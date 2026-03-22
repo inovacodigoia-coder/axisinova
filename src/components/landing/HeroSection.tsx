@@ -5,10 +5,10 @@ import { Play, Check, Calendar, TrendingUp, Users } from 'lucide-react';
 import { motion } from 'framer-motion';
 
 const badges = [
-  'Sem cartão de crédito',
-  'Configuração em 10 min',
-  'Suporte incluso',
-];
+'Sem cartão de crédito',
+'Configuração em 10 min',
+'Suporte incluso'];
+
 
 function DashboardMockup() {
   return (
@@ -16,39 +16,39 @@ function DashboardMockup() {
       {/* Top metrics */}
       <div className="grid grid-cols-3 gap-3 mb-4">
         {[
-          { label: 'Atendimentos', value: '1.284', icon: Users, color: 'text-primary' },
-          { label: 'Faturamento', value: 'R$ 89k', icon: TrendingUp, color: 'text-secondary' },
-          { label: 'Agendados', value: '47', icon: Calendar, color: 'text-primary' },
-        ].map((m) => (
-          <div key={m.label} className="rounded-xl bg-white p-3 shadow-sm">
+        { label: 'Atendimentos', value: '1.284', icon: Users, color: 'text-primary' },
+        { label: 'Faturamento', value: 'R$ 89k', icon: TrendingUp, color: 'text-secondary' },
+        { label: 'Agendados', value: '47', icon: Calendar, color: 'text-primary' }].
+        map((m) =>
+        <div key={m.label} className="rounded-xl bg-white p-3 shadow-sm">
             <m.icon className={`h-4 w-4 ${m.color} mb-1`} />
             <p className="text-lg font-bold text-foreground leading-tight">{m.value}</p>
             <p className="text-[11px] text-muted-foreground">{m.label}</p>
           </div>
-        ))}
+        )}
       </div>
       {/* Mini chart */}
       <div className="rounded-xl bg-white p-3 shadow-sm mb-3">
         <p className="text-xs font-semibold text-foreground mb-2">Atendimentos / semana</p>
         <div className="flex items-end gap-1.5 h-12">
-          {[40, 65, 50, 80, 60, 90, 75].map((h, i) => (
-            <div
-              key={i}
-              className="flex-1 rounded-t gradient-bg opacity-70"
-              style={{ height: `${h}%` }}
-            />
-          ))}
+          {[40, 65, 50, 80, 60, 90, 75].map((h, i) =>
+          <div
+            key={i}
+            className="flex-1 rounded-t gradient-bg opacity-70"
+            style={{ height: `${h}%` }} />
+
+          )}
         </div>
       </div>
       {/* Appointments list */}
       <div className="rounded-xl bg-white p-3 shadow-sm">
         <p className="text-xs font-semibold text-foreground mb-2">Próximos agendamentos</p>
         {[
-          { name: 'Maria S.', time: '09:00', type: 'Retorno' },
-          { name: 'Carlos R.', time: '09:30', type: '1ª vez' },
-          { name: 'Ana L.', time: '10:00', type: 'Retorno' },
-        ].map((a) => (
-          <div key={a.name} className="flex items-center justify-between py-1.5 border-b border-border last:border-0">
+        { name: 'Maria S.', time: '09:00', type: 'Retorno' },
+        { name: 'Carlos R.', time: '09:30', type: '1ª vez' },
+        { name: 'Ana L.', time: '10:00', type: 'Retorno' }].
+        map((a) =>
+        <div key={a.name} className="flex items-center justify-between py-1.5 border-b border-border last:border-0">
             <div className="flex items-center gap-2">
               <div className="h-6 w-6 rounded-full gradient-bg flex items-center justify-center text-[10px] font-bold text-white">
                 {a.name[0]}
@@ -57,10 +57,10 @@ function DashboardMockup() {
             </div>
             <span className="text-[10px] text-muted-foreground">{a.time} · {a.type}</span>
           </div>
-        ))}
+        )}
       </div>
-    </div>
-  );
+    </div>);
+
 }
 
 export function HeroSection() {
@@ -77,11 +77,11 @@ export function HeroSection() {
             className="flex-[3] text-center lg:text-left"
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
-          >
+            transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}>
+            
             {/* Badge */}
             <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-secondary/20 bg-gradient-to-r from-primary/[0.08] to-secondary/[0.08] px-4 py-1.5 text-[13px] font-semibold text-foreground">
-              🚀 Novo · Plataforma 2025
+              🚀 Novo · Plataforma 2026
             </div>
 
             <h1 className="text-4xl font-extrabold leading-[1.1] text-foreground md:text-[56px]" style={{ textWrap: 'balance' }}>
@@ -104,11 +104,11 @@ export function HeroSection() {
             </div>
 
             <div className="mt-6 flex flex-wrap justify-center gap-4 lg:justify-start">
-              {badges.map((b) => (
-                <span key={b} className="flex items-center gap-1.5 text-sm text-muted-foreground">
+              {badges.map((b) =>
+              <span key={b} className="flex items-center gap-1.5 text-sm text-muted-foreground">
                   <Check className="h-4 w-4 text-[hsl(var(--axis-success))]" /> {b}
                 </span>
-              ))}
+              )}
             </div>
           </motion.div>
 
@@ -117,12 +117,12 @@ export function HeroSection() {
             className="flex-[2] w-full max-w-md lg:max-w-none"
             initial={{ opacity: 0, x: 30 }}
             animate={{ opacity: 1, x: 0 }}
-            transition={{ duration: 0.7, delay: 0.2, ease: [0.16, 1, 0.3, 1] }}
-          >
+            transition={{ duration: 0.7, delay: 0.2, ease: [0.16, 1, 0.3, 1] }}>
+            
             <DashboardMockup />
           </motion.div>
         </div>
       </div>
-    </section>
-  );
+    </section>);
+
 }
