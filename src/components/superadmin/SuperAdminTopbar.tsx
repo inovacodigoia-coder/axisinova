@@ -14,7 +14,11 @@ const breadcrumbMap: Record<string, string> = {
   '/superadmin/alertas': 'Alertas e Suporte',
 }
 
-export function SuperAdminTopbar() {
+interface SuperAdminTopbarProps {
+  onMenuClick?: () => void
+}
+
+export function SuperAdminTopbar({ onMenuClick }: SuperAdminTopbarProps) {
   const { user, logout } = useAuth()
   const location = useLocation()
   const [search, setSearch] = useState('')
@@ -23,10 +27,13 @@ export function SuperAdminTopbar() {
   const currentPage = Object.entries(breadcrumbMap).find(([path]) => location.pathname.startsWith(path))?.[1] || 'Super Admin'
 
   return (
-    <header className="sticky top-0 z-30 flex h-16 items-center justify-between border-b border-border bg-card px-6 shadow-[0_1px_0_hsl(var(--border))]">
+    <header className="sticky top-0 z-30 flex h-16 items-center justify-between border-b border-border bg-card px-4 sm:px-6 shadow-[0_1px_0_hsl(var(--border))]">
       <div className="flex items-center gap-3">
-        <span className="text-xs text-muted-foreground">Super Admin</span>
-        <ChevronRight className="h-3 w-3 text-muted-foreground" />
+        <button onClick={onMenuClick} className="rounded-lg p-2 hover:bg-muted transition-colors lg:hidden">
+          <Menu className="h-5 w-5 text-muted-foreground" />
+        </button>
+        <span className="text-xs text-muted-foreground hidden sm:inline">Super Admin</span>
+        <ChevronRight className="h-3 w-3 text-muted-foreground hidden sm:inline" />
         <span className="text-sm font-medium text-foreground">{currentPage}</span>
       </div>
 

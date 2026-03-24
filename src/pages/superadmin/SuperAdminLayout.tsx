@@ -1,15 +1,18 @@
+import { useState } from 'react'
 import { Outlet } from 'react-router-dom'
 import { SuperAdminSidebar } from '@/components/superadmin/SuperAdminSidebar'
 import { SuperAdminTopbar } from '@/components/superadmin/SuperAdminTopbar'
 import { useAuth } from '@/context/AuthContext'
+import { Menu } from 'lucide-react'
 
 export default function SuperAdminLayout() {
   const { impersonation, setImpersonation } = useAuth()
+  const [mobileOpen, setMobileOpen] = useState(false)
 
   return (
     <div className="min-h-screen bg-muted">
-      <SuperAdminSidebar />
-      <div className="ml-[260px] flex flex-col min-h-screen transition-all duration-300">
+      <SuperAdminSidebar mobileOpen={mobileOpen} onMobileClose={() => setMobileOpen(false)} />
+      <div className="lg:ml-[260px] flex flex-col min-h-screen transition-all duration-300">
         {impersonation && (
           <div className="flex items-center justify-center gap-3 bg-[hsl(33,100%,50%)] px-4 py-2 text-sm font-medium text-white">
             <span>Você está visualizando como <strong>{impersonation.companyName}</strong></span>
@@ -18,8 +21,8 @@ export default function SuperAdminLayout() {
             </button>
           </div>
         )}
-        <SuperAdminTopbar />
-        <main className="flex-1 p-6">
+        <SuperAdminTopbar onMenuClick={() => setMobileOpen(true)} />
+        <main className="flex-1 p-4 sm:p-6">
           <Outlet />
         </main>
       </div>
