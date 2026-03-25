@@ -174,7 +174,7 @@ export default function SchedulePage() {
         confirmLabel="Cancelar Agendamento"
         variant="danger"
         onConfirm={handleDelete}
-        onCancel={() => setDeleteTarget(null)}
+        onClose={() => setDeleteTarget(null)}
       />
     </div>
   )

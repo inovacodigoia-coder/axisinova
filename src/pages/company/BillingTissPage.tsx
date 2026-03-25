@@ -212,7 +212,7 @@ export default function BillingTissPage() {
       </div>
 
       <TissGuideModal open={modalOpen} onClose={() => { setModalOpen(false); setEditingGuide(null) }} onSave={handleSave} initial={editingGuide} />
-      <ConfirmModal open={!!deleteTarget} title="Remover Guia TISS" description={`Deseja remover a guia ${deleteTarget?.number}?`} confirmLabel="Remover" variant="danger" onConfirm={handleDelete} onCancel={() => setDeleteTarget(null)} />
+      <ConfirmModal open={!!deleteTarget} title="Remover Guia TISS" description={`Deseja remover a guia ${deleteTarget?.number}?`} confirmLabel="Remover" variant="danger" onConfirm={handleDelete} <ConfirmModal open={!!deleteTarget} title="Remover Guia TISS" description={`Deseja remover a guia ${deleteTarget?.number}?`} confirmLabel="Remover" variant="danger" onConfirm={handleDelete} onClose={() => setDeleteTarget(null)} /> />
     </div>
   )
 }
