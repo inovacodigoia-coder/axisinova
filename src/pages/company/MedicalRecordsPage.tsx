@@ -160,7 +160,7 @@ export default function MedicalRecordsPage() {
         </div>
 
         <MedicalRecordModal open={recordModalOpen} onClose={() => setRecordModalOpen(false)} onSave={handleSaveRecord} patientName={selectedPatient.name} />
-        <ConfirmModal open={!!deleteRecord} title="Remover Registro" description="Deseja realmente remover este registro do prontuário?" confirmLabel="Remover" variant="danger" onConfirm={handleDeleteRecord} <ConfirmModal open={!!deleteRecord} title="Remover Registro" description="Deseja realmente remover este registro do prontuário?" confirmLabel="Remover" variant="danger" onConfirm={handleDeleteRecord} onClose={() => setDeleteRecord(null)} /> />
+        <ConfirmModal open={!!deleteRecord} title="Remover Registro" description="Deseja realmente remover este registro do prontuário?" confirmLabel="Remover" variant="danger" onConfirm={handleDeleteRecord} onClose={() => setDeleteRecord(null)} />
       </div>
     )
   }
