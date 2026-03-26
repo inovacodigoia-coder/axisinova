@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Plus, FileText, Calendar, ChevronRight, Heart, Stethoscope, Trash2 } from 'lucide-react'
 import { GradientButton } from '@/components/ui/GradientButton'
 import { SearchInput } from '@/components/ui/SearchInput'
@@ -6,91 +6,116 @@ import { MedicalRecordModal, type MedicalRecordFormData } from '@/components/com
 import { PatientModal, type PatientFormData } from '@/components/company/PatientModal'
 import { ConfirmModal } from '@/components/ui/ConfirmModal'
 import { useNotifications } from '@/components/company/NotificationPanel'
+import { supabase } from '@/integrations/supabase/client'
 import { toast } from 'sonner'
+import { DEMO_COMPANY_ID } from '@/lib/constants'
 
 interface Patient {
   id: string; name: string; cpf: string; birthDate: string; phone: string
   lastVisit: string; totalVisits: number; bloodType: string; allergies: string[]
 }
 
-const initialPatients: Patient[] = [
-  { id: '1', name: 'Maria Aparecida Silva', cpf: '123.456.789-00', birthDate: '15/03/1985', phone: '(11) 98765-4321', lastVisit: '22/03/2026', totalVisits: 12, bloodType: 'A+', allergies: ['Dipirona'] },
-  { id: '2', name: 'João Carlos Santos', cpf: '987.654.321-00', birthDate: '08/07/1972', phone: '(11) 91234-5678', lastVisit: '20/03/2026', totalVisits: 8, bloodType: 'O-', allergies: [] },
-  { id: '3', name: 'Ana Paula Oliveira', cpf: '456.789.123-00', birthDate: '22/11/1990', phone: '(21) 99876-5432', lastVisit: '18/03/2026', totalVisits: 5, bloodType: 'B+', allergies: ['Penicilina', 'Latex'] },
-  { id: '4', name: 'Pedro Henrique Costa', cpf: '321.654.987-00', birthDate: '03/09/1968', phone: '(31) 98765-1234', lastVisit: '15/03/2026', totalVisits: 22, bloodType: 'AB+', allergies: ['AAS'] },
-  { id: '5', name: 'Lucia Ferreira Lima', cpf: '654.321.987-00', birthDate: '17/01/1995', phone: '(41) 97654-3210', lastVisit: '10/03/2026', totalVisits: 3, bloodType: 'O+', allergies: [] },
-]
-
 interface MedicalRecord {
   id: string; date: string; doctor: string; type: string; diagnosis: string; notes: string; prescription?: string; exams?: string
-}
-
-const initialRecords: Record<string, MedicalRecord[]> = {
-  '1': [
-    { id: 'r1', date: '22/03/2026', doctor: 'Dr. Carlos Mendes', type: 'Consulta', diagnosis: 'Hipertensão arterial - acompanhamento', notes: 'PA 140/90. Ajuste de medicação.' },
-    { id: 'r2', date: '15/02/2026', doctor: 'Dr. Carlos Mendes', type: 'Retorno', diagnosis: 'Hipertensão arterial', notes: 'Exames laboratoriais dentro do esperado.' },
-  ],
-  '2': [
-    { id: 'r3', date: '20/03/2026', doctor: 'Dra. Ana Paula', type: 'Consulta', diagnosis: 'Lombalgia crônica', notes: 'Prescrição de fisioterapia. Retorno em 30 dias.' },
-  ],
 }
 
 export default function MedicalRecordsPage() {
   const [search, setSearch] = useState('')
   const [selectedPatient, setSelectedPatient] = useState<Patient | null>(null)
-  const [patients, setPatients] = useState<Patient[]>(initialPatients)
-  const [records, setRecords] = useState<Record<string, MedicalRecord[]>>(initialRecords)
+  const [patients, setPatients] = useState<Patient[]>([])
+  const [records, setRecords] = useState<MedicalRecord[]>([])
   const [recordModalOpen, setRecordModalOpen] = useState(false)
   const [patientModalOpen, setPatientModalOpen] = useState(false)
-  const [deleteRecord, setDeleteRecord] = useState<{ patientId: string; recordId: string } | null>(null)
+  const [deleteRecord, setDeleteRecord] = useState<string | null>(null)
+  const [loading, setLoading] = useState(true)
   const { addNotification } = useNotifications()
+
+  const fetchPatients = async () => {
+    const { data: patientsData } = await supabase
+      .from('patients').select('*').eq('company_id', DEMO_COMPANY_ID).order('name')
+    
+    if (!patientsData) { setLoading(false); return }
+
+    // Get record counts per patient
+    const { data: recordCounts } = await supabase
+      .from('medical_records').select('patient_id, date').eq('company_id', DEMO_COMPANY_ID)
+
+    const countMap: Record<string, { count: number; lastDate: string }> = {}
+    ;(recordCounts || []).forEach(r => {
+      if (!countMap[r.patient_id]) countMap[r.patient_id] = { count: 0, lastDate: r.date }
+      countMap[r.patient_id].count++
+      if (r.date > countMap[r.patient_id].lastDate) countMap[r.patient_id].lastDate = r.date
+    })
+
+    const mapped: Patient[] = patientsData.map(p => ({
+      id: p.id, name: p.name, cpf: p.cpf,
+      birthDate: new Date(p.birth_date).toLocaleDateString('pt-BR'),
+      phone: p.phone, bloodType: p.blood_type || 'O+',
+      allergies: p.allergies || [],
+      totalVisits: countMap[p.id]?.count || 0,
+      lastVisit: countMap[p.id] ? new Date(countMap[p.id].lastDate).toLocaleDateString('pt-BR') : '-',
+    }))
+    setPatients(mapped)
+    setLoading(false)
+  }
+
+  const fetchRecords = async (patientId: string) => {
+    const { data } = await supabase
+      .from('medical_records').select('*').eq('patient_id', patientId).order('date', { ascending: false })
+    const mapped: MedicalRecord[] = (data || []).map(r => ({
+      id: r.id, date: new Date(r.date).toLocaleDateString('pt-BR'),
+      doctor: r.doctor, type: r.type, diagnosis: r.diagnosis,
+      notes: r.notes, prescription: r.prescription || undefined, exams: r.exams || undefined,
+    }))
+    setRecords(mapped)
+  }
+
+  useEffect(() => { fetchPatients() }, [])
+  useEffect(() => { if (selectedPatient) fetchRecords(selectedPatient.id) }, [selectedPatient])
 
   const filtered = patients.filter((p) =>
     p.name.toLowerCase().includes(search.toLowerCase()) || p.cpf.includes(search)
   )
 
-  const handleSaveRecord = (data: MedicalRecordFormData) => {
+  const handleSaveRecord = async (data: MedicalRecordFormData) => {
     if (!selectedPatient) return
-    const newRecord: MedicalRecord = {
-      id: `rec_${Date.now()}`,
-      date: new Date(data.date).toLocaleDateString('pt-BR'),
-      doctor: data.doctor, type: data.type, diagnosis: data.diagnosis,
-      notes: data.notes, prescription: data.prescription, exams: data.exams,
-    }
-    setRecords(prev => ({
-      ...prev,
-      [selectedPatient.id]: [newRecord, ...(prev[selectedPatient.id] || [])],
-    }))
+    const { error } = await supabase.from('medical_records').insert({
+      company_id: DEMO_COMPANY_ID, patient_id: selectedPatient.id,
+      date: data.date, doctor: data.doctor, type: data.type,
+      diagnosis: data.diagnosis, notes: data.notes,
+      prescription: data.prescription || null, exams: data.exams || null,
+    })
+    if (error) { toast.error('Erro ao salvar registro'); return }
     setRecordModalOpen(false)
     toast.success('Registro adicionado ao prontuário!')
     addNotification({ type: 'record', title: 'Prontuário atualizado', message: `Novo registro para ${selectedPatient.name} por ${data.doctor}` })
+    fetchRecords(selectedPatient.id)
+    fetchPatients()
   }
 
-  const handleSavePatient = (data: PatientFormData) => {
-    const newPatient: Patient = {
-      id: `pat_${Date.now()}`, name: data.name, cpf: data.cpf,
-      birthDate: new Date(data.birthDate).toLocaleDateString('pt-BR'),
-      phone: data.phone, lastVisit: '-', totalVisits: 0,
-      bloodType: data.bloodType, allergies: data.allergies,
-    }
-    setPatients(prev => [newPatient, ...prev])
+  const handleSavePatient = async (data: PatientFormData) => {
+    const { error } = await supabase.from('patients').insert({
+      company_id: DEMO_COMPANY_ID, name: data.name, cpf: data.cpf,
+      birth_date: data.birthDate, phone: data.phone,
+      blood_type: data.bloodType, allergies: data.allergies,
+      email: data.email || null, address: data.address || null,
+    })
+    if (error) { toast.error('Erro ao cadastrar paciente'); return }
     setPatientModalOpen(false)
     toast.success('Paciente cadastrado com sucesso!')
     addNotification({ type: 'info', title: 'Novo paciente', message: `${data.name} foi cadastrado no sistema` })
+    fetchPatients()
   }
 
-  const handleDeleteRecord = () => {
+  const handleDeleteRecord = async () => {
     if (!deleteRecord) return
-    setRecords(prev => ({
-      ...prev,
-      [deleteRecord.patientId]: (prev[deleteRecord.patientId] || []).filter(r => r.id !== deleteRecord.recordId),
-    }))
+    await supabase.from('medical_records').delete().eq('id', deleteRecord)
     setDeleteRecord(null)
     toast.success('Registro removido do prontuário')
+    if (selectedPatient) fetchRecords(selectedPatient.id)
   }
 
   if (selectedPatient) {
-    const patientRecords = records[selectedPatient.id] || []
     return (
       <div className="space-y-6">
         <button onClick={() => setSelectedPatient(null)} className="flex items-center gap-1 text-sm text-primary hover:underline">← Voltar para lista</button>
@@ -127,13 +152,13 @@ export default function MedicalRecordsPage() {
               <h3 className="text-lg font-bold text-foreground">Histórico de Prontuário</h3>
               <GradientButton onClick={() => setRecordModalOpen(true)}><Plus className="h-4 w-4 mr-2" /> Nova Entrada</GradientButton>
             </div>
-            {patientRecords.length === 0 ? (
+            {records.length === 0 ? (
               <div className="rounded-2xl border border-border bg-card p-8 text-center">
                 <FileText className="h-10 w-10 text-muted-foreground mx-auto mb-3" />
                 <p className="text-muted-foreground">Nenhum registro encontrado</p>
               </div>
             ) : (
-              patientRecords.map((r) => (
+              records.map((r) => (
                 <div key={r.id} className="rounded-2xl border border-border bg-card p-5 shadow-[0_4px_24px_rgba(0,0,0,0.06)] group relative">
                   <div className="flex items-start justify-between mb-3">
                     <div className="flex items-center gap-2">
@@ -143,7 +168,7 @@ export default function MedicalRecordsPage() {
                     </div>
                     <div className="flex items-center gap-2">
                       <span className="text-xs text-muted-foreground">{r.doctor}</span>
-                      <button onClick={() => setDeleteRecord({ patientId: selectedPatient.id, recordId: r.id })}
+                      <button onClick={() => setDeleteRecord(r.id)}
                         className="hidden group-hover:block rounded p-1 hover:bg-muted transition-colors">
                         <Trash2 className="h-3.5 w-3.5 text-destructive" />
                       </button>
@@ -179,28 +204,32 @@ export default function MedicalRecordsPage() {
         <SearchInput value={search} onChange={setSearch} placeholder="Buscar por nome ou CPF..." />
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-        {filtered.map((p) => (
-          <button key={p.id} onClick={() => setSelectedPatient(p)}
-            className="rounded-2xl border border-border bg-card p-5 shadow-[0_4px_24px_rgba(0,0,0,0.06)] text-left hover:shadow-lg hover:border-primary/30 transition-all group">
-            <div className="flex items-center gap-3 mb-3">
-              <div className="flex h-10 w-10 items-center justify-center rounded-full gradient-bg text-white text-sm font-bold">{p.name.charAt(0)}</div>
-              <div className="min-w-0 flex-1">
-                <p className="font-semibold text-foreground truncate">{p.name}</p>
-                <p className="text-xs text-muted-foreground">{p.cpf}</p>
+      {loading ? (
+        <div className="p-12 text-center text-muted-foreground">Carregando pacientes...</div>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+          {filtered.map((p) => (
+            <button key={p.id} onClick={() => setSelectedPatient(p)}
+              className="rounded-2xl border border-border bg-card p-5 shadow-[0_4px_24px_rgba(0,0,0,0.06)] text-left hover:shadow-lg hover:border-primary/30 transition-all group">
+              <div className="flex items-center gap-3 mb-3">
+                <div className="flex h-10 w-10 items-center justify-center rounded-full gradient-bg text-white text-sm font-bold">{p.name.charAt(0)}</div>
+                <div className="min-w-0 flex-1">
+                  <p className="font-semibold text-foreground truncate">{p.name}</p>
+                  <p className="text-xs text-muted-foreground">{p.cpf}</p>
+                </div>
+                <ChevronRight className="h-4 w-4 text-muted-foreground group-hover:text-primary transition-colors" />
               </div>
-              <ChevronRight className="h-4 w-4 text-muted-foreground group-hover:text-primary transition-colors" />
-            </div>
-            <div className="flex items-center gap-4 text-xs text-muted-foreground">
-              <span className="flex items-center gap-1"><Calendar className="h-3 w-3" /> {p.lastVisit}</span>
-              <span className="flex items-center gap-1"><FileText className="h-3 w-3" /> {p.totalVisits} visitas</span>
-              {p.allergies.length > 0 && (
-                <span className="flex items-center gap-1 text-destructive"><Heart className="h-3 w-3" /> {p.allergies.length} alergia(s)</span>
-              )}
-            </div>
-          </button>
-        ))}
-      </div>
+              <div className="flex items-center gap-4 text-xs text-muted-foreground">
+                <span className="flex items-center gap-1"><Calendar className="h-3 w-3" /> {p.lastVisit}</span>
+                <span className="flex items-center gap-1"><FileText className="h-3 w-3" /> {p.totalVisits} visitas</span>
+                {p.allergies.length > 0 && (
+                  <span className="flex items-center gap-1 text-destructive"><Heart className="h-3 w-3" /> {p.allergies.length} alergia(s)</span>
+                )}
+              </div>
+            </button>
+          ))}
+        </div>
+      )}
 
       <PatientModal open={patientModalOpen} onClose={() => setPatientModalOpen(false)} onSave={handleSavePatient} />
     </div>
