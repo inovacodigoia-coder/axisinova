@@ -14,7 +14,258 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      appointments: {
+        Row: {
+          company_id: string
+          created_at: string
+          date: string
+          doctor: string
+          duration: number
+          id: string
+          notes: string | null
+          patient_name: string
+          status: Database["public"]["Enums"]["appointment_status"]
+          time: string
+          type: string
+          updated_at: string
+        }
+        Insert: {
+          company_id: string
+          created_at?: string
+          date: string
+          doctor: string
+          duration?: number
+          id?: string
+          notes?: string | null
+          patient_name: string
+          status?: Database["public"]["Enums"]["appointment_status"]
+          time: string
+          type?: string
+          updated_at?: string
+        }
+        Update: {
+          company_id?: string
+          created_at?: string
+          date?: string
+          doctor?: string
+          duration?: number
+          id?: string
+          notes?: string | null
+          patient_name?: string
+          status?: Database["public"]["Enums"]["appointment_status"]
+          time?: string
+          type?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "appointments_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      companies: {
+        Row: {
+          cnpj: string | null
+          created_at: string
+          id: string
+          name: string
+          updated_at: string
+        }
+        Insert: {
+          cnpj?: string | null
+          created_at?: string
+          id?: string
+          name: string
+          updated_at?: string
+        }
+        Update: {
+          cnpj?: string | null
+          created_at?: string
+          id?: string
+          name?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      medical_records: {
+        Row: {
+          company_id: string
+          created_at: string
+          date: string
+          diagnosis: string
+          doctor: string
+          exams: string | null
+          id: string
+          notes: string
+          patient_id: string
+          prescription: string | null
+          type: string
+          updated_at: string
+        }
+        Insert: {
+          company_id: string
+          created_at?: string
+          date?: string
+          diagnosis: string
+          doctor: string
+          exams?: string | null
+          id?: string
+          notes: string
+          patient_id: string
+          prescription?: string | null
+          type?: string
+          updated_at?: string
+        }
+        Update: {
+          company_id?: string
+          created_at?: string
+          date?: string
+          diagnosis?: string
+          doctor?: string
+          exams?: string | null
+          id?: string
+          notes?: string
+          patient_id?: string
+          prescription?: string | null
+          type?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "medical_records_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "medical_records_patient_id_fkey"
+            columns: ["patient_id"]
+            isOneToOne: false
+            referencedRelation: "patients"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      patients: {
+        Row: {
+          address: string | null
+          allergies: string[] | null
+          birth_date: string
+          blood_type: string | null
+          company_id: string
+          cpf: string
+          created_at: string
+          email: string | null
+          id: string
+          name: string
+          phone: string
+          updated_at: string
+        }
+        Insert: {
+          address?: string | null
+          allergies?: string[] | null
+          birth_date: string
+          blood_type?: string | null
+          company_id: string
+          cpf: string
+          created_at?: string
+          email?: string | null
+          id?: string
+          name: string
+          phone: string
+          updated_at?: string
+        }
+        Update: {
+          address?: string | null
+          allergies?: string[] | null
+          birth_date?: string
+          blood_type?: string | null
+          company_id?: string
+          cpf?: string
+          created_at?: string
+          email?: string | null
+          id?: string
+          name?: string
+          phone?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "patients_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      tiss_guides: {
+        Row: {
+          authorization_number: string | null
+          company_id: string
+          created_at: string
+          doctor: string
+          gloss_reason: string | null
+          guide_number: string
+          id: string
+          notes: string | null
+          operator: string
+          patient_name: string
+          procedure_code: string | null
+          procedure_name: string
+          status: Database["public"]["Enums"]["tiss_guide_status"]
+          updated_at: string
+          value: number
+        }
+        Insert: {
+          authorization_number?: string | null
+          company_id: string
+          created_at?: string
+          doctor: string
+          gloss_reason?: string | null
+          guide_number: string
+          id?: string
+          notes?: string | null
+          operator: string
+          patient_name: string
+          procedure_code?: string | null
+          procedure_name: string
+          status?: Database["public"]["Enums"]["tiss_guide_status"]
+          updated_at?: string
+          value?: number
+        }
+        Update: {
+          authorization_number?: string | null
+          company_id?: string
+          created_at?: string
+          doctor?: string
+          gloss_reason?: string | null
+          guide_number?: string
+          id?: string
+          notes?: string | null
+          operator?: string
+          patient_name?: string
+          procedure_code?: string | null
+          procedure_name?: string
+          status?: Database["public"]["Enums"]["tiss_guide_status"]
+          updated_at?: string
+          value?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tiss_guides_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
@@ -23,7 +274,8 @@ export type Database = {
       [_ in never]: never
     }
     Enums: {
-      [_ in never]: never
+      appointment_status: "confirmed" | "waiting" | "cancelled"
+      tiss_guide_status: "enviada" | "aprovada" | "pendente" | "glosada"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -150,6 +402,9 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      appointment_status: ["confirmed", "waiting", "cancelled"],
+      tiss_guide_status: ["enviada", "aprovada", "pendente", "glosada"],
+    },
   },
 } as const
