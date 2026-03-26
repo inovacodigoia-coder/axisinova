@@ -1,14 +1,15 @@
-import { useState } from 'react'
-import { Calendar, Clock, Plus, ChevronLeft, ChevronRight, Edit2, Trash2 } from 'lucide-react'
+import { useState, useEffect } from 'react'
+import { Plus, ChevronLeft, ChevronRight, Edit2, Trash2 } from 'lucide-react'
 import { GradientButton } from '@/components/ui/GradientButton'
 import { SearchInput } from '@/components/ui/SearchInput'
 import { AppointmentModal, type AppointmentFormData } from '@/components/company/AppointmentModal'
 import { ConfirmModal } from '@/components/ui/ConfirmModal'
 import { useNotifications } from '@/components/company/NotificationPanel'
+import { supabase } from '@/integrations/supabase/client'
 import { toast } from 'sonner'
+import { DEMO_COMPANY_ID } from '@/lib/constants'
 
 const doctors = ['Todos', 'Dr. Carlos Mendes', 'Dra. Ana Paula', 'Dr. Roberto Lima', 'Dra. Maria Souza']
-
 const timeSlots = ['07:00','07:30','08:00','08:30','09:00','09:30','10:00','10:30','11:00','11:30','12:00','13:00','13:30','14:00','14:30','15:00','15:30','16:00','16:30','17:00']
 
 const weekDays = [
@@ -25,16 +26,6 @@ interface Appointment {
   type: string; duration: number; status: 'confirmed' | 'waiting' | 'cancelled'; date: string; notes?: string
 }
 
-const initialAppointments: Appointment[] = [
-  { id: '1', time: '08:00', dayIndex: 0, patient: 'Maria Silva', doctor: 'Dr. Carlos Mendes', type: 'Consulta', duration: 30, status: 'confirmed', date: '2026-03-24' },
-  { id: '2', time: '08:30', dayIndex: 0, patient: 'João Santos', doctor: 'Dra. Ana Paula', type: 'Retorno', duration: 30, status: 'confirmed', date: '2026-03-24' },
-  { id: '3', time: '09:00', dayIndex: 1, patient: 'Pedro Oliveira', doctor: 'Dr. Carlos Mendes', type: 'Exame', duration: 60, status: 'waiting', date: '2026-03-25' },
-  { id: '4', time: '10:00', dayIndex: 2, patient: 'Ana Costa', doctor: 'Dr. Roberto Lima', type: 'Consulta', duration: 30, status: 'confirmed', date: '2026-03-26' },
-  { id: '5', time: '14:00', dayIndex: 0, patient: 'Lucia Ferreira', doctor: 'Dra. Ana Paula', type: 'Primeira vez', duration: 45, status: 'confirmed', date: '2026-03-24' },
-  { id: '6', time: '15:00', dayIndex: 3, patient: 'Carlos Almeida', doctor: 'Dr. Carlos Mendes', type: 'Retorno', duration: 30, status: 'cancelled', date: '2026-03-27' },
-  { id: '7', time: '09:30', dayIndex: 4, patient: 'Fernanda Lima', doctor: 'Dra. Maria Souza', type: 'Consulta', duration: 30, status: 'confirmed', date: '2026-03-28' },
-]
-
 const statusColors: Record<string, string> = {
   confirmed: 'border-l-[hsl(var(--success))] bg-[hsl(var(--success))]/5',
   waiting: 'border-l-[hsl(var(--warning))] bg-[hsl(var(--warning))]/5',
@@ -45,11 +36,31 @@ export default function SchedulePage() {
   const [search, setSearch] = useState('')
   const [selectedDoctor, setSelectedDoctor] = useState('Todos')
   const [view, setView] = useState<'week' | 'day'>('week')
-  const [appointments, setAppointments] = useState<Appointment[]>(initialAppointments)
+  const [appointments, setAppointments] = useState<Appointment[]>([])
   const [modalOpen, setModalOpen] = useState(false)
   const [editingAppointment, setEditingAppointment] = useState<AppointmentFormData | null>(null)
   const [deleteTarget, setDeleteTarget] = useState<Appointment | null>(null)
+  const [loading, setLoading] = useState(true)
   const { addNotification } = useNotifications()
+
+  const fetchAppointments = async () => {
+    const { data, error } = await supabase
+      .from('appointments')
+      .select('*')
+      .eq('company_id', DEMO_COMPANY_ID)
+      .order('date', { ascending: true })
+    if (error) { toast.error('Erro ao carregar agendamentos'); return }
+    const mapped: Appointment[] = (data || []).map(a => ({
+      id: a.id, time: a.time.slice(0, 5), patient: a.patient_name, doctor: a.doctor,
+      type: a.type, duration: a.duration, status: a.status,
+      date: a.date, notes: a.notes || undefined,
+      dayIndex: weekDays.findIndex(d => d.full === a.date),
+    }))
+    setAppointments(mapped)
+    setLoading(false)
+  }
+
+  useEffect(() => { fetchAppointments() }, [])
 
   const filtered = appointments.filter((a) => {
     if (selectedDoctor !== 'Todos' && a.doctor !== selectedDoctor) return false
@@ -57,34 +68,37 @@ export default function SchedulePage() {
     return true
   })
 
-  const handleSave = (data: AppointmentFormData) => {
+  const handleSave = async (data: AppointmentFormData) => {
     if (data.id) {
-      // Edit
-      const dayIndex = weekDays.findIndex(d => d.full === data.date)
-      setAppointments(prev => prev.map(a => a.id === data.id ? { ...a, ...data, dayIndex: dayIndex >= 0 ? dayIndex : a.dayIndex } : a))
+      const { error } = await supabase.from('appointments').update({
+        patient_name: data.patient, doctor: data.doctor, date: data.date,
+        time: data.time, type: data.type, duration: data.duration,
+        status: data.status, notes: data.notes || null,
+      }).eq('id', data.id)
+      if (error) { toast.error('Erro ao atualizar'); return }
       toast.success('Agendamento atualizado com sucesso!')
     } else {
-      // Create
-      const dayIndex = weekDays.findIndex(d => d.full === data.date)
-      const newApt: Appointment = {
-        id: `apt_${Date.now()}`, time: data.time, dayIndex: dayIndex >= 0 ? dayIndex : 0,
-        patient: data.patient, doctor: data.doctor, type: data.type,
-        duration: data.duration, status: data.status, date: data.date, notes: data.notes,
-      }
-      setAppointments(prev => [...prev, newApt])
+      const { error } = await supabase.from('appointments').insert({
+        company_id: DEMO_COMPANY_ID, patient_name: data.patient, doctor: data.doctor,
+        date: data.date, time: data.time, type: data.type, duration: data.duration,
+        status: data.status, notes: data.notes || null,
+      })
+      if (error) { toast.error('Erro ao criar agendamento'); return }
       toast.success('Agendamento criado com sucesso!')
       addNotification({ type: 'appointment', title: 'Novo agendamento', message: `${data.patient} agendado para ${data.date} às ${data.time}` })
     }
     setModalOpen(false)
     setEditingAppointment(null)
+    fetchAppointments()
   }
 
-  const handleDelete = () => {
-    if (deleteTarget) {
-      setAppointments(prev => prev.filter(a => a.id !== deleteTarget.id))
-      toast.success('Agendamento removido com sucesso!')
-      setDeleteTarget(null)
-    }
+  const handleDelete = async () => {
+    if (!deleteTarget) return
+    const { error } = await supabase.from('appointments').delete().eq('id', deleteTarget.id)
+    if (error) { toast.error('Erro ao remover'); return }
+    toast.success('Agendamento removido com sucesso!')
+    setDeleteTarget(null)
+    fetchAppointments()
   }
 
   const openEdit = (apt: Appointment) => {
@@ -123,47 +137,51 @@ export default function SchedulePage() {
           <button className="p-1 hover:bg-muted rounded-lg transition-colors"><ChevronRight className="h-5 w-5 text-muted-foreground" /></button>
         </div>
 
-        <div className="overflow-x-auto">
-          <div className="min-w-[700px]">
-            <div className="grid grid-cols-[80px_repeat(6,1fr)] border-b border-border">
-              <div className="p-3 text-xs text-muted-foreground font-medium">Horário</div>
-              {weekDays.map((d, i) => (
-                <div key={i} className={`p-3 text-center border-l border-border ${i === 1 ? 'bg-primary/5' : ''}`}>
-                  <p className="text-xs text-muted-foreground">{d.label}</p>
-                  <p className={`text-lg font-bold ${i === 1 ? 'text-primary' : 'text-foreground'}`}>{d.date}</p>
+        {loading ? (
+          <div className="p-12 text-center text-muted-foreground">Carregando agendamentos...</div>
+        ) : (
+          <div className="overflow-x-auto">
+            <div className="min-w-[700px]">
+              <div className="grid grid-cols-[80px_repeat(6,1fr)] border-b border-border">
+                <div className="p-3 text-xs text-muted-foreground font-medium">Horário</div>
+                {weekDays.map((d, i) => (
+                  <div key={i} className={`p-3 text-center border-l border-border ${i === 1 ? 'bg-primary/5' : ''}`}>
+                    <p className="text-xs text-muted-foreground">{d.label}</p>
+                    <p className={`text-lg font-bold ${i === 1 ? 'text-primary' : 'text-foreground'}`}>{d.date}</p>
+                  </div>
+                ))}
+              </div>
+
+              {timeSlots.map((time) => (
+                <div key={time} className="grid grid-cols-[80px_repeat(6,1fr)] border-b border-border/50 min-h-[48px]">
+                  <div className="p-2 text-xs text-muted-foreground flex items-start justify-end pr-3 pt-1">{time}</div>
+                  {weekDays.map((_, dayIdx) => {
+                    const apt = filtered.find((a) => a.time === time && a.dayIndex === dayIdx)
+                    return (
+                      <div key={dayIdx} className="border-l border-border/50 p-0.5 relative group">
+                        {apt && (
+                          <div className={`rounded-lg border-l-[3px] p-2 text-xs cursor-pointer hover:shadow-md transition-shadow ${statusColors[apt.status]}`}>
+                            <p className="font-semibold text-foreground truncate">{apt.patient}</p>
+                            <p className="text-muted-foreground truncate">{apt.doctor}</p>
+                            <p className="text-muted-foreground/70">{apt.type} · {apt.duration}min</p>
+                            <div className="absolute top-1 right-1 hidden group-hover:flex gap-0.5">
+                              <button onClick={() => openEdit(apt)} className="rounded p-1 bg-card shadow hover:bg-muted transition-colors">
+                                <Edit2 className="h-3 w-3 text-primary" />
+                              </button>
+                              <button onClick={() => setDeleteTarget(apt)} className="rounded p-1 bg-card shadow hover:bg-muted transition-colors">
+                                <Trash2 className="h-3 w-3 text-destructive" />
+                              </button>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    )
+                  })}
                 </div>
               ))}
             </div>
-
-            {timeSlots.map((time) => (
-              <div key={time} className="grid grid-cols-[80px_repeat(6,1fr)] border-b border-border/50 min-h-[48px]">
-                <div className="p-2 text-xs text-muted-foreground flex items-start justify-end pr-3 pt-1">{time}</div>
-                {weekDays.map((_, dayIdx) => {
-                  const apt = filtered.find((a) => a.time === time && a.dayIndex === dayIdx)
-                  return (
-                    <div key={dayIdx} className="border-l border-border/50 p-0.5 relative group">
-                      {apt && (
-                        <div className={`rounded-lg border-l-[3px] p-2 text-xs cursor-pointer hover:shadow-md transition-shadow ${statusColors[apt.status]}`}>
-                          <p className="font-semibold text-foreground truncate">{apt.patient}</p>
-                          <p className="text-muted-foreground truncate">{apt.doctor}</p>
-                          <p className="text-muted-foreground/70">{apt.type} · {apt.duration}min</p>
-                          <div className="absolute top-1 right-1 hidden group-hover:flex gap-0.5">
-                            <button onClick={() => openEdit(apt)} className="rounded p-1 bg-card shadow hover:bg-muted transition-colors">
-                              <Edit2 className="h-3 w-3 text-primary" />
-                            </button>
-                            <button onClick={() => setDeleteTarget(apt)} className="rounded p-1 bg-card shadow hover:bg-muted transition-colors">
-                              <Trash2 className="h-3 w-3 text-destructive" />
-                            </button>
-                          </div>
-                        </div>
-                      )}
-                    </div>
-                  )
-                })}
-              </div>
-            ))}
           </div>
-        </div>
+        )}
       </div>
 
       <AppointmentModal open={modalOpen} onClose={() => { setModalOpen(false); setEditingAppointment(null) }} onSave={handleSave} initial={editingAppointment} />
