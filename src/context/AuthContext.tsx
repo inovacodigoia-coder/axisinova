@@ -88,6 +88,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const logout = useCallback(() => {
     localStorage.removeItem(TOKEN_KEY)
+    sessionStorage.removeItem('axis_inova_session')
     dispatch({ type: 'LOGOUT' })
   }, [])
 
