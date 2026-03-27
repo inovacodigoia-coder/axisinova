@@ -3,7 +3,7 @@ import { Routes, Route, Navigate, useLocation } from 'react-router-dom'
 import { CompanySidebar } from '@/components/company/CompanySidebar'
 import { Menu, Bell } from 'lucide-react'
 import { useAuth } from '@/context/AuthContext'
-import { UserSessionProvider, useUserSession } from '@/context/UserSessionContext'
+import { useUserSession } from '@/context/UserSessionContext'
 import { NotificationProvider, NotificationPanel, useNotifications } from '@/components/company/NotificationPanel'
 import { UserContextBadge } from '@/components/auth/UserContextBadge'
 import { FunctionsMenu } from '@/components/portal/FunctionsMenu'
@@ -19,9 +19,6 @@ function PortalContent() {
   const { user } = useAuth()
   const { unreadCount } = useNotifications()
   const { session } = useUserSession()
-  const location = useLocation()
-
-  const isDashboard = location.pathname === '/app/dashboard' || location.pathname === '/app'
 
   return (
     <div className="min-h-screen bg-muted">
@@ -69,10 +66,8 @@ function PortalContent() {
 
 export default function CompanyPortalLayout() {
   return (
-    <UserSessionProvider>
-      <NotificationProvider>
-        <PortalContent />
-      </NotificationProvider>
-    </UserSessionProvider>
+    <NotificationProvider>
+      <PortalContent />
+    </NotificationProvider>
   )
 }
