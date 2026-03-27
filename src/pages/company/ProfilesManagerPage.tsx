@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { Search, Plus, Pencil, Trash2, Eye, Shield, ChevronDown, Check, X } from 'lucide-react'
-import { MOCK_PROFILES, MOCK_SECTORS, MOCK_COMPANY_USERS } from '@/mocks/profiles.mock'
+import { MOCK_PROFILES, MOCK_SECTORS } from '@/mocks/profiles.mock'
 import { MOCK_COMPANY_USERS as AUTH_USERS } from '@/mocks/superadmin.mock'
 import type { UserProfile, Permission, ModuleKey, FunctionItem } from '@/types/profile.types'
 import { MODULE_LABELS, MODULE_ICONS, ALL_ACTIONS, ACTION_LABELS } from '@/types/profile.types'
