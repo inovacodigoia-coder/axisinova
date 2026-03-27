@@ -13,7 +13,11 @@ export default function LoginPage() {
 
   useEffect(() => {
     if (isAuthenticated && user) {
-      navigate(user.role === 'super_admin' ? '/superadmin/dashboard' : '/app/dashboard', { replace: true })
+      if (user.role === 'super_admin') {
+        navigate('/superadmin/dashboard', { replace: true })
+      } else {
+        navigate('/selecionar-perfil', { replace: true })
+      }
     }
   }, [isAuthenticated, user, navigate])
 
