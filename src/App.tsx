@@ -4,6 +4,7 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { AuthProvider } from "@/context/AuthContext";
+import { UserSessionProvider } from "@/context/UserSessionContext";
 import { SuperAdminRoute, PrivateRoute } from "@/router/guards";
 import LandingPage from "./pages/LandingPage";
 import RegisterPage from "./pages/RegisterPage";
@@ -32,37 +33,38 @@ const App = () => (
       <Sonner />
       <BrowserRouter>
         <AuthProvider>
-          <UserSessionProviderGlobal>
-          <Routes>
-            {/* Public */}
-            <Route path="/" element={<LandingPage />} />
-            <Route path="/cadastro" element={<RegisterPage />} />
-            <Route path="/login" element={<LoginPage />} />
-            <Route path="/forgot-password" element={<ForgotPasswordPage />} />
-            <Route path="/reset-password/:token" element={<ResetPasswordPage />} />
-            <Route path="/reset-password" element={<ResetPasswordPage />} />
-            <Route path="/unauthorized" element={<UnauthorizedPage />} />
+          <UserSessionProvider>
+            <Routes>
+              {/* Public */}
+              <Route path="/" element={<LandingPage />} />
+              <Route path="/cadastro" element={<RegisterPage />} />
+              <Route path="/login" element={<LoginPage />} />
+              <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+              <Route path="/reset-password/:token" element={<ResetPasswordPage />} />
+              <Route path="/reset-password" element={<ResetPasswordPage />} />
+              <Route path="/unauthorized" element={<UnauthorizedPage />} />
 
-            {/* Profile Selector */}
-            <Route path="/selecionar-perfil" element={<PrivateRoute><ProfileSelectorPage /></PrivateRoute>} />
+              {/* Profile Selector */}
+              <Route path="/selecionar-perfil" element={<PrivateRoute><ProfileSelectorPage /></PrivateRoute>} />
 
-            {/* Super Admin */}
-            <Route path="/superadmin" element={<SuperAdminRoute><SuperAdminLayout /></SuperAdminRoute>}>
-              <Route path="dashboard" element={<SuperAdminDashboard />} />
-              <Route path="empresas" element={<CompaniesListPage />} />
-              <Route path="empresas/:companyId" element={<CompanyDetailPage />} />
-              <Route path="usuarios" element={<SuperAdminUsersPage />} />
-              <Route path="planos" element={<PlansManagerPage />} />
-              <Route path="auditoria" element={<AuditLogPage />} />
-              <Route path="configuracoes" element={<SystemSettingsPage />} />
-              <Route path="alertas" element={<SuperAdminDashboard />} />
-            </Route>
+              {/* Super Admin */}
+              <Route path="/superadmin" element={<SuperAdminRoute><SuperAdminLayout /></SuperAdminRoute>}>
+                <Route path="dashboard" element={<SuperAdminDashboard />} />
+                <Route path="empresas" element={<CompaniesListPage />} />
+                <Route path="empresas/:companyId" element={<CompanyDetailPage />} />
+                <Route path="usuarios" element={<SuperAdminUsersPage />} />
+                <Route path="planos" element={<PlansManagerPage />} />
+                <Route path="auditoria" element={<AuditLogPage />} />
+                <Route path="configuracoes" element={<SystemSettingsPage />} />
+                <Route path="alertas" element={<SuperAdminDashboard />} />
+              </Route>
 
-            {/* Company Portal */}
-            <Route path="/app/*" element={<PrivateRoute><CompanyPortalLayout /></PrivateRoute>} />
+              {/* Company Portal */}
+              <Route path="/app/*" element={<PrivateRoute><CompanyPortalLayout /></PrivateRoute>} />
 
-            <Route path="*" element={<NotFound />} />
-          </Routes>
+              <Route path="*" element={<NotFound />} />
+            </Routes>
+          </UserSessionProvider>
         </AuthProvider>
       </BrowserRouter>
     </TooltipProvider>
