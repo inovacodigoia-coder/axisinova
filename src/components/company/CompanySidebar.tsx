@@ -1,16 +1,17 @@
 import { useState } from 'react'
 import { NavLink, useLocation } from 'react-router-dom'
 import { useAuth } from '@/context/AuthContext'
-import { BarChart3, Calendar, FileText, DollarSign, Users, Settings, LogOut, ChevronLeft, ChevronRight, X } from 'lucide-react'
+import { useUserSession } from '@/context/UserSessionContext'
+import { BarChart3, Calendar, FileText, DollarSign, Users, Settings, LogOut, ChevronLeft, ChevronRight, X, ShieldCheck, Home } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
 const navItems = [
-  { label: 'Dashboard', icon: BarChart3, path: '/app/dashboard' },
-  { label: 'Agendamento', icon: Calendar, path: '/app/agendamento' },
-  { label: 'Prontuário', icon: FileText, path: '/app/prontuario' },
-  { label: 'Faturamento TISS', icon: DollarSign, path: '/app/faturamento' },
-  { label: 'Usuários', icon: Users, path: '/app/usuarios' },
-  { label: 'Configurações', icon: Settings, path: '/app/configuracoes' },
+  { label: 'Início', icon: Home, path: '/app/dashboard', module: null },
+  { label: 'Agendamento', icon: Calendar, path: '/app/agendamento', module: 'scheduling' as const },
+  { label: 'Prontuário', icon: FileText, path: '/app/prontuario', module: 'emr' as const },
+  { label: 'Faturamento TISS', icon: DollarSign, path: '/app/faturamento', module: 'billing' as const },
+  { label: 'Gestão de Perfis', icon: ShieldCheck, path: '/app/configuracoes/perfis', module: 'admin' as const },
+  { label: 'Configurações', icon: Settings, path: '/app/configuracoes', module: 'settings' as const },
 ]
 
 interface CompanySidebarProps {
@@ -21,7 +22,10 @@ interface CompanySidebarProps {
 export function CompanySidebar({ mobileOpen, onMobileClose }: CompanySidebarProps) {
   const [collapsed, setCollapsed] = useState(false)
   const { user, logout } = useAuth()
+  const { canAccess, session } = useUserSession()
   const location = useLocation()
+
+  const visibleItems = navItems.filter(item => !item.module || canAccess(item.module, 'view'))
 
   const sidebarContent = (
     <aside className={cn(
@@ -35,15 +39,9 @@ export function CompanySidebar({ mobileOpen, onMobileClose }: CompanySidebarProp
               <span className="text-lg font-bold">Axis<span className="text-white/70">Inova</span></span>
             </div>
             <p className="mt-1 truncate text-xs text-white/40">{user?.companyName || 'Portal da Empresa'}</p>
-            <div className="mt-3 flex items-center gap-2">
-              <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full gradient-bg text-xs font-bold">
-                {user?.name?.charAt(0) || 'U'}
-              </div>
-              <div className="min-w-0">
-                <p className="truncate text-sm font-medium">{user?.name}</p>
-                <p className="truncate text-xs text-white/40">{user?.email}</p>
-              </div>
-            </div>
+            {session.selectedProfile && (
+              <p className="mt-0.5 truncate text-[10px] text-white/30">{session.selectedProfile.name}</p>
+            )}
           </div>
         ) : (
           <div className="mx-auto flex h-8 w-8 items-center justify-center rounded-full gradient-bg text-xs font-bold">
@@ -58,7 +56,7 @@ export function CompanySidebar({ mobileOpen, onMobileClose }: CompanySidebarProp
       </div>
 
       <nav className="flex-1 overflow-y-auto px-3 py-4 space-y-1">
-        {navItems.map((item) => {
+        {visibleItems.map((item) => {
           const active = location.pathname.startsWith(item.path)
           return (
             <NavLink
@@ -94,11 +92,9 @@ export function CompanySidebar({ mobileOpen, onMobileClose }: CompanySidebarProp
 
   return (
     <>
-      {/* Desktop sidebar */}
       <div className="hidden lg:block fixed left-0 top-0 z-40">
         {sidebarContent}
       </div>
-      {/* Mobile drawer */}
       {mobileOpen && (
         <>
           <div className="fixed inset-0 z-40 bg-black/50 lg:hidden" onClick={onMobileClose} />
