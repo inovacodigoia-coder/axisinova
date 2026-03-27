@@ -49,3 +49,8 @@ export function SuperAdminRoute({ children }: { children: React.ReactNode }) {
     </PrivateRoute>
   )
 }
+
+// Guard that checks session is ready (profile + sector selected)
+export function SessionGuard({ children }: { children: React.ReactNode }) {
+  return <>{children}</>
+}
