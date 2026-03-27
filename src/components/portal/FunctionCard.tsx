@@ -9,7 +9,7 @@ interface FunctionCardProps {
 
 export function FunctionCard({ item }: FunctionCardProps) {
   const navigate = useNavigate()
-  const IconComponent = (icons as any)[item.icon] || icons.HelpCircle
+  const IconComponent = (icons as any)[item.icon] || icons.CircleHelp
 
   return (
     <button
