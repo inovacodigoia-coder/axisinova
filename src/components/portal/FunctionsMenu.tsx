@@ -1,6 +1,6 @@
 import { useState, useMemo } from 'react'
 import { Search } from 'lucide-react'
-import { useUserSession } from '@/context/UserSessionContext'
+import { useCompanyContext } from '@/context/CompanyContext'
 import { FunctionCard } from './FunctionCard'
 import { cn } from '@/lib/utils'
 
