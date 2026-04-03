@@ -4,7 +4,6 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { AuthProvider } from "@/context/AuthContext";
-import { UserSessionProvider } from "@/context/UserSessionContext";
 import { CompanyProvider } from "@/context/CompanyContext";
 import { SuperAdminRoute, PrivateRoute } from "@/router/guards";
 import LandingPage from "./pages/LandingPage";
@@ -34,8 +33,7 @@ const App = () => (
       <Sonner />
       <BrowserRouter>
         <AuthProvider>
-          <UserSessionProvider>
-            <CompanyProvider>
+          <CompanyProvider>
             <Routes>
               {/* Public */}
               <Route path="/" element={<LandingPage />} />
@@ -66,8 +64,7 @@ const App = () => (
 
               <Route path="*" element={<NotFound />} />
             </Routes>
-            </CompanyProvider>
-          </UserSessionProvider>
+          </CompanyProvider>
         </AuthProvider>
       </BrowserRouter>
     </TooltipProvider>

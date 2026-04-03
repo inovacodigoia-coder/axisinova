@@ -1,16 +1,16 @@
 import { useState, useMemo } from 'react'
 import { Search } from 'lucide-react'
-import { useUserSession } from '@/context/UserSessionContext'
+import { useCompanyContext } from '@/context/CompanyContext'
 import { FunctionCard } from './FunctionCard'
 import { cn } from '@/lib/utils'
 
 export function FunctionsMenu() {
-  const { getFunctions, getUtilities } = useUserSession()
+  const { availableFunctions, availableUtilities } = useCompanyContext()
   const [tab, setTab] = useState<'functions' | 'utilities'>('functions')
   const [search, setSearch] = useState('')
 
-  const functions = getFunctions()
-  const utilities = getUtilities()
+  const functions = availableFunctions
+  const utilities = availableUtilities
 
   const filtered = useMemo(() => {
     const items = tab === 'functions' ? functions : utilities
