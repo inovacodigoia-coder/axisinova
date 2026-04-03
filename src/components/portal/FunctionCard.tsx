@@ -4,7 +4,7 @@ import type { MenuFunction } from '@/types/permissions.types'
 import { cn } from '@/lib/utils'
 
 interface FunctionCardProps {
-  item: FunctionItem
+  item: MenuFunction
 }
 
 export function FunctionCard({ item }: FunctionCardProps) {
