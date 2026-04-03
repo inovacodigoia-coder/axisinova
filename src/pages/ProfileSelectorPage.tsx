@@ -3,13 +3,13 @@ import { useNavigate } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Shield, Check, Building2, LogOut, ChevronRight } from 'lucide-react'
 import { useAuth } from '@/context/AuthContext'
-import { useUserSession } from '@/context/UserSessionContext'
-import type { UserProfile, Sector } from '@/types/profile.types'
+import { useCompanyContext } from '@/context/CompanyContext'
+import type { Profile, Sector } from '@/types/permissions.types'
 import { cn } from '@/lib/utils'
 
 export default function ProfileSelectorPage() {
   const { user, logout } = useAuth()
-  const { session, selectProfile, selectSector, confirmSession, isSessionReady } = useUserSession()
+  const { profiles, selectProfile, selectSector, confirmSession, isSessionReady, activeProfile, activeSector, availableSectors } = useCompanyContext()
   const navigate = useNavigate()
   const [loading, setLoading] = useState(false)
 
@@ -21,10 +21,10 @@ export default function ProfileSelectorPage() {
 
   // Auto-select sector if profile has only 1
   useEffect(() => {
-    if (session.selectedProfile && session.selectedProfile.sectors.length === 1 && !session.selectedSector) {
-      selectSector(session.selectedProfile.sectors[0])
+    if (activeProfile && availableSectors.length === 1 && !activeSector) {
+      selectSector(availableSectors[0])
     }
-  }, [session.selectedProfile, session.selectedSector, selectSector])
+  }, [activeProfile, availableSectors, activeSector, selectSector])
 
   const handleConfirm = () => {
     setLoading(true)
@@ -35,7 +35,7 @@ export default function ProfileSelectorPage() {
 
   if (!user) return null
 
-  const canConfirm = session.selectedProfile && session.selectedSector && !loading
+  const canConfirm = activeProfile && activeSector && !loading
 
   return (
     <div className="min-h-screen flex items-center justify-center p-4 gradient-bg-subtle">
@@ -77,20 +77,23 @@ export default function ProfileSelectorPage() {
           <div className="mb-6">
             <label className="text-sm font-bold text-foreground mb-3 block">Perfil de Acesso</label>
             <div className="space-y-2 max-h-[240px] overflow-y-auto pr-1">
-              {session.availableProfiles.map((profile) => (
+              {profiles.map((profile) => (
                 <ProfileCard
                   key={profile.id}
                   profile={profile}
-                  selected={session.selectedProfile?.id === profile.id}
+                  selected={activeProfile?.id === profile.id}
                   onClick={() => selectProfile(profile)}
                 />
               ))}
+              {profiles.length === 0 && (
+                <p className="text-sm text-muted-foreground text-center py-4">Nenhum perfil disponível para este usuário.</p>
+              )}
             </div>
           </div>
 
           {/* Step 2: Sector */}
           <AnimatePresence>
-            {session.selectedProfile && (
+            {activeProfile && (
               <motion.div
                 initial={{ opacity: 0, height: 0 }}
                 animate={{ opacity: 1, height: 'auto' }}
@@ -99,18 +102,18 @@ export default function ProfileSelectorPage() {
                 className="mb-6 overflow-hidden"
               >
                 <label className="text-sm font-bold text-foreground mb-3 block">Setor de Atendimento</label>
-                {session.selectedProfile.sectors.length === 1 ? (
+                {availableSectors.length === 1 ? (
                   <p className="text-xs text-muted-foreground italic flex items-center gap-1.5">
                     <Check className="h-3.5 w-3.5 text-[hsl(var(--success))]" />
                     Setor selecionado automaticamente
                   </p>
                 ) : null}
                 <div className="flex flex-wrap gap-2 mt-1">
-                  {session.selectedProfile.sectors.map((sector) => (
+                  {availableSectors.map((sector) => (
                     <SectorChip
                       key={sector.id}
                       sector={sector}
-                      selected={session.selectedSector?.id === sector.id}
+                      selected={activeSector?.id === sector.id}
                       onClick={() => selectSector(sector)}
                     />
                   ))}
@@ -154,7 +157,8 @@ export default function ProfileSelectorPage() {
   )
 }
 
-function ProfileCard({ profile, selected, onClick }: { profile: UserProfile; selected: boolean; onClick: () => void }) {
+function ProfileCard({ profile, selected, onClick }: { profile: Profile; selected: boolean; onClick: () => void }) {
+  const permCount = Object.values(profile.permissions).reduce((sum, acts) => sum + (acts?.length || 0), 0)
   return (
     <button
       onClick={onClick}
@@ -186,7 +190,7 @@ function ProfileCard({ profile, selected, onClick }: { profile: UserProfile; sel
         )}
       </div>
       <span className="shrink-0 rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-semibold text-primary">
-        {profile.permissions.length} perm.
+        {permCount} perm.
       </span>
     </button>
   )
