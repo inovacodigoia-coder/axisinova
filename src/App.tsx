@@ -5,6 +5,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { AuthProvider } from "@/context/AuthContext";
 import { UserSessionProvider } from "@/context/UserSessionContext";
+import { CompanyProvider } from "@/context/CompanyContext";
 import { SuperAdminRoute, PrivateRoute } from "@/router/guards";
 import LandingPage from "./pages/LandingPage";
 import RegisterPage from "./pages/RegisterPage";
