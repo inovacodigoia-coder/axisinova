@@ -1,6 +1,6 @@
 import { useNavigate } from 'react-router-dom'
 import { icons } from 'lucide-react'
-import type { FunctionItem } from '@/types/profile.types'
+import type { MenuFunction } from '@/types/permissions.types'
 import { cn } from '@/lib/utils'
 
 interface FunctionCardProps {
