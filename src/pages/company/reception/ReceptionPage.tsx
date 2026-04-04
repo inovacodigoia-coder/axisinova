@@ -18,11 +18,7 @@ export default function ReceptionPage() {
     return () => clearInterval(id)
   }, [])
 
-  // Update clock
-  useState(() => {
-    const id = setInterval(() => setTime(new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit', second: '2-digit' })), 1000)
-    return () => clearInterval(id)
-  })
+
 
   return (
     <div className="flex flex-col h-[calc(100vh-8rem)]">
