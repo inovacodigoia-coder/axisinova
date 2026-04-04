@@ -84,6 +84,9 @@ function PortalContent() {
             <Route path="faltosos" element={<AbsenteesPage />} />
             <Route path="historico-paciente" element={<PatientHistoryPage />} />
             <Route path="recepcao" element={<ReceptionPage />} />
+            <Route path="medico" element={<MedicalDashboardPage />} />
+            <Route path="atendimento/:appointmentId" element={<AttendancePage />} />
+            <Route path="prontuario/:patientId" element={<PatientRecordPage />} />
             <Route path="prontuario" element={<MedicalRecordsPage />} />
             <Route path="faturamento" element={<BillingTissPage />} />
             <Route path="usuarios" element={<UsersListPage />} />
