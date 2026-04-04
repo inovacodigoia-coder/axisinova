@@ -101,8 +101,10 @@ function PortalContent() {
 
 export default function CompanyPortalLayout() {
   return (
-    <NotificationProvider>
-      <PortalContent />
-    </NotificationProvider>
+    <QueueProvider>
+      <NotificationProvider>
+        <PortalContent />
+      </NotificationProvider>
+    </QueueProvider>
   )
 }
