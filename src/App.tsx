@@ -38,6 +38,7 @@ const App = () => (
       <BrowserRouter>
         <AuthProvider>
           <CompanyProvider>
+            <QueueProvider>
             <Routes>
               {/* Public */}
               <Route path="/" element={<LandingPage />} />
