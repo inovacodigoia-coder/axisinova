@@ -1,0 +1,59 @@
+import type { QueueEntry, ReceptionDocument } from '@/types/reception.types'
+
+function now() { return new Date().toISOString() }
+function minutesAgo(m: number) {
+  const d = new Date(); d.setMinutes(d.getMinutes() - m); return d.toISOString()
+}
+
+export const MOCK_QUEUE: QueueEntry[] = [
+  { id: 'q_01', ticketNumber: 'SP001', ticketCategory: 'SP', patientId: 'pat_11', patientName: 'Antônio Carlos Ribeiro', patientAge: 79, appointmentId: 'apt_01', doctorId: 'doc_01', doctorName: 'Dr. Henrique Lima', appointmentType: 'consultation', convenioId: 'conv_05', convenioName: 'SUS', status: 'in_progress', isPreferential: true, preferentialReason: 'Idoso (79 anos)', checkedInAt: minutesAgo(40), calledAt: minutesAgo(15), callCount: 1, documentsValidated: true, waitingMinutes: 40, room: 'Consultório 1', createdAt: minutesAgo(45) },
+  { id: 'q_02', ticketNumber: 'SP002', ticketCategory: 'SP', patientId: 'pat_04', patientName: 'Mariana Costa Lima', patientAge: 24, appointmentId: 'apt_04', doctorId: 'doc_03', doctorName: 'Dr. Roberto Santos', appointmentType: 'consultation', convenioId: 'conv_01', convenioName: 'Unimed', status: 'documents_ok', isPreferential: true, preferentialReason: 'Gestante', checkedInAt: minutesAgo(25), callCount: 0, documentsValidated: true, waitingMinutes: 25, createdAt: minutesAgo(30) },
+  { id: 'q_03', ticketNumber: 'SN001', ticketCategory: 'SN', patientId: 'pat_01', patientName: 'João da Silva Santos', patientAge: 41, appointmentId: 'apt_01', doctorId: 'doc_01', doctorName: 'Dr. Henrique Lima', appointmentType: 'consultation', convenioId: 'conv_01', convenioName: 'Unimed', status: 'called', isPreferential: false, checkedInAt: minutesAgo(35), calledAt: minutesAgo(2), callCount: 1, documentsValidated: true, waitingMinutes: 35, room: 'Consultório 1', createdAt: minutesAgo(38) },
+  { id: 'q_04', ticketNumber: 'SN002', ticketCategory: 'SN', patientId: 'pat_02', patientName: 'Ana Beatriz Oliveira', patientAge: 29, appointmentId: 'apt_02', doctorId: 'doc_01', doctorName: 'Dr. Henrique Lima', appointmentType: 'consultation', convenioId: 'conv_02', convenioName: 'Hapvida', status: 'in_reception', isPreferential: false, checkedInAt: minutesAgo(20), callCount: 0, documentsValidated: false, waitingMinutes: 20, createdAt: minutesAgo(22) },
+  { id: 'q_05', ticketNumber: 'EX001', ticketCategory: 'EX', patientId: 'pat_08', patientName: 'Isabela Cristina Freitas', patientAge: 49, appointmentId: 'apt_08', doctorId: 'doc_01', doctorName: 'Dr. Henrique Lima', appointmentType: 'exam', convenioId: 'conv_06', convenioName: 'Amil', status: 'waiting', isPreferential: false, checkedInAt: minutesAgo(15), callCount: 0, documentsValidated: false, waitingMinutes: 15, createdAt: minutesAgo(18) },
+  { id: 'q_06', ticketNumber: 'SN003', ticketCategory: 'SN', patientId: 'pat_06', patientName: 'Fernanda Rodrigues', patientAge: 37, appointmentId: 'apt_06', doctorId: 'doc_04', doctorName: 'Dra. Mariana Lopes', appointmentType: 'consultation', convenioId: 'conv_03', convenioName: 'Bradesco Saúde', status: 'waiting', isPreferential: false, checkedInAt: minutesAgo(10), callCount: 0, documentsValidated: true, waitingMinutes: 10, createdAt: minutesAgo(12) },
+  { id: 'q_07', ticketNumber: 'PR001', ticketCategory: 'PR', patientId: 'pat_09', patientName: 'Rafael Mendes Barbosa', patientAge: 32, appointmentId: 'apt_09', doctorId: 'doc_02', doctorName: 'Dr. Pedro Almeida', appointmentType: 'procedure', convenioId: 'conv_01', convenioName: 'Unimed', status: 'waiting', isPreferential: false, checkedInAt: minutesAgo(8), callCount: 0, documentsValidated: false, waitingMinutes: 8, createdAt: minutesAgo(10) },
+  { id: 'q_08', ticketNumber: 'RE001', ticketCategory: 'RE', patientId: 'pat_03', patientName: 'Carlos Eduardo Pereira', patientAge: 55, appointmentId: 'apt_03', doctorId: 'doc_01', doctorName: 'Dr. Henrique Lima', appointmentType: 'consultation', convenioId: 'conv_04', convenioName: 'Particular', status: 'waiting', isPreferential: false, checkedInAt: minutesAgo(5), callCount: 0, documentsValidated: true, waitingMinutes: 5, createdAt: minutesAgo(6) },
+]
+
+export const MOCK_DOCUMENTS: ReceptionDocument[] = [
+  { id: 'doc_r01', appointmentId: 'apt_01', patientId: 'pat_01', type: 'convenio_card', name: 'carteirinha_unimed.jpg', fileUrl: '/mock/doc1.jpg', fileSize: 245000, uploadedAt: minutesAgo(30), uploadedBy: 'cu_03', isRequired: true, status: 'validated' },
+  { id: 'doc_r02', appointmentId: 'apt_01', patientId: 'pat_01', type: 'id_document', name: 'rg_joao.pdf', fileUrl: '/mock/doc2.pdf', fileSize: 120000, uploadedAt: minutesAgo(28), uploadedBy: 'cu_03', isRequired: true, status: 'validated' },
+  { id: 'doc_r03', appointmentId: 'apt_01', patientId: 'pat_01', type: 'medical_request', name: 'pedido_medico.pdf', fileUrl: '/mock/doc3.pdf', fileSize: 89000, uploadedAt: minutesAgo(27), uploadedBy: 'cu_03', isRequired: true, status: 'validated' },
+  { id: 'doc_r04', appointmentId: 'apt_04', patientId: 'pat_04', type: 'convenio_card', name: 'carteirinha_unimed_mariana.jpg', fileUrl: '/mock/doc4.jpg', fileSize: 312000, uploadedAt: minutesAgo(20), uploadedBy: 'cu_03', isRequired: true, status: 'validated' },
+  { id: 'doc_r05', appointmentId: 'apt_04', patientId: 'pat_04', type: 'id_document', name: 'rg_mariana.pdf', fileUrl: '/mock/doc5.pdf', fileSize: 150000, uploadedAt: minutesAgo(18), uploadedBy: 'cu_03', isRequired: true, status: 'validated' },
+  { id: 'doc_r06', appointmentId: 'apt_08', patientId: 'pat_08', type: 'convenio_card', name: 'carteirinha_amil.jpg', fileUrl: '/mock/doc6.jpg', fileSize: 200000, uploadedAt: minutesAgo(12), uploadedBy: 'cu_03', isRequired: true, status: 'pending' },
+  { id: 'doc_r07', appointmentId: 'apt_08', patientId: 'pat_08', type: 'sadt_guide', name: 'guia_sadt_ecg.pdf', fileUrl: '/mock/doc7.pdf', fileSize: 95000, uploadedAt: minutesAgo(10), uploadedBy: 'cu_03', isRequired: true, status: 'rejected', rejectionReason: 'Guia sem assinatura do médico solicitante' },
+  { id: 'doc_r08', appointmentId: 'apt_02', patientId: 'pat_02', type: 'convenio_card', name: 'carteirinha_hapvida.jpg', fileUrl: '/mock/doc8.jpg', fileSize: 180000, uploadedAt: minutesAgo(15), uploadedBy: 'cu_03', isRequired: true, status: 'validated' },
+]
+
+export const MOCK_CALL_HISTORY: QueueEntry[] = [
+  { ...MOCK_QUEUE[0], calledAt: minutesAgo(60), status: 'completed' },
+  { ...MOCK_QUEUE[2], calledAt: minutesAgo(45), status: 'called' },
+]
+
+// Convenio document requirements (from Prompt 3 rules)
+export type RequirementLevel = 'none' | 'optional' | 'required'
+
+export interface ConvenioDocRequirements {
+  convenioId: string
+  appointmentType: 'consultation' | 'exam' | 'procedure'
+  requirements: Record<string, RequirementLevel>
+}
+
+export const CONVENIO_DOC_RULES: ConvenioDocRequirements[] = [
+  { convenioId: 'conv_01', appointmentType: 'consultation', requirements: { convenio_card: 'required', medical_request: 'required', id_document: 'required', authorization: 'optional', sadt_guide: 'none', medical_report: 'none' } },
+  { convenioId: 'conv_01', appointmentType: 'exam', requirements: { convenio_card: 'required', medical_request: 'required', id_document: 'required', authorization: 'required', sadt_guide: 'required', medical_report: 'none' } },
+  { convenioId: 'conv_01', appointmentType: 'procedure', requirements: { convenio_card: 'required', medical_request: 'required', id_document: 'required', authorization: 'required', sadt_guide: 'none', medical_report: 'required' } },
+  { convenioId: 'conv_02', appointmentType: 'consultation', requirements: { convenio_card: 'required', medical_request: 'optional', id_document: 'required', authorization: 'required', sadt_guide: 'none', medical_report: 'none' } },
+  { convenioId: 'conv_02', appointmentType: 'exam', requirements: { convenio_card: 'required', medical_request: 'required', id_document: 'required', authorization: 'required', sadt_guide: 'required', medical_report: 'none' } },
+  { convenioId: 'conv_02', appointmentType: 'procedure', requirements: { convenio_card: 'required', medical_request: 'required', id_document: 'required', authorization: 'required', sadt_guide: 'required', medical_report: 'required' } },
+  { convenioId: 'conv_03', appointmentType: 'consultation', requirements: { convenio_card: 'required', medical_request: 'required', id_document: 'required', authorization: 'optional', sadt_guide: 'none', medical_report: 'none' } },
+  { convenioId: 'conv_03', appointmentType: 'exam', requirements: { convenio_card: 'required', medical_request: 'required', id_document: 'required', authorization: 'required', sadt_guide: 'required', medical_report: 'none' } },
+  { convenioId: 'conv_04', appointmentType: 'consultation', requirements: { convenio_card: 'none', medical_request: 'none', id_document: 'required', authorization: 'none', sadt_guide: 'none', medical_report: 'none' } },
+  { convenioId: 'conv_04', appointmentType: 'exam', requirements: { convenio_card: 'none', medical_request: 'optional', id_document: 'required', authorization: 'none', sadt_guide: 'none', medical_report: 'none' } },
+  { convenioId: 'conv_05', appointmentType: 'consultation', requirements: { convenio_card: 'required', medical_request: 'optional', id_document: 'required', authorization: 'none', sadt_guide: 'none', medical_report: 'none' } },
+  { convenioId: 'conv_05', appointmentType: 'exam', requirements: { convenio_card: 'required', medical_request: 'required', id_document: 'required', authorization: 'required', sadt_guide: 'required', medical_report: 'none' } },
+  { convenioId: 'conv_06', appointmentType: 'consultation', requirements: { convenio_card: 'required', medical_request: 'optional', id_document: 'required', authorization: 'optional', sadt_guide: 'none', medical_report: 'none' } },
+  { convenioId: 'conv_06', appointmentType: 'exam', requirements: { convenio_card: 'required', medical_request: 'required', id_document: 'required', authorization: 'required', sadt_guide: 'required', medical_report: 'none' } },
+]
