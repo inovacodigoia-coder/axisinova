@@ -23,6 +23,9 @@ import ConfirmationsPage from './scheduling/ConfirmationsPage'
 import AbsenteesPage from './scheduling/AbsenteesPage'
 import PatientHistoryPage from './scheduling/PatientHistoryPage'
 import ReceptionPage from './reception/ReceptionPage'
+import MedicalDashboardPage from './medical/MedicalDashboardPage'
+import AttendancePage from './medical/AttendancePage'
+import PatientRecordPage from './medical/PatientRecordPage'
 
 function PortalContent() {
   const [mobileOpen, setMobileOpen] = useState(false)
