@@ -23,6 +23,9 @@ import PlansManagerPage from "./pages/superadmin/PlansManagerPage";
 import AuditLogPage from "./pages/superadmin/AuditLogPage";
 import SystemSettingsPage from "./pages/superadmin/SystemSettingsPage";
 import CompanyPortalLayout from "./pages/company/CompanyPortalLayout";
+import TotemPage from "./pages/public/TotemPage";
+import CallingPanelPage from "./pages/public/CallingPanelPage";
+import DoctorPanelPage from "./pages/public/DoctorPanelPage";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
