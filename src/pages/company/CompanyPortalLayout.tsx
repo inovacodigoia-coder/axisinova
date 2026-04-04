@@ -26,6 +26,14 @@ import ReceptionPage from './reception/ReceptionPage'
 import MedicalDashboardPage from './medical/MedicalDashboardPage'
 import AttendancePage from './medical/AttendancePage'
 import PatientRecordPage from './medical/PatientRecordPage'
+import BillingDashboardPage from './billing/BillingDashboardPage'
+import GuidesListPage from './billing/GuidesListPage'
+import GuideDetailPage from './billing/GuideDetailPage'
+import LotesPage from './billing/LotesPage'
+import LoteDetailPage from './billing/LoteDetailPage'
+import GlosasPage from './billing/GlosasPage'
+import CorrectionQueuePage from './billing/CorrectionQueuePage'
+import ResultsListPage from './results/ResultsListPage'
 
 function PortalContent() {
   const [mobileOpen, setMobileOpen] = useState(false)
@@ -88,7 +96,15 @@ function PortalContent() {
             <Route path="atendimento/:appointmentId" element={<AttendancePage />} />
             <Route path="prontuario/:patientId" element={<PatientRecordPage />} />
             <Route path="prontuario" element={<MedicalRecordsPage />} />
-            <Route path="faturamento" element={<BillingTissPage />} />
+            <Route path="faturamento" element={<BillingDashboardPage />} />
+            <Route path="faturamento/guias" element={<GuidesListPage />} />
+            <Route path="faturamento/guias/:guideId" element={<GuideDetailPage />} />
+            <Route path="faturamento/lotes" element={<LotesPage />} />
+            <Route path="faturamento/lotes/:loteId" element={<LoteDetailPage />} />
+            <Route path="faturamento/glosas" element={<GlosasPage />} />
+            <Route path="faturamento/correcoes" element={<CorrectionQueuePage />} />
+            <Route path="faturamento/legado" element={<BillingTissPage />} />
+            <Route path="resultados" element={<ResultsListPage />} />
             <Route path="usuarios" element={<UsersListPage />} />
             <Route path="configuracoes/perfis" element={<ProfilesManagerPage />} />
             <Route path="setores" element={<SectorsPage />} />
