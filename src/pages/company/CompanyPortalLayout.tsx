@@ -73,7 +73,11 @@ function PortalContent() {
         <main className="flex-1 p-4 sm:p-6">
           <Routes>
             <Route path="dashboard" element={<CompanyDashboard />} />
-            <Route path="agendamento" element={<SchedulePage />} />
+            <Route path="agendamento" element={<SchedulingPage />} />
+            <Route path="agendamento/legado" element={<SchedulePage />} />
+            <Route path="confirmacoes" element={<ConfirmationsPage />} />
+            <Route path="faltosos" element={<AbsenteesPage />} />
+            <Route path="historico-paciente" element={<PatientHistoryPage />} />
             <Route path="prontuario" element={<MedicalRecordsPage />} />
             <Route path="faturamento" element={<BillingTissPage />} />
             <Route path="usuarios" element={<UsersListPage />} />
