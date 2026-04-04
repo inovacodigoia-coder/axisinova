@@ -43,6 +43,10 @@ const NAV_SECTIONS: NavSection[] = [
     title: 'OPERACIONAL',
     items: [
       { label: 'Faturamento', icon: 'DollarSign', path: '/app/faturamento', module: 'billing' },
+      { label: 'Guias', icon: 'FileText', path: '/app/faturamento/guias', module: 'billing' },
+      { label: 'Lotes', icon: 'Database', path: '/app/faturamento/lotes', module: 'billing' },
+      { label: 'Glosas', icon: 'DollarSign', path: '/app/faturamento/glosas', module: 'billing' },
+      { label: 'Correções', icon: 'UserCheck', path: '/app/faturamento/correcoes', module: 'reception' },
       { label: 'Resultados', icon: 'FlaskConical', path: '/app/resultados', module: 'results' },
     ],
   },
