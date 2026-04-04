@@ -192,8 +192,8 @@ export function CommandPalette() {
                     <p className="px-3 py-1.5 text-[10px] font-bold tracking-wider text-muted-foreground uppercase mt-1">
                       {category}
                     </p>
-                    {items.map((item, idx) => {
-                      const globalIdx = results.indexOf(item)
+                    {items.map((item) => {
+                      const globalIdx = results.findIndex(r => r.id === item.id)
                       return (
                         <button
                           key={item.id}
