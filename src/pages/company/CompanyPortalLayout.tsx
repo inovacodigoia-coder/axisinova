@@ -96,7 +96,15 @@ function PortalContent() {
             <Route path="atendimento/:appointmentId" element={<AttendancePage />} />
             <Route path="prontuario/:patientId" element={<PatientRecordPage />} />
             <Route path="prontuario" element={<MedicalRecordsPage />} />
-            <Route path="faturamento" element={<BillingTissPage />} />
+            <Route path="faturamento" element={<BillingDashboardPage />} />
+            <Route path="faturamento/guias" element={<GuidesListPage />} />
+            <Route path="faturamento/guias/:guideId" element={<GuideDetailPage />} />
+            <Route path="faturamento/lotes" element={<LotesPage />} />
+            <Route path="faturamento/lotes/:loteId" element={<LoteDetailPage />} />
+            <Route path="faturamento/glosas" element={<GlosasPage />} />
+            <Route path="faturamento/correcoes" element={<CorrectionQueuePage />} />
+            <Route path="faturamento/legado" element={<BillingTissPage />} />
+            <Route path="resultados" element={<ResultsListPage />} />
             <Route path="usuarios" element={<UsersListPage />} />
             <Route path="configuracoes/perfis" element={<ProfilesManagerPage />} />
             <Route path="setores" element={<SectorsPage />} />
