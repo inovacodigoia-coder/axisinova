@@ -17,6 +17,10 @@ import DoctorsPage from './registers/DoctorsPage'
 import ConveniosPage from './registers/ConveniosPage'
 import ExamsPage from './registers/ExamsPage'
 import CompanySettingsPage from './settings/CompanySettingsPage'
+import SchedulingPage from './scheduling/SchedulingPage'
+import ConfirmationsPage from './scheduling/ConfirmationsPage'
+import AbsenteesPage from './scheduling/AbsenteesPage'
+import PatientHistoryPage from './scheduling/PatientHistoryPage'
 
 function PortalContent() {
   const [mobileOpen, setMobileOpen] = useState(false)
