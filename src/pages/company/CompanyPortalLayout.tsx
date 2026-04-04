@@ -34,6 +34,13 @@ import LoteDetailPage from './billing/LoteDetailPage'
 import GlosasPage from './billing/GlosasPage'
 import CorrectionQueuePage from './billing/CorrectionQueuePage'
 import ResultsListPage from './results/ResultsListPage'
+import BIDashboardPage from './bi/BIDashboardPage'
+import ProductionReportPage from './bi/ProductionReportPage'
+import FinancialReportPage from './bi/FinancialReportPage'
+import SchedulingReportPage from './bi/SchedulingReportPage'
+import AbsenteesReportPage from './bi/AbsenteesReportPage'
+import ConvenioReportPage from './bi/ConvenioReportPage'
+import DoctorPerformancePage from './bi/DoctorPerformancePage'
 
 function PortalContent() {
   const [mobileOpen, setMobileOpen] = useState(false)
@@ -113,6 +120,13 @@ function PortalContent() {
             <Route path="cadastros/exames" element={<ExamsPage />} />
             <Route path="cadastros" element={<Navigate to="medicos" replace />} />
             <Route path="configuracoes" element={<CompanySettingsPage />} />
+            <Route path="bi" element={<BIDashboardPage />} />
+            <Route path="bi/producao" element={<ProductionReportPage />} />
+            <Route path="bi/financeiro" element={<FinancialReportPage />} />
+            <Route path="bi/agendamentos" element={<SchedulingReportPage />} />
+            <Route path="bi/faltosos" element={<AbsenteesReportPage />} />
+            <Route path="bi/convenios" element={<ConvenioReportPage />} />
+            <Route path="bi/medicos" element={<DoctorPerformancePage />} />
             <Route path="*" element={<Navigate to="dashboard" replace />} />
           </Routes>
         </main>
