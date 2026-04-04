@@ -6,6 +6,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { AuthProvider } from "@/context/AuthContext";
 import { CompanyProvider } from "@/context/CompanyContext";
 import { QueueProvider } from "@/context/QueueContext";
+import { ErrorBoundary } from "@/components/feedback/ErrorBoundary";
 import { SuperAdminRoute, PrivateRoute } from "@/router/guards";
 import LandingPage from "./pages/LandingPage";
 import RegisterPage from "./pages/RegisterPage";
@@ -31,55 +32,57 @@ import NotFound from "./pages/NotFound";
 const queryClient = new QueryClient();
 
 const App = () => (
-  <QueryClientProvider client={queryClient}>
-    <TooltipProvider>
-      <Toaster />
-      <Sonner />
-      <BrowserRouter>
-        <AuthProvider>
-          <CompanyProvider>
-            <QueueProvider>
-            <Routes>
-              {/* Public */}
-              <Route path="/" element={<LandingPage />} />
-              <Route path="/cadastro" element={<RegisterPage />} />
-              <Route path="/login" element={<LoginPage />} />
-              <Route path="/forgot-password" element={<ForgotPasswordPage />} />
-              <Route path="/reset-password/:token" element={<ResetPasswordPage />} />
-              <Route path="/reset-password" element={<ResetPasswordPage />} />
-              <Route path="/unauthorized" element={<UnauthorizedPage />} />
+  <ErrorBoundary>
+    <QueryClientProvider client={queryClient}>
+      <TooltipProvider>
+        <Toaster />
+        <Sonner />
+        <BrowserRouter>
+          <AuthProvider>
+            <CompanyProvider>
+              <QueueProvider>
+              <Routes>
+                {/* Public */}
+                <Route path="/" element={<LandingPage />} />
+                <Route path="/cadastro" element={<RegisterPage />} />
+                <Route path="/login" element={<LoginPage />} />
+                <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+                <Route path="/reset-password/:token" element={<ResetPasswordPage />} />
+                <Route path="/reset-password" element={<ResetPasswordPage />} />
+                <Route path="/unauthorized" element={<UnauthorizedPage />} />
 
-              {/* Public kiosk/panel routes */}
-              <Route path="/totem" element={<TotemPage />} />
-              <Route path="/painel-chamada" element={<CallingPanelPage />} />
-              <Route path="/painel-medico" element={<DoctorPanelPage />} />
+                {/* Public kiosk/panel routes */}
+                <Route path="/totem" element={<TotemPage />} />
+                <Route path="/painel-chamada" element={<CallingPanelPage />} />
+                <Route path="/painel-medico" element={<DoctorPanelPage />} />
 
-              {/* Profile Selector */}
-              <Route path="/selecionar-perfil" element={<PrivateRoute><ProfileSelectorPage /></PrivateRoute>} />
+                {/* Profile Selector */}
+                <Route path="/selecionar-perfil" element={<PrivateRoute><ProfileSelectorPage /></PrivateRoute>} />
 
-              {/* Super Admin */}
-              <Route path="/superadmin" element={<SuperAdminRoute><SuperAdminLayout /></SuperAdminRoute>}>
-                <Route path="dashboard" element={<SuperAdminDashboard />} />
-                <Route path="empresas" element={<CompaniesListPage />} />
-                <Route path="empresas/:companyId" element={<CompanyDetailPage />} />
-                <Route path="usuarios" element={<SuperAdminUsersPage />} />
-                <Route path="planos" element={<PlansManagerPage />} />
-                <Route path="auditoria" element={<AuditLogPage />} />
-                <Route path="configuracoes" element={<SystemSettingsPage />} />
-                <Route path="alertas" element={<SuperAdminDashboard />} />
-              </Route>
+                {/* Super Admin */}
+                <Route path="/superadmin" element={<SuperAdminRoute><SuperAdminLayout /></SuperAdminRoute>}>
+                  <Route path="dashboard" element={<SuperAdminDashboard />} />
+                  <Route path="empresas" element={<CompaniesListPage />} />
+                  <Route path="empresas/:companyId" element={<CompanyDetailPage />} />
+                  <Route path="usuarios" element={<SuperAdminUsersPage />} />
+                  <Route path="planos" element={<PlansManagerPage />} />
+                  <Route path="auditoria" element={<AuditLogPage />} />
+                  <Route path="configuracoes" element={<SystemSettingsPage />} />
+                  <Route path="alertas" element={<SuperAdminDashboard />} />
+                </Route>
 
-              {/* Company Portal */}
-              <Route path="/app/*" element={<PrivateRoute><CompanyPortalLayout /></PrivateRoute>} />
+                {/* Company Portal */}
+                <Route path="/app/*" element={<PrivateRoute><CompanyPortalLayout /></PrivateRoute>} />
 
-              <Route path="*" element={<NotFound />} />
-            </Routes>
-            </QueueProvider>
-          </CompanyProvider>
-        </AuthProvider>
-      </BrowserRouter>
-    </TooltipProvider>
-  </QueryClientProvider>
+                <Route path="*" element={<NotFound />} />
+              </Routes>
+              </QueueProvider>
+            </CompanyProvider>
+          </AuthProvider>
+        </BrowserRouter>
+      </TooltipProvider>
+    </QueryClientProvider>
+  </ErrorBoundary>
 );
 
 export default App;
