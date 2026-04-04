@@ -1,17 +1,22 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { QueuePanel } from '@/components/reception/queue/QueuePanel'
 import { CheckinPanel } from '@/components/reception/checkin/CheckinPanel'
 import { DocumentsPanel } from '@/components/reception/documents/DocumentsPanel'
 import { useQueue } from '@/context/QueueContext'
-import { Users, Clock, CheckCircle, UserPlus } from 'lucide-react'
+import { Users, Clock } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
 export default function ReceptionPage() {
   const [selectedId, setSelectedId] = useState<string | null>(null)
   const { stats } = useQueue()
   const [mobileTab, setMobileTab] = useState<'queue' | 'checkin' | 'docs'>('queue')
+  const [time, setTime] = useState(new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit', second: '2-digit' }))
   const now = new Date()
-  const [time, setTime] = useState(now.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit', second: '2-digit' }))
+
+  useEffect(() => {
+    const id = setInterval(() => setTime(new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit', second: '2-digit' })), 1000)
+    return () => clearInterval(id)
+  }, [])
 
   // Update clock
   useState(() => {
