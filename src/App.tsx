@@ -5,6 +5,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { AuthProvider } from "@/context/AuthContext";
 import { CompanyProvider } from "@/context/CompanyContext";
+import { QueueProvider } from "@/context/QueueContext";
 import { SuperAdminRoute, PrivateRoute } from "@/router/guards";
 import LandingPage from "./pages/LandingPage";
 import RegisterPage from "./pages/RegisterPage";
@@ -22,6 +23,9 @@ import PlansManagerPage from "./pages/superadmin/PlansManagerPage";
 import AuditLogPage from "./pages/superadmin/AuditLogPage";
 import SystemSettingsPage from "./pages/superadmin/SystemSettingsPage";
 import CompanyPortalLayout from "./pages/company/CompanyPortalLayout";
+import TotemPage from "./pages/public/TotemPage";
+import CallingPanelPage from "./pages/public/CallingPanelPage";
+import DoctorPanelPage from "./pages/public/DoctorPanelPage";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -34,6 +38,7 @@ const App = () => (
       <BrowserRouter>
         <AuthProvider>
           <CompanyProvider>
+            <QueueProvider>
             <Routes>
               {/* Public */}
               <Route path="/" element={<LandingPage />} />
@@ -43,6 +48,11 @@ const App = () => (
               <Route path="/reset-password/:token" element={<ResetPasswordPage />} />
               <Route path="/reset-password" element={<ResetPasswordPage />} />
               <Route path="/unauthorized" element={<UnauthorizedPage />} />
+
+              {/* Public kiosk/panel routes */}
+              <Route path="/totem" element={<TotemPage />} />
+              <Route path="/painel-chamada" element={<CallingPanelPage />} />
+              <Route path="/painel-medico" element={<DoctorPanelPage />} />
 
               {/* Profile Selector */}
               <Route path="/selecionar-perfil" element={<PrivateRoute><ProfileSelectorPage /></PrivateRoute>} />
@@ -64,6 +74,7 @@ const App = () => (
 
               <Route path="*" element={<NotFound />} />
             </Routes>
+            </QueueProvider>
           </CompanyProvider>
         </AuthProvider>
       </BrowserRouter>

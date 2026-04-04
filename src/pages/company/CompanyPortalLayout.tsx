@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { Routes, Route, Navigate } from 'react-router-dom'
+import { QueueProvider } from '@/context/QueueContext'
 import { CompanySidebar } from '@/components/company/CompanySidebar'
 import { UserMenuDropdown } from '@/components/company/UserMenuDropdown'
 import { Menu, Bell, Search } from 'lucide-react'
@@ -21,6 +22,7 @@ import SchedulingPage from './scheduling/SchedulingPage'
 import ConfirmationsPage from './scheduling/ConfirmationsPage'
 import AbsenteesPage from './scheduling/AbsenteesPage'
 import PatientHistoryPage from './scheduling/PatientHistoryPage'
+import ReceptionPage from './reception/ReceptionPage'
 
 function PortalContent() {
   const [mobileOpen, setMobileOpen] = useState(false)
@@ -78,6 +80,7 @@ function PortalContent() {
             <Route path="confirmacoes" element={<ConfirmationsPage />} />
             <Route path="faltosos" element={<AbsenteesPage />} />
             <Route path="historico-paciente" element={<PatientHistoryPage />} />
+            <Route path="recepcao" element={<ReceptionPage />} />
             <Route path="prontuario" element={<MedicalRecordsPage />} />
             <Route path="faturamento" element={<BillingTissPage />} />
             <Route path="usuarios" element={<UsersListPage />} />
@@ -98,8 +101,10 @@ function PortalContent() {
 
 export default function CompanyPortalLayout() {
   return (
-    <NotificationProvider>
-      <PortalContent />
-    </NotificationProvider>
+    <QueueProvider>
+      <NotificationProvider>
+        <PortalContent />
+      </NotificationProvider>
+    </QueueProvider>
   )
 }
