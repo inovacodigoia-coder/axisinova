@@ -31,7 +31,9 @@ const NAV_SECTIONS: NavSection[] = [
   {
     title: 'ATENDIMENTO',
     items: [
-      { label: 'Agendamento', icon: 'Calendar', path: '/app/agendamento', module: 'scheduling' },
+      { label: 'Agenda', icon: 'Calendar', path: '/app/agendamento', module: 'scheduling' },
+      { label: 'Confirmações', icon: 'UserCheck', path: '/app/confirmacoes', module: 'scheduling' },
+      { label: 'Faltosos', icon: 'Monitor', path: '/app/faltosos', module: 'scheduling' },
       { label: 'Recepção', icon: 'UserCheck', path: '/app/recepcao', module: 'reception' },
       { label: 'Prontuário', icon: 'FileText', path: '/app/prontuario', module: 'medical_record' },
     ],
