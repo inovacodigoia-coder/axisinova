@@ -1,12 +1,22 @@
-import { useState } from 'react'
-import { Routes, Route, Navigate } from 'react-router-dom'
+import { useState, Suspense, lazy } from 'react'
+import { Routes, Route, Navigate, useLocation } from 'react-router-dom'
 import { QueueProvider } from '@/context/QueueContext'
+import { NotificationContextProvider, useNotificationContext } from '@/context/NotificationContext'
+import { GlobalSearchProvider, useGlobalSearch } from '@/context/GlobalSearchContext'
 import { CompanySidebar } from '@/components/company/CompanySidebar'
 import { UserMenuDropdown } from '@/components/company/UserMenuDropdown'
+import { NotificationCenter } from '@/components/notifications/NotificationCenter'
+import { NotificationBadge } from '@/components/notifications/NotificationBadge'
+import { CommandPalette } from '@/components/global/CommandPalette'
+import { BreadcrumbNav } from '@/components/global/BreadcrumbNav'
+import { PageTransition } from '@/components/global/PageTransition'
+import { SystemStatusBar } from '@/components/global/SystemStatusBar'
+import { useKeyboardShortcuts } from '@/hooks/useKeyboardShortcuts'
 import { Menu, Bell, Search } from 'lucide-react'
 import { useAuth } from '@/context/AuthContext'
 import { useCompanyContext } from '@/context/CompanyContext'
-import { NotificationProvider, NotificationPanel, useNotifications } from '@/components/company/NotificationPanel'
+
+// Pages
 import CompanyDashboard from './CompanyDashboard'
 import SchedulePage from './SchedulePage'
 import MedicalRecordsPage from './MedicalRecordsPage'
@@ -47,18 +57,28 @@ function PortalContent() {
   const [collapsed, setCollapsed] = useState(false)
   const [notifOpen, setNotifOpen] = useState(false)
   const { user } = useAuth()
-  const { unreadCount } = useNotifications()
+  const { unreadCount } = useNotificationContext()
   const { activeSector } = useCompanyContext()
+  const { open: openSearch } = useGlobalSearch()
+  const location = useLocation()
+
+  useKeyboardShortcuts({
+    'ctrl+k': openSearch,
+    'ctrl+n': () => window.location.href = '/app/agendamento',
+    'ctrl+d': () => window.location.href = '/app/dashboard',
+    'escape': () => setNotifOpen(false),
+  })
 
   return (
-    <div className="min-h-screen bg-muted">
+    <div className="min-h-screen flex flex-col bg-muted">
       <CompanySidebar
         mobileOpen={mobileOpen}
         onMobileClose={() => setMobileOpen(false)}
         collapsed={collapsed}
         onToggleCollapse={() => setCollapsed(!collapsed)}
       />
-      <div className={`${collapsed ? 'lg:ml-[72px]' : 'lg:ml-[260px]'} flex flex-col min-h-screen transition-all duration-300`}>
+      <div className={`${collapsed ? 'lg:ml-[72px]' : 'lg:ml-[260px]'} flex flex-col flex-1 transition-all duration-300`}>
+        {/* Topbar */}
         <header className="sticky top-0 z-30 flex h-16 items-center justify-between border-b border-border bg-card px-4 sm:px-6 shadow-sm">
           <div className="flex items-center gap-3">
             <button onClick={() => setMobileOpen(true)} className="rounded-lg p-2 hover:bg-muted transition-colors lg:hidden">
@@ -70,67 +90,83 @@ function PortalContent() {
             </div>
           </div>
 
+          {/* Global Search */}
           <div className="hidden md:flex items-center gap-2 flex-1 max-w-md mx-4">
-            <div className="relative w-full">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              <input placeholder="Buscar..." className="w-full rounded-lg border border-input bg-background pl-9 pr-4 py-2 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring" />
-            </div>
+            <button
+              onClick={openSearch}
+              className="relative w-full flex items-center gap-2 rounded-lg border border-input bg-background pl-9 pr-4 py-2 text-sm text-muted-foreground hover:border-ring transition-colors"
+            >
+              <Search className="absolute left-3 h-4 w-4 text-muted-foreground" />
+              <span>Buscar pacientes, guias, médicos...</span>
+              <kbd className="ml-auto text-[10px] bg-muted border border-border rounded px-1.5 py-0.5">⌘K</kbd>
+            </button>
           </div>
 
           <div className="flex items-center gap-2">
-            <button onClick={() => setNotifOpen(!notifOpen)} className="relative rounded-lg p-2 hover:bg-muted transition-colors">
+            <button
+              onClick={() => setNotifOpen(!notifOpen)}
+              className="relative rounded-lg p-2 hover:bg-muted transition-colors"
+            >
               <Bell className="h-5 w-5 text-muted-foreground" />
-              {unreadCount > 0 && (
-                <span className="absolute -right-0.5 -top-0.5 flex h-4 w-4 items-center justify-center rounded-full bg-destructive text-[10px] font-bold text-white">{unreadCount > 9 ? '9+' : unreadCount}</span>
-              )}
+              <NotificationBadge count={unreadCount} animate={unreadCount > 0} />
             </button>
             <UserMenuDropdown />
           </div>
         </header>
 
-        <NotificationPanel open={notifOpen} onClose={() => setNotifOpen(false)} />
+        <NotificationCenter open={notifOpen} onClose={() => setNotifOpen(false)} />
 
+        {/* Main content */}
         <main className="flex-1 p-4 sm:p-6">
-          <Routes>
-            <Route path="dashboard" element={<CompanyDashboard />} />
-            <Route path="agendamento" element={<SchedulingPage />} />
-            <Route path="agendamento/legado" element={<SchedulePage />} />
-            <Route path="confirmacoes" element={<ConfirmationsPage />} />
-            <Route path="faltosos" element={<AbsenteesPage />} />
-            <Route path="historico-paciente" element={<PatientHistoryPage />} />
-            <Route path="recepcao" element={<ReceptionPage />} />
-            <Route path="medico" element={<MedicalDashboardPage />} />
-            <Route path="atendimento/:appointmentId" element={<AttendancePage />} />
-            <Route path="prontuario/:patientId" element={<PatientRecordPage />} />
-            <Route path="prontuario" element={<MedicalRecordsPage />} />
-            <Route path="faturamento" element={<BillingDashboardPage />} />
-            <Route path="faturamento/guias" element={<GuidesListPage />} />
-            <Route path="faturamento/guias/:guideId" element={<GuideDetailPage />} />
-            <Route path="faturamento/lotes" element={<LotesPage />} />
-            <Route path="faturamento/lotes/:loteId" element={<LoteDetailPage />} />
-            <Route path="faturamento/glosas" element={<GlosasPage />} />
-            <Route path="faturamento/correcoes" element={<CorrectionQueuePage />} />
-            <Route path="faturamento/legado" element={<BillingTissPage />} />
-            <Route path="resultados" element={<ResultsListPage />} />
-            <Route path="usuarios" element={<UsersListPage />} />
-            <Route path="configuracoes/perfis" element={<ProfilesManagerPage />} />
-            <Route path="setores" element={<SectorsPage />} />
-            <Route path="cadastros/medicos" element={<DoctorsPage />} />
-            <Route path="cadastros/convenios" element={<ConveniosPage />} />
-            <Route path="cadastros/exames" element={<ExamsPage />} />
-            <Route path="cadastros" element={<Navigate to="medicos" replace />} />
-            <Route path="configuracoes" element={<CompanySettingsPage />} />
-            <Route path="bi" element={<BIDashboardPage />} />
-            <Route path="bi/producao" element={<ProductionReportPage />} />
-            <Route path="bi/financeiro" element={<FinancialReportPage />} />
-            <Route path="bi/agendamentos" element={<SchedulingReportPage />} />
-            <Route path="bi/faltosos" element={<AbsenteesReportPage />} />
-            <Route path="bi/convenios" element={<ConvenioReportPage />} />
-            <Route path="bi/medicos" element={<DoctorPerformancePage />} />
-            <Route path="*" element={<Navigate to="dashboard" replace />} />
-          </Routes>
+          <BreadcrumbNav />
+          <PageTransition key={location.pathname}>
+            <Routes>
+              <Route path="dashboard" element={<CompanyDashboard />} />
+              <Route path="agendamento" element={<SchedulingPage />} />
+              <Route path="agendamento/legado" element={<SchedulePage />} />
+              <Route path="confirmacoes" element={<ConfirmationsPage />} />
+              <Route path="faltosos" element={<AbsenteesPage />} />
+              <Route path="historico-paciente" element={<PatientHistoryPage />} />
+              <Route path="recepcao" element={<ReceptionPage />} />
+              <Route path="medico" element={<MedicalDashboardPage />} />
+              <Route path="atendimento/:appointmentId" element={<AttendancePage />} />
+              <Route path="prontuario/:patientId" element={<PatientRecordPage />} />
+              <Route path="prontuario" element={<MedicalRecordsPage />} />
+              <Route path="faturamento" element={<BillingDashboardPage />} />
+              <Route path="faturamento/guias" element={<GuidesListPage />} />
+              <Route path="faturamento/guias/:guideId" element={<GuideDetailPage />} />
+              <Route path="faturamento/lotes" element={<LotesPage />} />
+              <Route path="faturamento/lotes/:loteId" element={<LoteDetailPage />} />
+              <Route path="faturamento/glosas" element={<GlosasPage />} />
+              <Route path="faturamento/correcoes" element={<CorrectionQueuePage />} />
+              <Route path="faturamento/legado" element={<BillingTissPage />} />
+              <Route path="resultados" element={<ResultsListPage />} />
+              <Route path="usuarios" element={<UsersListPage />} />
+              <Route path="configuracoes/perfis" element={<ProfilesManagerPage />} />
+              <Route path="setores" element={<SectorsPage />} />
+              <Route path="cadastros/medicos" element={<DoctorsPage />} />
+              <Route path="cadastros/convenios" element={<ConveniosPage />} />
+              <Route path="cadastros/exames" element={<ExamsPage />} />
+              <Route path="cadastros" element={<Navigate to="medicos" replace />} />
+              <Route path="configuracoes" element={<CompanySettingsPage />} />
+              <Route path="bi" element={<BIDashboardPage />} />
+              <Route path="bi/producao" element={<ProductionReportPage />} />
+              <Route path="bi/financeiro" element={<FinancialReportPage />} />
+              <Route path="bi/agendamentos" element={<SchedulingReportPage />} />
+              <Route path="bi/faltosos" element={<AbsenteesReportPage />} />
+              <Route path="bi/convenios" element={<ConvenioReportPage />} />
+              <Route path="bi/medicos" element={<DoctorPerformancePage />} />
+              <Route path="*" element={<Navigate to="dashboard" replace />} />
+            </Routes>
+          </PageTransition>
         </main>
+
+        {/* Status bar */}
+        <SystemStatusBar />
       </div>
+
+      {/* Command Palette */}
+      <CommandPalette />
     </div>
   )
 }
@@ -138,9 +174,11 @@ function PortalContent() {
 export default function CompanyPortalLayout() {
   return (
     <QueueProvider>
-      <NotificationProvider>
-        <PortalContent />
-      </NotificationProvider>
+      <NotificationContextProvider>
+        <GlobalSearchProvider>
+          <PortalContent />
+        </GlobalSearchProvider>
+      </NotificationContextProvider>
     </QueueProvider>
   )
 }
