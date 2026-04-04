@@ -120,6 +120,13 @@ function PortalContent() {
             <Route path="cadastros/exames" element={<ExamsPage />} />
             <Route path="cadastros" element={<Navigate to="medicos" replace />} />
             <Route path="configuracoes" element={<CompanySettingsPage />} />
+            <Route path="bi" element={<BIDashboardPage />} />
+            <Route path="bi/producao" element={<ProductionReportPage />} />
+            <Route path="bi/financeiro" element={<FinancialReportPage />} />
+            <Route path="bi/agendamentos" element={<SchedulingReportPage />} />
+            <Route path="bi/faltosos" element={<AbsenteesReportPage />} />
+            <Route path="bi/convenios" element={<ConvenioReportPage />} />
+            <Route path="bi/medicos" element={<DoctorPerformancePage />} />
             <Route path="*" element={<Navigate to="dashboard" replace />} />
           </Routes>
         </main>
