@@ -14,6 +14,7 @@ import { MOCK_PLANS } from '@/mocks/superadmin.mock'
 
 export default function DoctorsPage() {
   const { canAccess } = useCompanyContext()
+  const { user } = useAuth()
   const { doctors, specialties, convenios, addDoctor, updateDoctor, removeDoctor, getSpecialtyName, isDemo } = useRegisters()
   const [search, setSearch] = useState('')
   const [specFilter, setSpecFilter] = useState('')
@@ -23,6 +24,18 @@ export default function DoctorsPage() {
   const [showBlock, setShowBlock] = useState<Doctor | null>(null)
   const [showDeleteBlock, setShowDeleteBlock] = useState<Doctor | null>(null)
   const [showSpecialties, setShowSpecialties] = useState(false)
+  const [showRequestMore, setShowRequestMore] = useState(false)
+
+  // Get plan limits
+  const companyId = user?.companyId || 'comp_001'
+  const company = MOCK_COMPANIES.find(c => c.id === companyId)
+  const plan = MOCK_PLANS.find(p => p.name === company?.plano)
+  const doctorLimit = plan?.maxDoctors ?? company?.medicosLimite ?? 15
+  const isUnlimited = doctorLimit === null || doctorLimit >= 999
+  const activeDoctors = doctors.filter(d => d.isActive).length
+  const isAtLimit = !isUnlimited && activeDoctors >= doctorLimit
+  const isNearLimit = !isUnlimited && !isAtLimit && activeDoctors >= doctorLimit - 2
+  const ADDON_PRICE_PER_DOCTOR = 79
 
   const filtered = doctors.filter(d => {
     if (search && !d.fullName.toLowerCase().includes(search.toLowerCase()) && !d.crm.includes(search)) return false
