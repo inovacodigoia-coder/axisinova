@@ -10,6 +10,7 @@ export function LoadingScreen() {
         transition={{ duration: 0.5 }}
         className="text-center space-y-6"
       >
+        <img src={logoImg} alt="Axis Inova" className="h-16 w-16 rounded-2xl mx-auto" />
         <div className="text-4xl font-extrabold">
           <span className="gradient-text">Axis</span>
           <span className="text-foreground/70">Inova</span>

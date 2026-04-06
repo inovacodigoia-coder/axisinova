@@ -173,7 +173,8 @@ export default function RegisterPage() {
       <div className="flex-1 overflow-y-auto">
         {/* Mobile header */}
         <div className="lg:hidden flex items-center gap-3 p-4 border-b border-border">
-          <Link to="/" className="text-lg font-bold">
+          <Link to="/" className="flex items-center gap-2 text-lg font-bold">
+            <img src={logoImg} alt="Axis Inova" className="h-8 w-8 rounded-lg" />
             <span className="text-foreground">Axis</span>
             <span className="gradient-text">Inova</span>
           </Link>

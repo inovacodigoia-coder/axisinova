@@ -31,7 +31,8 @@ export function Footer() {
         <div className="flex flex-col gap-10 md:flex-row md:justify-between">
           {/* Brand */}
           <div className="max-w-xs">
-            <Link to="/" className="text-xl font-bold">
+            <Link to="/" className="flex items-center gap-2 text-xl font-bold">
+              <img src={logoImg} alt="Axis Inova" className="h-8 w-8 rounded-lg" />
               <span className="text-white">Axis</span>
               <span className="gradient-text">Inova</span>
             </Link>

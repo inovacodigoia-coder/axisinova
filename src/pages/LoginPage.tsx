@@ -84,6 +84,7 @@ export default function LoginPage() {
         <div className="w-full max-w-md">
           {/* Mobile logo */}
           <div className="lg:hidden mb-8 text-center">
+            <img src={logoImg} alt="Axis Inova" className="h-12 w-12 rounded-xl mx-auto mb-2" />
             <span className="text-2xl font-bold text-foreground">Axis</span>
             <span className="text-2xl font-bold gradient-text">Inova</span>
           </div>
