@@ -5,6 +5,7 @@ import { NotificationContextProvider, useNotificationContext } from '@/context/N
 import { GlobalSearchProvider, useGlobalSearch } from '@/context/GlobalSearchContext'
 import { SchedulingProvider } from '@/context/SchedulingContext'
 import { RegistersProvider } from '@/context/RegistersContext'
+import { MedicalProvider } from '@/context/MedicalContext'
 import { CompanySidebar } from '@/components/company/CompanySidebar'
 import { UserMenuDropdown } from '@/components/company/UserMenuDropdown'
 import { NotificationCenter } from '@/components/notifications/NotificationCenter'
@@ -187,7 +188,9 @@ export default function CompanyPortalLayout() {
         <GlobalSearchProvider>
           <SchedulingProvider>
             <RegistersProvider>
-              <PortalContent />
+              <MedicalProvider>
+                <PortalContent />
+              </MedicalProvider>
             </RegistersProvider>
           </SchedulingProvider>
         </GlobalSearchProvider>
