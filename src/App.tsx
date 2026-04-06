@@ -71,6 +71,11 @@ const App = () => (
                   <Route path="alertas" element={<SuperAdminDashboard />} />
                 </Route>
 
+                {/* Redirects for short paths */}
+                <Route path="/confirmacoes" element={<Navigate to="/app/confirmacoes" replace />} />
+                <Route path="/agendamento" element={<Navigate to="/app/agendamento" replace />} />
+                <Route path="/recepcao" element={<Navigate to="/app/recepcao" replace />} />
+
                 {/* Company Portal */}
                 <Route path="/app/*" element={<PrivateRoute><CompanyPortalLayout /></PrivateRoute>} />
 
