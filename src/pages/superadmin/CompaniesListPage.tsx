@@ -1,15 +1,60 @@
-import { useState, useMemo, useEffect } from 'react'
+import { useState, useMemo, useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { MOCK_COMPANIES } from '@/mocks/superadmin.mock'
 import { CompanyStatusBadge } from '@/components/superadmin/CompanyStatusBadge'
 import { SearchInput } from '@/components/ui/SearchInput'
 import { DataTable } from '@/components/ui/DataTable'
 import { StatusBadge } from '@/components/ui/StatusBadge'
-import { Eye, MoreHorizontal } from 'lucide-react'
+import { ConfirmModal } from '@/components/ui/ConfirmModal'
+import { Eye, MoreHorizontal, Trash2, Edit, Ban } from 'lucide-react'
 import type { Company, CompanyStatus, PlanType } from '@/types/company.types'
 import { supabase } from '@/integrations/supabase/client'
+import { toast } from 'sonner'
 
 const PLAN_VARIANT: Record<PlanType, 'info' | 'success' | 'warning'> = { Starter: 'info', Pro: 'warning', Enterprise: 'success' }
+
+function ActionsDropdown({ company, onDelete, onView }: { company: Company; onDelete: (c: Company) => void; onView: (c: Company) => void }) {
+  const [open, setOpen] = useState(false)
+  const ref = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    function handleClickOutside(e: MouseEvent) {
+      if (ref.current && !ref.current.contains(e.target as Node)) {
+        setOpen(false)
+      }
+    }
+    if (open) document.addEventListener('mousedown', handleClickOutside)
+    return () => document.removeEventListener('mousedown', handleClickOutside)
+  }, [open])
+
+  return (
+    <div className="relative" ref={ref}>
+      <button
+        onClick={(e) => { e.stopPropagation(); setOpen(!open) }}
+        className="rounded-lg p-1.5 hover:bg-muted transition-colors"
+        title="Mais ações"
+      >
+        <MoreHorizontal className="h-4 w-4 text-muted-foreground" />
+      </button>
+      {open && (
+        <div className="absolute right-0 top-full z-50 mt-1 w-48 rounded-lg border border-border bg-card shadow-lg animate-in fade-in zoom-in-95 duration-150">
+          <button
+            onClick={() => { onView(company); setOpen(false) }}
+            className="flex w-full items-center gap-2 px-3 py-2 text-sm text-foreground hover:bg-muted transition-colors rounded-t-lg"
+          >
+            <Eye className="h-4 w-4" /> Ver detalhes
+          </button>
+          <button
+            onClick={() => { onDelete(company); setOpen(false) }}
+            className="flex w-full items-center gap-2 px-3 py-2 text-sm text-destructive hover:bg-destructive/10 transition-colors rounded-b-lg"
+          >
+            <Trash2 className="h-4 w-4" /> Excluir empresa
+          </button>
+        </div>
+      )}
+    </div>
+  )
+}
 
 export default function CompaniesListPage() {
   const navigate = useNavigate()
@@ -17,50 +62,82 @@ export default function CompaniesListPage() {
   const [statusFilter, setStatusFilter] = useState<string>('all')
   const [planFilter, setPlanFilter] = useState<string>('all')
   const [dbCompanies, setDbCompanies] = useState<Company[]>([])
+  const [deleteTarget, setDeleteTarget] = useState<Company | null>(null)
+  const [isDeleting, setIsDeleting] = useState(false)
 
   // Fetch real companies from database
   useEffect(() => {
-    async function fetchCompanies() {
-      const { data, error } = await supabase.from('companies').select('*')
-      if (error) {
-        console.error('Error fetching companies:', error)
-        return
-      }
-      if (data) {
-        const mapped: Company[] = data.map((c: any) => ({
-          id: c.id,
-          razaoSocial: c.name || '',
-          nomeFantasia: c.nome_fantasia || c.name || '',
-          cnpj: c.cnpj || '',
-          segmento: c.segmento || 'Outro',
-          telefone: c.telefone || '',
-          email: c.email || '',
-          website: c.website || '',
-          endereco: {
-            cep: c.cep || '',
-            logradouro: c.logradouro || '',
-            numero: c.numero || '',
-            bairro: c.bairro || '',
-            cidade: c.cidade || '',
-            estado: c.estado || '',
-          },
-          plano: (c.plano || 'Pro') as PlanType,
-          status: (c.status || 'active') as CompanyStatus,
-          medicosAtivos: c.medicos_ativos || 0,
-          medicosLimite: c.medicos_limite || 15,
-          usuariosAtivos: c.usuarios_ativos || 0,
-          usuariosLimite: c.usuarios_limite || 999,
-          armazenamentoUsadoGB: Number(c.armazenamento_usado_gb) || 0,
-          armazenamentoLimiteGB: Number(c.armazenamento_limite_gb) || 100,
-          valorMensal: Number(c.valor_mensal) || 0,
-          criadoEm: c.created_at,
-          ultimoAcesso: c.updated_at,
-        }))
-        setDbCompanies(mapped)
-      }
-    }
     fetchCompanies()
   }, [])
+
+  async function fetchCompanies() {
+    const { data, error } = await supabase.from('companies').select('*')
+    if (error) {
+      console.error('Error fetching companies:', error)
+      return
+    }
+    if (data) {
+      const mapped: Company[] = data.map((c: any) => ({
+        id: c.id,
+        razaoSocial: c.name || '',
+        nomeFantasia: c.nome_fantasia || c.name || '',
+        cnpj: c.cnpj || '',
+        segmento: c.segmento || 'Outro',
+        telefone: c.telefone || '',
+        email: c.email || '',
+        website: c.website || '',
+        endereco: {
+          cep: c.cep || '',
+          logradouro: c.logradouro || '',
+          numero: c.numero || '',
+          bairro: c.bairro || '',
+          cidade: c.cidade || '',
+          estado: c.estado || '',
+        },
+        plano: (c.plano || 'Pro') as PlanType,
+        status: (c.status || 'active') as CompanyStatus,
+        medicosAtivos: c.medicos_ativos || 0,
+        medicosLimite: c.medicos_limite || 15,
+        usuariosAtivos: c.usuarios_ativos || 0,
+        usuariosLimite: c.usuarios_limite || 999,
+        armazenamentoUsadoGB: Number(c.armazenamento_usado_gb) || 0,
+        armazenamentoLimiteGB: Number(c.armazenamento_limite_gb) || 100,
+        valorMensal: Number(c.valor_mensal) || 0,
+        criadoEm: c.created_at,
+        ultimoAcesso: c.updated_at,
+      }))
+      setDbCompanies(mapped)
+    }
+  }
+
+  async function handleDelete() {
+    if (!deleteTarget) return
+    setIsDeleting(true)
+    try {
+      const { data: { session } } = await supabase.auth.getSession()
+      if (!session) {
+        toast.error('Sessão expirada. Faça login novamente.')
+        return
+      }
+
+      const res = await supabase.functions.invoke('delete-company', {
+        body: { companyId: deleteTarget.id },
+      })
+
+      if (res.error) {
+        toast.error(`Erro ao excluir: ${res.error.message}`)
+        return
+      }
+
+      toast.success(`Empresa "${deleteTarget.nomeFantasia}" excluída com sucesso.`)
+      setDeleteTarget(null)
+      fetchCompanies()
+    } catch (err: any) {
+      toast.error(`Erro inesperado: ${err.message}`)
+    } finally {
+      setIsDeleting(false)
+    }
+  }
 
   // Merge mock + real, dedup by cnpj
   const allCompanies = useMemo(() => {
@@ -135,9 +212,11 @@ export default function CompaniesListPage() {
           <button onClick={() => navigate(`/superadmin/empresas/${c.id}`)} className="rounded-lg p-1.5 hover:bg-muted transition-colors" title="Ver detalhes">
             <Eye className="h-4 w-4 text-muted-foreground" />
           </button>
-          <button className="rounded-lg p-1.5 hover:bg-muted transition-colors" title="Mais ações">
-            <MoreHorizontal className="h-4 w-4 text-muted-foreground" />
-          </button>
+          <ActionsDropdown
+            company={c}
+            onView={(c) => navigate(`/superadmin/empresas/${c.id}`)}
+            onDelete={(c) => setDeleteTarget(c)}
+          />
         </div>
       ),
     },
@@ -174,6 +253,17 @@ export default function CompaniesListPage() {
       </div>
 
       <DataTable data={filtered} columns={columns} />
+
+      <ConfirmModal
+        open={!!deleteTarget}
+        onClose={() => setDeleteTarget(null)}
+        onConfirm={handleDelete}
+        title="Excluir Empresa"
+        description={`Tem certeza que deseja excluir "${deleteTarget?.nomeFantasia}"? Todos os dados relacionados (pacientes, prontuários, agendamentos, guias TISS e usuários) serão permanentemente removidos. Esta ação não pode ser desfeita.`}
+        confirmLabel="Excluir permanentemente"
+        variant="danger"
+        isLoading={isDeleting}
+      />
     </div>
   )
 }
