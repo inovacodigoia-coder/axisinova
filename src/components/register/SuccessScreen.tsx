@@ -11,6 +11,7 @@ interface SuccessScreenProps {
 }
 
 export function SuccessScreen({ companyName, cnpj, plan, email }: SuccessScreenProps) {
+  const navigate = useNavigate();
   return (
     <motion.div
       className="flex flex-col items-center text-center py-8"
