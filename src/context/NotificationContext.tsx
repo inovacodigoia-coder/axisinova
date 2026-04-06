@@ -2,6 +2,7 @@ import { createContext, useCallback, useContext, useEffect, useMemo, useReducer,
 import type { AppNotification, NotificationCategory, NotificationGroup } from '@/types/notifications.types'
 import { MOCK_NOTIFICATIONS, SIMULATED_NOTIFICATIONS } from '@/mocks/notifications.mock'
 import { NOTIFICATION_INTERVAL_MS } from '@/utils/constants'
+import { useAuth } from '@/context/AuthContext'
 
 interface NotificationState {
   notifications: AppNotification[]
@@ -73,14 +74,20 @@ const CATEGORY_META: Record<NotificationCategory, { label: string; icon: string 
   admin: { label: 'Admin', icon: '👤' },
 }
 
+const DEMO_COMPANY = 'comp_001'
+
 export function NotificationContextProvider({ children }: { children: ReactNode }) {
+  const { user } = useAuth()
+  const isDemo = user?.companyId === DEMO_COMPANY
+
   const [state, dispatch] = useReducer(reducer, {
-    notifications: MOCK_NOTIFICATIONS.filter(n => n.status !== 'archived'),
+    notifications: isDemo ? MOCK_NOTIFICATIONS.filter(n => n.status !== 'archived') : [],
     lastChecked: new Date().toISOString(),
   })
 
-  // Simulate real-time notifications
+  // Simulate real-time notifications only for demo company
   useEffect(() => {
+    if (!isDemo) return
     let idx = 0
     const interval = setInterval(() => {
       if (idx < SIMULATED_NOTIFICATIONS.length) {
@@ -93,7 +100,7 @@ export function NotificationContextProvider({ children }: { children: ReactNode 
       }
     }, NOTIFICATION_INTERVAL_MS)
     return () => clearInterval(interval)
-  }, [])
+  }, [isDemo])
 
   const activeNotifications = useMemo(
     () => state.notifications.filter(n => n.status !== 'archived'),
@@ -126,7 +133,7 @@ export function NotificationContextProvider({ children }: { children: ReactNode 
   )
 
   const addNotification = useCallback((n: Omit<AppNotification, 'id' | 'createdAt' | 'status'>) => {
-    dispatch({ type: 'ADD', payload: { ...n, id: `n_${Date.now()}`, createdAt: new Date().toISOString(), status: 'unread' } })
+    dispatch({ type: 'ADD', payload: { ...n, id: `n_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`, createdAt: new Date().toISOString(), status: 'unread' } })
   }, [])
 
   const markRead = useCallback((id: string) => dispatch({ type: 'MARK_READ', payload: id }), [])
