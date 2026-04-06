@@ -190,7 +190,9 @@ export default function CompanyPortalLayout() {
           <SchedulingProvider>
             <RegistersProvider>
               <MedicalProvider>
-                <PortalContent />
+                <BillingProvider>
+                  <PortalContent />
+                </BillingProvider>
               </MedicalProvider>
             </RegistersProvider>
           </SchedulingProvider>
