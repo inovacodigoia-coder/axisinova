@@ -146,10 +146,15 @@ function PortalContent() {
               <Route path="usuarios" element={<UsersListPage />} />
               <Route path="configuracoes/perfis" element={<ProfilesManagerPage />} />
               <Route path="setores" element={<SectorsPage />} />
-              <Route path="cadastros/medicos" element={<DoctorsPage />} />
-              <Route path="cadastros/convenios" element={<ConveniosPage />} />
-              <Route path="cadastros/exames" element={<ExamsPage />} />
-              <Route path="cadastros" element={<Navigate to="medicos" replace />} />
+              <Route path="cadastros" element={<RegistersLayout />}>
+                <Route index element={<Navigate to="medicos" replace />} />
+                <Route path="medicos" element={<DoctorsPage />} />
+                <Route path="especialidades" element={<Navigate to="/app/cadastros/medicos" replace />} />
+                <Route path="convenios" element={<ConveniosPage />} />
+                <Route path="convenios/anexos" element={<Navigate to="/app/cadastros/convenios" replace />} />
+                <Route path="exames" element={<ExamsPage />} />
+                <Route path="procedimentos" element={<ProceduresPage />} />
+              </Route>
               <Route path="configuracoes" element={<CompanySettingsPage />} />
               <Route path="bi" element={<BIDashboardPage />} />
               <Route path="bi/producao" element={<ProductionReportPage />} />
