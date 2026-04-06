@@ -1,9 +1,7 @@
 import { useState, useMemo } from 'react'
-import { Search, FileText, CheckCircle, FlaskConical } from 'lucide-react'
-import type { ResultStatus } from '@/types/results.types'
+import { Search, CheckCircle, FlaskConical } from 'lucide-react'
+import type { ExamResult, ResultStatus } from '@/types/results.types'
 import { toast } from 'sonner'
-import { useMedical } from '@/context/MedicalContext'
-import { useAuth } from '@/context/AuthContext'
 
 const STATUS_CONFIG: Record<ResultStatus, { label: string; cls: string }> = {
   requested: { label: 'Solicitado', cls: 'bg-muted text-muted-foreground' },
@@ -15,22 +13,17 @@ const STATUS_CONFIG: Record<ResultStatus, { label: string; cls: string }> = {
 }
 
 export default function ResultsListPage() {
-  const { user } = useAuth()
-  const { examResults } = useMedical()
-  const companyId = user?.companyId
   const [search, setSearch] = useState('')
   const [statusFilter, setStatusFilter] = useState('all')
   const [onlyAvailable, setOnlyAvailable] = useState(false)
   const [deliveryModal, setDeliveryModal] = useState<string | null>(null)
   const [deliveryForm, setDeliveryForm] = useState({ deliveredTo: '' as 'patient' | 'responsible' | '', responsibleName: '', responsibleDoc: '', relationship: '', verifyMethod: '' })
 
-  const companyResults = useMemo(() =>
-    examResults.filter(r => r.companyId === companyId),
-    [examResults, companyId]
-  )
+  // Real data - starts empty, will be populated when exams are requested during medical attendance
+  const results: ExamResult[] = []
 
   const filtered = useMemo(() => {
-    return companyResults.filter(r => {
+    return results.filter(r => {
       if (onlyAvailable && r.status !== 'available') return false
       if (statusFilter !== 'all' && r.status !== statusFilter) return false
       if (search) {
@@ -39,7 +32,7 @@ export default function ResultsListPage() {
       }
       return true
     })
-  }, [search, statusFilter, onlyAvailable, companyResults])
+  }, [search, statusFilter, onlyAvailable, results])
 
   const handleDelivery = () => {
     if (!deliveryForm.deliveredTo) { toast.error('Selecione o destinatário'); return }
@@ -51,9 +44,9 @@ export default function ResultsListPage() {
     setDeliveryForm({ deliveredTo: '', responsibleName: '', responsibleDoc: '', relationship: '', verifyMethod: '' })
   }
 
-  const result = deliveryModal ? companyResults.find(r => r.id === deliveryModal) : null
+  const result = deliveryModal ? results.find(r => r.id === deliveryModal) : null
 
-  if (companyResults.length === 0) {
+  if (results.length === 0) {
     return (
       <div className="space-y-6">
         <div>
@@ -108,9 +101,7 @@ export default function ResultsListPage() {
               </tr>
             </thead>
             <tbody className="divide-y divide-border">
-              {filtered.length === 0 ? (
-                <tr><td colSpan={7} className="px-4 py-8 text-center text-muted-foreground">Nenhum resultado encontrado com os filtros selecionados.</td></tr>
-              ) : filtered.map(r => {
+              {filtered.map(r => {
                 const sc = STATUS_CONFIG[r.status]
                 return (
                   <tr key={r.id} className="hover:bg-muted/50 transition-colors">
@@ -135,7 +126,7 @@ export default function ResultsListPage() {
                         </button>
                       )}
                       {r.status === 'delivered' && (
-                        <span className="text-xs text-green-600 font-medium">Entregue em {r.deliveredAt ? new Date(r.deliveredAt).toLocaleDateString('pt-BR') : ''}</span>
+                        <span className="text-xs text-[hsl(var(--success))] font-medium">Entregue em {r.deliveredAt ? new Date(r.deliveredAt).toLocaleDateString('pt-BR') : ''}</span>
                       )}
                     </td>
                   </tr>
@@ -207,7 +198,7 @@ export default function ResultsListPage() {
             )}
 
             <div className="rounded-lg bg-muted border border-border p-4 mb-4 text-xs space-y-1 font-mono">
-              <p className="font-bold text-foreground">PROTOCOLO DE ENTREGA Nº 2025-{String(Math.floor(Math.random() * 9999)).padStart(4, '0')}</p>
+              <p className="font-bold text-foreground">PROTOCOLO DE ENTREGA</p>
               <hr className="border-border" />
               <p>Exame: {result.examName}</p>
               <p>Paciente: {result.patientName}</p>
