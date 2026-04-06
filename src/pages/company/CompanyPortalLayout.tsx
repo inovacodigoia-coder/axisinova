@@ -188,7 +188,9 @@ export default function CompanyPortalLayout() {
         <GlobalSearchProvider>
           <SchedulingProvider>
             <RegistersProvider>
-              <PortalContent />
+              <MedicalProvider>
+                <PortalContent />
+              </MedicalProvider>
             </RegistersProvider>
           </SchedulingProvider>
         </GlobalSearchProvider>

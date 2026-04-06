@@ -1,9 +1,13 @@
 import { useState, useMemo } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
-import { MOCK_PATIENTS } from '@/mocks/scheduling.mock'
-import { getPatientAttendances, getPatientAlerts, getPatientMedications, getPatientExamResults } from '@/mocks/medical.mock'
-import { AlertTriangle, Phone, Mail, Calendar, ChevronDown, FileText, Pill, TestTube, Paperclip, Activity } from 'lucide-react'
+import { useScheduling } from '@/context/SchedulingContext'
+import { useRegisters } from '@/context/RegistersContext'
+import { useMedical } from '@/context/MedicalContext'
+import { useAuth } from '@/context/AuthContext'
+import { EmptyTimelineState } from '@/components/medical/empty-states/EmptyTimelineState'
+import { AlertTriangle, Phone, Mail, Calendar, FileText, Pill, TestTube, Paperclip, Activity, Plus } from 'lucide-react'
 import { motion } from 'framer-motion'
+import { toast } from 'sonner'
 
 function getAge(birthDate: string) {
   return Math.floor((Date.now() - new Date(birthDate).getTime()) / (365.25 * 24 * 60 * 60 * 1000))
@@ -12,17 +16,70 @@ function getAge(birthDate: string) {
 export default function PatientRecordPage() {
   const { patientId } = useParams<{ patientId: string }>()
   const navigate = useNavigate()
+  const { user } = useAuth()
+  const { patients } = useScheduling()
+  const { doctors, convenios } = useRegisters()
+  const { getPatientAttendances, getPatientAlerts, getPatientMedications, getPatientExamResults, addPatientAlert } = useMedical()
   const [activeTab, setActiveTab] = useState('resumo')
 
-  const patient = MOCK_PATIENTS.find(p => p.id === patientId)
-  const attendances = patient ? getPatientAttendances(patient.id) : []
-  const alerts = patient ? getPatientAlerts(patient.id) : []
+  const activeCompanyId = user?.companyId ?? ''
+  const patient = patients.find(p => p.id === patientId)
+  const attendances = patient ? getPatientAttendances(patient.id, activeCompanyId) : []
+  const alerts = patient ? getPatientAlerts(patient.id, activeCompanyId) : []
   const medications = patient ? getPatientMedications(patient.id) : []
   const examResults = patient ? getPatientExamResults(patient.id) : []
 
   const activeMeds = medications.filter(m => m.status === 'active')
   const allergies = alerts.filter(a => a.type === 'allergy')
   const chronicConditions = alerts.filter(a => a.type === 'chronic_condition')
+
+  // Extract all prescriptions from signed attendances
+  const allPrescriptions = useMemo(() =>
+    attendances
+      .filter(r => r.status === 'signed' && r.prescription && r.prescription.length > 0)
+      .flatMap(r => r.prescription!.map(p => ({
+        ...p,
+        prescribedAt: r.startedAt,
+        prescribedBy: doctors.find(d => d.id === r.doctorId)?.fullName ?? 'Médico',
+        attendanceId: r.id,
+      }))),
+    [attendances, doctors]
+  )
+
+  // Extract all exam requests
+  const allExamRequests = useMemo(() =>
+    attendances
+      .filter(r => r.examRequests && r.examRequests.length > 0)
+      .flatMap(r => (r.examRequests ?? []).map(e => ({
+        ...e,
+        requestedInAttendance: r.startedAt,
+        requestedBy: doctors.find(d => d.id === r.doctorId)?.fullName ?? '',
+      }))),
+    [attendances, doctors]
+  )
+
+  // Add allergy
+  const [showAllergyForm, setShowAllergyForm] = useState(false)
+  const [newAllergyDesc, setNewAllergyDesc] = useState('')
+  const [newAllergySeverity, setNewAllergySeverity] = useState<'low' | 'medium' | 'high' | 'critical'>('medium')
+
+  const handleAddAllergy = () => {
+    if (!newAllergyDesc.trim() || !patientId) return
+    addPatientAlert({
+      id: `alert_${Date.now()}`,
+      patientId,
+      companyId: activeCompanyId,
+      type: 'allergy',
+      severity: newAllergySeverity,
+      description: newAllergyDesc,
+      createdBy: user?.name ?? '',
+      createdAt: new Date().toISOString(),
+      isActive: true,
+    })
+    setNewAllergyDesc('')
+    setShowAllergyForm(false)
+    toast.success('Alergia registrada!')
+  }
 
   if (!patient) {
     return <div className="text-center py-12 text-muted-foreground">Paciente não encontrado.</div>
@@ -37,6 +94,8 @@ export default function PatientRecordPage() {
     { id: 'anexos', label: 'Anexos', icon: Paperclip },
   ]
 
+  const primaryConvenio = patient.convenioId ? convenios.find(c => c.id === patient.convenioId) : null
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -50,6 +109,7 @@ export default function PatientRecordPage() {
             <div className="flex flex-wrap gap-x-4 gap-y-1 mt-1 text-sm text-muted-foreground">
               <span>{getAge(patient.birthDate)} anos · {patient.gender === 'M' ? 'Masculino' : patient.gender === 'F' ? 'Feminino' : 'Outro'}</span>
               {patient.cpf && <span>CPF: {patient.cpf}</span>}
+              {primaryConvenio && <span>{primaryConvenio.name}</span>}
               <span><Calendar className="inline h-3 w-3 mr-1" />{new Date(patient.birthDate).toLocaleDateString('pt-BR')}</span>
             </div>
             <div className="flex flex-wrap gap-x-4 gap-y-1 mt-1 text-sm text-muted-foreground">
@@ -64,6 +124,17 @@ export default function PatientRecordPage() {
             ➕ Novo Atendimento
           </button>
         </div>
+
+        {/* No clinical data message */}
+        {attendances.length === 0 && (
+          <div className="mt-4 p-3 rounded-lg bg-blue-50 border border-blue-200 text-blue-700 text-sm flex items-start gap-2">
+            <FileText className="h-4 w-4 mt-0.5 flex-shrink-0" />
+            <div>
+              <p className="font-medium">Nenhum registro clínico ainda</p>
+              <p className="text-xs mt-0.5">Este paciente ainda não possui atendimentos registrados. O prontuário será preenchido durante o primeiro atendimento.</p>
+            </div>
+          </div>
+        )}
 
         {/* Critical alerts */}
         {alerts.filter(a => a.severity === 'critical' || a.severity === 'high').length > 0 && (
@@ -96,10 +167,9 @@ export default function PatientRecordPage() {
         ))}
       </div>
 
-      {/* Tab Content */}
+      {/* Resumo tab */}
       {activeTab === 'resumo' && (
         <div className="grid md:grid-cols-2 gap-6">
-          {/* Quick stats */}
           <div className="space-y-4">
             <div className="grid grid-cols-2 gap-3">
               <div className="rounded-xl border border-border bg-card p-4">
@@ -112,7 +182,6 @@ export default function PatientRecordPage() {
               </div>
             </div>
 
-            {/* Active medications */}
             <div className="rounded-xl border border-border bg-card p-4">
               <h3 className="text-sm font-semibold text-foreground mb-3">Medicamentos em Uso</h3>
               {activeMeds.length === 0 ? (
@@ -130,7 +199,6 @@ export default function PatientRecordPage() {
               )}
             </div>
 
-            {/* Allergies */}
             <div className="rounded-xl border border-border bg-card p-4">
               <h3 className="text-sm font-semibold text-foreground mb-3">Alergias</h3>
               {allergies.length === 0 ? (
@@ -149,81 +217,102 @@ export default function PatientRecordPage() {
             </div>
           </div>
 
-          {/* Recent timeline */}
           <div className="rounded-xl border border-border bg-card p-4">
             <h3 className="text-sm font-semibold text-foreground mb-3">Últimos Atendimentos</h3>
-            <div className="space-y-0">
-              {attendances.slice(0, 5).map((record, i) => (
-                <div key={record.id} className="flex gap-3 pb-4">
-                  <div className="flex flex-col items-center">
-                    <div className={`h-3 w-3 rounded-full ${record.status === 'in_progress' ? 'bg-primary animate-pulse' : 'bg-green-500'}`} />
-                    {i < Math.min(attendances.length, 5) - 1 && <div className="w-px flex-1 bg-border" />}
-                  </div>
-                  <div className="flex-1">
-                    <p className="text-xs font-medium text-foreground">
-                      {new Date(record.startedAt).toLocaleDateString('pt-BR', { weekday: 'short', day: '2-digit', month: '2-digit', year: 'numeric' })}
-                      {record.status === 'in_progress' && <span className="ml-2 text-primary font-bold">EM ANDAMENTO</span>}
-                    </p>
-                    <p className="text-xs text-muted-foreground">{record.chiefComplaint.slice(0, 80)}...</p>
-                    {record.diagnosis && (
-                      <p className="text-[10px] text-primary mt-0.5">{record.diagnosis.cid10Primary.code} · {record.diagnosis.cid10Primary.description}</p>
-                    )}
-                  </div>
-                </div>
-              ))}
-            </div>
+            {attendances.length === 0 ? (
+              <EmptyTimelineState />
+            ) : (
+              <div className="space-y-0">
+                {attendances.slice(0, 5).map((record, i) => {
+                  const recDoctor = doctors.find(d => d.id === record.doctorId)
+                  return (
+                    <div key={record.id} className="flex gap-3 pb-4">
+                      <div className="flex flex-col items-center">
+                        <div className={`h-3 w-3 rounded-full ${record.status === 'in_progress' ? 'bg-primary animate-pulse' : 'bg-green-500'}`} />
+                        {i < Math.min(attendances.length, 5) - 1 && <div className="w-px flex-1 bg-border" />}
+                      </div>
+                      <div className="flex-1">
+                        <p className="text-xs font-medium text-foreground">
+                          {new Date(record.startedAt).toLocaleDateString('pt-BR', { weekday: 'short', day: '2-digit', month: '2-digit', year: 'numeric' })}
+                          {recDoctor && <span className="text-muted-foreground"> · Dr. {recDoctor.fullName}</span>}
+                          {record.status === 'in_progress' && <span className="ml-2 text-primary font-bold">EM ANDAMENTO</span>}
+                        </p>
+                        <p className="text-xs text-muted-foreground">{record.chiefComplaint.slice(0, 80)}{record.chiefComplaint.length > 80 ? '...' : ''}</p>
+                        {record.diagnosis && (
+                          <p className="text-[10px] text-primary mt-0.5">{record.diagnosis.cid10Primary.code} · {record.diagnosis.cid10Primary.description}</p>
+                        )}
+                      </div>
+                    </div>
+                  )
+                })}
+              </div>
+            )}
           </div>
         </div>
       )}
 
+      {/* Atendimentos tab */}
       {activeTab === 'atendimentos' && (
         <div className="space-y-4">
-          {attendances.map((record, i) => (
-            <motion.div
-              key={record.id}
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: i * 0.05 }}
-              className="rounded-xl border border-border bg-card p-4"
-            >
-              <div className="flex items-start justify-between mb-2">
-                <div>
-                  <p className="font-medium text-foreground">
-                    {new Date(record.startedAt).toLocaleDateString('pt-BR', { weekday: 'long', day: '2-digit', month: 'long', year: 'numeric' })}
-                  </p>
-                  <p className="text-xs text-muted-foreground">
-                    {record.duration ? `${record.duration} min` : 'Em andamento'} · {record.status === 'signed' ? '✅ Assinado' : record.status === 'completed' ? 'Concluído' : '🔄 Em andamento'}
-                  </p>
+          {attendances.length === 0 && <EmptyTimelineState />}
+          {attendances.map((record, i) => {
+            const recDoctor = doctors.find(d => d.id === record.doctorId)
+            return (
+              <motion.div key={record.id} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.05 }} className="rounded-xl border border-border bg-card p-4">
+                <div className="flex items-start justify-between mb-2">
+                  <div>
+                    <p className="font-medium text-foreground">
+                      {new Date(record.startedAt).toLocaleDateString('pt-BR', { weekday: 'long', day: '2-digit', month: 'long', year: 'numeric' })}
+                    </p>
+                    <p className="text-xs text-muted-foreground">
+                      {recDoctor ? `Dr. ${recDoctor.fullName}` : ''} · {record.duration ? `${record.duration} min` : 'Em andamento'} · {record.status === 'signed' ? '✅ Assinado' : record.status === 'completed' ? 'Concluído' : '🔄 Em andamento'}
+                    </p>
+                  </div>
                 </div>
-              </div>
-              <p className="text-sm text-foreground mb-2"><span className="font-medium">Queixa:</span> {record.chiefComplaint}</p>
-              {record.diagnosis && (
-                <p className="text-sm text-foreground mb-1">
-                  <span className="font-medium">Diagnóstico:</span>{' '}
-                  <span className="text-primary">{record.diagnosis.cid10Primary.code}</span> — {record.diagnosis.cid10Primary.description}
-                </p>
-              )}
-              {record.prescription && record.prescription.length > 0 && (
-                <p className="text-xs text-muted-foreground">{record.prescription.length} medicamento(s) prescrito(s)</p>
-              )}
-              {record.examRequests && record.examRequests.length > 0 && (
-                <p className="text-xs text-muted-foreground">{record.examRequests.length} exame(s) solicitado(s)</p>
-              )}
-              {record.certificateDays && (
-                <p className="text-xs text-muted-foreground">Atestado: {record.certificateDays} dia(s)</p>
-              )}
-            </motion.div>
-          ))}
-          {attendances.length === 0 && <p className="text-center py-8 text-muted-foreground">Nenhum atendimento registrado.</p>}
+                <p className="text-sm text-foreground mb-2"><span className="font-medium">Queixa:</span> {record.chiefComplaint}</p>
+                {record.diagnosis && (
+                  <p className="text-sm text-foreground mb-1">
+                    <span className="font-medium">Diagnóstico:</span> <span className="text-primary">{record.diagnosis.cid10Primary.code}</span> — {record.diagnosis.cid10Primary.description}
+                  </p>
+                )}
+                {record.prescription && record.prescription.length > 0 && <p className="text-xs text-muted-foreground">{record.prescription.length} medicamento(s) prescrito(s)</p>}
+                {record.examRequests && record.examRequests.length > 0 && <p className="text-xs text-muted-foreground">{record.examRequests.length} exame(s) solicitado(s)</p>}
+                {record.certificateDays && <p className="text-xs text-muted-foreground">Atestado: {record.certificateDays} dia(s)</p>}
+              </motion.div>
+            )
+          })}
         </div>
       )}
 
+      {/* Alergias tab */}
       {activeTab === 'alergias' && (
         <div className="space-y-6">
           <div>
-            <h3 className="text-lg font-semibold text-foreground mb-3">Alergias</h3>
-            {allergies.length === 0 ? (
-              <p className="text-sm text-muted-foreground">Nenhuma alergia registrada.</p>
+            <div className="flex items-center justify-between mb-3">
+              <h3 className="text-lg font-semibold text-foreground">Alergias</h3>
+              <button onClick={() => setShowAllergyForm(!showAllergyForm)} className="flex items-center gap-1 px-3 py-1.5 text-xs font-medium rounded-lg border border-border hover:bg-muted">
+                <Plus className="h-3 w-3" /> Registrar alergia
+              </button>
+            </div>
+            {showAllergyForm && (
+              <div className="p-4 rounded-xl border border-border bg-card mb-4 space-y-3">
+                <input value={newAllergyDesc} onChange={e => setNewAllergyDesc(e.target.value)} placeholder="Descrição da alergia..." className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm outline-none" />
+                <div className="flex gap-2">
+                  {(['low', 'medium', 'high', 'critical'] as const).map(s => (
+                    <label key={s} className="flex items-center gap-1 text-xs cursor-pointer">
+                      <input type="radio" checked={newAllergySeverity === s} onChange={() => setNewAllergySeverity(s)} className="accent-primary" />
+                      {s === 'low' ? 'Baixa' : s === 'medium' ? 'Média' : s === 'high' ? 'Alta' : 'Crítica'}
+                    </label>
+                  ))}
+                </div>
+                <button onClick={handleAddAllergy} className="px-4 py-2 text-sm font-medium rounded-lg bg-primary text-white hover:opacity-90">Salvar</button>
+              </div>
+            )}
+            {allergies.length === 0 && !showAllergyForm ? (
+              <div className="text-center py-8">
+                <p className="text-sm text-muted-foreground">Nenhuma alergia registrada para este paciente.</p>
+                <button onClick={() => setShowAllergyForm(true)} className="mt-2 text-sm text-primary font-medium hover:underline">+ Registrar primeira alergia</button>
+              </div>
             ) : (
               <div className="space-y-3">
                 {allergies.map(a => (
@@ -258,11 +347,15 @@ export default function PatientRecordPage() {
         </div>
       )}
 
+      {/* Medicamentos tab */}
       {activeTab === 'medicamentos' && (
         <div className="space-y-4">
           <h3 className="text-lg font-semibold text-foreground">Medicamentos</h3>
-          {medications.length === 0 ? (
-            <p className="text-sm text-muted-foreground">Nenhum medicamento registrado.</p>
+          {allPrescriptions.length === 0 && medications.length === 0 ? (
+            <div className="text-center py-8">
+              <p className="text-sm text-muted-foreground">Nenhum medicamento registrado.</p>
+              <p className="text-xs text-muted-foreground mt-1">Os medicamentos serão adicionados durante os atendimentos.</p>
+            </div>
           ) : (
             <div className="space-y-3">
               {medications.map(m => (
@@ -277,16 +370,31 @@ export default function PatientRecordPage() {
                   }`}>{m.status === 'active' ? 'Em uso' : m.status === 'suspended' ? 'Suspenso' : 'Concluído'}</span>
                 </div>
               ))}
+              {allPrescriptions.length > 0 && (
+                <>
+                  <h4 className="text-sm font-medium text-muted-foreground mt-4">Histórico de Prescrições</h4>
+                  {allPrescriptions.slice(0, 20).map((p, i) => (
+                    <div key={`${p.attendanceId}_${p.id}_${i}`} className="rounded-xl border border-border bg-card p-3 text-sm">
+                      <p className="font-medium text-foreground">{p.medication} {p.dosage}</p>
+                      <p className="text-xs text-muted-foreground">{p.frequency} · {p.duration} · {new Date(p.prescribedAt).toLocaleDateString('pt-BR')} · {p.prescribedBy}</p>
+                    </div>
+                  ))}
+                </>
+              )}
             </div>
           )}
         </div>
       )}
 
+      {/* Exames tab */}
       {activeTab === 'exames' && (
         <div className="space-y-4">
-          <h3 className="text-lg font-semibold text-foreground">Resultados de Exames</h3>
-          {examResults.length === 0 ? (
-            <p className="text-sm text-muted-foreground">Nenhum exame registrado.</p>
+          <h3 className="text-lg font-semibold text-foreground">Exames Solicitados</h3>
+          {allExamRequests.length === 0 && examResults.length === 0 ? (
+            <div className="text-center py-8">
+              <p className="text-sm text-muted-foreground">Nenhum exame solicitado ainda.</p>
+              <p className="text-xs text-muted-foreground mt-1">Os exames aparecerão aqui quando forem solicitados durante os atendimentos.</p>
+            </div>
           ) : (
             <div className="space-y-3">
               {examResults.map(e => {
@@ -307,16 +415,24 @@ export default function PatientRecordPage() {
                         <p className="text-xs text-muted-foreground">Data: {new Date(e.requestedAt).toLocaleDateString('pt-BR')}</p>
                         {e.resultSummary && <p className="text-sm text-foreground mt-1">{e.resultSummary}</p>}
                       </div>
-                      <span className={`px-2 py-1 text-[10px] font-bold rounded-full ${st.color}`}>{st.label}</span>
+                      <span className={`px-2 py-1 text-[10px] font-bold rounded-full ${st?.color ?? 'bg-muted text-muted-foreground'}`}>{st?.label ?? e.status}</span>
                     </div>
                   </div>
                 )
               })}
+              {allExamRequests.filter(e => !examResults.some(r => r.examName === e.examName)).map((e, i) => (
+                <div key={`req_${e.id}_${i}`} className="rounded-xl border border-border bg-card p-4">
+                  <p className="font-medium text-foreground">{e.examName}</p>
+                  <p className="text-xs text-muted-foreground">{e.examCode ? `TUSS: ${e.examCode} · ` : ''}Solicitado por {e.requestedBy} em {new Date(e.requestedInAttendance).toLocaleDateString('pt-BR')}</p>
+                  <span className="px-2 py-0.5 text-[10px] font-bold rounded-full bg-blue-100 text-blue-700 mt-1 inline-block">Solicitado</span>
+                </div>
+              ))}
             </div>
           )}
         </div>
       )}
 
+      {/* Anexos tab */}
       {activeTab === 'anexos' && (
         <div className="text-center py-12">
           <Paperclip className="h-12 w-12 text-muted-foreground mx-auto mb-3" />
