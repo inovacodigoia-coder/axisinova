@@ -124,7 +124,9 @@ export default function ConveniosPage() {
         )}
       </div>
       </>
-      )
+      )}
+
+      {showForm && (
         <ConvenioFormModal
           convenio={editing}
           onClose={() => { setShowForm(false); setEditing(null) }}
