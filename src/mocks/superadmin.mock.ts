@@ -3,7 +3,9 @@ import { AuditEntry, DashboardMetrics, MonthlySignup, PlanConfig, PlanDistributi
 
 export const MOCK_USERS_AUTH = [
   { email: 'superadmin@axisinova.com', password: 'Admin@2025', role: 'super_admin' as const, id: 'u_sa_001', name: 'Rafael Mendes' },
+  { email: 'inivacodigoiaadm@inivacodigoia.com.br', password: 'Inov@codigoia2026', role: 'super_admin' as const, id: 'u_sa_002', name: 'Super Admin Inova' },
   { email: 'admin@clinicademo.com', password: 'Admin@2025', role: 'company_admin' as const, id: 'u_ca_001', name: 'Dra. Camila Souza', companyId: 'comp_001', companyName: 'Clínica Vida & Saúde' },
+  { email: 'inivacodigoia@inivacodigoia.com.br', password: '111111adm', role: 'company_admin' as const, id: 'u_ca_010', name: 'Admin InovaSoftteste', companyId: 'comp_011', companyName: 'InovaSoftteste' },
   { email: 'medico@clinicademo.com', password: 'Admin@2025', role: 'doctor' as const, id: 'u_doc_001', name: 'Dr. Henrique Lima', companyId: 'comp_001', companyName: 'Clínica Vida & Saúde' },
   { email: 'recepcao@clinicademo.com', password: 'Admin@2025', role: 'receptionist' as const, id: 'u_rec_001', name: 'Juliana Ferreira', companyId: 'comp_001', companyName: 'Clínica Vida & Saúde' },
 ]
@@ -89,6 +91,14 @@ export const MOCK_COMPANIES: Company[] = [
     plano: 'Enterprise', status: 'active', medicosAtivos: 30, medicosLimite: 999, usuariosAtivos: 55, usuariosLimite: 999,
     armazenamentoUsadoGB: 380, armazenamentoLimiteGB: 1000, valorMensal: 2490, criadoEm: '2023-09-18', ultimoAcesso: '2025-01-20',
   },
+  {
+    id: 'comp_011', razaoSocial: 'InovaSoftteste LTDA', nomeFantasia: 'InovaSoftteste',
+    cnpj: '99.888.777/0001-10', segmento: 'Clínica Médica', telefone: '(84) 9999-0000',
+    email: 'inivacodigoia@inivacodigoia.com.br',
+    endereco: { cep: '59010-000', logradouro: 'Av. Teste', numero: '100', bairro: 'Centro', cidade: 'Natal', estado: 'RN' },
+    plano: 'Pro', status: 'active', medicosAtivos: 0, medicosLimite: 15, usuariosAtivos: 1, usuariosLimite: 999,
+    armazenamentoUsadoGB: 0.1, armazenamentoLimiteGB: 100, valorMensal: 990, criadoEm: '2025-04-06', ultimoAcesso: '2025-04-06',
+  },
 ]
 
 export const MOCK_COMPANY_USERS: CompanyUser[] = [
@@ -102,6 +112,7 @@ export const MOCK_COMPANY_USERS: CompanyUser[] = [
   { id: 'u_doc_003', name: 'Dra. Fernanda Reis', email: 'fernanda@odontocenter.com.br', role: 'doctor', isActive: true, lastAccess: '2025-01-18 09:30', companyId: 'comp_002' },
   { id: 'u_ca_003', name: 'Amanda Vieira', email: 'amanda@bioanalytica.com.br', role: 'company_admin', isActive: true, lastAccess: '2025-01-20 07:00', companyId: 'comp_003' },
   { id: 'u_doc_004', name: 'Dr. Thiago Nascimento', email: 'thiago@bioanalytica.com.br', role: 'doctor', isActive: true, lastAccess: '2025-01-20 08:45', companyId: 'comp_003' },
+  { id: 'u_ca_010', name: 'Admin InovaSoftteste', email: 'inivacodigoia@inivacodigoia.com.br', role: 'company_admin', isActive: true, lastAccess: '2025-04-06 10:00', companyId: 'comp_011' },
 ]
 
 export const MOCK_INVOICES: Invoice[] = [

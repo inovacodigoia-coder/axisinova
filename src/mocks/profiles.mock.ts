@@ -152,6 +152,8 @@ export const MOCK_USER_PROFILES: Record<string, string[]> = {
   'u_bil_001': ['prof_004'],                  // Marcos: Faturista (single profile)
   'u_tel_001': ['prof_005'],                  // Ana Paula: Telefonista (single profile)
   'u_sa_001': ['prof_001'],                   // Super admin gets admin profile
+  'u_sa_002': ['prof_001'],                   // Super Admin Inova
+  'u_ca_010': ['prof_001'],                   // Admin InovaSoftteste
 }
 
 export function getProfilesForUser(userId: string): UserProfile[] {
