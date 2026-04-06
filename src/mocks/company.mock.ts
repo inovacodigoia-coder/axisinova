@@ -1,6 +1,5 @@
 import type { Profile, Sector, MenuFunction, PermissionsMap } from '@/types/permissions.types'
 import type { CompanyUser } from '@/types/company-portal.types'
-import type { Doctor, Convenio, Exam } from '@/types/registers.types'
 
 const COMPANY_ID = 'comp_001'
 
@@ -99,37 +98,45 @@ export const MOCK_COMPANY_USERS: CompanyUser[] = [
   { id: 'cu_15', username: 'dra.gineco', fullName: 'Dra. Mariana Lopes', email: 'mariana@clinicademo.com', cpf: '555.666.777-88', birthDate: '1982-11-19', phone: '(11) 84321-0987', professionalClass: 'CRM', councilNumber: '111222', councilState: 'SP', occupation: 'Médica Ginecologista', companyId: COMPANY_ID, profiles: ['prof_02', 'prof_07'], sectors: ['sec_04'], activeProfileId: null, activeSectorId: null, isActive: true, isBlocked: false, lastLogin: '2025-01-19 13:00', createdAt: '2024-08-15' },
 ]
 
-// ── Médicos (5) ────────────────────────────────────────────────
-export const MOCK_DOCTORS: Doctor[] = [
-  { id: 'doc_01', fullName: 'Dr. Henrique Lima', crm: '654321', crmState: 'SP', mainSpecialty: 'Cardiologia', otherSpecialties: ['Clínica Geral'], phone: '(11) 97654-3210', email: 'henrique@clinicademo.com', enabledConvenios: ['conv_01','conv_02','conv_04','conv_06'], isActive: true, companyId: COMPANY_ID, consultDuration: 30, consultInterval: 10, schedule: [{ dayOfWeek: 1, startTime: '08:00', endTime: '12:00', active: true },{ dayOfWeek: 1, startTime: '14:00', endTime: '18:00', active: true },{ dayOfWeek: 3, startTime: '08:00', endTime: '12:00', active: true },{ dayOfWeek: 5, startTime: '08:00', endTime: '17:00', active: true }] },
-  { id: 'doc_02', fullName: 'Dr. Pedro Almeida', crm: '789012', crmState: 'SP', mainSpecialty: 'Ortopedia', phone: '(11) 95432-1098', email: 'pedro@clinicademo.com', enabledConvenios: ['conv_01','conv_03','conv_04'], isActive: true, companyId: COMPANY_ID, consultDuration: 20, consultInterval: 5, schedule: [{ dayOfWeek: 2, startTime: '07:00', endTime: '13:00', active: true },{ dayOfWeek: 4, startTime: '07:00', endTime: '13:00', active: true }] },
-  { id: 'doc_03', fullName: 'Dr. Roberto Santos', crm: '345678', crmState: 'SP', mainSpecialty: 'Neurologia', phone: '(11) 92109-8765', email: 'roberto@clinicademo.com', enabledConvenios: ['conv_01','conv_02','conv_05','conv_06'], isActive: true, companyId: COMPANY_ID, consultDuration: 45, consultInterval: 15, schedule: [{ dayOfWeek: 1, startTime: '09:00', endTime: '17:00', active: true },{ dayOfWeek: 2, startTime: '09:00', endTime: '17:00', active: true },{ dayOfWeek: 3, startTime: '09:00', endTime: '17:00', active: true }] },
-  { id: 'doc_04', fullName: 'Dra. Mariana Lopes', crm: '111222', crmState: 'SP', mainSpecialty: 'Ginecologia', otherSpecialties: ['Obstetrícia'], phone: '(11) 84321-0987', email: 'mariana@clinicademo.com', enabledConvenios: ['conv_01','conv_02','conv_03','conv_04','conv_05','conv_06'], isActive: true, companyId: COMPANY_ID, consultDuration: 30, consultInterval: 10, schedule: [{ dayOfWeek: 1, startTime: '08:00', endTime: '12:00', active: true },{ dayOfWeek: 2, startTime: '14:00', endTime: '18:00', active: true },{ dayOfWeek: 4, startTime: '08:00', endTime: '18:00', active: true }] },
-  { id: 'doc_05', fullName: 'Dra. Camila Souza', crm: '123456', crmState: 'SP', mainSpecialty: 'Clínica Geral', otherSpecialties: ['Dermatologia'], phone: '(11) 98765-4321', email: 'camila@clinicademo.com', enabledConvenios: ['conv_01','conv_04'], isActive: true, companyId: COMPANY_ID, consultDuration: 20, consultInterval: 5, schedule: [{ dayOfWeek: 3, startTime: '08:00', endTime: '12:00', active: true },{ dayOfWeek: 5, startTime: '14:00', endTime: '18:00', active: true }] },
+// ── Legacy compat types for scheduling ──────────────────────────
+// These are used by scheduling components that still reference old shapes
+export interface LegacyDoctor {
+  id: string
+  fullName: string
+  crm: string
+  crmState: string
+  mainSpecialty: string
+  enabledConvenios: string[]
+  isActive: boolean
+  companyId: string
+  consultDuration: number
+  consultInterval: number
+  schedule: { dayOfWeek: number; startTime: string; endTime: string; active: boolean }[]
+}
+
+export interface LegacyConvenio {
+  id: string
+  name: string
+  type: string
+  isActive: boolean
+  companyId: string
+}
+
+export const MOCK_DOCTORS: LegacyDoctor[] = [
+  { id: 'doc_01', fullName: 'Dr. Henrique Lima', crm: '654321', crmState: 'SP', mainSpecialty: 'Cardiologia', enabledConvenios: ['conv_01','conv_02','conv_04','conv_06'], isActive: true, companyId: COMPANY_ID, consultDuration: 30, consultInterval: 10, schedule: [{ dayOfWeek: 1, startTime: '08:00', endTime: '12:00', active: true },{ dayOfWeek: 1, startTime: '14:00', endTime: '18:00', active: true },{ dayOfWeek: 3, startTime: '08:00', endTime: '12:00', active: true },{ dayOfWeek: 5, startTime: '08:00', endTime: '17:00', active: true }] },
+  { id: 'doc_02', fullName: 'Dr. Pedro Almeida', crm: '789012', crmState: 'SP', mainSpecialty: 'Ortopedia', enabledConvenios: ['conv_01','conv_03','conv_04'], isActive: true, companyId: COMPANY_ID, consultDuration: 20, consultInterval: 5, schedule: [{ dayOfWeek: 2, startTime: '07:00', endTime: '13:00', active: true },{ dayOfWeek: 4, startTime: '07:00', endTime: '13:00', active: true }] },
+  { id: 'doc_03', fullName: 'Dr. Roberto Santos', crm: '345678', crmState: 'SP', mainSpecialty: 'Neurologia', enabledConvenios: ['conv_01','conv_02','conv_05','conv_06'], isActive: true, companyId: COMPANY_ID, consultDuration: 45, consultInterval: 15, schedule: [{ dayOfWeek: 1, startTime: '09:00', endTime: '17:00', active: true },{ dayOfWeek: 2, startTime: '09:00', endTime: '17:00', active: true },{ dayOfWeek: 3, startTime: '09:00', endTime: '17:00', active: true }] },
+  { id: 'doc_04', fullName: 'Dra. Mariana Lopes', crm: '111222', crmState: 'SP', mainSpecialty: 'Ginecologia', enabledConvenios: ['conv_01','conv_02','conv_03','conv_04','conv_05','conv_06'], isActive: true, companyId: COMPANY_ID, consultDuration: 30, consultInterval: 10, schedule: [{ dayOfWeek: 1, startTime: '08:00', endTime: '12:00', active: true },{ dayOfWeek: 2, startTime: '14:00', endTime: '18:00', active: true },{ dayOfWeek: 4, startTime: '08:00', endTime: '18:00', active: true }] },
+  { id: 'doc_05', fullName: 'Dra. Camila Souza', crm: '123456', crmState: 'SP', mainSpecialty: 'Clínica Geral', enabledConvenios: ['conv_01','conv_04'], isActive: true, companyId: COMPANY_ID, consultDuration: 20, consultInterval: 5, schedule: [{ dayOfWeek: 3, startTime: '08:00', endTime: '12:00', active: true },{ dayOfWeek: 5, startTime: '14:00', endTime: '18:00', active: true }] },
 ]
 
-// ── Convênios (6) ──────────────────────────────────────────────
-export const MOCK_CONVENIOS: Convenio[] = [
-  { id: 'conv_01', name: 'Unimed', ansCode: '302147', type: 'health_plan', cnpj: '01.234.567/0001-01', authPhone: '0800 123 4567', email: 'autorizacao@unimed.com.br', isActive: true, companyId: COMPANY_ID, documentRules: { consulta: { Carteirinha: 'required', 'Pedido Médico': 'none', 'RG/CPF': 'required', Autorização: 'optional', 'Guia SADT': 'none', Laudo: 'none' }, exame: { Carteirinha: 'required', 'Pedido Médico': 'required', 'RG/CPF': 'required', Autorização: 'required', 'Guia SADT': 'required', Laudo: 'none' }, procedimento: { Carteirinha: 'required', 'Pedido Médico': 'required', 'RG/CPF': 'required', Autorização: 'required', 'Guia SADT': 'optional', Laudo: 'required' } } },
-  { id: 'conv_02', name: 'Hapvida', ansCode: '368253', type: 'health_plan', cnpj: '12.345.678/0001-02', authPhone: '0800 234 5678', isActive: true, companyId: COMPANY_ID },
-  { id: 'conv_03', name: 'Bradesco Saúde', ansCode: '005711', type: 'health_plan', cnpj: '23.456.789/0001-03', authPhone: '0800 345 6789', isActive: true, companyId: COMPANY_ID },
-  { id: 'conv_04', name: 'Particular', type: 'private', isActive: true, companyId: COMPANY_ID, notes: 'Pagamento direto no ato da consulta' },
-  { id: 'conv_05', name: 'SUS', ansCode: '000000', type: 'sus', isActive: true, companyId: COMPANY_ID },
-  { id: 'conv_06', name: 'Amil', ansCode: '326305', type: 'health_plan', cnpj: '34.567.890/0001-04', authPhone: '0800 456 7890', isActive: true, companyId: COMPANY_ID },
-]
-
-// ── Exames e procedimentos (10) ────────────────────────────────
-export const MOCK_EXAMS: Exam[] = [
-  { id: 'ex_01', tussCode: '40301010', name: 'Hemograma Completo', type: 'lab', specialty: 'Clínica Geral', duration: 15, preparation: 'Jejum de 8 horas', resultDays: 1, requiresAuth: false, isActive: true, companyId: COMPANY_ID },
-  { id: 'ex_02', tussCode: '40302040', name: 'Glicemia de Jejum', type: 'lab', specialty: 'Endocrinologia', duration: 10, preparation: 'Jejum de 8 a 12 horas', resultDays: 1, requiresAuth: false, isActive: true, companyId: COMPANY_ID },
-  { id: 'ex_03', tussCode: '40808010', name: 'Eletrocardiograma', type: 'clinical_procedure', specialty: 'Cardiologia', duration: 20, resultDays: 0, requiresAuth: false, isActive: true, companyId: COMPANY_ID },
-  { id: 'ex_04', tussCode: '40901017', name: 'Raio-X de Tórax', type: 'imaging', specialty: 'Radiologia', duration: 15, preparation: 'Remover objetos metálicos', resultDays: 2, requiresAuth: false, isActive: true, companyId: COMPANY_ID },
-  { id: 'ex_05', tussCode: '40901050', name: 'Tomografia Computadorizada', type: 'imaging', specialty: 'Radiologia', duration: 45, preparation: 'Jejum de 4 horas. Informar alergias ao contraste', resultDays: 3, requiresAuth: true, authInstructions: 'Solicitar autorização prévia ao convênio com laudo médico', isActive: true, companyId: COMPANY_ID },
-  { id: 'ex_06', tussCode: '40901068', name: 'Ressonância Magnética', type: 'imaging', specialty: 'Neurologia', duration: 60, preparation: 'Remover objetos metálicos. Informar implantes', resultDays: 5, requiresAuth: true, authInstructions: 'Necessita autorização prévia com justificativa clínica', isActive: true, companyId: COMPANY_ID },
-  { id: 'ex_07', tussCode: '40302300', name: 'TSH e T4 Livre', type: 'lab', specialty: 'Endocrinologia', duration: 10, resultDays: 2, requiresAuth: false, isActive: true, companyId: COMPANY_ID },
-  { id: 'ex_08', tussCode: '31003060', name: 'Artroscopia de Joelho', type: 'surgical_procedure', specialty: 'Ortopedia', duration: 90, preparation: 'Jejum de 8 horas. Exames pré-operatórios atualizados', resultDays: 0, requiresAuth: true, authInstructions: 'Solicitar autorização ao convênio com relatório médico e exames de imagem', isActive: true, companyId: COMPANY_ID },
-  { id: 'ex_09', tussCode: '10101012', name: 'Consulta Médica', type: 'consultation', specialty: 'Clínica Geral', duration: 30, requiresAuth: false, isActive: true, companyId: COMPANY_ID },
-  { id: 'ex_10', tussCode: '40304361', name: 'Ultrassonografia Obstétrica', type: 'imaging', specialty: 'Ginecologia', duration: 30, preparation: 'Bexiga cheia', resultDays: 1, requiresAuth: false, isActive: true, companyId: COMPANY_ID },
+export const MOCK_CONVENIOS: LegacyConvenio[] = [
+  { id: 'conv_01', name: 'Unimed', type: 'health_plan', isActive: true, companyId: COMPANY_ID },
+  { id: 'conv_02', name: 'Hapvida', type: 'health_plan', isActive: true, companyId: COMPANY_ID },
+  { id: 'conv_03', name: 'Bradesco Saúde', type: 'health_plan', isActive: true, companyId: COMPANY_ID },
+  { id: 'conv_04', name: 'Particular', type: 'private', isActive: true, companyId: COMPANY_ID },
+  { id: 'conv_05', name: 'SUS', type: 'sus', isActive: true, companyId: COMPANY_ID },
+  { id: 'conv_06', name: 'Amil', type: 'health_plan', isActive: true, companyId: COMPANY_ID },
 ]
 
 // ── Helpers de funções por perfil ─────────────────────────────
