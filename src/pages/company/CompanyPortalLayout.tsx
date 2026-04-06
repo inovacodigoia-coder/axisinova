@@ -4,6 +4,7 @@ import { QueueProvider } from '@/context/QueueContext'
 import { NotificationContextProvider, useNotificationContext } from '@/context/NotificationContext'
 import { GlobalSearchProvider, useGlobalSearch } from '@/context/GlobalSearchContext'
 import { SchedulingProvider } from '@/context/SchedulingContext'
+import { RegistersProvider } from '@/context/RegistersContext'
 import { CompanySidebar } from '@/components/company/CompanySidebar'
 import { UserMenuDropdown } from '@/components/company/UserMenuDropdown'
 import { NotificationCenter } from '@/components/notifications/NotificationCenter'
@@ -185,7 +186,9 @@ export default function CompanyPortalLayout() {
       <NotificationContextProvider>
         <GlobalSearchProvider>
           <SchedulingProvider>
-            <PortalContent />
+            <RegistersProvider>
+              <PortalContent />
+            </RegistersProvider>
           </SchedulingProvider>
         </GlobalSearchProvider>
       </NotificationContextProvider>
