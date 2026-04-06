@@ -1,6 +1,7 @@
 import { createContext, useCallback, useContext, useEffect, useState, type ReactNode } from 'react'
 import type { AuthUser, UserRole } from '@/types/auth.types'
 import { authenticateUser, getRedirectByRole } from '@/mocks/users.mock'
+import { supabase } from '@/integrations/supabase/client'
 
 const TOKEN_KEY = 'axis_inova_token'
 const USER_KEY = 'axis_inova_user'
