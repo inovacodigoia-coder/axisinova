@@ -73,7 +73,7 @@ export function SuccessScreen({ companyName, cnpj, plan, email }: SuccessScreenP
       </div>
 
       <div className="mt-8 flex flex-col sm:flex-row gap-3 w-full max-w-sm">
-        <GradientButton fullWidth>Acessar o Sistema</GradientButton>
+        <GradientButton fullWidth onClick={() => navigate('/login')}>Acessar o Sistema</GradientButton>
         <OutlineButton fullWidth variant="purple">Reenviar E-mail</OutlineButton>
       </div>
     </motion.div>
