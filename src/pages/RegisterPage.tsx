@@ -13,6 +13,8 @@ import { SuccessScreen } from '@/components/register/SuccessScreen';
 import { GradientButton } from '@/components/ui/GradientButton';
 import { OutlineButton } from '@/components/ui/OutlineButton';
 import { ArrowLeft, ArrowRight, Shield, Zap, HeadphonesIcon, BarChart3 } from 'lucide-react';
+import { registerCompany } from '@/services/registration';
+import { toast } from 'sonner';
 
 function validateCnpj(cnpj: string) {
   const d = cnpj.replace(/\D/g, '');
@@ -120,9 +122,15 @@ export default function RegisterPage() {
     const valid = await methods.trigger(fields as any);
     if (!valid) return;
     setIsSubmitting(true);
-    await new Promise((r) => setTimeout(r, 2000));
-    setIsSubmitting(false);
-    setCompleted(true);
+    try {
+      const vals = methods.getValues();
+      await registerCompany(vals as any);
+      setCompleted(true);
+    } catch (err: any) {
+      toast.error(err.message || 'Erro ao criar conta. Tente novamente.');
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   if (completed) {

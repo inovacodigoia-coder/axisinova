@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { MOCK_COMPANIES } from '@/mocks/superadmin.mock'
 import { CompanyStatusBadge } from '@/components/superadmin/CompanyStatusBadge'
@@ -7,6 +7,7 @@ import { DataTable } from '@/components/ui/DataTable'
 import { StatusBadge } from '@/components/ui/StatusBadge'
 import { Eye, MoreHorizontal } from 'lucide-react'
 import type { Company, CompanyStatus, PlanType } from '@/types/company.types'
+import { supabase } from '@/integrations/supabase/client'
 
 const PLAN_VARIANT: Record<PlanType, 'info' | 'success' | 'warning'> = { Starter: 'info', Pro: 'warning', Enterprise: 'success' }
 
@@ -15,15 +16,71 @@ export default function CompaniesListPage() {
   const [search, setSearch] = useState('')
   const [statusFilter, setStatusFilter] = useState<string>('all')
   const [planFilter, setPlanFilter] = useState<string>('all')
+  const [dbCompanies, setDbCompanies] = useState<Company[]>([])
+
+  // Fetch real companies from database
+  useEffect(() => {
+    async function fetchCompanies() {
+      const { data, error } = await supabase.from('companies').select('*')
+      if (error) {
+        console.error('Error fetching companies:', error)
+        return
+      }
+      if (data) {
+        const mapped: Company[] = data.map((c: any) => ({
+          id: c.id,
+          razaoSocial: c.name || '',
+          nomeFantasia: c.nome_fantasia || c.name || '',
+          cnpj: c.cnpj || '',
+          segmento: c.segmento || 'Outro',
+          telefone: c.telefone || '',
+          email: c.email || '',
+          website: c.website || '',
+          endereco: {
+            cep: c.cep || '',
+            logradouro: c.logradouro || '',
+            numero: c.numero || '',
+            bairro: c.bairro || '',
+            cidade: c.cidade || '',
+            estado: c.estado || '',
+          },
+          plano: (c.plano || 'Pro') as PlanType,
+          status: (c.status || 'active') as CompanyStatus,
+          medicosAtivos: c.medicos_ativos || 0,
+          medicosLimite: c.medicos_limite || 15,
+          usuariosAtivos: c.usuarios_ativos || 0,
+          usuariosLimite: c.usuarios_limite || 999,
+          armazenamentoUsadoGB: Number(c.armazenamento_usado_gb) || 0,
+          armazenamentoLimiteGB: Number(c.armazenamento_limite_gb) || 100,
+          valorMensal: Number(c.valor_mensal) || 0,
+          criadoEm: c.created_at,
+          ultimoAcesso: c.updated_at,
+        }))
+        setDbCompanies(mapped)
+      }
+    }
+    fetchCompanies()
+  }, [])
+
+  // Merge mock + real, dedup by cnpj
+  const allCompanies = useMemo(() => {
+    const merged = [...MOCK_COMPANIES]
+    for (const dc of dbCompanies) {
+      if (!merged.some((m) => m.cnpj === dc.cnpj)) {
+        merged.push(dc)
+      }
+    }
+    return merged
+  }, [dbCompanies])
 
   const filtered = useMemo(() => {
-    return MOCK_COMPANIES.filter((c) => {
+    return allCompanies.filter((c) => {
       const matchSearch = !search || c.nomeFantasia.toLowerCase().includes(search.toLowerCase()) || c.cnpj.includes(search) || c.email.toLowerCase().includes(search.toLowerCase())
       const matchStatus = statusFilter === 'all' || c.status === statusFilter
       const matchPlan = planFilter === 'all' || c.plano === planFilter
       return matchSearch && matchStatus && matchPlan
     })
-  }, [search, statusFilter, planFilter])
+  }, [search, statusFilter, planFilter, allCompanies])
 
   const hasFilters = search || statusFilter !== 'all' || planFilter !== 'all'
 

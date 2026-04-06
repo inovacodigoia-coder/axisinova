@@ -1,6 +1,7 @@
 import { createContext, useCallback, useContext, useEffect, useState, type ReactNode } from 'react'
 import type { AuthUser, UserRole } from '@/types/auth.types'
 import { authenticateUser, getRedirectByRole } from '@/mocks/users.mock'
+import { supabase } from '@/integrations/supabase/client'
 
 const TOKEN_KEY = 'axis_inova_token'
 const USER_KEY = 'axis_inova_user'
@@ -55,29 +56,76 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [])
 
   const login = useCallback(async (email: string, password: string): Promise<LoginResult> => {
-    await new Promise((r) => setTimeout(r, 1200))
-
+    // 1. Try mock credentials first (for demo/super admin)
     const credential = authenticateUser(email, password)
 
-    if (!credential) {
+    if (credential) {
+      if (!credential.user.isActive) {
+        return { success: false, error: 'Usuário inativo. Contate o administrador.' }
+      }
+
+      const newToken = `mock_token_${credential.user.id}_${Date.now()}`
+      localStorage.setItem(TOKEN_KEY, newToken)
+      localStorage.setItem(USER_KEY, JSON.stringify(credential.user))
+      setUser(credential.user)
+      setToken(newToken)
+      setIsAuthenticated(true)
+      const redirectTo = getRedirectByRole(credential.user.role)
+      return { success: true, redirectTo }
+    }
+
+    // 2. Try Supabase auth for registered users
+    const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
+      email,
+      password,
+    })
+
+    if (authError || !authData.user) {
       return { success: false, error: 'Credenciais inválidas' }
     }
 
-    if (!credential.user.isActive) {
+    // Fetch profile to get company info
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('full_name, role, company_id, is_active')
+      .eq('id', authData.user.id)
+      .single()
+
+    if (profile && !profile.is_active) {
+      await supabase.auth.signOut()
       return { success: false, error: 'Usuário inativo. Contate o administrador.' }
     }
 
-    const newToken = `mock_token_${credential.user.id}_${Date.now()}`
+    // Get company name if linked
+    let companyName: string | null = null
+    if (profile?.company_id) {
+      const { data: company } = await supabase
+        .from('companies')
+        .select('name, nome_fantasia')
+        .eq('id', profile.company_id)
+        .single()
+      companyName = (company as any)?.nome_fantasia || company?.name || null
+    }
 
-    // Default to localStorage; caller can switch to sessionStorage via rememberMe logic
+    const authUser: AuthUser = {
+      id: authData.user.id,
+      name: profile?.full_name || authData.user.email || '',
+      email: authData.user.email || '',
+      role: (profile?.role as UserRole) || 'company_admin',
+      companyId: profile?.company_id || null,
+      companyName,
+      isActive: profile?.is_active ?? true,
+      lastLogin: new Date().toISOString(),
+    }
+
+    const newToken = authData.session?.access_token || `supabase_token_${Date.now()}`
     localStorage.setItem(TOKEN_KEY, newToken)
-    localStorage.setItem(USER_KEY, JSON.stringify(credential.user))
-
-    setUser(credential.user)
+    localStorage.setItem(USER_KEY, JSON.stringify(authUser))
+    setUser(authUser)
     setToken(newToken)
     setIsAuthenticated(true)
 
-    const redirectTo = getRedirectByRole(credential.user.role)
+    const redirectTo = getRedirectByRole(authUser.role)
     return { success: true, redirectTo }
   }, [])
 

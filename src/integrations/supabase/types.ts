@@ -69,25 +69,88 @@ export type Database = {
       }
       companies: {
         Row: {
+          armazenamento_limite_gb: number | null
+          armazenamento_usado_gb: number | null
+          bairro: string | null
+          cep: string | null
+          cidade: string | null
           cnpj: string | null
+          complemento: string | null
           created_at: string
+          email: string | null
+          estado: string | null
           id: string
+          logradouro: string | null
+          medicos_ativos: number | null
+          medicos_limite: number | null
           name: string
+          nome_fantasia: string | null
+          numero: string | null
+          plano: string | null
+          segmento: string | null
+          status: string | null
+          telefone: string | null
           updated_at: string
+          usuarios_ativos: number | null
+          usuarios_limite: number | null
+          valor_mensal: number | null
+          website: string | null
         }
         Insert: {
+          armazenamento_limite_gb?: number | null
+          armazenamento_usado_gb?: number | null
+          bairro?: string | null
+          cep?: string | null
+          cidade?: string | null
           cnpj?: string | null
+          complemento?: string | null
           created_at?: string
+          email?: string | null
+          estado?: string | null
           id?: string
+          logradouro?: string | null
+          medicos_ativos?: number | null
+          medicos_limite?: number | null
           name: string
+          nome_fantasia?: string | null
+          numero?: string | null
+          plano?: string | null
+          segmento?: string | null
+          status?: string | null
+          telefone?: string | null
           updated_at?: string
+          usuarios_ativos?: number | null
+          usuarios_limite?: number | null
+          valor_mensal?: number | null
+          website?: string | null
         }
         Update: {
+          armazenamento_limite_gb?: number | null
+          armazenamento_usado_gb?: number | null
+          bairro?: string | null
+          cep?: string | null
+          cidade?: string | null
           cnpj?: string | null
+          complemento?: string | null
           created_at?: string
+          email?: string | null
+          estado?: string | null
           id?: string
+          logradouro?: string | null
+          medicos_ativos?: number | null
+          medicos_limite?: number | null
           name?: string
+          nome_fantasia?: string | null
+          numero?: string | null
+          plano?: string | null
+          segmento?: string | null
+          status?: string | null
+          telefone?: string | null
           updated_at?: string
+          usuarios_ativos?: number | null
+          usuarios_limite?: number | null
+          valor_mensal?: number | null
+          website?: string | null
         }
         Relationships: []
       }
@@ -197,6 +260,47 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "patients_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      profiles: {
+        Row: {
+          company_id: string | null
+          cpf: string | null
+          created_at: string | null
+          full_name: string
+          id: string
+          is_active: boolean | null
+          role: string
+          updated_at: string | null
+        }
+        Insert: {
+          company_id?: string | null
+          cpf?: string | null
+          created_at?: string | null
+          full_name: string
+          id: string
+          is_active?: boolean | null
+          role?: string
+          updated_at?: string | null
+        }
+        Update: {
+          company_id?: string | null
+          cpf?: string | null
+          created_at?: string | null
+          full_name?: string
+          id?: string
+          is_active?: boolean | null
+          role?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "profiles_company_id_fkey"
             columns: ["company_id"]
             isOneToOne: false
             referencedRelation: "companies"
