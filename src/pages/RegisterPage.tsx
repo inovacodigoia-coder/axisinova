@@ -146,7 +146,8 @@ export default function RegisterPage() {
       {/* Left sidebar */}
       <div className="hidden lg:flex lg:w-[40%] gradient-bg relative overflow-hidden flex-col justify-between p-10 text-white">
         <div>
-          <Link to="/" className="text-2xl font-bold">
+          <Link to="/" className="flex items-center gap-3 text-2xl font-bold">
+            <img src={logoImg} alt="Axis Inova" className="h-10 w-10 rounded-lg" />
             <span className="text-white">Axis</span>
             <span className="text-white/80">Inova</span>
           </Link>
