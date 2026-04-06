@@ -1,13 +1,16 @@
 import { useState } from 'react'
 import { useRegisters } from '@/context/RegistersContext'
 import { useCompanyContext } from '@/context/CompanyContext'
+import { useAuth } from '@/context/AuthContext'
 import { usePaginatedList } from '@/hooks/usePaginatedList'
 import { EmptyState } from '@/components/feedback/EmptyState'
-import { Plus, Search, Edit, MoreVertical, Lock, Unlock, Trash2, Settings } from 'lucide-react'
+import { Plus, Search, Edit, MoreVertical, Lock, Unlock, Trash2, Settings, AlertTriangle, ArrowUpCircle } from 'lucide-react'
 import type { Doctor } from '@/types/registers.types'
 import { UF_LIST, BLOCK_REASONS } from '@/types/registers.types'
 import { toast } from 'sonner'
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu'
+import { MOCK_COMPANIES } from '@/mocks/superadmin.mock'
+import { MOCK_PLANS } from '@/mocks/superadmin.mock'
 
 export default function DoctorsPage() {
   const { canAccess } = useCompanyContext()
