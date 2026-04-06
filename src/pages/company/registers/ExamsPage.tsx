@@ -3,11 +3,12 @@ import { useRegisters } from '@/context/RegistersContext'
 import { useCompanyContext } from '@/context/CompanyContext'
 import { usePaginatedList } from '@/hooks/usePaginatedList'
 import { EmptyState } from '@/components/feedback/EmptyState'
-import { Plus, Search, MoreVertical, Edit, Trash2, ClipboardList } from 'lucide-react'
-import type { Exam } from '@/types/registers.types'
+import { Plus, Search, MoreVertical, Edit, Trash2, ClipboardList, Paperclip } from 'lucide-react'
+import type { Exam, AttachmentRule } from '@/types/registers.types'
 import { toast } from 'sonner'
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu'
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
+import { AttachmentsModal } from '@/components/registers/AttachmentsModal'
 
 export default function ExamsPage() {
   const { canAccess } = useCompanyContext()
@@ -17,6 +18,7 @@ export default function ExamsPage() {
   const [authFilter, setAuthFilter] = useState<'' | 'yes' | 'no'>('')
   const [showForm, setShowForm] = useState(false)
   const [editing, setEditing] = useState<Exam | null>(null)
+  const [showAttachments, setShowAttachments] = useState<Exam | null>(null)
 
   const filtered = exams.filter(e => {
     if (search && !e.name.toLowerCase().includes(search.toLowerCase()) && !e.tussCode?.includes(search)) return false
@@ -84,6 +86,7 @@ export default function ExamsPage() {
                 <th className="px-4 py-3 text-left font-medium text-muted-foreground">Especialidade</th>
                 <th className="px-4 py-3 text-left font-medium text-muted-foreground">Preparo</th>
                 <th className="px-4 py-3 text-left font-medium text-muted-foreground">Prazo Result.</th>
+                <th className="px-4 py-3 text-left font-medium text-muted-foreground">Anexos</th>
                 <th className="px-4 py-3 text-left font-medium text-muted-foreground">Autorização</th>
                 <th className="px-4 py-3 text-left font-medium text-muted-foreground">Status</th>
                 <th className="px-4 py-3 text-left font-medium text-muted-foreground">Ações</th>
@@ -104,6 +107,7 @@ export default function ExamsPage() {
                     ) : <span className="text-muted-foreground">—</span>}
                   </td>
                   <td className="px-4 py-3 text-sm">{e.resultDeadlineDays ? `${e.resultDeadlineDays} dias` : '—'}</td>
+                  <td className="px-4 py-3 text-sm text-muted-foreground">{e.attachmentRules.length} regras</td>
                   <td className="px-4 py-3">
                     <span className={`inline-flex rounded-full px-2 py-0.5 text-[10px] font-bold ${e.requiresAuthorization ? 'bg-orange-100 text-orange-700' : 'bg-muted text-muted-foreground'}`}>
                       {e.requiresAuthorization ? 'Exige' : 'Não exige'}
@@ -121,6 +125,7 @@ export default function ExamsPage() {
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end">
                         <DropdownMenuItem onClick={() => { setEditing(e); setShowForm(true) }}><Edit className="h-4 w-4 mr-2" /> Editar</DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => setShowAttachments(e)}><Paperclip className="h-4 w-4 mr-2" /> Configurar Anexos</DropdownMenuItem>
                         <DropdownMenuItem onClick={() => { updateExam({ ...e, isActive: !e.isActive }); toast.success(e.isActive ? 'Exame inativado' : 'Exame ativado') }}>
                           {e.isActive ? '🔴 Inativar' : '✅ Ativar'}
                         </DropdownMenuItem>
@@ -157,6 +162,20 @@ export default function ExamsPage() {
             else addExam(e)
             setShowForm(false); setEditing(null)
             toast.success(editing ? 'Exame atualizado' : 'Exame cadastrado')
+          }}
+        />
+      )}
+
+      {showAttachments && (
+        <AttachmentsModal
+          title={showAttachments.name}
+          entityId={showAttachments.id}
+          rules={showAttachments.attachmentRules}
+          onClose={() => setShowAttachments(null)}
+          onSave={(rules) => {
+            updateExam({ ...showAttachments, attachmentRules: rules })
+            setShowAttachments(null)
+            toast.success('Regras de anexo atualizadas!')
           }}
         />
       )}
@@ -220,6 +239,7 @@ function ExamFormModal({ exam, specialties, onClose, onSave }: {
               specialtyId: specialtyId || undefined, estimatedDurationMinutes: duration || undefined,
               preparationInstructions: preparation || undefined, resultDeadlineDays: resultDays || undefined,
               requiresAuthorization: requiresAuth, authorizationInstructions: requiresAuth ? authInstructions : undefined,
+              attachmentRules: exam?.attachmentRules || [],
               isActive: exam?.isActive ?? true, createdAt: exam?.createdAt || new Date().toISOString(),
             })
           }} className="gradient-bg rounded-lg px-6 py-2 text-sm font-semibold text-white">Salvar</button>

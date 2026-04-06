@@ -80,6 +80,7 @@ export interface Exam {
   resultDeadlineDays?: number
   requiresAuthorization: boolean
   authorizationInstructions?: string
+  attachmentRules: AttachmentRule[]
   isActive: boolean
   createdAt: string
 }
@@ -98,6 +99,7 @@ export interface Procedure {
   anesthesiaType?: string
   preOperativeInstructions?: string
   postOperativeInstructions?: string
+  attachmentRules: AttachmentRule[]
   isActive: boolean
   createdAt: string
 }

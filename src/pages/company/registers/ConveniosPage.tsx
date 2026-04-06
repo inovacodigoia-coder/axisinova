@@ -4,10 +4,11 @@ import { useCompanyContext } from '@/context/CompanyContext'
 import { usePaginatedList } from '@/hooks/usePaginatedList'
 import { EmptyState } from '@/components/feedback/EmptyState'
 import { Plus, Search, MoreVertical, Edit, Trash2, Paperclip } from 'lucide-react'
-import type { Convenio, AttachmentRule, AppointmentType } from '@/types/registers.types'
+import type { Convenio } from '@/types/registers.types'
 import { CONVENIO_TYPE_LABELS, CONVENIO_TYPE_COLORS } from '@/types/registers.types'
 import { toast } from 'sonner'
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu'
+import { AttachmentsModal } from '@/components/registers/AttachmentsModal'
 
 export default function ConveniosPage() {
   const { canAccess } = useCompanyContext()
@@ -140,8 +141,10 @@ export default function ConveniosPage() {
       )}
 
       {showAttachments && (
-        <ConvenioAttachmentsModal
-          convenio={showAttachments}
+        <AttachmentsModal
+          title={showAttachments.name}
+          entityId={showAttachments.id}
+          rules={showAttachments.attachmentRules}
           onClose={() => setShowAttachments(null)}
           onSave={(rules) => {
             updateConvenio({ ...showAttachments, attachmentRules: rules })
@@ -201,122 +204,6 @@ function ConvenioFormModal({ convenio, onClose, onSave }: { convenio: Convenio |
               attachmentRules: convenio?.attachmentRules || [], isActive: convenio?.isActive ?? true, createdAt: convenio?.createdAt || new Date().toISOString(),
             })
           }} className="gradient-bg rounded-lg px-6 py-2 text-sm font-semibold text-white">Salvar</button>
-        </div>
-      </div>
-    </div>
-  )
-}
-
-// ─── Convenio Attachments Modal ───────────────────────────────
-function ConvenioAttachmentsModal({ convenio, onClose, onSave }: { convenio: Convenio; onClose: () => void; onSave: (rules: AttachmentRule[]) => void }) {
-  const [rules, setRules] = useState<AttachmentRule[]>([...convenio.attachmentRules])
-  const [showAdd, setShowAdd] = useState(false)
-  const [newName, setNewName] = useState('')
-  const [newRequired, setNewRequired] = useState(true)
-  const [newTypes, setNewTypes] = useState<Set<AppointmentType>>(new Set(['consulta', 'exame', 'procedimento']))
-  const [newObs, setNewObs] = useState('')
-  const [showPreview, setShowPreview] = useState(false)
-
-  const addRule = () => {
-    if (!newName.trim()) { toast.error('Nome é obrigatório'); return }
-    setRules(prev => [...prev, {
-      id: `ar_${Date.now()}`, convenioId: convenio.id, attachmentName: newName.trim(),
-      isRequired: newRequired, appliesToTypes: Array.from(newTypes), order: prev.length + 1, observations: newObs || undefined,
-    }])
-    setNewName(''); setNewRequired(true); setNewTypes(new Set(['consulta', 'exame', 'procedimento'])); setNewObs(''); setShowAdd(false)
-  }
-
-  const removeRule = (id: string) => setRules(prev => prev.filter(r => r.id !== id))
-
-  const toggleType = (type: AppointmentType) => {
-    const next = new Set(newTypes)
-    next.has(type) ? next.delete(type) : next.add(type)
-    setNewTypes(next)
-  }
-
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4" onClick={onClose}>
-      <div onClick={e => e.stopPropagation()} className="w-full max-w-[650px] max-h-[85vh] overflow-y-auto rounded-2xl bg-card border border-border shadow-2xl">
-        <div className="sticky top-0 z-10 flex items-center justify-between border-b border-border bg-card px-6 py-4">
-          <h2 className="text-lg font-bold">Regras de Anexos — {convenio.name}</h2>
-          <button onClick={onClose} className="text-muted-foreground hover:text-foreground">✕</button>
-        </div>
-        <div className="p-6 space-y-4">
-          <div className="bg-muted/50 rounded-lg p-3 text-xs text-muted-foreground">
-            ℹ️ Configure os documentos que a recepcionista deve solicitar e validar quando um paciente deste convênio chegar para atendimento. Regras obrigatórias impedem o check-in de ser concluído sem o documento.
-          </div>
-
-          {rules.length === 0 && !showAdd && (
-            <p className="text-center text-sm text-muted-foreground py-4">Nenhuma regra de anexo configurada.</p>
-          )}
-
-          {rules.map(rule => (
-            <div key={rule.id} className="border border-border rounded-lg p-4 space-y-2">
-              <div className="flex items-center justify-between">
-                <span className="font-medium text-sm flex items-center gap-2"><Paperclip className="h-4 w-4" /> {rule.attachmentName}</span>
-                <span className={`rounded-full px-2 py-0.5 text-[10px] font-bold ${rule.isRequired ? 'bg-destructive/10 text-destructive' : 'bg-muted text-muted-foreground'}`}>
-                  {rule.isRequired ? 'Obrigatório' : 'Opcional'}
-                </span>
-              </div>
-              <p className="text-xs text-muted-foreground">Aplica-se a: {rule.appliesToTypes.map(t => t === 'consulta' ? 'Consulta' : t === 'exame' ? 'Exame' : 'Procedimento').join(', ')}</p>
-              {rule.observations && <p className="text-xs text-muted-foreground italic">"{rule.observations}"</p>}
-              <button onClick={() => removeRule(rule.id)} className="text-xs text-destructive hover:underline">🗑️ Remover esta regra</button>
-            </div>
-          ))}
-
-          {showAdd ? (
-            <div className="border border-primary/30 rounded-lg p-4 space-y-3 bg-primary/5">
-              <div><label className="text-sm font-medium">Nome do anexo *</label><input value={newName} onChange={e => setNewName(e.target.value)} className="mt-1 w-full rounded-lg border border-input bg-background px-3 py-2 text-sm" /></div>
-              <div className="flex items-center gap-4 text-sm">
-                <span>Obrigatório:</span>
-                <label className="flex items-center gap-1 cursor-pointer"><input type="radio" checked={newRequired} onChange={() => setNewRequired(true)} className="accent-primary" /> Sim</label>
-                <label className="flex items-center gap-1 cursor-pointer"><input type="radio" checked={!newRequired} onChange={() => setNewRequired(false)} className="accent-primary" /> Não</label>
-              </div>
-              <div className="flex items-center gap-3 text-sm">
-                <span>Aplica-se a:</span>
-                {(['consulta', 'exame', 'procedimento'] as AppointmentType[]).map(t => (
-                  <label key={t} className="flex items-center gap-1 cursor-pointer">
-                    <input type="checkbox" checked={newTypes.has(t)} onChange={() => toggleType(t)} className="accent-primary" />
-                    {t === 'consulta' ? 'Consulta' : t === 'exame' ? 'Exame' : 'Procedimento'}
-                  </label>
-                ))}
-              </div>
-              <div><label className="text-sm font-medium">Instrução (opcional)</label><input value={newObs} onChange={e => setNewObs(e.target.value)} className="mt-1 w-full rounded-lg border border-input bg-background px-3 py-2 text-sm" placeholder='Ex: "Trazer original e cópia"' /></div>
-              <div className="flex gap-2">
-                <button onClick={() => setShowAdd(false)} className="rounded-lg border border-input px-3 py-1.5 text-xs hover:bg-muted">Cancelar</button>
-                <button onClick={addRule} className="gradient-bg rounded-lg px-3 py-1.5 text-xs font-semibold text-white">✅ Adicionar</button>
-              </div>
-            </div>
-          ) : (
-            <button onClick={() => setShowAdd(true)} className="w-full rounded-lg border-2 border-dashed border-border py-3 text-sm text-muted-foreground hover:border-primary hover:text-primary transition-colors">
-              + Adicionar Regra de Anexo
-            </button>
-          )}
-
-          {rules.length > 0 && (
-            <details className="text-sm">
-              <summary className="cursor-pointer text-muted-foreground hover:text-foreground">👁️ Preview para a recepcionista</summary>
-              <div className="mt-2 border border-border rounded-lg p-4 bg-muted/30 space-y-3">
-                <p className="font-bold text-xs uppercase">Checklist de Documentos — {convenio.name}</p>
-                {(['consulta', 'exame', 'procedimento'] as AppointmentType[]).map(type => {
-                  const typeRules = rules.filter(r => r.appliesToTypes.includes(type))
-                  if (typeRules.length === 0) return null
-                  return (
-                    <div key={type}>
-                      <p className="font-medium text-xs capitalize mb-1">{type}:</p>
-                      {typeRules.map(r => (
-                        <p key={r.id} className="text-xs ml-2">☐ {r.attachmentName} <span className={`font-bold ${r.isRequired ? 'text-destructive' : 'text-muted-foreground'}`}>[{r.isRequired ? 'OBRIGATÓRIO' : 'OPCIONAL'}]</span></p>
-                      ))}
-                    </div>
-                  )
-                })}
-              </div>
-            </details>
-          )}
-        </div>
-        <div className="sticky bottom-0 flex justify-end gap-3 border-t border-border bg-card px-6 py-4">
-          <button onClick={onClose} className="rounded-lg border border-input px-4 py-2 text-sm hover:bg-muted">Cancelar</button>
-          <button onClick={() => onSave(rules)} className="gradient-bg rounded-lg px-6 py-2 text-sm font-semibold text-white">💾 Salvar Regras</button>
         </div>
       </div>
     </div>

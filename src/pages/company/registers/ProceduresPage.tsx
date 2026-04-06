@@ -3,11 +3,12 @@ import { useRegisters } from '@/context/RegistersContext'
 import { useCompanyContext } from '@/context/CompanyContext'
 import { usePaginatedList } from '@/hooks/usePaginatedList'
 import { EmptyState } from '@/components/feedback/EmptyState'
-import { Plus, Search, MoreVertical, Edit, Trash2 } from 'lucide-react'
+import { Plus, Search, MoreVertical, Edit, Trash2, Paperclip } from 'lucide-react'
 import type { Procedure } from '@/types/registers.types'
 import { PROCEDURE_TYPES, ANESTHESIA_TYPES } from '@/types/registers.types'
 import { toast } from 'sonner'
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu'
+import { AttachmentsModal } from '@/components/registers/AttachmentsModal'
 
 const TYPE_MAP = Object.fromEntries(PROCEDURE_TYPES.map(t => [t.value, t]))
 
@@ -17,6 +18,7 @@ export default function ProceduresPage() {
   const [search, setSearch] = useState('')
   const [showForm, setShowForm] = useState(false)
   const [editing, setEditing] = useState<Procedure | null>(null)
+  const [showAttachments, setShowAttachments] = useState<Procedure | null>(null)
 
   const filtered = procedures.filter(p => {
     if (search && !p.name.toLowerCase().includes(search.toLowerCase()) && !p.tussCode?.includes(search)) return false
@@ -70,6 +72,7 @@ export default function ProceduresPage() {
                 <th className="px-4 py-3 text-left font-medium text-muted-foreground">Tipo</th>
                 <th className="px-4 py-3 text-left font-medium text-muted-foreground">Especialidade</th>
                 <th className="px-4 py-3 text-left font-medium text-muted-foreground">Duração</th>
+                <th className="px-4 py-3 text-left font-medium text-muted-foreground">Anexos</th>
                 <th className="px-4 py-3 text-left font-medium text-muted-foreground">Anestesia</th>
                 <th className="px-4 py-3 text-left font-medium text-muted-foreground">Status</th>
                 <th className="px-4 py-3 text-left font-medium text-muted-foreground">Ações</th>
@@ -85,6 +88,7 @@ export default function ProceduresPage() {
                     <td className="px-4 py-3"><span className={`inline-flex rounded-full px-2 py-0.5 text-[10px] font-bold ${typeInfo?.color || ''}`}>{typeInfo?.label || p.type}</span></td>
                     <td className="px-4 py-3 text-sm text-muted-foreground">{p.specialtyId ? getSpecialtyName(p.specialtyId) : '—'}</td>
                     <td className="px-4 py-3 text-sm">{p.estimatedDurationMinutes ? `${p.estimatedDurationMinutes} min` : '—'}</td>
+                    <td className="px-4 py-3 text-sm text-muted-foreground">{p.attachmentRules.length} regras</td>
                     <td className="px-4 py-3">
                       <span className={`inline-flex rounded-full px-2 py-0.5 text-[10px] font-bold ${p.requiresAnesthesia ? 'bg-orange-100 text-orange-700' : 'bg-muted text-muted-foreground'}`}>
                         {p.requiresAnesthesia ? (p.anesthesiaType || 'Sim') : 'Não'}
@@ -102,6 +106,7 @@ export default function ProceduresPage() {
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end">
                           <DropdownMenuItem onClick={() => { setEditing(p); setShowForm(true) }}><Edit className="h-4 w-4 mr-2" /> Editar</DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => setShowAttachments(p)}><Paperclip className="h-4 w-4 mr-2" /> Configurar Anexos</DropdownMenuItem>
                           <DropdownMenuItem onClick={() => { updateProcedure({ ...p, isActive: !p.isActive }); toast.success(p.isActive ? 'Inativado' : 'Ativado') }}>
                             {p.isActive ? '🔴 Inativar' : '✅ Ativar'}
                           </DropdownMenuItem>
@@ -139,6 +144,20 @@ export default function ProceduresPage() {
             else addProcedure(p)
             setShowForm(false); setEditing(null)
             toast.success(editing ? 'Procedimento atualizado' : 'Procedimento cadastrado')
+          }}
+        />
+      )}
+
+      {showAttachments && (
+        <AttachmentsModal
+          title={showAttachments.name}
+          entityId={showAttachments.id}
+          rules={showAttachments.attachmentRules}
+          onClose={() => setShowAttachments(null)}
+          onSave={(rules) => {
+            updateProcedure({ ...showAttachments, attachmentRules: rules })
+            setShowAttachments(null)
+            toast.success('Regras de anexo atualizadas!')
           }}
         />
       )}
@@ -225,6 +244,7 @@ function ProcedureFormModal({ procedure, specialties, onClose, onSave }: {
               requiresAuthorization: requiresAuth, authorizationInstructions: requiresAuth ? authInstructions : undefined,
               requiresAnesthesia, anesthesiaType: requiresAnesthesia ? anesthesiaType : undefined,
               preOperativeInstructions: preOp || undefined, postOperativeInstructions: postOp || undefined,
+              attachmentRules: procedure?.attachmentRules || [],
               isActive: procedure?.isActive ?? true, createdAt: procedure?.createdAt || new Date().toISOString(),
             })
           }} className="gradient-bg rounded-lg px-6 py-2 text-sm font-semibold text-white">Salvar</button>
