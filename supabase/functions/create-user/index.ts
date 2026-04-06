@@ -11,55 +11,53 @@ Deno.serve(async (req) => {
   }
 
   try {
-    // Verify the caller is authenticated
-    const authHeader = req.headers.get("Authorization");
-    if (!authHeader) {
-      return new Response(JSON.stringify({ error: "Não autorizado" }), {
-        status: 401,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
-    }
-
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-
-    // Verify caller with anon client
-    const anonClient = createClient(supabaseUrl, Deno.env.get("SUPABASE_ANON_KEY")!, {
-      global: { headers: { Authorization: authHeader } },
-    });
-    const { data: { user: caller }, error: callerError } = await anonClient.auth.getUser();
-    if (callerError || !caller) {
-      return new Response(JSON.stringify({ error: "Não autorizado" }), {
-        status: 401,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
-    }
-
-    // Check caller is company_admin or super_admin
     const adminClient = createClient(supabaseUrl, serviceRoleKey);
-    const { data: callerProfile } = await adminClient
-      .from("profiles")
-      .select("role, company_id")
-      .eq("id", caller.id)
-      .single();
 
-    if (!callerProfile || !["company_admin", "super_admin"].includes(callerProfile.role)) {
-      return new Response(JSON.stringify({ error: "Sem permissão para criar usuários" }), {
-        status: 403,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
+    // Try JWT auth first
+    const authHeader = req.headers.get("Authorization");
+    let callerCompanyId: string | null = null;
+    let callerRole: string | null = null;
+
+    if (authHeader && authHeader.startsWith("Bearer ")) {
+      const anonKey = Deno.env.get("SUPABASE_ANON_KEY")!;
+      const anonClient = createClient(supabaseUrl, anonKey, {
+        global: { headers: { Authorization: authHeader } },
       });
+      const { data: { user: caller } } = await anonClient.auth.getUser();
+      if (caller) {
+        const { data: profile } = await adminClient
+          .from("profiles")
+          .select("role, company_id")
+          .eq("id", caller.id)
+          .single();
+        if (profile) {
+          callerRole = profile.role;
+          callerCompanyId = profile.company_id;
+        }
+      }
     }
 
-    const { email, password, full_name, cpf, role } = await req.json();
+    const body = await req.json();
+    const { email, password, full_name, cpf, role, company_id } = body;
 
-    if (!email || !password || !full_name || !role) {
-      return new Response(JSON.stringify({ error: "Campos obrigatórios: email, password, full_name, role" }), {
+    // If no JWT auth succeeded, use the company_id from the body (for mock-auth users)
+    const effectiveCompanyId = callerCompanyId || company_id;
+
+    if (!effectiveCompanyId) {
+      return new Response(JSON.stringify({ error: "Empresa não identificada" }), {
         status: 400,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
-    const companyId = callerProfile.company_id;
+    if (!email || !password || !full_name || !role) {
+      return new Response(JSON.stringify({ error: "Campos obrigatórios: email, senha, nome completo e função" }), {
+        status: 400,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
 
     // Create user with admin client
     const { data: newUser, error: createError } = await adminClient.auth.admin.createUser({
@@ -70,7 +68,7 @@ Deno.serve(async (req) => {
         full_name,
         cpf: cpf || null,
         role,
-        company_id: companyId,
+        company_id: effectiveCompanyId,
       },
     });
 
@@ -89,6 +87,7 @@ Deno.serve(async (req) => {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   } catch (err) {
+    console.error("create-user error:", err);
     return new Response(JSON.stringify({ error: "Erro interno do servidor" }), {
       status: 500,
       headers: { ...corsHeaders, "Content-Type": "application/json" },

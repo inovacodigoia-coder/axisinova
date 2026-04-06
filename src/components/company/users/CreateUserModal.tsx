@@ -6,6 +6,7 @@ import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Loader2 } from 'lucide-react'
 import { supabase } from '@/integrations/supabase/client'
+import { useAuth } from '@/context/AuthContext'
 import { toast } from 'sonner'
 
 const ROLE_OPTIONS = [
@@ -26,6 +27,7 @@ interface CreateUserModalProps {
 }
 
 export function CreateUserModal({ open, onOpenChange, onCreated }: CreateUserModalProps) {
+  const { user } = useAuth()
   const [fullName, setFullName] = useState('')
   const [email, setEmail] = useState('')
   const [cpf, setCpf] = useState('')
@@ -60,12 +62,27 @@ export function CreateUserModal({ open, onOpenChange, onCreated }: CreateUserMod
       const accessToken = sessionData.session?.access_token
 
       const res = await supabase.functions.invoke('create-user', {
-        body: { email, password, full_name: fullName, cpf: cpf || null, role },
+        body: {
+          email,
+          password,
+          full_name: fullName,
+          cpf: cpf || null,
+          role,
+          company_id: user?.companyId || null,
+        },
         headers: accessToken ? { Authorization: `Bearer ${accessToken}` } : undefined,
       })
 
-      if (res.error || res.data?.error) {
-        toast.error(res.data?.error || 'Erro ao criar usuário')
+      if (res.error) {
+        const errorMsg = typeof res.error === 'object' && 'message' in res.error
+          ? (res.error as any).message
+          : 'Erro ao criar usuário'
+        toast.error(errorMsg)
+        return
+      }
+
+      if (res.data?.error) {
+        toast.error(res.data.error)
         return
       }
 
