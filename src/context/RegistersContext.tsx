@@ -33,8 +33,8 @@ const sanitizeRegisters = (value: Partial<RegistersSnapshot>): RegistersSnapshot
   doctors: Array.isArray(value.doctors) ? value.doctors as Doctor[] : [],
   specialties: Array.isArray(value.specialties) ? value.specialties as Specialty[] : [],
   convenios: Array.isArray(value.convenios) ? value.convenios as Convenio[] : [],
-  exams: Array.isArray(value.exams) ? value.exams as Exam[] : [],
-  procedures: Array.isArray(value.procedures) ? value.procedures as Procedure[] : [],
+  exams: Array.isArray(value.exams) ? (value.exams as Exam[]).map(e => ({ ...e, attachmentRules: e.attachmentRules ?? [] })) : [],
+  procedures: Array.isArray(value.procedures) ? (value.procedures as Procedure[]).map(p => ({ ...p, attachmentRules: p.attachmentRules ?? [] })) : [],
 })
 
 const readStoredRegisters = (storageKey: string | null): RegistersSnapshot | null => {
