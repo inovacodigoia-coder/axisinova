@@ -126,6 +126,8 @@ export default function ProceduresPage() {
           </div>
         )}
       </div>
+      </>
+      )}
 
       {showForm && (
         <ProcedureFormModal

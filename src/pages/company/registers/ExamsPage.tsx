@@ -144,6 +144,8 @@ export default function ExamsPage() {
           </div>
         )}
       </div>
+      </>
+      )}
 
       {showForm && (
         <ExamFormModal
