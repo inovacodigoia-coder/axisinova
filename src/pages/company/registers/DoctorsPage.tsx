@@ -169,6 +169,8 @@ export default function DoctorsPage() {
           </div>
         )}
       </div>
+      </>
+      )}
 
       {/* Doctor Form Modal */}
       {showForm && (
