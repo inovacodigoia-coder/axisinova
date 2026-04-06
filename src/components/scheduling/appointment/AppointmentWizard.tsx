@@ -1,13 +1,14 @@
 import { useState } from 'react'
 import { X, ChevronRight, ChevronLeft } from 'lucide-react'
+import { useNavigate } from 'react-router-dom'
 import { Step1PatientSearch } from './Step1PatientSearch'
 import { Step2AppointmentData } from './Step2AppointmentData'
 import { Step3Confirmation } from './Step3Confirmation'
 import { PatientQuickForm } from './PatientQuickForm'
+import { useRegisters } from '@/context/RegistersContext'
 import type { SchedulingPatient, AppointmentType } from '@/types/scheduling.types'
 import { toast } from 'sonner'
-import { motion, AnimatePresence } from 'framer-motion'
-import type { Doctor } from '@/types/registers.types'
+import { motion } from 'framer-motion'
 
 interface Props {
   open: boolean
@@ -19,6 +20,8 @@ interface Props {
 }
 
 export function AppointmentWizard({ open, onClose, onSave, prefilledDoctor, prefilledDate, prefilledTime }: Props) {
+  const navigate = useNavigate()
+  const { doctors, convenios } = useRegisters()
   const [step, setStep] = useState(1)
   const [patient, setPatient] = useState<SchedulingPatient | null>(null)
   const [showQuickForm, setShowQuickForm] = useState(false)
@@ -35,6 +38,32 @@ export function AppointmentWizard({ open, onClose, onSave, prefilledDoctor, pref
 
   if (!open) return null
 
+  const activeDoctors = doctors.filter(d => d.isActive && !d.isBlocked)
+  const activeConvenios = convenios.filter(c => c.isActive)
+  const hasDoctors = activeDoctors.length > 0
+  const hasConvenios = activeConvenios.length > 0
+
+  // Pre-validation: no doctors
+  if (!hasDoctors) {
+    return (
+      <div className="fixed inset-0 z-50 flex items-center justify-center">
+        <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={onClose} />
+        <div className="relative bg-card rounded-2xl shadow-2xl p-8 max-w-md text-center space-y-4">
+          <span className="text-4xl">⚠️</span>
+          <h2 className="text-lg font-bold text-foreground">Não é possível criar agendamento</h2>
+          <p className="text-sm text-muted-foreground">Você precisa cadastrar ao menos um médico antes de criar agendamentos.</p>
+          <div className="flex gap-3 justify-center">
+            <button onClick={() => { onClose(); navigate('/app/cadastros/medicos') }}
+              className="rounded-lg gradient-bg px-4 py-2 text-sm font-medium text-white hover:opacity-90">
+              👨‍⚕️ Ir para Cadastro de Médicos
+            </button>
+            <button onClick={onClose} className="rounded-lg border border-input px-4 py-2 text-sm font-medium hover:bg-muted">Fechar</button>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
   const canGoStep2 = !!patient
   const canGoStep3 = formData.doctorId && formData.convenioId && formData.date && formData.time &&
     (formData.type === 'consultation' || formData.examId)
@@ -46,7 +75,6 @@ export function AppointmentWizard({ open, onClose, onSave, prefilledDoctor, pref
       toast.success('Agendamento realizado com sucesso!')
       setLoading(false)
       onClose()
-      // Reset
       setStep(1)
       setPatient(null)
       setFormData({ type: 'consultation', doctorId: '', convenioId: '', date: '', time: '', examId: '', observations: '' })
@@ -69,6 +97,18 @@ export function AppointmentWizard({ open, onClose, onSave, prefilledDoctor, pref
         transition={{ type: 'spring', damping: 25, stiffness: 200 }}
         className="relative w-full max-w-2xl bg-card shadow-2xl overflow-y-auto"
       >
+        {/* No convenios warning */}
+        {!hasConvenios && step === 1 && (
+          <div className="bg-yellow-50 border-b border-yellow-200 px-6 py-3">
+            <p className="text-sm text-yellow-800">
+              ⚠️ <strong>Atenção:</strong> Sem convênios cadastrados.{' '}
+              <button onClick={() => { onClose(); navigate('/app/cadastros/convenios') }} className="text-primary hover:underline font-medium">
+                Cadastrar Convênios
+              </button>
+            </p>
+          </div>
+        )}
+
         {/* Header */}
         <div className="sticky top-0 z-10 bg-card border-b border-border px-6 py-4">
           <div className="flex items-center justify-between mb-4">
@@ -78,7 +118,6 @@ export function AppointmentWizard({ open, onClose, onSave, prefilledDoctor, pref
             </button>
           </div>
 
-          {/* Progress */}
           <div className="flex items-center gap-2">
             {steps.map((s, i) => (
               <div key={s.num} className="flex items-center gap-2 flex-1">

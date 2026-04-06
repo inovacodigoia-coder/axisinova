@@ -1,12 +1,12 @@
 import { useState } from 'react'
 import { GradientButton } from '@/components/ui/GradientButton'
+import { useRegisters } from '@/context/RegistersContext'
+import { useScheduling } from '@/context/SchedulingContext'
 import type { SchedulingPatient, AppointmentType } from '@/types/scheduling.types'
-import { MOCK_DOCTORS, MOCK_CONVENIOS, MOCK_EXAMS } from '@/mocks/company.mock'
-import { format, addDays } from 'date-fns'
-import { ptBR } from 'date-fns/locale'
 import { APPOINTMENT_TYPE_CONFIG } from '@/types/scheduling.types'
 import { FirstVisitBadge } from './FirstVisitBadge'
-import { MOCK_APPOINTMENTS } from '@/mocks/scheduling.mock'
+import { format, addDays } from 'date-fns'
+import { ptBR } from 'date-fns/locale'
 import { Loader2 } from 'lucide-react'
 
 interface FormData {
@@ -29,10 +29,14 @@ interface Props {
 export function Step3Confirmation({ patient, formData, onConfirm, loading }: Props) {
   const [autoConfirm, setAutoConfirm] = useState(true)
   const [method, setMethod] = useState<'24h' | '48h'>('24h')
+  const { doctors, convenios, exams, procedures } = useRegisters()
+  const { appointments } = useScheduling()
 
-  const doctor = MOCK_DOCTORS.find(d => d.id === formData.doctorId)
-  const convenio = MOCK_CONVENIOS.find(c => c.id === formData.convenioId)
-  const exam = formData.examId ? MOCK_EXAMS.find(e => e.id === formData.examId) : null
+  const doctor = doctors.find(d => d.id === formData.doctorId)
+  const convenio = convenios.find(c => c.id === formData.convenioId)
+  const exam = formData.examId
+    ? exams.find(e => e.id === formData.examId) || procedures.find(p => p.id === formData.examId)
+    : null
   const typeCfg = APPOINTMENT_TYPE_CONFIG[formData.type]
   const aptDate = new Date(formData.date + 'T12:00:00')
   const confirmDate = method === '24h' ? addDays(aptDate, -1) : addDays(aptDate, -2)
@@ -47,7 +51,7 @@ export function Step3Confirmation({ patient, formData, onConfirm, loading }: Pro
           <div className="flex gap-3"><span className="text-muted-foreground w-24">👤 Paciente:</span><span className="font-medium text-foreground">{patient.fullName}</span></div>
           <div className="flex gap-3 items-center">
             <span className="text-muted-foreground w-24">🏷️ Tipo:</span>
-            <FirstVisitBadge patientId={patient.id} doctorId={formData.doctorId} appointments={MOCK_APPOINTMENTS} />
+            <FirstVisitBadge patientId={patient.id} doctorId={formData.doctorId} appointments={appointments} />
             <span className="font-medium text-foreground">{typeCfg.icon} {typeCfg.label}</span>
             {exam && <span className="text-muted-foreground">· {exam.name}</span>}
           </div>

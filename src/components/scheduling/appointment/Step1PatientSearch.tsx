@@ -1,6 +1,7 @@
 import { useState, useMemo } from 'react'
-import { X, Search, UserPlus } from 'lucide-react'
-import { MOCK_PATIENTS, MOCK_APPOINTMENTS } from '@/mocks/scheduling.mock'
+import { Search, UserPlus } from 'lucide-react'
+import { useScheduling } from '@/context/SchedulingContext'
+import { useRegisters } from '@/context/RegistersContext'
 import type { SchedulingPatient } from '@/types/scheduling.types'
 import { format, differenceInYears } from 'date-fns'
 
@@ -11,24 +12,52 @@ interface Props {
 
 export function Step1PatientSearch({ onSelect, onCreateNew }: Props) {
   const [query, setQuery] = useState('')
+  const { patients, appointments } = useScheduling()
+  const { convenios } = useRegisters()
 
   const results = useMemo(() => {
     if (query.length < 3) return []
     const q = query.toLowerCase()
-    return MOCK_PATIENTS.filter(p =>
+    return patients.filter(p =>
       p.fullName.toLowerCase().includes(q) ||
       (p.cpf && p.cpf.includes(q)) ||
       p.motherName.toLowerCase().includes(q)
     ).slice(0, 5)
-  }, [query])
+  }, [query, patients])
 
   const getAge = (bd: string) => differenceInYears(new Date(), new Date(bd))
 
   const getLastAppointment = (patientId: string) => {
-    const apts = MOCK_APPOINTMENTS
+    const apts = appointments
       .filter(a => a.patientId === patientId && a.status === 'completed')
       .sort((a, b) => b.date.localeCompare(a.date))
     return apts[0] || null
+  }
+
+  const getConvenioName = (id?: string) => {
+    if (!id) return ''
+    return convenios.find(c => c.id === id)?.name || ''
+  }
+
+  // No patients at all
+  if (patients.length === 0) {
+    return (
+      <div className="space-y-4">
+        <div>
+          <h3 className="text-lg font-bold text-foreground">Identificação do Paciente</h3>
+          <p className="text-sm text-muted-foreground">Busque por nome, CPF ou nome da mãe</p>
+        </div>
+        <div className="rounded-xl border border-dashed border-border p-6 text-center space-y-3">
+          <Search className="h-8 w-8 text-muted-foreground mx-auto" />
+          <p className="text-sm text-muted-foreground">Nenhum paciente cadastrado ainda.</p>
+          <p className="text-xs text-muted-foreground">Preencha os dados abaixo para cadastrar o primeiro paciente.</p>
+          <button onClick={onCreateNew}
+            className="inline-flex items-center gap-2 rounded-lg gradient-bg px-4 py-2.5 text-sm font-medium text-white hover:opacity-90 transition-opacity">
+            <UserPlus className="h-4 w-4" /> Cadastrar novo paciente
+          </button>
+        </div>
+      </div>
+    )
   }
 
   return (
@@ -63,6 +92,7 @@ export function Step1PatientSearch({ onSelect, onCreateNew }: Props) {
         <div className="space-y-2">
           {results.map(p => {
             const last = getLastAppointment(p.id)
+            const convName = getConvenioName(p.convenioId)
             return (
               <div key={p.id} className="rounded-xl border border-border p-4 hover:border-primary/50 hover:shadow-md transition-all cursor-pointer group"
                 onClick={() => onSelect(p)}>
@@ -72,10 +102,13 @@ export function Step1PatientSearch({ onSelect, onCreateNew }: Props) {
                     <p className="text-sm text-muted-foreground">{getAge(p.birthDate)} anos · Nasc. {format(new Date(p.birthDate), 'dd/MM/yyyy')}</p>
                     {p.cpf && <p className="text-xs text-muted-foreground">CPF: {p.cpf}</p>}
                     <p className="text-xs text-muted-foreground">📞 {p.phone1}</p>
-                    {last && (
+                    {convName && <p className="text-xs text-muted-foreground">💳 {convName}</p>}
+                    {last ? (
                       <p className="text-xs text-muted-foreground mt-1">
                         Último atendimento: {format(new Date(last.date), 'dd/MM/yyyy')} · {last.doctorName}
                       </p>
+                    ) : (
+                      <p className="text-xs text-muted-foreground mt-1">Nenhum atendimento anterior</p>
                     )}
                   </div>
                   <button className="rounded-lg gradient-bg px-3 py-1.5 text-xs font-medium text-white opacity-0 group-hover:opacity-100 transition-opacity">

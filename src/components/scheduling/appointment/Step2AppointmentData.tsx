@@ -1,8 +1,11 @@
-import { MOCK_DOCTORS, MOCK_CONVENIOS, MOCK_EXAMS } from '@/mocks/company.mock'
-import { MOCK_APPOINTMENTS } from '@/mocks/scheduling.mock'
-import type { SchedulingPatient, AppointmentType } from '@/types/scheduling.types'
+import { useMemo } from 'react'
+import { useRegisters } from '@/context/RegistersContext'
+import { useScheduling } from '@/context/SchedulingContext'
+import { useAvailableSlots } from '@/hooks/useAvailableSlots'
 import { ConvenioSelector } from './ConvenioSelector'
 import { FirstVisitBadge } from './FirstVisitBadge'
+import { DependencyAlert } from '@/components/scheduling/empty-states/DependencyAlert'
+import type { SchedulingPatient, AppointmentType } from '@/types/scheduling.types'
 import { differenceInYears, format } from 'date-fns'
 
 interface FormData {
@@ -25,63 +28,51 @@ interface Props {
 }
 
 export function Step2AppointmentData({ patient, formData, onChange, prefilledDoctor, prefilledDate, prefilledTime }: Props) {
-  const doctor = MOCK_DOCTORS.find(d => d.id === formData.doctorId)
+  const { doctors, convenios, exams, procedures, specialties } = useRegisters()
+  const { appointments } = useScheduling()
   const today = new Date().toISOString().split('T')[0]
 
-  // Calculate available time slots
-  const getAvailableSlots = () => {
-    if (!formData.doctorId || !formData.date) return []
-    const doc = MOCK_DOCTORS.find(d => d.id === formData.doctorId)
-    if (!doc) return []
-    const dayOfWeek = new Date(formData.date + 'T12:00:00').getDay()
-    const schedules = doc.schedule.filter(s => s.dayOfWeek === dayOfWeek && s.active)
-    if (schedules.length === 0) return []
+  const activeDoctors = useMemo(() => doctors.filter(d => d.isActive && !d.isBlocked), [doctors])
+  const activeExams = useMemo(() => exams.filter(e => e.isActive), [exams])
+  const activeProcedures = useMemo(() => procedures.filter(p => p.isActive), [procedures])
 
-    const slots: { time: string; available: boolean }[] = []
-    schedules.forEach(sch => {
-      const [sh, sm] = sch.startTime.split(':').map(Number)
-      const [eh, em] = sch.endTime.split(':').map(Number)
-      let mins = sh * 60 + sm
-      const endMins = eh * 60 + em
-      while (mins < endMins) {
-        const t = `${String(Math.floor(mins / 60)).padStart(2, '0')}:${String(mins % 60).padStart(2, '0')}`
-        const occupied = MOCK_APPOINTMENTS.some(a =>
-          a.doctorId === formData.doctorId && a.date === formData.date && a.time === t && a.status !== 'cancelled'
-        )
-        slots.push({ time: t, available: !occupied })
-        mins += doc.consultDuration + doc.consultInterval
-      }
-    })
-    return slots
+  const selectedDoctor = doctors.find(d => d.id === formData.doctorId)
+  const slotsResult = useAvailableSlots(selectedDoctor, formData.date, appointments)
+
+  const age = differenceInYears(new Date(), new Date(patient.birthDate))
+
+  const getSpecialtyName = (doc: typeof doctors[0]) => {
+    if (doc.specialtyIds.length === 0) return ''
+    return specialties.find(s => s.id === doc.specialtyIds[0])?.name || ''
   }
 
-  const slots = getAvailableSlots()
-  const age = differenceInYears(new Date(), new Date(patient.birthDate))
-  const exams = formData.type !== 'consultation' ? MOCK_EXAMS.filter(e => e.isActive) : []
+  const examItems = formData.type === 'exam' ? activeExams : formData.type === 'procedure' ? activeProcedures : []
 
   return (
     <div className="space-y-4">
       <h3 className="text-lg font-bold text-foreground">Dados do Agendamento</h3>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Left - Form */}
         <div className="lg:col-span-2 space-y-4">
           {/* Type */}
           <div>
             <label className="text-sm font-medium text-foreground mb-2 block">Tipo de Atendimento *</label>
             <div className="flex gap-2">
               {([
-                { value: 'consultation' as AppointmentType, label: '📋 Consulta' },
-                { value: 'exam' as AppointmentType, label: '🔬 Exame' },
-                { value: 'procedure' as AppointmentType, label: '⚕️ Procedimento' },
+                { value: 'consultation' as AppointmentType, label: '📋 Consulta', count: null },
+                { value: 'exam' as AppointmentType, label: '🔬 Exame', count: activeExams.length },
+                { value: 'procedure' as AppointmentType, label: '⚕️ Procedimento', count: activeProcedures.length },
               ]).map(t => (
                 <button key={t.value} type="button"
                   onClick={() => onChange({ type: t.value, examId: '' })}
-                  className={`flex-1 rounded-xl border-2 px-4 py-3 text-sm font-medium transition-all ${formData.type === t.value
+                  disabled={t.count !== null && t.count === 0}
+                  title={t.count === 0 ? `Nenhum ${t.value === 'exam' ? 'exame' : 'procedimento'} cadastrado. Vá em Cadastros.` : undefined}
+                  className={`flex-1 rounded-xl border-2 px-4 py-3 text-sm font-medium transition-all disabled:opacity-40 disabled:cursor-not-allowed ${formData.type === t.value
                     ? 'border-primary bg-primary/5 text-primary shadow-sm'
                     : 'border-input hover:border-primary/30'
                     }`}>
                   {t.label}
+                  {t.count !== null && <span className="ml-1 text-[10px]">({t.count})</span>}
                 </button>
               ))}
             </div>
@@ -94,8 +85,8 @@ export function Step2AppointmentData({ patient, formData, onChange, prefilledDoc
               disabled={!!prefilledDoctor}
               className="mt-1 w-full rounded-lg border border-input bg-background px-3 py-2.5 text-sm disabled:opacity-60">
               <option value="">Selecione...</option>
-              {MOCK_DOCTORS.filter(d => d.isActive).map(d => (
-                <option key={d.id} value={d.id}>{d.fullName} · {d.mainSpecialty}</option>
+              {activeDoctors.map(d => (
+                <option key={d.id} value={d.id}>{d.fullName} · {getSpecialtyName(d)}</option>
               ))}
             </select>
           </div>
@@ -109,18 +100,33 @@ export function Step2AppointmentData({ patient, formData, onChange, prefilledDoc
               <label className="text-sm font-medium text-foreground">Data *</label>
               <input type="date" value={formData.date} min={today}
                 onChange={e => onChange({ date: e.target.value, time: '' })}
-                disabled={!!prefilledDate}
+                disabled={!!prefilledDate || !formData.doctorId}
                 className="mt-1 w-full rounded-lg border border-input bg-background px-3 py-2.5 text-sm disabled:opacity-60" />
             </div>
             <div>
               <label className="text-sm font-medium text-foreground">Horário *</label>
+              {slotsResult.error === 'no_schedule' && formData.doctorId && (
+                <DependencyAlert
+                  icon="⚠️"
+                  message={`${selectedDoctor?.fullName || 'Médico'} não possui horários configurados.`}
+                  actionLabel="Configurar agenda"
+                  actionRoute="/app/cadastros/medicos"
+                  variant="warning"
+                />
+              )}
+              {slotsResult.error === 'not_working_day' && (
+                <p className="text-xs text-yellow-600 mt-1">ℹ️ {selectedDoctor?.fullName} não atende às {slotsResult.dayName}s. Selecione outro dia.</p>
+              )}
+              {!slotsResult.error && slotsResult.slots.length > 0 && slotsResult.slots.every(s => !s.isAvailable) && (
+                <p className="text-xs text-yellow-600 mt-1">📅 Todos os horários deste dia estão ocupados. Selecione outra data.</p>
+              )}
               <select value={formData.time} onChange={e => onChange({ time: e.target.value })}
-                disabled={!!prefilledTime}
+                disabled={!!prefilledTime || !formData.doctorId || !formData.date || slotsResult.error !== null}
                 className="mt-1 w-full rounded-lg border border-input bg-background px-3 py-2.5 text-sm disabled:opacity-60">
-                <option value="">Selecione...</option>
-                {slots.map(s => (
-                  <option key={s.time} value={s.time} disabled={!s.available}>
-                    {s.time}{!s.available ? ' (ocupado)' : ''}
+                <option value="">{!formData.doctorId ? 'Selecione um médico' : !formData.date ? 'Selecione uma data' : 'Selecione...'}</option>
+                {slotsResult.slots.map(s => (
+                  <option key={s.time} value={s.time} disabled={!s.isAvailable}>
+                    {s.time}{!s.isAvailable ? ' (ocupado)' : ''}
                   </option>
                 ))}
               </select>
@@ -130,12 +136,26 @@ export function Step2AppointmentData({ patient, formData, onChange, prefilledDoc
           {/* Exam selector */}
           {formData.type !== 'consultation' && (
             <div>
-              <label className="text-sm font-medium text-foreground">Exame/Procedimento *</label>
-              <select value={formData.examId} onChange={e => onChange({ examId: e.target.value })}
-                className="mt-1 w-full rounded-lg border border-input bg-background px-3 py-2.5 text-sm">
-                <option value="">Selecione...</option>
-                {exams.map(ex => <option key={ex.id} value={ex.id}>{ex.tussCode} - {ex.name}</option>)}
-              </select>
+              <label className="text-sm font-medium text-foreground">{formData.type === 'exam' ? 'Exame' : 'Procedimento'} *</label>
+              {examItems.length === 0 ? (
+                <DependencyAlert
+                  icon="⚠️"
+                  message={`Nenhum ${formData.type === 'exam' ? 'exame' : 'procedimento'} cadastrado.`}
+                  actionLabel={`Cadastrar ${formData.type === 'exam' ? 'Exame' : 'Procedimento'}`}
+                  actionRoute={`/app/cadastros/${formData.type === 'exam' ? 'exames' : 'procedimentos'}`}
+                  variant="warning"
+                />
+              ) : (
+                <select value={formData.examId} onChange={e => onChange({ examId: e.target.value })}
+                  className="mt-1 w-full rounded-lg border border-input bg-background px-3 py-2.5 text-sm">
+                  <option value="">Selecione...</option>
+                  {examItems.map(ex => (
+                    <option key={ex.id} value={ex.id}>
+                      {'tussCode' in ex && ex.tussCode ? `${ex.tussCode} - ` : ''}{ex.name}
+                    </option>
+                  ))}
+                </select>
+              )}
             </div>
           )}
 
@@ -155,15 +175,15 @@ export function Step2AppointmentData({ patient, formData, onChange, prefilledDoc
           <p className="text-xs text-muted-foreground">{age} anos · {patient.phone1}</p>
           {patient.convenioId && (
             <p className="text-xs text-muted-foreground">
-              {MOCK_CONVENIOS.find(c => c.id === patient.convenioId)?.name || 'Convênio'}
+              {convenios.find(c => c.id === patient.convenioId)?.name || 'Convênio'}
             </p>
           )}
           {formData.doctorId && (
-            <FirstVisitBadge patientId={patient.id} doctorId={formData.doctorId} appointments={MOCK_APPOINTMENTS} />
+            <FirstVisitBadge patientId={patient.id} doctorId={formData.doctorId} appointments={appointments} />
           )}
 
           {/* Alert for existing future appointments */}
-          {MOCK_APPOINTMENTS.some(a => a.patientId === patient.id && a.date >= today && a.status !== 'cancelled') && (
+          {appointments.some(a => a.patientId === patient.id && a.date >= today && a.status !== 'cancelled') && (
             <div className="rounded-lg bg-yellow-50 border border-yellow-200 p-2">
               <p className="text-xs text-yellow-700 font-medium">⚠️ Paciente possui agendamentos futuros</p>
             </div>
@@ -172,7 +192,7 @@ export function Step2AppointmentData({ patient, formData, onChange, prefilledDoc
           {/* Last appointments */}
           <div className="space-y-1">
             <p className="text-xs font-medium text-muted-foreground">Últimos atendimentos</p>
-            {MOCK_APPOINTMENTS
+            {appointments
               .filter(a => a.patientId === patient.id && a.status === 'completed')
               .sort((a, b) => b.date.localeCompare(a.date))
               .slice(0, 3)
@@ -182,6 +202,9 @@ export function Step2AppointmentData({ patient, formData, onChange, prefilledDoc
                 </p>
               ))
             }
+            {appointments.filter(a => a.patientId === patient.id && a.status === 'completed').length === 0 && (
+              <p className="text-[10px] text-muted-foreground">Nenhum atendimento anterior registrado</p>
+            )}
           </div>
         </div>
       </div>

@@ -1,12 +1,12 @@
 import { useMemo } from 'react'
 import type { SchedulingAppointment } from '@/types/scheduling.types'
-import type { LegacyDoctor as Doctor } from '@/mocks/company.mock'
 import { DayColumn } from './DayColumn'
-import { MOCK_DOCTORS } from '@/mocks/company.mock'
+import { useRegisters } from '@/context/RegistersContext'
 import { format, addDays, startOfWeek, getDaysInMonth, startOfMonth } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
 import { AppointmentCard } from './AppointmentCard'
 import { STATUS_CONFIG } from '@/types/scheduling.types'
+import { NoAppointmentsState } from '@/components/scheduling/empty-states/NoAppointmentsState'
 import type { ViewMode } from './AgendaFilters'
 
 const TIME_SLOTS: string[] = []
@@ -20,16 +20,25 @@ interface Props {
   appointments: SchedulingAppointment[]
   doctorFilter: string
   viewMode: ViewMode
-  onSlotClick: (doctor: Doctor, date: string, time: string) => void
+  onSlotClick: (doctorId: string, date: string, time: string) => void
   onAppointmentClick: (apt: SchedulingAppointment) => void
+  onNewAppointment?: () => void
 }
 
-export function AgendaCalendar({ selectedDate, appointments, doctorFilter, viewMode, onSlotClick, onAppointmentClick }: Props) {
-  const doctors = useMemo(() => {
-    const active = MOCK_DOCTORS.filter(d => d.isActive)
+export function AgendaCalendar({ selectedDate, appointments, doctorFilter, viewMode, onSlotClick, onAppointmentClick, onNewAppointment }: Props) {
+  const { doctors, specialties } = useRegisters()
+
+  const activeDoctors = useMemo(() => {
+    const active = doctors.filter(d => d.isActive && !d.isBlocked)
     if (doctorFilter !== 'all') return active.filter(d => d.id === doctorFilter)
     return active
-  }, [doctorFilter])
+  }, [doctors, doctorFilter])
+
+  const getSpecialtyName = (doc: typeof doctors[0]) => {
+    if (doc.specialtyIds.length === 0) return ''
+    const spec = specialties.find(s => s.id === doc.specialtyIds[0])
+    return spec?.name || ''
+  }
 
   const dateStr = format(selectedDate, 'yyyy-MM-dd')
   const todayStr = format(new Date(), 'yyyy-MM-dd')
@@ -37,11 +46,14 @@ export function AgendaCalendar({ selectedDate, appointments, doctorFilter, viewM
   if (viewMode === 'day') {
     const dayAppts = appointments.filter(a => a.date === dateStr)
 
+    if (activeDoctors.length === 0) {
+      return <NoAppointmentsState onNewAppointment={onNewAppointment} />
+    }
+
     return (
       <div className="rounded-2xl border border-border bg-card shadow-[0_4px_24px_rgba(0,0,0,0.06)] overflow-hidden">
         <div className="overflow-x-auto">
           <div className="flex min-w-fit">
-            {/* Time column */}
             <div className="flex flex-col w-[60px] shrink-0">
               <div className="sticky top-0 z-10 border-b border-border px-2 py-3 bg-card h-[76px]" />
               {TIME_SLOTS.map(t => (
@@ -50,15 +62,16 @@ export function AgendaCalendar({ selectedDate, appointments, doctorFilter, viewM
                 </div>
               ))}
             </div>
-            {/* Doctor columns */}
-            {doctors.map(doc => (
+            {activeDoctors.map(doc => (
               <DayColumn
                 key={doc.id}
-                doctor={doc}
+                doctorId={doc.id}
+                doctorName={doc.fullName}
+                doctorSpecialty={getSpecialtyName(doc)}
                 date={dateStr}
                 appointments={dayAppts.filter(a => a.doctorId === doc.id)}
                 timeSlots={TIME_SLOTS}
-                onSlotClick={onSlotClick}
+                onSlotClick={(date, time) => onSlotClick(doc.id, date, time)}
                 onAppointmentClick={onAppointmentClick}
                 isToday={dateStr === todayStr}
               />
