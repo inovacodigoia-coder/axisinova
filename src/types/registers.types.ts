@@ -99,6 +99,7 @@ export interface Procedure {
   anesthesiaType?: string
   preOperativeInstructions?: string
   postOperativeInstructions?: string
+  attachmentRules: AttachmentRule[]
   isActive: boolean
   createdAt: string
 }
