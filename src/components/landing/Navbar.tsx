@@ -83,7 +83,7 @@ export function Navbar() {
               </a>
             ))}
             <div className="flex flex-col gap-2 pt-2 border-t border-border">
-              <OutlineButton variant="purple">Entrar</OutlineButton>
+              <Link to="/login"><OutlineButton variant="purple">Entrar</OutlineButton></Link>
               <Link to="/cadastro">
                 <GradientButton fullWidth>Teste Grátis 14 dias</GradientButton>
               </Link>
