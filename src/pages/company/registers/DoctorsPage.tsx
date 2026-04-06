@@ -40,12 +40,29 @@ export default function DoctorsPage() {
         <>
           <div className="flex items-center justify-between">
             <div><h1 className="text-2xl font-bold text-foreground">Médicos</h1><p className="text-sm text-muted-foreground">Gestão de profissionais médicos</p></div>
+            <button onClick={() => setShowSpecialties(true)} className="rounded-xl border border-input px-4 py-2.5 text-sm font-medium hover:bg-muted flex items-center gap-2">
+              <Settings className="h-4 w-4" /> Gerenciar Especialidades
+            </button>
           </div>
           <EmptyState
             icon={<span className="text-4xl">👨‍⚕️</span>}
             title="Nenhum médico cadastrado ainda"
-            description="Cadastre o primeiro médico para começar a usar o agendamento"
-            action={canAccess('registers', 'create') ? <button onClick={() => setShowForm(true)} className="gradient-bg rounded-xl px-4 py-2.5 text-sm font-semibold text-white shadow-lg hover:opacity-90 flex items-center gap-2"><Plus className="h-4 w-4" /> Cadastrar Primeiro Médico</button> : undefined}
+            description={specialties.length === 0
+              ? "Antes de cadastrar um médico, cadastre pelo menos uma especialidade clicando em 'Gerenciar Especialidades' acima."
+              : "Cadastre o primeiro médico para começar a usar o agendamento"}
+            action={canAccess('registers', 'create') ? (
+              <div className="flex flex-col items-center gap-3">
+                {specialties.length === 0 ? (
+                  <button onClick={() => setShowSpecialties(true)} className="gradient-bg rounded-xl px-4 py-2.5 text-sm font-semibold text-white shadow-lg hover:opacity-90 flex items-center gap-2">
+                    <Settings className="h-4 w-4" /> Cadastrar Especialidades
+                  </button>
+                ) : (
+                  <button onClick={() => setShowForm(true)} className="gradient-bg rounded-xl px-4 py-2.5 text-sm font-semibold text-white shadow-lg hover:opacity-90 flex items-center gap-2">
+                    <Plus className="h-4 w-4" /> Cadastrar Primeiro Médico
+                  </button>
+                )}
+              </div>
+            ) : undefined}
           />
         </>
       ) : (
