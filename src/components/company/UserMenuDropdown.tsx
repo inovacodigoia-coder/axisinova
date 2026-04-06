@@ -14,8 +14,9 @@ export function UserMenuDropdown() {
   const initials = user?.name?.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase() || 'U'
 
   const handleSwitchProfile = (profileId: string) => {
-    clearSession()
-    navigate('/selecionar-perfil')
+    switchProfile(profileId)
+    const profile = profiles.find(p => p.id === profileId)
+    toast.success(`Perfil alterado para ${profile?.name}`)
   }
 
   const handleSwitchSector = (sectorId: string) => {
