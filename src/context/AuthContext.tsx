@@ -1,18 +1,22 @@
-import { createContext, useCallback, useContext, useEffect, useReducer, type ReactNode } from 'react'
-import { useNavigate } from 'react-router-dom'
-import type { AuthState, AuthUser, UserRole } from '@/types/auth.types'
-import { MOCK_USERS_AUTH } from '@/mocks/superadmin.mock'
+import { createContext, useCallback, useContext, useEffect, useState, type ReactNode } from 'react'
+import type { AuthUser, UserRole } from '@/types/auth.types'
+import { authenticateUser, getRedirectByRole } from '@/mocks/users.mock'
 
 const TOKEN_KEY = 'axis_inova_token'
+const USER_KEY = 'axis_inova_user'
 
-type AuthAction =
-  | { type: 'SET_LOADING'; payload: boolean }
-  | { type: 'LOGIN'; payload: { user: AuthUser; token: string } }
-  | { type: 'LOGOUT' }
-  | { type: 'SET_IMPERSONATION'; payload: { companyId: string; companyName: string } | null }
+interface LoginResult {
+  success: boolean
+  error?: string
+  redirectTo?: string
+}
 
-interface AuthContextValue extends AuthState {
-  login: (email: string, password: string) => Promise<void>
+interface AuthContextValue {
+  user: AuthUser | null
+  token: string | null
+  isAuthenticated: boolean
+  isLoading: boolean
+  login: (email: string, password: string) => Promise<LoginResult>
   logout: () => void
   forgotPassword: (email: string) => Promise<void>
   resetPassword: (token: string, newPassword: string) => Promise<void>
@@ -20,76 +24,73 @@ interface AuthContextValue extends AuthState {
   setImpersonation: (data: { companyId: string; companyName: string } | null) => void
 }
 
-const initialState: AuthState & { impersonation: { companyId: string; companyName: string } | null } = {
-  user: null,
-  token: null,
-  isAuthenticated: false,
-  isLoading: true,
-  impersonation: null,
-}
-
-function reducer(state: typeof initialState, action: AuthAction): typeof initialState {
-  switch (action.type) {
-    case 'SET_LOADING':
-      return { ...state, isLoading: action.payload }
-    case 'LOGIN':
-      return { ...state, user: action.payload.user, token: action.payload.token, isAuthenticated: true, isLoading: false }
-    case 'LOGOUT':
-      return { ...initialState, isLoading: false }
-    case 'SET_IMPERSONATION':
-      return { ...state, impersonation: action.payload }
-    default:
-      return state
-  }
-}
-
 const AuthContext = createContext<AuthContextValue | null>(null)
 
-function buildAuthUser(mock: typeof MOCK_USERS_AUTH[0]): AuthUser {
-  return {
-    id: mock.id,
-    name: mock.name,
-    email: mock.email,
-    role: mock.role as UserRole,
-    companyId: ('companyId' in mock ? (mock as any).companyId : null) as string | null,
-    companyName: ('companyName' in mock ? (mock as any).companyName : null) as string | null,
-    lastLogin: new Date().toISOString(),
-    isActive: true,
-  }
-}
-
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const [state, dispatch] = useReducer(reducer, initialState)
+  const [user, setUser] = useState<AuthUser | null>(null)
+  const [token, setToken] = useState<string | null>(null)
+  const [isAuthenticated, setIsAuthenticated] = useState(false)
+  const [isLoading, setIsLoading] = useState(true)
+  const [impersonation, setImpersonation] = useState<{ companyId: string; companyName: string } | null>(null)
 
+  // Restore session
   useEffect(() => {
-    const saved = localStorage.getItem(TOKEN_KEY)
-    if (saved) {
+    const savedToken = localStorage.getItem(TOKEN_KEY) || sessionStorage.getItem(TOKEN_KEY)
+    const savedUser = localStorage.getItem(USER_KEY) || sessionStorage.getItem(USER_KEY)
+
+    if (savedToken && savedUser) {
       try {
-        const parsed = JSON.parse(saved)
-        const mock = MOCK_USERS_AUTH.find((u) => u.email === parsed.email)
-        if (mock) {
-          dispatch({ type: 'LOGIN', payload: { user: buildAuthUser(mock), token: parsed.token } })
-          return
-        }
-      } catch { /* ignore */ }
+        const parsed = JSON.parse(savedUser) as AuthUser
+        setUser(parsed)
+        setToken(savedToken)
+        setIsAuthenticated(true)
+      } catch {
+        localStorage.removeItem(TOKEN_KEY)
+        localStorage.removeItem(USER_KEY)
+        sessionStorage.removeItem(TOKEN_KEY)
+        sessionStorage.removeItem(USER_KEY)
+      }
     }
-    dispatch({ type: 'SET_LOADING', payload: false })
+    setIsLoading(false)
   }, [])
 
-  const login = useCallback(async (email: string, password: string) => {
-    await new Promise((r) => setTimeout(r, 1500))
-    const mock = MOCK_USERS_AUTH.find((u) => u.email === email && u.password === password)
-    if (!mock) throw new Error('Credenciais inválidas')
-    const user = buildAuthUser(mock)
-    const token = `mock_token_${Date.now()}`
-    localStorage.setItem(TOKEN_KEY, JSON.stringify({ email, token }))
-    dispatch({ type: 'LOGIN', payload: { user, token } })
+  const login = useCallback(async (email: string, password: string): Promise<LoginResult> => {
+    await new Promise((r) => setTimeout(r, 1200))
+
+    const credential = authenticateUser(email, password)
+
+    if (!credential) {
+      return { success: false, error: 'Credenciais inválidas' }
+    }
+
+    if (!credential.user.isActive) {
+      return { success: false, error: 'Usuário inativo. Contate o administrador.' }
+    }
+
+    const newToken = `mock_token_${credential.user.id}_${Date.now()}`
+
+    // Default to localStorage; caller can switch to sessionStorage via rememberMe logic
+    localStorage.setItem(TOKEN_KEY, newToken)
+    localStorage.setItem(USER_KEY, JSON.stringify(credential.user))
+
+    setUser(credential.user)
+    setToken(newToken)
+    setIsAuthenticated(true)
+
+    const redirectTo = getRedirectByRole(credential.user.role)
+    return { success: true, redirectTo }
   }, [])
 
   const logout = useCallback(() => {
     localStorage.removeItem(TOKEN_KEY)
+    localStorage.removeItem(USER_KEY)
+    sessionStorage.removeItem(TOKEN_KEY)
+    sessionStorage.removeItem(USER_KEY)
     sessionStorage.removeItem('axis_inova_session')
-    dispatch({ type: 'LOGOUT' })
+    setUser(null)
+    setToken(null)
+    setIsAuthenticated(false)
+    setImpersonation(null)
   }, [])
 
   const forgotPassword = useCallback(async (_email: string) => {
@@ -100,12 +101,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     await new Promise((r) => setTimeout(r, 1500))
   }, [])
 
-  const setImpersonation = useCallback((data: { companyId: string; companyName: string } | null) => {
-    dispatch({ type: 'SET_IMPERSONATION', payload: data })
-  }, [])
-
   return (
-    <AuthContext.Provider value={{ ...state, login, logout, forgotPassword, resetPassword, impersonation: state.impersonation, setImpersonation }}>
+    <AuthContext.Provider
+      value={{
+        user,
+        token,
+        isAuthenticated,
+        isLoading,
+        login,
+        logout,
+        forgotPassword,
+        resetPassword,
+        impersonation,
+        setImpersonation,
+      }}
+    >
       {children}
     </AuthContext.Provider>
   )
