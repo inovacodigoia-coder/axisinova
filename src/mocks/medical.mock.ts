@@ -252,7 +252,7 @@ export const MOCK_ATTENDANCE_RECORDS: AttendanceRecord[] = [
     prescription: [
       { id: 'rx_15', medication: 'Omeprazol 20mg', dosage: '20mg', form: 'Cápsula', route: 'Oral', frequency: '1x/dia', duration: '30 dias', quantity: 30, instructions: 'Tomar em jejum 30 min antes do café', isControlled: false },
     ],
-    examRequests: [{ id: 'erq_04', examId: 'ex_12', examName: 'Endoscopia Digestiva Alta', examCode: '40202011', urgency: 'routine', clinicalIndication: 'DRGE com sintomas persistentes', requestedAt: `${d(-15)}T08:25:00` }],
+    examRequests: [{ id: 'erq_04', examCatalogId: 'ex_12', examCatalogType: 'exam' as const, examId: 'ex_12', examName: 'Endoscopia Digestiva Alta', examCode: '40202011', urgency: 'routine' as const, clinicalIndication: 'DRGE com sintomas persistentes', requestedAt: `${d(-15)}T08:25:00` }],
     followUpDays: 30,
     status: 'signed', signedAt: `${d(-15)}T08:30:00`, createdBy: 'doc_01', updatedAt: d(-15),
   },
