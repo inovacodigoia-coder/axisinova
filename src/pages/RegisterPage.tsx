@@ -3,6 +3,7 @@ import { useForm, FormProvider } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { Link } from 'react-router-dom';
+import logoImg from '@/assets/logo-axisinova.jpeg';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ProgressBar } from '@/components/register/ProgressBar';
 import { StepCompanyData } from '@/components/register/StepCompanyData';
