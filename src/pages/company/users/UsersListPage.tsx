@@ -1,72 +1,99 @@
-import { useState } from 'react'
-import { useCompanyContext } from '@/context/CompanyContext'
+import { useState, useEffect } from 'react'
+import { useAuth } from '@/context/AuthContext'
+import { supabase } from '@/integrations/supabase/client'
 import { DataTable } from '@/components/ui/DataTable'
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import { Search, Plus, Ban, Unlock, Edit, Users } from 'lucide-react'
-import type { CompanyUser } from '@/types/company-portal.types'
+import { Search, Plus, Users, Edit, Loader2 } from 'lucide-react'
 import { toast } from 'sonner'
 
+interface ProfileRow {
+  id: string
+  full_name: string
+  cpf: string | null
+  role: string
+  is_active: boolean | null
+  company_id: string | null
+  created_at: string | null
+  updated_at: string | null
+}
+
+const roleLabelMap: Record<string, string> = {
+  company_admin: 'Administrador',
+  doctor: 'Médico',
+  receptionist: 'Recepcionista',
+  billing: 'Faturista',
+  telephonist: 'Telefonista',
+  nurse: 'Enfermeiro(a)',
+  pharmacist: 'Farmacêutico(a)',
+  analyst: 'Analista',
+}
+
 export default function UsersListPage() {
-  const { allProfiles, allSectors, allUsers, canAccess } = useCompanyContext()
+  const { user } = useAuth()
+  const [profiles, setProfiles] = useState<ProfileRow[]>([])
+  const [loading, setLoading] = useState(true)
   const [search, setSearch] = useState('')
-  const [sectorFilter, setSectorFilter] = useState('')
-  const [profileFilter, setProfileFilter] = useState('')
-  const [users, setUsers] = useState<CompanyUser[]>(allUsers)
 
-  const activeUsers = users.filter(u => !u.isBlocked)
-  const blockedUsers = users.filter(u => u.isBlocked)
+  const companyId = user?.companyId
 
-  const filtered = activeUsers.filter(u => {
-    if (search && !u.fullName.toLowerCase().includes(search.toLowerCase()) && !u.username.toLowerCase().includes(search.toLowerCase())) return false
-    if (sectorFilter && !u.sectors.includes(sectorFilter)) return false
-    if (profileFilter && !u.profiles.includes(profileFilter)) return false
+  useEffect(() => {
+    if (!companyId) {
+      setLoading(false)
+      return
+    }
+    const fetchProfiles = async () => {
+      setLoading(true)
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('company_id', companyId)
+
+      if (error) {
+        console.error('Error fetching profiles:', error)
+        toast.error('Erro ao carregar usuários')
+      }
+      setProfiles(data ?? [])
+      setLoading(false)
+    }
+    fetchProfiles()
+  }, [companyId])
+
+  const activeProfiles = profiles.filter(p => p.is_active !== false)
+
+  const filtered = activeProfiles.filter(p => {
+    if (search && !p.full_name.toLowerCase().includes(search.toLowerCase()) && !(p.cpf ?? '').includes(search)) return false
     return true
   })
 
-  const handleBlock = (userId: string) => {
-    setUsers(prev => prev.map(u => u.id === userId ? { ...u, isBlocked: true, blockedReason: 'Bloqueado pelo administrador', blockedAt: new Date().toISOString() } : u))
-    toast.success('Usuário bloqueado')
-  }
-
-  const handleUnblock = (userId: string) => {
-    setUsers(prev => prev.map(u => u.id === userId ? { ...u, isBlocked: false, blockedReason: undefined } : u))
-    toast.success('Usuário desbloqueado')
-  }
-
-  const getSectorName = (ids: string[]) => allSectors.filter(s => ids.includes(s.id)).map(s => s.name).join(', ') || '—'
-
   const columns = [
-    { key: 'username', label: 'Nome (login)', sortable: true, render: (u: CompanyUser) => <span className="font-medium text-foreground">{u.username}</span> },
-    { key: 'fullName', label: 'Nome completo', sortable: true, render: (u: CompanyUser) => <span>{u.fullName}</span> },
-    { key: 'sectors', label: 'Setor', render: (u: CompanyUser) => <span className="text-sm text-muted-foreground">{getSectorName(u.sectors)}</span> },
-    { key: 'professionalClass', label: 'Classe', render: (u: CompanyUser) => <span className="text-sm">{u.professionalClass || '—'}</span> },
-    { key: 'occupation', label: 'Ocupação', render: (u: CompanyUser) => <span className="text-sm text-muted-foreground">{u.occupation || '—'}</span> },
-    { key: 'isActive', label: 'Status', render: (u: CompanyUser) => (
-      <span className={`inline-flex rounded-full px-2 py-0.5 text-[10px] font-bold ${u.isActive ? 'bg-[hsl(var(--success))]/10 text-[hsl(var(--success))]' : 'bg-muted text-muted-foreground'}`}>
-        {u.isActive ? 'Ativo' : 'Inativo'}
+    { key: 'full_name', label: 'Nome completo', sortable: true, render: (p: ProfileRow) => <span className="font-medium text-foreground">{p.full_name}</span> },
+    { key: 'cpf', label: 'CPF', render: (p: ProfileRow) => <span className="text-sm text-muted-foreground">{p.cpf || '—'}</span> },
+    { key: 'role', label: 'Função', render: (p: ProfileRow) => <span className="text-sm">{roleLabelMap[p.role] || p.role}</span> },
+    { key: 'is_active', label: 'Status', render: (p: ProfileRow) => (
+      <span className={`inline-flex rounded-full px-2 py-0.5 text-[10px] font-bold ${p.is_active !== false ? 'bg-[hsl(var(--success))]/10 text-[hsl(var(--success))]' : 'bg-muted text-muted-foreground'}`}>
+        {p.is_active !== false ? 'Ativo' : 'Inativo'}
       </span>
     )},
-    { key: 'actions', label: 'Ações', render: (u: CompanyUser) => (
+    { key: 'created_at', label: 'Cadastrado em', render: (p: ProfileRow) => (
+      <span className="text-sm text-muted-foreground">
+        {p.created_at ? new Date(p.created_at).toLocaleDateString('pt-BR') : '—'}
+      </span>
+    )},
+    { key: 'actions', label: 'Ações', render: (_p: ProfileRow) => (
       <div className="flex items-center gap-1">
         <button className="rounded p-1 hover:bg-muted"><Edit className="h-4 w-4 text-muted-foreground" /></button>
-        <button onClick={() => handleBlock(u.id)} className="rounded p-1 hover:bg-destructive/10"><Ban className="h-4 w-4 text-muted-foreground" /></button>
       </div>
     )},
   ]
 
-  const blockedColumns = [
-    { key: 'fullName', label: 'Nome', sortable: true, render: (u: CompanyUser) => <span className="font-medium">{u.fullName}</span> },
-    { key: 'username', label: 'Login', render: (u: CompanyUser) => <span>{u.username}</span> },
-    { key: 'blockedReason', label: 'Motivo', render: (u: CompanyUser) => <span className="text-sm text-muted-foreground">{u.blockedReason || '—'}</span> },
-    { key: 'blockedAt', label: 'Bloqueado em', render: (u: CompanyUser) => <span className="text-sm">{u.blockedAt || '—'}</span> },
-    { key: 'actions', label: '', render: (u: CompanyUser) => (
-      <button onClick={() => handleUnblock(u.id)} className="flex items-center gap-1 rounded-lg px-2 py-1 text-xs font-medium text-primary hover:bg-primary/10">
-        <Unlock className="h-3 w-3" /> Desbloquear
-      </button>
-    )},
-  ]
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center py-20">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    )
+  }
 
-  if (allUsers.length === 0) {
+  if (profiles.length === 0) {
     return (
       <div className="space-y-6">
         <div className="flex items-center justify-between">
@@ -91,41 +118,20 @@ export default function UsersListPage() {
           <h1 className="text-2xl font-bold text-foreground">Usuários</h1>
           <p className="text-sm text-muted-foreground">Gestão de usuários da empresa</p>
         </div>
-        {canAccess('users', 'create') && (
-          <button className="gradient-bg rounded-xl px-4 py-2.5 text-sm font-semibold text-white shadow-lg hover:opacity-90 transition-opacity flex items-center gap-2">
-            <Plus className="h-4 w-4" /> Novo Usuário
-          </button>
-        )}
+        <button className="gradient-bg rounded-xl px-4 py-2.5 text-sm font-semibold text-white shadow-lg hover:opacity-90 transition-opacity flex items-center gap-2">
+          <Plus className="h-4 w-4" /> Novo Usuário
+        </button>
       </div>
 
-      <Tabs defaultValue="active">
-        <TabsList>
-          <TabsTrigger value="active">Usuários ({activeUsers.length})</TabsTrigger>
-          <TabsTrigger value="blocked">Bloqueados ({blockedUsers.length})</TabsTrigger>
-        </TabsList>
-
-        <TabsContent value="active" className="space-y-4">
-          <div className="flex flex-wrap items-center gap-3">
-            <div className="relative flex-1 min-w-[200px]">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Buscar por nome..." className="w-full rounded-lg border border-input bg-background pl-9 pr-4 py-2 text-sm" />
-            </div>
-            <select value={sectorFilter} onChange={e => setSectorFilter(e.target.value)} className="rounded-lg border border-input bg-background px-3 py-2 text-sm">
-              <option value="">Todos os setores</option>
-              {allSectors.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
-            </select>
-            <select value={profileFilter} onChange={e => setProfileFilter(e.target.value)} className="rounded-lg border border-input bg-background px-3 py-2 text-sm">
-              <option value="">Todos os perfis</option>
-              {allProfiles.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
-            </select>
+      <div className="space-y-4">
+        <div className="flex flex-wrap items-center gap-3">
+          <div className="relative flex-1 min-w-[200px]">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Buscar por nome ou CPF..." className="w-full rounded-lg border border-input bg-background pl-9 pr-4 py-2 text-sm" />
           </div>
-          <DataTable data={filtered} columns={columns} pageSize={10} />
-        </TabsContent>
-
-        <TabsContent value="blocked">
-          <DataTable data={blockedUsers} columns={blockedColumns} pageSize={10} emptyMessage="Nenhum usuário bloqueado" />
-        </TabsContent>
-      </Tabs>
+        </div>
+        <DataTable data={filtered} columns={columns} pageSize={10} />
+      </div>
     </div>
   )
 }
