@@ -1,4 +1,5 @@
 import { motion } from 'framer-motion'
+import logoImg from '@/assets/logo-axisinova.jpeg'
 
 export function LoadingScreen() {
   return (

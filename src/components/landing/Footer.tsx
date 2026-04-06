@@ -1,4 +1,5 @@
 import { Link } from 'react-router-dom';
+import logoImg from '@/assets/logo-axisinova.jpeg';
 
 const footerLinks = {
   Produto: [

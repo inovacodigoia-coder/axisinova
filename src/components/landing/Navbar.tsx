@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { Menu, X } from 'lucide-react';
+import logoImg from '@/assets/logo-axisinova.jpeg';
 import { GradientButton } from '@/components/ui/GradientButton';
 import { OutlineButton } from '@/components/ui/OutlineButton';
 import { cn } from '@/lib/utils';
