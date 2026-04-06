@@ -54,9 +54,12 @@ export default function LoginPage() {
       {/* Left panel */}
       <div className="hidden lg:flex lg:w-[45%] gradient-bg relative overflow-hidden flex-col justify-between p-10 text-white">
         <div>
-          <div className="text-2xl font-bold">
-            <span className="text-white">Axis</span>
-            <span className="text-white/80">Inova</span>
+          <div className="flex items-center gap-3">
+            <img src={logoImg} alt="Axis Inova" className="h-10 w-10 rounded-lg" />
+            <div className="text-2xl font-bold">
+              <span className="text-white">Axis</span>
+              <span className="text-white/80">Inova</span>
+            </div>
           </div>
           <p className="mt-2 text-sm text-white/60">Plataforma de gestão clínica</p>
         </div>
