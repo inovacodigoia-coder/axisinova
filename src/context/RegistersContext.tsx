@@ -1,7 +1,59 @@
-import { createContext, useContext, useState, useCallback, type ReactNode } from 'react'
+import { createContext, useContext, useState, useCallback, useEffect, useMemo, type ReactNode } from 'react'
 import type { Doctor, Specialty, Convenio, Exam, Procedure } from '@/types/registers.types'
 import { DEMO_DOCTORS, DEMO_SPECIALTIES, DEMO_CONVENIOS, DEMO_EXAMS, DEMO_PROCEDURES, isDemoCompany } from '@/mocks/registers.mock'
 import { useAuth } from '@/context/AuthContext'
+
+interface RegistersSnapshot {
+  doctors: Doctor[]
+  specialties: Specialty[]
+  convenios: Convenio[]
+  exams: Exam[]
+  procedures: Procedure[]
+}
+
+const REGISTERS_STORAGE_PREFIX = 'axis-inova:registers'
+
+const createEmptyRegisters = (): RegistersSnapshot => ({
+  doctors: [],
+  specialties: [],
+  convenios: [],
+  exams: [],
+  procedures: [],
+})
+
+const createDemoRegisters = (): RegistersSnapshot => ({
+  doctors: DEMO_DOCTORS,
+  specialties: DEMO_SPECIALTIES,
+  convenios: DEMO_CONVENIOS,
+  exams: DEMO_EXAMS,
+  procedures: DEMO_PROCEDURES,
+})
+
+const sanitizeRegisters = (value: Partial<RegistersSnapshot>): RegistersSnapshot => ({
+  doctors: Array.isArray(value.doctors) ? value.doctors as Doctor[] : [],
+  specialties: Array.isArray(value.specialties) ? value.specialties as Specialty[] : [],
+  convenios: Array.isArray(value.convenios) ? value.convenios as Convenio[] : [],
+  exams: Array.isArray(value.exams) ? value.exams as Exam[] : [],
+  procedures: Array.isArray(value.procedures) ? value.procedures as Procedure[] : [],
+})
+
+const readStoredRegisters = (storageKey: string | null): RegistersSnapshot | null => {
+  if (!storageKey || typeof window === 'undefined') return null
+
+  try {
+    const raw = window.localStorage.getItem(storageKey)
+    if (!raw) return null
+
+    return sanitizeRegisters(JSON.parse(raw) as Partial<RegistersSnapshot>)
+  } catch {
+    return null
+  }
+}
+
+const createRegistersState = (isDemo: boolean, storageKey: string | null): RegistersSnapshot => {
+  if (isDemo) return createDemoRegisters()
+  return readStoredRegisters(storageKey) ?? createEmptyRegisters()
+}
 
 interface RegistersContextValue {
   // Data
@@ -50,32 +102,75 @@ export function RegistersProvider({ children }: { children: ReactNode }) {
   const { user } = useAuth()
   const companyId = user?.companyId
   const isDemo = isDemoCompany(companyId)
+  const storageKey = useMemo(
+    () => (companyId ? `${REGISTERS_STORAGE_PREFIX}:${companyId}` : null),
+    [companyId],
+  )
 
-  const [doctors, setDoctors] = useState<Doctor[]>(isDemo ? DEMO_DOCTORS : [])
-  const [specialties, setSpecialties] = useState<Specialty[]>(isDemo ? DEMO_SPECIALTIES : [])
-  const [convenios, setConvenios] = useState<Convenio[]>(isDemo ? DEMO_CONVENIOS : [])
-  const [exams, setExams] = useState<Exam[]>(isDemo ? DEMO_EXAMS : [])
-  const [procedures, setProcedures] = useState<Procedure[]>(isDemo ? DEMO_PROCEDURES : [])
+  const [state, setState] = useState<RegistersSnapshot>(() => createRegistersState(isDemo, storageKey))
+  const [hydratedKey, setHydratedKey] = useState<string | null>(() => (isDemo ? 'demo' : storageKey))
 
-  const addDoctor = useCallback((d: Doctor) => setDoctors(prev => [...prev, d]), [])
-  const updateDoctor = useCallback((d: Doctor) => setDoctors(prev => prev.map(x => x.id === d.id ? d : x)), [])
-  const removeDoctor = useCallback((id: string) => setDoctors(prev => prev.filter(x => x.id !== id)), [])
+  useEffect(() => {
+    setState(createRegistersState(isDemo, storageKey))
+    setHydratedKey(isDemo ? 'demo' : storageKey)
+  }, [isDemo, storageKey])
 
-  const addSpecialty = useCallback((s: Specialty) => setSpecialties(prev => [...prev, s]), [])
-  const updateSpecialty = useCallback((s: Specialty) => setSpecialties(prev => prev.map(x => x.id === s.id ? s : x)), [])
-  const removeSpecialty = useCallback((id: string) => setSpecialties(prev => prev.filter(x => x.id !== id)), [])
+  useEffect(() => {
+    if (isDemo || !storageKey || hydratedKey !== storageKey || typeof window === 'undefined') return
+    window.localStorage.setItem(storageKey, JSON.stringify(state))
+  }, [state, hydratedKey, isDemo, storageKey])
 
-  const addConvenio = useCallback((c: Convenio) => setConvenios(prev => [...prev, c]), [])
-  const updateConvenio = useCallback((c: Convenio) => setConvenios(prev => prev.map(x => x.id === c.id ? c : x)), [])
-  const removeConvenio = useCallback((id: string) => setConvenios(prev => prev.filter(x => x.id !== id)), [])
+  const { doctors, specialties, convenios, exams, procedures } = state
 
-  const addExam = useCallback((e: Exam) => setExams(prev => [...prev, e]), [])
-  const updateExam = useCallback((e: Exam) => setExams(prev => prev.map(x => x.id === e.id ? e : x)), [])
-  const removeExam = useCallback((id: string) => setExams(prev => prev.filter(x => x.id !== id)), [])
+  const addDoctor = useCallback((d: Doctor) => {
+    setState(prev => ({ ...prev, doctors: [...prev.doctors, d] }))
+  }, [])
+  const updateDoctor = useCallback((d: Doctor) => {
+    setState(prev => ({ ...prev, doctors: prev.doctors.map(x => x.id === d.id ? d : x) }))
+  }, [])
+  const removeDoctor = useCallback((id: string) => {
+    setState(prev => ({ ...prev, doctors: prev.doctors.filter(x => x.id !== id) }))
+  }, [])
 
-  const addProcedure = useCallback((p: Procedure) => setProcedures(prev => [...prev, p]), [])
-  const updateProcedure = useCallback((p: Procedure) => setProcedures(prev => prev.map(x => x.id === p.id ? p : x)), [])
-  const removeProcedure = useCallback((id: string) => setProcedures(prev => prev.filter(x => x.id !== id)), [])
+  const addSpecialty = useCallback((s: Specialty) => {
+    setState(prev => ({ ...prev, specialties: [...prev.specialties, s] }))
+  }, [])
+  const updateSpecialty = useCallback((s: Specialty) => {
+    setState(prev => ({ ...prev, specialties: prev.specialties.map(x => x.id === s.id ? s : x) }))
+  }, [])
+  const removeSpecialty = useCallback((id: string) => {
+    setState(prev => ({ ...prev, specialties: prev.specialties.filter(x => x.id !== id) }))
+  }, [])
+
+  const addConvenio = useCallback((c: Convenio) => {
+    setState(prev => ({ ...prev, convenios: [...prev.convenios, c] }))
+  }, [])
+  const updateConvenio = useCallback((c: Convenio) => {
+    setState(prev => ({ ...prev, convenios: prev.convenios.map(x => x.id === c.id ? c : x) }))
+  }, [])
+  const removeConvenio = useCallback((id: string) => {
+    setState(prev => ({ ...prev, convenios: prev.convenios.filter(x => x.id !== id) }))
+  }, [])
+
+  const addExam = useCallback((e: Exam) => {
+    setState(prev => ({ ...prev, exams: [...prev.exams, e] }))
+  }, [])
+  const updateExam = useCallback((e: Exam) => {
+    setState(prev => ({ ...prev, exams: prev.exams.map(x => x.id === e.id ? e : x) }))
+  }, [])
+  const removeExam = useCallback((id: string) => {
+    setState(prev => ({ ...prev, exams: prev.exams.filter(x => x.id !== id) }))
+  }, [])
+
+  const addProcedure = useCallback((p: Procedure) => {
+    setState(prev => ({ ...prev, procedures: [...prev.procedures, p] }))
+  }, [])
+  const updateProcedure = useCallback((p: Procedure) => {
+    setState(prev => ({ ...prev, procedures: prev.procedures.map(x => x.id === p.id ? p : x) }))
+  }, [])
+  const removeProcedure = useCallback((id: string) => {
+    setState(prev => ({ ...prev, procedures: prev.procedures.filter(x => x.id !== id) }))
+  }, [])
 
   const getSpecialtyName = useCallback((id: string) => specialties.find(s => s.id === id)?.name || '', [specialties])
   const getConvenioName = useCallback((id: string) => convenios.find(c => c.id === id)?.name || '', [convenios])
