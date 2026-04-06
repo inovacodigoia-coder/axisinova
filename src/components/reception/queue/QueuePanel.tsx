@@ -1,6 +1,7 @@
-import { useState } from 'react'
+import { useState, useCallback, memo } from 'react'
 import { useQueue } from '@/context/QueueContext'
 import { QueueCard } from './QueueCard'
+import { EmptyQueueState } from '@/components/reception/empty-states/EmptyQueueState'
 import { cn } from '@/lib/utils'
 import { Users, Clock, CheckCircle } from 'lucide-react'
 
@@ -20,7 +21,7 @@ const FILTER_MAP: Record<Filter, string[]> = {
   Atendimento: ['in_reception', 'in_progress'],
 }
 
-export function QueuePanel({ selectedId, onSelect, onCheckin }: QueuePanelProps) {
+export const QueuePanel = memo(function QueuePanel({ selectedId, onSelect, onCheckin }: QueuePanelProps) {
   const { state, callTicket, stats } = useQueue()
   const [filter, setFilter] = useState<Filter>('Todos')
 
@@ -32,6 +33,8 @@ export function QueuePanel({ selectedId, onSelect, onCheckin }: QueuePanelProps)
       if (!a.isPreferential && b.isPreferential) return 1
       return new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
     })
+
+  const handleCall = useCallback((id: string) => callTicket(id), [callTicket])
 
   return (
     <div className="flex flex-col h-full bg-[hsl(220,20%,12%)] rounded-xl overflow-hidden">
@@ -60,20 +63,21 @@ export function QueuePanel({ selectedId, onSelect, onCheckin }: QueuePanelProps)
       </div>
 
       <div className="flex-1 overflow-y-auto p-2 space-y-2">
-        {sorted.map(entry => (
-          <QueueCard
-            key={entry.id}
-            entry={entry}
-            selected={selectedId === entry.id}
-            onSelect={() => onSelect(entry.id)}
-            onCall={() => callTicket(entry.id)}
-            onCheckin={() => onCheckin(entry.id)}
-          />
-        ))}
-        {sorted.length === 0 && (
-          <div className="text-center text-gray-500 text-sm py-8">Nenhum paciente na fila</div>
+        {sorted.length === 0 ? (
+          <EmptyQueueState />
+        ) : (
+          sorted.map(entry => (
+            <QueueCard
+              key={entry.id}
+              entry={entry}
+              selected={selectedId === entry.id}
+              onSelect={() => onSelect(entry.id)}
+              onCall={() => handleCall(entry.id)}
+              onCheckin={() => onCheckin(entry.id)}
+            />
+          ))
         )}
       </div>
     </div>
   )
-}
+})

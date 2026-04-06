@@ -3,6 +3,8 @@ import type { QueueEntry } from '@/types/reception.types'
 import { QUEUE_STATUS_LABELS } from '@/types/reception.types'
 import { TicketBadge } from './TicketBadge'
 import { Star, Clock, FileCheck, FileWarning, Phone, User } from 'lucide-react'
+import { memo } from 'react'
+import { Progress } from '@/components/ui/progress'
 
 const STATUS_COLORS: Record<string, string> = {
   waiting: 'border-l-blue-400',
@@ -34,7 +36,10 @@ interface QueueCardProps {
   onCheckin?: () => void
 }
 
-export function QueueCard({ entry, selected, onSelect, onCall, onCheckin }: QueueCardProps) {
+export const QueueCard = memo(function QueueCard({ entry, selected, onSelect, onCall, onCheckin }: QueueCardProps) {
+  const ds = entry.documentsStatus
+  const showDocBar = ds && ds.total > 0
+
   return (
     <div
       onClick={onSelect}
@@ -65,15 +70,44 @@ export function QueueCard({ entry, selected, onSelect, onCall, onCheckin }: Queu
       </div>
       <div className="text-xs text-gray-500 mb-2 truncate">{entry.convenioName}</div>
 
+      {/* Document status bar */}
+      {showDocBar && (
+        <div className="mb-2 flex items-center gap-2 text-[10px]">
+          {ds.isComplete ? (
+            <FileCheck className="h-3.5 w-3.5 text-emerald-400 shrink-0" />
+          ) : (
+            <FileWarning className="h-3.5 w-3.5 text-amber-400 shrink-0" />
+          )}
+          <div className="flex-1">
+            <div className="h-1.5 rounded-full bg-[hsl(220,15%,25%)] overflow-hidden">
+              <div
+                className={cn('h-full rounded-full transition-all',
+                  ds.isComplete ? 'bg-emerald-400' : ds.missingRequired.length > 0 ? 'bg-red-400' : 'bg-amber-400'
+                )}
+                style={{ width: `${ds.required > 0 ? (ds.validated / ds.required) * 100 : 100}%` }}
+              />
+            </div>
+          </div>
+          <span className={cn(
+            ds.isComplete ? 'text-emerald-400' : ds.missingRequired.length > 0 ? 'text-red-400' : 'text-amber-400'
+          )}>
+            {ds.validated}/{ds.required}
+            {ds.missingRequired.length > 0 && ` ⚠️ ${ds.missingRequired.length} obrig.`}
+          </span>
+        </div>
+      )}
+
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
           <span className={cn('text-[10px] px-1.5 py-0.5 rounded font-medium', STATUS_BADGE_COLORS[entry.status])}>
             {QUEUE_STATUS_LABELS[entry.status]}
           </span>
-          {entry.documentsValidated ? (
-            <FileCheck className="h-3.5 w-3.5 text-emerald-400" />
-          ) : (
-            <FileWarning className="h-3.5 w-3.5 text-amber-400" />
+          {!showDocBar && (
+            entry.documentsValidated ? (
+              <FileCheck className="h-3.5 w-3.5 text-emerald-400" />
+            ) : (
+              <FileWarning className="h-3.5 w-3.5 text-amber-400" />
+            )
           )}
         </div>
         <span className={cn('flex items-center gap-1 text-[10px]', entry.waitingMinutes > 30 ? 'text-red-400 font-bold' : 'text-gray-500')}>
@@ -97,4 +131,4 @@ export function QueueCard({ entry, selected, onSelect, onCall, onCheckin }: Queu
       )}
     </div>
   )
-}
+})
