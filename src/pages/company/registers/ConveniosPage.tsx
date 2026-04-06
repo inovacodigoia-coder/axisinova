@@ -144,8 +144,10 @@ export default function ConveniosPage() {
       )}
 
       {showAttachments && (
-        <ConvenioAttachmentsModal
-          convenio={showAttachments}
+        <AttachmentsModal
+          title={showAttachments.name}
+          entityId={showAttachments.id}
+          rules={showAttachments.attachmentRules}
           onClose={() => setShowAttachments(null)}
           onSave={(rules) => {
             updateConvenio({ ...showAttachments, attachmentRules: rules })
