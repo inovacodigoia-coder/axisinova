@@ -1,16 +1,20 @@
 import { useState } from 'react'
 import { useRegisters } from '@/context/RegistersContext'
 import { useCompanyContext } from '@/context/CompanyContext'
+import { useAuth } from '@/context/AuthContext'
 import { usePaginatedList } from '@/hooks/usePaginatedList'
 import { EmptyState } from '@/components/feedback/EmptyState'
-import { Plus, Search, Edit, MoreVertical, Lock, Unlock, Trash2, Settings } from 'lucide-react'
+import { Plus, Search, Edit, MoreVertical, Lock, Unlock, Trash2, Settings, AlertTriangle, ArrowUpCircle } from 'lucide-react'
 import type { Doctor } from '@/types/registers.types'
 import { UF_LIST, BLOCK_REASONS } from '@/types/registers.types'
 import { toast } from 'sonner'
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu'
+import { MOCK_COMPANIES } from '@/mocks/superadmin.mock'
+import { MOCK_PLANS } from '@/mocks/superadmin.mock'
 
 export default function DoctorsPage() {
   const { canAccess } = useCompanyContext()
+  const { user } = useAuth()
   const { doctors, specialties, convenios, addDoctor, updateDoctor, removeDoctor, getSpecialtyName, isDemo } = useRegisters()
   const [search, setSearch] = useState('')
   const [specFilter, setSpecFilter] = useState('')
@@ -20,6 +24,18 @@ export default function DoctorsPage() {
   const [showBlock, setShowBlock] = useState<Doctor | null>(null)
   const [showDeleteBlock, setShowDeleteBlock] = useState<Doctor | null>(null)
   const [showSpecialties, setShowSpecialties] = useState(false)
+  const [showRequestMore, setShowRequestMore] = useState(false)
+
+  // Get plan limits
+  const companyId = user?.companyId || 'comp_001'
+  const company = MOCK_COMPANIES.find(c => c.id === companyId)
+  const plan = MOCK_PLANS.find(p => p.name === company?.plano)
+  const doctorLimit = plan?.maxDoctors ?? company?.medicosLimite ?? 15
+  const isUnlimited = doctorLimit === null || doctorLimit >= 999
+  const activeDoctors = doctors.filter(d => d.isActive).length
+  const isAtLimit = !isUnlimited && activeDoctors >= doctorLimit
+  const isNearLimit = !isUnlimited && !isAtLimit && activeDoctors >= doctorLimit - 2
+  const ADDON_PRICE_PER_DOCTOR = 79
 
   const filtered = doctors.filter(d => {
     if (search && !d.fullName.toLowerCase().includes(search.toLowerCase()) && !d.crm.includes(search)) return false
@@ -36,10 +52,43 @@ export default function DoctorsPage() {
 
   return (
     <div className="space-y-6">
+      {/* Limit warning banner */}
+      {isAtLimit && (
+        <div className="rounded-xl border border-destructive/30 bg-destructive/5 p-4 flex items-start gap-3">
+          <AlertTriangle className="h-5 w-5 text-destructive shrink-0 mt-0.5" />
+          <div className="flex-1">
+            <p className="text-sm font-semibold text-destructive">Limite de médicos atingido ({activeDoctors}/{doctorLimit})</p>
+            <p className="text-xs text-muted-foreground mt-1">
+              Seu plano <strong>{company?.plano}</strong> permite até {doctorLimit} médicos. Para adicionar mais, solicite ao administrador do sistema.
+            </p>
+          </div>
+          <button onClick={() => setShowRequestMore(true)} className="shrink-0 rounded-lg bg-primary px-3 py-1.5 text-xs font-semibold text-primary-foreground hover:opacity-90 flex items-center gap-1.5">
+            <ArrowUpCircle className="h-3.5 w-3.5" /> Solicitar mais
+          </button>
+        </div>
+      )}
+      {isNearLimit && (
+        <div className="rounded-xl border border-[hsl(33,100%,50%)]/30 bg-[hsl(33,100%,50%)]/5 p-4 flex items-start gap-3">
+          <AlertTriangle className="h-5 w-5 text-[hsl(33,100%,50%)] shrink-0 mt-0.5" />
+          <div className="flex-1">
+            <p className="text-sm font-semibold text-[hsl(33,100%,50%)]">Próximo do limite de médicos ({activeDoctors}/{doctorLimit})</p>
+            <p className="text-xs text-muted-foreground mt-1">
+              Restam apenas {doctorLimit - activeDoctors} vaga(s) no plano <strong>{company?.plano}</strong>.
+            </p>
+          </div>
+          <button onClick={() => setShowRequestMore(true)} className="shrink-0 rounded-lg border border-input px-3 py-1.5 text-xs font-medium hover:bg-muted flex items-center gap-1.5">
+            <ArrowUpCircle className="h-3.5 w-3.5" /> Ampliar limite
+          </button>
+        </div>
+      )}
+
       {isEmpty ? (
         <>
           <div className="flex items-center justify-between">
-            <div><h1 className="text-2xl font-bold text-foreground">Médicos</h1><p className="text-sm text-muted-foreground">Gestão de profissionais médicos</p></div>
+            <div>
+              <h1 className="text-2xl font-bold text-foreground">Médicos</h1>
+              <p className="text-sm text-muted-foreground">Gestão de profissionais médicos{!isUnlimited && ` · Limite do plano: ${doctorLimit}`}</p>
+            </div>
             <button onClick={() => setShowSpecialties(true)} className="rounded-xl border border-input px-4 py-2.5 text-sm font-medium hover:bg-muted flex items-center gap-2">
               <Settings className="h-4 w-4" /> Gerenciar Especialidades
             </button>
@@ -69,17 +118,41 @@ export default function DoctorsPage() {
         <>
       <div className="flex items-center justify-between flex-wrap gap-3">
         <div>
-          <h1 className="text-2xl font-bold text-foreground">Médicos <span className="text-muted-foreground text-lg font-normal">({doctors.length} cadastrados)</span></h1>
+          <h1 className="text-2xl font-bold text-foreground">
+            Médicos{' '}
+            <span className="text-muted-foreground text-lg font-normal">
+              ({activeDoctors}{!isUnlimited ? ` / ${doctorLimit}` : ''} cadastrados)
+            </span>
+          </h1>
           <p className="text-sm text-muted-foreground">Gestão de profissionais médicos</p>
+          {!isUnlimited && (
+            <div className="mt-1.5 flex items-center gap-2">
+              <div className="h-1.5 w-32 rounded-full bg-border overflow-hidden">
+                <div
+                  className={`h-full rounded-full transition-all ${isAtLimit ? 'bg-destructive' : isNearLimit ? 'bg-[hsl(33,100%,50%)]' : 'bg-primary'}`}
+                  style={{ width: `${Math.min((activeDoctors / doctorLimit) * 100, 100)}%` }}
+                />
+              </div>
+              <span className="text-xs text-muted-foreground">
+                {isAtLimit ? 'Limite atingido' : `${doctorLimit - activeDoctors} vaga(s) restante(s)`}
+              </span>
+            </div>
+          )}
         </div>
         <div className="flex items-center gap-2">
           <button onClick={() => setShowSpecialties(true)} className="rounded-xl border border-input px-4 py-2.5 text-sm font-medium hover:bg-muted flex items-center gap-2">
             <Settings className="h-4 w-4" /> Gerenciar Especialidades
           </button>
           {canAccess('registers', 'create') && (
-            <button onClick={() => { setEditing(null); setShowForm(true) }} className="gradient-bg rounded-xl px-4 py-2.5 text-sm font-semibold text-white shadow-lg hover:opacity-90 flex items-center gap-2">
-              <Plus className="h-4 w-4" /> Novo Médico
-            </button>
+            isAtLimit ? (
+              <button onClick={() => setShowRequestMore(true)} className="rounded-xl border border-primary/50 bg-primary/5 px-4 py-2.5 text-sm font-semibold text-primary hover:bg-primary/10 flex items-center gap-2">
+                <ArrowUpCircle className="h-4 w-4" /> Solicitar mais médicos
+              </button>
+            ) : (
+              <button onClick={() => { setEditing(null); setShowForm(true) }} className="gradient-bg rounded-xl px-4 py-2.5 text-sm font-semibold text-white shadow-lg hover:opacity-90 flex items-center gap-2">
+                <Plus className="h-4 w-4" /> Novo Médico
+              </button>
+            )
           )}
         </div>
       </div>
@@ -233,6 +306,59 @@ export default function DoctorsPage() {
       {/* Specialties Modal */}
       {showSpecialties && (
         <SpecialtyListModal onClose={() => setShowSpecialties(false)} />
+      )}
+
+      {/* Request More Doctors Modal */}
+      {showRequestMore && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4" onClick={() => setShowRequestMore(false)}>
+          <div onClick={e => e.stopPropagation()} className="w-full max-w-md rounded-2xl bg-card border border-border shadow-2xl">
+            <div className="flex items-center justify-between border-b border-border px-6 py-4">
+              <h2 className="text-lg font-bold text-foreground">Solicitar mais médicos</h2>
+              <button onClick={() => setShowRequestMore(false)} className="text-muted-foreground hover:text-foreground">✕</button>
+            </div>
+            <div className="p-6 space-y-4">
+              <div className="rounded-xl bg-muted/50 p-4 text-center">
+                <p className="text-3xl font-bold text-foreground">{activeDoctors} / {isUnlimited ? '∞' : doctorLimit}</p>
+                <p className="text-sm text-muted-foreground mt-1">Médicos ativos no plano <strong>{company?.plano}</strong></p>
+                <div className="mt-2 h-2 rounded-full bg-border overflow-hidden mx-auto max-w-[200px]">
+                  <div className={`h-full rounded-full ${isAtLimit ? 'bg-destructive' : 'bg-primary'}`} style={{ width: `${isUnlimited ? 30 : Math.min((activeDoctors / doctorLimit) * 100, 100)}%` }} />
+                </div>
+              </div>
+
+              <div className="rounded-xl border border-primary/20 bg-primary/5 p-4">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm font-semibold text-foreground">Médico adicional</p>
+                    <p className="text-xs text-muted-foreground">Por médico além do limite do plano</p>
+                  </div>
+                  <p className="text-lg font-bold text-primary">R$ {ADDON_PRICE_PER_DOCTOR}<span className="text-xs font-normal text-muted-foreground">/mês</span></p>
+                </div>
+              </div>
+
+              <div className="rounded-xl border border-border bg-muted/30 p-4 space-y-2">
+                <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Alternativa</p>
+                <p className="text-sm text-foreground">
+                  Faça upgrade para o plano <strong className="text-primary">Enterprise</strong> e tenha médicos ilimitados, multi-unidades e muito mais.
+                </p>
+              </div>
+
+              <div className="flex gap-2">
+                <button
+                  onClick={() => {
+                    toast.success('Solicitação enviada ao administrador do sistema. Você será notificado quando o limite for ampliado.')
+                    setShowRequestMore(false)
+                  }}
+                  className="flex-1 gradient-bg rounded-xl px-4 py-2.5 text-sm font-semibold text-white shadow-lg hover:opacity-90"
+                >
+                  Solicitar ao Super Admin
+                </button>
+                <button onClick={() => setShowRequestMore(false)} className="rounded-xl border border-input px-4 py-2.5 text-sm font-medium hover:bg-muted">
+                  Cancelar
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   )
