@@ -1,15 +1,34 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useCompanyContext } from '@/context/CompanyContext'
+import { useAuth } from '@/context/AuthContext'
+import { supabase } from '@/integrations/supabase/client'
 import { MOCK_SECTORS } from '@/mocks/company.mock'
-import { Plus, Edit, Users, ShieldCheck } from 'lucide-react'
+import { Plus, Edit, Users, ShieldCheck, Loader2 } from 'lucide-react'
 import type { Sector } from '@/types/permissions.types'
 import { toast } from 'sonner'
 
 export default function SectorsPage() {
   const { canAccess, allProfiles } = useCompanyContext()
+  const { user } = useAuth()
   const [sectors, setSectors] = useState(MOCK_SECTORS)
   const [showForm, setShowForm] = useState(false)
   const [editing, setEditing] = useState<Sector | null>(null)
+  const [userCount, setUserCount] = useState(0)
+  const [loadingCount, setLoadingCount] = useState(true)
+
+  useEffect(() => {
+    async function fetchCount() {
+      if (!user?.companyId) { setLoadingCount(false); return }
+      const { count, error } = await supabase
+        .from('profiles')
+        .select('*', { count: 'exact', head: true })
+        .eq('company_id', user.companyId)
+        .eq('is_active', true)
+      if (!error && count !== null) setUserCount(count)
+      setLoadingCount(false)
+    }
+    fetchCount()
+  }, [user?.companyId])
 
   const handleSave = (s: Sector) => {
     if (editing) {
@@ -49,7 +68,10 @@ export default function SectorsPage() {
             {s.description && <p className="text-xs text-muted-foreground mt-1">{s.description}</p>}
             <div className="mt-4 flex items-center gap-4 text-xs text-muted-foreground">
               <span className="flex items-center gap-1"><ShieldCheck className="h-3.5 w-3.5" /> {s.allowedProfiles.length} perfis</span>
-              <span className="flex items-center gap-1"><Users className="h-3.5 w-3.5" /> {Math.floor(Math.random() * 8 + 1)} usuários</span>
+              <span className="flex items-center gap-1">
+                <Users className="h-3.5 w-3.5" />
+                {loadingCount ? <Loader2 className="h-3 w-3 animate-spin" /> : `${userCount} usuários`}
+              </span>
             </div>
           </div>
         ))}
