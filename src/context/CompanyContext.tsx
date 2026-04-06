@@ -29,7 +29,11 @@ interface CompanyContextValue {
 
 const CompanyContext = createContext<CompanyContextValue | null>(null)
 
-function getUserProfiles(userId: string): Profile[] {
+function getUserProfiles(userId: string, role?: string): Profile[] {
+  // Real Supabase users with admin role get all active profiles
+  if (role === 'super_admin' || role === 'company_admin') {
+    return MOCK_COMPANY_PROFILES.filter(p => p.isActive)
+  }
   const user = MOCK_COMPANY_USERS.find(u => u.id === userId)
   if (!user) return []
   return MOCK_COMPANY_PROFILES.filter(p => user.profiles.includes(p.id) && p.isActive)
