@@ -25,24 +25,24 @@ export default function ProceduresPage() {
 
   const { visibleItems, totalItems, hasMore, visibleCount, showMore, showAll, remainingCount } = usePaginatedList(filtered)
 
-  if (procedures.length === 0) {
-    return (
-      <div className="space-y-6">
-        <div className="flex items-center justify-between">
-          <div><h1 className="text-2xl font-bold text-foreground">Procedimentos</h1><p className="text-sm text-muted-foreground">Catálogo de procedimentos da clínica</p></div>
-        </div>
-        <EmptyState
-          icon={<span className="text-4xl">⚕️</span>}
-          title="Nenhum procedimento cadastrado"
-          description="Cadastre os procedimentos realizados na sua clínica"
-          action={canAccess('registers', 'create') ? <button onClick={() => setShowForm(true)} className="gradient-bg rounded-xl px-4 py-2.5 text-sm font-semibold text-white shadow-lg hover:opacity-90 flex items-center gap-2"><Plus className="h-4 w-4" /> Cadastrar Primeiro Procedimento</button> : undefined}
-        />
-      </div>
-    )
-  }
+  const isEmpty = procedures.length === 0
 
   return (
     <div className="space-y-6">
+      {isEmpty ? (
+        <>
+          <div className="flex items-center justify-between">
+            <div><h1 className="text-2xl font-bold text-foreground">Procedimentos</h1><p className="text-sm text-muted-foreground">Catálogo de procedimentos da clínica</p></div>
+          </div>
+          <EmptyState
+            icon={<span className="text-4xl">⚕️</span>}
+            title="Nenhum procedimento cadastrado"
+            description="Cadastre os procedimentos realizados na sua clínica"
+            action={canAccess('registers', 'create') ? <button onClick={() => setShowForm(true)} className="gradient-bg rounded-xl px-4 py-2.5 text-sm font-semibold text-white shadow-lg hover:opacity-90 flex items-center gap-2"><Plus className="h-4 w-4" /> Cadastrar Primeiro Procedimento</button> : undefined}
+          />
+        </>
+      ) : (
+        <>
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold text-foreground">Procedimentos <span className="text-muted-foreground text-lg font-normal">({procedures.length})</span></h1>
@@ -126,6 +126,8 @@ export default function ProceduresPage() {
           </div>
         )}
       </div>
+      </>
+      )}
 
       {showForm && (
         <ProcedureFormModal

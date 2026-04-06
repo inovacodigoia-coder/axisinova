@@ -32,24 +32,24 @@ export default function DoctorsPage() {
 
   const { visibleItems, totalItems, hasMore, visibleCount, showMore, showAll, remainingCount } = usePaginatedList(filtered)
 
-  if (doctors.length === 0) {
-    return (
-      <div className="space-y-6">
-        <div className="flex items-center justify-between">
-          <div><h1 className="text-2xl font-bold text-foreground">Médicos</h1><p className="text-sm text-muted-foreground">Gestão de profissionais médicos</p></div>
-        </div>
-        <EmptyState
-          icon={<span className="text-4xl">👨‍⚕️</span>}
-          title="Nenhum médico cadastrado ainda"
-          description="Cadastre o primeiro médico para começar a usar o agendamento"
-          action={canAccess('registers', 'create') ? <button onClick={() => setShowForm(true)} className="gradient-bg rounded-xl px-4 py-2.5 text-sm font-semibold text-white shadow-lg hover:opacity-90 flex items-center gap-2"><Plus className="h-4 w-4" /> Cadastrar Primeiro Médico</button> : undefined}
-        />
-      </div>
-    )
-  }
+  const isEmpty = doctors.length === 0
 
   return (
     <div className="space-y-6">
+      {isEmpty ? (
+        <>
+          <div className="flex items-center justify-between">
+            <div><h1 className="text-2xl font-bold text-foreground">Médicos</h1><p className="text-sm text-muted-foreground">Gestão de profissionais médicos</p></div>
+          </div>
+          <EmptyState
+            icon={<span className="text-4xl">👨‍⚕️</span>}
+            title="Nenhum médico cadastrado ainda"
+            description="Cadastre o primeiro médico para começar a usar o agendamento"
+            action={canAccess('registers', 'create') ? <button onClick={() => setShowForm(true)} className="gradient-bg rounded-xl px-4 py-2.5 text-sm font-semibold text-white shadow-lg hover:opacity-90 flex items-center gap-2"><Plus className="h-4 w-4" /> Cadastrar Primeiro Médico</button> : undefined}
+          />
+        </>
+      ) : (
+        <>
       <div className="flex items-center justify-between flex-wrap gap-3">
         <div>
           <h1 className="text-2xl font-bold text-foreground">Médicos <span className="text-muted-foreground text-lg font-normal">({doctors.length} cadastrados)</span></h1>
@@ -169,6 +169,8 @@ export default function DoctorsPage() {
           </div>
         )}
       </div>
+      </>
+      )}
 
       {/* Doctor Form Modal */}
       {showForm && (
