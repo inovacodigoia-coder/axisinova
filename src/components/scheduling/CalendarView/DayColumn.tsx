@@ -1,6 +1,6 @@
 import { useMemo } from 'react'
 import type { SchedulingAppointment } from '@/types/scheduling.types'
-import type { Doctor } from '@/types/registers.types'
+import type { LegacyDoctor as Doctor } from '@/mocks/company.mock'
 import { AppointmentCard } from './AppointmentCard'
 import { AppointmentSlot } from './AppointmentSlot'
 

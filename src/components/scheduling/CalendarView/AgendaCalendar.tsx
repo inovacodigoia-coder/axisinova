@@ -1,6 +1,6 @@
 import { useMemo } from 'react'
 import type { SchedulingAppointment } from '@/types/scheduling.types'
-import type { Doctor } from '@/types/registers.types'
+import type { LegacyDoctor as Doctor } from '@/mocks/company.mock'
 import { DayColumn } from './DayColumn'
 import { MOCK_DOCTORS } from '@/mocks/company.mock'
 import { format, addDays, startOfWeek, getDaysInMonth, startOfMonth } from 'date-fns'

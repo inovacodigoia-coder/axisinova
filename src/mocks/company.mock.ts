@@ -139,6 +139,20 @@ export const MOCK_CONVENIOS: LegacyConvenio[] = [
   { id: 'conv_06', name: 'Amil', type: 'health_plan', isActive: true, companyId: COMPANY_ID },
 ]
 
+// ── Legacy exams for scheduling compat ─────────────────────────
+export const MOCK_EXAMS = [
+  { id: 'ex_01', tussCode: '40301010', name: 'Hemograma Completo', type: 'lab' as const, specialty: 'Clínica Geral', duration: 15, isActive: true, companyId: COMPANY_ID },
+  { id: 'ex_02', tussCode: '40302040', name: 'Glicemia de Jejum', type: 'lab' as const, specialty: 'Endocrinologia', duration: 10, isActive: true, companyId: COMPANY_ID },
+  { id: 'ex_03', tussCode: '40808010', name: 'Eletrocardiograma', type: 'clinical_procedure' as const, specialty: 'Cardiologia', duration: 20, isActive: true, companyId: COMPANY_ID },
+  { id: 'ex_04', tussCode: '40901017', name: 'Raio-X de Tórax', type: 'imaging' as const, specialty: 'Radiologia', duration: 15, isActive: true, companyId: COMPANY_ID },
+  { id: 'ex_05', tussCode: '40901050', name: 'Tomografia Computadorizada', type: 'imaging' as const, specialty: 'Radiologia', duration: 45, isActive: true, companyId: COMPANY_ID },
+  { id: 'ex_06', tussCode: '40901068', name: 'Ressonância Magnética', type: 'imaging' as const, specialty: 'Neurologia', duration: 60, isActive: true, companyId: COMPANY_ID },
+  { id: 'ex_07', tussCode: '40302300', name: 'TSH e T4 Livre', type: 'lab' as const, specialty: 'Endocrinologia', duration: 10, isActive: true, companyId: COMPANY_ID },
+  { id: 'ex_08', tussCode: '31003060', name: 'Artroscopia de Joelho', type: 'surgical_procedure' as const, specialty: 'Ortopedia', duration: 90, isActive: true, companyId: COMPANY_ID },
+  { id: 'ex_09', tussCode: '10101012', name: 'Consulta Médica', type: 'consultation' as const, specialty: 'Clínica Geral', duration: 30, isActive: true, companyId: COMPANY_ID },
+  { id: 'ex_10', tussCode: '40304361', name: 'Ultrassonografia Obstétrica', type: 'imaging' as const, specialty: 'Ginecologia', duration: 30, isActive: true, companyId: COMPANY_ID },
+]
+
 // ── Helpers de funções por perfil ─────────────────────────────
 export function getFunctionsForProfile(profile: Profile): MenuFunction[] {
   return ALL_SYSTEM_FUNCTIONS.filter(fn => {
