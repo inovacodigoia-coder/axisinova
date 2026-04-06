@@ -52,7 +52,7 @@ export function Navbar() {
 
         {/* Desktop buttons */}
         <div className="hidden items-center gap-3 md:flex">
-          <OutlineButton variant="purple" className="h-9 px-4 text-xs">Entrar</OutlineButton>
+          <Link to="/login"><OutlineButton variant="purple" className="h-9 px-4 text-xs">Entrar</OutlineButton></Link>
           <Link to="/cadastro">
             <GradientButton className="h-9 px-4 text-xs">Teste Grátis 14 dias</GradientButton>
           </Link>
@@ -83,7 +83,7 @@ export function Navbar() {
               </a>
             ))}
             <div className="flex flex-col gap-2 pt-2 border-t border-border">
-              <OutlineButton variant="purple">Entrar</OutlineButton>
+              <Link to="/login"><OutlineButton variant="purple">Entrar</OutlineButton></Link>
               <Link to="/cadastro">
                 <GradientButton fullWidth>Teste Grátis 14 dias</GradientButton>
               </Link>
