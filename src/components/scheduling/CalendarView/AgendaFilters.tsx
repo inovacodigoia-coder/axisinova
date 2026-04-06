@@ -31,7 +31,7 @@ export function AgendaFilters({
   const selectedDoctor = MOCK_DOCTORS.find(d => d.id === doctorFilter)
   const convenios = doctorFilter === 'all'
     ? MOCK_CONVENIOS.filter(c => c.isActive)
-    : MOCK_CONVENIOS.filter(c => c.isActive && (selectedDoctor?.enabledConvenios.includes(c.id) ?? true))
+    : MOCK_CONVENIOS.filter(c => c.isActive && (selectedDoctor?.enabledConvenios?.includes(c.id) ?? true))
 
   return (
     <div className="space-y-3">

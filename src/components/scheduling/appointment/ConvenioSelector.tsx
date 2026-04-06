@@ -9,7 +9,7 @@ interface Props {
 export function ConvenioSelector({ doctorId, value, onChange }: Props) {
   const doctor = MOCK_DOCTORS.find(d => d.id === doctorId)
   const convenios = doctor
-    ? MOCK_CONVENIOS.filter(c => c.isActive && doctor.enabledConvenios.includes(c.id))
+    ? MOCK_CONVENIOS.filter(c => c.isActive && doctor.enabledConvenios?.includes(c.id))
     : MOCK_CONVENIOS.filter(c => c.isActive)
 
   return (

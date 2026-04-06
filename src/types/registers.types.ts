@@ -1,83 +1,140 @@
+export interface Specialty {
+  id: string
+  name: string
+  companyId: string
+  isActive: boolean
+  createdAt: string
+}
+
 export interface Doctor {
   id: string
+  companyId: string
   fullName: string
   crm: string
   crmState: string
-  mainSpecialty: string
-  otherSpecialties?: string[]
+  specialtyIds: string[]
   phone?: string
   email?: string
   birthDate?: string
-  enabledConvenios: string[]
+  photo?: string
+  enabledConvenioIds: string[]
+  scheduleConfig?: DoctorScheduleConfig
   isActive: boolean
-  companyId: string
-  consultDuration: number
-  consultInterval: number
-  schedule: DoctorSchedule[]
+  isBlocked: boolean
+  blockedReason?: string
+  blockedAt?: string
+  createdAt: string
+  updatedAt: string
 }
 
-export interface DoctorSchedule {
-  dayOfWeek: number // 0=Sun...6=Sat
+export interface DoctorScheduleConfig {
+  consultationDuration: number
+  intervalBetween: number
+  workDays: WorkDayConfig[]
+}
+
+export interface WorkDayConfig {
+  day: 0 | 1 | 2 | 3 | 4 | 5 | 6
+  isActive: boolean
   startTime: string
   endTime: string
-  active: boolean
+  lunchStart?: string
+  lunchEnd?: string
 }
 
 export interface Convenio {
   id: string
+  companyId: string
   name: string
   ansCode?: string
-  type: 'health_plan' | 'private' | 'sus'
+  type: 'health_plan' | 'private' | 'sus' | 'other'
   cnpj?: string
   authPhone?: string
   email?: string
-  notes?: string
+  observations?: string
+  attachmentRules: AttachmentRule[]
   isActive: boolean
-  companyId: string
-  documentRules?: ConvenioDocumentRules
+  createdAt: string
 }
 
-export type DocumentRequirement = 'none' | 'optional' | 'required'
+export type AppointmentType = 'consulta' | 'exame' | 'procedimento'
 
-export interface ConvenioDocumentRules {
-  consulta: Record<string, DocumentRequirement>
-  exame: Record<string, DocumentRequirement>
-  procedimento: Record<string, DocumentRequirement>
+export interface AttachmentRule {
+  id: string
+  convenioId: string
+  attachmentName: string
+  isRequired: boolean
+  appliesToTypes: AppointmentType[]
+  order: number
+  observations?: string
 }
-
-export const DOCUMENT_COLUMNS = [
-  'Carteirinha', 'Pedido Médico', 'RG/CPF', 'Autorização', 'Guia SADT', 'Laudo'
-] as const
-
-export const ATTENDANCE_TYPES = ['consulta', 'exame', 'procedimento'] as const
 
 export interface Exam {
   id: string
-  tussCode: string
-  name: string
-  type: 'lab' | 'imaging' | 'clinical_procedure' | 'surgical_procedure' | 'consultation'
-  specialty?: string
-  duration?: number
-  preparation?: string
-  resultDays?: number
-  requiresAuth: boolean
-  authInstructions?: string
-  notes?: string
-  isActive: boolean
   companyId: string
+  name: string
+  tussCode?: string
+  specialtyId?: string
+  preparationInstructions?: string
+  estimatedDurationMinutes?: number
+  resultDeadlineDays?: number
+  requiresAuthorization: boolean
+  authorizationInstructions?: string
+  isActive: boolean
+  createdAt: string
 }
 
-export const EXAM_TYPES: { value: Exam['type']; label: string }[] = [
-  { value: 'lab', label: 'Exame Laboratorial' },
-  { value: 'imaging', label: 'Exame de Imagem' },
-  { value: 'clinical_procedure', label: 'Procedimento Clínico' },
-  { value: 'surgical_procedure', label: 'Procedimento Cirúrgico' },
-  { value: 'consultation', label: 'Consulta' },
+export interface Procedure {
+  id: string
+  companyId: string
+  name: string
+  tussCode?: string
+  type: 'clinical' | 'surgical' | 'diagnostic' | 'therapeutic' | 'other'
+  specialtyId?: string
+  estimatedDurationMinutes?: number
+  requiresAuthorization: boolean
+  authorizationInstructions?: string
+  requiresAnesthesia: boolean
+  anesthesiaType?: string
+  preOperativeInstructions?: string
+  postOperativeInstructions?: string
+  isActive: boolean
+  createdAt: string
+}
+
+export const PROCEDURE_TYPES: { value: Procedure['type']; label: string; color: string }[] = [
+  { value: 'clinical', label: 'Clínico', color: 'bg-blue-100 text-blue-700' },
+  { value: 'surgical', label: 'Cirúrgico', color: 'bg-red-100 text-red-700' },
+  { value: 'diagnostic', label: 'Diagnóstico', color: 'bg-green-100 text-green-700' },
+  { value: 'therapeutic', label: 'Terapêutico', color: 'bg-purple-100 text-purple-700' },
+  { value: 'other', label: 'Outro', color: 'bg-muted text-muted-foreground' },
 ]
 
-export const SPECIALTIES = [
-  'Cardiologia', 'Dermatologia', 'Endocrinologia', 'Gastroenterologia',
-  'Ginecologia', 'Neurologia', 'Oftalmologia', 'Ortopedia',
-  'Otorrinolaringologia', 'Pediatria', 'Psiquiatria', 'Urologia',
-  'Clínica Geral', 'Cirurgia Geral', 'Radiologia',
+export const ANESTHESIA_TYPES = ['Local', 'Sedação', 'Geral', 'Raqui', 'Peridural'] as const
+
+export const CONVENIO_TYPE_LABELS: Record<Convenio['type'], string> = {
+  health_plan: 'Plano de Saúde',
+  private: 'Particular',
+  sus: 'SUS',
+  other: 'Outro',
+}
+
+export const CONVENIO_TYPE_COLORS: Record<Convenio['type'], string> = {
+  health_plan: 'bg-blue-100 text-blue-700',
+  private: 'bg-green-100 text-green-700',
+  sus: 'bg-orange-100 text-orange-700',
+  other: 'bg-muted text-muted-foreground',
+}
+
+export const UF_LIST = [
+  'AC','AL','AM','AP','BA','CE','DF','ES','GO','MA','MG','MS','MT',
+  'PA','PB','PE','PI','PR','RJ','RN','RO','RR','RS','SC','SE','SP','TO',
 ]
+
+export const BLOCK_REASONS = [
+  'Saiu da empresa',
+  'Afastamento médico',
+  'Férias',
+  'Licença',
+  'Outro',
+] as const

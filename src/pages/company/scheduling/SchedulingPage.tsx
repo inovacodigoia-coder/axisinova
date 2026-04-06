@@ -7,7 +7,7 @@ import { AppointmentWizard } from '@/components/scheduling/appointment/Appointme
 import { AppointmentDetailDrawer } from '@/components/scheduling/AppointmentDetailDrawer'
 import { MOCK_APPOINTMENTS, MOCK_PATIENTS } from '@/mocks/scheduling.mock'
 import type { SchedulingAppointment } from '@/types/scheduling.types'
-import type { Doctor } from '@/types/registers.types'
+import type { LegacyDoctor as Doctor } from '@/mocks/company.mock'
 import { toast } from 'sonner'
 import { format } from 'date-fns'
 
