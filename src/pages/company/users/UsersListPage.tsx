@@ -2,9 +2,14 @@ import { useState, useEffect, useCallback } from 'react'
 import { useAuth } from '@/context/AuthContext'
 import { supabase } from '@/integrations/supabase/client'
 import { DataTable } from '@/components/ui/DataTable'
-import { Search, Plus, Users, Edit, Loader2 } from 'lucide-react'
+import { Search, Plus, Users, Edit, Loader2, ToggleLeft, ToggleRight } from 'lucide-react'
 import { toast } from 'sonner'
 import { CreateUserModal } from '@/components/company/users/CreateUserModal'
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 
 interface ProfileRow {
   id: string
@@ -28,12 +33,15 @@ const roleLabelMap: Record<string, string> = {
   analyst: 'Analista',
 }
 
+const ROLE_OPTIONS = Object.entries(roleLabelMap).map(([value, label]) => ({ value, label }))
+
 export default function UsersListPage() {
   const { user } = useAuth()
   const [profiles, setProfiles] = useState<ProfileRow[]>([])
   const [loading, setLoading] = useState(true)
   const [search, setSearch] = useState('')
   const [showCreateModal, setShowCreateModal] = useState(false)
+  const [editingUser, setEditingUser] = useState<ProfileRow | null>(null)
 
   const companyId = user?.companyId
 
@@ -62,6 +70,21 @@ export default function UsersListPage() {
     return true
   })
 
+  const handleToggleActive = async (profile: ProfileRow) => {
+    const newStatus = !(profile.is_active !== false)
+    const { error } = await supabase
+      .from('profiles')
+      .update({ is_active: newStatus })
+      .eq('id', profile.id)
+
+    if (error) {
+      toast.error('Erro ao alterar status')
+      return
+    }
+    toast.success(newStatus ? 'Usuário ativado' : 'Usuário desativado')
+    fetchProfiles()
+  }
+
   const columns = [
     { key: 'full_name', label: 'Nome completo', sortable: true, render: (p: ProfileRow) => <span className="font-medium text-foreground">{p.full_name}</span> },
     { key: 'cpf', label: 'CPF', render: (p: ProfileRow) => <span className="text-sm text-muted-foreground">{p.cpf || '—'}</span> },
@@ -76,9 +99,17 @@ export default function UsersListPage() {
         {p.created_at ? new Date(p.created_at).toLocaleDateString('pt-BR') : '—'}
       </span>
     )},
-    { key: 'actions', label: 'Ações', render: (_p: ProfileRow) => (
+    { key: 'actions', label: 'Ações', render: (p: ProfileRow) => (
       <div className="flex items-center gap-1">
-        <button className="rounded p-1 hover:bg-muted"><Edit className="h-4 w-4 text-muted-foreground" /></button>
+        <button onClick={() => setEditingUser(p)} className="rounded p-1.5 hover:bg-muted" title="Editar">
+          <Edit className="h-4 w-4 text-muted-foreground" />
+        </button>
+        <button onClick={() => handleToggleActive(p)} className="rounded p-1.5 hover:bg-muted" title={p.is_active !== false ? 'Desativar' : 'Ativar'}>
+          {p.is_active !== false
+            ? <ToggleRight className="h-4 w-4 text-[hsl(var(--success))]" />
+            : <ToggleLeft className="h-4 w-4 text-muted-foreground" />
+          }
+        </button>
       </div>
     )},
   ]
@@ -130,6 +161,85 @@ export default function UsersListPage() {
       )}
 
       <CreateUserModal open={showCreateModal} onOpenChange={setShowCreateModal} onCreated={fetchProfiles} />
+
+      <EditUserModal
+        profile={editingUser}
+        onClose={() => setEditingUser(null)}
+        onSaved={() => { setEditingUser(null); fetchProfiles() }}
+      />
     </div>
+  )
+}
+
+function EditUserModal({ profile, onClose, onSaved }: { profile: ProfileRow | null; onClose: () => void; onSaved: () => void }) {
+  const [fullName, setFullName] = useState('')
+  const [cpf, setCpf] = useState('')
+  const [role, setRole] = useState('')
+  const [saving, setSaving] = useState(false)
+
+  useEffect(() => {
+    if (profile) {
+      setFullName(profile.full_name)
+      setCpf(profile.cpf || '')
+      setRole(profile.role)
+    }
+  }, [profile])
+
+  const handleSave = async () => {
+    if (!profile || !fullName.trim() || !role) {
+      toast.error('Preencha todos os campos obrigatórios')
+      return
+    }
+    setSaving(true)
+    const { error } = await supabase
+      .from('profiles')
+      .update({ full_name: fullName, cpf: cpf || null, role })
+      .eq('id', profile.id)
+
+    if (error) {
+      toast.error('Erro ao atualizar usuário')
+    } else {
+      toast.success('Usuário atualizado')
+      onSaved()
+    }
+    setSaving(false)
+  }
+
+  return (
+    <Dialog open={!!profile} onOpenChange={open => { if (!open) onClose() }}>
+      <DialogContent className="sm:max-w-md">
+        <DialogHeader>
+          <DialogTitle>Editar Usuário</DialogTitle>
+        </DialogHeader>
+        <div className="space-y-4">
+          <div className="space-y-2">
+            <Label>Nome completo *</Label>
+            <Input value={fullName} onChange={e => setFullName(e.target.value)} />
+          </div>
+          <div className="space-y-2">
+            <Label>CPF</Label>
+            <Input value={cpf} onChange={e => setCpf(e.target.value)} />
+          </div>
+          <div className="space-y-2">
+            <Label>Função *</Label>
+            <Select value={role} onValueChange={setRole}>
+              <SelectTrigger><SelectValue /></SelectTrigger>
+              <SelectContent>
+                {ROLE_OPTIONS.map(r => (
+                  <SelectItem key={r.value} value={r.value}>{r.label}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="flex justify-end gap-2 pt-2">
+            <Button variant="outline" onClick={onClose} disabled={saving}>Cancelar</Button>
+            <Button onClick={handleSave} disabled={saving}>
+              {saving && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+              Salvar
+            </Button>
+          </div>
+        </div>
+      </DialogContent>
+    </Dialog>
   )
 }
