@@ -91,6 +91,14 @@ export const MOCK_COMPANIES: Company[] = [
     plano: 'Enterprise', status: 'active', medicosAtivos: 30, medicosLimite: 999, usuariosAtivos: 55, usuariosLimite: 999,
     armazenamentoUsadoGB: 380, armazenamentoLimiteGB: 1000, valorMensal: 2490, criadoEm: '2023-09-18', ultimoAcesso: '2025-01-20',
   },
+  {
+    id: 'comp_011', razaoSocial: 'InovaSoftteste LTDA', nomeFantasia: 'InovaSoftteste',
+    cnpj: '99.888.777/0001-10', segmento: 'Clínica Médica', telefone: '(84) 9999-0000',
+    email: 'inivacodigoia@inivacodigoia.com.br',
+    endereco: { cep: '59010-000', logradouro: 'Av. Teste', numero: '100', bairro: 'Centro', cidade: 'Natal', estado: 'RN' },
+    plano: 'Pro', status: 'active', medicosAtivos: 0, medicosLimite: 15, usuariosAtivos: 1, usuariosLimite: 999,
+    armazenamentoUsadoGB: 0.1, armazenamentoLimiteGB: 100, valorMensal: 990, criadoEm: '2025-04-06', ultimoAcesso: '2025-04-06',
+  },
 ]
 
 export const MOCK_COMPANY_USERS: CompanyUser[] = [
