@@ -1,3 +1,4 @@
+import { useNavigate } from 'react-router-dom'
 import { usePeriodFilter } from '@/hooks/usePeriodFilter'
 import { useBIData } from '@/hooks/useBIData'
 import { ReportFilters } from '@/components/bi/reports/ReportFilters'
@@ -5,10 +6,38 @@ import { ReportSummaryBar } from '@/components/bi/reports/ReportSummaryBar'
 import { ExportMenu } from '@/components/bi/reports/ExportMenu'
 import { ChartCard } from '@/components/bi/shared/ChartCard'
 import { AttendanceTrendChart } from '@/components/bi/charts/AttendanceTrendChart'
+import { EmptyReportState } from '@/components/bi/empty-states/EmptyReportState'
+import { usePaginatedList } from '@/hooks/usePaginatedList'
 
 export default function ProductionReportPage() {
+  const navigate = useNavigate()
   const { preset, setPreset, dateRange } = usePeriodFilter()
-  const { monthlyData, doctorProduction } = useBIData(dateRange, {})
+  const { monthlyData, doctorProduction, hasData } = useBIData(dateRange, {})
+
+  const { visibleItems, hasMore, showMore, showAll, totalItems, remainingCount } = usePaginatedList(doctorProduction, 10)
+
+  if (!hasData) {
+    return (
+      <div className="space-y-4">
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-xl font-bold text-foreground">Relatório de Produção</h1>
+            <p className="text-xs text-muted-foreground">Produção médica detalhada por período</p>
+          </div>
+          <ExportMenu />
+        </div>
+        <ReportFilters preset={preset} onPresetChange={setPreset} />
+        <EmptyReportState
+          hasFilters={false}
+          reportName="dado de produção"
+          emptyMessage="Realize atendimentos para gerar dados de produção médica."
+          actionLabel="Ir para Agendamento"
+          onAction={() => navigate('/app/agendamento')}
+        />
+      </div>
+    )
+  }
+
   const totalAtt = doctorProduction.reduce((s, d) => s + d.totalAttendances, 0)
   const totalRev = doctorProduction.reduce((s, d) => s + d.revenue, 0)
   const totalCons = doctorProduction.reduce((s, d) => s + d.consultations, 0)
@@ -29,11 +58,13 @@ export default function ProductionReportPage() {
         { label: 'Consultas', value: String(totalCons) },
         { label: 'Exames', value: String(totalExams) },
         { label: 'Receita Gerada', value: `R$ ${(totalRev / 1000).toFixed(1)}k` },
-        { label: 'Ticket Médio', value: `R$ ${(totalRev / totalAtt).toFixed(0)}` },
+        { label: 'Ticket Médio', value: totalAtt > 0 ? `R$ ${(totalRev / totalAtt).toFixed(0)}` : 'R$ 0' },
       ]} />
-      <ChartCard title="Tendência de Atendimentos">
-        <AttendanceTrendChart data={monthlyData} />
-      </ChartCard>
+      {monthlyData.some(m => m.attendances > 0) && (
+        <ChartCard title="Tendência de Atendimentos">
+          <AttendanceTrendChart data={monthlyData} />
+        </ChartCard>
+      )}
       <div className="rounded-xl border bg-card p-4">
         <table className="w-full text-xs">
           <thead>
@@ -49,7 +80,7 @@ export default function ProductionReportPage() {
             </tr>
           </thead>
           <tbody>
-            {doctorProduction.map(doc => (
+            {visibleItems.map(doc => (
               <tr key={doc.doctorId} className="border-b border-border hover:bg-muted/50">
                 <td className="py-2.5 font-medium text-foreground">{doc.doctorName}</td>
                 <td className="py-2.5 text-muted-foreground">{doc.specialty}</td>
@@ -63,6 +94,17 @@ export default function ProductionReportPage() {
             ))}
           </tbody>
         </table>
+        {totalItems > 0 && (
+          <div className="flex items-center justify-between mt-3 text-xs text-muted-foreground">
+            <span>Exibindo {visibleItems.length} de {totalItems}</span>
+            {hasMore && (
+              <div className="flex gap-2">
+                <button onClick={showMore} className="text-primary hover:underline">Mostrar mais {Math.min(10, remainingCount)}</button>
+                <button onClick={showAll} className="text-primary hover:underline">Ver todos ({totalItems})</button>
+              </div>
+            )}
+          </div>
+        )}
       </div>
     </div>
   )
