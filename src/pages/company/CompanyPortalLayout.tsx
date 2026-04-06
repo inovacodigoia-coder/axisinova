@@ -186,7 +186,9 @@ export default function CompanyPortalLayout() {
       <NotificationContextProvider>
         <GlobalSearchProvider>
           <SchedulingProvider>
-            <PortalContent />
+            <RegistersProvider>
+              <PortalContent />
+            </RegistersProvider>
           </SchedulingProvider>
         </GlobalSearchProvider>
       </NotificationContextProvider>
