@@ -5,13 +5,19 @@ import { AgendaFilters, type ViewMode } from '@/components/scheduling/CalendarVi
 import { AgendaCalendar } from '@/components/scheduling/CalendarView/AgendaCalendar'
 import { AppointmentWizard } from '@/components/scheduling/appointment/AppointmentWizard'
 import { AppointmentDetailDrawer } from '@/components/scheduling/AppointmentDetailDrawer'
-import { MOCK_APPOINTMENTS, MOCK_PATIENTS } from '@/mocks/scheduling.mock'
+import { NoDoctorsState } from '@/components/scheduling/empty-states/NoDoctorsState'
+import { useRegisters } from '@/context/RegistersContext'
+import { useScheduling } from '@/context/SchedulingContext'
 import type { SchedulingAppointment } from '@/types/scheduling.types'
-import type { LegacyDoctor as Doctor } from '@/mocks/company.mock'
 import { toast } from 'sonner'
 import { format } from 'date-fns'
 
 export default function SchedulingPage() {
+  const { doctors, convenios, specialties } = useRegisters()
+  const { appointments, addAppointment, updateAppointment } = useScheduling()
+
+  const activeDoctors = useMemo(() => doctors.filter(d => d.isActive && !d.isBlocked), [doctors])
+
   const [selectedDate, setSelectedDate] = useState(new Date())
   const [doctorFilter, setDoctorFilter] = useState('all')
   const [typeFilter, setTypeFilter] = useState('all')
@@ -23,7 +29,6 @@ export default function SchedulingPage() {
   const [prefilledDoctor, setPrefilledDoctor] = useState('')
   const [prefilledDate, setPrefilledDate] = useState('')
   const [prefilledTime, setPrefilledTime] = useState('')
-  const [appointments, setAppointments] = useState(MOCK_APPOINTMENTS)
 
   const filtered = useMemo(() => {
     return appointments.filter(a => {
@@ -44,8 +49,8 @@ export default function SchedulingPage() {
     procedures: todayAppts.filter(a => a.type === 'procedure').length,
   }
 
-  const handleSlotClick = (doctor: Doctor, date: string, time: string) => {
-    setPrefilledDoctor(doctor.id)
+  const handleSlotClick = (doctorId: string, date: string, time: string) => {
+    setPrefilledDoctor(doctorId)
     setPrefilledDate(date)
     setPrefilledTime(time)
     setWizardOpen(true)
@@ -59,37 +64,52 @@ export default function SchedulingPage() {
   }
 
   const handleSave = (data: any) => {
+    const doctor = doctors.find(d => d.id === data.doctorId)
+    const convenio = convenios.find(c => c.id === data.convenioId)
     const newApt: SchedulingAppointment = {
       id: `apt_new_${Date.now()}`,
-      companyId: 'comp_001',
+      companyId: data.patient.companyId,
       patientId: data.patient.id,
       patientName: data.patient.fullName,
       patientPhone1: data.patient.phone1,
       patientPhone2: data.patient.phone2,
       doctorId: data.doctorId,
-      doctorName: '', // will be set
+      doctorName: doctor?.fullName || '',
       convenioId: data.convenioId,
-      convenioName: '',
+      convenioName: convenio?.name || '',
       type: data.type,
       examId: data.examId || undefined,
       date: data.date,
       time: data.time,
-      duration: 30,
+      duration: doctor?.scheduleConfig?.consultationDuration || 30,
       status: 'scheduled',
       visitType: 'first_visit',
       observations: data.observations,
-      createdBy: 'cu_03',
+      createdBy: 'current_user',
       createdAt: new Date().toISOString().split('T')[0],
       updatedAt: new Date().toISOString().split('T')[0],
     }
-    setAppointments(prev => [...prev, newApt])
+    addAppointment(newApt)
   }
 
   const handleStatusChange = (id: string, status: SchedulingAppointment['status'], reason?: string) => {
-    setAppointments(prev => prev.map(a =>
-      a.id === id ? { ...a, status, cancelledReason: reason, updatedAt: new Date().toISOString().split('T')[0] } : a
-    ))
+    updateAppointment(id, { status, cancelledReason: reason, updatedAt: new Date().toISOString().split('T')[0] })
     toast.success(`Status atualizado para: ${status}`)
+  }
+
+  // No doctors: show empty state
+  if (activeDoctors.length === 0) {
+    return (
+      <div className="space-y-4">
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-2xl font-bold text-foreground">Agenda</h1>
+            <p className="text-sm text-muted-foreground">Central de agendamentos da clínica</p>
+          </div>
+        </div>
+        <NoDoctorsState />
+      </div>
+    )
   }
 
   return (
@@ -125,6 +145,7 @@ export default function SchedulingPage() {
         viewMode={viewMode}
         onSlotClick={handleSlotClick}
         onAppointmentClick={setSelectedApt}
+        onNewAppointment={handleNewAppointment}
       />
 
       <AppointmentWizard

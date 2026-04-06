@@ -1,20 +1,21 @@
 import { useMemo } from 'react'
 import type { SchedulingAppointment } from '@/types/scheduling.types'
-import type { LegacyDoctor as Doctor } from '@/mocks/company.mock'
 import { AppointmentCard } from './AppointmentCard'
 import { AppointmentSlot } from './AppointmentSlot'
 
 interface Props {
-  doctor: Doctor
+  doctorId: string
+  doctorName: string
+  doctorSpecialty: string
   date: string
   appointments: SchedulingAppointment[]
   timeSlots: string[]
-  onSlotClick: (doctor: Doctor, date: string, time: string) => void
+  onSlotClick: (date: string, time: string) => void
   onAppointmentClick: (apt: SchedulingAppointment) => void
   isToday?: boolean
 }
 
-export function DayColumn({ doctor, date, appointments, timeSlots, onSlotClick, onAppointmentClick, isToday }: Props) {
+export function DayColumn({ doctorId, doctorName, doctorSpecialty, date, appointments, timeSlots, onSlotClick, onAppointmentClick, isToday }: Props) {
   const aptMap = useMemo(() => {
     const map = new Map<string, SchedulingAppointment>()
     appointments.forEach(a => map.set(a.time, a))
@@ -28,11 +29,11 @@ export function DayColumn({ doctor, date, appointments, timeSlots, onSlotClick, 
       <div className={`sticky top-0 z-10 border-b border-border px-2 py-3 text-center bg-card ${isToday ? 'bg-primary/5' : ''}`}>
         <div className="flex items-center justify-center gap-2">
           <div className="h-8 w-8 rounded-full gradient-bg flex items-center justify-center text-xs font-bold text-white">
-            {doctor.fullName.split(' ').map(n => n[0]).slice(0, 2).join('')}
+            {doctorName.split(' ').map(n => n[0]).slice(0, 2).join('')}
           </div>
           <div className="text-left">
-            <p className="text-xs font-semibold text-foreground truncate max-w-[100px]">{doctor.fullName}</p>
-            <p className="text-[10px] text-muted-foreground">{doctor.mainSpecialty}</p>
+            <p className="text-xs font-semibold text-foreground truncate max-w-[100px]">{doctorName}</p>
+            <p className="text-[10px] text-muted-foreground">{doctorSpecialty}</p>
           </div>
         </div>
         <span className="mt-1 inline-flex items-center rounded-full bg-muted px-2 py-0.5 text-[10px] font-medium text-muted-foreground">
@@ -48,7 +49,7 @@ export function DayColumn({ doctor, date, appointments, timeSlots, onSlotClick, 
               <AppointmentSlot
                 time={time}
                 isEmpty={!apt}
-                onClickEmpty={() => onSlotClick(doctor, date, time)}
+                onClickEmpty={() => onSlotClick(date, time)}
               >
                 {apt && <AppointmentCard appointment={apt} onClick={onAppointmentClick} />}
               </AppointmentSlot>

@@ -1,9 +1,9 @@
 import { useState } from 'react'
-import { X, Phone, Calendar, Clock, User, FileText, Edit2 } from 'lucide-react'
+import { X, Phone, Calendar, User, FileText } from 'lucide-react'
 import type { SchedulingAppointment } from '@/types/scheduling.types'
 import { STATUS_CONFIG, APPOINTMENT_TYPE_CONFIG } from '@/types/scheduling.types'
 import { FirstVisitBadge } from './appointment/FirstVisitBadge'
-import { MOCK_APPOINTMENTS } from '@/mocks/scheduling.mock'
+import { useScheduling } from '@/context/SchedulingContext'
 import { GradientButton } from '@/components/ui/GradientButton'
 import { toast } from 'sonner'
 import { cn } from '@/lib/utils'
@@ -19,6 +19,7 @@ export function AppointmentDetailDrawer({ appointment: apt, onClose, onStatusCha
   const [cancelReason, setCancelReason] = useState('')
   const [showCancelInput, setShowCancelInput] = useState(false)
   const [showAbsentInput, setShowAbsentInput] = useState(false)
+  const { appointments } = useScheduling()
 
   if (!apt) return null
 
@@ -41,7 +42,6 @@ export function AppointmentDetailDrawer({ appointment: apt, onClose, onStatusCha
         </div>
 
         <div className="p-4 space-y-5">
-          {/* Patient */}
           <div>
             <h3 className="text-lg font-bold text-foreground">{apt.patientName}</h3>
             <p className="text-sm text-muted-foreground">{typeCfg.label} · {apt.doctorName} · {apt.date.split('-').reverse().join('/')} às {apt.time}</p>
@@ -54,7 +54,7 @@ export function AppointmentDetailDrawer({ appointment: apt, onClose, onStatusCha
               <div className="flex items-center gap-2"><Phone className="h-4 w-4 text-muted-foreground" /><a href={`tel:${apt.patientPhone1}`} className="text-primary hover:underline">{apt.patientPhone1}</a></div>
               {apt.patientPhone2 && <div className="flex items-center gap-2"><Phone className="h-4 w-4 text-muted-foreground" /><a href={`tel:${apt.patientPhone2}`} className="text-primary hover:underline">{apt.patientPhone2}</a></div>}
               <div className="flex items-center gap-2"><FileText className="h-4 w-4 text-muted-foreground" /><span>{apt.convenioName}</span></div>
-              <FirstVisitBadge patientId={apt.patientId} doctorId={apt.doctorId} appointments={MOCK_APPOINTMENTS} />
+              <FirstVisitBadge patientId={apt.patientId} doctorId={apt.doctorId} appointments={appointments} />
             </div>
           </div>
 
@@ -67,7 +67,6 @@ export function AppointmentDetailDrawer({ appointment: apt, onClose, onStatusCha
             </div>
           </div>
 
-          {/* Confirmation timeline */}
           <div className="space-y-2">
             <h4 className="text-xs font-bold text-muted-foreground uppercase tracking-wider">Confirmação</h4>
             <div className="space-y-1 text-xs">
@@ -90,7 +89,6 @@ export function AppointmentDetailDrawer({ appointment: apt, onClose, onStatusCha
             </div>
           </div>
 
-          {/* Actions */}
           {!['completed', 'cancelled', 'absent'].includes(apt.status) && (
             <div className="space-y-2">
               <h4 className="text-xs font-bold text-muted-foreground uppercase tracking-wider">Ações</h4>

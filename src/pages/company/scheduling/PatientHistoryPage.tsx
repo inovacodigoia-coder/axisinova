@@ -1,11 +1,12 @@
 import { useState, useMemo } from 'react'
 import { useSearchParams } from 'react-router-dom'
-import { MOCK_PATIENTS, MOCK_APPOINTMENTS, getPatientHistory } from '@/mocks/scheduling.mock'
-import { MOCK_CONVENIOS } from '@/mocks/company.mock'
+import { useScheduling } from '@/context/SchedulingContext'
+import { useRegisters } from '@/context/RegistersContext'
+import { usePaginatedList } from '@/hooks/usePaginatedList'
 import { STATUS_CONFIG, APPOINTMENT_TYPE_CONFIG } from '@/types/scheduling.types'
 import { differenceInYears, format } from 'date-fns'
 import { cn } from '@/lib/utils'
-import { Calendar, User, Phone, FileText, Search } from 'lucide-react'
+import { Search } from 'lucide-react'
 import { SearchInput } from '@/components/ui/SearchInput'
 
 export default function PatientHistoryPage() {
@@ -13,14 +14,24 @@ export default function PatientHistoryPage() {
   const patientIdParam = searchParams.get('id')
   const [search, setSearch] = useState('')
   const [selectedPatientId, setSelectedPatientId] = useState(patientIdParam || '')
+  const { patients, appointments } = useScheduling()
+  const { convenios } = useRegisters()
 
-  const patient = MOCK_PATIENTS.find(p => p.id === selectedPatientId)
-  const history = useMemo(() => selectedPatientId ? getPatientHistory(selectedPatientId) : [], [selectedPatientId])
+  const patient = patients.find(p => p.id === selectedPatientId)
+
+  const history = useMemo(() => {
+    if (!selectedPatientId) return []
+    return appointments
+      .filter(a => a.patientId === selectedPatientId)
+      .sort((a, b) => b.date.localeCompare(a.date) || b.time.localeCompare(a.time))
+  }, [selectedPatientId, appointments])
+
+  const { visibleItems, totalItems, hasMore, showMore, showAll, remainingCount } = usePaginatedList(history, 10)
 
   const searchResults = useMemo(() => {
     if (search.length < 2) return []
-    return MOCK_PATIENTS.filter(p => p.fullName.toLowerCase().includes(search.toLowerCase())).slice(0, 5)
-  }, [search])
+    return patients.filter(p => p.fullName.toLowerCase().includes(search.toLowerCase())).slice(0, 5)
+  }, [search, patients])
 
   const stats = useMemo(() => ({
     total: history.length,
@@ -29,6 +40,27 @@ export default function PatientHistoryPage() {
     lastVisit: history.find(a => a.status === 'completed')?.date || null,
     nextAppt: history.filter(a => a.date >= new Date().toISOString().split('T')[0] && !['cancelled', 'absent'].includes(a.status)).sort((a, b) => a.date.localeCompare(b.date))[0]?.date || null,
   }), [history])
+
+  const getConvenioName = (id?: string) => {
+    if (!id) return ''
+    return convenios.find(c => c.id === id)?.name || ''
+  }
+
+  if (patients.length === 0) {
+    return (
+      <div className="space-y-6">
+        <div>
+          <h1 className="text-2xl font-bold text-foreground">Histórico do Paciente</h1>
+          <p className="text-sm text-muted-foreground">Linha do tempo completa de atendimentos</p>
+        </div>
+        <div className="flex flex-col items-center justify-center py-16 text-center space-y-3">
+          <Search className="h-10 w-10 text-muted-foreground" />
+          <h3 className="text-lg font-bold text-foreground">Nenhum paciente cadastrado</h3>
+          <p className="text-sm text-muted-foreground">Cadastre pacientes pelo módulo de agendamento.</p>
+        </div>
+      </div>
+    )
+  }
 
   return (
     <div className="space-y-6">
@@ -61,7 +93,7 @@ export default function PatientHistoryPage() {
               <p className="text-sm text-muted-foreground">
                 {differenceInYears(new Date(), new Date(patient.birthDate))} anos
                 {patient.cpf ? ` · CPF: ${patient.cpf}` : ''}
-                · {MOCK_CONVENIOS.find(c => c.id === patient.convenioId)?.name || ''}
+                {patient.convenioId ? ` · ${getConvenioName(patient.convenioId)}` : ''}
               </p>
               <p className="text-xs text-muted-foreground">📞 {patient.phone1}{patient.phone2 ? ` · ${patient.phone2}` : ''}</p>
             </div>
@@ -70,7 +102,6 @@ export default function PatientHistoryPage() {
             </button>
           </div>
 
-          {/* Stats */}
           <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
             {[
               { label: 'Total', value: stats.total },
@@ -86,10 +117,9 @@ export default function PatientHistoryPage() {
             ))}
           </div>
 
-          {/* Timeline */}
           <div className="space-y-0 relative">
             <div className="absolute left-[19px] top-0 bottom-0 w-0.5 bg-border" />
-            {history.map((apt, i) => {
+            {visibleItems.map(apt => {
               const cfg = STATUS_CONFIG[apt.status]
               const typeCfg = APPOINTMENT_TYPE_CONFIG[apt.type]
               return (
@@ -110,8 +140,24 @@ export default function PatientHistoryPage() {
                 </div>
               )
             })}
-            {history.length === 0 && <p className="text-center text-muted-foreground py-8">Nenhum histórico encontrado</p>}
+            {history.length === 0 && <p className="text-center text-muted-foreground py-8">Este paciente não possui atendimentos registrados ainda.</p>}
           </div>
+
+          {hasMore && (
+            <div className="flex items-center justify-between px-1">
+              <span className="text-sm text-muted-foreground">Exibindo {visibleItems.length} de {totalItems}</span>
+              <div className="flex gap-2">
+                <button onClick={showMore} className="rounded-lg border border-input px-3 py-1.5 text-xs font-medium hover:bg-muted transition-colors">
+                  Carregar mais {Math.min(10, remainingCount)} atendimentos
+                </button>
+                {remainingCount > 10 && (
+                  <button onClick={showAll} className="rounded-lg px-3 py-1.5 text-xs font-medium text-muted-foreground hover:text-foreground">
+                    Ver todos ({totalItems})
+                  </button>
+                )}
+              </div>
+            </div>
+          )}
         </>
       )}
     </div>

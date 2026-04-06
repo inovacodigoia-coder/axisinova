@@ -3,6 +3,7 @@ import { Routes, Route, Navigate, useLocation } from 'react-router-dom'
 import { QueueProvider } from '@/context/QueueContext'
 import { NotificationContextProvider, useNotificationContext } from '@/context/NotificationContext'
 import { GlobalSearchProvider, useGlobalSearch } from '@/context/GlobalSearchContext'
+import { SchedulingProvider } from '@/context/SchedulingContext'
 import { CompanySidebar } from '@/components/company/CompanySidebar'
 import { UserMenuDropdown } from '@/components/company/UserMenuDropdown'
 import { NotificationCenter } from '@/components/notifications/NotificationCenter'
@@ -183,7 +184,9 @@ export default function CompanyPortalLayout() {
     <QueueProvider>
       <NotificationContextProvider>
         <GlobalSearchProvider>
-          <PortalContent />
+          <SchedulingProvider>
+            <PortalContent />
+          </SchedulingProvider>
         </GlobalSearchProvider>
       </NotificationContextProvider>
     </QueueProvider>

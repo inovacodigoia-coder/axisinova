@@ -1,7 +1,9 @@
 import { useState } from 'react'
 import { GradientButton } from '@/components/ui/GradientButton'
+import { useRegisters } from '@/context/RegistersContext'
+import { useScheduling } from '@/context/SchedulingContext'
+import { useAuth } from '@/context/AuthContext'
 import type { SchedulingPatient } from '@/types/scheduling.types'
-import { MOCK_CONVENIOS } from '@/mocks/company.mock'
 
 interface Props {
   onSave: (patient: SchedulingPatient) => void
@@ -9,6 +11,11 @@ interface Props {
 }
 
 export function PatientQuickForm({ onSave, onCancel }: Props) {
+  const { convenios } = useRegisters()
+  const { addPatient } = useScheduling()
+  const { user } = useAuth()
+  const activeConvenios = convenios.filter(c => c.isActive)
+
   const [form, setForm] = useState({
     fullName: '', birthDate: '', motherName: '', phone1: '', phone2: '',
     convenioId: '', convenioCardNumber: '', cpf: '', email: '', gender: '' as 'M' | 'F' | 'O' | '',
@@ -37,13 +44,14 @@ export function PatientQuickForm({ onSave, onCancel }: Props) {
       cpf: form.cpf || undefined,
       email: form.email || undefined,
       gender: (form.gender as any) || undefined,
-      companyId: 'comp_001',
+      companyId: user?.companyId || '',
       createdAt: new Date().toISOString().split('T')[0],
     }
+    addPatient(patient)
     onSave(patient)
   }
 
-  const selectedConvenio = MOCK_CONVENIOS.find(c => c.id === form.convenioId)
+  const selectedConvenio = activeConvenios.find(c => c.id === form.convenioId)
   const needsCard = selectedConvenio && selectedConvenio.type !== 'private'
 
   return (
@@ -85,11 +93,15 @@ export function PatientQuickForm({ onSave, onCancel }: Props) {
       <div className="grid grid-cols-2 gap-3">
         <div>
           <label className="text-xs font-medium text-foreground">Convênio *</label>
-          <select value={form.convenioId} onChange={e => set('convenioId', e.target.value)} required
-            className="mt-1 w-full rounded-lg border border-input bg-background px-3 py-2 text-sm">
-            <option value="">Selecione...</option>
-            {MOCK_CONVENIOS.filter(c => c.isActive).map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
-          </select>
+          {activeConvenios.length === 0 ? (
+            <p className="text-xs text-muted-foreground mt-1">Nenhum convênio cadastrado. <a href="/app/cadastros/convenios" className="text-primary hover:underline">Cadastrar</a></p>
+          ) : (
+            <select value={form.convenioId} onChange={e => set('convenioId', e.target.value)} required
+              className="mt-1 w-full rounded-lg border border-input bg-background px-3 py-2 text-sm">
+              <option value="">Selecione...</option>
+              {activeConvenios.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+            </select>
+          )}
         </div>
         {needsCard && (
           <div>

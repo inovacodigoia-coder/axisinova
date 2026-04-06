@@ -1,9 +1,10 @@
 import { SearchInput } from '@/components/ui/SearchInput'
-import { MOCK_DOCTORS, MOCK_CONVENIOS } from '@/mocks/company.mock'
+import { useRegisters } from '@/context/RegistersContext'
 import { ChevronLeft, ChevronRight, Calendar as CalIcon } from 'lucide-react'
 import { format, addDays } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
-import type { SchedulingAppointment } from '@/types/scheduling.types'
+import { useMemo } from 'react'
+import { DependencyAlert } from '@/components/scheduling/empty-states/DependencyAlert'
 
 export type ViewMode = 'day' | 'week' | 'month'
 
@@ -28,34 +29,52 @@ export function AgendaFilters({
   typeFilter, onTypeFilterChange, convenioFilter, onConvenioFilterChange,
   search, onSearchChange, viewMode, onViewModeChange, todayCount
 }: Props) {
-  const selectedDoctor = MOCK_DOCTORS.find(d => d.id === doctorFilter)
-  const convenios = doctorFilter === 'all'
-    ? MOCK_CONVENIOS.filter(c => c.isActive)
-    : MOCK_CONVENIOS.filter(c => c.isActive && (selectedDoctor?.enabledConvenios?.includes(c.id) ?? true))
+  const { doctors, convenios, exams, procedures } = useRegisters()
+
+  const activeDoctors = useMemo(() => doctors.filter(d => d.isActive && !d.isBlocked), [doctors])
+  const selectedDoctor = doctors.find(d => d.id === doctorFilter)
+
+  const filteredConvenios = useMemo(() => {
+    if (doctorFilter === 'all') return convenios.filter(c => c.isActive)
+    if (!selectedDoctor) return convenios.filter(c => c.isActive)
+    return convenios.filter(c => c.isActive && selectedDoctor.enabledConvenioIds.includes(c.id))
+  }, [doctorFilter, selectedDoctor, convenios])
+
+  const hasExams = exams.filter(e => e.isActive).length > 0
+  const hasProcedures = procedures.filter(p => p.isActive).length > 0
 
   return (
     <div className="space-y-3">
       <div className="flex flex-wrap items-center gap-3">
-        <select value={doctorFilter} onChange={e => onDoctorFilterChange(e.target.value)}
-          className="h-10 rounded-lg border border-input bg-background px-3 text-sm min-w-[200px]">
-          <option value="all">Todos os médicos</option>
-          {MOCK_DOCTORS.filter(d => d.isActive).map(d => (
-            <option key={d.id} value={d.id}>{d.fullName}</option>
-          ))}
-        </select>
+        {activeDoctors.length === 0 ? (
+          <DependencyAlert
+            icon="⚠️"
+            message="Nenhum médico ativo. Cadastre médicos em Cadastros → Médicos"
+            actionLabel="Cadastrar Médico"
+            actionRoute="/app/cadastros/medicos"
+          />
+        ) : (
+          <select value={doctorFilter} onChange={e => onDoctorFilterChange(e.target.value)}
+            className="h-10 rounded-lg border border-input bg-background px-3 text-sm min-w-[200px]">
+            {activeDoctors.length >= 2 && <option value="all">Todos os médicos</option>}
+            {activeDoctors.map(d => (
+              <option key={d.id} value={d.id}>{d.fullName}</option>
+            ))}
+          </select>
+        )}
 
         <select value={typeFilter} onChange={e => onTypeFilterChange(e.target.value)}
           className="h-10 rounded-lg border border-input bg-background px-3 text-sm">
           <option value="all">Todos os tipos</option>
           <option value="consultation">Consultas</option>
-          <option value="exam">Exames</option>
-          <option value="procedure">Procedimentos</option>
+          <option value="exam" disabled={!hasExams}>{hasExams ? 'Exames' : 'Exames (nenhum cadastrado)'}</option>
+          <option value="procedure" disabled={!hasProcedures}>{hasProcedures ? 'Procedimentos' : 'Procedimentos (nenhum cadastrado)'}</option>
         </select>
 
         <select value={convenioFilter} onChange={e => onConvenioFilterChange(e.target.value)}
           className="h-10 rounded-lg border border-input bg-background px-3 text-sm">
           <option value="all">Todos os convênios</option>
-          {convenios.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+          {filteredConvenios.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
         </select>
 
         <div className="flex items-center gap-1 rounded-lg border border-input bg-background">
@@ -89,13 +108,19 @@ export function AgendaFilters({
         </div>
         <div className="flex items-center gap-2 text-sm text-muted-foreground">
           <CalIcon className="h-4 w-4" />
-          <span className="font-medium text-foreground">{todayCount.total} pacientes</span>
-          <span>·</span>
-          <span>{todayCount.consultations} consultas</span>
-          <span>·</span>
-          <span>{todayCount.exams} exames</span>
-          <span>·</span>
-          <span>{todayCount.procedures} procedimentos</span>
+          <span className="font-medium text-foreground">
+            {todayCount.total === 0 ? 'Nenhum paciente agendado hoje' : `${todayCount.total} pacientes`}
+          </span>
+          {todayCount.total > 0 && (
+            <>
+              <span>·</span>
+              <span>{todayCount.consultations} consultas</span>
+              <span>·</span>
+              <span>{todayCount.exams} exames</span>
+              <span>·</span>
+              <span>{todayCount.procedures} procedimentos</span>
+            </>
+          )}
         </div>
       </div>
     </div>
