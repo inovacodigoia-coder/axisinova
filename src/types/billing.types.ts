@@ -45,6 +45,17 @@ export interface GuideProcedure {
   glosaReason?: string
 }
 
+export interface GuideAuditEntry {
+  id: string
+  action: string
+  performedBy: string
+  performedByName: string
+  previousStatus?: GuideStatus
+  newStatus?: GuideStatus
+  notes?: string
+  timestamp: string
+}
+
 export interface Guide {
   id: string
   companyId: string
@@ -52,15 +63,18 @@ export interface Guide {
   patientId: string
   patientName: string
   patientBirthDate: string
+  patientMotherName?: string
   convenioId: string
   convenioName: string
+  convenioAnsCode?: string
   convenioCardNumber: string
   doctorId: string
   doctorName: string
   doctorCRM: string
+  doctorCRMState?: string
   type: GuideType
   status: GuideStatus
-  tissGuideNumber?: string
+  tissGuideNumber: string
   convenioGuideNumber?: string
   authorizationNumber?: string
   authorizationExpiry?: string
@@ -77,6 +91,7 @@ export interface Guide {
   returnedBy?: string
   correctedAt?: string
   billerNotes?: string
+  auditLog: GuideAuditEntry[]
   createdBy: string
   createdAt: string
   updatedAt: string
