@@ -1,14 +1,28 @@
 export const formatCurrency = (value: number): string =>
   new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(value)
 
-export const formatDate = (date: string): string =>
-  new Intl.DateTimeFormat('pt-BR').format(new Date(date))
+export const formatCurrencyCompact = (value: number): string => {
+  if (value >= 1000000) return `R$ ${(value / 1000000).toFixed(1)}M`
+  if (value >= 1000) return `R$ ${(value / 1000).toFixed(1)}k`
+  return formatCurrency(value)
+}
 
-export const formatDateLong = (date: string): string =>
-  new Intl.DateTimeFormat('pt-BR', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' }).format(new Date(date))
+export const formatDate = (date: string | Date): string =>
+  new Intl.DateTimeFormat('pt-BR').format(typeof date === 'string' ? new Date(date) : date)
 
-export const formatRelativeTime = (date: string): string => {
-  const diff = Date.now() - new Date(date).getTime()
+export const formatDateLong = (date: string | Date): string =>
+  new Intl.DateTimeFormat('pt-BR', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' }).format(
+    typeof date === 'string' ? new Date(date) : date
+  )
+
+export const formatDateTime = (date: string | Date): string => {
+  const d = typeof date === 'string' ? new Date(date) : date
+  return `${new Intl.DateTimeFormat('pt-BR').format(d)} às ${d.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}`
+}
+
+export const formatRelativeTime = (date: string | Date): string => {
+  const d = typeof date === 'string' ? new Date(date) : date
+  const diff = Date.now() - d.getTime()
   const mins = Math.floor(diff / 60000)
   if (mins < 1) return 'agora'
   if (mins < 60) return `há ${mins} min`
@@ -21,14 +35,37 @@ export const formatRelativeTime = (date: string): string => {
 
 export const formatTime = (time: string): string => time
 
+export const formatCPF = (cpf?: string): string => {
+  if (!cpf) return ''
+  const digits = cpf.replace(/\D/g, '')
+  if (digits.length !== 11) return cpf
+  return digits.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, '$1.$2.$3-$4')
+}
+
+export const maskCPF = (cpf?: string): string => {
+  if (!cpf) return ''
+  const digits = cpf.replace(/\D/g, '')
+  if (digits.length !== 11) return cpf
+  return digits.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, '$1.***.***-$4')
+}
+
 export const maskCardNumber = (card: string): string =>
   card.replace(/(\d{4})(\d+)(\d{4})/, '$1 **** **** $3')
 
-export const maskCPF = (cpf: string): string =>
-  cpf.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, '$1.***.***-$4')
+export const formatCNPJ = (cnpj?: string): string => {
+  if (!cnpj) return ''
+  const digits = cnpj.replace(/\D/g, '')
+  if (digits.length !== 14) return cnpj
+  return digits.replace(/(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})/, '$1.$2.$3/$4-$5')
+}
 
-export const formatPhone = (phone: string): string =>
-  phone.replace(/(\d{2})(\d{5})(\d{4})/, '($1) $2-$3')
+export const formatPhone = (phone?: string): string => {
+  if (!phone) return ''
+  const digits = phone.replace(/\D/g, '')
+  if (digits.length === 11) return digits.replace(/(\d{2})(\d{5})(\d{4})/, '($1) $2-$3')
+  if (digits.length === 10) return digits.replace(/(\d{2})(\d{4})(\d{4})/, '($1) $2-$3')
+  return phone
+}
 
 export const calculateAge = (birthDate: string): number => {
   const birth = new Date(birthDate)
@@ -39,9 +76,14 @@ export const calculateAge = (birthDate: string): number => {
   return age
 }
 
+export const formatAge = (birthDate: string): string => {
+  const age = calculateAge(birthDate)
+  return `${age} ${age === 1 ? 'ano' : 'anos'}`
+}
+
 export const formatFileSize = (bytes: number): string => {
   if (bytes < 1024) return `${bytes} B`
-  if (bytes < 1048576) return `${(bytes / 1024).toFixed(0)} KB`
+  if (bytes < 1048576) return `${(bytes / 1024).toFixed(1)} KB`
   return `${(bytes / 1048576).toFixed(1)} MB`
 }
 
@@ -50,3 +92,9 @@ export const formatPercent = (value: number, decimals = 1): string =>
 
 export const formatNumber = (value: number): string =>
   new Intl.NumberFormat('pt-BR').format(value)
+
+export const getDayName = (date: Date): string =>
+  date.toLocaleDateString('pt-BR', { weekday: 'long' })
+
+export const getDayNameShort = (date: Date): string =>
+  date.toLocaleDateString('pt-BR', { weekday: 'short' })
