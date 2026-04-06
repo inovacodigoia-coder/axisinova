@@ -1,11 +1,16 @@
 import { useParams, useNavigate } from 'react-router-dom'
 import { useState } from 'react'
-import { MOCK_COMPANIES, MOCK_COMPANY_USERS, MOCK_INVOICES } from '@/mocks/superadmin.mock'
+import { MOCK_COMPANIES, MOCK_COMPANY_USERS, MOCK_INVOICES, MOCK_PLANS } from '@/mocks/superadmin.mock'
 import { CompanyStatusBadge } from '@/components/superadmin/CompanyStatusBadge'
 import { StatusBadge } from '@/components/ui/StatusBadge'
-import { ArrowLeft, Users, Building2, ClipboardList, HardDrive, ExternalLink } from 'lucide-react'
+import { ArrowLeft, Users, Building2, ClipboardList, HardDrive, ExternalLink, Plus, Minus, Stethoscope, UserPlus, Database } from 'lucide-react'
 import { useAuth } from '@/context/AuthContext'
 import { OutlineButton } from '@/components/ui/OutlineButton'
+import { toast } from 'sonner'
+
+const ADDON_PRICE_DOCTOR = 79
+const ADDON_PRICE_PATIENT_PACK = 49 // per 500 patients
+const ADDON_PRICE_STORAGE = 29 // per 50 GB
 
 export default function CompanyDetailPage() {
   const { companyId } = useParams<{ companyId: string }>()
@@ -16,11 +21,13 @@ export default function CompanyDetailPage() {
   const company = MOCK_COMPANIES.find((c) => c.id === companyId)
   if (!company) return <div className="p-8 text-center text-muted-foreground">Empresa não encontrada</div>
 
+  const plan = MOCK_PLANS.find(p => p.name === company.plano)
   const users = MOCK_COMPANY_USERS.filter((u) => u.companyId === companyId)
   const invoices = MOCK_INVOICES.filter((i) => i.companyId === companyId)
 
   const tabs = [
     { id: 'overview', label: 'Visão Geral' },
+    { id: 'resources', label: 'Recursos e Limites' },
     { id: 'users', label: 'Usuários' },
     { id: 'billing', label: 'Plano e Faturamento' },
     { id: 'settings', label: 'Configurações' },
@@ -58,12 +65,12 @@ export default function CompanyDetailPage() {
       </div>
 
       {/* Tabs */}
-      <div className="flex gap-1 border-b border-border">
+      <div className="flex gap-1 border-b border-border overflow-x-auto">
         {tabs.map((tab) => (
           <button
             key={tab.id}
             onClick={() => setActiveTab(tab.id)}
-            className={`px-4 py-2.5 text-sm font-medium transition-colors border-b-2 ${activeTab === tab.id ? 'border-primary text-primary' : 'border-transparent text-muted-foreground hover:text-foreground'}`}
+            className={`px-4 py-2.5 text-sm font-medium transition-colors border-b-2 whitespace-nowrap ${activeTab === tab.id ? 'border-primary text-primary' : 'border-transparent text-muted-foreground hover:text-foreground'}`}
           >
             {tab.label}
           </button>
@@ -96,7 +103,7 @@ export default function CompanyDetailPage() {
             <div className="rounded-xl border border-border bg-card p-4 text-center">
               <Building2 className="mx-auto h-5 w-5 text-primary mb-1" />
               <p className="text-2xl font-bold">{company.medicosAtivos}</p>
-              <p className="text-xs text-muted-foreground">Médicos</p>
+              <p className="text-xs text-muted-foreground">Médicos ({company.medicosLimite === 999 ? '∞' : company.medicosLimite} max)</p>
             </div>
             <div className="rounded-xl border border-border bg-card p-4 text-center">
               <Users className="mx-auto h-5 w-5 text-secondary mb-1" />
@@ -112,12 +119,16 @@ export default function CompanyDetailPage() {
               <HardDrive className="mx-auto h-5 w-5 text-muted-foreground mb-1" />
               <p className="text-2xl font-bold">{company.armazenamentoUsadoGB.toFixed(0)} GB</p>
               <div className="mt-1 h-1.5 rounded-full bg-border overflow-hidden">
-                <div className="h-full gradient-bg rounded-full" style={{ width: `${Math.min(storagePct, 100)}%` }} />
+                <div className={`h-full rounded-full transition-all ${storagePct > 90 ? 'bg-destructive' : storagePct > 75 ? 'bg-[hsl(33,100%,50%)]' : 'bg-primary'}`} style={{ width: `${Math.min(storagePct, 100)}%` }} />
               </div>
               <p className="text-xs text-muted-foreground mt-1">{storagePct.toFixed(0)}% de {company.armazenamentoLimiteGB} GB</p>
             </div>
           </div>
         </div>
+      )}
+
+      {activeTab === 'resources' && (
+        <ResourcesTab company={company} plan={plan || null} />
       )}
 
       {activeTab === 'users' && (
@@ -208,6 +219,175 @@ export default function CompanyDetailPage() {
       {activeTab === 'logs' && (
         <div className="rounded-2xl border border-border bg-card p-6 text-center text-sm text-muted-foreground">
           Logs de acesso serão exibidos aqui quando conectados ao backend.
+        </div>
+      )}
+    </div>
+  )
+}
+
+// ─── Resources Tab ─────────────────────────────────────────
+function ResourcesTab({ company, plan }: { company: any; plan: any }) {
+  const [addDoctors, setAddDoctors] = useState(0)
+  const [addPatientPacks, setAddPatientPacks] = useState(0)
+  const [addStoragePacks, setAddStoragePacks] = useState(0)
+
+  const doctorLimit = plan?.maxDoctors ?? company.medicosLimite ?? 15
+  const isUnlimitedDoctors = doctorLimit === null || doctorLimit >= 999
+  const storageLimitGB = company.armazenamentoLimiteGB ?? 100
+  const storageUsedGB = company.armazenamentoUsadoGB ?? 0
+  const storagePct = (storageUsedGB / storageLimitGB) * 100
+
+  const newDoctorLimit = doctorLimit + addDoctors
+  const newStorageLimit = storageLimitGB + (addStoragePacks * 50)
+  const monthlyCost = (addDoctors * ADDON_PRICE_DOCTOR) + (addPatientPacks * ADDON_PRICE_PATIENT_PACK) + (addStoragePacks * ADDON_PRICE_STORAGE)
+
+  const handleSave = () => {
+    if (monthlyCost === 0) {
+      toast.info('Nenhuma alteração para salvar.')
+      return
+    }
+    toast.success(`Recursos atualizados! Custo adicional: R$ ${monthlyCost}/mês adicionado ao plano da empresa.`)
+    setAddDoctors(0)
+    setAddPatientPacks(0)
+    setAddStoragePacks(0)
+  }
+
+  return (
+    <div className="space-y-6">
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
+        {/* Doctors */}
+        <div className="rounded-2xl border border-border bg-card p-6 shadow-[0_4px_24px_rgba(0,0,0,0.06)]">
+          <div className="flex items-center gap-3 mb-4">
+            <div className="rounded-lg bg-primary/10 p-2"><Stethoscope className="h-5 w-5 text-primary" /></div>
+            <div>
+              <h3 className="text-sm font-semibold text-foreground">Médicos</h3>
+              <p className="text-xs text-muted-foreground">{isUnlimitedDoctors ? 'Ilimitado' : `${company.medicosAtivos} de ${doctorLimit} ativos`}</p>
+            </div>
+          </div>
+          {!isUnlimitedDoctors && (
+            <>
+              <div className="h-2 rounded-full bg-border overflow-hidden mb-3">
+                <div
+                  className={`h-full rounded-full transition-all ${company.medicosAtivos >= doctorLimit ? 'bg-destructive' : company.medicosAtivos >= doctorLimit - 2 ? 'bg-[hsl(33,100%,50%)]' : 'bg-primary'}`}
+                  style={{ width: `${Math.min((company.medicosAtivos / doctorLimit) * 100, 100)}%` }}
+                />
+              </div>
+              <div className="flex items-center justify-between rounded-lg bg-muted/50 p-3">
+                <div>
+                  <p className="text-xs font-medium text-foreground">Adicionar médicos</p>
+                  <p className="text-[10px] text-muted-foreground">R$ {ADDON_PRICE_DOCTOR}/mês cada</p>
+                </div>
+                <div className="flex items-center gap-2">
+                  <button onClick={() => setAddDoctors(Math.max(0, addDoctors - 1))} disabled={addDoctors === 0} className="rounded-md border border-input p-1 hover:bg-muted disabled:opacity-30">
+                    <Minus className="h-3.5 w-3.5" />
+                  </button>
+                  <span className="w-8 text-center text-sm font-bold">{addDoctors}</span>
+                  <button onClick={() => setAddDoctors(addDoctors + 1)} className="rounded-md border border-input p-1 hover:bg-muted">
+                    <Plus className="h-3.5 w-3.5" />
+                  </button>
+                </div>
+              </div>
+              {addDoctors > 0 && (
+                <p className="text-xs text-primary mt-2">Novo limite: {newDoctorLimit} médicos (+R$ {addDoctors * ADDON_PRICE_DOCTOR}/mês)</p>
+              )}
+            </>
+          )}
+          {isUnlimitedDoctors && (
+            <p className="text-sm text-muted-foreground">O plano Enterprise inclui médicos ilimitados.</p>
+          )}
+        </div>
+
+        {/* Patients */}
+        <div className="rounded-2xl border border-border bg-card p-6 shadow-[0_4px_24px_rgba(0,0,0,0.06)]">
+          <div className="flex items-center gap-3 mb-4">
+            <div className="rounded-lg bg-secondary/10 p-2"><UserPlus className="h-5 w-5 text-secondary" /></div>
+            <div>
+              <h3 className="text-sm font-semibold text-foreground">Pacientes</h3>
+              <p className="text-xs text-muted-foreground">Pacotes adicionais de cadastro</p>
+            </div>
+          </div>
+          <p className="text-sm text-muted-foreground mb-3">
+            Incluso no plano: ilimitado. Pacotes adicionais garantem armazenamento e performance otimizada para grandes volumes.
+          </p>
+          <div className="flex items-center justify-between rounded-lg bg-muted/50 p-3">
+            <div>
+              <p className="text-xs font-medium text-foreground">Pacote +500 pacientes</p>
+              <p className="text-[10px] text-muted-foreground">R$ {ADDON_PRICE_PATIENT_PACK}/mês cada pacote</p>
+            </div>
+            <div className="flex items-center gap-2">
+              <button onClick={() => setAddPatientPacks(Math.max(0, addPatientPacks - 1))} disabled={addPatientPacks === 0} className="rounded-md border border-input p-1 hover:bg-muted disabled:opacity-30">
+                <Minus className="h-3.5 w-3.5" />
+              </button>
+              <span className="w-8 text-center text-sm font-bold">{addPatientPacks}</span>
+              <button onClick={() => setAddPatientPacks(addPatientPacks + 1)} className="rounded-md border border-input p-1 hover:bg-muted">
+                <Plus className="h-3.5 w-3.5" />
+              </button>
+            </div>
+          </div>
+          {addPatientPacks > 0 && (
+            <p className="text-xs text-secondary mt-2">+{addPatientPacks * 500} pacientes (+R$ {addPatientPacks * ADDON_PRICE_PATIENT_PACK}/mês)</p>
+          )}
+        </div>
+
+        {/* Storage */}
+        <div className="rounded-2xl border border-border bg-card p-6 shadow-[0_4px_24px_rgba(0,0,0,0.06)]">
+          <div className="flex items-center gap-3 mb-4">
+            <div className="rounded-lg bg-muted p-2"><Database className="h-5 w-5 text-muted-foreground" /></div>
+            <div>
+              <h3 className="text-sm font-semibold text-foreground">Armazenamento</h3>
+              <p className="text-xs text-muted-foreground">{storageUsedGB.toFixed(1)} GB de {storageLimitGB} GB</p>
+            </div>
+          </div>
+          <div className="h-2 rounded-full bg-border overflow-hidden mb-1">
+            <div
+              className={`h-full rounded-full transition-all ${storagePct > 90 ? 'bg-destructive' : storagePct > 75 ? 'bg-[hsl(33,100%,50%)]' : 'bg-primary'}`}
+              style={{ width: `${Math.min(storagePct, 100)}%` }}
+            />
+          </div>
+          <p className="text-xs text-muted-foreground mb-3">{storagePct.toFixed(0)}% utilizado</p>
+          {storagePct > 75 && (
+            <div className={`rounded-lg p-2 mb-3 text-xs font-medium ${storagePct > 90 ? 'bg-destructive/10 text-destructive' : 'bg-[hsl(33,100%,50%)]/10 text-[hsl(33,100%,50%)]'}`}>
+              {storagePct > 90 ? '⚠️ Armazenamento crítico! Expanda para evitar interrupções.' : '⚠️ Armazenamento acima de 75%. Considere expandir.'}
+            </div>
+          )}
+          <div className="flex items-center justify-between rounded-lg bg-muted/50 p-3">
+            <div>
+              <p className="text-xs font-medium text-foreground">Pacote +50 GB</p>
+              <p className="text-[10px] text-muted-foreground">R$ {ADDON_PRICE_STORAGE}/mês cada pacote</p>
+            </div>
+            <div className="flex items-center gap-2">
+              <button onClick={() => setAddStoragePacks(Math.max(0, addStoragePacks - 1))} disabled={addStoragePacks === 0} className="rounded-md border border-input p-1 hover:bg-muted disabled:opacity-30">
+                <Minus className="h-3.5 w-3.5" />
+              </button>
+              <span className="w-8 text-center text-sm font-bold">{addStoragePacks}</span>
+              <button onClick={() => setAddStoragePacks(addStoragePacks + 1)} className="rounded-md border border-input p-1 hover:bg-muted">
+                <Plus className="h-3.5 w-3.5" />
+              </button>
+            </div>
+          </div>
+          {addStoragePacks > 0 && (
+            <p className="text-xs text-primary mt-2">Novo limite: {newStorageLimit} GB (+R$ {addStoragePacks * ADDON_PRICE_STORAGE}/mês)</p>
+          )}
+        </div>
+      </div>
+
+      {/* Summary & Save */}
+      {monthlyCost > 0 && (
+        <div className="rounded-2xl border border-primary/30 bg-primary/5 p-6 flex items-center justify-between">
+          <div>
+            <p className="text-sm font-semibold text-foreground">Resumo dos recursos adicionais</p>
+            <div className="flex flex-wrap gap-3 mt-2 text-xs text-muted-foreground">
+              {addDoctors > 0 && <span>+{addDoctors} médico(s): R$ {addDoctors * ADDON_PRICE_DOCTOR}/mês</span>}
+              {addPatientPacks > 0 && <span>+{addPatientPacks * 500} pacientes: R$ {addPatientPacks * ADDON_PRICE_PATIENT_PACK}/mês</span>}
+              {addStoragePacks > 0 && <span>+{addStoragePacks * 50} GB: R$ {addStoragePacks * ADDON_PRICE_STORAGE}/mês</span>}
+            </div>
+          </div>
+          <div className="text-right">
+            <p className="text-2xl font-bold text-primary">+R$ {monthlyCost}<span className="text-sm font-normal text-muted-foreground">/mês</span></p>
+            <button onClick={handleSave} className="mt-2 gradient-bg rounded-xl px-6 py-2 text-sm font-semibold text-white shadow-lg hover:opacity-90">
+              Aplicar alterações
+            </button>
+          </div>
         </div>
       )}
     </div>
