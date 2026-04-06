@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { useAuth } from '@/context/AuthContext'
 import { LoginForm } from '@/components/auth/LoginForm'
 import { Shield, Zap, Building2 } from 'lucide-react'
+import logoImg from '@/assets/logo-axisinova.jpeg'
 
 export default function LoginPage() {
   const { login, isAuthenticated, user } = useAuth()
