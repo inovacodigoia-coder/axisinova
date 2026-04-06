@@ -120,7 +120,7 @@ export const MOCK_ATTENDANCE_RECORDS: AttendanceRecord[] = [
       { id: 'rx_01', medication: 'Metformina 850mg', dosage: '850mg', form: 'Comprimido', route: 'Oral', frequency: '2x/dia', duration: 'Uso contínuo', quantity: 60, instructions: 'Tomar após café e jantar', isControlled: false },
       { id: 'rx_02', medication: 'Losartana 50mg', dosage: '50mg', form: 'Comprimido', route: 'Oral', frequency: '1x/dia', duration: 'Uso contínuo', quantity: 30, instructions: 'Tomar pela manhã', isControlled: false },
     ],
-    examRequests: [{ id: 'erq_01', examId: 'ex_01', examName: 'HbA1c', examCode: '40302040', urgency: 'routine', clinicalIndication: 'Controle glicêmico - DM2', requestedAt: `${d(-3)}T08:28:00` }],
+    examRequests: [{ id: 'erq_01', examCatalogId: 'ex_01', examCatalogType: 'exam' as const, examId: 'ex_01', examName: 'HbA1c', examCode: '40302040', urgency: 'routine' as const, clinicalIndication: 'Controle glicêmico - DM2', requestedAt: `${d(-3)}T08:28:00` }],
     followUpDays: 30, followUpNotes: 'Retorno com resultados de HbA1c para reavaliação terapêutica',
     notes: 'Orientado sobre importância da dieta e atividade física regular. Encaminhado para nutricionista.',
     status: 'signed', signedAt: `${d(-3)}T08:32:00`, createdBy: 'doc_01', updatedAt: d(-3),
