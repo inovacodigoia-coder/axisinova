@@ -40,7 +40,10 @@ export async function checkCnpjExists(cnpj: string): Promise<boolean> {
 }
 
 export async function registerCompany(data: RegistrationData) {
-  // 0. Check for duplicate CNPJ
+  // 0. Sign out any leftover session from previous attempts
+  await supabase.auth.signOut()
+
+  // 1. Check for duplicate CNPJ
   const cnpjExists = await checkCnpjExists(data.cnpj)
   if (cnpjExists) {
     throw new Error('Este CNPJ já está cadastrado no sistema. Caso precise de ajuda, entre em contato com o suporte.')
