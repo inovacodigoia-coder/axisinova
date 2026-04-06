@@ -28,24 +28,24 @@ export default function ExamsPage() {
 
   const { visibleItems, totalItems, hasMore, visibleCount, showMore, showAll, remainingCount } = usePaginatedList(filtered)
 
-  if (exams.length === 0) {
-    return (
-      <div className="space-y-6">
-        <div className="flex items-center justify-between">
-          <div><h1 className="text-2xl font-bold text-foreground">Exames</h1><p className="text-sm text-muted-foreground">Catálogo de exames da clínica</p></div>
-        </div>
-        <EmptyState
-          icon={<span className="text-4xl">🔬</span>}
-          title="Nenhum exame cadastrado"
-          description="Cadastre os exames disponíveis na sua clínica"
-          action={canAccess('registers', 'create') ? <button onClick={() => setShowForm(true)} className="gradient-bg rounded-xl px-4 py-2.5 text-sm font-semibold text-white shadow-lg hover:opacity-90 flex items-center gap-2"><Plus className="h-4 w-4" /> Cadastrar Primeiro Exame</button> : undefined}
-        />
-      </div>
-    )
-  }
+  const isEmpty = exams.length === 0
 
   return (
     <div className="space-y-6">
+      {isEmpty ? (
+        <>
+          <div className="flex items-center justify-between">
+            <div><h1 className="text-2xl font-bold text-foreground">Exames</h1><p className="text-sm text-muted-foreground">Catálogo de exames da clínica</p></div>
+          </div>
+          <EmptyState
+            icon={<span className="text-4xl">🔬</span>}
+            title="Nenhum exame cadastrado"
+            description="Cadastre os exames disponíveis na sua clínica"
+            action={canAccess('registers', 'create') ? <button onClick={() => setShowForm(true)} className="gradient-bg rounded-xl px-4 py-2.5 text-sm font-semibold text-white shadow-lg hover:opacity-90 flex items-center gap-2"><Plus className="h-4 w-4" /> Cadastrar Primeiro Exame</button> : undefined}
+          />
+        </>
+      ) : (
+        <>
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold text-foreground">Exames <span className="text-muted-foreground text-lg font-normal">({exams.length})</span></h1>
