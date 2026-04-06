@@ -1,7 +1,7 @@
 import { useState, useCallback, useEffect, useRef } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
 import { useAuth } from '@/context/AuthContext'
-import { MOCK_CREDENTIALS } from '@/mocks/users.mock'
+import { getRedirectByRole } from '@/mocks/users.mock'
 import { Mail, Lock, Eye, EyeOff, AlertCircle, Calendar, FileText, DollarSign, BarChart3, X, ChevronDown, ChevronUp } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 import logoImg from '@/assets/logo-axisinova.jpeg'
