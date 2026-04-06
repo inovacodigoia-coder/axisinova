@@ -79,7 +79,7 @@ export function CompanyProvider({ children }: { children: ReactNode }) {
 
     // company_admin and super_admin bypass
     if (user.role === 'super_admin' || user.role === 'company_admin') {
-      const profs = getUserProfiles(companyUserId || '')
+      const profs = getUserProfiles(companyUserId || '', user.role)
       if (profs.length > 0) {
         const saved = sessionStorage.getItem(SESSION_KEY)
         if (saved) {
