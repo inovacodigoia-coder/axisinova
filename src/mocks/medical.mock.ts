@@ -149,8 +149,8 @@ export const MOCK_ATTENDANCE_RECORDS: AttendanceRecord[] = [
       { id: 'rx_05', medication: 'Losartana 50mg', dosage: '50mg', form: 'Comprimido', route: 'Oral', frequency: '1x/dia', duration: 'Uso contínuo', quantity: 30, isControlled: false },
     ],
     examRequests: [
-      { id: 'erq_02', examId: 'ex_01', examName: 'Hemograma Completo', examCode: '40304361', urgency: 'routine', clinicalIndication: 'Avaliação inicial', requestedAt: `${d(-24)}T08:30:00` },
-      { id: 'erq_03', examId: 'ex_02', examName: 'Eletrocardiograma', examCode: '40101010', urgency: 'routine', clinicalIndication: 'Avaliação cardiovascular inicial', requestedAt: `${d(-24)}T08:30:00` },
+      { id: 'erq_02', examCatalogId: 'ex_01', examCatalogType: 'exam' as const, examId: 'ex_01', examName: 'Hemograma Completo', examCode: '40304361', urgency: 'routine' as const, clinicalIndication: 'Avaliação inicial', requestedAt: `${d(-24)}T08:30:00` },
+      { id: 'erq_03', examCatalogId: 'ex_02', examCatalogType: 'exam' as const, examId: 'ex_02', examName: 'Eletrocardiograma', examCode: '40101010', urgency: 'routine' as const, clinicalIndication: 'Avaliação cardiovascular inicial', requestedAt: `${d(-24)}T08:30:00` },
     ],
     followUpDays: 14,
     status: 'signed', signedAt: `${d(-24)}T08:40:00`, createdBy: 'doc_01', updatedAt: d(-24),
