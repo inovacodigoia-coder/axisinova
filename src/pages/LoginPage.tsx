@@ -39,7 +39,6 @@ export default function LoginPage() {
   // Redirect if already authenticated
   useEffect(() => {
     if (isAuthenticated && user) {
-      const { getRedirectByRole } = require('@/mocks/users.mock')
       toast.success(`Você já está conectado como ${user.name}`)
       navigate(getRedirectByRole(user.role), { replace: true })
     }
