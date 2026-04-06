@@ -1,6 +1,9 @@
 import { useState, useMemo } from 'react'
-import { Search, CheckCircle, FlaskConical } from 'lucide-react'
-import type { ExamResult, ResultStatus } from '@/types/results.types'
+import { Search, CheckCircle, FlaskConical, Filter } from 'lucide-react'
+import { useBillingContext } from '@/context/BillingContext'
+import { usePaginatedList } from '@/hooks/usePaginatedList'
+import { useAuth } from '@/context/AuthContext'
+import type { ResultStatus } from '@/types/results.types'
 import { toast } from 'sonner'
 
 const STATUS_CONFIG: Record<ResultStatus, { label: string; cls: string }> = {
@@ -13,14 +16,13 @@ const STATUS_CONFIG: Record<ResultStatus, { label: string; cls: string }> = {
 }
 
 export default function ResultsListPage() {
+  const { results, deliverResult, generateProtocolNumber } = useBillingContext()
+  const { user } = useAuth()
   const [search, setSearch] = useState('')
   const [statusFilter, setStatusFilter] = useState('all')
   const [onlyAvailable, setOnlyAvailable] = useState(false)
   const [deliveryModal, setDeliveryModal] = useState<string | null>(null)
   const [deliveryForm, setDeliveryForm] = useState({ deliveredTo: '' as 'patient' | 'responsible' | '', responsibleName: '', responsibleDoc: '', relationship: '', verifyMethod: '' })
-
-  // Real data - starts empty, will be populated when exams are requested during medical attendance
-  const results: ExamResult[] = []
 
   const filtered = useMemo(() => {
     return results.filter(r => {
@@ -34,12 +36,21 @@ export default function ResultsListPage() {
     })
   }, [search, statusFilter, onlyAvailable, results])
 
+  const { visibleItems, hasMore, showMore, showAll, totalItems } = usePaginatedList(filtered, 10)
+  const hasFilters = search || statusFilter !== 'all' || onlyAvailable
+
   const handleDelivery = () => {
     if (!deliveryForm.deliveredTo) { toast.error('Selecione o destinatário'); return }
     if (deliveryForm.deliveredTo === 'responsible' && (!deliveryForm.responsibleName || !deliveryForm.responsibleDoc)) {
       toast.error('Preencha nome e documento do responsável'); return
     }
-    toast.success('Resultado entregue e protocolo registrado!')
+    const result = results.find(r => r.id === deliveryModal)
+    if (!result) return
+
+    const toName = deliveryForm.deliveredTo === 'patient' ? result.patientName : deliveryForm.responsibleName
+    deliverResult(result.id, deliveryForm.deliveredTo, toName, deliveryForm.responsibleDoc || '', user?.id || '')
+    const protocol = generateProtocolNumber()
+    toast.success(`Resultado entregue. Protocolo: ${protocol}`)
     setDeliveryModal(null)
     setDeliveryForm({ deliveredTo: '', responsibleName: '', responsibleDoc: '', relationship: '', verifyMethod: '' })
   }
@@ -53,10 +64,10 @@ export default function ResultsListPage() {
           <h1 className="text-2xl font-bold text-foreground">Entrega de Resultados</h1>
           <p className="text-sm text-muted-foreground">Gerencie a entrega de resultados de exames</p>
         </div>
-        <div className="rounded-2xl border border-border bg-card p-12 text-center">
-          <FlaskConical className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-          <h3 className="text-lg font-semibold text-foreground mb-2">Nenhum resultado de exame</h3>
-          <p className="text-sm text-muted-foreground">Os resultados aparecerão aqui quando exames forem solicitados durante os atendimentos médicos.</p>
+        <div className="rounded-2xl border border-border bg-card p-12 text-center shadow-sm">
+          <FlaskConical className="h-14 w-14 text-muted-foreground mx-auto mb-4" />
+          <h3 className="text-lg font-semibold text-foreground mb-2">Nenhum resultado para entregar</h3>
+          <p className="text-sm text-muted-foreground max-w-md mx-auto">Os resultados aparecerão aqui quando os exames forem solicitados e processados durante os atendimentos médicos.</p>
         </div>
       </div>
     )
@@ -67,7 +78,7 @@ export default function ResultsListPage() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold text-foreground">Entrega de Resultados</h1>
-          <p className="text-sm text-muted-foreground">{filtered.length} resultados</p>
+          <p className="text-sm text-muted-foreground">{results.length} resultados</p>
         </div>
       </div>
 
@@ -84,59 +95,87 @@ export default function ResultsListPage() {
           <input type="checkbox" checked={onlyAvailable} onChange={e => setOnlyAvailable(e.target.checked)} className="rounded border-input" />
           Apenas disponíveis
         </label>
+        {hasFilters && (
+          <button onClick={() => { setSearch(''); setStatusFilter('all'); setOnlyAvailable(false) }} className="h-10 rounded-lg border border-input bg-background px-3 text-sm text-muted-foreground hover:bg-muted">Limpar filtros</button>
+        )}
       </div>
 
-      <div className="rounded-2xl border border-border bg-card shadow-sm overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="border-b border-border bg-muted/50">
-                <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground">Paciente</th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground">Exame</th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground hidden md:table-cell">Solicitado por</th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground hidden lg:table-cell">Data Solic.</th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground hidden lg:table-cell">Previsão</th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground">Status</th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground">Ações</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-border">
-              {filtered.map(r => {
-                const sc = STATUS_CONFIG[r.status]
-                return (
-                  <tr key={r.id} className="hover:bg-muted/50 transition-colors">
-                    <td className="px-4 py-3">
-                      <p className="text-foreground font-medium">{r.patientName}</p>
-                      <p className="text-xs text-muted-foreground">{r.patientCpf ? r.patientCpf.replace(/(\d{3})\.\d{3}\.\d{3}/, '$1.***.***') : '—'}</p>
-                    </td>
-                    <td className="px-4 py-3">
-                      <p className="text-foreground">{r.examName}</p>
-                      <p className="text-xs text-muted-foreground font-mono">{r.examCode}</p>
-                    </td>
-                    <td className="px-4 py-3 hidden md:table-cell text-muted-foreground">{r.doctorName}</td>
-                    <td className="px-4 py-3 hidden lg:table-cell text-muted-foreground">{new Date(r.requestedAt).toLocaleDateString('pt-BR')}</td>
-                    <td className="px-4 py-3 hidden lg:table-cell text-muted-foreground">{r.expectedAt ? new Date(r.expectedAt).toLocaleDateString('pt-BR') : '—'}</td>
-                    <td className="px-4 py-3">
-                      <span className={`inline-flex rounded-full px-2 py-0.5 text-[10px] font-bold ${sc.cls} ${r.status === 'available' ? 'animate-pulse' : ''}`} style={r.status === 'available' ? { animationDuration: '2s' } : undefined}>{sc.label}</span>
-                    </td>
-                    <td className="px-4 py-3">
-                      {r.status === 'available' && (
-                        <button onClick={() => setDeliveryModal(r.id)} className="flex items-center gap-1 rounded-lg bg-primary text-primary-foreground px-3 py-1.5 text-xs font-medium hover:bg-primary/90 transition-colors">
-                          <CheckCircle className="h-3.5 w-3.5" /> Entregar
-                        </button>
-                      )}
-                      {r.status === 'delivered' && (
-                        <span className="text-xs text-[hsl(var(--success))] font-medium">Entregue em {r.deliveredAt ? new Date(r.deliveredAt).toLocaleDateString('pt-BR') : ''}</span>
-                      )}
-                    </td>
-                  </tr>
-                )
-              })}
-            </tbody>
-          </table>
+      {filtered.length === 0 ? (
+        <div className="rounded-2xl border border-border bg-card p-12 text-center shadow-sm">
+          <Filter className="h-10 w-10 text-muted-foreground mx-auto mb-3" />
+          <h3 className="text-base font-semibold text-foreground mb-1">Nenhum resultado encontrado</h3>
+          <p className="text-sm text-muted-foreground">Nenhum resultado corresponde aos filtros aplicados.</p>
+          <button onClick={() => { setSearch(''); setStatusFilter('all'); setOnlyAvailable(false) }} className="mt-3 text-sm text-primary hover:underline">Limpar filtros</button>
         </div>
-      </div>
+      ) : (
+        <>
+          <div className="rounded-2xl border border-border bg-card shadow-sm overflow-hidden">
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-b border-border bg-muted/50">
+                    <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground">Paciente</th>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground">Exame</th>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground hidden md:table-cell">Solicitado por</th>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground hidden lg:table-cell">Data Solic.</th>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground hidden lg:table-cell">Previsão</th>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground">Status</th>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground">Ações</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-border">
+                  {visibleItems.map(r => {
+                    const sc = STATUS_CONFIG[r.status]
+                    return (
+                      <tr key={r.id} className="hover:bg-muted/50 transition-colors">
+                        <td className="px-4 py-3">
+                          <p className="text-foreground font-medium">{r.patientName}</p>
+                          <p className="text-xs text-muted-foreground">{r.patientCpf ? r.patientCpf.replace(/(\d{3})\.\d{3}\.\d{3}/, '$1.***.***') : '—'}</p>
+                        </td>
+                        <td className="px-4 py-3">
+                          <p className="text-foreground">{r.examName}</p>
+                          <p className="text-xs text-muted-foreground font-mono">{r.examCode}</p>
+                        </td>
+                        <td className="px-4 py-3 hidden md:table-cell text-muted-foreground">{r.doctorName}</td>
+                        <td className="px-4 py-3 hidden lg:table-cell text-muted-foreground">{new Date(r.requestedAt).toLocaleDateString('pt-BR')}</td>
+                        <td className="px-4 py-3 hidden lg:table-cell text-muted-foreground">{r.expectedAt ? new Date(r.expectedAt).toLocaleDateString('pt-BR') : '—'}</td>
+                        <td className="px-4 py-3">
+                          <span className={`inline-flex rounded-full px-2 py-0.5 text-[10px] font-bold ${sc.cls} ${r.status === 'available' ? 'animate-pulse' : ''}`} style={r.status === 'available' ? { animationDuration: '2s' } : undefined}>{sc.label}</span>
+                        </td>
+                        <td className="px-4 py-3">
+                          {r.status === 'available' && (
+                            <button onClick={() => setDeliveryModal(r.id)} className="flex items-center gap-1 rounded-lg bg-primary text-primary-foreground px-3 py-1.5 text-xs font-medium hover:bg-primary/90 transition-colors">
+                              <CheckCircle className="h-3.5 w-3.5" /> Entregar
+                            </button>
+                          )}
+                          {r.status === 'delivered' && (
+                            <span className="text-xs text-green-600 font-medium">
+                              Entregue {r.deliveredAt ? new Date(r.deliveredAt).toLocaleDateString('pt-BR') : ''}
+                              {r.deliveryProtocolNumber && <> · {r.deliveryProtocolNumber}</>}
+                            </span>
+                          )}
+                        </td>
+                      </tr>
+                    )
+                  })}
+                </tbody>
+              </table>
+            </div>
+          </div>
 
+          {hasMore && (
+            <div className="flex items-center justify-between text-sm text-muted-foreground">
+              <span>Exibindo {visibleItems.length} de {totalItems} resultados</span>
+              <div className="flex gap-2">
+                <button onClick={showMore} className="rounded-lg border border-input bg-background px-3 py-1.5 text-xs hover:bg-muted transition-colors">Mostrar mais 10</button>
+                <button onClick={showAll} className="rounded-lg border border-input bg-background px-3 py-1.5 text-xs hover:bg-muted transition-colors">Ver todos ({totalItems})</button>
+              </div>
+            </div>
+          )}
+        </>
+      )}
+
+      {/* Delivery Modal */}
       {deliveryModal && result && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50" onClick={() => setDeliveryModal(null)}>
           <div className="w-full max-w-lg rounded-2xl bg-card border border-border p-6 shadow-xl mx-4 max-h-[90vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
@@ -198,7 +237,7 @@ export default function ResultsListPage() {
             )}
 
             <div className="rounded-lg bg-muted border border-border p-4 mb-4 text-xs space-y-1 font-mono">
-              <p className="font-bold text-foreground">PROTOCOLO DE ENTREGA</p>
+              <p className="font-bold text-foreground">PROTOCOLO DE ENTREGA Nº {generateProtocolNumber()}</p>
               <hr className="border-border" />
               <p>Exame: {result.examName}</p>
               <p>Paciente: {result.patientName}</p>
@@ -207,11 +246,15 @@ export default function ResultsListPage() {
               {deliveryForm.deliveredTo === 'patient' && <p>Entregue a: Próprio paciente</p>}
               {deliveryForm.deliveredTo === 'responsible' && <p>Entregue a: {deliveryForm.responsibleName || '___'} ({deliveryForm.relationship || '___'})</p>}
               {deliveryForm.responsibleDoc && <p>Documento: {deliveryForm.responsibleDoc}</p>}
+              <hr className="border-border" />
+              <p>Recepcionista: {user?.name || '—'}</p>
+              <p>Unidade: {user?.companyName || '—'}</p>
+              <p>Assinatura: ___________________________</p>
             </div>
 
             <div className="flex gap-3">
               <button onClick={() => setDeliveryModal(null)} className="flex-1 rounded-lg border border-input bg-background px-4 py-2.5 text-sm font-medium hover:bg-muted transition-colors">Cancelar</button>
-              <button onClick={handleDelivery} className="flex-1 rounded-lg bg-gradient-to-r from-[hsl(var(--primary))] to-[hsl(var(--primary)/0.8)] text-primary-foreground px-4 py-2.5 text-sm font-medium hover:opacity-90 transition-opacity">Registrar e Imprimir Protocolo</button>
+              <button onClick={handleDelivery} className="flex-1 rounded-lg gradient-bg text-white px-4 py-2.5 text-sm font-medium hover:opacity-90 transition-opacity">Registrar e Imprimir Protocolo</button>
             </div>
           </div>
         </div>

@@ -1,7 +1,7 @@
 import { useMemo } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { ArrowLeft } from 'lucide-react'
-import { MOCK_LOTES, MOCK_GUIDES } from '@/mocks/billing.mock'
+import { useBillingContext } from '@/context/BillingContext'
 import { toast } from 'sonner'
 
 const STEPS = ['open', 'closed', 'submitted', 'processing', 'finished']
@@ -10,8 +10,9 @@ const STEP_LABELS: Record<string, string> = { open: 'Aberto', closed: 'Fechado',
 export default function LoteDetailPage() {
   const { loteId } = useParams()
   const navigate = useNavigate()
-  const lote = useMemo(() => MOCK_LOTES.find(l => l.id === loteId), [loteId])
-  const loteGuides = useMemo(() => MOCK_GUIDES.filter(g => g.loteId === loteId), [loteId])
+  const { lotes, guides, updateLote } = useBillingContext()
+  const lote = useMemo(() => lotes.find(l => l.id === loteId), [lotes, loteId])
+  const loteGuides = useMemo(() => guides.filter(g => g.loteId === loteId), [guides, loteId])
 
   if (!lote) return <div className="flex items-center justify-center h-64"><p className="text-muted-foreground">Lote não encontrado</p></div>
 
@@ -28,7 +29,6 @@ export default function LoteDetailPage() {
         </div>
       </div>
 
-      {/* Stepper */}
       <div className="rounded-2xl border border-border bg-card p-6 shadow-sm">
         <div className="flex items-center gap-2">
           {STEPS.map((step, i) => (
@@ -41,7 +41,6 @@ export default function LoteDetailPage() {
         </div>
       </div>
 
-      {/* Totals */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
         <div className="rounded-xl border border-border bg-card p-4">
           <p className="text-2xl font-bold text-foreground">{lote.totalGuides}</p>
@@ -61,11 +60,9 @@ export default function LoteDetailPage() {
         </div>
       </div>
 
-      {/* Guides table */}
       <div className="rounded-2xl border border-border bg-card shadow-sm overflow-hidden">
-        <div className="p-4 border-b border-border flex items-center justify-between">
+        <div className="p-4 border-b border-border">
           <h3 className="text-sm font-semibold text-foreground">Guias do Lote</h3>
-          <button className="text-xs text-primary hover:underline">+ Adicionar guias</button>
         </div>
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
@@ -86,6 +83,9 @@ export default function LoteDetailPage() {
                   <td className="px-4 py-2 text-right font-medium text-foreground">R$ {g.totalValueSubmitted.toLocaleString('pt-BR')}</td>
                 </tr>
               ))}
+              {loteGuides.length === 0 && (
+                <tr><td colSpan={4} className="px-4 py-8 text-center text-muted-foreground">Nenhuma guia neste lote</td></tr>
+              )}
             </tbody>
           </table>
         </div>
@@ -93,9 +93,9 @@ export default function LoteDetailPage() {
 
       {lote.status === 'open' && (
         <div className="flex gap-3">
-          <button onClick={() => toast.success('Lote fechado com sucesso')} className="rounded-lg border border-input bg-background px-4 py-2 text-sm font-medium hover:bg-muted transition-colors">Fechar Lote</button>
+          <button onClick={() => { updateLote({ id: lote.id, status: 'closed' }); toast.success('Lote fechado') }} className="rounded-lg border border-input bg-background px-4 py-2 text-sm font-medium hover:bg-muted transition-colors">Fechar Lote</button>
           <button onClick={() => toast.info('XML TISS gerado')} className="rounded-lg border border-input bg-background px-4 py-2 text-sm font-medium hover:bg-muted transition-colors">Gerar XML TISS</button>
-          <button onClick={() => toast.success('Lote marcado como enviado')} className="rounded-lg bg-primary text-primary-foreground px-4 py-2 text-sm font-medium hover:bg-primary/90 transition-colors">Marcar como Enviado</button>
+          <button onClick={() => { updateLote({ id: lote.id, status: 'submitted', submittedAt: new Date().toISOString() }); toast.success('Lote marcado como enviado') }} className="rounded-lg bg-primary text-primary-foreground px-4 py-2 text-sm font-medium hover:bg-primary/90 transition-colors">Marcar como Enviado</button>
         </div>
       )}
     </div>

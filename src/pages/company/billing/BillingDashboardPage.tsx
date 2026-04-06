@@ -1,8 +1,8 @@
-import { useState, useMemo } from 'react'
+import { useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { DollarSign, FileText, AlertTriangle, TrendingUp, CheckCircle, BarChart3 } from 'lucide-react'
+import { DollarSign, FileText, AlertTriangle, TrendingUp, CheckCircle, CreditCard } from 'lucide-react'
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, Legend } from 'recharts'
-import { MOCK_GUIDES, MOCK_GLOSAS, MOCK_LOTES } from '@/mocks/billing.mock'
+import { useBillingContext } from '@/context/BillingContext'
 import type { GuideStatus } from '@/types/billing.types'
 
 const GUIDE_STATUS_CONFIG: Record<GuideStatus, { label: string; cls: string }> = {
@@ -21,9 +21,9 @@ const GUIDE_STATUS_CONFIG: Record<GuideStatus, { label: string; cls: string }> =
 
 export default function BillingDashboardPage() {
   const navigate = useNavigate()
-  const guides = MOCK_GUIDES
-  const glosas = MOCK_GLOSAS
-  const lotes = MOCK_LOTES
+  const { guides, glosas, lotes } = useBillingContext()
+
+  const isEmpty = guides.length === 0
 
   const pendingGlosas = useMemo(() => glosas.filter(g => g.status === 'pending' || g.status === 'in_analysis'), [glosas])
   const totalGlosaValue = useMemo(() => pendingGlosas.reduce((s, g) => s + g.value, 0), [pendingGlosas])
@@ -40,16 +40,33 @@ export default function BillingDashboardPage() {
   const received = useMemo(() => guides.filter(g => g.status === 'paid').reduce((s, g) => s + (g.totalValueApproved || 0), 0), [guides])
   const glosaTotal = useMemo(() => guides.reduce((s, g) => s + (g.totalValueGlosa || 0), 0), [guides])
   const glosaRate = submitted > 0 ? ((glosaTotal / submitted) * 100) : 0
-  const pendingGuides = useMemo(() => guides.filter(g => ['draft', 'pending_docs', 'pending_authorization'].includes(g.status)), [guides])
+  const pendingGuides = useMemo(() => guides.filter(g => ['draft', 'pending_docs', 'pending_authorization', 'returned_reception'].includes(g.status)), [guides])
 
-  const barData = [
-    { month: 'Out', faturado: 12400, recebido: 11800, glosado: 600 },
-    { month: 'Nov', faturado: 9800, recebido: 9200, glosado: 600 },
-    { month: 'Dez', faturado: 14200, recebido: 13000, glosado: 1200 },
-    { month: 'Jan', faturado: 11500, recebido: 10800, glosado: 700 },
-    { month: 'Fev', faturado: 8200, recebido: 7600, glosado: 600 },
-    { month: 'Mar', faturado: submitted, recebido: received, glosado: glosaTotal },
-  ]
+  if (isEmpty) {
+    return (
+      <div className="space-y-6">
+        <div>
+          <h1 className="text-2xl font-bold text-foreground">Faturamento</h1>
+          <p className="text-sm text-muted-foreground">Painel geral de faturamento e cobrança</p>
+        </div>
+        <div className="rounded-2xl border border-border bg-card p-12 text-center shadow-sm">
+          <CreditCard className="h-14 w-14 text-muted-foreground mx-auto mb-4" />
+          <h3 className="text-lg font-semibold text-foreground mb-2">Nenhuma guia de faturamento ainda</h3>
+          <p className="text-sm text-muted-foreground max-w-md mx-auto mb-6">
+            As guias serão criadas automaticamente após os atendimentos serem finalizados.
+            Realize o primeiro atendimento para começar.
+          </p>
+          <div className="flex flex-wrap items-center justify-center gap-3 text-sm">
+            <button onClick={() => navigate('/app/agendamento')} className="rounded-lg border border-input bg-background px-4 py-2 hover:bg-muted transition-colors">📅 Agendamento</button>
+            <span className="text-muted-foreground">→</span>
+            <button onClick={() => navigate('/app/recepcao')} className="rounded-lg border border-input bg-background px-4 py-2 hover:bg-muted transition-colors">🏥 Recepção</button>
+            <span className="text-muted-foreground">→</span>
+            <button onClick={() => navigate('/app/medico')} className="rounded-lg border border-input bg-background px-4 py-2 hover:bg-muted transition-colors">📋 Médico</button>
+          </div>
+        </div>
+      </div>
+    )
+  }
 
   const pieData = useMemo(() => {
     const counts: Record<string, number> = {}
@@ -72,7 +89,6 @@ export default function BillingDashboardPage() {
 
   return (
     <div className="space-y-6">
-      {/* Glosa Alert Banner */}
       {pendingGlosas.length > 0 && (
         <div className="flex items-center gap-3 rounded-xl border-l-4 border-destructive bg-destructive/5 p-4">
           <AlertTriangle className="h-5 w-5 text-destructive shrink-0" />
@@ -91,7 +107,6 @@ export default function BillingDashboardPage() {
         </div>
       </div>
 
-      {/* Metrics */}
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4">
         {metrics.map(m => (
           <div key={m.label} className="rounded-2xl border border-border bg-card p-4 shadow-sm">
@@ -102,23 +117,8 @@ export default function BillingDashboardPage() {
         ))}
       </div>
 
-      {/* Charts */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div className="lg:col-span-2 rounded-2xl border border-border bg-card p-6 shadow-sm">
-          <h3 className="text-sm font-semibold text-foreground mb-4">Faturamento vs Recebido (últimos 6 meses)</h3>
-          <ResponsiveContainer width="100%" height={280}>
-            <BarChart data={barData}>
-              <CartesianGrid strokeDasharray="3 3" className="stroke-border" />
-              <XAxis dataKey="month" className="text-muted-foreground" tick={{ fontSize: 12 }} />
-              <YAxis className="text-muted-foreground" tick={{ fontSize: 12 }} tickFormatter={v => `${(v/1000).toFixed(0)}k`} />
-              <Tooltip formatter={(v: number) => `R$ ${v.toLocaleString('pt-BR')}`} />
-              <Bar dataKey="faturado" fill="hsl(var(--primary))" name="Faturado" radius={[4, 4, 0, 0]} />
-              <Bar dataKey="recebido" fill="hsl(142,71%,45%)" name="Recebido" radius={[4, 4, 0, 0]} />
-              <Bar dataKey="glosado" fill="hsl(0,84%,60%)" name="Glosado" radius={[4, 4, 0, 0]} />
-            </BarChart>
-          </ResponsiveContainer>
-        </div>
-        <div className="rounded-2xl border border-border bg-card p-6 shadow-sm">
           <h3 className="text-sm font-semibold text-foreground mb-4">Guias por Status</h3>
           <ResponsiveContainer width="100%" height={280}>
             <PieChart>
@@ -130,10 +130,7 @@ export default function BillingDashboardPage() {
             </PieChart>
           </ResponsiveContainer>
         </div>
-      </div>
 
-      {/* Pending guides & open lotes */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <div className="rounded-2xl border border-border bg-card p-6 shadow-sm">
           <div className="flex items-center justify-between mb-4">
             <h3 className="text-sm font-semibold text-foreground">Guias Pendentes</h3>
@@ -156,30 +153,32 @@ export default function BillingDashboardPage() {
                 </div>
               )
             })}
+            {pendingGuides.length === 0 && <p className="text-sm text-muted-foreground text-center py-4">Nenhuma guia pendente</p>}
           </div>
         </div>
+      </div>
 
-        <div className="rounded-2xl border border-border bg-card p-6 shadow-sm">
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="text-sm font-semibold text-foreground">Lotes em Aberto</h3>
-            <button onClick={() => navigate('/app/faturamento/lotes')} className="text-xs text-primary hover:underline">Ver todos</button>
-          </div>
-          <div className="space-y-2">
-            {lotes.filter(l => l.status !== 'finished').map(l => (
-              <div key={l.id} className="flex items-center justify-between rounded-lg border border-border p-3 hover:bg-muted/50 transition-colors cursor-pointer" onClick={() => navigate(`/app/faturamento/lotes/${l.id}`)}>
-                <div>
-                  <p className="text-sm font-medium text-foreground">{l.number} · {l.convenioName}</p>
-                  <p className="text-xs text-muted-foreground">Competência: {l.competencia} · {l.totalGuides} guias</p>
-                </div>
-                <div className="text-right">
-                  <p className="text-sm font-bold text-foreground">R$ {l.totalValue.toLocaleString('pt-BR')}</p>
-                  <span className={`inline-flex rounded-full px-2 py-0.5 text-[10px] font-bold ${l.status === 'open' ? 'bg-blue-100 text-blue-800' : l.status === 'submitted' ? 'bg-purple-100 text-purple-800' : 'bg-yellow-100 text-yellow-800'}`}>
-                    {l.status === 'open' ? 'Aberto' : l.status === 'submitted' ? 'Enviado' : l.status === 'closed' ? 'Fechado' : l.status}
-                  </span>
-                </div>
+      <div className="rounded-2xl border border-border bg-card p-6 shadow-sm">
+        <div className="flex items-center justify-between mb-4">
+          <h3 className="text-sm font-semibold text-foreground">Lotes em Aberto</h3>
+          <button onClick={() => navigate('/app/faturamento/lotes')} className="text-xs text-primary hover:underline">Ver todos</button>
+        </div>
+        <div className="space-y-2">
+          {lotes.filter(l => l.status !== 'finished').map(l => (
+            <div key={l.id} className="flex items-center justify-between rounded-lg border border-border p-3 hover:bg-muted/50 transition-colors cursor-pointer" onClick={() => navigate(`/app/faturamento/lotes/${l.id}`)}>
+              <div>
+                <p className="text-sm font-medium text-foreground">{l.number} · {l.convenioName}</p>
+                <p className="text-xs text-muted-foreground">Competência: {l.competencia} · {l.totalGuides} guias</p>
               </div>
-            ))}
-          </div>
+              <div className="text-right">
+                <p className="text-sm font-bold text-foreground">R$ {l.totalValue.toLocaleString('pt-BR')}</p>
+                <span className={`inline-flex rounded-full px-2 py-0.5 text-[10px] font-bold ${l.status === 'open' ? 'bg-blue-100 text-blue-800' : l.status === 'submitted' ? 'bg-purple-100 text-purple-800' : 'bg-yellow-100 text-yellow-800'}`}>
+                  {l.status === 'open' ? 'Aberto' : l.status === 'submitted' ? 'Enviado' : l.status === 'closed' ? 'Fechado' : l.status}
+                </span>
+              </div>
+            </div>
+          ))}
+          {lotes.filter(l => l.status !== 'finished').length === 0 && <p className="text-sm text-muted-foreground text-center py-4">Nenhum lote em aberto</p>}
         </div>
       </div>
     </div>
