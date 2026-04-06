@@ -112,6 +112,7 @@ export const MOCK_COMPANY_USERS: CompanyUser[] = [
   { id: 'u_doc_003', name: 'Dra. Fernanda Reis', email: 'fernanda@odontocenter.com.br', role: 'doctor', isActive: true, lastAccess: '2025-01-18 09:30', companyId: 'comp_002' },
   { id: 'u_ca_003', name: 'Amanda Vieira', email: 'amanda@bioanalytica.com.br', role: 'company_admin', isActive: true, lastAccess: '2025-01-20 07:00', companyId: 'comp_003' },
   { id: 'u_doc_004', name: 'Dr. Thiago Nascimento', email: 'thiago@bioanalytica.com.br', role: 'doctor', isActive: true, lastAccess: '2025-01-20 08:45', companyId: 'comp_003' },
+  { id: 'u_ca_010', name: 'Admin InovaSoftteste', email: 'inivacodigoia@inivacodigoia.com.br', role: 'company_admin', isActive: true, lastAccess: '2025-04-06 10:00', companyId: 'comp_011' },
 ]
 
 export const MOCK_INVOICES: Invoice[] = [
