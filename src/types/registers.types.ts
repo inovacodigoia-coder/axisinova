@@ -80,6 +80,7 @@ export interface Exam {
   resultDeadlineDays?: number
   requiresAuthorization: boolean
   authorizationInstructions?: string
+  attachmentRules: AttachmentRule[]
   isActive: boolean
   createdAt: string
 }
