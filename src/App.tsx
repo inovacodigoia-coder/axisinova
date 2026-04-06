@@ -1,5 +1,5 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Route, Routes } from "react-router-dom";
+import { BrowserRouter, Route, Routes, Navigate } from "react-router-dom";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -70,6 +70,11 @@ const App = () => (
                   <Route path="configuracoes" element={<SystemSettingsPage />} />
                   <Route path="alertas" element={<SuperAdminDashboard />} />
                 </Route>
+
+                {/* Redirects for short paths */}
+                <Route path="/confirmacoes" element={<Navigate to="/app/confirmacoes" replace />} />
+                <Route path="/agendamento" element={<Navigate to="/app/agendamento" replace />} />
+                <Route path="/recepcao" element={<Navigate to="/app/recepcao" replace />} />
 
                 {/* Company Portal */}
                 <Route path="/app/*" element={<PrivateRoute><CompanyPortalLayout /></PrivateRoute>} />
