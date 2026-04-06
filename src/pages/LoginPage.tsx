@@ -35,6 +35,12 @@ export default function LoginPage() {
 
   const emailRef = useRef<HTMLInputElement>(null)
   const passwordRef = useRef<HTMLInputElement>(null)
+  const typingTimeoutsRef = useRef<number[]>([])
+
+  const clearTypingAnimation = useCallback(() => {
+    typingTimeoutsRef.current.forEach((timeoutId) => window.clearTimeout(timeoutId))
+    typingTimeoutsRef.current = []
+  }, [])
 
   // Redirect if already authenticated
   useEffect(() => {
@@ -55,6 +61,10 @@ export default function LoginPage() {
   useEffect(() => {
     if (error) setError(null)
   }, [email, password])
+
+  useEffect(() => {
+    return () => clearTypingAnimation()
+  }, [clearTypingAnimation])
 
   const validateEmail = (v: string) => {
     if (!v) return null
@@ -94,7 +104,6 @@ export default function LoginPage() {
         return
       }
 
-      // Success — navigate
       setIsLoading(false)
       if (result.redirectTo) {
         navigate(result.redirectTo, { replace: true })
@@ -105,31 +114,30 @@ export default function LoginPage() {
 
   // Typewriter fill for dev card
   const fillCredentials = useCallback((targetEmail: string, targetPassword: string) => {
+    clearTypingAnimation()
     setEmail('')
     setPassword('')
     setError(null)
     setEmailError(null)
 
-    let i = 0
-    const typeEmail = () => {
-      if (i < targetEmail.length) {
-        setEmail((prev) => prev + targetEmail[i])
-        i++
-        setTimeout(typeEmail, 15)
-      } else {
-        let j = 0
-        const typePass = () => {
-          if (j < targetPassword.length) {
-            setPassword((prev) => prev + targetPassword[j])
-            j++
-            setTimeout(typePass, 15)
-          }
-        }
-        typePass()
-      }
-    }
-    typeEmail()
-  }, [])
+    targetEmail.split('').forEach((char, index) => {
+      const timeoutId = window.setTimeout(() => {
+        setEmail((prev) => prev + char)
+      }, index * 15)
+
+      typingTimeoutsRef.current.push(timeoutId)
+    })
+
+    const passwordStart = targetEmail.length * 15
+
+    targetPassword.split('').forEach((char, index) => {
+      const timeoutId = window.setTimeout(() => {
+        setPassword((prev) => prev + char)
+      }, passwordStart + index * 15)
+
+      typingTimeoutsRef.current.push(timeoutId)
+    })
+  }, [clearTypingAnimation])
 
   const isDisabled = cooldown > 0 || isLoading || (!email && !password)
   const cooldownProgress = cooldown > 0 ? ((60 - cooldown) / 60) * 100 : 0
