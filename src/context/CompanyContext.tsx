@@ -63,7 +63,7 @@ export function CompanyProvider({ children }: { children: ReactNode }) {
 
   const companyUserId = user ? getCompanyUserId(user.id) : null
   const companyUser = companyUserId ? MOCK_COMPANY_USERS.find(u => u.id === companyUserId) || null : null
-  const profiles = user ? getUserProfiles(companyUserId || '') : []
+  const profiles = user ? getUserProfiles(companyUserId || '', user.role) : []
   const availableSectors = activeProfile ? getSectorsForProfile(activeProfile) : []
   const availableFunctions = activeProfile ? getFunctionsForProfile(activeProfile) : []
   const availableUtilities = activeProfile ? getUtilitiesForProfile(activeProfile) : []
