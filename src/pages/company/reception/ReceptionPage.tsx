@@ -3,22 +3,45 @@ import { QueuePanel } from '@/components/reception/queue/QueuePanel'
 import { CheckinPanel } from '@/components/reception/checkin/CheckinPanel'
 import { DocumentsPanel } from '@/components/reception/documents/DocumentsPanel'
 import { useQueue } from '@/context/QueueContext'
+import { useScheduling } from '@/context/SchedulingContext'
+import { NoAppointmentsTodayState } from '@/components/reception/empty-states/NoAppointmentsTodayState'
 import { Users, Clock } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
 export default function ReceptionPage() {
   const [selectedId, setSelectedId] = useState<string | null>(null)
-  const { stats } = useQueue()
+  const { stats, state, isDemo } = useQueue()
+  const { appointments } = useScheduling()
   const [mobileTab, setMobileTab] = useState<'queue' | 'checkin' | 'docs'>('queue')
   const [time, setTime] = useState(new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit', second: '2-digit' }))
   const now = new Date()
+  const today = now.toISOString().slice(0, 10)
 
   useEffect(() => {
     const id = setInterval(() => setTime(new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit', second: '2-digit' })), 1000)
     return () => clearInterval(id)
   }, [])
 
+  const todayAppointments = appointments.filter(a =>
+    a.date === today && !['cancelled'].includes(a.status)
+  )
+  const hasNoData = !isDemo && todayAppointments.length === 0 && state.entries.length === 0
 
+  if (hasNoData) {
+    return (
+      <div className="flex flex-col h-[calc(100vh-8rem)]">
+        <div className="flex items-center justify-between mb-4">
+          <div>
+            <h1 className="text-xl font-bold text-foreground">Recepção</h1>
+            <p className="text-sm text-muted-foreground">{now.toLocaleDateString('pt-BR', { weekday: 'long', day: '2-digit', month: 'long', year: 'numeric' })} · {time}</p>
+          </div>
+        </div>
+        <div className="flex-1 flex items-center justify-center">
+          <NoAppointmentsTodayState />
+        </div>
+      </div>
+    )
+  }
 
   return (
     <div className="flex flex-col h-[calc(100vh-8rem)]">

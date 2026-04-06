@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useQueue } from '@/context/QueueContext'
+import { useRegisters } from '@/context/RegistersContext'
 import { TicketBadge } from '@/components/reception/queue/TicketBadge'
 import { Volume2, CheckCircle, SkipForward, Bell, Clock, Star, AlertTriangle } from 'lucide-react'
 import { cn } from '@/lib/utils'
@@ -7,6 +8,7 @@ import { toast } from 'sonner'
 
 export default function DoctorPanelPage() {
   const { state, callTicket, completeEntry, skipEntry, recallEntry, updateStatus } = useQueue()
+  const { doctors, specialties } = useRegisters()
   const [time, setTime] = useState(new Date())
 
   useEffect(() => {
@@ -14,13 +16,19 @@ export default function DoctorPanelPage() {
     return () => clearInterval(id)
   }, [])
 
-  // Filter for a specific doctor (mock: doc_01)
-  const doctorId = 'doc_01'
-  const doctorName = 'Dr. Henrique Lima'
-  const doctorEntries = state.entries.filter(e => e.doctorId === doctorId)
+  // Use first active doctor as default
+  const activeDoctor = doctors.find(d => d.isActive && !d.isBlocked) || null
+  const doctorId = activeDoctor?.id || 'doc_01'
+  const doctorName = activeDoctor ? `Dr. ${activeDoctor.fullName}` : 'Dr. Henrique Lima'
+  const doctorSpecialty = activeDoctor?.specialtyIds
+    .map(id => specialties.find(s => s.id === id)?.name)
+    .filter(Boolean)
+    .join(', ') || ''
 
+  const doctorEntries = state.entries.filter(e => e.doctorId === doctorId)
   const currentPatient = doctorEntries.find(e => e.status === 'in_progress' || e.status === 'called_doctor')
-  const waitingQueue = doctorEntries.filter(e => ['waiting', 'documents_ok', 'called'].includes(e.status))
+  const waitingQueue = doctorEntries
+    .filter(e => ['waiting', 'documents_ok', 'called'].includes(e.status))
     .sort((a, b) => {
       if (a.isPreferential && !b.isPreferential) return -1
       if (!a.isPreferential && b.isPreferential) return 1
@@ -55,17 +63,17 @@ export default function DoctorPanelPage() {
 
   return (
     <div className="min-h-screen bg-background p-6">
-      {/* Header */}
       <div className="max-w-2xl mx-auto">
         <div className="flex items-center justify-between mb-6">
           <div>
             <h1 className="text-lg font-bold text-foreground">{doctorName}</h1>
             <p className="text-sm text-muted-foreground">
+              {doctorSpecialty && `${doctorSpecialty} · `}
               Consultório 1 · {time.toLocaleDateString('pt-BR', { weekday: 'short', day: '2-digit', month: '2-digit' })} · {time.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
             </p>
           </div>
           <div className="h-12 w-12 rounded-full gradient-bg flex items-center justify-center text-white font-bold text-lg">
-            HL
+            {(activeDoctor?.fullName || 'HL').split(' ').map(n => n[0]).slice(0, 2).join('')}
           </div>
         </div>
 
@@ -95,7 +103,15 @@ export default function DoctorPanelPage() {
             </div>
           ) : (
             <div className="bg-card rounded-xl border border-border p-8 text-center">
-              <p className="text-muted-foreground text-sm">Nenhum paciente em atendimento</p>
+              {waitingQueue.length === 0 ? (
+                <div>
+                  <CheckCircle className="h-10 w-10 text-emerald-500/30 mx-auto mb-2" />
+                  <p className="text-muted-foreground text-sm">Nenhum paciente aguardando</p>
+                  <p className="text-xs text-muted-foreground mt-1">Fila do dia concluída</p>
+                </div>
+              ) : (
+                <p className="text-muted-foreground text-sm">Nenhum paciente em atendimento</p>
+              )}
             </div>
           )}
         </div>
@@ -111,7 +127,7 @@ export default function DoctorPanelPage() {
                 <TicketBadge category={entry.ticketCategory} number={entry.ticketNumber} size="sm" />
                 <div className="flex-1">
                   <p className="text-sm font-medium text-foreground">{entry.patientName}</p>
-                  <p className="text-xs text-muted-foreground">{entry.appointmentType === 'consultation' ? 'Consulta' : 'Exame'}</p>
+                  <p className="text-xs text-muted-foreground">{entry.appointmentType === 'consultation' ? 'Consulta' : entry.appointmentType === 'exam' ? 'Exame' : 'Procedimento'}</p>
                 </div>
                 {entry.isPreferential && <Star className="h-4 w-4 text-amber-400 fill-amber-400" />}
                 {entry.waitingMinutes > 30 && <span className="text-xs text-destructive font-bold">⚠️</span>}
@@ -120,7 +136,7 @@ export default function DoctorPanelPage() {
             {waitingQueue.length > 4 && (
               <p className="text-xs text-muted-foreground text-center py-1">+ {waitingQueue.length - 4} mais</p>
             )}
-            {waitingQueue.length === 0 && (
+            {waitingQueue.length === 0 && !currentPatient && (
               <div className="bg-card rounded-lg border border-border p-4 text-center">
                 <p className="text-sm text-muted-foreground">Nenhum paciente na fila</p>
               </div>

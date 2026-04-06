@@ -1,27 +1,34 @@
 import { useState, useEffect, useCallback } from 'react'
 import { useQueue } from '@/context/QueueContext'
-import { MOCK_PATIENTS } from '@/mocks/scheduling.mock'
+import { useScheduling } from '@/context/SchedulingContext'
+import { useAuth } from '@/context/AuthContext'
+import { ELDERLY_AGE } from '@/types/reception.types'
 import { Monitor, Calendar, CreditCard, User, Search, ArrowLeft, Check, Printer } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { toast } from 'sonner'
 
-type Screen = 'welcome' | 'search-options' | 'search-name' | 'search-cpf' | 'result' | 'ticket'
+type Screen = 'welcome' | 'search-options' | 'search-name' | 'search-cpf' | 'result' | 'select-appointment' | 'ticket'
 
 export default function TotemPage() {
   const [screen, setScreen] = useState<Screen>('welcome')
   const [searchValue, setSearchValue] = useState('')
-  const [foundPatient, setFoundPatient] = useState<typeof MOCK_PATIENTS[0] | null>(null)
+  const [foundPatient, setFoundPatient] = useState<any>(null)
+  const [todayAppointments, setTodayAppointments] = useState<any[]>([])
+  const [selectedAppointment, setSelectedAppointment] = useState<any>(null)
   const [generatedTicket, setGeneratedTicket] = useState('')
   const [countdown, setCountdown] = useState(10)
   const { addToQueue, state } = useQueue()
+  const { patients, appointments } = useScheduling()
+  const { user } = useAuth()
+  const companyId = user?.companyId || ''
   const [time, setTime] = useState(new Date())
+  const today = new Date().toISOString().slice(0, 10)
 
   useEffect(() => {
     const id = setInterval(() => setTime(new Date()), 1000)
     return () => clearInterval(id)
   }, [])
 
-  // Auto-reset after idle
   useEffect(() => {
     if (screen === 'welcome') return
     const id = setTimeout(() => {
@@ -30,7 +37,6 @@ export default function TotemPage() {
     return () => clearTimeout(id)
   }, [screen, searchValue])
 
-  // Ticket countdown
   useEffect(() => {
     if (screen !== 'ticket') return
     if (countdown <= 0) { setScreen('welcome'); setSearchValue(''); setCountdown(10); return }
@@ -38,41 +44,60 @@ export default function TotemPage() {
     return () => clearTimeout(id)
   }, [screen, countdown])
 
+  const calculateAge = (birthDate: string) => Math.floor((Date.now() - new Date(birthDate).getTime()) / 31557600000)
+
   const handleSearch = useCallback(() => {
     const q = searchValue.toLowerCase().trim()
-    const found = MOCK_PATIENTS.find(p =>
+    if (!q) return
+    const found = patients.find(p =>
       p.fullName.toLowerCase().includes(q) || (p.cpf && p.cpf.replace(/\D/g, '').includes(q.replace(/\D/g, '')))
     )
     if (found) {
       setFoundPatient(found)
-      setScreen('result')
+      const patAppts = appointments.filter(a =>
+        a.patientId === found.id && a.date === today &&
+        !['cancelled', 'completed'].includes(a.status)
+      )
+      setTodayAppointments(patAppts)
+      if (patAppts.length === 1) {
+        setSelectedAppointment(patAppts[0])
+        setScreen('result')
+      } else if (patAppts.length > 1) {
+        setScreen('select-appointment')
+      } else {
+        setSelectedAppointment(null)
+        setScreen('result')
+      }
     } else {
-      toast.error('Nenhum agendamento encontrado')
+      toast.error('Nenhum paciente encontrado')
     }
-  }, [searchValue])
+  }, [searchValue, patients, appointments, today])
 
   const handleCheckin = useCallback(() => {
     if (!foundPatient) return
-    const age = Math.floor((Date.now() - new Date(foundPatient.birthDate).getTime()) / 31557600000)
+    const age = calculateAge(foundPatient.birthDate)
+    const appt = selectedAppointment
     addToQueue({
+      companyId,
       patientId: foundPatient.id,
       patientName: foundPatient.fullName,
       patientAge: age,
-      appointmentId: `apt_totem_${Date.now()}`,
-      doctorId: 'doc_01',
-      doctorName: 'Dr. Henrique Lima',
-      appointmentType: 'consultation',
-      convenioId: foundPatient.convenioId || 'conv_04',
-      convenioName: 'Convênio',
+      appointmentId: appt?.id || `apt_totem_${Date.now()}`,
+      doctorId: appt?.doctorId || '',
+      doctorName: appt?.doctorName || 'A definir',
+      appointmentType: appt?.type || 'consultation',
+      convenioId: appt?.convenioId || '',
+      convenioName: appt?.convenioName || 'A definir',
       status: 'waiting',
-      isPreferential: age >= 60,
-      preferentialReason: age >= 60 ? `Idoso (${age} anos)` : undefined,
+      isPreferential: age >= ELDERLY_AGE,
+      preferentialReason: age >= ELDERLY_AGE ? `Idoso (${age} anos)` : undefined,
     })
-    const lastEntry = state.entries[state.entries.length - 1]
-    setGeneratedTicket(age >= 60 ? `SP${String(state.entries.filter(e => e.ticketCategory === 'SP').length + 1).padStart(3, '0')}` : `SN${String(state.entries.filter(e => e.ticketCategory === 'SN').length + 1).padStart(3, '0')}`)
+    const cat = age >= ELDERLY_AGE ? 'SP' : appt?.type === 'exam' ? 'EX' : appt?.type === 'procedure' ? 'PR' : 'SN'
+    const count = state.entries.filter(e => e.ticketCategory === cat && e.createdAt.startsWith(today)).length + 1
+    setGeneratedTicket(`${cat}${String(count).padStart(3, '0')}`)
     setScreen('ticket')
     setCountdown(10)
-  }, [foundPatient, addToQueue, state.entries])
+  }, [foundPatient, selectedAppointment, addToQueue, companyId, state.entries, today])
 
   const NumKey = ({ val, onPress }: { val: string; onPress: (v: string) => void }) => (
     <button onClick={() => onPress(val)} className="h-16 rounded-xl bg-white/10 text-white text-2xl font-bold hover:bg-white/20 active:scale-95 transition-all">
@@ -84,13 +109,11 @@ export default function TotemPage() {
     <div className="fixed inset-0 flex flex-col items-center justify-between overflow-hidden"
       style={{ background: 'linear-gradient(180deg, hsl(191 100% 30%) 0%, hsl(262 92% 30%) 100%)', cursor: 'none' }}>
 
-      {/* Logo */}
       <div className="pt-8 text-center">
         <h1 className="text-3xl font-extrabold text-white tracking-tight">AXIS INOVA</h1>
-        <p className="text-white/70 text-sm">Clínica Demo</p>
+        <p className="text-white/70 text-sm">{user?.companyName || 'Clínica'}</p>
       </div>
 
-      {/* Content */}
       <div className="flex-1 flex items-center justify-center w-full max-w-lg px-6">
         {screen === 'welcome' && (
           <div className="text-center w-full space-y-6 animate-fade-in">
@@ -101,7 +124,11 @@ export default function TotemPage() {
             <button onClick={() => setScreen('search-options')} className="w-full py-5 rounded-2xl bg-white text-[hsl(191,100%,30%)] font-bold text-lg shadow-lg hover:shadow-xl active:scale-[0.98] transition-all flex items-center justify-center gap-3">
               <Calendar className="h-6 w-6" /> Tenho AGENDAMENTO
             </button>
-            <button className="w-full py-5 rounded-2xl bg-white/10 text-white font-bold text-lg border border-white/20 hover:bg-white/20 active:scale-[0.98] transition-all flex items-center justify-center gap-3">
+            <button onClick={() => {
+              setFoundPatient(null)
+              setSelectedAppointment(null)
+              setScreen('search-options')
+            }} className="w-full py-5 rounded-2xl bg-white/10 text-white font-bold text-lg border border-white/20 hover:bg-white/20 active:scale-[0.98] transition-all flex items-center justify-center gap-3">
               <User className="h-6 w-6" /> Não tenho AGENDAMENTO
             </button>
           </div>
@@ -170,17 +197,54 @@ export default function TotemPage() {
           </div>
         )}
 
+        {screen === 'select-appointment' && foundPatient && (
+          <div className="w-full space-y-4 animate-fade-in">
+            <h2 className="text-xl font-bold text-white text-center mb-2">
+              {foundPatient.fullName} tem {todayAppointments.length} atendimentos hoje
+            </h2>
+            <p className="text-white/70 text-center text-sm mb-4">Selecione o atendimento para check-in:</p>
+            {todayAppointments.map(appt => (
+              <button
+                key={appt.id}
+                onClick={() => { setSelectedAppointment(appt); setScreen('result') }}
+                className="w-full py-4 px-5 rounded-2xl bg-white/10 text-white text-left border border-white/20 hover:bg-white/20 transition-all"
+              >
+                <div className="flex items-center gap-3">
+                  <span className="text-lg">{appt.type === 'consultation' ? '📋' : appt.type === 'exam' ? '🔬' : '⚕️'}</span>
+                  <div>
+                    <p className="font-semibold">{appt.time} · {appt.type === 'consultation' ? 'Consulta' : appt.type === 'exam' ? 'Exame' : 'Procedimento'}</p>
+                    <p className="text-sm text-white/70">{appt.doctorName} · {appt.convenioName}</p>
+                  </div>
+                </div>
+              </button>
+            ))}
+            <button onClick={() => { setScreen('search-options'); setSearchValue(''); setFoundPatient(null) }} className="text-white/60 text-sm flex items-center gap-1 mx-auto mt-4 hover:text-white transition-colors">
+              <ArrowLeft className="h-4 w-4" /> Voltar
+            </button>
+          </div>
+        )}
+
         {screen === 'result' && foundPatient && (
           <div className="w-full space-y-4 animate-fade-in">
             <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-6 border border-white/20">
               <div className="flex items-center gap-2 mb-4">
                 <Check className="h-6 w-6 text-emerald-400" />
-                <h2 className="text-xl font-bold text-white">Agendamento Encontrado!</h2>
+                <h2 className="text-xl font-bold text-white">
+                  {selectedAppointment ? 'Agendamento Encontrado!' : 'Paciente Encontrado'}
+                </h2>
               </div>
               <div className="space-y-2 text-white/90">
                 <p className="flex items-center gap-2 text-lg"><User className="h-5 w-5 text-white/60" /> {foundPatient.fullName}</p>
-                <p className="flex items-center gap-2"><Calendar className="h-4 w-4 text-white/60" /> Hoje, {time.toLocaleDateString('pt-BR')} às 09:00</p>
-                <p className="flex items-center gap-2 text-sm text-white/70"><CreditCard className="h-4 w-4 text-white/60" /> {foundPatient.convenioId === 'conv_04' ? 'Particular' : 'Convênio'}</p>
+                {selectedAppointment && (
+                  <>
+                    <p className="flex items-center gap-2"><Calendar className="h-4 w-4 text-white/60" /> Hoje, {time.toLocaleDateString('pt-BR')} às {selectedAppointment.time}</p>
+                    <p className="flex items-center gap-2 text-sm text-white/70"><CreditCard className="h-4 w-4 text-white/60" /> {selectedAppointment.convenioName}</p>
+                    <p className="text-sm text-white/70">{selectedAppointment.doctorName}</p>
+                  </>
+                )}
+                {!selectedAppointment && (
+                  <p className="text-sm text-white/70">Nenhum agendamento para hoje. Será encaminhado à recepção.</p>
+                )}
               </div>
             </div>
             <button onClick={handleCheckin} className="w-full py-5 rounded-2xl bg-emerald-500 text-white font-bold text-lg shadow-lg hover:bg-emerald-600 active:scale-[0.98] transition-all flex items-center justify-center gap-2">
@@ -219,7 +283,6 @@ export default function TotemPage() {
         )}
       </div>
 
-      {/* Footer */}
       <div className="pb-6 text-center">
         <p className="text-white/50 text-sm">
           {time.toLocaleDateString('pt-BR', { weekday: 'long', day: '2-digit', month: 'long' })} · {time.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}

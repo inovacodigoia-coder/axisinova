@@ -1,20 +1,28 @@
 import { useState, useEffect } from 'react'
 import { useQueue } from '@/context/QueueContext'
+import { useAuth } from '@/context/AuthContext'
 import { TicketBadge } from '@/components/reception/queue/TicketBadge'
 import { Volume2, Users, Clock } from 'lucide-react'
-import logoImg from '@/assets/logo-axisinova.jpeg'
 
 export default function CallingPanelPage() {
   const { state, stats } = useQueue()
+  const { user } = useAuth()
   const [time, setTime] = useState(new Date())
   const [flash, setFlash] = useState(false)
+  const companyName = user?.companyName || 'Axis Inova'
 
   useEffect(() => {
     const id = setInterval(() => setTime(new Date()), 1000)
     return () => clearInterval(id)
   }, [])
 
-  // Flash on new call
+  // Prevent interaction on TV panel
+  useEffect(() => {
+    const prevent = (e: Event) => e.preventDefault()
+    document.addEventListener('contextmenu', prevent)
+    return () => document.removeEventListener('contextmenu', prevent)
+  }, [])
+
   useEffect(() => {
     if (state.lastCalledTicket) {
       setFlash(true)
@@ -46,15 +54,17 @@ export default function CallingPanelPage() {
   const waiting = state.entries.filter(e => ['waiting', 'documents_ok', 'called_doctor'].includes(e.status))
   const called = state.lastCalledTicket
 
+  const isEmpty = !called && state.entries.length === 0
+
   return (
     <div className="fixed inset-0 flex flex-col bg-white">
       {/* Header */}
       <div className="flex items-center justify-between px-8 py-4 border-b border-gray-200 bg-white">
         <div className="flex items-center gap-3">
-          <img src={logoImg} alt="Axis Inova" className="h-10 w-10 rounded-lg" />
+          <div className="h-10 w-10 rounded-lg gradient-bg flex items-center justify-center text-white font-bold text-sm">AI</div>
           <h1 className="text-xl font-extrabold text-gray-900 tracking-tight">AXIS INOVA</h1>
           <span className="text-gray-300">·</span>
-          <span className="text-gray-500 text-sm">Clínica Demo</span>
+          <span className="text-gray-500 text-sm">{companyName}</span>
         </div>
         <div className="flex items-center gap-4 text-gray-500 text-sm">
           <span className="flex items-center gap-1.5"><Users className="h-4 w-4" /> {stats.waiting} aguardando</span>
@@ -73,7 +83,15 @@ export default function CallingPanelPage() {
         {/* Left - Called */}
         <div className="flex-[3] flex items-center justify-center relative overflow-hidden bg-gray-50">
           {flash && <div className="absolute inset-0 bg-primary/5 animate-pulse pointer-events-none" />}
-          {called ? (
+          {isEmpty ? (
+            <div className="text-center">
+              <h2 className="text-2xl font-bold text-gray-300 mb-2">{companyName}</h2>
+              <p className="text-gray-400 text-lg">Nenhum paciente aguardando</p>
+              <p className="text-gray-300 text-4xl mt-6 font-mono">
+                {time.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
+              </p>
+            </div>
+          ) : called ? (
             <div className="text-center animate-scale-in">
               <p className="text-gray-400 text-lg mb-4 uppercase tracking-widest flex items-center justify-center gap-2">
                 <Volume2 className="h-5 w-5 text-primary" /> Chamando
@@ -94,7 +112,8 @@ export default function CallingPanelPage() {
             </div>
           ) : (
             <div className="text-center text-gray-300">
-              <p className="text-2xl">Aguardando chamada...</p>
+              <p className="text-2xl">Aguardando primeira chamada...</p>
+              <p className="text-sm mt-2">{stats.waiting} pacientes na fila</p>
             </div>
           )}
         </div>
@@ -106,7 +125,7 @@ export default function CallingPanelPage() {
           </div>
           <div className="flex-1 overflow-hidden px-6 py-4">
             <div className="space-y-3">
-              {waiting.slice(0, 8).map((entry, i) => (
+              {waiting.slice(0, 8).map(entry => (
                 <div key={entry.id} className="flex items-center gap-4 py-3 border-b border-gray-100 last:border-0">
                   <TicketBadge category={entry.ticketCategory} number={entry.ticketNumber} size="sm" />
                   <div className="flex-1 min-w-0">
