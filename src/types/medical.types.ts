@@ -40,13 +40,16 @@ export interface PrescriptionItem {
 
 export interface ExamRequest {
   id: string
-  examId: string
+  examCatalogId: string
+  examCatalogType: 'exam' | 'procedure'
   examName: string
-  examCode: string
+  examCode?: string
   urgency: 'routine' | 'urgent' | 'emergency'
   clinicalIndication: string
   prepInstructions?: string
   requestedAt: string
+  // Legacy fields for backward compat with mock data
+  examId?: string
 }
 
 export interface AttendanceRecord {
@@ -79,6 +82,7 @@ export interface AttendanceRecord {
 export interface PatientAlert {
   id: string
   patientId: string
+  companyId?: string
   type: 'allergy' | 'chronic_condition' | 'important_note' | 'medication_in_use'
   severity: 'low' | 'medium' | 'high' | 'critical'
   description: string
