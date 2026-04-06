@@ -52,10 +52,43 @@ export default function DoctorsPage() {
 
   return (
     <div className="space-y-6">
+      {/* Limit warning banner */}
+      {isAtLimit && (
+        <div className="rounded-xl border border-destructive/30 bg-destructive/5 p-4 flex items-start gap-3">
+          <AlertTriangle className="h-5 w-5 text-destructive shrink-0 mt-0.5" />
+          <div className="flex-1">
+            <p className="text-sm font-semibold text-destructive">Limite de médicos atingido ({activeDoctors}/{doctorLimit})</p>
+            <p className="text-xs text-muted-foreground mt-1">
+              Seu plano <strong>{company?.plano}</strong> permite até {doctorLimit} médicos. Para adicionar mais, solicite ao administrador do sistema.
+            </p>
+          </div>
+          <button onClick={() => setShowRequestMore(true)} className="shrink-0 rounded-lg bg-primary px-3 py-1.5 text-xs font-semibold text-primary-foreground hover:opacity-90 flex items-center gap-1.5">
+            <ArrowUpCircle className="h-3.5 w-3.5" /> Solicitar mais
+          </button>
+        </div>
+      )}
+      {isNearLimit && (
+        <div className="rounded-xl border border-[hsl(33,100%,50%)]/30 bg-[hsl(33,100%,50%)]/5 p-4 flex items-start gap-3">
+          <AlertTriangle className="h-5 w-5 text-[hsl(33,100%,50%)] shrink-0 mt-0.5" />
+          <div className="flex-1">
+            <p className="text-sm font-semibold text-[hsl(33,100%,50%)]">Próximo do limite de médicos ({activeDoctors}/{doctorLimit})</p>
+            <p className="text-xs text-muted-foreground mt-1">
+              Restam apenas {doctorLimit - activeDoctors} vaga(s) no plano <strong>{company?.plano}</strong>.
+            </p>
+          </div>
+          <button onClick={() => setShowRequestMore(true)} className="shrink-0 rounded-lg border border-input px-3 py-1.5 text-xs font-medium hover:bg-muted flex items-center gap-1.5">
+            <ArrowUpCircle className="h-3.5 w-3.5" /> Ampliar limite
+          </button>
+        </div>
+      )}
+
       {isEmpty ? (
         <>
           <div className="flex items-center justify-between">
-            <div><h1 className="text-2xl font-bold text-foreground">Médicos</h1><p className="text-sm text-muted-foreground">Gestão de profissionais médicos</p></div>
+            <div>
+              <h1 className="text-2xl font-bold text-foreground">Médicos</h1>
+              <p className="text-sm text-muted-foreground">Gestão de profissionais médicos{!isUnlimited && ` · Limite do plano: ${doctorLimit}`}</p>
+            </div>
             <button onClick={() => setShowSpecialties(true)} className="rounded-xl border border-input px-4 py-2.5 text-sm font-medium hover:bg-muted flex items-center gap-2">
               <Settings className="h-4 w-4" /> Gerenciar Especialidades
             </button>
@@ -85,17 +118,41 @@ export default function DoctorsPage() {
         <>
       <div className="flex items-center justify-between flex-wrap gap-3">
         <div>
-          <h1 className="text-2xl font-bold text-foreground">Médicos <span className="text-muted-foreground text-lg font-normal">({doctors.length} cadastrados)</span></h1>
+          <h1 className="text-2xl font-bold text-foreground">
+            Médicos{' '}
+            <span className="text-muted-foreground text-lg font-normal">
+              ({activeDoctors}{!isUnlimited ? ` / ${doctorLimit}` : ''} cadastrados)
+            </span>
+          </h1>
           <p className="text-sm text-muted-foreground">Gestão de profissionais médicos</p>
+          {!isUnlimited && (
+            <div className="mt-1.5 flex items-center gap-2">
+              <div className="h-1.5 w-32 rounded-full bg-border overflow-hidden">
+                <div
+                  className={`h-full rounded-full transition-all ${isAtLimit ? 'bg-destructive' : isNearLimit ? 'bg-[hsl(33,100%,50%)]' : 'bg-primary'}`}
+                  style={{ width: `${Math.min((activeDoctors / doctorLimit) * 100, 100)}%` }}
+                />
+              </div>
+              <span className="text-xs text-muted-foreground">
+                {isAtLimit ? 'Limite atingido' : `${doctorLimit - activeDoctors} vaga(s) restante(s)`}
+              </span>
+            </div>
+          )}
         </div>
         <div className="flex items-center gap-2">
           <button onClick={() => setShowSpecialties(true)} className="rounded-xl border border-input px-4 py-2.5 text-sm font-medium hover:bg-muted flex items-center gap-2">
             <Settings className="h-4 w-4" /> Gerenciar Especialidades
           </button>
           {canAccess('registers', 'create') && (
-            <button onClick={() => { setEditing(null); setShowForm(true) }} className="gradient-bg rounded-xl px-4 py-2.5 text-sm font-semibold text-white shadow-lg hover:opacity-90 flex items-center gap-2">
-              <Plus className="h-4 w-4" /> Novo Médico
-            </button>
+            isAtLimit ? (
+              <button onClick={() => setShowRequestMore(true)} className="rounded-xl border border-primary/50 bg-primary/5 px-4 py-2.5 text-sm font-semibold text-primary hover:bg-primary/10 flex items-center gap-2">
+                <ArrowUpCircle className="h-4 w-4" /> Solicitar mais médicos
+              </button>
+            ) : (
+              <button onClick={() => { setEditing(null); setShowForm(true) }} className="gradient-bg rounded-xl px-4 py-2.5 text-sm font-semibold text-white shadow-lg hover:opacity-90 flex items-center gap-2">
+                <Plus className="h-4 w-4" /> Novo Médico
+              </button>
+            )
           )}
         </div>
       </div>
