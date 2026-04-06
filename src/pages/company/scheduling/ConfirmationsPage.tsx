@@ -1,14 +1,13 @@
 import { useState, useMemo } from 'react'
-import { MOCK_CONFIRMATIONS, MOCK_APPOINTMENTS } from '@/mocks/scheduling.mock'
+import { useScheduling } from '@/context/SchedulingContext'
+import { usePaginatedList } from '@/hooks/usePaginatedList'
 import type { ConfirmationDispatch } from '@/types/scheduling.types'
 import { toast } from 'sonner'
-import { GradientButton } from '@/components/ui/GradientButton'
-import { SearchInput } from '@/components/ui/SearchInput'
-import { Check, Phone, Send, AlertTriangle, Eye, Clock } from 'lucide-react'
-import { format, differenceInHours } from 'date-fns'
+import { Check, Send, AlertTriangle } from 'lucide-react'
+import { differenceInHours } from 'date-fns'
 
 export default function ConfirmationsPage() {
-  const [confirmations, setConfirmations] = useState(MOCK_CONFIRMATIONS)
+  const { confirmations, updateConfirmation } = useScheduling()
   const [statusFilter, setStatusFilter] = useState('all')
   const [selected, setSelected] = useState<Set<string>>(new Set())
 
@@ -17,14 +16,19 @@ export default function ConfirmationsPage() {
     return confirmations.filter(c => c.status === statusFilter)
   }, [confirmations, statusFilter])
 
+  const { visibleItems, totalItems, hasMore, showMore, showAll, remainingCount } = usePaginatedList(filtered, 10)
+
   const counts = {
     pending: confirmations.filter(c => c.status === 'pending').length,
     confirmed: confirmations.filter(c => c.status === 'confirmed').length,
     failed: confirmations.filter(c => c.status === 'failed').length,
   }
 
-  const updateStatus = (id: string, status: ConfirmationDispatch['status']) => {
-    setConfirmations(prev => prev.map(c => c.id === id ? { ...c, status, ...(status === 'sent' ? { sentAt: new Date().toISOString().split('T')[0] } : {}), ...(status === 'confirmed' ? { confirmedAt: new Date().toISOString().split('T')[0] } : {}) } : c))
+  const handleUpdateStatus = (id: string, status: ConfirmationDispatch['status']) => {
+    const updates: Partial<ConfirmationDispatch> = { status }
+    if (status === 'sent') updates.sentAt = new Date().toISOString().split('T')[0]
+    if (status === 'confirmed') updates.confirmedAt = new Date().toISOString().split('T')[0]
+    updateConfirmation(id, updates)
     toast.success('Status atualizado!')
   }
 
@@ -33,9 +37,27 @@ export default function ConfirmationsPage() {
   }
 
   const batchMarkSent = () => {
-    setConfirmations(prev => prev.map(c => selected.has(c.id) ? { ...c, status: 'sent' as const, sentAt: new Date().toISOString().split('T')[0] } : c))
+    selected.forEach(id => {
+      updateConfirmation(id, { status: 'sent', sentAt: new Date().toISOString().split('T')[0] })
+    })
     toast.success(`${selected.size} marcados como enviados`)
     setSelected(new Set())
+  }
+
+  if (confirmations.length === 0) {
+    return (
+      <div className="space-y-6">
+        <div>
+          <h1 className="text-2xl font-bold text-foreground">Central de Confirmações</h1>
+          <p className="text-sm text-muted-foreground">Gerencie os disparos de confirmação de agendamentos</p>
+        </div>
+        <div className="flex flex-col items-center justify-center py-16 text-center space-y-3">
+          <span className="text-4xl">📞</span>
+          <h3 className="text-lg font-bold text-foreground">Nenhuma confirmação pendente</h3>
+          <p className="text-sm text-muted-foreground">para o período selecionado</p>
+        </div>
+      </div>
+    )
   }
 
   return (
@@ -71,7 +93,7 @@ export default function ConfirmationsPage() {
       )}
 
       <div className="space-y-3">
-        {filtered.map(conf => {
+        {visibleItems.map(conf => {
           const hoursUntil = differenceInHours(new Date(conf.appointmentDate + 'T' + conf.appointmentTime), new Date())
           const isUrgent = hoursUntil < 24 && hoursUntil > 0
 
@@ -94,18 +116,18 @@ export default function ConfirmationsPage() {
                   <div className="flex gap-2 mt-3">
                     {conf.status === 'pending' && (
                       <>
-                        <button onClick={() => updateStatus(conf.id, 'sent')}
+                        <button onClick={() => handleUpdateStatus(conf.id, 'sent')}
                           className="flex items-center gap-1 rounded-lg border border-blue-200 bg-blue-50 px-3 py-1.5 text-xs font-medium text-blue-700 hover:bg-blue-100 transition-colors">
                           <Send className="h-3 w-3" /> Marcar como Enviado
                         </button>
-                        <button onClick={() => updateStatus(conf.id, 'confirmed')}
+                        <button onClick={() => handleUpdateStatus(conf.id, 'confirmed')}
                           className="flex items-center gap-1 rounded-lg border border-green-200 bg-green-50 px-3 py-1.5 text-xs font-medium text-green-700 hover:bg-green-100 transition-colors">
                           <Check className="h-3 w-3" /> Paciente Confirmou
                         </button>
                       </>
                     )}
                     {conf.status === 'sent' && (
-                      <button onClick={() => updateStatus(conf.id, 'confirmed')}
+                      <button onClick={() => handleUpdateStatus(conf.id, 'confirmed')}
                         className="flex items-center gap-1 rounded-lg border border-green-200 bg-green-50 px-3 py-1.5 text-xs font-medium text-green-700 hover:bg-green-100 transition-colors">
                         <Check className="h-3 w-3" /> Paciente Confirmou
                       </button>
@@ -123,6 +145,22 @@ export default function ConfirmationsPage() {
           )
         })}
       </div>
+
+      {hasMore && (
+        <div className="flex items-center justify-between px-1">
+          <span className="text-sm text-muted-foreground">Exibindo {visibleItems.length} de {totalItems}</span>
+          <div className="flex gap-2">
+            <button onClick={showMore} className="rounded-lg border border-input px-3 py-1.5 text-xs font-medium hover:bg-muted transition-colors">
+              Mostrar mais {Math.min(10, remainingCount)}
+            </button>
+            {remainingCount > 10 && (
+              <button onClick={showAll} className="rounded-lg px-3 py-1.5 text-xs font-medium text-muted-foreground hover:text-foreground">
+                Ver todos ({totalItems})
+              </button>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   )
 }
