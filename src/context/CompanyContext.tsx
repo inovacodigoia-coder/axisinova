@@ -171,10 +171,18 @@ export function CompanyProvider({ children }: { children: ReactNode }) {
   const switchProfile = useCallback((profileId: string) => {
     const p = profiles.find(x => x.id === profileId)
     if (p) {
-      clearSession()
       setActiveProfile(p)
+      const sectors = getSectorsForProfile(p)
+      if (sectors.length === 1) {
+        setActiveSector(sectors[0])
+        sessionStorage.setItem(SESSION_KEY, JSON.stringify({ profileId: p.id, sectorId: sectors[0].id }))
+        setIsSessionReady(true)
+      } else {
+        setActiveSector(null)
+        setIsSessionReady(false)
+      }
     }
-  }, [profiles, clearSession])
+  }, [profiles])
 
   const switchSector = useCallback((sectorId: string) => {
     const s = MOCK_SECTORS.find(x => x.id === sectorId)
