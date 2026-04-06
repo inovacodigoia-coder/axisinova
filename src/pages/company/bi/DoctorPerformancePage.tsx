@@ -1,13 +1,39 @@
+import { useNavigate } from 'react-router-dom'
 import { usePeriodFilter } from '@/hooks/usePeriodFilter'
 import { useBIData } from '@/hooks/useBIData'
 import { ReportFilters } from '@/components/bi/reports/ReportFilters'
 import { ReportSummaryBar } from '@/components/bi/reports/ReportSummaryBar'
 import { ExportMenu } from '@/components/bi/reports/ExportMenu'
 import { DoctorProductionChart } from '@/components/bi/charts/DoctorProductionChart'
+import { EmptyReportState } from '@/components/bi/empty-states/EmptyReportState'
 
 export default function DoctorPerformancePage() {
+  const navigate = useNavigate()
   const { preset, setPreset, dateRange } = usePeriodFilter()
-  const { doctorProduction } = useBIData(dateRange, {})
+  const { doctorProduction, hasData } = useBIData(dateRange, {})
+
+  if (!hasData || doctorProduction.length === 0) {
+    return (
+      <div className="space-y-4">
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-xl font-bold text-foreground">Performance por Médico</h1>
+            <p className="text-xs text-muted-foreground">Análise de produtividade e indicadores médicos</p>
+          </div>
+          <ExportMenu />
+        </div>
+        <ReportFilters preset={preset} onPresetChange={setPreset} />
+        <EmptyReportState
+          hasFilters={false}
+          reportName="dado de performance"
+          emptyMessage="Cadastre médicos e realize atendimentos para gerar dados de performance."
+          actionLabel="Ir para Cadastros"
+          onAction={() => navigate('/app/cadastros/medicos')}
+        />
+      </div>
+    )
+  }
+
   const topProd = [...doctorProduction].sort((a, b) => b.totalAttendances - a.totalAttendances)[0]
   const topRev = [...doctorProduction].sort((a, b) => b.revenue - a.revenue)[0]
   const bestAbs = [...doctorProduction].sort((a, b) => a.absenteeRate - b.absenteeRate)[0]
@@ -24,9 +50,9 @@ export default function DoctorPerformancePage() {
       <ReportFilters preset={preset} onPresetChange={setPreset} />
       <ReportSummaryBar items={[
         { label: 'Médicos Ativos', value: String(doctorProduction.length) },
-        { label: 'Mais Produtivo', value: topProd.doctorName },
-        { label: 'Maior Receita', value: topRev.doctorName },
-        { label: 'Menor Faltosos', value: `${bestAbs.doctorName} (${bestAbs.absenteeRate}%)` },
+        { label: 'Mais Produtivo', value: topProd?.doctorName ?? '—' },
+        { label: 'Maior Receita', value: topRev?.doctorName ?? '—' },
+        { label: 'Menor Faltosos', value: bestAbs ? `${bestAbs.doctorName} (${bestAbs.absenteeRate.toFixed(1)}%)` : '—' },
       ]} />
       <DoctorProductionChart data={doctorProduction} />
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -45,9 +71,9 @@ export default function DoctorPerformancePage() {
               {[
                 { label: 'Atend.', value: doc.totalAttendances },
                 { label: 'Receita', value: `R$ ${(doc.revenue / 1000).toFixed(1)}k` },
-                { label: 'Faltosos', value: `${doc.absenteeRate}%` },
+                { label: 'Faltosos', value: `${doc.absenteeRate.toFixed(1)}%` },
                 { label: 'Tempo', value: `${doc.avgAttendanceTime} min` },
-                { label: 'Ticket', value: `R$ ${(doc.revenue / doc.totalAttendances).toFixed(0)}` },
+                { label: 'Ticket', value: doc.totalAttendances > 0 ? `R$ ${(doc.revenue / doc.totalAttendances).toFixed(0)}` : '—' },
                 { label: 'Satisfação', value: doc.rating ? `${doc.rating}⭐` : '—' },
               ].map(m => (
                 <div key={m.label} className="rounded-lg bg-muted p-2">
