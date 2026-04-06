@@ -56,80 +56,83 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [])
 
   const login = useCallback(async (email: string, password: string): Promise<LoginResult> => {
-    // 1. Try mock credentials first (for demo/super admin)
-    const credential = authenticateUser(email, password)
-
-    if (credential) {
-      if (!credential.user.isActive) {
-        return { success: false, error: 'Usuário inativo. Contate o administrador.' }
-      }
-
-      const newToken = `mock_token_${credential.user.id}_${Date.now()}`
-      localStorage.setItem(TOKEN_KEY, newToken)
-      localStorage.setItem(USER_KEY, JSON.stringify(credential.user))
-      setUser(credential.user)
-      setToken(newToken)
-      setIsAuthenticated(true)
-      const redirectTo = getRedirectByRole(credential.user.role)
-      return { success: true, redirectTo }
-    }
-
-    // 2. Try Supabase auth for registered users
+    // 1. Try backend auth first so privileged users get a real session
     const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
       email,
       password,
     })
 
-    if (authError || !authData.user) {
-      return { success: false, error: 'Credenciais inválidas' }
+    if (authData.user) {
+      // Fetch profile to get company info
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('full_name, role, company_id, is_active')
+        .eq('id', authData.user.id)
+        .single()
+
+      if (profile && !profile.is_active) {
+        await supabase.auth.signOut()
+        return { success: false, error: 'Usuário inativo. Contate o administrador.' }
+      }
+
+      // Get company name if linked
+      let companyName: string | null = null
+      if (profile?.company_id) {
+        const { data: company } = await supabase
+          .from('companies')
+          .select('name, nome_fantasia')
+          .eq('id', profile.company_id)
+          .single()
+        companyName = (company as any)?.nome_fantasia || company?.name || null
+      }
+
+      const authUser: AuthUser = {
+        id: authData.user.id,
+        name: profile?.full_name || authData.user.email || '',
+        email: authData.user.email || '',
+        role: (profile?.role as UserRole) || 'company_admin',
+        companyId: profile?.company_id || null,
+        companyName,
+        isActive: profile?.is_active ?? true,
+        lastLogin: new Date().toISOString(),
+      }
+
+      const newToken = authData.session?.access_token || `supabase_token_${Date.now()}`
+      localStorage.setItem(TOKEN_KEY, newToken)
+      localStorage.setItem(USER_KEY, JSON.stringify(authUser))
+      setUser(authUser)
+      setToken(newToken)
+      setIsAuthenticated(true)
+
+      const redirectTo = getRedirectByRole(authUser.role)
+      return { success: true, redirectTo }
     }
 
-    // Fetch profile to get company info
-    const { data: profile } = await supabase
-      .from('profiles')
-      .select('full_name, role, company_id, is_active')
-      .eq('id', authData.user.id)
-      .single()
+    // 2. Fallback to mock credentials for local demo users only
+    const credential = authenticateUser(email, password)
 
-    if (profile && !profile.is_active) {
-      await supabase.auth.signOut()
+    if (!credential) {
+      return { success: false, error: authError?.message === 'Email not confirmed' ? 'E-mail ainda não confirmado.' : 'Credenciais inválidas' }
+    }
+
+    if (!credential.user.isActive) {
       return { success: false, error: 'Usuário inativo. Contate o administrador.' }
     }
 
-    // Get company name if linked
-    let companyName: string | null = null
-    if (profile?.company_id) {
-      const { data: company } = await supabase
-        .from('companies')
-        .select('name, nome_fantasia')
-        .eq('id', profile.company_id)
-        .single()
-      companyName = (company as any)?.nome_fantasia || company?.name || null
-    }
+    await supabase.auth.signOut()
 
-    const authUser: AuthUser = {
-      id: authData.user.id,
-      name: profile?.full_name || authData.user.email || '',
-      email: authData.user.email || '',
-      role: (profile?.role as UserRole) || 'company_admin',
-      companyId: profile?.company_id || null,
-      companyName,
-      isActive: profile?.is_active ?? true,
-      lastLogin: new Date().toISOString(),
-    }
-
-    const newToken = authData.session?.access_token || `supabase_token_${Date.now()}`
+    const newToken = `mock_token_${credential.user.id}_${Date.now()}`
     localStorage.setItem(TOKEN_KEY, newToken)
-    localStorage.setItem(USER_KEY, JSON.stringify(authUser))
-    setUser(authUser)
+    localStorage.setItem(USER_KEY, JSON.stringify(credential.user))
+    setUser(credential.user)
     setToken(newToken)
     setIsAuthenticated(true)
-
-    const redirectTo = getRedirectByRole(authUser.role)
+    const redirectTo = getRedirectByRole(credential.user.role)
     return { success: true, redirectTo }
   }, [])
 
   const logout = useCallback(() => {
+    void supabase.auth.signOut()
     localStorage.removeItem(TOKEN_KEY)
     localStorage.removeItem(USER_KEY)
     sessionStorage.removeItem(TOKEN_KEY)
