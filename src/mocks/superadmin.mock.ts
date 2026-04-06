@@ -5,7 +5,7 @@ export const MOCK_USERS_AUTH = [
   { email: 'superadmin@axisinova.com', password: 'Admin@2025', role: 'super_admin' as const, id: 'u_sa_001', name: 'Rafael Mendes' },
   { email: 'inivacodigoiaadm@inivacodigoia.com.br', password: 'Inov@codigoia2026', role: 'super_admin' as const, id: 'u_sa_002', name: 'Super Admin Inova' },
   { email: 'admin@clinicademo.com', password: 'Admin@2025', role: 'company_admin' as const, id: 'u_ca_001', name: 'Dra. Camila Souza', companyId: 'comp_001', companyName: 'Clínica Vida & Saúde' },
-  { email: 'inivacodigoia@inivacodigoia.com.br', password: '111111adm', role: 'company_admin' as const, id: 'u_ca_002', name: 'Admin InovaSoftteste', companyId: 'comp_011', companyName: 'InovaSoftteste' },
+  { email: 'inivacodigoia@inivacodigoia.com.br', password: '111111adm', role: 'company_admin' as const, id: 'u_ca_010', name: 'Admin InovaSoftteste', companyId: 'comp_011', companyName: 'InovaSoftteste' },
   { email: 'medico@clinicademo.com', password: 'Admin@2025', role: 'doctor' as const, id: 'u_doc_001', name: 'Dr. Henrique Lima', companyId: 'comp_001', companyName: 'Clínica Vida & Saúde' },
   { email: 'recepcao@clinicademo.com', password: 'Admin@2025', role: 'receptionist' as const, id: 'u_rec_001', name: 'Juliana Ferreira', companyId: 'comp_001', companyName: 'Clínica Vida & Saúde' },
 ]
