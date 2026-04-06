@@ -1,9 +1,11 @@
 import { useMemo } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
-import { ArrowLeft, Edit2, FolderPlus, CornerDownLeft, X, CheckCircle, Clock, FileText } from 'lucide-react'
-import { MOCK_GUIDES, MOCK_AUDIT_LOG } from '@/mocks/billing.mock'
+import { ArrowLeft, Edit2, FolderPlus, CornerDownLeft, CheckCircle, Clock, FileText } from 'lucide-react'
+import { useBillingContext } from '@/context/BillingContext'
 import type { GuideStatus } from '@/types/billing.types'
 import { toast } from 'sonner'
+import { useAuth } from '@/context/AuthContext'
+import { useState } from 'react'
 
 const STATUS_CONFIG: Record<GuideStatus, { label: string; cls: string }> = {
   draft: { label: 'Rascunho', cls: 'bg-muted text-muted-foreground' },
@@ -24,8 +26,12 @@ const STATUS_STEPS: GuideStatus[] = ['draft', 'pending_docs', 'authorized', 'sub
 export default function GuideDetailPage() {
   const { guideId } = useParams()
   const navigate = useNavigate()
-  const guide = useMemo(() => MOCK_GUIDES.find(g => g.id === guideId), [guideId])
-  const auditEntries = useMemo(() => MOCK_AUDIT_LOG.filter(a => a.targetId === guideId), [guideId])
+  const { user } = useAuth()
+  const { guides, returnGuideToReception } = useBillingContext()
+  const guide = useMemo(() => guides.find(g => g.id === guideId), [guides, guideId])
+  const [showReturnModal, setShowReturnModal] = useState(false)
+  const [returnReason, setReturnReason] = useState('')
+  const [returnNotes, setReturnNotes] = useState('')
 
   if (!guide) return (
     <div className="flex items-center justify-center h-64">
@@ -36,9 +42,17 @@ export default function GuideDetailPage() {
   const sc = STATUS_CONFIG[guide.status]
   const currentStepIdx = STATUS_STEPS.indexOf(guide.status)
 
+  const handleReturn = () => {
+    if (!returnReason) { toast.error('Informe o motivo da devolução'); return }
+    returnGuideToReception(guide.id, returnReason, returnNotes, user?.id || '', user?.name || '')
+    toast.success('Guia devolvida para recepção')
+    setShowReturnModal(false)
+    setReturnReason('')
+    setReturnNotes('')
+  }
+
   return (
     <div className="space-y-6">
-      {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center gap-4">
         <button onClick={() => navigate(-1)} className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors">
           <ArrowLeft className="h-4 w-4" /> Voltar
@@ -53,14 +67,12 @@ export default function GuideDetailPage() {
         <div className="flex gap-2">
           <button className="flex items-center gap-2 rounded-lg border border-input bg-background px-3 py-2 text-sm hover:bg-muted transition-colors"><Edit2 className="h-4 w-4" /> Editar</button>
           <button className="flex items-center gap-2 rounded-lg border border-input bg-background px-3 py-2 text-sm hover:bg-muted transition-colors"><FolderPlus className="h-4 w-4" /> Adicionar ao Lote</button>
-          <button onClick={() => toast.info('Devolução para recepção')} className="flex items-center gap-2 rounded-lg border border-orange-300 bg-orange-50 px-3 py-2 text-sm text-orange-700 hover:bg-orange-100 transition-colors"><CornerDownLeft className="h-4 w-4" /> Devolver</button>
+          <button onClick={() => setShowReturnModal(true)} className="flex items-center gap-2 rounded-lg border border-orange-300 bg-orange-50 px-3 py-2 text-sm text-orange-700 hover:bg-orange-100 transition-colors dark:bg-orange-900/20 dark:border-orange-800 dark:text-orange-400"><CornerDownLeft className="h-4 w-4" /> Devolver</button>
         </div>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
-        {/* Left column */}
         <div className="lg:col-span-3 space-y-6">
-          {/* Patient & Convenio */}
           <div className="rounded-2xl border border-border bg-card p-6 shadow-sm">
             <h3 className="text-sm font-semibold text-foreground mb-4">Dados do Paciente e Convênio</h3>
             <div className="grid grid-cols-2 gap-4 text-sm">
@@ -72,10 +84,10 @@ export default function GuideDetailPage() {
               <div><span className="text-muted-foreground">CRM:</span> <span className="text-foreground">{guide.doctorCRM}</span></div>
               <div><span className="text-muted-foreground">Tipo Atend.:</span> <span className="text-foreground">{guide.attendanceType === '01' ? 'Consulta' : guide.attendanceType === '03' ? 'SADT' : guide.attendanceType}</span></div>
               {guide.authorizationNumber && <div><span className="text-muted-foreground">Autorização:</span> <span className="text-foreground">{guide.authorizationNumber}</span></div>}
+              {guide.convenioAnsCode && <div><span className="text-muted-foreground">Código ANS:</span> <span className="text-foreground">{guide.convenioAnsCode}</span></div>}
             </div>
           </div>
 
-          {/* Procedures */}
           <div className="rounded-2xl border border-border bg-card p-6 shadow-sm">
             <h3 className="text-sm font-semibold text-foreground mb-4">Procedimentos</h3>
             <table className="w-full text-sm">
@@ -92,15 +104,15 @@ export default function GuideDetailPage() {
               <tbody className="divide-y divide-border">
                 {guide.procedures.map(p => (
                   <tr key={p.id}>
-                    <td className="py-2 font-mono text-xs text-foreground">{p.tussCode}</td>
+                    <td className="py-2 font-mono text-xs text-foreground">
+                      {p.tussCode || <span className="text-orange-500 border border-orange-300 rounded px-1" title="Código TUSS não cadastrado">—</span>}
+                    </td>
                     <td className="py-2 text-foreground">{p.description}</td>
                     <td className="py-2 text-right text-foreground">{p.quantity}</td>
-                    <td className="py-2 text-right text-foreground">R$ {p.unitValue.toLocaleString('pt-BR')}</td>
+                    <td className="py-2 text-right text-foreground">{p.unitValue === 0 ? <span className="text-orange-500">R$ 0</span> : `R$ ${p.unitValue.toLocaleString('pt-BR')}`}</td>
                     <td className="py-2 text-right font-medium text-foreground">R$ {p.totalValue.toLocaleString('pt-BR')}</td>
                     <td className="py-2 text-right">
-                      {p.glosaValue ? (
-                        <span className="text-destructive font-medium">R$ {p.glosaValue.toLocaleString('pt-BR')}</span>
-                      ) : <span className="text-muted-foreground">—</span>}
+                      {p.glosaValue ? <span className="text-destructive font-medium">R$ {p.glosaValue.toLocaleString('pt-BR')}</span> : <span className="text-muted-foreground">—</span>}
                     </td>
                   </tr>
                 ))}
@@ -121,19 +133,15 @@ export default function GuideDetailPage() {
             </table>
           </div>
 
-          {/* Notes */}
           {guide.billerNotes && (
             <div className="rounded-2xl border border-border bg-card p-6 shadow-sm">
               <h3 className="text-sm font-semibold text-foreground mb-2">Observações Internas</h3>
-              <p className="text-xs text-muted-foreground mb-2">Observação interna — não enviada ao convênio</p>
               <p className="text-sm text-foreground bg-muted rounded-lg p-3">{guide.billerNotes}</p>
             </div>
           )}
         </div>
 
-        {/* Right column */}
         <div className="lg:col-span-2 space-y-6">
-          {/* Status Timeline */}
           <div className="rounded-2xl border border-border bg-card p-6 shadow-sm">
             <h3 className="text-sm font-semibold text-foreground mb-4">Timeline de Status</h3>
             <div className="space-y-3">
@@ -153,9 +161,8 @@ export default function GuideDetailPage() {
             </div>
           </div>
 
-          {/* Documents */}
           <div className="rounded-2xl border border-border bg-card p-6 shadow-sm">
-            <h3 className="text-sm font-semibold text-foreground mb-4">Documentos Anexados</h3>
+            <h3 className="text-sm font-semibold text-foreground mb-4">Documentos</h3>
             {guide.documents.length > 0 ? (
               <div className="space-y-2">
                 {guide.documents.map((docId, i) => (
@@ -171,16 +178,15 @@ export default function GuideDetailPage() {
             )}
           </div>
 
-          {/* Audit */}
-          {auditEntries.length > 0 && (
+          {guide.auditLog.length > 0 && (
             <div className="rounded-2xl border border-border bg-card p-6 shadow-sm">
               <h3 className="text-sm font-semibold text-foreground mb-4">Histórico de Auditoria</h3>
               <div className="space-y-3">
-                {auditEntries.map(a => (
+                {guide.auditLog.map(a => (
                   <div key={a.id} className="text-sm">
                     <p className="text-foreground font-medium">{a.action}</p>
-                    <p className="text-xs text-muted-foreground">{a.userName} · {new Date(a.timestamp).toLocaleString('pt-BR')}</p>
-                    <p className="text-xs text-muted-foreground">{a.details}</p>
+                    <p className="text-xs text-muted-foreground">{a.performedByName} · {new Date(a.timestamp).toLocaleString('pt-BR')}</p>
+                    {a.notes && <p className="text-xs text-muted-foreground mt-0.5">{a.notes}</p>}
                   </div>
                 ))}
               </div>
@@ -188,6 +194,36 @@ export default function GuideDetailPage() {
           )}
         </div>
       </div>
+
+      {/* Return to Reception Modal */}
+      {showReturnModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50" onClick={() => setShowReturnModal(false)}>
+          <div className="w-full max-w-lg rounded-2xl bg-card border border-border p-6 shadow-xl mx-4" onClick={e => e.stopPropagation()}>
+            <h2 className="text-lg font-bold text-foreground mb-4">↩️ Devolver Guia para Recepção</h2>
+            <div className="space-y-4">
+              <div>
+                <label className="text-sm font-medium text-foreground">Motivo *</label>
+                <select value={returnReason} onChange={e => setReturnReason(e.target.value)} className="mt-1 w-full rounded-lg border border-input bg-background px-3 py-2 text-sm">
+                  <option value="">Selecione...</option>
+                  <option value="Documento ausente">Documento ausente</option>
+                  <option value="Dados incorretos">Dados incorretos</option>
+                  <option value="Carteirinha vencida">Carteirinha vencida</option>
+                  <option value="Autorização pendente">Autorização pendente</option>
+                  <option value="Outro">Outro</option>
+                </select>
+              </div>
+              <div>
+                <label className="text-sm font-medium text-foreground">Observações</label>
+                <textarea value={returnNotes} onChange={e => setReturnNotes(e.target.value)} placeholder="Detalhes adicionais..." className="mt-1 w-full rounded-lg border border-input bg-background p-3 text-sm min-h-[80px] focus:outline-none focus:ring-2 focus:ring-ring" />
+              </div>
+              <div className="flex gap-3">
+                <button onClick={() => setShowReturnModal(false)} className="flex-1 rounded-lg border border-input bg-background px-4 py-2.5 text-sm font-medium hover:bg-muted transition-colors">Cancelar</button>
+                <button onClick={handleReturn} className="flex-1 rounded-lg bg-orange-600 text-white px-4 py-2.5 text-sm font-medium hover:bg-orange-700 transition-colors">Devolver</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

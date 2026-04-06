@@ -1,19 +1,25 @@
-import { useState, useMemo } from 'react'
-import { CornerDownLeft, Paperclip, CheckCircle, AlertTriangle } from 'lucide-react'
-import { MOCK_GUIDES } from '@/mocks/billing.mock'
+import { useState } from 'react'
+import { CornerDownLeft, Paperclip, CheckCircle } from 'lucide-react'
+import { useBillingContext } from '@/context/BillingContext'
+import { useAuth } from '@/context/AuthContext'
 import { toast } from 'sonner'
 import { motion, AnimatePresence } from 'framer-motion'
 
 export default function CorrectionQueuePage() {
-  const [guides, setGuides] = useState(() => MOCK_GUIDES.filter(g => g.status === 'returned_reception'))
+  const { guides, correctGuide } = useBillingContext()
+  const { user } = useAuth()
   const [correctionNote, setCorrectionNote] = useState<Record<string, string>>({})
+
+  const pendingCorrections = guides
+    .filter(g => g.status === 'returned_reception')
+    .sort((a, b) => new Date(a.returnedAt || a.createdAt).getTime() - new Date(b.returnedAt || b.createdAt).getTime())
 
   const handleMarkCorrected = (id: string) => {
     if (!correctionNote[id] || correctionNote[id].length < 10) {
       toast.error('Descreva o que foi corrigido (mínimo 10 caracteres)')
       return
     }
-    setGuides(prev => prev.filter(g => g.id !== id))
+    correctGuide(id, correctionNote[id], user?.id || '', user?.name || '')
     toast.success('Guia marcada como corrigida. Faturamento notificado.')
   }
 
@@ -22,28 +28,28 @@ export default function CorrectionQueuePage() {
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
           <h1 className="text-2xl font-bold text-foreground">Correções Pendentes</h1>
-          {guides.length > 0 && (
-            <span className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-destructive text-[10px] font-bold text-white">{guides.length}</span>
+          {pendingCorrections.length > 0 && (
+            <span className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-destructive text-[10px] font-bold text-white">{pendingCorrections.length}</span>
           )}
         </div>
       </div>
 
-      {guides.length === 0 ? (
+      {pendingCorrections.length === 0 ? (
         <div className="rounded-2xl border border-border bg-card p-12 text-center shadow-sm">
-          <CheckCircle className="h-12 w-12 text-green-500 mx-auto mb-3" />
+          <CheckCircle className="h-14 w-14 text-green-500 mx-auto mb-3" />
           <h3 className="text-lg font-semibold text-foreground">Nenhuma correção pendente</h3>
           <p className="text-sm text-muted-foreground">Todas as guias estão em dia!</p>
         </div>
       ) : (
         <AnimatePresence>
-          {guides.map(g => (
+          {pendingCorrections.map(g => (
             <motion.div key={g.id} layout exit={{ x: -300, opacity: 0 }} transition={{ duration: 0.3 }} className="rounded-2xl border border-destructive/30 bg-card p-6 shadow-sm">
               <div className="flex items-start justify-between mb-4">
                 <div className="flex items-center gap-2">
                   <CornerDownLeft className="h-5 w-5 text-orange-500" />
                   <span className="text-sm font-bold text-foreground">AGUARDANDO CORREÇÃO</span>
                 </div>
-                <span className="inline-flex rounded-full px-2 py-0.5 text-[10px] font-bold bg-red-100 text-red-800">URGENTE</span>
+                <span className="inline-flex rounded-full px-2 py-0.5 text-[10px] font-bold bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400">URGENTE</span>
               </div>
 
               <div className="text-sm space-y-1 mb-4">
@@ -54,7 +60,7 @@ export default function CorrectionQueuePage() {
 
               <div className="rounded-lg bg-orange-50 dark:bg-orange-900/10 border border-orange-200 dark:border-orange-800 p-4 mb-4">
                 <p className="text-sm font-medium text-orange-800 dark:text-orange-400 mb-1">PROBLEMA: {g.returnedReason}</p>
-                <p className="text-sm text-orange-700 dark:text-orange-300">"{g.billerNotes}"</p>
+                {g.billerNotes && <p className="text-sm text-orange-700 dark:text-orange-300">"{g.billerNotes}"</p>}
               </div>
 
               <div className="flex gap-2 mb-4">

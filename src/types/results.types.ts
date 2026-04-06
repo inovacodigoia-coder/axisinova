@@ -8,14 +8,16 @@ export type ResultStatus =
 
 export interface ExamResult {
   id: string
+  companyId: string
   appointmentId: string
   patientId: string
   patientName: string
   patientCpf?: string
   patientMotherName: string
-  examId: string
+  examCatalogId?: string
+  examId?: string
   examName: string
-  examCode: string
+  examCode?: string
   doctorId: string
   doctorName: string
   requestedAt: string
@@ -30,6 +32,8 @@ export interface ExamResult {
   deliveredTo: 'patient' | 'responsible' | null
   deliveredToName?: string
   deliveredToDocument?: string
-  deliveredBy: string
-  companyId: string
+  deliveredBy?: string
+  deliveryProtocolNumber?: string
+  createdAt?: string
+  updatedAt?: string
 }
