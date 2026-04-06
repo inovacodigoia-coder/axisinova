@@ -6,6 +6,7 @@ import { GlobalSearchProvider, useGlobalSearch } from '@/context/GlobalSearchCon
 import { SchedulingProvider } from '@/context/SchedulingContext'
 import { RegistersProvider } from '@/context/RegistersContext'
 import { MedicalProvider } from '@/context/MedicalContext'
+import { BillingProvider } from '@/context/BillingContext'
 import { CompanySidebar } from '@/components/company/CompanySidebar'
 import { UserMenuDropdown } from '@/components/company/UserMenuDropdown'
 import { NotificationCenter } from '@/components/notifications/NotificationCenter'
