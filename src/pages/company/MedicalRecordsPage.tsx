@@ -5,10 +5,9 @@ import { SearchInput } from '@/components/ui/SearchInput'
 import { MedicalRecordModal, type MedicalRecordFormData } from '@/components/company/MedicalRecordModal'
 import { PatientModal, type PatientFormData } from '@/components/company/PatientModal'
 import { ConfirmModal } from '@/components/ui/ConfirmModal'
-import { useNotifications } from '@/components/company/NotificationPanel'
 import { supabase } from '@/integrations/supabase/client'
 import { toast } from 'sonner'
-import { DEMO_COMPANY_ID } from '@/lib/constants'
+import { useAuth } from '@/context/AuthContext'
 
 interface Patient {
   id: string; name: string; cpf: string; birthDate: string; phone: string
@@ -20,6 +19,8 @@ interface MedicalRecord {
 }
 
 export default function MedicalRecordsPage() {
+  const { user } = useAuth()
+  const companyId = user?.companyId
   const [search, setSearch] = useState('')
   const [selectedPatient, setSelectedPatient] = useState<Patient | null>(null)
   const [patients, setPatients] = useState<Patient[]>([])
@@ -28,17 +29,16 @@ export default function MedicalRecordsPage() {
   const [patientModalOpen, setPatientModalOpen] = useState(false)
   const [deleteRecord, setDeleteRecord] = useState<string | null>(null)
   const [loading, setLoading] = useState(true)
-  const { addNotification } = useNotifications()
 
   const fetchPatients = async () => {
+    if (!companyId) { setLoading(false); return }
     const { data: patientsData } = await supabase
-      .from('patients').select('*').eq('company_id', DEMO_COMPANY_ID).order('name')
+      .from('patients').select('*').eq('company_id', companyId).order('name')
     
     if (!patientsData) { setLoading(false); return }
 
-    // Get record counts per patient
     const { data: recordCounts } = await supabase
-      .from('medical_records').select('patient_id, date').eq('company_id', DEMO_COMPANY_ID)
+      .from('medical_records').select('patient_id, date').eq('company_id', companyId)
 
     const countMap: Record<string, { count: number; lastDate: string }> = {}
     ;(recordCounts || []).forEach(r => {
@@ -70,7 +70,7 @@ export default function MedicalRecordsPage() {
     setRecords(mapped)
   }
 
-  useEffect(() => { fetchPatients() }, [])
+  useEffect(() => { fetchPatients() }, [companyId])
   useEffect(() => { if (selectedPatient) fetchRecords(selectedPatient.id) }, [selectedPatient])
 
   const filtered = patients.filter((p) =>
@@ -78,9 +78,9 @@ export default function MedicalRecordsPage() {
   )
 
   const handleSaveRecord = async (data: MedicalRecordFormData) => {
-    if (!selectedPatient) return
+    if (!selectedPatient || !companyId) return
     const { error } = await supabase.from('medical_records').insert({
-      company_id: DEMO_COMPANY_ID, patient_id: selectedPatient.id,
+      company_id: companyId, patient_id: selectedPatient.id,
       date: data.date, doctor: data.doctor, type: data.type,
       diagnosis: data.diagnosis, notes: data.notes,
       prescription: data.prescription || null, exams: data.exams || null,
@@ -88,14 +88,14 @@ export default function MedicalRecordsPage() {
     if (error) { toast.error('Erro ao salvar registro'); return }
     setRecordModalOpen(false)
     toast.success('Registro adicionado ao prontuário!')
-    addNotification({ type: 'record', title: 'Prontuário atualizado', message: `Novo registro para ${selectedPatient.name} por ${data.doctor}` })
     fetchRecords(selectedPatient.id)
     fetchPatients()
   }
 
   const handleSavePatient = async (data: PatientFormData) => {
+    if (!companyId) return
     const { error } = await supabase.from('patients').insert({
-      company_id: DEMO_COMPANY_ID, name: data.name, cpf: data.cpf,
+      company_id: companyId, name: data.name, cpf: data.cpf,
       birth_date: data.birthDate, phone: data.phone,
       blood_type: data.bloodType, allergies: data.allergies,
       email: data.email || null, address: data.address || null,
@@ -103,7 +103,6 @@ export default function MedicalRecordsPage() {
     if (error) { toast.error('Erro ao cadastrar paciente'); return }
     setPatientModalOpen(false)
     toast.success('Paciente cadastrado com sucesso!')
-    addNotification({ type: 'info', title: 'Novo paciente', message: `${data.name} foi cadastrado no sistema` })
     fetchPatients()
   }
 
@@ -206,6 +205,13 @@ export default function MedicalRecordsPage() {
 
       {loading ? (
         <div className="p-12 text-center text-muted-foreground">Carregando pacientes...</div>
+      ) : patients.length === 0 ? (
+        <div className="rounded-2xl border border-border bg-card p-12 text-center">
+          <FileText className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+          <h3 className="text-lg font-semibold text-foreground mb-2">Nenhum paciente cadastrado</h3>
+          <p className="text-sm text-muted-foreground mb-4">Cadastre o primeiro paciente para começar a usar o prontuário eletrônico.</p>
+          <GradientButton onClick={() => setPatientModalOpen(true)}><Plus className="h-4 w-4 mr-2" /> Cadastrar Primeiro Paciente</GradientButton>
+        </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
           {filtered.map((p) => (

@@ -1,18 +1,17 @@
 import { useState } from 'react'
 import { useCompanyContext } from '@/context/CompanyContext'
-import { MOCK_COMPANY_USERS } from '@/mocks/company.mock'
 import { DataTable } from '@/components/ui/DataTable'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import { Search, Plus, Ban, Unlock, Edit, Eye } from 'lucide-react'
+import { Search, Plus, Ban, Unlock, Edit, Users } from 'lucide-react'
 import type { CompanyUser } from '@/types/company-portal.types'
 import { toast } from 'sonner'
 
 export default function UsersListPage() {
-  const { allProfiles, allSectors, canAccess } = useCompanyContext()
+  const { allProfiles, allSectors, allUsers, canAccess } = useCompanyContext()
   const [search, setSearch] = useState('')
   const [sectorFilter, setSectorFilter] = useState('')
   const [profileFilter, setProfileFilter] = useState('')
-  const [users, setUsers] = useState(MOCK_COMPANY_USERS)
+  const [users, setUsers] = useState<CompanyUser[]>(allUsers)
 
   const activeUsers = users.filter(u => !u.isBlocked)
   const blockedUsers = users.filter(u => u.isBlocked)
@@ -66,6 +65,24 @@ export default function UsersListPage() {
       </button>
     )},
   ]
+
+  if (allUsers.length === 0) {
+    return (
+      <div className="space-y-6">
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-2xl font-bold text-foreground">Usuários</h1>
+            <p className="text-sm text-muted-foreground">Gestão de usuários da empresa</p>
+          </div>
+        </div>
+        <div className="rounded-2xl border border-border bg-card p-12 text-center">
+          <Users className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+          <h3 className="text-lg font-semibold text-foreground mb-2">Nenhum usuário cadastrado</h3>
+          <p className="text-sm text-muted-foreground">Os usuários serão exibidos aqui após serem cadastrados no sistema.</p>
+        </div>
+      </div>
+    )
+  }
 
   return (
     <div className="space-y-6">

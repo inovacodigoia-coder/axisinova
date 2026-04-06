@@ -1,7 +1,6 @@
 import { useState, useMemo } from 'react'
-import { Search, FileText, CheckCircle, Clock, FlaskConical } from 'lucide-react'
-import { MOCK_RESULTS } from '@/mocks/results.mock'
-import type { ResultStatus } from '@/types/results.types'
+import { Search, CheckCircle, FlaskConical } from 'lucide-react'
+import type { ExamResult, ResultStatus } from '@/types/results.types'
 import { toast } from 'sonner'
 
 const STATUS_CONFIG: Record<ResultStatus, { label: string; cls: string }> = {
@@ -16,17 +15,16 @@ const STATUS_CONFIG: Record<ResultStatus, { label: string; cls: string }> = {
 export default function ResultsListPage() {
   const [search, setSearch] = useState('')
   const [statusFilter, setStatusFilter] = useState('all')
-  const [onlyAvailable, setOnlyAvailable] = useState(true)
+  const [onlyAvailable, setOnlyAvailable] = useState(false)
   const [deliveryModal, setDeliveryModal] = useState<string | null>(null)
   const [deliveryForm, setDeliveryForm] = useState({ deliveredTo: '' as 'patient' | 'responsible' | '', responsibleName: '', responsibleDoc: '', relationship: '', verifyMethod: '' })
 
+  // Real data - starts empty, will be populated when exams are requested during medical attendance
+  const results: ExamResult[] = []
+
   const filtered = useMemo(() => {
-    return MOCK_RESULTS.filter(r => {
-      if (onlyAvailable && r.status !== 'available') {
-        if (statusFilter !== 'all') {
-          if (r.status !== statusFilter) return false
-        } else return false
-      }
+    return results.filter(r => {
+      if (onlyAvailable && r.status !== 'available') return false
       if (statusFilter !== 'all' && r.status !== statusFilter) return false
       if (search) {
         const s = search.toLowerCase()
@@ -34,7 +32,7 @@ export default function ResultsListPage() {
       }
       return true
     })
-  }, [search, statusFilter, onlyAvailable])
+  }, [search, statusFilter, onlyAvailable, results])
 
   const handleDelivery = () => {
     if (!deliveryForm.deliveredTo) { toast.error('Selecione o destinatário'); return }
@@ -46,7 +44,23 @@ export default function ResultsListPage() {
     setDeliveryForm({ deliveredTo: '', responsibleName: '', responsibleDoc: '', relationship: '', verifyMethod: '' })
   }
 
-  const result = deliveryModal ? MOCK_RESULTS.find(r => r.id === deliveryModal) : null
+  const result = deliveryModal ? results.find(r => r.id === deliveryModal) : null
+
+  if (results.length === 0) {
+    return (
+      <div className="space-y-6">
+        <div>
+          <h1 className="text-2xl font-bold text-foreground">Entrega de Resultados</h1>
+          <p className="text-sm text-muted-foreground">Gerencie a entrega de resultados de exames</p>
+        </div>
+        <div className="rounded-2xl border border-border bg-card p-12 text-center">
+          <FlaskConical className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+          <h3 className="text-lg font-semibold text-foreground mb-2">Nenhum resultado de exame</h3>
+          <p className="text-sm text-muted-foreground">Os resultados aparecerão aqui quando exames forem solicitados durante os atendimentos médicos.</p>
+        </div>
+      </div>
+    )
+  }
 
   return (
     <div className="space-y-6">
@@ -57,7 +71,6 @@ export default function ResultsListPage() {
         </div>
       </div>
 
-      {/* Filters */}
       <div className="flex flex-wrap gap-3 items-center">
         <div className="relative flex-1 min-w-[250px]">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -73,7 +86,6 @@ export default function ResultsListPage() {
         </label>
       </div>
 
-      {/* Table */}
       <div className="rounded-2xl border border-border bg-card shadow-sm overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
@@ -114,7 +126,7 @@ export default function ResultsListPage() {
                         </button>
                       )}
                       {r.status === 'delivered' && (
-                        <span className="text-xs text-green-600 font-medium">Entregue em {r.deliveredAt ? new Date(r.deliveredAt).toLocaleDateString('pt-BR') : ''}</span>
+                        <span className="text-xs text-[hsl(var(--success))] font-medium">Entregue em {r.deliveredAt ? new Date(r.deliveredAt).toLocaleDateString('pt-BR') : ''}</span>
                       )}
                     </td>
                   </tr>
@@ -125,20 +137,17 @@ export default function ResultsListPage() {
         </div>
       </div>
 
-      {/* Delivery Modal */}
       {deliveryModal && result && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50" onClick={() => setDeliveryModal(null)}>
           <div className="w-full max-w-lg rounded-2xl bg-card border border-border p-6 shadow-xl mx-4 max-h-[90vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
             <h2 className="text-lg font-bold text-foreground mb-4">📋 Protocolo de Entrega</h2>
 
-            {/* Exam data */}
             <div className="rounded-lg bg-muted p-4 mb-4 text-sm space-y-1">
               <p><span className="text-muted-foreground">Paciente:</span> <span className="text-foreground font-medium">{result.patientName}</span></p>
               <p><span className="text-muted-foreground">Exame:</span> <span className="text-foreground">{result.examName}</span></p>
               <p><span className="text-muted-foreground">Solicitado por:</span> <span className="text-foreground">{result.doctorName}</span></p>
             </div>
 
-            {/* Recipient */}
             <div className="mb-4">
               <label className="text-sm font-medium text-foreground mb-2 block">Destinatário *</label>
               <div className="flex gap-3">
@@ -188,9 +197,8 @@ export default function ResultsListPage() {
               </div>
             )}
 
-            {/* Protocol preview */}
             <div className="rounded-lg bg-muted border border-border p-4 mb-4 text-xs space-y-1 font-mono">
-              <p className="font-bold text-foreground">PROTOCOLO DE ENTREGA Nº 2025-{String(Math.floor(Math.random() * 9999)).padStart(4, '0')}</p>
+              <p className="font-bold text-foreground">PROTOCOLO DE ENTREGA</p>
               <hr className="border-border" />
               <p>Exame: {result.examName}</p>
               <p>Paciente: {result.patientName}</p>
