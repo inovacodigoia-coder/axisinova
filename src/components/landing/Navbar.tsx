@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { Menu, X } from 'lucide-react';
+import logoImg from '@/assets/logo-axisinova.jpeg';
 import { GradientButton } from '@/components/ui/GradientButton';
 import { OutlineButton } from '@/components/ui/OutlineButton';
 import { cn } from '@/lib/utils';
@@ -32,7 +33,8 @@ export function Navbar() {
     >
       <nav className="mx-auto flex h-16 max-w-[1200px] items-center justify-between px-4 md:px-6">
         {/* Logo */}
-        <Link to="/" className="flex items-center gap-0 text-xl font-bold">
+        <Link to="/" className="flex items-center gap-2 text-xl font-bold">
+          <img src={logoImg} alt="Axis Inova" className="h-8 w-8 rounded-lg" />
           <span className="text-foreground">Axis</span>
           <span className="gradient-text">Inova</span>
         </Link>
