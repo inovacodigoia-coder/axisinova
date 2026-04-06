@@ -10,8 +10,17 @@ export type QueueStatus =
   | 'completed'
   | 'absent'
 
+export interface DocumentValidationStatus {
+  total: number
+  required: number
+  validated: number
+  missingRequired: string[]
+  isComplete: boolean
+}
+
 export interface QueueEntry {
   id: string
+  companyId: string
   ticketNumber: string
   ticketCategory: TicketCategory
   patientId: string
@@ -30,10 +39,27 @@ export interface QueueEntry {
   calledAt?: string
   callCount: number
   documentsValidated: boolean
+  documentsStatus: DocumentValidationStatus
   observations?: string
   waitingMinutes: number
   room?: string
   createdAt: string
+}
+
+export interface CheckinDocument {
+  id: string
+  appointmentId: string
+  companyId: string
+  attachmentRuleId: string
+  attachmentName: string
+  isRequired: boolean
+  fileUrl?: string
+  fileName?: string
+  fileSize?: number
+  uploadedAt?: string
+  uploadedBy?: string
+  status: 'pending' | 'uploaded' | 'validated' | 'rejected'
+  rejectionReason?: string
 }
 
 export interface ReceptionDocument {
@@ -88,3 +114,5 @@ export const QUEUE_STATUS_LABELS: Record<QueueStatus, string> = {
   completed: 'Concluído',
   absent: 'Ausente',
 }
+
+export const ELDERLY_AGE = 60

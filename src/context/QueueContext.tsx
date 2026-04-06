@@ -1,6 +1,8 @@
-import { createContext, useCallback, useContext, useEffect, useReducer, type ReactNode } from 'react'
-import type { QueueEntry, QueueStatus, TicketCategory } from '@/types/reception.types'
+import { createContext, useCallback, useContext, useEffect, useReducer, useMemo, type ReactNode } from 'react'
+import type { QueueEntry, QueueStatus, TicketCategory, DocumentValidationStatus } from '@/types/reception.types'
 import { MOCK_QUEUE } from '@/mocks/reception.mock'
+import { useAuth } from '@/context/AuthContext'
+import { isDemoCompany } from '@/mocks/registers.mock'
 
 interface QueueState {
   entries: QueueEntry[]
@@ -12,7 +14,7 @@ interface QueueState {
 type QueueAction =
   | { type: 'ADD_TO_QUEUE'; payload: QueueEntry }
   | { type: 'CALL_TICKET'; payload: string }
-  | { type: 'UPDATE_STATUS'; payload: { id: string; status: QueueStatus; room?: string } }
+  | { type: 'UPDATE_STATUS'; payload: { id: string; status: QueueStatus; room?: string; documentsValidated?: boolean; documentsStatus?: DocumentValidationStatus; checkedInAt?: string } }
   | { type: 'COMPLETE'; payload: string }
   | { type: 'SKIP'; payload: string }
   | { type: 'RECALL'; payload: string }
@@ -43,7 +45,14 @@ function reducer(state: QueueState, action: QueueAction): QueueState {
         ...state,
         entries: state.entries.map(e =>
           e.id === action.payload.id
-            ? { ...e, status: action.payload.status, room: action.payload.room || e.room }
+            ? {
+                ...e,
+                status: action.payload.status,
+                room: action.payload.room || e.room,
+                documentsValidated: action.payload.documentsValidated ?? e.documentsValidated,
+                documentsStatus: action.payload.documentsStatus ?? e.documentsStatus,
+                checkedInAt: action.payload.checkedInAt ?? e.checkedInAt,
+              }
             : e
         ),
       }
@@ -81,11 +90,12 @@ function reducer(state: QueueState, action: QueueAction): QueueState {
     case 'INCREMENT_WAIT':
       return {
         ...state,
-        entries: state.entries.map(e =>
-          ['waiting', 'called', 'in_reception', 'documents_ok'].includes(e.status)
-            ? { ...e, waitingMinutes: e.waitingMinutes + 1 }
-            : e
-        ),
+        entries: state.entries.map(e => {
+          if (!['waiting', 'called', 'in_reception', 'documents_ok'].includes(e.status)) return e
+          const ref = e.checkedInAt || e.createdAt
+          const mins = Math.floor((Date.now() - new Date(ref).getTime()) / 60000)
+          return { ...e, waitingMinutes: mins }
+        }),
       }
 
     default:
@@ -102,48 +112,62 @@ function initCounters(entries: QueueEntry[]): Record<TicketCategory, number> {
   return counts
 }
 
+const emptyDocStatus: DocumentValidationStatus = {
+  total: 0, required: 0, validated: 0, missingRequired: [], isComplete: false,
+}
+
 interface QueueContextValue {
   state: QueueState
   callTicket: (id: string) => void
-  updateStatus: (id: string, status: QueueStatus, room?: string) => void
+  updateStatus: (id: string, status: QueueStatus, room?: string, extra?: { documentsValidated?: boolean; documentsStatus?: DocumentValidationStatus; checkedInAt?: string }) => void
   completeEntry: (id: string) => void
   skipEntry: (id: string) => void
   recallEntry: (id: string) => void
-  addToQueue: (entry: Omit<QueueEntry, 'id' | 'ticketNumber' | 'ticketCategory' | 'callCount' | 'waitingMinutes' | 'createdAt' | 'documentsValidated'>) => void
+  addToQueue: (entry: Omit<QueueEntry, 'id' | 'ticketNumber' | 'ticketCategory' | 'callCount' | 'waitingMinutes' | 'createdAt' | 'documentsValidated' | 'documentsStatus'> & { ticketCategory?: TicketCategory }) => void
   stats: { waiting: number; inProgress: number; completed: number; avgWaitTime: number }
+  isDemo: boolean
 }
 
 const QueueContext = createContext<QueueContextValue | null>(null)
 
 export function QueueProvider({ children }: { children: ReactNode }) {
+  const { user } = useAuth()
+  const companyId = user?.companyId
+  const isDemo = isDemoCompany(companyId)
+
+  const initialEntries = isDemo ? MOCK_QUEUE : []
+
   const [state, dispatch] = useReducer(reducer, {
-    entries: MOCK_QUEUE,
-    lastCalledTicket: MOCK_QUEUE.find(e => e.status === 'called') || null,
+    entries: initialEntries,
+    lastCalledTicket: initialEntries.find(e => e.status === 'called') || null,
     callHistory: [],
-    counters: initCounters(MOCK_QUEUE),
+    counters: initCounters(initialEntries),
   })
 
-  // Increment wait time every 60 seconds
   useEffect(() => {
     const id = setInterval(() => dispatch({ type: 'INCREMENT_WAIT' }), 60000)
     return () => clearInterval(id)
   }, [])
 
   const callTicket = useCallback((id: string) => dispatch({ type: 'CALL_TICKET', payload: id }), [])
-  const updateStatus = useCallback((id: string, status: QueueStatus, room?: string) =>
-    dispatch({ type: 'UPDATE_STATUS', payload: { id, status, room } }), [])
+  const updateStatus = useCallback((id: string, status: QueueStatus, room?: string, extra?: { documentsValidated?: boolean; documentsStatus?: DocumentValidationStatus; checkedInAt?: string }) =>
+    dispatch({ type: 'UPDATE_STATUS', payload: { id, status, room, ...extra } }), [])
   const completeEntry = useCallback((id: string) => dispatch({ type: 'COMPLETE', payload: id }), [])
   const skipEntry = useCallback((id: string) => dispatch({ type: 'SKIP', payload: id }), [])
   const recallEntry = useCallback((id: string) => dispatch({ type: 'RECALL', payload: id }), [])
 
-  const addToQueue = useCallback((entry: Omit<QueueEntry, 'id' | 'ticketNumber' | 'ticketCategory' | 'callCount' | 'waitingMinutes' | 'createdAt' | 'documentsValidated'>) => {
-    const cat: TicketCategory = entry.isPreferential ? 'SP'
+  const addToQueue = useCallback((entry: Omit<QueueEntry, 'id' | 'ticketNumber' | 'ticketCategory' | 'callCount' | 'waitingMinutes' | 'createdAt' | 'documentsValidated' | 'documentsStatus'> & { ticketCategory?: TicketCategory }) => {
+    const cat: TicketCategory = entry.ticketCategory
+      || (entry.isPreferential ? 'SP'
       : entry.appointmentType === 'exam' ? 'EX'
       : entry.appointmentType === 'procedure' ? 'PR'
-      : 'SN'
-    const next = (state.counters[cat] || 0) + 1
+      : 'SN')
+    const today = new Date().toISOString().slice(0, 10)
+    const todayCount = state.entries.filter(e =>
+      e.ticketCategory === cat && e.createdAt.startsWith(today)
+    ).length
+    const next = todayCount + 1
     const ticketNumber = `${cat}${String(next).padStart(3, '0')}`
-    state.counters[cat] = next
     dispatch({
       type: 'ADD_TO_QUEUE',
       payload: {
@@ -155,20 +179,21 @@ export function QueueProvider({ children }: { children: ReactNode }) {
         waitingMinutes: 0,
         createdAt: new Date().toISOString(),
         documentsValidated: false,
-      },
+        documentsStatus: emptyDocStatus,
+      } as QueueEntry,
     })
-  }, [state.counters])
+  }, [state.entries])
 
   const active = state.entries.filter(e => e.status !== 'completed' && e.status !== 'absent')
-  const stats = {
+  const stats = useMemo(() => ({
     waiting: active.filter(e => ['waiting', 'called', 'in_reception', 'documents_ok', 'called_doctor'].includes(e.status)).length,
     inProgress: active.filter(e => e.status === 'in_progress').length,
     completed: state.entries.filter(e => e.status === 'completed').length,
     avgWaitTime: active.length ? Math.round(active.reduce((s, e) => s + e.waitingMinutes, 0) / active.length) : 0,
-  }
+  }), [state.entries])
 
   return (
-    <QueueContext.Provider value={{ state, callTicket, updateStatus, completeEntry, skipEntry, recallEntry, addToQueue, stats }}>
+    <QueueContext.Provider value={{ state, callTicket, updateStatus, completeEntry, skipEntry, recallEntry, addToQueue, stats, isDemo }}>
       {children}
     </QueueContext.Provider>
   )
