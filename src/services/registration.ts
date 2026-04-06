@@ -25,7 +25,27 @@ interface RegistrationData {
   plano: string
 }
 
+export async function checkCnpjExists(cnpj: string): Promise<boolean> {
+  const { data, error } = await supabase
+    .from('companies')
+    .select('id')
+    .eq('cnpj', cnpj)
+    .maybeSingle()
+
+  if (error) {
+    console.error('CNPJ check error:', error)
+    return false
+  }
+  return !!data
+}
+
 export async function registerCompany(data: RegistrationData) {
+  // 0. Check for duplicate CNPJ
+  const cnpjExists = await checkCnpjExists(data.cnpj)
+  if (cnpjExists) {
+    throw new Error('Este CNPJ já está cadastrado no sistema. Caso precise de ajuda, entre em contato com o suporte.')
+  }
+
   // 1. Create the company first
   const { data: company, error: companyError } = await supabase
     .from('companies')
@@ -53,6 +73,9 @@ export async function registerCompany(data: RegistrationData) {
 
   if (companyError) {
     console.error('Company creation error:', companyError)
+    if (companyError.message?.includes('companies_cnpj_unique')) {
+      throw new Error('Este CNPJ já está cadastrado no sistema.')
+    }
     throw new Error('Erro ao criar empresa: ' + companyError.message)
   }
 
