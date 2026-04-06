@@ -216,6 +216,7 @@ function PortalContent() {
         </div>
       )}
     </div>
+  )
 }
 
 export default function CompanyPortalLayout() {
