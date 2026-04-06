@@ -63,11 +63,12 @@ function PortalContent() {
   const [mobileOpen, setMobileOpen] = useState(false)
   const [collapsed, setCollapsed] = useState(false)
   const [notifOpen, setNotifOpen] = useState(false)
-  const { user } = useAuth()
+  const { user, logout } = useAuth()
   const { unreadCount } = useNotificationContext()
   const { activeSector } = useCompanyContext()
   const { open: openSearch } = useGlobalSearch()
   const location = useLocation()
+  const { showWarning, countdown, extendSession } = useSessionTimeout()
 
   useKeyboardShortcuts({
     'ctrl+k': openSearch,
