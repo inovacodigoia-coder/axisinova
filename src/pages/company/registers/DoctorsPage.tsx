@@ -381,8 +381,9 @@ function DoctorFormModal({ doctor, specialties, convenios, onClose, onSave }: {
   const [phone, setPhone] = useState(doctor?.phone || '')
   const [email, setEmail] = useState(doctor?.email || '')
   const [enabledConvenios, setEnabledConvenios] = useState<Set<string>>(new Set(doctor?.enabledConvenioIds || []))
-  const [duration, setDuration] = useState(doctor?.scheduleConfig?.consultationDuration || 30)
-  const [interval, setIntervalMin] = useState(doctor?.scheduleConfig?.intervalBetween || 10)
+  const [scheduleDays, setScheduleDays] = useState<DayScheduleConfig[] | undefined>(undefined)
+  const [scheduleDuration, setScheduleDuration] = useState(doctor?.scheduleConfig?.consultationDuration || 30)
+  const [scheduleInterval, setScheduleInterval] = useState(doctor?.scheduleConfig?.intervalBetween || 10)
   const [activeTab, setActiveTab] = useState('dados')
   const [allConvenios, setAllConvenios] = useState(false)
 
