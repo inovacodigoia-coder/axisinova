@@ -27,6 +27,7 @@ import CompanyPortalLayout from "./pages/company/CompanyPortalLayout";
 import TotemPage from "./pages/public/TotemPage";
 import CallingPanelPage from "./pages/public/CallingPanelPage";
 import DoctorPanelPage from "./pages/public/DoctorPanelPage";
+import PatientPortalLayout from "./pages/patient/PatientPortalLayout";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -53,8 +54,14 @@ const App = () => (
 
                 {/* Public kiosk/panel routes */}
                 <Route path="/totem" element={<TotemPage />} />
+                <Route path="/totem/:slug" element={<TotemPage />} />
                 <Route path="/painel-chamada" element={<CallingPanelPage />} />
+                <Route path="/painel/:slug" element={<CallingPanelPage />} />
                 <Route path="/painel-medico" element={<DoctorPanelPage />} />
+
+                {/* Patient Portal */}
+                <Route path="/resultado" element={<PatientPortalLayout />} />
+                <Route path="/resultado/*" element={<PatientPortalLayout />} />
 
                 {/* Profile Selector */}
                 <Route path="/selecionar-perfil" element={<PrivateRoute><ProfileSelectorPage /></PrivateRoute>} />

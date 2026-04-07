@@ -35,11 +35,19 @@ import ConveniosPage from './registers/ConveniosPage'
 import ExamsPage from './registers/ExamsPage'
 import ProceduresPage from './registers/ProceduresPage'
 import CompanySettingsPage from './settings/CompanySettingsPage'
+import VisualSettingsPage from './settings/VisualSettingsPage'
+import TotemTVSettingsPage from './settings/TotemTVSettingsPage'
+import RoomsSettingsPage from './settings/RoomsSettingsPage'
+import PrinterSettingsPage from './settings/PrinterSettingsPage'
+import VoiceSettingsPage from './settings/VoiceSettingsPage'
+import CompanyDataSettingsPage from './settings/CompanyDataSettingsPage'
+import NotificationsSettingsPage from './settings/NotificationsSettingsPage'
+import EstablishmentsSettingsPage from './settings/EstablishmentsSettingsPage'
+import ReceptionLayout from './reception/ReceptionLayout'
 import SchedulingPage from './scheduling/SchedulingPage'
 import ConfirmationsPage from './scheduling/ConfirmationsPage'
 import AbsenteesPage from './scheduling/AbsenteesPage'
 import PatientHistoryPage from './scheduling/PatientHistoryPage'
-import ReceptionPage from './reception/ReceptionPage'
 import MedicalDashboardPage from './medical/MedicalDashboardPage'
 import AttendancePage from './medical/AttendancePage'
 import PatientRecordPage from './medical/PatientRecordPage'
@@ -135,7 +143,7 @@ function PortalContent() {
               <Route path="confirmacoes" element={<ConfirmationsPage />} />
               <Route path="faltosos" element={<AbsenteesPage />} />
               <Route path="historico-paciente" element={<PatientHistoryPage />} />
-              <Route path="recepcao" element={<ReceptionPage />} />
+              <Route path="recepcao" element={<ReceptionLayout />} />
               <Route path="medico" element={<MedicalDashboardPage />} />
               <Route path="atendimento/:appointmentId" element={<AttendancePage />} />
               <Route path="prontuario/:patientId" element={<PatientRecordPage />} />
@@ -162,6 +170,14 @@ function PortalContent() {
                 <Route path="procedimentos" element={<ProceduresPage />} />
               </Route>
               <Route path="configuracoes" element={<CompanySettingsPage />} />
+              <Route path="configuracoes/dados" element={<CompanyDataSettingsPage />} />
+              <Route path="configuracoes/visual" element={<VisualSettingsPage />} />
+              <Route path="configuracoes/totem-tv" element={<TotemTVSettingsPage />} />
+              <Route path="configuracoes/salas" element={<RoomsSettingsPage />} />
+              <Route path="configuracoes/impressora" element={<PrinterSettingsPage />} />
+              <Route path="configuracoes/voz" element={<VoiceSettingsPage />} />
+              <Route path="configuracoes/notificacoes" element={<NotificationsSettingsPage />} />
+              <Route path="configuracoes/estabelecimentos" element={<EstablishmentsSettingsPage />} />
               <Route path="bi" element={<BIDashboardPage />} />
               <Route path="bi/producao" element={<ProductionReportPage />} />
               <Route path="bi/financeiro" element={<FinancialReportPage />} />
