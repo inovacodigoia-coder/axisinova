@@ -1,10 +1,12 @@
-import { useMemo } from 'react'
+import { useMemo, useState, useEffect } from 'react'
 import { useRegisters } from '@/context/RegistersContext'
 import { useScheduling } from '@/context/SchedulingContext'
 import { useAvailableSlots } from '@/hooks/useAvailableSlots'
+import { useRestrictionAlerts } from '@/hooks/useRestrictionAlerts'
 import { ConvenioSelector } from './ConvenioSelector'
 import { FirstVisitBadge } from './FirstVisitBadge'
 import { DependencyAlert } from '@/components/scheduling/empty-states/DependencyAlert'
+import { RestrictionAlertSystem } from '@/components/doctors/RestrictionAlertSystem'
 import type { SchedulingPatient, AppointmentType } from '@/types/scheduling.types'
 import { differenceInYears, format } from 'date-fns'
 
