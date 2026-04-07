@@ -31,6 +31,7 @@ export interface DoctorScheduleConfig {
   consultationDuration: number
   intervalBetween: number
   workDays: WorkDayConfig[]
+  blockedDates?: string[] // ISO date strings for holidays, days off, etc.
 }
 
 export interface WorkDayConfig {

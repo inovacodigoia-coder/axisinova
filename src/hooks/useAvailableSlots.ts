@@ -55,6 +55,12 @@ export function useAvailableSlots(
     if (!date) return { slots: [], error: null }
 
     const dayOfWeek = new Date(date + 'T12:00:00').getDay() as 0 | 1 | 2 | 3 | 4 | 5 | 6
+
+    // Check blocked dates
+    if (doctor.scheduleConfig.blockedDates?.includes(date)) {
+      return { slots: [], error: 'not_working_day', dayName: DAY_NAMES[dayOfWeek] }
+    }
+
     const workDay = doctor.scheduleConfig.workDays.find(wd => wd.day === dayOfWeek && wd.isActive)
 
     if (!workDay) {
