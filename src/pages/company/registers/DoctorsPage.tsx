@@ -1,6 +1,8 @@
 import { useState } from 'react'
 import { useRegisters } from '@/context/RegistersContext'
 import { useCompanyContext } from '@/context/CompanyContext'
+import { DoctorScheduleEditor } from '@/components/doctors/DoctorScheduleEditor'
+import type { DayScheduleConfig } from '@/types/schedule-config.types'
 import { useAuth } from '@/context/AuthContext'
 import { usePaginatedList } from '@/hooks/usePaginatedList'
 import { EmptyState } from '@/components/feedback/EmptyState'
