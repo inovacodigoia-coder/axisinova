@@ -408,7 +408,7 @@ function DoctorFormModal({ doctor, specialties, convenios, onClose, onSave }: {
       enabledConvenioIds: Array.from(enabledConvenios),
       isActive: doctor?.isActive ?? true,
       isBlocked: doctor?.isBlocked ?? false,
-      scheduleConfig: { consultationDuration: duration, intervalBetween: interval, workDays: doctor?.scheduleConfig?.workDays || [] },
+      scheduleConfig: { consultationDuration: scheduleDuration, intervalBetween: scheduleInterval, workDays: doctor?.scheduleConfig?.workDays || [] },
       createdAt: doctor?.createdAt || new Date().toISOString(),
       updatedAt: new Date().toISOString(),
     })
