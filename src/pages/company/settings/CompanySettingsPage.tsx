@@ -1,13 +1,16 @@
 import { useState } from 'react'
 import { useAuth } from '@/context/AuthContext'
-import { Building2, Palette, Bell, MapPin, Save } from 'lucide-react'
+import { Building2, Palette, Bell, MapPin, Save, Monitor, Tablet, Copy, ExternalLink, QrCode } from 'lucide-react'
 import { toast } from 'sonner'
+import { useCompanyBranding } from '@/hooks/useCompanyBranding'
 
 const TABS = [
   { key: 'company', label: 'Dados da Empresa', icon: Building2 },
   { key: 'visual', label: 'Personalização Visual', icon: Palette },
   { key: 'notifications', label: 'Notificações', icon: Bell },
   { key: 'establishments', label: 'Estabelecimentos', icon: MapPin },
+  { key: 'totem', label: 'Totem de Autoatendimento', icon: Tablet },
+  { key: 'panels', label: 'Painéis de TV', icon: Monitor },
 ]
 
 export default function CompanySettingsPage() {
@@ -21,7 +24,7 @@ export default function CompanySettingsPage() {
         <p className="text-sm text-muted-foreground">Configurações gerais da empresa</p>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-[220px_1fr] gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-[240px_1fr] gap-6">
         <div className="space-y-1">
           {TABS.map(t => (
             <button key={t.key} onClick={() => setActiveTab(t.key)}
@@ -36,6 +39,8 @@ export default function CompanySettingsPage() {
           {activeTab === 'visual' && <VisualTab />}
           {activeTab === 'notifications' && <NotificationsTab />}
           {activeTab === 'establishments' && <EstablishmentsTab />}
+          {activeTab === 'totem' && <TotemTab />}
+          {activeTab === 'panels' && <PanelsTab />}
         </div>
       </div>
     </div>
@@ -62,10 +67,18 @@ function CompanyDataTab() {
 }
 
 function VisualTab() {
-  const [color, setColor] = useState('#00D4FF')
+  const { accentColor, saveAccentColor } = useCompanyBranding()
+  const [color, setColor] = useState(accentColor)
+
+  const handleSave = () => {
+    saveAccentColor(color)
+    toast.success('Personalização salva e aplicada!')
+  }
+
   return (
     <div className="space-y-4">
       <h3 className="text-lg font-semibold text-foreground">Personalização Visual</h3>
+      <p className="text-sm text-muted-foreground">A cor de destaque será aplicada em botões, links e elementos de destaque em todo o sistema.</p>
       <div>
         <label className="text-sm font-medium">Cor de destaque da empresa</label>
         <div className="flex items-center gap-3 mt-2">
@@ -74,14 +87,17 @@ function VisualTab() {
         </div>
       </div>
       <div className="mt-4 rounded-xl border border-border p-4">
-        <p className="text-xs text-muted-foreground mb-2">Preview</p>
-        <div className="flex items-center gap-2">
+        <p className="text-xs text-muted-foreground mb-3">Preview</p>
+        <div className="flex items-center gap-4">
           <div className="h-8 w-20 rounded" style={{ background: color }} />
           <span className="text-sm font-medium" style={{ color }}>Texto em destaque</span>
+          <button className="rounded-lg px-4 py-2 text-sm font-semibold text-white" style={{ background: color }}>Botão</button>
         </div>
       </div>
       <div className="flex justify-end pt-4">
-        <button onClick={() => toast.success('Personalização salva')} className="gradient-bg rounded-lg px-6 py-2 text-sm font-semibold text-white">Salvar</button>
+        <button onClick={handleSave} className="gradient-bg rounded-lg px-6 py-2 text-sm font-semibold text-white flex items-center gap-2">
+          <Save className="h-4 w-4" /> Salvar
+        </button>
       </div>
     </div>
   )
@@ -133,6 +149,134 @@ function EstablishmentsTab() {
             <button className="text-xs text-primary hover:underline">Editar</button>
           </div>
         ))}
+      </div>
+    </div>
+  )
+}
+
+function LinkCard({ label, description, url, icon: Icon }: { label: string; description: string; url: string; icon: any }) {
+  const fullUrl = `${window.location.origin}${url}`
+
+  const copyUrl = () => {
+    navigator.clipboard.writeText(fullUrl)
+    toast.success('Link copiado!')
+  }
+
+  const openUrl = () => {
+    window.open(fullUrl, '_blank')
+  }
+
+  return (
+    <div className="rounded-xl border border-border p-4 space-y-3">
+      <div className="flex items-center gap-3">
+        <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10">
+          <Icon className="h-5 w-5 text-primary" />
+        </div>
+        <div>
+          <p className="text-sm font-semibold text-foreground">{label}</p>
+          <p className="text-xs text-muted-foreground">{description}</p>
+        </div>
+      </div>
+      <div className="flex items-center gap-2 rounded-lg bg-muted p-2">
+        <code className="flex-1 text-xs text-muted-foreground truncate">{fullUrl}</code>
+        <button onClick={copyUrl} className="rounded-md p-1.5 hover:bg-background transition-colors" title="Copiar link">
+          <Copy className="h-4 w-4 text-muted-foreground" />
+        </button>
+        <button onClick={openUrl} className="rounded-md p-1.5 hover:bg-background transition-colors" title="Abrir em nova aba">
+          <ExternalLink className="h-4 w-4 text-muted-foreground" />
+        </button>
+      </div>
+    </div>
+  )
+}
+
+function TotemTab() {
+  return (
+    <div className="space-y-5">
+      <div>
+        <h3 className="text-lg font-semibold text-foreground">Totem de Autoatendimento</h3>
+        <p className="text-sm text-muted-foreground mt-1">
+          Configure o totem de autoatendimento para que os pacientes possam fazer check-in e emitir senhas de forma autônoma.
+        </p>
+      </div>
+
+      <LinkCard
+        label="Link do Totem"
+        description="Use este link no tablet ou computador em modo quiosque"
+        url="/totem"
+        icon={Tablet}
+      />
+
+      <div className="rounded-xl border border-border p-4 space-y-3">
+        <h4 className="text-sm font-semibold text-foreground">Como configurar</h4>
+        <ol className="list-decimal list-inside space-y-2 text-sm text-muted-foreground">
+          <li>Abra o link acima em um tablet ou computador com tela touch</li>
+          <li>Coloque o navegador em <strong className="text-foreground">modo tela cheia</strong> (F11)</li>
+          <li>O totem permite busca por nome ou CPF e emissão de senhas</li>
+          <li>Categorias de senha: Preferencial, Normal, Exame, Procedimento e Retorno</li>
+        </ol>
+      </div>
+
+      <div className="rounded-xl border border-border p-4 space-y-2">
+        <h4 className="text-sm font-semibold text-foreground flex items-center gap-2">
+          <QrCode className="h-4 w-4" /> Dica
+        </h4>
+        <p className="text-sm text-muted-foreground">
+          Para segurança, o acesso administrativo no totem pode ser feito com múltiplos toques no logotipo da empresa.
+        </p>
+      </div>
+    </div>
+  )
+}
+
+function PanelsTab() {
+  return (
+    <div className="space-y-5">
+      <div>
+        <h3 className="text-lg font-semibold text-foreground">Painéis de TV</h3>
+        <p className="text-sm text-muted-foreground mt-1">
+          Configure os painéis para exibição em TVs na sala de espera e consultórios.
+        </p>
+      </div>
+
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <LinkCard
+          label="Painel de Chamada"
+          description="TV da sala de espera — exibe senhas chamadas"
+          url="/painel-chamada"
+          icon={Monitor}
+        />
+
+        <LinkCard
+          label="Painel Médico"
+          description="TV do consultório — exibe fila do médico"
+          url="/painel-medico"
+          icon={Monitor}
+        />
+      </div>
+
+      <div className="rounded-xl border border-border p-4 space-y-3">
+        <h4 className="text-sm font-semibold text-foreground">Como configurar</h4>
+        <ol className="list-decimal list-inside space-y-2 text-sm text-muted-foreground">
+          <li>Conecte um computador, Chromecast ou Smart TV à TV desejada</li>
+          <li>Abra o link do painel correspondente no navegador</li>
+          <li>Coloque em <strong className="text-foreground">modo tela cheia</strong> (F11)</li>
+          <li>O painel atualiza automaticamente em tempo real</li>
+        </ol>
+      </div>
+
+      <div className="rounded-xl border border-border p-4 space-y-3">
+        <h4 className="text-sm font-semibold text-foreground">Resolução recomendada</h4>
+        <div className="grid grid-cols-2 gap-3 text-sm">
+          <div className="rounded-lg bg-muted p-3">
+            <p className="font-medium text-foreground">Painel de Chamada</p>
+            <p className="text-xs text-muted-foreground">1920×1080 (landscape)</p>
+          </div>
+          <div className="rounded-lg bg-muted p-3">
+            <p className="font-medium text-foreground">Totem</p>
+            <p className="text-xs text-muted-foreground">768×1024 (portrait)</p>
+          </div>
+        </div>
       </div>
     </div>
   )
