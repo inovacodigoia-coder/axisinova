@@ -32,7 +32,9 @@ interface Props {
 export function Step2AppointmentData({ patient, formData, onChange, prefilledDoctor, prefilledDate, prefilledTime }: Props) {
   const { doctors, convenios, exams, procedures, specialties } = useRegisters()
   const { appointments } = useScheduling()
+  const { checkRestrictions } = useRestrictionAlerts()
   const today = new Date().toISOString().split('T')[0]
+  const [showRestrictions, setShowRestrictions] = useState(false)
 
   const activeDoctors = useMemo(() => doctors.filter(d => d.isActive && !d.isBlocked), [doctors])
   const activeExams = useMemo(() => exams.filter(e => e.isActive), [exams])
@@ -42,6 +44,26 @@ export function Step2AppointmentData({ patient, formData, onChange, prefilledDoc
   const slotsResult = useAvailableSlots(selectedDoctor, formData.date, appointments)
 
   const age = differenceInYears(new Date(), new Date(patient.birthDate))
+
+  // Check restrictions whenever relevant fields change
+  const restrictionAlerts = useMemo(() => {
+    if (!formData.doctorId && !formData.convenioId && !formData.examId) return []
+    return checkRestrictions({
+      doctorId: formData.doctorId || undefined,
+      convenioId: formData.convenioId || undefined,
+      examId: formData.type === 'exam' ? (formData.examId || undefined) : undefined,
+      procedureId: formData.type === 'procedure' ? (formData.examId || undefined) : undefined,
+      appointmentType: formData.type,
+      date: formData.date || undefined,
+    })
+  }, [formData.doctorId, formData.convenioId, formData.examId, formData.type, formData.date, checkRestrictions])
+
+  // Auto-show restriction modal when blocks are detected
+  useEffect(() => {
+    if (restrictionAlerts.some(a => a.severity === 'block')) {
+      setShowRestrictions(true)
+    }
+  }, [restrictionAlerts])
 
   const getSpecialtyName = (doc: typeof doctors[0]) => {
     if (doc.specialtyIds.length === 0) return ''
