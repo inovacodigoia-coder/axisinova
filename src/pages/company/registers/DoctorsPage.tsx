@@ -384,6 +384,7 @@ function DoctorFormModal({ doctor, specialties, convenios, onClose, onSave }: {
   const [scheduleDays, setScheduleDays] = useState<DayScheduleConfig[] | undefined>(undefined)
   const [scheduleDuration, setScheduleDuration] = useState(doctor?.scheduleConfig?.consultationDuration || 30)
   const [scheduleInterval, setScheduleInterval] = useState(doctor?.scheduleConfig?.intervalBetween || 10)
+  const [blockedDates, setBlockedDates] = useState<string[]>(doctor?.scheduleConfig?.blockedDates || [])
   const [activeTab, setActiveTab] = useState('dados')
   const [allConvenios, setAllConvenios] = useState(false)
 
@@ -399,6 +400,19 @@ function DoctorFormModal({ doctor, specialties, convenios, onClose, onSave }: {
 
   const handleSave = () => {
     if (!name || !crm || selectedSpecs.length === 0) { toast.error('Preencha os campos obrigatórios'); return }
+    
+    // Convert DayScheduleConfig[] to WorkDayConfig[] if schedule was edited
+    const workDays = scheduleDays
+      ? scheduleDays.filter(d => d.isActive).map(d => ({
+          day: d.dayOfWeek,
+          isActive: d.isActive,
+          startTime: d.startTime,
+          endTime: d.endTime,
+          lunchStart: d.lunchStart,
+          lunchEnd: d.lunchEnd,
+        }))
+      : doctor?.scheduleConfig?.workDays || []
+
     onSave({
       id: doctor?.id || `doc_${Date.now()}`,
       companyId: doctor?.companyId || '',
@@ -408,7 +422,7 @@ function DoctorFormModal({ doctor, specialties, convenios, onClose, onSave }: {
       enabledConvenioIds: Array.from(enabledConvenios),
       isActive: doctor?.isActive ?? true,
       isBlocked: doctor?.isBlocked ?? false,
-      scheduleConfig: { consultationDuration: scheduleDuration, intervalBetween: scheduleInterval, workDays: doctor?.scheduleConfig?.workDays || [] },
+      scheduleConfig: { consultationDuration: scheduleDuration, intervalBetween: scheduleInterval, workDays, blockedDates },
       createdAt: doctor?.createdAt || new Date().toISOString(),
       updatedAt: new Date().toISOString(),
     })
@@ -508,14 +522,29 @@ function DoctorFormModal({ doctor, specialties, convenios, onClose, onSave }: {
           )}
           {activeTab === 'agenda' && (
             <DoctorScheduleEditor
+              initialDays={scheduleDays || (doctor?.scheduleConfig?.workDays ? doctor.scheduleConfig.workDays.map(wd => ({
+                dayOfWeek: wd.day,
+                isActive: wd.isActive,
+                startTime: wd.startTime,
+                endTime: wd.endTime,
+                lunchStart: wd.lunchStart,
+                lunchEnd: wd.lunchEnd,
+                attendanceTypes: ['consultation'] as DayScheduleConfig['attendanceTypes'],
+                slotDuration: doctor.scheduleConfig!.consultationDuration,
+                intervalBetween: doctor.scheduleConfig!.intervalBetween,
+                maxPatients: 0,
+                roomId: undefined,
+              })) : undefined) as DayScheduleConfig[] | undefined}
               defaultDuration={scheduleDuration}
               defaultInterval={scheduleInterval}
+              blockedDates={blockedDates}
               onSave={(days, dur, intv) => {
                 setScheduleDays(days)
                 setScheduleDuration(dur)
                 setScheduleInterval(intv)
                 toast.success('Configuração de agenda salva')
               }}
+              onBlockedDatesChange={setBlockedDates}
             />
           )}
         </div>
