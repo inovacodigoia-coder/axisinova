@@ -65,7 +65,7 @@ export default function ActiveAttendancePage({ selectedId, onSelectId }: Props) 
                 </div>
                 <div>
                   <h2 className="text-lg font-bold text-foreground">{selected.patientName}</h2>
-                  <p className="text-sm text-muted-foreground">{selected.doctorName} · {selected.appointmentTime}</p>
+                  <p className="text-sm text-muted-foreground">{selected.doctorName} · {selected.appointmentType === 'consultation' ? 'Consulta' : selected.appointmentType === 'exam' ? 'Exame' : 'Procedimento'}</p>
                 </div>
               </div>
             </div>

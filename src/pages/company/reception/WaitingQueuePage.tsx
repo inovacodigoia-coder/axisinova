@@ -101,7 +101,7 @@ export default function WaitingQueuePage({ onSelectPatient }: Props) {
                 {/* Patient info */}
                 <p className="text-sm font-semibold text-foreground">{entry.patientName}</p>
                 <p className="text-xs text-muted-foreground mt-0.5">
-                  {entry.doctorName} · {entry.appointmentType === 'consultation' ? 'Consulta' : entry.appointmentType === 'exam' ? 'Exame' : 'Procedimento'} · {entry.appointmentTime}
+                  {entry.doctorName} · {entry.appointmentType === 'consultation' ? 'Consulta' : entry.appointmentType === 'exam' ? 'Exame' : 'Procedimento'}
                 </p>
 
                 {/* Status */}
