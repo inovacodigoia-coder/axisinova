@@ -41,6 +41,46 @@ export default function PlansManagerPage() {
           </div>
         ))}
       </div>
+
+      {/* Implantação e Treinamento */}
+      <div className="space-y-4">
+        <h2 className="text-xl font-bold text-foreground">Implantação e Treinamento (30 dias)</h2>
+        <div className="rounded-2xl border border-border bg-card shadow-[0_4px_24px_rgba(0,0,0,0.06)] overflow-hidden">
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="border-b border-border bg-muted/50">
+                <th className="px-6 py-3 text-left font-semibold text-foreground">Plano</th>
+                <th className="px-6 py-3 text-left font-semibold text-foreground">Perfil de Cliente</th>
+                <th className="px-6 py-3 text-left font-semibold text-foreground">Esforço de Treinamento</th>
+                <th className="px-6 py-3 text-left font-semibold text-foreground">Valor Sugerido (Setup)</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr className="border-b border-border">
+                <td className="px-6 py-4 font-bold text-foreground">Starter</td>
+                <td className="px-6 py-4 text-muted-foreground">Consultórios pequenos</td>
+                <td className="px-6 py-4 text-muted-foreground">1 médico + até 3 usuários. Foco em agenda e prontuário básico.</td>
+                <td className="px-6 py-4 font-semibold text-foreground">R$ 800,00 a R$ 1.200,00</td>
+              </tr>
+              <tr className="border-b border-border">
+                <td className="px-6 py-4 font-bold text-foreground">Pro</td>
+                <td className="px-6 py-4 text-muted-foreground">Clínicas em crescimento</td>
+                <td className="px-6 py-4 text-muted-foreground">Até 15 médicos + usuários ilimitados. Inclui BI e Digitalização.</td>
+                <td className="px-6 py-4 font-semibold text-foreground">R$ 2.500,00 a R$ 3.500,00</td>
+              </tr>
+              <tr>
+                <td className="px-6 py-4 font-bold text-foreground">Enterprise</td>
+                <td className="px-6 py-4 text-muted-foreground">Redes e Hospitais</td>
+                <td className="px-6 py-4 text-muted-foreground">Médicos ilimitados, multi-unidades (5 CNPJs) e Integração API.</td>
+                <td className="px-6 py-4 font-semibold text-foreground">A partir de R$ 7.000,00</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <p className="text-xs text-muted-foreground">
+          * Pagamento: 50% no ato da assinatura e 50% após a entrega do último módulo de treinamento.
+        </p>
+      </div>
     </div>
   )
 }
