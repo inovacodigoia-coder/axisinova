@@ -172,6 +172,7 @@ function ProcedureFormModal({ procedure, specialties, onClose, onSave }: {
   onClose: () => void
   onSave: (p: Procedure) => void
 }) {
+  const { doctors, convenios } = useRegisters()
   const [name, setName] = useState(procedure?.name || '')
   const [tussCode, setTussCode] = useState(procedure?.tussCode || '')
   const [type, setType] = useState<Procedure['type']>(procedure?.type || 'clinical')
@@ -183,56 +184,175 @@ function ProcedureFormModal({ procedure, specialties, onClose, onSave }: {
   const [anesthesiaType, setAnesthesiaType] = useState(procedure?.anesthesiaType || '')
   const [preOp, setPreOp] = useState(procedure?.preOperativeInstructions || '')
   const [postOp, setPostOp] = useState(procedure?.postOperativeInstructions || '')
+  const [tab, setTab] = useState<'dados' | 'restricoes'>('dados')
+
+  // Restriction config
+  const [allowedDoctorIds, setAllowedDoctorIds] = useState<string[]>((procedure as any)?.allowedDoctorIds || [])
+  const [allowedConvenioIds, setAllowedConvenioIds] = useState<string[]>((procedure as any)?.allowedConvenioIds || [])
+  const [restrictDoctors, setRestrictDoctors] = useState(((procedure as any)?.allowedDoctorIds || []).length > 0)
+  const [restrictConvenios, setRestrictConvenios] = useState(((procedure as any)?.allowedConvenioIds || []).length > 0)
+
+  const activeDoctors = doctors.filter(d => d.isActive && !d.isBlocked)
+  const activeConvenios = convenios.filter(c => c.isActive)
+
+  const tabs = [
+    { key: 'dados' as const, label: '📋 Dados Gerais' },
+    { key: 'restricoes' as const, label: '🔒 Restrições' },
+  ]
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4" onClick={onClose}>
-      <div onClick={e => e.stopPropagation()} className="w-full max-w-[600px] max-h-[85vh] overflow-y-auto rounded-2xl bg-card border border-border shadow-2xl">
-        <div className="sticky top-0 z-10 flex items-center justify-between border-b border-border bg-card px-6 py-4">
-          <h2 className="text-lg font-bold">{procedure ? 'Editar Procedimento' : 'Novo Procedimento'}</h2>
-          <button onClick={onClose} className="text-muted-foreground hover:text-foreground">✕</button>
+      <div onClick={e => e.stopPropagation()} className="w-full max-w-[650px] max-h-[85vh] overflow-y-auto rounded-2xl bg-card border border-border shadow-2xl">
+        <div className="sticky top-0 z-10 border-b border-border bg-card">
+          <div className="flex items-center justify-between px-6 py-4">
+            <h2 className="text-lg font-bold">{procedure ? 'Editar Procedimento' : 'Novo Procedimento'}</h2>
+            <button onClick={onClose} className="text-muted-foreground hover:text-foreground">✕</button>
+          </div>
+          <div className="flex gap-1 px-6 pb-3">
+            {tabs.map(t => (
+              <button key={t.key} onClick={() => setTab(t.key)}
+                className={`rounded-lg px-3 py-1.5 text-sm font-medium transition-colors ${tab === t.key ? 'gradient-bg text-white' : 'hover:bg-muted text-muted-foreground'}`}>
+                {t.label}
+              </button>
+            ))}
+          </div>
         </div>
+
         <div className="p-6 space-y-4">
-          <div><label className="text-sm font-medium">Nome do procedimento *</label><input value={name} onChange={e => setName(e.target.value)} className="mt-1 w-full rounded-lg border border-input bg-background px-3 py-2 text-sm" /></div>
-          <div className="grid grid-cols-2 gap-4">
-            <div><label className="text-sm font-medium">Código TUSS</label><input value={tussCode} onChange={e => setTussCode(e.target.value)} className="mt-1 w-full rounded-lg border border-input bg-background px-3 py-2 text-sm" /></div>
-            <div>
-              <label className="text-sm font-medium">Tipo *</label>
-              <select value={type} onChange={e => setType(e.target.value as Procedure['type'])} className="mt-1 w-full rounded-lg border border-input bg-background px-3 py-2 text-sm">
-                {PROCEDURE_TYPES.map(t => <option key={t.value} value={t.value}>{t.label}</option>)}
-              </select>
-            </div>
-          </div>
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className="text-sm font-medium">Especialidade</label>
-              <select value={specialtyId} onChange={e => setSpecialtyId(e.target.value)} className="mt-1 w-full rounded-lg border border-input bg-background px-3 py-2 text-sm">
-                <option value="">Não se aplica</option>
-                {specialties.filter(s => s.isActive).map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
-              </select>
-            </div>
-            <div><label className="text-sm font-medium">Duração estimada (min)</label><input type="number" value={duration} onChange={e => setDuration(+e.target.value)} className="mt-1 w-full rounded-lg border border-input bg-background px-3 py-2 text-sm" /></div>
-          </div>
-          <label className="flex items-center gap-2 text-sm font-medium cursor-pointer">
-            <input type="checkbox" checked={requiresAnesthesia} onChange={e => setRequiresAnesthesia(e.target.checked)} className="accent-primary" /> Requer anestesia
-          </label>
-          {requiresAnesthesia && (
-            <div>
-              <label className="text-sm font-medium">Tipo de anestesia</label>
-              <select value={anesthesiaType} onChange={e => setAnesthesiaType(e.target.value)} className="mt-1 w-full rounded-lg border border-input bg-background px-3 py-2 text-sm">
-                <option value="">Selecione...</option>
-                {ANESTHESIA_TYPES.map(a => <option key={a} value={a}>{a}</option>)}
-              </select>
-            </div>
+          {tab === 'dados' && (
+            <>
+              <div><label className="text-sm font-medium">Nome do procedimento *</label><input value={name} onChange={e => setName(e.target.value)} className="mt-1 w-full rounded-lg border border-input bg-background px-3 py-2 text-sm" /></div>
+              <div className="grid grid-cols-2 gap-4">
+                <div><label className="text-sm font-medium">Código TUSS</label><input value={tussCode} onChange={e => setTussCode(e.target.value)} className="mt-1 w-full rounded-lg border border-input bg-background px-3 py-2 text-sm" /></div>
+                <div>
+                  <label className="text-sm font-medium">Tipo *</label>
+                  <select value={type} onChange={e => setType(e.target.value as Procedure['type'])} className="mt-1 w-full rounded-lg border border-input bg-background px-3 py-2 text-sm">
+                    {PROCEDURE_TYPES.map(t => <option key={t.value} value={t.value}>{t.label}</option>)}
+                  </select>
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="text-sm font-medium">Especialidade</label>
+                  <select value={specialtyId} onChange={e => setSpecialtyId(e.target.value)} className="mt-1 w-full rounded-lg border border-input bg-background px-3 py-2 text-sm">
+                    <option value="">Não se aplica</option>
+                    {specialties.filter(s => s.isActive).map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
+                  </select>
+                </div>
+                <div><label className="text-sm font-medium">Duração estimada (min)</label><input type="number" value={duration} onChange={e => setDuration(+e.target.value)} className="mt-1 w-full rounded-lg border border-input bg-background px-3 py-2 text-sm" /></div>
+              </div>
+              <label className="flex items-center gap-2 text-sm font-medium cursor-pointer">
+                <input type="checkbox" checked={requiresAnesthesia} onChange={e => setRequiresAnesthesia(e.target.checked)} className="accent-primary" /> Requer anestesia
+              </label>
+              {requiresAnesthesia && (
+                <div>
+                  <label className="text-sm font-medium">Tipo de anestesia</label>
+                  <select value={anesthesiaType} onChange={e => setAnesthesiaType(e.target.value)} className="mt-1 w-full rounded-lg border border-input bg-background px-3 py-2 text-sm">
+                    <option value="">Selecione...</option>
+                    {ANESTHESIA_TYPES.map(a => <option key={a} value={a}>{a}</option>)}
+                  </select>
+                </div>
+              )}
+              <label className="flex items-center gap-2 text-sm font-medium cursor-pointer">
+                <input type="checkbox" checked={requiresAuth} onChange={e => setRequiresAuth(e.target.checked)} className="accent-primary" /> Requer autorização prévia
+              </label>
+              {requiresAuth && (
+                <div><label className="text-sm font-medium">Instruções para autorização</label><textarea value={authInstructions} onChange={e => setAuthInstructions(e.target.value)} rows={2} className="mt-1 w-full rounded-lg border border-input bg-background px-3 py-2 text-sm" /></div>
+              )}
+              <div><label className="text-sm font-medium">Instruções pré-operatórias</label><textarea value={preOp} onChange={e => setPreOp(e.target.value)} rows={2} className="mt-1 w-full rounded-lg border border-input bg-background px-3 py-2 text-sm" /></div>
+              <div><label className="text-sm font-medium">Instruções pós-operatórias</label><textarea value={postOp} onChange={e => setPostOp(e.target.value)} rows={2} className="mt-1 w-full rounded-lg border border-input bg-background px-3 py-2 text-sm" /></div>
+            </>
           )}
-          <label className="flex items-center gap-2 text-sm font-medium cursor-pointer">
-            <input type="checkbox" checked={requiresAuth} onChange={e => setRequiresAuth(e.target.checked)} className="accent-primary" /> Requer autorização prévia
-          </label>
-          {requiresAuth && (
-            <div><label className="text-sm font-medium">Instruções para autorização</label><textarea value={authInstructions} onChange={e => setAuthInstructions(e.target.value)} rows={2} className="mt-1 w-full rounded-lg border border-input bg-background px-3 py-2 text-sm" /></div>
+
+          {tab === 'restricoes' && (
+            <>
+              <div className="rounded-xl border border-border p-4 bg-muted/20 space-y-1">
+                <p className="text-sm font-semibold text-foreground">🔒 Configurar Restrições</p>
+                <p className="text-xs text-muted-foreground">Defina quais médicos podem realizar este procedimento e quais convênios o cobrem. Se nenhuma restrição for configurada, todos os médicos e convênios serão aceitos.</p>
+              </div>
+
+              {/* Restrict by Doctors */}
+              <div className="space-y-3">
+                <label className="flex items-center gap-2 text-sm font-medium cursor-pointer">
+                  <input type="checkbox" checked={restrictDoctors} onChange={e => { setRestrictDoctors(e.target.checked); if (!e.target.checked) setAllowedDoctorIds([]) }} className="accent-primary" />
+                  Restringir a médicos específicos
+                </label>
+                {restrictDoctors && (
+                  <div className="rounded-xl border border-border p-3 space-y-2 max-h-48 overflow-y-auto">
+                    <p className="text-xs text-muted-foreground mb-1">Selecione os médicos habilitados:</p>
+                    {activeDoctors.length === 0 ? (
+                      <p className="text-xs text-muted-foreground">Nenhum médico ativo cadastrado</p>
+                    ) : activeDoctors.map(d => (
+                      <label key={d.id} className="flex items-center gap-2 text-sm cursor-pointer hover:bg-muted/30 rounded px-2 py-1">
+                        <input type="checkbox" checked={allowedDoctorIds.includes(d.id)}
+                          onChange={e => setAllowedDoctorIds(prev => e.target.checked ? [...prev, d.id] : prev.filter(id => id !== d.id))}
+                          className="accent-primary" />
+                        <span className="text-foreground">{d.fullName}</span>
+                        <span className="text-xs text-muted-foreground ml-auto">CRM {d.crm}/{d.crmState}</span>
+                      </label>
+                    ))}
+                    {allowedDoctorIds.length > 0 && (
+                      <p className="text-xs font-medium text-primary mt-1">✅ {allowedDoctorIds.length} médico(s) selecionado(s)</p>
+                    )}
+                  </div>
+                )}
+              </div>
+
+              {/* Restrict by Convenios */}
+              <div className="space-y-3">
+                <label className="flex items-center gap-2 text-sm font-medium cursor-pointer">
+                  <input type="checkbox" checked={restrictConvenios} onChange={e => { setRestrictConvenios(e.target.checked); if (!e.target.checked) setAllowedConvenioIds([]) }} className="accent-primary" />
+                  Restringir a convênios específicos
+                </label>
+                {restrictConvenios && (
+                  <div className="rounded-xl border border-border p-3 space-y-2 max-h-48 overflow-y-auto">
+                    <p className="text-xs text-muted-foreground mb-1">Selecione os convênios que cobrem este procedimento:</p>
+                    {activeConvenios.length === 0 ? (
+                      <p className="text-xs text-muted-foreground">Nenhum convênio ativo cadastrado</p>
+                    ) : activeConvenios.map(c => (
+                      <label key={c.id} className="flex items-center gap-2 text-sm cursor-pointer hover:bg-muted/30 rounded px-2 py-1">
+                        <input type="checkbox" checked={allowedConvenioIds.includes(c.id)}
+                          onChange={e => setAllowedConvenioIds(prev => e.target.checked ? [...prev, c.id] : prev.filter(id => id !== c.id))}
+                          className="accent-primary" />
+                        <span className="text-foreground">{c.name}</span>
+                        <span className="text-xs text-muted-foreground ml-auto">{c.ansCode || ''}</span>
+                      </label>
+                    ))}
+                    {allowedConvenioIds.length > 0 && (
+                      <p className="text-xs font-medium text-primary mt-1">✅ {allowedConvenioIds.length} convênio(s) selecionado(s)</p>
+                    )}
+                  </div>
+                )}
+              </div>
+
+              {/* Authorization alert */}
+              <div className="space-y-3">
+                <label className="flex items-center gap-2 text-sm font-medium cursor-pointer">
+                  <input type="checkbox" checked={requiresAuth} onChange={e => setRequiresAuth(e.target.checked)} className="accent-primary" />
+                  ⚠️ Exigir autorização prévia do convênio
+                </label>
+                {requiresAuth && (
+                  <div className="rounded-xl border border-[hsl(var(--warning))]/30 bg-[hsl(var(--warning))]/5 p-3">
+                    <p className="text-xs text-muted-foreground mb-2">Quando ativo, o sistema exibirá um alerta de restrição ao agendar este procedimento.</p>
+                    <label className="text-sm font-medium">Instruções para autorização</label>
+                    <textarea value={authInstructions} onChange={e => setAuthInstructions(e.target.value)} rows={2} placeholder="Ex: Solicitar autorização pelo portal do convênio com 48h de antecedência..." className="mt-1 w-full rounded-lg border border-input bg-background px-3 py-2 text-sm" />
+                  </div>
+                )}
+              </div>
+
+              {/* Summary */}
+              {(restrictDoctors || restrictConvenios || requiresAuth) && (
+                <div className="rounded-xl border border-primary/20 bg-primary/5 p-3 space-y-1">
+                  <p className="text-xs font-semibold text-foreground">📊 Resumo das restrições ativas:</p>
+                  {restrictDoctors && <p className="text-xs text-muted-foreground">• {allowedDoctorIds.length > 0 ? `${allowedDoctorIds.length} médico(s) habilitado(s)` : 'Nenhum médico selecionado (bloqueará agendamentos)'}</p>}
+                  {restrictConvenios && <p className="text-xs text-muted-foreground">• {allowedConvenioIds.length > 0 ? `${allowedConvenioIds.length} convênio(s) aceito(s)` : 'Nenhum convênio selecionado (bloqueará agendamentos)'}</p>}
+                  {requiresAuth && <p className="text-xs text-muted-foreground">• Autorização prévia obrigatória</p>}
+                </div>
+              )}
+            </>
           )}
-          <div><label className="text-sm font-medium">Instruções pré-operatórias</label><textarea value={preOp} onChange={e => setPreOp(e.target.value)} rows={2} className="mt-1 w-full rounded-lg border border-input bg-background px-3 py-2 text-sm" /></div>
-          <div><label className="text-sm font-medium">Instruções pós-operatórias</label><textarea value={postOp} onChange={e => setPostOp(e.target.value)} rows={2} className="mt-1 w-full rounded-lg border border-input bg-background px-3 py-2 text-sm" /></div>
         </div>
+
         <div className="sticky bottom-0 flex justify-end gap-3 border-t border-border bg-card px-6 py-4">
           <button onClick={onClose} className="rounded-lg border border-input px-4 py-2 text-sm hover:bg-muted">Cancelar</button>
           <button onClick={() => {
@@ -246,7 +366,9 @@ function ProcedureFormModal({ procedure, specialties, onClose, onSave }: {
               preOperativeInstructions: preOp || undefined, postOperativeInstructions: postOp || undefined,
               attachmentRules: procedure?.attachmentRules || [],
               isActive: procedure?.isActive ?? true, createdAt: procedure?.createdAt || new Date().toISOString(),
-            })
+              allowedDoctorIds: restrictDoctors ? allowedDoctorIds : [],
+              allowedConvenioIds: restrictConvenios ? allowedConvenioIds : [],
+            } as any)
           }} className="gradient-bg rounded-lg px-6 py-2 text-sm font-semibold text-white">Salvar</button>
         </div>
       </div>

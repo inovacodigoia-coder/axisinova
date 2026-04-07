@@ -1,10 +1,12 @@
-import { useMemo } from 'react'
+import { useMemo, useState, useEffect } from 'react'
 import { useRegisters } from '@/context/RegistersContext'
 import { useScheduling } from '@/context/SchedulingContext'
 import { useAvailableSlots } from '@/hooks/useAvailableSlots'
+import { useRestrictionAlerts } from '@/hooks/useRestrictionAlerts'
 import { ConvenioSelector } from './ConvenioSelector'
 import { FirstVisitBadge } from './FirstVisitBadge'
 import { DependencyAlert } from '@/components/scheduling/empty-states/DependencyAlert'
+import { RestrictionAlertSystem } from '@/components/doctors/RestrictionAlertSystem'
 import type { SchedulingPatient, AppointmentType } from '@/types/scheduling.types'
 import { differenceInYears, format } from 'date-fns'
 
@@ -30,7 +32,9 @@ interface Props {
 export function Step2AppointmentData({ patient, formData, onChange, prefilledDoctor, prefilledDate, prefilledTime }: Props) {
   const { doctors, convenios, exams, procedures, specialties } = useRegisters()
   const { appointments } = useScheduling()
+  const { checkRestrictions } = useRestrictionAlerts()
   const today = new Date().toISOString().split('T')[0]
+  const [showRestrictions, setShowRestrictions] = useState(false)
 
   const activeDoctors = useMemo(() => doctors.filter(d => d.isActive && !d.isBlocked), [doctors])
   const activeExams = useMemo(() => exams.filter(e => e.isActive), [exams])
@@ -41,6 +45,26 @@ export function Step2AppointmentData({ patient, formData, onChange, prefilledDoc
 
   const age = differenceInYears(new Date(), new Date(patient.birthDate))
 
+  // Check restrictions whenever relevant fields change
+  const restrictionAlerts = useMemo(() => {
+    if (!formData.doctorId && !formData.convenioId && !formData.examId) return []
+    return checkRestrictions({
+      doctorId: formData.doctorId || undefined,
+      convenioId: formData.convenioId || undefined,
+      examId: formData.type === 'exam' ? (formData.examId || undefined) : undefined,
+      procedureId: formData.type === 'procedure' ? (formData.examId || undefined) : undefined,
+      appointmentType: formData.type,
+      date: formData.date || undefined,
+    })
+  }, [formData.doctorId, formData.convenioId, formData.examId, formData.type, formData.date, checkRestrictions])
+
+  // Auto-show restriction modal when blocks are detected
+  useEffect(() => {
+    if (restrictionAlerts.some(a => a.severity === 'block')) {
+      setShowRestrictions(true)
+    }
+  }, [restrictionAlerts])
+
   const getSpecialtyName = (doc: typeof doctors[0]) => {
     if (doc.specialtyIds.length === 0) return ''
     return specialties.find(s => s.id === doc.specialtyIds[0])?.name || ''
@@ -50,6 +74,23 @@ export function Step2AppointmentData({ patient, formData, onChange, prefilledDoc
 
   return (
     <div className="space-y-4">
+      {/* Restriction alerts banner */}
+      {restrictionAlerts.length > 0 && (
+        <div className={`rounded-xl border p-3 flex items-center justify-between ${restrictionAlerts.some(a => a.severity === 'block') ? 'border-destructive/30 bg-destructive/5' : 'border-[hsl(var(--warning))]/30 bg-[hsl(var(--warning))]/5'}`}>
+          <div className="flex items-center gap-2">
+            <span>{restrictionAlerts.some(a => a.severity === 'block') ? '🔴' : '⚠️'}</span>
+            <span className="text-sm font-medium text-foreground">
+              {restrictionAlerts.filter(a => a.severity === 'block').length > 0
+                ? `${restrictionAlerts.filter(a => a.severity === 'block').length} bloqueio(s) detectado(s)`
+                : `${restrictionAlerts.length} aviso(s) de restrição`}
+            </span>
+          </div>
+          <button onClick={() => setShowRestrictions(true)} className="text-xs font-medium text-primary hover:underline">
+            Ver detalhes →
+          </button>
+        </div>
+      )}
+
       <h3 className="text-lg font-bold text-foreground">Dados do Agendamento</h3>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -208,6 +249,15 @@ export function Step2AppointmentData({ patient, formData, onChange, prefilledDoc
           </div>
         </div>
       </div>
+
+      {/* Restriction Alert Modal */}
+      {showRestrictions && restrictionAlerts.length > 0 && (
+        <RestrictionAlertSystem
+          alerts={restrictionAlerts}
+          onClose={() => setShowRestrictions(false)}
+          onContinue={() => setShowRestrictions(false)}
+        />
+      )}
     </div>
   )
 }
