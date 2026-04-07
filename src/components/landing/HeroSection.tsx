@@ -1,7 +1,9 @@
+import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { GradientButton } from '@/components/ui/GradientButton';
 import { OutlineButton } from '@/components/ui/OutlineButton';
-import { Play, Check, Calendar, TrendingUp, Users } from 'lucide-react';
+import { Play, Check, Calendar, TrendingUp, Users, X } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { motion } from 'framer-motion';
 
 const badges = [
