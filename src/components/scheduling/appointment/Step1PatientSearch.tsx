@@ -16,7 +16,30 @@ export function Step1PatientSearch({ onSelect, onCreateNew }: Props) {
   const { convenios } = useRegisters()
 
   const results = useMemo(() => {
-    if (query.length < 3) return []
+    if (query.length < 2) return []
+
+    // Support wildcard search with % (e.g. "Dani% B%")
+    const hasWildcard = query.includes('%')
+
+    if (hasWildcard) {
+      // Convert "Dani% B%" into a regex like /dani.*\sb.*/i
+      const regexStr = query
+        .toLowerCase()
+        .split('%')
+        .map(part => part.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'))
+        .join('.*')
+      try {
+        const regex = new RegExp(regexStr, 'i')
+        return patients.filter(p =>
+          regex.test(p.fullName) ||
+          (p.cpf && regex.test(p.cpf)) ||
+          regex.test(p.motherName)
+        ).slice(0, 10)
+      } catch {
+        return []
+      }
+    }
+
     const q = query.toLowerCase()
     return patients.filter(p =>
       p.fullName.toLowerCase().includes(q) ||
