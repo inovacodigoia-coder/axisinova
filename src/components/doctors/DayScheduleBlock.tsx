@@ -118,17 +118,23 @@ export function DayScheduleBlock({ day, dayName, rooms, isSelected, onSelect, on
           <div className="grid grid-cols-2 gap-3">
             <div>
               <label className="text-[10px] font-medium text-muted-foreground">Duração (min)</label>
-              <select value={day.slotDuration} onChange={e => onChange({ slotDuration: Number(e.target.value) })}
-                className="mt-0.5 w-full rounded-lg border border-input bg-background px-2 py-1.5 text-xs">
-                {[15, 20, 30, 45, 60].map(d => <option key={d} value={d}>{d} min</option>)}
-              </select>
+              <input type="number" min={1} max={120} value={day.slotDuration}
+                onChange={e => { const v = Number(e.target.value); if (v > 0) onChange({ slotDuration: v }) }}
+                list="day-duration-presets"
+                className="mt-0.5 w-full rounded-lg border border-input bg-background px-2 py-1.5 text-xs" />
+              <datalist id="day-duration-presets">
+                {[15, 20, 30, 45, 60].map(d => <option key={d} value={d} />)}
+              </datalist>
             </div>
             <div>
               <label className="text-[10px] font-medium text-muted-foreground">Intervalo (min)</label>
-              <select value={day.intervalBetween} onChange={e => onChange({ intervalBetween: Number(e.target.value) })}
-                className="mt-0.5 w-full rounded-lg border border-input bg-background px-2 py-1.5 text-xs">
-                {[0, 5, 10, 15].map(d => <option key={d} value={d}>{d} min</option>)}
-              </select>
+              <input type="number" min={0} max={60} value={day.intervalBetween}
+                onChange={e => { const v = Number(e.target.value); if (v >= 0) onChange({ intervalBetween: v }) }}
+                list="day-interval-presets"
+                className="mt-0.5 w-full rounded-lg border border-input bg-background px-2 py-1.5 text-xs" />
+              <datalist id="day-interval-presets">
+                {[0, 5, 10, 15].map(d => <option key={d} value={d} />)}
+              </datalist>
             </div>
           </div>
 

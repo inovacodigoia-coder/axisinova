@@ -57,18 +57,28 @@ export function DoctorScheduleEditor({ initialDays, defaultDuration = 30, defaul
         <h4 className="text-sm font-bold text-foreground mb-3">Configurações Padrão</h4>
         <div className="flex flex-wrap items-end gap-4">
           <div>
-            <label className="text-xs font-medium text-muted-foreground">Duração da consulta *</label>
-            <select value={globalDuration} onChange={e => setGlobalDuration(Number(e.target.value))}
-              className="mt-1 w-full rounded-lg border border-input bg-background px-3 py-2 text-sm">
-              {DURATIONS.map(d => <option key={d} value={d}>{d} minutos</option>)}
-            </select>
+            <label className="text-xs font-medium text-muted-foreground">Duração da consulta * (min)</label>
+            <div className="relative mt-1">
+              <input type="number" min={1} max={120} value={globalDuration}
+                onChange={e => { const v = Number(e.target.value); if (v > 0) setGlobalDuration(v) }}
+                list="duration-presets"
+                className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm" />
+              <datalist id="duration-presets">
+                {DURATIONS.map(d => <option key={d} value={d} />)}
+              </datalist>
+            </div>
           </div>
           <div>
-            <label className="text-xs font-medium text-muted-foreground">Intervalo entre consultas</label>
-            <select value={globalInterval} onChange={e => setGlobalInterval(Number(e.target.value))}
-              className="mt-1 w-full rounded-lg border border-input bg-background px-3 py-2 text-sm">
-              {INTERVALS.map(d => <option key={d} value={d}>{d} minutos</option>)}
-            </select>
+            <label className="text-xs font-medium text-muted-foreground">Intervalo entre consultas (min)</label>
+            <div className="relative mt-1">
+              <input type="number" min={0} max={60} value={globalInterval}
+                onChange={e => { const v = Number(e.target.value); if (v >= 0) setGlobalInterval(v) }}
+                list="interval-presets"
+                className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm" />
+              <datalist id="interval-presets">
+                {INTERVALS.map(d => <option key={d} value={d} />)}
+              </datalist>
+            </div>
           </div>
           <button onClick={applyToAll} className="rounded-lg border border-input px-3 py-2 text-xs font-medium hover:bg-muted transition-colors">
             Aplicar a todos os dias ativos
