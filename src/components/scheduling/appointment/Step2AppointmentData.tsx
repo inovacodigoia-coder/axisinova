@@ -74,6 +74,23 @@ export function Step2AppointmentData({ patient, formData, onChange, prefilledDoc
 
   return (
     <div className="space-y-4">
+      {/* Restriction alerts banner */}
+      {restrictionAlerts.length > 0 && (
+        <div className={`rounded-xl border p-3 flex items-center justify-between ${restrictionAlerts.some(a => a.severity === 'block') ? 'border-destructive/30 bg-destructive/5' : 'border-[hsl(var(--warning))]/30 bg-[hsl(var(--warning))]/5'}`}>
+          <div className="flex items-center gap-2">
+            <span>{restrictionAlerts.some(a => a.severity === 'block') ? '🔴' : '⚠️'}</span>
+            <span className="text-sm font-medium text-foreground">
+              {restrictionAlerts.filter(a => a.severity === 'block').length > 0
+                ? `${restrictionAlerts.filter(a => a.severity === 'block').length} bloqueio(s) detectado(s)`
+                : `${restrictionAlerts.length} aviso(s) de restrição`}
+            </span>
+          </div>
+          <button onClick={() => setShowRestrictions(true)} className="text-xs font-medium text-primary hover:underline">
+            Ver detalhes →
+          </button>
+        </div>
+      )}
+
       <h3 className="text-lg font-bold text-foreground">Dados do Agendamento</h3>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
