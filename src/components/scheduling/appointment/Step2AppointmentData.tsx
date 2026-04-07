@@ -249,6 +249,15 @@ export function Step2AppointmentData({ patient, formData, onChange, prefilledDoc
           </div>
         </div>
       </div>
+
+      {/* Restriction Alert Modal */}
+      {showRestrictions && restrictionAlerts.length > 0 && (
+        <RestrictionAlertSystem
+          alerts={restrictionAlerts}
+          onClose={() => setShowRestrictions(false)}
+          onContinue={() => setShowRestrictions(false)}
+        />
+      )}
     </div>
   )
 }
