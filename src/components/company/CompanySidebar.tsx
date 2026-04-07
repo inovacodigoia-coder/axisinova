@@ -80,11 +80,18 @@ export function CompanySidebar({ mobileOpen, onMobileClose, collapsed = false, o
   const { canAccess, activeProfile } = useCompanyContext()
   const location = useLocation()
 
+  const sidebarBg = typeof window !== 'undefined'
+    ? (localStorage.getItem('axis_visual_sidebar') || undefined)
+    : undefined
+
   const sidebarContent = (
-    <aside className={cn(
-      'flex h-screen flex-col bg-[hsl(220,26%,14%)] text-white transition-all duration-300',
-      collapsed ? 'w-[72px]' : 'w-[260px]'
-    )}>
+    <aside
+      className={cn(
+        'flex h-screen flex-col text-white transition-all duration-300',
+        collapsed ? 'w-[72px]' : 'w-[260px]'
+      )}
+      style={{ background: sidebarBg || 'var(--sidebar-bg, hsl(220,26%,14%))' }}
+    >
       {/* Header */}
       <div className="flex items-center justify-between border-b border-white/10 px-4 py-5">
         {!collapsed ? (
