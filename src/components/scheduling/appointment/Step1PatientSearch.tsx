@@ -16,7 +16,30 @@ export function Step1PatientSearch({ onSelect, onCreateNew }: Props) {
   const { convenios } = useRegisters()
 
   const results = useMemo(() => {
-    if (query.length < 3) return []
+    if (query.length < 2) return []
+
+    // Support wildcard search with % (e.g. "Dani% B%")
+    const hasWildcard = query.includes('%')
+
+    if (hasWildcard) {
+      // Convert "Dani% B%" into a regex like /dani.*\sb.*/i
+      const regexStr = query
+        .toLowerCase()
+        .split('%')
+        .map(part => part.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'))
+        .join('.*')
+      try {
+        const regex = new RegExp(regexStr, 'i')
+        return patients.filter(p =>
+          regex.test(p.fullName) ||
+          (p.cpf && regex.test(p.cpf)) ||
+          regex.test(p.motherName)
+        ).slice(0, 10)
+      } catch {
+        return []
+      }
+    }
+
     const q = query.toLowerCase()
     return patients.filter(p =>
       p.fullName.toLowerCase().includes(q) ||
@@ -64,7 +87,7 @@ export function Step1PatientSearch({ onSelect, onCreateNew }: Props) {
     <div className="space-y-4">
       <div>
         <h3 className="text-lg font-bold text-foreground">Identificação do Paciente</h3>
-        <p className="text-sm text-muted-foreground">Busque por nome, CPF ou nome da mãe</p>
+        <p className="text-sm text-muted-foreground">Busque por nome, CPF ou nome da mãe. Use <code className="bg-muted px-1 py-0.5 rounded text-xs font-mono">%</code> como curinga (ex: <em>Dani% B%</em>)</p>
       </div>
 
       <div className="relative">
@@ -72,13 +95,13 @@ export function Step1PatientSearch({ onSelect, onCreateNew }: Props) {
         <input
           value={query}
           onChange={e => setQuery(e.target.value)}
-          placeholder="Busque por nome, CPF ou nome da mãe..."
+          placeholder="Busque por nome, CPF ou nome da mãe... (use % como curinga)"
           className="w-full rounded-xl border-2 border-input bg-background pl-10 pr-4 py-3 text-sm font-medium focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all"
           autoFocus
         />
       </div>
 
-      {query.length >= 3 && results.length === 0 && (
+      {query.length >= 2 && results.length === 0 && (
         <div className="rounded-xl border border-dashed border-border p-6 text-center space-y-3">
           <p className="text-sm text-muted-foreground">Nenhum paciente encontrado com estes dados</p>
           <button onClick={onCreateNew}
