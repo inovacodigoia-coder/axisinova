@@ -507,37 +507,16 @@ function DoctorFormModal({ doctor, specialties, convenios, onClose, onSave }: {
             </>
           )}
           {activeTab === 'agenda' && (
-            <div className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="text-sm font-medium">Duração da consulta *</label>
-                  <select value={duration} onChange={e => setDuration(+e.target.value)} className="mt-1 w-full rounded-lg border border-input bg-background px-3 py-2 text-sm">
-                    {[15, 20, 30, 45, 60].map(m => <option key={m} value={m}>{m} min</option>)}
-                  </select>
-                </div>
-                <div>
-                  <label className="text-sm font-medium">Intervalo entre consultas</label>
-                  <select value={interval} onChange={e => setIntervalMin(+e.target.value)} className="mt-1 w-full rounded-lg border border-input bg-background px-3 py-2 text-sm">
-                    {[0, 5, 10, 15].map(m => <option key={m} value={m}>{m} min</option>)}
-                  </select>
-                </div>
-              </div>
-              <div className="space-y-2">
-                <label className="text-sm font-medium">Dias da semana</label>
-                {['Domingo', 'Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta', 'Sábado'].map((dayName, idx) => {
-                  const wd = doctor?.scheduleConfig?.workDays?.find(w => w.day === idx)
-                  return (
-                    <div key={idx} className="flex items-center gap-3 text-sm">
-                      <input type="checkbox" defaultChecked={wd?.isActive ?? (idx >= 1 && idx <= 5)} className="accent-primary" />
-                      <span className="w-20">{dayName}</span>
-                      <input type="time" defaultValue={wd?.startTime ?? '08:00'} className="rounded border border-input bg-background px-2 py-1 text-xs" />
-                      <span className="text-muted-foreground">até</span>
-                      <input type="time" defaultValue={wd?.endTime ?? '18:00'} className="rounded border border-input bg-background px-2 py-1 text-xs" />
-                    </div>
-                  )
-                })}
-              </div>
-            </div>
+            <DoctorScheduleEditor
+              defaultDuration={scheduleDuration}
+              defaultInterval={scheduleInterval}
+              onSave={(days, dur, intv) => {
+                setScheduleDays(days)
+                setScheduleDuration(dur)
+                setScheduleInterval(intv)
+                toast.success('Configuração de agenda salva')
+              }}
+            />
           )}
         </div>
 
