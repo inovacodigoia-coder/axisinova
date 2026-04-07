@@ -1,8 +1,9 @@
+import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { GradientButton } from '@/components/ui/GradientButton';
 import { OutlineButton } from '@/components/ui/OutlineButton';
-import { Play, Check, Calendar, TrendingUp, Users } from 'lucide-react';
-import { motion } from 'framer-motion';
+import { Play, Check, Calendar, TrendingUp, Users, X } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
 
 const badges = [
 'Sem cartão de crédito',
@@ -64,65 +65,109 @@ function DashboardMockup() {
 }
 
 export function HeroSection() {
+  const [showDemo, setShowDemo] = useState(false);
+
   return (
-    <section className="relative overflow-hidden bg-white py-16 md:py-24">
-      {/* Decorative blurs */}
-      <div className="pointer-events-none absolute -top-20 right-0 h-[400px] w-[400px] rounded-full bg-primary/[0.08] blur-[100px]" />
-      <div className="pointer-events-none absolute -bottom-20 -left-20 h-[300px] w-[300px] rounded-full bg-secondary/[0.06] blur-[100px]" />
+    <>
+      <section className="relative overflow-hidden bg-white py-16 md:py-24">
+        {/* Decorative blurs */}
+        <div className="pointer-events-none absolute -top-20 right-0 h-[400px] w-[400px] rounded-full bg-primary/[0.08] blur-[100px]" />
+        <div className="pointer-events-none absolute -bottom-20 -left-20 h-[300px] w-[300px] rounded-full bg-secondary/[0.06] blur-[100px]" />
 
-      <div className="relative mx-auto max-w-[1200px] px-4 md:px-6">
-        <div className="flex flex-col items-center gap-12 lg:flex-row lg:gap-16">
-          {/* Left */}
-          <motion.div
-            className="flex-[3] text-center lg:text-left"
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}>
-            
-            {/* Badge */}
-            <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-secondary/20 bg-gradient-to-r from-primary/[0.08] to-secondary/[0.08] px-4 py-1.5 text-[13px] font-semibold text-foreground">
-              🚀 Novo · Plataforma 2026
-            </div>
+        <div className="relative mx-auto max-w-[1200px] px-4 md:px-6">
+          <div className="flex flex-col items-center gap-12 lg:flex-row lg:gap-16">
+            {/* Left */}
+            <motion.div
+              className="flex-[3] text-center lg:text-left"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}>
+              
+              {/* Badge */}
+              <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-secondary/20 bg-gradient-to-r from-primary/[0.08] to-secondary/[0.08] px-4 py-1.5 text-[13px] font-semibold text-foreground">
+                🚀 Novo · Plataforma 2026
+              </div>
 
-            <h1 className="text-4xl font-extrabold leading-[1.1] text-foreground md:text-[56px]" style={{ textWrap: 'balance' }}>
-              A gestão completa da sua{' '}
-              <span className="gradient-text">clínica</span>
-              {' '}em um só lugar
-            </h1>
+              <h1 className="text-4xl font-extrabold leading-[1.1] text-foreground md:text-[56px]" style={{ textWrap: 'balance' }}>
+                A gestão completa da sua{' '}
+                <span className="gradient-text">clínica</span>
+                {' '}em um só lugar
+              </h1>
 
-            <p className="mt-6 max-w-xl text-base leading-relaxed text-muted-foreground md:text-lg" style={{ textWrap: 'pretty' }}>
-              Do agendamento ao faturamento TISS, da recepção ao BI estratégico. Tudo integrado, tudo em tempo real.
-            </p>
+              <p className="mt-6 max-w-xl text-base leading-relaxed text-muted-foreground md:text-lg" style={{ textWrap: 'pretty' }}>
+                Do agendamento ao faturamento TISS, da recepção ao BI estratégico. Tudo integrado, tudo em tempo real.
+              </p>
 
-            <div className="mt-8 flex flex-col items-center gap-3 sm:flex-row lg:justify-start">
-              <Link to="/cadastro">
-                <GradientButton className="h-12 px-8 text-base">Começar Grátis por 14 Dias</GradientButton>
-              </Link>
-              <OutlineButton variant="gray" className="h-12 px-6 text-base">
-                <Play className="h-4 w-4" /> Ver Demo de 2 min
-              </OutlineButton>
-            </div>
+              <div className="mt-8 flex flex-col items-center gap-3 sm:flex-row lg:justify-start">
+                <Link to="/cadastro">
+                  <GradientButton className="h-12 px-8 text-base">Começar Grátis por 14 Dias</GradientButton>
+                </Link>
+                <OutlineButton variant="gray" className="h-12 px-6 text-base" onClick={() => setShowDemo(true)}>
+                  <Play className="h-4 w-4" /> Ver Demo de 2 min
+                </OutlineButton>
+              </div>
 
-            <div className="mt-6 flex flex-wrap justify-center gap-4 lg:justify-start">
-              {badges.map((b) =>
-              <span key={b} className="flex items-center gap-1.5 text-sm text-muted-foreground">
-                  <Check className="h-4 w-4 text-[hsl(var(--axis-success))]" /> {b}
-                </span>
-              )}
-            </div>
-          </motion.div>
+              <div className="mt-6 flex flex-wrap justify-center gap-4 lg:justify-start">
+                {badges.map((b) =>
+                <span key={b} className="flex items-center gap-1.5 text-sm text-muted-foreground">
+                    <Check className="h-4 w-4 text-[hsl(var(--axis-success))]" /> {b}
+                  </span>
+                )}
+              </div>
+            </motion.div>
 
-          {/* Right — Dashboard mockup */}
-          <motion.div
-            className="flex-[2] w-full max-w-md lg:max-w-none"
-            initial={{ opacity: 0, x: 30 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ duration: 0.7, delay: 0.2, ease: [0.16, 1, 0.3, 1] }}>
-            
-            <DashboardMockup />
-          </motion.div>
+            {/* Right — Dashboard mockup */}
+            <motion.div
+              className="flex-[2] w-full max-w-md lg:max-w-none"
+              initial={{ opacity: 0, x: 30 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ duration: 0.7, delay: 0.2, ease: [0.16, 1, 0.3, 1] }}>
+              
+              <DashboardMockup />
+            </motion.div>
+          </div>
         </div>
-      </div>
-    </section>);
+      </section>
 
+      {/* Video Demo Modal */}
+      <AnimatePresence>
+        {showDemo && (
+          <motion.div
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black/80"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            onClick={() => setShowDemo(false)}
+          >
+            <motion.div
+              className="relative w-full max-w-4xl mx-4"
+              initial={{ scale: 0.9, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.9, opacity: 0 }}
+              transition={{ duration: 0.3 }}
+              onClick={(e) => e.stopPropagation()}
+            >
+              <button
+                onClick={() => setShowDemo(false)}
+                className="absolute -top-12 right-0 text-white/80 hover:text-white transition-colors"
+              >
+                <X className="h-8 w-8" />
+              </button>
+              <div className="rounded-2xl overflow-hidden shadow-2xl bg-black">
+                <video
+                  src="/videos/axis-inova-demo.mp4"
+                  controls
+                  autoPlay
+                  className="w-full aspect-video"
+                />
+              </div>
+              <p className="text-center text-white/50 text-sm mt-4">
+                Demonstração do Axis Inova — Sistema de Gestão para Clínicas
+              </p>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </>
+  );
 }
