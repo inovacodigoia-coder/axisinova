@@ -416,7 +416,7 @@ function DoctorFormModal({ doctor, specialties, convenios, onClose, onSave }: {
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4" onClick={onClose}>
-      <div onClick={e => e.stopPropagation()} className="w-full max-w-[700px] max-h-[85vh] overflow-y-auto rounded-2xl bg-card border border-border shadow-2xl">
+      <div onClick={e => e.stopPropagation()} className={`w-full ${activeTab === 'agenda' ? 'max-w-[950px]' : 'max-w-[700px]'} max-h-[85vh] overflow-y-auto rounded-2xl bg-card border border-border shadow-2xl transition-all`}>
         <div className="sticky top-0 z-10 flex items-center justify-between border-b border-border bg-card px-6 py-4">
           <h2 className="text-lg font-bold">{doctor ? 'Editar Médico' : 'Novo Médico'}</h2>
           <button onClick={onClose} className="text-muted-foreground hover:text-foreground">✕</button>
