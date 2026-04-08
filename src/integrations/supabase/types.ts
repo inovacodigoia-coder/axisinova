@@ -154,6 +154,227 @@ export type Database = {
         }
         Relationships: []
       }
+      company_branding: {
+        Row: {
+          company_id: string
+          created_at: string
+          id: string
+          logo_url: string | null
+          primary_color: string
+          secondary_color: string
+          sidebar_bg: string
+          updated_at: string
+        }
+        Insert: {
+          company_id: string
+          created_at?: string
+          id?: string
+          logo_url?: string | null
+          primary_color?: string
+          secondary_color?: string
+          sidebar_bg?: string
+          updated_at?: string
+        }
+        Update: {
+          company_id?: string
+          created_at?: string
+          id?: string
+          logo_url?: string | null
+          primary_color?: string
+          secondary_color?: string
+          sidebar_bg?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "company_branding_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: true
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      convenios: {
+        Row: {
+          ans_code: string | null
+          attachment_rules: Json
+          auth_phone: string | null
+          cnpj: string | null
+          company_id: string
+          created_at: string
+          email: string | null
+          id: string
+          is_active: boolean
+          name: string
+          observations: string | null
+          type: string
+        }
+        Insert: {
+          ans_code?: string | null
+          attachment_rules?: Json
+          auth_phone?: string | null
+          cnpj?: string | null
+          company_id: string
+          created_at?: string
+          email?: string | null
+          id?: string
+          is_active?: boolean
+          name: string
+          observations?: string | null
+          type?: string
+        }
+        Update: {
+          ans_code?: string | null
+          attachment_rules?: Json
+          auth_phone?: string | null
+          cnpj?: string | null
+          company_id?: string
+          created_at?: string
+          email?: string | null
+          id?: string
+          is_active?: boolean
+          name?: string
+          observations?: string | null
+          type?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "convenios_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      doctors: {
+        Row: {
+          birth_date: string | null
+          blocked_at: string | null
+          blocked_reason: string | null
+          company_id: string
+          created_at: string
+          crm: string
+          crm_state: string
+          email: string | null
+          enabled_convenio_ids: string[]
+          full_name: string
+          id: string
+          is_active: boolean
+          is_blocked: boolean
+          phone: string | null
+          photo: string | null
+          schedule_config: Json | null
+          specialty_ids: string[]
+          updated_at: string
+        }
+        Insert: {
+          birth_date?: string | null
+          blocked_at?: string | null
+          blocked_reason?: string | null
+          company_id: string
+          created_at?: string
+          crm: string
+          crm_state?: string
+          email?: string | null
+          enabled_convenio_ids?: string[]
+          full_name: string
+          id?: string
+          is_active?: boolean
+          is_blocked?: boolean
+          phone?: string | null
+          photo?: string | null
+          schedule_config?: Json | null
+          specialty_ids?: string[]
+          updated_at?: string
+        }
+        Update: {
+          birth_date?: string | null
+          blocked_at?: string | null
+          blocked_reason?: string | null
+          company_id?: string
+          created_at?: string
+          crm?: string
+          crm_state?: string
+          email?: string | null
+          enabled_convenio_ids?: string[]
+          full_name?: string
+          id?: string
+          is_active?: boolean
+          is_blocked?: boolean
+          phone?: string | null
+          photo?: string | null
+          schedule_config?: Json | null
+          specialty_ids?: string[]
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "doctors_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      exams: {
+        Row: {
+          attachment_rules: Json
+          authorization_instructions: string | null
+          company_id: string
+          created_at: string
+          estimated_duration_minutes: number | null
+          id: string
+          is_active: boolean
+          name: string
+          preparation_instructions: string | null
+          requires_authorization: boolean
+          result_deadline_days: number | null
+          specialty_id: string | null
+          tuss_code: string | null
+        }
+        Insert: {
+          attachment_rules?: Json
+          authorization_instructions?: string | null
+          company_id: string
+          created_at?: string
+          estimated_duration_minutes?: number | null
+          id?: string
+          is_active?: boolean
+          name: string
+          preparation_instructions?: string | null
+          requires_authorization?: boolean
+          result_deadline_days?: number | null
+          specialty_id?: string | null
+          tuss_code?: string | null
+        }
+        Update: {
+          attachment_rules?: Json
+          authorization_instructions?: string | null
+          company_id?: string
+          created_at?: string
+          estimated_duration_minutes?: number | null
+          id?: string
+          is_active?: boolean
+          name?: string
+          preparation_instructions?: string | null
+          requires_authorization?: boolean
+          result_deadline_days?: number | null
+          specialty_id?: string | null
+          tuss_code?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "exams_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       medical_records: {
         Row: {
           company_id: string
@@ -267,6 +488,71 @@ export type Database = {
           },
         ]
       }
+      procedures: {
+        Row: {
+          anesthesia_type: string | null
+          attachment_rules: Json
+          authorization_instructions: string | null
+          company_id: string
+          created_at: string
+          estimated_duration_minutes: number | null
+          id: string
+          is_active: boolean
+          name: string
+          post_operative_instructions: string | null
+          pre_operative_instructions: string | null
+          requires_anesthesia: boolean
+          requires_authorization: boolean
+          specialty_id: string | null
+          tuss_code: string | null
+          type: string
+        }
+        Insert: {
+          anesthesia_type?: string | null
+          attachment_rules?: Json
+          authorization_instructions?: string | null
+          company_id: string
+          created_at?: string
+          estimated_duration_minutes?: number | null
+          id?: string
+          is_active?: boolean
+          name: string
+          post_operative_instructions?: string | null
+          pre_operative_instructions?: string | null
+          requires_anesthesia?: boolean
+          requires_authorization?: boolean
+          specialty_id?: string | null
+          tuss_code?: string | null
+          type?: string
+        }
+        Update: {
+          anesthesia_type?: string | null
+          attachment_rules?: Json
+          authorization_instructions?: string | null
+          company_id?: string
+          created_at?: string
+          estimated_duration_minutes?: number | null
+          id?: string
+          is_active?: boolean
+          name?: string
+          post_operative_instructions?: string | null
+          pre_operative_instructions?: string | null
+          requires_anesthesia?: boolean
+          requires_authorization?: boolean
+          specialty_id?: string | null
+          tuss_code?: string | null
+          type?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "procedures_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           company_id: string | null
@@ -301,6 +587,38 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "profiles_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      specialties: {
+        Row: {
+          company_id: string
+          created_at: string
+          id: string
+          is_active: boolean
+          name: string
+        }
+        Insert: {
+          company_id: string
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          name: string
+        }
+        Update: {
+          company_id?: string
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          name?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "specialties_company_id_fkey"
             columns: ["company_id"]
             isOneToOne: false
             referencedRelation: "companies"
