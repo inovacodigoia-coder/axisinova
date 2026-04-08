@@ -154,18 +154,19 @@ interface QueueSystemContextValue {
 const QueueSystemContext = createContext<QueueSystemContextValue | null>(null)
 
 export function QueueSystemProvider({ children }: { children: ReactNode }) {
+  const { user } = useAuth()
+  const isDemoCompany = user?.companyId === DEMO_COMPANY_ID
+
   const [state, dispatch] = useReducer(reducer, {
-    units: MOCK_UNITS,
-    queueLines: MOCK_QUEUE_LINES,
-    guiches: MOCK_GUICHES,
-    totems: MOCK_TOTEMS,
-    tvs: MOCK_TVS,
-    tickets: MOCK_TICKETS,
+    units: isDemoCompany ? MOCK_UNITS : [],
+    queueLines: isDemoCompany ? MOCK_QUEUE_LINES : [],
+    guiches: isDemoCompany ? MOCK_GUICHES : [],
+    totems: isDemoCompany ? MOCK_TOTEMS : [],
+    tvs: isDemoCompany ? MOCK_TVS : [],
+    tickets: isDemoCompany ? MOCK_TICKETS : [],
     lastCalledTicket: null,
     attendantSession: null,
   })
-
-  // Auto-generate ticket every 60s
   useEffect(() => {
     const interval = setInterval(() => {
       if (!state.attendantSession?.unitId) return
