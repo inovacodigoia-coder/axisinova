@@ -1,6 +1,9 @@
 import { createContext, useCallback, useContext, useReducer, useEffect, useMemo, type ReactNode } from 'react'
 import type { Unit, QueueLine, Guiche, Totem, TV, Ticket, TicketStatus, AttendantSession, MediaAttachment } from '@/types/queue-system.types'
 import { MOCK_UNITS, MOCK_QUEUE_LINES, MOCK_GUICHES, MOCK_TOTEMS, MOCK_TVS, MOCK_TICKETS } from '@/mocks/queue-system.mock'
+import { useAuth } from '@/context/AuthContext'
+
+const DEMO_COMPANY_ID = 'comp_001'
 
 interface QueueSystemState {
   units: Unit[]
