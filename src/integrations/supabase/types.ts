@@ -594,6 +594,267 @@ export type Database = {
           },
         ]
       }
+      queue_guiches: {
+        Row: {
+          company_id: string
+          created_at: string
+          id: string
+          is_active: boolean
+          name: string
+          type: string
+          unit_id: string
+        }
+        Insert: {
+          company_id: string
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          name: string
+          type?: string
+          unit_id: string
+        }
+        Update: {
+          company_id?: string
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          name?: string
+          type?: string
+          unit_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "queue_guiches_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "queue_guiches_unit_id_fkey"
+            columns: ["unit_id"]
+            isOneToOne: false
+            referencedRelation: "queue_units"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      queue_lines: {
+        Row: {
+          allow_totem_choice: boolean
+          category: string
+          color: string | null
+          company_id: string
+          created_at: string
+          has_preferential: boolean
+          has_preferential_80: boolean
+          id: string
+          is_active: boolean
+          linked_queue_ids: string[]
+          name: string
+          prefix: string
+          prefix_alt: string | null
+          queue_type: string
+          show_on_totem: boolean
+          sort_order: number
+          totem_id: string | null
+          type: string
+          unit_id: string
+        }
+        Insert: {
+          allow_totem_choice?: boolean
+          category?: string
+          color?: string | null
+          company_id: string
+          created_at?: string
+          has_preferential?: boolean
+          has_preferential_80?: boolean
+          id?: string
+          is_active?: boolean
+          linked_queue_ids?: string[]
+          name: string
+          prefix: string
+          prefix_alt?: string | null
+          queue_type?: string
+          show_on_totem?: boolean
+          sort_order?: number
+          totem_id?: string | null
+          type?: string
+          unit_id: string
+        }
+        Update: {
+          allow_totem_choice?: boolean
+          category?: string
+          color?: string | null
+          company_id?: string
+          created_at?: string
+          has_preferential?: boolean
+          has_preferential_80?: boolean
+          id?: string
+          is_active?: boolean
+          linked_queue_ids?: string[]
+          name?: string
+          prefix?: string
+          prefix_alt?: string | null
+          queue_type?: string
+          show_on_totem?: boolean
+          sort_order?: number
+          totem_id?: string | null
+          type?: string
+          unit_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "queue_lines_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "queue_lines_totem_id_fkey"
+            columns: ["totem_id"]
+            isOneToOne: false
+            referencedRelation: "queue_totems"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "queue_lines_unit_id_fkey"
+            columns: ["unit_id"]
+            isOneToOne: false
+            referencedRelation: "queue_units"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      queue_totems: {
+        Row: {
+          company_id: string
+          created_at: string
+          id: string
+          is_active: boolean
+          name: string
+          unit_id: string
+        }
+        Insert: {
+          company_id: string
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          name: string
+          unit_id: string
+        }
+        Update: {
+          company_id?: string
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          name?: string
+          unit_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "queue_totems_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "queue_totems_unit_id_fkey"
+            columns: ["unit_id"]
+            isOneToOne: false
+            referencedRelation: "queue_units"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      queue_tvs: {
+        Row: {
+          company_id: string
+          created_at: string
+          device_count: number
+          id: string
+          is_active: boolean
+          media_mode: string
+          name: string
+          screen_size: string
+          unit_id: string
+          voice_type: string
+        }
+        Insert: {
+          company_id: string
+          created_at?: string
+          device_count?: number
+          id?: string
+          is_active?: boolean
+          media_mode?: string
+          name: string
+          screen_size?: string
+          unit_id: string
+          voice_type?: string
+        }
+        Update: {
+          company_id?: string
+          created_at?: string
+          device_count?: number
+          id?: string
+          is_active?: boolean
+          media_mode?: string
+          name?: string
+          screen_size?: string
+          unit_id?: string
+          voice_type?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "queue_tvs_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "queue_tvs_unit_id_fkey"
+            columns: ["unit_id"]
+            isOneToOne: false
+            referencedRelation: "queue_units"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      queue_units: {
+        Row: {
+          company_id: string
+          created_at: string
+          id: string
+          is_active: boolean
+          name: string
+        }
+        Insert: {
+          company_id: string
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          name: string
+        }
+        Update: {
+          company_id?: string
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          name?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "queue_units_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       specialties: {
         Row: {
           company_id: string

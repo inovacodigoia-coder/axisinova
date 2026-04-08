@@ -4,12 +4,19 @@ import { ArrowLeft, Plus, Pencil, Trash2, Eye } from 'lucide-react'
 import { toast } from 'sonner'
 import { cn } from '@/lib/utils'
 import { useQueueSystem } from '@/context/QueueSystemContext'
+import { useAuth } from '@/context/AuthContext'
 import type { TV, MediaAttachment } from '@/types/queue-system.types'
+
+const DEMO_COMPANY_ID = 'comp_001'
 
 export default function TVConfigPage() {
   const { unitId } = useParams<{ unitId: string }>()
   const navigate = useNavigate()
-  const { state, dispatch, getUnitTVs } = useQueueSystem()
+  const { user } = useAuth()
+  const { state, dispatch, getUnitTVs, addTVDB, updateTVDB, removeTVDB } = useQueueSystem()
+
+  const isDemoCompany = user?.companyId === DEMO_COMPANY_ID
+  const companyId = user?.companyId || ''
 
   const unit = state.units.find(u => u.id === unitId)
   const tvs = getUnitTVs(unitId || '')
@@ -17,6 +24,7 @@ export default function TVConfigPage() {
   const [tab, setTab] = useState<'attachments' | 'tvs'>('attachments')
   const [showTVModal, setShowTVModal] = useState(false)
   const [editTV, setEditTV] = useState<TV | null>(null)
+  const [saving, setSaving] = useState(false)
 
   // TV form
   const [tvName, setTvName] = useState('')
@@ -35,20 +43,42 @@ export default function TVConfigPage() {
     setShowTVModal(true)
   }
 
-  const saveTV = () => {
-    if (!tvName.trim()) return
-    if (editTV) {
-      dispatch({ type: 'UPDATE_TV', payload: { ...editTV, name: tvName, voiceType: tvVoice, screenSize: tvSize, deviceCount: tvDeviceCount } })
-      toast.success('TV atualizada')
-    } else {
-      const newTv: TV = {
-        id: `tv_${Date.now()}`, unitId: unitId!, name: tvName, voiceType: tvVoice, screenSize: tvSize,
-        deviceCount: tvDeviceCount, mediaMode: 'without_media', mediaAttachments: [], isActive: true,
+  const saveTV = async () => {
+    if (!tvName.trim() || saving) return
+    setSaving(true)
+    if (isDemoCompany) {
+      if (editTV) {
+        dispatch({ type: 'UPDATE_TV', payload: { ...editTV, name: tvName, voiceType: tvVoice, screenSize: tvSize, deviceCount: tvDeviceCount } })
+        toast.success('TV atualizada')
+      } else {
+        const newTv: TV = {
+          id: `tv_${Date.now()}`, unitId: unitId!, name: tvName, voiceType: tvVoice, screenSize: tvSize,
+          deviceCount: tvDeviceCount, mediaMode: 'without_media', mediaAttachments: [], isActive: true,
+        }
+        dispatch({ type: 'ADD_TV', payload: newTv })
+        toast.success('TV criada')
       }
-      dispatch({ type: 'ADD_TV', payload: newTv })
-      toast.success('TV criada')
+    } else {
+      if (editTV) {
+        const ok = await updateTVDB({ ...editTV, name: tvName, voiceType: tvVoice, screenSize: tvSize, deviceCount: tvDeviceCount })
+        if (ok) toast.success('TV atualizada')
+      } else {
+        const tv = await addTVDB({ unitId: unitId!, name: tvName, voiceType: tvVoice, screenSize: tvSize, deviceCount: tvDeviceCount, mediaMode: 'without_media', companyId })
+        if (tv) { toast.success('TV criada'); setSelectedTvId(tv.id) }
+      }
     }
+    setSaving(false)
     setShowTVModal(false)
+  }
+
+  const handleRemoveTV = async (id: string) => {
+    if (isDemoCompany) {
+      dispatch({ type: 'REMOVE_TV', payload: id })
+      toast.success('TV removida')
+    } else {
+      const ok = await removeTVDB(id)
+      if (ok) toast.success('TV removida')
+    }
   }
 
   const removeMedia = (attachmentId: string) => {
@@ -79,7 +109,6 @@ export default function TVConfigPage() {
         <div />
       </div>
 
-      {/* TV selector */}
       <div className="flex items-center gap-4">
         <label className="text-sm font-medium text-foreground">Tela da TV</label>
         <select value={selectedTvId} onChange={e => setSelectedTvId(e.target.value)} className="rounded-lg border border-input bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring">
@@ -88,7 +117,6 @@ export default function TVConfigPage() {
         </select>
       </div>
 
-      {/* Preview */}
       {selectedTv && (
         <div className="rounded-xl bg-[hsl(220,26%,14%)] p-6 text-white">
           <p className="text-sm text-white/50 mb-2">Chame rápido</p>
@@ -111,7 +139,6 @@ export default function TVConfigPage() {
         </div>
       )}
 
-      {/* Tabs */}
       <div className="flex gap-1 rounded-lg border border-border p-0.5 w-fit">
         <button onClick={() => setTab('attachments')} className={cn('rounded-md px-4 py-1.5 text-sm font-medium transition-colors', tab === 'attachments' ? 'bg-[hsl(222,70%,35%)] text-white' : 'text-muted-foreground hover:bg-muted')}>
           Configurar Anexos
@@ -181,16 +208,18 @@ export default function TVConfigPage() {
                     <td className="px-4 py-3 text-foreground">{t.name}</td>
                     <td className="px-4 py-3 text-foreground capitalize">{t.voiceType === 'feminine' ? 'Feminina' : 'Masculina'}</td>
                     <td className="px-4 py-3 text-center"><button onClick={() => openTVModal(t)} className="text-muted-foreground hover:text-foreground"><Pencil className="h-4 w-4 mx-auto" /></button></td>
-                    <td className="px-4 py-3 text-center"><button onClick={() => { dispatch({ type: 'REMOVE_TV', payload: t.id }); toast.success('TV removida') }} className="text-destructive hover:text-destructive/80"><Trash2 className="h-4 w-4 mx-auto" /></button></td>
+                    <td className="px-4 py-3 text-center"><button onClick={() => handleRemoveTV(t.id)} className="text-destructive hover:text-destructive/80"><Trash2 className="h-4 w-4 mx-auto" /></button></td>
                   </tr>
                 ))}
+                {!tvs.length && (
+                  <tr><td colSpan={4} className="px-4 py-6 text-center text-muted-foreground">Nenhuma TV cadastrada</td></tr>
+                )}
               </tbody>
             </table>
           </div>
         </div>
       )}
 
-      {/* TV Form Modal */}
       {showTVModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50" onClick={() => setShowTVModal(false)}>
           <div onClick={e => e.stopPropagation()} className="w-full max-w-sm rounded-2xl bg-card border border-border p-6 space-y-4">
@@ -203,7 +232,9 @@ export default function TVConfigPage() {
             </div>
             <div className="flex gap-3 justify-end">
               <button onClick={() => setShowTVModal(false)} className="rounded-lg border border-input px-4 py-2 text-sm font-medium hover:bg-muted">Cancelar</button>
-              <button onClick={saveTV} className="rounded-lg bg-green-500 px-4 py-2 text-sm font-semibold text-white hover:bg-green-600">Salvar</button>
+              <button onClick={saveTV} disabled={saving} className="rounded-lg bg-green-500 px-4 py-2 text-sm font-semibold text-white hover:bg-green-600 disabled:opacity-50">
+                {saving ? 'Salvando...' : 'Salvar'}
+              </button>
             </div>
           </div>
         </div>

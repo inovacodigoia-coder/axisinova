@@ -3,12 +3,24 @@ import { useParams, useNavigate } from 'react-router-dom'
 import { ArrowLeft, Plus, Pencil, Trash2, GripVertical } from 'lucide-react'
 import { toast } from 'sonner'
 import { useQueueSystem } from '@/context/QueueSystemContext'
+import { useAuth } from '@/context/AuthContext'
 import type { QueueLine, Guiche, Totem } from '@/types/queue-system.types'
+
+const DEMO_COMPANY_ID = 'comp_001'
 
 export default function UnitConfigPage() {
   const { unitId } = useParams<{ unitId: string }>()
   const navigate = useNavigate()
-  const { state, dispatch, getUnitQueues, getUnitGuiches, getUnitTotems } = useQueueSystem()
+  const { user } = useAuth()
+  const {
+    state, dispatch, getUnitQueues, getUnitGuiches, getUnitTotems,
+    addTotemDB, updateTotemDB, removeTotemDB,
+    addQueueLineDB, updateQueueLineDB, removeQueueLineDB,
+    addGuicheDB, updateGuicheDB, removeGuicheDB,
+  } = useQueueSystem()
+
+  const isDemoCompany = user?.companyId === DEMO_COMPANY_ID
+  const companyId = user?.companyId || ''
 
   const unit = state.units.find(u => u.id === unitId)
   const queues = getUnitQueues(unitId || '')
@@ -40,7 +52,8 @@ export default function UnitConfigPage() {
   const [totemModal, setTotemModal] = useState<Totem | null | 'new'>(null)
   const [tName, setTName] = useState('')
 
-  // Available queues for linking (same unit, excluding current)
+  const [saving, setSaving] = useState(false)
+
   const availableForLink = queues.filter(q => {
     if (queueModal === 'new') return q.queueType === 'single'
     if (queueModal && typeof queueModal === 'object') return q.id !== queueModal.id && q.queueType === 'single'
@@ -60,20 +73,32 @@ export default function UnitConfigPage() {
     setQueueModal(q)
   }
 
-  const saveQueue = () => {
-    if (!qName.trim() || !qPrefix.trim()) return
+  const saveQueue = async () => {
+    if (!qName.trim() || !qPrefix.trim() || saving) return
+    setSaving(true)
     const base = {
       name: qName, prefix: qPrefix, prefixAlt: qPrefixAlt || undefined, type: qType, category: qCategory,
       color: qColor, showOnTotem: qShowOnTotem, queueType: qQueueType, linkedQueueIds: qQueueType === 'block' ? qLinkedIds : [],
       totemId: qTotemId || undefined, hasPreferential: qHasPreferential, hasPreferential80: qHasPreferential80, allowTotemChoice: qAllowTotemChoice,
     }
-    if (queueModal === 'new') {
-      dispatch({ type: 'ADD_QUEUE_LINE', payload: { id: `ql_${Date.now()}`, unitId: unitId!, isActive: true, order: queues.length + 1, ...base } })
-      toast.success('Fila criada')
-    } else if (queueModal) {
-      dispatch({ type: 'UPDATE_QUEUE_LINE', payload: { ...queueModal, ...base } })
-      toast.success('Fila atualizada')
+    if (isDemoCompany) {
+      if (queueModal === 'new') {
+        dispatch({ type: 'ADD_QUEUE_LINE', payload: { id: `ql_${Date.now()}`, unitId: unitId!, isActive: true, order: queues.length + 1, ...base } })
+        toast.success('Fila criada')
+      } else if (queueModal) {
+        dispatch({ type: 'UPDATE_QUEUE_LINE', payload: { ...queueModal, ...base } })
+        toast.success('Fila atualizada')
+      }
+    } else {
+      if (queueModal === 'new') {
+        const ql = await addQueueLineDB({ unitId: unitId!, order: queues.length + 1, companyId, ...base })
+        if (ql) toast.success('Fila criada')
+      } else if (queueModal) {
+        const ok = await updateQueueLineDB({ ...queueModal, ...base })
+        if (ok) toast.success('Fila atualizada')
+      }
     }
+    setSaving(false)
     setQueueModal(null)
   }
 
@@ -86,15 +111,27 @@ export default function UnitConfigPage() {
     setGuicheModal(g)
   }
 
-  const saveGuiche = () => {
-    if (!gName.trim()) return
-    if (guicheModal === 'new') {
-      dispatch({ type: 'ADD_GUICHE', payload: { id: `g_${Date.now()}`, unitId: unitId!, name: gName, type: gType, isActive: true } })
-      toast.success('Guichê criado')
-    } else if (guicheModal) {
-      dispatch({ type: 'UPDATE_GUICHE', payload: { ...guicheModal, name: gName, type: gType } })
-      toast.success('Guichê atualizado')
+  const saveGuiche = async () => {
+    if (!gName.trim() || saving) return
+    setSaving(true)
+    if (isDemoCompany) {
+      if (guicheModal === 'new') {
+        dispatch({ type: 'ADD_GUICHE', payload: { id: `g_${Date.now()}`, unitId: unitId!, name: gName, type: gType, isActive: true } })
+        toast.success('Guichê criado')
+      } else if (guicheModal) {
+        dispatch({ type: 'UPDATE_GUICHE', payload: { ...guicheModal, name: gName, type: gType } })
+        toast.success('Guichê atualizado')
+      }
+    } else {
+      if (guicheModal === 'new') {
+        const g = await addGuicheDB(unitId!, gName, gType, companyId)
+        if (g) toast.success('Guichê criado')
+      } else if (guicheModal) {
+        const ok = await updateGuicheDB(guicheModal.id, gName, gType)
+        if (ok) toast.success('Guichê atualizado')
+      }
     }
+    setSaving(false)
     setGuicheModal(null)
   }
 
@@ -104,16 +141,41 @@ export default function UnitConfigPage() {
     setTotemModal(t)
   }
 
-  const saveTotem = () => {
-    if (!tName.trim()) return
-    if (totemModal === 'new') {
-      dispatch({ type: 'ADD_TOTEM', payload: { id: `tot_${Date.now()}`, unitId: unitId!, name: tName, isActive: true } })
-      toast.success('Totem criado')
-    } else if (totemModal) {
-      dispatch({ type: 'UPDATE_TOTEM', payload: { ...totemModal, name: tName } })
-      toast.success('Totem atualizado')
+  const saveTotem = async () => {
+    if (!tName.trim() || saving) return
+    setSaving(true)
+    if (isDemoCompany) {
+      if (totemModal === 'new') {
+        dispatch({ type: 'ADD_TOTEM', payload: { id: `tot_${Date.now()}`, unitId: unitId!, name: tName, isActive: true } })
+        toast.success('Totem criado')
+      } else if (totemModal) {
+        dispatch({ type: 'UPDATE_TOTEM', payload: { ...totemModal, name: tName } })
+        toast.success('Totem atualizado')
+      }
+    } else {
+      if (totemModal === 'new') {
+        const t = await addTotemDB(unitId!, tName, companyId)
+        if (t) toast.success('Totem criado')
+      } else if (totemModal) {
+        const ok = await updateTotemDB(totemModal.id, tName)
+        if (ok) toast.success('Totem atualizado')
+      }
     }
+    setSaving(false)
     setTotemModal(null)
+  }
+
+  const handleRemoveQueue = async (id: string) => {
+    if (isDemoCompany) { dispatch({ type: 'REMOVE_QUEUE_LINE', payload: id }); toast.success('Removido') }
+    else { const ok = await removeQueueLineDB(id); if (ok) toast.success('Removido') }
+  }
+  const handleRemoveGuiche = async (id: string) => {
+    if (isDemoCompany) { dispatch({ type: 'REMOVE_GUICHE', payload: id }); toast.success('Removido') }
+    else { const ok = await removeGuicheDB(id); if (ok) toast.success('Removido') }
+  }
+  const handleRemoveTotem = async (id: string) => {
+    if (isDemoCompany) { dispatch({ type: 'REMOVE_TOTEM', payload: id }); toast.success('Removido') }
+    else { const ok = await removeTotemDB(id); if (ok) toast.success('Removido') }
   }
 
   const displayLabel = (q: QueueLine) => {
@@ -154,7 +216,7 @@ export default function UnitConfigPage() {
               <span className="text-sm text-foreground font-medium">{t.name}</span>
               <div className="flex gap-1">
                 <button onClick={() => openTotemModal(t)} className="p-1.5 hover:bg-background rounded" aria-label="Editar totem" title="Editar"><Pencil className="h-4 w-4 text-muted-foreground" /></button>
-                <button onClick={() => { dispatch({ type: 'REMOVE_TOTEM', payload: t.id }); toast.success('Removido') }} className="p-1.5 hover:bg-background rounded" aria-label="Remover totem" title="Remover"><Trash2 className="h-4 w-4 text-muted-foreground" /></button>
+                <button onClick={() => handleRemoveTotem(t.id)} className="p-1.5 hover:bg-background rounded" aria-label="Remover totem" title="Remover"><Trash2 className="h-4 w-4 text-muted-foreground" /></button>
               </div>
             </div>
           ))}
@@ -178,7 +240,7 @@ export default function UnitConfigPage() {
                 </div>
                 <div className="flex gap-1">
                   <button onClick={() => openQueueModal(q)} className="p-1.5 hover:bg-background rounded" aria-label="Editar fila" title="Editar"><Pencil className="h-4 w-4 text-muted-foreground" /></button>
-                  <button onClick={() => { dispatch({ type: 'REMOVE_QUEUE_LINE', payload: q.id }); toast.success('Removido') }} className="p-1.5 hover:bg-background rounded" aria-label="Remover fila" title="Remover"><Trash2 className="h-4 w-4 text-muted-foreground" /></button>
+                  <button onClick={() => handleRemoveQueue(q.id)} className="p-1.5 hover:bg-background rounded" aria-label="Remover fila" title="Remover"><Trash2 className="h-4 w-4 text-muted-foreground" /></button>
                 </div>
               </div>
             ))}
@@ -199,7 +261,7 @@ export default function UnitConfigPage() {
               <span className="text-sm text-foreground font-medium">{displayGuicheLabel(g)}</span>
               <div className="flex gap-1">
                 <button onClick={() => openGuicheModal(g)} className="p-1.5 hover:bg-background rounded" aria-label="Editar guichê" title="Editar"><Pencil className="h-4 w-4 text-muted-foreground" /></button>
-                <button onClick={() => { dispatch({ type: 'REMOVE_GUICHE', payload: g.id }); toast.success('Removido') }} className="p-1.5 hover:bg-background rounded" aria-label="Remover guichê" title="Remover"><Trash2 className="h-4 w-4 text-muted-foreground" /></button>
+                <button onClick={() => handleRemoveGuiche(g.id)} className="p-1.5 hover:bg-background rounded" aria-label="Remover guichê" title="Remover"><Trash2 className="h-4 w-4 text-muted-foreground" /></button>
               </div>
             </div>
           ))}
@@ -213,14 +275,12 @@ export default function UnitConfigPage() {
           <div onClick={e => e.stopPropagation()} className="w-full max-w-md rounded-2xl bg-card border border-border p-6 space-y-5 max-h-[90vh] overflow-y-auto">
             <h3 className="text-lg font-bold text-foreground">{queueModal === 'new' ? 'Adicionar Fila' : 'Editar Fila'}</h3>
 
-            {/* Nome */}
             <div className="space-y-1">
               <label className="text-sm font-medium text-foreground">Nome</label>
               <input type="text" value={qName} onChange={e => setQName(e.target.value)} placeholder="Ex: Atendimento"
                 className="w-full rounded-lg border border-input bg-background px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-ring" />
             </div>
 
-            {/* Tipo da fila + Cor */}
             <div className="flex gap-4 items-end">
               <div className="flex-1 space-y-1">
                 <label className="text-sm font-medium text-foreground">Tipo da fila</label>
@@ -237,7 +297,6 @@ export default function UnitConfigPage() {
               </div>
             </div>
 
-            {/* Linked queues (only for block type) */}
             {qQueueType === 'block' && (
               <div className="space-y-2">
                 <label className="text-sm font-medium text-foreground">Filas vinculadas ao bloco</label>
@@ -269,7 +328,6 @@ export default function UnitConfigPage() {
               </div>
             )}
 
-            {/* Prefixes */}
             <div className="flex gap-4">
               <div className="flex-1 space-y-1">
                 <label className="text-sm font-medium text-foreground">Prefixo ({qName || 'Principal'})</label>
@@ -285,7 +343,6 @@ export default function UnitConfigPage() {
               )}
             </div>
 
-            {/* Tipo Externo/Interno */}
             <div className="flex gap-4">
               <div className="flex-1 space-y-1">
                 <label className="text-sm font-medium text-foreground">Tipo</label>
@@ -305,7 +362,6 @@ export default function UnitConfigPage() {
               </div>
             </div>
 
-            {/* Totem */}
             <div className="space-y-1">
               <label className="text-sm font-medium text-foreground">Totem</label>
               <select value={qTotemId} onChange={e => setQTotemId(e.target.value)}
@@ -317,14 +373,12 @@ export default function UnitConfigPage() {
               </select>
             </div>
 
-            {/* Exibir no totem */}
             <label className="flex items-center gap-2 cursor-pointer">
               <input type="checkbox" checked={qShowOnTotem} onChange={e => setQShowOnTotem(e.target.checked)}
                 className="h-4 w-4 rounded border-input accent-green-500" />
               <span className="text-sm font-medium text-foreground">Exibir no totem</span>
             </label>
 
-            {/* Preferential options */}
             <div className="rounded-lg border border-border bg-muted/30 p-3 space-y-2">
               <label className="flex items-center gap-2 cursor-pointer">
                 <input type="checkbox" checked={qHasPreferential} onChange={e => setQHasPreferential(e.target.checked)}
@@ -343,10 +397,11 @@ export default function UnitConfigPage() {
               </label>
             </div>
 
-            {/* Actions */}
             <div className="flex gap-3 justify-end pt-2">
               <button onClick={() => setQueueModal(null)} className="rounded-lg border border-input px-4 py-2.5 text-sm font-medium hover:bg-muted">Cancelar</button>
-              <button onClick={saveQueue} className="rounded-lg bg-green-500 px-6 py-2.5 text-sm font-semibold text-white hover:bg-green-600">Salvar</button>
+              <button onClick={saveQueue} disabled={saving} className="rounded-lg bg-green-500 px-6 py-2.5 text-sm font-semibold text-white hover:bg-green-600 disabled:opacity-50">
+                {saving ? 'Salvando...' : 'Salvar'}
+              </button>
             </div>
           </div>
         </div>
@@ -363,7 +418,9 @@ export default function UnitConfigPage() {
             </div>
             <div className="flex gap-3 justify-end">
               <button onClick={() => setGuicheModal(null)} className="rounded-lg border border-input px-4 py-2.5 text-sm font-medium hover:bg-muted">Cancelar</button>
-              <button onClick={saveGuiche} className="rounded-lg bg-green-500 px-6 py-2.5 text-sm font-semibold text-white hover:bg-green-600">Salvar</button>
+              <button onClick={saveGuiche} disabled={saving} className="rounded-lg bg-green-500 px-6 py-2.5 text-sm font-semibold text-white hover:bg-green-600 disabled:opacity-50">
+                {saving ? 'Salvando...' : 'Salvar'}
+              </button>
             </div>
           </div>
         </div>
@@ -377,7 +434,9 @@ export default function UnitConfigPage() {
             <div className="space-y-1"><label className="text-sm font-medium text-foreground">Nome *</label><input type="text" value={tName} onChange={e => setTName(e.target.value)} className="w-full rounded-lg border border-input bg-background px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-ring" /></div>
             <div className="flex gap-3 justify-end">
               <button onClick={() => setTotemModal(null)} className="rounded-lg border border-input px-4 py-2.5 text-sm font-medium hover:bg-muted">Cancelar</button>
-              <button onClick={saveTotem} className="rounded-lg bg-green-500 px-6 py-2.5 text-sm font-semibold text-white hover:bg-green-600">Salvar</button>
+              <button onClick={saveTotem} disabled={saving} className="rounded-lg bg-green-500 px-6 py-2.5 text-sm font-semibold text-white hover:bg-green-600 disabled:opacity-50">
+                {saving ? 'Salvando...' : 'Salvar'}
+              </button>
             </div>
           </div>
         </div>
