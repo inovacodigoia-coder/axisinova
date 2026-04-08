@@ -4,6 +4,7 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { AuthProvider } from "@/context/AuthContext";
+import { QueueSystemProvider } from "@/context/QueueSystemContext";
 import { CompanyProvider } from "@/context/CompanyContext";
 import { QueueProvider } from "@/context/QueueContext";
 import { ErrorBoundary } from "@/components/feedback/ErrorBoundary";
