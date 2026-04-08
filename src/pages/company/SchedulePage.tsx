@@ -7,7 +7,7 @@ import { ConfirmModal } from '@/components/ui/ConfirmModal'
 import { useNotifications } from '@/components/company/NotificationPanel'
 import { supabase } from '@/integrations/supabase/client'
 import { toast } from 'sonner'
-import { DEMO_COMPANY_ID } from '@/lib/constants'
+import { useAuth } from '@/context/AuthContext'
 
 const doctors = ['Todos', 'Dr. Carlos Mendes', 'Dra. Ana Paula', 'Dr. Roberto Lima', 'Dra. Maria Souza']
 const timeSlots = ['07:00','07:30','08:00','08:30','09:00','09:30','10:00','10:30','11:00','11:30','12:00','13:00','13:30','14:00','14:30','15:00','15:30','16:00','16:30','17:00']
@@ -33,6 +33,8 @@ const statusColors: Record<string, string> = {
 }
 
 export default function SchedulePage() {
+  const { user } = useAuth()
+  const companyId = user?.companyId || ''
   const [search, setSearch] = useState('')
   const [selectedDoctor, setSelectedDoctor] = useState('Todos')
   const [view, setView] = useState<'week' | 'day'>('week')
@@ -47,7 +49,7 @@ export default function SchedulePage() {
     const { data, error } = await supabase
       .from('appointments')
       .select('*')
-      .eq('company_id', DEMO_COMPANY_ID)
+      .eq('company_id', companyId)
       .order('date', { ascending: true })
     if (error) { toast.error('Erro ao carregar agendamentos'); return }
     const mapped: Appointment[] = (data || []).map(a => ({
@@ -79,7 +81,7 @@ export default function SchedulePage() {
       toast.success('Agendamento atualizado com sucesso!')
     } else {
       const { error } = await supabase.from('appointments').insert({
-        company_id: DEMO_COMPANY_ID, patient_name: data.patient, doctor: data.doctor,
+        company_id: companyId, patient_name: data.patient, doctor: data.doctor,
         date: data.date, time: data.time, type: data.type, duration: data.duration,
         status: data.status, notes: data.notes || null,
       })

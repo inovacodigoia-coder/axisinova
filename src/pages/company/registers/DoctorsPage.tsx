@@ -29,7 +29,7 @@ export default function DoctorsPage() {
   const [showRequestMore, setShowRequestMore] = useState(false)
 
   // Get plan limits
-  const companyId = user?.companyId || 'comp_001'
+  const companyId = user?.companyId || ''
   const company = MOCK_COMPANIES.find(c => c.id === companyId)
   const plan = MOCK_PLANS.find(p => p.name === company?.plano)
   const doctorLimit = plan?.maxDoctors ?? company?.medicosLimite ?? 15

@@ -121,7 +121,7 @@ export default function SectorsPage() {
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4" onClick={() => setShowForm(false)}>
           <div onClick={e => e.stopPropagation()} className="w-full max-w-md rounded-2xl bg-card border border-border shadow-2xl p-6 space-y-4">
             <h2 className="text-lg font-bold text-foreground">{editing ? 'Editar Setor' : 'Novo Setor'}</h2>
-            <SectorForm sector={editing} profiles={allProfiles} onSave={handleSave} onCancel={() => setShowForm(false)} />
+            <SectorForm sector={editing} profiles={allProfiles} companyId={user?.companyId || ''} onSave={handleSave} onCancel={() => setShowForm(false)} />
           </div>
         </div>
       )}
@@ -237,7 +237,7 @@ function ManageUsersModal({
 }
 
 /* ── Form de Setor ── */
-function SectorForm({ sector, profiles, onSave, onCancel }: { sector: Sector | null; profiles: any[]; onSave: (s: Sector) => void; onCancel: () => void }) {
+function SectorForm({ sector, profiles, companyId, onSave, onCancel }: { sector: Sector | null; profiles: any[]; companyId: string; onSave: (s: Sector) => void; onCancel: () => void }) {
   const [name, setName] = useState(sector?.name || '')
   const [desc, setDesc] = useState(sector?.description || '')
   const [allowed, setAllowed] = useState<Set<string>>(new Set(sector?.allowedProfiles || []))
@@ -277,7 +277,7 @@ function SectorForm({ sector, profiles, onSave, onCancel }: { sector: Sector | n
         <button onClick={onCancel} className="rounded-lg border border-input px-4 py-2 text-sm hover:bg-muted">Cancelar</button>
         <button onClick={() => {
           if (!name.trim()) { toast.error('Nome é obrigatório'); return }
-          onSave({ id: sector?.id || `sec_${Date.now()}`, name, description: desc, companyId: 'comp_001', isActive: active, allowedProfiles: Array.from(allowed) })
+          onSave({ id: sector?.id || `sec_${Date.now()}`, name, description: desc, companyId: companyId || '', isActive: active, allowedProfiles: Array.from(allowed) })
         }} className="gradient-bg rounded-lg px-4 py-2 text-sm font-semibold text-white">Salvar</button>
       </div>
     </div>
