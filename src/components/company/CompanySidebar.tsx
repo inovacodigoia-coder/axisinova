@@ -5,7 +5,7 @@ import { useCompanyContext } from '@/context/CompanyContext'
 import {
   Home, Calendar, UserCheck, FileText, DollarSign, FlaskConical, BarChart3,
   TrendingUp, Users, Settings, Database, Monitor, Building2, Lock,
-  LogOut, ChevronLeft, ChevronRight, X, Stethoscope
+  LogOut, ChevronLeft, ChevronRight, X, Stethoscope, TicketCheck
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
