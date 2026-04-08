@@ -23,6 +23,9 @@ const ql = (id: string, unitId: string, name: string, prefix: string, type: 'ext
   showOnTotem: type === 'external',
   queueType: 'single',
   linkedQueueIds: [],
+  hasPreferential: false,
+  hasPreferential80: false,
+  allowTotemChoice: false,
   ...opts,
 })
 
