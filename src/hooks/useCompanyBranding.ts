@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react'
+import { supabase } from '@/integrations/supabase/client'
 
-const STORAGE_KEY = 'axis_company_accent_color'
 const DEFAULT_COLOR = '#00D4FF'
 
 function hexToHSL(hex: string): string {
@@ -31,26 +31,35 @@ function applyAccentColor(hex: string) {
   document.documentElement.style.setProperty('--company-accent-hex', hex)
 }
 
-export function useCompanyBranding() {
-  const [accentColor, setAccentColor] = useState(() => {
-    return localStorage.getItem(STORAGE_KEY) || DEFAULT_COLOR
-  })
+export function useCompanyBranding(companyId?: string) {
+  const [accentColor, setAccentColor] = useState(DEFAULT_COLOR)
+
+  useEffect(() => {
+    if (!companyId) return
+    const load = async () => {
+      const { data } = await supabase.from('company_branding').select('*').eq('company_id', companyId).maybeSingle() as any
+      if (data?.primary_color) {
+        setAccentColor(data.primary_color)
+        applyAccentColor(data.primary_color)
+        // Apply all branding
+        const root = document.documentElement
+        root.style.setProperty('--color-primary-hex', data.primary_color || DEFAULT_COLOR)
+        root.style.setProperty('--color-secondary-hex', data.secondary_color || '#7B2FF7')
+        root.style.setProperty('--gradient-main', `linear-gradient(135deg, ${data.primary_color || DEFAULT_COLOR} 0%, ${data.secondary_color || '#7B2FF7'} 100%)`)
+        root.style.setProperty('--sidebar-bg', data.sidebar_bg || '#1E293B')
+      }
+    }
+    load()
+  }, [companyId])
 
   useEffect(() => {
     applyAccentColor(accentColor)
   }, [accentColor])
 
   const saveAccentColor = useCallback((color: string) => {
-    localStorage.setItem(STORAGE_KEY, color)
     setAccentColor(color)
     applyAccentColor(color)
   }, [])
 
   return { accentColor, saveAccentColor }
-}
-
-// Initialize on load
-const saved = localStorage.getItem(STORAGE_KEY)
-if (saved) {
-  applyAccentColor(saved)
 }

@@ -1,7 +1,8 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { NavLink, useLocation } from 'react-router-dom'
 import { useAuth } from '@/context/AuthContext'
 import { useCompanyContext } from '@/context/CompanyContext'
+import { supabase } from '@/integrations/supabase/client'
 import {
   Home, Calendar, UserCheck, FileText, DollarSign, FlaskConical, BarChart3,
   TrendingUp, Users, Settings, Database, Monitor, Building2, Lock,
@@ -80,10 +81,28 @@ export function CompanySidebar({ mobileOpen, onMobileClose, collapsed = false, o
   const { user, logout } = useAuth()
   const { canAccess, activeProfile } = useCompanyContext()
   const location = useLocation()
+  const [sidebarBg, setSidebarBg] = useState<string | undefined>(undefined)
 
-  const sidebarBg = typeof window !== 'undefined'
-    ? (localStorage.getItem('axis_visual_sidebar') || undefined)
-    : undefined
+  // Load branding from DB
+  useEffect(() => {
+    const companyId = user?.companyId
+    if (!companyId) return
+    const load = async () => {
+      const { data } = await supabase.from('company_branding').select('sidebar_bg, primary_color, secondary_color').eq('company_id', companyId).maybeSingle() as any
+      if (data?.sidebar_bg) {
+        setSidebarBg(data.sidebar_bg)
+        document.documentElement.style.setProperty('--sidebar-bg', data.sidebar_bg)
+      }
+      if (data?.primary_color) {
+        document.documentElement.style.setProperty('--color-primary-hex', data.primary_color)
+        document.documentElement.style.setProperty('--company-accent-hex', data.primary_color)
+        const secondary = data.secondary_color || '#7B2FF7'
+        document.documentElement.style.setProperty('--color-secondary-hex', secondary)
+        document.documentElement.style.setProperty('--gradient-main', `linear-gradient(135deg, ${data.primary_color} 0%, ${secondary} 100%)`)
+      }
+    }
+    load()
+  }, [user?.companyId])
 
   const sidebarContent = (
     <aside
