@@ -121,7 +121,7 @@ export default function SectorsPage() {
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4" onClick={() => setShowForm(false)}>
           <div onClick={e => e.stopPropagation()} className="w-full max-w-md rounded-2xl bg-card border border-border shadow-2xl p-6 space-y-4">
             <h2 className="text-lg font-bold text-foreground">{editing ? 'Editar Setor' : 'Novo Setor'}</h2>
-            <SectorForm sector={editing} profiles={allProfiles} onSave={handleSave} onCancel={() => setShowForm(false)} />
+            <SectorForm sector={editing} profiles={allProfiles} companyId={user?.companyId || ''} onSave={handleSave} onCancel={() => setShowForm(false)} />
           </div>
         </div>
       )}
