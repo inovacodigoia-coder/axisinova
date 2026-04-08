@@ -37,6 +37,7 @@ const NAV_SECTIONS: NavSection[] = [
       { label: 'Recepção', icon: 'UserCheck', path: '/app/recepcao', module: 'reception' },
       { label: 'Painel Médico', icon: 'Stethoscope', path: '/app/medico', module: 'medical_record' },
       { label: 'Prontuário', icon: 'FileText', path: '/app/prontuario', module: 'medical_record' },
+      { label: 'Central de Atendimento', icon: 'TicketCheck', path: '/app/filas', module: null },
     ],
   },
   {
