@@ -5,7 +5,7 @@ import { useCompanyContext } from '@/context/CompanyContext'
 import {
   Home, Calendar, UserCheck, FileText, DollarSign, FlaskConical, BarChart3,
   TrendingUp, Users, Settings, Database, Monitor, Building2, Lock,
-  LogOut, ChevronLeft, ChevronRight, X, Stethoscope
+  LogOut, ChevronLeft, ChevronRight, X, Stethoscope, TicketCheck
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
@@ -13,7 +13,7 @@ import type { SystemModule } from '@/types/permissions.types'
 
 const ICON_MAP: Record<string, any> = {
   Calendar, UserCheck, FileText, DollarSign, FlaskConical, BarChart3,
-  TrendingUp, Users, Settings, Database, Monitor, Building2, Stethoscope, Home
+  TrendingUp, Users, Settings, Database, Monitor, Building2, Stethoscope, Home, TicketCheck
 }
 
 interface NavSection {
@@ -37,6 +37,7 @@ const NAV_SECTIONS: NavSection[] = [
       { label: 'Recepção', icon: 'UserCheck', path: '/app/recepcao', module: 'reception' },
       { label: 'Painel Médico', icon: 'Stethoscope', path: '/app/medico', module: 'medical_record' },
       { label: 'Prontuário', icon: 'FileText', path: '/app/prontuario', module: 'medical_record' },
+      { label: 'Central de Atendimento', icon: 'TicketCheck', path: '/app/filas', module: null },
     ],
   },
   {
