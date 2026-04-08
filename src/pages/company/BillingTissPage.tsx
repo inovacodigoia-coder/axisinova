@@ -8,7 +8,7 @@ import { ConfirmModal } from '@/components/ui/ConfirmModal'
 import { useNotifications } from '@/components/company/NotificationPanel'
 import { supabase } from '@/integrations/supabase/client'
 import { toast } from 'sonner'
-import { DEMO_COMPANY_ID } from '@/lib/constants'
+import { useAuth } from '@/context/AuthContext'
 
 type GuideStatus = 'aprovada' | 'pendente' | 'glosada' | 'enviada'
 

@@ -21,7 +21,7 @@ export default function UnitsListPage() {
       dispatch({ type: 'UPDATE_UNIT', payload: { ...editUnit, name: name.trim() } })
       toast.success('Unidade atualizada')
     } else {
-      dispatch({ type: 'ADD_UNIT', payload: { id: `unit_${Date.now()}`, name: name.trim(), companyId: 'comp_001', isActive: true, createdAt: new Date().toISOString() } })
+      dispatch({ type: 'ADD_UNIT', payload: { id: `unit_${Date.now()}`, name: name.trim(), companyId: user?.companyId || '', isActive: true, createdAt: new Date().toISOString() } })
       toast.success('Unidade criada')
     }
     setShowModal(false)

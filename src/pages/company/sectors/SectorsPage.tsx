@@ -277,7 +277,7 @@ function SectorForm({ sector, profiles, onSave, onCancel }: { sector: Sector | n
         <button onClick={onCancel} className="rounded-lg border border-input px-4 py-2 text-sm hover:bg-muted">Cancelar</button>
         <button onClick={() => {
           if (!name.trim()) { toast.error('Nome é obrigatório'); return }
-          onSave({ id: sector?.id || `sec_${Date.now()}`, name, description: desc, companyId: 'comp_001', isActive: active, allowedProfiles: Array.from(allowed) })
+          onSave({ id: sector?.id || `sec_${Date.now()}`, name, description: desc, companyId: companyId || '', isActive: active, allowedProfiles: Array.from(allowed) })
         }} className="gradient-bg rounded-lg px-4 py-2 text-sm font-semibold text-white">Salvar</button>
       </div>
     </div>
