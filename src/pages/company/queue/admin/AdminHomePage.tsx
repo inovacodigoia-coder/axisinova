@@ -5,7 +5,7 @@ export default function AdminHomePage() {
   const navigate = useNavigate()
 
   const cards = [
-    { label: 'Unidades', icon: Building2, path: '/app/filas/admin/unidades', desc: 'Gerenciar unidades, filas e guichês' },
+    { label: 'Locais / Unidades', icon: Building2, path: '/app/filas/admin/unidades', desc: 'Gerenciar unidades, filas e guichês' },
     { label: 'Dashboard', icon: BarChart3, path: '/app/filas/admin/bi', desc: 'Métricas e BI de filas' },
   ]
 
