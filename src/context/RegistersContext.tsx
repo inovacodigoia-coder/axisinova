@@ -2,94 +2,32 @@ import { createContext, useContext, useState, useCallback, useEffect, useMemo, t
 import type { Doctor, Specialty, Convenio, Exam, Procedure } from '@/types/registers.types'
 import { DEMO_DOCTORS, DEMO_SPECIALTIES, DEMO_CONVENIOS, DEMO_EXAMS, DEMO_PROCEDURES, isDemoCompany } from '@/mocks/registers.mock'
 import { useAuth } from '@/context/AuthContext'
-
-interface RegistersSnapshot {
-  doctors: Doctor[]
-  specialties: Specialty[]
-  convenios: Convenio[]
-  exams: Exam[]
-  procedures: Procedure[]
-}
-
-const REGISTERS_STORAGE_PREFIX = 'axis-inova:registers'
-
-const createEmptyRegisters = (): RegistersSnapshot => ({
-  doctors: [],
-  specialties: [],
-  convenios: [],
-  exams: [],
-  procedures: [],
-})
-
-const createDemoRegisters = (): RegistersSnapshot => ({
-  doctors: DEMO_DOCTORS,
-  specialties: DEMO_SPECIALTIES,
-  convenios: DEMO_CONVENIOS,
-  exams: DEMO_EXAMS,
-  procedures: DEMO_PROCEDURES,
-})
-
-const sanitizeRegisters = (value: Partial<RegistersSnapshot>): RegistersSnapshot => ({
-  doctors: Array.isArray(value.doctors) ? value.doctors as Doctor[] : [],
-  specialties: Array.isArray(value.specialties) ? value.specialties as Specialty[] : [],
-  convenios: Array.isArray(value.convenios) ? value.convenios as Convenio[] : [],
-  exams: Array.isArray(value.exams) ? (value.exams as Exam[]).map(e => ({ ...e, attachmentRules: e.attachmentRules ?? [] })) : [],
-  procedures: Array.isArray(value.procedures) ? (value.procedures as Procedure[]).map(p => ({ ...p, attachmentRules: p.attachmentRules ?? [] })) : [],
-})
-
-const readStoredRegisters = (storageKey: string | null): RegistersSnapshot | null => {
-  if (!storageKey || typeof window === 'undefined') return null
-
-  try {
-    const raw = window.localStorage.getItem(storageKey)
-    if (!raw) return null
-
-    return sanitizeRegisters(JSON.parse(raw) as Partial<RegistersSnapshot>)
-  } catch {
-    return null
-  }
-}
-
-const createRegistersState = (isDemo: boolean, storageKey: string | null): RegistersSnapshot => {
-  if (isDemo) return createDemoRegisters()
-  return readStoredRegisters(storageKey) ?? createEmptyRegisters()
-}
+import { supabase } from '@/integrations/supabase/client'
+import { toast } from 'sonner'
 
 interface RegistersContextValue {
-  // Data
   doctors: Doctor[]
   specialties: Specialty[]
   convenios: Convenio[]
   exams: Exam[]
   procedures: Procedure[]
   isDemo: boolean
-
-  // Doctors
+  isLoading: boolean
   addDoctor: (d: Doctor) => void
   updateDoctor: (d: Doctor) => void
   removeDoctor: (id: string) => void
-
-  // Specialties
   addSpecialty: (s: Specialty) => void
   updateSpecialty: (s: Specialty) => void
   removeSpecialty: (id: string) => void
-
-  // Convenios
   addConvenio: (c: Convenio) => void
   updateConvenio: (c: Convenio) => void
   removeConvenio: (id: string) => void
-
-  // Exams
   addExam: (e: Exam) => void
   updateExam: (e: Exam) => void
   removeExam: (id: string) => void
-
-  // Procedures
   addProcedure: (p: Procedure) => void
   updateProcedure: (p: Procedure) => void
   removeProcedure: (id: string) => void
-
-  // Helpers
   getSpecialtyName: (id: string) => string
   getConvenioName: (id: string) => string
   getDoctorsForSpecialty: (specId: string) => Doctor[]
@@ -98,80 +36,260 @@ interface RegistersContextValue {
 
 const RegistersContext = createContext<RegistersContextValue | null>(null)
 
+// DB row → App type mappers
+function mapSpecialtyRow(row: any): Specialty {
+  return { id: row.id, name: row.name, companyId: row.company_id, isActive: row.is_active, createdAt: row.created_at }
+}
+function mapDoctorRow(row: any): Doctor {
+  return {
+    id: row.id, companyId: row.company_id, fullName: row.full_name, crm: row.crm, crmState: row.crm_state || '',
+    specialtyIds: row.specialty_ids || [], phone: row.phone, email: row.email, birthDate: row.birth_date,
+    photo: row.photo, enabledConvenioIds: row.enabled_convenio_ids || [],
+    scheduleConfig: row.schedule_config || undefined,
+    isActive: row.is_active, isBlocked: row.is_blocked, blockedReason: row.blocked_reason,
+    blockedAt: row.blocked_at, createdAt: row.created_at, updatedAt: row.updated_at,
+  }
+}
+function mapConvenioRow(row: any): Convenio {
+  return {
+    id: row.id, companyId: row.company_id, name: row.name, ansCode: row.ans_code,
+    type: row.type as Convenio['type'], cnpj: row.cnpj, authPhone: row.auth_phone,
+    email: row.email, observations: row.observations,
+    attachmentRules: row.attachment_rules || [], isActive: row.is_active, createdAt: row.created_at,
+  }
+}
+function mapExamRow(row: any): Exam {
+  return {
+    id: row.id, companyId: row.company_id, name: row.name, tussCode: row.tuss_code,
+    specialtyId: row.specialty_id, preparationInstructions: row.preparation_instructions,
+    estimatedDurationMinutes: row.estimated_duration_minutes, resultDeadlineDays: row.result_deadline_days,
+    requiresAuthorization: row.requires_authorization, authorizationInstructions: row.authorization_instructions,
+    attachmentRules: row.attachment_rules || [], isActive: row.is_active, createdAt: row.created_at,
+  }
+}
+function mapProcedureRow(row: any): Procedure {
+  return {
+    id: row.id, companyId: row.company_id, name: row.name, tussCode: row.tuss_code,
+    type: row.type as Procedure['type'], specialtyId: row.specialty_id,
+    estimatedDurationMinutes: row.estimated_duration_minutes,
+    requiresAuthorization: row.requires_authorization, authorizationInstructions: row.authorization_instructions,
+    requiresAnesthesia: row.requires_anesthesia, anesthesiaType: row.anesthesia_type,
+    preOperativeInstructions: row.pre_operative_instructions, postOperativeInstructions: row.post_operative_instructions,
+    attachmentRules: row.attachment_rules || [], isActive: row.is_active, createdAt: row.created_at,
+  }
+}
+
 export function RegistersProvider({ children }: { children: ReactNode }) {
   const { user } = useAuth()
   const companyId = user?.companyId
   const isDemo = isDemoCompany(companyId)
-  const storageKey = useMemo(
-    () => (companyId ? `${REGISTERS_STORAGE_PREFIX}:${companyId}` : null),
-    [companyId],
-  )
 
-  const [state, setState] = useState<RegistersSnapshot>(() => createRegistersState(isDemo, storageKey))
-  const [hydratedKey, setHydratedKey] = useState<string | null>(() => (isDemo ? 'demo' : storageKey))
+  const [doctors, setDoctors] = useState<Doctor[]>(isDemo ? DEMO_DOCTORS : [])
+  const [specialties, setSpecialties] = useState<Specialty[]>(isDemo ? DEMO_SPECIALTIES : [])
+  const [convenios, setConvenios] = useState<Convenio[]>(isDemo ? DEMO_CONVENIOS : [])
+  const [exams, setExams] = useState<Exam[]>(isDemo ? DEMO_EXAMS : [])
+  const [procedures, setProcedures] = useState<Procedure[]>(isDemo ? DEMO_PROCEDURES : [])
+  const [isLoading, setIsLoading] = useState(!isDemo)
 
+  // Load from Supabase
   useEffect(() => {
-    setState(createRegistersState(isDemo, storageKey))
-    setHydratedKey(isDemo ? 'demo' : storageKey)
-  }, [isDemo, storageKey])
+    if (isDemo || !companyId) return
+    setIsLoading(true)
 
-  useEffect(() => {
-    if (isDemo || !storageKey || hydratedKey !== storageKey || typeof window === 'undefined') return
-    window.localStorage.setItem(storageKey, JSON.stringify(state))
-  }, [state, hydratedKey, isDemo, storageKey])
+    const load = async () => {
+      try {
+        const [specRes, docRes, convRes, examRes, procRes] = await Promise.all([
+          supabase.from('specialties').select('*').eq('company_id', companyId),
+          supabase.from('doctors').select('*').eq('company_id', companyId),
+          supabase.from('convenios').select('*').eq('company_id', companyId),
+          supabase.from('exams').select('*').eq('company_id', companyId),
+          supabase.from('procedures').select('*').eq('company_id', companyId),
+        ])
+        if (specRes.data) setSpecialties(specRes.data.map(mapSpecialtyRow))
+        if (docRes.data) setDoctors(docRes.data.map(mapDoctorRow))
+        if (convRes.data) setConvenios(convRes.data.map(mapConvenioRow))
+        if (examRes.data) setExams(examRes.data.map(mapExamRow))
+        if (procRes.data) setProcedures(procRes.data.map(mapProcedureRow))
+      } catch (err) {
+        console.error('Failed to load registers:', err)
+      } finally {
+        setIsLoading(false)
+      }
+    }
+    load()
+  }, [isDemo, companyId])
 
-  const { doctors, specialties, convenios, exams, procedures } = state
+  // --- Specialties ---
+  const addSpecialty = useCallback(async (s: Specialty) => {
+    setSpecialties(prev => [...prev, s])
+    if (isDemo || !companyId) return
+    const { error } = await supabase.from('specialties').insert({
+      id: s.id, company_id: companyId, name: s.name, is_active: s.isActive,
+    } as any)
+    if (error) { console.error(error); toast.error('Erro ao salvar especialidade') }
+  }, [isDemo, companyId])
 
-  const addDoctor = useCallback((d: Doctor) => {
-    setState(prev => ({ ...prev, doctors: [...prev.doctors, d] }))
-  }, [])
-  const updateDoctor = useCallback((d: Doctor) => {
-    setState(prev => ({ ...prev, doctors: prev.doctors.map(x => x.id === d.id ? d : x) }))
-  }, [])
-  const removeDoctor = useCallback((id: string) => {
-    setState(prev => ({ ...prev, doctors: prev.doctors.filter(x => x.id !== id) }))
-  }, [])
+  const updateSpecialty = useCallback(async (s: Specialty) => {
+    setSpecialties(prev => prev.map(x => x.id === s.id ? s : x))
+    if (isDemo) return
+    const { error } = await supabase.from('specialties').update({ name: s.name, is_active: s.isActive } as any).eq('id', s.id)
+    if (error) { console.error(error); toast.error('Erro ao atualizar especialidade') }
+  }, [isDemo])
 
-  const addSpecialty = useCallback((s: Specialty) => {
-    setState(prev => ({ ...prev, specialties: [...prev.specialties, s] }))
-  }, [])
-  const updateSpecialty = useCallback((s: Specialty) => {
-    setState(prev => ({ ...prev, specialties: prev.specialties.map(x => x.id === s.id ? s : x) }))
-  }, [])
-  const removeSpecialty = useCallback((id: string) => {
-    setState(prev => ({ ...prev, specialties: prev.specialties.filter(x => x.id !== id) }))
-  }, [])
+  const removeSpecialty = useCallback(async (id: string) => {
+    setSpecialties(prev => prev.filter(x => x.id !== id))
+    if (isDemo) return
+    const { error } = await supabase.from('specialties').delete().eq('id', id)
+    if (error) { console.error(error); toast.error('Erro ao remover especialidade') }
+  }, [isDemo])
 
-  const addConvenio = useCallback((c: Convenio) => {
-    setState(prev => ({ ...prev, convenios: [...prev.convenios, c] }))
-  }, [])
-  const updateConvenio = useCallback((c: Convenio) => {
-    setState(prev => ({ ...prev, convenios: prev.convenios.map(x => x.id === c.id ? c : x) }))
-  }, [])
-  const removeConvenio = useCallback((id: string) => {
-    setState(prev => ({ ...prev, convenios: prev.convenios.filter(x => x.id !== id) }))
-  }, [])
+  // --- Doctors ---
+  const addDoctor = useCallback(async (d: Doctor) => {
+    setDoctors(prev => [...prev, d])
+    if (isDemo || !companyId) return
+    const { error } = await supabase.from('doctors').insert({
+      id: d.id, company_id: companyId, full_name: d.fullName, crm: d.crm, crm_state: d.crmState,
+      specialty_ids: d.specialtyIds, phone: d.phone || null, email: d.email || null,
+      birth_date: d.birthDate || null, photo: d.photo || null,
+      enabled_convenio_ids: d.enabledConvenioIds, schedule_config: d.scheduleConfig || null,
+      is_active: d.isActive, is_blocked: d.isBlocked,
+      blocked_reason: d.blockedReason || null, blocked_at: d.blockedAt || null,
+    } as any)
+    if (error) { console.error(error); toast.error('Erro ao salvar médico') }
+  }, [isDemo, companyId])
 
-  const addExam = useCallback((e: Exam) => {
-    setState(prev => ({ ...prev, exams: [...prev.exams, e] }))
-  }, [])
-  const updateExam = useCallback((e: Exam) => {
-    setState(prev => ({ ...prev, exams: prev.exams.map(x => x.id === e.id ? e : x) }))
-  }, [])
-  const removeExam = useCallback((id: string) => {
-    setState(prev => ({ ...prev, exams: prev.exams.filter(x => x.id !== id) }))
-  }, [])
+  const updateDoctor = useCallback(async (d: Doctor) => {
+    setDoctors(prev => prev.map(x => x.id === d.id ? d : x))
+    if (isDemo) return
+    const { error } = await supabase.from('doctors').update({
+      full_name: d.fullName, crm: d.crm, crm_state: d.crmState,
+      specialty_ids: d.specialtyIds, phone: d.phone || null, email: d.email || null,
+      birth_date: d.birthDate || null, photo: d.photo || null,
+      enabled_convenio_ids: d.enabledConvenioIds, schedule_config: d.scheduleConfig || null,
+      is_active: d.isActive, is_blocked: d.isBlocked,
+      blocked_reason: d.blockedReason || null, blocked_at: d.blockedAt || null,
+    } as any).eq('id', d.id)
+    if (error) { console.error(error); toast.error('Erro ao atualizar médico') }
+  }, [isDemo])
 
-  const addProcedure = useCallback((p: Procedure) => {
-    setState(prev => ({ ...prev, procedures: [...prev.procedures, p] }))
-  }, [])
-  const updateProcedure = useCallback((p: Procedure) => {
-    setState(prev => ({ ...prev, procedures: prev.procedures.map(x => x.id === p.id ? p : x) }))
-  }, [])
-  const removeProcedure = useCallback((id: string) => {
-    setState(prev => ({ ...prev, procedures: prev.procedures.filter(x => x.id !== id) }))
-  }, [])
+  const removeDoctor = useCallback(async (id: string) => {
+    setDoctors(prev => prev.filter(x => x.id !== id))
+    if (isDemo) return
+    const { error } = await supabase.from('doctors').delete().eq('id', id)
+    if (error) { console.error(error); toast.error('Erro ao remover médico') }
+  }, [isDemo])
 
+  // --- Convenios ---
+  const addConvenio = useCallback(async (c: Convenio) => {
+    setConvenios(prev => [...prev, c])
+    if (isDemo || !companyId) return
+    const { error } = await supabase.from('convenios').insert({
+      id: c.id, company_id: companyId, name: c.name, ans_code: c.ansCode || null,
+      type: c.type, cnpj: c.cnpj || null, auth_phone: c.authPhone || null,
+      email: c.email || null, observations: c.observations || null,
+      attachment_rules: c.attachmentRules, is_active: c.isActive,
+    } as any)
+    if (error) { console.error(error); toast.error('Erro ao salvar convênio') }
+  }, [isDemo, companyId])
+
+  const updateConvenio = useCallback(async (c: Convenio) => {
+    setConvenios(prev => prev.map(x => x.id === c.id ? c : x))
+    if (isDemo) return
+    const { error } = await supabase.from('convenios').update({
+      name: c.name, ans_code: c.ansCode || null, type: c.type, cnpj: c.cnpj || null,
+      auth_phone: c.authPhone || null, email: c.email || null,
+      observations: c.observations || null, attachment_rules: c.attachmentRules, is_active: c.isActive,
+    } as any).eq('id', c.id)
+    if (error) { console.error(error); toast.error('Erro ao atualizar convênio') }
+  }, [isDemo])
+
+  const removeConvenio = useCallback(async (id: string) => {
+    setConvenios(prev => prev.filter(x => x.id !== id))
+    if (isDemo) return
+    const { error } = await supabase.from('convenios').delete().eq('id', id)
+    if (error) { console.error(error); toast.error('Erro ao remover convênio') }
+  }, [isDemo])
+
+  // --- Exams ---
+  const addExam = useCallback(async (e: Exam) => {
+    setExams(prev => [...prev, e])
+    if (isDemo || !companyId) return
+    const { error } = await supabase.from('exams').insert({
+      id: e.id, company_id: companyId, name: e.name, tuss_code: e.tussCode || null,
+      specialty_id: e.specialtyId || null, preparation_instructions: e.preparationInstructions || null,
+      estimated_duration_minutes: e.estimatedDurationMinutes || null,
+      result_deadline_days: e.resultDeadlineDays || null,
+      requires_authorization: e.requiresAuthorization,
+      authorization_instructions: e.authorizationInstructions || null,
+      attachment_rules: e.attachmentRules, is_active: e.isActive,
+    } as any)
+    if (error) { console.error(error); toast.error('Erro ao salvar exame') }
+  }, [isDemo, companyId])
+
+  const updateExam = useCallback(async (e: Exam) => {
+    setExams(prev => prev.map(x => x.id === e.id ? e : x))
+    if (isDemo) return
+    const { error } = await supabase.from('exams').update({
+      name: e.name, tuss_code: e.tussCode || null, specialty_id: e.specialtyId || null,
+      preparation_instructions: e.preparationInstructions || null,
+      estimated_duration_minutes: e.estimatedDurationMinutes || null,
+      result_deadline_days: e.resultDeadlineDays || null,
+      requires_authorization: e.requiresAuthorization,
+      authorization_instructions: e.authorizationInstructions || null,
+      attachment_rules: e.attachmentRules, is_active: e.isActive,
+    } as any).eq('id', e.id)
+    if (error) { console.error(error); toast.error('Erro ao atualizar exame') }
+  }, [isDemo])
+
+  const removeExam = useCallback(async (id: string) => {
+    setExams(prev => prev.filter(x => x.id !== id))
+    if (isDemo) return
+    const { error } = await supabase.from('exams').delete().eq('id', id)
+    if (error) { console.error(error); toast.error('Erro ao remover exame') }
+  }, [isDemo])
+
+  // --- Procedures ---
+  const addProcedure = useCallback(async (p: Procedure) => {
+    setProcedures(prev => [...prev, p])
+    if (isDemo || !companyId) return
+    const { error } = await supabase.from('procedures').insert({
+      id: p.id, company_id: companyId, name: p.name, tuss_code: p.tussCode || null,
+      type: p.type, specialty_id: p.specialtyId || null,
+      estimated_duration_minutes: p.estimatedDurationMinutes || null,
+      requires_authorization: p.requiresAuthorization,
+      authorization_instructions: p.authorizationInstructions || null,
+      requires_anesthesia: p.requiresAnesthesia, anesthesia_type: p.anesthesiaType || null,
+      pre_operative_instructions: p.preOperativeInstructions || null,
+      post_operative_instructions: p.postOperativeInstructions || null,
+      attachment_rules: p.attachmentRules, is_active: p.isActive,
+    } as any)
+    if (error) { console.error(error); toast.error('Erro ao salvar procedimento') }
+  }, [isDemo, companyId])
+
+  const updateProcedure = useCallback(async (p: Procedure) => {
+    setProcedures(prev => prev.map(x => x.id === p.id ? p : x))
+    if (isDemo) return
+    const { error } = await supabase.from('procedures').update({
+      name: p.name, tuss_code: p.tussCode || null, type: p.type,
+      specialty_id: p.specialtyId || null, estimated_duration_minutes: p.estimatedDurationMinutes || null,
+      requires_authorization: p.requiresAuthorization,
+      authorization_instructions: p.authorizationInstructions || null,
+      requires_anesthesia: p.requiresAnesthesia, anesthesia_type: p.anesthesiaType || null,
+      pre_operative_instructions: p.preOperativeInstructions || null,
+      post_operative_instructions: p.postOperativeInstructions || null,
+      attachment_rules: p.attachmentRules, is_active: p.isActive,
+    } as any).eq('id', p.id)
+    if (error) { console.error(error); toast.error('Erro ao atualizar procedimento') }
+  }, [isDemo])
+
+  const removeProcedure = useCallback(async (id: string) => {
+    setProcedures(prev => prev.filter(x => x.id !== id))
+    if (isDemo) return
+    const { error } = await supabase.from('procedures').delete().eq('id', id)
+    if (error) { console.error(error); toast.error('Erro ao remover procedimento') }
+  }, [isDemo])
+
+  // --- Helpers ---
   const getSpecialtyName = useCallback((id: string) => specialties.find(s => s.id === id)?.name || '', [specialties])
   const getConvenioName = useCallback((id: string) => convenios.find(c => c.id === id)?.name || '', [convenios])
   const getDoctorsForSpecialty = useCallback((specId: string) => doctors.filter(d => d.specialtyIds.includes(specId)), [doctors])
@@ -179,7 +297,7 @@ export function RegistersProvider({ children }: { children: ReactNode }) {
 
   return (
     <RegistersContext.Provider value={{
-      doctors, specialties, convenios, exams, procedures, isDemo,
+      doctors, specialties, convenios, exams, procedures, isDemo, isLoading,
       addDoctor, updateDoctor, removeDoctor,
       addSpecialty, updateSpecialty, removeSpecialty,
       addConvenio, updateConvenio, removeConvenio,

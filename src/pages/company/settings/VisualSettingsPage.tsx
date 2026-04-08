@@ -1,13 +1,12 @@
 import { useState, useEffect } from 'react'
 import { Save, RotateCcw } from 'lucide-react'
 import { toast } from 'sonner'
+import { supabase } from '@/integrations/supabase/client'
+import { useAuth } from '@/context/AuthContext'
 
 const DEFAULT_PRIMARY = '#00D4FF'
 const DEFAULT_SECONDARY = '#7B2FF7'
 const DEFAULT_SIDEBAR = '#1E293B'
-const STORAGE_PRIMARY = 'axis_visual_primary'
-const STORAGE_SECONDARY = 'axis_visual_secondary'
-const STORAGE_SIDEBAR = 'axis_visual_sidebar'
 
 function applyColors(primary: string, secondary: string, sidebar: string) {
   const root = document.documentElement
@@ -16,14 +15,6 @@ function applyColors(primary: string, secondary: string, sidebar: string) {
   root.style.setProperty('--gradient-main', `linear-gradient(135deg, ${primary} 0%, ${secondary} 100%)`)
   root.style.setProperty('--company-accent-hex', primary)
   root.style.setProperty('--sidebar-bg', sidebar)
-}
-
-function loadSavedColors() {
-  return {
-    primary: localStorage.getItem(STORAGE_PRIMARY) || DEFAULT_PRIMARY,
-    secondary: localStorage.getItem(STORAGE_SECONDARY) || DEFAULT_SECONDARY,
-    sidebar: localStorage.getItem(STORAGE_SIDEBAR) || DEFAULT_SIDEBAR,
-  }
 }
 
 const SIDEBAR_PRESETS = [
@@ -38,31 +29,65 @@ const SIDEBAR_PRESETS = [
 ]
 
 export default function VisualSettingsPage() {
-  const saved = loadSavedColors()
-  const [primary, setPrimary] = useState(saved.primary)
-  const [secondary, setSecondary] = useState(saved.secondary)
-  const [sidebar, setSidebar] = useState(saved.sidebar)
+  const { user } = useAuth()
+  const companyId = user?.companyId
+
+  const [primary, setPrimary] = useState(DEFAULT_PRIMARY)
+  const [secondary, setSecondary] = useState(DEFAULT_SECONDARY)
+  const [sidebar, setSidebar] = useState(DEFAULT_SIDEBAR)
+  const [loaded, setLoaded] = useState(false)
+
+  // Load from DB
+  useEffect(() => {
+    if (!companyId) return
+    const load = async () => {
+      const { data } = await supabase.from('company_branding').select('*').eq('company_id', companyId).maybeSingle() as any
+      if (data) {
+        setPrimary(data.primary_color || DEFAULT_PRIMARY)
+        setSecondary(data.secondary_color || DEFAULT_SECONDARY)
+        setSidebar(data.sidebar_bg || DEFAULT_SIDEBAR)
+        applyColors(data.primary_color || DEFAULT_PRIMARY, data.secondary_color || DEFAULT_SECONDARY, data.sidebar_bg || DEFAULT_SIDEBAR)
+      }
+      setLoaded(true)
+    }
+    load()
+  }, [companyId])
 
   useEffect(() => {
-    applyColors(primary, secondary, sidebar)
-  }, [primary, secondary, sidebar])
+    if (loaded) applyColors(primary, secondary, sidebar)
+  }, [primary, secondary, sidebar, loaded])
 
-  const handleSave = () => {
-    localStorage.setItem(STORAGE_PRIMARY, primary)
-    localStorage.setItem(STORAGE_SECONDARY, secondary)
-    localStorage.setItem(STORAGE_SIDEBAR, sidebar)
+  const handleSave = async () => {
+    if (!companyId) return
+    // Upsert branding
+    const { error } = await supabase.from('company_branding').upsert({
+      company_id: companyId,
+      primary_color: primary,
+      secondary_color: secondary,
+      sidebar_bg: sidebar,
+    } as any, { onConflict: 'company_id' })
+    if (error) {
+      console.error(error)
+      toast.error('Erro ao salvar personalização')
+      return
+    }
     applyColors(primary, secondary, sidebar)
     toast.success('Personalização visual salva e aplicada!')
   }
 
-  const handleReset = () => {
+  const handleReset = async () => {
     setPrimary(DEFAULT_PRIMARY)
     setSecondary(DEFAULT_SECONDARY)
     setSidebar(DEFAULT_SIDEBAR)
-    localStorage.removeItem(STORAGE_PRIMARY)
-    localStorage.removeItem(STORAGE_SECONDARY)
-    localStorage.removeItem(STORAGE_SIDEBAR)
     applyColors(DEFAULT_PRIMARY, DEFAULT_SECONDARY, DEFAULT_SIDEBAR)
+    if (companyId) {
+      await supabase.from('company_branding').upsert({
+        company_id: companyId,
+        primary_color: DEFAULT_PRIMARY,
+        secondary_color: DEFAULT_SECONDARY,
+        sidebar_bg: DEFAULT_SIDEBAR,
+      } as any, { onConflict: 'company_id' })
+    }
     toast.success('Cores restauradas ao padrão')
   }
 
@@ -152,9 +177,7 @@ export default function VisualSettingsPage() {
           </div>
           <div className="p-6">
             <div className="rounded-xl border border-border overflow-hidden">
-              {/* Mini sidebar + content */}
               <div className="grid grid-cols-[60px_1fr] h-64">
-                {/* Sidebar */}
                 <div className="p-2 space-y-2" style={{ background: sidebar }}>
                   <div className="h-8 w-8 rounded-lg mx-auto" style={{ background: `linear-gradient(135deg, ${primary}, ${secondary})` }} />
                   <div className="space-y-1">
@@ -164,7 +187,6 @@ export default function VisualSettingsPage() {
                     ))}
                   </div>
                 </div>
-                {/* Content */}
                 <div className="bg-background p-4 space-y-3">
                   <div className="h-4 rounded" style={{ background: `linear-gradient(135deg, ${primary}, ${secondary})`, width: '60%' }} />
                   <div className="flex gap-2">
