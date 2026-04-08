@@ -205,7 +205,7 @@ function PortalContent() {
               <Route path="filas/atendente" element={<AttendantSelectorPage />} />
               <Route path="filas/atendente/painel" element={<AttendantPanelPage />} />
               <Route path="filas/admin" element={<QueueAdminPage />}>
-                <Route index element={<AdminHomePage />} />
+                <Route index element={<Navigate to="/app/filas/admin/unidades" replace />} />
                 <Route path="unidades" element={<UnitsListPage />} />
                 <Route path="unidades/:unitId" element={<UnitConfigPage />} />
                 <Route path="unidades/:unitId/tvs" element={<TVConfigPage />} />
