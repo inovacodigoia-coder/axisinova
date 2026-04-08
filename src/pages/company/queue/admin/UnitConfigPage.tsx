@@ -51,9 +51,11 @@ export default function UnitConfigPage() {
     if (q === 'new') {
       setQName(''); setQPrefix(''); setQPrefixAlt(''); setQType('external'); setQCategory('attendance')
       setQColor('#e0e0e0'); setQShowOnTotem(true); setQQueueType('single'); setQLinkedIds([])
+      setQTotemId(''); setQHasPreferential(false); setQHasPreferential80(false); setQAllowTotemChoice(false)
     } else {
       setQName(q.name); setQPrefix(q.prefix); setQPrefixAlt(q.prefixAlt || ''); setQType(q.type); setQCategory(q.category)
       setQColor(q.color || '#e0e0e0'); setQShowOnTotem(q.showOnTotem); setQQueueType(q.queueType); setQLinkedIds([...q.linkedQueueIds])
+      setQTotemId(q.totemId || ''); setQHasPreferential(q.hasPreferential); setQHasPreferential80(q.hasPreferential80); setQAllowTotemChoice(q.allowTotemChoice)
     }
     setQueueModal(q)
   }
@@ -63,6 +65,7 @@ export default function UnitConfigPage() {
     const base = {
       name: qName, prefix: qPrefix, prefixAlt: qPrefixAlt || undefined, type: qType, category: qCategory,
       color: qColor, showOnTotem: qShowOnTotem, queueType: qQueueType, linkedQueueIds: qQueueType === 'block' ? qLinkedIds : [],
+      totemId: qTotemId || undefined, hasPreferential: qHasPreferential, hasPreferential80: qHasPreferential80, allowTotemChoice: qAllowTotemChoice,
     }
     if (queueModal === 'new') {
       dispatch({ type: 'ADD_QUEUE_LINE', payload: { id: `ql_${Date.now()}`, unitId: unitId!, isActive: true, order: queues.length + 1, ...base } })
