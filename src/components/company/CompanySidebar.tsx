@@ -13,7 +13,7 @@ import type { SystemModule } from '@/types/permissions.types'
 
 const ICON_MAP: Record<string, any> = {
   Calendar, UserCheck, FileText, DollarSign, FlaskConical, BarChart3,
-  TrendingUp, Users, Settings, Database, Monitor, Building2, Stethoscope, Home
+  TrendingUp, Users, Settings, Database, Monitor, Building2, Stethoscope, Home, TicketCheck
 }
 
 interface NavSection {
