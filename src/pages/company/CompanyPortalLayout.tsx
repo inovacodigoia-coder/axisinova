@@ -264,19 +264,21 @@ function PortalContent() {
 export default function CompanyPortalLayout() {
   return (
     <QueueProvider>
-      <NotificationContextProvider>
-        <GlobalSearchProvider>
-          <SchedulingProvider>
-            <RegistersProvider>
-              <MedicalProvider>
-                <BillingProvider>
-                  <PortalContent />
-                </BillingProvider>
-              </MedicalProvider>
-            </RegistersProvider>
-          </SchedulingProvider>
-        </GlobalSearchProvider>
-      </NotificationContextProvider>
+      <QueueSystemProvider>
+        <NotificationContextProvider>
+          <GlobalSearchProvider>
+            <SchedulingProvider>
+              <RegistersProvider>
+                <MedicalProvider>
+                  <BillingProvider>
+                    <PortalContent />
+                  </BillingProvider>
+                </MedicalProvider>
+              </RegistersProvider>
+            </SchedulingProvider>
+          </GlobalSearchProvider>
+        </NotificationContextProvider>
+      </QueueSystemProvider>
     </QueueProvider>
   )
 }
