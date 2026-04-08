@@ -6,33 +6,57 @@ import { useQueueSystem } from '@/context/QueueSystemContext'
 import { useAuth } from '@/context/AuthContext'
 import type { Unit } from '@/types/queue-system.types'
 
+const DEMO_COMPANY_ID = 'comp_001'
+
 export default function UnitsListPage() {
   const navigate = useNavigate()
   const { user } = useAuth()
-  const { state, dispatch } = useQueueSystem()
+  const { state, dispatch, addUnitDB, updateUnitDB, removeUnitDB } = useQueueSystem()
   const [showModal, setShowModal] = useState(false)
   const [editUnit, setEditUnit] = useState<Unit | null>(null)
   const [name, setName] = useState('')
+  const [saving, setSaving] = useState(false)
+
+  const isDemoCompany = user?.companyId === DEMO_COMPANY_ID
 
   const openAdd = () => { setEditUnit(null); setName(''); setShowModal(true) }
   const openEdit = (u: Unit) => { setEditUnit(u); setName(u.name); setShowModal(true) }
 
-  const handleSave = () => {
-    if (!name.trim()) return
-    if (editUnit) {
-      dispatch({ type: 'UPDATE_UNIT', payload: { ...editUnit, name: name.trim() } })
-      toast.success('Unidade atualizada')
+  const handleSave = async () => {
+    if (!name.trim() || saving) return
+    setSaving(true)
+
+    if (isDemoCompany) {
+      if (editUnit) {
+        dispatch({ type: 'UPDATE_UNIT', payload: { ...editUnit, name: name.trim() } })
+        toast.success('Unidade atualizada')
+      } else {
+        dispatch({ type: 'ADD_UNIT', payload: { id: `unit_${Date.now()}`, name: name.trim(), companyId: user?.companyId || '', isActive: true, createdAt: new Date().toISOString() } })
+        toast.success('Unidade criada')
+      }
     } else {
-      dispatch({ type: 'ADD_UNIT', payload: { id: `unit_${Date.now()}`, name: name.trim(), companyId: user?.companyId || '', isActive: true, createdAt: new Date().toISOString() } })
-      toast.success('Unidade criada')
+      if (editUnit) {
+        const ok = await updateUnitDB(editUnit.id, name.trim())
+        if (ok) toast.success('Unidade atualizada')
+      } else {
+        const unit = await addUnitDB(name.trim(), user?.companyId || '')
+        if (unit) toast.success('Unidade criada')
+      }
     }
+
+    setSaving(false)
     setShowModal(false)
   }
 
-  const handleRemove = (id: string) => {
+  const handleRemove = async (id: string) => {
     if (!confirm('Remover esta unidade?')) return
-    dispatch({ type: 'REMOVE_UNIT', payload: id })
-    toast.success('Unidade removida')
+    if (isDemoCompany) {
+      dispatch({ type: 'REMOVE_UNIT', payload: id })
+      toast.success('Unidade removida')
+    } else {
+      const ok = await removeUnitDB(id)
+      if (ok) toast.success('Unidade removida')
+    }
   }
 
   return (
@@ -75,6 +99,9 @@ export default function UnitsListPage() {
                 </td>
               </tr>
             ))}
+            {!state.units.length && (
+              <tr><td colSpan={4} className="px-4 py-8 text-center text-muted-foreground">Nenhuma unidade cadastrada</td></tr>
+            )}
           </tbody>
         </table>
       </div>
@@ -89,7 +116,9 @@ export default function UnitsListPage() {
             </div>
             <div className="flex gap-3 justify-end">
               <button onClick={() => setShowModal(false)} className="rounded-lg border border-input px-4 py-2 text-sm font-medium hover:bg-muted">Cancelar</button>
-              <button onClick={handleSave} className="rounded-lg bg-green-500 px-4 py-2 text-sm font-semibold text-white hover:bg-green-600">Salvar</button>
+              <button onClick={handleSave} disabled={saving} className="rounded-lg bg-green-500 px-4 py-2 text-sm font-semibold text-white hover:bg-green-600 disabled:opacity-50">
+                {saving ? 'Salvando...' : 'Salvar'}
+              </button>
             </div>
           </div>
         </div>
