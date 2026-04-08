@@ -1,13 +1,12 @@
 import { useState } from 'react'
 import { Outlet, useNavigate, useLocation } from 'react-router-dom'
-import { Home, BarChart3, Building2, Users, LogOut, ChevronLeft, ChevronRight } from 'lucide-react'
+import { Home, BarChart3, Building2, LogOut, ChevronLeft, ChevronRight } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
 const NAV = [
   { label: 'Home', icon: Home, path: '/app/filas/admin' },
   { label: 'Dashboard', icon: BarChart3, path: '/app/filas/admin/bi' },
   { label: 'Unidades', icon: Building2, path: '/app/filas/admin/unidades' },
-  { label: 'Usuários', icon: Users, path: '/app/filas/admin/usuarios' },
 ]
 
 export default function QueueAdminPage() {

@@ -23,7 +23,7 @@ export default function QueueBIPage() {
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between flex-wrap gap-4">
-        <h1 className="text-xl font-bold text-foreground">Dashboard de Atendimento</h1>
+        <h1 className="text-xl font-bold text-foreground">Dashboard de Atendimento (BI)</h1>
         <div className="flex items-center gap-3">
           <select value={unitId} onChange={e => setUnitId(e.target.value)} className="rounded-lg border border-input bg-background px-3 py-2 text-sm">
             <option value="all">Todas as unidades</option>

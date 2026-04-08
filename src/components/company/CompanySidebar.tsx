@@ -64,6 +64,7 @@ const NAV_SECTIONS: NavSection[] = [
       { label: 'Financeiro', icon: 'DollarSign', path: '/app/bi/financeiro', module: 'bi' },
       { label: 'Agendamentos', icon: 'Calendar', path: '/app/bi/agendamentos', module: 'bi' },
       { label: 'Faltosos (BI)', icon: 'Monitor', path: '/app/bi/faltosos', module: 'bi' },
+      { label: 'Atendimento (BI)', icon: 'TicketCheck', path: '/app/bi/atendimento', module: 'bi' },
       { label: 'Convênios (BI)', icon: 'Database', path: '/app/bi/convenios', module: 'bi' },
       { label: 'Performance', icon: 'Stethoscope', path: '/app/bi/medicos', module: 'bi' },
     ],
