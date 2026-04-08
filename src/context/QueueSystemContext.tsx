@@ -2,6 +2,8 @@ import { createContext, useCallback, useContext, useReducer, useEffect, useMemo,
 import type { Unit, QueueLine, Guiche, Totem, TV, Ticket, TicketStatus, AttendantSession, MediaAttachment } from '@/types/queue-system.types'
 import { MOCK_UNITS, MOCK_QUEUE_LINES, MOCK_GUICHES, MOCK_TOTEMS, MOCK_TVS, MOCK_TICKETS } from '@/mocks/queue-system.mock'
 import { useAuth } from '@/context/AuthContext'
+import { supabase } from '@/integrations/supabase/client'
+import { toast } from 'sonner'
 
 const DEMO_COMPANY_ID = 'comp_001'
 
@@ -14,6 +16,7 @@ interface QueueSystemState {
   tickets: Ticket[]
   lastCalledTicket: Ticket | null
   attendantSession: AttendantSession | null
+  isLoading: boolean
 }
 
 type QueueSystemAction =
@@ -47,9 +50,11 @@ type QueueSystemAction =
   | { type: 'FINALIZE_TICKET'; payload: { ticketId: string; attendantName: string } }
   | { type: 'REACTIVATE_TICKET'; payload: { ticketId: string; attendantName: string } }
   | { type: 'SET_ATTENDANT_SESSION'; payload: AttendantSession | null }
+  | { type: 'SET_LOADING'; payload: boolean }
 
 function reducer(state: QueueSystemState, action: QueueSystemAction): QueueSystemState {
   switch (action.type) {
+    case 'SET_LOADING': return { ...state, isLoading: action.payload }
     case 'SET_UNITS': return { ...state, units: action.payload }
     case 'ADD_UNIT': return { ...state, units: [...state.units, action.payload] }
     case 'UPDATE_UNIT': return { ...state, units: state.units.map(u => u.id === action.payload.id ? action.payload : u) }
@@ -141,6 +146,34 @@ function reducer(state: QueueSystemState, action: QueueSystemAction): QueueSyste
   }
 }
 
+// Helper to map DB rows to local types
+function mapDbUnit(row: any): Unit {
+  return { id: row.id, name: row.name, companyId: row.company_id, isActive: row.is_active, createdAt: row.created_at }
+}
+function mapDbTotem(row: any): Totem {
+  return { id: row.id, unitId: row.unit_id, name: row.name, isActive: row.is_active }
+}
+function mapDbQueueLine(row: any): QueueLine {
+  return {
+    id: row.id, unitId: row.unit_id, name: row.name, prefix: row.prefix, type: row.type as any,
+    category: row.category as any, isActive: row.is_active, order: row.sort_order,
+    color: row.color, showOnTotem: row.show_on_totem, queueType: row.queue_type as any,
+    linkedQueueIds: row.linked_queue_ids || [], prefixAlt: row.prefix_alt,
+    totemId: row.totem_id, hasPreferential: row.has_preferential,
+    hasPreferential80: row.has_preferential_80, allowTotemChoice: row.allow_totem_choice,
+  }
+}
+function mapDbGuiche(row: any): Guiche {
+  return { id: row.id, unitId: row.unit_id, name: row.name, type: row.type as any, isActive: row.is_active }
+}
+function mapDbTV(row: any): TV {
+  return {
+    id: row.id, unitId: row.unit_id, name: row.name, voiceType: row.voice_type as any,
+    screenSize: row.screen_size as any, deviceCount: row.device_count,
+    mediaMode: row.media_mode as any, mediaAttachments: [], isActive: row.is_active,
+  }
+}
+
 interface QueueSystemContextValue {
   state: QueueSystemState
   dispatch: React.Dispatch<QueueSystemAction>
@@ -149,6 +182,23 @@ interface QueueSystemContextValue {
   getUnitTotems: (unitId: string) => Totem[]
   getUnitTVs: (unitId: string) => TV[]
   getUnitTickets: (unitId: string, queueLineIds?: string[]) => Ticket[]
+  // Supabase CRUD helpers
+  addUnitDB: (name: string, companyId: string) => Promise<Unit | null>
+  updateUnitDB: (id: string, name: string) => Promise<boolean>
+  removeUnitDB: (id: string) => Promise<boolean>
+  addTotemDB: (unitId: string, name: string, companyId: string) => Promise<Totem | null>
+  updateTotemDB: (id: string, name: string) => Promise<boolean>
+  removeTotemDB: (id: string) => Promise<boolean>
+  addQueueLineDB: (data: Omit<QueueLine, 'id' | 'isActive'> & { companyId: string }) => Promise<QueueLine | null>
+  updateQueueLineDB: (data: QueueLine & { companyId?: string }) => Promise<boolean>
+  removeQueueLineDB: (id: string) => Promise<boolean>
+  addGuicheDB: (unitId: string, name: string, type: string, companyId: string) => Promise<Guiche | null>
+  updateGuicheDB: (id: string, name: string, type: string) => Promise<boolean>
+  removeGuicheDB: (id: string) => Promise<boolean>
+  addTVDB: (data: Omit<TV, 'id' | 'isActive' | 'mediaAttachments'> & { companyId: string }) => Promise<TV | null>
+  updateTVDB: (data: TV & { companyId?: string }) => Promise<boolean>
+  removeTVDB: (id: string) => Promise<boolean>
+  loadCompanyData: (companyId: string) => Promise<void>
 }
 
 const QueueSystemContext = createContext<QueueSystemContextValue | null>(null)
@@ -166,8 +216,42 @@ export function QueueSystemProvider({ children }: { children: ReactNode }) {
     tickets: isDemoCompany ? MOCK_TICKETS : [],
     lastCalledTicket: null,
     attendantSession: null,
+    isLoading: false,
   })
+
+  // Load data from Supabase for non-demo companies
+  const loadCompanyData = useCallback(async (companyId: string) => {
+    if (companyId === DEMO_COMPANY_ID) return
+    dispatch({ type: 'SET_LOADING', payload: true })
+    try {
+      const [unitsRes, totemsRes, queuesRes, guichesRes, tvsRes] = await Promise.all([
+        supabase.from('queue_units').select('*').eq('company_id', companyId),
+        supabase.from('queue_totems').select('*').eq('company_id', companyId),
+        supabase.from('queue_lines').select('*').eq('company_id', companyId).order('sort_order'),
+        supabase.from('queue_guiches').select('*').eq('company_id', companyId),
+        supabase.from('queue_tvs').select('*').eq('company_id', companyId),
+      ])
+      if (unitsRes.data) dispatch({ type: 'SET_UNITS', payload: unitsRes.data.map(mapDbUnit) })
+      if (totemsRes.data) dispatch({ type: 'SET_TOTEMS', payload: totemsRes.data.map(mapDbTotem) })
+      if (queuesRes.data) dispatch({ type: 'SET_QUEUE_LINES', payload: queuesRes.data.map(mapDbQueueLine) })
+      if (guichesRes.data) dispatch({ type: 'SET_GUICHES', payload: guichesRes.data.map(mapDbGuiche) })
+      if (tvsRes.data) dispatch({ type: 'SET_TVS', payload: tvsRes.data.map(mapDbTV) })
+    } catch (err) {
+      console.error('Error loading queue data:', err)
+    } finally {
+      dispatch({ type: 'SET_LOADING', payload: false })
+    }
+  }, [])
+
   useEffect(() => {
+    if (user?.companyId && user.companyId !== DEMO_COMPANY_ID) {
+      loadCompanyData(user.companyId)
+    }
+  }, [user?.companyId, loadCompanyData])
+
+  // Auto ticket generation for demo
+  useEffect(() => {
+    if (!isDemoCompany) return
     const interval = setInterval(() => {
       if (!state.attendantSession?.unitId) return
       const unitQueues = state.queueLines.filter(q => q.unitId === state.attendantSession!.unitId && q.type === 'external')
@@ -191,7 +275,140 @@ export function QueueSystemProvider({ children }: { children: ReactNode }) {
       dispatch({ type: 'ADD_TICKET', payload: ticket })
     }, 60000)
     return () => clearInterval(interval)
-  }, [state.attendantSession?.unitId, state.queueLines, state.tickets])
+  }, [isDemoCompany, state.attendantSession?.unitId, state.queueLines, state.tickets])
+
+  // ====== Supabase CRUD helpers ======
+  const addUnitDB = useCallback(async (name: string, companyId: string): Promise<Unit | null> => {
+    const { data, error } = await supabase.from('queue_units').insert({ name, company_id: companyId }).select().single()
+    if (error) { toast.error('Erro ao criar unidade'); console.error(error); return null }
+    const unit = mapDbUnit(data)
+    dispatch({ type: 'ADD_UNIT', payload: unit })
+    return unit
+  }, [])
+
+  const updateUnitDB = useCallback(async (id: string, name: string): Promise<boolean> => {
+    const { error } = await supabase.from('queue_units').update({ name }).eq('id', id)
+    if (error) { toast.error('Erro ao atualizar unidade'); return false }
+    dispatch({ type: 'UPDATE_UNIT', payload: { ...state.units.find(u => u.id === id)!, name } })
+    return true
+  }, [state.units])
+
+  const removeUnitDB = useCallback(async (id: string): Promise<boolean> => {
+    const { error } = await supabase.from('queue_units').delete().eq('id', id)
+    if (error) { toast.error('Erro ao remover unidade'); return false }
+    dispatch({ type: 'REMOVE_UNIT', payload: id })
+    return true
+  }, [])
+
+  const addTotemDB = useCallback(async (unitId: string, name: string, companyId: string): Promise<Totem | null> => {
+    const { data, error } = await supabase.from('queue_totems').insert({ unit_id: unitId, name, company_id: companyId }).select().single()
+    if (error) { toast.error('Erro ao criar totem'); console.error(error); return null }
+    const totem = mapDbTotem(data)
+    dispatch({ type: 'ADD_TOTEM', payload: totem })
+    return totem
+  }, [])
+
+  const updateTotemDB = useCallback(async (id: string, name: string): Promise<boolean> => {
+    const { error } = await supabase.from('queue_totems').update({ name }).eq('id', id)
+    if (error) { toast.error('Erro ao atualizar totem'); return false }
+    dispatch({ type: 'UPDATE_TOTEM', payload: { ...state.totems.find(t => t.id === id)!, name } })
+    return true
+  }, [state.totems])
+
+  const removeTotemDB = useCallback(async (id: string): Promise<boolean> => {
+    const { error } = await supabase.from('queue_totems').delete().eq('id', id)
+    if (error) { toast.error('Erro ao remover totem'); return false }
+    dispatch({ type: 'REMOVE_TOTEM', payload: id })
+    return true
+  }, [])
+
+  const addQueueLineDB = useCallback(async (data: Omit<QueueLine, 'id' | 'isActive'> & { companyId: string }): Promise<QueueLine | null> => {
+    const { data: row, error } = await supabase.from('queue_lines').insert({
+      company_id: data.companyId, unit_id: data.unitId, name: data.name, prefix: data.prefix,
+      prefix_alt: data.prefixAlt || null, type: data.type, category: data.category,
+      color: data.color, show_on_totem: data.showOnTotem, queue_type: data.queueType,
+      linked_queue_ids: data.linkedQueueIds, totem_id: data.totemId || null,
+      has_preferential: data.hasPreferential, has_preferential_80: data.hasPreferential80,
+      allow_totem_choice: data.allowTotemChoice, sort_order: data.order,
+    }).select().single()
+    if (error) { toast.error('Erro ao criar fila'); console.error(error); return null }
+    const ql = mapDbQueueLine(row)
+    dispatch({ type: 'ADD_QUEUE_LINE', payload: ql })
+    return ql
+  }, [])
+
+  const updateQueueLineDB = useCallback(async (data: QueueLine & { companyId?: string }): Promise<boolean> => {
+    const { error } = await supabase.from('queue_lines').update({
+      name: data.name, prefix: data.prefix, prefix_alt: data.prefixAlt || null,
+      type: data.type, category: data.category, color: data.color,
+      show_on_totem: data.showOnTotem, queue_type: data.queueType,
+      linked_queue_ids: data.linkedQueueIds, totem_id: data.totemId || null,
+      has_preferential: data.hasPreferential, has_preferential_80: data.hasPreferential80,
+      allow_totem_choice: data.allowTotemChoice, sort_order: data.order,
+    }).eq('id', data.id)
+    if (error) { toast.error('Erro ao atualizar fila'); return false }
+    dispatch({ type: 'UPDATE_QUEUE_LINE', payload: data })
+    return true
+  }, [])
+
+  const removeQueueLineDB = useCallback(async (id: string): Promise<boolean> => {
+    const { error } = await supabase.from('queue_lines').delete().eq('id', id)
+    if (error) { toast.error('Erro ao remover fila'); return false }
+    dispatch({ type: 'REMOVE_QUEUE_LINE', payload: id })
+    return true
+  }, [])
+
+  const addGuicheDB = useCallback(async (unitId: string, name: string, type: string, companyId: string): Promise<Guiche | null> => {
+    const { data, error } = await supabase.from('queue_guiches').insert({ unit_id: unitId, name, type, company_id: companyId }).select().single()
+    if (error) { toast.error('Erro ao criar guichê'); console.error(error); return null }
+    const g = mapDbGuiche(data)
+    dispatch({ type: 'ADD_GUICHE', payload: g })
+    return g
+  }, [])
+
+  const updateGuicheDB = useCallback(async (id: string, name: string, type: string): Promise<boolean> => {
+    const { error } = await supabase.from('queue_guiches').update({ name, type }).eq('id', id)
+    if (error) { toast.error('Erro ao atualizar guichê'); return false }
+    const existing = state.guiches.find(g => g.id === id)
+    if (existing) dispatch({ type: 'UPDATE_GUICHE', payload: { ...existing, name, type: type as any } })
+    return true
+  }, [state.guiches])
+
+  const removeGuicheDB = useCallback(async (id: string): Promise<boolean> => {
+    const { error } = await supabase.from('queue_guiches').delete().eq('id', id)
+    if (error) { toast.error('Erro ao remover guichê'); return false }
+    dispatch({ type: 'REMOVE_GUICHE', payload: id })
+    return true
+  }, [])
+
+  const addTVDB = useCallback(async (data: Omit<TV, 'id' | 'isActive' | 'mediaAttachments'> & { companyId: string }): Promise<TV | null> => {
+    const { data: row, error } = await supabase.from('queue_tvs').insert({
+      company_id: data.companyId, unit_id: data.unitId, name: data.name,
+      voice_type: data.voiceType, screen_size: data.screenSize,
+      device_count: data.deviceCount, media_mode: data.mediaMode,
+    }).select().single()
+    if (error) { toast.error('Erro ao criar TV'); console.error(error); return null }
+    const tv = mapDbTV(row)
+    dispatch({ type: 'ADD_TV', payload: tv })
+    return tv
+  }, [])
+
+  const updateTVDB = useCallback(async (data: TV & { companyId?: string }): Promise<boolean> => {
+    const { error } = await supabase.from('queue_tvs').update({
+      name: data.name, voice_type: data.voiceType, screen_size: data.screenSize,
+      device_count: data.deviceCount, media_mode: data.mediaMode,
+    }).eq('id', data.id)
+    if (error) { toast.error('Erro ao atualizar TV'); return false }
+    dispatch({ type: 'UPDATE_TV', payload: data })
+    return true
+  }, [])
+
+  const removeTVDB = useCallback(async (id: string): Promise<boolean> => {
+    const { error } = await supabase.from('queue_tvs').delete().eq('id', id)
+    if (error) { toast.error('Erro ao remover TV'); return false }
+    dispatch({ type: 'REMOVE_TV', payload: id })
+    return true
+  }, [])
 
   const getUnitQueues = useCallback((unitId: string) => state.queueLines.filter(q => q.unitId === unitId), [state.queueLines])
   const getUnitGuiches = useCallback((unitId: string) => state.guiches.filter(g => g.unitId === unitId), [state.guiches])
@@ -203,7 +420,15 @@ export function QueueSystemProvider({ children }: { children: ReactNode }) {
     return filtered
   }, [state.tickets])
 
-  const value = useMemo(() => ({ state, dispatch, getUnitQueues, getUnitGuiches, getUnitTotems, getUnitTVs, getUnitTickets }), [state, dispatch, getUnitQueues, getUnitGuiches, getUnitTotems, getUnitTVs, getUnitTickets])
+  const value = useMemo(() => ({
+    state, dispatch, getUnitQueues, getUnitGuiches, getUnitTotems, getUnitTVs, getUnitTickets,
+    addUnitDB, updateUnitDB, removeUnitDB, addTotemDB, updateTotemDB, removeTotemDB,
+    addQueueLineDB, updateQueueLineDB, removeQueueLineDB, addGuicheDB, updateGuicheDB, removeGuicheDB,
+    addTVDB, updateTVDB, removeTVDB, loadCompanyData,
+  }), [state, dispatch, getUnitQueues, getUnitGuiches, getUnitTotems, getUnitTVs, getUnitTickets,
+    addUnitDB, updateUnitDB, removeUnitDB, addTotemDB, updateTotemDB, removeTotemDB,
+    addQueueLineDB, updateQueueLineDB, removeQueueLineDB, addGuicheDB, updateGuicheDB, removeGuicheDB,
+    addTVDB, updateTVDB, removeTVDB, loadCompanyData])
 
   return <QueueSystemContext.Provider value={value}>{children}</QueueSystemContext.Provider>
 }
