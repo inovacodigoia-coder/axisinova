@@ -237,7 +237,7 @@ function ManageUsersModal({
 }
 
 /* ── Form de Setor ── */
-function SectorForm({ sector, profiles, onSave, onCancel }: { sector: Sector | null; profiles: any[]; onSave: (s: Sector) => void; onCancel: () => void }) {
+function SectorForm({ sector, profiles, companyId, onSave, onCancel }: { sector: Sector | null; profiles: any[]; companyId: string; onSave: (s: Sector) => void; onCancel: () => void }) {
   const [name, setName] = useState(sector?.name || '')
   const [desc, setDesc] = useState(sector?.description || '')
   const [allowed, setAllowed] = useState<Set<string>>(new Set(sector?.allowedProfiles || []))
