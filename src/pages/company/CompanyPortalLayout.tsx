@@ -199,7 +199,7 @@ function PortalContent() {
               <Route path="bi/medicos" element={<DoctorPerformancePage />} />
               <Route path="bi/atendimento" element={<QueueBIPage />} />
               {/* Queue System */}
-              <Route path="filas" element={<QueueSelectorPage />} />
+              <Route path="filas" element={<Navigate to="/app/filas/admin/unidades" replace />} />
               <Route path="filas/tv" element={<TVSelectorPage />} />
               <Route path="filas/totem" element={<TotemSelectorPage />} />
               <Route path="filas/atendente" element={<AttendantSelectorPage />} />

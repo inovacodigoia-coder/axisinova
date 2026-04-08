@@ -38,7 +38,7 @@ export default function UnitsListPage() {
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <h1 className="text-xl font-bold text-foreground">Configurar Unidades</h1>
+        <h1 className="text-xl font-bold text-foreground">Configurar Local / Unidade</h1>
         <button onClick={openAdd} className="flex items-center gap-2 rounded-lg bg-green-500 px-4 py-2 text-sm font-semibold text-white hover:bg-green-600 transition-colors">
           <Plus className="h-4 w-4" /> Adicionar
         </button>
