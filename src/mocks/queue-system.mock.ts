@@ -84,9 +84,11 @@ export const MOCK_TVS: TV[] = [
 ]
 
 function mkTimeline(id: string, gen: string, called?: string, attended?: string, guiche?: string, attendant?: string) {
-  const tl = [{ id: `tl_${id}_1`, action: 'created' as const, description: 'Ficha gerada no totem', timestamp: gen }]
-  if (called) tl.push({ id: `tl_${id}_2`, action: 'called' as const, description: `Chamado por ${attendant || 'Atendente'} (${guiche || 'Guichê'})`, performedBy: attendant, guicheName: guiche, timestamp: called })
-  if (attended) tl.push({ id: `tl_${id}_3`, action: 'attended' as const, description: `Atendido por ${attendant || 'Atendente'} (${guiche || 'Guichê'})`, performedBy: attendant, guicheName: guiche, timestamp: attended })
+  const tl: import('@/types/queue-system.types').TicketTimelineEntry[] = [
+    { id: `tl_${id}_1`, action: 'created', description: 'Ficha gerada no totem', timestamp: gen },
+  ]
+  if (called) tl.push({ id: `tl_${id}_2`, action: 'called', description: `Chamado por ${attendant || 'Atendente'} (${guiche || 'Guichê'})`, performedBy: attendant, guicheName: guiche, timestamp: called })
+  if (attended) tl.push({ id: `tl_${id}_3`, action: 'attended', description: `Atendido por ${attendant || 'Atendente'} (${guiche || 'Guichê'})`, performedBy: attendant, guicheName: guiche, timestamp: attended })
   return tl
 }
 
