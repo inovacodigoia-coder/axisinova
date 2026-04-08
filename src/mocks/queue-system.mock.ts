@@ -18,51 +18,59 @@ export const MOCK_UNITS: Unit[] = [
   { id: 'unit_12', name: 'Neópolis', companyId: 'comp_001', isActive: true, createdAt: '2024-01-01T00:00:00' },
 ]
 
+const ql = (id: string, unitId: string, name: string, prefix: string, type: 'external' | 'internal', category: 'attendance' | 'collect', order: number, opts?: Partial<QueueLine>): QueueLine => ({
+  id, unitId, name, prefix, type, category, isActive: true, order,
+  showOnTotem: type === 'external',
+  queueType: 'single',
+  linkedQueueIds: [],
+  ...opts,
+})
+
 export const MOCK_QUEUE_LINES: QueueLine[] = [
   // Major Laurentino - External
-  { id: 'ql_1', unitId: 'unit_10', name: 'Atendimento Laboratório (A) - Externo', prefix: 'A', type: 'external', category: 'attendance', isActive: true, order: 1 },
-  { id: 'ql_2', unitId: 'unit_10', name: 'Retorno/Entrega/Pré-Cadastro (R) - Externo', prefix: 'R', type: 'external', category: 'attendance', isActive: true, order: 2 },
-  { id: 'ql_3', unitId: 'unit_10', name: 'Exame Agendado (E) - Externo', prefix: 'E', type: 'external', category: 'attendance', isActive: true, order: 3 },
-  { id: 'ql_4', unitId: 'unit_10', name: 'Kids (K) - Externo', prefix: 'K', type: 'external', category: 'attendance', isActive: true, order: 4 },
-  { id: 'ql_5', unitId: 'unit_10', name: 'Resultado de Exame (R) - Externo', prefix: 'R', type: 'external', category: 'attendance', isActive: true, order: 5 },
-  { id: 'ql_6', unitId: 'unit_10', name: 'Dr. Aurelio Braulio (1º Andar)', prefix: 'D', type: 'external', category: 'attendance', isActive: true, order: 6 },
-  { id: 'ql_7', unitId: 'unit_10', name: 'DNA Care', prefix: 'N', type: 'external', category: 'attendance', isActive: true, order: 7 },
-  { id: 'ql_8', unitId: 'unit_10', name: 'InovaGastro (1º Andar)', prefix: 'I', type: 'external', category: 'attendance', isActive: true, order: 8 },
-  { id: 'ql_9', unitId: 'unit_10', name: 'Normal (N) - Externo', prefix: 'N', type: 'external', category: 'attendance', isActive: true, order: 9 },
-  { id: 'ql_10', unitId: 'unit_10', name: 'Preferencial (P) - Externo', prefix: 'P', type: 'external', category: 'attendance', isActive: true, order: 10 },
+  ql('ql_1', 'unit_10', 'Atendimento', 'A', 'external', 'attendance', 1, { queueType: 'block', linkedQueueIds: ['ql_24', 'ql_22', 'ql_21', 'ql_9'], prefixAlt: 'F' }),
+  ql('ql_2', 'unit_10', 'Retorno/Entrega/Pré-Cadastro', 'R', 'external', 'attendance', 2),
+  ql('ql_3', 'unit_10', 'Exame Agendado', 'E', 'external', 'attendance', 3),
+  ql('ql_4', 'unit_10', 'Kids', 'K', 'external', 'attendance', 4),
+  ql('ql_5', 'unit_10', 'Resultado de Exame', 'R', 'external', 'attendance', 5),
+  ql('ql_6', 'unit_10', 'Dr. Aurelio Braulio (1º Andar)', 'D', 'external', 'attendance', 6),
+  ql('ql_7', 'unit_10', 'DNA Care', 'N', 'external', 'attendance', 7),
+  ql('ql_8', 'unit_10', 'InovaGastro (1º Andar)', 'I', 'external', 'attendance', 8),
+  ql('ql_9', 'unit_10', 'Normal', 'N', 'external', 'attendance', 9),
+  ql('ql_10', 'unit_10', 'Preferencial', 'P', 'external', 'attendance', 10),
   // Major Laurentino - Internal
-  { id: 'ql_11', unitId: 'unit_10', name: 'Consultório Médico - Interno', prefix: 'CM', type: 'internal', category: 'attendance', isActive: true, order: 11 },
-  { id: 'ql_12', unitId: 'unit_10', name: 'Coleta - Interno', prefix: 'CL', type: 'internal', category: 'collect', isActive: true, order: 12 },
-  { id: 'ql_13', unitId: 'unit_10', name: 'Carro - Interno', prefix: 'CR', type: 'internal', category: 'collect', isActive: true, order: 13 },
-  { id: 'ql_14', unitId: 'unit_10', name: 'DNA Care - Interno', prefix: 'DC', type: 'internal', category: 'attendance', isActive: true, order: 14 },
-  { id: 'ql_15', unitId: 'unit_10', name: 'Repouso - Interno', prefix: 'RP', type: 'internal', category: 'collect', isActive: true, order: 15 },
+  ql('ql_11', 'unit_10', 'Consultório Médico', 'CM', 'internal', 'attendance', 11, { showOnTotem: false }),
+  ql('ql_12', 'unit_10', 'Coleta', 'CL', 'internal', 'collect', 12, { showOnTotem: false }),
+  ql('ql_13', 'unit_10', 'Carro', 'CR', 'internal', 'collect', 13, { showOnTotem: false }),
+  ql('ql_14', 'unit_10', 'DNA Care', 'DC', 'internal', 'attendance', 14, { showOnTotem: false }),
+  ql('ql_15', 'unit_10', 'Repouso', 'RP', 'internal', 'collect', 15, { showOnTotem: false }),
   // Alecrim
-  { id: 'ql_20', unitId: 'unit_1', name: 'Atendimento (A) - Externo', prefix: 'A', type: 'external', category: 'attendance', isActive: true, order: 1 },
-  { id: 'ql_21', unitId: 'unit_1', name: 'Preferencial +80 (F) - Externo', prefix: 'F', type: 'external', category: 'attendance', isActive: true, order: 2 },
-  { id: 'ql_22', unitId: 'unit_1', name: 'Preferencial (P) - Externo', prefix: 'P', type: 'external', category: 'attendance', isActive: true, order: 3 },
-  { id: 'ql_23', unitId: 'unit_1', name: 'Normal (N) - Externo', prefix: 'N', type: 'external', category: 'attendance', isActive: true, order: 4 },
-  { id: 'ql_24', unitId: 'unit_1', name: 'Liga (L) - Externo', prefix: 'L', type: 'external', category: 'attendance', isActive: true, order: 5 },
-  { id: 'ql_25', unitId: 'unit_1', name: 'Kids (K) - Externo', prefix: 'K', type: 'external', category: 'attendance', isActive: true, order: 6 },
-  { id: 'ql_26', unitId: 'unit_1', name: 'Retorno-Entrega Material (R) - Externo', prefix: 'R', type: 'external', category: 'attendance', isActive: true, order: 7 },
-  { id: 'ql_27', unitId: 'unit_1', name: 'Coleta (C) - Externo', prefix: 'C', type: 'external', category: 'collect', isActive: true, order: 8 },
-  { id: 'ql_28', unitId: 'unit_1', name: 'Consultório Médico - Interno', prefix: 'CM', type: 'internal', category: 'attendance', isActive: true, order: 9 },
-  { id: 'ql_29', unitId: 'unit_1', name: 'Coleta - Interno', prefix: 'CL', type: 'internal', category: 'collect', isActive: true, order: 10 },
+  ql('ql_20', 'unit_1', 'Atendimento', 'A', 'external', 'attendance', 1, { queueType: 'block', linkedQueueIds: ['ql_24', 'ql_21', 'ql_23'], prefixAlt: 'F' }),
+  ql('ql_21', 'unit_1', 'Preferencial +80', 'F', 'external', 'attendance', 2),
+  ql('ql_22', 'unit_1', 'Preferencial', 'P', 'external', 'attendance', 3),
+  ql('ql_23', 'unit_1', 'Normal', 'N', 'external', 'attendance', 4),
+  ql('ql_24', 'unit_1', 'Liga', 'L', 'external', 'attendance', 5),
+  ql('ql_25', 'unit_1', 'Kids', 'K', 'external', 'attendance', 6),
+  ql('ql_26', 'unit_1', 'Retorno-Entrega Material', 'R', 'external', 'attendance', 7),
+  ql('ql_27', 'unit_1', 'Coleta', 'C', 'external', 'collect', 8),
+  ql('ql_28', 'unit_1', 'Consultório Médico', 'CM', 'internal', 'attendance', 9, { showOnTotem: false }),
+  ql('ql_29', 'unit_1', 'Coleta', 'CL', 'internal', 'collect', 10, { showOnTotem: false }),
 ]
 
 export const MOCK_GUICHES: Guiche[] = [
   // Major Laurentino
-  { id: 'g_1', unitId: 'unit_10', name: 'Guichê 01 Preferencial - Externo', type: 'external', isActive: true },
-  { id: 'g_2', unitId: 'unit_10', name: 'Guichê 02 - Externo', type: 'external', isActive: true },
-  { id: 'g_3', unitId: 'unit_10', name: 'Guichê 03 - Externo', type: 'external', isActive: true },
-  { id: 'g_4', unitId: 'unit_10', name: 'Coleta - Interno', type: 'internal', isActive: true },
-  { id: 'g_5', unitId: 'unit_10', name: 'Repouso - Interno', type: 'internal', isActive: true },
-  { id: 'g_6', unitId: 'unit_10', name: 'Guichê 06 - Externo', type: 'external', isActive: true },
+  { id: 'g_1', unitId: 'unit_10', name: 'Guichê 01 Preferencial', type: 'external', isActive: true },
+  { id: 'g_2', unitId: 'unit_10', name: 'Guichê 02', type: 'external', isActive: true },
+  { id: 'g_3', unitId: 'unit_10', name: 'Guichê 03', type: 'external', isActive: true },
+  { id: 'g_4', unitId: 'unit_10', name: 'Coleta', type: 'internal', isActive: true },
+  { id: 'g_5', unitId: 'unit_10', name: 'Repouso', type: 'internal', isActive: true },
+  { id: 'g_6', unitId: 'unit_10', name: 'Guichê 06', type: 'external', isActive: true },
   // Alecrim
-  { id: 'g_10', unitId: 'unit_1', name: 'Guichê 01 Preferencial - Externo', type: 'external', isActive: true },
-  { id: 'g_11', unitId: 'unit_1', name: 'Guichê 02 - Externo', type: 'external', isActive: true },
-  { id: 'g_12', unitId: 'unit_1', name: 'Guichê 03 - Externo', type: 'external', isActive: true },
-  { id: 'g_13', unitId: 'unit_1', name: 'Coleta - Interno', type: 'internal', isActive: true },
-  { id: 'g_14', unitId: 'unit_1', name: 'Repouso - Interno', type: 'internal', isActive: true },
+  { id: 'g_10', unitId: 'unit_1', name: 'Guichê 01 Preferencial', type: 'external', isActive: true },
+  { id: 'g_11', unitId: 'unit_1', name: 'Guichê 02', type: 'external', isActive: true },
+  { id: 'g_12', unitId: 'unit_1', name: 'Guichê 03', type: 'external', isActive: true },
+  { id: 'g_13', unitId: 'unit_1', name: 'Coleta', type: 'internal', isActive: true },
+  { id: 'g_14', unitId: 'unit_1', name: 'Repouso', type: 'internal', isActive: true },
 ]
 
 export const MOCK_TOTEMS: Totem[] = [
@@ -93,7 +101,6 @@ function mkTimeline(id: string, gen: string, called?: string, attended?: string,
 }
 
 export const MOCK_TICKETS: Ticket[] = [
-  // Waiting
   { id: 'tk_1', unitId: 'unit_10', queueLineId: 'ql_5', queueLineName: 'Resultado de Exame', prefix: 'R', number: 23, displayCode: 'R23', status: 'called', guicheId: 'g_6', guicheName: 'Guichê 06', callCount: 1, generatedAt: ts(15, 25), calledAt: ts(15, 27), attendanceStartedAt: ts(15, 27), timeline: mkTimeline('1', ts(15, 25), ts(15, 27), ts(15, 27), 'Guichê 06', 'Marianna Beatriz') },
   { id: 'tk_2', unitId: 'unit_10', queueLineId: 'ql_5', queueLineName: 'Resultado de Exame', prefix: 'R', number: 24, displayCode: 'R24', status: 'waiting', callCount: 0, generatedAt: ts(15, 28), timeline: mkTimeline('2', ts(15, 28)) },
   { id: 'tk_3', unitId: 'unit_10', queueLineId: 'ql_5', queueLineName: 'Resultado de Exame', prefix: 'R', number: 25, displayCode: 'R25', status: 'waiting', callCount: 0, generatedAt: ts(15, 30), timeline: mkTimeline('3', ts(15, 30)) },
