@@ -60,6 +60,7 @@ const App = () => (
                 <Route path="/painel-chamada" element={<CallingPanelPage />} />
                 <Route path="/painel/:slug" element={<CallingPanelPage />} />
                 <Route path="/painel-medico" element={<DoctorPanelPage />} />
+                <Route path="/painel-tv" element={<QueueSystemProvider><TVPanelPage /></QueueSystemProvider>} />
 
                 {/* Patient Portal */}
                 <Route path="/resultado" element={<PatientPortalLayout />} />
