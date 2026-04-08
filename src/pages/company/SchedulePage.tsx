@@ -33,6 +33,8 @@ const statusColors: Record<string, string> = {
 }
 
 export default function SchedulePage() {
+  const { user } = useAuth()
+  const companyId = user?.companyId || ''
   const [search, setSearch] = useState('')
   const [selectedDoctor, setSelectedDoctor] = useState('Todos')
   const [view, setView] = useState<'week' | 'day'>('week')
@@ -47,7 +49,7 @@ export default function SchedulePage() {
     const { data, error } = await supabase
       .from('appointments')
       .select('*')
-      .eq('company_id', DEMO_COMPANY_ID)
+      .eq('company_id', companyId)
       .order('date', { ascending: true })
     if (error) { toast.error('Erro ao carregar agendamentos'); return }
     const mapped: Appointment[] = (data || []).map(a => ({
@@ -79,7 +81,7 @@ export default function SchedulePage() {
       toast.success('Agendamento atualizado com sucesso!')
     } else {
       const { error } = await supabase.from('appointments').insert({
-        company_id: DEMO_COMPANY_ID, patient_name: data.patient, doctor: data.doctor,
+        company_id: companyId, patient_name: data.patient, doctor: data.doctor,
         date: data.date, time: data.time, type: data.type, duration: data.duration,
         status: data.status, notes: data.notes || null,
       })

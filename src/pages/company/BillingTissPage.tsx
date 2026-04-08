@@ -26,6 +26,8 @@ const statusConfig: Record<GuideStatus, { label: string; class: string }> = {
 }
 
 export default function BillingTissPage() {
+  const { user } = useAuth()
+  const companyId = user?.companyId || ''
   const [search, setSearch] = useState('')
   const [statusFilter, setStatusFilter] = useState('all')
   const [guides, setGuides] = useState<TissGuide[]>([])
@@ -37,7 +39,7 @@ export default function BillingTissPage() {
 
   const fetchGuides = async () => {
     const { data, error } = await supabase
-      .from('tiss_guides').select('*').eq('company_id', DEMO_COMPANY_ID).order('created_at', { ascending: false })
+      .from('tiss_guides').select('*').eq('company_id', companyId).order('created_at', { ascending: false })
     if (error) { toast.error('Erro ao carregar guias'); return }
     const mapped: TissGuide[] = (data || []).map(g => ({
       id: g.id, number: g.guide_number, patient: g.patient_name,
@@ -85,7 +87,7 @@ export default function BillingTissPage() {
     } else {
       const guideNumber = `TISS-2026-${String(guides.length + 1549).padStart(6, '0')}`
       const { error } = await supabase.from('tiss_guides').insert({
-        company_id: DEMO_COMPANY_ID, guide_number: guideNumber,
+        company_id: companyId, guide_number: guideNumber,
         patient_name: data.patient, procedure_name: data.procedure,
         procedure_code: data.procedureCode || null, operator: data.operator,
         value: data.value, doctor: data.doctor,

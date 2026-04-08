@@ -3,10 +3,12 @@ import { useNavigate } from 'react-router-dom'
 import { Plus, Settings, Pencil, Trash2 } from 'lucide-react'
 import { toast } from 'sonner'
 import { useQueueSystem } from '@/context/QueueSystemContext'
+import { useAuth } from '@/context/AuthContext'
 import type { Unit } from '@/types/queue-system.types'
 
 export default function UnitsListPage() {
   const navigate = useNavigate()
+  const { user } = useAuth()
   const { state, dispatch } = useQueueSystem()
   const [showModal, setShowModal] = useState(false)
   const [editUnit, setEditUnit] = useState<Unit | null>(null)
