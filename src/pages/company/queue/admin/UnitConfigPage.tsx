@@ -26,6 +26,10 @@ export default function UnitConfigPage() {
   const [qShowOnTotem, setQShowOnTotem] = useState(true)
   const [qQueueType, setQQueueType] = useState<'single' | 'block'>('single')
   const [qLinkedIds, setQLinkedIds] = useState<string[]>([])
+  const [qTotemId, setQTotemId] = useState('')
+  const [qHasPreferential, setQHasPreferential] = useState(false)
+  const [qHasPreferential80, setQHasPreferential80] = useState(false)
+  const [qAllowTotemChoice, setQAllowTotemChoice] = useState(false)
 
   // Guiche modal
   const [guicheModal, setGuicheModal] = useState<Guiche | null | 'new'>(null)

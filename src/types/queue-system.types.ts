@@ -20,6 +20,10 @@ export interface QueueLine {
   queueType: 'single' | 'block'
   linkedQueueIds: string[]
   prefixAlt?: string // e.g. prefix for "Preferencial 80+"
+  totemId?: string
+  hasPreferential: boolean
+  hasPreferential80: boolean
+  allowTotemChoice: boolean
 }
 
 export interface Guiche {
