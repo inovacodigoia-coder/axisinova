@@ -197,6 +197,7 @@ function PortalContent() {
               <Route path="bi/faltosos" element={<AbsenteesReportPage />} />
               <Route path="bi/convenios" element={<ConvenioReportPage />} />
               <Route path="bi/medicos" element={<DoctorPerformancePage />} />
+              <Route path="bi/atendimento" element={<QueueBIPage />} />
               {/* Queue System */}
               <Route path="filas" element={<QueueSelectorPage />} />
               <Route path="filas/tv" element={<TVSelectorPage />} />
@@ -209,7 +210,6 @@ function PortalContent() {
                 <Route path="unidades/:unitId" element={<UnitConfigPage />} />
                 <Route path="unidades/:unitId/tvs" element={<TVConfigPage />} />
                 <Route path="bi" element={<QueueBIPage />} />
-                <Route path="usuarios" element={<AdminHomePage />} />
               </Route>
               <Route path="*" element={<Navigate to="dashboard" replace />} />
             </Routes>
