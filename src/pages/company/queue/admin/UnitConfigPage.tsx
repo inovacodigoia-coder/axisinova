@@ -305,12 +305,43 @@ export default function UnitConfigPage() {
               </div>
             </div>
 
+            {/* Totem */}
+            <div className="space-y-1">
+              <label className="text-sm font-medium text-foreground">Totem</label>
+              <select value={qTotemId} onChange={e => setQTotemId(e.target.value)}
+                className="w-full rounded-lg border border-input bg-background px-3 py-2.5 text-sm">
+                <option value="">Selecionar</option>
+                {totems.map(t => (
+                  <option key={t.id} value={t.id}>{t.name}</option>
+                ))}
+              </select>
+            </div>
+
             {/* Exibir no totem */}
             <label className="flex items-center gap-2 cursor-pointer">
               <input type="checkbox" checked={qShowOnTotem} onChange={e => setQShowOnTotem(e.target.checked)}
                 className="h-4 w-4 rounded border-input accent-green-500" />
               <span className="text-sm font-medium text-foreground">Exibir no totem</span>
             </label>
+
+            {/* Preferential options */}
+            <div className="rounded-lg border border-border bg-muted/30 p-3 space-y-2">
+              <label className="flex items-center gap-2 cursor-pointer">
+                <input type="checkbox" checked={qHasPreferential} onChange={e => setQHasPreferential(e.target.checked)}
+                  className="h-4 w-4 rounded border-input accent-green-500" />
+                <span className="text-sm font-medium text-foreground">Fila preferencial</span>
+              </label>
+              <label className="flex items-center gap-2 cursor-pointer">
+                <input type="checkbox" checked={qHasPreferential80} onChange={e => setQHasPreferential80(e.target.checked)}
+                  className="h-4 w-4 rounded border-input accent-green-500" />
+                <span className="text-sm font-medium text-foreground">Fila preferencial 80+</span>
+              </label>
+              <label className="flex items-center gap-2 cursor-pointer">
+                <input type="checkbox" checked={qAllowTotemChoice} onChange={e => setQAllowTotemChoice(e.target.checked)}
+                  className="h-4 w-4 rounded border-input accent-green-500" />
+                <span className="text-sm font-medium text-foreground">Permitir escolha entre atendimento normal ou preferencial no totem</span>
+              </label>
+            </div>
 
             {/* Actions */}
             <div className="flex gap-3 justify-end pt-2">
