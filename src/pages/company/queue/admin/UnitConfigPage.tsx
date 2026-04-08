@@ -26,6 +26,10 @@ export default function UnitConfigPage() {
   const [qShowOnTotem, setQShowOnTotem] = useState(true)
   const [qQueueType, setQQueueType] = useState<'single' | 'block'>('single')
   const [qLinkedIds, setQLinkedIds] = useState<string[]>([])
+  const [qTotemId, setQTotemId] = useState('')
+  const [qHasPreferential, setQHasPreferential] = useState(false)
+  const [qHasPreferential80, setQHasPreferential80] = useState(false)
+  const [qAllowTotemChoice, setQAllowTotemChoice] = useState(false)
 
   // Guiche modal
   const [guicheModal, setGuicheModal] = useState<Guiche | null | 'new'>(null)
@@ -47,9 +51,11 @@ export default function UnitConfigPage() {
     if (q === 'new') {
       setQName(''); setQPrefix(''); setQPrefixAlt(''); setQType('external'); setQCategory('attendance')
       setQColor('#e0e0e0'); setQShowOnTotem(true); setQQueueType('single'); setQLinkedIds([])
+      setQTotemId(''); setQHasPreferential(false); setQHasPreferential80(false); setQAllowTotemChoice(false)
     } else {
       setQName(q.name); setQPrefix(q.prefix); setQPrefixAlt(q.prefixAlt || ''); setQType(q.type); setQCategory(q.category)
       setQColor(q.color || '#e0e0e0'); setQShowOnTotem(q.showOnTotem); setQQueueType(q.queueType); setQLinkedIds([...q.linkedQueueIds])
+      setQTotemId(q.totemId || ''); setQHasPreferential(q.hasPreferential); setQHasPreferential80(q.hasPreferential80); setQAllowTotemChoice(q.allowTotemChoice)
     }
     setQueueModal(q)
   }
@@ -59,6 +65,7 @@ export default function UnitConfigPage() {
     const base = {
       name: qName, prefix: qPrefix, prefixAlt: qPrefixAlt || undefined, type: qType, category: qCategory,
       color: qColor, showOnTotem: qShowOnTotem, queueType: qQueueType, linkedQueueIds: qQueueType === 'block' ? qLinkedIds : [],
+      totemId: qTotemId || undefined, hasPreferential: qHasPreferential, hasPreferential80: qHasPreferential80, allowTotemChoice: qAllowTotemChoice,
     }
     if (queueModal === 'new') {
       dispatch({ type: 'ADD_QUEUE_LINE', payload: { id: `ql_${Date.now()}`, unitId: unitId!, isActive: true, order: queues.length + 1, ...base } })
@@ -298,12 +305,43 @@ export default function UnitConfigPage() {
               </div>
             </div>
 
+            {/* Totem */}
+            <div className="space-y-1">
+              <label className="text-sm font-medium text-foreground">Totem</label>
+              <select value={qTotemId} onChange={e => setQTotemId(e.target.value)}
+                className="w-full rounded-lg border border-input bg-background px-3 py-2.5 text-sm">
+                <option value="">Selecionar</option>
+                {totems.map(t => (
+                  <option key={t.id} value={t.id}>{t.name}</option>
+                ))}
+              </select>
+            </div>
+
             {/* Exibir no totem */}
             <label className="flex items-center gap-2 cursor-pointer">
               <input type="checkbox" checked={qShowOnTotem} onChange={e => setQShowOnTotem(e.target.checked)}
                 className="h-4 w-4 rounded border-input accent-green-500" />
               <span className="text-sm font-medium text-foreground">Exibir no totem</span>
             </label>
+
+            {/* Preferential options */}
+            <div className="rounded-lg border border-border bg-muted/30 p-3 space-y-2">
+              <label className="flex items-center gap-2 cursor-pointer">
+                <input type="checkbox" checked={qHasPreferential} onChange={e => setQHasPreferential(e.target.checked)}
+                  className="h-4 w-4 rounded border-input accent-green-500" />
+                <span className="text-sm font-medium text-foreground">Fila preferencial</span>
+              </label>
+              <label className="flex items-center gap-2 cursor-pointer">
+                <input type="checkbox" checked={qHasPreferential80} onChange={e => setQHasPreferential80(e.target.checked)}
+                  className="h-4 w-4 rounded border-input accent-green-500" />
+                <span className="text-sm font-medium text-foreground">Fila preferencial 80+</span>
+              </label>
+              <label className="flex items-center gap-2 cursor-pointer">
+                <input type="checkbox" checked={qAllowTotemChoice} onChange={e => setQAllowTotemChoice(e.target.checked)}
+                  className="h-4 w-4 rounded border-input accent-green-500" />
+                <span className="text-sm font-medium text-foreground">Permitir escolha entre atendimento normal ou preferencial no totem</span>
+              </label>
+            </div>
 
             {/* Actions */}
             <div className="flex gap-3 justify-end pt-2">
