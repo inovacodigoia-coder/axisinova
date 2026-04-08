@@ -1,6 +1,7 @@
 import { useState, Suspense, lazy } from 'react'
 import { Routes, Route, Navigate, useLocation } from 'react-router-dom'
 import { QueueProvider } from '@/context/QueueContext'
+import { QueueSystemProvider } from '@/context/QueueSystemContext'
 import { NotificationContextProvider, useNotificationContext } from '@/context/NotificationContext'
 import { GlobalSearchProvider, useGlobalSearch } from '@/context/GlobalSearchContext'
 import { SchedulingProvider } from '@/context/SchedulingContext'
@@ -66,6 +67,17 @@ import SchedulingReportPage from './bi/SchedulingReportPage'
 import AbsenteesReportPage from './bi/AbsenteesReportPage'
 import ConvenioReportPage from './bi/ConvenioReportPage'
 import DoctorPerformancePage from './bi/DoctorPerformancePage'
+import QueueSelectorPage from './queue/QueueSelectorPage'
+import TVSelectorPage from './queue/TVSelectorPage'
+import TotemSelectorPage from './queue/TotemSelectorPage'
+import AttendantSelectorPage from './queue/AttendantSelectorPage'
+import AttendantPanelPage from './queue/AttendantPanelPage'
+import QueueAdminPage from './queue/admin/QueueAdminPage'
+import AdminHomePage from './queue/admin/AdminHomePage'
+import UnitsListPage from './queue/admin/UnitsListPage'
+import UnitConfigPage from './queue/admin/UnitConfigPage'
+import TVConfigPage from './queue/admin/TVConfigPage'
+import QueueBIPage from './queue/admin/QueueBIPage'
 
 function PortalContent() {
   const [mobileOpen, setMobileOpen] = useState(false)
@@ -185,6 +197,20 @@ function PortalContent() {
               <Route path="bi/faltosos" element={<AbsenteesReportPage />} />
               <Route path="bi/convenios" element={<ConvenioReportPage />} />
               <Route path="bi/medicos" element={<DoctorPerformancePage />} />
+              {/* Queue System */}
+              <Route path="filas" element={<QueueSelectorPage />} />
+              <Route path="filas/tv" element={<TVSelectorPage />} />
+              <Route path="filas/totem" element={<TotemSelectorPage />} />
+              <Route path="filas/atendente" element={<AttendantSelectorPage />} />
+              <Route path="filas/atendente/painel" element={<AttendantPanelPage />} />
+              <Route path="filas/admin" element={<QueueAdminPage />}>
+                <Route index element={<AdminHomePage />} />
+                <Route path="unidades" element={<UnitsListPage />} />
+                <Route path="unidades/:unitId" element={<UnitConfigPage />} />
+                <Route path="unidades/:unitId/tvs" element={<TVConfigPage />} />
+                <Route path="bi" element={<QueueBIPage />} />
+                <Route path="usuarios" element={<AdminHomePage />} />
+              </Route>
               <Route path="*" element={<Navigate to="dashboard" replace />} />
             </Routes>
           </PageTransition>
@@ -238,19 +264,21 @@ function PortalContent() {
 export default function CompanyPortalLayout() {
   return (
     <QueueProvider>
-      <NotificationContextProvider>
-        <GlobalSearchProvider>
-          <SchedulingProvider>
-            <RegistersProvider>
-              <MedicalProvider>
-                <BillingProvider>
-                  <PortalContent />
-                </BillingProvider>
-              </MedicalProvider>
-            </RegistersProvider>
-          </SchedulingProvider>
-        </GlobalSearchProvider>
-      </NotificationContextProvider>
+      <QueueSystemProvider>
+        <NotificationContextProvider>
+          <GlobalSearchProvider>
+            <SchedulingProvider>
+              <RegistersProvider>
+                <MedicalProvider>
+                  <BillingProvider>
+                    <PortalContent />
+                  </BillingProvider>
+                </MedicalProvider>
+              </RegistersProvider>
+            </SchedulingProvider>
+          </GlobalSearchProvider>
+        </NotificationContextProvider>
+      </QueueSystemProvider>
     </QueueProvider>
   )
 }

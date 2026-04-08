@@ -4,6 +4,7 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { AuthProvider } from "@/context/AuthContext";
+import { QueueSystemProvider } from "@/context/QueueSystemContext";
 import { CompanyProvider } from "@/context/CompanyContext";
 import { QueueProvider } from "@/context/QueueContext";
 import { ErrorBoundary } from "@/components/feedback/ErrorBoundary";
@@ -27,6 +28,7 @@ import CompanyPortalLayout from "./pages/company/CompanyPortalLayout";
 import TotemPage from "./pages/public/TotemPage";
 import CallingPanelPage from "./pages/public/CallingPanelPage";
 import DoctorPanelPage from "./pages/public/DoctorPanelPage";
+import TVPanelPage from "./pages/company/queue/TVPanelPage";
 import PatientPortalLayout from "./pages/patient/PatientPortalLayout";
 import NotFound from "./pages/NotFound";
 
@@ -58,6 +60,7 @@ const App = () => (
                 <Route path="/painel-chamada" element={<CallingPanelPage />} />
                 <Route path="/painel/:slug" element={<CallingPanelPage />} />
                 <Route path="/painel-medico" element={<DoctorPanelPage />} />
+                <Route path="/painel-tv" element={<QueueSystemProvider><TVPanelPage /></QueueSystemProvider>} />
 
                 {/* Patient Portal */}
                 <Route path="/resultado" element={<PatientPortalLayout />} />
