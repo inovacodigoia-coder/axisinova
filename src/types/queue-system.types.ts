@@ -15,6 +15,11 @@ export interface QueueLine {
   category: 'attendance' | 'collect'
   isActive: boolean
   order: number
+  color?: string
+  showOnTotem: boolean
+  queueType: 'single' | 'block'
+  linkedQueueIds: string[]
+  prefixAlt?: string // e.g. prefix for "Preferencial 80+"
 }
 
 export interface Guiche {
