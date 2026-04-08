@@ -28,6 +28,7 @@ import CompanyPortalLayout from "./pages/company/CompanyPortalLayout";
 import TotemPage from "./pages/public/TotemPage";
 import CallingPanelPage from "./pages/public/CallingPanelPage";
 import DoctorPanelPage from "./pages/public/DoctorPanelPage";
+import TVPanelPage from "./pages/company/queue/TVPanelPage";
 import PatientPortalLayout from "./pages/patient/PatientPortalLayout";
 import NotFound from "./pages/NotFound";
 
