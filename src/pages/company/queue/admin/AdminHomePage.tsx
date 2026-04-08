@@ -1,5 +1,5 @@
 import { useNavigate } from 'react-router-dom'
-import { Building2, BarChart3, Users } from 'lucide-react'
+import { Building2, BarChart3 } from 'lucide-react'
 
 export default function AdminHomePage() {
   const navigate = useNavigate()
@@ -7,7 +7,6 @@ export default function AdminHomePage() {
   const cards = [
     { label: 'Unidades', icon: Building2, path: '/app/filas/admin/unidades', desc: 'Gerenciar unidades, filas e guichês' },
     { label: 'Dashboard', icon: BarChart3, path: '/app/filas/admin/bi', desc: 'Métricas e BI de filas' },
-    { label: 'Usuários', icon: Users, path: '/app/filas/admin/usuarios', desc: 'Gerenciar atendentes' },
   ]
 
   return (
