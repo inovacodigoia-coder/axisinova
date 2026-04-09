@@ -35,11 +35,17 @@ export default function UnitsListPage() {
         toast.success('Unidade criada')
       }
     } else {
+      if (!user?.companyId) {
+        toast.error('Empresa não identificada. Faça login novamente.')
+        setSaving(false)
+        setShowModal(false)
+        return
+      }
       if (editUnit) {
         const ok = await updateUnitDB(editUnit.id, name.trim())
         if (ok) toast.success('Unidade atualizada')
       } else {
-        const unit = await addUnitDB(name.trim(), user?.companyId || '')
+        const unit = await addUnitDB(name.trim(), user.companyId)
         if (unit) toast.success('Unidade criada')
       }
     }

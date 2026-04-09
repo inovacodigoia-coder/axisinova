@@ -279,8 +279,9 @@ export function QueueSystemProvider({ children }: { children: ReactNode }) {
 
   // ====== Supabase CRUD helpers ======
   const addUnitDB = useCallback(async (name: string, companyId: string): Promise<Unit | null> => {
+    if (!companyId) { toast.error('Empresa não identificada'); return null }
     const { data, error } = await supabase.from('queue_units').insert({ name, company_id: companyId }).select().single()
-    if (error) { toast.error('Erro ao criar unidade'); console.error(error); return null }
+    if (error) { toast.error('Erro ao criar unidade: ' + error.message); console.error('addUnitDB error:', error); return null }
     const unit = mapDbUnit(data)
     dispatch({ type: 'ADD_UNIT', payload: unit })
     return unit
