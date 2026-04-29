@@ -88,7 +88,7 @@ export function PatientModal({ open, onClose, onSave }: Props) {
           <div className="grid grid-cols-2 gap-3">
             <div>
               <label className="text-sm font-medium text-foreground">CPF *</label>
-              <input value={form.cpf} onChange={e => set('cpf', e.target.value)} required
+              <input value={form.cpf} onChange={e => set('cpf', maskCPFInput(e.target.value))} required inputMode="numeric"
                 className="mt-1 w-full rounded-lg border border-input bg-background px-3 py-2.5 text-sm" placeholder="000.000.000-00" />
             </div>
             <div>
@@ -100,8 +100,8 @@ export function PatientModal({ open, onClose, onSave }: Props) {
           <div className="grid grid-cols-2 gap-3">
             <div>
               <label className="text-sm font-medium text-foreground">Telefone *</label>
-              <input value={form.phone} onChange={e => set('phone', e.target.value)} required
-                className="mt-1 w-full rounded-lg border border-input bg-background px-3 py-2.5 text-sm" placeholder="(11) 99999-9999" />
+              <input value={form.phone} onChange={e => set('phone', maskPhoneInput(e.target.value))} required inputMode="numeric"
+                className="mt-1 w-full rounded-lg border border-input bg-background px-3 py-2.5 text-sm" placeholder="(00) 00000-0000" />
             </div>
             <div>
               <label className="text-sm font-medium text-foreground">Tipo Sanguíneo</label>
