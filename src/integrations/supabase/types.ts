@@ -438,45 +438,156 @@ export type Database = {
       patients: {
         Row: {
           address: string | null
+          address_data: Json | null
           allergies: string[] | null
+          birth_city: string | null
           birth_date: string
+          birth_state: string | null
           blood_type: string | null
+          clinical_data: Json
           company_id: string
+          convenios: Json
           cpf: string
           created_at: string
+          education: string | null
           email: string | null
+          email_secondary: string | null
+          employer: string | null
+          ethnicity: string | null
+          father_name: string | null
+          financial_notes: string | null
+          gender: string | null
+          general_notes: string | null
           id: string
+          import_batch_id: string | null
+          imported_from: string | null
+          internal_alerts: Json | null
+          last_attendance: string | null
+          marital_status: string | null
+          mother_name: string | null
           name: string
+          nationality: string | null
+          occupation: string | null
           phone: string
+          phone1_type: string | null
+          phone2: string | null
+          phone2_type: string | null
+          phone3: string | null
+          referral_by: string | null
+          referral_source: string | null
+          registered_by: string | null
+          responsible: Json | null
+          rg: string | null
+          rg_issue_date: string | null
+          rg_issuer: string | null
+          rg_state: string | null
+          social_name: string | null
+          status: string
+          tags: string[] | null
           updated_at: string
+          work_phone: string | null
         }
         Insert: {
           address?: string | null
+          address_data?: Json | null
           allergies?: string[] | null
+          birth_city?: string | null
           birth_date: string
+          birth_state?: string | null
           blood_type?: string | null
+          clinical_data?: Json
           company_id: string
+          convenios?: Json
           cpf: string
           created_at?: string
+          education?: string | null
           email?: string | null
+          email_secondary?: string | null
+          employer?: string | null
+          ethnicity?: string | null
+          father_name?: string | null
+          financial_notes?: string | null
+          gender?: string | null
+          general_notes?: string | null
           id?: string
+          import_batch_id?: string | null
+          imported_from?: string | null
+          internal_alerts?: Json | null
+          last_attendance?: string | null
+          marital_status?: string | null
+          mother_name?: string | null
           name: string
+          nationality?: string | null
+          occupation?: string | null
           phone: string
+          phone1_type?: string | null
+          phone2?: string | null
+          phone2_type?: string | null
+          phone3?: string | null
+          referral_by?: string | null
+          referral_source?: string | null
+          registered_by?: string | null
+          responsible?: Json | null
+          rg?: string | null
+          rg_issue_date?: string | null
+          rg_issuer?: string | null
+          rg_state?: string | null
+          social_name?: string | null
+          status?: string
+          tags?: string[] | null
           updated_at?: string
+          work_phone?: string | null
         }
         Update: {
           address?: string | null
+          address_data?: Json | null
           allergies?: string[] | null
+          birth_city?: string | null
           birth_date?: string
+          birth_state?: string | null
           blood_type?: string | null
+          clinical_data?: Json
           company_id?: string
+          convenios?: Json
           cpf?: string
           created_at?: string
+          education?: string | null
           email?: string | null
+          email_secondary?: string | null
+          employer?: string | null
+          ethnicity?: string | null
+          father_name?: string | null
+          financial_notes?: string | null
+          gender?: string | null
+          general_notes?: string | null
           id?: string
+          import_batch_id?: string | null
+          imported_from?: string | null
+          internal_alerts?: Json | null
+          last_attendance?: string | null
+          marital_status?: string | null
+          mother_name?: string | null
           name?: string
+          nationality?: string | null
+          occupation?: string | null
           phone?: string
+          phone1_type?: string | null
+          phone2?: string | null
+          phone2_type?: string | null
+          phone3?: string | null
+          referral_by?: string | null
+          referral_source?: string | null
+          registered_by?: string | null
+          responsible?: Json | null
+          rg?: string | null
+          rg_issue_date?: string | null
+          rg_issuer?: string | null
+          rg_state?: string | null
+          social_name?: string | null
+          status?: string
+          tags?: string[] | null
           updated_at?: string
+          work_phone?: string | null
         }
         Relationships: [
           {
