@@ -35,6 +35,7 @@ import DoctorsPage from './registers/DoctorsPage'
 import ConveniosPage from './registers/ConveniosPage'
 import ExamsPage from './registers/ExamsPage'
 import ProceduresPage from './registers/ProceduresPage'
+import PatientsListPage from './registers/patients/PatientsListPage'
 import CompanySettingsPage from './settings/CompanySettingsPage'
 import VisualSettingsPage from './settings/VisualSettingsPage'
 import TotemTVSettingsPage from './settings/TotemTVSettingsPage'
@@ -180,6 +181,7 @@ function PortalContent() {
                 <Route path="convenios/anexos" element={<Navigate to="/app/cadastros/convenios" replace />} />
                 <Route path="exames" element={<ExamsPage />} />
                 <Route path="procedimentos" element={<ProceduresPage />} />
+                <Route path="pacientes" element={<PatientsListPage />} />
               </Route>
               <Route path="configuracoes" element={<CompanySettingsPage />} />
               <Route path="configuracoes/dados" element={<CompanyDataSettingsPage />} />
