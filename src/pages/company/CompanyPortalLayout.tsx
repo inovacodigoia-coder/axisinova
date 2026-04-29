@@ -181,6 +181,7 @@ function PortalContent() {
                 <Route path="convenios/anexos" element={<Navigate to="/app/cadastros/convenios" replace />} />
                 <Route path="exames" element={<ExamsPage />} />
                 <Route path="procedimentos" element={<ProceduresPage />} />
+                <Route path="pacientes" element={<PatientsListPage />} />
               </Route>
               <Route path="configuracoes" element={<CompanySettingsPage />} />
               <Route path="configuracoes/dados" element={<CompanyDataSettingsPage />} />
