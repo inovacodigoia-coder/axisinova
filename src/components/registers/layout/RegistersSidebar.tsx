@@ -30,10 +30,12 @@ function usePatientsCount() {
 export function RegistersSidebar() {
   const location = useLocation()
   const reg = useRegisters()
+  const patientsCount = usePatientsCount()
 
   const getCount = (key: string | null) => {
     if (!key) return null
     const map: Record<string, number> = {
+      patients: patientsCount,
       doctors: reg.doctors.length,
       specialties: reg.specialties.length,
       convenios: reg.convenios.length,
