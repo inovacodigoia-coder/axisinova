@@ -93,14 +93,26 @@ export default function MedicalRecordsPage() {
   }
 
   const handleSavePatient = async (data: PatientFormData) => {
-    if (!companyId) return
+    if (!companyId) {
+      toast.error('Empresa não identificada. Faça login novamente.')
+      return
+    }
     const { error } = await supabase.from('patients').insert({
-      company_id: companyId, name: data.name, cpf: data.cpf,
-      birth_date: data.birthDate, phone: data.phone,
-      blood_type: data.bloodType, allergies: data.allergies,
-      email: data.email || null, address: data.address || null,
+      company_id: companyId,
+      name: data.name.trim(),
+      cpf: data.cpf.replace(/\D/g, ''),
+      birth_date: data.birthDate,
+      phone: data.phone.replace(/\D/g, ''),
+      blood_type: data.bloodType,
+      allergies: data.allergies,
+      email: data.email?.trim() || null,
+      address: data.address?.trim() || null,
     })
-    if (error) { toast.error('Erro ao cadastrar paciente'); return }
+    if (error) {
+      console.error('[patients.insert] error:', error)
+      toast.error(`Erro ao cadastrar paciente: ${error.message}`)
+      return
+    }
     setPatientModalOpen(false)
     toast.success('Paciente cadastrado com sucesso!')
     fetchPatients()
