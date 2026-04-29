@@ -1,9 +1,13 @@
 import { NavLink, useLocation } from 'react-router-dom'
-import { Stethoscope, Heart, FlaskConical, Scissors, ArrowLeft, Sparkles } from 'lucide-react'
+import { Stethoscope, Heart, FlaskConical, Scissors, ArrowLeft, Sparkles, Users } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { useRegisters } from '@/context/RegistersContext'
+import { useEffect, useState } from 'react'
+import { supabase } from '@/integrations/supabase/client'
+import { useAuth } from '@/context/AuthContext'
 
 const NAV_ITEMS = [
+  { path: '/app/cadastros/pacientes', label: 'Pacientes', icon: Users, countKey: 'patients' as const },
   { path: '/app/cadastros/medicos', label: 'Médicos', icon: Stethoscope, countKey: 'doctors' as const },
   { path: '/app/cadastros/especialidades', label: 'Especialidades', icon: Sparkles, countKey: 'specialties' as const, indent: true },
   { path: '/app/cadastros/convenios', label: 'Convênios', icon: Heart, countKey: 'convenios' as const },
@@ -11,6 +15,17 @@ const NAV_ITEMS = [
   { path: '/app/cadastros/exames', label: 'Exames', icon: FlaskConical, countKey: 'exams' as const },
   { path: '/app/cadastros/procedimentos', label: 'Procedimentos', icon: Scissors, countKey: 'procedures' as const },
 ]
+
+function usePatientsCount() {
+  const { user } = useAuth()
+  const [count, setCount] = useState(0)
+  useEffect(() => {
+    if (!user?.companyId) return
+    supabase.from('patients').select('id', { count: 'exact', head: true }).eq('company_id', user.companyId)
+      .then(({ count: c }) => setCount(c || 0))
+  }, [user?.companyId])
+  return count
+}
 
 export function RegistersSidebar() {
   const location = useLocation()
