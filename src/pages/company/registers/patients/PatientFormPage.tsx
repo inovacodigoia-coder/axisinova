@@ -138,8 +138,8 @@ export default function PatientFormPage() {
     if (!isEditing) payload.registered_by = user.id
 
     const { data, error } = isEditing
-      ? await supabase.from('patients').update(payload).eq('id', patientId!).select().single()
-      : await supabase.from('patients').insert(payload).select().single()
+      ? await supabase.from('patients').update(payload as any).eq('id', patientId!).select().single()
+      : await supabase.from('patients').insert(payload as any).select().single()
 
     setSaving(false)
     if (error) {
