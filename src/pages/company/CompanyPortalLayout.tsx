@@ -36,6 +36,7 @@ import ConveniosPage from './registers/ConveniosPage'
 import ExamsPage from './registers/ExamsPage'
 import ProceduresPage from './registers/ProceduresPage'
 import PatientsListPage from './registers/patients/PatientsListPage'
+import PatientFormPage from './registers/patients/PatientFormPage'
 import CompanySettingsPage from './settings/CompanySettingsPage'
 import VisualSettingsPage from './settings/VisualSettingsPage'
 import TotemTVSettingsPage from './settings/TotemTVSettingsPage'
@@ -182,6 +183,8 @@ function PortalContent() {
                 <Route path="exames" element={<ExamsPage />} />
                 <Route path="procedimentos" element={<ProceduresPage />} />
                 <Route path="pacientes" element={<PatientsListPage />} />
+                <Route path="pacientes/novo" element={<PatientFormPage />} />
+                <Route path="pacientes/:patientId/editar" element={<PatientFormPage />} />
               </Route>
               <Route path="configuracoes" element={<CompanySettingsPage />} />
               <Route path="configuracoes/dados" element={<CompanyDataSettingsPage />} />
