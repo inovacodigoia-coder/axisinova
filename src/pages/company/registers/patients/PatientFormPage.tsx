@@ -25,6 +25,7 @@ import { ResponsibleSection } from '@/components/patients/form/ResponsibleSectio
 import { ClinicalSection } from '@/components/patients/form/ClinicalSection'
 import { NotesSection } from '@/components/patients/form/NotesSection'
 import { DuplicateWarningModal } from '@/components/patients/form/DuplicateWarningModal'
+import { PatientReviewModal } from '@/components/patients/form/PatientReviewModal'
 
 const TABS = [
   { value: 'personal', label: 'Pessoal', icon: User, fields: ['fullName', 'birthDate', 'gender', 'cpf', 'rg', 'motherName'] },
@@ -55,6 +56,7 @@ export default function PatientFormPage() {
   const [saving, setSaving] = useState(false)
   const [duplicates, setDuplicates] = useState<Array<{ patient: Patient; reason: string; score?: number }>>([])
   const [pendingValues, setPendingValues] = useState<PatientFormValues | null>(null)
+  const [reviewValues, setReviewValues] = useState<PatientFormValues | null>(null)
   const allPatientsRef = useRef<Patient[]>([])
 
   // Carrega o paciente em edição
@@ -150,18 +152,25 @@ export default function PatientFormPage() {
     toast.success(isEditing ? 'Paciente atualizado!' : 'Paciente cadastrado com sucesso!')
     setPendingValues(null)
     setDuplicates([])
+    setReviewValues(null)
     if (data?.id) navigate(`/app/cadastros/pacientes/${data.id}`)
     else navigate('/app/cadastros/pacientes')
   }
 
   const onSubmit = (values: PatientFormValues) => {
-    const dups = findDuplicates(values)
+    // Abre tela de revisão antes de qualquer persistência
+    setReviewValues(values)
+  }
+
+  const confirmFromReview = () => {
+    if (!reviewValues) return
+    const dups = findDuplicates(reviewValues)
     if (dups.length > 0) {
       setDuplicates(dups)
-      setPendingValues(values)
+      setPendingValues(reviewValues)
       return
     }
-    persist(values)
+    persist(reviewValues)
   }
 
   const onInvalid = (errs: any) => {
@@ -202,7 +211,7 @@ export default function PatientFormPage() {
           </div>
           <GradientButton type="submit" disabled={saving}>
             {saving ? <Loader2 className="h-4 w-4 mr-1.5 animate-spin" /> : <Save className="h-4 w-4 mr-1.5" />}
-            {saving ? 'Salvando...' : 'Salvar paciente'}
+            {saving ? 'Salvando...' : 'Revisar e salvar'}
           </GradientButton>
         </div>
 
@@ -248,11 +257,21 @@ export default function PatientFormPage() {
             </button>
             <GradientButton type="submit" disabled={saving}>
               {saving ? <Loader2 className="h-4 w-4 mr-1.5 animate-spin" /> : <Save className="h-4 w-4 mr-1.5" />}
-              {isEditing ? 'Salvar alterações' : 'Cadastrar paciente'}
+              {isEditing ? 'Revisar e salvar' : 'Revisar e cadastrar'}
             </GradientButton>
           </div>
         </div>
       </form>
+
+      <PatientReviewModal
+        open={!!reviewValues}
+        values={reviewValues}
+        saving={saving}
+        isEditing={isEditing}
+        onCancel={() => setReviewValues(null)}
+        onConfirm={confirmFromReview}
+        onEditSection={(s) => { setTab(s); setReviewValues(null) }}
+      />
 
       <DuplicateWarningModal
         open={duplicates.length > 0}
