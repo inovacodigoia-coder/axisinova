@@ -3,6 +3,7 @@ import { supabase } from '@/integrations/supabase/client'
 import { useAuth } from '@/context/AuthContext'
 import type { Patient, PatientListFilters } from '@/types/patient.types'
 import { dbToPatient } from '@/utils/patient.adapter'
+import { resolveCompanyId } from '@/utils/companyId'
 
 interface UsePatientsOptions {
   autoFetch?: boolean
@@ -25,7 +26,7 @@ const EMPTY_FILTERS: PatientListFilters = {}
 export function usePatients(options: UsePatientsOptions = {}): UsePatientsResult {
   const { autoFetch = true } = options
   const { user } = useAuth()
-  const companyId = user?.companyId
+  const companyId = resolveCompanyId(user?.companyId)
   const [patients, setPatients] = useState<Patient[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)

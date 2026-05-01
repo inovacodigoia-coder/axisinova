@@ -30,12 +30,19 @@ export const convenioSchema = z.object({
 })
 
 // ─── Responsável ─────────────────────────────────────────────────────
+// Para adultos os campos do responsável são livres; quando o paciente for menor
+// de idade a obrigatoriedade dos principais campos é validada no superRefine
+// abaixo (name, cpf, relationship e phone1).
 export const responsibleSchema = z.object({
-  name: z.string().refine(isValidName, 'Nome inválido (mínimo nome + sobrenome)'),
-  cpf: z.string().refine(v => isValidCPF(v), 'CPF inválido'),
+  name: z.string().max(200).optional().or(z.literal('')),
+  cpf: z
+    .string()
+    .optional()
+    .or(z.literal(''))
+    .refine(v => !v || isValidCPF(v), 'CPF inválido'),
   birthDate: z.string().optional().or(z.literal('')),
-  relationship: z.string().min(2, 'Parentesco obrigatório').max(60),
-  phone1: z.string().min(10, 'Telefone inválido'),
+  relationship: z.string().max(60).optional().or(z.literal('')),
+  phone1: z.string().optional().or(z.literal('')),
   phone2: z.string().optional().or(z.literal('')),
   email: z.string().refine(v => !v || isValidEmail(v), 'E-mail inválido').optional().or(z.literal('')),
   address: addressSchema.optional(),

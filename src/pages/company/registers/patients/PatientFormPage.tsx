@@ -15,6 +15,7 @@ import { supabase } from '@/integrations/supabase/client'
 
 import { patientFormSchema, emptyPatientForm, type PatientFormValues } from '@/utils/patient.schema'
 import { dbToPatient, patientToDb } from '@/utils/patient.adapter'
+import { resolveCompanyId } from '@/utils/companyId'
 import { stringSimilarity } from '@/utils/patient.validators'
 import type { Patient } from '@/types/patient.types'
 
@@ -81,9 +82,10 @@ export default function PatientFormPage() {
 
   // Carrega lista de pacientes da empresa para detecção de duplicados
   useEffect(() => {
-    if (!user?.companyId) return
+    const cid = resolveCompanyId(user?.companyId)
+    if (!cid) return
     supabase.from('patients').select('id,company_id,name,cpf,birth_date,mother_name')
-      .eq('company_id', user.companyId)
+      .eq('company_id', cid)
       .then(({ data }) => { allPatientsRef.current = (data || []).map(dbToPatient) })
   }, [user?.companyId])
 
@@ -131,13 +133,18 @@ export default function PatientFormPage() {
   }
 
   const persist = async (values: PatientFormValues) => {
-    if (!user?.companyId) {
+    const companyId = resolveCompanyId(user?.companyId)
+    if (!companyId) {
       toast.error('Empresa não identificada. Faça login novamente.')
       return
     }
     setSaving(true)
-    const payload = patientToDb({ ...values, companyId: user.companyId } as any)
-    if (!isEditing) payload.registered_by = user.id
+    const payload = patientToDb({ ...values, companyId } as any)
+    // registered_by precisa ser UUID válido (auth.users); se o id local não for UUID, ignora
+    const isUUID = (v?: string | null) =>
+      !!v && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(v)
+    if (!isEditing && isUUID(user?.id)) payload.registered_by = user!.id
+    else if (!isEditing) delete (payload as any).registered_by
 
     const { data, error } = isEditing
       ? await supabase.from('patients').update(payload as any).eq('id', patientId!).select().single()
