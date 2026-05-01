@@ -10,6 +10,7 @@ import type { PatientFormValues } from '@/utils/patient.schema'
 import { maskCPF, maskMonthYear, maskCNS } from '@/utils/patient.validators'
 import { useAuth } from '@/context/AuthContext'
 import { supabase } from '@/integrations/supabase/client'
+import { resolveCompanyId } from '@/utils/companyId'
 
 interface ConvenioOption { id: string; name: string }
 
@@ -20,10 +21,15 @@ export function InsuranceSection() {
   const [options, setOptions] = useState<ConvenioOption[]>([])
 
   useEffect(() => {
-    if (!user?.companyId) return
+    const cid = resolveCompanyId(user?.companyId)
+    if (!cid) return
     supabase.from('convenios').select('id,name')
-      .eq('company_id', user.companyId).eq('is_active', true)
-      .then(({ data }) => setOptions((data || []).map(c => ({ id: c.id, name: c.name }))))
+      .eq('company_id', cid).eq('is_active', true)
+      .order('name', { ascending: true })
+      .then(({ data, error }) => {
+        if (error) console.error('[InsuranceSection] convenios error:', error)
+        setOptions((data || []).map(c => ({ id: c.id, name: c.name })))
+      })
   }, [user?.companyId])
 
   return (
