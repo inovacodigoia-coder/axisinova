@@ -257,11 +257,21 @@ export default function PatientFormPage() {
             </button>
             <GradientButton type="submit" disabled={saving}>
               {saving ? <Loader2 className="h-4 w-4 mr-1.5 animate-spin" /> : <Save className="h-4 w-4 mr-1.5" />}
-              {isEditing ? 'Salvar alterações' : 'Cadastrar paciente'}
+              {isEditing ? 'Revisar e salvar' : 'Revisar e cadastrar'}
             </GradientButton>
           </div>
         </div>
       </form>
+
+      <PatientReviewModal
+        open={!!reviewValues}
+        values={reviewValues}
+        saving={saving}
+        isEditing={isEditing}
+        onCancel={() => setReviewValues(null)}
+        onConfirm={confirmFromReview}
+        onEditSection={(s) => { setTab(s); setReviewValues(null) }}
+      />
 
       <DuplicateWarningModal
         open={duplicates.length > 0}
