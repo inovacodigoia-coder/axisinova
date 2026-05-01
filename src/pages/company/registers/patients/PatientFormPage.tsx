@@ -56,6 +56,7 @@ export default function PatientFormPage() {
   const [saving, setSaving] = useState(false)
   const [duplicates, setDuplicates] = useState<Array<{ patient: Patient; reason: string; score?: number }>>([])
   const [pendingValues, setPendingValues] = useState<PatientFormValues | null>(null)
+  const [reviewValues, setReviewValues] = useState<PatientFormValues | null>(null)
   const allPatientsRef = useRef<Patient[]>([])
 
   // Carrega o paciente em edição
