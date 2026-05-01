@@ -12,7 +12,7 @@ import {
 } from 'lucide-react'
 import type { PatientFormValues } from '@/utils/patient.schema'
 import {
-  GENDER_LABELS, ETHNICITY_LABELS, MARITAL_STATUS_LABELS, STATUS_LABELS,
+  GENDER_LABELS, ETHNICITY_LABELS, MARITAL_LABELS, STATUS_LABELS,
 } from '@/types/patient.types'
 
 interface Props {
