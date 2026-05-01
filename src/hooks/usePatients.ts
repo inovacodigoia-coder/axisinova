@@ -3,6 +3,7 @@ import { supabase } from '@/integrations/supabase/client'
 import { useAuth } from '@/context/AuthContext'
 import type { Patient, PatientListFilters } from '@/types/patient.types'
 import { dbToPatient } from '@/utils/patient.adapter'
+import { resolveCompanyId } from '@/utils/companyId'
 
 interface UsePatientsOptions {
   autoFetch?: boolean
