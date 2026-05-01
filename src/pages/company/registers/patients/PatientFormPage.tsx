@@ -25,6 +25,7 @@ import { ResponsibleSection } from '@/components/patients/form/ResponsibleSectio
 import { ClinicalSection } from '@/components/patients/form/ClinicalSection'
 import { NotesSection } from '@/components/patients/form/NotesSection'
 import { DuplicateWarningModal } from '@/components/patients/form/DuplicateWarningModal'
+import { PatientReviewModal } from '@/components/patients/form/PatientReviewModal'
 
 const TABS = [
   { value: 'personal', label: 'Pessoal', icon: User, fields: ['fullName', 'birthDate', 'gender', 'cpf', 'rg', 'motherName'] },
