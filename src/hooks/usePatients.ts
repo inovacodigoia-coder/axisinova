@@ -26,7 +26,7 @@ const EMPTY_FILTERS: PatientListFilters = {}
 export function usePatients(options: UsePatientsOptions = {}): UsePatientsResult {
   const { autoFetch = true } = options
   const { user } = useAuth()
-  const companyId = user?.companyId
+  const companyId = resolveCompanyId(user?.companyId)
   const [patients, setPatients] = useState<Patient[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
