@@ -138,7 +138,7 @@ export function PatientReviewModal({
             <Row label="Mãe" value={v.motherName} />
             {v.fatherName && <Row label="Pai" value={v.fatherName} />}
             {v.ethnicity && <Row label="Etnia" value={ETHNICITY_LABELS[v.ethnicity]} />}
-            {v.maritalStatus && <Row label="Estado civil" value={MARITAL_STATUS_LABELS[v.maritalStatus]} />}
+            {v.maritalStatus && <Row label="Estado civil" value={MARITAL_LABELS[v.maritalStatus]} />}
             <Row label="Status" value={STATUS_LABELS[v.status]} />
           </Section>
 
