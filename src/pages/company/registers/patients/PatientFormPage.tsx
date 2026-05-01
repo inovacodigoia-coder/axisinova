@@ -211,7 +211,7 @@ export default function PatientFormPage() {
           </div>
           <GradientButton type="submit" disabled={saving}>
             {saving ? <Loader2 className="h-4 w-4 mr-1.5 animate-spin" /> : <Save className="h-4 w-4 mr-1.5" />}
-            {saving ? 'Salvando...' : 'Salvar paciente'}
+            {saving ? 'Salvando...' : 'Revisar e salvar'}
           </GradientButton>
         </div>
 
