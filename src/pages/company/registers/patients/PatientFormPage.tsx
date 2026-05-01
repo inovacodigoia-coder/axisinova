@@ -152,18 +152,25 @@ export default function PatientFormPage() {
     toast.success(isEditing ? 'Paciente atualizado!' : 'Paciente cadastrado com sucesso!')
     setPendingValues(null)
     setDuplicates([])
+    setReviewValues(null)
     if (data?.id) navigate(`/app/cadastros/pacientes/${data.id}`)
     else navigate('/app/cadastros/pacientes')
   }
 
   const onSubmit = (values: PatientFormValues) => {
-    const dups = findDuplicates(values)
+    // Abre tela de revisão antes de qualquer persistência
+    setReviewValues(values)
+  }
+
+  const confirmFromReview = () => {
+    if (!reviewValues) return
+    const dups = findDuplicates(reviewValues)
     if (dups.length > 0) {
       setDuplicates(dups)
-      setPendingValues(values)
+      setPendingValues(reviewValues)
       return
     }
-    persist(values)
+    persist(reviewValues)
   }
 
   const onInvalid = (errs: any) => {
