@@ -126,12 +126,18 @@ export function RegistersProvider({ children }: { children: ReactNode }) {
 
   // --- Specialties ---
   const addSpecialty = useCallback(async (s: Specialty) => {
-    setSpecialties(prev => [...prev, s])
+    const id = ensureUUID(s.id)
+    const entity = { ...s, id, companyId: companyId || s.companyId }
+    setSpecialties(prev => [...prev, entity])
     if (isDemo || !companyId) return
     const { error } = await supabase.from('specialties').insert({
-      id: s.id, company_id: companyId, name: s.name, is_active: s.isActive,
+      id, company_id: companyId, name: s.name, is_active: s.isActive,
     } as any)
-    if (error) { console.error(error); toast.error('Erro ao salvar especialidade') }
+    if (error) {
+      console.error('[specialties.insert]', error)
+      toast.error(`Erro ao salvar especialidade: ${error.message}`)
+      setSpecialties(prev => prev.filter(x => x.id !== id))
+    }
   }, [isDemo, companyId])
 
   const updateSpecialty = useCallback(async (s: Specialty) => {
