@@ -3,7 +3,12 @@ import type { Doctor, Specialty, Convenio, Exam, Procedure } from '@/types/regis
 import { DEMO_DOCTORS, DEMO_SPECIALTIES, DEMO_CONVENIOS, DEMO_EXAMS, DEMO_PROCEDURES, isDemoCompany } from '@/mocks/registers.mock'
 import { useAuth } from '@/context/AuthContext'
 import { supabase } from '@/integrations/supabase/client'
+import { resolveCompanyId } from '@/utils/companyId'
 import { toast } from 'sonner'
+
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
+const ensureUUID = (id?: string | null): string =>
+  (id && UUID_RE.test(id)) ? id : (typeof crypto !== 'undefined' && 'randomUUID' in crypto ? crypto.randomUUID() : `${Date.now()}-${Math.random().toString(36).slice(2)}`)
 
 interface RegistersContextValue {
   doctors: Doctor[]
@@ -81,8 +86,8 @@ function mapProcedureRow(row: any): Procedure {
 
 export function RegistersProvider({ children }: { children: ReactNode }) {
   const { user } = useAuth()
-  const companyId = user?.companyId
-  const isDemo = isDemoCompany(companyId)
+  const companyId = resolveCompanyId(user?.companyId)
+  const isDemo = isDemoCompany(user?.companyId)
 
   const [doctors, setDoctors] = useState<Doctor[]>(isDemo ? DEMO_DOCTORS : [])
   const [specialties, setSpecialties] = useState<Specialty[]>(isDemo ? DEMO_SPECIALTIES : [])
@@ -121,12 +126,18 @@ export function RegistersProvider({ children }: { children: ReactNode }) {
 
   // --- Specialties ---
   const addSpecialty = useCallback(async (s: Specialty) => {
-    setSpecialties(prev => [...prev, s])
+    const id = ensureUUID(s.id)
+    const entity = { ...s, id, companyId: companyId || s.companyId }
+    setSpecialties(prev => [...prev, entity])
     if (isDemo || !companyId) return
     const { error } = await supabase.from('specialties').insert({
-      id: s.id, company_id: companyId, name: s.name, is_active: s.isActive,
+      id, company_id: companyId, name: s.name, is_active: s.isActive,
     } as any)
-    if (error) { console.error(error); toast.error('Erro ao salvar especialidade') }
+    if (error) {
+      console.error('[specialties.insert]', error)
+      toast.error(`Erro ao salvar especialidade: ${error.message}`)
+      setSpecialties(prev => prev.filter(x => x.id !== id))
+    }
   }, [isDemo, companyId])
 
   const updateSpecialty = useCallback(async (s: Specialty) => {
@@ -145,17 +156,23 @@ export function RegistersProvider({ children }: { children: ReactNode }) {
 
   // --- Doctors ---
   const addDoctor = useCallback(async (d: Doctor) => {
-    setDoctors(prev => [...prev, d])
+    const id = ensureUUID(d.id)
+    const entity = { ...d, id, companyId: companyId || d.companyId }
+    setDoctors(prev => [...prev, entity])
     if (isDemo || !companyId) return
     const { error } = await supabase.from('doctors').insert({
-      id: d.id, company_id: companyId, full_name: d.fullName, crm: d.crm, crm_state: d.crmState,
+      id, company_id: companyId, full_name: d.fullName, crm: d.crm, crm_state: d.crmState,
       specialty_ids: d.specialtyIds, phone: d.phone || null, email: d.email || null,
       birth_date: d.birthDate || null, photo: d.photo || null,
       enabled_convenio_ids: d.enabledConvenioIds, schedule_config: d.scheduleConfig || null,
       is_active: d.isActive, is_blocked: d.isBlocked,
       blocked_reason: d.blockedReason || null, blocked_at: d.blockedAt || null,
     } as any)
-    if (error) { console.error(error); toast.error('Erro ao salvar médico') }
+    if (error) {
+      console.error('[doctors.insert]', error)
+      toast.error(`Erro ao salvar médico: ${error.message}`)
+      setDoctors(prev => prev.filter(x => x.id !== id))
+    }
   }, [isDemo, companyId])
 
   const updateDoctor = useCallback(async (d: Doctor) => {
@@ -181,15 +198,21 @@ export function RegistersProvider({ children }: { children: ReactNode }) {
 
   // --- Convenios ---
   const addConvenio = useCallback(async (c: Convenio) => {
-    setConvenios(prev => [...prev, c])
+    const id = ensureUUID(c.id)
+    const entity = { ...c, id, companyId: companyId || c.companyId }
+    setConvenios(prev => [...prev, entity])
     if (isDemo || !companyId) return
     const { error } = await supabase.from('convenios').insert({
-      id: c.id, company_id: companyId, name: c.name, ans_code: c.ansCode || null,
+      id, company_id: companyId, name: c.name, ans_code: c.ansCode || null,
       type: c.type, cnpj: c.cnpj || null, auth_phone: c.authPhone || null,
       email: c.email || null, observations: c.observations || null,
       attachment_rules: c.attachmentRules, is_active: c.isActive,
     } as any)
-    if (error) { console.error(error); toast.error('Erro ao salvar convênio') }
+    if (error) {
+      console.error('[convenios.insert]', error)
+      toast.error(`Erro ao salvar convênio: ${error.message}`)
+      setConvenios(prev => prev.filter(x => x.id !== id))
+    }
   }, [isDemo, companyId])
 
   const updateConvenio = useCallback(async (c: Convenio) => {
@@ -212,10 +235,12 @@ export function RegistersProvider({ children }: { children: ReactNode }) {
 
   // --- Exams ---
   const addExam = useCallback(async (e: Exam) => {
-    setExams(prev => [...prev, e])
+    const id = ensureUUID(e.id)
+    const entity = { ...e, id, companyId: companyId || e.companyId }
+    setExams(prev => [...prev, entity])
     if (isDemo || !companyId) return
     const { error } = await supabase.from('exams').insert({
-      id: e.id, company_id: companyId, name: e.name, tuss_code: e.tussCode || null,
+      id, company_id: companyId, name: e.name, tuss_code: e.tussCode || null,
       specialty_id: e.specialtyId || null, preparation_instructions: e.preparationInstructions || null,
       estimated_duration_minutes: e.estimatedDurationMinutes || null,
       result_deadline_days: e.resultDeadlineDays || null,
@@ -223,7 +248,11 @@ export function RegistersProvider({ children }: { children: ReactNode }) {
       authorization_instructions: e.authorizationInstructions || null,
       attachment_rules: e.attachmentRules, is_active: e.isActive,
     } as any)
-    if (error) { console.error(error); toast.error('Erro ao salvar exame') }
+    if (error) {
+      console.error('[exams.insert]', error)
+      toast.error(`Erro ao salvar exame: ${error.message}`)
+      setExams(prev => prev.filter(x => x.id !== id))
+    }
   }, [isDemo, companyId])
 
   const updateExam = useCallback(async (e: Exam) => {
@@ -250,10 +279,12 @@ export function RegistersProvider({ children }: { children: ReactNode }) {
 
   // --- Procedures ---
   const addProcedure = useCallback(async (p: Procedure) => {
-    setProcedures(prev => [...prev, p])
+    const id = ensureUUID(p.id)
+    const entity = { ...p, id, companyId: companyId || p.companyId }
+    setProcedures(prev => [...prev, entity])
     if (isDemo || !companyId) return
     const { error } = await supabase.from('procedures').insert({
-      id: p.id, company_id: companyId, name: p.name, tuss_code: p.tussCode || null,
+      id, company_id: companyId, name: p.name, tuss_code: p.tussCode || null,
       type: p.type, specialty_id: p.specialtyId || null,
       estimated_duration_minutes: p.estimatedDurationMinutes || null,
       requires_authorization: p.requiresAuthorization,
@@ -263,7 +294,11 @@ export function RegistersProvider({ children }: { children: ReactNode }) {
       post_operative_instructions: p.postOperativeInstructions || null,
       attachment_rules: p.attachmentRules, is_active: p.isActive,
     } as any)
-    if (error) { console.error(error); toast.error('Erro ao salvar procedimento') }
+    if (error) {
+      console.error('[procedures.insert]', error)
+      toast.error(`Erro ao salvar procedimento: ${error.message}`)
+      setProcedures(prev => prev.filter(x => x.id !== id))
+    }
   }, [isDemo, companyId])
 
   const updateProcedure = useCallback(async (p: Procedure) => {
