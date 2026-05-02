@@ -1,11 +1,9 @@
 import { useNavigate } from 'react-router-dom'
-import { Building2, Palette, Tablet, Monitor, DoorOpen, Bell, Printer, Volume2, MapPin, Settings2 } from 'lucide-react'
+import { Building2, Palette, DoorOpen, Bell, Printer, Volume2, MapPin, Settings2 } from 'lucide-react'
 
 const CARDS = [
   { key: 'dados', label: 'Dados da Empresa', desc: 'Razão social, CNPJ, contato', icon: Building2, path: '/app/configuracoes/dados' },
   { key: 'visual', label: 'Visual', desc: 'Cores, logo e personalização', icon: Palette, path: '/app/configuracoes/visual' },
-  { key: 'totem', label: 'Totem e Entrada', desc: 'Totens e painéis de TV', icon: Tablet, path: '/app/configuracoes/totem-tv' },
-  { key: 'panels', label: 'Painéis de TV', desc: 'Configurar painéis de chamada', icon: Monitor, path: '/app/configuracoes/totem-tv' },
   { key: 'rooms', label: 'Salas e Setores', desc: 'Consultórios e salas de exame', icon: DoorOpen, path: '/app/configuracoes/salas' },
   { key: 'notifications', label: 'Notificações', desc: 'E-mail, WhatsApp e alertas', icon: Bell, path: '/app/configuracoes/notificacoes' },
   { key: 'printer', label: 'Impressora', desc: 'Térmica de senhas', icon: Printer, path: '/app/configuracoes/impressora' },
