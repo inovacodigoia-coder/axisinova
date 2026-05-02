@@ -279,10 +279,12 @@ export function RegistersProvider({ children }: { children: ReactNode }) {
 
   // --- Procedures ---
   const addProcedure = useCallback(async (p: Procedure) => {
-    setProcedures(prev => [...prev, p])
+    const id = ensureUUID(p.id)
+    const entity = { ...p, id, companyId: companyId || p.companyId }
+    setProcedures(prev => [...prev, entity])
     if (isDemo || !companyId) return
     const { error } = await supabase.from('procedures').insert({
-      id: p.id, company_id: companyId, name: p.name, tuss_code: p.tussCode || null,
+      id, company_id: companyId, name: p.name, tuss_code: p.tussCode || null,
       type: p.type, specialty_id: p.specialtyId || null,
       estimated_duration_minutes: p.estimatedDurationMinutes || null,
       requires_authorization: p.requiresAuthorization,
@@ -292,7 +294,11 @@ export function RegistersProvider({ children }: { children: ReactNode }) {
       post_operative_instructions: p.postOperativeInstructions || null,
       attachment_rules: p.attachmentRules, is_active: p.isActive,
     } as any)
-    if (error) { console.error(error); toast.error('Erro ao salvar procedimento') }
+    if (error) {
+      console.error('[procedures.insert]', error)
+      toast.error(`Erro ao salvar procedimento: ${error.message}`)
+      setProcedures(prev => prev.filter(x => x.id !== id))
+    }
   }, [isDemo, companyId])
 
   const updateProcedure = useCallback(async (p: Procedure) => {
