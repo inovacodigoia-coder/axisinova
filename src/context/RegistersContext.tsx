@@ -156,17 +156,23 @@ export function RegistersProvider({ children }: { children: ReactNode }) {
 
   // --- Doctors ---
   const addDoctor = useCallback(async (d: Doctor) => {
-    setDoctors(prev => [...prev, d])
+    const id = ensureUUID(d.id)
+    const entity = { ...d, id, companyId: companyId || d.companyId }
+    setDoctors(prev => [...prev, entity])
     if (isDemo || !companyId) return
     const { error } = await supabase.from('doctors').insert({
-      id: d.id, company_id: companyId, full_name: d.fullName, crm: d.crm, crm_state: d.crmState,
+      id, company_id: companyId, full_name: d.fullName, crm: d.crm, crm_state: d.crmState,
       specialty_ids: d.specialtyIds, phone: d.phone || null, email: d.email || null,
       birth_date: d.birthDate || null, photo: d.photo || null,
       enabled_convenio_ids: d.enabledConvenioIds, schedule_config: d.scheduleConfig || null,
       is_active: d.isActive, is_blocked: d.isBlocked,
       blocked_reason: d.blockedReason || null, blocked_at: d.blockedAt || null,
     } as any)
-    if (error) { console.error(error); toast.error('Erro ao salvar médico') }
+    if (error) {
+      console.error('[doctors.insert]', error)
+      toast.error(`Erro ao salvar médico: ${error.message}`)
+      setDoctors(prev => prev.filter(x => x.id !== id))
+    }
   }, [isDemo, companyId])
 
   const updateDoctor = useCallback(async (d: Doctor) => {
