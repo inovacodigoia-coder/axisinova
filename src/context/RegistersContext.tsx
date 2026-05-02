@@ -198,15 +198,21 @@ export function RegistersProvider({ children }: { children: ReactNode }) {
 
   // --- Convenios ---
   const addConvenio = useCallback(async (c: Convenio) => {
-    setConvenios(prev => [...prev, c])
+    const id = ensureUUID(c.id)
+    const entity = { ...c, id, companyId: companyId || c.companyId }
+    setConvenios(prev => [...prev, entity])
     if (isDemo || !companyId) return
     const { error } = await supabase.from('convenios').insert({
-      id: c.id, company_id: companyId, name: c.name, ans_code: c.ansCode || null,
+      id, company_id: companyId, name: c.name, ans_code: c.ansCode || null,
       type: c.type, cnpj: c.cnpj || null, auth_phone: c.authPhone || null,
       email: c.email || null, observations: c.observations || null,
       attachment_rules: c.attachmentRules, is_active: c.isActive,
     } as any)
-    if (error) { console.error(error); toast.error('Erro ao salvar convênio') }
+    if (error) {
+      console.error('[convenios.insert]', error)
+      toast.error(`Erro ao salvar convênio: ${error.message}`)
+      setConvenios(prev => prev.filter(x => x.id !== id))
+    }
   }, [isDemo, companyId])
 
   const updateConvenio = useCallback(async (c: Convenio) => {
