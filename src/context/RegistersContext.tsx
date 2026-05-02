@@ -3,7 +3,12 @@ import type { Doctor, Specialty, Convenio, Exam, Procedure } from '@/types/regis
 import { DEMO_DOCTORS, DEMO_SPECIALTIES, DEMO_CONVENIOS, DEMO_EXAMS, DEMO_PROCEDURES, isDemoCompany } from '@/mocks/registers.mock'
 import { useAuth } from '@/context/AuthContext'
 import { supabase } from '@/integrations/supabase/client'
+import { resolveCompanyId } from '@/utils/companyId'
 import { toast } from 'sonner'
+
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
+const ensureUUID = (id?: string | null): string =>
+  (id && UUID_RE.test(id)) ? id : (typeof crypto !== 'undefined' && 'randomUUID' in crypto ? crypto.randomUUID() : `${Date.now()}-${Math.random().toString(36).slice(2)}`)
 
 interface RegistersContextValue {
   doctors: Doctor[]
