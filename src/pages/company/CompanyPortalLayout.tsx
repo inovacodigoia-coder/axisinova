@@ -39,7 +39,7 @@ import PatientsListPage from './registers/patients/PatientsListPage'
 import PatientFormPage from './registers/patients/PatientFormPage'
 import CompanySettingsPage from './settings/CompanySettingsPage'
 import VisualSettingsPage from './settings/VisualSettingsPage'
-import TotemTVSettingsPage from './settings/TotemTVSettingsPage'
+
 import RoomsSettingsPage from './settings/RoomsSettingsPage'
 import PrinterSettingsPage from './settings/PrinterSettingsPage'
 import VoiceSettingsPage from './settings/VoiceSettingsPage'
@@ -189,7 +189,7 @@ function PortalContent() {
               <Route path="configuracoes" element={<CompanySettingsPage />} />
               <Route path="configuracoes/dados" element={<CompanyDataSettingsPage />} />
               <Route path="configuracoes/visual" element={<VisualSettingsPage />} />
-              <Route path="configuracoes/totem-tv" element={<TotemTVSettingsPage />} />
+              
               <Route path="configuracoes/salas" element={<RoomsSettingsPage />} />
               <Route path="configuracoes/impressora" element={<PrinterSettingsPage />} />
               <Route path="configuracoes/voz" element={<VoiceSettingsPage />} />
