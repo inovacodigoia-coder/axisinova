@@ -189,7 +189,7 @@ function PortalContent() {
               <Route path="configuracoes" element={<CompanySettingsPage />} />
               <Route path="configuracoes/dados" element={<CompanyDataSettingsPage />} />
               <Route path="configuracoes/visual" element={<VisualSettingsPage />} />
-              <Route path="configuracoes/totem-tv" element={<TotemTVSettingsPage />} />
+              
               <Route path="configuracoes/salas" element={<RoomsSettingsPage />} />
               <Route path="configuracoes/impressora" element={<PrinterSettingsPage />} />
               <Route path="configuracoes/voz" element={<VoiceSettingsPage />} />
