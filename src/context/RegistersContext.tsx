@@ -86,8 +86,8 @@ function mapProcedureRow(row: any): Procedure {
 
 export function RegistersProvider({ children }: { children: ReactNode }) {
   const { user } = useAuth()
-  const companyId = user?.companyId
-  const isDemo = isDemoCompany(companyId)
+  const companyId = resolveCompanyId(user?.companyId)
+  const isDemo = isDemoCompany(user?.companyId)
 
   const [doctors, setDoctors] = useState<Doctor[]>(isDemo ? DEMO_DOCTORS : [])
   const [specialties, setSpecialties] = useState<Specialty[]>(isDemo ? DEMO_SPECIALTIES : [])
