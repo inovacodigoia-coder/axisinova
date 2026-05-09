@@ -139,29 +139,69 @@ export default function UnitConfigPage() {
     setGuicheModal(null)
   }
 
+  const slugify = (str: string) =>
+    str.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+       .replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 40)
+
+  const randomToken = (len: number) => {
+    const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz23456789'
+    let out = ''
+    const arr = new Uint32Array(len)
+    crypto.getRandomValues(arr)
+    for (let i = 0; i < len; i++) out += chars[arr[i] % chars.length]
+    return out
+  }
+
   const openTotemModal = (t: Totem | 'new') => {
-    if (t === 'new') setTName('')
-    else setTName(t.name)
+    setShowPwd(false)
+    if (t === 'new') {
+      const auto = `totem-${randomToken(6).toLowerCase()}`
+      setTName('')
+      setTSlug(auto)
+      setTUsername(`totem_${randomToken(4).toLowerCase()}`)
+      setTPassword(randomToken(8))
+    } else {
+      setTName(t.name)
+      setTSlug(t.slug || `totem-${t.id.slice(0, 8)}`)
+      setTUsername(t.accessUsername || '')
+      setTPassword(t.accessPassword || '')
+    }
     setTotemModal(t)
+  }
+
+  const generateCredentials = () => {
+    setTUsername(`totem_${randomToken(4).toLowerCase()}`)
+    setTPassword(randomToken(8))
+    setShowPwd(true)
+    toast.success('Novas credenciais geradas')
+  }
+
+  const totemUrl = (slug: string) => `${window.location.origin}/totem/${slug || ''}`
+
+  const copyToClipboard = async (text: string, label: string) => {
+    try { await navigator.clipboard.writeText(text); toast.success(`${label} copiado`) }
+    catch { toast.error('Não foi possível copiar') }
   }
 
   const saveTotem = async () => {
     if (!tName.trim() || saving) return
+    const slug = slugify(tSlug) || `totem-${randomToken(6).toLowerCase()}`
     setSaving(true)
+    const extra = { slug, accessUsername: tUsername.trim() || undefined, accessPassword: tPassword.trim() || undefined }
     if (isDemoCompany) {
       if (totemModal === 'new') {
-        dispatch({ type: 'ADD_TOTEM', payload: { id: `tot_${Date.now()}`, unitId: unitId!, name: tName, isActive: true } })
+        dispatch({ type: 'ADD_TOTEM', payload: { id: `tot_${Date.now()}`, unitId: unitId!, name: tName, isActive: true, ...extra } })
         toast.success('Totem criado')
       } else if (totemModal) {
-        dispatch({ type: 'UPDATE_TOTEM', payload: { ...totemModal, name: tName } })
+        dispatch({ type: 'UPDATE_TOTEM', payload: { ...totemModal, name: tName, ...extra } })
         toast.success('Totem atualizado')
       }
     } else {
       if (totemModal === 'new') {
-        const t = await addTotemDB(unitId!, tName, companyId)
+        const t = await addTotemDB(unitId!, tName, companyId, extra)
         if (t) toast.success('Totem criado')
       } else if (totemModal) {
-        const ok = await updateTotemDB(totemModal.id, tName)
+        const ok = await updateTotemDB(totemModal.id, tName, extra)
         if (ok) toast.success('Totem atualizado')
       }
     }
