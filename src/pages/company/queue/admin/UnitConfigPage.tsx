@@ -51,6 +51,10 @@ export default function UnitConfigPage() {
   // Totem modal
   const [totemModal, setTotemModal] = useState<Totem | null | 'new'>(null)
   const [tName, setTName] = useState('')
+  const [tSlug, setTSlug] = useState('')
+  const [tUsername, setTUsername] = useState('')
+  const [tPassword, setTPassword] = useState('')
+  const [showPwd, setShowPwd] = useState(false)
 
   const [saving, setSaving] = useState(false)
 
