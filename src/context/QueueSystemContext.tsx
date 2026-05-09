@@ -186,8 +186,8 @@ interface QueueSystemContextValue {
   addUnitDB: (name: string, companyId: string) => Promise<Unit | null>
   updateUnitDB: (id: string, name: string) => Promise<boolean>
   removeUnitDB: (id: string) => Promise<boolean>
-  addTotemDB: (unitId: string, name: string, companyId: string) => Promise<Totem | null>
-  updateTotemDB: (id: string, name: string) => Promise<boolean>
+  addTotemDB: (unitId: string, name: string, companyId: string, extra?: { slug?: string; accessUsername?: string; accessPassword?: string }) => Promise<Totem | null>
+  updateTotemDB: (id: string, name: string, extra?: { slug?: string; accessUsername?: string; accessPassword?: string }) => Promise<boolean>
   removeTotemDB: (id: string) => Promise<boolean>
   addQueueLineDB: (data: Omit<QueueLine, 'id' | 'isActive'> & { companyId: string }) => Promise<QueueLine | null>
   updateQueueLineDB: (data: QueueLine & { companyId?: string }) => Promise<boolean>
