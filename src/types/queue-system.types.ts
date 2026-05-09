@@ -39,6 +39,9 @@ export interface Totem {
   unitId: string
   name: string
   isActive: boolean
+  slug?: string
+  accessUsername?: string
+  accessPassword?: string
 }
 
 export interface TV {
