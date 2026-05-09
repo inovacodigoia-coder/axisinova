@@ -151,7 +151,7 @@ function mapDbUnit(row: any): Unit {
   return { id: row.id, name: row.name, companyId: row.company_id, isActive: row.is_active, createdAt: row.created_at }
 }
 function mapDbTotem(row: any): Totem {
-  return { id: row.id, unitId: row.unit_id, name: row.name, isActive: row.is_active }
+  return { id: row.id, unitId: row.unit_id, name: row.name, isActive: row.is_active, slug: row.slug || undefined, accessUsername: row.access_username || undefined, accessPassword: row.access_password || undefined }
 }
 function mapDbQueueLine(row: any): QueueLine {
   return {
@@ -186,8 +186,8 @@ interface QueueSystemContextValue {
   addUnitDB: (name: string, companyId: string) => Promise<Unit | null>
   updateUnitDB: (id: string, name: string) => Promise<boolean>
   removeUnitDB: (id: string) => Promise<boolean>
-  addTotemDB: (unitId: string, name: string, companyId: string) => Promise<Totem | null>
-  updateTotemDB: (id: string, name: string) => Promise<boolean>
+  addTotemDB: (unitId: string, name: string, companyId: string, extra?: { slug?: string; accessUsername?: string; accessPassword?: string }) => Promise<Totem | null>
+  updateTotemDB: (id: string, name: string, extra?: { slug?: string; accessUsername?: string; accessPassword?: string }) => Promise<boolean>
   removeTotemDB: (id: string) => Promise<boolean>
   addQueueLineDB: (data: Omit<QueueLine, 'id' | 'isActive'> & { companyId: string }) => Promise<QueueLine | null>
   updateQueueLineDB: (data: QueueLine & { companyId?: string }) => Promise<boolean>
@@ -301,18 +301,30 @@ export function QueueSystemProvider({ children }: { children: ReactNode }) {
     return true
   }, [])
 
-  const addTotemDB = useCallback(async (unitId: string, name: string, companyId: string): Promise<Totem | null> => {
-    const { data, error } = await supabase.from('queue_totems').insert({ unit_id: unitId, name, company_id: companyId }).select().single()
+  const addTotemDB = useCallback(async (unitId: string, name: string, companyId: string, extra?: { slug?: string; accessUsername?: string; accessPassword?: string }): Promise<Totem | null> => {
+    const { data, error } = await supabase.from('queue_totems').insert({
+      unit_id: unitId, name, company_id: companyId,
+      slug: extra?.slug || null,
+      access_username: extra?.accessUsername || null,
+      access_password: extra?.accessPassword || null,
+    }).select().single()
     if (error) { toast.error('Erro ao criar totem'); console.error(error); return null }
     const totem = mapDbTotem(data)
     dispatch({ type: 'ADD_TOTEM', payload: totem })
     return totem
   }, [])
 
-  const updateTotemDB = useCallback(async (id: string, name: string): Promise<boolean> => {
-    const { error } = await supabase.from('queue_totems').update({ name }).eq('id', id)
+  const updateTotemDB = useCallback(async (id: string, name: string, extra?: { slug?: string; accessUsername?: string; accessPassword?: string }): Promise<boolean> => {
+    const payload: any = { name }
+    if (extra) {
+      payload.slug = extra.slug || null
+      payload.access_username = extra.accessUsername || null
+      payload.access_password = extra.accessPassword || null
+    }
+    const { error } = await supabase.from('queue_totems').update(payload).eq('id', id)
     if (error) { toast.error('Erro ao atualizar totem'); return false }
-    dispatch({ type: 'UPDATE_TOTEM', payload: { ...state.totems.find(t => t.id === id)!, name } })
+    const existing = state.totems.find(t => t.id === id)
+    if (existing) dispatch({ type: 'UPDATE_TOTEM', payload: { ...existing, name, ...(extra ? { slug: extra.slug, accessUsername: extra.accessUsername, accessPassword: extra.accessPassword } : {}) } })
     return true
   }, [state.totems])
 

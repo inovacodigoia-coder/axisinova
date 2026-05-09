@@ -840,27 +840,36 @@ export type Database = {
       }
       queue_totems: {
         Row: {
+          access_password: string | null
+          access_username: string | null
           company_id: string
           created_at: string
           id: string
           is_active: boolean
           name: string
+          slug: string | null
           unit_id: string
         }
         Insert: {
+          access_password?: string | null
+          access_username?: string | null
           company_id: string
           created_at?: string
           id?: string
           is_active?: boolean
           name: string
+          slug?: string | null
           unit_id: string
         }
         Update: {
+          access_password?: string | null
+          access_username?: string | null
           company_id?: string
           created_at?: string
           id?: string
           is_active?: boolean
           name?: string
+          slug?: string | null
           unit_id?: string
         }
         Relationships: [

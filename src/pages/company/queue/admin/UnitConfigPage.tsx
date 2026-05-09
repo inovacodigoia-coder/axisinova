@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
-import { ArrowLeft, Plus, Pencil, Trash2, GripVertical } from 'lucide-react'
+import { ArrowLeft, Plus, Pencil, Trash2, GripVertical, Copy, Eye, EyeOff, RefreshCw, ExternalLink } from 'lucide-react'
 import { toast } from 'sonner'
 import { useQueueSystem } from '@/context/QueueSystemContext'
 import { useAuth } from '@/context/AuthContext'
@@ -51,6 +51,10 @@ export default function UnitConfigPage() {
   // Totem modal
   const [totemModal, setTotemModal] = useState<Totem | null | 'new'>(null)
   const [tName, setTName] = useState('')
+  const [tSlug, setTSlug] = useState('')
+  const [tUsername, setTUsername] = useState('')
+  const [tPassword, setTPassword] = useState('')
+  const [showPwd, setShowPwd] = useState(false)
 
   const [saving, setSaving] = useState(false)
 
@@ -135,29 +139,69 @@ export default function UnitConfigPage() {
     setGuicheModal(null)
   }
 
+  const slugify = (str: string) =>
+    str.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+       .replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 40)
+
+  const randomToken = (len: number) => {
+    const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz23456789'
+    let out = ''
+    const arr = new Uint32Array(len)
+    crypto.getRandomValues(arr)
+    for (let i = 0; i < len; i++) out += chars[arr[i] % chars.length]
+    return out
+  }
+
   const openTotemModal = (t: Totem | 'new') => {
-    if (t === 'new') setTName('')
-    else setTName(t.name)
+    setShowPwd(false)
+    if (t === 'new') {
+      const auto = `totem-${randomToken(6).toLowerCase()}`
+      setTName('')
+      setTSlug(auto)
+      setTUsername(`totem_${randomToken(4).toLowerCase()}`)
+      setTPassword(randomToken(8))
+    } else {
+      setTName(t.name)
+      setTSlug(t.slug || `totem-${t.id.slice(0, 8)}`)
+      setTUsername(t.accessUsername || '')
+      setTPassword(t.accessPassword || '')
+    }
     setTotemModal(t)
+  }
+
+  const generateCredentials = () => {
+    setTUsername(`totem_${randomToken(4).toLowerCase()}`)
+    setTPassword(randomToken(8))
+    setShowPwd(true)
+    toast.success('Novas credenciais geradas')
+  }
+
+  const totemUrl = (slug: string) => `${window.location.origin}/totem/${slug || ''}`
+
+  const copyToClipboard = async (text: string, label: string) => {
+    try { await navigator.clipboard.writeText(text); toast.success(`${label} copiado`) }
+    catch { toast.error('Não foi possível copiar') }
   }
 
   const saveTotem = async () => {
     if (!tName.trim() || saving) return
+    const slug = slugify(tSlug) || `totem-${randomToken(6).toLowerCase()}`
     setSaving(true)
+    const extra = { slug, accessUsername: tUsername.trim() || undefined, accessPassword: tPassword.trim() || undefined }
     if (isDemoCompany) {
       if (totemModal === 'new') {
-        dispatch({ type: 'ADD_TOTEM', payload: { id: `tot_${Date.now()}`, unitId: unitId!, name: tName, isActive: true } })
+        dispatch({ type: 'ADD_TOTEM', payload: { id: `tot_${Date.now()}`, unitId: unitId!, name: tName, isActive: true, ...extra } })
         toast.success('Totem criado')
       } else if (totemModal) {
-        dispatch({ type: 'UPDATE_TOTEM', payload: { ...totemModal, name: tName } })
+        dispatch({ type: 'UPDATE_TOTEM', payload: { ...totemModal, name: tName, ...extra } })
         toast.success('Totem atualizado')
       }
     } else {
       if (totemModal === 'new') {
-        const t = await addTotemDB(unitId!, tName, companyId)
+        const t = await addTotemDB(unitId!, tName, companyId, extra)
         if (t) toast.success('Totem criado')
       } else if (totemModal) {
-        const ok = await updateTotemDB(totemModal.id, tName)
+        const ok = await updateTotemDB(totemModal.id, tName, extra)
         if (ok) toast.success('Totem atualizado')
       }
     }
@@ -428,11 +472,83 @@ export default function UnitConfigPage() {
 
       {/* Totem Modal */}
       {totemModal !== null && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50" onClick={() => setTotemModal(null)}>
-          <div onClick={e => e.stopPropagation()} className="w-full max-w-sm rounded-2xl bg-card border border-border p-6 space-y-4">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" onClick={() => setTotemModal(null)}>
+          <div onClick={e => e.stopPropagation()} className="w-full max-w-md rounded-2xl bg-card border border-border p-6 space-y-4 max-h-[90vh] overflow-y-auto">
             <h3 className="text-lg font-bold text-foreground">{totemModal === 'new' ? 'Adicionar Totem' : 'Editar Totem'}</h3>
-            <div className="space-y-1"><label className="text-sm font-medium text-foreground">Nome *</label><input type="text" value={tName} onChange={e => setTName(e.target.value)} className="w-full rounded-lg border border-input bg-background px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-ring" /></div>
-            <div className="flex gap-3 justify-end">
+
+            <div className="space-y-1">
+              <label className="text-sm font-medium text-foreground">Nome *</label>
+              <input type="text" value={tName} onChange={e => setTName(e.target.value)} placeholder="Ex.: Totem Recepção"
+                className="w-full rounded-lg border border-input bg-background px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-ring" />
+            </div>
+
+            <div className="space-y-1">
+              <label className="text-sm font-medium text-foreground">Identificador da URL (slug)</label>
+              <input type="text" value={tSlug} onChange={e => setTSlug(e.target.value)} placeholder="ex: totem-recepcao"
+                className="w-full rounded-lg border border-input bg-background px-3 py-2.5 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-ring" />
+              <p className="text-[11px] text-muted-foreground">Apenas letras minúsculas, números e hífens.</p>
+            </div>
+
+            <div className="rounded-lg border border-border bg-muted/40 p-3 space-y-2">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Link de acesso do Totem</span>
+                <a href={totemUrl(tSlug)} target="_blank" rel="noopener noreferrer" className="text-xs text-primary hover:underline inline-flex items-center gap-1">
+                  Abrir <ExternalLink className="h-3 w-3" />
+                </a>
+              </div>
+              <div className="flex gap-2">
+                <input readOnly value={totemUrl(tSlug)}
+                  className="flex-1 rounded-lg border border-input bg-background px-3 py-2 text-xs font-mono text-foreground" />
+                <button type="button" onClick={() => copyToClipboard(totemUrl(tSlug), 'Link')}
+                  className="inline-flex items-center gap-1 rounded-lg bg-primary px-3 py-2 text-xs font-semibold text-primary-foreground hover:opacity-90">
+                  <Copy className="h-3.5 w-3.5" /> Copiar
+                </button>
+              </div>
+              <p className="text-[11px] text-muted-foreground">Use este link no equipamento (totem, recepção, sala de procedimento ou painel médico).</p>
+            </div>
+
+            <div className="rounded-lg border border-border p-3 space-y-3">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Credenciais de acesso</span>
+                <button type="button" onClick={generateCredentials}
+                  className="inline-flex items-center gap-1 rounded-lg border border-input bg-background px-2.5 py-1.5 text-xs font-semibold hover:bg-muted">
+                  <RefreshCw className="h-3.5 w-3.5" /> Gerar
+                </button>
+              </div>
+
+              <div className="space-y-1">
+                <label className="text-xs font-medium text-foreground">Usuário</label>
+                <div className="flex gap-2">
+                  <input type="text" value={tUsername} onChange={e => setTUsername(e.target.value)}
+                    className="flex-1 rounded-lg border border-input bg-background px-3 py-2 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-ring" />
+                  <button type="button" onClick={() => copyToClipboard(tUsername, 'Usuário')}
+                    className="rounded-lg border border-input bg-background px-2.5 hover:bg-muted" aria-label="Copiar usuário">
+                    <Copy className="h-3.5 w-3.5 text-muted-foreground" />
+                  </button>
+                </div>
+              </div>
+
+              <div className="space-y-1">
+                <label className="text-xs font-medium text-foreground">Senha</label>
+                <div className="flex gap-2">
+                  <div className="relative flex-1">
+                    <input type={showPwd ? 'text' : 'password'} value={tPassword} onChange={e => setTPassword(e.target.value)}
+                      className="w-full rounded-lg border border-input bg-background px-3 py-2 pr-9 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-ring" />
+                    <button type="button" onClick={() => setShowPwd(s => !s)}
+                      className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground" aria-label="Mostrar senha">
+                      {showPwd ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                    </button>
+                  </div>
+                  <button type="button" onClick={() => copyToClipboard(tPassword, 'Senha')}
+                    className="rounded-lg border border-input bg-background px-2.5 hover:bg-muted" aria-label="Copiar senha">
+                    <Copy className="h-3.5 w-3.5 text-muted-foreground" />
+                  </button>
+                </div>
+                <p className="text-[11px] text-muted-foreground">Remova a senha (deixe em branco) para liberar chamada por recepção, médicos ou sala de procedimento sem login.</p>
+              </div>
+            </div>
+
+            <div className="flex gap-3 justify-end pt-2">
               <button onClick={() => setTotemModal(null)} className="rounded-lg border border-input px-4 py-2.5 text-sm font-medium hover:bg-muted">Cancelar</button>
               <button onClick={saveTotem} disabled={saving} className="rounded-lg bg-green-500 px-6 py-2.5 text-sm font-semibold text-white hover:bg-green-600 disabled:opacity-50">
                 {saving ? 'Salvando...' : 'Salvar'}
