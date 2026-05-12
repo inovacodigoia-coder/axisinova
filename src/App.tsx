@@ -56,8 +56,8 @@ const App = () => (
                 <Route path="/unauthorized" element={<UnauthorizedPage />} />
 
                 {/* Public kiosk/panel routes */}
-                <Route path="/totem" element={<TotemPage />} />
-                <Route path="/totem/:slug" element={<TotemPage />} />
+                <Route path="/totem" element={<SchedulingProvider><TotemPage /></SchedulingProvider>} />
+                <Route path="/totem/:slug" element={<SchedulingProvider><TotemPage /></SchedulingProvider>} />
                 <Route path="/painel-chamada" element={<CallingPanelPage />} />
                 <Route path="/painel/:slug" element={<CallingPanelPage />} />
                 <Route path="/painel-medico" element={<DoctorPanelPage />} />
