@@ -7,6 +7,7 @@ import { AuthProvider } from "@/context/AuthContext";
 import { QueueSystemProvider } from "@/context/QueueSystemContext";
 import { CompanyProvider } from "@/context/CompanyContext";
 import { QueueProvider } from "@/context/QueueContext";
+import { SchedulingProvider } from "@/context/SchedulingContext";
 import { ErrorBoundary } from "@/components/feedback/ErrorBoundary";
 import { SuperAdminRoute, PrivateRoute } from "@/router/guards";
 import LandingPage from "./pages/LandingPage";
