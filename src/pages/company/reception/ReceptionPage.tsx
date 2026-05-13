@@ -90,8 +90,8 @@ export default function ReceptionPage() {
     const { error } = await supabase.from('queue_tickets').update({
       status: 'called',
       called_at: new Date().toISOString(),
-      guiche_name: user?.fullName || 'Recepção',
-      attendant_name: user?.fullName || 'Recepção',
+      guiche_name: user?.name || 'Recepção',
+      attendant_name: user?.name || 'Recepção',
     }).eq('id', id)
     if (error) toast.error('Erro ao chamar ficha')
     else toast.success('Ficha chamada')
