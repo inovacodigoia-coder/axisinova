@@ -838,6 +838,69 @@ export type Database = {
           },
         ]
       }
+      queue_tickets: {
+        Row: {
+          attendance_started_at: string | null
+          attendant_name: string | null
+          called_at: string | null
+          company_id: string
+          created_at: string
+          display_code: string
+          finalized_at: string | null
+          generated_at: string
+          guiche_id: string | null
+          guiche_name: string | null
+          id: string
+          number: number
+          patient_name: string | null
+          prefix: string
+          queue_line_id: string
+          queue_line_name: string
+          status: string
+          unit_id: string
+        }
+        Insert: {
+          attendance_started_at?: string | null
+          attendant_name?: string | null
+          called_at?: string | null
+          company_id: string
+          created_at?: string
+          display_code: string
+          finalized_at?: string | null
+          generated_at?: string
+          guiche_id?: string | null
+          guiche_name?: string | null
+          id?: string
+          number: number
+          patient_name?: string | null
+          prefix: string
+          queue_line_id: string
+          queue_line_name: string
+          status?: string
+          unit_id: string
+        }
+        Update: {
+          attendance_started_at?: string | null
+          attendant_name?: string | null
+          called_at?: string | null
+          company_id?: string
+          created_at?: string
+          display_code?: string
+          finalized_at?: string | null
+          generated_at?: string
+          guiche_id?: string | null
+          guiche_name?: string | null
+          id?: string
+          number?: number
+          patient_name?: string | null
+          prefix?: string
+          queue_line_id?: string
+          queue_line_name?: string
+          status?: string
+          unit_id?: string
+        }
+        Relationships: []
+      }
       queue_totems: {
         Row: {
           access_password: string | null
