@@ -268,16 +268,82 @@ export default function TVConfigPage() {
       )}
 
       {showTVModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50" onClick={() => setShowTVModal(false)}>
-          <div onClick={e => e.stopPropagation()} className="w-full max-w-sm rounded-2xl bg-card border border-border p-6 space-y-4">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" onClick={() => setShowTVModal(false)}>
+          <div onClick={e => e.stopPropagation()} className="w-full max-w-md rounded-2xl bg-card border border-border p-6 space-y-4 max-h-[90vh] overflow-y-auto">
             <h3 className="text-lg font-bold text-foreground">{editTV ? 'Editar TV' : 'Cadastrar TV'}</h3>
+
             <div className="space-y-3">
               <div className="space-y-1"><label className="text-sm font-medium">Nome *</label><input type="text" value={tvName} onChange={e => setTvName(e.target.value)} placeholder="Digite o nome..." className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring" /></div>
               <div className="space-y-1"><label className="text-sm font-medium">Tipo de voz</label><select value={tvVoice} onChange={e => setTvVoice(e.target.value as 'feminine'|'masculine')} className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm"><option value="feminine">Feminina</option><option value="masculine">Masculina</option></select></div>
               <div className="space-y-1"><label className="text-sm font-medium">Tamanho da TV</label><select value={tvSize} onChange={e => setTvSize(e.target.value as any)} className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm"><option value="small">Pequena</option><option value="medium">Médio</option><option value="large">Grande</option><option value="extra_large">Extra Grande</option></select></div>
               <div className="space-y-1"><label className="text-sm font-medium">Número de dispositivos</label><input type="number" min={1} value={tvDeviceCount} onChange={e => setTvDeviceCount(Number(e.target.value))} className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring" /></div>
             </div>
-            <div className="flex gap-3 justify-end">
+
+            <div className="space-y-1">
+              <label className="text-sm font-medium text-foreground">Identificador da URL (slug)</label>
+              <input type="text" value={tvSlug} onChange={e => setTvSlug(e.target.value)} placeholder="ex: tv-recepcao"
+                className="w-full rounded-lg border border-input bg-background px-3 py-2.5 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-ring" />
+              <p className="text-[11px] text-muted-foreground">Apenas letras minúsculas, números e hífens.</p>
+            </div>
+
+            <div className="rounded-lg border border-border bg-muted/40 p-3 space-y-2">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Link de acesso da TV</span>
+                <a href={tvUrl(tvSlug)} target="_blank" rel="noopener noreferrer" className="text-xs text-primary hover:underline inline-flex items-center gap-1">
+                  Abrir <ExternalLink className="h-3 w-3" />
+                </a>
+              </div>
+              <div className="flex gap-2">
+                <input readOnly value={tvUrl(tvSlug)}
+                  className="flex-1 rounded-lg border border-input bg-background px-3 py-2 text-xs font-mono text-foreground" />
+                <button type="button" onClick={() => copyToClipboard(tvUrl(tvSlug), 'Link')}
+                  className="inline-flex items-center gap-1 rounded-lg bg-primary px-3 py-2 text-xs font-semibold text-primary-foreground hover:opacity-90">
+                  <Copy className="h-3.5 w-3.5" /> Copiar
+                </button>
+              </div>
+              <p className="text-[11px] text-muted-foreground">Use este link no painel/TV de chamadas.</p>
+            </div>
+
+            <div className="rounded-lg border border-border p-3 space-y-3">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Credenciais de acesso</span>
+                <button type="button" onClick={generateTvCredentials}
+                  className="inline-flex items-center gap-1 rounded-lg border border-input bg-background px-2.5 py-1.5 text-xs font-semibold hover:bg-muted">
+                  <RefreshCw className="h-3.5 w-3.5" /> Gerar
+                </button>
+              </div>
+              <div className="space-y-1">
+                <label className="text-xs font-medium text-foreground">Usuário</label>
+                <div className="flex gap-2">
+                  <input type="text" value={tvUsername} onChange={e => setTvUsername(e.target.value)}
+                    className="flex-1 rounded-lg border border-input bg-background px-3 py-2 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-ring" />
+                  <button type="button" onClick={() => copyToClipboard(tvUsername, 'Usuário')}
+                    className="rounded-lg border border-input bg-background px-2.5 hover:bg-muted" aria-label="Copiar usuário">
+                    <Copy className="h-3.5 w-3.5 text-muted-foreground" />
+                  </button>
+                </div>
+              </div>
+              <div className="space-y-1">
+                <label className="text-xs font-medium text-foreground">Senha</label>
+                <div className="flex gap-2">
+                  <div className="relative flex-1">
+                    <input type={showTvPwd ? 'text' : 'password'} value={tvPassword} onChange={e => setTvPassword(e.target.value)}
+                      className="w-full rounded-lg border border-input bg-background px-3 py-2 pr-9 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-ring" />
+                    <button type="button" onClick={() => setShowTvPwd(s => !s)}
+                      className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground" aria-label="Mostrar senha">
+                      {showTvPwd ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                    </button>
+                  </div>
+                  <button type="button" onClick={() => copyToClipboard(tvPassword, 'Senha')}
+                    className="rounded-lg border border-input bg-background px-2.5 hover:bg-muted" aria-label="Copiar senha">
+                    <Copy className="h-3.5 w-3.5 text-muted-foreground" />
+                  </button>
+                </div>
+                <p className="text-[11px] text-muted-foreground">Deixe em branco para liberar o painel sem login.</p>
+              </div>
+            </div>
+
+            <div className="flex gap-3 justify-end pt-2">
               <button onClick={() => setShowTVModal(false)} className="rounded-lg border border-input px-4 py-2 text-sm font-medium hover:bg-muted">Cancelar</button>
               <button onClick={saveTV} disabled={saving} className="rounded-lg bg-green-500 px-4 py-2 text-sm font-semibold text-white hover:bg-green-600 disabled:opacity-50">
                 {saving ? 'Salvando...' : 'Salvar'}
