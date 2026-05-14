@@ -54,6 +54,9 @@ export interface TV {
   mediaMode: 'with_media' | 'without_media'
   mediaAttachments: MediaAttachment[]
   isActive: boolean
+  slug?: string
+  accessUsername?: string
+  accessPassword?: string
 }
 
 export interface MediaAttachment {
