@@ -171,6 +171,9 @@ function mapDbTV(row: any): TV {
     id: row.id, unitId: row.unit_id, name: row.name, voiceType: row.voice_type as any,
     screenSize: row.screen_size as any, deviceCount: row.device_count,
     mediaMode: row.media_mode as any, mediaAttachments: [], isActive: row.is_active,
+    slug: row.slug || undefined,
+    accessUsername: row.access_username || undefined,
+    accessPassword: row.access_password || undefined,
   }
 }
 
@@ -399,7 +402,10 @@ export function QueueSystemProvider({ children }: { children: ReactNode }) {
       company_id: data.companyId, unit_id: data.unitId, name: data.name,
       voice_type: data.voiceType, screen_size: data.screenSize,
       device_count: data.deviceCount, media_mode: data.mediaMode,
-    }).select().single()
+      slug: data.slug || null,
+      access_username: data.accessUsername || null,
+      access_password: data.accessPassword || null,
+    } as any).select().single()
     if (error) { toast.error('Erro ao criar TV'); console.error(error); return null }
     const tv = mapDbTV(row)
     dispatch({ type: 'ADD_TV', payload: tv })
@@ -410,7 +416,10 @@ export function QueueSystemProvider({ children }: { children: ReactNode }) {
     const { error } = await supabase.from('queue_tvs').update({
       name: data.name, voice_type: data.voiceType, screen_size: data.screenSize,
       device_count: data.deviceCount, media_mode: data.mediaMode,
-    }).eq('id', data.id)
+      slug: data.slug || null,
+      access_username: data.accessUsername || null,
+      access_password: data.accessPassword || null,
+    } as any).eq('id', data.id)
     if (error) { toast.error('Erro ao atualizar TV'); return false }
     dispatch({ type: 'UPDATE_TV', payload: data })
     return true

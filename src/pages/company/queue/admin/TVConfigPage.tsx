@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
-import { ArrowLeft, Plus, Pencil, Trash2, Eye } from 'lucide-react'
+import { ArrowLeft, Plus, Pencil, Trash2, Eye, EyeOff, Copy, RefreshCw, ExternalLink } from 'lucide-react'
 import { toast } from 'sonner'
 import { cn } from '@/lib/utils'
 import { useQueueSystem } from '@/context/QueueSystemContext'
@@ -31,39 +31,86 @@ export default function TVConfigPage() {
   const [tvVoice, setTvVoice] = useState<'feminine' | 'masculine'>('feminine')
   const [tvSize, setTvSize] = useState<'small' | 'medium' | 'large' | 'extra_large'>('medium')
   const [tvDeviceCount, setTvDeviceCount] = useState(1)
+  const [tvSlug, setTvSlug] = useState('')
+  const [tvUsername, setTvUsername] = useState('')
+  const [tvPassword, setTvPassword] = useState('')
+  const [showTvPwd, setShowTvPwd] = useState(false)
 
   const selectedTv = tvs.find(t => t.id === selectedTvId)
 
+  const slugify = (str: string) =>
+    str.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+       .replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 40)
+
+  const randomToken = (len: number) => {
+    const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz23456789'
+    let out = ''
+    const arr = new Uint32Array(len)
+    crypto.getRandomValues(arr)
+    for (let i = 0; i < len; i++) out += chars[arr[i] % chars.length]
+    return out
+  }
+
+  const tvUrl = (slug: string) => `${window.location.origin}/painel/${slug || ''}`
+
+  const copyToClipboard = async (text: string, label: string) => {
+    try { await navigator.clipboard.writeText(text); toast.success(`${label} copiado`) }
+    catch { toast.error('Não foi possível copiar') }
+  }
+
+  const generateTvCredentials = () => {
+    setTvUsername(`tv_${randomToken(4).toLowerCase()}`)
+    setTvPassword(randomToken(8))
+    setShowTvPwd(true)
+    toast.success('Novas credenciais geradas')
+  }
+
   const openTVModal = (tv: TV | null) => {
     setEditTV(tv)
+    setShowTvPwd(false)
     setTvName(tv?.name || '')
     setTvVoice(tv?.voiceType || 'feminine')
     setTvSize(tv?.screenSize || 'medium')
     setTvDeviceCount(tv?.deviceCount || 1)
+    if (tv) {
+      setTvSlug(tv.slug || `tv-${tv.id.slice(0, 8)}`)
+      setTvUsername(tv.accessUsername || '')
+      setTvPassword(tv.accessPassword || '')
+    } else {
+      setTvSlug(`tv-${randomToken(6).toLowerCase()}`)
+      setTvUsername(`tv_${randomToken(4).toLowerCase()}`)
+      setTvPassword(randomToken(8))
+    }
     setShowTVModal(true)
   }
 
   const saveTV = async () => {
     if (!tvName.trim() || saving) return
     setSaving(true)
+    const slug = slugify(tvSlug) || `tv-${randomToken(6).toLowerCase()}`
+    const extra = {
+      slug,
+      accessUsername: tvUsername.trim() || undefined,
+      accessPassword: tvPassword.trim() || undefined,
+    }
     if (isDemoCompany) {
       if (editTV) {
-        dispatch({ type: 'UPDATE_TV', payload: { ...editTV, name: tvName, voiceType: tvVoice, screenSize: tvSize, deviceCount: tvDeviceCount } })
+        dispatch({ type: 'UPDATE_TV', payload: { ...editTV, name: tvName, voiceType: tvVoice, screenSize: tvSize, deviceCount: tvDeviceCount, ...extra } })
         toast.success('TV atualizada')
       } else {
         const newTv: TV = {
           id: `tv_${Date.now()}`, unitId: unitId!, name: tvName, voiceType: tvVoice, screenSize: tvSize,
-          deviceCount: tvDeviceCount, mediaMode: 'without_media', mediaAttachments: [], isActive: true,
+          deviceCount: tvDeviceCount, mediaMode: 'without_media', mediaAttachments: [], isActive: true, ...extra,
         }
         dispatch({ type: 'ADD_TV', payload: newTv })
         toast.success('TV criada')
       }
     } else {
       if (editTV) {
-        const ok = await updateTVDB({ ...editTV, name: tvName, voiceType: tvVoice, screenSize: tvSize, deviceCount: tvDeviceCount })
+        const ok = await updateTVDB({ ...editTV, name: tvName, voiceType: tvVoice, screenSize: tvSize, deviceCount: tvDeviceCount, ...extra })
         if (ok) toast.success('TV atualizada')
       } else {
-        const tv = await addTVDB({ unitId: unitId!, name: tvName, voiceType: tvVoice, screenSize: tvSize, deviceCount: tvDeviceCount, mediaMode: 'without_media', companyId })
+        const tv = await addTVDB({ unitId: unitId!, name: tvName, voiceType: tvVoice, screenSize: tvSize, deviceCount: tvDeviceCount, mediaMode: 'without_media', companyId, ...extra })
         if (tv) { toast.success('TV criada'); setSelectedTvId(tv.id) }
       }
     }
@@ -221,16 +268,82 @@ export default function TVConfigPage() {
       )}
 
       {showTVModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50" onClick={() => setShowTVModal(false)}>
-          <div onClick={e => e.stopPropagation()} className="w-full max-w-sm rounded-2xl bg-card border border-border p-6 space-y-4">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" onClick={() => setShowTVModal(false)}>
+          <div onClick={e => e.stopPropagation()} className="w-full max-w-md rounded-2xl bg-card border border-border p-6 space-y-4 max-h-[90vh] overflow-y-auto">
             <h3 className="text-lg font-bold text-foreground">{editTV ? 'Editar TV' : 'Cadastrar TV'}</h3>
+
             <div className="space-y-3">
               <div className="space-y-1"><label className="text-sm font-medium">Nome *</label><input type="text" value={tvName} onChange={e => setTvName(e.target.value)} placeholder="Digite o nome..." className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring" /></div>
               <div className="space-y-1"><label className="text-sm font-medium">Tipo de voz</label><select value={tvVoice} onChange={e => setTvVoice(e.target.value as 'feminine'|'masculine')} className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm"><option value="feminine">Feminina</option><option value="masculine">Masculina</option></select></div>
               <div className="space-y-1"><label className="text-sm font-medium">Tamanho da TV</label><select value={tvSize} onChange={e => setTvSize(e.target.value as any)} className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm"><option value="small">Pequena</option><option value="medium">Médio</option><option value="large">Grande</option><option value="extra_large">Extra Grande</option></select></div>
               <div className="space-y-1"><label className="text-sm font-medium">Número de dispositivos</label><input type="number" min={1} value={tvDeviceCount} onChange={e => setTvDeviceCount(Number(e.target.value))} className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring" /></div>
             </div>
-            <div className="flex gap-3 justify-end">
+
+            <div className="space-y-1">
+              <label className="text-sm font-medium text-foreground">Identificador da URL (slug)</label>
+              <input type="text" value={tvSlug} onChange={e => setTvSlug(e.target.value)} placeholder="ex: tv-recepcao"
+                className="w-full rounded-lg border border-input bg-background px-3 py-2.5 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-ring" />
+              <p className="text-[11px] text-muted-foreground">Apenas letras minúsculas, números e hífens.</p>
+            </div>
+
+            <div className="rounded-lg border border-border bg-muted/40 p-3 space-y-2">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Link de acesso da TV</span>
+                <a href={tvUrl(tvSlug)} target="_blank" rel="noopener noreferrer" className="text-xs text-primary hover:underline inline-flex items-center gap-1">
+                  Abrir <ExternalLink className="h-3 w-3" />
+                </a>
+              </div>
+              <div className="flex gap-2">
+                <input readOnly value={tvUrl(tvSlug)}
+                  className="flex-1 rounded-lg border border-input bg-background px-3 py-2 text-xs font-mono text-foreground" />
+                <button type="button" onClick={() => copyToClipboard(tvUrl(tvSlug), 'Link')}
+                  className="inline-flex items-center gap-1 rounded-lg bg-primary px-3 py-2 text-xs font-semibold text-primary-foreground hover:opacity-90">
+                  <Copy className="h-3.5 w-3.5" /> Copiar
+                </button>
+              </div>
+              <p className="text-[11px] text-muted-foreground">Use este link no painel/TV de chamadas.</p>
+            </div>
+
+            <div className="rounded-lg border border-border p-3 space-y-3">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Credenciais de acesso</span>
+                <button type="button" onClick={generateTvCredentials}
+                  className="inline-flex items-center gap-1 rounded-lg border border-input bg-background px-2.5 py-1.5 text-xs font-semibold hover:bg-muted">
+                  <RefreshCw className="h-3.5 w-3.5" /> Gerar
+                </button>
+              </div>
+              <div className="space-y-1">
+                <label className="text-xs font-medium text-foreground">Usuário</label>
+                <div className="flex gap-2">
+                  <input type="text" value={tvUsername} onChange={e => setTvUsername(e.target.value)}
+                    className="flex-1 rounded-lg border border-input bg-background px-3 py-2 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-ring" />
+                  <button type="button" onClick={() => copyToClipboard(tvUsername, 'Usuário')}
+                    className="rounded-lg border border-input bg-background px-2.5 hover:bg-muted" aria-label="Copiar usuário">
+                    <Copy className="h-3.5 w-3.5 text-muted-foreground" />
+                  </button>
+                </div>
+              </div>
+              <div className="space-y-1">
+                <label className="text-xs font-medium text-foreground">Senha</label>
+                <div className="flex gap-2">
+                  <div className="relative flex-1">
+                    <input type={showTvPwd ? 'text' : 'password'} value={tvPassword} onChange={e => setTvPassword(e.target.value)}
+                      className="w-full rounded-lg border border-input bg-background px-3 py-2 pr-9 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-ring" />
+                    <button type="button" onClick={() => setShowTvPwd(s => !s)}
+                      className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground" aria-label="Mostrar senha">
+                      {showTvPwd ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                    </button>
+                  </div>
+                  <button type="button" onClick={() => copyToClipboard(tvPassword, 'Senha')}
+                    className="rounded-lg border border-input bg-background px-2.5 hover:bg-muted" aria-label="Copiar senha">
+                    <Copy className="h-3.5 w-3.5 text-muted-foreground" />
+                  </button>
+                </div>
+                <p className="text-[11px] text-muted-foreground">Deixe em branco para liberar o painel sem login.</p>
+              </div>
+            </div>
+
+            <div className="flex gap-3 justify-end pt-2">
               <button onClick={() => setShowTVModal(false)} className="rounded-lg border border-input px-4 py-2 text-sm font-medium hover:bg-muted">Cancelar</button>
               <button onClick={saveTV} disabled={saving} className="rounded-lg bg-green-500 px-4 py-2 text-sm font-semibold text-white hover:bg-green-600 disabled:opacity-50">
                 {saving ? 'Salvando...' : 'Salvar'}

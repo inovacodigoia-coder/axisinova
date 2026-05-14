@@ -954,6 +954,8 @@ export type Database = {
       }
       queue_tvs: {
         Row: {
+          access_password: string | null
+          access_username: string | null
           company_id: string
           created_at: string
           device_count: number
@@ -962,10 +964,13 @@ export type Database = {
           media_mode: string
           name: string
           screen_size: string
+          slug: string | null
           unit_id: string
           voice_type: string
         }
         Insert: {
+          access_password?: string | null
+          access_username?: string | null
           company_id: string
           created_at?: string
           device_count?: number
@@ -974,10 +979,13 @@ export type Database = {
           media_mode?: string
           name: string
           screen_size?: string
+          slug?: string | null
           unit_id: string
           voice_type?: string
         }
         Update: {
+          access_password?: string | null
+          access_username?: string | null
           company_id?: string
           created_at?: string
           device_count?: number
@@ -986,6 +994,7 @@ export type Database = {
           media_mode?: string
           name?: string
           screen_size?: string
+          slug?: string | null
           unit_id?: string
           voice_type?: string
         }
