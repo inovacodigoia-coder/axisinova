@@ -31,39 +31,86 @@ export default function TVConfigPage() {
   const [tvVoice, setTvVoice] = useState<'feminine' | 'masculine'>('feminine')
   const [tvSize, setTvSize] = useState<'small' | 'medium' | 'large' | 'extra_large'>('medium')
   const [tvDeviceCount, setTvDeviceCount] = useState(1)
+  const [tvSlug, setTvSlug] = useState('')
+  const [tvUsername, setTvUsername] = useState('')
+  const [tvPassword, setTvPassword] = useState('')
+  const [showTvPwd, setShowTvPwd] = useState(false)
 
   const selectedTv = tvs.find(t => t.id === selectedTvId)
 
+  const slugify = (str: string) =>
+    str.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+       .replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 40)
+
+  const randomToken = (len: number) => {
+    const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz23456789'
+    let out = ''
+    const arr = new Uint32Array(len)
+    crypto.getRandomValues(arr)
+    for (let i = 0; i < len; i++) out += chars[arr[i] % chars.length]
+    return out
+  }
+
+  const tvUrl = (slug: string) => `${window.location.origin}/painel/${slug || ''}`
+
+  const copyToClipboard = async (text: string, label: string) => {
+    try { await navigator.clipboard.writeText(text); toast.success(`${label} copiado`) }
+    catch { toast.error('Não foi possível copiar') }
+  }
+
+  const generateTvCredentials = () => {
+    setTvUsername(`tv_${randomToken(4).toLowerCase()}`)
+    setTvPassword(randomToken(8))
+    setShowTvPwd(true)
+    toast.success('Novas credenciais geradas')
+  }
+
   const openTVModal = (tv: TV | null) => {
     setEditTV(tv)
+    setShowTvPwd(false)
     setTvName(tv?.name || '')
     setTvVoice(tv?.voiceType || 'feminine')
     setTvSize(tv?.screenSize || 'medium')
     setTvDeviceCount(tv?.deviceCount || 1)
+    if (tv) {
+      setTvSlug(tv.slug || `tv-${tv.id.slice(0, 8)}`)
+      setTvUsername(tv.accessUsername || '')
+      setTvPassword(tv.accessPassword || '')
+    } else {
+      setTvSlug(`tv-${randomToken(6).toLowerCase()}`)
+      setTvUsername(`tv_${randomToken(4).toLowerCase()}`)
+      setTvPassword(randomToken(8))
+    }
     setShowTVModal(true)
   }
 
   const saveTV = async () => {
     if (!tvName.trim() || saving) return
     setSaving(true)
+    const slug = slugify(tvSlug) || `tv-${randomToken(6).toLowerCase()}`
+    const extra = {
+      slug,
+      accessUsername: tvUsername.trim() || undefined,
+      accessPassword: tvPassword.trim() || undefined,
+    }
     if (isDemoCompany) {
       if (editTV) {
-        dispatch({ type: 'UPDATE_TV', payload: { ...editTV, name: tvName, voiceType: tvVoice, screenSize: tvSize, deviceCount: tvDeviceCount } })
+        dispatch({ type: 'UPDATE_TV', payload: { ...editTV, name: tvName, voiceType: tvVoice, screenSize: tvSize, deviceCount: tvDeviceCount, ...extra } })
         toast.success('TV atualizada')
       } else {
         const newTv: TV = {
           id: `tv_${Date.now()}`, unitId: unitId!, name: tvName, voiceType: tvVoice, screenSize: tvSize,
-          deviceCount: tvDeviceCount, mediaMode: 'without_media', mediaAttachments: [], isActive: true,
+          deviceCount: tvDeviceCount, mediaMode: 'without_media', mediaAttachments: [], isActive: true, ...extra,
         }
         dispatch({ type: 'ADD_TV', payload: newTv })
         toast.success('TV criada')
       }
     } else {
       if (editTV) {
-        const ok = await updateTVDB({ ...editTV, name: tvName, voiceType: tvVoice, screenSize: tvSize, deviceCount: tvDeviceCount })
+        const ok = await updateTVDB({ ...editTV, name: tvName, voiceType: tvVoice, screenSize: tvSize, deviceCount: tvDeviceCount, ...extra })
         if (ok) toast.success('TV atualizada')
       } else {
-        const tv = await addTVDB({ unitId: unitId!, name: tvName, voiceType: tvVoice, screenSize: tvSize, deviceCount: tvDeviceCount, mediaMode: 'without_media', companyId })
+        const tv = await addTVDB({ unitId: unitId!, name: tvName, voiceType: tvVoice, screenSize: tvSize, deviceCount: tvDeviceCount, mediaMode: 'without_media', companyId, ...extra })
         if (tv) { toast.success('TV criada'); setSelectedTvId(tv.id) }
       }
     }
