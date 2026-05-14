@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
-import { ArrowLeft, Plus, Pencil, Trash2, Eye } from 'lucide-react'
+import { ArrowLeft, Plus, Pencil, Trash2, Eye, EyeOff, Copy, RefreshCw, ExternalLink } from 'lucide-react'
 import { toast } from 'sonner'
 import { cn } from '@/lib/utils'
 import { useQueueSystem } from '@/context/QueueSystemContext'
