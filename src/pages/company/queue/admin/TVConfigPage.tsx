@@ -74,8 +74,8 @@ export default function TVConfigPage() {
     setTvDeviceCount(tv?.deviceCount || 1)
     if (tv) {
       setTvSlug(tv.slug || `tv-${tv.id.slice(0, 8)}`)
-      setTvUsername(tv.accessUsername || '')
-      setTvPassword(tv.accessPassword || '')
+      setTvUsername(tv.accessUsername || `tv_${randomToken(4).toLowerCase()}`)
+      setTvPassword(tv.accessPassword || randomToken(8))
     } else {
       setTvSlug(`tv-${randomToken(6).toLowerCase()}`)
       setTvUsername(`tv_${randomToken(4).toLowerCase()}`)
@@ -309,9 +309,10 @@ export default function TVConfigPage() {
                 <span className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Credenciais de acesso</span>
                 <button type="button" onClick={generateTvCredentials}
                   className="inline-flex items-center gap-1 rounded-lg border border-input bg-background px-2.5 py-1.5 text-xs font-semibold hover:bg-muted">
-                  <RefreshCw className="h-3.5 w-3.5" /> Gerar
+                  <RefreshCw className="h-3.5 w-3.5" /> Gerar aleatório
                 </button>
               </div>
+              <p className="text-[11px] text-muted-foreground">Digite manualmente ou gere automaticamente o login e a senha desta TV.</p>
               <div className="space-y-1">
                 <label className="text-xs font-medium text-foreground">Usuário</label>
                 <div className="flex gap-2">

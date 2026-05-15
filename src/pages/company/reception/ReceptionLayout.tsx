@@ -1,9 +1,10 @@
-import { useState, useEffect, useMemo } from 'react'
+import { useState, useEffect, useMemo, useCallback } from 'react'
 import { useQueue } from '@/context/QueueContext'
 import { useQueueSystem } from '@/context/QueueSystemContext'
 import { useAuth } from '@/context/AuthContext'
+import { supabase } from '@/integrations/supabase/client'
 import { cn } from '@/lib/utils'
-import { Users, Stethoscope, ArrowLeft } from 'lucide-react'
+import { Users, Stethoscope, ArrowLeft, FilterX } from 'lucide-react'
 import { toast } from 'sonner'
 import { AnimatePresence } from 'framer-motion'
 import ActiveAttendancePage from './ActiveAttendancePage'
@@ -15,12 +16,38 @@ import { TicketTimelineModal } from '@/components/queue/attendant/TicketTimeline
 import { TicketReallocateModal } from '@/components/queue/attendant/TicketReallocateModal'
 import { TicketFinalizeModal } from '@/components/queue/attendant/TicketFinalizeModal'
 import { SelectQueuesModal } from '@/components/queue/attendant/SelectQueuesModal'
-import type { Ticket } from '@/types/queue-system.types'
+import type { Ticket, TicketStatus } from '@/types/queue-system.types'
+
+const DEMO_COMPANY_ID = 'comp_001'
+
+function mapDbTicket(row: any): Ticket {
+  return {
+    id: row.id,
+    unitId: row.unit_id,
+    queueLineId: row.queue_line_id,
+    queueLineName: row.queue_line_name,
+    prefix: row.prefix,
+    number: row.number,
+    displayCode: row.display_code,
+    status: row.status as TicketStatus,
+    guicheId: row.guiche_id || undefined,
+    guicheName: row.guiche_name || undefined,
+    callCount: row.status === 'waiting' ? 0 : 1,
+    patientName: row.patient_name || undefined,
+    attendantName: row.attendant_name || undefined,
+    generatedAt: row.generated_at,
+    calledAt: row.called_at || undefined,
+    attendanceStartedAt: row.attendance_started_at || undefined,
+    finalizedAt: row.finalized_at || undefined,
+    timeline: [],
+  }
+}
 
 export default function ReceptionLayout() {
   const { stats } = useQueue()
   const { user } = useAuth()
   const { state, dispatch, getUnitQueues, getUnitGuiches, getUnitTVs, getUnitTickets } = useQueueSystem()
+  const isDemoCompany = user?.companyId === DEMO_COMPANY_ID
 
   const [activeTab, setActiveTab] = useState<'queue' | 'attendance'>('queue')
   const [selectedPatientId, setSelectedPatientId] = useState<string | null>(null)
@@ -38,6 +65,7 @@ export default function ReceptionLayout() {
   const [timelineTicket, setTimelineTicket] = useState<Ticket | null>(null)
   const [reallocateTicket, setReallocateTicket] = useState<Ticket | null>(null)
   const [finalizeTicket, setFinalizeTicket] = useState<Ticket | null>(null)
+  const [dbTickets, setDbTickets] = useState<Ticket[]>([])
 
   useEffect(() => {
     const id = setInterval(() => setTime(new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit', second: '2-digit' })), 1000)
@@ -64,7 +92,37 @@ export default function ReceptionLayout() {
   const guiches = useMemo(() => getUnitGuiches(unitId), [unitId, getUnitGuiches])
   const tvs = useMemo(() => getUnitTVs(unitId), [unitId, getUnitTVs])
   const internalQueues = useMemo(() => queues.filter(q => q.type === 'internal'), [queues])
-  const allTickets = useMemo(() => getUnitTickets(unitId, selectedQueues.length ? selectedQueues : undefined), [unitId, selectedQueues, getUnitTickets])
+  const loadDbTickets = useCallback(async () => {
+    if (isDemoCompany || !unitId) return
+    const startOfDay = new Date(); startOfDay.setHours(0, 0, 0, 0)
+    const { data, error } = await supabase
+      .from('queue_tickets')
+      .select('*')
+      .eq('unit_id', unitId)
+      .gte('generated_at', startOfDay.toISOString())
+      .order('generated_at', { ascending: true })
+    if (error) {
+      toast.error('Erro ao carregar fichas do totem')
+      console.error('loadDbTickets reception error', error)
+      return
+    }
+    setDbTickets((data || []).map(mapDbTicket))
+  }, [isDemoCompany, unitId])
+
+  useEffect(() => {
+    if (isDemoCompany || !unitId || !unitConfirmed) return
+    loadDbTickets()
+    const channel = supabase.channel(`reception_layout_tickets_${unitId}`)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'queue_tickets', filter: `unit_id=eq.${unitId}` }, loadDbTickets)
+      .subscribe()
+    return () => { supabase.removeChannel(channel) }
+  }, [isDemoCompany, unitId, unitConfirmed, loadDbTickets])
+
+  const allTickets = useMemo(() => {
+    const list = isDemoCompany ? getUnitTickets(unitId, selectedQueues.length ? selectedQueues : undefined) : dbTickets
+    if (!isDemoCompany && selectedQueues.length) return list.filter(t => selectedQueues.includes(t.queueLineId))
+    return list
+  }, [isDemoCompany, unitId, selectedQueues, getUnitTickets, dbTickets])
   const activeTickets = useMemo(() => allTickets.filter(t => !['finalized', 'reallocated'].includes(t.status)), [allTickets])
   const finalizedTickets = useMemo(() => allTickets.filter(t => t.status === 'finalized'), [allTickets])
   const guicheName = guiches.find(g => g.id === guicheId)?.name || ''
@@ -92,10 +150,21 @@ export default function ReceptionLayout() {
     sessionStorage.setItem('reception_attendant_session', JSON.stringify(updated))
   }
 
-  const handleCall = (ticketId: string) => {
+  const handleCall = async (ticketId: string) => {
     if (!tvId) { toast.warning('Selecione uma TV antes de chamar'); return }
     if (!guicheId) { toast.warning('Selecione um guichê'); return }
-    dispatch({ type: 'CALL_TICKET', payload: { ticketId, guicheId, guicheName, tvId, attendantName } })
+    if (isDemoCompany) {
+      dispatch({ type: 'CALL_TICKET', payload: { ticketId, guicheId, guicheName, tvId, attendantName } })
+    } else {
+      const { error } = await supabase.from('queue_tickets').update({
+        status: 'called',
+        called_at: new Date().toISOString(),
+        guiche_id: guicheId,
+        guiche_name: guicheName,
+        attendant_name: attendantName,
+      }).eq('id', ticketId)
+      if (error) { toast.error('Erro ao chamar ficha'); return }
+    }
     try {
       const ctx = new AudioContext()
       const beep = (freq: number, start: number, dur: number) => { const o = ctx.createOscillator(); o.frequency.value = freq; o.connect(ctx.destination); o.start(start); o.stop(start + dur) }
@@ -105,25 +174,41 @@ export default function ReceptionLayout() {
     toast.success('Ficha chamada!')
   }
 
-  const handleAttend = (ticketId: string) => {
-    dispatch({ type: 'ATTEND_TICKET', payload: { ticketId, attendantName, guicheName } })
+  const handleAttend = async (ticketId: string) => {
+    if (isDemoCompany) dispatch({ type: 'ATTEND_TICKET', payload: { ticketId, attendantName, guicheName } })
+    else {
+      const { error } = await supabase.from('queue_tickets').update({ status: 'in_attendance', attendance_started_at: new Date().toISOString(), attendant_name: attendantName }).eq('id', ticketId)
+      if (error) { toast.error('Erro ao iniciar atendimento'); return }
+    }
     toast.success('Em atendimento')
   }
 
-  const handleReallocate = (ticketId: string, queueId: string, queueName: string, patientName?: string) => {
-    dispatch({ type: 'REALLOCATE_TICKET', payload: { ticketId, queueId, queueName, patientName, attendantName } })
+  const handleReallocate = async (ticketId: string, queueId: string, queueName: string, patientName?: string) => {
+    if (isDemoCompany) dispatch({ type: 'REALLOCATE_TICKET', payload: { ticketId, queueId, queueName, patientName, attendantName } })
+    else {
+      const { error } = await supabase.from('queue_tickets').update({ status: 'reallocated', queue_line_id: queueId, queue_line_name: queueName, patient_name: patientName || undefined }).eq('id', ticketId)
+      if (error) { toast.error('Erro ao realocar ficha'); return }
+    }
     setReallocateTicket(null)
     toast.success('Ficha realocada')
   }
 
-  const handleFinalize = (ticketId: string) => {
-    dispatch({ type: 'FINALIZE_TICKET', payload: { ticketId, attendantName } })
+  const handleFinalize = async (ticketId: string) => {
+    if (isDemoCompany) dispatch({ type: 'FINALIZE_TICKET', payload: { ticketId, attendantName } })
+    else {
+      const { error } = await supabase.from('queue_tickets').update({ status: 'finalized', finalized_at: new Date().toISOString() }).eq('id', ticketId)
+      if (error) { toast.error('Erro ao finalizar ficha'); return }
+    }
     setFinalizeTicket(null)
     toast.success('Ficha finalizada')
   }
 
-  const handleReactivate = (ticketId: string) => {
-    dispatch({ type: 'REACTIVATE_TICKET', payload: { ticketId, attendantName } })
+  const handleReactivate = async (ticketId: string) => {
+    if (isDemoCompany) dispatch({ type: 'REACTIVATE_TICKET', payload: { ticketId, attendantName } })
+    else {
+      const { error } = await supabase.from('queue_tickets').update({ status: 'waiting', finalized_at: null }).eq('id', ticketId)
+      if (error) { toast.error('Erro ao reativar ficha'); return }
+    }
     toast.success('Ficha reativada')
   }
 
@@ -133,6 +218,14 @@ export default function ReceptionLayout() {
     const updated = { unitId, unitName, selectedQueueLineIds: ids, showFinalized: false }
     dispatch({ type: 'SET_ATTENDANT_SESSION', payload: updated })
     setShowSelectQueues(false)
+  }
+
+  const handleClearFilters = () => {
+    setSelectedQueues([])
+    setGuicheId('')
+    setTvId('')
+    persistSession({ selectedQueueLineIds: [], guicheId: '', tvId: '' })
+    dispatch({ type: 'SET_ATTENDANT_SESSION', payload: { unitId, unitName, selectedQueueLineIds: [], showFinalized: false } })
   }
 
   const goToAttendance = (id: string) => {
@@ -212,6 +305,11 @@ export default function ReceptionLayout() {
                   <button onClick={() => setShowSelectQueues(true)} className="rounded-lg border border-primary text-primary px-3 py-1.5 text-xs font-semibold hover:bg-primary/5 transition-colors">
                     Selecionar filas {selectedQueues.length > 0 && `(${selectedQueues.length})`}
                   </button>
+                  {(selectedQueues.length > 0 || guicheId || tvId) && (
+                    <button onClick={handleClearFilters} className="rounded-lg border border-border text-muted-foreground px-3 py-1.5 text-xs font-semibold hover:bg-muted transition-colors flex items-center gap-1">
+                      <FilterX className="h-3.5 w-3.5" /> Limpar filtros
+                    </button>
+                  )}
                   <button onClick={() => setShowFinalized(!showFinalized)} className="rounded-lg border border-primary text-primary px-3 py-1.5 text-xs font-semibold hover:bg-primary/5 transition-colors">
                     {showFinalized ? 'Ver fichas ativas' : 'Ver fichas finalizadas'}
                   </button>
@@ -223,10 +321,7 @@ export default function ReceptionLayout() {
 
               <h2 className="text-lg font-bold text-foreground">Lista de Fichas</h2>
 
-              {!selectedQueues.length ? (
-                <p className="text-sm text-muted-foreground">Nenhuma fila selecionada. Clique em &quot;Selecionar filas&quot; para começar.</p>
-              ) : (
-                <div className="flex-1 overflow-y-auto space-y-3">
+              <div className="flex-1 overflow-y-auto space-y-3">
                   {/* TV + Guichê selectors */}
                   <div className="flex gap-4 flex-wrap">
                     <div className="w-56">
@@ -262,7 +357,6 @@ export default function ReceptionLayout() {
                   {!showFinalized && !activeTickets.length && <p className="text-sm text-muted-foreground">Nenhuma ficha ativa</p>}
                   {showFinalized && !finalizedTickets.length && <p className="text-sm text-muted-foreground">Nenhuma ficha finalizada</p>}
                 </div>
-              )}
             </div>
           )
         ) : (
