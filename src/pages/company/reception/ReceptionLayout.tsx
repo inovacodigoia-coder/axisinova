@@ -92,7 +92,37 @@ export default function ReceptionLayout() {
   const guiches = useMemo(() => getUnitGuiches(unitId), [unitId, getUnitGuiches])
   const tvs = useMemo(() => getUnitTVs(unitId), [unitId, getUnitTVs])
   const internalQueues = useMemo(() => queues.filter(q => q.type === 'internal'), [queues])
-  const allTickets = useMemo(() => getUnitTickets(unitId, selectedQueues.length ? selectedQueues : undefined), [unitId, selectedQueues, getUnitTickets])
+  const loadDbTickets = useCallback(async () => {
+    if (isDemoCompany || !unitId) return
+    const startOfDay = new Date(); startOfDay.setHours(0, 0, 0, 0)
+    const { data, error } = await supabase
+      .from('queue_tickets')
+      .select('*')
+      .eq('unit_id', unitId)
+      .gte('generated_at', startOfDay.toISOString())
+      .order('generated_at', { ascending: true })
+    if (error) {
+      toast.error('Erro ao carregar fichas do totem')
+      console.error('loadDbTickets reception error', error)
+      return
+    }
+    setDbTickets((data || []).map(mapDbTicket))
+  }, [isDemoCompany, unitId])
+
+  useEffect(() => {
+    if (isDemoCompany || !unitId || !unitConfirmed) return
+    loadDbTickets()
+    const channel = supabase.channel(`reception_layout_tickets_${unitId}`)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'queue_tickets', filter: `unit_id=eq.${unitId}` }, loadDbTickets)
+      .subscribe()
+    return () => { supabase.removeChannel(channel) }
+  }, [isDemoCompany, unitId, unitConfirmed, loadDbTickets])
+
+  const allTickets = useMemo(() => {
+    const list = isDemoCompany ? getUnitTickets(unitId, selectedQueues.length ? selectedQueues : undefined) : dbTickets
+    if (!isDemoCompany && selectedQueues.length) return list.filter(t => selectedQueues.includes(t.queueLineId))
+    return list
+  }, [isDemoCompany, unitId, selectedQueues, getUnitTickets, dbTickets])
   const activeTickets = useMemo(() => allTickets.filter(t => !['finalized', 'reallocated'].includes(t.status)), [allTickets])
   const finalizedTickets = useMemo(() => allTickets.filter(t => t.status === 'finalized'), [allTickets])
   const guicheName = guiches.find(g => g.id === guicheId)?.name || ''
@@ -120,10 +150,21 @@ export default function ReceptionLayout() {
     sessionStorage.setItem('reception_attendant_session', JSON.stringify(updated))
   }
 
-  const handleCall = (ticketId: string) => {
+  const handleCall = async (ticketId: string) => {
     if (!tvId) { toast.warning('Selecione uma TV antes de chamar'); return }
     if (!guicheId) { toast.warning('Selecione um guichê'); return }
-    dispatch({ type: 'CALL_TICKET', payload: { ticketId, guicheId, guicheName, tvId, attendantName } })
+    if (isDemoCompany) {
+      dispatch({ type: 'CALL_TICKET', payload: { ticketId, guicheId, guicheName, tvId, attendantName } })
+    } else {
+      const { error } = await supabase.from('queue_tickets').update({
+        status: 'called',
+        called_at: new Date().toISOString(),
+        guiche_id: guicheId,
+        guiche_name: guicheName,
+        attendant_name: attendantName,
+      }).eq('id', ticketId)
+      if (error) { toast.error('Erro ao chamar ficha'); return }
+    }
     try {
       const ctx = new AudioContext()
       const beep = (freq: number, start: number, dur: number) => { const o = ctx.createOscillator(); o.frequency.value = freq; o.connect(ctx.destination); o.start(start); o.stop(start + dur) }
@@ -133,8 +174,12 @@ export default function ReceptionLayout() {
     toast.success('Ficha chamada!')
   }
 
-  const handleAttend = (ticketId: string) => {
-    dispatch({ type: 'ATTEND_TICKET', payload: { ticketId, attendantName, guicheName } })
+  const handleAttend = async (ticketId: string) => {
+    if (isDemoCompany) dispatch({ type: 'ATTEND_TICKET', payload: { ticketId, attendantName, guicheName } })
+    else {
+      const { error } = await supabase.from('queue_tickets').update({ status: 'in_attendance', attendance_started_at: new Date().toISOString(), attendant_name: attendantName }).eq('id', ticketId)
+      if (error) { toast.error('Erro ao iniciar atendimento'); return }
+    }
     toast.success('Em atendimento')
   }
 
