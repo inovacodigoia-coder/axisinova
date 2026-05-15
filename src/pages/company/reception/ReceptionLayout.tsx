@@ -1,9 +1,10 @@
-import { useState, useEffect, useMemo } from 'react'
+import { useState, useEffect, useMemo, useCallback } from 'react'
 import { useQueue } from '@/context/QueueContext'
 import { useQueueSystem } from '@/context/QueueSystemContext'
 import { useAuth } from '@/context/AuthContext'
+import { supabase } from '@/integrations/supabase/client'
 import { cn } from '@/lib/utils'
-import { Users, Stethoscope, ArrowLeft } from 'lucide-react'
+import { Users, Stethoscope, ArrowLeft, FilterX } from 'lucide-react'
 import { toast } from 'sonner'
 import { AnimatePresence } from 'framer-motion'
 import ActiveAttendancePage from './ActiveAttendancePage'
@@ -15,12 +16,38 @@ import { TicketTimelineModal } from '@/components/queue/attendant/TicketTimeline
 import { TicketReallocateModal } from '@/components/queue/attendant/TicketReallocateModal'
 import { TicketFinalizeModal } from '@/components/queue/attendant/TicketFinalizeModal'
 import { SelectQueuesModal } from '@/components/queue/attendant/SelectQueuesModal'
-import type { Ticket } from '@/types/queue-system.types'
+import type { Ticket, TicketStatus } from '@/types/queue-system.types'
+
+const DEMO_COMPANY_ID = 'comp_001'
+
+function mapDbTicket(row: any): Ticket {
+  return {
+    id: row.id,
+    unitId: row.unit_id,
+    queueLineId: row.queue_line_id,
+    queueLineName: row.queue_line_name,
+    prefix: row.prefix,
+    number: row.number,
+    displayCode: row.display_code,
+    status: row.status as TicketStatus,
+    guicheId: row.guiche_id || undefined,
+    guicheName: row.guiche_name || undefined,
+    callCount: row.status === 'waiting' ? 0 : 1,
+    patientName: row.patient_name || undefined,
+    attendantName: row.attendant_name || undefined,
+    generatedAt: row.generated_at,
+    calledAt: row.called_at || undefined,
+    attendanceStartedAt: row.attendance_started_at || undefined,
+    finalizedAt: row.finalized_at || undefined,
+    timeline: [],
+  }
+}
 
 export default function ReceptionLayout() {
   const { stats } = useQueue()
   const { user } = useAuth()
   const { state, dispatch, getUnitQueues, getUnitGuiches, getUnitTVs, getUnitTickets } = useQueueSystem()
+  const isDemoCompany = user?.companyId === DEMO_COMPANY_ID
 
   const [activeTab, setActiveTab] = useState<'queue' | 'attendance'>('queue')
   const [selectedPatientId, setSelectedPatientId] = useState<string | null>(null)
@@ -38,6 +65,7 @@ export default function ReceptionLayout() {
   const [timelineTicket, setTimelineTicket] = useState<Ticket | null>(null)
   const [reallocateTicket, setReallocateTicket] = useState<Ticket | null>(null)
   const [finalizeTicket, setFinalizeTicket] = useState<Ticket | null>(null)
+  const [dbTickets, setDbTickets] = useState<Ticket[]>([])
 
   useEffect(() => {
     const id = setInterval(() => setTime(new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit', second: '2-digit' })), 1000)
