@@ -183,20 +183,32 @@ export default function ReceptionLayout() {
     toast.success('Em atendimento')
   }
 
-  const handleReallocate = (ticketId: string, queueId: string, queueName: string, patientName?: string) => {
-    dispatch({ type: 'REALLOCATE_TICKET', payload: { ticketId, queueId, queueName, patientName, attendantName } })
+  const handleReallocate = async (ticketId: string, queueId: string, queueName: string, patientName?: string) => {
+    if (isDemoCompany) dispatch({ type: 'REALLOCATE_TICKET', payload: { ticketId, queueId, queueName, patientName, attendantName } })
+    else {
+      const { error } = await supabase.from('queue_tickets').update({ status: 'reallocated', queue_line_id: queueId, queue_line_name: queueName, patient_name: patientName || undefined }).eq('id', ticketId)
+      if (error) { toast.error('Erro ao realocar ficha'); return }
+    }
     setReallocateTicket(null)
     toast.success('Ficha realocada')
   }
 
-  const handleFinalize = (ticketId: string) => {
-    dispatch({ type: 'FINALIZE_TICKET', payload: { ticketId, attendantName } })
+  const handleFinalize = async (ticketId: string) => {
+    if (isDemoCompany) dispatch({ type: 'FINALIZE_TICKET', payload: { ticketId, attendantName } })
+    else {
+      const { error } = await supabase.from('queue_tickets').update({ status: 'finalized', finalized_at: new Date().toISOString() }).eq('id', ticketId)
+      if (error) { toast.error('Erro ao finalizar ficha'); return }
+    }
     setFinalizeTicket(null)
     toast.success('Ficha finalizada')
   }
 
-  const handleReactivate = (ticketId: string) => {
-    dispatch({ type: 'REACTIVATE_TICKET', payload: { ticketId, attendantName } })
+  const handleReactivate = async (ticketId: string) => {
+    if (isDemoCompany) dispatch({ type: 'REACTIVATE_TICKET', payload: { ticketId, attendantName } })
+    else {
+      const { error } = await supabase.from('queue_tickets').update({ status: 'waiting', finalized_at: null }).eq('id', ticketId)
+      if (error) { toast.error('Erro ao reativar ficha'); return }
+    }
     toast.success('Ficha reativada')
   }
 
@@ -206,6 +218,14 @@ export default function ReceptionLayout() {
     const updated = { unitId, unitName, selectedQueueLineIds: ids, showFinalized: false }
     dispatch({ type: 'SET_ATTENDANT_SESSION', payload: updated })
     setShowSelectQueues(false)
+  }
+
+  const handleClearFilters = () => {
+    setSelectedQueues([])
+    setGuicheId('')
+    setTvId('')
+    persistSession({ selectedQueueLineIds: [], guicheId: '', tvId: '' })
+    dispatch({ type: 'SET_ATTENDANT_SESSION', payload: { unitId, unitName, selectedQueueLineIds: [], showFinalized: false } })
   }
 
   const goToAttendance = (id: string) => {
