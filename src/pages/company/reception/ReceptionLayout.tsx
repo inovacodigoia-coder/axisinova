@@ -305,6 +305,11 @@ export default function ReceptionLayout() {
                   <button onClick={() => setShowSelectQueues(true)} className="rounded-lg border border-primary text-primary px-3 py-1.5 text-xs font-semibold hover:bg-primary/5 transition-colors">
                     Selecionar filas {selectedQueues.length > 0 && `(${selectedQueues.length})`}
                   </button>
+                  {(selectedQueues.length > 0 || guicheId || tvId) && (
+                    <button onClick={handleClearFilters} className="rounded-lg border border-border text-muted-foreground px-3 py-1.5 text-xs font-semibold hover:bg-muted transition-colors flex items-center gap-1">
+                      <FilterX className="h-3.5 w-3.5" /> Limpar filtros
+                    </button>
+                  )}
                   <button onClick={() => setShowFinalized(!showFinalized)} className="rounded-lg border border-primary text-primary px-3 py-1.5 text-xs font-semibold hover:bg-primary/5 transition-colors">
                     {showFinalized ? 'Ver fichas ativas' : 'Ver fichas finalizadas'}
                   </button>
@@ -316,10 +321,7 @@ export default function ReceptionLayout() {
 
               <h2 className="text-lg font-bold text-foreground">Lista de Fichas</h2>
 
-              {!selectedQueues.length ? (
-                <p className="text-sm text-muted-foreground">Nenhuma fila selecionada. Clique em &quot;Selecionar filas&quot; para começar.</p>
-              ) : (
-                <div className="flex-1 overflow-y-auto space-y-3">
+              <div className="flex-1 overflow-y-auto space-y-3">
                   {/* TV + Guichê selectors */}
                   <div className="flex gap-4 flex-wrap">
                     <div className="w-56">
@@ -355,7 +357,6 @@ export default function ReceptionLayout() {
                   {!showFinalized && !activeTickets.length && <p className="text-sm text-muted-foreground">Nenhuma ficha ativa</p>}
                   {showFinalized && !finalizedTickets.length && <p className="text-sm text-muted-foreground">Nenhuma ficha finalizada</p>}
                 </div>
-              )}
             </div>
           )
         ) : (
