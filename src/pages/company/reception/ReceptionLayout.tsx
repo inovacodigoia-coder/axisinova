@@ -435,6 +435,20 @@ export default function ReceptionLayout() {
           onClose={() => setFinalizeTicket(null)}
         />
       )}
+      {cadastroTicket && (
+        <AttendanceCadastroModal
+          open
+          onClose={() => setCadastroTicket(null)}
+          ticketId={cadastroTicket.id}
+          ticketCode={cadastroTicket.displayCode}
+          unitId={unitId}
+          unitName={unitName}
+          guicheName={guicheName}
+        />
+      )}
+      {reprintDoc && (
+        <AttendancePrintModal open onClose={() => setReprintDoc(null)} document={reprintDoc} />
+      )}
     </div>
   )
 }
