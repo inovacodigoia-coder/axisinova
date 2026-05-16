@@ -48,6 +48,18 @@ export function TicketCard({ ticket, onCall, onAttend, onReallocate, onFinalize,
             {ticket.calledAt && ` / Chamado: ${fmt(ticket.calledAt)}`}
             {ticket.attendanceStartedAt && ` / Atendido na recepção: ${fmt(ticket.attendanceStartedAt)}`}
           </p>
+          {orderNumber && (
+            <div className="mt-1 flex items-center gap-2 flex-wrap">
+              <span className="text-[10px] font-semibold bg-emerald-100 text-emerald-700 px-2 py-0.5 rounded">
+                Pedido: {orderNumber}
+              </span>
+              {allocatedQueueName && (
+                <span className="text-[10px] font-semibold bg-muted text-muted-foreground px-2 py-0.5 rounded">
+                  → {allocatedQueueName}
+                </span>
+              )}
+            </div>
+          )}
         </div>
       </div>
 
