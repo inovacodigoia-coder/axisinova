@@ -1,0 +1,323 @@
+import { useState, useCallback, useEffect } from 'react'
+import { Dialog, DialogContent } from '@/components/ui/dialog'
+import { Button } from '@/components/ui/button'
+import { X, ArrowLeft, ArrowRight, Check, UserPlus } from 'lucide-react'
+import { cn } from '@/lib/utils'
+import { toast } from 'sonner'
+import { Step1PatientLookup } from './steps/Step1PatientLookup'
+import { Step2AttendanceData } from './steps/Step2AttendanceData'
+import { Step3Authorization } from './steps/Step3Authorization'
+import { Step4Attachments } from './steps/Step4Attachments'
+import { useAttendanceCadastro, useDraftAutosave, loadDraft, clearDraft } from '@/hooks/useAttendanceCadastro'
+import { useAuth } from '@/context/AuthContext'
+import type { AttendanceOrder, AttendanceServiceType, AttendancePaymentType, AttendanceAttachment } from '@/types/attendance-cadastro.types'
+import type { Patient } from '@/types/patient.types'
+
+interface AttendanceCadastroModalProps {
+  open: boolean
+  onClose: () => void
+  ticketId?: string
+  ticketCode?: string
+  unitId: string
+  unitName?: string
+  guicheName?: string
+  onOrderCreated?: (order: AttendanceOrder) => void
+}
+
+export interface CadastroState {
+  patient?: Patient
+  scheduledAppointmentId?: string
+  serviceType?: AttendanceServiceType
+  paymentType?: AttendancePaymentType
+  doctorId?: string
+  doctorName?: string
+  doctorCRM?: string
+  specialty?: string
+  requestingDoctor?: string
+  procedureId?: string
+  procedureName?: string
+  procedureCode?: string
+  procedureDescription?: string
+  procedureRequiresAuth?: boolean
+  convenioId?: string
+  convenioName?: string
+  cardNumber?: string
+  cardExpiry?: string
+  authorizationCode?: string
+  authorizationDate?: string
+  authorizationExpiry?: string
+  authorizationPassword?: string
+  billingCode?: string
+  billingTable?: 'TUSS' | 'AMB' | 'CBHPM' | 'OTHER'
+  quantity?: number
+  participationDegree?: string
+  cnes?: string
+  cbo?: string
+  privateValue?: number
+  freeReason?: string
+  attachments: AttendanceAttachment[]
+  attachmentOverrideReason?: string
+}
+
+const STEPS = ['Paciente', 'Atendimento', 'Autorização', 'Anexos'] as const
+
+export function AttendanceCadastroModal({
+  open, onClose, ticketId, ticketCode, unitId, unitName, guicheName, onOrderCreated,
+}: AttendanceCadastroModalProps) {
+  const { user } = useAuth()
+  const { createOrder } = useAttendanceCadastro()
+  const [step, setStep] = useState(0)
+  const [showReview, setShowReview] = useState(false)
+  const [state, setState] = useState<CadastroState>({ attachments: [] })
+  const [restorePromptShown, setRestorePromptShown] = useState(false)
+
+  // Carrega rascunho ao abrir
+  useEffect(() => {
+    if (!open || !ticketId || restorePromptShown) return
+    const draft = loadDraft(ticketId)
+    if (draft && draft.savedAt) {
+      const saved = new Date(draft.savedAt).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })
+      if (confirm(`Restaurar rascunho salvo às ${saved}?`)) {
+        setState({ attachments: [], ...draft })
+      } else {
+        clearDraft(ticketId)
+      }
+    }
+    setRestorePromptShown(true)
+  }, [open, ticketId, restorePromptShown])
+
+  useEffect(() => {
+    if (!open) {
+      setStep(0); setShowReview(false); setState({ attachments: [] }); setRestorePromptShown(false)
+    }
+  }, [open])
+
+  useDraftAutosave(ticketId, state, open)
+
+  const update = useCallback((patch: Partial<CadastroState>) => {
+    setState(s => ({ ...s, ...patch }))
+  }, [])
+
+  const hasUnsavedData = !!(state.patient || state.serviceType || state.attachments.length)
+
+  const handleClose = () => {
+    if (hasUnsavedData) {
+      if (!confirm('Tem certeza? Os dados não salvos serão perdidos.')) return
+    }
+    if (ticketId) clearDraft(ticketId)
+    onClose()
+  }
+
+  // Validação por passo
+  const stepValid = (s: number): boolean => {
+    if (s === 0) return !!state.patient
+    if (s === 1) {
+      if (!state.serviceType || !state.paymentType || !state.procedureId || !state.procedureCode) return false
+      if (state.paymentType === 'convenio' && (!state.convenioId || !state.cardNumber)) return false
+      if (state.paymentType === 'free' && !state.freeReason) return false
+      return true
+    }
+    if (s === 2) {
+      if (state.procedureRequiresAuth) {
+        return !!(state.authorizationCode && state.authorizationDate && state.authorizationExpiry)
+      }
+      return true
+    }
+    if (s === 3) return true
+    return false
+  }
+
+  const canAdvance = stepValid(step)
+
+  const next = () => {
+    if (!canAdvance) return
+    if (step === 3) setShowReview(true)
+    else setStep(step + 1)
+  }
+  const prev = () => {
+    if (showReview) { setShowReview(false); return }
+    if (step > 0) setStep(step - 1)
+  }
+
+  const handleFinalize = () => {
+    if (!state.patient || !state.serviceType || !state.paymentType || !state.procedureId) {
+      toast.error('Dados incompletos')
+      return
+    }
+    const order = createOrder({
+      patientId: state.patient.id,
+      patientName: state.patient.fullName,
+      unitId,
+      ticketId, ticketCode,
+      serviceType: state.serviceType,
+      paymentType: state.paymentType,
+      doctorId: state.doctorId, doctorName: state.doctorName, doctorCRM: state.doctorCRM,
+      specialty: state.specialty, requestingDoctor: state.requestingDoctor,
+      procedureId: state.procedureId, procedureName: state.procedureName,
+      procedureCode: state.procedureCode, procedureDescription: state.procedureDescription,
+      convenioId: state.convenioId, convenioName: state.convenioName,
+      cardNumber: state.cardNumber, cardExpiry: state.cardExpiry,
+      authorizationCode: state.authorizationCode, authorizationDate: state.authorizationDate,
+      authorizationExpiry: state.authorizationExpiry, authorizationPassword: state.authorizationPassword,
+      billingCode: state.billingCode, billingTable: state.billingTable, quantity: state.quantity,
+      participationDegree: state.participationDegree, cnes: state.cnes, cbo: state.cbo,
+      privateValue: state.privateValue, freeReason: state.freeReason,
+      attachments: state.attachments,
+      attachmentRulesSatisfied: !state.attachmentOverrideReason,
+      attachmentOverrideReason: state.attachmentOverrideReason,
+      scheduledAppointmentId: state.scheduledAppointmentId,
+      status: state.procedureRequiresAuth && state.authorizationCode ? 'authorized' : 'open',
+    })
+    toast.success(`Atendimento registrado · Pedido: ${order.orderNumber}`)
+    if (ticketId) clearDraft(ticketId)
+    onOrderCreated?.(order)
+    onClose()
+  }
+
+  return (
+    <Dialog open={open} onOpenChange={(o) => !o && handleClose()}>
+      <DialogContent className="max-w-[1200px] w-[95vw] h-[90vh] p-0 flex flex-col gap-0" hideCloseButton>
+        {/* Header */}
+        <div className="flex items-center justify-between border-b border-border px-6 py-4 bg-card">
+          <div className="flex items-center gap-3">
+            <div className="rounded-full gradient-bg p-2 text-white">
+              <UserPlus className="h-5 w-5" />
+            </div>
+            <div>
+              <h2 className="text-lg font-bold text-foreground">Cadastro de Atendimento</h2>
+              <p className="text-xs text-muted-foreground">
+                {guicheName ? `${guicheName} · ` : ''}{unitName ? `Unidade: ${unitName} · ` : ''}
+                {new Date().toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
+              </p>
+            </div>
+          </div>
+          <div className="flex items-center gap-3">
+            {ticketCode && (
+              <span className="rounded-full gradient-bg px-3 py-1 text-xs font-semibold text-white">
+                Ficha: {ticketCode}
+              </span>
+            )}
+            {state.scheduledAppointmentId && (
+              <span className="rounded-full bg-emerald-100 text-emerald-700 px-3 py-1 text-xs font-semibold">
+                Agendamento vinculado
+              </span>
+            )}
+            <button onClick={handleClose} className="rounded-md p-1.5 hover:bg-muted text-muted-foreground">
+              <X className="h-5 w-5" />
+            </button>
+          </div>
+        </div>
+
+        {/* Progress */}
+        <div className="border-b border-border bg-muted/30 px-6 py-4">
+          <div className="flex items-center justify-between max-w-3xl mx-auto">
+            {STEPS.map((label, idx) => {
+              const done = idx < step || showReview
+              const active = idx === step && !showReview
+              return (
+                <div key={label} className="flex items-center flex-1 last:flex-none">
+                  <div className="flex flex-col items-center">
+                    <div className={cn(
+                      'w-9 h-9 rounded-full flex items-center justify-center text-sm font-bold transition-all',
+                      done && 'bg-emerald-500 text-white',
+                      active && 'gradient-bg text-white shadow-md scale-110',
+                      !done && !active && 'bg-muted text-muted-foreground border border-border'
+                    )}>
+                      {done ? <Check className="h-4 w-4" /> : idx + 1}
+                    </div>
+                    <span className={cn(
+                      'mt-1 text-xs',
+                      (done || active) ? 'text-foreground font-medium' : 'text-muted-foreground'
+                    )}>{label}</span>
+                  </div>
+                  {idx < STEPS.length - 1 && (
+                    <div className={cn('flex-1 h-0.5 mx-2 transition-all', done ? 'bg-emerald-500' : 'bg-border')} />
+                  )}
+                </div>
+              )
+            })}
+          </div>
+        </div>
+
+        {/* Content */}
+        <div className="flex-1 overflow-y-auto bg-background">
+          {!showReview && step === 0 && <Step1PatientLookup state={state} update={update} unitId={unitId} />}
+          {!showReview && step === 1 && <Step2AttendanceData state={state} update={update} />}
+          {!showReview && step === 2 && <Step3Authorization state={state} update={update} />}
+          {!showReview && step === 3 && <Step4Attachments state={state} update={update} />}
+          {showReview && <ReviewPanel state={state} unitName={unitName} guicheName={guicheName} ticketCode={ticketCode} />}
+        </div>
+
+        {/* Footer */}
+        <div className="flex items-center justify-between border-t border-border px-6 py-4 bg-card">
+          <Button variant="outline" onClick={prev} disabled={step === 0 && !showReview}>
+            <ArrowLeft className="h-4 w-4 mr-1" /> Voltar
+          </Button>
+          {!showReview ? (
+            <button
+              onClick={next}
+              disabled={!canAdvance}
+              className={cn(
+                'inline-flex items-center gap-1 rounded-md gradient-bg px-6 py-2 text-sm font-semibold text-white shadow-sm transition-all',
+                !canAdvance && 'opacity-50 cursor-not-allowed'
+              )}
+            >
+              {step === 3 ? 'Revisar' : 'Próximo'} <ArrowRight className="h-4 w-4" />
+            </button>
+          ) : (
+            <button
+              onClick={handleFinalize}
+              className="inline-flex items-center gap-1 rounded-md bg-emerald-500 px-6 py-2 text-sm font-semibold text-white shadow-sm hover:bg-emerald-600 transition-colors"
+            >
+              <Check className="h-4 w-4" /> Confirmar Atendimento
+            </button>
+          )}
+        </div>
+      </DialogContent>
+    </Dialog>
+  )
+}
+
+// Painel de revisão final
+function ReviewPanel({ state, unitName, guicheName, ticketCode }: { state: CadastroState; unitName?: string; guicheName?: string; ticketCode?: string }) {
+  const requiredCount = state.attachments.filter(a => a.isRequired).length
+  return (
+    <div className="p-6 max-w-3xl mx-auto">
+      <div className="rounded-lg border border-border bg-card p-6 space-y-4">
+        <h3 className="text-lg font-bold text-foreground flex items-center gap-2">
+          📋 Resumo do Atendimento
+        </h3>
+        <div className="border-t border-border" />
+        <dl className="space-y-2 text-sm">
+          <Row label="👤 Paciente" value={`${state.patient?.fullName} ${state.patient?.age ? `(${state.patient.age} anos)` : ''}`} />
+          {ticketCode && <Row label="🎫 Ficha" value={`${ticketCode}${guicheName ? ` · ${guicheName}` : ''}${unitName ? ` · ${unitName}` : ''}`} />}
+          <Row label="📋 Tipo" value={state.serviceType === 'consultation' ? 'Consulta' : state.serviceType === 'exam' ? 'Exame' : 'Procedimento'} />
+          {state.doctorName && <Row label="👨‍⚕️ Médico" value={`${state.doctorName}${state.specialty ? ` · ${state.specialty}` : ''}`} />}
+          {state.procedureName && <Row label="💊 Procedimento" value={`${state.procedureName} · TUSS: ${state.procedureCode}`} />}
+          {state.paymentType === 'convenio' && state.convenioName && (
+            <Row label="💳 Convênio" value={`${state.convenioName} · Nº ${state.cardNumber}`} />
+          )}
+          {state.authorizationCode && (
+            <Row label="🔑 Autorização" value={`${state.authorizationCode}${state.authorizationExpiry ? ` · Válida até ${state.authorizationExpiry}` : ''}`} />
+          )}
+          <Row label="📎 Documentos" value={`${state.attachments.length} anexado(s)${requiredCount ? ` · ${requiredCount} obrigatório(s)` : ''}`} />
+          <Row label="💰 Forma de pagamento" value={state.paymentType === 'convenio' ? 'Convênio' : state.paymentType === 'private' ? `Particular${state.privateValue ? ` · R$ ${state.privateValue.toFixed(2)}` : ''}` : 'Cortesia'} />
+        </dl>
+        {state.attachmentOverrideReason && (
+          <div className="rounded-md bg-amber-50 border border-amber-200 p-3 text-xs text-amber-800">
+            ⚠️ Documentos obrigatórios não anexados. Justificativa: {state.attachmentOverrideReason}
+          </div>
+        )}
+      </div>
+    </div>
+  )
+}
+
+function Row({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="flex gap-2">
+      <dt className="font-medium text-muted-foreground w-44 shrink-0">{label}:</dt>
+      <dd className="text-foreground">{value}</dd>
+    </div>
+  )
+}
