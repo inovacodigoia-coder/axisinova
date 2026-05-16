@@ -37,7 +37,7 @@ export default function CallingPanelPage() {
   const [tv, setTv] = useState<TVRow | null>(null)
   const [tickets, setTickets] = useState<QueueTicketRow[]>([])
   const [loadingPanel, setLoadingPanel] = useState(!!slug)
-  const lastCalledIdRef = useRef<string | null>(null)
+  const lastCalledKeyRef = useRef<string | null>(null)
   const companyName = user?.companyName || 'Axis Inova'
 
   useEffect(() => {
@@ -106,7 +106,9 @@ export default function CallingPanelPage() {
 
   useEffect(() => {
     if (!panelCalled || panelCalled.id === lastCalledIdRef.current) return
-    lastCalledIdRef.current = panelCalled.id
+    const calledKey = `${panelCalled.id}-${panelCalled.called_at}-${panelCalled.call_count || 1}`
+    if (calledKey === lastCalledKeyRef.current) return
+    lastCalledKeyRef.current = calledKey
     setFlash(true)
     try {
       const ctx = new AudioContext()
@@ -125,7 +127,41 @@ export default function CallingPanelPage() {
     } catch {}
     const id = setTimeout(() => setFlash(false), 2000)
     return () => clearTimeout(id)
-  }, [panelCalled?.called_at, panelCalled?.id])
+  }, [panelCalled?.called_at, panelCalled?.call_count, panelCalled?.id])
+
+  // Prevent interaction on TV panel
+  useEffect(() => {
+    const prevent = (e: Event) => e.preventDefault()
+    document.addEventListener('contextmenu', prevent)
+    return () => document.removeEventListener('contextmenu', prevent)
+  }, [])
+
+  useEffect(() => {
+    if (slug || !state.lastCalledTicket) return
+    setFlash(true)
+    try {
+      const ctx = new AudioContext()
+      const osc = ctx.createOscillator()
+      const gain = ctx.createGain()
+      osc.connect(gain)
+      gain.connect(ctx.destination)
+      osc.frequency.value = 800
+      gain.gain.value = 0.3
+      osc.start()
+      osc.stop(ctx.currentTime + 0.15)
+      setTimeout(() => {
+        const osc2 = ctx.createOscillator()
+        const gain2 = ctx.createGain()
+        osc2.connect(gain2)
+        gain2.connect(ctx.destination)
+        osc2.frequency.value = 1000
+        gain2.gain.value = 0.3
+        osc2.start()
+        osc2.stop(ctx.currentTime + 0.2)
+      }, 200)
+    } catch {}
+    setTimeout(() => setFlash(false), 2000)
+  }, [slug, state.lastCalledTicket?.calledAt])
 
   if (slug) {
     const panelCompanyName = user?.companyName || 'AXIS INOVA'
@@ -208,41 +244,6 @@ export default function CallingPanelPage() {
       </div>
     )
   }
-
-  // Prevent interaction on TV panel
-  useEffect(() => {
-    const prevent = (e: Event) => e.preventDefault()
-    document.addEventListener('contextmenu', prevent)
-    return () => document.removeEventListener('contextmenu', prevent)
-  }, [])
-
-  useEffect(() => {
-    if (state.lastCalledTicket) {
-      setFlash(true)
-      try {
-        const ctx = new AudioContext()
-        const osc = ctx.createOscillator()
-        const gain = ctx.createGain()
-        osc.connect(gain)
-        gain.connect(ctx.destination)
-        osc.frequency.value = 800
-        gain.gain.value = 0.3
-        osc.start()
-        osc.stop(ctx.currentTime + 0.15)
-        setTimeout(() => {
-          const osc2 = ctx.createOscillator()
-          const gain2 = ctx.createGain()
-          osc2.connect(gain2)
-          gain2.connect(ctx.destination)
-          osc2.frequency.value = 1000
-          gain2.gain.value = 0.3
-          osc2.start()
-          osc2.stop(ctx.currentTime + 0.2)
-        }, 200)
-      } catch {}
-      setTimeout(() => setFlash(false), 2000)
-    }
-  }, [state.lastCalledTicket?.calledAt])
 
   const waiting = state.entries.filter(e => ['waiting', 'documents_ok', 'called_doctor'].includes(e.status))
   const called = state.lastCalledTicket
