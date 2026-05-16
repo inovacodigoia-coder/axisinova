@@ -107,6 +107,37 @@ export default function CallingPanelPage() {
 
   const panelWaiting = useMemo(() => tickets.filter(t => t.status === 'waiting').slice(0, 8), [tickets])
 
+  const speakCall = useCallback((ticket: QueueTicketRow) => {
+    if (!audioEnabledRef.current) return
+    if (typeof window === 'undefined' || !window.speechSynthesis) return
+    try {
+      window.speechSynthesis.cancel()
+      const wantMale = (tv?.voice_type || 'feminine') === 'masculine'
+      const voices = window.speechSynthesis.getVoices()
+      const ptVoices = voices.filter(v => v.lang?.toLowerCase().startsWith('pt'))
+      const pickVoice = () => {
+        const maleHints = /male|masculin|ricardo|daniel|luciano|felipe|paulo/i
+        const femaleHints = /female|feminin|maria|luciana|fernanda|joana|ana|helena/i
+        const list = ptVoices.length ? ptVoices : voices
+        return list.find(v => (wantMale ? maleHints : femaleHints).test(v.name))
+          || ptVoices[0]
+          || voices[0]
+      }
+      const code = (ticket.display_code || '').split('').join(' ')
+      const guiche = ticket.guiche_name ? `, dirija-se ao ${ticket.guiche_name}` : ''
+      const text = `Atenção. Senha ${code}${guiche}.`
+      const utter = new SpeechSynthesisUtterance(text)
+      utter.lang = 'pt-BR'
+      utter.rate = 0.95
+      utter.pitch = wantMale ? 0.85 : 1.1
+      const voice = pickVoice()
+      if (voice) utter.voice = voice
+      window.speechSynthesis.speak(utter)
+    } catch (e) {
+      console.warn('Falha ao sintetizar voz', e)
+    }
+  }, [tv?.voice_type])
+
   useEffect(() => {
     if (!panelCalled) return
     const calledKey = `${panelCalled.id}-${panelCalled.called_at}-${panelCalled.call_count || 1}`
@@ -128,9 +159,10 @@ export default function CallingPanelPage() {
       beep(800, ctx.currentTime, 0.15)
       beep(1000, ctx.currentTime + 0.2, 0.2)
     } catch {}
+    const speakTimer = setTimeout(() => speakCall(panelCalled), 600)
     const id = setTimeout(() => setFlash(false), 2000)
-    return () => clearTimeout(id)
-  }, [panelCalled?.called_at, panelCalled?.call_count, panelCalled?.id])
+    return () => { clearTimeout(id); clearTimeout(speakTimer) }
+  }, [panelCalled?.called_at, panelCalled?.call_count, panelCalled?.id, speakCall])
 
   // Prevent interaction on TV panel
   useEffect(() => {
