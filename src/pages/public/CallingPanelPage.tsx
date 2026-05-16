@@ -12,6 +12,7 @@ interface TVRow {
   company_id: string
   name: string
   slug: string | null
+  voice_type?: string | null
 }
 
 interface QueueTicketRow {
