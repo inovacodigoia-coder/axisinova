@@ -105,7 +105,7 @@ export default function CallingPanelPage() {
   const panelWaiting = useMemo(() => tickets.filter(t => t.status === 'waiting').slice(0, 8), [tickets])
 
   useEffect(() => {
-    if (!panelCalled || panelCalled.id === lastCalledIdRef.current) return
+    if (!panelCalled) return
     const calledKey = `${panelCalled.id}-${panelCalled.called_at}-${panelCalled.call_count || 1}`
     if (calledKey === lastCalledKeyRef.current) return
     lastCalledKeyRef.current = calledKey
