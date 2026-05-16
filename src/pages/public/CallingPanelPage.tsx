@@ -223,6 +223,7 @@ export default function CallingPanelPage() {
             <span className="text-sm text-muted-foreground">Necessário para que a TV anuncie as chamadas por voz.</span>
           </button>
         )}
+        <header className="flex items-center justify-between border-b border-border bg-card px-8 py-4">
           <div className="flex items-center gap-3">
             <div className="gradient-bg flex h-10 w-10 items-center justify-center rounded-lg text-sm font-bold text-primary-foreground">AI</div>
             <h1 className="text-xl font-extrabold tracking-tight text-foreground">AXIS INOVA</h1>
