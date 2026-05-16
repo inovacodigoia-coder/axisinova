@@ -1,5 +1,5 @@
 import { format } from 'date-fns'
-import { Clock, UserPlus } from 'lucide-react'
+import { Clock, UserPlus, Eye, Printer } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import type { Ticket } from '@/types/queue-system.types'
 import { motion } from 'framer-motion'
@@ -12,9 +12,13 @@ interface TicketCardProps {
   onFinalize: () => void
   onTimeline: () => void
   onStartCadastro?: () => void
+  orderNumber?: string
+  hasOrder?: boolean
+  allocatedQueueName?: string
+  onReprint?: () => void
 }
 
-export function TicketCard({ ticket, onCall, onAttend, onReallocate, onFinalize, onTimeline, onStartCadastro }: TicketCardProps) {
+export function TicketCard({ ticket, onCall, onAttend, onReallocate, onFinalize, onTimeline, onStartCadastro, orderNumber, hasOrder, allocatedQueueName, onReprint }: TicketCardProps) {
   const hasCalled = ticket.callCount > 0
   const hasAttended = !!ticket.attendanceStartedAt
 
