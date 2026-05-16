@@ -71,7 +71,7 @@ export default function CallingPanelPage() {
       setLoadingPanel(true)
       const { data, error } = await supabase
         .from('queue_tvs')
-        .select('id, unit_id, company_id, name, slug')
+        .select('id, unit_id, company_id, name, slug, voice_type')
         .eq('slug', slug)
         .maybeSingle()
       if (cancelled) return
