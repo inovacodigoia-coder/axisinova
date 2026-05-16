@@ -360,6 +360,42 @@ export function AttendanceCadastroModal({
           )}
         </div>
       </DialogContent>
+
+      {/* Post-finalize flow */}
+      {showPayment && createdOrder && (
+        <PaymentModal
+          open
+          onClose={() => setShowPayment(false)}
+          orderId={createdOrder.id}
+          patientId={createdOrder.patientId}
+          patientName={createdOrder.patientName}
+          procedureName={createdOrder.procedureName || ''}
+          grossValue={state.privateValue || 0}
+          onPaid={handlePaymentDone}
+        />
+      )}
+      {showPrint && controlDoc && (
+        <AttendancePrintModal
+          open
+          onClose={() => { setShowPrint(false); setShowAllocation(true) }}
+          document={controlDoc}
+          autoPrint
+        />
+      )}
+      {showAllocation && createdOrder && (
+        <QueueAllocationModal
+          open
+          onClose={closeAllAndExit}
+          unitId={unitId}
+          orderId={createdOrder.id}
+          orderNumber={createdOrder.orderNumber}
+          patientName={createdOrder.patientName}
+          procedureName={createdOrder.procedureName || ''}
+          doctorName={createdOrder.doctorName}
+          doctorId={createdOrder.doctorId}
+          onPrint={() => setShowPrint(true)}
+        />
+      )}
     </Dialog>
   )
 }
