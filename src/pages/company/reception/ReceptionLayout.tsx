@@ -387,6 +387,13 @@ export default function ReceptionLayout() {
                         onReallocate={() => setReallocateTicket(t)}
                         onFinalize={() => setFinalizeTicket(t)}
                         onTimeline={() => setTimelineTicket(t)}
+                        onStartCadastro={() => setCadastroTicket(t)}
+                        hasOrder={!!orderByTicket.get(t.id)}
+                        orderNumber={orderByTicket.get(t.id)?.orderNumber}
+                        onReprint={() => {
+                          const o = orderByTicket.get(t.id)
+                          if (o) setReprintDoc(buildDocFromOrder(o))
+                        }}
                       />
                     ))}
                     {showFinalized && finalizedTickets.map(t => (
