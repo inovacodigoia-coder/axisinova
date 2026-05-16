@@ -153,6 +153,45 @@ export function AttendanceCadastroModal({
     if (step > 0) setStep(step - 1)
   }
 
+  const buildControlDocument = useCallback((order: AttendanceOrder, payment?: PaymentRecord | null): AttendanceControlDocument => {
+    const now = new Date()
+    return {
+      orderNumber: order.orderNumber,
+      orderDate: now.toLocaleDateString('pt-BR'),
+      orderTime: now.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }),
+      patientId: order.patientId,
+      patientName: order.patientName,
+      patientBirthDate: state.patient?.birthDate,
+      patientAge: state.patient?.age,
+      patientCPF: state.patient?.cpf,
+      patientPhone: state.patient?.phone1,
+      motherName: state.patient?.motherName,
+      serviceType: order.serviceType === 'consultation' ? 'Consulta' : order.serviceType === 'exam' ? 'Exame' : 'Procedimento',
+      procedureName: order.procedureName || '',
+      procedureCode: order.procedureCode || '',
+      doctorName: order.doctorName,
+      doctorCRM: order.doctorCRM,
+      specialty: order.specialty,
+      unitName: unitName || '',
+      guicheName,
+      ticketCode: order.ticketCode,
+      paymentType: order.paymentType === 'convenio' ? 'Convênio' : order.paymentType === 'private' ? 'Particular' : 'Cortesia',
+      convenioName: order.convenioName,
+      cardNumber: order.cardNumber,
+      authorizationCode: order.authorizationCode,
+      authorizationExpiry: order.authorizationExpiry,
+      paymentMethod: payment ? PAYMENT_METHOD_LABELS[payment.method] : undefined,
+      paidValue: payment?.paidValue ?? payment?.netValue,
+      receiptNumber: payment?.receiptNumber,
+      attachments: order.attachments.map(a => ({ name: a.documentType, type: 'document' })),
+      registeredByName: order.registeredByName,
+      companyName: 'CLÍNICA AXIS INOVA',
+      companyAddress: 'Rua das Flores, 123 · Natal/RN',
+      companyCNPJ: '00.000.000/0001-00',
+      companyPhone: '(84) 3333-0000',
+    }
+  }, [state.patient, unitName, guicheName])
+
   const handleFinalize = () => {
     if (!state.patient || !state.serviceType || !state.paymentType || !state.procedureId) {
       toast.error('Dados incompletos')
@@ -184,9 +223,42 @@ export function AttendanceCadastroModal({
     })
     toast.success(`Atendimento registrado · Pedido: ${order.orderNumber}`)
     if (ticketId) clearDraft(ticketId)
+    setCreatedOrder(order)
     onOrderCreated?.(order)
+
+    // Flow: if private → payment first; else → print (auto) → allocation
+    if (state.paymentType === 'private') {
+      setShowPayment(true)
+    } else {
+      proceedAfterPayment(order, null)
+    }
+  }
+
+  const proceedAfterPayment = useCallback((order: AttendanceOrder, payment: PaymentRecord | null) => {
+    const cfg = getDefault()
+    if (cfg.autoPrintOnFinalize) {
+      setShowPrint(true)
+    } else {
+      setShowAllocation(true)
+    }
+  }, [getDefault])
+
+  const handlePaymentDone = (record: PaymentRecord) => {
+    setPaymentRecord(record)
+    setShowPayment(false)
+    if (createdOrder) proceedAfterPayment(createdOrder, record)
+  }
+
+  const closeAllAndExit = () => {
+    setShowPayment(false); setShowPrint(false); setShowAllocation(false)
+    setCreatedOrder(null); setPaymentRecord(null)
     onClose()
   }
+
+  const controlDoc = useMemo(
+    () => createdOrder ? buildControlDocument(createdOrder, paymentRecord) : null,
+    [createdOrder, paymentRecord, buildControlDocument],
+  )
 
   return (
     <Dialog open={open} onOpenChange={(o) => !o && handleClose()}>
