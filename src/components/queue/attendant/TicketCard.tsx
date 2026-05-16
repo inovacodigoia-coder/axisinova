@@ -95,7 +95,13 @@ export function TicketCard({ ticket, onCall, onAttend, onReallocate, onFinalize,
             onClick={onStartCadastro}
             className="rounded-md gradient-bg px-3 py-1.5 text-xs font-semibold text-white shadow-sm hover:opacity-90 transition-all hover:-translate-y-px inline-flex items-center gap-1"
           >
-            <UserPlus className="h-3.5 w-3.5" /> Iniciar Cadastro
+            {hasOrder ? <><Eye className="h-3.5 w-3.5" /> Ver Cadastro</> : <><UserPlus className="h-3.5 w-3.5" /> Iniciar Cadastro</>}
+          </button>
+        )}
+        {hasOrder && onReprint && (
+          <button onClick={onReprint} title="Reimprimir controle"
+            className="rounded-md border border-input px-2.5 py-1.5 text-xs font-semibold text-foreground hover:bg-muted">
+            <Printer className="h-3.5 w-3.5" />
           </button>
         )}
         <button
