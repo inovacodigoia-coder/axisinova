@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect } from 'react'
+import { useState, useCallback, useEffect, useMemo } from 'react'
 import { Dialog, DialogContent } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
 import { X, ArrowLeft, ArrowRight, Check, UserPlus } from 'lucide-react'
@@ -8,10 +8,16 @@ import { Step1PatientLookup } from './steps/Step1PatientLookup'
 import { Step2AttendanceData } from './steps/Step2AttendanceData'
 import { Step3Authorization } from './steps/Step3Authorization'
 import { Step4Attachments } from './steps/Step4Attachments'
+import { PaymentModal } from './payment/PaymentModal'
+import { AttendancePrintModal } from './print/AttendancePrintModal'
+import { QueueAllocationModal } from './queue-allocation/QueueAllocationModal'
 import { useAttendanceCadastro, useDraftAutosave, loadDraft, clearDraft } from '@/hooks/useAttendanceCadastro'
+import { usePrinterConfig } from '@/hooks/usePrinterConfig'
 import { useAuth } from '@/context/AuthContext'
 import type { AttendanceOrder, AttendanceServiceType, AttendancePaymentType, AttendanceAttachment } from '@/types/attendance-cadastro.types'
 import type { Patient } from '@/types/patient.types'
+import type { AttendanceControlDocument, PaymentRecord } from '@/types/payment-print.types'
+import { PAYMENT_METHOD_LABELS } from '@/types/payment-print.types'
 
 interface AttendanceCadastroModalProps {
   open: boolean
