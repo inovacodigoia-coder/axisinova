@@ -30,7 +30,8 @@ function mapDbTicket(row: any): Ticket {
     status: row.status as TicketStatus,
     guicheId: row.guiche_id || undefined,
     guicheName: row.guiche_name || undefined,
-    callCount,
+    tvId: row.tv_id || undefined,
+    callCount: row.call_count ?? callCount,
     patientName: row.patient_name || undefined,
     attendantName: row.attendant_name || undefined,
     generatedAt: row.generated_at,
@@ -124,6 +125,7 @@ export default function AttendantPanelPage() {
   const handleCall = async (ticketId: string) => {
     if (!tvId) { toast.warning('Selecione uma TV antes de chamar'); return }
     if (!guicheId) { toast.warning('Selecione um guichê'); return }
+    const currentTicket = activeTickets.find(t => t.id === ticketId)
     if (isDemo) {
       dispatch({ type: 'CALL_TICKET', payload: { ticketId, guicheId, guicheName, tvId, attendantName } })
     } else {
@@ -132,8 +134,10 @@ export default function AttendantPanelPage() {
         called_at: new Date().toISOString(),
         guiche_id: guicheId,
         guiche_name: guicheName,
+        tv_id: tvId,
+        call_count: (currentTicket?.callCount || 0) + 1,
         attendant_name: attendantName,
-      }).eq('id', ticketId)
+      } as any).eq('id', ticketId)
       if (error) { toast.error('Erro ao chamar ficha: ' + error.message); return }
     }
     try {
