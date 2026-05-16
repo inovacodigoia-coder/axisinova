@@ -72,10 +72,18 @@ export function AttendanceCadastroModal({
 }: AttendanceCadastroModalProps) {
   const { user } = useAuth()
   const { createOrder } = useAttendanceCadastro()
+  const { getDefault } = usePrinterConfig()
   const [step, setStep] = useState(0)
   const [showReview, setShowReview] = useState(false)
   const [state, setState] = useState<CadastroState>({ attachments: [] })
   const [restorePromptShown, setRestorePromptShown] = useState(false)
+
+  // Post-finalize flow
+  const [createdOrder, setCreatedOrder] = useState<AttendanceOrder | null>(null)
+  const [paymentRecord, setPaymentRecord] = useState<PaymentRecord | null>(null)
+  const [showPayment, setShowPayment] = useState(false)
+  const [showPrint, setShowPrint] = useState(false)
+  const [showAllocation, setShowAllocation] = useState(false)
 
   // Carrega rascunho ao abrir
   useEffect(() => {
