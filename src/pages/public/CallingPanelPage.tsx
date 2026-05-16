@@ -205,7 +205,24 @@ export default function CallingPanelPage() {
 
     return (
       <div className="fixed inset-0 flex flex-col bg-background text-foreground">
-        <header className="flex items-center justify-between border-b border-border bg-card px-8 py-4">
+        {!audioEnabled && (
+          <button
+            onClick={() => {
+              try {
+                const u = new SpeechSynthesisUtterance('Áudio ativado')
+                u.lang = 'pt-BR'
+                window.speechSynthesis?.speak(u)
+              } catch {}
+              audioEnabledRef.current = true
+              setAudioEnabled(true)
+            }}
+            className="absolute inset-0 z-50 flex flex-col items-center justify-center gap-3 bg-background/95 backdrop-blur-sm"
+          >
+            <Volume2 className="h-16 w-16 text-primary" />
+            <span className="text-2xl font-bold text-foreground">Clique para ativar o áudio</span>
+            <span className="text-sm text-muted-foreground">Necessário para que a TV anuncie as chamadas por voz.</span>
+          </button>
+        )}
           <div className="flex items-center gap-3">
             <div className="gradient-bg flex h-10 w-10 items-center justify-center rounded-lg text-sm font-bold text-primary-foreground">AI</div>
             <h1 className="text-xl font-extrabold tracking-tight text-foreground">AXIS INOVA</h1>
