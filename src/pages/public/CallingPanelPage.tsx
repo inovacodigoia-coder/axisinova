@@ -1,20 +1,133 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback, useMemo, useRef } from 'react'
+import { useParams } from 'react-router-dom'
 import { useQueue } from '@/context/QueueContext'
 import { useAuth } from '@/context/AuthContext'
+import { supabase } from '@/integrations/supabase/client'
 import { TicketBadge } from '@/components/reception/queue/TicketBadge'
 import { Volume2, Users, Clock } from 'lucide-react'
 
+interface TVRow {
+  id: string
+  unit_id: string
+  company_id: string
+  name: string
+  slug: string | null
+}
+
+interface QueueTicketRow {
+  id: string
+  unit_id: string
+  queue_line_name: string
+  display_code: string
+  status: string
+  guiche_name: string | null
+  attendant_name: string | null
+  called_at: string | null
+  generated_at: string
+  tv_id?: string | null
+  call_count?: number | null
+}
+
 export default function CallingPanelPage() {
+  const { slug } = useParams<{ slug: string }>()
   const { state, stats } = useQueue()
   const { user } = useAuth()
   const [time, setTime] = useState(new Date())
   const [flash, setFlash] = useState(false)
+  const [tv, setTv] = useState<TVRow | null>(null)
+  const [tickets, setTickets] = useState<QueueTicketRow[]>([])
+  const [loadingPanel, setLoadingPanel] = useState(!!slug)
+  const lastCalledKeyRef = useRef<string | null>(null)
   const companyName = user?.companyName || 'Axis Inova'
 
   useEffect(() => {
     const id = setInterval(() => setTime(new Date()), 1000)
     return () => clearInterval(id)
   }, [])
+
+  const loadPanelData = useCallback(async (currentTv: TVRow) => {
+    const startOfDay = new Date()
+    startOfDay.setHours(0, 0, 0, 0)
+    const { data, error } = await supabase
+      .from('queue_tickets')
+      .select('*')
+      .eq('unit_id', currentTv.unit_id)
+      .gte('generated_at', startOfDay.toISOString())
+      .order('generated_at', { ascending: true })
+    if (error) {
+      console.error('Erro ao carregar painel da TV', error)
+      return
+    }
+    setTickets((data || []) as QueueTicketRow[])
+  }, [])
+
+  useEffect(() => {
+    if (!slug) return
+    let cancelled = false
+    async function loadTv() {
+      setLoadingPanel(true)
+      const { data, error } = await supabase
+        .from('queue_tvs')
+        .select('id, unit_id, company_id, name, slug')
+        .eq('slug', slug)
+        .maybeSingle()
+      if (cancelled) return
+      if (error || !data) {
+        console.error('TV não encontrada', error)
+        setLoadingPanel(false)
+        return
+      }
+      const currentTv = data as TVRow
+      setTv(currentTv)
+      await loadPanelData(currentTv)
+      setLoadingPanel(false)
+    }
+    loadTv()
+    return () => { cancelled = true }
+  }, [slug, loadPanelData])
+
+  useEffect(() => {
+    if (!slug || !tv) return
+    const channel = supabase
+      .channel(`calling_panel_${tv.id}`)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'queue_tickets', filter: `unit_id=eq.${tv.unit_id}` }, () => loadPanelData(tv))
+      .subscribe()
+    return () => { supabase.removeChannel(channel) }
+  }, [slug, tv, loadPanelData])
+
+  const panelCalled = useMemo(() => {
+    if (!tv) return null
+    return tickets
+      .filter(t => t.tv_id === tv.id && t.status === 'called' && t.called_at)
+      .sort((a, b) => new Date(b.called_at || '').getTime() - new Date(a.called_at || '').getTime())[0] || null
+  }, [tickets, tv])
+
+  const panelWaiting = useMemo(() => tickets.filter(t => t.status === 'waiting').slice(0, 8), [tickets])
+
+  useEffect(() => {
+    if (!panelCalled) return
+    const calledKey = `${panelCalled.id}-${panelCalled.called_at}-${panelCalled.call_count || 1}`
+    if (calledKey === lastCalledKeyRef.current) return
+    lastCalledKeyRef.current = calledKey
+    setFlash(true)
+    try {
+      const ctx = new AudioContext()
+      const beep = (freq: number, start: number, duration: number) => {
+        const osc = ctx.createOscillator()
+        const gain = ctx.createGain()
+        osc.connect(gain)
+        gain.connect(ctx.destination)
+        osc.frequency.value = freq
+        gain.gain.value = 0.3
+        osc.start(start)
+        osc.stop(start + duration)
+      }
+      beep(800, ctx.currentTime, 0.15)
+      beep(1000, ctx.currentTime + 0.2, 0.2)
+    } catch {}
+    const id = setTimeout(() => setFlash(false), 2000)
+    return () => clearTimeout(id)
+  }, [panelCalled?.called_at, panelCalled?.call_count, panelCalled?.id])
 
   // Prevent interaction on TV panel
   useEffect(() => {
@@ -24,32 +137,113 @@ export default function CallingPanelPage() {
   }, [])
 
   useEffect(() => {
-    if (state.lastCalledTicket) {
-      setFlash(true)
-      try {
-        const ctx = new AudioContext()
-        const osc = ctx.createOscillator()
-        const gain = ctx.createGain()
-        osc.connect(gain)
-        gain.connect(ctx.destination)
-        osc.frequency.value = 800
-        gain.gain.value = 0.3
-        osc.start()
-        osc.stop(ctx.currentTime + 0.15)
-        setTimeout(() => {
-          const osc2 = ctx.createOscillator()
-          const gain2 = ctx.createGain()
-          osc2.connect(gain2)
-          gain2.connect(ctx.destination)
-          osc2.frequency.value = 1000
-          gain2.gain.value = 0.3
-          osc2.start()
-          osc2.stop(ctx.currentTime + 0.2)
-        }, 200)
-      } catch {}
-      setTimeout(() => setFlash(false), 2000)
-    }
-  }, [state.lastCalledTicket?.calledAt])
+    if (slug || !state.lastCalledTicket) return
+    setFlash(true)
+    try {
+      const ctx = new AudioContext()
+      const osc = ctx.createOscillator()
+      const gain = ctx.createGain()
+      osc.connect(gain)
+      gain.connect(ctx.destination)
+      osc.frequency.value = 800
+      gain.gain.value = 0.3
+      osc.start()
+      osc.stop(ctx.currentTime + 0.15)
+      setTimeout(() => {
+        const osc2 = ctx.createOscillator()
+        const gain2 = ctx.createGain()
+        osc2.connect(gain2)
+        gain2.connect(ctx.destination)
+        osc2.frequency.value = 1000
+        gain2.gain.value = 0.3
+        osc2.start()
+        osc2.stop(ctx.currentTime + 0.2)
+      }, 200)
+    } catch {}
+    setTimeout(() => setFlash(false), 2000)
+  }, [slug, state.lastCalledTicket?.calledAt])
+
+  if (slug) {
+    const panelCompanyName = user?.companyName || 'AXIS INOVA'
+    const waitingCount = panelWaiting.length
+    const attendanceCount = tickets.filter(t => t.status === 'in_attendance').length
+
+    return (
+      <div className="fixed inset-0 flex flex-col bg-background text-foreground">
+        <header className="flex items-center justify-between border-b border-border bg-card px-8 py-4">
+          <div className="flex items-center gap-3">
+            <div className="gradient-bg flex h-10 w-10 items-center justify-center rounded-lg text-sm font-bold text-primary-foreground">AI</div>
+            <h1 className="text-xl font-extrabold tracking-tight text-foreground">AXIS INOVA</h1>
+            <span className="text-muted-foreground">·</span>
+            <span className="text-sm text-muted-foreground">{tv?.name || panelCompanyName}</span>
+          </div>
+          <div className="flex items-center gap-4 text-sm text-muted-foreground">
+            <span className="flex items-center gap-1.5"><Users className="h-4 w-4" /> {waitingCount} aguardando</span>
+            <span className="flex items-center gap-1.5"><Clock className="h-4 w-4" /> {attendanceCount} em atendimento</span>
+            <span className="font-mono text-lg text-foreground">
+              {time.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
+            </span>
+            <span className="text-xs text-muted-foreground">
+              {time.toLocaleDateString('pt-BR', { weekday: 'short', day: '2-digit', month: '2-digit' })}
+            </span>
+          </div>
+        </header>
+
+        <main className="flex flex-1">
+          <section className="relative flex flex-[3] items-center justify-center overflow-hidden bg-muted/30">
+            {flash && <div className="absolute inset-0 animate-pulse bg-primary/10 pointer-events-none" />}
+            {loadingPanel ? (
+              <p className="text-xl font-semibold text-muted-foreground">Carregando painel...</p>
+            ) : panelCalled ? (
+              <div className="animate-scale-in text-center">
+                <p className="mb-4 flex items-center justify-center gap-2 text-lg uppercase tracking-widest text-muted-foreground">
+                  <Volume2 className="h-5 w-5 text-primary" /> Chamando agora
+                </p>
+                <p className="gradient-text mb-6 text-[128px] font-extrabold leading-none">{panelCalled.display_code}</p>
+                <p className="mb-3 text-3xl font-semibold text-foreground">{panelCalled.queue_line_name}</p>
+                <p className="text-2xl font-bold text-primary">{panelCalled.guiche_name || 'Recepção'}</p>
+                <p className="mt-2 text-base text-muted-foreground">Dirija-se ao guichê selecionado para atendimento</p>
+                <span className="mt-6 inline-flex min-w-36 items-center justify-center rounded-full bg-warning/15 px-4 py-2 text-base font-bold text-warning">
+                  Chamada Nº {panelCalled.call_count || 1}
+                </span>
+              </div>
+            ) : (
+              <div className="text-center">
+                <h2 className="mb-2 text-2xl font-bold text-muted-foreground">{tv?.name || panelCompanyName}</h2>
+                <p className="text-lg text-muted-foreground">Nenhum paciente sendo chamado</p>
+                <p className="mt-6 font-mono text-4xl text-muted-foreground/70">
+                  {time.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
+                </p>
+              </div>
+            )}
+          </section>
+
+          <aside className="flex flex-[2] flex-col border-l border-border bg-card">
+            <div className="border-b border-border px-6 py-4">
+              <h2 className="text-sm font-bold uppercase tracking-widest text-muted-foreground">Próximos na Fila</h2>
+            </div>
+            <div className="flex-1 overflow-hidden px-6 py-4">
+              <div className="space-y-3">
+                {panelWaiting.map(ticket => (
+                  <div key={ticket.id} className="flex items-center gap-4 border-b border-border py-3 last:border-0">
+                    <span className="flex h-10 min-w-20 items-center justify-center rounded-lg border border-border bg-muted px-3 font-bold text-foreground">{ticket.display_code}</span>
+                    <div className="min-w-0 flex-1">
+                      <p className="truncate text-sm font-medium text-foreground">{ticket.queue_line_name}</p>
+                      <p className="text-xs text-muted-foreground">Aguardando chamada</p>
+                    </div>
+                  </div>
+                ))}
+                {panelWaiting.length === 0 && <p className="py-8 text-center text-sm text-muted-foreground">Nenhum paciente aguardando</p>}
+              </div>
+            </div>
+            <div className="border-t border-border bg-muted/30 px-6 py-3 text-center">
+              <p className="text-xs text-muted-foreground">{waitingCount} aguardando · {attendanceCount} em atendimento</p>
+            </div>
+          </aside>
+        </main>
+      </div>
+    )
+  }
 
   const waiting = state.entries.filter(e => ['waiting', 'documents_ok', 'called_doctor'].includes(e.status))
   const called = state.lastCalledTicket
