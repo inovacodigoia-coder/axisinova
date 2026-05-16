@@ -158,13 +158,18 @@ export default function ReceptionLayout() {
     if (isDemoCompany) {
       dispatch({ type: 'CALL_TICKET', payload: { ticketId, guicheId, guicheName, tvId, attendantName } })
     } else {
+      const { data: ticketCounter } = await (supabase.from('queue_tickets') as any)
+        .select('call_count')
+        .eq('id', ticketId)
+        .maybeSingle()
+      const nextCallCount = ((ticketCounter?.call_count ?? currentTicket?.callCount) || 0) + 1
       const { error } = await supabase.from('queue_tickets').update({
         status: 'called',
         called_at: new Date().toISOString(),
         guiche_id: guicheId,
         guiche_name: guicheName,
         tv_id: tvId,
-        call_count: (currentTicket?.callCount || 0) + 1,
+        call_count: nextCallCount,
         attendant_name: attendantName,
       } as any).eq('id', ticketId)
       if (error) { toast.error('Erro ao chamar ficha'); return }
