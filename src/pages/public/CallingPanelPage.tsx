@@ -38,7 +38,9 @@ export default function CallingPanelPage() {
   const [tv, setTv] = useState<TVRow | null>(null)
   const [tickets, setTickets] = useState<QueueTicketRow[]>([])
   const [loadingPanel, setLoadingPanel] = useState(!!slug)
+  const [audioEnabled, setAudioEnabled] = useState(false)
   const lastCalledKeyRef = useRef<string | null>(null)
+  const audioEnabledRef = useRef(false)
   const companyName = user?.companyName || 'Axis Inova'
 
   useEffect(() => {
