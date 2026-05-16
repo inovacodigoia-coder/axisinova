@@ -1,5 +1,5 @@
 import { format } from 'date-fns'
-import { Clock } from 'lucide-react'
+import { Clock, UserPlus } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import type { Ticket } from '@/types/queue-system.types'
 import { motion } from 'framer-motion'
@@ -11,9 +11,10 @@ interface TicketCardProps {
   onReallocate: () => void
   onFinalize: () => void
   onTimeline: () => void
+  onStartCadastro?: () => void
 }
 
-export function TicketCard({ ticket, onCall, onAttend, onReallocate, onFinalize, onTimeline }: TicketCardProps) {
+export function TicketCard({ ticket, onCall, onAttend, onReallocate, onFinalize, onTimeline, onStartCadastro }: TicketCardProps) {
   const hasCalled = ticket.callCount > 0
   const hasAttended = !!ticket.attendanceStartedAt
 
@@ -73,6 +74,14 @@ export function TicketCard({ ticket, onCall, onAttend, onReallocate, onFinalize,
         >
           {hasAttended ? 'Em Atendimento' : 'Atender'}
         </button>
+        {hasAttended && onStartCadastro && (
+          <button
+            onClick={onStartCadastro}
+            className="rounded-md gradient-bg px-3 py-1.5 text-xs font-semibold text-white shadow-sm hover:opacity-90 transition-all hover:-translate-y-px inline-flex items-center gap-1"
+          >
+            <UserPlus className="h-3.5 w-3.5" /> Iniciar Cadastro
+          </button>
+        )}
         <button
           onClick={onReallocate}
           disabled={!hasAttended}
