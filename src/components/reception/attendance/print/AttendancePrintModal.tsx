@@ -80,7 +80,7 @@ export function AttendancePrintModal({ open, onClose, document: doc, autoPrint, 
             </select>
           </label>
           <div className="flex-1" />
-          <Button variant="outline" size="sm" onClick={() => window.open('', '_blank')?.document.write(document.querySelector('.print-receipt')?.outerHTML || '')}>
+          <Button variant="outline" size="sm" onClick={() => window.print()}>
             <FileText className="h-4 w-4 mr-1" /> Ver PDF
           </Button>
           <button
