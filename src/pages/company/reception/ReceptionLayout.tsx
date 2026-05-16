@@ -16,6 +16,11 @@ import { TicketTimelineModal } from '@/components/queue/attendant/TicketTimeline
 import { TicketReallocateModal } from '@/components/queue/attendant/TicketReallocateModal'
 import { TicketFinalizeModal } from '@/components/queue/attendant/TicketFinalizeModal'
 import { SelectQueuesModal } from '@/components/queue/attendant/SelectQueuesModal'
+import { AttendanceCadastroModal } from '@/components/reception/attendance/AttendanceCadastroModal'
+import { AttendancePrintModal } from '@/components/reception/attendance/print/AttendancePrintModal'
+import { useAttendanceCadastro } from '@/hooks/useAttendanceCadastro'
+import type { AttendanceOrder } from '@/types/attendance-cadastro.types'
+import type { AttendanceControlDocument } from '@/types/payment-print.types'
 import type { Ticket, TicketStatus } from '@/types/queue-system.types'
 
 const DEMO_COMPANY_ID = 'comp_001'
@@ -67,6 +72,36 @@ export default function ReceptionLayout() {
   const [reallocateTicket, setReallocateTicket] = useState<Ticket | null>(null)
   const [finalizeTicket, setFinalizeTicket] = useState<Ticket | null>(null)
   const [dbTickets, setDbTickets] = useState<Ticket[]>([])
+  const [cadastroTicket, setCadastroTicket] = useState<Ticket | null>(null)
+  const [reprintDoc, setReprintDoc] = useState<AttendanceControlDocument | null>(null)
+  const { orders } = useAttendanceCadastro()
+
+  const orderByTicket = useMemo(() => {
+    const m = new Map<string, AttendanceOrder>()
+    orders.forEach(o => { if (o.ticketId) m.set(o.ticketId, o) })
+    return m
+  }, [orders])
+
+  const buildDocFromOrder = (order: AttendanceOrder): AttendanceControlDocument => {
+    const now = new Date()
+    return {
+      orderNumber: order.orderNumber,
+      orderDate: now.toLocaleDateString('pt-BR'),
+      orderTime: now.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }),
+      patientId: order.patientId, patientName: order.patientName,
+      serviceType: order.serviceType === 'consultation' ? 'Consulta' : order.serviceType === 'exam' ? 'Exame' : 'Procedimento',
+      procedureName: order.procedureName || '', procedureCode: order.procedureCode || '',
+      doctorName: order.doctorName, doctorCRM: order.doctorCRM, specialty: order.specialty,
+      unitName: unitName, guicheName, ticketCode: order.ticketCode,
+      paymentType: order.paymentType === 'convenio' ? 'Convênio' : order.paymentType === 'private' ? 'Particular' : 'Cortesia',
+      convenioName: order.convenioName, cardNumber: order.cardNumber,
+      authorizationCode: order.authorizationCode, authorizationExpiry: order.authorizationExpiry,
+      attachments: order.attachments.map(a => ({ name: a.documentType, type: 'document' })),
+      registeredByName: order.registeredByName,
+      companyName: 'CLÍNICA AXIS INOVA', companyAddress: 'Rua das Flores, 123 · Natal/RN',
+      companyCNPJ: '00.000.000/0001-00', companyPhone: '(84) 3333-0000',
+    }
+  }
 
   useEffect(() => {
     const id = setInterval(() => setTime(new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit', second: '2-digit' })), 1000)
