@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect } from 'react'
+import { useState, useCallback, useEffect, useMemo } from 'react'
 import { Dialog, DialogContent } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
 import { X, ArrowLeft, ArrowRight, Check, UserPlus } from 'lucide-react'
@@ -8,10 +8,16 @@ import { Step1PatientLookup } from './steps/Step1PatientLookup'
 import { Step2AttendanceData } from './steps/Step2AttendanceData'
 import { Step3Authorization } from './steps/Step3Authorization'
 import { Step4Attachments } from './steps/Step4Attachments'
+import { PaymentModal } from './payment/PaymentModal'
+import { AttendancePrintModal } from './print/AttendancePrintModal'
+import { QueueAllocationModal } from './queue-allocation/QueueAllocationModal'
 import { useAttendanceCadastro, useDraftAutosave, loadDraft, clearDraft } from '@/hooks/useAttendanceCadastro'
+import { usePrinterConfig } from '@/hooks/usePrinterConfig'
 import { useAuth } from '@/context/AuthContext'
 import type { AttendanceOrder, AttendanceServiceType, AttendancePaymentType, AttendanceAttachment } from '@/types/attendance-cadastro.types'
 import type { Patient } from '@/types/patient.types'
+import type { AttendanceControlDocument, PaymentRecord } from '@/types/payment-print.types'
+import { PAYMENT_METHOD_LABELS } from '@/types/payment-print.types'
 
 interface AttendanceCadastroModalProps {
   open: boolean
@@ -66,10 +72,18 @@ export function AttendanceCadastroModal({
 }: AttendanceCadastroModalProps) {
   const { user } = useAuth()
   const { createOrder } = useAttendanceCadastro()
+  const { getDefault } = usePrinterConfig()
   const [step, setStep] = useState(0)
   const [showReview, setShowReview] = useState(false)
   const [state, setState] = useState<CadastroState>({ attachments: [] })
   const [restorePromptShown, setRestorePromptShown] = useState(false)
+
+  // Post-finalize flow
+  const [createdOrder, setCreatedOrder] = useState<AttendanceOrder | null>(null)
+  const [paymentRecord, setPaymentRecord] = useState<PaymentRecord | null>(null)
+  const [showPayment, setShowPayment] = useState(false)
+  const [showPrint, setShowPrint] = useState(false)
+  const [showAllocation, setShowAllocation] = useState(false)
 
   // Carrega rascunho ao abrir
   useEffect(() => {
@@ -139,6 +153,45 @@ export function AttendanceCadastroModal({
     if (step > 0) setStep(step - 1)
   }
 
+  const buildControlDocument = useCallback((order: AttendanceOrder, payment?: PaymentRecord | null): AttendanceControlDocument => {
+    const now = new Date()
+    return {
+      orderNumber: order.orderNumber,
+      orderDate: now.toLocaleDateString('pt-BR'),
+      orderTime: now.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }),
+      patientId: order.patientId,
+      patientName: order.patientName,
+      patientBirthDate: state.patient?.birthDate,
+      patientAge: state.patient?.age,
+      patientCPF: state.patient?.cpf,
+      patientPhone: state.patient?.phone1,
+      motherName: state.patient?.motherName,
+      serviceType: order.serviceType === 'consultation' ? 'Consulta' : order.serviceType === 'exam' ? 'Exame' : 'Procedimento',
+      procedureName: order.procedureName || '',
+      procedureCode: order.procedureCode || '',
+      doctorName: order.doctorName,
+      doctorCRM: order.doctorCRM,
+      specialty: order.specialty,
+      unitName: unitName || '',
+      guicheName,
+      ticketCode: order.ticketCode,
+      paymentType: order.paymentType === 'convenio' ? 'Convênio' : order.paymentType === 'private' ? 'Particular' : 'Cortesia',
+      convenioName: order.convenioName,
+      cardNumber: order.cardNumber,
+      authorizationCode: order.authorizationCode,
+      authorizationExpiry: order.authorizationExpiry,
+      paymentMethod: payment ? PAYMENT_METHOD_LABELS[payment.method] : undefined,
+      paidValue: payment?.paidValue ?? payment?.netValue,
+      receiptNumber: payment?.receiptNumber,
+      attachments: order.attachments.map(a => ({ name: a.documentType, type: 'document' })),
+      registeredByName: order.registeredByName,
+      companyName: 'CLÍNICA AXIS INOVA',
+      companyAddress: 'Rua das Flores, 123 · Natal/RN',
+      companyCNPJ: '00.000.000/0001-00',
+      companyPhone: '(84) 3333-0000',
+    }
+  }, [state.patient, unitName, guicheName])
+
   const handleFinalize = () => {
     if (!state.patient || !state.serviceType || !state.paymentType || !state.procedureId) {
       toast.error('Dados incompletos')
@@ -170,9 +223,42 @@ export function AttendanceCadastroModal({
     })
     toast.success(`Atendimento registrado · Pedido: ${order.orderNumber}`)
     if (ticketId) clearDraft(ticketId)
+    setCreatedOrder(order)
     onOrderCreated?.(order)
+
+    // Flow: if private → payment first; else → print (auto) → allocation
+    if (state.paymentType === 'private') {
+      setShowPayment(true)
+    } else {
+      proceedAfterPayment(order, null)
+    }
+  }
+
+  const proceedAfterPayment = useCallback((order: AttendanceOrder, payment: PaymentRecord | null) => {
+    const cfg = getDefault()
+    if (cfg.autoPrintOnFinalize) {
+      setShowPrint(true)
+    } else {
+      setShowAllocation(true)
+    }
+  }, [getDefault])
+
+  const handlePaymentDone = (record: PaymentRecord) => {
+    setPaymentRecord(record)
+    setShowPayment(false)
+    if (createdOrder) proceedAfterPayment(createdOrder, record)
+  }
+
+  const closeAllAndExit = () => {
+    setShowPayment(false); setShowPrint(false); setShowAllocation(false)
+    setCreatedOrder(null); setPaymentRecord(null)
     onClose()
   }
+
+  const controlDoc = useMemo(
+    () => createdOrder ? buildControlDocument(createdOrder, paymentRecord) : null,
+    [createdOrder, paymentRecord, buildControlDocument],
+  )
 
   return (
     <Dialog open={open} onOpenChange={(o) => !o && handleClose()}>
@@ -274,6 +360,42 @@ export function AttendanceCadastroModal({
           )}
         </div>
       </DialogContent>
+
+      {/* Post-finalize flow */}
+      {showPayment && createdOrder && (
+        <PaymentModal
+          open
+          onClose={() => setShowPayment(false)}
+          orderId={createdOrder.id}
+          patientId={createdOrder.patientId}
+          patientName={createdOrder.patientName}
+          procedureName={createdOrder.procedureName || ''}
+          grossValue={state.privateValue || 0}
+          onPaid={handlePaymentDone}
+        />
+      )}
+      {showPrint && controlDoc && (
+        <AttendancePrintModal
+          open
+          onClose={() => { setShowPrint(false); setShowAllocation(true) }}
+          document={controlDoc}
+          autoPrint
+        />
+      )}
+      {showAllocation && createdOrder && (
+        <QueueAllocationModal
+          open
+          onClose={closeAllAndExit}
+          unitId={unitId}
+          orderId={createdOrder.id}
+          orderNumber={createdOrder.orderNumber}
+          patientName={createdOrder.patientName}
+          procedureName={createdOrder.procedureName || ''}
+          doctorName={createdOrder.doctorName}
+          doctorId={createdOrder.doctorId}
+          onPrint={() => setShowPrint(true)}
+        />
+      )}
     </Dialog>
   )
 }

@@ -1,5 +1,5 @@
 import { format } from 'date-fns'
-import { Clock, UserPlus } from 'lucide-react'
+import { Clock, UserPlus, Eye, Printer } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import type { Ticket } from '@/types/queue-system.types'
 import { motion } from 'framer-motion'
@@ -12,9 +12,13 @@ interface TicketCardProps {
   onFinalize: () => void
   onTimeline: () => void
   onStartCadastro?: () => void
+  orderNumber?: string
+  hasOrder?: boolean
+  allocatedQueueName?: string
+  onReprint?: () => void
 }
 
-export function TicketCard({ ticket, onCall, onAttend, onReallocate, onFinalize, onTimeline, onStartCadastro }: TicketCardProps) {
+export function TicketCard({ ticket, onCall, onAttend, onReallocate, onFinalize, onTimeline, onStartCadastro, orderNumber, hasOrder, allocatedQueueName, onReprint }: TicketCardProps) {
   const hasCalled = ticket.callCount > 0
   const hasAttended = !!ticket.attendanceStartedAt
 
@@ -44,6 +48,18 @@ export function TicketCard({ ticket, onCall, onAttend, onReallocate, onFinalize,
             {ticket.calledAt && ` / Chamado: ${fmt(ticket.calledAt)}`}
             {ticket.attendanceStartedAt && ` / Atendido na recepção: ${fmt(ticket.attendanceStartedAt)}`}
           </p>
+          {orderNumber && (
+            <div className="mt-1 flex items-center gap-2 flex-wrap">
+              <span className="text-[10px] font-semibold bg-emerald-100 text-emerald-700 px-2 py-0.5 rounded">
+                Pedido: {orderNumber}
+              </span>
+              {allocatedQueueName && (
+                <span className="text-[10px] font-semibold bg-muted text-muted-foreground px-2 py-0.5 rounded">
+                  → {allocatedQueueName}
+                </span>
+              )}
+            </div>
+          )}
         </div>
       </div>
 
@@ -79,7 +95,13 @@ export function TicketCard({ ticket, onCall, onAttend, onReallocate, onFinalize,
             onClick={onStartCadastro}
             className="rounded-md gradient-bg px-3 py-1.5 text-xs font-semibold text-white shadow-sm hover:opacity-90 transition-all hover:-translate-y-px inline-flex items-center gap-1"
           >
-            <UserPlus className="h-3.5 w-3.5" /> Iniciar Cadastro
+            {hasOrder ? <><Eye className="h-3.5 w-3.5" /> Ver Cadastro</> : <><UserPlus className="h-3.5 w-3.5" /> Iniciar Cadastro</>}
+          </button>
+        )}
+        {hasOrder && onReprint && (
+          <button onClick={onReprint} title="Reimprimir controle"
+            className="rounded-md border border-input px-2.5 py-1.5 text-xs font-semibold text-foreground hover:bg-muted">
+            <Printer className="h-3.5 w-3.5" />
           </button>
         )}
         <button
