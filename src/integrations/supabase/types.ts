@@ -842,6 +842,7 @@ export type Database = {
         Row: {
           attendance_started_at: string | null
           attendant_name: string | null
+          call_count: number
           called_at: string | null
           company_id: string
           created_at: string
@@ -857,11 +858,13 @@ export type Database = {
           queue_line_id: string
           queue_line_name: string
           status: string
+          tv_id: string | null
           unit_id: string
         }
         Insert: {
           attendance_started_at?: string | null
           attendant_name?: string | null
+          call_count?: number
           called_at?: string | null
           company_id: string
           created_at?: string
@@ -877,11 +880,13 @@ export type Database = {
           queue_line_id: string
           queue_line_name: string
           status?: string
+          tv_id?: string | null
           unit_id: string
         }
         Update: {
           attendance_started_at?: string | null
           attendant_name?: string | null
+          call_count?: number
           called_at?: string | null
           company_id?: string
           created_at?: string
@@ -897,6 +902,7 @@ export type Database = {
           queue_line_id?: string
           queue_line_name?: string
           status?: string
+          tv_id?: string | null
           unit_id?: string
         }
         Relationships: []
