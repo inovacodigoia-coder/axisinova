@@ -448,4 +448,10 @@ export default function TotemPage() {
       </div>
     </div>
   )
+
+  return (
+    <DeviceAuthGate deviceKind="totem" slug={slug || 'default'} expectedUsername={totem?.access_username} expectedPassword={totem?.access_password} deviceName={totem?.name}>
+      {content}
+    </DeviceAuthGate>
+  )
 }
