@@ -19,6 +19,10 @@ export function DeviceAuthGate({ deviceKind, slug, expectedUsername, expectedPas
   const [authed, setAuthed] = useState<boolean>(() => {
     try { return sessionStorage.getItem(storageKey(deviceKind, slug)) === '1' } catch { return false }
   })
+  const [username, setUsername] = useState('')
+  const [password, setPassword] = useState('')
+  const [showPwd, setShowPwd] = useState(false)
+  const [error, setError] = useState('')
 
   useEffect(() => {
     try {
@@ -33,10 +37,6 @@ export function DeviceAuthGate({ deviceKind, slug, expectedUsername, expectedPas
       </div>
     )
   }
-  const [username, setUsername] = useState('')
-  const [password, setPassword] = useState('')
-  const [showPwd, setShowPwd] = useState(false)
-  const [error, setError] = useState('')
 
   if (!hasCredentials || authed) return <>{children}</>
 
