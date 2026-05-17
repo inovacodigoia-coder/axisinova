@@ -5,6 +5,7 @@ import { useAuth } from '@/context/AuthContext'
 import { supabase } from '@/integrations/supabase/client'
 import { TicketBadge } from '@/components/reception/queue/TicketBadge'
 import { Volume2, Users, Clock } from 'lucide-react'
+import { DeviceAuthGate } from '@/components/public/DeviceAuthGate'
 
 interface TVRow {
   id: string
