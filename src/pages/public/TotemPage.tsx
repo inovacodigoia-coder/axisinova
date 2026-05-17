@@ -7,6 +7,7 @@ import { supabase } from '@/integrations/supabase/client'
 import { ELDERLY_AGE } from '@/types/reception.types'
 import { Calendar, CreditCard, User, Search, ArrowLeft, Check, Printer, Ticket as TicketIcon } from 'lucide-react'
 import { toast } from 'sonner'
+import { DeviceAuthGate } from '@/components/public/DeviceAuthGate'
 
 type Screen =
   | 'welcome'
