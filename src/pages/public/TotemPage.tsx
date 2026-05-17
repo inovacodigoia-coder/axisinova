@@ -218,6 +218,7 @@ export default function TotemPage() {
   )
 
   return (
+  const content = (
     <div className="fixed inset-0 flex flex-col items-center justify-between overflow-hidden"
       style={{ background: 'linear-gradient(180deg, hsl(191 100% 30%) 0%, hsl(262 92% 30%) 100%)', cursor: 'none' }}>
 
