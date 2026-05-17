@@ -450,7 +450,7 @@ export default function TotemPage() {
   )
 
   return (
-    <DeviceAuthGate deviceKind="totem" slug={slug || 'default'} expectedUsername={totem?.access_username} expectedPassword={totem?.access_password} deviceName={totem?.name}>
+    <DeviceAuthGate deviceKind="totem" slug={slug || 'default'} expectedUsername={totem?.access_username} expectedPassword={totem?.access_password} deviceName={totem?.name} loading={!!slug && !totem}>
       {content}
     </DeviceAuthGate>
   )
