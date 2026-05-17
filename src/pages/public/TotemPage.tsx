@@ -72,7 +72,7 @@ export default function TotemPage() {
       if (slug) {
         const { data: totemRow } = await supabase
           .from('queue_totems')
-          .select('id, unit_id, company_id, name, slug')
+          .select('id, unit_id, company_id, name, slug, access_username, access_password')
           .eq('slug', slug)
           .maybeSingle()
         if (cancelled || !totemRow) return
