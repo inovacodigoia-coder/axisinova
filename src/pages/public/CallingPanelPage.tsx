@@ -5,6 +5,7 @@ import { useAuth } from '@/context/AuthContext'
 import { supabase } from '@/integrations/supabase/client'
 import { TicketBadge } from '@/components/reception/queue/TicketBadge'
 import { Volume2, Users, Clock } from 'lucide-react'
+import { DeviceAuthGate } from '@/components/public/DeviceAuthGate'
 
 interface TVRow {
   id: string
@@ -13,6 +14,8 @@ interface TVRow {
   name: string
   slug: string | null
   voice_type?: string | null
+  access_username?: string | null
+  access_password?: string | null
 }
 
 interface QueueTicketRow {
@@ -71,7 +74,7 @@ export default function CallingPanelPage() {
       setLoadingPanel(true)
       const { data, error } = await supabase
         .from('queue_tvs')
-        .select('id, unit_id, company_id, name, slug, voice_type')
+        .select('id, unit_id, company_id, name, slug, voice_type, access_username, access_password')
         .eq('slug', slug)
         .maybeSingle()
       if (cancelled) return
@@ -204,6 +207,7 @@ export default function CallingPanelPage() {
     const attendanceCount = tickets.filter(t => t.status === 'in_attendance').length
 
     return (
+      <DeviceAuthGate deviceKind="tv" slug={slug} expectedUsername={tv?.access_username} expectedPassword={tv?.access_password} deviceName={tv?.name}>
       <div className="fixed inset-0 flex flex-col bg-background text-foreground">
         {!audioEnabled && (
           <button
@@ -295,6 +299,7 @@ export default function CallingPanelPage() {
           </aside>
         </main>
       </div>
+      </DeviceAuthGate>
     )
   }
 

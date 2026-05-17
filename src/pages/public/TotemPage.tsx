@@ -7,6 +7,7 @@ import { supabase } from '@/integrations/supabase/client'
 import { ELDERLY_AGE } from '@/types/reception.types'
 import { Calendar, CreditCard, User, Search, ArrowLeft, Check, Printer, Ticket as TicketIcon } from 'lucide-react'
 import { toast } from 'sonner'
+import { DeviceAuthGate } from '@/components/public/DeviceAuthGate'
 
 type Screen =
   | 'welcome'
@@ -40,6 +41,8 @@ interface TotemRow {
   company_id: string
   name: string
   slug: string | null
+  access_username?: string | null
+  access_password?: string | null
 }
 
 export default function TotemPage() {
@@ -69,7 +72,7 @@ export default function TotemPage() {
       if (slug) {
         const { data: totemRow } = await supabase
           .from('queue_totems')
-          .select('id, unit_id, company_id, name, slug')
+          .select('id, unit_id, company_id, name, slug, access_username, access_password')
           .eq('slug', slug)
           .maybeSingle()
         if (cancelled || !totemRow) return
@@ -214,7 +217,7 @@ export default function TotemPage() {
     </button>
   )
 
-  return (
+  const content = (
     <div className="fixed inset-0 flex flex-col items-center justify-between overflow-hidden"
       style={{ background: 'linear-gradient(180deg, hsl(191 100% 30%) 0%, hsl(262 92% 30%) 100%)', cursor: 'none' }}>
 
@@ -444,5 +447,11 @@ export default function TotemPage() {
         </p>
       </div>
     </div>
+  )
+
+  return (
+    <DeviceAuthGate deviceKind="totem" slug={slug || 'default'} expectedUsername={totem?.access_username} expectedPassword={totem?.access_password} deviceName={totem?.name}>
+      {content}
+    </DeviceAuthGate>
   )
 }
