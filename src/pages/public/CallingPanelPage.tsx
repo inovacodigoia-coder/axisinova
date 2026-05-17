@@ -207,7 +207,7 @@ export default function CallingPanelPage() {
     const attendanceCount = tickets.filter(t => t.status === 'in_attendance').length
 
     return (
-      <DeviceAuthGate deviceKind="tv" slug={slug} expectedUsername={tv?.access_username} expectedPassword={tv?.access_password} deviceName={tv?.name}>
+      <DeviceAuthGate deviceKind="tv" slug={slug} expectedUsername={tv?.access_username} expectedPassword={tv?.access_password} deviceName={tv?.name} loading={loadingPanel || !tv}>
       <div className="fixed inset-0 flex flex-col bg-background text-foreground">
         {!audioEnabled && (
           <button
