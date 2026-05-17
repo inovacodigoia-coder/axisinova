@@ -41,6 +41,8 @@ interface TotemRow {
   company_id: string
   name: string
   slug: string | null
+  access_username?: string | null
+  access_password?: string | null
 }
 
 export default function TotemPage() {
