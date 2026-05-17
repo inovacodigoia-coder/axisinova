@@ -14,6 +14,8 @@ interface TVRow {
   name: string
   slug: string | null
   voice_type?: string | null
+  access_username?: string | null
+  access_password?: string | null
 }
 
 interface QueueTicketRow {
