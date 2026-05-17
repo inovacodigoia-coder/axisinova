@@ -1,4 +1,4 @@
-import { useState, FormEvent } from 'react'
+import { useState, useEffect, FormEvent } from 'react'
 import { Lock, Eye, EyeOff, LogIn } from 'lucide-react'
 
 interface Props {
@@ -8,20 +8,35 @@ interface Props {
   expectedPassword?: string | null
   deviceName?: string
   children: React.ReactNode
+  /** While true, gate waits (shows nothing) instead of letting children through. Use while credentials are still loading. */
+  loading?: boolean
 }
 
 const storageKey = (kind: string, slug: string) => `axis_device_auth__${kind}__${slug}`
 
-export function DeviceAuthGate({ deviceKind, slug, expectedUsername, expectedPassword, deviceName, children }: Props) {
+export function DeviceAuthGate({ deviceKind, slug, expectedUsername, expectedPassword, deviceName, children, loading }: Props) {
   const hasCredentials = !!(expectedUsername && expectedPassword)
   const [authed, setAuthed] = useState<boolean>(() => {
-    if (!hasCredentials) return true
     try { return sessionStorage.getItem(storageKey(deviceKind, slug)) === '1' } catch { return false }
   })
   const [username, setUsername] = useState('')
   const [password, setPassword] = useState('')
   const [showPwd, setShowPwd] = useState(false)
   const [error, setError] = useState('')
+
+  useEffect(() => {
+    try {
+      setAuthed(sessionStorage.getItem(storageKey(deviceKind, slug)) === '1')
+    } catch {}
+  }, [deviceKind, slug])
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-slate-900 text-white text-sm">
+        Carregando...
+      </div>
+    )
+  }
 
   if (!hasCredentials || authed) return <>{children}</>
 
