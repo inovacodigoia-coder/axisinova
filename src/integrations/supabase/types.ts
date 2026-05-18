@@ -1021,6 +1021,7 @@ export type Database = {
           device_count: number
           id: string
           is_active: boolean
+          media_attachments: Json
           media_mode: string
           name: string
           screen_size: string
@@ -1036,6 +1037,7 @@ export type Database = {
           device_count?: number
           id?: string
           is_active?: boolean
+          media_attachments?: Json
           media_mode?: string
           name: string
           screen_size?: string
@@ -1051,6 +1053,7 @@ export type Database = {
           device_count?: number
           id?: string
           is_active?: boolean
+          media_attachments?: Json
           media_mode?: string
           name?: string
           screen_size?: string
