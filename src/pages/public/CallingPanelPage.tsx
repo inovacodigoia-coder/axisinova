@@ -134,7 +134,30 @@ export default function CallingPanelPage() {
       .sort((a, b) => new Date(b.called_at || '').getTime() - new Date(a.called_at || '').getTime())[0] || null
   }, [tickets, tv])
 
-  const panelWaiting = useMemo(() => tickets.filter(t => t.status === 'waiting').slice(0, 8), [tickets])
+  const panelWaiting = useMemo(() => tickets.filter(t => t.status === 'waiting').slice(0, 6), [tickets])
+
+  const panelLastCalled = useMemo(() => {
+    if (!tv) return []
+    return tickets
+      .filter(t => t.tv_id === tv.id && t.called_at)
+      .sort((a, b) => new Date(b.called_at || '').getTime() - new Date(a.called_at || '').getTime())
+      .slice(0, 5)
+  }, [tickets, tv])
+
+  const mediaList: Array<{ id: string; type: string; fileUrl: string; durationSeconds: number; name: string }> = useMemo(() => {
+    const raw = (tv?.media_attachments as any) || []
+    if (!Array.isArray(raw)) return []
+    return raw
+  }, [tv?.media_attachments])
+  const showMedia = (tv?.media_mode === 'with_media') && mediaList.length > 0
+  const [mediaIdx, setMediaIdx] = useState(0)
+  useEffect(() => {
+    if (!showMedia) return
+    const current = mediaList[mediaIdx % mediaList.length]
+    const dur = (current?.durationSeconds || 15) * 1000
+    const id = setTimeout(() => setMediaIdx(i => (i + 1) % mediaList.length), dur)
+    return () => clearTimeout(id)
+  }, [showMedia, mediaIdx, mediaList])
 
   const speakCall = useCallback((ticket: QueueTicketRow) => {
     if (!audioEnabledRef.current) return
