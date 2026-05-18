@@ -16,6 +16,15 @@ interface TVRow {
   voice_type?: string | null
   access_username?: string | null
   access_password?: string | null
+  media_mode?: string | null
+  media_attachments?: any
+}
+
+interface PanelBranding {
+  companyName: string
+  logoUrl?: string | null
+  primaryColor?: string
+  secondaryColor?: string
 }
 
 interface QueueTicketRow {
