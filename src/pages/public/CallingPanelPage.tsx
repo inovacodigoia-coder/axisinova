@@ -85,7 +85,7 @@ export default function CallingPanelPage() {
       setLoadingPanel(true)
       const { data, error } = await supabase
         .from('queue_tvs')
-        .select('id, unit_id, company_id, name, slug, voice_type, access_username, access_password')
+        .select('id, unit_id, company_id, name, slug, voice_type, access_username, access_password, media_mode, media_attachments')
         .eq('slug', slug)
         .maybeSingle()
       if (cancelled) return
@@ -96,6 +96,21 @@ export default function CallingPanelPage() {
       }
       const currentTv = data as TVRow
       setTv(currentTv)
+
+      // Load branding (company name + logo + colors)
+      const [{ data: companyRow }, { data: brandRow }] = await Promise.all([
+        supabase.from('companies').select('name, nome_fantasia').eq('id', currentTv.company_id).maybeSingle(),
+        supabase.from('company_branding').select('primary_color, secondary_color, logo_url').eq('company_id', currentTv.company_id).maybeSingle(),
+      ])
+      if (!cancelled) {
+        setBranding({
+          companyName: (companyRow as any)?.nome_fantasia || (companyRow as any)?.name || 'Clínica',
+          logoUrl: (brandRow as any)?.logo_url || null,
+          primaryColor: (brandRow as any)?.primary_color,
+          secondaryColor: (brandRow as any)?.secondary_color,
+        })
+      }
+
       await loadPanelData(currentTv)
       setLoadingPanel(false)
     }
