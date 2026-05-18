@@ -205,13 +205,55 @@ export default function TVConfigPage() {
         <div />
       </div>
 
-      <div className="flex items-center gap-4">
+      <div className="flex items-center gap-4 flex-wrap">
         <label className="text-sm font-medium text-foreground">Tela da TV</label>
         <select value={selectedTvId} onChange={e => setSelectedTvId(e.target.value)} className="rounded-lg border border-input bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring">
           {tvs.map(t => <option key={t.id} value={t.id}>{t.name}</option>)}
           {!tvs.length && <option value="">Nenhuma TV</option>}
         </select>
+        {selectedTv && (
+          <div className="flex items-center gap-2 ml-2">
+            <span className="text-xs text-muted-foreground">Modo:</span>
+            <button onClick={toggleMediaMode} className={cn('inline-flex items-center gap-2 rounded-lg border px-3 py-1.5 text-xs font-semibold transition-colors',
+              selectedTv.mediaMode === 'with_media' ? 'border-primary bg-primary/10 text-primary' : 'border-input text-muted-foreground hover:bg-muted')}>
+              {selectedTv.mediaMode === 'with_media' ? <Monitor className="h-3.5 w-3.5" /> : <MonitorOff className="h-3.5 w-3.5" />}
+              {selectedTv.mediaMode === 'with_media' ? 'Com Mídia' : 'Sem Mídia'}
+            </button>
+          </div>
+        )}
       </div>
+
+      {selectedTv && (
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="rounded-xl border border-border bg-card p-3">
+            <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-2">Preview · Sem Mídia</p>
+            <div className="rounded-lg bg-[hsl(220,26%,14%)] aspect-video flex items-center justify-center text-white">
+              <div className="text-center">
+                <p className="text-[10px] text-white/40">Ficha:</p>
+                <p className="text-4xl font-black">A5</p>
+                <p className="text-[10px] text-white/40 mt-1">Guichê 01</p>
+              </div>
+            </div>
+          </div>
+          <div className="rounded-xl border border-border bg-card p-3">
+            <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-2">Preview · Com Mídia</p>
+            <div className="rounded-lg bg-[hsl(220,26%,14%)] aspect-video relative overflow-hidden flex items-center justify-center text-white">
+              {selectedTv.mediaAttachments[0] ? (
+                selectedTv.mediaAttachments[0].type === 'video' ? (
+                  <video src={selectedTv.mediaAttachments[0].fileUrl} className="absolute inset-0 h-full w-full object-cover" autoPlay muted loop playsInline />
+                ) : (
+                  <img src={selectedTv.mediaAttachments[0].fileUrl} alt="" className="absolute inset-0 h-full w-full object-cover" />
+                )
+              ) : (
+                <p className="text-xs text-white/40">Sem anexos cadastrados</p>
+              )}
+              <div className="absolute bottom-2 right-2 bg-background/80 backdrop-blur rounded px-2 py-1">
+                <p className="text-[10px] text-foreground font-bold">A5 · Guichê 01</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {selectedTv && (
         <div className="rounded-xl bg-[hsl(220,26%,14%)] p-6 text-white">
