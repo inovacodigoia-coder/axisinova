@@ -599,6 +599,60 @@ export type Database = {
           },
         ]
       }
+      pricing_plans: {
+        Row: {
+          created_at: string
+          description: string | null
+          features: Json
+          id: string
+          is_popular: boolean
+          is_visible: boolean
+          max_doctors: number | null
+          max_users: number | null
+          name: string
+          price_annual: number
+          price_monthly: number
+          slug: string
+          sort_order: number
+          storage_gb: number
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          features?: Json
+          id?: string
+          is_popular?: boolean
+          is_visible?: boolean
+          max_doctors?: number | null
+          max_users?: number | null
+          name: string
+          price_annual?: number
+          price_monthly?: number
+          slug: string
+          sort_order?: number
+          storage_gb?: number
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          features?: Json
+          id?: string
+          is_popular?: boolean
+          is_visible?: boolean
+          max_doctors?: number | null
+          max_users?: number | null
+          name?: string
+          price_annual?: number
+          price_monthly?: number
+          slug?: string
+          sort_order?: number
+          storage_gb?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
       procedures: {
         Row: {
           anesthesia_type: string | null
@@ -967,6 +1021,7 @@ export type Database = {
           device_count: number
           id: string
           is_active: boolean
+          media_attachments: Json
           media_mode: string
           name: string
           screen_size: string
@@ -982,6 +1037,7 @@ export type Database = {
           device_count?: number
           id?: string
           is_active?: boolean
+          media_attachments?: Json
           media_mode?: string
           name: string
           screen_size?: string
@@ -997,6 +1053,7 @@ export type Database = {
           device_count?: number
           id?: string
           is_active?: boolean
+          media_attachments?: Json
           media_mode?: string
           name?: string
           screen_size?: string

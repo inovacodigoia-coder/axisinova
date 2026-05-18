@@ -1,10 +1,11 @@
 import { useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
-import { ArrowLeft, Plus, Pencil, Trash2, Eye, EyeOff, Copy, RefreshCw, ExternalLink } from 'lucide-react'
+import { ArrowLeft, Plus, Pencil, Trash2, Eye, EyeOff, Copy, RefreshCw, ExternalLink, Upload, X, Monitor, MonitorOff } from 'lucide-react'
 import { toast } from 'sonner'
 import { cn } from '@/lib/utils'
 import { useQueueSystem } from '@/context/QueueSystemContext'
 import { useAuth } from '@/context/AuthContext'
+import { supabase } from '@/integrations/supabase/client'
 import type { TV, MediaAttachment } from '@/types/queue-system.types'
 
 const DEMO_COMPANY_ID = 'comp_001'
@@ -128,21 +129,69 @@ export default function TVConfigPage() {
     }
   }
 
-  const removeMedia = (attachmentId: string) => {
-    if (!selectedTvId) return
-    dispatch({ type: 'REMOVE_MEDIA', payload: { tvId: selectedTvId, attachmentId } })
+  const [showMediaModal, setShowMediaModal] = useState(false)
+  const [mediaFile, setMediaFile] = useState<File | null>(null)
+  const [mediaName, setMediaName] = useState('')
+  const [mediaDuration, setMediaDuration] = useState(15)
+  const [uploadingMedia, setUploadingMedia] = useState(false)
+
+  const persistTvMedia = async (tv: TV, list: MediaAttachment[]) => {
+    if (isDemoCompany) return
+    await supabase.from('queue_tvs').update({ media_attachments: list as any } as any).eq('id', tv.id)
+  }
+
+  const removeMedia = async (attachmentId: string) => {
+    if (!selectedTv) return
+    const next = selectedTv.mediaAttachments.filter(m => m.id !== attachmentId)
+    dispatch({ type: 'UPDATE_TV', payload: { ...selectedTv, mediaAttachments: next } })
+    await persistTvMedia(selectedTv, next)
     toast.success('Anexo removido')
   }
 
-  const addMockMedia = () => {
-    if (!selectedTvId) return
-    const att: MediaAttachment = {
-      id: `ma_${Date.now()}`, tvId: selectedTvId, name: `Mídia ${Date.now()}.mp4`,
-      type: 'video', durationSeconds: 30, fileUrl: '#', createdAt: new Date().toISOString(),
-    }
-    dispatch({ type: 'ADD_MEDIA', payload: { tvId: selectedTvId, attachment: att } })
-    toast.success('Anexo adicionado')
+  const openMediaModal = () => {
+    setMediaFile(null); setMediaName(''); setMediaDuration(15); setShowMediaModal(true)
   }
+
+  const saveMediaUpload = async () => {
+    if (!selectedTv || !mediaFile) { toast.error('Selecione um arquivo'); return }
+    setUploadingMedia(true)
+    try {
+      const ext = mediaFile.name.split('.').pop() || 'bin'
+      const path = `${companyId}/${selectedTv.id}/${Date.now()}.${ext}`
+      const { error: upErr } = await supabase.storage.from('tv-media').upload(path, mediaFile, { upsert: false, contentType: mediaFile.type })
+      if (upErr) throw upErr
+      const { data: pub } = supabase.storage.from('tv-media').getPublicUrl(path)
+      const att: MediaAttachment = {
+        id: `ma_${Date.now()}`, tvId: selectedTv.id,
+        name: mediaName.trim() || mediaFile.name,
+        type: mediaFile.type.startsWith('video') ? 'video' : 'image',
+        durationSeconds: Number(mediaDuration) || 15,
+        fileUrl: pub.publicUrl, createdAt: new Date().toISOString(),
+      }
+      const next = [...selectedTv.mediaAttachments, att]
+      dispatch({ type: 'UPDATE_TV', payload: { ...selectedTv, mediaAttachments: next } })
+      await persistTvMedia(selectedTv, next)
+      toast.success('Anexo cadastrado')
+      setShowMediaModal(false)
+    } catch (e: any) {
+      console.error(e); toast.error('Falha no upload: ' + (e.message || ''))
+    } finally {
+      setUploadingMedia(false)
+    }
+  }
+
+  const toggleMediaMode = async () => {
+    if (!selectedTv) return
+    const mode = selectedTv.mediaMode === 'with_media' ? 'without_media' : 'with_media'
+    const updated = { ...selectedTv, mediaMode: mode as 'with_media' | 'without_media' }
+    if (isDemoCompany) {
+      dispatch({ type: 'UPDATE_TV', payload: updated })
+    } else {
+      await updateTVDB(updated)
+    }
+    toast.success(mode === 'with_media' ? 'TV agora exibe mídia' : 'TV agora exibe somente chamadas')
+  }
+
 
   if (!unit) return <p className="text-muted-foreground">Unidade não encontrada</p>
 
@@ -156,13 +205,55 @@ export default function TVConfigPage() {
         <div />
       </div>
 
-      <div className="flex items-center gap-4">
+      <div className="flex items-center gap-4 flex-wrap">
         <label className="text-sm font-medium text-foreground">Tela da TV</label>
         <select value={selectedTvId} onChange={e => setSelectedTvId(e.target.value)} className="rounded-lg border border-input bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring">
           {tvs.map(t => <option key={t.id} value={t.id}>{t.name}</option>)}
           {!tvs.length && <option value="">Nenhuma TV</option>}
         </select>
+        {selectedTv && (
+          <div className="flex items-center gap-2 ml-2">
+            <span className="text-xs text-muted-foreground">Modo:</span>
+            <button onClick={toggleMediaMode} className={cn('inline-flex items-center gap-2 rounded-lg border px-3 py-1.5 text-xs font-semibold transition-colors',
+              selectedTv.mediaMode === 'with_media' ? 'border-primary bg-primary/10 text-primary' : 'border-input text-muted-foreground hover:bg-muted')}>
+              {selectedTv.mediaMode === 'with_media' ? <Monitor className="h-3.5 w-3.5" /> : <MonitorOff className="h-3.5 w-3.5" />}
+              {selectedTv.mediaMode === 'with_media' ? 'Com Mídia' : 'Sem Mídia'}
+            </button>
+          </div>
+        )}
       </div>
+
+      {selectedTv && (
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="rounded-xl border border-border bg-card p-3">
+            <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-2">Preview · Sem Mídia</p>
+            <div className="rounded-lg bg-[hsl(220,26%,14%)] aspect-video flex items-center justify-center text-white">
+              <div className="text-center">
+                <p className="text-[10px] text-white/40">Ficha:</p>
+                <p className="text-4xl font-black">A5</p>
+                <p className="text-[10px] text-white/40 mt-1">Guichê 01</p>
+              </div>
+            </div>
+          </div>
+          <div className="rounded-xl border border-border bg-card p-3">
+            <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-2">Preview · Com Mídia</p>
+            <div className="rounded-lg bg-[hsl(220,26%,14%)] aspect-video relative overflow-hidden flex items-center justify-center text-white">
+              {selectedTv.mediaAttachments[0] ? (
+                selectedTv.mediaAttachments[0].type === 'video' ? (
+                  <video src={selectedTv.mediaAttachments[0].fileUrl} className="absolute inset-0 h-full w-full object-cover" autoPlay muted loop playsInline />
+                ) : (
+                  <img src={selectedTv.mediaAttachments[0].fileUrl} alt="" className="absolute inset-0 h-full w-full object-cover" />
+                )
+              ) : (
+                <p className="text-xs text-white/40">Sem anexos cadastrados</p>
+              )}
+              <div className="absolute bottom-2 right-2 bg-background/80 backdrop-blur rounded px-2 py-1">
+                <p className="text-[10px] text-foreground font-bold">A5 · Guichê 01</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {selectedTv && (
         <div className="rounded-xl bg-[hsl(220,26%,14%)] p-6 text-white">
@@ -198,7 +289,7 @@ export default function TVConfigPage() {
       {tab === 'attachments' && selectedTv && (
         <div className="space-y-4">
           <div className="flex justify-end">
-            <button onClick={addMockMedia} className="flex items-center gap-2 rounded-lg bg-green-500 px-4 py-2 text-sm font-semibold text-white hover:bg-green-600">
+            <button onClick={openMediaModal} className="flex items-center gap-2 rounded-lg bg-green-500 px-4 py-2 text-sm font-semibold text-white hover:bg-green-600">
               <Plus className="h-4 w-4" /> Adicionar Anexo
             </button>
           </div>

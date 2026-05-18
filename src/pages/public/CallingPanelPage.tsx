@@ -16,6 +16,15 @@ interface TVRow {
   voice_type?: string | null
   access_username?: string | null
   access_password?: string | null
+  media_mode?: string | null
+  media_attachments?: any
+}
+
+interface PanelBranding {
+  companyName: string
+  logoUrl?: string | null
+  primaryColor?: string
+  secondaryColor?: string
 }
 
 interface QueueTicketRow {
@@ -46,6 +55,8 @@ export default function CallingPanelPage() {
   const audioEnabledRef = useRef(false)
   const companyName = user?.companyName || 'Axis Inova'
 
+  const [branding, setBranding] = useState<PanelBranding | null>(null)
+
   useEffect(() => {
     const id = setInterval(() => setTime(new Date()), 1000)
     return () => clearInterval(id)
@@ -74,7 +85,7 @@ export default function CallingPanelPage() {
       setLoadingPanel(true)
       const { data, error } = await supabase
         .from('queue_tvs')
-        .select('id, unit_id, company_id, name, slug, voice_type, access_username, access_password')
+        .select('id, unit_id, company_id, name, slug, voice_type, access_username, access_password, media_mode, media_attachments')
         .eq('slug', slug)
         .maybeSingle()
       if (cancelled) return
@@ -85,6 +96,21 @@ export default function CallingPanelPage() {
       }
       const currentTv = data as TVRow
       setTv(currentTv)
+
+      // Load branding (company name + logo + colors)
+      const [{ data: companyRow }, { data: brandRow }] = await Promise.all([
+        supabase.from('companies').select('name, nome_fantasia').eq('id', currentTv.company_id).maybeSingle(),
+        supabase.from('company_branding').select('primary_color, secondary_color, logo_url').eq('company_id', currentTv.company_id).maybeSingle(),
+      ])
+      if (!cancelled) {
+        setBranding({
+          companyName: (companyRow as any)?.nome_fantasia || (companyRow as any)?.name || 'Clínica',
+          logoUrl: (brandRow as any)?.logo_url || null,
+          primaryColor: (brandRow as any)?.primary_color,
+          secondaryColor: (brandRow as any)?.secondary_color,
+        })
+      }
+
       await loadPanelData(currentTv)
       setLoadingPanel(false)
     }
@@ -108,7 +134,30 @@ export default function CallingPanelPage() {
       .sort((a, b) => new Date(b.called_at || '').getTime() - new Date(a.called_at || '').getTime())[0] || null
   }, [tickets, tv])
 
-  const panelWaiting = useMemo(() => tickets.filter(t => t.status === 'waiting').slice(0, 8), [tickets])
+  const panelWaiting = useMemo(() => tickets.filter(t => t.status === 'waiting').slice(0, 6), [tickets])
+
+  const panelLastCalled = useMemo(() => {
+    if (!tv) return []
+    return tickets
+      .filter(t => t.tv_id === tv.id && t.called_at)
+      .sort((a, b) => new Date(b.called_at || '').getTime() - new Date(a.called_at || '').getTime())
+      .slice(0, 5)
+  }, [tickets, tv])
+
+  const mediaList: Array<{ id: string; type: string; fileUrl: string; durationSeconds: number; name: string }> = useMemo(() => {
+    const raw = (tv?.media_attachments as any) || []
+    if (!Array.isArray(raw)) return []
+    return raw
+  }, [tv?.media_attachments])
+  const showMedia = (tv?.media_mode === 'with_media') && mediaList.length > 0
+  const [mediaIdx, setMediaIdx] = useState(0)
+  useEffect(() => {
+    if (!showMedia) return
+    const current = mediaList[mediaIdx % mediaList.length]
+    const dur = (current?.durationSeconds || 15) * 1000
+    const id = setTimeout(() => setMediaIdx(i => (i + 1) % mediaList.length), dur)
+    return () => clearTimeout(id)
+  }, [showMedia, mediaIdx, mediaList])
 
   const speakCall = useCallback((ticket: QueueTicketRow) => {
     if (!audioEnabledRef.current) return
@@ -229,10 +278,17 @@ export default function CallingPanelPage() {
         )}
         <header className="flex items-center justify-between border-b border-border bg-card px-8 py-4">
           <div className="flex items-center gap-3">
-            <div className="gradient-bg flex h-10 w-10 items-center justify-center rounded-lg text-sm font-bold text-primary-foreground">AI</div>
-            <h1 className="text-xl font-extrabold tracking-tight text-foreground">AXIS INOVA</h1>
-            <span className="text-muted-foreground">·</span>
-            <span className="text-sm text-muted-foreground">{tv?.name || panelCompanyName}</span>
+            {branding?.logoUrl ? (
+              <img src={branding.logoUrl} alt={branding.companyName} className="h-12 w-12 rounded-lg object-contain bg-white border border-border" />
+            ) : (
+              <div className="gradient-bg flex h-12 w-12 items-center justify-center rounded-lg text-base font-bold text-primary-foreground">
+                {(branding?.companyName || 'C').charAt(0).toUpperCase()}
+              </div>
+            )}
+            <div>
+              <h1 className="text-2xl font-extrabold tracking-tight text-foreground leading-tight">{branding?.companyName || 'Clínica'}</h1>
+              <p className="text-xs text-muted-foreground">{tv?.name}</p>
+            </div>
           </div>
           <div className="flex items-center gap-4 text-sm text-muted-foreground">
             <span className="flex items-center gap-1.5"><Users className="h-4 w-4" /> {waitingCount} aguardando</span>
@@ -246,13 +302,25 @@ export default function CallingPanelPage() {
           </div>
         </header>
 
-        <main className="flex flex-1">
+        <main className="flex flex-1 min-h-0">
           <section className="relative flex flex-[3] items-center justify-center overflow-hidden bg-muted/30">
-            {flash && <div className="absolute inset-0 animate-pulse bg-primary/10 pointer-events-none" />}
+            {flash && <div className="absolute inset-0 animate-pulse bg-primary/10 pointer-events-none z-10" />}
+            {showMedia && !panelCalled && (
+              <div className="absolute inset-0">
+                {(() => {
+                  const m = mediaList[mediaIdx % mediaList.length]
+                  if (!m) return null
+                  if (m.type === 'video') {
+                    return <video key={m.id} src={m.fileUrl} autoPlay muted playsInline className="h-full w-full object-cover" onEnded={() => setMediaIdx(i => (i + 1) % mediaList.length)} />
+                  }
+                  return <img key={m.id} src={m.fileUrl} alt={m.name} className="h-full w-full object-cover" />
+                })()}
+              </div>
+            )}
             {loadingPanel ? (
               <p className="text-xl font-semibold text-muted-foreground">Carregando painel...</p>
             ) : panelCalled ? (
-              <div className="animate-scale-in text-center">
+              <div className="animate-scale-in text-center relative z-10 bg-background/80 backdrop-blur-sm rounded-3xl px-12 py-8">
                 <p className="mb-4 flex items-center justify-center gap-2 text-lg uppercase tracking-widest text-muted-foreground">
                   <Volume2 className="h-5 w-5 text-primary" /> Chamando agora
                 </p>
@@ -264,9 +332,9 @@ export default function CallingPanelPage() {
                   Chamada Nº {panelCalled.call_count || 1}
                 </span>
               </div>
-            ) : (
+            ) : !showMedia && (
               <div className="text-center">
-                <h2 className="mb-2 text-2xl font-bold text-muted-foreground">{tv?.name || panelCompanyName}</h2>
+                <h2 className="mb-2 text-2xl font-bold text-muted-foreground">{branding?.companyName || tv?.name}</h2>
                 <p className="text-lg text-muted-foreground">Nenhum paciente sendo chamado</p>
                 <p className="mt-6 font-mono text-4xl text-muted-foreground/70">
                   {time.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
@@ -275,26 +343,53 @@ export default function CallingPanelPage() {
             )}
           </section>
 
-          <aside className="flex flex-[2] flex-col border-l border-border bg-card">
-            <div className="border-b border-border px-6 py-4">
-              <h2 className="text-sm font-bold uppercase tracking-widest text-muted-foreground">Próximos na Fila</h2>
-            </div>
-            <div className="flex-1 overflow-hidden px-6 py-4">
-              <div className="space-y-3">
-                {panelWaiting.map(ticket => (
-                  <div key={ticket.id} className="flex items-center gap-4 border-b border-border py-3 last:border-0">
-                    <span className="flex h-10 min-w-20 items-center justify-center rounded-lg border border-border bg-muted px-3 font-bold text-foreground">{ticket.display_code}</span>
-                    <div className="min-w-0 flex-1">
-                      <p className="truncate text-sm font-medium text-foreground">{ticket.queue_line_name}</p>
-                      <p className="text-xs text-muted-foreground">Aguardando chamada</p>
+          <aside className="flex flex-[2] flex-col border-l border-border bg-card min-h-0">
+            {/* TOP: Últimas Chamadas (destaque) */}
+            <div className="flex-[3] flex flex-col min-h-0 border-b-2 border-primary/30">
+              <div className="border-b border-border bg-primary/5 px-6 py-3">
+                <h2 className="text-base font-extrabold uppercase tracking-widest text-primary flex items-center gap-2">
+                  <Volume2 className="h-4 w-4" /> Últimas Chamadas
+                </h2>
+              </div>
+              <div className="flex-1 overflow-auto px-4 py-3">
+                <div className="space-y-2">
+                  {panelLastCalled.map((ticket, i) => (
+                    <div key={ticket.id} className={`flex items-center gap-3 rounded-lg border px-3 py-2.5 ${i === 0 ? 'border-primary bg-primary/5 shadow-sm' : 'border-border bg-background'}`}>
+                      <span className={`flex h-12 min-w-20 items-center justify-center rounded-lg px-3 text-xl font-extrabold ${i === 0 ? 'bg-primary text-primary-foreground' : 'bg-muted text-foreground'}`}>
+                        {ticket.display_code}
+                      </span>
+                      <div className="min-w-0 flex-1">
+                        <p className="truncate text-sm font-bold text-foreground">{ticket.guiche_name || ticket.queue_line_name}</p>
+                        <p className="text-xs text-muted-foreground">
+                          {ticket.called_at ? new Date(ticket.called_at).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }) : ''}
+                          {ticket.attendant_name ? ` · ${ticket.attendant_name}` : ''}
+                        </p>
+                      </div>
                     </div>
-                  </div>
-                ))}
-                {panelWaiting.length === 0 && <p className="py-8 text-center text-sm text-muted-foreground">Nenhum paciente aguardando</p>}
+                  ))}
+                  {panelLastCalled.length === 0 && <p className="py-8 text-center text-sm text-muted-foreground">Nenhuma chamada ainda hoje</p>}
+                </div>
               </div>
             </div>
-            <div className="border-t border-border bg-muted/30 px-6 py-3 text-center">
-              <p className="text-xs text-muted-foreground">{waitingCount} aguardando · {attendanceCount} em atendimento</p>
+            {/* BOTTOM: Próximos na Fila (menos destaque) */}
+            <div className="flex-[2] flex flex-col min-h-0">
+              <div className="border-b border-border bg-muted/40 px-6 py-2.5">
+                <h2 className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">Próximos na Fila</h2>
+              </div>
+              <div className="flex-1 overflow-auto px-4 py-2">
+                <div className="space-y-1.5">
+                  {panelWaiting.map(ticket => (
+                    <div key={ticket.id} className="flex items-center gap-3 py-1.5">
+                      <span className="flex h-8 min-w-16 items-center justify-center rounded-md border border-border bg-background px-2 text-sm font-bold text-muted-foreground">{ticket.display_code}</span>
+                      <p className="truncate text-xs text-muted-foreground flex-1">{ticket.queue_line_name}</p>
+                    </div>
+                  ))}
+                  {panelWaiting.length === 0 && <p className="py-4 text-center text-xs text-muted-foreground/70">Sem fila</p>}
+                </div>
+              </div>
+            </div>
+            <div className="border-t border-border bg-muted/30 px-6 py-2 text-center">
+              <p className="text-[10px] text-muted-foreground/60 tracking-wide">powered by <span className="font-semibold">AXIS INOVA</span></p>
             </div>
           </aside>
         </main>

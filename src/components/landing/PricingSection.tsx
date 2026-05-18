@@ -2,59 +2,12 @@ import { useState } from 'react';
 import { PlanCard } from '@/components/ui/PlanCard';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-
-const plans = [
-  {
-    name: 'Starter',
-    price: 490,
-    annualPrice: 392,
-    features: [
-      'Até 3 usuários simultâneos',
-      '1 médico cadastrado',
-      'Agendamento e recepção',
-      'Prontuário básico',
-      'Relatórios essenciais',
-      'Suporte via chat (horário comercial)',
-      'Armazenamento: 10 GB',
-    ],
-  },
-  {
-    name: 'Pro',
-    price: 990,
-    annualPrice: 792,
-    popular: true,
-    features: [
-      'Usuários ilimitados',
-      'Até 15 médicos',
-      'Todos os módulos inclusos',
-      'BI com dashboards em tempo real',
-      'Digitalização de guias ilimitada',
-      'Integração com convênios',
-      'Suporte prioritário (chat + WhatsApp)',
-      'Armazenamento: 100 GB',
-    ],
-  },
-  {
-    name: 'Enterprise',
-    price: 2490,
-    annualPrice: 1992,
-    features: [
-      'Médicos ilimitados',
-      'Multi-unidades (até 5 CNPJs)',
-      'Tudo do Pro +',
-      'API de integração',
-      'Onboarding dedicado com consultor',
-      'SLA de uptime 99,9%',
-      'Treinamento presencial/remoto incluso',
-      'Armazenamento: 1 TB',
-      'Suporte 24/7 com gerente de conta',
-    ],
-  },
-];
+import { usePricingPlans } from '@/hooks/usePricingPlans';
 
 export function PricingSection() {
   const [isAnnual, setIsAnnual] = useState(false);
   const navigate = useNavigate();
+  const { plans, loading } = usePricingPlans({ onlyVisible: true });
 
   return (
     <section id="pricing" className="bg-white py-20 md:py-24">
@@ -95,19 +48,35 @@ export function PricingSection() {
           )}
         </div>
 
-        <div className="grid items-center gap-6 md:grid-cols-3 md:gap-4">
-          {plans.map((p, i) => (
-            <motion.div
-              key={p.name}
-              initial={{ opacity: 0, y: 24 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true, amount: 0.2 }}
-              transition={{ duration: 0.5, delay: i * 0.1 }}
-            >
-              <PlanCard {...p} isAnnual={isAnnual} onSelect={() => navigate('/cadastro')} />
-            </motion.div>
-          ))}
-        </div>
+        {loading ? (
+          <div className="grid items-center gap-6 md:grid-cols-3">
+            {[1,2,3].map(i => (
+              <div key={i} className="h-[480px] rounded-2xl border border-border bg-muted/30 animate-pulse" />
+            ))}
+          </div>
+        ) : (
+          <div className="grid items-center gap-6 md:grid-cols-3 md:gap-4">
+            {plans.map((p, i) => (
+              <motion.div
+                key={p.id}
+                initial={{ opacity: 0, y: 24 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true, amount: 0.2 }}
+                transition={{ duration: 0.5, delay: i * 0.1 }}
+              >
+                <PlanCard
+                  name={p.name}
+                  price={Number(p.price_monthly)}
+                  annualPrice={Number(p.price_annual)}
+                  features={p.features}
+                  popular={p.is_popular}
+                  isAnnual={isAnnual}
+                  onSelect={() => navigate('/cadastro')}
+                />
+              </motion.div>
+            ))}
+          </div>
+        )}
       </div>
     </section>
   );
