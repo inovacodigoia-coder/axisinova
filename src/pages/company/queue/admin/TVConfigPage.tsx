@@ -157,7 +157,7 @@ export default function TVConfigPage() {
     setUploadingMedia(true)
     try {
       const ext = mediaFile.name.split('.').pop() || 'bin'
-      const path = `${selectedTv.companyId || companyId}/${selectedTv.id}/${Date.now()}.${ext}`
+      const path = `${companyId}/${selectedTv.id}/${Date.now()}.${ext}`
       const { error: upErr } = await supabase.storage.from('tv-media').upload(path, mediaFile, { upsert: false, contentType: mediaFile.type })
       if (upErr) throw upErr
       const { data: pub } = supabase.storage.from('tv-media').getPublicUrl(path)
