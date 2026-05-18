@@ -129,21 +129,69 @@ export default function TVConfigPage() {
     }
   }
 
-  const removeMedia = (attachmentId: string) => {
-    if (!selectedTvId) return
-    dispatch({ type: 'REMOVE_MEDIA', payload: { tvId: selectedTvId, attachmentId } })
+  const [showMediaModal, setShowMediaModal] = useState(false)
+  const [mediaFile, setMediaFile] = useState<File | null>(null)
+  const [mediaName, setMediaName] = useState('')
+  const [mediaDuration, setMediaDuration] = useState(15)
+  const [uploadingMedia, setUploadingMedia] = useState(false)
+
+  const persistTvMedia = async (tv: TV, list: MediaAttachment[]) => {
+    if (isDemoCompany) return
+    await supabase.from('queue_tvs').update({ media_attachments: list as any } as any).eq('id', tv.id)
+  }
+
+  const removeMedia = async (attachmentId: string) => {
+    if (!selectedTv) return
+    const next = selectedTv.mediaAttachments.filter(m => m.id !== attachmentId)
+    dispatch({ type: 'UPDATE_TV', payload: { ...selectedTv, mediaAttachments: next } })
+    await persistTvMedia(selectedTv, next)
     toast.success('Anexo removido')
   }
 
-  const addMockMedia = () => {
-    if (!selectedTvId) return
-    const att: MediaAttachment = {
-      id: `ma_${Date.now()}`, tvId: selectedTvId, name: `Mídia ${Date.now()}.mp4`,
-      type: 'video', durationSeconds: 30, fileUrl: '#', createdAt: new Date().toISOString(),
-    }
-    dispatch({ type: 'ADD_MEDIA', payload: { tvId: selectedTvId, attachment: att } })
-    toast.success('Anexo adicionado')
+  const openMediaModal = () => {
+    setMediaFile(null); setMediaName(''); setMediaDuration(15); setShowMediaModal(true)
   }
+
+  const saveMediaUpload = async () => {
+    if (!selectedTv || !mediaFile) { toast.error('Selecione um arquivo'); return }
+    setUploadingMedia(true)
+    try {
+      const ext = mediaFile.name.split('.').pop() || 'bin'
+      const path = `${selectedTv.companyId || companyId}/${selectedTv.id}/${Date.now()}.${ext}`
+      const { error: upErr } = await supabase.storage.from('tv-media').upload(path, mediaFile, { upsert: false, contentType: mediaFile.type })
+      if (upErr) throw upErr
+      const { data: pub } = supabase.storage.from('tv-media').getPublicUrl(path)
+      const att: MediaAttachment = {
+        id: `ma_${Date.now()}`, tvId: selectedTv.id,
+        name: mediaName.trim() || mediaFile.name,
+        type: mediaFile.type.startsWith('video') ? 'video' : 'image',
+        durationSeconds: Number(mediaDuration) || 15,
+        fileUrl: pub.publicUrl, createdAt: new Date().toISOString(),
+      }
+      const next = [...selectedTv.mediaAttachments, att]
+      dispatch({ type: 'UPDATE_TV', payload: { ...selectedTv, mediaAttachments: next } })
+      await persistTvMedia(selectedTv, next)
+      toast.success('Anexo cadastrado')
+      setShowMediaModal(false)
+    } catch (e: any) {
+      console.error(e); toast.error('Falha no upload: ' + (e.message || ''))
+    } finally {
+      setUploadingMedia(false)
+    }
+  }
+
+  const toggleMediaMode = async () => {
+    if (!selectedTv) return
+    const mode = selectedTv.mediaMode === 'with_media' ? 'without_media' : 'with_media'
+    const updated = { ...selectedTv, mediaMode: mode as 'with_media' | 'without_media' }
+    if (isDemoCompany) {
+      dispatch({ type: 'UPDATE_TV', payload: updated })
+    } else {
+      await updateTVDB(updated)
+    }
+    toast.success(mode === 'with_media' ? 'TV agora exibe mídia' : 'TV agora exibe somente chamadas')
+  }
+
 
   if (!unit) return <p className="text-muted-foreground">Unidade não encontrada</p>
 
