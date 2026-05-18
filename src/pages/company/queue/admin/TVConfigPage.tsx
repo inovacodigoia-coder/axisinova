@@ -1,10 +1,11 @@
 import { useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
-import { ArrowLeft, Plus, Pencil, Trash2, Eye, EyeOff, Copy, RefreshCw, ExternalLink } from 'lucide-react'
+import { ArrowLeft, Plus, Pencil, Trash2, Eye, Copy, RefreshCw, ExternalLink, Upload, X } from 'lucide-react'
 import { toast } from 'sonner'
 import { cn } from '@/lib/utils'
 import { useQueueSystem } from '@/context/QueueSystemContext'
 import { useAuth } from '@/context/AuthContext'
+import { supabase } from '@/integrations/supabase/client'
 import type { TV, MediaAttachment } from '@/types/queue-system.types'
 
 const DEMO_COMPANY_ID = 'comp_001'
