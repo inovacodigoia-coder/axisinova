@@ -55,6 +55,8 @@ export default function CallingPanelPage() {
   const audioEnabledRef = useRef(false)
   const companyName = user?.companyName || 'Axis Inova'
 
+  const [branding, setBranding] = useState<PanelBranding | null>(null)
+
   useEffect(() => {
     const id = setInterval(() => setTime(new Date()), 1000)
     return () => clearInterval(id)
