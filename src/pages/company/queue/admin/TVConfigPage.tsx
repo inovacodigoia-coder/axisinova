@@ -184,7 +184,8 @@ export default function TVConfigPage() {
 
   const persistTvMedia = async (tv: TV, list: MediaAttachment[]) => {
     if (isDemoCompany) return
-    await supabase.from('queue_tvs').update({ media_attachments: list as any } as any).eq('id', tv.id)
+    const { error } = await supabase.from('queue_tvs' as never).update({ media_attachments: list } as never).eq('id', tv.id)
+    if (error) throw error
   }
 
   const removeMedia = async (attachmentId: string) => {
@@ -220,8 +221,9 @@ export default function TVConfigPage() {
       await persistTvMedia(selectedTv, next)
       toast.success('Anexo cadastrado')
       setShowMediaModal(false)
-    } catch (e: any) {
-      console.error(e); toast.error('Falha no upload: ' + (e.message || ''))
+    } catch (e: unknown) {
+      const message = e instanceof Error ? e.message : 'erro desconhecido'
+      console.error(e); toast.error('Falha no upload: ' + message)
     } finally {
       setUploadingMedia(false)
     }
