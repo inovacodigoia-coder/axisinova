@@ -444,6 +444,58 @@ export default function TVConfigPage() {
           </div>
         </div>
       )}
+
+      {showMediaModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" onClick={() => !uploadingMedia && setShowMediaModal(false)}>
+          <div onClick={e => e.stopPropagation()} className="w-full max-w-md rounded-2xl bg-card border border-border p-6 space-y-4">
+            <div className="flex items-center justify-between">
+              <h3 className="text-lg font-bold text-foreground">Cadastrar Anexo</h3>
+              <button onClick={() => !uploadingMedia && setShowMediaModal(false)} className="text-muted-foreground hover:text-foreground"><X className="h-5 w-5" /></button>
+            </div>
+
+            <div className="space-y-1">
+              <label className="text-sm font-medium text-foreground">Arquivo (imagem ou vídeo) *</label>
+              <label className="flex flex-col items-center justify-center gap-2 rounded-lg border-2 border-dashed border-input bg-background px-4 py-6 cursor-pointer hover:bg-muted/40 transition-colors">
+                <Upload className="h-6 w-6 text-muted-foreground" />
+                <span className="text-xs text-muted-foreground text-center">
+                  {mediaFile ? mediaFile.name : 'Clique para selecionar (JPG, PNG, MP4...)'}
+                </span>
+                <input type="file" accept="image/*,video/*" className="hidden"
+                  onChange={e => {
+                    const f = e.target.files?.[0] || null
+                    setMediaFile(f)
+                    if (f && !mediaName) setMediaName(f.name.replace(/\.[^.]+$/, ''))
+                  }} />
+              </label>
+              {mediaFile && (
+                <p className="text-[11px] text-muted-foreground">
+                  {(mediaFile.size / (1024 * 1024)).toFixed(2)} MB · {mediaFile.type || 'desconhecido'}
+                </p>
+              )}
+            </div>
+
+            <div className="space-y-1">
+              <label className="text-sm font-medium text-foreground">Nome do anexo</label>
+              <input type="text" value={mediaName} onChange={e => setMediaName(e.target.value)} placeholder="Ex: Promoção check-up"
+                className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring" />
+            </div>
+
+            <div className="space-y-1">
+              <label className="text-sm font-medium text-foreground">Duração (segundos)</label>
+              <input type="number" min={1} max={300} value={mediaDuration} onChange={e => setMediaDuration(Number(e.target.value))}
+                className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring" />
+              <p className="text-[11px] text-muted-foreground">Tempo de exibição na TV antes de passar ao próximo anexo.</p>
+            </div>
+
+            <div className="flex gap-3 justify-end pt-2">
+              <button onClick={() => setShowMediaModal(false)} disabled={uploadingMedia} className="rounded-lg border border-input px-4 py-2 text-sm font-medium hover:bg-muted disabled:opacity-50">Cancelar</button>
+              <button onClick={saveMediaUpload} disabled={uploadingMedia || !mediaFile} className="rounded-lg bg-green-500 px-4 py-2 text-sm font-semibold text-white hover:bg-green-600 disabled:opacity-50">
+                {uploadingMedia ? 'Enviando...' : 'Cadastrar'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
