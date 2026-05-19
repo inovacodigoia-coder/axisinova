@@ -10,6 +10,53 @@ import type { TV, MediaAttachment } from '@/types/queue-system.types'
 
 const DEMO_COMPANY_ID = 'comp_001'
 
+function TVScreenPreview({ tv }: { tv: TV }) {
+  const firstMedia = tv.mediaAttachments[0]
+  const withMedia = tv.mediaMode === 'with_media'
+
+  return (
+    <div className="rounded-xl border border-border bg-card p-3 shadow-sm">
+      <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+        Preview · {withMedia ? 'Com Mídia' : 'Sem Mídia'}
+      </p>
+      <div className="overflow-hidden rounded-lg border border-border bg-background shadow-md">
+        <div className="bg-primary px-3 py-1.5 text-xs font-bold text-primary-foreground">Chame rápido</div>
+        <div className="grid aspect-[16/7] grid-cols-[1fr_0.72fr] gap-2 bg-muted p-2 sm:grid-cols-[1fr_1.05fr_0.72fr]">
+          {withMedia && (
+            <div className="relative hidden overflow-hidden rounded-md bg-primary/20 sm:block">
+              {firstMedia ? (
+                firstMedia.type === 'video' ? (
+                  <video src={firstMedia.fileUrl} className="h-full w-full object-cover" muted playsInline />
+                ) : (
+                  <img src={firstMedia.fileUrl} alt={firstMedia.name} className="h-full w-full object-cover" />
+                )
+              ) : (
+                <div className="flex h-full items-center justify-center text-xs font-medium text-muted-foreground">Imagem</div>
+              )}
+            </div>
+          )}
+
+          <div className={cn('flex flex-col items-center justify-center rounded-md bg-primary/20 text-center text-foreground', !withMedia && 'sm:col-span-2')}>
+            <p className="text-xs">Ficha:</p>
+            <p className="text-2xl font-semibold leading-tight">A5</p>
+            <p className="mt-1 text-xs">Dirija-se ao:</p>
+            <p className="text-sm font-medium">Guichê 01</p>
+          </div>
+
+          <div className="grid gap-1.5">
+            {['A1', 'A2', 'A3', 'A4'].map(code => (
+              <div key={code} className="flex flex-col items-center justify-center rounded-md bg-primary px-2 py-1 text-center text-primary-foreground">
+                <p className="text-[10px] font-bold leading-none">Ficha: {code}</p>
+                <p className="text-[9px] font-semibold leading-tight">Guichê 04</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    </div>
+  )
+}
+
 export default function TVConfigPage() {
   const { unitId } = useParams<{ unitId: string }>()
   const navigate = useNavigate()
@@ -137,7 +184,8 @@ export default function TVConfigPage() {
 
   const persistTvMedia = async (tv: TV, list: MediaAttachment[]) => {
     if (isDemoCompany) return
-    await supabase.from('queue_tvs').update({ media_attachments: list as any } as any).eq('id', tv.id)
+    const { error } = await supabase.from('queue_tvs' as never).update({ media_attachments: list } as never).eq('id', tv.id)
+    if (error) throw error
   }
 
   const removeMedia = async (attachmentId: string) => {
@@ -173,8 +221,9 @@ export default function TVConfigPage() {
       await persistTvMedia(selectedTv, next)
       toast.success('Anexo cadastrado')
       setShowMediaModal(false)
-    } catch (e: any) {
-      console.error(e); toast.error('Falha no upload: ' + (e.message || ''))
+    } catch (e: unknown) {
+      const message = e instanceof Error ? e.message : 'erro desconhecido'
+      console.error(e); toast.error('Falha no upload: ' + message)
     } finally {
       setUploadingMedia(false)
     }
@@ -223,37 +272,7 @@ export default function TVConfigPage() {
         )}
       </div>
 
-      {selectedTv && (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div className="rounded-xl border border-border bg-card p-3">
-            <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-2">Preview · Sem Mídia</p>
-            <div className="rounded-lg bg-[hsl(220,26%,14%)] aspect-video flex items-center justify-center text-white">
-              <div className="text-center">
-                <p className="text-[10px] text-white/40">Ficha:</p>
-                <p className="text-4xl font-black">A5</p>
-                <p className="text-[10px] text-white/40 mt-1">Guichê 01</p>
-              </div>
-            </div>
-          </div>
-          <div className="rounded-xl border border-border bg-card p-3">
-            <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-2">Preview · Com Mídia</p>
-            <div className="rounded-lg bg-[hsl(220,26%,14%)] aspect-video relative overflow-hidden flex items-center justify-center text-white">
-              {selectedTv.mediaAttachments[0] ? (
-                selectedTv.mediaAttachments[0].type === 'video' ? (
-                  <video src={selectedTv.mediaAttachments[0].fileUrl} className="absolute inset-0 h-full w-full object-cover" autoPlay muted loop playsInline />
-                ) : (
-                  <img src={selectedTv.mediaAttachments[0].fileUrl} alt="" className="absolute inset-0 h-full w-full object-cover" />
-                )
-              ) : (
-                <p className="text-xs text-white/40">Sem anexos cadastrados</p>
-              )}
-              <div className="absolute bottom-2 right-2 bg-background/80 backdrop-blur rounded px-2 py-1">
-                <p className="text-[10px] text-foreground font-bold">A5 · Guichê 01</p>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
+      {selectedTv && <TVScreenPreview tv={selectedTv} />}
 
       {selectedTv && (
         <div className="rounded-xl bg-[hsl(220,26%,14%)] p-6 text-white">
@@ -366,7 +385,7 @@ export default function TVConfigPage() {
             <div className="space-y-3">
               <div className="space-y-1"><label className="text-sm font-medium">Nome *</label><input type="text" value={tvName} onChange={e => setTvName(e.target.value)} placeholder="Digite o nome..." className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring" /></div>
               <div className="space-y-1"><label className="text-sm font-medium">Tipo de voz</label><select value={tvVoice} onChange={e => setTvVoice(e.target.value as 'feminine'|'masculine')} className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm"><option value="feminine">Feminina</option><option value="masculine">Masculina</option></select></div>
-              <div className="space-y-1"><label className="text-sm font-medium">Tamanho da TV</label><select value={tvSize} onChange={e => setTvSize(e.target.value as any)} className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm"><option value="small">Pequena</option><option value="medium">Médio</option><option value="large">Grande</option><option value="extra_large">Extra Grande</option></select></div>
+              <div className="space-y-1"><label className="text-sm font-medium">Tamanho da TV</label><select value={tvSize} onChange={e => setTvSize(e.target.value as TV['screenSize'])} className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm"><option value="small">Pequena</option><option value="medium">Médio</option><option value="large">Grande</option><option value="extra_large">Extra Grande</option></select></div>
               <div className="space-y-1"><label className="text-sm font-medium">Número de dispositivos</label><input type="number" min={1} value={tvDeviceCount} onChange={e => setTvDeviceCount(Number(e.target.value))} className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring" /></div>
             </div>
 

@@ -170,7 +170,9 @@ function mapDbTV(row: any): TV {
   return {
     id: row.id, unitId: row.unit_id, name: row.name, voiceType: row.voice_type as any,
     screenSize: row.screen_size as any, deviceCount: row.device_count,
-    mediaMode: row.media_mode as any, mediaAttachments: [], isActive: row.is_active,
+    mediaMode: row.media_mode as any,
+    mediaAttachments: Array.isArray(row.media_attachments) ? row.media_attachments : [],
+    isActive: row.is_active,
     slug: row.slug || undefined,
     accessUsername: row.access_username || undefined,
     accessPassword: row.access_password || undefined,
@@ -416,6 +418,7 @@ export function QueueSystemProvider({ children }: { children: ReactNode }) {
     const { error } = await supabase.from('queue_tvs').update({
       name: data.name, voice_type: data.voiceType, screen_size: data.screenSize,
       device_count: data.deviceCount, media_mode: data.mediaMode,
+      media_attachments: data.mediaAttachments as any,
       slug: data.slug || null,
       access_username: data.accessUsername || null,
       access_password: data.accessPassword || null,
