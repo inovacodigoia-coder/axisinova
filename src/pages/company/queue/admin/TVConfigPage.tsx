@@ -10,6 +10,53 @@ import type { TV, MediaAttachment } from '@/types/queue-system.types'
 
 const DEMO_COMPANY_ID = 'comp_001'
 
+function TVScreenPreview({ tv }: { tv: TV }) {
+  const firstMedia = tv.mediaAttachments[0]
+  const withMedia = tv.mediaMode === 'with_media'
+
+  return (
+    <div className="rounded-xl border border-border bg-card p-3 shadow-sm">
+      <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+        Preview · {withMedia ? 'Com Mídia' : 'Sem Mídia'}
+      </p>
+      <div className="overflow-hidden rounded-lg border border-border bg-background shadow-md">
+        <div className="bg-primary px-3 py-1.5 text-xs font-bold text-primary-foreground">Chame rápido</div>
+        <div className="grid aspect-[16/7] grid-cols-[1fr_0.72fr] gap-2 bg-muted p-2 sm:grid-cols-[1fr_1.05fr_0.72fr]">
+          {withMedia && (
+            <div className="relative hidden overflow-hidden rounded-md bg-primary/20 sm:block">
+              {firstMedia ? (
+                firstMedia.type === 'video' ? (
+                  <video src={firstMedia.fileUrl} className="h-full w-full object-cover" muted playsInline />
+                ) : (
+                  <img src={firstMedia.fileUrl} alt={firstMedia.name} className="h-full w-full object-cover" />
+                )
+              ) : (
+                <div className="flex h-full items-center justify-center text-xs font-medium text-muted-foreground">Imagem</div>
+              )}
+            </div>
+          )}
+
+          <div className={cn('flex flex-col items-center justify-center rounded-md bg-primary/20 text-center text-foreground', !withMedia && 'sm:col-span-2')}>
+            <p className="text-xs">Ficha:</p>
+            <p className="text-2xl font-semibold leading-tight">A5</p>
+            <p className="mt-1 text-xs">Dirija-se ao:</p>
+            <p className="text-sm font-medium">Guichê 01</p>
+          </div>
+
+          <div className="grid gap-1.5">
+            {['A1', 'A2', 'A3', 'A4'].map(code => (
+              <div key={code} className="flex flex-col items-center justify-center rounded-md bg-primary px-2 py-1 text-center text-primary-foreground">
+                <p className="text-[10px] font-bold leading-none">Ficha: {code}</p>
+                <p className="text-[9px] font-semibold leading-tight">Guichê 04</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    </div>
+  )
+}
+
 export default function TVConfigPage() {
   const { unitId } = useParams<{ unitId: string }>()
   const navigate = useNavigate()
