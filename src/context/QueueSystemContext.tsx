@@ -170,7 +170,9 @@ function mapDbTV(row: any): TV {
   return {
     id: row.id, unitId: row.unit_id, name: row.name, voiceType: row.voice_type as any,
     screenSize: row.screen_size as any, deviceCount: row.device_count,
-    mediaMode: row.media_mode as any, mediaAttachments: [], isActive: row.is_active,
+    mediaMode: row.media_mode as any,
+    mediaAttachments: Array.isArray(row.media_attachments) ? row.media_attachments : [],
+    isActive: row.is_active,
     slug: row.slug || undefined,
     accessUsername: row.access_username || undefined,
     accessPassword: row.access_password || undefined,
