@@ -270,37 +270,7 @@ export default function TVConfigPage() {
         )}
       </div>
 
-      {selectedTv && (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div className="rounded-xl border border-border bg-card p-3">
-            <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-2">Preview · Sem Mídia</p>
-            <div className="rounded-lg bg-[hsl(220,26%,14%)] aspect-video flex items-center justify-center text-white">
-              <div className="text-center">
-                <p className="text-[10px] text-white/40">Ficha:</p>
-                <p className="text-4xl font-black">A5</p>
-                <p className="text-[10px] text-white/40 mt-1">Guichê 01</p>
-              </div>
-            </div>
-          </div>
-          <div className="rounded-xl border border-border bg-card p-3">
-            <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-2">Preview · Com Mídia</p>
-            <div className="rounded-lg bg-[hsl(220,26%,14%)] aspect-video relative overflow-hidden flex items-center justify-center text-white">
-              {selectedTv.mediaAttachments[0] ? (
-                selectedTv.mediaAttachments[0].type === 'video' ? (
-                  <video src={selectedTv.mediaAttachments[0].fileUrl} className="absolute inset-0 h-full w-full object-cover" autoPlay muted loop playsInline />
-                ) : (
-                  <img src={selectedTv.mediaAttachments[0].fileUrl} alt="" className="absolute inset-0 h-full w-full object-cover" />
-                )
-              ) : (
-                <p className="text-xs text-white/40">Sem anexos cadastrados</p>
-              )}
-              <div className="absolute bottom-2 right-2 bg-background/80 backdrop-blur rounded px-2 py-1">
-                <p className="text-[10px] text-foreground font-bold">A5 · Guichê 01</p>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
+      {selectedTv && <TVScreenPreview tv={selectedTv} />}
 
       {selectedTv && (
         <div className="rounded-xl bg-[hsl(220,26%,14%)] p-6 text-white">
