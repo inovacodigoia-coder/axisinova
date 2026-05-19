@@ -418,6 +418,7 @@ export function QueueSystemProvider({ children }: { children: ReactNode }) {
     const { error } = await supabase.from('queue_tvs').update({
       name: data.name, voice_type: data.voiceType, screen_size: data.screenSize,
       device_count: data.deviceCount, media_mode: data.mediaMode,
+      media_attachments: data.mediaAttachments as any,
       slug: data.slug || null,
       access_username: data.accessUsername || null,
       access_password: data.accessPassword || null,
