@@ -376,37 +376,52 @@ export default function ReceptionLayout() {
                     </div>
                   </div>
 
-                  {/* Tickets */}
-                  <AnimatePresence mode="popLayout">
-                    {!showFinalized && activeTickets.map(t => (
-                      <TicketCard
-                        key={t.id}
-                        ticket={t}
-                        onCall={() => handleCall(t.id)}
-                        onAttend={() => handleAttend(t.id)}
-                        onReallocate={() => setReallocateTicket(t)}
-                        onFinalize={() => setFinalizeTicket(t)}
-                        onTimeline={() => setTimelineTicket(t)}
-                        onStartCadastro={() => setCadastroTicket(t)}
-                        hasOrder={!!orderByTicket.get(t.id)}
-                        orderNumber={orderByTicket.get(t.id)?.orderNumber}
-                        onReprint={() => {
-                          const o = orderByTicket.get(t.id)
-                          if (o) setReprintDoc(buildDocFromOrder(o))
-                        }}
-                      />
-                    ))}
-                    {showFinalized && finalizedTickets.map(t => (
-                      <FinalizedTicketCard
-                        key={t.id}
-                        ticket={t}
-                        onTimeline={() => setTimelineTicket(t)}
-                        onReactivate={() => handleReactivate(t.id)}
-                      />
-                    ))}
-                  </AnimatePresence>
-                  {!showFinalized && !activeTickets.length && <p className="text-sm text-muted-foreground">Nenhuma ficha ativa</p>}
-                  {showFinalized && !finalizedTickets.length && <p className="text-sm text-muted-foreground">Nenhuma ficha finalizada</p>}
+                  {/* Tickets — só carrega após selecionar filas E guichê */}
+                  {(!selectedQueues.length || !guicheId) ? (
+                    <div className="rounded-xl border border-dashed border-border bg-muted/30 p-8 text-center">
+                      <p className="text-sm font-medium text-foreground">Selecione as filas e o guichê para carregar as fichas</p>
+                      <p className="text-xs text-muted-foreground mt-1">
+                        {!selectedQueues.length && !guicheId
+                          ? 'Nenhuma fila e nenhum guichê selecionado.'
+                          : !selectedQueues.length
+                          ? 'Clique em "Selecionar filas" acima.'
+                          : 'Selecione um guichê acima.'}
+                      </p>
+                    </div>
+                  ) : (
+                    <>
+                      <AnimatePresence mode="popLayout">
+                        {!showFinalized && activeTickets.map(t => (
+                          <TicketCard
+                            key={t.id}
+                            ticket={t}
+                            onCall={() => handleCall(t.id)}
+                            onAttend={() => handleAttend(t.id)}
+                            onReallocate={() => setReallocateTicket(t)}
+                            onFinalize={() => setFinalizeTicket(t)}
+                            onTimeline={() => setTimelineTicket(t)}
+                            onStartCadastro={() => setCadastroTicket(t)}
+                            hasOrder={!!orderByTicket.get(t.id)}
+                            orderNumber={orderByTicket.get(t.id)?.orderNumber}
+                            onReprint={() => {
+                              const o = orderByTicket.get(t.id)
+                              if (o) setReprintDoc(buildDocFromOrder(o))
+                            }}
+                          />
+                        ))}
+                        {showFinalized && finalizedTickets.map(t => (
+                          <FinalizedTicketCard
+                            key={t.id}
+                            ticket={t}
+                            onTimeline={() => setTimelineTicket(t)}
+                            onReactivate={() => handleReactivate(t.id)}
+                          />
+                        ))}
+                      </AnimatePresence>
+                      {!showFinalized && !activeTickets.length && <p className="text-sm text-muted-foreground">Nenhuma ficha ativa</p>}
+                      {showFinalized && !finalizedTickets.length && <p className="text-sm text-muted-foreground">Nenhuma ficha finalizada</p>}
+                    </>
+                  )}
                 </div>
             </div>
           )
