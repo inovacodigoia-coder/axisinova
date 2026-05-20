@@ -242,11 +242,20 @@ function SectorForm({ sector, profiles, companyId, onSave, onCancel }: { sector:
   const [desc, setDesc] = useState(sector?.description || '')
   const [allowed, setAllowed] = useState<Set<string>>(new Set(sector?.allowedProfiles || []))
   const [active, setActive] = useState(sector?.isActive ?? true)
+  const [queueTypes, setQueueTypes] = useState<Set<'internal' | 'external'>>(
+    new Set(sector?.allowedQueueTypes && sector.allowedQueueTypes.length ? sector.allowedQueueTypes : ['internal', 'external'])
+  )
 
   const toggle = (id: string) => {
     const next = new Set(allowed)
     next.has(id) ? next.delete(id) : next.add(id)
     setAllowed(next)
+  }
+
+  const toggleQueueType = (t: 'internal' | 'external') => {
+    const next = new Set(queueTypes)
+    next.has(t) ? next.delete(t) : next.add(t)
+    setQueueTypes(next)
   }
 
   return (
@@ -270,6 +279,20 @@ function SectorForm({ sector, profiles, companyId, onSave, onCancel }: { sector:
           ))}
         </div>
       </div>
+      <div>
+        <label className="text-sm font-medium mb-2 block">Tipos de fila visíveis na Recepção</label>
+        <p className="text-xs text-muted-foreground mb-2">Controla quais abas de filas (Externa/Interna) este setor poderá visualizar.</p>
+        <div className="space-y-1">
+          <label className="flex items-center gap-2 text-sm cursor-pointer hover:bg-muted rounded px-2 py-1">
+            <input type="checkbox" checked={queueTypes.has('external')} onChange={() => toggleQueueType('external')} className="accent-primary" />
+            Fila Externa (Atendimento / Coleta)
+          </label>
+          <label className="flex items-center gap-2 text-sm cursor-pointer hover:bg-muted rounded px-2 py-1">
+            <input type="checkbox" checked={queueTypes.has('internal')} onChange={() => toggleQueueType('internal')} className="accent-primary" />
+            Fila Interna
+          </label>
+        </div>
+      </div>
       <label className="flex items-center gap-2 text-sm">
         <input type="checkbox" checked={active} onChange={e => setActive(e.target.checked)} className="accent-primary" /> Ativo
       </label>
@@ -277,7 +300,15 @@ function SectorForm({ sector, profiles, companyId, onSave, onCancel }: { sector:
         <button onClick={onCancel} className="rounded-lg border border-input px-4 py-2 text-sm hover:bg-muted">Cancelar</button>
         <button onClick={() => {
           if (!name.trim()) { toast.error('Nome é obrigatório'); return }
-          onSave({ id: sector?.id || `sec_${Date.now()}`, name, description: desc, companyId: companyId || '', isActive: active, allowedProfiles: Array.from(allowed) })
+          if (queueTypes.size === 0) { toast.error('Selecione ao menos um tipo de fila'); return }
+          onSave({
+            id: sector?.id || `sec_${Date.now()}`,
+            name, description: desc,
+            companyId: companyId || '',
+            isActive: active,
+            allowedProfiles: Array.from(allowed),
+            allowedQueueTypes: Array.from(queueTypes),
+          })
         }} className="gradient-bg rounded-lg px-4 py-2 text-sm font-semibold text-white">Salvar</button>
       </div>
     </div>

@@ -87,7 +87,7 @@ function PortalContent() {
   const [notifOpen, setNotifOpen] = useState(false)
   const { user, logout } = useAuth()
   const { unreadCount } = useNotificationContext()
-  const { activeSector } = useCompanyContext()
+  const { activeSector, activeProfile, isSessionReady } = useCompanyContext()
   const { open: openSearch } = useGlobalSearch()
   const location = useLocation()
   const { showWarning, countdown, extendSession } = useSessionTimeout()
@@ -98,6 +98,14 @@ function PortalContent() {
     'ctrl+d': () => window.location.href = '/app/dashboard',
     'escape': () => setNotifOpen(false),
   })
+
+  // Guard: usuário precisa ter perfil + setor selecionados antes de acessar módulos.
+  // super_admin / company_admin têm bypass automático no CompanyContext.
+  const needsSessionSelection = user && !isSessionReady && (!activeProfile || !activeSector)
+  if (needsSessionSelection) {
+    return <Navigate to="/selecionar-perfil" replace state={{ from: location }} />
+  }
+
 
   return (
     <div className="min-h-screen flex flex-col bg-muted">
