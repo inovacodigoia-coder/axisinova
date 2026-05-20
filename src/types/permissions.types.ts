@@ -36,6 +36,8 @@ export interface Sector {
   description?: string
   isActive: boolean
   allowedProfiles: string[]
+  /** Tipos de fila que este setor pode visualizar na Recepção. Se vazio/indefinido = ambos. */
+  allowedQueueTypes?: ('internal' | 'external')[]
 }
 
 export interface MenuFunction {
