@@ -1,6 +1,7 @@
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 import { X } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import { useCompanyContext } from '@/context/CompanyContext'
 import type { QueueLine } from '@/types/queue-system.types'
 
 interface SelectQueuesModalProps {
@@ -10,13 +11,37 @@ interface SelectQueuesModalProps {
   onClose: () => void
 }
 
-export function SelectQueuesModal({ queues, selected, onSave, onClose }: SelectQueuesModalProps) {
-  const [sel, setSel] = useState<string[]>(selected)
-  const [tab, setTab] = useState<'attendance' | 'collect'>('attendance')
+type Tab = 'attendance' | 'collect' | 'internal'
 
-  const filtered = queues.filter(q => q.category === tab)
+export function SelectQueuesModal({ queues, selected, onSave, onClose }: SelectQueuesModalProps) {
+  const { activeSector } = useCompanyContext()
+  const allowedTypes = (activeSector as any)?.allowedQueueTypes as ('internal' | 'external')[] | undefined
+  const hasExternal = !allowedTypes || allowedTypes.length === 0 || allowedTypes.includes('external')
+  const hasInternal = !allowedTypes || allowedTypes.length === 0 || allowedTypes.includes('internal')
+
+  const availableTabs = useMemo<Tab[]>(() => {
+    const tabs: Tab[] = []
+    if (hasExternal) tabs.push('attendance', 'collect')
+    if (hasInternal) tabs.push('internal')
+    return tabs
+  }, [hasExternal, hasInternal])
+
+  const [sel, setSel] = useState<string[]>(selected)
+  const [tab, setTab] = useState<Tab>(availableTabs[0] || 'attendance')
+
+  const filtered = queues.filter(q => {
+    if (tab === 'internal') return q.type === 'internal'
+    if (tab === 'attendance') return q.category === 'attendance' && q.type === 'external'
+    return q.category === 'collect' && q.type === 'external'
+  })
 
   const toggle = (id: string) => setSel(prev => prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id])
+
+  const TAB_LABELS: Record<Tab, string> = {
+    attendance: 'Atendimento',
+    collect: 'Coleta',
+    internal: 'Fila interna',
+  }
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50" onClick={onClose}>
@@ -26,13 +51,14 @@ export function SelectQueuesModal({ queues, selected, onSave, onClose }: SelectQ
           <button onClick={onClose} className="rounded-lg p-1 hover:bg-muted"><X className="h-5 w-5 text-muted-foreground" /></button>
         </div>
 
-        <div className="flex gap-1 rounded-lg border border-border p-0.5 w-fit">
-          <button onClick={() => setTab('attendance')} className={cn('rounded-md px-4 py-1.5 text-sm font-medium transition-colors', tab === 'attendance' ? 'bg-[hsl(222,70%,35%)] text-white' : 'text-muted-foreground hover:bg-muted')}>
-            Atendimento
-          </button>
-          <button onClick={() => setTab('collect')} className={cn('rounded-md px-4 py-1.5 text-sm font-medium transition-colors', tab === 'collect' ? 'bg-[hsl(222,70%,35%)] text-white' : 'text-muted-foreground hover:bg-muted')}>
-            Coleta
-          </button>
+        <div className="flex gap-1 rounded-lg border border-border p-0.5 w-fit flex-wrap">
+          {availableTabs.map(t => (
+            <button key={t} onClick={() => setTab(t)}
+              className={cn('rounded-md px-4 py-1.5 text-sm font-medium transition-colors',
+                tab === t ? 'bg-[hsl(222,70%,35%)] text-white' : 'text-muted-foreground hover:bg-muted')}>
+              {TAB_LABELS[t]}
+            </button>
+          ))}
         </div>
 
         <div className="max-h-60 overflow-y-auto space-y-2">
