@@ -22,6 +22,7 @@ interface CompanyContextValue {
   switchSector: (sectorId: string) => void
   canAccess: (module: SystemModule, action?: PermissionAction) => boolean
   isSessionReady: boolean
+  isSessionHydrated: boolean
   allProfiles: Profile[]
   allSectors: Sector[]
   allUsers: CompanyUser[]
@@ -60,6 +61,7 @@ export function CompanyProvider({ children }: { children: ReactNode }) {
   const [activeProfile, setActiveProfile] = useState<Profile | null>(null)
   const [activeSector, setActiveSector] = useState<Sector | null>(null)
   const [isSessionReady, setIsSessionReady] = useState(false)
+  const [isSessionHydrated, setIsSessionHydrated] = useState(false)
 
   const companyUserId = user ? getCompanyUserId(user.id) : null
   const companyUser = companyUserId ? MOCK_COMPANY_USERS.find(u => u.id === companyUserId) || null : null
@@ -70,10 +72,13 @@ export function CompanyProvider({ children }: { children: ReactNode }) {
 
   // Restore session
   useEffect(() => {
+    setIsSessionHydrated(false)
+
     if (!user) {
       setActiveProfile(null)
       setActiveSector(null)
       setIsSessionReady(false)
+      setIsSessionHydrated(true)
       return
     }
 
@@ -92,6 +97,7 @@ export function CompanyProvider({ children }: { children: ReactNode }) {
               setActiveProfile(p)
               setActiveSector(s || sectors[0] || null)
               setIsSessionReady(true)
+              setIsSessionHydrated(true)
               return
             }
           } catch { /* ignore */ }
@@ -104,6 +110,7 @@ export function CompanyProvider({ children }: { children: ReactNode }) {
             setActiveSector(sectors[0])
             sessionStorage.setItem(SESSION_KEY, JSON.stringify({ profileId: profs[0].id, sectorId: sectors[0].id }))
             setIsSessionReady(true)
+            setIsSessionHydrated(true)
             return
           }
         }
@@ -122,6 +129,7 @@ export function CompanyProvider({ children }: { children: ReactNode }) {
           setActiveProfile(p)
           setActiveSector(s || null)
           if (s) setIsSessionReady(true)
+          setIsSessionHydrated(true)
           return
         }
       } catch { /* ignore */ }
@@ -135,9 +143,15 @@ export function CompanyProvider({ children }: { children: ReactNode }) {
         setActiveSector(sectors[0])
         sessionStorage.setItem(SESSION_KEY, JSON.stringify({ profileId: profiles[0].id, sectorId: sectors[0].id }))
         setIsSessionReady(true)
+        setIsSessionHydrated(true)
         return
       }
     }
+
+    setActiveProfile(null)
+    setActiveSector(null)
+    setIsSessionReady(false)
+    setIsSessionHydrated(true)
   }, [user?.id])
 
   const selectProfile = useCallback((profile: Profile) => {
@@ -207,7 +221,7 @@ export function CompanyProvider({ children }: { children: ReactNode }) {
       companyUser, profiles, activeProfile, activeSector, availableSectors,
       availableFunctions, availableUtilities,
       selectProfile, selectSector, confirmSession, clearSession,
-      switchProfile, switchSector, canAccess, isSessionReady,
+      switchProfile, switchSector, canAccess, isSessionReady, isSessionHydrated,
       allProfiles: MOCK_COMPANY_PROFILES, allSectors: MOCK_SECTORS, allUsers: MOCK_COMPANY_USERS,
     }}>
       {children}
