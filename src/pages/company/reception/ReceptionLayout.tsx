@@ -52,8 +52,16 @@ function mapDbTicket(row: any): Ticket {
 export default function ReceptionLayout() {
   const { stats } = useQueue()
   const { user } = useAuth()
-  const { state, dispatch, getUnitQueues, getUnitGuiches, getUnitTVs, getUnitTickets } = useQueueSystem()
+  const { state, dispatch, getUnitQueues, getUnitGuiches, getUnitTVs, getUnitTickets, loadCompanyData } = useQueueSystem()
   const isDemoCompany = user?.companyId === DEMO_COMPANY_ID
+
+  // Refresh queue data on mount so newly created/renamed TVs show up in the selector
+  useEffect(() => {
+    if (user?.companyId && user.companyId !== DEMO_COMPANY_ID) {
+      loadCompanyData(user.companyId)
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user?.companyId])
 
   const [activeTab, setActiveTab] = useState<'queue' | 'attendance'>('queue')
   const [selectedPatientId, setSelectedPatientId] = useState<string | null>(null)
