@@ -303,93 +303,125 @@ export default function CallingPanelPage() {
         </header>
 
         <main className="flex flex-1 min-h-0">
-          <section className="relative flex flex-[3] items-center justify-center overflow-hidden bg-muted/30">
+          <section className="relative flex flex-[4] min-h-0 overflow-hidden bg-muted/30">
             {flash && <div className="absolute inset-0 animate-pulse bg-primary/10 pointer-events-none z-10" />}
-            {showMedia && !panelCalled && (
-              <div className="absolute inset-0">
-                {(() => {
-                  const m = mediaList[mediaIdx % mediaList.length]
-                  if (!m) return null
-                  if (m.type === 'video') {
-                    return <video key={m.id} src={m.fileUrl} autoPlay muted playsInline className="h-full w-full object-cover" onEnded={() => setMediaIdx(i => (i + 1) % mediaList.length)} />
-                  }
-                  return <img key={m.id} src={m.fileUrl} alt={m.name} className="h-full w-full object-cover" />
-                })()}
+            {showMedia ? (
+              <div className="flex w-full h-full">
+                {/* Media half */}
+                <div className="relative flex-1 bg-black overflow-hidden">
+                  {(() => {
+                    const m = mediaList[mediaIdx % mediaList.length]
+                    if (!m) return null
+                    if (m.type === 'video') {
+                      return <video key={m.id} src={m.fileUrl} autoPlay muted playsInline className="h-full w-full object-cover" onEnded={() => setMediaIdx(i => (i + 1) % mediaList.length)} />
+                    }
+                    return <img key={m.id} src={m.fileUrl} alt={m.name} className="h-full w-full object-cover" />
+                  })()}
+                </div>
+                {/* Call half */}
+                <div className="flex flex-1 items-center justify-center bg-background p-6">
+                  {panelCalled ? (
+                    <div className="animate-scale-in text-center">
+                      <p className="mb-3 flex items-center justify-center gap-2 text-base uppercase tracking-widest text-muted-foreground">
+                        <Volume2 className="h-5 w-5 text-primary" /> Chamando agora
+                      </p>
+                      <p className="gradient-text mb-4 text-[96px] font-extrabold leading-none">{panelCalled.display_code}</p>
+                      <p className="mb-2 text-2xl font-semibold text-foreground">{panelCalled.queue_line_name}</p>
+                      <p className="text-2xl font-bold text-primary">{panelCalled.guiche_name || 'Recepção'}</p>
+                      {(panelCalled.call_count || 1) > 1 && (
+                        <span className="mt-4 inline-flex items-center justify-center rounded-full bg-warning/15 px-3 py-1 text-sm font-bold text-warning">
+                          Chamada Nº {panelCalled.call_count}
+                        </span>
+                      )}
+                    </div>
+                  ) : (
+                    <div className="text-center">
+                      <h2 className="mb-2 text-xl font-bold text-muted-foreground">Aguardando chamada</h2>
+                      <p className="mt-2 font-mono text-3xl text-muted-foreground/70">
+                        {time.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
+                      </p>
+                    </div>
+                  )}
+                </div>
               </div>
-            )}
-            {loadingPanel ? (
-              <p className="text-xl font-semibold text-muted-foreground">Carregando painel...</p>
-            ) : panelCalled ? (
-              <div className="animate-scale-in text-center relative z-10 bg-background/80 backdrop-blur-sm rounded-3xl px-12 py-8">
-                <p className="mb-4 flex items-center justify-center gap-2 text-lg uppercase tracking-widest text-muted-foreground">
-                  <Volume2 className="h-5 w-5 text-primary" /> Chamando agora
-                </p>
-                <p className="gradient-text mb-6 text-[128px] font-extrabold leading-none">{panelCalled.display_code}</p>
-                <p className="mb-3 text-3xl font-semibold text-foreground">{panelCalled.queue_line_name}</p>
-                <p className="text-2xl font-bold text-primary">{panelCalled.guiche_name || 'Recepção'}</p>
-                <p className="mt-2 text-base text-muted-foreground">Dirija-se ao guichê selecionado para atendimento</p>
-                <span className="mt-6 inline-flex min-w-36 items-center justify-center rounded-full bg-warning/15 px-4 py-2 text-base font-bold text-warning">
-                  Chamada Nº {panelCalled.call_count || 1}
-                </span>
-              </div>
-            ) : !showMedia && (
-              <div className="text-center">
-                <h2 className="mb-2 text-2xl font-bold text-muted-foreground">{branding?.companyName || tv?.name}</h2>
-                <p className="text-lg text-muted-foreground">Nenhum paciente sendo chamado</p>
-                <p className="mt-6 font-mono text-4xl text-muted-foreground/70">
-                  {time.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
-                </p>
+            ) : (
+              <div className="flex w-full h-full items-center justify-center">
+                {loadingPanel ? (
+                  <p className="text-xl font-semibold text-muted-foreground">Carregando painel...</p>
+                ) : panelCalled ? (
+                  <div className="animate-scale-in text-center">
+                    <p className="mb-4 flex items-center justify-center gap-2 text-lg uppercase tracking-widest text-muted-foreground">
+                      <Volume2 className="h-5 w-5 text-primary" /> Chamando agora
+                    </p>
+                    <p className="gradient-text mb-6 text-[128px] font-extrabold leading-none">{panelCalled.display_code}</p>
+                    <p className="mb-3 text-3xl font-semibold text-foreground">{panelCalled.queue_line_name}</p>
+                    <p className="text-2xl font-bold text-primary">{panelCalled.guiche_name || 'Recepção'}</p>
+                    {(panelCalled.call_count || 1) > 1 && (
+                      <span className="mt-6 inline-flex items-center justify-center rounded-full bg-warning/15 px-4 py-2 text-base font-bold text-warning">
+                        Chamada Nº {panelCalled.call_count}
+                      </span>
+                    )}
+                  </div>
+                ) : (
+                  <div className="text-center">
+                    <h2 className="mb-2 text-2xl font-bold text-muted-foreground">{branding?.companyName || tv?.name}</h2>
+                    <p className="text-lg text-muted-foreground">Nenhum paciente sendo chamado</p>
+                    <p className="mt-6 font-mono text-4xl text-muted-foreground/70">
+                      {time.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
+                    </p>
+                  </div>
+                )}
               </div>
             )}
           </section>
 
-          <aside className="flex flex-[2] flex-col border-l border-border bg-card min-h-0">
-            {/* TOP: Últimas Chamadas (destaque) */}
-            <div className="flex-[3] flex flex-col min-h-0 border-b-2 border-primary/30">
-              <div className="border-b border-border bg-primary/5 px-6 py-3">
-                <h2 className="text-base font-extrabold uppercase tracking-widest text-primary flex items-center gap-2">
+          <aside className="flex flex-1 min-w-[260px] max-w-[360px] flex-col border-l border-border bg-card min-h-0">
+            {/* TOP: Últimas Chamadas (destaque) — altura ajustada ao conteúdo */}
+            <div className="flex flex-col min-h-0 border-b-2 border-primary/30 flex-shrink-0" style={{ maxHeight: '60%' }}>
+              <div className="border-b border-border bg-primary/5 px-4 py-2">
+                <h2 className="text-sm font-extrabold uppercase tracking-widest text-primary flex items-center gap-2">
                   <Volume2 className="h-4 w-4" /> Últimas Chamadas
                 </h2>
               </div>
-              <div className="flex-1 overflow-auto px-4 py-3">
-                <div className="space-y-2">
+              <div className="overflow-auto px-3 py-2">
+                <div className="space-y-1.5">
                   {panelLastCalled.map((ticket, i) => (
-                    <div key={ticket.id} className={`flex items-center gap-3 rounded-lg border px-3 py-2.5 ${i === 0 ? 'border-primary bg-primary/5 shadow-sm' : 'border-border bg-background'}`}>
-                      <span className={`flex h-12 min-w-20 items-center justify-center rounded-lg px-3 text-xl font-extrabold ${i === 0 ? 'bg-primary text-primary-foreground' : 'bg-muted text-foreground'}`}>
+                    <div key={ticket.id} className={`flex items-center gap-2 rounded-lg border px-2 py-2 ${i === 0 ? 'border-primary bg-primary/5 shadow-sm' : 'border-border bg-background'}`}>
+                      <span className={`flex h-10 min-w-16 items-center justify-center rounded-lg px-2 text-base font-extrabold ${i === 0 ? 'bg-primary text-primary-foreground' : 'bg-muted text-foreground'}`}>
                         {ticket.display_code}
                       </span>
                       <div className="min-w-0 flex-1">
                         <p className="truncate text-sm font-bold text-foreground">{ticket.guiche_name || ticket.queue_line_name}</p>
-                        <p className="text-xs text-muted-foreground">
+                        <p className="text-[11px] text-muted-foreground truncate">
                           {ticket.called_at ? new Date(ticket.called_at).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }) : ''}
                           {ticket.attendant_name ? ` · ${ticket.attendant_name}` : ''}
                         </p>
                       </div>
                     </div>
                   ))}
-                  {panelLastCalled.length === 0 && <p className="py-8 text-center text-sm text-muted-foreground">Nenhuma chamada ainda hoje</p>}
+                  {panelLastCalled.length === 0 && <p className="py-3 text-center text-xs text-muted-foreground">Nenhuma chamada ainda hoje</p>}
                 </div>
               </div>
             </div>
             {/* BOTTOM: Próximos na Fila (menos destaque) */}
-            <div className="flex-[2] flex flex-col min-h-0">
-              <div className="border-b border-border bg-muted/40 px-6 py-2.5">
-                <h2 className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">Próximos na Fila</h2>
+            <div className="flex flex-col min-h-0 flex-1">
+              <div className="border-b border-border bg-muted/40 px-4 py-2">
+                <h2 className="text-[11px] font-semibold uppercase tracking-widest text-muted-foreground">Próximos na Fila</h2>
               </div>
-              <div className="flex-1 overflow-auto px-4 py-2">
-                <div className="space-y-1.5">
+              <div className="flex-1 overflow-auto px-3 py-1.5">
+                <div className="space-y-1">
                   {panelWaiting.map(ticket => (
-                    <div key={ticket.id} className="flex items-center gap-3 py-1.5">
-                      <span className="flex h-8 min-w-16 items-center justify-center rounded-md border border-border bg-background px-2 text-sm font-bold text-muted-foreground">{ticket.display_code}</span>
+                    <div key={ticket.id} className="flex items-center gap-2 py-1">
+                      <span className="flex h-7 min-w-14 items-center justify-center rounded-md border border-border bg-background px-2 text-xs font-bold text-muted-foreground">{ticket.display_code}</span>
                       <p className="truncate text-xs text-muted-foreground flex-1">{ticket.queue_line_name}</p>
                     </div>
                   ))}
-                  {panelWaiting.length === 0 && <p className="py-4 text-center text-xs text-muted-foreground/70">Sem fila</p>}
+                  {panelWaiting.length === 0 && <p className="py-2 text-center text-[11px] text-muted-foreground/70">Sem fila</p>}
                 </div>
               </div>
             </div>
-            <div className="border-t border-border bg-muted/30 px-6 py-2 text-center">
-              <p className="text-[10px] text-muted-foreground/60 tracking-wide">powered by <span className="font-semibold">AXIS INOVA</span></p>
+            <div className="border-t border-border bg-muted/30 px-4 py-1 text-center">
+              <p className="text-[9px] text-muted-foreground/50 tracking-wide">powered by <span className="font-semibold">AXIS INOVA</span></p>
             </div>
           </aside>
         </main>
