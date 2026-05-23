@@ -400,6 +400,9 @@ export default function ReceptionLayout() {
                   <button onClick={() => setShowFinalized(!showFinalized)} className="rounded-lg border border-primary text-primary px-3 py-1.5 text-xs font-semibold hover:bg-primary/5 transition-colors">
                     {showFinalized ? 'Ver fichas ativas' : 'Ver fichas finalizadas'}
                   </button>
+                  <button onClick={() => setShowLookup(true)} className="rounded-lg border border-emerald-500 text-emerald-600 px-3 py-1.5 text-xs font-semibold hover:bg-emerald-500/5 transition-colors">
+                    Buscar cadastros
+                  </button>
                   <button onClick={handleBackToSelector} className="rounded-lg bg-[hsl(222,70%,35%)] text-white px-3 py-1.5 text-xs font-semibold flex items-center gap-1 hover:bg-[hsl(222,70%,30%)] transition-colors">
                     <ArrowLeft className="h-3.5 w-3.5" /> Voltar
                   </button>
