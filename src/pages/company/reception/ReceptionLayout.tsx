@@ -517,6 +517,25 @@ export default function ReceptionLayout() {
       {reprintDoc && (
         <AttendancePrintModal open onClose={() => setReprintDoc(null)} document={reprintDoc} />
       )}
+      {showLookup && (
+        <AttendanceLookupModal
+          open
+          onClose={() => setShowLookup(false)}
+          unitName={unitName}
+          guicheName={guicheName}
+          onAddProcedure={(p) => { setLookupPatient(p); setShowLookup(false) }}
+        />
+      )}
+      {lookupPatient && (
+        <AttendanceCadastroModal
+          open
+          onClose={() => setLookupPatient(null)}
+          unitId={unitId}
+          unitName={unitName}
+          guicheName={guicheName}
+          initialPatient={lookupPatient}
+        />
+      )}
     </div>
   )
 }
