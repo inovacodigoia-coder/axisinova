@@ -103,9 +103,9 @@ export function AttendanceCadastroModal({
 
   useEffect(() => {
     if (!open) {
-      setStep(0); setShowReview(false); setState({ attachments: [] }); setRestorePromptShown(false)
+      setStep(initialPatient ? 1 : 0); setShowReview(false); setState({ attachments: [], patient: initialPatient }); setRestorePromptShown(false)
     }
-  }, [open])
+  }, [open, initialPatient])
 
   useDraftAutosave(ticketId, state, open)
 
