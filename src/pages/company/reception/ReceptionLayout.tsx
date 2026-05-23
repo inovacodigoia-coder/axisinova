@@ -140,6 +140,24 @@ export default function ReceptionLayout() {
   const guiches = useMemo(() => getUnitGuiches(unitId), [unitId, getUnitGuiches])
   const tvs = useMemo(() => getUnitTVs(unitId), [unitId, getUnitTVs])
   const internalQueues = useMemo(() => queues.filter(q => q.type === 'internal'), [queues])
+
+  // Determina quais tipos de guichê estão liberados pela seleção atual de filas:
+  // - Atendimento (externa) → guichês externos
+  // - Coleta (externa) ou Fila interna → guichês internos
+  const allowedGuicheTypes = useMemo<Set<'internal' | 'external'>>(() => {
+    const set = new Set<'internal' | 'external'>()
+    selectedQueues.forEach(id => {
+      const q = queues.find(qu => qu.id === id)
+      if (!q) return
+      if (q.type === 'external' && q.category === 'attendance') set.add('external')
+      else set.add('internal')
+    })
+    return set
+  }, [selectedQueues, queues])
+  const filteredGuiches = useMemo(
+    () => allowedGuicheTypes.size === 0 ? guiches : guiches.filter(g => allowedGuicheTypes.has(g.type)),
+    [guiches, allowedGuicheTypes],
+  )
   const loadDbTickets = useCallback(async () => {
     if (isDemoCompany || !unitId) return
     const startOfDay = new Date(); startOfDay.setHours(0, 0, 0, 0)
