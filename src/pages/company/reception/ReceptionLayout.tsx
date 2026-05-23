@@ -289,6 +289,19 @@ export default function ReceptionLayout() {
   const handleSaveQueues = (ids: string[]) => {
     setSelectedQueues(ids)
     persistSession({ selectedQueueLineIds: ids })
+    // Limpa o guichê selecionado se ele não pertence mais aos tipos permitidos pelas filas selecionadas
+    const newAllowed = new Set<'internal' | 'external'>()
+    ids.forEach(id => {
+      const q = queues.find(qu => qu.id === id)
+      if (!q) return
+      if (q.type === 'external' && q.category === 'attendance') newAllowed.add('external')
+      else newAllowed.add('internal')
+    })
+    const currentGuiche = guiches.find(g => g.id === guicheId)
+    if (currentGuiche && newAllowed.size > 0 && !newAllowed.has(currentGuiche.type)) {
+      setGuicheId('')
+      persistSession({ guicheId: '' })
+    }
     const updated = { unitId, unitName, selectedQueueLineIds: ids, showFinalized: false }
     dispatch({ type: 'SET_ATTENDANT_SESSION', payload: updated })
     setShowSelectQueues(false)
