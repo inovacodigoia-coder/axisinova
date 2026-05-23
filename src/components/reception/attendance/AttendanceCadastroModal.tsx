@@ -27,6 +27,7 @@ interface AttendanceCadastroModalProps {
   unitId: string
   unitName?: string
   guicheName?: string
+  initialPatient?: Patient
   onOrderCreated?: (order: AttendanceOrder) => void
 }
 
