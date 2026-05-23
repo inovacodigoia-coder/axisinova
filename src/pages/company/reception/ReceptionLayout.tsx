@@ -24,9 +24,6 @@ import type { AttendanceOrder } from '@/types/attendance-cadastro.types'
 import type { AttendanceControlDocument } from '@/types/payment-print.types'
 import type { Patient } from '@/types/patient.types'
 import type { Ticket, TicketStatus } from '@/types/queue-system.types'
-import type { AttendanceOrder } from '@/types/attendance-cadastro.types'
-import type { AttendanceControlDocument } from '@/types/payment-print.types'
-import type { Ticket, TicketStatus } from '@/types/queue-system.types'
 
 const DEMO_COMPANY_ID = 'comp_001'
 
