@@ -27,6 +27,7 @@ interface AttendanceCadastroModalProps {
   unitId: string
   unitName?: string
   guicheName?: string
+  initialPatient?: Patient
   onOrderCreated?: (order: AttendanceOrder) => void
 }
 
@@ -68,14 +69,14 @@ export interface CadastroState {
 const STEPS = ['Paciente', 'Atendimento', 'Autorização', 'Anexos'] as const
 
 export function AttendanceCadastroModal({
-  open, onClose, ticketId, ticketCode, unitId, unitName, guicheName, onOrderCreated,
+  open, onClose, ticketId, ticketCode, unitId, unitName, guicheName, initialPatient, onOrderCreated,
 }: AttendanceCadastroModalProps) {
   const { user } = useAuth()
   const { createOrder } = useAttendanceCadastro()
   const { getDefault } = usePrinterConfig()
-  const [step, setStep] = useState(0)
+  const [step, setStep] = useState(initialPatient ? 1 : 0)
   const [showReview, setShowReview] = useState(false)
-  const [state, setState] = useState<CadastroState>({ attachments: [] })
+  const [state, setState] = useState<CadastroState>({ attachments: [], patient: initialPatient })
   const [restorePromptShown, setRestorePromptShown] = useState(false)
 
   // Post-finalize flow
@@ -102,9 +103,9 @@ export function AttendanceCadastroModal({
 
   useEffect(() => {
     if (!open) {
-      setStep(0); setShowReview(false); setState({ attachments: [] }); setRestorePromptShown(false)
+      setStep(initialPatient ? 1 : 0); setShowReview(false); setState({ attachments: [], patient: initialPatient }); setRestorePromptShown(false)
     }
-  }, [open])
+  }, [open, initialPatient])
 
   useDraftAutosave(ticketId, state, open)
 

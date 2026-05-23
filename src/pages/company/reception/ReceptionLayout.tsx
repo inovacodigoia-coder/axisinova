@@ -18,9 +18,11 @@ import { TicketFinalizeModal } from '@/components/queue/attendant/TicketFinalize
 import { SelectQueuesModal } from '@/components/queue/attendant/SelectQueuesModal'
 import { AttendanceCadastroModal } from '@/components/reception/attendance/AttendanceCadastroModal'
 import { AttendancePrintModal } from '@/components/reception/attendance/print/AttendancePrintModal'
+import { AttendanceLookupModal } from '@/components/reception/attendance/lookup/AttendanceLookupModal'
 import { useAttendanceCadastro } from '@/hooks/useAttendanceCadastro'
 import type { AttendanceOrder } from '@/types/attendance-cadastro.types'
 import type { AttendanceControlDocument } from '@/types/payment-print.types'
+import type { Patient } from '@/types/patient.types'
 import type { Ticket, TicketStatus } from '@/types/queue-system.types'
 
 const DEMO_COMPANY_ID = 'comp_001'
@@ -82,6 +84,8 @@ export default function ReceptionLayout() {
   const [dbTickets, setDbTickets] = useState<Ticket[]>([])
   const [cadastroTicket, setCadastroTicket] = useState<Ticket | null>(null)
   const [reprintDoc, setReprintDoc] = useState<AttendanceControlDocument | null>(null)
+  const [showLookup, setShowLookup] = useState(false)
+  const [lookupPatient, setLookupPatient] = useState<Patient | null>(null)
   const { orders } = useAttendanceCadastro()
 
   const orderByTicket = useMemo(() => {
@@ -136,6 +140,24 @@ export default function ReceptionLayout() {
   const guiches = useMemo(() => getUnitGuiches(unitId), [unitId, getUnitGuiches])
   const tvs = useMemo(() => getUnitTVs(unitId), [unitId, getUnitTVs])
   const internalQueues = useMemo(() => queues.filter(q => q.type === 'internal'), [queues])
+
+  // Determina quais tipos de guichê estão liberados pela seleção atual de filas:
+  // - Atendimento (externa) → guichês externos
+  // - Coleta (externa) ou Fila interna → guichês internos
+  const allowedGuicheTypes = useMemo<Set<'internal' | 'external'>>(() => {
+    const set = new Set<'internal' | 'external'>()
+    selectedQueues.forEach(id => {
+      const q = queues.find(qu => qu.id === id)
+      if (!q) return
+      if (q.type === 'external' && q.category === 'attendance') set.add('external')
+      else set.add('internal')
+    })
+    return set
+  }, [selectedQueues, queues])
+  const filteredGuiches = useMemo(
+    () => allowedGuicheTypes.size === 0 ? guiches : guiches.filter(g => allowedGuicheTypes.has(g.type)),
+    [guiches, allowedGuicheTypes],
+  )
   const loadDbTickets = useCallback(async () => {
     if (isDemoCompany || !unitId) return
     const startOfDay = new Date(); startOfDay.setHours(0, 0, 0, 0)
@@ -267,6 +289,19 @@ export default function ReceptionLayout() {
   const handleSaveQueues = (ids: string[]) => {
     setSelectedQueues(ids)
     persistSession({ selectedQueueLineIds: ids })
+    // Limpa o guichê selecionado se ele não pertence mais aos tipos permitidos pelas filas selecionadas
+    const newAllowed = new Set<'internal' | 'external'>()
+    ids.forEach(id => {
+      const q = queues.find(qu => qu.id === id)
+      if (!q) return
+      if (q.type === 'external' && q.category === 'attendance') newAllowed.add('external')
+      else newAllowed.add('internal')
+    })
+    const currentGuiche = guiches.find(g => g.id === guicheId)
+    if (currentGuiche && newAllowed.size > 0 && !newAllowed.has(currentGuiche.type)) {
+      setGuicheId('')
+      persistSession({ guicheId: '' })
+    }
     const updated = { unitId, unitName, selectedQueueLineIds: ids, showFinalized: false }
     dispatch({ type: 'SET_ATTENDANT_SESSION', payload: updated })
     setShowSelectQueues(false)
@@ -365,6 +400,9 @@ export default function ReceptionLayout() {
                   <button onClick={() => setShowFinalized(!showFinalized)} className="rounded-lg border border-primary text-primary px-3 py-1.5 text-xs font-semibold hover:bg-primary/5 transition-colors">
                     {showFinalized ? 'Ver fichas ativas' : 'Ver fichas finalizadas'}
                   </button>
+                  <button onClick={() => setShowLookup(true)} className="rounded-lg border border-emerald-500 text-emerald-600 px-3 py-1.5 text-xs font-semibold hover:bg-emerald-500/5 transition-colors">
+                    Buscar cadastros
+                  </button>
                   <button onClick={handleBackToSelector} className="rounded-lg bg-[hsl(222,70%,35%)] text-white px-3 py-1.5 text-xs font-semibold flex items-center gap-1 hover:bg-[hsl(222,70%,30%)] transition-colors">
                     <ArrowLeft className="h-3.5 w-3.5" /> Voltar
                   </button>
@@ -380,7 +418,14 @@ export default function ReceptionLayout() {
                       <DeviceSelector items={tvs} value={tvId} onChange={v => { setTvId(v); persistSession({ tvId: v }) }} label="Selecionar TV" />
                     </div>
                     <div className="w-56">
-                      <DeviceSelector items={guiches} value={guicheId} onChange={v => { setGuicheId(v); persistSession({ guicheId: v }) }} label="Selecionar Guichê" />
+                      <DeviceSelector
+                        items={filteredGuiches}
+                        value={guicheId}
+                        onChange={v => { setGuicheId(v); persistSession({ guicheId: v }) }}
+                        label="Selecionar Guichê"
+                        placeholder={!selectedQueues.length ? 'Selecione as filas primeiro' : 'Selecione guichê'}
+                        disabled={!selectedQueues.length}
+                      />
                     </div>
                   </div>
 
@@ -471,6 +516,25 @@ export default function ReceptionLayout() {
       )}
       {reprintDoc && (
         <AttendancePrintModal open onClose={() => setReprintDoc(null)} document={reprintDoc} />
+      )}
+      {showLookup && (
+        <AttendanceLookupModal
+          open
+          onClose={() => setShowLookup(false)}
+          unitName={unitName}
+          guicheName={guicheName}
+          onAddProcedure={(p) => { setLookupPatient(p); setShowLookup(false) }}
+        />
+      )}
+      {lookupPatient && (
+        <AttendanceCadastroModal
+          open
+          onClose={() => setLookupPatient(null)}
+          unitId={unitId}
+          unitName={unitName}
+          guicheName={guicheName}
+          initialPatient={lookupPatient}
+        />
       )}
     </div>
   )
