@@ -69,14 +69,14 @@ export interface CadastroState {
 const STEPS = ['Paciente', 'Atendimento', 'Autorização', 'Anexos'] as const
 
 export function AttendanceCadastroModal({
-  open, onClose, ticketId, ticketCode, unitId, unitName, guicheName, onOrderCreated,
+  open, onClose, ticketId, ticketCode, unitId, unitName, guicheName, initialPatient, onOrderCreated,
 }: AttendanceCadastroModalProps) {
   const { user } = useAuth()
   const { createOrder } = useAttendanceCadastro()
   const { getDefault } = usePrinterConfig()
-  const [step, setStep] = useState(0)
+  const [step, setStep] = useState(initialPatient ? 1 : 0)
   const [showReview, setShowReview] = useState(false)
-  const [state, setState] = useState<CadastroState>({ attachments: [] })
+  const [state, setState] = useState<CadastroState>({ attachments: [], patient: initialPatient })
   const [restorePromptShown, setRestorePromptShown] = useState(false)
 
   // Post-finalize flow
