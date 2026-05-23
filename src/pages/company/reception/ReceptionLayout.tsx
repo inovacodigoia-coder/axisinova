@@ -418,7 +418,14 @@ export default function ReceptionLayout() {
                       <DeviceSelector items={tvs} value={tvId} onChange={v => { setTvId(v); persistSession({ tvId: v }) }} label="Selecionar TV" />
                     </div>
                     <div className="w-56">
-                      <DeviceSelector items={guiches} value={guicheId} onChange={v => { setGuicheId(v); persistSession({ guicheId: v }) }} label="Selecionar Guichê" />
+                      <DeviceSelector
+                        items={filteredGuiches}
+                        value={guicheId}
+                        onChange={v => { setGuicheId(v); persistSession({ guicheId: v }) }}
+                        label="Selecionar Guichê"
+                        placeholder={!selectedQueues.length ? 'Selecione as filas primeiro' : 'Selecione guichê'}
+                        disabled={!selectedQueues.length}
+                      />
                     </div>
                   </div>
 
