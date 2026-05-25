@@ -143,13 +143,19 @@ export default function LoginPage() {
   const isDisabled = cooldown > 0 || isLoading || (!email && !password)
   const cooldownProgress = cooldown > 0 ? ((60 - cooldown) / 60) * 100 : 0
 
-  const devCredentials = [
-    { label: 'Super Admin', email: 'inovacodigoiaadm@inovacodigoia.com.br', password: 'Inov@codigoia2026' },
-    { label: 'Admin da Clínica Demo', email: 'admin@clinicademo.com.br', password: 'Admin@2025' },
-    { label: 'Médico Demo', email: 'medico@clinicademo.com.br', password: 'Medico@2025' },
-    { label: 'Recepção Demo', email: 'recepcao@clinicademo.com.br', password: 'Recepcao@2025' },
-    { label: 'Faturamento Demo', email: 'faturamento@clinicademo.com.br', password: 'Fatura@2025' },
-  ]
+  const [devConfig, setDevConfig] = useState(() => loadDevAccessConfig())
+
+  useEffect(() => {
+    const handler = () => setDevConfig(loadDevAccessConfig())
+    window.addEventListener('dev-access-config-changed', handler)
+    window.addEventListener('storage', handler)
+    return () => {
+      window.removeEventListener('dev-access-config-changed', handler)
+      window.removeEventListener('storage', handler)
+    }
+  }, [])
+
+  const devCredentials: DevAccessCredential[] = devConfig.credentials
 
   return (
     <div className="min-h-screen flex flex-col lg:flex-row overflow-hidden">
