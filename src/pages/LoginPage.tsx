@@ -414,7 +414,7 @@ export default function LoginPage() {
 
       {/* Dev credentials card — desktop only */}
       <AnimatePresence>
-        {devCardOpen && (
+        {devConfig.enabled && devCardOpen && devCredentials.length > 0 && (
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
