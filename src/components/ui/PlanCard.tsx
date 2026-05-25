@@ -76,7 +76,7 @@ const PlanCard = ({ name, price, annualPrice, isAnnual, features, popular, onSel
       </div>
       {isAnnual && (
         <p className="mt-1 text-sm text-[hsl(var(--axis-success))]">
-          Economia de R$ {(price - annualPrice) * 12}/ano
+          Economia de R$ {formattedSavings}/ano
         </p>
       )}
       <ul className="mt-6 flex-1 space-y-3">
