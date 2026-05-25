@@ -39,7 +39,7 @@ const PlanCard = ({ name, price, annualPrice, isAnnual, features, popular, onSel
           )}
         </div>
         <div className="mt-1">
-          <span className="text-xl font-bold text-foreground">R$ {displayPrice}</span>
+          <span className="text-xl font-bold text-foreground">R$ {formattedPrice}</span>
           <span className="text-sm text-muted-foreground">/mês</span>
         </div>
         <ul className="mt-2 space-y-1">
