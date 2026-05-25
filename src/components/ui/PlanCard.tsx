@@ -71,7 +71,7 @@ const PlanCard = ({ name, price, annualPrice, isAnnual, features, popular, onSel
       )}
       <h3 className="text-xl font-bold text-foreground">{name}</h3>
       <div className="mt-4 flex items-baseline gap-1">
-        <span className="text-[40px] font-extrabold leading-none text-foreground">R$ {displayPrice}</span>
+        <span className="text-[40px] font-extrabold leading-none text-foreground">R$ {formattedPrice}</span>
         <span className="text-base text-muted-foreground">/mês</span>
       </div>
       {isAnnual && (
