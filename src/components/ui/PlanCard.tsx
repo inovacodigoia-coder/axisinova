@@ -17,6 +17,8 @@ interface PlanCardProps {
 
 const PlanCard = ({ name, price, annualPrice, isAnnual, features, popular, onSelect, compact, selected }: PlanCardProps) => {
   const displayPrice = isAnnual ? annualPrice : price;
+  const formattedPrice = Number(displayPrice).toLocaleString('pt-BR', { minimumFractionDigits: 0, maximumFractionDigits: 2 });
+  const formattedSavings = ((price - annualPrice) * 12).toLocaleString('pt-BR', { minimumFractionDigits: 0, maximumFractionDigits: 2 });
 
   if (compact) {
     return (
@@ -37,7 +39,7 @@ const PlanCard = ({ name, price, annualPrice, isAnnual, features, popular, onSel
           )}
         </div>
         <div className="mt-1">
-          <span className="text-xl font-bold text-foreground">R$ {displayPrice}</span>
+          <span className="text-xl font-bold text-foreground">R$ {formattedPrice}</span>
           <span className="text-sm text-muted-foreground">/mês</span>
         </div>
         <ul className="mt-2 space-y-1">
@@ -69,12 +71,12 @@ const PlanCard = ({ name, price, annualPrice, isAnnual, features, popular, onSel
       )}
       <h3 className="text-xl font-bold text-foreground">{name}</h3>
       <div className="mt-4 flex items-baseline gap-1">
-        <span className="text-[40px] font-extrabold leading-none text-foreground">R$ {displayPrice}</span>
+        <span className="text-[40px] font-extrabold leading-none text-foreground">R$ {formattedPrice}</span>
         <span className="text-base text-muted-foreground">/mês</span>
       </div>
       {isAnnual && (
         <p className="mt-1 text-sm text-[hsl(var(--axis-success))]">
-          Economia de R$ {(price - annualPrice) * 12}/ano
+          Economia de R$ {formattedSavings}/ano
         </p>
       )}
       <ul className="mt-6 flex-1 space-y-3">

@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { Save, X, Plus, Trash2, Pencil, Star, Eye, EyeOff } from 'lucide-react'
 import { usePricingPlans, type PricingPlanRow } from '@/hooks/usePricingPlans'
 import { StatusBadge } from '@/components/ui/StatusBadge'
+import { CurrencyInput } from '@/components/ui/CurrencyInput'
 import { toast } from 'sonner'
 
 const fmt = (v: number) => v.toLocaleString('pt-BR', { minimumFractionDigits: 0, maximumFractionDigits: 2 })
@@ -132,8 +133,14 @@ export default function PlansManagerPage() {
                   <TextArea label="Descrição" value={form.description} onChange={v => setForm({ ...form, description: v })} />
 
                   <div className="grid grid-cols-2 gap-2">
-                    <Input label="R$/mês" value={form.price_monthly} onChange={v => setForm({ ...form, price_monthly: v })} type="number" />
-                    <Input label="R$/mês (anual)" value={form.price_annual} onChange={v => setForm({ ...form, price_annual: v })} type="number" />
+                    <div className="space-y-1">
+                      <label className="text-xs font-semibold text-foreground">R$/mês</label>
+                      <CurrencyInput value={form.price_monthly} onChange={v => setForm({ ...form, price_monthly: String(v) })} />
+                    </div>
+                    <div className="space-y-1">
+                      <label className="text-xs font-semibold text-foreground">R$/mês (anual)</label>
+                      <CurrencyInput value={form.price_annual} onChange={v => setForm({ ...form, price_annual: String(v) })} />
+                    </div>
                   </div>
 
                   <div className="grid grid-cols-3 gap-2">
