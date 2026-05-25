@@ -17,6 +17,8 @@ interface PlanCardProps {
 
 const PlanCard = ({ name, price, annualPrice, isAnnual, features, popular, onSelect, compact, selected }: PlanCardProps) => {
   const displayPrice = isAnnual ? annualPrice : price;
+  const formattedPrice = Number(displayPrice).toLocaleString('pt-BR', { minimumFractionDigits: 0, maximumFractionDigits: 2 });
+  const formattedSavings = ((price - annualPrice) * 12).toLocaleString('pt-BR', { minimumFractionDigits: 0, maximumFractionDigits: 2 });
 
   if (compact) {
     return (
