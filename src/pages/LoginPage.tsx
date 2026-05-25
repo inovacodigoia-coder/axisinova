@@ -6,6 +6,7 @@ import { Mail, Lock, Eye, EyeOff, AlertCircle, Calendar, FileText, DollarSign, B
 import { motion, AnimatePresence } from 'framer-motion'
 import logoImg from '@/assets/logo-axisinova.jpeg'
 import { toast } from 'sonner'
+import { loadDevAccessConfig, type DevAccessCredential } from '@/utils/devAccessConfig'
 
 const FEATURES = [
   { icon: Calendar, label: 'Agendamento inteligente' },
