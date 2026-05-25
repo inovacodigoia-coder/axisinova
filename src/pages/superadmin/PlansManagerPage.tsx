@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { Save, X, Plus, Trash2, Pencil, Star, Eye, EyeOff } from 'lucide-react'
 import { usePricingPlans, type PricingPlanRow } from '@/hooks/usePricingPlans'
 import { StatusBadge } from '@/components/ui/StatusBadge'
+import { CurrencyInput } from '@/components/ui/CurrencyInput'
 import { toast } from 'sonner'
 
 const fmt = (v: number) => v.toLocaleString('pt-BR', { minimumFractionDigits: 0, maximumFractionDigits: 2 })
