@@ -32,6 +32,7 @@ import DoctorPanelPage from "./pages/public/DoctorPanelPage";
 import TVPanelPage from "./pages/company/queue/TVPanelPage";
 import PatientPortalLayout from "./pages/patient/PatientPortalLayout";
 import NotFound from "./pages/NotFound";
+import GreenScreenPage from "./pages/GreenScreenPage";
 
 const queryClient = new QueryClient();
 
@@ -48,6 +49,7 @@ const App = () => (
               <Routes>
                 {/* Public */}
                 <Route path="/" element={<LandingPage />} />
+                <Route path="/verde" element={<GreenScreenPage />} />
                 <Route path="/cadastro" element={<RegisterPage />} />
                 <Route path="/login" element={<LoginPage />} />
                 <Route path="/forgot-password" element={<ForgotPasswordPage />} />
