@@ -32,6 +32,7 @@ import DoctorPanelPage from "./pages/public/DoctorPanelPage";
 import TVPanelPage from "./pages/company/queue/TVPanelPage";
 import PatientPortalLayout from "./pages/patient/PatientPortalLayout";
 import NotFound from "./pages/NotFound";
+import GreenScreenPage from "./pages/GreenScreenPage";
 
 const queryClient = new QueryClient();
 
