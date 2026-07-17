@@ -3,9 +3,7 @@ import { Card } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { 
   Search, 
-  Filter, 
   Beaker, 
-  AlertCircle, 
   ChevronRight, 
   Clock, 
   User,
@@ -13,7 +11,6 @@ import {
   ClipboardCheck,
   History,
   AlertTriangle,
-  ArrowLeft,
   CheckCircle2,
   XCircle,
   RefreshCcw,
@@ -25,7 +22,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { cn } from '@/lib/utils';
-import { LabAttendanceOrder, ResultStatus } from '@/types/lab.types';
+import { LabAttendanceOrder } from '@/types/lab.types';
 import ResultInputPanel from '@/components/lab/ResultInputPanel';
 import { toast } from 'sonner';
 
@@ -53,16 +50,6 @@ const MOCK_ORDERS: LabAttendanceOrder[] = [
     registeredBy: 'u1',
     registeredAt: '2026-07-15T08:00:00Z',
     updatedAt: '2026-07-15T08:00:00Z',
-    companyId: 'c1',
-    unitId: 'u1',
-    serviceType: 'exam',
-    paymentType: 'private',
-    attachments: [],
-    attachmentRulesSatisfied: true,
-    registeredBy: 'u1',
-    registeredAt: '2026-07-15T08:00:00Z',
-    updatedAt: '2026-07-15T08:00:00Z',
-    createdAt: '2026-07-15T08:00:00Z',
     companyId: 'c1',
     unitId: 'u1',
     exams: [
@@ -110,7 +97,6 @@ const MOCK_ORDERS: LabAttendanceOrder[] = [
     registeredBy: 'u1',
     registeredAt: '2026-07-15T09:30:00Z',
     updatedAt: '2026-07-15T09:30:00Z',
-    createdAt: '2026-07-15T09:30:00Z',
     companyId: 'c1',
     unitId: 'u1',
     exams: [
@@ -263,7 +249,7 @@ export default function LabTechnicalWorkPage({ view }: LabTechnicalWorkPageProps
                   <div>
                     <h2 className="text-lg font-bold flex items-center gap-2">
                       {selectedOrder.patientName}
-                      <Badge variant="outline" className="text-[10px] h-5">{selectedOrder.patientGender}, {new Date().getFullYear() - new Date(selectedOrder.patientBirthDate).getFullYear()} anos</Badge>
+                      <Badge variant="outline" className="text-[10px] h-5">{selectedOrder.patientGender === 'M' ? 'Masc' : 'Fem'}, {new Date().getFullYear() - new Date(selectedOrder.patientBirthDate).getFullYear()} anos</Badge>
                     </h2>
                     <div className="flex items-center gap-4 text-xs text-muted-foreground">
                       <span className="flex items-center gap-1"><Beaker className="h-3 w-3" /> {selectedExam.name} ({selectedExam.code})</span>
@@ -310,7 +296,7 @@ export default function LabTechnicalWorkPage({ view }: LabTechnicalWorkPageProps
             <div className="flex-1 overflow-hidden">
               {isTyping ? (
                 <ResultInputPanel 
-                  exam={selectedExam} 
+                  exam={selectedExam as any} 
                   order={selectedOrder}
                   onCancel={() => setIsTyping(false)}
                   onSave={() => {
