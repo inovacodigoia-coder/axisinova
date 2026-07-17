@@ -242,7 +242,8 @@ export default function CompanyDetailPage() {
             <textarea rows={3} className="mt-1 flex w-full rounded-lg border border-input bg-background px-3 py-2 text-sm" placeholder="Notas visíveis apenas para o super admin..." />
           </div>
         </div>
-      )}
+      </div>
+    )}
 
       {activeTab === 'logs' && (
         <div className="rounded-2xl border border-border bg-card p-6 text-center text-sm text-muted-foreground">
