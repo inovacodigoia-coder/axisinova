@@ -4,7 +4,6 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { 
   Search, 
   Beaker, 
-  ChevronRight, 
   Clock, 
   User,
   FlaskConical,
@@ -24,6 +23,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { cn } from '@/lib/utils';
 import { LabAttendanceOrder } from '@/types/lab.types';
 import ResultInputPanel from '@/components/lab/ResultInputPanel';
+import { toast } from 'sonner';
 import {
   Dialog,
   DialogContent,
@@ -32,13 +32,11 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { toast } from 'sonner';
 
 interface LabTechnicalWorkPageProps {
   view: 'inbox' | 'validation';
 }
 
-// Mock Data
 const MOCK_ORDERS: LabAttendanceOrder[] = [
   {
     id: '1',
@@ -109,7 +107,7 @@ const MOCK_ORDERS: LabAttendanceOrder[] = [
     unitId: 'u1',
     exams: [
       {
-        examId: 'e1',
+        examId: 'e3',
         code: 'GLI',
         name: 'Glicose',
         material: 'Plasma Fluoretado',
@@ -299,18 +297,10 @@ export default function LabTechnicalWorkPage({ view }: LabTechnicalWorkPageProps
                   >
                     <Edit3 className="h-4 w-4" /> Digitar resultados
                   </Button>
-                  <Button 
-                    variant="outline" 
-                    className="gap-2"
-                    onClick={() => setShowRetesteModal(true)}
-                  >
+                  <Button variant="outline" className="gap-2" onClick={() => setShowRetesteModal(true)}>
                     <RefreshCcw className="h-4 w-4" /> Solicitar Reteste
                   </Button>
-                  <Button 
-                    variant="outline" 
-                    className="gap-2"
-                    onClick={() => setShowRecoletaModal(true)}
-                  >
+                  <Button variant="outline" className="gap-2" onClick={() => setShowRecoletaModal(true)}>
                     <AlertTriangle className="h-4 w-4 text-orange-500" /> Solicitar Recoleta
                   </Button>
                   {selectedExam.status === 'waiting_approval' && (
@@ -353,89 +343,7 @@ export default function LabTechnicalWorkPage({ view }: LabTechnicalWorkPageProps
                 <Check className="h-4 w-4" /> Validar Tudo e Liberar
               </Button>
             </div>
-      </div>
-
-      {/* Batch Input Modal */}
-      <Dialog open={showBatchModal} onOpenChange={setShowBatchModal}>
-        <DialogContent className="sm:max-w-[600px]">
-          <DialogHeader>
-            <DialogTitle>Digitação em Lote</DialogTitle>
-            <DialogDescription>
-              Aplique resultados padronizados para múltiplos pacientes simultaneamente.
-            </DialogDescription>
-          </DialogHeader>
-          <div className="py-4 space-y-4">
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-1">
-                <label className="text-[10px] font-bold uppercase">Exame</label>
-                <select className="w-full p-2 text-sm border rounded-md">
-                  <option>Urina Tipo 1</option>
-                </select>
-              </div>
-              <div className="space-y-1">
-                <label className="text-[10px] font-bold uppercase">Bancada</label>
-                <div className="text-sm font-bold p-2 bg-muted rounded-md">Uroanálise</div>
-              </div>
-            </div>
-            <div className="border p-4 rounded-lg bg-muted/30">
-              <p className="text-xs font-bold mb-3 uppercase">Valores a aplicar:</p>
-              <div className="grid grid-cols-2 gap-3">
-                <div className="space-y-1">
-                  <span className="text-[10px] text-muted-foreground uppercase">Aspecto</span>
-                  <input className="w-full p-2 text-sm border rounded" placeholder="Amarelo claro" />
-                </div>
-                <div className="space-y-1">
-                  <span className="text-[10px] text-muted-foreground uppercase">Cor</span>
-                  <input className="w-full p-2 text-sm border rounded" placeholder="Amarelo" />
-                </div>
-              </div>
-            </div>
           </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setShowBatchModal(false)}>Cancelar</Button>
-            <Button className="gradient-bg text-white" onClick={() => {
-              toast.success('Resultados aplicados em lote');
-              setShowBatchModal(false);
-            }}>Aplicar em selecionados</Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      {/* Reteste Modal */}
-      <Dialog open={showRetesteModal} onOpenChange={setShowRetesteModal}>
-        <DialogContent className="sm:max-w-[400px]">
-          <DialogHeader>
-            <DialogTitle>Solicitar Reteste</DialogTitle>
-            <DialogDescription>O exame voltará para a fila técnica com prioridade alta.</DialogDescription>
-          </DialogHeader>
-          <div className="py-4 space-y-4">
-            <div className="space-y-2">
-              <label className="text-sm font-bold">Motivo (obrigatório)</label>
-              <select 
-                className="w-full p-2 border rounded-md text-sm"
-                value={retesteMotivo}
-                onChange={(e) => setRetesteMotivo(e.target.value)}
-              >
-                <option value="">Selecione um motivo...</option>
-                <option value="1">Divergência Clínica</option>
-                <option value="2">Confirmação de Valor Crítico</option>
-                <option value="3">Erro de Processamento</option>
-              </select>
-            </div>
-          </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setShowRetesteModal(false)}>Cancelar</Button>
-            <Button 
-              className="bg-primary text-white" 
-              disabled={!retesteMotivo}
-              onClick={() => {
-                toast.success('Reteste solicitado com sucesso');
-                setShowRetesteModal(false);
-              }}
-            >Confirmar Reteste</Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
         ) : (
           <div className="flex-1 flex flex-col items-center justify-center bg-card rounded-2xl border border-border">
             <div className="h-20 w-20 rounded-full bg-muted flex items-center justify-center text-muted-foreground mb-4">
@@ -446,6 +354,63 @@ export default function LabTechnicalWorkPage({ view }: LabTechnicalWorkPageProps
           </div>
         )}
       </div>
+
+      {/* Modals */}
+      <Dialog open={showBatchModal} onOpenChange={setShowBatchModal}>
+        <DialogContent className="sm:max-w-[600px]">
+          <DialogHeader>
+            <DialogTitle>Digitação em Lote</DialogTitle>
+            <DialogDescription>Aplique resultados padronizados para múltiplos pacientes simultaneamente.</DialogDescription>
+          </DialogHeader>
+          <div className="py-4 space-y-4">
+             {/* Batch content placeholder */}
+             <p className="text-sm text-muted-foreground italic">Selecione os exames e defina os valores padrão.</p>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowBatchModal(false)}>Cancelar</Button>
+            <Button className="gradient-bg text-white" onClick={() => setShowBatchModal(false)}>Aplicar em lote</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={showRetesteModal} onOpenChange={setShowRetesteModal}>
+        <DialogContent className="sm:max-w-[400px]">
+          <DialogHeader>
+            <DialogTitle>Solicitar Reteste</DialogTitle>
+            <DialogDescription>O exame voltará para a fila técnica com prioridade alta.</DialogDescription>
+          </DialogHeader>
+          <div className="py-4 space-y-4">
+            <div className="space-y-2">
+              <label className="text-sm font-bold">Motivo (obrigatório)</label>
+              <select className="w-full p-2 border rounded-md text-sm" value={retesteMotivo} onChange={(e) => setRetesteMotivo(e.target.value)}>
+                <option value="">Selecione um motivo...</option>
+                <option value="1">Divergência Clínica</option>
+                <option value="2">Confirmação de Valor Crítico</option>
+              </select>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowRetesteModal(false)}>Cancelar</Button>
+            <Button className="bg-primary text-white" disabled={!retesteMotivo} onClick={() => { toast.success('Reteste solicitado'); setShowRetesteModal(false); }}>Confirmar</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+      
+      <Dialog open={showRecoletaModal} onOpenChange={setShowRecoletaModal}>
+        <DialogContent className="sm:max-w-[400px]">
+          <DialogHeader>
+            <DialogTitle>Solicitar Recoleta</DialogTitle>
+            <DialogDescription>Nova amostra necessária para este exame.</DialogDescription>
+          </DialogHeader>
+          <div className="py-4 space-y-4">
+            <p className="text-sm text-muted-foreground italic">Paciente será notificado automaticamente.</p>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowRecoletaModal(false)}>Cancelar</Button>
+            <Button className="bg-orange-600 hover:bg-orange-700 text-white" onClick={() => { toast.success('Recoleta solicitada'); setShowRecoletaModal(false); }}>Solicitar Recoleta</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
