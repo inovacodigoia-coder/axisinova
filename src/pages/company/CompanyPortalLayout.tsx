@@ -46,6 +46,7 @@ import VoiceSettingsPage from './settings/VoiceSettingsPage'
 import CompanyDataSettingsPage from './settings/CompanyDataSettingsPage'
 import NotificationsSettingsPage from './settings/NotificationsSettingsPage'
 import EstablishmentsSettingsPage from './settings/EstablishmentsSettingsPage'
+import OriginsPage from './settings/OriginsPage'
 import ReceptionLayout from './reception/ReceptionLayout'
 import SchedulingPage from './scheduling/SchedulingPage'
 import ConfirmationsPage from './scheduling/ConfirmationsPage'
@@ -214,6 +215,7 @@ function PortalContent() {
               <Route path="configuracoes/voz" element={<VoiceSettingsPage />} />
               <Route path="configuracoes/notificacoes" element={<NotificationsSettingsPage />} />
               <Route path="configuracoes/estabelecimentos" element={<EstablishmentsSettingsPage />} />
+              <Route path="configuracoes/origens" element={<OriginsPage />} />
               <Route path="bi" element={<BIDashboardPage />} />
               <Route path="bi/producao" element={<ProductionReportPage />} />
               <Route path="bi/financeiro" element={<FinancialReportPage />} />

@@ -86,6 +86,25 @@ export function Step2AttendanceData({ state, update }: Props) {
 
       {state.serviceType && (
         <>
+          {/* Origem */}
+          <section>
+            <Field label="Origem do Atendimento *">
+              <select 
+                value={state.originId || ''} 
+                onChange={e => {
+                  const val = e.target.value;
+                  const code = val === 'orig_00' ? 0 : val === 'orig_01' ? 1 : 2;
+                  update({ originId: val, originCode: code });
+                }}
+                className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm"
+              >
+                <option value="orig_00">Matriz (00)</option>
+                <option value="orig_01">Filial Norte (01)</option>
+                <option value="orig_02">Filial Sul (02)</option>
+              </select>
+            </Field>
+          </section>
+
           {/* Médico + Especialidade */}
           <section className="grid grid-cols-1 md:grid-cols-2 gap-3">
             <Field label="Médico *">

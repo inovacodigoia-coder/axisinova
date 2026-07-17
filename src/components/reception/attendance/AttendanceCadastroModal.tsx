@@ -64,6 +64,9 @@ export interface CadastroState {
   freeReason?: string
   attachments: AttendanceAttachment[]
   attachmentOverrideReason?: string
+  originId?: string
+  originCode?: number
+  protocol?: string
 }
 
 const STEPS = ['Paciente', 'Atendimento', 'Autorização', 'Anexos'] as const
@@ -76,7 +79,16 @@ export function AttendanceCadastroModal({
   const { getDefault } = usePrinterConfig()
   const [step, setStep] = useState(initialPatient ? 1 : 0)
   const [showReview, setShowReview] = useState(false)
-  const [state, setState] = useState<CadastroState>({ attachments: [], patient: initialPatient })
+  const [state, setState] = useState<CadastroState>(() => {
+    const activeOrigin = sessionStorage.getItem('activeOrigin');
+    const origin = activeOrigin ? JSON.parse(activeOrigin) : null;
+    return { 
+      attachments: [], 
+      patient: initialPatient,
+      originId: origin?.originId,
+      originCode: origin?.originCode
+    }
+  })
   const [restorePromptShown, setRestorePromptShown] = useState(false)
 
   // Post-finalize flow
