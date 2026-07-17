@@ -1,3 +1,4 @@
+import { useNavigate } from 'react-router-dom'
 import { Building2, Palette, DoorOpen, Bell, Printer, Volume2, MapPin, Settings2, Beaker } from 'lucide-react'
 
 const CARDS = [
