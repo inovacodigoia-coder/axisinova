@@ -56,6 +56,34 @@ let _mockOrders: AttendanceOrder[] = [
     status: 'authorized',
     registeredBy: 'user_001', registeredAt: '2025-04-07T09:00:00', updatedAt: '2025-04-07T09:15:00',
   },
+  {
+    id: 'ord_lab_001', orderNumber: '20260716-360-80',
+    patientId: 'pat_001', patientName: 'PACIENTE TESTE',
+    companyId: DEMO_COMPANY_ID, unitId: 'unit_01',
+    protocol: '20260716-360-80',
+    serviceType: 'exam', paymentType: 'convenio',
+    convenioName: 'SUS',
+    status: 'waiting_collection',
+    registeredBy: 'user_001', registeredAt: '2025-04-07T09:00:00', updatedAt: '2025-04-07T09:15:00',
+  } as any,
+  {
+    id: 'ord_lab_002', orderNumber: '20260716-360-81',
+    patientId: 'pat_002', patientName: 'MARIA APARECIDA',
+    companyId: DEMO_COMPANY_ID, unitId: 'unit_01',
+    protocol: '20260716-360-81',
+    serviceType: 'exam', paymentType: 'private',
+    status: 'waiting_collection',
+    registeredBy: 'user_001', registeredAt: '2025-04-07T09:00:00', updatedAt: '2025-04-07T09:15:00',
+  } as any,
+  {
+    id: 'ord_lab_003', orderNumber: '20260716-360-82',
+    patientId: 'pat_003', patientName: 'JOSE CARLOS SANTOS',
+    companyId: DEMO_COMPANY_ID, unitId: 'unit_01',
+    protocol: '20260716-360-82',
+    serviceType: 'exam', paymentType: 'convenio',
+    status: 'waiting_collection',
+    registeredBy: 'user_001', registeredAt: '2025-04-07T09:00:00', updatedAt: '2025-04-07T09:15:00',
+  } as any,
 ]
 
 export function getMockOrders(companyId: string): AttendanceOrder[] {
