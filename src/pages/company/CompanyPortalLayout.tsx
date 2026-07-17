@@ -89,8 +89,6 @@ import LabEquipmentPage from './lab/equipment/LabEquipmentPage'
 import LabAbbreviationsPage from './lab/abbreviations/LabAbbreviationsPage'
 import LabTechnicalWorkPage from './lab/LabTechnicalWorkPage'
 import LabMapaPage from './lab/LabMapaPage'
-import LabMapaPage from './lab/LabMapaPage'
-import LabTechnicalWorkPage from './lab/LabTechnicalWorkPage'
 
 function PortalContent() {
   const [mobileOpen, setMobileOpen] = useState(false)
