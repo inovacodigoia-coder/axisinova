@@ -496,6 +496,10 @@ export default function LabTechnicalWorkPage({ view }: LabTechnicalWorkPageProps
               </p>
             </div>
           </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowBatchModal(false)}>Cancelar</Button>
+            <Button className="gradient-bg text-white" onClick={() => setShowBatchModal(false)}>Aplicar em lote</Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
       
@@ -509,14 +513,6 @@ export default function LabTechnicalWorkPage({ view }: LabTechnicalWorkPageProps
           status={selectedExam?.status}
         />
       )}
-            </div>
-          </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setShowBatchModal(false)}>Cancelar</Button>
-            <Button className="gradient-bg text-white" onClick={() => setShowBatchModal(false)}>Aplicar em lote</Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
 
       <Dialog open={showRetesteModal} onOpenChange={setShowRetesteModal}>
         <DialogContent className="sm:max-w-[400px]">
