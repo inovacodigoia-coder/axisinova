@@ -1,5 +1,5 @@
 import { useNavigate } from 'react-router-dom'
-import { Building2, Palette, DoorOpen, Bell, Printer, Volume2, MapPin, Settings2 } from 'lucide-react'
+import { Building2, Palette, DoorOpen, Bell, Printer, Volume2, MapPin, Settings2, Beaker } from 'lucide-react'
 
 const CARDS = [
   { key: 'dados', label: 'Dados da Empresa', desc: 'Razão social, CNPJ, contato', icon: Building2, path: '/app/configuracoes/dados' },
@@ -10,6 +10,7 @@ const CARDS = [
   { key: 'voice', label: 'Voz e Chamada', desc: 'Síntese de voz para senhas', icon: Volume2, path: '/app/configuracoes/voz' },
   { key: 'establishments', label: 'Estab. e Unidades', desc: 'Filiais e unidades', icon: MapPin, path: '/app/configuracoes/estabelecimentos' },
   { key: 'admin-panel', label: 'Painel Administrativo', desc: 'Unidades, filas e guichês', icon: Settings2, path: '/app/filas/admin/unidades' },
+  { key: 'lab-settings', label: 'Config. Laboratório', desc: 'Assinaturas, etiquetas, parâmetros', icon: Beaker, path: '/app/configuracoes/laboratorio' },
 ]
 
 export default function CompanySettingsPage() {
