@@ -214,7 +214,15 @@ export default function ResultInputPanel({ exam, order, onCancel, onSave }: Resu
 
     // Check Sum Validation for HEM (demo)
     if (exam.code === 'HEM') {
-      // Logic for sum validation...
+      const sumParams = ['NEU', 'EOS', 'BAS', 'LYM', 'MON'];
+      const sum = sumParams.reduce((acc, p) => acc + parseFloat(results[p] || '0'), 0);
+      
+      if (Math.abs(sum - 100) > 0.1) {
+        toast.error(`A soma dos diferenciais (${sum.toFixed(1)}%) deve ser 100%`, {
+          description: "Por favor, revise os valores digitados no hemograma."
+        });
+        return;
+      }
     }
 
     onSave([]);
