@@ -64,6 +64,13 @@ export interface LabAttendanceOrder extends AttendanceOrder {
   collectionResponsible?: string;
   collectionObservations?: string;
   collectionTime?: string;
+  auditTrail?: {
+    action: 'opened' | 'confirmed' | 'cancelled' | 'postponed' | 'reprinted';
+    timestamp: string;
+    userId: string;
+    userName: string;
+    details?: string;
+  }[];
 }
 
 export interface LabTube {
