@@ -6,7 +6,7 @@ import { supabase } from '@/integrations/supabase/client'
 import {
   Home, Calendar, UserCheck, FileText, DollarSign, FlaskConical, BarChart3,
   TrendingUp, Users, Settings, Database, Monitor, Building2, Lock,
-  LogOut, ChevronLeft, ChevronRight, X, Stethoscope, TicketCheck, ShieldCheck
+  LogOut, ChevronLeft, ChevronRight, X, Stethoscope, TicketCheck, ShieldCheck, Ruler, Layout, Beaker as BeakerIcon
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
@@ -14,7 +14,7 @@ import type { SystemModule } from '@/types/permissions.types'
 
 const ICON_MAP: Record<string, any> = {
   Calendar, UserCheck, FileText, DollarSign, FlaskConical, BarChart3,
-  TrendingUp, Users, Settings, Database, Monitor, Building2, Stethoscope, Home, TicketCheck
+  TrendingUp, Users, Settings, Database, Monitor, Building2, Stethoscope, Home, TicketCheck, Ruler, Layout, Beaker: BeakerIcon
 }
 
 interface NavSection {
@@ -82,6 +82,9 @@ const NAV_SECTIONS: NavSection[] = [
     title: 'CADASTROS LABORATÓRIO',
     items: [
       { label: 'Catálogo de Exames', icon: 'FlaskConical', path: '/app/cadastros/catalogo', module: 'registers' },
+      { label: 'Unidades de Medida', icon: 'Ruler', path: '/app/configuracoes/laboratorio?tab=units', module: 'settings' },
+      { label: 'Metodologias', icon: 'Beaker', path: '/app/configuracoes/laboratorio?tab=methods', module: 'settings' },
+      { label: 'Bancadas', icon: 'Layout', path: '/app/configuracoes/laboratorio?tab=workbenches', module: 'settings' },
       { label: 'Equipamentos', icon: 'Monitor', path: '/app/cadastros/equipamentos', module: 'registers' },
       { label: 'Abreviaturas', icon: 'FileText', path: '/app/configuracoes/abreviaturas', module: 'settings' },
     ],

@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { useSearchParams } from 'react-router-dom'
 import { Card } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -25,7 +26,12 @@ import { cn } from '@/lib/utils'
 import { toast } from 'sonner'
 
 export default function LabSettingsPage() {
-  const [activeTab, setActiveTab] = useState('lab-data')
+  const [searchParams, setSearchParams] = useSearchParams()
+  const activeTab = searchParams.get('tab') || 'lab-data'
+
+  const setActiveTab = (tab: string) => {
+    setSearchParams({ tab })
+  }
 
   const handleSave = () => {
     toast.success('Configurações salvas com sucesso!')
@@ -63,6 +69,12 @@ export default function LabSettingsPage() {
             {activeTab === 'signature' && <SignatureSection />}
             {activeTab === 'security' && <SecuritySection />}
             {activeTab === 'printer' && <PrinterLabelSection />}
+            {activeTab === 'units' && <UnitsSection />}
+            {activeTab === 'methods' && <MethodsSection />}
+            {activeTab === 'workbenches' && <WorkbenchesSection />}
+            {activeTab === 'equipment' && <EquipmentRedirect />}
+            {activeTab === 'collection-reasons' && <CollectionReasonsSection />}
+            {activeTab === 'logs' && <LogsSection />}
             {/* Other sections would be similar... */}
             <div className="mt-8 pt-6 border-t flex justify-end">
               <Button onClick={handleSave} className="gradient-bg text-white gap-2 px-8">
