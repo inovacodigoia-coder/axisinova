@@ -5,22 +5,23 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Switch } from '@/components/ui/switch'
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import { Badge } from '@/components/ui/badge'
 import { 
   Building2, 
-  UserRound, 
   Printer, 
   Signature, 
   Monitor, 
   Ruler, 
   Beaker, 
   Layout, 
-  MapPin, 
   AlertCircle, 
   ShieldCheck, 
   History,
   Upload,
-  Save
+  Save,
+  Plus,
+  Trash2,
+  Edit2
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { toast } from 'sonner'
@@ -75,7 +76,7 @@ export default function LabSettingsPage() {
             {activeTab === 'equipment' && <EquipmentRedirect />}
             {activeTab === 'collection-reasons' && <CollectionReasonsSection />}
             {activeTab === 'logs' && <LogsSection />}
-            {/* Other sections would be similar... */}
+            
             <div className="mt-8 pt-6 border-t flex justify-end">
               <Button onClick={handleSave} className="gradient-bg text-white gap-2 px-8">
                 <Save className="h-4 w-4" /> Salvar Alterações
@@ -302,6 +303,157 @@ function PrinterLabelSection() {
              <div className="absolute top-0 right-0 p-1 text-[8px] font-bold text-primary opacity-50 uppercase">Preview</div>
           </div>
         </div>
+      </div>
+    </div>
+  )
+}
+
+function EquipmentRedirect() {
+  return (
+    <div className="flex flex-col items-center justify-center py-12 space-y-4">
+      <Monitor className="h-12 w-12 text-muted-foreground" />
+      <div className="text-center">
+        <h3 className="font-bold">Gerenciamento de Equipamentos</h3>
+        <p className="text-sm text-muted-foreground max-w-xs">Os equipamentos são gerenciados em uma tela dedicada para melhor controle técnico.</p>
+      </div>
+      <Button asChild className="gradient-bg text-white">
+        <a href="/app/cadastros/equipamentos">Ir para Equipamentos</a>
+      </Button>
+    </div>
+  )
+}
+
+function UnitsSection() {
+  const units = ["/mm³", "%", "cel/μL", "copies/mL", "fl", "g/24h", "g/dL", "g/L", "mg/dL", "mg/L", "mL", "mUI/mL", "ng/mL", "U/L", "UI/L"]
+  return (
+    <div className="space-y-6">
+      <div className="flex items-center justify-between">
+        <h3 className="text-lg font-bold">Unidades de Medida</h3>
+        <Button size="sm" className="gradient-bg text-white gap-2"><Plus className="h-4 w-4" /> Nova Unidade</Button>
+      </div>
+      <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-2">
+        {units.map(u => (
+          <div key={u} className="p-3 border rounded-xl bg-card flex items-center justify-between group">
+            <span className="text-sm font-mono font-bold">{u}</span>
+            <div className="flex opacity-0 group-hover:opacity-100 transition-opacity">
+              <Button variant="ghost" size="sm" className="h-6 w-6 p-0"><Trash2 className="h-3 w-3 text-red-500" /></Button>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  )
+}
+
+function MethodsSection() {
+  const methods = [
+    { name: 'Colorimétrico', desc: 'Método colorimétrico clássico' },
+    { name: 'Glicose-oxidase', desc: 'Método enzimático GOD-PAP' },
+    { name: 'Hexoquinase', desc: 'Método enzimático Hexoquinase' },
+    { name: 'Quimioluminescência', desc: 'Imunoensaio quimioluminescente' },
+  ]
+  return (
+    <div className="space-y-6">
+      <div className="flex items-center justify-between">
+        <h3 className="text-lg font-bold">Metodologias Analíticas</h3>
+        <Button size="sm" className="gradient-bg text-white gap-2"><Plus className="h-4 w-4" /> Nova Metodologia</Button>
+      </div>
+      <div className="space-y-2">
+        {methods.map(m => (
+          <div key={m.name} className="p-4 border rounded-xl bg-card flex items-center justify-between hover:border-primary/30 transition-all">
+            <div>
+              <p className="font-bold text-sm">{m.name}</p>
+              <p className="text-xs text-muted-foreground">{m.desc}</p>
+            </div>
+            <Button variant="ghost" size="sm" className="h-8 w-8 p-0"><Edit2 className="h-3.5 w-3.5" /></Button>
+          </div>
+        ))}
+      </div>
+    </div>
+  )
+}
+
+function WorkbenchesSection() {
+  const benches = [
+    { name: 'Bioquímica', desc: 'Dosagens bioquímicas em soro e plasma' },
+    { name: 'Hematologia', desc: 'Hemograma e provas hematológicas' },
+    { name: 'Imunologia', desc: 'Testes imunológicos e hormonais' },
+    { name: 'Uroanálise', desc: 'Exames de urina e sedimentoscopia' },
+  ]
+  return (
+    <div className="space-y-6">
+      <div className="flex items-center justify-between">
+        <h3 className="text-lg font-bold">Bancadas Técnicas</h3>
+        <Button size="sm" className="gradient-bg text-white gap-2"><Plus className="h-4 w-4" /> Nova Bancada</Button>
+      </div>
+      <div className="space-y-2">
+        {benches.map(b => (
+          <div key={b.name} className="p-4 border rounded-xl bg-card flex items-center justify-between hover:border-primary/30 transition-all">
+            <div>
+              <p className="font-bold text-sm">{b.name}</p>
+              <p className="text-xs text-muted-foreground">{b.desc}</p>
+            </div>
+            <div className="flex gap-1">
+              <Button variant="ghost" size="sm" className="h-8 w-8 p-0"><Edit2 className="h-3.5 w-3.5" /></Button>
+              <Button variant="ghost" size="sm" className="h-8 w-8 p-0 text-red-600"><Trash2 className="h-3.5 w-3.5" /></Button>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  )
+}
+
+function CollectionReasonsSection() {
+  const reasons = [
+    { code: 'CANCEL_JEJUM', label: 'Jejum inadequado', type: 'cancel' },
+    { code: 'POSTPONE_INSUMO', label: 'Insumo indisponível', type: 'postpone' },
+  ]
+  return (
+    <div className="space-y-6">
+      <div className="flex items-center justify-between">
+        <h3 className="text-lg font-bold">Motivos de Coleta</h3>
+        <Button size="sm" className="gradient-bg text-white gap-2"><Plus className="h-4 w-4" /> Novo Motivo</Button>
+      </div>
+      <div className="space-y-2">
+        {reasons.map(r => (
+          <div key={r.code} className="p-4 border rounded-xl bg-card flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className={cn(
+                "text-[10px] uppercase font-black px-1.5 py-0.5 rounded text-white",
+                r.type === 'cancel' ? 'bg-red-500' : 'bg-amber-500'
+              )}>
+                {r.type === 'cancel' ? 'Cancelar' : 'Adiar'}
+              </div>
+              <p className="font-bold text-sm">{r.label}</p>
+            </div>
+            <Button variant="ghost" size="sm" className="h-8 w-8 p-0"><Trash2 className="h-3.5 w-3.5 text-muted-foreground" /></Button>
+          </div>
+        ))}
+      </div>
+    </div>
+  )
+}
+
+function LogsSection() {
+  const logs = [
+    { time: '14:32:01', user: 'Alexsandro', action: 'Coleta registrada', detail: 'Protocolo 20260716-001', color: 'bg-teal-500' },
+    { time: '14:30:15', user: 'Sistema', action: 'Login', detail: 'Acesso via Web', color: 'bg-emerald-500' },
+  ]
+  return (
+    <div className="space-y-6">
+      <h3 className="text-lg font-bold">Logs de Auditoria</h3>
+      <div className="space-y-3">
+        {logs.map((l, i) => (
+          <div key={i} className="flex gap-4 text-xs items-center p-3 rounded-lg border bg-muted/20">
+            <span className="font-mono text-muted-foreground">{l.time}</span>
+            <div className="flex-1">
+              <span className="font-bold">{l.user}</span>
+              <div className={cn("inline-flex ml-3 text-[9px] uppercase font-black px-1.5 py-0.5 rounded text-white", l.color)}>{l.action}</div>
+              <p className="text-muted-foreground mt-0.5">{l.detail}</p>
+            </div>
+          </div>
+        ))}
       </div>
     </div>
   )
