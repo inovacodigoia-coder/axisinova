@@ -21,7 +21,8 @@ import {
   Save,
   Plus,
   Trash2,
-  Edit2
+  Edit2,
+  Info
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { toast } from 'sonner'
@@ -49,6 +50,7 @@ export default function LabSettingsPage() {
         <Card className="w-64 shrink-0 p-2 h-fit space-y-1">
           <p className="px-3 py-2 text-[10px] font-bold text-muted-foreground uppercase tracking-wider">Configurações Base</p>
           <NavItem active={activeTab === 'lab-data'} onClick={() => setActiveTab('lab-data')} icon={<Building2 className="h-4 w-4" />} label="Dados do Laboratório" />
+          <NavItem active={activeTab === 'tiss'} onClick={() => setActiveTab('tiss')} icon={<ShieldCheck className="h-4 w-4" />} label="Configurações TISS" />
           <NavItem active={activeTab === 'signature'} onClick={() => setActiveTab('signature')} icon={<Signature className="h-4 w-4" />} label="Assinatura Digital" />
           <NavItem active={activeTab === 'printer'} onClick={() => setActiveTab('printer')} icon={<Printer className="h-4 w-4" />} label="Impressora / Etiqueta" />
           
@@ -67,6 +69,7 @@ export default function LabSettingsPage() {
         <div className="flex-1 min-w-0">
           <Card className="p-6">
             {activeTab === 'lab-data' && <LabDataSection />}
+            {activeTab === 'tiss' && <TISSSection />}
             {activeTab === 'signature' && <SignatureSection />}
             {activeTab === 'security' && <SecuritySection />}
             {activeTab === 'printer' && <PrinterLabelSection />}
@@ -242,66 +245,159 @@ function SecuritySection() {
 }
 
 function PrinterLabelSection() {
+  const [rotation, setRotation] = useState("0")
+  const [width, setWidth] = useState(50)
+  const [height, setHeight] = useState(25)
+
   const presets = [
-    "CD410 rotacionado 50x25",
-    "CD410 single 50x25 (2 por página)",
-    "CD410 single 50x25 (1 por página)",
-    "50x30 padrão"
+    { name: "CD410 rotacionado 50x25", w: 50, h: 25, r: "90" },
+    { name: "CD410 single 50x25 (2 por página)", w: 50, h: 25, r: "0" },
+    { name: "CD410 single 50x25 (1 por página)", w: 50, h: 25, r: "0" },
+    { name: "50x30 padrão", w: 50, h: 30, r: "0" }
   ]
+
+  const applyPreset = (p: any) => {
+    setWidth(p.w)
+    setHeight(p.h)
+    setRotation(p.r)
+    toast.info(`Preset ${p.name} aplicado!`)
+  }
 
   return (
     <div className="space-y-8">
-      <h3 className="text-lg font-bold">Impressora / Etiquetadora</h3>
+      <div className="flex items-center justify-between">
+        <h3 className="text-lg font-bold">Configuração de Impressora / Etiqueta</h3>
+        <Button variant="outline" size="sm" className="gap-2">
+           <Layout className="h-4 w-4" /> Gerenciar Slots
+        </Button>
+      </div>
       
       <div className="space-y-3">
-        <Label>Presets rápidos</Label>
+        <Label>Presets rápidos (CD410 e outros)</Label>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
           {presets.map(p => (
-            <button key={p} className="p-3 text-left rounded-xl border border-border bg-card hover:border-primary transition-all text-xs font-medium">
-              {p}
+            <button 
+              key={p.name} 
+              onClick={() => applyPreset(p)}
+              className="p-3 text-left rounded-xl border border-border bg-card hover:border-primary transition-all text-xs font-medium focus:ring-2 focus:ring-primary/20 outline-none"
+            >
+              {p.name}
             </button>
           ))}
         </div>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-8 pt-6 border-t">
-        <div className="space-y-4">
-          <h4 className="font-bold text-sm uppercase tracking-wider text-muted-foreground">Dimensões da Etiqueta</h4>
+        <div className="space-y-6">
+          <h4 className="font-bold text-sm uppercase tracking-wider text-muted-foreground flex items-center gap-2">
+             Editor de Layout <Edit2 className="h-3 w-3" />
+          </h4>
+          
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label>Largura (mm)</Label>
-              <Input type="number" defaultValue={50} />
+              <Input type="number" value={width} onChange={(e) => setWidth(Number(e.target.value))} />
             </div>
             <div className="space-y-2">
               <Label>Altura (mm)</Label>
-              <Input type="number" defaultValue={25} />
+              <Input type="number" value={height} onChange={(e) => setHeight(Number(e.target.value))} />
             </div>
           </div>
+
           <div className="space-y-2">
             <Label>Rotação do conteúdo</Label>
-            <select className="w-full h-10 px-3 rounded-lg border bg-background text-sm outline-none focus:ring-2 focus:ring-primary/20">
+            <select 
+              value={rotation} 
+              onChange={(e) => setRotation(e.target.value)}
+              className="w-full h-10 px-3 rounded-lg border bg-background text-sm outline-none focus:ring-2 focus:ring-primary/20"
+            >
               <option value="0">0° (Padrão)</option>
               <option value="90">90° (Sentido Horário)</option>
               <option value="-90">-90° (Sentido Anti-horário)</option>
               <option value="180">180° (Invertido)</option>
             </select>
           </div>
+
+          <div className="pt-4 flex gap-2">
+            <Button variant="outline" size="sm" className="flex-1 gap-2">
+               <Plus className="h-3.5 w-3.5" /> Duplicar Slot
+            </Button>
+            <Button variant="outline" size="sm" className="flex-1 gap-2">
+               <History className="h-3.5 w-3.5" /> Resetar
+            </Button>
+          </div>
         </div>
 
-        <div className="bg-muted/50 rounded-xl p-4 flex items-center justify-center border-2 border-dashed border-border min-h-[200px]">
-          <div className="w-[180px] h-[100px] bg-card border-2 border-primary/30 rounded shadow-sm relative p-2 flex flex-col justify-between overflow-hidden">
-             <div className="flex justify-between items-start">
-               <div className="h-4 w-16 bg-muted rounded" />
-               <div className="h-6 w-6 bg-primary/10 rounded" />
-             </div>
-             <div className="h-3 w-24 bg-muted rounded" />
-             <div className="h-2 w-32 bg-muted/50 rounded" />
-             <div className="flex justify-between items-end">
-                <div className="h-8 w-8 bg-muted rounded" />
-                <div className="h-6 w-12 bg-muted/50 rounded" />
-             </div>
-             <div className="absolute top-0 right-0 p-1 text-[8px] font-bold text-primary opacity-50 uppercase">Preview</div>
+        <div className="space-y-4">
+          <Label className="text-xs font-bold text-muted-foreground uppercase">Preview em Tempo Real</Label>
+          <div className="bg-muted/50 rounded-xl p-8 flex items-center justify-center border-2 border-dashed border-border min-h-[300px]">
+            <div 
+              style={{ 
+                width: `${width * 3.7}px`, 
+                height: `${height * 3.7}px`,
+                transform: `rotate(${rotation}deg)`,
+                transition: 'all 0.3s ease'
+              }} 
+              className="bg-card border-2 border-primary/50 rounded shadow-sm relative p-3 flex flex-col justify-between overflow-hidden"
+            >
+              <div className="flex justify-between items-start">
+                <div className="h-3 w-16 bg-muted rounded" />
+                <div className="h-5 w-5 bg-primary/10 rounded" />
+              </div>
+              <div className="h-2.5 w-24 bg-muted rounded" />
+              <div className="h-2 w-32 bg-muted/50 rounded" />
+              <div className="flex justify-between items-end">
+                  <div className="h-6 w-6 bg-muted rounded" />
+                  <div className="h-5 w-10 bg-muted/50 rounded" />
+              </div>
+              <div className="absolute top-0 right-0 p-1 text-[7px] font-bold text-primary/40 uppercase">Label ID: 001</div>
+            </div>
           </div>
+          <p className="text-[10px] text-center text-muted-foreground italic">
+            Visualização aproximada. Escala: 1mm ≈ 3.7px
+          </p>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+function TISSSection() {
+  return (
+    <div className="space-y-8">
+      <div>
+        <h3 className="text-lg font-bold mb-1">Configurações TISS</h3>
+        <p className="text-xs text-muted-foreground mb-4">Dados regulatórios e operacionais para faturamento.</p>
+        
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="space-y-2">
+            <Label>Registro ANS</Label>
+            <Input placeholder="Ex: 123456" />
+          </div>
+          <div className="space-y-2">
+            <Label>Código IBGE (Município)</Label>
+            <Input placeholder="Ex: 2400109" />
+          </div>
+          <div className="space-y-2">
+            <Label>CNPJ do Prestador (Padrão)</Label>
+            <Input placeholder="00.000.000/0000-00" />
+          </div>
+          <div className="space-y-2">
+            <Label className="text-muted-foreground">Sequência de Lotes (Read-only)</Label>
+            <Input value="000154" readOnly className="bg-muted cursor-not-allowed font-mono" />
+          </div>
+        </div>
+      </div>
+
+      <div className="border-t pt-6 space-y-4">
+        <h4 className="font-bold text-sm">Versão do Padrão TISS</h4>
+        <select className="w-full md:w-1/2 h-10 px-3 rounded-lg border bg-background text-sm outline-none focus:ring-2 focus:ring-primary/20">
+          <option>4.01.00</option>
+          <option>3.05.00</option>
+        </select>
+        <div className="flex items-center gap-2 p-3 bg-blue-50 border border-blue-100 rounded-lg">
+          <Info className="h-4 w-4 text-blue-600" />
+          <p className="text-[11px] text-blue-800">A versão do padrão TISS influência a geração do XML de faturamento.</p>
         </div>
       </div>
     </div>
