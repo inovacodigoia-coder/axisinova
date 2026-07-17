@@ -26,6 +26,8 @@ export interface ProtocolNumber {
   formatted: string;
 }
 
+export type ResultStatus = 'normal' | 'attention' | 'altered' | 'critical' | 'calculated';
+
 export interface LabExam {
   id: string;
   code: string;
@@ -36,8 +38,41 @@ export interface LabExam {
   price: number;
   alertTitle?: string;
   alertMessage?: string;
-  workbench?: string; // e.g., 'Hematologia', 'Bioquímica'
+  workbench?: string;
   requiresCollection?: boolean;
+  parameters?: LabParameter[];
+  validationRules?: {
+    validateSum?: boolean;
+    sumParameters?: string[]; // IDs of parameters
+    expectedSum?: number;
+    deltaCheckEnabled?: boolean;
+    deltaMaxVariation?: number; // percentage
+    deltaPreviousResultsCount?: number;
+  };
+}
+
+export interface LabParameter {
+  id: string;
+  code: string;
+  name: string;
+  unit: string;
+  type: 'editable' | 'calculated';
+  formula?: string;
+  references?: LabReferenceRange[];
+  criticalMin?: number;
+  criticalMax?: number;
+  criticalAction?: 'alert' | 'email' | 'sms' | 'both';
+}
+
+export interface LabReferenceRange {
+  id: string;
+  sex: 'M' | 'F' | 'Both';
+  ageMin: number;
+  ageMax: number;
+  ageUnit: 'days' | 'months' | 'years';
+  min: number;
+  max: number;
+  description?: string;
 }
 
 export interface LabAttendanceOrder extends AttendanceOrder {
@@ -49,16 +84,33 @@ export interface LabAttendanceOrder extends AttendanceOrder {
     code: string;
     name: string;
     material: string;
-    status: 'pending' | 'collected' | 'processing' | 'validated' | 'cancelled';
+    status: 'pending' | 'processing' | 'waiting_approval' | 'validated' | 'cancelled' | 'retest_requested' | 'waiting_recollection';
     isCobrado: boolean;
     isColeta: boolean;
     previsaoEntrega: string;
     valor: number;
     workbench?: string;
-    result?: string;
-    unit?: string;
-    reference?: string;
-    history?: { value: string; date: string };
+    results?: {
+      parameterId: string;
+      parameterCode: string;
+      value: string;
+      status: ResultStatus;
+      wasCalculated: boolean;
+      deltaCheckOverride?: boolean;
+      deltaCheckJustification?: string;
+      notifiedCritical?: boolean;
+      notifiedAt?: string;
+    }[];
+    internalObservations?: string;
+    isRetificado?: boolean;
+    retificationHistory?: {
+      previousValue: any;
+      newValue: any;
+      reason: string;
+      userId: string;
+      userName: string;
+      timestamp: string;
+    }[];
   }[];
   collectionStatus?: 'waiting' | 'in_progress' | 'collected' | 'cancelled';
   collectionResponsible?: string;
