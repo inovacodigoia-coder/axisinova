@@ -151,6 +151,7 @@ export default function LabTechnicalWorkPage({ view }: LabTechnicalWorkPageProps
   const [retesteMotivo, setRetesteMotivo] = useState('');
   const [retificacaoMotivo, setRetificacaoMotivo] = useState('');
   const [selectedBatchOrders, setSelectedBatchOrders] = useState<string[]>([]);
+  const [batchProgress, setBatchProgress] = useState<{current: number, total: number, status: string} | null>(null);
 
   useEffect(() => {
     const timer = setTimeout(() => setLoading(false), 800);
@@ -185,32 +186,63 @@ export default function LabTechnicalWorkPage({ view }: LabTechnicalWorkPageProps
     );
   };
 
-  const handleBatchDownload = () => {
+  const handleBatchDownload = async () => {
     if (selectedBatchOrders.length === 0) {
       toast.error("Selecione pelo menos um laudo para download em lote.");
       return;
     }
 
-    toast.loading(`Gerando ${selectedBatchOrders.length} laudos...`, { id: 'batch-download' });
+    const total = selectedBatchOrders.length;
+    setBatchProgress({ current: 0, total, status: 'Iniciando...' });
+    
+    toast.loading(`Gerando ${total} laudos...`, { id: 'batch-download' });
 
-    // Mock batch download logic
+    for (let i = 0; i < total; i++) {
+      const order = MOCK_ORDERS.find(o => o.id === selectedBatchOrders[i]);
+      setBatchProgress({ 
+        current: i + 1, 
+        total, 
+        status: `Processando: ${order?.patientName || 'Paciente'}` 
+      });
+      
+      // Simulate individual file processing time
+      await new Promise(resolve => setTimeout(resolve, 800));
+      
+      // Simulate individual failure
+      if (Math.random() < 0.05) {
+        toast.error(`Falha ao gerar laudo de ${order?.patientName}`, { duration: 3000 });
+      }
+    }
+
+    // Final simulation
     setTimeout(() => {
-      // Simulate potential error
       if (Math.random() < 0.1) {
-        toast.error("Erro ao gerar PDF em lote", {
+        toast.error("Erro ao finalizar download em lote", {
           id: 'batch-download',
-          description: "Ocorreu uma falha de conexão com o servidor de relatórios. Tente novamente."
+          description: "Ocorreu uma falha ao compactar os arquivos. Tente novamente."
         });
+        setBatchProgress(null);
         return;
       }
 
-      toast.success(`${selectedBatchOrders.length} laudos baixados com sucesso!`, {
+      toast.success(`${total} laudos processados!`, {
         id: 'batch-download',
-        description: "Os arquivos foram compactados em um arquivo .zip"
+        description: "O download do arquivo .zip iniciará automaticamente."
       });
       setSelectedBatchOrders([]);
-    }, 2000);
+      setBatchProgress(null);
+    }, 500);
   };
+
+  const handleSelectAll = () => {
+    const allIds = orders.map(o => o.id);
+    setSelectedBatchOrders(allIds);
+  };
+
+  const handleClearSelection = () => {
+    setSelectedBatchOrders([]);
+  };
+
 
   const handleDownloadPDF = () => {
     const isError = Math.random() < 0.1; // 10% chance of mock error
@@ -257,6 +289,25 @@ export default function LabTechnicalWorkPage({ view }: LabTechnicalWorkPageProps
             />
           </div>
 
+          <div className="flex items-center justify-between gap-2">
+            <Button 
+              variant="outline" 
+              size="sm"
+              className="flex-1 h-7 text-[9px] font-bold uppercase"
+              onClick={handleSelectAll}
+            >
+              Selecionar Tudo
+            </Button>
+            <Button 
+              variant="outline" 
+              size="sm"
+              className="flex-1 h-7 text-[9px] font-bold uppercase"
+              onClick={handleClearSelection}
+            >
+              Limpar Seleção
+            </Button>
+          </div>
+
           {view === 'inbox' && (
             <Button 
               variant="outline" 
@@ -266,6 +317,7 @@ export default function LabTechnicalWorkPage({ view }: LabTechnicalWorkPageProps
               <ClipboardCheck className="h-3.5 w-3.5" /> Digitação em Lote
             </Button>
           )}
+
         </div>
 
         <ScrollArea className="flex-1 pr-4">
@@ -416,29 +468,51 @@ export default function LabTechnicalWorkPage({ view }: LabTechnicalWorkPageProps
             </div>
             
             {/* Bottom Actions for Attendance */}
-            <div className="flex items-center justify-between p-4 bg-background border rounded-xl">
-              <div className="flex gap-2">
-                <Button variant="outline" size="sm" className="gap-2" onClick={() => setShowPDFPreview(true)}>
-                  <Eye className="h-4 w-4" /> Visualizar Laudo
-                </Button>
-                <Button variant="outline" size="sm" className="gap-2" onClick={handleDownloadPDF}>
-                  <Download className="h-4 w-4" /> Download PDF
-                </Button>
-                {selectedBatchOrders.length > 0 && (
-                  <Button 
-                    variant="secondary" 
-                    size="sm" 
-                    className="gap-2 border-primary/20 bg-primary/5 text-primary hover:bg-primary/10"
-                    onClick={handleBatchDownload}
-                  >
-                    <Download className="h-4 w-4" /> Download Lote ({selectedBatchOrders.length})
+            <div className="flex flex-col gap-3 p-4 bg-background border rounded-xl">
+              {batchProgress && (
+                <div className="bg-muted/50 p-3 rounded-lg border border-primary/10 animate-pulse">
+                  <div className="flex justify-between items-center mb-1.5">
+                    <span className="text-[10px] font-bold uppercase tracking-wider text-primary flex items-center gap-2">
+                      <RefreshCcw className="h-3 w-3 animate-spin" /> Gerando Lote...
+                    </span>
+                    <span className="text-[10px] font-mono">{batchProgress.current} / {batchProgress.total}</span>
+                  </div>
+                  <div className="w-full h-1.5 bg-muted rounded-full overflow-hidden">
+                    <div 
+                      className="h-full bg-primary transition-all duration-300" 
+                      style={{ width: `${(batchProgress.current / batchProgress.total) * 100}%` }}
+                    />
+                  </div>
+                  <p className="text-[9px] text-muted-foreground mt-1.5 truncate">{batchProgress.status}</p>
+                </div>
+              )}
+
+              <div className="flex items-center justify-between">
+                <div className="flex gap-2">
+                  <Button variant="outline" size="sm" className="gap-2" onClick={() => setShowPDFPreview(true)}>
+                    <Eye className="h-4 w-4" /> Visualizar Laudo
                   </Button>
-                )}
+                  <Button variant="outline" size="sm" className="gap-2" onClick={handleDownloadPDF}>
+                    <Download className="h-4 w-4" /> Download PDF
+                  </Button>
+                  {selectedBatchOrders.length > 0 && (
+                    <Button 
+                      variant="secondary" 
+                      size="sm" 
+                      className="gap-2 border-primary/20 bg-primary/5 text-primary hover:bg-primary/10"
+                      onClick={handleBatchDownload}
+                      disabled={!!batchProgress}
+                    >
+                      <Download className="h-4 w-4" /> Download Lote ({selectedBatchOrders.length})
+                    </Button>
+                  )}
+                </div>
+                <Button size="sm" className="bg-teal-600 hover:bg-teal-700 text-white gap-2">
+                  <Check className="h-4 w-4" /> Validar Tudo e Liberar
+                </Button>
               </div>
-              <Button size="sm" className="bg-teal-600 hover:bg-teal-700 text-white gap-2">
-                <Check className="h-4 w-4" /> Validar Tudo e Liberar
-              </Button>
             </div>
+
           </div>
         ) : (
           <div className="flex-1 flex flex-col items-center justify-center bg-card rounded-2xl border border-border">

@@ -7,8 +7,9 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { FileText, Download, X, Printer, ZoomIn, ZoomOut } from 'lucide-react';
+import { FileText, Download, X, Printer, ZoomIn, ZoomOut, Maximize2, Minimize2 } from 'lucide-react';
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { cn } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
 
 interface PDFPreviewModalProps {
@@ -28,9 +29,19 @@ export default function PDFPreviewModal({
   onDownload,
   status = 'waiting_approval'
 }: PDFPreviewModalProps) {
+  const [zoom, setZoom] = React.useState(100);
+  const [isFullscreen, setIsFullscreen] = React.useState(false);
+
+  const handleZoomIn = () => setZoom(prev => Math.min(prev + 10, 200));
+  const handleZoomOut = () => setZoom(prev => Math.max(prev - 10, 50));
+  const toggleFullscreen = () => setIsFullscreen(!isFullscreen);
+
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="sm:max-w-[800px] h-[90vh] flex flex-col p-0 overflow-hidden">
+      <DialogContent className={cn(
+        "flex flex-col p-0 overflow-hidden transition-all duration-300",
+        isFullscreen ? "max-w-none w-screen h-screen rounded-none" : "sm:max-w-[800px] h-[90vh]"
+      )}>
         <DialogHeader className="p-4 border-b bg-muted/30">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
@@ -50,19 +61,31 @@ export default function PDFPreviewModal({
           </div>
         </DialogHeader>
 
-        <div className="flex-1 bg-zinc-800 p-8 overflow-hidden flex flex-col items-center">
-          <div className="flex gap-2 mb-4 bg-zinc-700 p-1 rounded-lg">
-            <Button variant="ghost" size="sm" className="h-8 w-8 p-0 text-white hover:bg-zinc-600">
+        <div className="flex-1 bg-zinc-800 p-8 overflow-hidden flex flex-col items-center relative">
+          <div className="absolute top-4 right-4 flex gap-2 z-10 bg-zinc-700/80 backdrop-blur-md p-1.5 rounded-lg shadow-xl border border-zinc-600">
+            <Button variant="ghost" size="sm" className="h-8 w-8 p-0 text-white hover:bg-zinc-600" onClick={handleZoomOut} disabled={zoom <= 50}>
               <ZoomOut className="h-4 w-4" />
             </Button>
-            <span className="flex items-center px-2 text-xs text-zinc-300">100%</span>
-            <Button variant="ghost" size="sm" className="h-8 w-8 p-0 text-white hover:bg-zinc-600">
+            <span className="flex items-center px-2 text-xs font-mono text-zinc-300 min-w-[45px] justify-center">{zoom}%</span>
+            <Button variant="ghost" size="sm" className="h-8 w-8 p-0 text-white hover:bg-zinc-600" onClick={handleZoomIn} disabled={zoom >= 200}>
               <ZoomIn className="h-4 w-4" />
+            </Button>
+            <div className="w-px bg-zinc-600 mx-1" />
+            <Button variant="ghost" size="sm" className="h-8 w-8 p-0 text-white hover:bg-zinc-600" onClick={toggleFullscreen}>
+              {isFullscreen ? <Minimize2 className="h-4 w-4" /> : <Maximize2 className="h-4 w-4" />}
             </Button>
           </div>
           
-          <ScrollArea className="w-full h-full flex justify-center">
-            <div className="mx-auto bg-white w-[595px] min-h-[842px] shadow-2xl p-12 text-zinc-800 font-serif">
+          <ScrollArea className="w-full h-full">
+            <div className="flex justify-center p-8">
+              <div 
+                className="bg-white shadow-2xl p-12 text-zinc-800 font-serif origin-top transition-transform duration-200"
+                style={{ 
+                  width: '595px', 
+                  minHeight: '842px',
+                  transform: `scale(${zoom / 100})`
+                }}
+              >
               {/* Mock PDF Header */}
               <div className="border-b-2 border-zinc-800 pb-4 mb-8 flex justify-between items-start">
                 <div>
