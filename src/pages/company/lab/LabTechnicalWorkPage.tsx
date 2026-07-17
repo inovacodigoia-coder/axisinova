@@ -144,7 +144,9 @@ export default function LabTechnicalWorkPage({ view }: LabTechnicalWorkPageProps
   const [showBatchModal, setShowBatchModal] = useState(false);
   const [showRetesteModal, setShowRetesteModal] = useState(false);
   const [showRecoletaModal, setShowRecoletaModal] = useState(false);
+  const [showRetificacaoModal, setShowRetificacaoModal] = useState(false);
   const [retesteMotivo, setRetesteMotivo] = useState('');
+  const [retificacaoMotivo, setRetificacaoMotivo] = useState('');
 
   useEffect(() => {
     const timer = setTimeout(() => setLoading(false), 800);
@@ -307,8 +309,16 @@ export default function LabTechnicalWorkPage({ view }: LabTechnicalWorkPageProps
                   <Button variant="outline" className="gap-2" onClick={() => setShowRecoletaModal(true)}>
                     <AlertTriangle className="h-4 w-4 text-orange-500" /> Solicitar Recoleta
                   </Button>
+                  {selectedExam.status === 'released' && (
+                    <Button variant="outline" className="gap-2 border-orange-200 bg-orange-50 text-orange-700" onClick={() => setShowRetificacaoModal(true)}>
+                      <FileEdit className="h-4 w-4" /> Retificar Laudo
+                    </Button>
+                  )}
                   {selectedExam.status === 'waiting_approval' && (
-                    <Button className="bg-teal-600 hover:bg-teal-700 text-white gap-2 ml-auto">
+                    <Button className="bg-teal-600 hover:bg-teal-700 text-white gap-2 ml-auto" onClick={() => {
+                      toast.success('Exame liberado com sucesso');
+                      // In a real app, update state here
+                    }}>
                       <CheckCircle2 className="h-4 w-4" /> Aprovar Exame
                     </Button>
                   )}
@@ -412,6 +422,49 @@ export default function LabTechnicalWorkPage({ view }: LabTechnicalWorkPageProps
           <DialogFooter>
             <Button variant="outline" onClick={() => setShowRecoletaModal(false)}>Cancelar</Button>
             <Button className="bg-orange-600 hover:bg-orange-700 text-white" onClick={() => { toast.success('Recoleta solicitada'); setShowRecoletaModal(false); }}>Solicitar Recoleta</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={showRetificacaoModal} onOpenChange={setShowRetificacaoModal}>
+        <DialogContent className="sm:max-w-[450px]">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <AlertCircle className="h-5 w-5 text-orange-600" /> 
+              Retificar Laudo Liberado
+            </DialogTitle>
+            <DialogDescription>
+              A retificação criará uma nova versão do laudo. O motivo será registrado na trilha de auditoria.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="py-4 space-y-4">
+            <div className="bg-orange-50 border border-orange-200 p-3 rounded-lg flex gap-3">
+              <AlertCircle className="h-5 w-5 text-orange-600 shrink-0" />
+              <p className="text-[11px] text-orange-800 leading-relaxed">
+                Atenção: Ao retificar, o laudo anterior será invalidado. Se o resultado já foi visualizado pelo paciente/médico, uma notificação de retificação será enviada.
+              </p>
+            </div>
+            <div className="space-y-2">
+              <label className="text-sm font-bold">Justificativa da Alteração</label>
+              <textarea 
+                className="w-full p-3 border rounded-md text-sm min-h-[100px]"
+                placeholder="Descreva detalhadamente o motivo da retificação..."
+                value={retificacaoMotivo}
+                onChange={(e) => setRetificacaoMotivo(e.target.value)}
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowRetificacaoModal(false)}>Cancelar</Button>
+            <Button 
+              className="bg-orange-600 hover:bg-orange-700 text-white"
+              disabled={!retificacaoMotivo || retificacaoMotivo.length < 10}
+              onClick={() => {
+                toast.success('Retificação iniciada. Edite os valores agora.');
+                setShowRetificacaoModal(false);
+                setIsTyping(true);
+              }}
+            >Iniciar Retificação</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
