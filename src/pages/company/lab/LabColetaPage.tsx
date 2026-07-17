@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { Card } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
-import { Search, ChevronDown, ChevronUp, User, Beaker, ClipboardList, Printer, Check, X, AlertCircle } from 'lucide-react'
+import { Search, ChevronDown, ChevronUp, User, Beaker, ClipboardList, Printer, Check, X, AlertCircle, Filter } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { useAttendanceCadastro } from '@/hooks/useAttendanceCadastro'
 import { TUBE_TYPES } from '@/types/lab.types'
