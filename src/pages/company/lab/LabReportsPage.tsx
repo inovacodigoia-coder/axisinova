@@ -23,6 +23,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { cn } from '@/lib/utils';
 import { LabReport } from '@/types/lab.types';
 import PDFPreviewModal from '@/components/lab/PDFPreviewModal';
+import DeliveryTrackingModal from '@/components/lab/DeliveryTrackingModal';
 import { toast } from 'sonner';
 import {
   DropdownMenu,
@@ -94,6 +95,7 @@ export default function LabReportsPage() {
   const [search, setSearch] = useState('');
   const [selectedReportId, setSelectedReportId] = useState<string | null>(null);
   const [showPreview, setShowPreview] = useState(false);
+  const [showDelivery, setShowDelivery] = useState(false);
   const [filterStatus, setFilterStatus] = useState<string>('all');
 
   useEffect(() => {
@@ -252,7 +254,13 @@ export default function LabReportsPage() {
                             <DropdownMenuItem className="gap-2 text-primary">
                               <FileEdit className="h-4 w-4" /> Retificar Laudo
                             </DropdownMenuItem>
-                            <DropdownMenuItem className="gap-2">
+                            <DropdownMenuItem 
+                              className="gap-2"
+                              onClick={() => {
+                                setSelectedReportId(report.id);
+                                setShowDelivery(true);
+                              }}
+                            >
                               <CheckCircle2 className="h-4 w-4" /> Registrar Entrega
                             </DropdownMenuItem>
                           </DropdownMenuContent>
@@ -273,6 +281,20 @@ export default function LabReportsPage() {
           onClose={() => setShowPreview(false)}
           order={selectedReport as any}
           onDownload={() => handleDownload(selectedReport.id)}
+        />
+      )}
+
+      {selectedReport && (
+        <DeliveryTrackingModal
+          isOpen={showDelivery}
+          onClose={() => setShowDelivery(false)}
+          onConfirm={(data) => {
+            toast.success('Entrega registrada com sucesso!');
+            console.log('Delivery data:', data);
+            setShowDelivery(false);
+          }}
+          patientName={selectedReport.patientName}
+          protocol={selectedReport.protocol}
         />
       )}
     </div>
