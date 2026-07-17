@@ -84,6 +84,8 @@ export function UserMenuDropdown() {
         <DropdownMenuSeparator />
         <DropdownMenuItem className="text-xs"><User className="h-3.5 w-3.5 mr-2" /> Meu cadastro</DropdownMenuItem>
         <DropdownMenuItem className="text-xs"><Key className="h-3.5 w-3.5 mr-2" /> Alterar senha</DropdownMenuItem>
+        <DropdownMenuItem className="text-xs text-muted-foreground"><div className="h-3.5 w-3.5 mr-2" /> ℹ Sobre</DropdownMenuItem>
+        <DropdownMenuItem className="text-xs text-muted-foreground"><div className="h-3.5 w-3.5 mr-2" /> ⌨️ Atalhos</DropdownMenuItem>
         <DropdownMenuSeparator />
         <DropdownMenuItem onClick={logout} className="text-xs text-destructive"><LogOut className="h-3.5 w-3.5 mr-2" /> Sair</DropdownMenuItem>
       </DropdownMenuContent>
