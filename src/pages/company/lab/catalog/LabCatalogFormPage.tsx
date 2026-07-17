@@ -199,15 +199,18 @@ function GeneralInfoSection() {
 
 function ParametersSection() {
   return (
-    <Card className="p-8 space-y-6">
+    <Card className="p-8 space-y-8">
        <div className="flex items-center justify-between">
-          <h3 className="text-lg font-bold">Parâmetros do Exame</h3>
+          <div>
+            <h3 className="text-lg font-bold">Parâmetros e Máscara de Resultado</h3>
+            <p className="text-xs text-muted-foreground">Configure os campos que serão preenchidos no laudo.</p>
+          </div>
           <Button size="sm" className="gradient-bg text-white gap-2">
             <Plus className="h-4 w-4" /> Adicionar Parâmetro
           </Button>
        </div>
 
-       <div className="border rounded-xl overflow-hidden">
+       <div className="border rounded-xl overflow-hidden bg-card">
          <table className="w-full text-left text-sm">
            <thead className="bg-muted/50 border-b">
              <tr>
@@ -215,6 +218,7 @@ function ParametersSection() {
                <th className="px-4 py-3 font-bold text-[10px] uppercase text-muted-foreground">Tipo</th>
                <th className="px-4 py-3 font-bold text-[10px] uppercase text-muted-foreground">Unidade</th>
                <th className="px-4 py-3 font-bold text-[10px] uppercase text-muted-foreground">Metodologia</th>
+               <th className="px-4 py-3 font-bold text-[10px] uppercase text-muted-foreground">Máscara/Cálculo</th>
                <th className="px-4 py-3 text-right"></th>
              </tr>
            </thead>
@@ -225,6 +229,8 @@ function ParametersSection() {
                  <select className="h-8 px-2 rounded-md border text-xs outline-none bg-background">
                    <option>Editável</option>
                    <option>Calculado</option>
+                   <option>Texto Livre</option>
+                   <option>Seleção</option>
                  </select>
                </td>
                <td className="px-4 py-3">
@@ -237,12 +243,37 @@ function ParametersSection() {
                    <option>Quimioluminescência</option>
                  </select>
                </td>
+               <td className="px-4 py-3">
+                 <Input className="h-8 text-xs font-mono" placeholder="Ex: ##.#" defaultValue="##.#" />
+               </td>
                <td className="px-4 py-3 text-right">
                   <Button variant="ghost" size="sm" className="h-8 w-8 p-0 text-red-600"><Trash2 className="h-3.5 w-3.5" /></Button>
                </td>
              </tr>
            </tbody>
          </table>
+       </div>
+
+       <div className="pt-6 border-t space-y-4">
+         <div className="flex items-center gap-2">
+           <Layout className="h-5 w-5 text-primary" />
+           <h4 className="font-bold text-sm">Layout da Máscara de Resultado</h4>
+         </div>
+         <div className="p-4 bg-muted/20 border border-dashed rounded-xl min-h-[150px] space-y-4">
+            <p className="text-[10px] text-muted-foreground font-mono">Editor de Rich Text / HTML para o laudo (Simulação)</p>
+            <div className="w-full h-32 bg-card border rounded p-4 text-sm font-mono flex flex-col gap-2">
+               <div className="flex justify-between border-b pb-1 font-bold">
+                 <span>PARÂMETRO</span>
+                 <span>RESULTADO</span>
+                 <span>VALOR DE REFERÊNCIA</span>
+               </div>
+               <div className="flex justify-between py-1">
+                 <span>Vitamina D</span>
+                 <span className="bg-primary/5 px-2 rounded border border-primary/20">{"{vitamina_d}"} ng/mL</span>
+                 <span className="text-muted-foreground italic">Ver tabela abaixo</span>
+               </div>
+            </div>
+         </div>
        </div>
     </Card>
   )
