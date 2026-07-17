@@ -259,6 +259,8 @@ function PortalContent() {
               <Route path="lab/caixa-entrada" element={<LabTechnicalWorkPage view="inbox" />} />
               <Route path="lab/validacao" element={<LabTechnicalWorkPage view="validation" />} />
               <Route path="lab/laudos" element={<LabReportsPage />} />
+              <Route path="orcamentos" element={<LabBudgetsPage />} />
+
 
               <Route path="*" element={<Navigate to="dashboard" replace />} />
             </Routes>
