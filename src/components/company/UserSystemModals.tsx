@@ -1,6 +1,7 @@
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command'
 import { Info, Keyboard, X } from 'lucide-react'
+import { Button } from '@/components/ui/button'
 
 interface UserSystemModalsProps {
   type: 'about' | 'shortcuts' | null
