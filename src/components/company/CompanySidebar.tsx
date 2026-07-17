@@ -74,8 +74,8 @@ const NAV_SECTIONS: NavSection[] = [
     items: [
       { label: 'Coleta', icon: 'FlaskConical', path: '/app/lab/coleta', module: 'reception' },
       { label: 'Mapa de Trabalho', icon: 'FileText', path: '/app/lab/mapa', module: 'reception' },
-      { label: 'Caixa de Entrada', icon: 'FlaskConical', path: '/app/lab/caixa-entrada', module: 'reception' },
-      { label: 'Validação', icon: 'TicketCheck', path: '/app/lab/validacao', module: 'reception' },
+      { label: 'Caixa de Entrada', icon: 'Database', path: '/app/lab/caixa-entrada', module: 'reception' },
+      { label: 'Validação', icon: 'ShieldCheck', path: '/app/lab/validacao', module: 'reception' },
     ],
   },
 ]
