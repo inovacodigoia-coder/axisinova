@@ -270,6 +270,32 @@ export default function ResultInputPanel({ exam, order, onCancel, onSave }: Resu
 
   return (
     <div className="h-full flex flex-col gap-4">
+      {criticalParams.length > 0 && (
+        <Card className="p-4 bg-red-600 text-white border-none animate-pulse">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <Bell className="h-6 w-6" />
+              <div>
+                <p className="font-bold text-lg">VALOR CRÍTICO DETECTADO</p>
+                <p className="text-sm opacity-90">
+                  {criticalParams.map(p => `${p.name}: ${results[p.id]} ${p.unit}`).join(', ')} 
+                  (Mín: {criticalParams[0].criticalMin}, Máx: {criticalParams[0].criticalMax})
+                </p>
+                <p className="text-[10px] mt-1 opacity-80">Médico solicitante: {order.doctorName || 'Dr. Carlos Lima'} • {order.doctorCRM || '(84) 99999-0001'}</p>
+              </div>
+            </div>
+            <div className="flex gap-2">
+              <Button size="sm" variant="secondary" className="gap-2">
+                <Mail className="h-4 w-4" /> Notificar E-mail
+              </Button>
+              <Button size="sm" variant="secondary" className="gap-2">
+                <Smartphone className="h-4 w-4" /> Notificar SMS
+              </Button>
+            </div>
+          </div>
+        </Card>
+      )}
+
       <Card className="flex-1 overflow-hidden flex flex-col">
         <div className="p-4 border-b bg-muted/30 flex justify-between items-center">
           <div className="flex items-center gap-2">
