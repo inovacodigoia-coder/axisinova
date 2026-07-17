@@ -1,5 +1,4 @@
-import { useNavigate } from 'react-router-dom'
-import { Building2, Palette, DoorOpen, Bell, Printer, Volume2, MapPin, Settings2 } from 'lucide-react'
+import { Building2, Palette, DoorOpen, Bell, Printer, Volume2, MapPin, Settings2, Beaker } from 'lucide-react'
 
 const CARDS = [
   { key: 'dados', label: 'Dados da Empresa', desc: 'Razão social, CNPJ, contato', icon: Building2, path: '/app/configuracoes/dados' },
