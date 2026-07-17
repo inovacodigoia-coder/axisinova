@@ -80,9 +80,7 @@ export function AttendanceCadastroModal({
   const { user } = useAuth()
   const { createOrder } = useAttendanceCadastro()
   const { getDefault } = usePrinterConfig()
-  const [step, setStep] = useState(initialPatient ? (state.serviceType === 'exam' ? 1 : 1) : 0)
-  const isLab = state.serviceType === 'exam'
-  const STEPS = isLab ? STEPS_LAB : STEPS_CLINIC
+  const [step, setStep] = useState(initialPatient ? 1 : 0)
   const [showReview, setShowReview] = useState(false)
   const [state, setState] = useState<CadastroState>(() => {
     const activeOrigin = sessionStorage.getItem('activeOrigin');
@@ -94,6 +92,9 @@ export function AttendanceCadastroModal({
       originCode: origin?.originCode
     }
   })
+
+  const isLab = state.serviceType === 'exam'
+  const STEPS = isLab ? STEPS_LAB : STEPS_CLINIC
   const [restorePromptShown, setRestorePromptShown] = useState(false)
 
   // Post-finalize flow
