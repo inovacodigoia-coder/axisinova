@@ -32,6 +32,10 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { 
+  FileEdit,
+  AlertCircle
+} from 'lucide-react';
 
 interface LabTechnicalWorkPageProps {
   view: 'inbox' | 'validation';
