@@ -412,10 +412,54 @@ export default function ResultInputPanel({ exam, order, onCancel, onSave }: Resu
         <Button variant="outline" onClick={onCancel} className="gap-2">
           <X className="h-4 w-4" /> Cancelar digitação
         </Button>
-        <Button className="gradient-bg text-white gap-2" onClick={() => onSave([])}>
+        <Button className="gradient-bg text-white gap-2" onClick={handleSaveAttempt}>
           <Check className="h-4 w-4" /> Salvar e Finalizar
         </Button>
       </div>
+
+      {/* Delta Check Modal */}
+      <Dialog open={showDeltaModal} onOpenChange={setShowDeltaModal}>
+        <DialogContent className="sm:max-w-[500px]">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-orange-600">
+              <AlertTriangle className="h-5 w-5" /> ATENÇÃO — Delta Check
+            </DialogTitle>
+            <DialogDescription>
+              O resultado atual está fora do esperado comparado ao histórico do paciente.
+            </DialogDescription>
+          </DialogHeader>
+
+          {deltaInfo && (
+            <div className="space-y-4 py-4">
+              <div className="grid grid-cols-2 gap-4 text-sm bg-muted/50 p-4 rounded-lg">
+                <div className="text-muted-foreground">Resultado atual:</div>
+                <div className="font-bold">{deltaInfo.current} mg/dL</div>
+                <div className="text-muted-foreground">Média anterior:</div>
+                <div className="font-bold">{deltaInfo.avg} mg/dL (3 últimos)</div>
+                <div className="text-muted-foreground font-bold text-orange-600">Variação:</div>
+                <div className="font-bold text-orange-600">{deltaInfo.variation}</div>
+              </div>
+
+              <div className="space-y-2">
+                <label className="text-sm font-bold">Justificativa (obrigatória)</label>
+                <textarea 
+                  className="w-full h-24 p-3 rounded-lg border border-input bg-background text-sm outline-none focus:ring-2 focus:ring-primary/20 resize-none"
+                  placeholder="Informe o motivo para aprovação fora do delta..."
+                  value={justification}
+                  onChange={(e) => setJustification(e.target.value)}
+                />
+              </div>
+            </div>
+          )}
+
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowDeltaModal(false)}>Cancelar</Button>
+            <Button onClick={confirmDeltaOverride} disabled={!justification} className="bg-orange-600 hover:bg-orange-700 text-white">
+              Confirmar aprovação
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
