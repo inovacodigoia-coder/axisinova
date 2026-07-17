@@ -255,8 +255,8 @@ function PortalContent() {
               {/* Lab Technical Sector */}
               <Route path="lab/coleta" element={<LabColetaPage />} />
               <Route path="lab/mapa" element={<LabMapaPage />} />
-              <Route path="lab/caixa-entrada" element={<LabInboxPage />} />
-              <Route path="lab/validacao" element={<div className="p-8">Validação Técnica (Em breve)</div>} />
+              <Route path="lab/caixa-entrada" element={<LabTechnicalWorkPage view="inbox" />} />
+              <Route path="lab/validacao" element={<LabTechnicalWorkPage view="validation" />} />
 
               <Route path="*" element={<Navigate to="dashboard" replace />} />
             </Routes>
