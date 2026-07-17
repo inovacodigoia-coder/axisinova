@@ -87,6 +87,8 @@ import LabCatalogPage from './lab/catalog/LabCatalogPage'
 import LabCatalogFormPage from './lab/catalog/LabCatalogFormPage'
 import LabEquipmentPage from './lab/equipment/LabEquipmentPage'
 import LabAbbreviationsPage from './lab/abbreviations/LabAbbreviationsPage'
+import LabTechnicalWorkPage from './lab/LabTechnicalWorkPage'
+import LabMapaPage from './lab/LabMapaPage'
 
 function PortalContent() {
   const [mobileOpen, setMobileOpen] = useState(false)
@@ -252,9 +254,9 @@ function PortalContent() {
               
               {/* Lab Technical Sector */}
               <Route path="lab/coleta" element={<LabColetaPage />} />
-              <Route path="lab/mapa" element={<div className="p-8">Mapa de Trabalho (Em breve)</div>} />
-              <Route path="lab/caixa-entrada" element={<div className="p-8">Caixa de Entrada (Em breve)</div>} />
-              <Route path="lab/validacao" element={<div className="p-8">Validação Técnica (Em breve)</div>} />
+              <Route path="lab/mapa" element={<LabMapaPage />} />
+              <Route path="lab/caixa-entrada" element={<LabTechnicalWorkPage view="inbox" />} />
+              <Route path="lab/validacao" element={<LabTechnicalWorkPage view="validation" />} />
 
               <Route path="*" element={<Navigate to="dashboard" replace />} />
             </Routes>
