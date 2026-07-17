@@ -196,34 +196,54 @@ export default function CompanyDetailPage() {
       {activeTab === 'settings' && (
         <div className="space-y-6">
           <div className="rounded-2xl border border-border bg-card p-6 shadow-[0_4px_24px_rgba(0,0,0,0.06)] space-y-6">
-            <h3 className="text-sm font-semibold text-foreground uppercase tracking-wider">Módulos do Sistema</h3>
+            <h3 className="text-sm font-semibold text-foreground uppercase tracking-wider">Módulos do Sistema (Ativação)</h3>
             <div className="space-y-4 divide-y divide-border">
               <div className="pt-0 flex items-center justify-between">
                 <div>
-                  <p className="font-medium flex items-center gap-2">🏥 Soft Clínica</p>
-                  <p className="text-xs text-muted-foreground">Agenda, Recepção, Prontuário, Faturamento clínico</p>
+                  <p className="font-medium flex items-center gap-2 text-primary">🏥 Soft Clínica</p>
+                  <p className="text-xs text-muted-foreground">Gestão ambulatorial: Agenda, Recepção, Prontuário e Faturamento TISS</p>
                 </div>
-                <input type="checkbox" defaultChecked className="h-5 w-10 rounded-full accent-primary" />
+                <input type="checkbox" defaultChecked className="h-5 w-10 rounded-full accent-primary cursor-pointer" />
               </div>
               <div className="pt-4 flex items-center justify-between">
                 <div>
-                  <p className="font-medium flex items-center gap-2">🔬 Soft Laboratório</p>
-                  <p className="text-xs text-muted-foreground">Cadastro de exames, Coleta, Setor técnico, Laudos</p>
+                  <p className="font-medium flex items-center gap-2 text-[hsl(262,80%,50%)]">🔬 Soft Laboratório</p>
+                  <p className="text-xs text-muted-foreground">Módulo LIS: Cadastro de exames, Coleta, Setor técnico, Interfaceamento e Laudos</p>
                 </div>
-                <input type="checkbox" className="h-5 w-10 rounded-full accent-primary" />
+                <input type="checkbox" className="h-5 w-10 rounded-full accent-primary cursor-pointer" />
               </div>
               <div className="pt-4 flex items-center justify-between">
                 <div>
-                  <p className="font-medium flex items-center gap-2">🏨 Soft Hospital</p>
-                  <p className="text-xs text-muted-foreground">Internação, Leitos, Centro cirúrgico, UTI</p>
+                  <p className="font-medium flex items-center gap-2 text-emerald-600">🏨 Soft Hospital</p>
+                  <p className="text-xs text-muted-foreground">Gestão hospitalar: Internação, Gestão de Leitos, Centro Cirúrgico e UTI</p>
                 </div>
-                <input type="checkbox" className="h-5 w-10 rounded-full accent-primary" />
+                <input type="checkbox" className="h-5 w-10 rounded-full accent-primary cursor-pointer" />
               </div>
             </div>
           </div>
 
           <div className="rounded-2xl border border-border bg-card p-6 shadow-[0_4px_24px_rgba(0,0,0,0.06)] space-y-6">
-          <h3 className="text-sm font-semibold text-foreground">Configurações da Empresa</h3>
+            <h3 className="text-sm font-semibold text-foreground uppercase tracking-wider">Sistema de Origens / Unidades</h3>
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="font-medium flex items-center gap-2">📍 Habilitar Multi-unidades</p>
+                  <p className="text-xs text-muted-foreground">Permite que a empresa gerencie múltiplas origens de atendimento com protocolos distintos</p>
+                </div>
+                <input type="checkbox" defaultChecked className="h-5 w-10 rounded-full accent-primary cursor-pointer" />
+              </div>
+              <div className="flex items-center justify-between pt-4 border-t border-border">
+                <div>
+                  <p className="font-medium flex items-center gap-2">🔄 Exigir Seleção de Origem no Login</p>
+                  <p className="text-xs text-muted-foreground">Força o usuário a escolher uma unidade de trabalho logo após o acesso</p>
+                </div>
+                <input type="checkbox" defaultChecked className="h-5 w-10 rounded-full accent-primary cursor-pointer" />
+              </div>
+            </div>
+          </div>
+
+          <div className="rounded-2xl border border-border bg-card p-6 shadow-[0_4px_24px_rgba(0,0,0,0.06)] space-y-6">
+            <h3 className="text-sm font-semibold text-foreground">Configurações da Empresa</h3>
           {[
             { label: 'Ativar acesso ao sistema', defaultChecked: company.status === 'active' },
             { label: 'Modo manutenção', defaultChecked: false },
