@@ -1,0 +1,1 @@
+export default function LabCatalogFormPage() { return <div>Formulário de Exames (Em breve)</div> }

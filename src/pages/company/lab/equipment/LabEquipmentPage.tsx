@@ -1,0 +1,1 @@
+export default function LabEquipmentPage() { return <div>Gerenciamento de Equipamentos (Em breve)</div> }

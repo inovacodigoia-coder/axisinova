@@ -1,0 +1,1 @@
+export default function LabCatalogPage() { return <div>Catálogo de Exames (Em breve)</div> }

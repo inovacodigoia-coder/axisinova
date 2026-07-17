@@ -1,0 +1,1 @@
+export default function LabAbbreviationsPage() { return <div>Gerenciamento de Abreviaturas (Em breve)</div> }
