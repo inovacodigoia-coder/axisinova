@@ -309,7 +309,7 @@ export default function LabTechnicalWorkPage({ view }: LabTechnicalWorkPageProps
                   <Button variant="outline" className="gap-2" onClick={() => setShowRecoletaModal(true)}>
                     <AlertTriangle className="h-4 w-4 text-orange-500" /> Solicitar Recoleta
                   </Button>
-                  {selectedExam.status === 'released' && (
+                  {selectedExam.status === 'validated' && (
                     <Button variant="outline" className="gap-2 border-orange-200 bg-orange-50 text-orange-700" onClick={() => setShowRetificacaoModal(true)}>
                       <FileEdit className="h-4 w-4" /> Retificar Laudo
                     </Button>
