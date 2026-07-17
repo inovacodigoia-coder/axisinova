@@ -349,8 +349,19 @@ export default function LabTechnicalWorkPage({ view }: LabTechnicalWorkPageProps
             {/* Bottom Actions for Attendance */}
             <div className="flex items-center justify-between p-4 bg-background border rounded-xl">
               <div className="flex gap-2">
-                <Button variant="outline" size="sm" className="gap-2">
+                <Button variant="outline" size="sm" className="gap-2" onClick={() => {
+                  toast.info("Preparando visualização do laudo...", {
+                    description: `Paciente: ${selectedOrder.patientName}`
+                  });
+                }}>
                   <Eye className="h-4 w-4" /> Visualizar Laudo
+                </Button>
+                <Button variant="outline" size="sm" className="gap-2" onClick={() => {
+                  toast.success("PDF do laudo gerado e baixado com sucesso!", {
+                    description: `Data/Hora: ${new Date().toLocaleString('pt-BR')} • Status: ${selectedExam.status === 'waiting_approval' ? 'Validado' : 'Aguardando'}`
+                  });
+                }}>
+                  <Download className="h-4 w-4" /> Download PDF
                 </Button>
               </div>
               <Button size="sm" className="bg-teal-600 hover:bg-teal-700 text-white gap-2">

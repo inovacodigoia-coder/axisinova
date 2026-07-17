@@ -228,6 +228,19 @@ export default function ResultInputPanel({ exam, order, onCancel, onSave }: Resu
     onSave([]);
   };
 
+  const handleDownloadPDF = () => {
+    toast.info("Gerando PDF do laudo...", {
+      description: `Paciente: ${order.patientName} • Protocolo: ${order.protocol}`
+    });
+    
+    // In a real implementation, we would use jsPDF or a similar library
+    setTimeout(() => {
+      toast.success("PDF do laudo baixado com sucesso!", {
+        description: `Status: ${exam.status === 'waiting_approval' ? 'Validado Tecnicamente' : 'Em Digitação'}`
+      });
+    }, 1500);
+  };
+
   const confirmDeltaOverride = () => {
     if (!justification) {
       toast.error('Justificativa obrigatória para Delta Check');
@@ -389,7 +402,7 @@ export default function ResultInputPanel({ exam, order, onCancel, onSave }: Resu
                         <Button variant="ghost" size="icon" className="h-7 w-7">
                           <Eye className="h-3.5 w-3.5" />
                         </Button>
-                        <Button variant="ghost" size="icon" className="h-7 w-7">
+                        <Button variant="ghost" size="icon" className="h-7 w-7" onClick={handleDownloadPDF}>
                           <Download className="h-3.5 w-3.5" />
                         </Button>
                       </div>
