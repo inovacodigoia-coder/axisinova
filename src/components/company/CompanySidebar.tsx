@@ -78,6 +78,14 @@ const NAV_SECTIONS: NavSection[] = [
       { label: 'Validação', icon: 'ShieldCheck', path: '/app/lab/validacao', module: 'reception' },
     ],
   },
+  {
+    title: 'CADASTROS LABORATÓRIO',
+    items: [
+      { label: 'Catálogo de Exames', icon: 'FlaskConical', path: '/app/cadastros/catalogo', module: 'registers' },
+      { label: 'Equipamentos', icon: 'Monitor', path: '/app/cadastros/equipamentos', module: 'registers' },
+      { label: 'Abreviaturas', icon: 'FileText', path: '/app/configuracoes/abreviaturas', module: 'settings' },
+    ],
+  },
 ]
 
 interface CompanySidebarProps {
