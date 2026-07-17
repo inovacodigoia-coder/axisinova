@@ -69,6 +69,14 @@ const NAV_SECTIONS: NavSection[] = [
       { label: 'Performance', icon: 'Stethoscope', path: '/app/bi/medicos', module: 'bi' },
     ],
   },
+  {
+    title: 'LABORATÓRIO',
+    items: [
+      { label: 'Coleta', icon: 'FlaskConical', path: '/app/lab/coleta', module: 'reception' },
+      { label: 'Mapa de Trabalho', icon: 'FileText', path: '/app/lab/mapa', module: 'reception' },
+      { label: 'Validação', icon: 'TicketCheck', path: '/app/lab/validacao', module: 'reception' },
+    ],
+  },
 ]
 
 interface CompanySidebarProps {

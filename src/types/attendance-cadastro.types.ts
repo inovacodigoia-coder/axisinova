@@ -27,6 +27,11 @@ export interface AttendanceOrder {
   unitId: string
   ticketId?: string
   ticketCode?: string
+  
+  // Lab specific
+  originId?: string
+  originCode?: number
+  protocol?: string
 
   serviceType: AttendanceServiceType
   paymentType: AttendancePaymentType
@@ -66,7 +71,7 @@ export interface AttendanceOrder {
   attachmentRulesSatisfied: boolean
   attachmentOverrideReason?: string
 
-  status: 'open' | 'authorized' | 'completed' | 'cancelled'
+  status: 'open' | 'authorized' | 'completed' | 'cancelled' | 'waiting_collection'
   scheduledAppointmentId?: string
   registeredBy: string
   registeredByName?: string

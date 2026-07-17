@@ -10,6 +10,8 @@ import { Step3Authorization } from './steps/Step3Authorization'
 import { Step4Attachments } from './steps/Step4Attachments'
 import { PaymentModal } from './payment/PaymentModal'
 import { AttendancePrintModal } from './print/AttendancePrintModal'
+import { LabStep1PatientReview } from '@/components/lab/attendance/steps/LabStep1PatientReview'
+import { LabStep2ExamData } from '@/components/lab/attendance/steps/LabStep2ExamData'
 import { QueueAllocationModal } from './queue-allocation/QueueAllocationModal'
 import { useAttendanceCadastro, useDraftAutosave, loadDraft, clearDraft } from '@/hooks/useAttendanceCadastro'
 import { usePrinterConfig } from '@/hooks/usePrinterConfig'
@@ -64,9 +66,13 @@ export interface CadastroState {
   freeReason?: string
   attachments: AttendanceAttachment[]
   attachmentOverrideReason?: string
+  originId?: string
+  originCode?: number
+  protocol?: string
 }
 
-const STEPS = ['Paciente', 'Atendimento', 'Autorização', 'Anexos'] as const
+const STEPS_CLINIC = ['Paciente', 'Atendimento', 'Autorização', 'Anexos'] as const
+const STEPS_LAB = ['1 Cliente', '2 Atendimento', '3 Guias e Procedimentos', '4 Pagamento', '5 Autorização', '6 Resumo'] as const
 
 export function AttendanceCadastroModal({
   open, onClose, ticketId, ticketCode, unitId, unitName, guicheName, initialPatient, onOrderCreated,
@@ -76,7 +82,19 @@ export function AttendanceCadastroModal({
   const { getDefault } = usePrinterConfig()
   const [step, setStep] = useState(initialPatient ? 1 : 0)
   const [showReview, setShowReview] = useState(false)
-  const [state, setState] = useState<CadastroState>({ attachments: [], patient: initialPatient })
+  const [state, setState] = useState<CadastroState>(() => {
+    const activeOrigin = sessionStorage.getItem('activeOrigin');
+    const origin = activeOrigin ? JSON.parse(activeOrigin) : null;
+    return { 
+      attachments: [], 
+      patient: initialPatient,
+      originId: origin?.originId,
+      originCode: origin?.originCode
+    }
+  })
+
+  const isLab = state.serviceType === 'exam'
+  const STEPS = isLab ? STEPS_LAB : STEPS_CLINIC
   const [restorePromptShown, setRestorePromptShown] = useState(false)
 
   // Post-finalize flow
@@ -328,10 +346,18 @@ export function AttendanceCadastroModal({
 
         {/* Content */}
         <div className="flex-1 overflow-y-auto bg-background">
-          {!showReview && step === 0 && <Step1PatientLookup state={state} update={update} unitId={unitId} />}
-          {!showReview && step === 1 && <Step2AttendanceData state={state} update={update} />}
-          {!showReview && step === 2 && <Step3Authorization state={state} update={update} />}
-          {!showReview && step === 3 && <Step4Attachments state={state} update={update} />}
+          {!isLab && !showReview && step === 0 && <Step1PatientLookup state={state} update={update} unitId={unitId} />}
+          {!isLab && !showReview && step === 1 && <Step2AttendanceData state={state} update={update} />}
+          {!isLab && !showReview && step === 2 && <Step3Authorization state={state} update={update} />}
+          {!isLab && !showReview && step === 3 && <Step4Attachments state={state} update={update} />}
+          
+          {isLab && !showReview && step === 0 && <Step1PatientLookup state={state} update={update} unitId={unitId} />}
+          {isLab && !showReview && step === 1 && <LabStep1PatientReview state={state} update={update} />}
+          {isLab && !showReview && step === 2 && <LabStep2ExamData state={state} update={update} />}
+          {isLab && !showReview && step === 3 && <div className="p-8 text-center text-muted-foreground">Passo 3: Guias e Procedimentos (Em implementação...)</div>}
+          {isLab && !showReview && step === 4 && <div className="p-8 text-center text-muted-foreground">Passo 4: Pagamento (Em implementação...)</div>}
+          {isLab && !showReview && step === 5 && <div className="p-8 text-center text-muted-foreground">Passo 5: Autorização (Em implementação...)</div>}
+          
           {showReview && <ReviewPanel state={state} unitName={unitName} guicheName={guicheName} ticketCode={ticketCode} />}
         </div>
 
