@@ -159,6 +159,8 @@ export function CompanySidebar({ mobileOpen, onMobileClose, collapsed = false, o
                 const active = location.pathname.startsWith(item.path)
                 const Icon = ICON_MAP[item.icon] || Home
 
+                const badge = item.path === '/app/lab/coleta' ? 3 : item.path === '/app/lab/caixa-entrada' ? 70 : null
+
                 const link = (
                   <NavLink
                     key={item.path}
@@ -183,6 +185,9 @@ export function CompanySidebar({ mobileOpen, onMobileClose, collapsed = false, o
                       <Lock className="h-5 w-5 shrink-0" />
                     )}
                     {!collapsed && <span className="flex-1 truncate">{item.label}</span>}
+                    {!collapsed && badge && (
+                      <span className="bg-white/20 px-1.5 py-0.5 rounded-full text-[10px] font-bold">{badge}</span>
+                    )}
                   </NavLink>
                 )
 
