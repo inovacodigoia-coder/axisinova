@@ -180,6 +180,12 @@ export default function LabTechnicalWorkPage({ view }: LabTechnicalWorkPageProps
               onChange={(e) => setSearch(e.target.value)}
             />
           </div>
+
+          {view === 'inbox' && (
+            <Button variant="outline" className="w-full h-8 gap-2 text-[10px] font-bold uppercase tracking-wider">
+              <ClipboardCheck className="h-3.5 w-3.5" /> Digitação em Lote
+            </Button>
+          )}
         </div>
 
         <ScrollArea className="flex-1 pr-4">
