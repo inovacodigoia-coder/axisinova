@@ -21,7 +21,8 @@ import {
   Save,
   Plus,
   Trash2,
-  Edit2
+  Edit2,
+  Info
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { toast } from 'sonner'

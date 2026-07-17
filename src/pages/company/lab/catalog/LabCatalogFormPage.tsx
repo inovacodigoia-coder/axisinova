@@ -17,7 +17,8 @@ import {
   Trash2, 
   Star,
   ShieldCheck,
-  Zap
+  Zap,
+  Layout
 } from 'lucide-react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { cn } from '@/lib/utils'
