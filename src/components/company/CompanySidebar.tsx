@@ -76,6 +76,7 @@ const NAV_SECTIONS: NavSection[] = [
       { label: 'Mapa de Trabalho', icon: 'FileText', path: '/app/lab/mapa', module: 'reception' },
       { label: 'Caixa de Entrada', icon: 'Database', path: '/app/lab/caixa-entrada', module: 'reception' },
       { label: 'Validação', icon: 'ShieldCheck', path: '/app/lab/validacao', module: 'reception' },
+      { label: 'Laudos', icon: 'FileText', path: '/app/lab/laudos', module: 'reception' },
     ],
   },
   {

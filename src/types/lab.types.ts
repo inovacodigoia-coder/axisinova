@@ -86,7 +86,7 @@ export interface LabAttendanceOrder extends AttendanceOrder {
     code: string;
     name: string;
     material: string;
-    status: 'pending' | 'processing' | 'waiting_approval' | 'validated' | 'cancelled' | 'retest_requested' | 'waiting_recollection';
+    status: 'pending' | 'processing' | 'waiting_approval' | 'validated' | 'liberado' | 'cancelled' | 'retest_requested' | 'waiting_recollection' | 'retificado';
     isCobrado: boolean;
     isColeta: boolean;
     previsaoEntrega: string;
@@ -125,6 +125,31 @@ export interface LabAttendanceOrder extends AttendanceOrder {
     userName: string;
     details?: string;
   }[];
+  deliveryStatus?: 'not_delivered' | 'delivered';
+  deliveryInfo?: {
+    deliveredTo: 'patient' | 'relative' | 'doctor' | 'other';
+    recipientName?: string;
+    recipientDoc?: string;
+    deliveryMethod: 'printed' | 'email' | 'portal';
+    deliveredAt: string;
+    deliveredBy: string;
+  };
+}
+
+export interface LabReport {
+  id: string;
+  protocol: string;
+  patientId: string;
+  patientName: string;
+  patientBirthDate: string;
+  patientGender: 'M' | 'F' | 'Other';
+  date: string;
+  doctorName: string;
+  doctorCRM: string;
+  status: 'liberado' | 'pending' | 'aprovado' | 'retificado' | 'parcial';
+  examsCount: string;
+  exams: any[]; // Detailed exams for the report
+  deliveryStatus: 'not_delivered' | 'delivered';
 }
 
 export interface LabTube {

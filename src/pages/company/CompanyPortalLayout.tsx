@@ -89,6 +89,7 @@ import LabEquipmentPage from './lab/equipment/LabEquipmentPage'
 import LabAbbreviationsPage from './lab/abbreviations/LabAbbreviationsPage'
 import LabTechnicalWorkPage from './lab/LabTechnicalWorkPage'
 import LabMapaPage from './lab/LabMapaPage'
+import LabReportsPage from './lab/LabReportsPage'
 
 function PortalContent() {
   const [mobileOpen, setMobileOpen] = useState(false)
@@ -257,6 +258,7 @@ function PortalContent() {
               <Route path="lab/mapa" element={<LabMapaPage />} />
               <Route path="lab/caixa-entrada" element={<LabTechnicalWorkPage view="inbox" />} />
               <Route path="lab/validacao" element={<LabTechnicalWorkPage view="validation" />} />
+              <Route path="lab/laudos" element={<LabReportsPage />} />
 
               <Route path="*" element={<Navigate to="dashboard" replace />} />
             </Routes>
