@@ -8,7 +8,7 @@ import {
   DialogDescription
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Mail, Send, Checkbox as CheckboxIcon, FileText } from 'lucide-react';
+import { Mail, Send, FileText } from 'lucide-react';
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";

@@ -24,6 +24,7 @@ import { cn } from '@/lib/utils';
 import { LabReport } from '@/types/lab.types';
 import PDFPreviewModal from '@/components/lab/PDFPreviewModal';
 import DeliveryTrackingModal from '@/components/lab/DeliveryTrackingModal';
+import EmailReportModal from '@/components/lab/EmailReportModal';
 import { toast } from 'sonner';
 import {
   DropdownMenu,
@@ -96,6 +97,7 @@ export default function LabReportsPage() {
   const [selectedReportId, setSelectedReportId] = useState<string | null>(null);
   const [showPreview, setShowPreview] = useState(false);
   const [showDelivery, setShowDelivery] = useState(false);
+  const [showEmail, setShowEmail] = useState(false);
   const [filterStatus, setFilterStatus] = useState<string>('all');
 
   useEffect(() => {
@@ -244,7 +246,13 @@ export default function LabReportsPage() {
                             </Button>
                           </DropdownMenuTrigger>
                           <DropdownMenuContent align="end" className="w-48">
-                            <DropdownMenuItem onClick={() => handleEmail(report.id)} className="gap-2">
+                            <DropdownMenuItem 
+                              onClick={() => {
+                                setSelectedReportId(report.id);
+                                setShowEmail(true);
+                              }} 
+                              className="gap-2"
+                            >
                               <Mail className="h-4 w-4" /> Enviar por E-mail
                             </DropdownMenuItem>
                             <DropdownMenuItem className="gap-2">
@@ -292,6 +300,19 @@ export default function LabReportsPage() {
             toast.success('Entrega registrada com sucesso!');
             console.log('Delivery data:', data);
             setShowDelivery(false);
+          }}
+          patientName={selectedReport.patientName}
+          protocol={selectedReport.protocol}
+        />
+      )}
+
+      {selectedReport && (
+        <EmailReportModal
+          isOpen={showEmail}
+          onClose={() => setShowEmail(false)}
+          onSend={(data) => {
+            toast.success(`Laudo enviado para ${data.email}`);
+            setShowEmail(false);
           }}
           patientName={selectedReport.patientName}
           protocol={selectedReport.protocol}
