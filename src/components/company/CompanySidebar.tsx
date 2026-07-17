@@ -6,7 +6,7 @@ import { supabase } from '@/integrations/supabase/client'
 import {
   Home, Calendar, UserCheck, FileText, DollarSign, FlaskConical, BarChart3,
   TrendingUp, Users, Settings, Database, Monitor, Building2, Lock,
-  LogOut, ChevronLeft, ChevronRight, X, Stethoscope, TicketCheck
+  LogOut, ChevronLeft, ChevronRight, X, Stethoscope, TicketCheck, ShieldCheck
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
@@ -70,11 +70,12 @@ const NAV_SECTIONS: NavSection[] = [
     ],
   },
   {
-    title: 'LABORATÓRIO',
+    title: 'SETOR TÉCNICO',
     items: [
       { label: 'Coleta', icon: 'FlaskConical', path: '/app/lab/coleta', module: 'reception' },
       { label: 'Mapa de Trabalho', icon: 'FileText', path: '/app/lab/mapa', module: 'reception' },
-      { label: 'Validação', icon: 'TicketCheck', path: '/app/lab/validacao', module: 'reception' },
+      { label: 'Caixa de Entrada', icon: 'Database', path: '/app/lab/caixa-entrada', module: 'reception' },
+      { label: 'Validação', icon: 'ShieldCheck', path: '/app/lab/validacao', module: 'reception' },
     ],
   },
 ]
@@ -158,6 +159,8 @@ export function CompanySidebar({ mobileOpen, onMobileClose, collapsed = false, o
                 const active = location.pathname.startsWith(item.path)
                 const Icon = ICON_MAP[item.icon] || Home
 
+                const badge = item.path === '/app/lab/coleta' ? 3 : item.path === '/app/lab/caixa-entrada' ? 70 : null
+
                 const link = (
                   <NavLink
                     key={item.path}
@@ -182,6 +185,9 @@ export function CompanySidebar({ mobileOpen, onMobileClose, collapsed = false, o
                       <Lock className="h-5 w-5 shrink-0" />
                     )}
                     {!collapsed && <span className="flex-1 truncate">{item.label}</span>}
+                    {!collapsed && badge && (
+                      <span className="bg-white/20 px-1.5 py-0.5 rounded-full text-[10px] font-bold">{badge}</span>
+                    )}
                   </NavLink>
                 )
 

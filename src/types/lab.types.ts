@@ -36,6 +36,8 @@ export interface LabExam {
   price: number;
   alertTitle?: string;
   alertMessage?: string;
+  workbench?: string; // e.g., 'Hematologia', 'Bioquímica'
+  requiresCollection?: boolean;
 }
 
 export interface LabAttendanceOrder extends AttendanceOrder {
@@ -52,5 +54,30 @@ export interface LabAttendanceOrder extends AttendanceOrder {
     isColeta: boolean;
     previsaoEntrega: string;
     valor: number;
+    workbench?: string;
+    result?: string;
+    unit?: string;
+    reference?: string;
+    history?: { value: string; date: string };
   }[];
+  collectionStatus?: 'waiting' | 'in_progress' | 'collected' | 'cancelled';
+  collectionResponsible?: string;
+  collectionObservations?: string;
+  collectionTime?: string;
 }
+
+export interface LabTube {
+  type: string;
+  color: string;
+  label: string;
+  volume: string;
+  exams: string[]; // List of exam names
+  tag: string; // [protocol]-[sequence]
+}
+
+export const TUBE_TYPES = [
+  { type: 'gel', color: 'bg-yellow-400', label: 'Gel Separador', volume: '5mL', hex: '#FACC15' },
+  { type: 'edta', color: 'bg-purple-600', label: 'EDTA', volume: '4mL', hex: '#9333EA' },
+  { type: 'citrato', color: 'bg-gray-400', label: 'Plasma Citratado', volume: '3mL', hex: '#9CA3AF' },
+  { type: 'urina', color: 'bg-orange-500', label: 'Frasco de Urina', volume: '50mL', hex: '#F97316' },
+];

@@ -32,7 +32,7 @@ export function SelectQueuesModal({ queues, selected, onSave, onClose }: SelectQ
   const filtered = queues.filter(q => {
     if (tab === 'internal') return q.type === 'internal'
     if (tab === 'attendance') return q.category === 'attendance' && q.type === 'external'
-    return q.category === 'collect' && q.type === 'external'
+    return q.category === 'collect'
   })
 
   const toggle = (id: string) => setSel(prev => prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id])
