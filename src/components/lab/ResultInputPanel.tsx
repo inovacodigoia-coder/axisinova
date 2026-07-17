@@ -96,6 +96,11 @@ export default function ResultInputPanel({ exam, order, onCancel, onSave }: Resu
   const [results, setResults] = useState<Record<string, string>>({});
   const [statuses, setStatuses] = useState<Record<string, ResultStatus>>({});
   const [lastSaved, setLastSaved] = useState<string | null>(null);
+  const [showDeltaModal, setShowDeltaModal] = useState(false);
+  const [deltaInfo, setDeltaInfo] = useState<{ param: string, current: string, avg: string, variation: string } | null>(null);
+  const [criticalParams, setCriticalParams] = useState<LabParameter[]>([]);
+  const [justification, setJustification] = useState('');
+  
   const parameters = MOCK_PARAMETERS[exam.code] || [];
   const firstInputRef = useRef<HTMLInputElement>(null);
 
