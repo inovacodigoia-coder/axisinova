@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { Building2 } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useAuth } from '@/context/AuthContext';
 
@@ -25,7 +26,7 @@ export default function OriginSelectorPage() {
         <div className="space-y-6">
           <div className="text-center space-y-2">
             <h1 className="text-2xl font-bold">Olá, {user?.name}!</h1>
-            <p className="text-muted-foreground">Selecione a origem de atendimento</p>
+            <p className="text-[#64748b] text-base">Selecione a unidade de atendimento para iniciar</p>
           </div>
           
           <div className="space-y-4">

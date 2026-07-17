@@ -72,7 +72,7 @@ export interface CadastroState {
 }
 
 const STEPS_CLINIC = ['Paciente', 'Atendimento', 'Autorização', 'Anexos'] as const
-const STEPS_LAB = ['1 Cliente', '2 Atendimento', '3 Guias e Procedimentos', '4 Pagamento', '5 Autorização', '6 Resumo'] as const
+const STEPS_LAB = ['Cliente', 'Atendimento', 'Guias e Procedimentos', 'Pagamento', 'Autorização', 'Resumo'] as const
 
 export function AttendanceCadastroModal({
   open, onClose, ticketId, ticketCode, unitId, unitName, guicheName, initialPatient, onOrderCreated,
