@@ -24,6 +24,14 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { cn } from '@/lib/utils';
 import { LabAttendanceOrder } from '@/types/lab.types';
 import ResultInputPanel from '@/components/lab/ResultInputPanel';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { toast } from 'sonner';
 
 interface LabTechnicalWorkPageProps {
@@ -131,6 +139,10 @@ export default function LabTechnicalWorkPage({ view }: LabTechnicalWorkPageProps
   const [selectedOrderId, setSelectedOrderId] = useState<string | null>(null);
   const [selectedExamId, setSelectedExamId] = useState<string | null>(null);
   const [isTyping, setIsTyping] = useState(false);
+  const [showBatchModal, setShowBatchModal] = useState(false);
+  const [showRetesteModal, setShowRetesteModal] = useState(false);
+  const [showRecoletaModal, setShowRecoletaModal] = useState(false);
+  const [retesteMotivo, setRetesteMotivo] = useState('');
 
   useEffect(() => {
     const timer = setTimeout(() => setLoading(false), 800);
@@ -182,7 +194,11 @@ export default function LabTechnicalWorkPage({ view }: LabTechnicalWorkPageProps
           </div>
 
           {view === 'inbox' && (
-            <Button variant="outline" className="w-full h-8 gap-2 text-[10px] font-bold uppercase tracking-wider">
+            <Button 
+              variant="outline" 
+              className="w-full h-8 gap-2 text-[10px] font-bold uppercase tracking-wider"
+              onClick={() => setShowBatchModal(true)}
+            >
               <ClipboardCheck className="h-3.5 w-3.5" /> Digitação em Lote
             </Button>
           )}
@@ -283,10 +299,18 @@ export default function LabTechnicalWorkPage({ view }: LabTechnicalWorkPageProps
                   >
                     <Edit3 className="h-4 w-4" /> Digitar resultados
                   </Button>
-                  <Button variant="outline" className="gap-2">
+                  <Button 
+                    variant="outline" 
+                    className="gap-2"
+                    onClick={() => setShowRetesteModal(true)}
+                  >
                     <RefreshCcw className="h-4 w-4" /> Solicitar Reteste
                   </Button>
-                  <Button variant="outline" className="gap-2">
+                  <Button 
+                    variant="outline" 
+                    className="gap-2"
+                    onClick={() => setShowRecoletaModal(true)}
+                  >
                     <AlertTriangle className="h-4 w-4 text-orange-500" /> Solicitar Recoleta
                   </Button>
                   {selectedExam.status === 'waiting_approval' && (
@@ -329,7 +353,89 @@ export default function LabTechnicalWorkPage({ view }: LabTechnicalWorkPageProps
                 <Check className="h-4 w-4" /> Validar Tudo e Liberar
               </Button>
             </div>
+      </div>
+
+      {/* Batch Input Modal */}
+      <Dialog open={showBatchModal} onOpenChange={setShowBatchModal}>
+        <DialogContent className="sm:max-w-[600px]">
+          <DialogHeader>
+            <DialogTitle>Digitação em Lote</DialogTitle>
+            <DialogDescription>
+              Aplique resultados padronizados para múltiplos pacientes simultaneamente.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="py-4 space-y-4">
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-1">
+                <label className="text-[10px] font-bold uppercase">Exame</label>
+                <select className="w-full p-2 text-sm border rounded-md">
+                  <option>Urina Tipo 1</option>
+                </select>
+              </div>
+              <div className="space-y-1">
+                <label className="text-[10px] font-bold uppercase">Bancada</label>
+                <div className="text-sm font-bold p-2 bg-muted rounded-md">Uroanálise</div>
+              </div>
+            </div>
+            <div className="border p-4 rounded-lg bg-muted/30">
+              <p className="text-xs font-bold mb-3 uppercase">Valores a aplicar:</p>
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-1">
+                  <span className="text-[10px] text-muted-foreground uppercase">Aspecto</span>
+                  <input className="w-full p-2 text-sm border rounded" placeholder="Amarelo claro" />
+                </div>
+                <div className="space-y-1">
+                  <span className="text-[10px] text-muted-foreground uppercase">Cor</span>
+                  <input className="w-full p-2 text-sm border rounded" placeholder="Amarelo" />
+                </div>
+              </div>
+            </div>
           </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowBatchModal(false)}>Cancelar</Button>
+            <Button className="gradient-bg text-white" onClick={() => {
+              toast.success('Resultados aplicados em lote');
+              setShowBatchModal(false);
+            }}>Aplicar em selecionados</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Reteste Modal */}
+      <Dialog open={showRetesteModal} onOpenChange={setShowRetesteModal}>
+        <DialogContent className="sm:max-w-[400px]">
+          <DialogHeader>
+            <DialogTitle>Solicitar Reteste</DialogTitle>
+            <DialogDescription>O exame voltará para a fila técnica com prioridade alta.</DialogDescription>
+          </DialogHeader>
+          <div className="py-4 space-y-4">
+            <div className="space-y-2">
+              <label className="text-sm font-bold">Motivo (obrigatório)</label>
+              <select 
+                className="w-full p-2 border rounded-md text-sm"
+                value={retesteMotivo}
+                onChange={(e) => setRetesteMotivo(e.target.value)}
+              >
+                <option value="">Selecione um motivo...</option>
+                <option value="1">Divergência Clínica</option>
+                <option value="2">Confirmação de Valor Crítico</option>
+                <option value="3">Erro de Processamento</option>
+              </select>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowRetesteModal(false)}>Cancelar</Button>
+            <Button 
+              className="bg-primary text-white" 
+              disabled={!retesteMotivo}
+              onClick={() => {
+                toast.success('Reteste solicitado com sucesso');
+                setShowRetesteModal(false);
+              }}
+            >Confirmar Reteste</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
         ) : (
           <div className="flex-1 flex flex-col items-center justify-center bg-card rounded-2xl border border-border">
             <div className="h-20 w-20 rounded-full bg-muted flex items-center justify-center text-muted-foreground mb-4">
