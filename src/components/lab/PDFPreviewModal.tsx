@@ -145,8 +145,9 @@ export default function PDFPreviewModal({
                 </p>
               </div>
             </div>
-          </ScrollArea>
-        </div>
+          </div>
+        </ScrollArea>
+      </div>
 
         <DialogFooter className="p-4 bg-background border-t gap-2">
           <Button variant="outline" onClick={onClose} className="gap-2">
