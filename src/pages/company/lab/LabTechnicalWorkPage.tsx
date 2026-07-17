@@ -377,8 +377,42 @@ export default function LabTechnicalWorkPage({ view }: LabTechnicalWorkPageProps
             <DialogDescription>Aplique resultados padronizados para múltiplos pacientes simultaneamente.</DialogDescription>
           </DialogHeader>
           <div className="py-4 space-y-4">
-             {/* Batch content placeholder */}
-             <p className="text-sm text-muted-foreground italic">Selecione os exames e defina os valores padrão.</p>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-1">
+                <label className="text-[10px] font-bold uppercase">Exame</label>
+                <select className="w-full p-2 text-sm border rounded-md">
+                  <option>Urina Tipo 1</option>
+                  <option>Hemograma Completo</option>
+                </select>
+              </div>
+              <div className="space-y-1">
+                <label className="text-[10px] font-bold uppercase">Bancada</label>
+                <div className="text-sm font-bold p-2 bg-muted rounded-md uppercase">Uroanálise</div>
+              </div>
+            </div>
+            
+            <div className="border p-4 rounded-lg bg-muted/30">
+              <p className="text-xs font-bold mb-3 uppercase flex items-center gap-2">
+                <FlaskConical className="h-3 w-3" /> Valores a aplicar em lote:
+              </p>
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-1">
+                  <span className="text-[10px] text-muted-foreground uppercase">Aspecto</span>
+                  <input className="w-full p-2 text-sm border rounded bg-background" placeholder="Límpido" />
+                </div>
+                <div className="space-y-1">
+                  <span className="text-[10px] text-muted-foreground uppercase">Cor</span>
+                  <input className="w-full p-2 text-sm border rounded bg-background" placeholder="Amarelo Citrino" />
+                </div>
+                <div className="space-y-1">
+                  <span className="text-[10px] text-muted-foreground uppercase">Depósito</span>
+                  <input className="w-full p-2 text-sm border rounded bg-background" placeholder="Ausente" />
+                </div>
+              </div>
+              <p className="text-[10px] text-muted-foreground mt-3 italic">
+                * Campos em branco não serão alterados nos exames selecionados.
+              </p>
+            </div>
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setShowBatchModal(false)}>Cancelar</Button>
