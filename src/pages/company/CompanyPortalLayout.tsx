@@ -90,6 +90,8 @@ import LabAbbreviationsPage from './lab/abbreviations/LabAbbreviationsPage'
 import LabTechnicalWorkPage from './lab/LabTechnicalWorkPage'
 import LabMapaPage from './lab/LabMapaPage'
 import LabReportsPage from './lab/LabReportsPage'
+import LabBudgetsPage from './lab/orcamentos/LabBudgetsPage'
+
 
 function PortalContent() {
   const [mobileOpen, setMobileOpen] = useState(false)
