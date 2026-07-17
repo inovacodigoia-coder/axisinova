@@ -18,6 +18,14 @@ import {
   TooltipProvider, 
   TooltipTrigger 
 } from '@/components/ui/tooltip';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { 
   Eye, 
   Download, 
@@ -27,7 +35,10 @@ import {
   AlertTriangle,
   Calculator,
   MessageSquare,
-  History as HistoryIcon
+  History as HistoryIcon,
+  Bell,
+  Mail,
+  Smartphone
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { LabAttendanceOrder, LabParameter, ResultStatus } from '@/types/lab.types';
