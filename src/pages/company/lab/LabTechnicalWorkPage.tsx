@@ -24,6 +24,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { cn } from '@/lib/utils';
 import { LabAttendanceOrder } from '@/types/lab.types';
 import ResultInputPanel from '@/components/lab/ResultInputPanel';
+import PDFPreviewModal from '@/components/lab/PDFPreviewModal';
 import { toast } from 'sonner';
 import {
   Dialog,
@@ -146,8 +147,10 @@ export default function LabTechnicalWorkPage({ view }: LabTechnicalWorkPageProps
   const [showRetesteModal, setShowRetesteModal] = useState(false);
   const [showRecoletaModal, setShowRecoletaModal] = useState(false);
   const [showRetificacaoModal, setShowRetificacaoModal] = useState(false);
+  const [showPDFPreview, setShowPDFPreview] = useState(false);
   const [retesteMotivo, setRetesteMotivo] = useState('');
   const [retificacaoMotivo, setRetificacaoMotivo] = useState('');
+  const [selectedBatchOrders, setSelectedBatchOrders] = useState<string[]>([]);
 
   useEffect(() => {
     const timer = setTimeout(() => setLoading(false), 800);
@@ -172,6 +175,62 @@ export default function LabTechnicalWorkPage({ view }: LabTechnicalWorkPageProps
     setSelectedOrderId(orderId);
     setSelectedExamId(examId);
     setIsTyping(false);
+  };
+
+  const toggleBatchSelection = (orderId: string) => {
+    setSelectedBatchOrders(prev => 
+      prev.includes(orderId) 
+        ? prev.filter(id => id !== orderId)
+        : [...prev, orderId]
+    );
+  };
+
+  const handleBatchDownload = () => {
+    if (selectedBatchOrders.length === 0) {
+      toast.error("Selecione pelo menos um laudo para download em lote.");
+      return;
+    }
+
+    toast.loading(`Gerando ${selectedBatchOrders.length} laudos...`, { id: 'batch-download' });
+
+    // Mock batch download logic
+    setTimeout(() => {
+      // Simulate potential error
+      if (Math.random() < 0.1) {
+        toast.error("Erro ao gerar PDF em lote", {
+          id: 'batch-download',
+          description: "Ocorreu uma falha de conexão com o servidor de relatórios. Tente novamente."
+        });
+        return;
+      }
+
+      toast.success(`${selectedBatchOrders.length} laudos baixados com sucesso!`, {
+        id: 'batch-download',
+        description: "Os arquivos foram compactados em um arquivo .zip"
+      });
+      setSelectedBatchOrders([]);
+    }, 2000);
+  };
+
+  const handleDownloadPDF = () => {
+    const isError = Math.random() < 0.1; // 10% chance of mock error
+
+    toast.loading("Processando PDF...", { id: 'pdf-gen' });
+
+    setTimeout(() => {
+      if (isError) {
+        toast.error("Falha ao gerar PDF", {
+          id: 'pdf-gen',
+          description: "Não foi possível conectar ao motor de renderização. Verifique sua internet."
+        });
+      } else {
+        toast.success("PDF gerado com sucesso!", {
+          id: 'pdf-gen',
+          description: "O download iniciará automaticamente."
+        });
+        setShowPDFPreview(false);
+      }
+    }, 1500);
   };
 
   const handleStartTyping = () => {
@@ -225,8 +284,17 @@ export default function LabTechnicalWorkPage({ view }: LabTechnicalWorkPageProps
             ) : (
               orders.map((order) => (
                 <div key={order.id} className="space-y-1">
-                  <div className="px-2 py-1 text-[10px] font-bold text-muted-foreground uppercase flex justify-between">
-                    <span>{order.protocol}</span>
+                  <div className="px-2 py-1 text-[10px] font-bold text-muted-foreground uppercase flex justify-between items-center">
+                    <div className="flex items-center gap-2">
+                      <input 
+                        type="checkbox" 
+                        checked={selectedBatchOrders.includes(order.id)}
+                        onChange={() => toggleBatchSelection(order.id)}
+                        onClick={(e) => e.stopPropagation()}
+                        className="rounded border-gray-300 text-primary focus:ring-primary h-3 w-3"
+                      />
+                      <span>{order.protocol}</span>
+                    </div>
                     <span className="flex items-center gap-1"><Clock className="h-2.5 w-2.5" /> 10m</span>
                   </div>
                   {order.exams
@@ -350,20 +418,22 @@ export default function LabTechnicalWorkPage({ view }: LabTechnicalWorkPageProps
             {/* Bottom Actions for Attendance */}
             <div className="flex items-center justify-between p-4 bg-background border rounded-xl">
               <div className="flex gap-2">
-                <Button variant="outline" size="sm" className="gap-2" onClick={() => {
-                  toast.info("Preparando visualização do laudo...", {
-                    description: `Paciente: ${selectedOrder.patientName}`
-                  });
-                }}>
+                <Button variant="outline" size="sm" className="gap-2" onClick={() => setShowPDFPreview(true)}>
                   <Eye className="h-4 w-4" /> Visualizar Laudo
                 </Button>
-                <Button variant="outline" size="sm" className="gap-2" onClick={() => {
-                  toast.success("PDF do laudo gerado e baixado com sucesso!", {
-                    description: `Data/Hora: ${new Date().toLocaleString('pt-BR')} • Status: ${selectedExam.status === 'waiting_approval' ? 'Validado' : 'Aguardando'}`
-                  });
-                }}>
+                <Button variant="outline" size="sm" className="gap-2" onClick={handleDownloadPDF}>
                   <Download className="h-4 w-4" /> Download PDF
                 </Button>
+                {selectedBatchOrders.length > 0 && (
+                  <Button 
+                    variant="secondary" 
+                    size="sm" 
+                    className="gap-2 border-primary/20 bg-primary/5 text-primary hover:bg-primary/10"
+                    onClick={handleBatchDownload}
+                  >
+                    <Download className="h-4 w-4" /> Download Lote ({selectedBatchOrders.length})
+                  </Button>
+                )}
               </div>
               <Button size="sm" className="bg-teal-600 hover:bg-teal-700 text-white gap-2">
                 <Check className="h-4 w-4" /> Validar Tudo e Liberar
@@ -424,6 +494,21 @@ export default function LabTechnicalWorkPage({ view }: LabTechnicalWorkPageProps
               <p className="text-[10px] text-muted-foreground mt-3 italic">
                 * Campos em branco não serão alterados nos exames selecionados.
               </p>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+      
+      {selectedOrder && (
+        <PDFPreviewModal 
+          isOpen={showPDFPreview}
+          onClose={() => setShowPDFPreview(false)}
+          patientName={selectedOrder.patientName}
+          protocol={selectedOrder.protocol}
+          onDownload={handleDownloadPDF}
+          status={selectedExam?.status}
+        />
+      )}
             </div>
           </div>
           <DialogFooter>
