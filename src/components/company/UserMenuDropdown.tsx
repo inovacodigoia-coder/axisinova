@@ -5,11 +5,13 @@ import { useCompanyContext } from '@/context/CompanyContext'
 import { ChevronDown, ChevronRight, Check, User, Key, LogOut, Building2, ShieldCheck, MapPin } from 'lucide-react'
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuSub, DropdownMenuSubContent, DropdownMenuSubTrigger, DropdownMenuTrigger } from '@/components/ui/dropdown-menu'
 import { toast } from 'sonner'
+import { UserSystemModals } from './UserSystemModals'
 
 export function UserMenuDropdown() {
   const { user, logout } = useAuth()
   const { activeProfile, activeSector, profiles, availableSectors, switchProfile, switchSector, clearSession } = useCompanyContext()
   const navigate = useNavigate()
+  const [modalType, setModalType] = useState<'about' | 'shortcuts' | null>(null)
 
   const initials = user?.name?.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase() || 'U'
 
@@ -84,11 +86,12 @@ export function UserMenuDropdown() {
         <DropdownMenuSeparator />
         <DropdownMenuItem className="text-xs"><User className="h-3.5 w-3.5 mr-2" /> Meu cadastro</DropdownMenuItem>
         <DropdownMenuItem className="text-xs"><Key className="h-3.5 w-3.5 mr-2" /> Alterar senha</DropdownMenuItem>
-        <DropdownMenuItem className="text-xs text-muted-foreground"><div className="h-3.5 w-3.5 mr-2" /> ℹ Sobre</DropdownMenuItem>
-        <DropdownMenuItem className="text-xs text-muted-foreground"><div className="h-3.5 w-3.5 mr-2" /> ⌨️ Atalhos</DropdownMenuItem>
+        <DropdownMenuItem className="text-xs" onClick={() => setModalType('about')}><div className="h-3.5 w-3.5 mr-2" /> ℹ Sobre</DropdownMenuItem>
+        <DropdownMenuItem className="text-xs" onClick={() => setModalType('shortcuts')}><div className="h-3.5 w-3.5 mr-2" /> ⌨️ Atalhos</DropdownMenuItem>
         <DropdownMenuSeparator />
         <DropdownMenuItem onClick={logout} className="text-xs text-destructive"><LogOut className="h-3.5 w-3.5 mr-2" /> Sair</DropdownMenuItem>
       </DropdownMenuContent>
+      <UserSystemModals type={modalType} onClose={() => setModalType(null)} />
     </DropdownMenu>
   )
 }
