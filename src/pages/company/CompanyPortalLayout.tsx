@@ -222,6 +222,12 @@ function PortalContent() {
               <Route path="configuracoes/notificacoes" element={<NotificationsSettingsPage />} />
               <Route path="configuracoes/estabelecimentos" element={<EstablishmentsSettingsPage />} />
               <Route path="configuracoes/origens" element={<OriginsPage />} />
+              <Route path="configuracoes/laboratorio" element={<LabSettingsPage />} />
+              <Route path="configuracoes/abreviaturas" element={<LabAbbreviationsPage />} />
+              <Route path="cadastros/catalogo" element={<LabCatalogPage />} />
+              <Route path="cadastros/catalogo/novo" element={<LabCatalogFormPage />} />
+              <Route path="cadastros/catalogo/:id/editar" element={<LabCatalogFormPage />} />
+              <Route path="cadastros/equipamentos" element={<LabEquipmentPage />} />
               <Route path="bi" element={<BIDashboardPage />} />
               <Route path="bi/producao" element={<ProductionReportPage />} />
               <Route path="bi/financeiro" element={<FinancialReportPage />} />
