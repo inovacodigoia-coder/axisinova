@@ -16,7 +16,8 @@ import {
   Edit3,
   Eye,
   Check,
-  Download
+  Download,
+  ShieldCheck
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -26,6 +27,7 @@ import { LabAttendanceOrder } from '@/types/lab.types';
 import ResultInputPanel from '@/components/lab/ResultInputPanel';
 import PDFPreviewModal from '@/components/lab/PDFPreviewModal';
 import { toast } from 'sonner';
+import ConfirmReleaseModal from '@/components/lab/ConfirmReleaseModal';
 import {
   Dialog,
   DialogContent,
@@ -36,7 +38,8 @@ import {
 } from "@/components/ui/dialog";
 import { 
   FileEdit,
-  AlertCircle
+  AlertCircle,
+  ShieldCheck as ReleaseIcon
 } from 'lucide-react';
 
 interface LabTechnicalWorkPageProps {
@@ -152,6 +155,7 @@ export default function LabTechnicalWorkPage({ view }: LabTechnicalWorkPageProps
   const [retificacaoMotivo, setRetificacaoMotivo] = useState('');
   const [selectedBatchOrders, setSelectedBatchOrders] = useState<string[]>([]);
   const [batchProgress, setBatchProgress] = useState<{current: number, total: number, status: string} | null>(null);
+  const [showConfirmRelease, setShowConfirmRelease] = useState(false);
 
   useEffect(() => {
     const timer = setTimeout(() => setLoading(false), 800);
@@ -507,7 +511,11 @@ export default function LabTechnicalWorkPage({ view }: LabTechnicalWorkPageProps
                     </Button>
                   )}
                 </div>
-                <Button size="sm" className="bg-teal-600 hover:bg-teal-700 text-white gap-2">
+                <Button 
+                  size="sm" 
+                  className="bg-teal-600 hover:bg-teal-700 text-white gap-2"
+                  onClick={() => setShowConfirmRelease(true)}
+                >
                   <Check className="h-4 w-4" /> Validar Tudo e Liberar
                 </Button>
               </div>
@@ -667,6 +675,24 @@ export default function LabTechnicalWorkPage({ view }: LabTechnicalWorkPageProps
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {selectedOrder && (
+        <ConfirmReleaseModal
+          isOpen={showConfirmRelease}
+          onClose={() => setShowConfirmRelease(false)}
+          onConfirm={() => {
+            toast.success('Laudo liberado com sucesso!');
+            setShowConfirmRelease(false);
+          }}
+          patientName={selectedOrder.patientName}
+          protocol={selectedOrder.protocol}
+          examsCount={selectedOrder.exams.length}
+          technicalResponsible={{
+            name: "Anderson Veríssimo O. Neto",
+            register: "CRBM-RN-08453"
+          }}
+        />
+      )}
     </div>
   );
 }
