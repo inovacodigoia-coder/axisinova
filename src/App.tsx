@@ -33,6 +33,7 @@ import TVPanelPage from "./pages/company/queue/TVPanelPage";
 import PatientPortalLayout from "./pages/patient/PatientPortalLayout";
 import NotFound from "./pages/NotFound";
 import GreenScreenPage from "./pages/GreenScreenPage";
+import OriginSelectorPage from "./pages/company/OriginSelectorPage";
 
 const queryClient = new QueryClient();
 
@@ -71,6 +72,7 @@ const App = () => (
 
                 {/* Profile Selector */}
                 <Route path="/selecionar-perfil" element={<PrivateRoute><ProfileSelectorPage /></PrivateRoute>} />
+                <Route path="/selecionar-origem" element={<PrivateRoute><OriginSelectorPage /></PrivateRoute>} />
 
                 {/* Super Admin */}
                 <Route path="/superadmin" element={<SuperAdminRoute><SuperAdminLayout /></SuperAdminRoute>}>

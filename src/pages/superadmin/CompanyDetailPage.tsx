@@ -194,7 +194,35 @@ export default function CompanyDetailPage() {
       )}
 
       {activeTab === 'settings' && (
-        <div className="rounded-2xl border border-border bg-card p-6 shadow-[0_4px_24px_rgba(0,0,0,0.06)] space-y-6">
+        <div className="space-y-6">
+          <div className="rounded-2xl border border-border bg-card p-6 shadow-[0_4px_24px_rgba(0,0,0,0.06)] space-y-6">
+            <h3 className="text-sm font-semibold text-foreground uppercase tracking-wider">Módulos do Sistema</h3>
+            <div className="space-y-4 divide-y divide-border">
+              <div className="pt-0 flex items-center justify-between">
+                <div>
+                  <p className="font-medium flex items-center gap-2">🏥 Soft Clínica</p>
+                  <p className="text-xs text-muted-foreground">Agenda, Recepção, Prontuário, Faturamento clínico</p>
+                </div>
+                <input type="checkbox" defaultChecked className="h-5 w-10 rounded-full accent-primary" />
+              </div>
+              <div className="pt-4 flex items-center justify-between">
+                <div>
+                  <p className="font-medium flex items-center gap-2">🔬 Soft Laboratório</p>
+                  <p className="text-xs text-muted-foreground">Cadastro de exames, Coleta, Setor técnico, Laudos</p>
+                </div>
+                <input type="checkbox" className="h-5 w-10 rounded-full accent-primary" />
+              </div>
+              <div className="pt-4 flex items-center justify-between">
+                <div>
+                  <p className="font-medium flex items-center gap-2">🏨 Soft Hospital</p>
+                  <p className="text-xs text-muted-foreground">Internação, Leitos, Centro cirúrgico, UTI</p>
+                </div>
+                <input type="checkbox" className="h-5 w-10 rounded-full accent-primary" />
+              </div>
+            </div>
+          </div>
+
+          <div className="rounded-2xl border border-border bg-card p-6 shadow-[0_4px_24px_rgba(0,0,0,0.06)] space-y-6">
           <h3 className="text-sm font-semibold text-foreground">Configurações da Empresa</h3>
           {[
             { label: 'Ativar acesso ao sistema', defaultChecked: company.status === 'active' },
