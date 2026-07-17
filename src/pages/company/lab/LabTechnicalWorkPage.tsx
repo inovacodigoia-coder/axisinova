@@ -581,10 +581,8 @@ export default function LabTechnicalWorkPage({ view }: LabTechnicalWorkPageProps
         <PDFPreviewModal 
           isOpen={showPDFPreview}
           onClose={() => setShowPDFPreview(false)}
-          patientName={selectedOrder.patientName}
-          protocol={selectedOrder.protocol}
+          order={selectedOrder}
           onDownload={handleDownloadPDF}
-          status={selectedExam?.status}
         />
       )}
 
