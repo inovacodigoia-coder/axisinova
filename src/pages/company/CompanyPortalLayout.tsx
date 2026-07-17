@@ -82,6 +82,11 @@ import UnitConfigPage from './queue/admin/UnitConfigPage'
 import TVConfigPage from './queue/admin/TVConfigPage'
 import QueueBIPage from './queue/admin/QueueBIPage'
 import LabColetaPage from './lab/LabColetaPage'
+import LabSettingsPage from './lab/settings/LabSettingsPage'
+import LabCatalogPage from './lab/catalog/LabCatalogPage'
+import LabCatalogFormPage from './lab/catalog/LabCatalogFormPage'
+import LabEquipmentPage from './lab/equipment/LabEquipmentPage'
+import LabAbbreviationsPage from './lab/abbreviations/LabAbbreviationsPage'
 
 function PortalContent() {
   const [mobileOpen, setMobileOpen] = useState(false)
