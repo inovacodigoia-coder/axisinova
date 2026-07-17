@@ -185,10 +185,48 @@ export default function ResultInputPanel({ exam, order, onCancel, onSave }: Resu
 
     // Update statuses
     const newStatuses = { ...statuses };
+    const newCriticals: LabParameter[] = [];
+    
     parameters.forEach(p => {
-      newStatuses[p.id] = getStatus(newResults[p.id], p);
+      const status = getStatus(newResults[p.id], p);
+      newStatuses[p.id] = status;
+      if (status === 'critical') {
+        newCriticals.push(p);
+      }
     });
+    
     setStatuses(newStatuses);
+    setCriticalParams(newCriticals);
+  };
+
+  const handleSaveAttempt = () => {
+    // Check Delta Check for Glicose (demo)
+    if (exam.code === 'GLI' && parseFloat(results['p1']) > 150) {
+      setDeltaInfo({
+        param: 'Glicose',
+        current: results['p1'],
+        avg: '94',
+        variation: '+197%'
+      });
+      setShowDeltaModal(true);
+      return;
+    }
+
+    // Check Sum Validation for HEM (demo)
+    if (exam.code === 'HEM') {
+      // Logic for sum validation...
+    }
+
+    onSave([]);
+  };
+
+  const confirmDeltaOverride = () => {
+    if (!justification) {
+      toast.error('Justificativa obrigatória para Delta Check');
+      return;
+    }
+    setShowDeltaModal(false);
+    onSave([]);
   };
 
   const handleKeyDown = (e: React.KeyboardEvent, index: number) => {
