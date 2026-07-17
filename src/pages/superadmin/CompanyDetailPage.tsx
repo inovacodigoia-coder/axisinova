@@ -240,9 +240,10 @@ export default function CompanyDetailPage() {
                 <input type="checkbox" defaultChecked className="h-5 w-10 rounded-full accent-primary cursor-pointer" />
               </div>
             </div>
+          </div>
 
           <div className="rounded-2xl border border-border bg-card p-6 shadow-[0_4px_24px_rgba(0,0,0,0.06)] space-y-6">
-          <h3 className="text-sm font-semibold text-foreground">Configurações da Empresa</h3>
+            <h3 className="text-sm font-semibold text-foreground">Configurações da Empresa</h3>
           {[
             { label: 'Ativar acesso ao sistema', defaultChecked: company.status === 'active' },
             { label: 'Modo manutenção', defaultChecked: false },
