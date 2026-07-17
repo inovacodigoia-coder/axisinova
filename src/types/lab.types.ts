@@ -167,3 +167,59 @@ export const TUBE_TYPES = [
   { type: 'citrato', color: 'bg-gray-400', label: 'Plasma Citratado', volume: '3mL', hex: '#9CA3AF' },
   { type: 'urina', color: 'bg-orange-500', label: 'Frasco de Urina', volume: '50mL', hex: '#F97316' },
 ];
+
+export interface LabBudget {
+  id: string;
+  budgetNumber: string;
+  patientId?: string;
+  patientName: string;
+  patientCpf?: string;
+  patientMotherName?: string;
+  patientPhone?: string;
+  patientBirthDate?: string;
+  isAnonymous: boolean;
+  date: string;
+  expiryDate: string;
+  convenioId: string;
+  convenioName: string;
+  priceTableId: string;
+  priceTableName: string;
+  doctorId?: string;
+  doctorName?: string;
+  doctorCrm?: string;
+  specialty?: string;
+  discountType: 'percentage' | 'fixed';
+  discountValue: number;
+  subtotal: number;
+  total: number;
+  status: 'pending' | 'approved' | 'expired' | 'cancelled' | 'converted';
+  notes?: string;
+  convertedAttendanceId?: string;
+  exams: {
+    examId: string;
+    code: string;
+    name: string;
+    material: string;
+    unitPrice: number;
+    quantity: number;
+    totalPrice: number;
+  }[];
+  history?: {
+    action: string;
+    timestamp: string;
+    userId: string;
+    userName: string;
+  }[];
+}
+
+export interface LabExamGroup {
+  id: string;
+  name: string;
+  description?: string;
+  isActive: boolean;
+  exams: {
+    examId: string;
+    code: string;
+    name: string;
+  }[];
+}
