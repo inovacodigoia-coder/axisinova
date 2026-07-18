@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate, useParams, Link } from 'react-router-dom';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -14,16 +14,31 @@ import {
   History,
   Info,
   ExternalLink,
-  FileText
+  FileText,
+  Send,
+  CheckCircle2,
+  Settings
 } from 'lucide-react';
 
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { toast } from 'sonner';
+import EmailReportModal from '@/components/lab/EmailReportModal';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter
+} from "@/components/ui/dialog";
 
 export default function LabBudgetDetailPage() {
   const navigate = useNavigate();
   const { id } = useParams();
+  const [emailModalOpen, setEmailModalOpen] = useState(false);
+  const [approvalModalOpen, setApprovalModalOpen] = useState(false);
+  const [status, setStatus] = useState<'pending' | 'approved' | 'converted'>('pending');
 
   const handleConvert = () => {
     toast.info("Processando conversão em atendimento...");
@@ -31,6 +46,24 @@ export default function LabBudgetDetailPage() {
       toast.success("Orçamento convertido com sucesso! Redirecionando para o atendimento...");
       navigate('/app/recepcao');
     }, 1500);
+  };
+
+  const handleSendEmail = (data: any) => {
+    toast.promise(
+      new Promise((resolve) => setTimeout(resolve, 2000)),
+      {
+        loading: 'Enviando orçamento por e-mail...',
+        success: 'Orçamento enviado com sucesso!',
+        error: 'Erro ao enviar e-mail.',
+      }
+    );
+    setEmailModalOpen(false);
+  };
+
+  const handleApprove = () => {
+    setStatus('approved');
+    setApprovalModalOpen(false);
+    toast.success("Orçamento aprovado com sucesso!");
   };
 
   return (
@@ -43,7 +76,9 @@ export default function LabBudgetDetailPage() {
           <div>
             <div className="flex items-center gap-3">
               <h1 className="text-2xl font-bold">ORC-2025-001</h1>
-              <Badge className="bg-blue-500 text-white">● Pendente</Badge>
+              {status === 'pending' && <Badge className="bg-blue-500 text-white">● Pendente</Badge>}
+              {status === 'approved' && <Badge className="bg-emerald-500 text-white">● Aprovado</Badge>}
+              {status === 'converted' && <Badge className="bg-purple-500 text-white">● Convertido</Badge>}
             </div>
             <p className="text-sm text-muted-foreground">Criado em 07/07/2025 · Válido até 14/07/2025</p>
           </div>
@@ -52,9 +87,14 @@ export default function LabBudgetDetailPage() {
           <Button variant="outline" className="gap-2" onClick={() => navigate(`/app/orcamentos/${id}/editar`)}>
             <Edit className="h-4 w-4" /> Editar
           </Button>
-          <Button variant="outline" className="gap-2">
+          <Button variant="outline" className="gap-2" onClick={() => setEmailModalOpen(true)}>
             <Mail className="h-4 w-4" /> Enviar
           </Button>
+          {status === 'pending' && (
+            <Button variant="outline" className="gap-2 text-emerald-600 border-emerald-200 hover:bg-emerald-50" onClick={() => setApprovalModalOpen(true)}>
+              <CheckCircle2 className="h-4 w-4" /> Aprovar Orçamento
+            </Button>
+          )}
           <Button onClick={handleConvert} className="gap-2 bg-purple-600 hover:bg-purple-700 text-white">
             <ArrowRightLeft className="h-4 w-4" /> Converter em Guia
           </Button>
@@ -199,6 +239,41 @@ export default function LabBudgetDetailPage() {
           </Button>
         </div>
       </div>
+      </div>
+
+      <EmailReportModal
+        isOpen={emailModalOpen}
+        onClose={() => setEmailModalOpen(false)}
+        onSend={handleSendEmail}
+        patientName="João da Silva"
+        protocol="ORC-2025-001"
+      />
+
+      <Dialog open={approvalModalOpen} onOpenChange={setApprovalModalOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Aprovar Orçamento</DialogTitle>
+            <DialogDescription>
+              Confirmar a aprovação do orçamento <strong>ORC-2025-001</strong> para o paciente João da Silva.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="py-4 text-sm space-y-4">
+            <div className="p-4 bg-muted/50 rounded-lg flex items-center justify-between">
+              <span className="font-medium">Valor Total:</span>
+              <span className="text-lg font-bold">R$ 117,00</span>
+            </div>
+            <p className="text-muted-foreground italic text-xs">
+              Ao aprovar, o status do orçamento será atualizado e registrado no histórico. Você poderá convertê-lo em guia a qualquer momento.
+            </p>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setApprovalModalOpen(false)}>Cancelar</Button>
+            <Button className="bg-emerald-600 hover:bg-emerald-700 text-white gap-2" onClick={handleApprove}>
+              <CheckCircle2 className="h-4 w-4" /> Confirmar Aprovação
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
