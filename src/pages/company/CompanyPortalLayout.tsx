@@ -107,6 +107,11 @@ import LabStockLotsPage from './estoque/LabStockLotsPage'
 import LabStockMovementsPage from './estoque/LabStockMovementsPage'
 import LabStockSuppliersPage from './estoque/LabStockSuppliersPage'
 import LabStockReportsPage from './estoque/LabStockReportsPage'
+import LabPharmacyDashboardPage from './farmacia/LabPharmacyDashboardPage'
+import LabPharmacyMedsPage from './farmacia/LabPharmacyMedsPage'
+import LabPharmacyPrescriptionsPage from './farmacia/LabPharmacyPrescriptionsPage'
+import LabPharmacyStockPage from './farmacia/LabPharmacyStockPage'
+import LabPharmacyReportsPage from './farmacia/LabPharmacyReportsPage'
 
 
 
@@ -300,6 +305,14 @@ function PortalContent() {
               <Route path="estoque/movimentacoes" element={<LabStockMovementsPage />} />
               <Route path="estoque/fornecedores" element={<LabStockSuppliersPage />} />
               <Route path="estoque/relatorios" element={<LabStockReportsPage />} />
+
+              {/* Pharmacy Module */}
+              <Route path="farmacia" element={<LabPharmacyDashboardPage />} />
+              <Route path="farmacia/medicamentos" element={<LabPharmacyMedsPage />} />
+              <Route path="farmacia/prescricoes" element={<LabPharmacyPrescriptionsPage />} />
+              <Route path="farmacia/dispensacao" element={<LabPharmacyPrescriptionsPage />} /> {/* Link to queue */}
+              <Route path="farmacia/estoque" element={<LabPharmacyStockPage />} />
+              <Route path="farmacia/relatorios" element={<LabPharmacyReportsPage />} />
 
 
 
