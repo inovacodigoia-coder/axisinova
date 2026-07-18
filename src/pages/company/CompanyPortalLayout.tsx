@@ -90,6 +90,11 @@ import LabAbbreviationsPage from './lab/abbreviations/LabAbbreviationsPage'
 import LabTechnicalWorkPage from './lab/LabTechnicalWorkPage'
 import LabMapaPage from './lab/LabMapaPage'
 import LabReportsPage from './lab/LabReportsPage'
+import LabBudgetsPage from './lab/orcamentos/LabBudgetsPage'
+import LabBudgetFormPage from './lab/orcamentos/LabBudgetFormPage'
+import LabBudgetDetailPage from './lab/orcamentos/LabBudgetDetailPage'
+
+
 
 function PortalContent() {
   const [mobileOpen, setMobileOpen] = useState(false)
@@ -259,6 +264,12 @@ function PortalContent() {
               <Route path="lab/caixa-entrada" element={<LabTechnicalWorkPage view="inbox" />} />
               <Route path="lab/validacao" element={<LabTechnicalWorkPage view="validation" />} />
               <Route path="lab/laudos" element={<LabReportsPage />} />
+              <Route path="orcamentos" element={<LabBudgetsPage />} />
+              <Route path="orcamentos/novo" element={<LabBudgetFormPage />} />
+              <Route path="orcamentos/:id" element={<LabBudgetDetailPage />} />
+              <Route path="orcamentos/:id/editar" element={<LabBudgetFormPage />} />
+
+
 
               <Route path="*" element={<Navigate to="dashboard" replace />} />
             </Routes>
