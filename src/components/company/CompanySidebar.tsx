@@ -116,6 +116,17 @@ const NAV_SECTIONS: NavSection[] = [
       { label: 'Relatórios Estoque', icon: 'BarChart3', path: '/app/estoque/relatorios', module: 'settings' },
     ],
   },
+  {
+    title: 'FARMÁCIA HOSPITALAR',
+    items: [
+      { label: 'Dashboard Farmácia', icon: 'Layout', path: '/app/farmacia', module: 'settings' },
+      { label: 'Dispensação', icon: 'Pill', path: '/app/farmacia/dispensacao', module: 'settings' },
+      { label: 'Prescrições', icon: 'ClipboardList', path: '/app/farmacia/prescricoes', module: 'settings' },
+      { label: 'Medicamentos', icon: 'Pill', path: '/app/farmacia/medicamentos', module: 'settings' },
+      { label: 'Estoque Farmácia', icon: 'Warehouse', path: '/app/farmacia/estoque', module: 'settings' },
+      { label: 'Relatórios Farmácia', icon: 'BarChart3', path: '/app/farmacia/relatorios', module: 'settings' },
+    ],
+  },
 ]
 
 
