@@ -220,18 +220,17 @@ export default function LabFinanceDashboardPage() {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <Card className="p-0 overflow-hidden">
           <div className="p-4 border-b bg-muted/20 flex items-center justify-between">
-            <h3 className="text-sm font-bold">Próximos Pagamentos</h3>
+            <h3 className="text-sm font-bold">Próximos Pagamentos & Alertas</h3>
             <Button variant="ghost" size="sm" className="h-7 text-primary gap-1">
               Ver tudo <ChevronRight className="h-4 w-4" />
             </Button>
           </div>
           <div className="divide-y divide-border">
             {[
-              { desc: 'Reagentes EDTA', provider: 'Lab Suprimentos', due: 'Amanhã', value: 1200, status: 'warning' },
-              { desc: 'Energia Elétrica', provider: 'COSERN', due: '20/07', value: 480, status: 'pending' },
-              { desc: 'Manutenção Equip.', provider: 'BioTech', due: '22/07', value: 850, status: 'pending' },
-              { desc: 'Internet Fibra', provider: 'Telecom', due: '25/07', value: 199, status: 'pending' },
-              { desc: 'Limpeza e Higiene', provider: 'SafeClean', due: '28/07', value: 340, status: 'pending' },
+              { desc: 'Reagentes EDTA', provider: 'Lab Suprimentos', due: 'Amanhã', value: 1200, status: 'warning', alert: 'In-app + Email' },
+              { desc: 'Energia Elétrica', provider: 'COSERN', due: '20/07', value: 480, status: 'pending', alert: 'In-app' },
+              { desc: 'Manutenção Equip.', provider: 'BioTech', due: '22/07', value: 850, status: 'pending', alert: 'In-app' },
+              { desc: 'Internet Fibra', provider: 'Telecom', due: '25/07', value: 199, status: 'pending', alert: 'Email' },
             ].map((p, i) => (
               <div key={i} className="p-3 flex items-center justify-between hover:bg-muted/30 transition-colors">
                 <div className="flex items-center gap-3">
@@ -239,7 +238,10 @@ export default function LabFinanceDashboardPage() {
                     <DollarSign className="h-4 w-4" />
                   </div>
                   <div>
-                    <p className="text-sm font-bold">{p.desc}</p>
+                    <div className="flex items-center gap-2">
+                      <p className="text-sm font-bold">{p.desc}</p>
+                      <Badge variant="outline" className="text-[9px] h-4 px-1">{p.alert}</Badge>
+                    </div>
                     <p className="text-[10px] text-muted-foreground">{p.provider}</p>
                   </div>
                 </div>
@@ -254,33 +256,33 @@ export default function LabFinanceDashboardPage() {
 
         <Card className="p-0 overflow-hidden">
           <div className="p-4 border-b bg-muted/20 flex items-center justify-between">
-            <h3 className="text-sm font-bold">Faturas Vencidas Pendentes</h3>
-            <Badge variant="destructive" className="h-5 text-[10px]">3 faturas</Badge>
+            <h3 className="text-sm font-bold">Conciliação & Divergências</h3>
+            <Badge variant="destructive" className="h-5 text-[10px]">4 pendências</Badge>
           </div>
           <div className="divide-y divide-border">
             {[
-              { provider: 'Unimed Natal', batch: 'LOTE-2025-001', overdue: '15 dias', value: 12450 },
-              { provider: 'Hapvida', batch: 'LOTE-2024-088', overdue: '45 dias', value: 8200 },
-              { provider: 'Particular', batch: 'REC-2026-042', overdue: '5 dias', value: 320 },
+              { item: 'Unimed Natal', ref: 'LOTE-2025-001', value: 12450, received: 12000, diff: 450, type: 'Parcial' },
+              { item: 'João da Silva', ref: 'REC-2026-042', value: 320, received: 300, diff: 20, type: 'Divergente' },
+              { item: 'Hapvida', ref: 'LOTE-2024-088', value: 8200, received: 0, diff: 8200, type: 'Pendente' },
             ].map((f, i) => (
               <div key={i} className="p-4 flex items-center justify-between hover:bg-muted/30 transition-colors">
                 <div className="flex items-center gap-3">
-                  <div className="h-8 w-8 rounded-full bg-destructive/10 text-destructive flex items-center justify-center">
+                  <div className={`h-8 w-8 rounded-full flex items-center justify-center ${f.received > 0 ? 'bg-amber-100 text-amber-600' : 'bg-destructive/10 text-destructive'}`}>
                     <AlertCircle className="h-4 w-4" />
                   </div>
                   <div>
-                    <p className="text-sm font-bold">{f.provider}</p>
-                    <p className="text-[10px] text-muted-foreground">{f.batch}</p>
+                    <p className="text-sm font-bold">{f.item}</p>
+                    <p className="text-[10px] text-muted-foreground">{f.ref} • {f.type}</p>
                   </div>
                 </div>
                 <div className="text-right">
-                  <p className="text-sm font-bold text-destructive">R$ {f.value.toLocaleString()}</p>
-                  <p className="text-[10px] font-medium text-muted-foreground">Vencida há {f.overdue}</p>
+                  <p className="text-sm font-bold text-foreground">R$ {f.value.toLocaleString()}</p>
+                  <p className="text-[10px] font-medium text-destructive">Dif: R$ {f.diff.toLocaleString()}</p>
                 </div>
               </div>
             ))}
             <div className="p-4 bg-muted/10 text-center">
-              <Button variant="link" size="sm" className="text-xs">Ver faturamento completo</Button>
+              <Button variant="outline" size="sm" className="text-xs w-full">Abrir Tela de Conciliação</Button>
             </div>
           </div>
         </Card>

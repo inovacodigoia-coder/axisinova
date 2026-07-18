@@ -12,7 +12,8 @@ import {
   MoreVertical,
   CheckCircle2,
   XCircle,
-  Search as SearchIcon
+  Search as SearchIcon,
+  History
 } from 'lucide-react';
 import {
   DropdownMenu,
@@ -37,9 +38,14 @@ export default function LabPriceTablesPage() {
           <h1 className="text-2xl font-bold">Tabelas de Preços</h1>
           <p className="text-sm text-muted-foreground">Gerencie valores de exames por convênio ou particular.</p>
         </div>
-        <Button className="gradient-bg gap-2">
-          <Plus className="h-4 w-4" /> Nova Tabela
-        </Button>
+        <div className="flex gap-2">
+          <Button variant="outline" className="gap-2">
+            <History className="h-4 w-4" /> Log de Alterações
+          </Button>
+          <Button className="gradient-bg gap-2">
+            <Plus className="h-4 w-4" /> Nova Tabela
+          </Button>
+        </div>
       </div>
 
       <div className="flex flex-col md:flex-row gap-4 items-center bg-card p-4 rounded-xl border border-border shadow-sm">

@@ -15,7 +15,8 @@ import {
   ChevronRight,
   AlertCircle,
   FileText,
-  Building
+  Building,
+  History
 } from 'lucide-react';
 import {
   DropdownMenu,
@@ -42,9 +43,14 @@ export default function LabAccountsPayablePage() {
           <h1 className="text-2xl font-bold">Contas a Pagar</h1>
           <p className="text-sm text-muted-foreground">Controle de despesas, fornecedores e vencimentos.</p>
         </div>
-        <Button className="gradient-bg gap-2">
-          <Plus className="h-4 w-4" /> Nova Conta
-        </Button>
+        <div className="flex gap-2">
+          <Button variant="outline" className="gap-2">
+            <History className="h-4 w-4" /> Histórico
+          </Button>
+          <Button className="gradient-bg gap-2">
+            <Plus className="h-4 w-4" /> Nova Conta
+          </Button>
+        </div>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
