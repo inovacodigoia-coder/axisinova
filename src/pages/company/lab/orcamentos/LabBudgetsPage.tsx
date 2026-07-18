@@ -129,9 +129,37 @@ export default function LabBudgetsPage() {
           <h1 className="text-2xl font-bold">Orçamentos</h1>
           <p className="text-sm text-muted-foreground">Simule valores de exames e converta orçamentos em atendimentos.</p>
         </div>
-        <Button onClick={() => navigate('/app/orcamentos/novo')} className="gap-2 gradient-bg">
-          <Plus className="h-4 w-4" /> Novo Orçamento
-        </Button>
+        <div className="flex gap-2">
+          <Button variant="outline" className="gap-2" onClick={() => navigate('/app/bi/financeiro')}>
+            <BarChart3 className="h-4 w-4" /> Relatórios
+          </Button>
+          <Button onClick={() => navigate('/app/orcamentos/novo')} className="gap-2 gradient-bg">
+            <Plus className="h-4 w-4" /> Novo Orçamento
+          </Button>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <Card className="p-4 flex flex-col gap-2">
+          <p className="text-xs font-bold text-muted-foreground uppercase tracking-wider">Conversão (30 dias)</p>
+          <div className="flex items-end justify-between">
+            <h3 className="text-2xl font-bold text-primary">68%</h3>
+            <Badge className="bg-emerald-500/10 text-emerald-600 border-none text-[10px]">+12% vs anterior</Badge>
+          </div>
+          <div className="h-1.5 w-full bg-muted rounded-full overflow-hidden mt-2">
+            <div className="h-full bg-primary rounded-full" style={{ width: '68%' }}></div>
+          </div>
+        </Card>
+        <Card className="p-4 flex flex-col gap-2">
+          <p className="text-xs font-bold text-muted-foreground uppercase tracking-wider">Ticket Médio</p>
+          <h3 className="text-2xl font-bold text-foreground">R$ 245,50</h3>
+          <p className="text-[10px] text-muted-foreground">Baseado em 128 orçamentos aprovados</p>
+        </Card>
+        <Card className="p-4 flex flex-col gap-2">
+          <p className="text-xs font-bold text-muted-foreground uppercase tracking-wider">Total Pendente</p>
+          <h3 className="text-2xl font-bold text-amber-600">R$ 12.450,00</h3>
+          <p className="text-[10px] text-muted-foreground">42 orçamentos aguardando aprovação</p>
+        </Card>
       </div>
 
       <div className="flex flex-col md:flex-row gap-4 items-center bg-card p-4 rounded-xl border border-border">
@@ -153,6 +181,7 @@ export default function LabBudgetsPage() {
           </Button>
         </div>
       </div>
+
 
       <div className="flex gap-2 overflow-x-auto pb-2">
         {['all', 'pending', 'approved', 'expired', 'cancelled', 'converted'].map((status) => (
