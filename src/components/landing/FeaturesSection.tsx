@@ -34,6 +34,13 @@ const features = [
   },
 ];
 
+const subFeatures = [
+  { title: 'Conformidade LGPD', desc: 'Dados criptografados e controle de acesso rigoroso.' },
+  { title: 'Multi-unidades', desc: 'Gerencie múltiplas filiais em um único painel central.' },
+  { title: 'API Aberta', desc: 'Integre com outros softwares e laboratórios parceiros.' },
+  { title: 'Suporte VIP', desc: 'Atendimento humanizado em menos de 5 minutos por chat.' },
+];
+
 export function FeaturesSection() {
   return (
     <section id="features" className="bg-muted py-20 md:py-24">
@@ -71,6 +78,21 @@ export function FeaturesSection() {
             </motion.div>
           ))}
         </div>
+
+        <motion.div 
+          className="mt-16 grid grid-cols-2 md:grid-cols-4 gap-4"
+          initial={{ opacity: 0 }}
+          whileInView={{ opacity: 1 }}
+          viewport={{ once: true }}
+          transition={{ duration: 0.8, delay: 0.4 }}
+        >
+          {subFeatures.map((sf) => (
+            <div key={sf.title} className="text-center p-4 rounded-xl bg-white/50 border border-border/50">
+              <h4 className="font-bold text-foreground text-sm">{sf.title}</h4>
+              <p className="text-[11px] text-muted-foreground mt-1">{sf.desc}</p>
+            </div>
+          ))}
+        </motion.div>
       </div>
     </section>
   );
