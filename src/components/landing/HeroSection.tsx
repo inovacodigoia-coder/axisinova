@@ -89,8 +89,8 @@ export function HeroSection() {
               </div>
 
               <h1 className="text-4xl font-extrabold leading-[1.1] text-foreground md:text-[56px]" style={{ textWrap: 'balance' }}>
-                A gestão completa da sua{' '}
-                <span className="gradient-text">clínica</span>
+                A gestão completa de{' '}
+                <span className="gradient-text">Clínicas, Hospitais e Laboratórios</span>
                 {' '}em um só lugar
               </h1>
 
