@@ -13,8 +13,10 @@ import {
   User,
   History,
   Info,
-  ExternalLink
+  ExternalLink,
+  FileText
 } from 'lucide-react';
+
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { toast } from 'sonner';
