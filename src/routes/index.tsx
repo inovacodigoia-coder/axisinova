@@ -4,9 +4,8 @@
 
 /*
   TAREFAS PENDENTES:
-  - Criar a tela para cadastrar prateleiras/compartimentos e configurar localizações físicas do estoque em /app/farmacia/configuracoes/localizacoes.
-  - Implementar um log de auditoria completo para cada dispensação, com quem fez, itens, quantidades, lotes e alterações de status no RX-.
-  - Adicionar o fluxo de override para dispensação bloqueada por alergia, exigindo justificativa e autorização do perfil autorizado antes de liberar.
-  - Adicionar exportação dos relatórios de /app/farmacia/relatorios em PDF e Excel, mantendo filtros por período, médico e paciente.
+  - Corrigir os erros de TypeScript em src/routes/index.tsx e garantir que o projeto compila e roda sem warnings.
+  - Criar a tela para cadastrar prateleiras/compartimentos e configurar localizações físicas em /app/farmacia/configuracoes/localizacoes.
+  - Implementar um log de auditoria completo para cada dispensação, registrando quem fez, itens, quantidades, lotes e alterações de status em RX.
 */
 export {}
