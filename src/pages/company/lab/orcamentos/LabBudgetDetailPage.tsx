@@ -239,7 +239,6 @@ export default function LabBudgetDetailPage() {
           </Button>
         </div>
       </div>
-      </div>
 
       <EmailReportModal
         isOpen={emailModalOpen}
