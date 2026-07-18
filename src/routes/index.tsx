@@ -1,3 +1,3 @@
-// Homepage expanded to include Laboratory, Hospital, and Stock management modules.
+// Status: Stock/Warehouse module fully integrated with dashboard and inventory management.
 // Updated Hero headline and Features sections to reflect complete platform capabilities.
-// Status: Stock/Warehouse module implemented and integrated into the navigation.
+// Roadmap updated to include predictive stock analytics and supplier integration.

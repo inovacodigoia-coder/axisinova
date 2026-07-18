@@ -101,6 +101,8 @@ import LabPriceTablesPage from './financeiro/LabPriceTablesPage'
 import LabBillingTissPage from './financeiro/LabBillingTissPage'
 import LabCostCentersPage from './financeiro/LabCostCentersPage'
 import LabFinancialIndicatorsPage from './financeiro/LabFinancialIndicatorsPage'
+import LabStockDashboardPage from './estoque/LabStockDashboardPage'
+import LabStockItemsPage from './estoque/LabStockItemsPage'
 
 
 
@@ -286,6 +288,10 @@ function PortalContent() {
               <Route path="financeiro/faturamento" element={<LabBillingTissPage />} />
               <Route path="financeiro/centros-custo" element={<LabCostCentersPage />} />
               <Route path="financeiro/indicadores" element={<LabFinancialIndicatorsPage />} />
+
+              {/* Stock Module */}
+              <Route path="estoque" element={<LabStockDashboardPage />} />
+              <Route path="estoque/itens" element={<LabStockItemsPage />} />
 
 
 
