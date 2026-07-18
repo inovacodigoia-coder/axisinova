@@ -35,6 +35,8 @@ const features = [
 ];
 
 const subFeatures = [
+  { title: 'Gestão Laboratorial', desc: 'Módulo completo com Soroteca, Interfaceamento e Laudos.' },
+  { title: 'Gestão Hospitalar', desc: 'Controle de leitos, Farmácia e Prontuário de Alta Complexidade.' },
   { title: 'Conformidade LGPD', desc: 'Dados criptografados e controle de acesso rigoroso.' },
   { title: 'Multi-unidades', desc: 'Gerencie múltiplas filiais em um único painel central.' },
   { title: 'API Aberta', desc: 'Integre com outros softwares e laboratórios parceiros.' },
@@ -80,7 +82,7 @@ export function FeaturesSection() {
         </div>
 
         <motion.div 
-          className="mt-16 grid grid-cols-2 md:grid-cols-4 gap-4"
+          className="mt-16 grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4"
           initial={{ opacity: 0 }}
           whileInView={{ opacity: 1 }}
           viewport={{ once: true }}
