@@ -105,6 +105,13 @@ const NAV_SECTIONS: NavSection[] = [
       { label: 'Indicadores', icon: 'TrendingUp', path: '/app/financeiro/indicadores', module: 'billing' },
     ],
   },
+  {
+    title: 'ESTOQUE E ALMOXARIFADO',
+    items: [
+      { label: 'Dashboard Estoque', icon: 'Warehouse', path: '/app/estoque', module: 'settings' },
+      { label: 'Itens de Estoque', icon: 'Package', path: '/app/estoque/itens', module: 'settings' },
+    ],
+  },
 ]
 
 
