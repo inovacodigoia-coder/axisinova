@@ -16,7 +16,8 @@ import {
   ArrowRightLeft, 
   Trash2,
   Calendar,
-  MoreVertical
+  MoreVertical,
+  BarChart3
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
