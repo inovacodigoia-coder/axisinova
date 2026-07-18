@@ -1,3 +1,12 @@
 // Status: Módulos de Estoque e Farmácia Hospitalar totalmente implementados.
 // Inclui: Gestão de medicamentos, prescrições eletrônicas, controle SNGPC, verificação de alergias e BI de farmácia.
 // Roadmap: Próxima etapa - Integração da farmácia com o módulo de beira de leito e checagem via barcode.
+
+/*
+  TAREFAS PENDENTES:
+  - Criar a tela para cadastrar prateleiras/compartimentos e configurar localizações físicas do estoque em /app/farmacia/configuracoes/localizacoes.
+  - Implementar um log de auditoria completo para cada dispensação, com quem fez, itens, quantidades, lotes e alterações de status no RX-.
+  - Adicionar o fluxo de override para dispensação bloqueada por alergia, exigindo justificativa e autorização do perfil autorizado antes de liberar.
+  - Adicionar exportação dos relatórios de /app/farmacia/relatorios em PDF e Excel, mantendo filtros por período, médico e paciente.
+*/
+export {}
