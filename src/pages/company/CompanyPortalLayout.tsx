@@ -103,6 +103,10 @@ import LabCostCentersPage from './financeiro/LabCostCentersPage'
 import LabFinancialIndicatorsPage from './financeiro/LabFinancialIndicatorsPage'
 import LabStockDashboardPage from './estoque/LabStockDashboardPage'
 import LabStockItemsPage from './estoque/LabStockItemsPage'
+import LabStockLotsPage from './estoque/LabStockLotsPage'
+import LabStockMovementsPage from './estoque/LabStockMovementsPage'
+import LabStockSuppliersPage from './estoque/LabStockSuppliersPage'
+import LabStockReportsPage from './estoque/LabStockReportsPage'
 
 
 
@@ -292,6 +296,10 @@ function PortalContent() {
               {/* Stock Module */}
               <Route path="estoque" element={<LabStockDashboardPage />} />
               <Route path="estoque/itens" element={<LabStockItemsPage />} />
+              <Route path="estoque/lotes" element={<LabStockLotsPage />} />
+              <Route path="estoque/movimentacoes" element={<LabStockMovementsPage />} />
+              <Route path="estoque/fornecedores" element={<LabStockSuppliersPage />} />
+              <Route path="estoque/relatorios" element={<LabStockReportsPage />} />
 
 
 

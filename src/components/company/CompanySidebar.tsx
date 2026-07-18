@@ -110,6 +110,10 @@ const NAV_SECTIONS: NavSection[] = [
     items: [
       { label: 'Dashboard Estoque', icon: 'Warehouse', path: '/app/estoque', module: 'settings' },
       { label: 'Itens de Estoque', icon: 'Package', path: '/app/estoque/itens', module: 'settings' },
+      { label: 'Gestão de Lotes', icon: 'Database', path: '/app/estoque/lotes', module: 'settings' },
+      { label: 'Movimentações', icon: 'RefreshCw', path: '/app/estoque/movimentacoes', module: 'settings' },
+      { label: 'Fornecedores', icon: 'Building2', path: '/app/estoque/fornecedores', module: 'settings' },
+      { label: 'Relatórios Estoque', icon: 'BarChart3', path: '/app/estoque/relatorios', module: 'settings' },
     ],
   },
 ]
