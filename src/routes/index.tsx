@@ -1,3 +1,3 @@
-// Homepage expanded to include Laboratory and Hospital modules.
-// Added specific sub-features for Lab (Soroteca, Interfacing) and Hospital (Leitos, Pharmacy).
-// Updated Hero headline to reflect Clinics, Hospitals, and Laboratories.
+// Status: Stock/Warehouse module fully integrated with dashboard and inventory management.
+// Updated Hero headline and Features sections to reflect complete platform capabilities.
+// Roadmap updated to include predictive stock analytics and supplier integration.

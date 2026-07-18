@@ -7,7 +7,7 @@ import {
   Home, Calendar, UserCheck, FileText, DollarSign, FlaskConical, BarChart3,
   TrendingUp, Users, Settings, Database, Monitor, Building2, Lock,
   LogOut, ChevronLeft, ChevronRight, X, Stethoscope, TicketCheck, ShieldCheck, Ruler, Layout, Beaker as BeakerIcon,
-  PieChart
+  PieChart, Warehouse, Package as PackageIcon
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
@@ -16,7 +16,7 @@ import type { SystemModule } from '@/types/permissions.types'
 const ICON_MAP: Record<string, any> = {
   Calendar, UserCheck, FileText, DollarSign, FlaskConical, BarChart3,
   TrendingUp, Users, Settings, Database, Monitor, Building2, Stethoscope, Home, TicketCheck, Ruler, Layout, Beaker: BeakerIcon,
-  PieChart
+  PieChart, Warehouse, Package: PackageIcon
 }
 
 
@@ -103,6 +103,13 @@ const NAV_SECTIONS: NavSection[] = [
       { label: 'Tabelas de Preços', icon: 'Database', path: '/app/financeiro/tabelas', module: 'billing' },
       { label: 'Centros de Custo', icon: 'PieChart', path: '/app/financeiro/centros-custo', module: 'billing' },
       { label: 'Indicadores', icon: 'TrendingUp', path: '/app/financeiro/indicadores', module: 'billing' },
+    ],
+  },
+  {
+    title: 'ESTOQUE E ALMOXARIFADO',
+    items: [
+      { label: 'Dashboard Estoque', icon: 'Warehouse', path: '/app/estoque', module: 'settings' },
+      { label: 'Itens de Estoque', icon: 'Package', path: '/app/estoque/itens', module: 'settings' },
     ],
   },
 ]
