@@ -32,6 +32,8 @@ export const MOCK_NOTIFICATIONS: AppNotification[] = [
   { id: 'notif_25', userId: 'cu_01', category: 'reception', priority: 'low', status: 'archived', title: 'Documento digitalizado', message: 'Carteirinha de Pedro Santos digitalizada com sucesso.', icon: '📄', createdAt: new Date(now - 48 * hour).toISOString() },
   { id: 'notif_26', userId: 'cu_01', category: 'results', priority: 'low', status: 'archived', title: 'Exame solicitado', message: 'Hemograma solicitado para Fernanda Lima por Dr. Roberto.', icon: '🧪', createdAt: new Date(now - 50 * hour).toISOString() },
   { id: 'notif_27', userId: 'cu_01', category: 'scheduling', priority: 'low', status: 'archived', title: 'Agenda configurada', message: 'Horários de Dr. Carlos Lima atualizados para maio/2025.', icon: '📅', createdAt: new Date(now - 52 * hour).toISOString() },
+  { id: 'notif_28', userId: 'cu_01', category: 'billing', priority: 'high', status: 'unread', title: 'Conta Vencida', message: 'O pagamento para "Lab Suprimentos" (R$ 1.200,00) vence hoje.', actionLabel: 'Pagar Agora', actionRoute: '/app/financeiro/pagar', icon: '💰', createdAt: new Date(now - 10 * min).toISOString() },
+  { id: 'notif_29', userId: 'cu_01', category: 'billing', priority: 'medium', status: 'unread', title: 'Próximo Vencimento', message: 'Energia Elétrica vence em 3 dias. Valor: R$ 480,00.', actionLabel: 'Ver Detalhes', actionRoute: '/app/financeiro/pagar', icon: '📅', createdAt: new Date(now - 1 * hour).toISOString() },
 ]
 
 export const SIMULATED_NOTIFICATIONS: Omit<AppNotification, 'id' | 'createdAt' | 'status'>[] = [

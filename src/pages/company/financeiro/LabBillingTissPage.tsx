@@ -15,7 +15,8 @@ import {
   AlertCircle,
   CheckCircle2,
   Clock,
-  Download
+  Download,
+  History
 } from 'lucide-react';
 
 const MOCK_LOTES = [
@@ -34,9 +35,14 @@ export default function LabBillingTissPage() {
           <h1 className="text-2xl font-bold">Faturamento de Convênios (TISS)</h1>
           <p className="text-sm text-muted-foreground">Geração de lotes, arquivos XML TISS e controle de faturas.</p>
         </div>
-        <Button className="gradient-bg gap-2">
-          <Plus className="h-4 w-4" /> Gerar Nova Fatura
-        </Button>
+        <div className="flex gap-2">
+          <Button variant="outline" className="gap-2">
+            <History className="h-4 w-4" /> Auditoria
+          </Button>
+          <Button className="gradient-bg gap-2">
+            <Plus className="h-4 w-4" /> Gerar Nova Fatura
+          </Button>
+        </div>
       </div>
 
       <div className="flex flex-col md:flex-row gap-4 items-center bg-card p-4 rounded-xl border border-border shadow-sm">

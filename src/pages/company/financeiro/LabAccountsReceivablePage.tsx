@@ -13,7 +13,10 @@ import {
   Calendar,
   ChevronLeft,
   ChevronRight,
-  Download
+  Download,
+  History,
+  CheckCircle2,
+  AlertCircle
 } from 'lucide-react';
 import { 
   Tabs, 
@@ -52,9 +55,14 @@ export default function LabAccountsReceivablePage() {
           <h1 className="text-2xl font-bold">Contas a Receber</h1>
           <p className="text-sm text-muted-foreground">Gerencie recebimentos de particulares e convênios.</p>
         </div>
-        <Button className="gradient-bg gap-2">
-          <Plus className="h-4 w-4" /> Novo Lançamento Manual
-        </Button>
+        <div className="flex gap-2">
+          <Button variant="outline" className="gap-2">
+            <History className="h-4 w-4" /> Audit Log
+          </Button>
+          <Button className="gradient-bg gap-2">
+            <Plus className="h-4 w-4" /> Novo Lançamento Manual
+          </Button>
+        </div>
       </div>
 
       <Tabs defaultValue="particular" className="w-full" onValueChange={setActiveTab}>
