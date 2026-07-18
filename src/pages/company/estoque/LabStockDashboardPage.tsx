@@ -291,7 +291,12 @@ export default function LabStockDashboardPage() {
                 <span>Seringa 5mL</span>
                 <span className="text-destructive font-bold">Urgente</span>
               </div>
-              <Progress value={90} className="h-1.5" indicatorClassName="bg-destructive" />
+              <div className="h-1.5 w-full bg-secondary rounded-full overflow-hidden">
+                <div 
+                  className="h-full bg-destructive transition-all" 
+                  style={{ width: '90%' }}
+                />
+              </div>
             </div>
             <div className="space-y-1">
               <div className="flex justify-between text-xs">
