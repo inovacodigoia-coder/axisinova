@@ -94,6 +94,15 @@ import LabBudgetsPage from './lab/orcamentos/LabBudgetsPage'
 import LabBudgetFormPage from './lab/orcamentos/LabBudgetFormPage'
 import LabBudgetDetailPage from './lab/orcamentos/LabBudgetDetailPage'
 
+import LabFinanceDashboardPage from './financeiro/LabFinanceDashboardPage'
+import LabAccountsReceivablePage from './financeiro/LabAccountsReceivablePage'
+import LabAccountsPayablePage from './financeiro/LabAccountsPayablePage'
+import LabPriceTablesPage from './financeiro/LabPriceTablesPage'
+import LabBillingTissPage from './financeiro/LabBillingTissPage'
+import LabCostCentersPage from './financeiro/LabCostCentersPage'
+import LabFinancialIndicatorsPage from './financeiro/LabFinancialIndicatorsPage'
+
+
 
 
 function PortalContent() {
@@ -268,6 +277,16 @@ function PortalContent() {
               <Route path="orcamentos/novo" element={<LabBudgetFormPage />} />
               <Route path="orcamentos/:id" element={<LabBudgetDetailPage />} />
               <Route path="orcamentos/:id/editar" element={<LabBudgetFormPage />} />
+
+              {/* Lab Financial Module */}
+              <Route path="financeiro" element={<LabFinanceDashboardPage />} />
+              <Route path="financeiro/receber" element={<LabAccountsReceivablePage />} />
+              <Route path="financeiro/pagar" element={<LabAccountsPayablePage />} />
+              <Route path="financeiro/tabelas" element={<LabPriceTablesPage />} />
+              <Route path="financeiro/faturamento" element={<LabBillingTissPage />} />
+              <Route path="financeiro/centros-custo" element={<LabCostCentersPage />} />
+              <Route path="financeiro/indicadores" element={<LabFinancialIndicatorsPage />} />
+
 
 
 

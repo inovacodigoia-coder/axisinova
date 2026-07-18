@@ -6,7 +6,8 @@ import { supabase } from '@/integrations/supabase/client'
 import {
   Home, Calendar, UserCheck, FileText, DollarSign, FlaskConical, BarChart3,
   TrendingUp, Users, Settings, Database, Monitor, Building2, Lock,
-  LogOut, ChevronLeft, ChevronRight, X, Stethoscope, TicketCheck, ShieldCheck, Ruler, Layout, Beaker as BeakerIcon
+  LogOut, ChevronLeft, ChevronRight, X, Stethoscope, TicketCheck, ShieldCheck, Ruler, Layout, Beaker as BeakerIcon,
+  PieChart
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
@@ -14,8 +15,10 @@ import type { SystemModule } from '@/types/permissions.types'
 
 const ICON_MAP: Record<string, any> = {
   Calendar, UserCheck, FileText, DollarSign, FlaskConical, BarChart3,
-  TrendingUp, Users, Settings, Database, Monitor, Building2, Stethoscope, Home, TicketCheck, Ruler, Layout, Beaker: BeakerIcon
+  TrendingUp, Users, Settings, Database, Monitor, Building2, Stethoscope, Home, TicketCheck, Ruler, Layout, Beaker: BeakerIcon,
+  PieChart
 }
+
 
 interface NavSection {
   title: string
@@ -90,7 +93,20 @@ const NAV_SECTIONS: NavSection[] = [
       { label: 'Abreviaturas', icon: 'FileText', path: '/app/configuracoes/abreviaturas', module: 'settings' },
     ],
   },
+  {
+    title: 'FINANCEIRO LABORATÓRIO',
+    items: [
+      { label: 'Dashboard Fin.', icon: 'Layout', path: '/app/financeiro', module: 'billing' },
+      { label: 'Contas a Receber', icon: 'DollarSign', path: '/app/financeiro/receber', module: 'billing' },
+      { label: 'Contas a Pagar', icon: 'DollarSign', path: '/app/financeiro/pagar', module: 'billing' },
+      { label: 'Faturamento TISS', icon: 'FileText', path: '/app/financeiro/faturamento', module: 'billing' },
+      { label: 'Tabelas de Preços', icon: 'Database', path: '/app/financeiro/tabelas', module: 'billing' },
+      { label: 'Centros de Custo', icon: 'PieChart', path: '/app/financeiro/centros-custo', module: 'billing' },
+      { label: 'Indicadores', icon: 'TrendingUp', path: '/app/financeiro/indicadores', module: 'billing' },
+    ],
+  },
 ]
+
 
 interface CompanySidebarProps {
   mobileOpen?: boolean
