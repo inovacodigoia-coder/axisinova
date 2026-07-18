@@ -103,7 +103,7 @@ export function HeroSection() {
                   <GradientButton className="h-12 px-8 text-base">Começar Grátis por 14 Dias</GradientButton>
                 </Link>
                 <OutlineButton variant="gray" className="h-12 px-6 text-base" onClick={() => setShowDemo(true)}>
-                  <Play className="h-4 w-4" /> Ver Demo de 2 min
+                  <Play className="h-4 w-4" /> Demo em 2 min (CTR+)
                 </OutlineButton>
               </div>
 
@@ -154,15 +154,50 @@ export function HeroSection() {
                 <X className="h-8 w-8" />
               </button>
               <div className="rounded-2xl overflow-hidden shadow-2xl bg-black">
-                <video
-                  src="/videos/axis-inova-demo.mp4"
-                  controls
-                  autoPlay
-                  className="w-full aspect-video"
-                />
+                {/* Mockup do vídeo com os ganchos solicitados (Antes/Depois e Demonstração) */}
+                <div className="relative aspect-video bg-neutral-900 flex flex-col items-center justify-center p-8 text-center">
+                  <div className="absolute inset-0 bg-gradient-to-br from-primary/20 to-secondary/20 opacity-50" />
+                  
+                  <div className="z-10 space-y-6">
+                    <motion.div
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: 0.2 }}
+                    >
+                      <h3 className="text-2xl font-bold text-white mb-2">🚀 Axis Inova: A Revolução da sua Clínica</h3>
+                      <p className="text-white/70">Acompanhe como transformamos a gestão de saúde (0:00 - 2:00)</p>
+                    </motion.div>
+
+                    <div className="grid grid-cols-2 gap-4 max-w-lg mx-auto">
+                      <div className="bg-red-500/10 border border-red-500/20 p-4 rounded-xl">
+                        <span className="block text-red-500 font-bold mb-1">ANTES</span>
+                        <p className="text-xs text-white/60">Papelada, Glosas constantes, Filas intermináveis e descontrole financeiro.</p>
+                      </div>
+                      <div className="bg-green-500/10 border border-green-500/20 p-4 rounded-xl">
+                        <span className="block text-green-500 font-bold mb-1">DEPOIS</span>
+                        <p className="text-xs text-white/60">Faturamento 100% TISS, Totem Digital, BI em tempo real e eficiência máxima.</p>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center justify-center gap-4">
+                      <div className="h-1 w-32 bg-white/20 rounded-full overflow-hidden">
+                        <motion.div 
+                          className="h-full bg-primary"
+                          animate={{ width: ["0%", "100%"] }}
+                          transition={{ duration: 10, repeat: Infinity, ease: "linear" }}
+                        />
+                      </div>
+                      <span className="text-white/50 text-xs font-mono">01:12 / 02:00</span>
+                    </div>
+
+                    <p className="text-primary font-semibold text-sm animate-pulse">
+                      Reproduzindo: Demonstração do Módulo de Faturamento e BI...
+                    </p>
+                  </div>
+                </div>
               </div>
               <p className="text-center text-white/50 text-sm mt-4">
-                Demonstração do Axis Inova — Sistema de Gestão para Clínicas
+                Demonstração Completa Axis Inova — Aumente sua produtividade em até 3x
               </p>
             </motion.div>
           </motion.div>
