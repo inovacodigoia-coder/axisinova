@@ -1209,8 +1209,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      current_company_id: { Args: never; Returns: string }
-      is_super_admin: { Args: never; Returns: boolean }
+      [_ in never]: never
     }
     Enums: {
       appointment_status: "confirmed" | "waiting" | "cancelled"
