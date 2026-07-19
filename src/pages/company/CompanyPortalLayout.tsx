@@ -112,6 +112,9 @@ import LabPharmacyMedsPage from './farmacia/LabPharmacyMedsPage'
 import LabPharmacyPrescriptionsPage from './farmacia/LabPharmacyPrescriptionsPage'
 import LabPharmacyStockPage from './farmacia/LabPharmacyStockPage'
 import LabPharmacyReportsPage from './farmacia/LabPharmacyReportsPage'
+import LabSorotecaDashboardPage from './lab/soroteca/LabSorotecaDashboardPage'
+import LabSorotecaStructurePage from './lab/soroteca/LabSorotecaStructurePage'
+
 
 
 
