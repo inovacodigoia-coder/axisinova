@@ -1,11 +1,12 @@
-// Status: Módulos de Estoque e Farmácia Hospitalar totalmente implementados.
-// Inclui: Gestão de medicamentos, prescrições eletrônicas, controle SNGPC, verificação de alergias e BI de farmácia.
-// Roadmap: Próxima etapa - Integração da farmácia com o módulo de beira de leito e checagem via barcode.
+// Status: Módulo de Soroteca implementado.
+// Inclui: Dashboard com grid de ocupação, gestão de estrutura física (geladeiras/freezers), entrada de amostras e fluxo de descarte.
+// Roadmap: Próxima etapa - Integração com coletores de dados mobile para auditoria de inventário em tempo real.
 
 /*
   TAREFAS PENDENTES:
-  - Corrigir os erros de TypeScript em src/routes/index.tsx e garantir que o projeto compila e roda sem warnings.
-  - Criar a tela para cadastrar prateleiras/compartimentos e configurar localizações físicas em /app/farmacia/configuracoes/localizacoes.
-  - Implementar um log de auditoria completo para cada dispensação, registrando quem fez, itens, quantidades, lotes e alterações de status em RX.
+  - Implementar o visualizador de grade interativo para as geladeiras da Soroteca.
+  - Adicionar o fluxo de bloqueio automático de armazenamento para exames não concluídos.
+  - Finalizar o relatório de rastreabilidade (linha do tempo da amostra).
 */
 export {}
+
