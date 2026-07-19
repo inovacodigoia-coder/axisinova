@@ -112,6 +112,9 @@ import LabPharmacyMedsPage from './farmacia/LabPharmacyMedsPage'
 import LabPharmacyPrescriptionsPage from './farmacia/LabPharmacyPrescriptionsPage'
 import LabPharmacyStockPage from './farmacia/LabPharmacyStockPage'
 import LabPharmacyReportsPage from './farmacia/LabPharmacyReportsPage'
+import LabSorotecaDashboardPage from './lab/soroteca/LabSorotecaDashboardPage'
+import LabSorotecaStructurePage from './lab/soroteca/LabSorotecaStructurePage'
+
 
 
 
@@ -313,6 +316,16 @@ function PortalContent() {
               <Route path="farmacia/dispensacao" element={<LabPharmacyPrescriptionsPage />} /> {/* Link to queue */}
               <Route path="farmacia/estoque" element={<LabPharmacyStockPage />} />
               <Route path="farmacia/relatorios" element={<LabPharmacyReportsPage />} />
+
+              {/* Soroteca Module */}
+              <Route path="soroteca" element={<LabSorotecaDashboardPage />} />
+              <Route path="soroteca/estrutura" element={<LabSorotecaStructurePage />} />
+              <Route path="soroteca/entrada" element={<LabSorotecaDashboardPage />} /> {/* Placeholder */}
+              <Route path="soroteca/consulta" element={<LabSorotecaDashboardPage />} /> {/* Placeholder */}
+              <Route path="soroteca/descarte" element={<LabSorotecaDashboardPage />} /> {/* Placeholder */}
+              <Route path="soroteca/rastreabilidade" element={<LabSorotecaDashboardPage />} /> {/* Placeholder */}
+              <Route path="soroteca/configuracoes" element={<LabSorotecaDashboardPage />} /> {/* Placeholder */}
+
 
 
 

@@ -127,6 +127,19 @@ const NAV_SECTIONS: NavSection[] = [
       { label: 'Relatórios Farmácia', icon: 'BarChart3', path: '/app/farmacia/relatorios', module: 'settings' },
     ],
   },
+  {
+    title: 'SOROTECA',
+    items: [
+      { label: 'Dashboard Soroteca', icon: 'Layout', path: '/app/soroteca', module: 'settings' },
+      { label: 'Entrada / Armazenar', icon: 'ArrowRight', path: '/app/soroteca/entrada', module: 'settings' },
+      { label: 'Consulta Amostras', icon: 'Search', path: '/app/soroteca/consulta', module: 'settings' },
+      { label: 'Estrutura Física', icon: 'Database', path: '/app/soroteca/estrutura', module: 'settings' },
+      { label: 'Descarte Amostras', icon: 'Package', path: '/app/soroteca/descarte', module: 'settings' },
+      { label: 'Rastreabilidade', icon: 'FileText', path: '/app/soroteca/rastreabilidade', module: 'settings' },
+      { label: 'Config. Soroteca', icon: 'Settings', path: '/app/soroteca/configuracoes', module: 'settings' },
+    ],
+  },
+
 ]
 
 
