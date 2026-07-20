@@ -55,11 +55,29 @@ Deno.serve(async (req) => {
       });
     }
 
-    // 1. Delete related data (cascade)
-    await supabaseAdmin.from("tiss_guides").delete().eq("company_id", companyId);
-    await supabaseAdmin.from("medical_records").delete().eq("company_id", companyId);
-    await supabaseAdmin.from("appointments").delete().eq("company_id", companyId);
-    await supabaseAdmin.from("patients").delete().eq("company_id", companyId);
+    // 1. Delete related data (cascade-like but explicit for safety)
+    const tablesToDelete = [
+      "tiss_guides",
+      "medical_records",
+      "appointments",
+      "patients",
+      "specialties",
+      "doctors",
+      "procedures",
+      "exams",
+      "company_branding",
+      "queue_tickets",
+      "convenios",
+      "queue_totems",
+      "queue_units",
+      "queue_guiches",
+      "queue_lines",
+      "queue_tvs"
+    ];
+
+    for (const table of tablesToDelete) {
+      await supabaseAdmin.from(table).delete().eq("company_id", companyId);
+    }
 
     // 2. Get all user profiles linked to this company
     const { data: companyProfiles } = await supabaseAdmin
