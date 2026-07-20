@@ -1,6 +1,6 @@
-// Status: Módulo de Portais Externos em desenvolvimento.
-// Inclui: Gestão centralizada de parceiros, médicos e locais.
-// Roadmap: Implementação das rotas públicas /portal/* e sistema de notificações automáticas.
+// Status: Módulo de Portais Externos em fase avançada.
+// Inclui: Gestão de acessos internos, Portais de Parceiros e Pacientes com login simulado.
+// Roadmap: Implementação de Lotes de Envio e Autenticação Médica.
 
 /*
   TAREFAS PENDENTES:
