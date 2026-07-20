@@ -1,5 +1,6 @@
 // All modules implemented: Clinic, Laboratory, Hospital, External Portals, and Financial.
-// Fixed registration RLS for new company creation.
+// Fixed registration RLS and duplicate CNPJ handling.
+
 
 /*
   TAREFAS PENDENTES:

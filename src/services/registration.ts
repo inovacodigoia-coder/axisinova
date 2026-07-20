@@ -43,14 +43,14 @@ export async function registerCompany(data: RegistrationData) {
   // 0. Sign out any leftover session from previous attempts
   await supabase.auth.signOut()
 
-  // 1. Check for duplicate CNPJ
+  // 1. Check for duplicate CNPJ before attempting insert
   const cnpjExists = await checkCnpjExists(data.cnpj)
   if (cnpjExists) {
     throw new Error('Este CNPJ já está cadastrado no sistema. Caso precise de ajuda, entre em contato com o suporte.')
   }
 
-  // 1. Create the company first
-  const { data: company, error: companyError } = await supabase
+  // 2. Create the company first
+  const { data: companyInsert, error: companyError } = await supabase
     .from('companies')
     .insert({
       name: data.razaoSocial,
@@ -70,19 +70,36 @@ export async function registerCompany(data: RegistrationData) {
       cidade: data.cidade,
       estado: data.estado,
       valor_mensal: data.plano === 'Starter' ? 490 : data.plano === 'Enterprise' ? 2490 : 990,
-    } as any)
+    })
     .select('id')
-    .single()
+    .maybeSingle()
+
+  let companyId = companyInsert?.id
 
   if (companyError) {
     console.error('Company creation error:', companyError)
-    if (companyError.message?.includes('companies_cnpj_unique')) {
+    // Common duplicate key code is 23505
+    if (companyError.code === '23505' || companyError.message?.includes('unique') || companyError.message?.includes('cnpj')) {
       throw new Error('Este CNPJ já está cadastrado no sistema.')
     }
     throw new Error('Erro ao criar empresa: ' + companyError.message)
   }
 
-  // 2. Sign up the admin user with metadata
+  // If insert succeeded but select returned nothing (can happen if RLS permits INSERT but not yet SELECT for this specific record)
+  if (!companyId) {
+    const { data: existingCompany } = await supabase
+      .from('companies')
+      .select('id')
+      .eq('cnpj', data.cnpj)
+      .maybeSingle()
+    
+    if (!existingCompany) {
+      throw new Error('Erro ao processar criação da empresa. Por favor, tente novamente.')
+    }
+    companyId = existingCompany.id
+  }
+
+  // 3. Sign up the admin user with metadata
   const { data: authData, error: authError } = await supabase.auth.signUp({
     email: data.emailAdmin,
     password: data.senha,
@@ -91,7 +108,7 @@ export async function registerCompany(data: RegistrationData) {
         full_name: data.nomeCompleto,
         cpf: data.cpf,
         role: 'company_admin',
-        company_id: company.id,
+        company_id: companyId,
       },
     },
   })
@@ -101,11 +118,11 @@ export async function registerCompany(data: RegistrationData) {
     throw new Error('Erro ao criar usuário: ' + authError.message)
   }
 
-  // 3. Sign out immediately so the user logs in explicitly
+  // 4. Sign out immediately so the user logs in explicitly
   await supabase.auth.signOut()
 
   return {
-    companyId: company.id,
+    companyId: companyId,
     userId: authData.user?.id,
   }
 }
