@@ -49,7 +49,8 @@ export async function registerCompany(data: RegistrationData) {
     throw new Error('Este CNPJ já está cadastrado no sistema. Caso precise de ajuda, entre em contato com o suporte.')
   }
 
-  // 1. Create the company first
+  // 2. Create the company first
+  // We use .select() to get the ID, but we handle the case where it might fail due to RLS or unique constraint
   const { data: company, error: companyError } = await supabase
     .from('companies')
     .insert({
@@ -70,17 +71,33 @@ export async function registerCompany(data: RegistrationData) {
       cidade: data.cidade,
       estado: data.estado,
       valor_mensal: data.plano === 'Starter' ? 490 : data.plano === 'Enterprise' ? 2490 : 990,
-    } as any)
+    })
     .select('id')
-    .single()
+    .maybeSingle()
 
   if (companyError) {
     console.error('Company creation error:', companyError)
-    if (companyError.message?.includes('companies_cnpj_unique')) {
+    if (companyError.code === '23505' || companyError.message?.includes('unique') || companyError.message?.includes('cnpj')) {
       throw new Error('Este CNPJ já está cadastrado no sistema.')
     }
     throw new Error('Erro ao criar empresa: ' + companyError.message)
   }
+
+  if (!company) {
+    // If insert succeeded but select returned nothing (unlikely with RLS 'true' for insert, but safe to check)
+    // We try to fetch it again just in case it was created but RLS blocked the returning select
+    const { data: existingCompany } = await supabase
+      .from('companies')
+      .select('id')
+      .eq('cnpj', data.cnpj)
+      .maybeSingle()
+    
+    if (!existingCompany) {
+      throw new Error('Erro ao processar criação da empresa. Por favor, tente novamente.')
+    }
+    company = existingCompany;
+  }
+
 
   // 2. Sign up the admin user with metadata
   const { data: authData, error: authError } = await supabase.auth.signUp({
