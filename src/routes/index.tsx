@@ -1,6 +1,6 @@
-// Status: Módulo de Portais Externos finalizado.
-// Inclui: Gestão centralizada, Portais de Parceiros, Pacientes e Médicos com dashboards completos e KPIs.
-// Roadmap: Próxima etapa - Implementação de integração real com gateways de SMS/Email para notificações.
+// Status: Módulo de Portais Externos e Notificações finalizado.
+// Inclui: Gestão centralizada de parceiros, médicos e locais, além dos portais públicos com dashboards realistas e configurações de notificações.
+// Roadmap: Próxima etapa - Integração com coletores de dados e refinamento dos templates de e-mail/SMS.
 
 /*
   TAREFAS PENDENTES:
