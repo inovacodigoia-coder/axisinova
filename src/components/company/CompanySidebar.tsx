@@ -139,6 +139,14 @@ const NAV_SECTIONS: NavSection[] = [
       { label: 'Config. Soroteca', icon: 'Settings', path: '/app/soroteca/configuracoes', module: 'settings' },
     ],
   },
+  {
+    title: 'PORTAIS EXTERNOS',
+    items: [
+      { label: 'Gestão de Portais', icon: 'Users', path: '/app/portais', module: 'settings' },
+      { label: 'Notificações', icon: 'Bell', path: '/app/configuracoes/notificacoes', module: 'settings' },
+      { label: 'Relatórios Externos', icon: 'BarChart3', path: '/app/portais/relatorios', module: 'bi' },
+    ],
+  },
 
 ]
 

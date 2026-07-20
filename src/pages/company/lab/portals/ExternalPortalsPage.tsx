@@ -2,8 +2,9 @@ import { useState } from 'react';
 import { 
   Users, Building2, Stethoscope, User, History, 
   Plus, Search, MoreHorizontal, Eye, Edit, Trash2,
-  CheckCircle2, PauseCircle, Mail, ExternalLink, ShieldCheck
+  CheckCircle2, PauseCircle, History as HistoryIcon
 } from 'lucide-react';
+import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
@@ -172,7 +173,7 @@ export default function ExternalPortalsPage() {
                     {item.lastAccess ? new Date(item.lastAccess).toLocaleString('pt-BR') : '—'}
                   </TableCell>
                   <TableCell>
-                    <Badge variant={item.status === 'active' ? 'success' : 'secondary'} className="gap-1">
+                    <Badge variant={item.status === 'active' ? 'default' : 'secondary'} className={cn("gap-1", item.status === 'active' && "bg-green-500 hover:bg-green-600 text-white")}>
                       {item.status === 'active' ? (
                         <>
                           <CheckCircle2 className="h-3 w-3" />
