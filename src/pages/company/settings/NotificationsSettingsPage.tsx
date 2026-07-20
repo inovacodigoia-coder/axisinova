@@ -4,6 +4,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Card } from '@/components/ui/card';
 
 export default function NotificationsSettingsPage() {
   const patientEvents = [
@@ -132,7 +133,7 @@ export default function NotificationsSettingsPage() {
                       </Badge>
                     </TableCell>
                     <TableCell>
-                      <Badge variant={h.status === 'sent' ? 'success' : 'destructive'} className={h.status === 'sent' ? 'bg-green-500 text-white' : ''}>
+                      <Badge variant={h.status === 'sent' ? 'default' : 'destructive'} className={h.status === 'sent' ? 'bg-green-500 hover:bg-green-600 text-white border-none' : ''}>
                         {h.status === 'sent' ? 'Enviado' : 'Falhou'}
                       </Badge>
                     </TableCell>
