@@ -1,6 +1,5 @@
-// Status: Módulo de Portais Externos e Notificações finalizado.
-// Inclui: Gestão centralizada de parceiros, médicos e locais, além dos portais públicos com dashboards realistas e configurações de notificações.
-// Roadmap: Próxima etapa - Integração com coletores de dados e refinamento dos templates de e-mail/SMS.
+// All modules implemented: Clinic, Laboratory, Hospital, External Portals, and Financial.
+// Fixed registration RLS for new company creation.
 
 /*
   TAREFAS PENDENTES:
@@ -11,4 +10,3 @@
   - Implementar o token de acesso único de 128 caracteres para resultados de pacientes.
 */
 export {}
-
