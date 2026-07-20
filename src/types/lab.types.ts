@@ -223,3 +223,57 @@ export interface LabExamGroup {
     name: string;
   }[];
 }
+
+export type PortalType = 'parceiro' | 'local' | 'medico' | 'paciente';
+
+export interface ExternalAccess {
+  id: string;
+  name: string;
+  type: PortalType;
+  email: string;
+  lastAccess?: string;
+  status: 'active' | 'inactive';
+  companyId: string;
+  partnerType?: 'laboratorio' | 'posto_coleta' | 'hospital' | 'clinica' | 'outros';
+  cnpj?: string;
+  responsibleName?: string;
+  phone?: string;
+  address?: string;
+  priceTableId?: string;
+  originId?: string;
+  crm?: string;
+  specialty?: string;
+  permissions: string[];
+  blockOnlineResults?: boolean;
+}
+
+export interface ShippingBatch {
+  id: string;
+  batchNumber: string;
+  originId: string;
+  originName: string;
+  destinationName: string;
+  status: 'in_transit' | 'received' | 'cancelled';
+  sentAt: string;
+  sentBy: string;
+  receivedAt?: string;
+  receivedBy?: string;
+  observations?: string;
+  samples: {
+    attendanceId: string;
+    protocol: string;
+    patientName: string;
+    sampleTag: string;
+    material: string;
+  }[];
+}
+
+export interface PortalNotification {
+  id: string;
+  timestamp: string;
+  recipient: string;
+  type: string;
+  channel: 'email' | 'sms' | 'system' | 'both';
+  content: string;
+  status: 'sent' | 'failed' | 'pending';
+}
