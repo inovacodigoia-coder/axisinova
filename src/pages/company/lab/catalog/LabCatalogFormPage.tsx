@@ -32,6 +32,22 @@ import { cn } from '@/lib/utils'
 import { toast } from 'sonner'
 import { Badge } from '@/components/ui/badge'
 import { useRegisters } from '@/context/RegistersContext'
+import { 
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip"
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "@/components/ui/dialog"
+import { Checkbox } from "@/components/ui/checkbox"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+
 
 
 export default function LabCatalogFormPage() {
