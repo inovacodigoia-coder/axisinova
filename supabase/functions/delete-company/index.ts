@@ -55,7 +55,7 @@ Deno.serve(async (req) => {
       });
     }
 
-    // 1. Delete related data (cascade-like but explicit for safety)
+    // 1. Enforce a broad cleanup of all potential related tables
     const tablesToDelete = [
       "tiss_guides",
       "medical_records",
@@ -88,36 +88,38 @@ Deno.serve(async (req) => {
       "lab_finance_transactions",
       "lab_price_tables",
       "lab_external_access",
+      "user_roles"
     ];
 
-    // Use a transaction-like approach by deleting in sequence and handling errors
+    // Log the start of cleanup
+    console.log(`Starting cleanup for company: ${companyId}`);
+
     for (const table of tablesToDelete) {
-      const { error: tableError } = await supabaseAdmin.from(table).delete().eq("company_id", companyId);
-      if (tableError) {
-        console.error(`Erro ao deletar da tabela ${table}:`, tableError.message);
+      const { error: delErr } = await supabaseAdmin.from(table).delete().eq("company_id", companyId);
+      if (delErr) {
+        console.warn(`Warning deleting from ${table}: ${delErr.message}`);
       }
     }
 
-    // 2. Get all user profiles linked to this company to clean up auth
-    const { data: companyProfiles } = await supabaseAdmin
+    // 2. Identify and remove all associated user accounts and profiles
+    const { data: profiles } = await supabaseAdmin
       .from("profiles")
       .select("id")
       .eq("company_id", companyId);
 
-    // 3. Delete user-related records and auth users
-    if (companyProfiles && companyProfiles.length > 0) {
-      for (const p of companyProfiles) {
-        // Explicitly delete roles first
+    if (profiles && profiles.length > 0) {
+      console.log(`Deleting ${profiles.length} associated users`);
+      for (const p of profiles) {
+        // Remove roles specifically to avoid FK issues
         await supabaseAdmin.from("user_roles").delete().eq("user_id", p.id);
-        
-        // Delete profile
+        // Remove profile
         await supabaseAdmin.from("profiles").delete().eq("id", p.id);
-        
-        // Delete auth user (Admin API)
+        // Remove auth user
         try {
-          await supabaseAdmin.auth.admin.deleteUser(p.id);
+          const { error: authDelErr } = await supabaseAdmin.auth.admin.deleteUser(p.id);
+          if (authDelErr) console.error(`Auth deletion error for ${p.id}:`, authDelErr.message);
         } catch (e) {
-          console.error(`Erro ao deletar usuário auth ${p.id}:`, e.message);
+          console.error(`Unexpected auth deletion error:`, e);
         }
       }
     }
