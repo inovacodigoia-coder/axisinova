@@ -448,7 +448,7 @@ function ReviewPanel({ state, unitName, guicheName, ticketCode }: { state: Cadas
         </h3>
         <div className="border-t border-border" />
         <dl className="space-y-2 text-sm">
-          <Row label="👤 Paciente" value={`${state.patient?.fullName} ${state.patient?.age ? `(${state.patient.age} anos)` : ''}`} />
+          <Row label="👤 Paciente" value={`${state.tempPatient?.fullName || state.patient?.fullName} ${state.tempPatient?.age || state.patient?.age ? `(${state.tempPatient?.age || state.patient?.age} anos)` : ''}`} />
           {ticketCode && <Row label="🎫 Ficha" value={`${ticketCode}${guicheName ? ` · ${guicheName}` : ''}${unitName ? ` · ${unitName}` : ''}`} />}
           <Row label="📋 Tipo" value={state.serviceType === 'consultation' ? 'Consulta' : state.serviceType === 'exam' ? 'Exame' : 'Procedimento'} />
           {state.doctorName && <Row label="👨‍⚕️ Médico" value={`${state.doctorName}${state.specialty ? ` · ${state.specialty}` : ''}`} />}
@@ -459,6 +459,8 @@ function ReviewPanel({ state, unitName, guicheName, ticketCode }: { state: Cadas
           {state.authorizationCode && (
             <Row label="🔑 Autorização" value={`${state.authorizationCode}${state.authorizationExpiry ? ` · Válida até ${state.authorizationExpiry}` : ''}`} />
           )}
+          {state.weight && <Row label="⚖️ Peso" value={`${state.weight} kg`} />}
+          {state.height && <Row label="📏 Altura" value={`${state.height} m`} />}
           <Row label="📎 Documentos" value={`${state.attachments.length} anexado(s)${requiredCount ? ` · ${requiredCount} obrigatório(s)` : ''}`} />
           <Row label="💰 Forma de pagamento" value={state.paymentType === 'convenio' ? 'Convênio' : state.paymentType === 'private' ? `Particular${state.privateValue ? ` · R$ ${state.privateValue.toFixed(2)}` : ''}` : 'Cortesia'} />
         </dl>
