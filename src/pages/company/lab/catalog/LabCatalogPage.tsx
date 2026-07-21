@@ -3,17 +3,30 @@ import { Card } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Skeleton } from '@/components/ui/skeleton'
-import { Search, Plus, Filter, LayoutGrid, List, MoreVertical, Edit2, Trash2, Beaker } from 'lucide-react'
+import { Search, Plus, Filter, LayoutGrid, List, MoreVertical, Edit2, Trash2, Beaker, AlertTriangle } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
 import { useNavigate } from 'react-router-dom'
 import { cn } from '@/lib/utils'
 import { useRegisters } from '@/context/RegistersContext'
+import { toast } from 'sonner'
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog"
 
 export default function LabCatalogPage() {
   const navigate = useNavigate()
-  const { exams: registeredExams, isLoading } = useRegisters()
+  const { exams: registeredExams, isLoading, deleteExam } = useRegisters()
   const [view, setView] = useState<'grid' | 'list'>('list')
   const [search, setSearch] = useState('')
+  const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false)
+  const [examToDelete, setExamToDelete] = useState<string | null>(null)
 
   const exams = useMemo(() => {
     // If we have real exams from the database, use them
@@ -46,6 +59,25 @@ export default function LabCatalogPage() {
     e.name.toLowerCase().includes(search.toLowerCase()) || 
     e.code.toLowerCase().includes(search.toLowerCase())
   )
+
+  const handleDelete = async () => {
+    if (!examToDelete) return
+
+    try {
+      await deleteExam(examToDelete)
+      toast.success('Exame excluído com sucesso')
+      setDeleteConfirmOpen(false)
+      setExamToDelete(null)
+    } catch (error) {
+      console.error('Erro ao excluir exame:', error)
+      toast.error('Erro ao excluir o exame')
+    }
+  }
+
+  const openDeleteConfirm = (id: string) => {
+    setExamToDelete(id)
+    setDeleteConfirmOpen(true)
+  }
 
   return (
     <div className="space-y-6">
@@ -153,7 +185,12 @@ export default function LabCatalogPage() {
                         <Button variant="ghost" size="sm" className="h-8 w-8 p-0" onClick={() => navigate(`${exam.id}/editar`)}>
                           <Edit2 className="h-3.5 w-3.5" />
                         </Button>
-                        <Button variant="ghost" size="sm" className="h-8 w-8 p-0 text-red-600 hover:text-red-700 hover:bg-red-50">
+                        <Button 
+                          variant="ghost" 
+                          size="sm" 
+                          className="h-8 w-8 p-0 text-red-600 hover:text-red-700 hover:bg-red-50"
+                          onClick={() => openDeleteConfirm(exam.id)}
+                        >
                           <Trash2 className="h-3.5 w-3.5" />
                         </Button>
                       </div>
@@ -181,7 +218,12 @@ export default function LabCatalogPage() {
                     <Button variant="ghost" size="sm" className="h-8 w-8 p-0" onClick={() => navigate(`${exam.id}/editar`)}>
                       <Edit2 className="h-3.5 w-3.5" />
                     </Button>
-                    <Button variant="ghost" size="sm" className="h-8 w-8 p-0 text-red-600">
+                    <Button 
+                      variant="ghost" 
+                      size="sm" 
+                      className="h-8 w-8 p-0 text-red-600"
+                      onClick={() => openDeleteConfirm(exam.id)}
+                    >
                       <Trash2 className="h-3.5 w-3.5" />
                     </Button>
                   </div>
@@ -191,6 +233,26 @@ export default function LabCatalogPage() {
           </div>
         )}
       </div>
+
+      <AlertDialog open={deleteConfirmOpen} onOpenChange={setDeleteConfirmOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle className="flex items-center gap-2">
+              <AlertTriangle className="h-5 w-5 text-red-500" />
+              Confirmar Exclusão
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              Tem certeza que deseja excluir este exame? Esta ação não poderá ser desfeita e removerá o exame do catálogo permanentemente.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => setExamToDelete(null)}>Cancelar</AlertDialogCancel>
+            <AlertDialogAction onClick={handleDelete} className="bg-red-600 hover:bg-red-700 text-white">
+              Excluir Exame
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   )
 }
