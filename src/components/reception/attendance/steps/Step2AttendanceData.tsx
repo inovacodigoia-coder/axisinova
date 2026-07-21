@@ -106,7 +106,7 @@ export function Step2AttendanceData({ state, update }: Props) {
               onClick={() => update({ examMode: 'clinic' })}
               className={cn(
                 "flex flex-col items-center gap-3 p-6 rounded-xl border-2 transition-all",
-                state.examMode === 'clinic' 
+                (state.examMode as string) === 'clinic' 
                   ? "border-primary bg-primary/5 shadow-md scale-[1.02]" 
                   : "border-border bg-card hover:border-primary/40"
               )}
@@ -124,7 +124,7 @@ export function Step2AttendanceData({ state, update }: Props) {
               onClick={() => update({ examMode: 'lab' })}
               className={cn(
                 "flex flex-col items-center gap-3 p-6 rounded-xl border-2 transition-all",
-                state.examMode === 'lab' 
+                (state.examMode as string) === 'lab' 
                   ? "border-primary bg-primary/5 shadow-md scale-[1.02]" 
                   : "border-border bg-card hover:border-primary/40"
               )}
