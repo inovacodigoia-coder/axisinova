@@ -154,14 +154,9 @@ export default function CompaniesListPage() {
     }
   }
 
-  // Show real DB companies, if empty fallback to valid mocks
+  // Show real DB companies if they exist
   const allCompanies = useMemo(() => {
-    // Only show real companies from DB if they exist
-    if (dbCompanies.length > 0) {
-      return dbCompanies;
-    }
-    // Fallback to valid mocks if DB is empty
-    return MOCK_COMPANIES;
+    return dbCompanies;
   }, [dbCompanies])
 
   const filtered = useMemo(() => {
