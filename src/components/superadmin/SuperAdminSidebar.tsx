@@ -8,7 +8,7 @@ import { cn } from '@/lib/utils'
 
 const navItems = [
   { label: 'Dashboard Geral', icon: BarChart3, path: '/superadmin/dashboard' },
-  { label: 'Empresas', icon: Building2, path: '/superadmin/empresas', badge: '147' },
+  { label: 'Empresas', icon: Building2, path: '/superadmin/empresas' },
   { label: 'Usuários do Sistema', icon: Users, path: '/superadmin/usuarios' },
   { label: 'Planos e Preços', icon: CreditCard, path: '/superadmin/planos' },
   { label: 'Configurações Globais', icon: Settings, path: '/superadmin/configuracoes' },
