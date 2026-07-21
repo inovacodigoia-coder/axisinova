@@ -1,0 +1,1 @@
+UPDATE public.profiles SET is_active = true WHERE full_name ILIKE '%Alexsandro de Souza%';
