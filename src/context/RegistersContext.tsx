@@ -66,6 +66,7 @@ function mapConvenioRow(row: any): Convenio {
 function mapExamRow(row: any): Exam {
   return {
     id: row.id, companyId: row.company_id, name: row.name, tussCode: row.tuss_code,
+    type: row.type || 'clinical',
     specialtyId: row.specialty_id, preparationInstructions: row.preparation_instructions,
     estimatedDurationMinutes: row.estimated_duration_minutes, resultDeadlineDays: row.result_deadline_days,
     requiresAuthorization: row.requires_authorization, authorizationInstructions: row.authorization_instructions,
@@ -241,6 +242,7 @@ export function RegistersProvider({ children }: { children: ReactNode }) {
     if (isDemo || !companyId) return
     const { error } = await supabase.from('exams').insert({
       id, company_id: companyId, name: e.name, tuss_code: e.tussCode || null,
+      type: e.type,
       specialty_id: e.specialtyId || null, preparation_instructions: e.preparationInstructions || null,
       estimated_duration_minutes: e.estimatedDurationMinutes || null,
       result_deadline_days: e.resultDeadlineDays || null,
@@ -260,6 +262,7 @@ export function RegistersProvider({ children }: { children: ReactNode }) {
     if (isDemo) return
     const { error } = await supabase.from('exams').update({
       name: e.name, tuss_code: e.tussCode || null, specialty_id: e.specialtyId || null,
+      type: e.type,
       preparation_instructions: e.preparationInstructions || null,
       estimated_duration_minutes: e.estimatedDurationMinutes || null,
       result_deadline_days: e.resultDeadlineDays || null,

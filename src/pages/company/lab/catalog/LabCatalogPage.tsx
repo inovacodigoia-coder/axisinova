@@ -15,7 +15,7 @@ export default function LabCatalogPage() {
   const [view, setView] = useState<'grid' | 'list'>('list')
   const [search, setSearch] = useState('')
 
-  const exams = registeredExams.length > 0 ? registeredExams.map(e => ({
+  const exams = registeredExams.length > 0 ? registeredExams.filter(e => e.type === 'lab').map(e => ({
     id: e.id,
     code: e.tussCode || 'S/C',
     name: e.name,
