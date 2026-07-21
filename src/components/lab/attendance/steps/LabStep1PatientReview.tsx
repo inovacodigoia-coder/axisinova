@@ -13,6 +13,8 @@ interface Props { state: any; update: (patch: any) => void; }
 type TabType = 'pessoal' | 'contato' | 'convenios' | 'responsavel' | 'clinico' | 'observacoes';
 
 export function LabStep1PatientReview({ state, update }: Props) {
+  const { convenios } = useRegisters();
+  const activeConvenios = useMemo(() => convenios.filter(c => c.isActive), [convenios]);
   const [activeTab, setActiveTab] = useState<TabType>('pessoal');
   const patient = state.patient;
   if (!patient) return null;
