@@ -72,7 +72,23 @@ Deno.serve(async (req) => {
       "queue_units",
       "queue_guiches",
       "queue_lines",
-      "queue_tvs"
+      "queue_tvs",
+      "lab_results",
+      "lab_attendances",
+      "lab_exams",
+      "lab_budgets",
+      "lab_stock_movements",
+      "lab_stock_lots",
+      "lab_stock_items",
+      "lab_pharmacy_dispensations",
+      "lab_pharmacy_meds",
+      "lab_soroteca_samples",
+      "lab_soroteca_shelves",
+      "lab_soroteca_units",
+      "lab_finance_transactions",
+      "lab_price_tables",
+      "lab_external_access",
+      "user_roles"
     ];
 
     for (const table of tablesToDelete) {
