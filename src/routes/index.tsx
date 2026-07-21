@@ -5,6 +5,7 @@
 
 /*
   TAREFAS PENDENTES:
+  - Adicionar uma tela de confirmação detalhada antes de excluir uma empresa, exibindo dados principais (CNPJ, Nome, Plano) e alertando explicitamente que a remoção inclui usuários e todos os registros vinculados. Ação via menu de três pontos "Excluir empresa".
   - Criar os layouts públicos para /portal/parceiro, /portal/medico e /portal/paciente.
   - Implementar o sistema de Lote de Envio de Amostras para parceiros.
   - Desenvolver o visualizador simplificado de resultados para o portal do paciente.
