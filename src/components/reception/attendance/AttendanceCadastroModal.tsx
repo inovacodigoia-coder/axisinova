@@ -350,9 +350,9 @@ export function AttendanceCadastroModal({
                       {done ? <Check className="h-4 w-4" /> : idx + 1}
                     </div>
                     <span className={cn(
-                      'mt-1 text-[10px] leading-tight text-center px-1 whitespace-nowrap overflow-hidden text-ellipsis max-w-[80px]',
+                      'mt-1 text-[10px] leading-tight text-center px-1 whitespace-nowrap',
                       (done || active) ? 'text-foreground font-semibold' : 'text-muted-foreground'
-                    )} title={label}>{label}</span>
+                    )}>{label}</span>
                   </div>
                   {idx < STEPS.length - 1 && (
                     <div className={cn('flex-1 h-0.5 mx-2 transition-all', done ? 'bg-emerald-500' : 'bg-border')} />
