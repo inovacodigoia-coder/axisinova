@@ -367,11 +367,37 @@ function GeneralInfoSection({ isEditing, data, onChange }: { isEditing: boolean,
           </div>
         </div>
         <div className="md:col-span-2 space-y-2">
-          <Label>Ficha Técnica</Label>
+          <Label className="text-sm font-bold uppercase tracking-wider text-muted-foreground">Observações do Laudo</Label>
           <textarea 
-            className="w-full h-32 p-3 rounded-lg border bg-background text-sm focus:ring-2 focus:ring-primary/20 outline-none resize-none" 
-            placeholder="Informações técnicas do exame..." 
+            className="w-full h-24 p-3 rounded-lg border bg-background text-sm focus:ring-2 focus:ring-primary/20 outline-none resize-none" 
+            placeholder="Ex: A partir de 01/2026 os valores de referência foram atualizados conforme nova diretriz..." 
           />
+          <p className="text-[11px] text-muted-foreground">Esse texto será impresso no laudo, abaixo dos resultados deste exame.</p>
+        </div>
+
+        <div className="md:col-span-2 space-y-4 pt-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <MessageSquare className="h-5 w-5 text-primary" />
+              <Label className="text-sm font-bold uppercase tracking-wider text-muted-foreground">Perguntas de Confirmação</Label>
+            </div>
+            <Button variant="outline" size="sm" className="gap-2">
+              <Plus className="h-4 w-4" /> Adicionar
+            </Button>
+          </div>
+          <p className="text-[11px] text-muted-foreground">Perguntas que o atendente deverá confirmar com o paciente ao adicionar este exame.</p>
+          <div className="space-y-3">
+            <div className="flex gap-3 items-center">
+              <span className="text-xs text-muted-foreground font-medium w-4">1.</span>
+              <Input 
+                defaultValue="O paciente está em jejum há pelo menos 8 horas?" 
+                className="flex-1"
+              />
+              <Button variant="ghost" size="icon" className="text-red-500">
+                <Trash2 className="h-4 w-4" />
+              </Button>
+            </div>
+          </div>
         </div>
       </div>
     </Card>
