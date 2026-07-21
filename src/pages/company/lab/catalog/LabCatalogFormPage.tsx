@@ -21,7 +21,11 @@ import {
   Zap,
   Layout,
   MessageSquare,
-  FileText
+  FileText,
+  History,
+  Calculator,
+  ExternalLink,
+  MoreVertical
 } from 'lucide-react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { cn } from '@/lib/utils'
