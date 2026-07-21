@@ -282,17 +282,23 @@ function GeneralInfoSection({ isEditing, data, onChange }: { isEditing: boolean,
             onChange={(e) => onChange({ resultDeadlineDays: Number(e.target.value) })}
           />
         </div>
-        <div className="space-y-2">
-          <Label>Prazo de Entrega (dias)</Label>
-          <Input 
-            type="number" 
-            value={data.resultDeadlineDays}
-            onChange={(e) => onChange({ resultDeadlineDays: Number(e.target.value) })}
-          />
-        </div>
-        <div className="space-y-2">
-          <Label>Prazo de Entrega (dias)</Label>
-          <Input type="number" defaultValue={isEditing ? 3 : 0} />
+        <div className="space-y-2 flex items-end gap-3">
+          <div className="flex-1 space-y-2">
+            <Label>Prazo de Entrega (dias)</Label>
+            <Input 
+              type="number" 
+              value={data.resultDeadlineDays}
+              onChange={(e) => onChange({ resultDeadlineDays: Number(e.target.value) })}
+            />
+          </div>
+          <div className="flex items-center gap-2 mb-2 pb-1">
+            <Label className="text-xs font-medium cursor-pointer" htmlFor="exam-active-toggle">Ativo</Label>
+            <Switch 
+              id="exam-active-toggle"
+              checked={data.isActive} 
+              onCheckedChange={(val) => onChange({ isActive: val })} 
+            />
+          </div>
         </div>
       </div>
 
