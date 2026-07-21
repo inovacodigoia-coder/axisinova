@@ -38,6 +38,11 @@ interface AttendanceGuide {
   number: string;
   exams: any[];
   isDoctorDisabled?: boolean;
+  doctorName?: string;
+  doctorCrm?: string;
+  doctorCrmState?: string;
+  doctorCouncil?: string;
+  doctorCbos?: string;
 }
 
 export function LabStep3GuidesProcedures({ state, update }: Props) {
