@@ -1,17 +1,21 @@
 import { useState, useCallback, useEffect, useMemo } from 'react'
 import { Dialog, DialogContent } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
-import { X, ArrowLeft, ArrowRight, Check, UserPlus } from 'lucide-react'
+import { X, ArrowLeft, ArrowRight, Check, UserPlus, AlertTriangle } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { toast } from 'sonner'
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog"
 import { Step1PatientLookup } from './steps/Step1PatientLookup'
-import { Step2AttendanceData } from './steps/Step2AttendanceData'
-import { Step3Authorization } from './steps/Step3Authorization'
-import { Step4Attachments } from './steps/Step4Attachments'
-import { PaymentModal } from './payment/PaymentModal'
-import { AttendancePrintModal } from './print/AttendancePrintModal'
-import { LabStep1PatientReview } from '@/components/lab/attendance/steps/LabStep1PatientReview'
-import { LabStep2ExamData } from '@/components/lab/attendance/steps/LabStep2ExamData'
+...
 import { LabStep3GuidesProcedures } from '@/components/lab/attendance/steps/LabStep3GuidesProcedures'
 import { QueueAllocationModal } from './queue-allocation/QueueAllocationModal'
 import { useAttendanceCadastro, useDraftAutosave, loadDraft, clearDraft } from '@/hooks/useAttendanceCadastro'
@@ -91,6 +95,9 @@ export function AttendanceCadastroModal({
   const { getDefault } = usePrinterConfig()
   const [step, setStep] = useState(initialPatient ? 1 : 0)
   const [showReview, setShowReview] = useState(false)
+  const [showExitConfirm, setShowExitConfirm] = useState(false)
+  const [showRestoreConfirm, setShowRestoreConfirm] = useState(false)
+  const [pendingDraft, setPendingDraft] = useState<any>(null)
   const [state, setState] = useState<CadastroState>(() => {
     const activeOrigin = sessionStorage.getItem('activeOrigin');
     const origin = activeOrigin ? JSON.parse(activeOrigin) : null;
@@ -118,12 +125,8 @@ export function AttendanceCadastroModal({
     if (!open || !ticketId || restorePromptShown) return
     const draft = loadDraft(ticketId)
     if (draft && draft.savedAt) {
-      const saved = new Date(draft.savedAt).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })
-      if (confirm(`Restaurar rascunho salvo às ${saved}?`)) {
-        setState({ attachments: [], ...draft })
-      } else {
-        clearDraft(ticketId)
-      }
+      setPendingDraft(draft)
+      setShowRestoreConfirm(true)
     }
     setRestorePromptShown(true)
   }, [open, ticketId, restorePromptShown])
@@ -144,8 +147,13 @@ export function AttendanceCadastroModal({
 
   const handleClose = () => {
     if (hasUnsavedData) {
-      if (!confirm('Tem certeza? Os dados não salvos serão perdidos.')) return
+      setShowExitConfirm(true)
+      return
     }
+    forceClose()
+  }
+
+  const forceClose = () => {
     if (ticketId) clearDraft(ticketId)
     onClose()
   }
@@ -406,6 +414,69 @@ export function AttendanceCadastroModal({
           )}
         </div>
       </DialogContent>
+
+      {/* Modal de confirmação de saída */}
+      <AlertDialog open={showExitConfirm} onOpenChange={setShowExitConfirm}>
+        <AlertDialogContent className="max-w-[400px]">
+          <AlertDialogHeader>
+            <div className="flex items-center gap-3 text-amber-500 mb-2">
+              <div className="p-2 bg-amber-50 rounded-full">
+                <AlertTriangle className="h-6 w-6" />
+              </div>
+              <AlertDialogTitle className="text-xl">Dados não salvos</AlertDialogTitle>
+            </div>
+            <AlertDialogDescription className="text-sm text-muted-foreground leading-relaxed">
+              Tem certeza que deseja sair? Todos os dados informados neste atendimento serão <strong>perdidos permanentemente</strong>.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter className="mt-6">
+            <AlertDialogCancel className="font-bold">CONTINUAR EDITANDO</AlertDialogCancel>
+            <AlertDialogAction 
+              onClick={forceClose}
+              className="bg-destructive hover:bg-destructive/90 text-white font-bold px-6"
+            >
+              SIM, SAIR
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Modal de confirmação de restauração de rascunho */}
+      <AlertDialog open={showRestoreConfirm} onOpenChange={setShowRestoreConfirm}>
+        <AlertDialogContent className="max-w-[400px]">
+          <AlertDialogHeader>
+            <div className="flex items-center gap-3 text-primary mb-2">
+              <div className="p-2 bg-primary/10 rounded-full">
+                <UserPlus className="h-6 w-6" />
+              </div>
+              <AlertDialogTitle className="text-xl">Restaurar rascunho?</AlertDialogTitle>
+            </div>
+            <AlertDialogDescription className="text-sm text-muted-foreground leading-relaxed">
+              Encontramos um atendimento em andamento salvo às <strong>{pendingDraft?.savedAt ? new Date(pendingDraft.savedAt).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }) : ''}</strong>. Deseja continuar de onde parou?
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter className="mt-6">
+            <AlertDialogCancel 
+              onClick={() => {
+                if (ticketId) clearDraft(ticketId)
+                setShowRestoreConfirm(false)
+              }}
+              className="font-bold"
+            >
+              NÃO, COMEÇAR NOVO
+            </AlertDialogCancel>
+            <AlertDialogAction 
+              onClick={() => {
+                if (pendingDraft) setState({ attachments: [], ...pendingDraft })
+                setShowRestoreConfirm(false)
+              }}
+              className="gradient-bg text-white font-bold px-6"
+            >
+              SIM, RESTAURAR
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       {/* Post-finalize flow */}
       {showPayment && createdOrder && (
