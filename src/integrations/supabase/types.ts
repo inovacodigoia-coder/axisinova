@@ -334,6 +334,7 @@ export type Database = {
           result_deadline_days: number | null
           specialty_id: string | null
           tuss_code: string | null
+          type: string | null
         }
         Insert: {
           attachment_rules?: Json
@@ -349,6 +350,7 @@ export type Database = {
           result_deadline_days?: number | null
           specialty_id?: string | null
           tuss_code?: string | null
+          type?: string | null
         }
         Update: {
           attachment_rules?: Json
@@ -364,6 +366,7 @@ export type Database = {
           result_deadline_days?: number | null
           specialty_id?: string | null
           tuss_code?: string | null
+          type?: string | null
         }
         Relationships: [
           {
