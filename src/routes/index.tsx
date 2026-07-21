@@ -5,7 +5,7 @@
 
 /*
   TAREFAS PENDENTES:
-  - Atualização automática e estado vazio na listagem do Super Admin após exclusão de empresas.
+  - Corrigido: Listagem do Super Admin agora sincroniza corretamente após exclusões, evitando erros de "sessão expirada" ou "empresa não encontrada".
   - Criar os layouts públicos para /portal/parceiro, /portal/medico e /portal/paciente.
   - Implementar o sistema de Lote de Envio de Amostras para parceiros.
   - Desenvolver o visualizador simplificado de resultados para o portal do paciente.

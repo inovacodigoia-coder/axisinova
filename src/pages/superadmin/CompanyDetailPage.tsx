@@ -1,12 +1,14 @@
 import { useParams, useNavigate } from 'react-router-dom'
-import { useState } from 'react'
-import { MOCK_COMPANIES, MOCK_COMPANY_USERS, MOCK_INVOICES, MOCK_PLANS } from '@/mocks/superadmin.mock'
+import { useState, useEffect } from 'react'
+import { MOCK_COMPANY_USERS, MOCK_INVOICES, MOCK_PLANS } from '@/mocks/superadmin.mock'
 import { CompanyStatusBadge } from '@/components/superadmin/CompanyStatusBadge'
 import { StatusBadge } from '@/components/ui/StatusBadge'
-import { ArrowLeft, Users, Building2, ClipboardList, HardDrive, ExternalLink, Plus, Minus, Stethoscope, UserPlus, Database } from 'lucide-react'
+import { ArrowLeft, Users, Building2, ClipboardList, HardDrive, ExternalLink, Stethoscope, Plus, Minus, UserPlus, Database } from 'lucide-react'
 import { useAuth } from '@/context/AuthContext'
 import { OutlineButton } from '@/components/ui/OutlineButton'
 import { toast } from 'sonner'
+import { supabase } from '@/integrations/supabase/client'
+import type { Company, PlanType, CompanyStatus } from '@/types/company.types'
 
 const ADDON_PRICE_DOCTOR = 79
 const ADDON_PRICE_PATIENT_PACK = 49 // per 500 patients
@@ -17,8 +19,64 @@ export default function CompanyDetailPage() {
   const navigate = useNavigate()
   const { setImpersonation } = useAuth()
   const [activeTab, setActiveTab] = useState('overview')
+  const [company, setCompany] = useState<Company | null>(null)
+  const [loading, setLoading] = useState(true)
 
-  const company = MOCK_COMPANIES.find((c) => c.id === companyId)
+  useEffect(() => {
+    async function fetchCompany() {
+      if (!companyId) return
+      setLoading(true)
+      const { data, error } = await supabase
+        .from('companies')
+        .select('*')
+        .eq('id', companyId)
+        .single()
+
+      if (error) {
+        console.error('Error fetching company:', error)
+        setLoading(false)
+        return
+      }
+
+      if (data) {
+        const mapped: Company = {
+          id: data.id,
+          razaoSocial: data.name || '',
+          nomeFantasia: data.nome_fantasia || data.name || '',
+          cnpj: data.cnpj || '',
+          segmento: data.segmento || 'Outro',
+          telefone: data.telefone || '',
+          email: data.email || '',
+          website: data.website || '',
+          endereco: {
+            cep: data.cep || '',
+            logradouro: data.logradouro || '',
+            numero: data.numero || '',
+            bairro: data.bairro || '',
+            cidade: data.cidade || '',
+            estado: data.estado || '',
+          },
+          plano: (data.plano || 'Pro') as PlanType,
+          status: (data.status || 'active') as CompanyStatus,
+          medicosAtivos: data.medicos_ativos || 0,
+          medicosLimite: data.medicos_limite || 15,
+          usuariosAtivos: data.usuarios_ativos || 0,
+          usuariosLimite: data.usuarios_limite || 999,
+          armazenamentoUsadoGB: Number(data.armazenamento_usado_gb) || 0,
+          armazenamentoLimiteGB: Number(data.armazenamento_limite_gb) || 100,
+          valorMensal: Number(data.valor_mensal) || 0,
+          criadoEm: data.created_at,
+          ultimoAcesso: data.updated_at,
+        }
+        setCompany(mapped)
+      }
+      setLoading(false)
+    }
+
+    fetchCompany()
+  }, [companyId])
+
+  if (loading) return <div className="p-8 text-center text-muted-foreground">Carregando detalhes da empresa...</div>
   if (!company) return <div className="p-8 text-center text-muted-foreground">Empresa não encontrada</div>
 
   const plan = MOCK_PLANS.find(p => p.name === company.plano)
