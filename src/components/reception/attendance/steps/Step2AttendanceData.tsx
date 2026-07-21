@@ -123,54 +123,9 @@ export function Step2AttendanceData({ state, update }: Props) {
       </section>
 
 
-      {state.serviceType === 'exam' && state.examMode === 'ask' && (
-        <section className="animate-in fade-in slide-in-from-top-2 duration-300">
-          <h3 className="text-sm font-semibold text-foreground mb-3 flex items-center gap-2">
-            <FlaskConical className="h-4 w-4 text-primary" />
-            Onde o exame será realizado? *
-          </h3>
-          <div className="grid grid-cols-2 gap-4">
-            <button
-              onClick={() => update({ examMode: 'clinic' })}
-              className={cn(
-                "flex flex-col items-center gap-3 p-6 rounded-xl border-2 transition-all",
-                (state.examMode as string) === 'clinic' 
-                  ? "border-primary bg-primary/5 shadow-md scale-[1.02]" 
-                  : "border-border bg-card hover:border-primary/40"
-              )}
-            >
-              <div className="h-12 w-12 rounded-full bg-blue-100 flex items-center justify-center">
-                <Stethoscope className="h-6 w-6 text-blue-600" />
-              </div>
-              <div className="text-center">
-                <div className="font-bold text-sm">CLÍNICA</div>
-                <div className="text-[10px] text-muted-foreground mt-1">Realizado internamente</div>
-              </div>
-            </button>
-
-            <button
-              onClick={() => update({ examMode: 'lab' })}
-              className={cn(
-                "flex flex-col items-center gap-3 p-6 rounded-xl border-2 transition-all",
-                (state.examMode as string) === 'lab' 
-                  ? "border-primary bg-primary/5 shadow-md scale-[1.02]" 
-                  : "border-border bg-card hover:border-primary/40"
-              )}
-            >
-              <div className="h-12 w-12 rounded-full bg-purple-100 flex items-center justify-center">
-                <FlaskConical className="h-6 w-6 text-purple-600" />
-              </div>
-              <div className="text-center">
-                <div className="font-bold text-sm">LABORATÓRIO</div>
-                <div className="text-[10px] text-muted-foreground mt-1">Encaminhado para bancada</div>
-              </div>
-            </button>
-          </div>
-        </section>
-      )}
-
-      {state.serviceType && (state.serviceType !== 'exam' || state.examMode !== 'ask') && (
+      {state.serviceType && (state.serviceType !== 'exam' || (state.examMode && state.examMode !== 'ask')) && (
         <>
+
           {/* Origem */}
           <section>
             <Field label="Origem do Atendimento *">
