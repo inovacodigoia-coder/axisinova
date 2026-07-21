@@ -469,9 +469,17 @@ function ReviewPanel({ state, unitName, guicheName, ticketCode }: { state: Cadas
           )}
           {state.weight && <Row label="⚖️ Peso" value={`${state.weight} kg`} />}
           {state.height && <Row label="📏 Altura" value={`${state.height} m`} />}
+          {state.isUrgent && <Row label="🚨 Urgência" value="Sim" />}
+          {state.hasFever && <Row label="🌡️ Febre" value="Sim" />}
+          {state.fastingSince && <Row label="🥣 Jejum" value={state.fastingSince} />}
           <Row label="📎 Documentos" value={`${state.attachments.length} anexado(s)${requiredCount ? ` · ${requiredCount} obrigatório(s)` : ''}`} />
           <Row label="💰 Forma de pagamento" value={state.paymentType === 'convenio' ? 'Convênio' : state.paymentType === 'private' ? `Particular${state.privateValue ? ` · R$ ${state.privateValue.toFixed(2)}` : ''}` : 'Cortesia'} />
         </dl>
+        {state.observation && (
+          <div className="rounded-md bg-muted p-3 text-xs italic">
+            " {state.observation} "
+          </div>
+        )}
         {state.attachmentOverrideReason && (
           <div className="rounded-md bg-amber-50 border border-amber-200 p-3 text-xs text-amber-800">
             ⚠️ Documentos obrigatórios não anexados. Justificativa: {state.attachmentOverrideReason}
@@ -480,6 +488,16 @@ function ReviewPanel({ state, unitName, guicheName, ticketCode }: { state: Cadas
       </div>
     </div>
   )
+}
+
+function Row({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="flex justify-between py-1 border-b border-border/50 last:border-0">
+      <dt className="text-muted-foreground">{label}</dt>
+      <dd className="font-semibold text-foreground text-right">{value}</dd>
+    </div>
+  )
+}
 }
 
 function Row({ label, value }: { label: string; value: string }) {
