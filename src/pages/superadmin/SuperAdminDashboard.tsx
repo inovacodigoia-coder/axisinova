@@ -1,4 +1,6 @@
 import { Building2, DollarSign, Users, ClipboardList, AlertTriangle } from 'lucide-react'
+import { useState, useEffect, useMemo } from 'react'
+import { supabase } from '@/integrations/supabase/client'
 import { MetricCard } from '@/components/superadmin/MetricCard'
 import { useSuperAdminStats } from '@/hooks/useSuperAdminStats'
 import { MOCK_COMPANIES } from '@/mocks/superadmin.mock'
@@ -9,7 +11,28 @@ import { useNavigate } from 'react-router-dom'
 export default function SuperAdminDashboard() {
   const { metrics, monthlySignups, planDistribution, alerts } = useSuperAdminStats()
   const navigate = useNavigate()
-  const recentCompanies = [...MOCK_COMPANIES].sort((a, b) => b.criadoEm.localeCompare(a.criadoEm)).slice(0, 5)
+  const [dbCompanies, setDbCompanies] = useState<any[]>([])
+
+  useEffect(() => {
+    async function fetchRecent() {
+      const { data } = await supabase.from('companies').select('*').order('created_at', { ascending: false }).limit(5)
+      if (data) setDbCompanies(data)
+    }
+    fetchRecent()
+  }, [])
+
+  const recentCompanies = useMemo(() => {
+    if (dbCompanies.length > 0) {
+      return dbCompanies.map(c => ({
+        id: c.id,
+        nomeFantasia: c.nome_fantasia || c.name,
+        cnpj: c.cnpj,
+        status: c.status || 'active',
+        criadoEm: c.created_at
+      }))
+    }
+    return [...MOCK_COMPANIES].sort((a, b) => b.criadoEm.localeCompare(a.criadoEm)).slice(0, 5)
+  }, [dbCompanies])
 
   return (
     <div className="space-y-6">
@@ -71,7 +94,7 @@ export default function SuperAdminDashboard() {
                   <p className="text-xs text-muted-foreground">{c.cnpj}</p>
                 </div>
                 <div className="flex items-center gap-3">
-                  <CompanyStatusBadge status={c.status} trialDaysLeft={c.trialDaysLeft} />
+                  <CompanyStatusBadge status={c.status} trialDaysLeft={(c as any).trialDaysLeft} />
                   <button onClick={() => navigate(`/superadmin/empresas/${c.id}`)} className="text-xs font-medium text-primary hover:underline">
                     Ver
                   </button>

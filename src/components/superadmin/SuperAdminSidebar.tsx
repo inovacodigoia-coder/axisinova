@@ -8,7 +8,7 @@ import { cn } from '@/lib/utils'
 
 const navItems = [
   { label: 'Dashboard Geral', icon: BarChart3, path: '/superadmin/dashboard' },
-  { label: 'Empresas', icon: Building2, path: '/superadmin/empresas', badge: '147' },
+  { label: 'Empresas', icon: Building2, path: '/superadmin/empresas' },
   { label: 'Usuários do Sistema', icon: Users, path: '/superadmin/usuarios' },
   { label: 'Planos e Preços', icon: CreditCard, path: '/superadmin/planos' },
   { label: 'Configurações Globais', icon: Settings, path: '/superadmin/configuracoes' },
@@ -82,8 +82,8 @@ export function SuperAdminSidebar({ mobileOpen, onMobileClose }: SuperAdminSideb
               {!collapsed && (
                 <>
                   <span className="flex-1">{item.label}</span>
-                  {item.badge && (
-                    <span className="rounded-full bg-white/10 px-2 py-0.5 text-[10px] font-bold">{item.badge}</span>
+                  {('badge' in item) && item.badge && (
+                    <span className="rounded-full bg-white/10 px-2 py-0.5 text-[10px] font-bold">{(item as any).badge}</span>
                   )}
                 </>
               )}
