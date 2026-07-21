@@ -82,8 +82,8 @@ export function SuperAdminSidebar({ mobileOpen, onMobileClose }: SuperAdminSideb
               {!collapsed && (
                 <>
                   <span className="flex-1">{item.label}</span>
-                  {item.badge && (
-                    <span className="rounded-full bg-white/10 px-2 py-0.5 text-[10px] font-bold">{item.badge}</span>
+                  {('badge' in item) && item.badge && (
+                    <span className="rounded-full bg-white/10 px-2 py-0.5 text-[10px] font-bold">{(item as any).badge}</span>
                   )}
                 </>
               )}
