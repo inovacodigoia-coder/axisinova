@@ -94,7 +94,7 @@ export default function SuperAdminDashboard() {
                   <p className="text-xs text-muted-foreground">{c.cnpj}</p>
                 </div>
                 <div className="flex items-center gap-3">
-                  <CompanyStatusBadge status={c.status} trialDaysLeft={c.trialDaysLeft} />
+                  <CompanyStatusBadge status={c.status} trialDaysLeft={(c as any).trialDaysLeft} />
                   <button onClick={() => navigate(`/superadmin/empresas/${c.id}`)} className="text-xs font-medium text-primary hover:underline">
                     Ver
                   </button>
