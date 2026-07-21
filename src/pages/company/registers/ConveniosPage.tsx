@@ -179,6 +179,7 @@ function ConvenioFormModal({ convenio, onClose, onSave }: { convenio: Convenio |
           <div><label className="text-sm font-medium">Nome do convênio *</label><input value={name} onChange={e => setName(e.target.value)} className="mt-1 w-full rounded-lg border border-input bg-background px-3 py-2 text-sm" /></div>
           <div className="grid grid-cols-2 gap-4">
             <div><label className="text-sm font-medium">Código ANS</label><input value={ansCode} onChange={e => setAnsCode(e.target.value)} maxLength={6} className="mt-1 w-full rounded-lg border border-input bg-background px-3 py-2 text-sm" placeholder="6 dígitos" /></div>
+            <div><label className="text-sm font-medium">Operadora</label><input value={operator} onChange={e => setOperator(e.target.value)} className="mt-1 w-full rounded-lg border border-input bg-background px-3 py-2 text-sm" placeholder="Ex: AMIL, UNIMED" /></div>
             <div>
               <label className="text-sm font-medium">Tipo *</label>
               <select value={type} onChange={e => setType(e.target.value as Convenio['type'])} className="mt-1 w-full rounded-lg border border-input bg-background px-3 py-2 text-sm">
