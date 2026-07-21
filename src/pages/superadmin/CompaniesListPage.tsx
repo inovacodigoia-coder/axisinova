@@ -120,9 +120,13 @@ export default function CompaniesListPage() {
       
       if (sessionError || !session) {
         console.error('Session error:', sessionError)
-        toast.error('Sessão expirada ou inválida. Por favor, faça login novamente.')
-        setIsDeleting(false)
-        return
+        // Try to refresh session or get user directly
+        const { data: { user } } = await supabase.auth.getUser()
+        if (!user) {
+          toast.error('Sessão expirada ou inválida. Por favor, faça login novamente.')
+          setIsDeleting(false)
+          return
+        }
       }
 
       console.log('Iniciando exclusão da empresa:', deleteTarget.id);
