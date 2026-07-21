@@ -101,7 +101,11 @@ export default function LabCatalogFormPage() {
         <div className="flex items-center gap-3">
           <div className="flex items-center gap-2 mr-4">
             <Label className="text-xs font-bold uppercase tracking-wider">Ativo</Label>
-            <Switch defaultChecked />
+            <Switch 
+              checked={examData.isActive} 
+              onCheckedChange={(val) => setExamData(prev => ({ ...prev, isActive: val }))} 
+            />
+
           </div>
           <Button variant="outline" onClick={() => navigate('/app/cadastros/catalogo')}>Cancelar</Button>
           <Button onClick={handleSave} className="gradient-bg text-white gap-2 px-6">
