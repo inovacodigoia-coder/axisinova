@@ -456,6 +456,13 @@ function GeneralInfoSection({ isEditing, data, onChange }: { isEditing: boolean,
 
 function ParametersSection() {
   const [measurementUnits, setMeasurementUnits] = useState<any[]>([])
+  const [parameters, setParameters] = useState<any[]>([
+    { id: 1, name: 'Hemácias', section: 'ER', equipCode: '', type: 'numerical', origin: 'equipment', unit: 'milhões/mm³', isMandatory: true, allowNegative: false, isCalculated: false, formula: '' },
+    { id: 2, name: 'Hemoglobina', section: 'ER', equipCode: '', type: 'numerical', origin: 'equipment', unit: 'g/dL', isMandatory: true, allowNegative: false, isCalculated: false, formula: '' },
+    { id: 3, name: 'Hematócrito', section: 'ER', equipCode: '', type: 'numerical', origin: 'equipment', unit: '%', isMandatory: true, allowNegative: false, isCalculated: false, formula: '' },
+    { id: 4, name: 'VCM (Volume Corpuscular Médio)', section: 'ER', equipCode: '', type: 'numerical', origin: 'equipment', unit: 'fL', isMandatory: true, allowNegative: false, isCalculated: true, formula: '[Hematócrito] / [Hemácias] * 10' },
+  ])
+  const [editingReference, setEditingReference] = useState<any>(null)
 
   useEffect(() => {
     const fetchUnits = async () => {
@@ -464,86 +471,373 @@ function ParametersSection() {
     }
     fetchUnits()
   }, [])
+
+  const addParameter = () => {
+    const newId = parameters.length > 0 ? Math.max(...parameters.map(p => p.id)) + 1 : 1
+    setParameters([...parameters, { 
+      id: newId, 
+      name: '', 
+      section: '', 
+      equipCode: '', 
+      type: 'numerical', 
+      origin: 'manual', 
+      unit: '', 
+      isMandatory: true, 
+      allowNegative: false, 
+      isCalculated: false,
+      formula: ''
+    }])
+  }
+
+  const updateParameter = (id: number, field: string, value: any) => {
+    setParameters(parameters.map(p => p.id === id ? { ...p, [field]: value } : p))
+  }
+
+  const removeParameter = (id: number) => {
+    setParameters(parameters.filter(p => p.id !== id))
+  }
+
+  const availableVariables = useMemo(() => {
+    return parameters.filter(p => p.name).map(p => p.name)
+  }, [parameters])
+
   return (
-    <Card className="p-8 space-y-8">
-       <div className="flex items-center justify-between">
-          <div>
-            <h3 className="text-lg font-bold">Parâmetros e Máscara de Resultado</h3>
-            <p className="text-xs text-muted-foreground">Configure os campos que serão preenchidos no laudo.</p>
+    <TooltipProvider>
+      <Card className="p-0 border-none shadow-none bg-transparent space-y-6">
+        <div className="flex items-center justify-between bg-card p-4 rounded-xl border border-border">
+          <div className="flex items-center gap-2">
+            <Beaker className="h-5 w-5 text-primary" />
+            <h3 className="text-lg font-bold">Parâmetros do Exame</h3>
           </div>
-          <Button size="sm" className="gradient-bg text-white gap-2">
-            <Plus className="h-4 w-4" /> Adicionar Parâmetro
-          </Button>
-       </div>
+          <div className="flex gap-2">
+            <Button size="sm" variant="outline" className="gap-2" onClick={addParameter}>
+              <Plus className="h-4 w-4" /> Adicionar Parâmetro
+            </Button>
+            <Button size="sm" variant="outline" className="gap-2">
+              <ExternalLink className="h-4 w-4" /> Vincular exame existente
+            </Button>
+          </div>
+        </div>
 
-       <div className="border rounded-xl overflow-hidden bg-card">
-         <table className="w-full text-left text-sm">
-           <thead className="bg-muted/50 border-b">
-             <tr>
-               <th className="px-4 py-3 font-bold text-[10px] uppercase text-muted-foreground">Nome do Parâmetro</th>
-               <th className="px-4 py-3 font-bold text-[10px] uppercase text-muted-foreground">Tipo</th>
-               <th className="px-4 py-3 font-bold text-[10px] uppercase text-muted-foreground">Unidade</th>
-               <th className="px-4 py-3 font-bold text-[10px] uppercase text-muted-foreground">Metodologia</th>
-               <th className="px-4 py-3 font-bold text-[10px] uppercase text-muted-foreground">Máscara/Cálculo</th>
-               <th className="px-4 py-3 text-right"></th>
-             </tr>
-           </thead>
-           <tbody className="divide-y">
-             <tr>
-               <td className="px-4 py-3"><Input className="h-8 text-xs" defaultValue="Vitamina D" /></td>
-               <td className="px-4 py-3">
-                 <select className="h-8 px-2 rounded-md border text-xs outline-none bg-background">
-                   <option>Editável</option>
-                   <option>Calculado</option>
-                   <option>Texto Livre</option>
-                   <option>Seleção</option>
-                 </select>
-               </td>
-               <td className="px-4 py-3">
-                  <select className="h-8 px-2 rounded-md border text-xs outline-none bg-background w-full">
-                    {measurementUnits.map(unit => (
-                      <option key={unit.name} value={unit.name}>{unit.name}</option>
-                    ))}
-                  </select>
-               </td>
-               <td className="px-4 py-3">
-                 <select className="h-8 px-2 rounded-md border text-xs outline-none bg-background">
-                   <option>Quimioluminescência</option>
-                 </select>
-               </td>
-               <td className="px-4 py-3">
-                 <Input className="h-8 text-xs font-mono" placeholder="Ex: ##.#" defaultValue="##.#" />
-               </td>
-               <td className="px-4 py-3 text-right">
-                  <Button variant="ghost" size="sm" className="h-8 w-8 p-0 text-red-600"><Trash2 className="h-3.5 w-3.5" /></Button>
-               </td>
-             </tr>
-           </tbody>
-         </table>
-       </div>
+        <div className="border rounded-xl overflow-hidden bg-card shadow-sm">
+          <div className="overflow-x-auto">
+            <table className="w-full text-left text-sm">
+              <thead className="bg-muted/30 border-b">
+                <tr>
+                  <th className="px-4 py-3 font-bold text-[10px] uppercase text-muted-foreground w-10">#</th>
+                  <th className="px-4 py-3 font-bold text-[10px] uppercase text-muted-foreground">Nome</th>
+                  <th className="px-4 py-3 font-bold text-[10px] uppercase text-muted-foreground w-20">Seção</th>
+                  <th className="px-4 py-3 font-bold text-[10px] uppercase text-muted-foreground w-24">Cód. Equip.</th>
+                  <th className="px-4 py-3 font-bold text-[10px] uppercase text-muted-foreground w-32">Tipo</th>
+                  <th className="px-4 py-3 font-bold text-[10px] uppercase text-muted-foreground w-32">Origem</th>
+                  <th className="px-4 py-3 font-bold text-[10px] uppercase text-muted-foreground w-40">Unidade</th>
+                  <th className="px-4 py-3 font-bold text-[10px] uppercase text-muted-foreground w-32">Referências</th>
+                  <th className="px-4 py-3 font-bold text-[10px] uppercase text-muted-foreground text-center">Obrig.</th>
+                  <th className="px-4 py-3 font-bold text-[10px] uppercase text-muted-foreground text-center">Neg.</th>
+                  <th className="px-4 py-3 font-bold text-[10px] uppercase text-muted-foreground text-center">Calc.</th>
+                  <th className="px-4 py-3 text-right"></th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-border">
+                {parameters.map((param, idx) => (
+                  <React.Fragment key={param.id}>
+                    <tr className="hover:bg-muted/5 transition-colors">
+                      <td className="px-4 py-3 text-xs text-muted-foreground font-medium">{idx + 1}</td>
+                      <td className="px-4 py-3 min-w-[200px]">
+                        <div className="flex items-center gap-2">
+                          <Input 
+                            className="h-9 text-xs font-medium focus:ring-primary/20" 
+                            value={param.name} 
+                            onChange={(e) => updateParameter(param.id, 'name', e.target.value)}
+                            placeholder="Nome do parâmetro"
+                          />
+                          <Button variant="ghost" size="sm" className="h-7 text-[10px] px-2 text-muted-foreground hover:text-primary">
+                            <History className="h-3 w-3 mr-1" /> Hist.
+                          </Button>
+                        </div>
+                      </td>
+                      <td className="px-4 py-3">
+                        <Input 
+                          className="h-9 text-xs text-center uppercase" 
+                          value={param.section} 
+                          onChange={(e) => updateParameter(param.id, 'section', e.target.value)}
+                          placeholder="Ex: ER"
+                        />
+                      </td>
+                      <td className="px-4 py-3">
+                        <Input 
+                          className="h-9 text-xs text-center" 
+                          value={param.equipCode} 
+                          onChange={(e) => updateParameter(param.id, 'equipCode', e.target.value)}
+                          placeholder="ex"
+                        />
+                      </td>
+                      <td className="px-4 py-3">
+                        <Select value={param.type} onValueChange={(val) => updateParameter(param.id, 'type', val)}>
+                          <SelectTrigger className="h-9 text-xs">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="numerical">Numérico</SelectItem>
+                            <SelectItem value="text">Texto</SelectItem>
+                            <SelectItem value="selection">Seleção</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </td>
+                      <td className="px-4 py-3">
+                        <Select value={param.origin} onValueChange={(val) => updateParameter(param.id, 'origin', val)}>
+                          <SelectTrigger className="h-9 text-xs">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="manual">Manual</SelectItem>
+                            <SelectItem value="equipment">Equipamento</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </td>
+                      <td className="px-4 py-3">
+                        <div className="flex gap-1 items-center">
+                          <Select value={param.unit} onValueChange={(val) => updateParameter(param.id, 'unit', val)}>
+                            <SelectTrigger className="h-9 text-xs flex-1">
+                              <SelectValue placeholder="Unidade" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {measurementUnits.map(unit => (
+                                <SelectItem key={unit.name} value={unit.name}>{unit.name}</SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                          <Button variant="ghost" size="icon" className="h-7 w-7 text-primary shrink-0">
+                            <Plus className="h-3 w-3" />
+                          </Button>
+                        </div>
+                      </td>
+                      <td className="px-4 py-3">
+                        <Button 
+                          variant="outline" 
+                          size="sm" 
+                          className="h-8 text-[10px] gap-1 px-2 w-full"
+                          onClick={() => setEditingReference(param)}
+                        >
+                          <Settings2 className="h-3 w-3" /> Editar
+                        </Button>
+                      </td>
+                      <td className="px-4 py-3">
+                        <div className="flex justify-center">
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <Switch 
+                                checked={param.isMandatory} 
+                                onCheckedChange={(val) => updateParameter(param.id, 'isMandatory', val)}
+                                className="scale-75"
+                              />
+                            </TooltipTrigger>
+                            <TooltipContent>
+                              <p className="text-xs">Parâmetro obrigatório: precisa ser preenchido na digitação manual de resultados</p>
+                            </TooltipContent>
+                          </Tooltip>
+                        </div>
+                      </td>
+                      <td className="px-4 py-3">
+                        <div className="flex justify-center">
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <Switch 
+                                checked={param.allowNegative} 
+                                onCheckedChange={(val) => updateParameter(param.id, 'allowNegative', val)}
+                                className="scale-75"
+                              />
+                            </TooltipTrigger>
+                            <TooltipContent>
+                              <p className="text-xs">Neg. Permite digitar valores negativos para este parâmetro.</p>
+                            </TooltipContent>
+                          </Tooltip>
+                        </div>
+                      </td>
+                      <td className="px-4 py-3">
+                        <div className="flex justify-center">
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <Switch 
+                                checked={param.isCalculated} 
+                                onCheckedChange={(val) => updateParameter(param.id, 'isCalculated', val)}
+                                className="scale-75 data-[state=checked]:bg-cyan-500"
+                              />
+                            </TooltipTrigger>
+                            <TooltipContent>
+                              <p className="text-xs">Calc. Parâmetro calculado automaticamente por fórmula. Não é editável manualmente.</p>
+                            </TooltipContent>
+                          </Tooltip>
+                        </div>
+                      </td>
+                      <td className="px-4 py-3 text-right">
+                         <div className="flex justify-end gap-1">
+                            <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground">
+                              <MoreVertical className="h-4 w-4" />
+                            </Button>
+                            <Button variant="ghost" size="icon" className="h-8 w-8 text-red-500" onClick={() => removeParameter(param.id)}>
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                         </div>
+                      </td>
+                    </tr>
+                    
+                    {param.isCalculated && (
+                      <tr>
+                        <td colSpan={12} className="px-4 py-4 bg-muted/20 border-t border-b border-border">
+                          <div className="space-y-3">
+                            <div className="flex items-center gap-2 text-[10px] font-bold uppercase text-primary">
+                              <Calculator className="h-3 w-3" />
+                              Fórmula de cálculo de "{param.name || 'Novo Parâmetro'}"
+                            </div>
+                            <div className="flex flex-wrap gap-1.5">
+                              {availableVariables.filter(v => v !== param.name).map(v => (
+                                <button
+                                  key={v}
+                                  type="button"
+                                  onClick={() => {
+                                    const currentFormula = param.formula || ''
+                                    updateParameter(param.id, 'formula', currentFormula + ` [${v}] `)
+                                  }}
+                                  className="px-2 py-1 rounded bg-white border border-border text-[10px] font-bold hover:bg-primary/5 hover:border-primary/30 transition-all shadow-sm"
+                                >
+                                  [{v}]
+                                </button>
+                              ))}
+                              <button className="px-2 py-1 rounded bg-white border border-border text-[10px] font-bold opacity-50">{"{peso}"}</button>
+                              <button className="px-2 py-1 rounded bg-white border border-border text-[10px] font-bold opacity-50">{"{sexo}"}</button>
+                            </div>
+                            <textarea
+                              className="w-full h-16 p-3 rounded-lg border bg-white text-xs font-mono focus:ring-2 focus:ring-primary/20 outline-none resize-none shadow-inner"
+                              placeholder="Ex: [Hematócrito] / [Hemácias] * 10"
+                              value={param.formula}
+                              onChange={(e) => updateParameter(param.id, 'formula', e.target.value)}
+                            />
+                          </div>
+                        </td>
+                      </tr>
+                    )}
+                  </React.Fragment>
+                ))}
+                {parameters.length === 0 && (
+                  <tr>
+                    <td colSpan={12} className="px-4 py-12 text-center text-muted-foreground italic">
+                      Nenhum parâmetro cadastrado. Clique em "Adicionar Parâmetro" para começar.
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+        </div>
 
-       <div className="pt-6 border-t space-y-4">
-         <div className="flex items-center gap-2">
-           <Layout className="h-5 w-5 text-primary" />
-           <h4 className="font-bold text-sm">Layout da Máscara de Resultado</h4>
-         </div>
-         <div className="p-4 bg-muted/20 border border-dashed rounded-xl min-h-[150px] space-y-4">
-            <p className="text-[10px] text-muted-foreground font-mono">Editor de Rich Text / HTML para o laudo (Simulação)</p>
-            <div className="w-full h-32 bg-card border rounded p-4 text-sm font-mono flex flex-col gap-2">
-               <div className="flex justify-between border-b pb-1 font-bold">
-                 <span>PARÂMETRO</span>
-                 <span>RESULTADO</span>
-                 <span>VALOR DE REFERÊNCIA</span>
-               </div>
-               <div className="flex justify-between py-1">
-                 <span>Vitamina D</span>
-                 <span className="bg-primary/5 px-2 rounded border border-primary/20">{"{vitamina_d}"} ng/mL</span>
-                 <span className="text-muted-foreground italic">Ver tabela abaixo</span>
-               </div>
+        <ReferenceValuesModal 
+          parameter={editingReference} 
+          onClose={() => setEditingReference(null)} 
+        />
+      </Card>
+    </TooltipProvider>
+  )
+}
+
+function ReferenceValuesModal({ parameter, onClose }: { parameter: any, onClose: () => void }) {
+  const [faixas, setFaixas] = useState<any[]>([
+    { id: 1, description: 'Adulto Masculino', minAge: 18, maxAge: 150, sex: 'Masculino', isPregnant: false, minValue: '4.5', maxValue: '6.1' },
+    { id: 2, description: 'Adulto Feminino', minAge: 18, maxAge: 150, sex: 'Feminino', isPregnant: false, minValue: '4', maxValue: '5.4' },
+  ])
+
+  const addFaixa = () => {
+    const newId = faixas.length > 0 ? Math.max(...faixas.map(f => f.id)) + 1 : 1
+    setFaixas([...faixas, { id: newId, description: '', minAge: 0, maxAge: 120, sex: 'Todos', isPregnant: false, minValue: '', maxValue: '' }])
+  }
+
+  const removeFaixa = (id: number) => {
+    setFaixas(faixas.filter(f => f.id !== id))
+  }
+
+  if (!parameter) return null
+
+  return (
+    <Dialog open={!!parameter} onOpenChange={(open) => !open && onClose()}>
+      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+        <DialogHeader>
+          <div className="flex items-center gap-2">
+            <Scale className="h-5 w-5 text-primary" />
+            <DialogTitle>Valores de Referência — {parameter.name}</DialogTitle>
+          </div>
+          <p className="text-xs text-muted-foreground">Configure múltiplas faixas de referência com condições de idade, sexo e gestante.</p>
+        </DialogHeader>
+
+        <div className="space-y-6 py-4">
+          {faixas.map((faixa, idx) => (
+            <div key={faixa.id} className="p-4 border border-border rounded-xl bg-muted/10 relative space-y-4">
+              <div className="flex items-center justify-between">
+                <Badge variant="outline" className="bg-white">Faixa {idx + 1}</Badge>
+                <Button variant="ghost" size="icon" className="h-8 w-8 text-red-500" onClick={() => removeFaixa(faixa.id)}>
+                  <Trash2 className="h-4 w-4" />
+                </Button>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-1.5 md:col-span-2">
+                  <Label className="text-[10px] font-bold uppercase text-muted-foreground">Descrição (ex: Adulto Masculino)</Label>
+                  <Input className="h-9 text-xs" value={faixa.description} placeholder="Ex: Adulto Masculino" onChange={() => {}} />
+                </div>
+                
+                <div className="space-y-4 border-t pt-4 md:col-span-2 grid grid-cols-2 gap-4">
+                  <div className="space-y-1.5">
+                    <Label className="text-[10px] font-bold uppercase text-emerald-600">Valor Mínimo</Label>
+                    <Input className="h-9 text-xs font-bold" value={faixa.minValue} placeholder="0.0" onChange={() => {}} />
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label className="text-[10px] font-bold uppercase text-emerald-600">Valor Máximo</Label>
+                    <Input className="h-9 text-xs font-bold" value={faixa.maxValue} placeholder="0.0" onChange={() => {}} />
+                  </div>
+                </div>
+
+                <div className="space-y-1.5">
+                  <Label className="text-[10px] font-bold uppercase text-muted-foreground">Idade Mín (anos)</Label>
+                  <Input type="number" className="h-9 text-xs" value={faixa.minAge} onChange={() => {}} />
+                </div>
+                <div className="space-y-1.5">
+                  <Label className="text-[10px] font-bold uppercase text-muted-foreground">Idade Máx (anos)</Label>
+                  <Input type="number" className="h-9 text-xs" value={faixa.maxAge} onChange={() => {}} />
+                </div>
+
+                <div className="flex items-center gap-4 md:col-span-2 bg-white/50 p-2 rounded-lg border border-dashed">
+                  <div className="flex-1 space-y-1.5">
+                    <Label className="text-[10px] font-bold uppercase text-muted-foreground">Sexo</Label>
+                    <Select value={faixa.sex} onValueChange={() => {}}>
+                      <SelectTrigger className="h-9 text-xs">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="Todos">Todos</SelectItem>
+                        <SelectItem value="Masculino">Masculino</SelectItem>
+                        <SelectItem value="Feminino">Feminino</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="flex items-center gap-2 pt-5">
+                    <Switch checked={faixa.isPregnant} className="scale-75" />
+                    <Label className="text-xs cursor-pointer">Gestante</Label>
+                  </div>
+                </div>
+              </div>
             </div>
-         </div>
-       </div>
-    </Card>
+          ))}
+
+          <Button variant="outline" className="w-full border-dashed gap-2 py-6" onClick={addFaixa}>
+            <Plus className="h-4 w-4" /> Adicionar Faixa de Referência
+          </Button>
+        </div>
+
+        <DialogFooter className="gap-2">
+          <Button variant="outline" onClick={onClose}>Cancelar</Button>
+          <Button className="gradient-bg text-white px-8" onClick={onClose}>Salvar</Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   )
 }
 
