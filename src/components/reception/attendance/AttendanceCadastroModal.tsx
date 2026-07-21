@@ -334,7 +334,7 @@ export function AttendanceCadastroModal({
 
         {/* Progress */}
         <div className="border-b border-border bg-muted/30 px-6 py-4">
-          <div className="flex items-center justify-between max-w-3xl mx-auto">
+          <div className="flex items-center justify-between max-w-5xl mx-auto">
             {STEPS.map((label, idx) => {
               const done = idx < step || showReview
               const active = idx === step && !showReview
@@ -350,8 +350,8 @@ export function AttendanceCadastroModal({
                       {done ? <Check className="h-4 w-4" /> : idx + 1}
                     </div>
                     <span className={cn(
-                      'mt-1 text-xs',
-                      (done || active) ? 'text-foreground font-medium' : 'text-muted-foreground'
+                      'mt-1 text-[10px] leading-tight text-center px-1 whitespace-nowrap',
+                      (done || active) ? 'text-foreground font-semibold' : 'text-muted-foreground'
                     )}>{label}</span>
                   </div>
                   {idx < STEPS.length - 1 && (
