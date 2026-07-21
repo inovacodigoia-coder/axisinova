@@ -15,7 +15,13 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
 import { Step1PatientLookup } from './steps/Step1PatientLookup'
-...
+import { Step2AttendanceData } from './steps/Step2AttendanceData'
+import { Step3Authorization } from './steps/Step3Authorization'
+import { Step4Attachments } from './steps/Step4Attachments'
+import { PaymentModal } from './payment/PaymentModal'
+import { AttendancePrintModal } from './print/AttendancePrintModal'
+import { LabStep1PatientReview } from '@/components/lab/attendance/steps/LabStep1PatientReview'
+import { LabStep2ExamData } from '@/components/lab/attendance/steps/LabStep2ExamData'
 import { LabStep3GuidesProcedures } from '@/components/lab/attendance/steps/LabStep3GuidesProcedures'
 import { QueueAllocationModal } from './queue-allocation/QueueAllocationModal'
 import { useAttendanceCadastro, useDraftAutosave, loadDraft, clearDraft } from '@/hooks/useAttendanceCadastro'
