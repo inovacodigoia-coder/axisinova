@@ -490,21 +490,3 @@ function ReviewPanel({ state, unitName, guicheName, ticketCode }: { state: Cadas
   )
 }
 
-function Row({ label, value }: { label: string; value: string }) {
-  return (
-    <div className="flex justify-between py-1 border-b border-border/50 last:border-0">
-      <dt className="text-muted-foreground">{label}</dt>
-      <dd className="font-semibold text-foreground text-right">{value}</dd>
-    </div>
-  )
-}
-}
-
-function Row({ label, value }: { label: string; value: string }) {
-  return (
-    <div className="flex gap-2">
-      <dt className="font-medium text-muted-foreground w-44 shrink-0">{label}:</dt>
-      <dd className="text-foreground">{value}</dd>
-    </div>
-  )
-}
