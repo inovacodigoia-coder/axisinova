@@ -104,20 +104,40 @@ export function RegistersProvider({ children }: { children: ReactNode }) {
 
     const load = async () => {
       try {
-        const [specRes, docRes, convRes, examRes, procRes] = await Promise.all([
+        const queries = [
           supabase.from('specialties').select('*').eq('company_id', companyId),
           supabase.from('doctors').select('*').eq('company_id', companyId),
           supabase.from('convenios').select('*').eq('company_id', companyId),
           supabase.from('exams').select('*').eq('company_id', companyId),
           supabase.from('procedures').select('*').eq('company_id', companyId),
-        ])
-        if (specRes.data) setSpecialties(specRes.data.map(mapSpecialtyRow))
-        if (docRes.data) setDoctors(docRes.data.map(mapDoctorRow))
-        if (convRes.data) setConvenios(convRes.data.map(mapConvenioRow))
-        if (examRes.data) setExams(examRes.data.map(mapExamRow))
-        if (procRes.data) setProcedures(procRes.data.map(mapProcedureRow))
+        ]
+
+        const results = await Promise.allSettled(queries)
+        
+        results.forEach((result, index) => {
+          if (result.status === 'rejected') {
+            console.error(`Query ${index} failed:`, result.reason)
+            return
+          }
+          
+          const { data, error } = result.value
+          if (error) {
+            console.error(`Error in query ${index}:`, error)
+            return
+          }
+
+          if (data) {
+            switch(index) {
+              case 0: setSpecialties(data.map(mapSpecialtyRow)); break
+              case 1: setDoctors(data.map(mapDoctorRow)); break
+              case 2: setConvenios(data.map(mapConvenioRow)); break
+              case 3: setExams(data.map(mapExamRow)); break
+              case 4: setProcedures(data.map(mapProcedureRow)); break
+            }
+          }
+        })
       } catch (err) {
-        console.error('Failed to load registers:', err)
+        console.error('Unexpected error loading registers:', err)
       } finally {
         setIsLoading(false)
       }
