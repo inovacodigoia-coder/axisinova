@@ -1,4 +1,5 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
+import { supabase } from '@/integrations/supabase/client'
 import { Card } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -103,6 +104,15 @@ function GeneralInfoSection({ isEditing }: { isEditing: boolean }) {
   const materials = ['Sangue Total', 'Soro', 'Plasma', 'Urina', 'Fezes', 'Secreção', 'Líquor', 'Swab']
   const [selectedMaterials, setSelectedMaterials] = useState<string[]>(isEditing ? ['Soro'] : [])
   const [defaultMaterial, setDefaultMaterial] = useState(isEditing ? 'Soro' : '')
+  const [measurementUnits, setMeasurementUnits] = useState<any[]>([])
+
+  useEffect(() => {
+    const fetchUnits = async () => {
+      const { data } = await supabase.from('measurement_units').select('name').order('name')
+      if (data) setMeasurementUnits(data)
+    }
+    fetchUnits()
+  }, [])
 
   const toggleMaterial = (mat: string) => {
     setSelectedMaterials(prev => 
@@ -159,9 +169,9 @@ function GeneralInfoSection({ isEditing }: { isEditing: boolean }) {
           <div className="flex gap-2">
             <select className="flex-1 h-10 px-3 rounded-lg border bg-background text-sm outline-none focus:ring-2 focus:ring-primary/20">
               <option value="">-- Selecione --</option>
-              <option>ng/mL</option>
-              <option>mg/dL</option>
-              <option>U/L</option>
+              {measurementUnits.map(unit => (
+                <option key={unit.name} value={unit.name}>{unit.name}</option>
+              ))}
             </select>
             <Button variant="outline" size="icon" className="shrink-0" onClick={() => toast.info("Funcionalidade para cadastrar novos materiais será implementada em breve.")}><Plus className="h-4 w-4" /></Button>
           </div>
@@ -259,6 +269,15 @@ function GeneralInfoSection({ isEditing }: { isEditing: boolean }) {
 }
 
 function ParametersSection() {
+  const [measurementUnits, setMeasurementUnits] = useState<any[]>([])
+
+  useEffect(() => {
+    const fetchUnits = async () => {
+      const { data } = await supabase.from('measurement_units').select('name').order('name')
+      if (data) setMeasurementUnits(data)
+    }
+    fetchUnits()
+  }, [])
   return (
     <Card className="p-8 space-y-8">
        <div className="flex items-center justify-between">
@@ -295,9 +314,11 @@ function ParametersSection() {
                  </select>
                </td>
                <td className="px-4 py-3">
-                 <select className="h-8 px-2 rounded-md border text-xs outline-none bg-background">
-                   <option>ng/mL</option>
-                 </select>
+                  <select className="h-8 px-2 rounded-md border text-xs outline-none bg-background w-full">
+                    {measurementUnits.map(unit => (
+                      <option key={unit.name} value={unit.name}>{unit.name}</option>
+                    ))}
+                  </select>
                </td>
                <td className="px-4 py-3">
                  <select className="h-8 px-2 rounded-md border text-xs outline-none bg-background">
