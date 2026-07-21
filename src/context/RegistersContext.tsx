@@ -65,7 +65,7 @@ function mapConvenioRow(row: any): Convenio {
 }
 function mapExamRow(row: any): Exam {
   return {
-    id: row.id, companyId: row.company_id, name: row.name, tussCode: row.tuss_code,
+    id: row.id, companyId: row.company_id, name: row.name, tussCode: row.tuss_code, internalCode: row.internal_code,
     type: row.type || 'clinical',
     specialtyId: row.specialty_id, preparationInstructions: row.preparation_instructions,
     estimatedDurationMinutes: row.estimated_duration_minutes, resultDeadlineDays: row.result_deadline_days,
@@ -281,7 +281,7 @@ export function RegistersProvider({ children }: { children: ReactNode }) {
     setExams(prev => prev.map(x => x.id === e.id ? e : x))
     if (isDemo) return
     const { error } = await supabase.from('exams').update({
-      name: e.name, tuss_code: e.tussCode || null, specialty_id: e.specialtyId || null,
+      name: e.name, tuss_code: e.tussCode || null, internal_code: e.internalCode || null, specialty_id: e.specialtyId || null,
       type: e.type,
       preparation_instructions: e.preparationInstructions || null,
       estimated_duration_minutes: e.estimatedDurationMinutes || null,

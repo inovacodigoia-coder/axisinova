@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { Card } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -15,20 +15,30 @@ export default function LabCatalogPage() {
   const [view, setView] = useState<'grid' | 'list'>('list')
   const [search, setSearch] = useState('')
 
-  const exams = registeredExams.length > 0 ? registeredExams.filter(e => e.type === 'lab').map(e => ({
-    id: e.id,
-    code: e.tussCode || 'S/C',
-    name: e.name,
-    material: 'Soro', // Padrão se não houver no cadastro
-    workbench: 'Bioquímica',
-    status: e.isActive ? 'active' : 'inactive'
-  })) : [
-    { id: '1', code: 'VITD', name: '25-Hidroxivitamina D', material: 'Soro', workbench: 'Bioquímica', status: 'active' },
-    { id: '2', code: 'ACU', name: 'Ácido Úrico', material: 'Soro', workbench: 'Bioquímica', status: 'active' },
-    { id: '3', code: 'HEM', name: 'Hemograma Completo', material: 'Sangue Total EDTA', workbench: 'Hematologia', status: 'active' },
-    { id: '4', code: 'GL', name: 'Glicose', material: 'Soro/Plasma Fluoretado', workbench: 'Bioquímica', status: 'active' },
-    { id: '5', code: 'TSH', name: 'Hormônio Tireoestimulante', material: 'Soro', workbench: 'Imunologia', status: 'active' },
-  ]
+  const exams = useMemo(() => {
+    if (isLoading) return []
+    
+    if (registeredExams.length > 0) {
+      return registeredExams
+        .filter(e => e.type === 'lab')
+        .map(e => ({
+          id: e.id,
+          code: e.internalCode || e.tussCode || 'S/C',
+          name: e.name,
+          material: 'Soro', // Padrão se não houver no cadastro
+          workbench: 'Bioquímica',
+          status: e.isActive ? 'active' : 'inactive'
+        }))
+    }
+    
+    return [
+      { id: '1', code: 'VITD', name: '25-Hidroxivitamina D', material: 'Soro', workbench: 'Bioquímica', status: 'active' },
+      { id: '2', code: 'ACU', name: 'Ácido Úrico', material: 'Soro', workbench: 'Bioquímica', status: 'active' },
+      { id: '3', code: 'HEM', name: 'Hemograma Completo', material: 'Sangue Total EDTA', workbench: 'Hematologia', status: 'active' },
+      { id: '4', code: 'GL', name: 'Glicose', material: 'Soro/Plasma Fluoretado', workbench: 'Bioquímica', status: 'active' },
+      { id: '5', code: 'TSH', name: 'Hormônio Tireoestimulante', material: 'Soro', workbench: 'Imunologia', status: 'active' },
+    ]
+  }, [registeredExams, isLoading])
 
   const filteredExams = exams.filter(e => 
     e.name.toLowerCase().includes(search.toLowerCase()) || 
