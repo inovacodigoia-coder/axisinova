@@ -101,6 +101,7 @@ export default function LabCatalogFormPage() {
 }
 
 function GeneralInfoSection({ isEditing }: { isEditing: boolean }) {
+  const navigate = useNavigate()
   const materials = ['Sangue Total', 'Soro', 'Plasma', 'Urina', 'Fezes', 'Secreção', 'Líquor', 'Swab']
   const [selectedMaterials, setSelectedMaterials] = useState<string[]>(isEditing ? ['Soro'] : [])
   const [defaultMaterial, setDefaultMaterial] = useState(isEditing ? 'Soro' : '')
