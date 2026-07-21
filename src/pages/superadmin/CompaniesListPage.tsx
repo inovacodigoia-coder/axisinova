@@ -261,7 +261,11 @@ export default function CompaniesListPage() {
         )}
       </div>
 
-      <DataTable data={filtered} columns={columns} />
+      <DataTable 
+        data={filtered} 
+        columns={columns} 
+        emptyMessage={hasFilters ? "Nenhuma empresa encontrada para os filtros aplicados." : "Nenhuma empresa cadastrada no sistema."}
+      />
 
       <ConfirmModal
         open={!!deleteTarget}
