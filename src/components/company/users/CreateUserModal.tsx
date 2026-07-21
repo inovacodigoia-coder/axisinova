@@ -17,7 +17,9 @@ const ROLE_OPTIONS = [
   { value: 'telephonist', label: 'Telefonista' },
   { value: 'nurse', label: 'Enfermeiro(a)' },
   { value: 'pharmacist', label: 'Farmacêutico(a)' },
+  { value: 'biochemist', label: 'Bioquímico' },
   { value: 'analyst', label: 'Analista' },
+  { value: 'other', label: 'Outros' },
 ]
 
 interface CreateUserModalProps {
@@ -33,6 +35,7 @@ export function CreateUserModal({ open, onOpenChange, onCreated }: CreateUserMod
   const [cpf, setCpf] = useState('')
   const [role, setRole] = useState('')
   const [password, setPassword] = useState('')
+  const [customRole, setCustomRole] = useState('')
   const [saving, setSaving] = useState(false)
 
   const resetForm = () => {
@@ -41,6 +44,7 @@ export function CreateUserModal({ open, onOpenChange, onCreated }: CreateUserMod
     setCpf('')
     setRole('')
     setPassword('')
+    setCustomRole('')
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -67,7 +71,7 @@ export function CreateUserModal({ open, onOpenChange, onCreated }: CreateUserMod
           password,
           full_name: fullName,
           cpf: cpf || null,
-          role,
+          role: role === 'other' ? customRole : role,
           company_id: user?.companyId || null,
         },
         headers: accessToken ? { Authorization: `Bearer ${accessToken}` } : undefined,
@@ -129,6 +133,17 @@ export function CreateUserModal({ open, onOpenChange, onCreated }: CreateUserMod
               </SelectContent>
             </Select>
           </div>
+          {role === 'other' && (
+            <div className="space-y-2 animate-in fade-in slide-in-from-top-1">
+              <Label htmlFor="customRole">Nova Função *</Label>
+              <Input 
+                id="customRole" 
+                value={customRole} 
+                onChange={e => setCustomRole(e.target.value)} 
+                placeholder="Digite o nome da função" 
+              />
+            </div>
+          )}
           <div className="space-y-2">
             <Label htmlFor="password">Senha *</Label>
             <Input id="password" type="password" value={password} onChange={e => setPassword(e.target.value)} placeholder="Mínimo 6 caracteres" />
