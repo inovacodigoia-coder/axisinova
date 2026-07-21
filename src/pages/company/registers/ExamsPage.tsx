@@ -21,6 +21,7 @@ export default function ExamsPage() {
   const [showAttachments, setShowAttachments] = useState<Exam | null>(null)
 
   const filtered = exams.filter(e => {
+    if (e.type !== 'clinical') return false
     if (search && !e.name.toLowerCase().includes(search.toLowerCase()) && !e.tussCode?.includes(search)) return false
     if (specFilter && e.specialtyId !== specFilter) return false
     if (authFilter === 'yes' && !e.requiresAuthorization) return false
@@ -191,6 +192,7 @@ function ExamFormModal({ exam, specialties, onClose, onSave }: {
   onSave: (e: Exam) => void
 }) {
   const [name, setName] = useState(exam?.name || '')
+  const [type, setType] = useState<'clinical' | 'lab'>(exam?.type || 'clinical')
   const [tussCode, setTussCode] = useState(exam?.tussCode || '')
   const [specialtyId, setSpecialtyId] = useState(exam?.specialtyId || '')
   const [duration, setDuration] = useState(exam?.estimatedDurationMinutes || 30)
@@ -208,6 +210,32 @@ function ExamFormModal({ exam, specialties, onClose, onSave }: {
         </div>
         <div className="p-6 space-y-4">
           <div><label className="text-sm font-medium">Nome do exame *</label><input value={name} onChange={e => setName(e.target.value)} className="mt-1 w-full rounded-lg border border-input bg-background px-3 py-2 text-sm" /></div>
+          
+          <div>
+            <label className="text-sm font-medium">Tipo de Exame</label>
+            <div className="mt-2 flex gap-4">
+              <label className="flex items-center gap-2 cursor-pointer">
+                <input 
+                  type="radio" 
+                  name="examType" 
+                  checked={type === 'clinical'} 
+                  onChange={() => setType('clinical')}
+                  className="accent-primary"
+                />
+                <span className="text-sm">CLÍNICA</span>
+              </label>
+              <label className="flex items-center gap-2 cursor-pointer">
+                <input 
+                  type="radio" 
+                  name="examType" 
+                  checked={type === 'lab'} 
+                  onChange={() => setType('lab')}
+                  className="accent-primary"
+                />
+                <span className="text-sm">LABORATÓRIO</span>
+              </label>
+            </div>
+          </div>
           <div className="grid grid-cols-2 gap-4">
             <div><label className="text-sm font-medium">Código TUSS</label><input value={tussCode} onChange={e => setTussCode(e.target.value)} maxLength={10} className="mt-1 w-full rounded-lg border border-input bg-background px-3 py-2 text-sm" placeholder="10 dígitos" /></div>
             <div>
@@ -235,10 +263,17 @@ function ExamFormModal({ exam, specialties, onClose, onSave }: {
           <button onClick={() => {
             if (!name) { toast.error('Nome é obrigatório'); return }
             onSave({
-              id: exam?.id || `ex_${Date.now()}`, companyId: exam?.companyId || '', name, tussCode: tussCode || undefined,
-              specialtyId: specialtyId || undefined, estimatedDurationMinutes: duration || undefined,
-              preparationInstructions: preparation || undefined, resultDeadlineDays: resultDays || undefined,
-              requiresAuthorization: requiresAuth, authorizationInstructions: requiresAuth ? authInstructions : undefined,
+              id: exam?.id || `ex_${Date.now()}`, 
+              companyId: exam?.companyId || '', 
+              name, 
+              type,
+              tussCode: tussCode || undefined,
+              specialtyId: specialtyId || undefined, 
+              estimatedDurationMinutes: duration || undefined,
+              preparationInstructions: preparation || undefined, 
+              resultDeadlineDays: resultDays || undefined,
+              requiresAuthorization: requiresAuth, 
+              authorizationInstructions: requiresAuth ? authInstructions : undefined,
               attachmentRules: exam?.attachmentRules || [],
               isActive: exam?.isActive ?? true, createdAt: exam?.createdAt || new Date().toISOString(),
             })
