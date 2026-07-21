@@ -543,13 +543,15 @@ function UnitsSection() {
         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3">
           {units.map(u => (
             <div key={u.id} className="p-4 border rounded-xl bg-card flex flex-col gap-3 group hover:border-primary/30 transition-all">
-              <div className="flex items-center justify-between">
-                <span className="text-sm font-mono font-bold break-all leading-tight min-h-[1.25rem]">{u.name}</span>
-                {u.active && (
-                  <Badge variant="outline" className="text-[10px] bg-teal-50 text-teal-700 border-teal-200 shrink-0">
-                    Ativa
-                  </Badge>
-                )}
+              <div className="flex flex-col gap-2 min-h-[3rem] justify-center">
+                <div className="flex items-center justify-between gap-2">
+                  <span className="text-sm font-mono font-bold break-all leading-tight">{u.name}</span>
+                  {u.active !== false && (
+                    <Badge variant="outline" className="text-[10px] bg-teal-50 text-teal-700 border-teal-200 shrink-0">
+                      Ativa
+                    </Badge>
+                  )}
+                </div>
               </div>
               
               <div className="flex items-center gap-2 pt-2 border-t mt-auto">
