@@ -111,17 +111,16 @@ export default function CompaniesListPage() {
   }
 
   async function handleDelete() {
-    if (!deleteTarget) return
+    if (!deleteTarget || isDeleting) return
     setIsDeleting(true)
     try {
-      // Use the service role key if available for deletion tasks in superadmin, 
-      // but since we are calling an edge function, we just need a valid session.
       const { data: { session }, error: sessionError } = await supabase.auth.getSession()
       
+      let currentUser = session?.user
       if (sessionError || !session) {
         console.error('Session error:', sessionError)
-        // Try to refresh session or get user directly
         const { data: { user } } = await supabase.auth.getUser()
+        currentUser = user || undefined
         if (!user) {
           toast.error('Sessão expirada ou inválida. Por favor, faça login novamente.')
           setIsDeleting(false)
@@ -143,8 +142,31 @@ export default function CompaniesListPage() {
 
       if (data?.error) {
         console.error('Function internal error:', data.error);
-        toast.error(`Erro no processamento: ${data.error}`)
+        if (data.error.includes('not found') || data.error.includes('não encontrada')) {
+          toast.error(`Esta empresa já foi removida do sistema.`)
+          setDeleteTarget(null)
+          fetchCompanies()
+        } else {
+          toast.error(`Erro no processamento: ${data.error}`)
+        }
         return
+      }
+
+      // Registro de auditoria - Using plain supabase insert without strict typing for non-generated table
+      try {
+        await (supabase as any).from('audit_logs').insert({
+          action: 'DELETE_COMPANY',
+          entity_type: 'company',
+          entity_id: deleteTarget.id,
+          user_id: currentUser?.id,
+          details: {
+            nome: deleteTarget.nomeFantasia,
+            cnpj: deleteTarget.cnpj,
+            reason: 'Exclusão solicitada via Super Admin'
+          }
+        })
+      } catch (auditErr) {
+        console.warn('Falha ao registrar auditoria:', auditErr)
       }
 
       toast.success(`Empresa "${deleteTarget.nomeFantasia}" excluída com sucesso.`)

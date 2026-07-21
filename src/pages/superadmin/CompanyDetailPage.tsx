@@ -77,7 +77,22 @@ export default function CompanyDetailPage() {
   }, [companyId])
 
   if (loading) return <div className="p-8 text-center text-muted-foreground">Carregando detalhes da empresa...</div>
-  if (!company) return <div className="p-8 text-center text-muted-foreground">Empresa não encontrada</div>
+  if (!company) return (
+    <div className="flex flex-col items-center justify-center p-12 text-center space-y-4">
+      <div className="bg-muted p-4 rounded-full">
+        <Building2 className="h-12 w-12 text-muted-foreground" />
+      </div>
+      <div>
+        <h2 className="text-xl font-bold text-foreground">Empresa não encontrada</h2>
+        <p className="text-sm text-muted-foreground mt-1">
+          A empresa que você está tentando acessar pode ter sido excluída ou o ID é inválido.
+        </p>
+      </div>
+      <OutlineButton onClick={() => navigate('/superadmin/empresas')}>
+        Voltar para listagem
+      </OutlineButton>
+    </div>
+  )
 
   const plan = MOCK_PLANS.find(p => p.name === company.plano)
   const users = MOCK_COMPANY_USERS.filter((u) => u.companyId === companyId)

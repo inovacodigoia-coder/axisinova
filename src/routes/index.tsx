@@ -5,7 +5,8 @@
 
 /*
   TAREFAS PENDENTES:
-  - Corrigido: Listagem do Super Admin agora sincroniza corretamente após exclusões, evitando erros de "sessão expirada" ou "empresa não encontrada".
+  - Auditoria de exclusão, sincronização automática entre telas e bloqueio de exclusões duplicadas no Super Admin.
+  - Página de detalhes com estado "Empresa não encontrada" amigável e botão de retorno. A exclusão de empresas agora gera logs de auditoria detalhados.
   - Criar os layouts públicos para /portal/parceiro, /portal/medico e /portal/paciente.
   - Implementar o sistema de Lote de Envio de Amostras para parceiros.
   - Desenvolver o visualizador simplificado de resultados para o portal do paciente.
