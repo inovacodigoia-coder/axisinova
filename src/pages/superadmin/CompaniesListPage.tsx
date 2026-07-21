@@ -114,6 +114,8 @@ export default function CompaniesListPage() {
     if (!deleteTarget) return
     setIsDeleting(true)
     try {
+      // Use the service role key if available for deletion tasks in superadmin, 
+      // but since we are calling an edge function, we just need a valid session.
       const { data: { session }, error: sessionError } = await supabase.auth.getSession()
       
       if (sessionError || !session) {
@@ -123,12 +125,21 @@ export default function CompaniesListPage() {
         return
       }
 
-      const res = await supabase.functions.invoke('delete-company', {
+      console.log('Iniciando exclusão da empresa:', deleteTarget.id);
+      
+      const { data, error } = await supabase.functions.invoke('delete-company', {
         body: { companyId: deleteTarget.id },
       })
 
-      if (res.error) {
-        toast.error(`Erro ao excluir: ${res.error.message}`)
+      if (error) {
+        console.error('Invoke error:', error);
+        toast.error(`Erro ao invocar função: ${error.message || 'Erro desconhecido'}`)
+        return
+      }
+
+      if (data?.error) {
+        console.error('Function internal error:', data.error);
+        toast.error(`Erro no processamento: ${data.error}`)
         return
       }
 
@@ -136,6 +147,7 @@ export default function CompaniesListPage() {
       setDeleteTarget(null)
       fetchCompanies()
     } catch (err: any) {
+      console.error('Catch error:', err);
       toast.error(`Erro inesperado: ${err.message}`)
     } finally {
       setIsDeleting(false)
