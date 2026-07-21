@@ -267,8 +267,8 @@ export default function CompaniesListPage() {
         open={!!deleteTarget}
         onClose={() => setDeleteTarget(null)}
         onConfirm={handleDelete}
-        title="Excluir Empresa"
-        description={`Tem certeza que deseja excluir "${deleteTarget?.nomeFantasia}"? Todos os dados relacionados (pacientes, prontuários, agendamentos, guias TISS e usuários) serão permanentemente removidos. Esta ação não pode ser desfeita.`}
+        title="Confirmar Exclusão de Empresa"
+        description={`Você está prestes a excluir permanentemente a empresa ${deleteTarget?.nomeFantasia} (CNPJ: ${deleteTarget?.cnpj}). Esta ação é IRREVERSÍVEL e removerá todos os usuários, perfis, prontuários, agendamentos, dados financeiros e registros vinculados.`}
         confirmLabel="Excluir permanentemente"
         variant="danger"
         isLoading={isDeleting}

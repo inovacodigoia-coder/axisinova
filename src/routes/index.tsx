@@ -5,6 +5,7 @@
 
 /*
   TAREFAS PENDENTES:
+  - Ação de exclusão de empresa via menu de três pontos com confirmação detalhada (CNPJ, Nome e alerta de remoção total).
   - Criar os layouts públicos para /portal/parceiro, /portal/medico e /portal/paciente.
   - Implementar o sistema de Lote de Envio de Amostras para parceiros.
   - Desenvolver o visualizador simplificado de resultados para o portal do paciente.
