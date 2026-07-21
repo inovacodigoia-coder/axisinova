@@ -5,9 +5,7 @@
 
 /*
   TAREFAS PENDENTES:
-  - Auditoria de exclusão, sincronização automática entre telas e bloqueio de exclusões duplicadas no Super Admin.
-  - Página de detalhes com estado "Empresa não encontrada" amigável e botão de retorno. A exclusão de empresas agora gera logs de auditoria detalhados.
-  - Criar os layouts públicos para /portal/parceiro, /portal/medico e /portal/paciente.
+  - Implementação de novo Dashboard de Gestão de Clientes com alternância entre Tabela e Grade de Cards para melhor visualização.
   - Implementar o sistema de Lote de Envio de Amostras para parceiros.
   - Desenvolver o visualizador simplificado de resultados para o portal do paciente.
   - Configurar os disparos reais de e-mail/SMS baseados nos templates definidos.

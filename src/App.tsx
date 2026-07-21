@@ -19,7 +19,7 @@ import UnauthorizedPage from "./pages/UnauthorizedPage";
 import ProfileSelectorPage from "./pages/ProfileSelectorPage";
 import SuperAdminLayout from "./pages/superadmin/SuperAdminLayout";
 import SuperAdminDashboard from "./pages/superadmin/SuperAdminDashboard";
-import CompaniesListPage from "./pages/superadmin/CompaniesListPage";
+import CompaniesManagementPage from "./pages/superadmin/companies/CompaniesManagementPage";
 import CompanyDetailPage from "./pages/superadmin/CompanyDetailPage";
 import SuperAdminUsersPage from "./pages/superadmin/SuperAdminUsersPage";
 import PlansManagerPage from "./pages/superadmin/PlansManagerPage";
@@ -79,7 +79,7 @@ const App = () => (
                 {/* Super Admin */}
                 <Route path="/superadmin" element={<SuperAdminRoute><SuperAdminLayout /></SuperAdminRoute>}>
                   <Route path="dashboard" element={<SuperAdminDashboard />} />
-                  <Route path="empresas" element={<CompaniesListPage />} />
+                  <Route path="empresas" element={<CompaniesManagementPage />} />
                   <Route path="empresas/:companyId" element={<CompanyDetailPage />} />
                   <Route path="usuarios" element={<SuperAdminUsersPage />} />
                   <Route path="planos" element={<PlansManagerPage />} />
