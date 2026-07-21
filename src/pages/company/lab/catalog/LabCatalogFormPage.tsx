@@ -113,13 +113,46 @@ function GeneralInfoSection({ isEditing }: { isEditing: boolean }) {
   return (
     <Card className="p-8 space-y-8">
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        <div className="space-y-2 lg:col-span-2">
-          <Label>Nome do Exame *</Label>
-          <Input placeholder="Ex: Hemograma Completo" defaultValue={isEditing ? "25-Hidroxivitamina D" : ""} />
+        <div className="space-y-4 lg:col-span-2">
+          <Label className="text-sm font-bold uppercase tracking-wider text-muted-foreground">Nome do Exame *</Label>
+          <Input 
+            placeholder="Ex: Hemograma Completo" 
+            defaultValue={isEditing ? "25-Hidroxivitamina D" : ""} 
+            className="h-11 text-base font-medium focus:ring-primary/20 transition-all shadow-sm"
+          />
+        </div>
+        <div className="space-y-4">
+          <Label className="text-sm font-bold uppercase tracking-wider text-muted-foreground">Tipo de Exame</Label>
+          <div className="flex gap-4 p-1.5 bg-muted/20 rounded-xl border border-border/50">
+            <button
+              type="button"
+              className={cn(
+                "flex-1 flex items-center justify-center gap-2 py-2 text-xs font-bold rounded-lg transition-all",
+                "hover:bg-background/50",
+                "data-[active=true]:bg-background data-[active=true]:text-primary data-[active=true]:shadow-sm data-[active=true]:border-primary/20 border border-transparent"
+              )}
+              data-active={false}
+            >
+              <div className="h-2 w-2 rounded-full border border-primary/30" />
+              CLÍNICA
+            </button>
+            <button
+              type="button"
+              className={cn(
+                "flex-1 flex items-center justify-center gap-2 py-2 text-xs font-bold rounded-lg transition-all",
+                "hover:bg-background/50",
+                "data-[active=true]:bg-background data-[active=true]:text-primary data-[active=true]:shadow-sm data-[active=true]:border-primary/20 border border-transparent"
+              )}
+              data-active={true}
+            >
+              <div className="h-2 w-2 rounded-full bg-primary shadow-[0_0_8px_rgba(var(--primary-rgb),0.5)]" />
+              LABORATÓRIO
+            </button>
+          </div>
         </div>
         <div className="space-y-2">
-          <Label>Código *</Label>
-          <Input placeholder="Ex: HMG" defaultValue={isEditing ? "VITD" : ""} />
+          <Label>Código TUSS</Label>
+          <Input placeholder="Ex: 40302534" defaultValue={isEditing ? "VITD" : ""} />
         </div>
         <div className="space-y-2">
           <Label>Unidade de Medida</Label>
@@ -134,20 +167,36 @@ function GeneralInfoSection({ isEditing }: { isEditing: boolean }) {
           </div>
         </div>
         <div className="space-y-2">
-          <Label>Prazo de Entrega (dias) *</Label>
-          <Input type="number" defaultValue={isEditing ? 1 : 0} />
+          <Label>Especialidade</Label>
+          <select className="w-full h-10 px-3 rounded-lg border bg-background text-sm outline-none focus:ring-2 focus:ring-primary/20">
+            <option>Não se aplica</option>
+          </select>
         </div>
         <div className="space-y-2">
-          <Label>Bancada *</Label>
-          <select className="w-full h-10 px-3 rounded-lg border bg-background text-sm outline-none focus:ring-2 focus:ring-primary/20">
-            <option>Bioquímica</option>
-            <option>Hematologia</option>
-            <option>Imunologia</option>
-          </select>
+          <Label>Duração estimada (min)</Label>
+          <Input type="number" defaultValue={isEditing ? 30 : 30} />
+        </div>
+        <div className="space-y-2">
+          <Label>Prazo resultado (dias úteis)</Label>
+          <Input type="number" defaultValue={isEditing ? 1 : 0} />
         </div>
       </div>
 
-      <div className="space-y-4">
+      <div className="space-y-2 pt-2">
+        <Label>Instrução de preparo</Label>
+        <textarea 
+          className="w-full h-24 p-3 rounded-lg border bg-background text-sm focus:ring-2 focus:ring-primary/20 outline-none resize-none" 
+          placeholder="Orientações enviadas ao paciente (ex: jejum, preparo intestinal)"
+          defaultValue={isEditing ? "Jejum de 8 horas." : ""}
+        />
+      </div>
+
+      <div className="flex items-center gap-2 py-2">
+        <input type="checkbox" id="pre-auth" className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary" />
+        <Label htmlFor="pre-auth" className="cursor-pointer">Requer autorização prévia</Label>
+      </div>
+
+      <div className="space-y-4 pt-4 border-t">
         <div className="space-y-1">
           <div className="flex items-center justify-between">
             <Label>Materiais aceitos *</Label>
