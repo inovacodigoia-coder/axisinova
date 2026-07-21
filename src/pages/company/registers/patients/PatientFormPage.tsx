@@ -12,6 +12,7 @@ import { GradientButton } from '@/components/ui/GradientButton'
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs'
 import { useAuth } from '@/context/AuthContext'
 import { supabase } from '@/integrations/supabase/client'
+import { maskCPF } from '@/utils/patient.validators'
 
 import { patientFormSchema, emptyPatientForm, type PatientFormValues } from '@/utils/patient.schema'
 import { dbToPatient, patientToDb } from '@/utils/patient.adapter'
@@ -50,7 +51,7 @@ export default function PatientFormPage() {
     defaultValues: emptyPatientForm(),
     mode: 'onBlur',
   })
-  const { handleSubmit, reset, formState: { errors, isDirty } } = methods
+  const { handleSubmit, reset, formState: { errors, isDirty }, setValue, watch } = methods
 
   const [tab, setTab] = useState<TabKey>('personal')
   const [loading, setLoading] = useState(isEditing)
@@ -88,6 +89,45 @@ export default function PatientFormPage() {
       .eq('company_id', cid)
       .then(({ data }) => { allPatientsRef.current = (data || []).map(dbToPatient) })
   }, [user?.companyId])
+
+  // Automatic CPF lookup effect
+  useEffect(() => {
+    const handleCpfLookup = async (e: Event) => {
+      if (isEditing) return
+      const cpf = (e as CustomEvent).detail
+      const cleanCpf = cpf.replace(/\D/g, '')
+      const cid = resolveCompanyId(user?.companyId)
+      if (!cid || !cleanCpf) return
+
+      const { data, error } = await supabase
+        .from('patients')
+        .select('*')
+        .eq('company_id', cid)
+        .eq('cpf', cleanCpf)
+        .maybeSingle()
+
+      if (error) {
+        console.error('CPF lookup error:', error)
+        return
+      }
+
+      if (data) {
+        toast.info(`Paciente encontrado: ${data.name}. Carregando dados...`)
+        const p = dbToPatient(data)
+        const vals = toFormValues(p)
+        
+        // Reset the form with the found patient data
+        reset(vals)
+        
+        // Navigate to edit mode for this patient
+        toast.success(`Redirecionando para edição de ${data.name}`)
+        navigate(`/app/cadastros/pacientes/${data.id}/editar`, { replace: true })
+      }
+    }
+
+    window.addEventListener('patient-cpf-lookup', handleCpfLookup)
+    return () => window.removeEventListener('patient-cpf-lookup', handleCpfLookup)
+  }, [user?.companyId, isEditing, reset, navigate])
 
   // Detecta erros por aba para badge visual
   const tabErrorMap = useMemo(() => {

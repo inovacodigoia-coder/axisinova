@@ -50,14 +50,14 @@ export function QuickPatientForm({ onCreate }: Props) {
     try {
       const { data: existing, error: checkError } = await supabase
         .from('patients')
-        .select('id')
+        .select('id, name')
         .eq('company_id', companyId)
-        .eq('cpf', f.cpf)
+        .eq('cpf', f.cpf.replace(/\D/g, ''))
         .maybeSingle()
 
       if (checkError) throw checkError
       if (existing) {
-        toast.error('Já existe um paciente cadastrado com este CPF')
+        toast.error(`CPF já cadastrado para o paciente: ${existing.name}`)
         return
       }
     } catch (e) {
@@ -123,7 +123,47 @@ export function QuickPatientForm({ onCreate }: Props) {
             className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm" />
         </Field>
         <Field label="CPF *">
-          <input value={f.cpf} onChange={e => set('cpf', maskCpf(e.target.value))} placeholder="000.000.000-00"
+          <input value={f.cpf} 
+            onChange={async (e) => {
+              const masked = maskCpf(e.target.value)
+              set('cpf', masked)
+              
+              // Auto lookup for quick patient
+              if (masked.length === 14 && companyId) {
+                const clean = masked.replace(/\D/g, '')
+                const { data } = await supabase
+                  .from('patients')
+                  .select('*')
+                  .eq('company_id', companyId)
+                  .eq('cpf', clean)
+                  .maybeSingle()
+                
+                if (data) {
+                  toast.success(`Paciente encontrado: ${data.name}`)
+                  // Convert db record to the UI Patient shape
+                  const p: Patient = {
+                    id: data.id,
+                    companyId: data.company_id,
+                    fullName: data.name,
+                    birthDate: data.birth_date,
+                    motherName: data.mother_name || undefined,
+                    cpf: data.cpf || undefined,
+                    gender: data.gender as any,
+                    phone1: data.phone || '',
+                    phone1Type: 'mobile',
+                    email: data.email || undefined,
+                    status: data.status as any,
+                    createdAt: data.created_at,
+                    updatedAt: data.updated_at,
+                    convenios: [],
+                    clinicalData: { allergies: [], chronicConditions: [], continuousMedications: [] },
+                    tags: []
+                  }
+                  onCreate(p)
+                }
+              }
+            }} 
+            placeholder="000.000.000-00"
             className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm" />
         </Field>
       </div>
