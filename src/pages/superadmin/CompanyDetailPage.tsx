@@ -20,6 +20,7 @@ export default function CompanyDetailPage() {
   const { setImpersonation } = useAuth()
   const [activeTab, setActiveTab] = useState('overview')
   const [company, setCompany] = useState<Company | null>(null)
+  const [companyUsers, setCompanyUsers] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
@@ -70,6 +71,17 @@ export default function CompanyDetailPage() {
         }
         setCompany(mapped)
       }
+      const { data: userData, error: userError } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('company_id', companyId)
+
+      if (userError) {
+        console.error('Error fetching company users:', userError)
+      } else {
+        setCompanyUsers(userData || [])
+      }
+
       setLoading(false)
     }
 
@@ -95,7 +107,15 @@ export default function CompanyDetailPage() {
   )
 
   const plan = MOCK_PLANS.find(p => p.name === company.plano)
-  const users = MOCK_COMPANY_USERS.filter((u) => u.companyId === companyId)
+  const users = companyUsers.length > 0 ? companyUsers.map(u => ({
+    id: u.id,
+    name: u.full_name || 'Sem nome',
+    email: u.email || '—',
+    role: u.role || 'user',
+    isActive: true, // Profiles table doesn't have an isActive, assuming true if exists
+    lastAccess: u.updated_at ? new Date(u.updated_at).toLocaleDateString('pt-BR') : '—',
+    companyId: u.company_id
+  })) : MOCK_COMPANY_USERS.filter((u) => u.companyId === companyId)
   const invoices = MOCK_INVOICES.filter((i) => i.companyId === companyId)
 
   const tabs = [
