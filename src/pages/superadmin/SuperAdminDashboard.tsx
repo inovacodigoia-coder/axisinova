@@ -1,4 +1,6 @@
 import { Building2, DollarSign, Users, ClipboardList, AlertTriangle } from 'lucide-react'
+import { useState, useEffect, useMemo } from 'react'
+import { supabase } from '@/integrations/supabase/client'
 import { MetricCard } from '@/components/superadmin/MetricCard'
 import { useSuperAdminStats } from '@/hooks/useSuperAdminStats'
 import { MOCK_COMPANIES } from '@/mocks/superadmin.mock'
@@ -9,8 +11,28 @@ import { useNavigate } from 'react-router-dom'
 export default function SuperAdminDashboard() {
   const { metrics, monthlySignups, planDistribution, alerts } = useSuperAdminStats()
   const navigate = useNavigate()
-  const recentCompanies = [...MOCK_COMPANIES].sort((a, b) => b.criadoEm.localeCompare(a.criadoEm)).slice(0, 5)
-  // In a real scenario, we would also fetch recent companies from the DB here if any exist.
+  const [dbCompanies, setDbCompanies] = useState<any[]>([])
+
+  useEffect(() => {
+    async function fetchRecent() {
+      const { data } = await supabase.from('companies').select('*').order('created_at', { ascending: false }).limit(5)
+      if (data) setDbCompanies(data)
+    }
+    fetchRecent()
+  }, [])
+
+  const recentCompanies = useMemo(() => {
+    if (dbCompanies.length > 0) {
+      return dbCompanies.map(c => ({
+        id: c.id,
+        nomeFantasia: c.nome_fantasia || c.name,
+        cnpj: c.cnpj,
+        status: c.status || 'active',
+        criadoEm: c.created_at
+      }))
+    }
+    return [...MOCK_COMPANIES].sort((a, b) => b.criadoEm.localeCompare(a.criadoEm)).slice(0, 5)
+  }, [dbCompanies])
 
   return (
     <div className="space-y-6">
