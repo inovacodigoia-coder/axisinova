@@ -22,7 +22,7 @@ import {
 
 export default function LabCatalogPage() {
   const navigate = useNavigate()
-  const { exams: registeredExams, isLoading, deleteExam } = useRegisters()
+  const { exams: registeredExams, isLoading, removeExam } = useRegisters()
   const [view, setView] = useState<'grid' | 'list'>('list')
   const [search, setSearch] = useState('')
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false)
@@ -64,7 +64,7 @@ export default function LabCatalogPage() {
     if (!examToDelete) return
 
     try {
-      await deleteExam(examToDelete)
+      await removeExam(examToDelete)
       toast.success('Exame excluído com sucesso')
       setDeleteConfirmOpen(false)
       setExamToDelete(null)
