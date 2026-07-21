@@ -262,6 +262,7 @@ export function RegistersProvider({ children }: { children: ReactNode }) {
     if (isDemo || !companyId) return
     const { error } = await supabase.from('exams').insert({
       id, company_id: companyId, name: e.name, tuss_code: e.tussCode || null,
+      internal_code: e.internalCode || null,
       type: e.type,
       specialty_id: e.specialtyId || null, preparation_instructions: e.preparationInstructions || null,
       estimated_duration_minutes: e.estimatedDurationMinutes || null,
