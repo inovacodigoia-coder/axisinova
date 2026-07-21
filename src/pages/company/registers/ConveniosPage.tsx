@@ -161,6 +161,7 @@ export default function ConveniosPage() {
 function ConvenioFormModal({ convenio, onClose, onSave }: { convenio: Convenio | null; onClose: () => void; onSave: (c: Convenio) => void }) {
   const [name, setName] = useState(convenio?.name || '')
   const [ansCode, setAnsCode] = useState(convenio?.ansCode || '')
+  const [operator, setOperator] = useState(convenio?.operator || '')
   const [type, setType] = useState<Convenio['type']>(convenio?.type || 'health_plan')
   const [cnpj, setCnpj] = useState(convenio?.cnpj || '')
   const [authPhone, setAuthPhone] = useState(convenio?.authPhone || '')
