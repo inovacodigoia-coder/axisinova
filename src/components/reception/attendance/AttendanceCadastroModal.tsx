@@ -334,7 +334,7 @@ export function AttendanceCadastroModal({
 
         {/* Progress */}
         <div className="border-b border-border bg-muted/30 px-6 py-4">
-          <div className="flex items-center justify-between max-w-3xl mx-auto">
+          <div className="flex items-center justify-between max-w-5xl mx-auto">
             {STEPS.map((label, idx) => {
               const done = idx < step || showReview
               const active = idx === step && !showReview
