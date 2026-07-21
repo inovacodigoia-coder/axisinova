@@ -539,7 +539,11 @@ function ReviewPanel({ state, unitName, guicheName, ticketCode }: { state: Cadas
           <Row label="👤 Paciente" value={`${state.tempPatient?.fullName || state.patient?.fullName} ${state.tempPatient?.age || state.patient?.age ? `(${state.tempPatient?.age || state.patient?.age} anos)` : ''}`} />
           {ticketCode && <Row label="🎫 Ficha" value={`${ticketCode}${guicheName ? ` · ${guicheName}` : ''}${unitName ? ` · ${unitName}` : ''}`} />}
           <Row label="📋 Tipo" value={state.serviceType === 'consultation' ? 'Consulta' : state.serviceType === 'exam' ? 'Exame' : 'Procedimento'} />
+          {state.serviceType === 'exam' && state.examMode && (
+            <Row label="🏢 Local Realização" value={state.examMode === 'clinic' ? 'Clínica' : 'Laboratório'} />
+          )}
           {state.doctorName && <Row label="👨‍⚕️ Médico" value={`${state.doctorName}${state.specialty ? ` · ${state.specialty}` : ''}`} />}
+
           {state.procedureName && <Row label="💊 Procedimento" value={`${state.procedureName} · TUSS: ${state.procedureCode}`} />}
           {state.paymentType === 'convenio' && state.convenioName && (
             <Row label="💳 Convênio" value={`${state.convenioName} · Nº ${state.cardNumber}`} />
