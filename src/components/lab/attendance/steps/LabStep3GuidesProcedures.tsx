@@ -27,6 +27,8 @@ interface AttendanceGuide {
 }
 
 export function LabStep3GuidesProcedures({ state, update }: Props) {
+  const { convenios } = useRegisters();
+  const activeConvenios = useMemo(() => convenios.filter(c => c.isActive), [convenios]);
   const [guides, setGuides] = useState<AttendanceGuide[]>(state.guides || [{ id: '1', name: 'Guia 1', plan: 'PARTICULAR', operator: 'PARTICULAR', number: '', exams: [] }]);
   const [activeGuideId, setActiveGuideId] = useState(guides[0]?.id || '1');
 
