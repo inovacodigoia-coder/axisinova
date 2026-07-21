@@ -68,15 +68,35 @@ export default function TotemPage() {
   // Load totem + queue lines linked to this totem
   useEffect(() => {
     let cancelled = false
+    let timeoutId: NodeJS.Timeout
+
     async function load() {
       if (slug) {
-        const { data: totemRow } = await supabase
+        // Set a timeout to check if loading takes too long
+        timeoutId = setTimeout(() => {
+          if (!cancelled && !totem) {
+            toast.error('O carregamento está demorando mais que o esperado. Verifique sua conexão.')
+          }
+        }, 8000)
+
+        const { data: totemRow, error: totemError } = await supabase
           .from('queue_totems')
           .select('id, unit_id, company_id, name, slug, access_username, access_password')
           .eq('slug', slug)
           .maybeSingle()
-        if (cancelled || !totemRow) return
+        
+        if (cancelled) return
+
+        if (totemError || !totemRow) {
+          toast.error('Totem não encontrado ou erro de conexão. Redirecionando...')
+          setTimeout(() => {
+            window.location.href = '/login'
+          }, 3000)
+          return
+        }
+
         setTotem(totemRow as TotemRow)
+        
         const { data: lines } = await supabase
           .from('queue_lines')
           .select('id, unit_id, company_id, name, prefix, prefix_alt, color, has_preferential, has_preferential_80, allow_totem_choice, show_on_totem, is_active, totem_id')
@@ -84,6 +104,7 @@ export default function TotemPage() {
           .eq('is_active', true)
           .eq('show_on_totem', true)
           .order('sort_order', { ascending: true })
+        
         if (!cancelled) setQueueLines((lines || []) as QueueLineRow[])
       } else if (fallbackCompanyId) {
         const { data: lines } = await supabase
@@ -97,7 +118,10 @@ export default function TotemPage() {
       }
     }
     load()
-    return () => { cancelled = true }
+    return () => { 
+      cancelled = true
+      if (timeoutId) clearTimeout(timeoutId)
+    }
   }, [slug, fallbackCompanyId])
 
   useEffect(() => {
