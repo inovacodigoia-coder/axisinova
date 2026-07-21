@@ -88,6 +88,7 @@ export interface CadastroState {
   fastingSince?: string
   deliveryLocation?: string
   observation?: string
+  examMode?: 'ask' | 'clinic' | 'lab'
 }
 
 const STEPS_CLINIC = ['Paciente', 'Atendimento', 'Autorização', 'Anexos'] as const
@@ -178,6 +179,7 @@ export function AttendanceCadastroModal({
     if (s === 0) return !!state.patient
     if (s === 1) {
       if (!state.serviceType || !state.paymentType || !state.procedureId || !state.procedureCode) return false
+      if (state.serviceType === 'exam' && state.examMode === 'ask') return false
       if (state.paymentType === 'convenio' && (!state.convenioId || !state.cardNumber)) return false
       if (state.paymentType === 'free' && !state.freeReason) return false
       return true
