@@ -88,23 +88,26 @@ Deno.serve(async (req) => {
       "lab_finance_transactions",
       "lab_price_tables",
       "lab_external_access",
-      "user_roles"
     ];
 
+    // Use a transaction-like approach by deleting in sequence and handling errors
     for (const table of tablesToDelete) {
-      await supabaseAdmin.from(table).delete().eq("company_id", companyId);
+      const { error: tableError } = await supabaseAdmin.from(table).delete().eq("company_id", companyId);
+      if (tableError) {
+        console.error(`Erro ao deletar da tabela ${table}:`, tableError.message);
+      }
     }
 
-    // 2. Get all user profiles linked to this company
+    // 2. Get all user profiles linked to this company to clean up auth
     const { data: companyProfiles } = await supabaseAdmin
       .from("profiles")
       .select("id")
       .eq("company_id", companyId);
 
-    // 3. Delete profiles and auth users
+    // 3. Delete user-related records and auth users
     if (companyProfiles && companyProfiles.length > 0) {
       for (const p of companyProfiles) {
-        // Delete from user_roles first (handled above in loop, but explicit is safer)
+        // Explicitly delete roles first
         await supabaseAdmin.from("user_roles").delete().eq("user_id", p.id);
         
         // Delete profile
@@ -119,24 +122,22 @@ Deno.serve(async (req) => {
       }
     }
 
-    // 4. Delete the company itself
+    // 4. Finally delete the company itself
     const { error: deleteError } = await supabaseAdmin
       .from("companies")
       .delete()
       .eq("id", companyId);
 
     if (deleteError) {
-      return new Response(JSON.stringify({ error: deleteError.message }), {
-        status: 500,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
+      throw new Error(`Erro final ao deletar empresa: ${deleteError.message}`);
     }
 
     return new Response(
-      JSON.stringify({ success: true, message: "Empresa e todos os dados relacionados foram excluídos com sucesso" }),
+      JSON.stringify({ success: true, message: "Empresa e todos os dados vinculados foram removidos com sucesso." }),
       { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   } catch (err) {
+    console.error("Erro fatal na exclusão:", err.message);
     return new Response(JSON.stringify({ error: err.message }), {
       status: 500,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
