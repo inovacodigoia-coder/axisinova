@@ -457,10 +457,10 @@ function GeneralInfoSection({ isEditing, data, onChange }: { isEditing: boolean,
 function ParametersSection() {
   const [measurementUnits, setMeasurementUnits] = useState<any[]>([])
   const [parameters, setParameters] = useState<any[]>([
-    { id: 1, name: 'Hemácias', section: 'ER', equipCode: '', type: 'numerical', origin: 'equipment', unit: 'milhões/mm³', isMandatory: true, allowNegative: false, isCalculated: false, formula: '' },
-    { id: 2, name: 'Hemoglobina', section: 'ER', equipCode: '', type: 'numerical', origin: 'equipment', unit: 'g/dL', isMandatory: true, allowNegative: false, isCalculated: false, formula: '' },
-    { id: 3, name: 'Hematócrito', section: 'ER', equipCode: '', type: 'numerical', origin: 'equipment', unit: '%', isMandatory: true, allowNegative: false, isCalculated: false, formula: '' },
-    { id: 4, name: 'VCM (Volume Corpuscular Médio)', section: 'ER', equipCode: '', type: 'numerical', origin: 'equipment', unit: 'fL', isMandatory: true, allowNegative: false, isCalculated: true, formula: '[Hematócrito] / [Hemácias] * 10' },
+    { id: 1, name: 'Hemácias', section: 'ER', equipCode: '', type: 'numerical', origin: 'equipment', unit: 'milhões/mm³', isMandatory: true, allowNegative: false, isCalculated: false, isHidden: false, formula: '' },
+    { id: 2, name: 'Hemoglobina', section: 'ER', equipCode: '', type: 'numerical', origin: 'equipment', unit: 'g/dL', isMandatory: true, allowNegative: false, isCalculated: false, isHidden: false, formula: '' },
+    { id: 3, name: 'Hematócrito', section: 'ER', equipCode: '', type: 'numerical', origin: 'equipment', unit: '%', isMandatory: true, allowNegative: false, isCalculated: false, isHidden: false, formula: '' },
+    { id: 4, name: 'VCM (Volume Corpuscular Médio)', section: 'ER', equipCode: '', type: 'numerical', origin: 'equipment', unit: 'fL', isMandatory: true, allowNegative: false, isCalculated: true, isHidden: false, formula: '[Hematócrito] / [Hemácias] * 10' },
   ])
   const [editingReference, setEditingReference] = useState<any>(null)
 
@@ -485,6 +485,7 @@ function ParametersSection() {
       isMandatory: true, 
       allowNegative: false, 
       isCalculated: false,
+      isHidden: false,
       formula: ''
     }])
   }
@@ -535,6 +536,7 @@ function ParametersSection() {
                   <th className="px-4 py-3 font-bold text-[10px] uppercase text-muted-foreground text-center">Obrig.</th>
                   <th className="px-4 py-3 font-bold text-[10px] uppercase text-muted-foreground text-center">Neg.</th>
                   <th className="px-4 py-3 font-bold text-[10px] uppercase text-muted-foreground text-center">Calc.</th>
+                  <th className="px-4 py-3 font-bold text-[10px] uppercase text-muted-foreground text-center">Oculto</th>
                   <th className="px-4 py-3 text-right"></th>
                 </tr>
               </thead>
@@ -629,7 +631,7 @@ function ParametersSection() {
                               <Switch 
                                 checked={param.isMandatory} 
                                 onCheckedChange={(val) => updateParameter(param.id, 'isMandatory', val)}
-                                className="scale-75"
+                                className="scale-75 data-[state=checked]:bg-primary shadow-sm"
                               />
                             </TooltipTrigger>
                             <TooltipContent>
@@ -645,7 +647,7 @@ function ParametersSection() {
                               <Switch 
                                 checked={param.allowNegative} 
                                 onCheckedChange={(val) => updateParameter(param.id, 'allowNegative', val)}
-                                className="scale-75"
+                                className="scale-75 data-[state=checked]:bg-primary shadow-sm"
                               />
                             </TooltipTrigger>
                             <TooltipContent>
@@ -661,11 +663,27 @@ function ParametersSection() {
                               <Switch 
                                 checked={param.isCalculated} 
                                 onCheckedChange={(val) => updateParameter(param.id, 'isCalculated', val)}
-                                className="scale-75 data-[state=checked]:bg-cyan-500"
+                                className="scale-75 data-[state=checked]:bg-primary shadow-sm"
                               />
                             </TooltipTrigger>
                             <TooltipContent>
                               <p className="text-xs">Calc. Parâmetro calculado automaticamente por fórmula. Não é editável manualmente.</p>
+                            </TooltipContent>
+                          </Tooltip>
+                        </div>
+                      </td>
+                      <td className="px-4 py-3">
+                        <div className="flex justify-center">
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <Switch 
+                                checked={param.isHidden} 
+                                onCheckedChange={(val) => updateParameter(param.id, 'isHidden', val)}
+                                className="scale-75 data-[state=checked]:bg-primary shadow-sm"
+                              />
+                            </TooltipTrigger>
+                            <TooltipContent>
+                              <p className="text-xs">Oculto Laudo: O parâmetro não será exibido na impressão do laudo.</p>
                             </TooltipContent>
                           </Tooltip>
                         </div>
