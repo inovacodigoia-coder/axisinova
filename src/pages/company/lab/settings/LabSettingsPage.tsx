@@ -432,6 +432,10 @@ function EquipmentRedirect() {
 function UnitsSection() {
   const [units, setUnits] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
+  const [editingUnit, setEditingUnit] = useState<any>(null)
+  const [isDialogOpen, setIsDialogOpen] = useState(false)
+  const [unitName, setUnitName] = useState('')
+  const [saving, setSaving] = useState(false)
 
   useEffect(() => {
     fetchUnits()
@@ -455,6 +459,58 @@ function UnitsSection() {
     }
   }
 
+  const handleOpenDialog = (unit: any = null) => {
+    setEditingUnit(unit)
+    setUnitName(unit ? unit.name : '')
+    setIsDialogOpen(true)
+  }
+
+  const handleSave = async () => {
+    if (!unitName.trim()) {
+      toast.error('Nome da unidade é obrigatório')
+      return
+    }
+
+    try {
+      setSaving(true)
+      
+      if (editingUnit) {
+        const { error } = await supabase
+          .from('measurement_units')
+          .update({ name: unitName })
+          .eq('id', editingUnit.id)
+        
+        if (error) throw error
+        toast.success('Unidade atualizada com sucesso')
+      } else {
+        // Obter company_id do primeiro item ou do usuário atual (simplificado para demo)
+        const { data: userData } = await supabase.auth.getUser()
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('company_id')
+          .eq('id', userData.user?.id)
+          .single()
+
+        const { error } = await supabase
+          .from('measurement_units')
+          .insert({ 
+            name: unitName, 
+            company_id: profile?.company_id 
+          })
+        
+        if (error) throw error
+        toast.success('Unidade criada com sucesso')
+      }
+
+      setIsDialogOpen(false)
+      fetchUnits()
+    } catch (error: any) {
+      toast.error('Erro ao salvar unidade')
+    } finally {
+      setSaving(false)
+    }
+  }
+
   const handleDelete = async (id: string) => {
     try {
       const { error } = await supabase
@@ -474,7 +530,7 @@ function UnitsSection() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <h3 className="text-lg font-bold">Unidades de Medida</h3>
-        <Button size="sm" className="gradient-bg text-white gap-2">
+        <Button size="sm" onClick={() => handleOpenDialog()} className="gradient-bg text-white gap-2">
           <Plus className="h-4 w-4" /> Nova Unidade
         </Button>
       </div>
@@ -484,29 +540,37 @@ function UnitsSection() {
           <Loader2 className="h-8 w-8 animate-spin text-primary" />
         </div>
       ) : (
-        <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-2">
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3">
           {units.map(u => (
-            <div key={u.id} className="p-3 border rounded-xl bg-card flex items-center justify-between group hover:border-primary/30 transition-all">
-              <span className="text-sm font-mono font-bold">{u.name}</span>
-              <div className="flex items-center gap-1">
+            <div key={u.id} className="p-4 border rounded-xl bg-card flex flex-col gap-3 group hover:border-primary/30 transition-all">
+              <div className="flex items-center justify-between">
+                <span className="text-sm font-mono font-bold break-all">{u.name}</span>
                 {u.active && (
-                  <Badge variant="outline" className="text-[10px] bg-teal-50 text-teal-700 border-teal-200">
+                  <Badge variant="outline" className="text-[10px] bg-teal-50 text-teal-700 border-teal-200 shrink-0">
                     Ativa
                   </Badge>
                 )}
-                <div className="flex opacity-0 group-hover:opacity-100 transition-opacity">
-                  <Button variant="ghost" size="sm" className="h-6 w-6 p-0">
-                    <Edit2 className="h-3 w-3" />
-                  </Button>
-                  <Button 
-                    variant="ghost" 
-                    size="sm" 
-                    className="h-6 w-6 p-0"
-                    onClick={() => handleDelete(u.id)}
-                  >
-                    <Trash2 className="h-3 w-3 text-red-500" />
-                  </Button>
-                </div>
+              </div>
+              
+              <div className="flex items-center gap-2 pt-2 border-t mt-auto">
+                <Button 
+                  variant="ghost" 
+                  size="sm" 
+                  className="h-8 flex-1 gap-2 hover:bg-primary/10 hover:text-primary transition-colors"
+                  onClick={() => handleOpenDialog(u)}
+                >
+                  <Edit2 className="h-3.5 w-3.5" />
+                  <span className="text-xs">Editar</span>
+                </Button>
+                <Button 
+                  variant="ghost" 
+                  size="sm" 
+                  className="h-8 flex-1 gap-2 hover:bg-red-50 hover:text-red-600 transition-colors"
+                  onClick={() => handleDelete(u.id)}
+                >
+                  <Trash2 className="h-3.5 w-3.5" />
+                  <span className="text-xs">Excluir</span>
+                </Button>
               </div>
             </div>
           ))}
@@ -517,9 +581,41 @@ function UnitsSection() {
           )}
         </div>
       )}
+
+      <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+        <DialogContent className="sm:max-w-[425px]">
+          <DialogHeader>
+            <DialogTitle>{editingUnit ? 'Editar Unidade' : 'Nova Unidade'}</DialogTitle>
+          </DialogHeader>
+          <div className="grid gap-4 py-4">
+            <div className="grid gap-2">
+              <Label htmlFor="name">Nome da unidade</Label>
+              <Input
+                id="name"
+                value={unitName}
+                onChange={(e) => setUnitName(e.target.value)}
+                placeholder="Ex: /mm³"
+                className="col-span-3"
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsDialogOpen(false)}>Cancelar</Button>
+            <Button 
+              className="gradient-bg text-white" 
+              onClick={handleSave}
+              disabled={saving}
+            >
+              {saving ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
+              Salvar
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }
+
 
 
 function MethodsSection() {
