@@ -138,7 +138,7 @@ export default function SuperAdminUsersPage() {
                     </td>
                     <td className="px-4 py-4 text-muted-foreground whitespace-nowrap">{m.lastAccess}</td>
                     <td className="px-4 py-4">
-                      <StatusBadge variant={m.isActive ? 'success' : 'danger'}>
+                      <StatusBadge variant={m.isActive ? 'success' : 'error'}>
                         {m.isActive ? 'Ativo' : 'Inativo'}
                       </StatusBadge>
                     </td>
