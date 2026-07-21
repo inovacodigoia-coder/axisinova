@@ -378,6 +378,38 @@ export type Database = {
           },
         ]
       }
+      measurement_units: {
+        Row: {
+          active: boolean | null
+          company_id: string
+          created_at: string | null
+          id: string
+          name: string
+        }
+        Insert: {
+          active?: boolean | null
+          company_id: string
+          created_at?: string | null
+          id?: string
+          name: string
+        }
+        Update: {
+          active?: boolean | null
+          company_id?: string
+          created_at?: string | null
+          id?: string
+          name?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "measurement_units_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       medical_records: {
         Row: {
           company_id: string
