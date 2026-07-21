@@ -143,6 +143,15 @@ export function AttendanceCadastroModal({
 
   // Validação por passo
   const stepValid = (s: number): boolean => {
+    if (isLab) {
+      if (s === 0) return !!state.patient
+      // For Lab, let's allow progression to more steps as they are developed
+      // For now, allow Step 1 (Review) and Step 2 (Exam Data)
+      if (s === 1) return true
+      if (s === 2) return true
+      return true
+    }
+
     if (s === 0) return !!state.patient
     if (s === 1) {
       if (!state.serviceType || !state.paymentType || !state.procedureId || !state.procedureCode) return false
