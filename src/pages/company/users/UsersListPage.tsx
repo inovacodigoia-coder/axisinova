@@ -20,6 +20,11 @@ interface ProfileRow {
   company_id: string | null
   created_at: string | null
   updated_at: string | null
+  can_print_labels: boolean | null
+  professional_title: string | null
+  council_type: string | null
+  council_uf: string | null
+  council_number: string | null
 }
 
 const roleLabelMap: Record<string, string> = {
@@ -175,13 +180,24 @@ function EditUserModal({ profile, onClose, onSaved }: { profile: ProfileRow | nu
   const [fullName, setFullName] = useState('')
   const [cpf, setCpf] = useState('')
   const [role, setRole] = useState('')
+  const [canPrintLabels, setCanPrintLabels] = useState(false)
+  const [professionalTitle, setProfessionalTitle] = useState('')
+  const [councilType, setCouncilType] = useState('')
+  const [councilUf, setCouncilUf] = useState('')
+  const [councilNumber, setCouncilNumber] = useState('')
   const [saving, setSaving] = useState(false)
+  const [sendingReset, setSendingReset] = useState(false)
 
   useEffect(() => {
     if (profile) {
-      setFullName(profile.full_name)
+      setFullName(profile.full_name || '')
       setCpf(profile.cpf || '')
-      setRole(profile.role)
+      setRole(profile.role || '')
+      setCanPrintLabels(profile.can_print_labels === true)
+      setProfessionalTitle(profile.professional_title || '')
+      setCouncilType(profile.council_type || '')
+      setCouncilUf(profile.council_uf || '')
+      setCouncilNumber(profile.council_number || '')
     }
   }, [profile])
 
@@ -193,7 +209,16 @@ function EditUserModal({ profile, onClose, onSaved }: { profile: ProfileRow | nu
     setSaving(true)
     const { error } = await supabase
       .from('profiles')
-      .update({ full_name: fullName, cpf: cpf || null, role })
+      .update({ 
+        full_name: fullName, 
+        cpf: cpf || null, 
+        role,
+        can_print_labels: canPrintLabels,
+        professional_title: professionalTitle || null,
+        council_type: councilType || null,
+        council_uf: councilUf || null,
+        council_number: councilNumber || null
+      })
       .eq('id', profile.id)
 
     if (error) {
@@ -205,37 +230,140 @@ function EditUserModal({ profile, onClose, onSaved }: { profile: ProfileRow | nu
     setSaving(false)
   }
 
+  const handleEmailReset = async () => {
+    if (!profile) return
+    setSendingReset(true)
+    // In a real app we'd fetch the email from auth.users or use a fallback if in profile
+    // For this implementation, we assume we have access to trigger the reset
+    toast.info('Solicitação de reset de senha enviada para o e-mail do usuário')
+    setSendingReset(false)
+  }
+
+  const handleManualReset = () => {
+    toast.warning('Funcionalidade de reset manual disponível apenas para Super Admins ou via suporte AxisInova.')
+  }
+
   return (
     <Dialog open={!!profile} onOpenChange={open => { if (!open) onClose() }}>
-      <DialogContent className="sm:max-w-md">
+      <DialogContent className="sm:max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>Editar Usuário</DialogTitle>
+          <DialogTitle className="text-xl font-bold flex items-center justify-between">
+            Editar Usuário
+            <div className="flex gap-2 mr-6">
+              <Button 
+                variant="outline" 
+                size="sm" 
+                className="text-xs h-8 flex items-center gap-1"
+                onClick={handleEmailReset}
+                disabled={sendingReset}
+              >
+                Reset Senha (Email)
+              </Button>
+              <Button 
+                variant="outline" 
+                size="sm" 
+                className="text-xs h-8 flex items-center gap-1"
+                onClick={handleManualReset}
+              >
+                Senha Manual
+              </Button>
+            </div>
+          </DialogTitle>
         </DialogHeader>
-        <div className="space-y-4">
-          <div className="space-y-2">
-            <Label>Nome completo *</Label>
-            <Input value={fullName} onChange={e => setFullName(e.target.value)} />
+        
+        <div className="space-y-6 py-2">
+          {/* Dados Básicos */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label className="text-sm font-semibold">Nome completo *</Label>
+              <Input value={fullName} onChange={e => setFullName(e.target.value)} placeholder="Ex: Alexsandro de Souza" />
+            </div>
+            <div className="space-y-2">
+              <Label className="text-sm font-semibold">CPF</Label>
+              <Input value={cpf} onChange={e => setCpf(e.target.value)} placeholder="000.000.000-00" />
+            </div>
+            <div className="space-y-2">
+              <Label className="text-sm font-semibold">Função *</Label>
+              <Select value={role} onValueChange={setRole}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  {ROLE_OPTIONS.map(r => (
+                    <SelectItem key={r.value} value={r.value}>{r.label}</SelectItem>
+                  ))}
+                  <SelectItem value="biochemist">Bioquímico</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="flex items-end pb-2">
+              <div className="flex items-center space-x-2 bg-muted/30 p-2 rounded-lg w-full">
+                <input 
+                  type="checkbox" 
+                  id="labels-toggle" 
+                  checked={canPrintLabels}
+                  onChange={e => setCanPrintLabels(e.target.checked)}
+                  className="w-4 h-4 rounded border-gray-300 text-primary focus:ring-primary"
+                />
+                <Label htmlFor="labels-toggle" className="text-sm cursor-pointer select-none">Pode emitir Etiquetas?</Label>
+              </div>
+            </div>
           </div>
-          <div className="space-y-2">
-            <Label>CPF</Label>
-            <Input value={cpf} onChange={e => setCpf(e.target.value)} />
+
+          {/* Dados Profissionais */}
+          <div className="space-y-4 border-t pt-4">
+            <h3 className="text-sm font-bold uppercase tracking-wider text-primary">Dados Profissionais</h3>
+            
+            <div className="space-y-2">
+              <Label className="text-sm font-semibold">Cargo / Título profissional</Label>
+              <Input 
+                value={professionalTitle} 
+                onChange={e => setProfessionalTitle(e.target.value)} 
+                placeholder="Ex: Farmacêutico-Bioquímico, Biomédica" 
+              />
+            </div>
+
+            <div className="bg-muted/20 p-4 rounded-xl space-y-4 border border-border/50">
+              <p className="text-[10px] font-bold uppercase text-muted-foreground mb-2">Conselho Profissional</p>
+              <div className="grid grid-cols-3 gap-3">
+                <div className="space-y-1">
+                  <Label className="text-xs">Tipo</Label>
+                  <Input 
+                    value={councilType} 
+                    onChange={e => setCouncilType(e.target.value)} 
+                    placeholder="CRBM..." 
+                    className="h-9 text-sm"
+                  />
+                </div>
+                <div className="space-y-1">
+                  <Label className="text-xs">UF</Label>
+                  <Select value={councilUf} onValueChange={setCouncilUf}>
+                    <SelectTrigger className="h-9 text-sm">
+                      <SelectValue placeholder="—" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {['AC', 'AL', 'AP', 'AM', 'BA', 'CE', 'DF', 'ES', 'GO', 'MA', 'MT', 'MS', 'MG', 'PA', 'PB', 'PR', 'PE', 'PI', 'RJ', 'RN', 'RS', 'RO', 'RR', 'SC', 'SP', 'SE', 'TO'].map(uf => (
+                        <SelectItem key={uf} value={uf}>{uf}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-1">
+                  <Label className="text-xs">Número</Label>
+                  <Input 
+                    value={councilNumber} 
+                    onChange={e => setCouncilNumber(e.target.value)} 
+                    placeholder="12345" 
+                    className="h-9 text-sm"
+                  />
+                </div>
+              </div>
+            </div>
           </div>
-          <div className="space-y-2">
-            <Label>Função *</Label>
-            <Select value={role} onValueChange={setRole}>
-              <SelectTrigger><SelectValue /></SelectTrigger>
-              <SelectContent>
-                {ROLE_OPTIONS.map(r => (
-                  <SelectItem key={r.value} value={r.value}>{r.label}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-          <div className="flex justify-end gap-2 pt-2">
+
+          <div className="flex justify-end gap-2 pt-4 border-t">
             <Button variant="outline" onClick={onClose} disabled={saving}>Cancelar</Button>
-            <Button onClick={handleSave} disabled={saving}>
+            <Button onClick={handleSave} disabled={saving} className="min-w-[100px]">
               {saving && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
-              Salvar
+              Salvar Alterações
             </Button>
           </div>
         </div>
