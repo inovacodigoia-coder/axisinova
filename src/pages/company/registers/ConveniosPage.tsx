@@ -67,6 +67,7 @@ export default function ConveniosPage() {
               <tr className="border-b border-border bg-muted/30">
                 <th className="px-4 py-3 text-left font-medium text-muted-foreground">Nome</th>
                 <th className="px-4 py-3 text-left font-medium text-muted-foreground">Código ANS</th>
+                <th className="px-4 py-3 text-left font-medium text-muted-foreground">Operadora</th>
                 <th className="px-4 py-3 text-left font-medium text-muted-foreground">Tipo</th>
                 <th className="px-4 py-3 text-left font-medium text-muted-foreground">Médicos</th>
                 <th className="px-4 py-3 text-left font-medium text-muted-foreground">Anexos</th>
@@ -81,6 +82,7 @@ export default function ConveniosPage() {
                   <tr key={c.id} className="border-b border-border last:border-0 hover:bg-muted/20 transition-colors">
                     <td className="px-4 py-3 font-medium text-foreground">{c.name}</td>
                     <td className="px-4 py-3 font-mono text-sm">{c.ansCode || '—'}</td>
+                    <td className="px-4 py-3 text-sm">{c.operator || '—'}</td>
                     <td className="px-4 py-3"><span className={`inline-flex rounded-full px-2 py-0.5 text-[10px] font-bold ${CONVENIO_TYPE_COLORS[c.type]}`}>{CONVENIO_TYPE_LABELS[c.type]}</span></td>
                     <td className="px-4 py-3 text-sm text-muted-foreground">{docCount} médicos</td>
                     <td className="px-4 py-3 text-sm text-muted-foreground">{c.attachmentRules.length} regras</td>
@@ -161,6 +163,7 @@ export default function ConveniosPage() {
 function ConvenioFormModal({ convenio, onClose, onSave }: { convenio: Convenio | null; onClose: () => void; onSave: (c: Convenio) => void }) {
   const [name, setName] = useState(convenio?.name || '')
   const [ansCode, setAnsCode] = useState(convenio?.ansCode || '')
+  const [operator, setOperator] = useState(convenio?.operator || '')
   const [type, setType] = useState<Convenio['type']>(convenio?.type || 'health_plan')
   const [cnpj, setCnpj] = useState(convenio?.cnpj || '')
   const [authPhone, setAuthPhone] = useState(convenio?.authPhone || '')
@@ -176,8 +179,9 @@ function ConvenioFormModal({ convenio, onClose, onSave }: { convenio: Convenio |
         </div>
         <div className="p-6 space-y-4">
           <div><label className="text-sm font-medium">Nome do convênio *</label><input value={name} onChange={e => setName(e.target.value)} className="mt-1 w-full rounded-lg border border-input bg-background px-3 py-2 text-sm" /></div>
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div><label className="text-sm font-medium">Código ANS</label><input value={ansCode} onChange={e => setAnsCode(e.target.value)} maxLength={6} className="mt-1 w-full rounded-lg border border-input bg-background px-3 py-2 text-sm" placeholder="6 dígitos" /></div>
+            <div><label className="text-sm font-medium">Operadora</label><input value={operator} onChange={e => setOperator(e.target.value)} className="mt-1 w-full rounded-lg border border-input bg-background px-3 py-2 text-sm" placeholder="Ex: AMIL, UNIMED" /></div>
             <div>
               <label className="text-sm font-medium">Tipo *</label>
               <select value={type} onChange={e => setType(e.target.value as Convenio['type'])} className="mt-1 w-full rounded-lg border border-input bg-background px-3 py-2 text-sm">
@@ -200,7 +204,7 @@ function ConvenioFormModal({ convenio, onClose, onSave }: { convenio: Convenio |
           <button onClick={() => {
             if (!name) { toast.error('Nome é obrigatório'); return }
             onSave({
-              id: convenio?.id || `conv_${Date.now()}`, companyId: convenio?.companyId || '', name, ansCode, type, cnpj, authPhone, email, observations,
+              id: convenio?.id || `conv_${Date.now()}`, companyId: convenio?.companyId || '', name, ansCode, operator, type, cnpj, authPhone, email, observations,
               attachmentRules: convenio?.attachmentRules || [], isActive: convenio?.isActive ?? true, createdAt: convenio?.createdAt || new Date().toISOString(),
             })
           }} className="gradient-bg rounded-lg px-6 py-2 text-sm font-semibold text-white">Salvar</button>

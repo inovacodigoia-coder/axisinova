@@ -48,6 +48,7 @@ export interface Convenio {
   companyId: string
   name: string
   ansCode?: string
+  operator?: string
   type: 'health_plan' | 'private' | 'sus' | 'other'
   cnpj?: string
   authPhone?: string
