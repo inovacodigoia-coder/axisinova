@@ -129,8 +129,8 @@ export default function LabCatalogFormPage() {
             <Switch 
               checked={examData.isActive} 
               onCheckedChange={(val) => setExamData(prev => ({ ...prev, isActive: val }))} 
+              className="data-[state=checked]:bg-primary data-[state=unchecked]:bg-red-500"
             />
-
           </div>
           <Button variant="outline" onClick={() => navigate('/app/cadastros/catalogo')}>Cancelar</Button>
           <Button onClick={handleSave} className="gradient-bg text-white gap-2 px-6">
