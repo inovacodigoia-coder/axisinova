@@ -7,19 +7,22 @@ import { Search, Plus, Filter, LayoutGrid, List, MoreVertical, Edit2, Trash2, Be
 import { Badge } from '@/components/ui/badge'
 import { useNavigate } from 'react-router-dom'
 import { cn } from '@/lib/utils'
+import { useRegisters } from '@/context/RegistersContext'
 
 export default function LabCatalogPage() {
   const navigate = useNavigate()
-  const [loading, setLoading] = useState(true)
+  const { exams: registeredExams, isLoading } = useRegisters()
   const [view, setView] = useState<'grid' | 'list'>('list')
   const [search, setSearch] = useState('')
 
-  useEffect(() => {
-    const timer = setTimeout(() => setLoading(false), 800)
-    return () => clearTimeout(timer)
-  }, [])
-
-  const exams = [
+  const exams = registeredExams.length > 0 ? registeredExams.map(e => ({
+    id: e.id,
+    code: e.tussCode || 'S/C',
+    name: e.name,
+    material: 'Soro', // Padrão se não houver no cadastro
+    workbench: 'Bioquímica',
+    status: e.isActive ? 'active' : 'inactive'
+  })) : [
     { id: '1', code: 'VITD', name: '25-Hidroxivitamina D', material: 'Soro', workbench: 'Bioquímica', status: 'active' },
     { id: '2', code: 'ACU', name: 'Ácido Úrico', material: 'Soro', workbench: 'Bioquímica', status: 'active' },
     { id: '3', code: 'HEM', name: 'Hemograma Completo', material: 'Sangue Total EDTA', workbench: 'Hematologia', status: 'active' },
@@ -80,7 +83,7 @@ export default function LabCatalogPage() {
       </div>
 
       <div className="space-y-3">
-        {loading ? (
+        {isLoading ? (
           Array(5).fill(0).map((_, i) => (
             <Card key={i} className="p-4">
               <div className="flex items-center justify-between">
