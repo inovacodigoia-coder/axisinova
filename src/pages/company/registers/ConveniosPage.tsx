@@ -202,7 +202,7 @@ function ConvenioFormModal({ convenio, onClose, onSave }: { convenio: Convenio |
           <button onClick={() => {
             if (!name) { toast.error('Nome é obrigatório'); return }
             onSave({
-              id: convenio?.id || `conv_${Date.now()}`, companyId: convenio?.companyId || '', name, ansCode, type, cnpj, authPhone, email, observations,
+              id: convenio?.id || `conv_${Date.now()}`, companyId: convenio?.companyId || '', name, ansCode, operator, type, cnpj, authPhone, email, observations,
               attachmentRules: convenio?.attachmentRules || [], isActive: convenio?.isActive ?? true, createdAt: convenio?.createdAt || new Date().toISOString(),
             })
           }} className="gradient-bg rounded-lg px-6 py-2 text-sm font-semibold text-white">Salvar</button>
