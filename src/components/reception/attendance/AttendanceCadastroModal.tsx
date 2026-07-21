@@ -150,7 +150,7 @@ export function AttendanceCadastroModal({
     setState(s => ({ ...s, ...patch }))
   }, [])
 
-  const hasUnsavedData = !!(state.patient || state.serviceType || state.attachments.length)
+  const hasUnsavedData = !!(state.patient || state.serviceType || state.attachments.length || (state.serviceType === 'exam' && state.examMode !== 'ask'))
 
   const handleClose = () => {
     if (hasUnsavedData) {
@@ -558,6 +558,8 @@ function ReviewPanel({ state, unitName, guicheName, ticketCode }: { state: Cadas
           {state.isUrgent && <Row label="🚨 Urgência" value="Sim" />}
           {state.hasFever && <Row label="🌡️ Febre" value="Sim" />}
           {state.fastingSince && <Row label="🥣 Jejum" value={state.fastingSince} />}
+          {state.examMode && state.examMode !== 'ask' && <Row label="🏢 Local" value={state.examMode === 'clinic' ? 'Clínica' : 'Laboratório'} />}
+
           <Row label="📎 Documentos" value={`${state.attachments.length} anexado(s)${requiredCount ? ` · ${requiredCount} obrigatório(s)` : ''}`} />
           <Row label="💰 Forma de pagamento" value={state.paymentType === 'convenio' ? 'Convênio' : state.paymentType === 'private' ? `Particular${state.privateValue ? ` · R$ ${state.privateValue.toFixed(2)}` : ''}` : 'Cortesia'} />
         </dl>
