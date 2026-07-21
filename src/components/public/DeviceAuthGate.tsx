@@ -32,8 +32,12 @@ export function DeviceAuthGate({ deviceKind, slug, expectedUsername, expectedPas
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-slate-900 text-white text-sm">
-        Carregando...
+      <div className="min-h-screen flex flex-col items-center justify-center bg-[#0F172A] text-white p-6 text-center">
+        <div className="w-12 h-12 border-4 border-primary/30 border-t-primary rounded-full animate-spin mb-4" />
+        <h2 className="text-xl font-semibold mb-2">Conectando ao sistema...</h2>
+        <p className="text-slate-400 max-w-xs">
+          Estamos preparando o acesso. Se esta tela persistir por muito tempo, verifique sua conexão ou o link utilizado.
+        </p>
       </div>
     )
   }
