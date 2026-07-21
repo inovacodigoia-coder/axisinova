@@ -54,7 +54,6 @@ export default function LabCatalogFormPage() {
   useEffect(() => {
     if (isEditing) {
       // Em uma implementação real, buscaríamos os dados do exame pelo ID
-      // Por enquanto, simulamos com os dados que já estavam no mock/default
       setExamData({
         name: "25-Hidroxivitamina D",
         internalCode: "VITD001",
@@ -65,6 +64,8 @@ export default function LabCatalogFormPage() {
         estimatedDurationMinutes: 30,
         resultDeadlineDays: 1,
         requiresAuthorization: false,
+        showDuration: true,
+        showDeadline: true,
       })
     }
   }, [isEditing, id])
