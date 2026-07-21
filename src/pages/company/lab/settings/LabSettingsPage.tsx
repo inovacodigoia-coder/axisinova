@@ -420,7 +420,13 @@ function EquipmentRedirect() {
 }
 
 function UnitsSection() {
-  const units = ["/mm³", "%", "cel/μL", "copies/mL", "fl", "g/24h", "g/dL", "g/L", "mg/dL", "mg/L", "mL", "mUI/mL", "ng/mL", "U/L", "UI/L"]
+  const units = [
+    "/mm³", "%", "cel/µL", "copies/mL", "fl", "g/24h", "g/dL", "g/L", "g%", "mEq/L", 
+    "mg/24h", "mg/dL", "mg/L", "mil/mm³", "milhões/mm³", "mL/24h", "mL/min", "mL/min/1.73m²", 
+    "mm/h", "mm³", "mmHg", "mmol/L", "mUI/L", "mUI/mL", "ng/dL", "ng/L-teste", "ng/mL", 
+    "pg", "pg/mL", "pH", "seg", "segundos", "título", "U/L", "UI/L", "UI/mL", "µg/dL", 
+    "µmol/L", "µUI/mL"
+  ]
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
@@ -429,10 +435,14 @@ function UnitsSection() {
       </div>
       <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-2">
         {units.map(u => (
-          <div key={u} className="p-3 border rounded-xl bg-card flex items-center justify-between group">
+          <div key={u} className="p-3 border rounded-xl bg-card flex items-center justify-between group hover:border-primary/30 transition-all">
             <span className="text-sm font-mono font-bold">{u}</span>
-            <div className="flex opacity-0 group-hover:opacity-100 transition-opacity">
-              <Button variant="ghost" size="sm" className="h-6 w-6 p-0"><Trash2 className="h-3 w-3 text-red-500" /></Button>
+            <div className="flex items-center gap-1">
+              <Badge variant="outline" className="text-[10px] bg-teal-50 text-teal-700 border-teal-200">Ativa</Badge>
+              <div className="flex opacity-0 group-hover:opacity-100 transition-opacity">
+                <Button variant="ghost" size="sm" className="h-6 w-6 p-0"><Edit2 className="h-3 w-3" /></Button>
+                <Button variant="ghost" size="sm" className="h-6 w-6 p-0"><Trash2 className="h-3 w-3 text-red-500" /></Button>
+              </div>
             </div>
           </div>
         ))}
