@@ -114,9 +114,12 @@ export default function CompaniesListPage() {
     if (!deleteTarget) return
     setIsDeleting(true)
     try {
-      const { data: { session } } = await supabase.auth.getSession()
-      if (!session) {
-        toast.error('Sessão expirada. Faça login novamente.')
+      const { data: { session }, error: sessionError } = await supabase.auth.getSession()
+      
+      if (sessionError || !session) {
+        console.error('Session error:', sessionError)
+        toast.error('Sessão expirada ou inválida. Por favor, faça login novamente.')
+        setIsDeleting(false)
         return
       }
 
