@@ -720,32 +720,47 @@ export type Database = {
       }
       profiles: {
         Row: {
+          can_print_labels: boolean | null
           company_id: string | null
+          council_number: string | null
+          council_type: string | null
+          council_uf: string | null
           cpf: string | null
           created_at: string | null
           full_name: string
           id: string
           is_active: boolean | null
+          professional_title: string | null
           role: string
           updated_at: string | null
         }
         Insert: {
+          can_print_labels?: boolean | null
           company_id?: string | null
+          council_number?: string | null
+          council_type?: string | null
+          council_uf?: string | null
           cpf?: string | null
           created_at?: string | null
           full_name: string
           id: string
           is_active?: boolean | null
+          professional_title?: string | null
           role?: string
           updated_at?: string | null
         }
         Update: {
+          can_print_labels?: boolean | null
           company_id?: string | null
+          council_number?: string | null
+          council_type?: string | null
+          council_uf?: string | null
           cpf?: string | null
           created_at?: string | null
           full_name?: string
           id?: string
           is_active?: boolean | null
+          professional_title?: string | null
           role?: string
           updated_at?: string | null
         }
