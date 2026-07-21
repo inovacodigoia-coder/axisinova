@@ -1,5 +1,6 @@
 import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
+import { useEffect } from 'react';
 import { GradientButton } from '@/components/ui/GradientButton';
 import { OutlineButton } from '@/components/ui/OutlineButton';
 
@@ -12,6 +13,14 @@ interface SuccessScreenProps {
 
 export function SuccessScreen({ companyName, cnpj, plan, email }: SuccessScreenProps) {
   const navigate = useNavigate();
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      navigate('/login');
+    }, 5000); // 5 seconds
+    return () => clearTimeout(timer);
+  }, [navigate]);
+
   return (
     <motion.div
       className="flex flex-col items-center text-center py-8"
