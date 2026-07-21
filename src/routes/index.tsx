@@ -1,7 +1,7 @@
 // All modules implemented: Clinic, Laboratory, Hospital, External Portals, and Financial.
 
 // Fixed registration RLS and duplicate CNPJ handling. Improved company deletion in Super Admin to handle all related records (including Lab/Stock/Pharmacy/Finance).
-// A exclusão de empresa agora remove corretamente todos os dados de laboratório, estoque, farmácia e finanças. Removi o fallback para dados mockados na listagem de empresas.
+// A listagem de empresas no Super Admin foi corrigida para exibir apenas dados reais do banco de dados, sem fallback de teste. A exclusão agora limpa corretamente todos os vínculos.
 
 /*
   TAREFAS PENDENTES:
