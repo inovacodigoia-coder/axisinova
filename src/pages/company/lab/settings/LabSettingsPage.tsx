@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { Card } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -22,10 +22,13 @@ import {
   Plus,
   Trash2,
   Edit2,
-  Info
+  Info,
+  Loader2
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { toast } from 'sonner'
+import { supabase } from '@/integrations/supabase/client'
+
 
 export default function LabSettingsPage() {
   const [searchParams, setSearchParams] = useSearchParams()
@@ -420,36 +423,97 @@ function EquipmentRedirect() {
 }
 
 function UnitsSection() {
-  const units = [
-    "/mm³", "%", "cel/µL", "copies/mL", "fl", "g/24h", "g/dL", "g/L", "g%", "mEq/L", 
-    "mg/24h", "mg/dL", "mg/L", "mil/mm³", "milhões/mm³", "mL/24h", "mL/min", "mL/min/1.73m²", 
-    "mm/h", "mm³", "mmHg", "mmol/L", "mUI/L", "mUI/mL", "ng/dL", "ng/L-teste", "ng/mL", 
-    "pg", "pg/mL", "pH", "seg", "segundos", "título", "U/L", "UI/L", "UI/mL", "µg/dL", 
-    "µmol/L", "µUI/mL"
-  ]
+  const [units, setUnits] = useState<any[]>([])
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    fetchUnits()
+  }, [])
+
+  const fetchUnits = async () => {
+    try {
+      setLoading(true)
+      const { data, error } = await supabase
+        .from('measurement_units')
+        .select('*')
+        .order('name')
+      
+      if (error) throw error
+      setUnits(data || [])
+    } catch (error: any) {
+      console.error('Error fetching units:', error)
+      toast.error('Erro ao carregar unidades de medida')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const handleDelete = async (id: string) => {
+    try {
+      const { error } = await supabase
+        .from('measurement_units')
+        .delete()
+        .eq('id', id)
+      
+      if (error) throw error
+      toast.success('Unidade excluída com sucesso')
+      fetchUnits()
+    } catch (error: any) {
+      toast.error('Erro ao excluir unidade')
+    }
+  }
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <h3 className="text-lg font-bold">Unidades de Medida</h3>
-        <Button size="sm" className="gradient-bg text-white gap-2"><Plus className="h-4 w-4" /> Nova Unidade</Button>
+        <Button size="sm" className="gradient-bg text-white gap-2">
+          <Plus className="h-4 w-4" /> Nova Unidade
+        </Button>
       </div>
-      <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-2">
-        {units.map(u => (
-          <div key={u} className="p-3 border rounded-xl bg-card flex items-center justify-between group hover:border-primary/30 transition-all">
-            <span className="text-sm font-mono font-bold">{u}</span>
-            <div className="flex items-center gap-1">
-              <Badge variant="outline" className="text-[10px] bg-teal-50 text-teal-700 border-teal-200">Ativa</Badge>
-              <div className="flex opacity-0 group-hover:opacity-100 transition-opacity">
-                <Button variant="ghost" size="sm" className="h-6 w-6 p-0"><Edit2 className="h-3 w-3" /></Button>
-                <Button variant="ghost" size="sm" className="h-6 w-6 p-0"><Trash2 className="h-3 w-3 text-red-500" /></Button>
+
+      {loading ? (
+        <div className="flex justify-center py-12">
+          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        </div>
+      ) : (
+        <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-2">
+          {units.map(u => (
+            <div key={u.id} className="p-3 border rounded-xl bg-card flex items-center justify-between group hover:border-primary/30 transition-all">
+              <span className="text-sm font-mono font-bold">{u.name}</span>
+              <div className="flex items-center gap-1">
+                {u.active && (
+                  <Badge variant="outline" className="text-[10px] bg-teal-50 text-teal-700 border-teal-200">
+                    Ativa
+                  </Badge>
+                )}
+                <div className="flex opacity-0 group-hover:opacity-100 transition-opacity">
+                  <Button variant="ghost" size="sm" className="h-6 w-6 p-0">
+                    <Edit2 className="h-3 w-3" />
+                  </Button>
+                  <Button 
+                    variant="ghost" 
+                    size="sm" 
+                    className="h-6 w-6 p-0"
+                    onClick={() => handleDelete(u.id)}
+                  >
+                    <Trash2 className="h-3 w-3 text-red-500" />
+                  </Button>
+                </div>
               </div>
             </div>
-          </div>
-        ))}
-      </div>
+          ))}
+          {units.length === 0 && (
+            <div className="col-span-full py-8 text-center text-muted-foreground text-sm">
+              Nenhuma unidade de medida cadastrada.
+            </div>
+          )}
+        </div>
+      )}
     </div>
   )
 }
+
 
 function MethodsSection() {
   const methods = [
