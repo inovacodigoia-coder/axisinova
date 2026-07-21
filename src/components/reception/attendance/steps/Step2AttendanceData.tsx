@@ -73,7 +73,7 @@ export function Step2AttendanceData({ state, update }: Props) {
             {SERVICE_BTNS.map(({ value, icon: Icon, label }) => {
               const active = state.serviceType === value
               return (
-                <button key={value} onClick={() => {
+                <button key={value} type="button" onClick={() => {
                   if (value === 'exam') {
                     update({ serviceType: value, procedureId: undefined, procedureName: undefined, procedureCode: undefined, examMode: 'ask' })
                   } else {
@@ -91,31 +91,38 @@ export function Step2AttendanceData({ state, update }: Props) {
           </div>
 
           {state.serviceType === 'exam' && (
-            <div className="animate-in fade-in slide-in-from-top-2 duration-300 grid grid-cols-2 gap-3 mt-1">
+            <div className="animate-in fade-in slide-in-from-top-2 duration-300 grid grid-cols-2 gap-3 mt-1 p-3 bg-muted/30 rounded-lg border border-dashed border-primary/30">
+              <div className="col-span-2 text-center text-[10px] font-bold text-primary mb-1 uppercase tracking-wider">
+                Local de Realização do Exame
+              </div>
               <button
+                type="button"
                 onClick={() => update({ examMode: 'clinic' })}
                 className={cn(
                   "flex items-center justify-center gap-2 p-3 rounded-lg border-2 transition-all",
                   state.examMode === 'clinic' 
-                    ? "border-primary bg-primary/5 shadow-sm" 
+                    ? "border-primary bg-primary/10 shadow-sm" 
                     : "border-border bg-card hover:border-primary/40"
                 )}
               >
                 <Stethoscope className={cn("h-4 w-4", state.examMode === 'clinic' ? "text-primary" : "text-muted-foreground")} />
                 <span className={cn("text-xs font-bold", state.examMode === 'clinic' ? "text-foreground" : "text-muted-foreground")}>CLÍNICA</span>
+                {state.examMode === 'clinic' && <Check className="h-3 w-3 text-primary" />}
               </button>
 
               <button
+                type="button"
                 onClick={() => update({ examMode: 'lab' })}
                 className={cn(
                   "flex items-center justify-center gap-2 p-3 rounded-lg border-2 transition-all",
                   state.examMode === 'lab' 
-                    ? "border-primary bg-primary/5 shadow-sm" 
+                    ? "border-primary bg-primary/10 shadow-sm" 
                     : "border-border bg-card hover:border-primary/40"
                 )}
               >
                 <FlaskConical className={cn("h-4 w-4", state.examMode === 'lab' ? "text-primary" : "text-muted-foreground")} />
                 <span className={cn("text-xs font-bold", state.examMode === 'lab' ? "text-foreground" : "text-muted-foreground")}>LABORATÓRIO</span>
+                {state.examMode === 'lab' && <Check className="h-3 w-3 text-primary" />}
               </button>
             </div>
           )}
