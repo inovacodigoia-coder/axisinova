@@ -52,7 +52,7 @@ export default function SuperAdminUsersPage() {
           name: p.full_name || 'Sem nome',
           email: p.email || '',
           role: p.role || 'user',
-          isActive: true, // Profiles table doesn't have an active field yet, assuming true
+          isActive: p.is_active !== false,
           lastAccess: p.updated_at ? new Date(p.updated_at).toLocaleString('pt-BR') : 'Nunca',
           companyId: p.company_id,
           companyName: p.companies?.name || 'Sistema (AxisInova)',
@@ -63,6 +63,22 @@ export default function SuperAdminUsersPage() {
       toast.error('Erro ao carregar usuários: ' + err.message)
     } finally {
       setLoading(false)
+    }
+  }
+
+  async function toggleUserStatus(userId: string, currentStatus: boolean) {
+    try {
+      const { error } = await supabase
+        .from('profiles')
+        .update({ is_active: !currentStatus })
+        .eq('id', userId)
+
+      if (error) throw error
+      
+      toast.success(`Usuário ${!currentStatus ? 'ativado' : 'desativado'} com sucesso`)
+      fetchUsers()
+    } catch (err: any) {
+      toast.error('Erro ao alterar status: ' + err.message)
     }
   }
 
@@ -87,6 +103,7 @@ export default function SuperAdminUsersPage() {
                 <th className="px-4 py-4 text-left font-semibold text-muted-foreground">Associação</th>
                 <th className="px-4 py-4 text-left font-semibold text-muted-foreground">Nível / Cargo</th>
                 <th className="px-4 py-4 text-left font-semibold text-muted-foreground">Último acesso</th>
+                <th className="px-4 py-4 text-left font-semibold text-muted-foreground">Status</th>
                 <th className="px-4 py-4 text-center font-semibold text-muted-foreground">Ações</th>
               </tr>
             </thead>
@@ -120,15 +137,32 @@ export default function SuperAdminUsersPage() {
                       </StatusBadge>
                     </td>
                     <td className="px-4 py-4 text-muted-foreground whitespace-nowrap">{m.lastAccess}</td>
+                    <td className="px-4 py-4">
+                      <StatusBadge variant={m.isActive ? 'success' : 'error'}>
+                        {m.isActive ? 'Ativo' : 'Inativo'}
+                      </StatusBadge>
+                    </td>
                     <td className="px-4 py-4 text-center">
-                      <button 
-                        onClick={() => navigate(`/superadmin/usuarios/${m.id}`)}
-                        className="p-2 hover:bg-muted rounded-full transition-colors inline-flex items-center gap-1 text-primary"
-                        title="Ver detalhes"
-                      >
-                        <Eye className="h-4 w-4" />
-                        <span className="text-xs font-medium">Ver</span>
-                      </button>
+                      <div className="flex items-center justify-center gap-2">
+                        <button 
+                          onClick={() => navigate(`/superadmin/usuarios/${m.id}`)}
+                          className="p-2 hover:bg-muted rounded-full transition-colors inline-flex items-center gap-1 text-primary"
+                          title="Ver detalhes"
+                        >
+                          <Eye className="h-4 w-4" />
+                          <span className="text-xs font-medium">Ver</span>
+                        </button>
+                        <button 
+                          onClick={() => toggleUserStatus(m.id, m.isActive)}
+                          className={`px-3 py-1 rounded-md text-xs font-medium transition-all ${
+                            m.isActive 
+                              ? 'bg-red-50 text-red-600 hover:bg-red-100' 
+                              : 'bg-green-50 text-green-600 hover:bg-green-100'
+                          }`}
+                        >
+                          {m.isActive ? 'Desativar' : 'Ativar'}
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 ))
