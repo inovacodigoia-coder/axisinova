@@ -173,7 +173,8 @@ export function AttendanceCadastroModal({
 
   const next = () => {
     if (!canAdvance) return
-    if (step === 3) setShowReview(true)
+    const maxStep = isLab ? STEPS_LAB.length - 1 : 3
+    if (step === maxStep) setShowReview(true)
     else setStep(step + 1)
   }
   const prev = () => {
