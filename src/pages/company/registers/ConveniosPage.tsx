@@ -67,6 +67,7 @@ export default function ConveniosPage() {
               <tr className="border-b border-border bg-muted/30">
                 <th className="px-4 py-3 text-left font-medium text-muted-foreground">Nome</th>
                 <th className="px-4 py-3 text-left font-medium text-muted-foreground">Código ANS</th>
+                <th className="px-4 py-3 text-left font-medium text-muted-foreground">Operadora</th>
                 <th className="px-4 py-3 text-left font-medium text-muted-foreground">Tipo</th>
                 <th className="px-4 py-3 text-left font-medium text-muted-foreground">Médicos</th>
                 <th className="px-4 py-3 text-left font-medium text-muted-foreground">Anexos</th>
