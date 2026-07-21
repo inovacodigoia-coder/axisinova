@@ -152,18 +152,22 @@ export default function CompaniesListPage() {
         return
       }
 
-      // Registro de auditoria
-      await supabase.from('audit_logs').insert({
-        action: 'DELETE_COMPANY',
-        entity_type: 'company',
-        entity_id: deleteTarget.id,
-        user_id: currentUser?.id,
-        details: {
-          nome: deleteTarget.nomeFantasia,
-          cnpj: deleteTarget.cnpj,
-          reason: 'Exclusão solicitada via Super Admin'
-        }
-      })
+      // Registro de auditoria - Using plain supabase insert without strict typing for non-generated table
+      try {
+        await (supabase as any).from('audit_logs').insert({
+          action: 'DELETE_COMPANY',
+          entity_type: 'company',
+          entity_id: deleteTarget.id,
+          user_id: currentUser?.id,
+          details: {
+            nome: deleteTarget.nomeFantasia,
+            cnpj: deleteTarget.cnpj,
+            reason: 'Exclusão solicitada via Super Admin'
+          }
+        })
+      } catch (auditErr) {
+        console.warn('Falha ao registrar auditoria:', auditErr)
+      }
 
       toast.success(`Empresa "${deleteTarget.nomeFantasia}" excluída com sucesso.`)
       setDeleteTarget(null)
