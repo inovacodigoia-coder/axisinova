@@ -542,36 +542,36 @@ function UnitsSection() {
       ) : (
         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3">
           {units.map(u => (
-            <div key={u.id} className="p-4 border rounded-xl bg-card flex flex-col gap-3 group hover:border-primary/30 transition-all">
-              <div className="flex flex-col gap-2 min-h-[3rem] justify-center">
+            <div key={u.id} className="p-3 sm:p-4 border rounded-xl bg-card flex flex-col gap-3 group hover:border-primary/30 transition-all min-h-[140px]">
+              <div className="flex flex-col gap-2 flex-1 justify-center">
                 <div className="flex items-center justify-between gap-2">
-                  <span className="text-sm font-mono font-bold break-all leading-tight">{u.name}</span>
+                  <span className="text-[13px] sm:text-sm font-mono font-bold break-all leading-tight">{u.name}</span>
                   {u.active !== false && (
-                    <Badge variant="outline" className="text-[10px] bg-teal-50 text-teal-700 border-teal-200 shrink-0">
+                    <Badge variant="outline" className="text-[9px] sm:text-[10px] bg-teal-50 text-teal-700 border-teal-200 shrink-0">
                       Ativa
                     </Badge>
                   )}
                 </div>
               </div>
               
-              <div className="flex items-center gap-2 pt-2 border-t mt-auto">
+              <div className="flex flex-col sm:flex-row items-center gap-2 pt-2 border-t mt-auto">
                 <Button 
                   variant="ghost" 
                   size="sm" 
-                  className="h-8 flex-1 gap-2 hover:bg-primary/10 hover:text-primary transition-colors"
+                  className="h-8 w-full sm:flex-1 gap-2 hover:bg-primary/10 hover:text-primary transition-colors text-xs"
                   onClick={() => handleOpenDialog(u)}
                 >
-                  <Edit2 className="h-3.5 w-3.5" />
-                  <span className="text-xs">Editar</span>
+                  <Edit2 className="h-3 w-3 sm:h-3.5 sm:w-3.5" />
+                  <span>Editar</span>
                 </Button>
                 <Button 
                   variant="ghost" 
                   size="sm" 
-                  className="h-8 flex-1 gap-2 hover:bg-red-50 hover:text-red-600 transition-colors"
+                  className="h-8 w-full sm:flex-1 gap-2 hover:bg-red-50 hover:text-red-600 transition-colors text-xs"
                   onClick={() => handleDelete(u.id)}
                 >
-                  <Trash2 className="h-3.5 w-3.5" />
-                  <span className="text-xs">Excluir</span>
+                  <Trash2 className="h-3 w-3 sm:h-3.5 sm:w-3.5" />
+                  <span>Excluir</span>
                 </Button>
               </div>
             </div>
