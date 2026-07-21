@@ -149,7 +149,17 @@ function GeneralInfoSection({ isEditing }: { isEditing: boolean }) {
 
       <div className="space-y-4">
         <div className="space-y-1">
-          <Label>Materiais aceitos *</Label>
+          <div className="flex items-center justify-between">
+            <Label>Materiais aceitos *</Label>
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              className="h-7 text-[10px] gap-1 text-primary hover:text-primary hover:bg-primary/5"
+              onClick={() => toast.info("Funcionalidade para cadastrar novos materiais será implementada em breve.")}
+            >
+              <Plus className="h-3 w-3" /> Novo Material
+            </Button>
+          </div>
           <p className="text-[10px] text-muted-foreground">Selecione um ou mais. Clique duplo para definir como padrão ⭐.</p>
         </div>
         <div className="flex flex-wrap gap-2">
