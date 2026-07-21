@@ -66,7 +66,20 @@ export function LabStep3GuidesProcedures({ state, update }: Props) {
       <Card className="p-6 space-y-6 bg-muted/20 border-border">
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
           <Field label="Plano">
-             <Input value={activeGuide?.plan} onChange={(e) => {/* update guide logic */}} />
+             <select 
+               className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+               value={activeGuide?.plan} 
+               onChange={(e) => {
+                 const newGuides = guides.map(g => g.id === activeGuideId ? { ...g, plan: e.target.value } : g);
+                 setGuides(newGuides);
+                 update({ guides: newGuides });
+               }}
+             >
+               <option value="PARTICULAR">Particular</option>
+               {activeConvenios.map(c => (
+                 <option key={c.id} value={c.name}>{c.name}</option>
+               ))}
+             </select>
           </Field>
           <Field label="Operadora">
              <Input value={activeGuide?.operator} onChange={(e) => {}} />
