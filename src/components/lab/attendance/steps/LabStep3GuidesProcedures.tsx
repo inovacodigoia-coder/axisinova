@@ -41,12 +41,17 @@ interface AttendanceGuide {
 }
 
 export function LabStep3GuidesProcedures({ state, update }: Props) {
-  const { convenios, exams: clinicExams } = useRegisters();
+  const { convenios, exams: clinicExams, doctors } = useRegisters();
   const activeConvenios = useMemo(() => convenios.filter(c => c.isActive), [convenios]);
+  const activeDoctors = useMemo(() => doctors.filter(d => d.isActive), [doctors]);
   const [guides, setGuides] = useState<AttendanceGuide[]>(state.guides || [{ id: '1', name: 'Guia 1', plan: 'PARTICULAR', operator: 'PARTICULAR', number: '', exams: [], isDoctorDisabled: false }]);
   const [activeGuideId, setActiveGuideId] = useState(guides[0]?.id || '1');
   const [showDoctorPopover, setShowDoctorPopover] = useState(false);
   
+  // Doctor search state
+  const [doctorSearch, setDoctorSearch] = useState('');
+  const [showDoctorDropdown, setShowDoctorDropdown] = useState(false);
+
   // Modal states for adding/editing exam
   const [showExamModal, setShowExamModal] = useState(false);
   const [editingExamIndex, setEditingExamIndex] = useState<number | null>(null);
@@ -72,6 +77,29 @@ export function LabStep3GuidesProcedures({ state, update }: Props) {
       e.tussCode?.toLowerCase().includes(examSearch.toLowerCase())
     );
   }, [examSearch, clinicExams, selectedExam]);
+
+  const filteredDoctors = useMemo(() => {
+    if (!doctorSearch || doctorSearch.length < 2) return [];
+    return activeDoctors.filter(d => 
+      d.fullName.toLowerCase().includes(doctorSearch.toLowerCase()) || 
+      d.crm.toLowerCase().includes(doctorSearch.toLowerCase())
+    );
+  }, [doctorSearch, activeDoctors]);
+
+  const selectDoctor = (doc: any) => {
+    // Update guide with doctor data
+    const newGuides = guides.map(g => g.id === activeGuideId ? { 
+      ...g, 
+      doctorCrm: doc.crm,
+      doctorCrmState: doc.crmState,
+      doctorName: doc.fullName,
+      doctorCbos: '225125' // Default or based on specialty if available
+    } : g);
+    setGuides(newGuides);
+    update({ guides: newGuides });
+    setDoctorSearch(doc.fullName);
+    setShowDoctorDropdown(false);
+  };
 
   const handleOpenExamModal = (index: number | null = null) => {
     if (index !== null && activeGuide) {
@@ -299,6 +327,12 @@ export function LabStep3GuidesProcedures({ state, update }: Props) {
                       <select 
                         disabled={activeGuide?.isDoctorDisabled}
                         className="flex h-10 w-full rounded-md border bg-background px-3 text-sm disabled:bg-muted disabled:cursor-not-allowed"
+                        value={activeGuide?.doctorCouncil || 'CRM'}
+                        onChange={(e) => {
+                          const newGuides = guides.map(g => g.id === activeGuideId ? { ...g, doctorCouncil: e.target.value } : g);
+                          setGuides(newGuides);
+                          update({ guides: newGuides });
+                        }}
                       >
                         <option>CRM</option>
                         <option>CRO</option>
@@ -309,10 +343,18 @@ export function LabStep3GuidesProcedures({ state, update }: Props) {
                       <select 
                         disabled={activeGuide?.isDoctorDisabled}
                         className="flex h-10 w-full rounded-md border bg-background px-3 text-sm disabled:bg-muted disabled:cursor-not-allowed"
+                        value={activeGuide?.doctorCrmState || 'RN'}
+                        onChange={(e) => {
+                          const newGuides = guides.map(g => g.id === activeGuideId ? { ...g, doctorCrmState: e.target.value } : g);
+                          setGuides(newGuides);
+                          update({ guides: newGuides });
+                        }}
                       >
                         <option>RN</option>
                         <option>SP</option>
                         <option>RJ</option>
+                        <option>MG</option>
+                        <option>CE</option>
                       </select>
                     </div>
                     <div className="relative w-1/2">
@@ -320,6 +362,19 @@ export function LabStep3GuidesProcedures({ state, update }: Props) {
                         placeholder="Nº Inscrição" 
                         disabled={activeGuide?.isDoctorDisabled}
                         className="pr-8 disabled:bg-muted disabled:cursor-not-allowed" 
+                        value={activeGuide?.doctorCrm || ''}
+                        onChange={(e) => {
+                          const val = e.target.value;
+                          const newGuides = guides.map(g => g.id === activeGuideId ? { ...g, doctorCrm: val } : g);
+                          setGuides(newGuides);
+                          update({ guides: newGuides });
+                          
+                          // Auto-lookup by CRM
+                          const found = activeDoctors.find(d => d.crm === val);
+                          if (found) {
+                            selectDoctor(found);
+                          }
+                        }}
                       />
                       <Search className="h-4 w-4 absolute right-2.5 top-3 text-muted-foreground" />
                     </div>
@@ -332,6 +387,12 @@ export function LabStep3GuidesProcedures({ state, update }: Props) {
                       placeholder="Nome do Médico" 
                       disabled={activeGuide?.isDoctorDisabled}
                       className="pr-8 disabled:bg-muted disabled:cursor-not-allowed" 
+                      value={doctorSearch || activeGuide?.doctorName || ''}
+                      onChange={(e) => {
+                        setDoctorSearch(e.target.value);
+                        setShowDoctorDropdown(true);
+                      }}
+                      onBlur={() => setTimeout(() => setShowDoctorDropdown(false), 200)}
                     />
                     <div className="absolute right-2.5 top-2 flex items-center gap-1">
                       <Search className="h-4 w-4 text-muted-foreground" />
@@ -339,13 +400,36 @@ export function LabStep3GuidesProcedures({ state, update }: Props) {
                         <Plus className="h-4 w-4" />
                       </button>
                     </div>
+
+                    {showDoctorDropdown && filteredDoctors.length > 0 && (
+                      <div className="absolute z-50 w-full bg-white border border-border rounded-md shadow-lg mt-1 max-h-60 overflow-auto">
+                        {filteredDoctors.map(doc => (
+                          <div 
+                            key={doc.id}
+                            className="p-2 hover:bg-primary/5 cursor-pointer text-xs flex flex-col gap-0.5"
+                            onMouseDown={() => selectDoctor(doc)}
+                          >
+                            <span className="font-bold">{doc.fullName}</span>
+                            <span className="text-muted-foreground">CRM: {doc.crm} - {doc.crmState}</span>
+                          </div>
+                        ))}
+                      </div>
+                    )}
                   </div>
                   <div className="w-1/3">
                     <select 
                       disabled={activeGuide?.isDoctorDisabled}
                       className="flex h-10 w-full rounded-md border bg-background px-3 text-sm disabled:bg-muted disabled:cursor-not-allowed"
+                      value={activeGuide?.doctorCbos || 'CBOS'}
+                      onChange={(e) => {
+                        const newGuides = guides.map(g => g.id === activeGuideId ? { ...g, doctorCbos: e.target.value } : g);
+                        setGuides(newGuides);
+                        update({ guides: newGuides });
+                      }}
                     >
-                      <option>CBOS</option>
+                      <option value="CBOS">CBOS</option>
+                      <option value="225125">Clínico Geral</option>
+                      <option value="225133">Bioquímico</option>
                     </select>
                   </div>
                 </div>
