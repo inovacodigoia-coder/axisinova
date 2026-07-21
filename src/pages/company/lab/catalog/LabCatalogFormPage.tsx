@@ -199,6 +199,10 @@ function GeneralInfoSection({ isEditing }: { isEditing: boolean }) {
           <Label>Prazo resultado (dias úteis)</Label>
           <Input type="number" defaultValue={isEditing ? 1 : 0} />
         </div>
+        <div className="space-y-2">
+          <Label>Prazo de Entrega (dias)</Label>
+          <Input type="number" defaultValue={isEditing ? 3 : 0} />
+        </div>
       </div>
 
       <div className="space-y-2 pt-2">
@@ -263,10 +267,23 @@ function GeneralInfoSection({ isEditing }: { isEditing: boolean }) {
         </div>
         <div className="space-y-2">
           <Label>Destino padrão</Label>
-          <select className="w-full h-10 px-3 rounded-lg border bg-background text-sm outline-none focus:ring-2 focus:ring-primary/20">
-            <option>-- Não definido --</option>
-            <option>Bancada Bioquímica</option>
-          </select>
+          <div className="flex gap-2">
+            <select className="flex-1 h-10 px-3 rounded-lg border bg-background text-sm outline-none focus:ring-2 focus:ring-primary/20">
+              <option>-- Não definido --</option>
+              <option>Ipanguaçu</option>
+              <option>Pardini</option>
+              <option>Bancada Bioquímica</option>
+            </select>
+            <Button 
+              variant="outline" 
+              size="icon" 
+              className="shrink-0" 
+              onClick={() => navigate('/app/configuracoes/laboratorio?tab=workbenches')}
+              title="Gerenciar Locais / Bancadas"
+            >
+              <Plus className="h-4 w-4" />
+            </Button>
+          </div>
         </div>
         <div className="md:col-span-2 space-y-2">
           <Label>Ficha Técnica</Label>
