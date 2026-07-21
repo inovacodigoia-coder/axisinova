@@ -129,7 +129,7 @@ export default function LabCatalogFormPage() {
             <Switch 
               checked={examData.isActive} 
               onCheckedChange={(val) => setExamData(prev => ({ ...prev, isActive: val }))} 
-              className="data-[state=checked]:bg-primary data-[state=unchecked]:bg-red-500"
+              className="data-[state=checked]:!bg-primary data-[state=unchecked]:!bg-red-500"
             />
           </div>
           <Button variant="outline" onClick={() => navigate('/app/cadastros/catalogo')}>Cancelar</Button>
@@ -293,7 +293,7 @@ function GeneralInfoSection({ isEditing, data, onChange }: { isEditing: boolean,
           <div className="flex items-center gap-2 mb-1">
             <Label>Duração estimada (min)</Label>
             <Switch 
-              className="h-4 w-7 [&>span]:h-3 [&>span]:w-3 data-[state=checked]:bg-primary data-[state=unchecked]:bg-red-500"
+              className="h-4 w-7 [&>span]:h-3 [&>span]:w-3 data-[state=checked]:!bg-primary data-[state=unchecked]:!bg-red-500"
               checked={data.showDuration} 
               onCheckedChange={(val) => onChange({ showDuration: val })} 
             />
@@ -319,7 +319,7 @@ function GeneralInfoSection({ isEditing, data, onChange }: { isEditing: boolean,
           <div className="flex items-center gap-2 mb-1">
             <Label>Prazo de Entrega (dias)</Label>
             <Switch 
-              className="h-4 w-7 [&>span]:h-3 [&>span]:w-3 data-[state=checked]:bg-primary data-[state=unchecked]:bg-red-500"
+              className="h-4 w-7 [&>span]:h-3 [&>span]:w-3 data-[state=checked]:!bg-primary data-[state=unchecked]:!bg-red-500"
               checked={data.showDeadline} 
               onCheckedChange={(val) => onChange({ showDeadline: val })} 
             />
@@ -631,7 +631,7 @@ function ParametersSection() {
                               <Switch 
                                 checked={param.isMandatory} 
                                 onCheckedChange={(val) => updateParameter(param.id, 'isMandatory', val)}
-                                className="scale-75 data-[state=checked]:bg-primary data-[state=unchecked]:bg-red-500 shadow-sm"
+                                className="scale-75 data-[state=checked]:!bg-primary data-[state=unchecked]:!bg-red-500 shadow-sm"
                               />
                             </TooltipTrigger>
                             <TooltipContent>
@@ -647,7 +647,7 @@ function ParametersSection() {
                               <Switch 
                                 checked={param.allowNegative} 
                                 onCheckedChange={(val) => updateParameter(param.id, 'allowNegative', val)}
-                                className="scale-75 data-[state=checked]:bg-primary data-[state=unchecked]:bg-red-500 shadow-sm"
+                                className="scale-75 data-[state=checked]:!bg-primary data-[state=unchecked]:!bg-red-500 shadow-sm"
                               />
                             </TooltipTrigger>
                             <TooltipContent>
@@ -663,7 +663,7 @@ function ParametersSection() {
                               <Switch 
                                 checked={param.isCalculated} 
                                 onCheckedChange={(val) => updateParameter(param.id, 'isCalculated', val)}
-                                className="scale-75 data-[state=checked]:bg-primary data-[state=unchecked]:bg-red-500 shadow-sm"
+                                className="scale-75 data-[state=checked]:!bg-primary data-[state=unchecked]:!bg-red-500 shadow-sm"
                               />
                             </TooltipTrigger>
                             <TooltipContent>
@@ -679,7 +679,7 @@ function ParametersSection() {
                               <Switch 
                                 checked={param.isHidden} 
                                 onCheckedChange={(val) => updateParameter(param.id, 'isHidden', val)}
-                                className="scale-75 data-[state=checked]:bg-primary data-[state=unchecked]:bg-red-500 shadow-sm"
+                                className="scale-75 data-[state=checked]:!bg-primary data-[state=unchecked]:!bg-red-500 shadow-sm"
                               />
                             </TooltipTrigger>
                             <TooltipContent>
