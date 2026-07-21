@@ -34,11 +34,28 @@ export default function CompaniesManagementPage() {
       nomeFantasia: c.nome_fantasia || c.name || '',
       cnpj: c.cnpj || '',
       segmento: c.segmento || 'Outro',
+      telefone: c.telefone || '',
+      email: c.email || '',
+      website: c.website || '',
+      endereco: {
+        cep: c.cep || '',
+        logradouro: c.logradouro || '',
+        numero: c.numero || '',
+        bairro: c.bairro || '',
+        cidade: c.cidade || '',
+        estado: c.estado || '',
+      },
       plano: (c.plano || 'Pro') as PlanType,
       status: (c.status || 'active') as CompanyStatus,
       medicosAtivos: c.medicos_ativos || 0,
       medicosLimite: c.medicos_limite || 15,
+      usuariosAtivos: c.usuarios_ativos || 0,
+      usuariosLimite: c.usuarios_limite || 999,
+      armazenamentoUsadoGB: Number(c.armazenamento_usado_gb) || 0,
+      armazenamentoLimiteGB: Number(c.armazenamento_limite_gb) || 100,
+      valorMensal: Number(c.valor_mensal) || 0,
       criadoEm: c.created_at,
+      ultimoAcesso: c.updated_at,
     }))
     setDbCompanies(mapped)
     setLoading(false)
