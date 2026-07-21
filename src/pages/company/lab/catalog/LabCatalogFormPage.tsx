@@ -19,7 +19,9 @@ import {
   Star,
   ShieldCheck,
   Zap,
-  Layout
+  Layout,
+  MessageSquare,
+  FileText
 } from 'lucide-react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { cn } from '@/lib/utils'
@@ -291,7 +293,10 @@ function GeneralInfoSection({ isEditing }: { isEditing: boolean }) {
         </div>
         <div className="md:col-span-2 space-y-2">
           <Label>Ficha Técnica</Label>
-          <textarea className="w-full h-24 p-3 rounded-lg border bg-background text-sm focus:ring-2 focus:ring-primary/20 outline-none resize-none" placeholder="Informações técnicas internas..." />
+          <textarea 
+            className="w-full h-32 p-3 rounded-lg border bg-background text-sm focus:ring-2 focus:ring-primary/20 outline-none resize-none" 
+            placeholder="Informações técnicas do exame..." 
+          />
         </div>
       </div>
     </Card>
@@ -527,27 +532,94 @@ function RulesSection() {
 }
 
 function PatientInfoSection() {
+  const [questions, setQuestions] = useState<string[]>([
+    "O paciente está em jejum há pelo menos 8 horas?"
+  ]);
+
+  const addQuestion = () => setQuestions([...questions, ""]);
+  const removeQuestion = (index: number) => setQuestions(questions.filter((_, i) => i !== index));
+  const updateQuestion = (index: number, value: string) => {
+    const newQuestions = [...questions];
+    newQuestions[index] = value;
+    setQuestions(newQuestions);
+  };
+
   return (
-    <Card className="p-8 space-y-8">
-      <div className="space-y-4">
-        <h3 className="text-lg font-bold">Orientações ao Paciente</h3>
+    <div className="space-y-6">
+      <Card className="p-8 space-y-6">
         <div className="space-y-4">
           <div className="space-y-2">
-            <Label>Instruções de Preparo</Label>
-            <textarea className="w-full h-32 p-3 rounded-lg border bg-background text-sm focus:ring-2 focus:ring-primary/20 outline-none resize-none" defaultValue={"- Jejum de 8 a 12 horas.\n- Água pode ser consumida moderadamente.\n- Evitar bebidas alcoólicas 24h antes."} />
+            <Label className="text-sm font-bold uppercase tracking-wider text-muted-foreground">Ficha Técnica</Label>
+            <textarea 
+              className="w-full h-32 p-3 rounded-lg border bg-background text-sm focus:ring-2 focus:ring-primary/20 outline-none resize-none" 
+              placeholder="Informações técnicas do exame..." 
+            />
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div className="space-y-2">
-              <Label>Prazo de entrega ao paciente (dias)</Label>
-              <Input type="number" defaultValue={1} />
-            </div>
-            <div className="flex items-center justify-between pt-8">
-              <Label>Exibir orientações no comprovante?</Label>
-              <Switch defaultChecked />
-            </div>
+
+          <div className="space-y-2">
+            <Label className="text-sm font-bold uppercase tracking-wider text-muted-foreground">Orientações ao Paciente</Label>
+            <textarea 
+              className="w-full h-32 p-3 rounded-lg border bg-background text-sm focus:ring-2 focus:ring-primary/20 outline-none resize-none" 
+              placeholder="Ex: Jejum de 8 horas."
+              defaultValue="Jejum de 8 horas."
+            />
+            <p className="text-[11px] text-muted-foreground">Essas orientações serão exibidas para a recepção durante o cadastro de atendimentos.</p>
+          </div>
+
+          <div className="space-y-2">
+            <Label className="text-sm font-bold uppercase tracking-wider text-muted-foreground">Observações do Laudo</Label>
+            <textarea 
+              className="w-full h-32 p-3 rounded-lg border bg-background text-sm focus:ring-2 focus:ring-primary/20 outline-none resize-none" 
+              placeholder="Ex: A partir de 01/2026 os valores de referência foram atualizados conforme nova diretriz..." 
+            />
+            <p className="text-[11px] text-muted-foreground">Esse texto será impresso no laudo, abaixo dos resultados deste exame.</p>
           </div>
         </div>
-      </div>
-    </Card>
+      </Card>
+
+      <Card className="p-8 space-y-6">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <div className="bg-primary/10 p-2 rounded-lg">
+              <MessageSquare className="h-5 w-5 text-primary" />
+            </div>
+            <div>
+              <h3 className="font-bold">Perguntas de Confirmação</h3>
+              <p className="text-xs text-muted-foreground">Perguntas que o atendente deverá confirmar com o paciente ao adicionar este exame.</p>
+            </div>
+          </div>
+          <Button variant="outline" size="sm" onClick={addQuestion} className="gap-2">
+            <Plus className="h-4 w-4" /> Adicionar
+          </Button>
+        </div>
+
+        <div className="space-y-3">
+          {questions.map((q, index) => (
+            <div key={index} className="flex gap-3 items-center">
+              <span className="text-xs text-muted-foreground font-medium w-4">{index + 1}.</span>
+              <Input 
+                value={q} 
+                onChange={(e) => updateQuestion(index, e.target.value)}
+                placeholder="Digite a pergunta..."
+                className="flex-1"
+              />
+              <Button 
+                variant="ghost" 
+                size="icon" 
+                onClick={() => removeQuestion(index)}
+                className="text-red-500 hover:text-red-700 hover:bg-red-50"
+              >
+                <Trash2 className="h-4 w-4" />
+              </Button>
+            </div>
+          ))}
+          {questions.length === 0 && (
+            <div className="text-center py-6 border-2 border-dashed rounded-xl border-muted">
+              <p className="text-sm text-muted-foreground">Nenhuma pergunta cadastrada.</p>
+            </div>
+          )}
+        </div>
+      </Card>
+    </div>
   )
 }
