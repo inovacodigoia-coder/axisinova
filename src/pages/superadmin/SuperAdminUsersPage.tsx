@@ -47,10 +47,14 @@ export default function SuperAdminUsersPage() {
       if (error) throw error
 
       if (data) {
+        // Since email is in auth.users, and profiles is linked by id, 
+        // we might not have the email in public.profiles depending on schema.
+        // Let's ensure we use the email field from the profile if it exists, 
+        // or a placeholder if it's missing from the public view.
         const mapped: SystemUser[] = data.map((p: any) => ({
           id: p.id,
           name: p.full_name || 'Sem nome',
-          email: p.email || '',
+          email: p.email || (p.username ? `${p.username}@sistema` : 'usuario@sistema'),
           role: p.role || 'user',
           isActive: p.is_active !== false,
           lastAccess: p.updated_at ? new Date(p.updated_at).toLocaleString('pt-BR') : 'Nunca',
