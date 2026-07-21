@@ -82,6 +82,7 @@ export default function ConveniosPage() {
                   <tr key={c.id} className="border-b border-border last:border-0 hover:bg-muted/20 transition-colors">
                     <td className="px-4 py-3 font-medium text-foreground">{c.name}</td>
                     <td className="px-4 py-3 font-mono text-sm">{c.ansCode || '—'}</td>
+                    <td className="px-4 py-3 text-sm">{c.operator || '—'}</td>
                     <td className="px-4 py-3"><span className={`inline-flex rounded-full px-2 py-0.5 text-[10px] font-bold ${CONVENIO_TYPE_COLORS[c.type]}`}>{CONVENIO_TYPE_LABELS[c.type]}</span></td>
                     <td className="px-4 py-3 text-sm text-muted-foreground">{docCount} médicos</td>
                     <td className="px-4 py-3 text-sm text-muted-foreground">{c.attachmentRules.length} regras</td>
