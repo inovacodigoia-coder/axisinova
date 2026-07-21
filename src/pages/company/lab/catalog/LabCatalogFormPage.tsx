@@ -197,7 +197,11 @@ function GeneralInfoSection({ isEditing }: { isEditing: boolean }) {
         </div>
         <div className="space-y-2">
           <Label>Prazo resultado (dias úteis)</Label>
-          <Input type="number" defaultValue={isEditing ? 1 : 0} />
+          <Input type="number" defaultValue={isEditing ? 1 : 1} />
+        </div>
+        <div className="space-y-2">
+          <Label>Prazo de Entrega (dias)</Label>
+          <Input type="number" defaultValue={isEditing ? 3 : 0} />
         </div>
         <div className="space-y-2">
           <Label>Prazo de Entrega (dias)</Label>
