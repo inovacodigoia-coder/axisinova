@@ -3,7 +3,7 @@ import { Card } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
-import { Search, Printer, Download, User, Phone, ShieldCheck, Users, HeartPulse, FileText, CheckCircle2, Plus } from 'lucide-react';
+import { Search, Printer, Download, User, Phone, ShieldCheck, Users, HeartPulse, FileText, CheckCircle2, Plus, Trash2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { GENDER_LABELS, ETHNICITY_LABELS, MARITAL_LABELS, STATUS_LABELS, BRAZIL_STATES } from '@/types/patient.types';
 import { useRegisters } from '@/context/RegistersContext';
