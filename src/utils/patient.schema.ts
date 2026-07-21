@@ -81,7 +81,7 @@ export const patientFormSchema = z
     // Personal
     fullName: z.string().refine(isValidName, 'Informe nome completo'),
     socialName: z.string().max(200).optional().or(z.literal('')),
-    cpf: z.string().optional().or(z.literal('')).refine(v => !v || isValidCPF(v), 'CPF inválido'),
+    cpf: z.string().min(1, 'CPF obrigatório').refine(isValidCPF, 'CPF inválido'),
     rg: z.string().max(20).optional().or(z.literal('')),
     rgIssuer: z.string().max(20).optional().or(z.literal('')),
     rgState: z.string().max(2).optional().or(z.literal('')),

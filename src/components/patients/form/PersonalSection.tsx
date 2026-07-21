@@ -29,11 +29,19 @@ export function PersonalSection() {
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <Field name="cpf" label="CPF">
+        <Field name="cpf" label="CPF" required>
           <Controller name="cpf" control={control}
             render={({ field }) => (
               <Input {...field} placeholder="000.000.000-00" inputMode="numeric"
-                onChange={e => field.onChange(maskCPF(e.target.value))} />
+                onChange={e => {
+                  const masked = maskCPF(e.target.value)
+                  field.onChange(masked)
+                  
+                  // Auto lookup when CPF is complete (14 chars with mask: 000.000.000-00)
+                  if (masked.length === 14) {
+                    window.dispatchEvent(new CustomEvent('patient-cpf-lookup', { detail: masked }))
+                  }
+                }} />
             )} />
         </Field>
         <Field name="rg" label="RG">
