@@ -47,6 +47,8 @@ export default function LabCatalogFormPage() {
     estimatedDurationMinutes: 30,
     resultDeadlineDays: 1,
     requiresAuthorization: false,
+    showDuration: true,
+    showDeadline: true,
   })
 
   useEffect(() => {
@@ -267,12 +269,22 @@ function GeneralInfoSection({ isEditing, data, onChange }: { isEditing: boolean,
           </select>
         </div>
         <div className="space-y-2">
-          <Label>Duração estimada (min)</Label>
-          <Input 
-            type="number" 
-            value={data.estimatedDurationMinutes}
-            onChange={(e) => onChange({ estimatedDurationMinutes: Number(e.target.value) })}
-          />
+          <div className="flex items-center gap-2 mb-1">
+            <Label>Duração estimada (min)</Label>
+            <Switch 
+              className="h-4 w-7 [&>span]:h-3 [&>span]:w-3"
+              checked={data.showDuration} 
+              onCheckedChange={(val) => onChange({ showDuration: val })} 
+            />
+          </div>
+          {data.showDuration && (
+            <Input 
+              type="number" 
+              value={data.estimatedDurationMinutes}
+              onChange={(e) => onChange({ estimatedDurationMinutes: Number(e.target.value) })}
+              className="h-10"
+            />
+          )}
         </div>
         <div className="space-y-2">
           <Label>Prazo resultado (dias úteis)</Label>
@@ -282,23 +294,23 @@ function GeneralInfoSection({ isEditing, data, onChange }: { isEditing: boolean,
             onChange={(e) => onChange({ resultDeadlineDays: Number(e.target.value) })}
           />
         </div>
-        <div className="space-y-2 flex items-end gap-3">
-          <div className="flex-1 space-y-2">
+        <div className="space-y-2">
+          <div className="flex items-center gap-2 mb-1">
             <Label>Prazo de Entrega (dias)</Label>
+            <Switch 
+              className="h-4 w-7 [&>span]:h-3 [&>span]:w-3"
+              checked={data.showDeadline} 
+              onCheckedChange={(val) => onChange({ showDeadline: val })} 
+            />
+          </div>
+          {data.showDeadline && (
             <Input 
               type="number" 
               value={data.resultDeadlineDays}
               onChange={(e) => onChange({ resultDeadlineDays: Number(e.target.value) })}
+              className="h-10"
             />
-          </div>
-          <div className="flex items-center gap-2 mb-2 pb-1">
-            <Label className="text-xs font-medium cursor-pointer" htmlFor="exam-active-toggle">Ativo</Label>
-            <Switch 
-              id="exam-active-toggle"
-              checked={data.isActive} 
-              onCheckedChange={(val) => onChange({ isActive: val })} 
-            />
-          </div>
+          )}
         </div>
       </div>
 
