@@ -456,12 +456,7 @@ function GeneralInfoSection({ isEditing, data, onChange }: { isEditing: boolean,
 
 function ParametersSection() {
   const [measurementUnits, setMeasurementUnits] = useState<any[]>([])
-  const [parameters, setParameters] = useState<any[]>([
-    { id: 1, name: 'Hemácias', section: 'ER', equipCode: '', type: 'numerical', origin: 'equipment', unit: 'milhões/mm³', isMandatory: true, allowNegative: false, isCalculated: false, isHidden: false, formula: '' },
-    { id: 2, name: 'Hemoglobina', section: 'ER', equipCode: '', type: 'numerical', origin: 'equipment', unit: 'g/dL', isMandatory: true, allowNegative: false, isCalculated: false, isHidden: false, formula: '' },
-    { id: 3, name: 'Hematócrito', section: 'ER', equipCode: '', type: 'numerical', origin: 'equipment', unit: '%', isMandatory: true, allowNegative: false, isCalculated: false, isHidden: false, formula: '' },
-    { id: 4, name: 'VCM (Volume Corpuscular Médio)', section: 'ER', equipCode: '', type: 'numerical', origin: 'equipment', unit: 'fL', isMandatory: true, allowNegative: false, isCalculated: true, isHidden: false, formula: '[Hematócrito] / [Hemácias] * 10' },
-  ])
+  const [parameters, setParameters] = useState<any[]>([])
   const [editingReference, setEditingReference] = useState<any>(null)
 
   useEffect(() => {
