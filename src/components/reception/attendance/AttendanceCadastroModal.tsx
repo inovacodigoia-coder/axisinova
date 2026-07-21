@@ -12,6 +12,7 @@ import { PaymentModal } from './payment/PaymentModal'
 import { AttendancePrintModal } from './print/AttendancePrintModal'
 import { LabStep1PatientReview } from '@/components/lab/attendance/steps/LabStep1PatientReview'
 import { LabStep2ExamData } from '@/components/lab/attendance/steps/LabStep2ExamData'
+import { LabStep3GuidesProcedures } from '@/components/lab/attendance/steps/LabStep3GuidesProcedures'
 import { QueueAllocationModal } from './queue-allocation/QueueAllocationModal'
 import { useAttendanceCadastro, useDraftAutosave, loadDraft, clearDraft } from '@/hooks/useAttendanceCadastro'
 import { usePrinterConfig } from '@/hooks/usePrinterConfig'
@@ -372,7 +373,7 @@ export function AttendanceCadastroModal({
           {isLab && !showReview && step === 0 && <Step1PatientLookup state={state} update={update} unitId={unitId} />}
           {isLab && !showReview && step === 1 && <LabStep1PatientReview state={state} update={update} />}
           {isLab && !showReview && step === 2 && <LabStep2ExamData state={state} update={update} />}
-          {isLab && !showReview && step === 3 && <div className="p-8 text-center text-muted-foreground">Passo 3: Guias e Procedimentos (Em implementação...)</div>}
+          {isLab && !showReview && step === 3 && <LabStep3GuidesProcedures state={state} update={update} />}
           {isLab && !showReview && step === 4 && <div className="p-8 text-center text-muted-foreground">Passo 4: Pagamento (Em implementação...)</div>}
           {isLab && !showReview && step === 5 && <div className="p-8 text-center text-muted-foreground">Passo 5: Autorização (Em implementação...)</div>}
           
