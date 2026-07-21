@@ -269,6 +269,15 @@ function GeneralInfoSection({ isEditing }: { isEditing: boolean }) {
 }
 
 function ParametersSection() {
+  const [measurementUnits, setMeasurementUnits] = useState<any[]>([])
+
+  useEffect(() => {
+    const fetchUnits = async () => {
+      const { data } = await supabase.from('measurement_units').select('name').order('name')
+      if (data) setMeasurementUnits(data)
+    }
+    fetchUnits()
+  }, [])
   return (
     <Card className="p-8 space-y-8">
        <div className="flex items-center justify-between">
@@ -305,9 +314,11 @@ function ParametersSection() {
                  </select>
                </td>
                <td className="px-4 py-3">
-                 <select className="h-8 px-2 rounded-md border text-xs outline-none bg-background">
-                   <option>ng/mL</option>
-                 </select>
+                  <select className="h-8 px-2 rounded-md border text-xs outline-none bg-background w-full">
+                    {measurementUnits.map(unit => (
+                      <option key={unit.name} value={unit.name}>{unit.name}</option>
+                    ))}
+                  </select>
                </td>
                <td className="px-4 py-3">
                  <select className="h-8 px-2 rounded-md border text-xs outline-none bg-background">
