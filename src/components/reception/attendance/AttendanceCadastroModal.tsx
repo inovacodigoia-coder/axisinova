@@ -35,6 +35,7 @@ interface AttendanceCadastroModalProps {
 
 export interface CadastroState {
   patient?: Patient
+  tempPatient?: Partial<Patient>
   scheduledAppointmentId?: string
   serviceType?: AttendanceServiceType
   paymentType?: AttendancePaymentType
@@ -69,6 +70,13 @@ export interface CadastroState {
   originId?: string
   originCode?: number
   protocol?: string
+  weight?: string
+  height?: string
+  isUrgent?: boolean
+  hasFever?: boolean
+  fastingSince?: string
+  deliveryLocation?: string
+  observation?: string
 }
 
 const STEPS_CLINIC = ['Paciente', 'Atendimento', 'Autorização', 'Anexos'] as const
@@ -143,6 +151,15 @@ export function AttendanceCadastroModal({
 
   // Validação por passo
   const stepValid = (s: number): boolean => {
+    if (isLab) {
+      if (s === 0) return !!state.patient
+      // For Lab, let's allow progression to more steps as they are developed
+      // For now, allow Step 1 (Review) and Step 2 (Exam Data)
+      if (s === 1) return true
+      if (s === 2) return true
+      return true
+    }
+
     if (s === 0) return !!state.patient
     if (s === 1) {
       if (!state.serviceType || !state.paymentType || !state.procedureId || !state.procedureCode) return false
@@ -164,7 +181,8 @@ export function AttendanceCadastroModal({
 
   const next = () => {
     if (!canAdvance) return
-    if (step === 3) setShowReview(true)
+    const maxStep = isLab ? STEPS_LAB.length - 1 : 3
+    if (step === maxStep) setShowReview(true)
     else setStep(step + 1)
   }
   const prev = () => {
@@ -438,7 +456,7 @@ function ReviewPanel({ state, unitName, guicheName, ticketCode }: { state: Cadas
         </h3>
         <div className="border-t border-border" />
         <dl className="space-y-2 text-sm">
-          <Row label="👤 Paciente" value={`${state.patient?.fullName} ${state.patient?.age ? `(${state.patient.age} anos)` : ''}`} />
+          <Row label="👤 Paciente" value={`${state.tempPatient?.fullName || state.patient?.fullName} ${state.tempPatient?.age || state.patient?.age ? `(${state.tempPatient?.age || state.patient?.age} anos)` : ''}`} />
           {ticketCode && <Row label="🎫 Ficha" value={`${ticketCode}${guicheName ? ` · ${guicheName}` : ''}${unitName ? ` · ${unitName}` : ''}`} />}
           <Row label="📋 Tipo" value={state.serviceType === 'consultation' ? 'Consulta' : state.serviceType === 'exam' ? 'Exame' : 'Procedimento'} />
           {state.doctorName && <Row label="👨‍⚕️ Médico" value={`${state.doctorName}${state.specialty ? ` · ${state.specialty}` : ''}`} />}
@@ -449,9 +467,19 @@ function ReviewPanel({ state, unitName, guicheName, ticketCode }: { state: Cadas
           {state.authorizationCode && (
             <Row label="🔑 Autorização" value={`${state.authorizationCode}${state.authorizationExpiry ? ` · Válida até ${state.authorizationExpiry}` : ''}`} />
           )}
+          {state.weight && <Row label="⚖️ Peso" value={`${state.weight} kg`} />}
+          {state.height && <Row label="📏 Altura" value={`${state.height} m`} />}
+          {state.isUrgent && <Row label="🚨 Urgência" value="Sim" />}
+          {state.hasFever && <Row label="🌡️ Febre" value="Sim" />}
+          {state.fastingSince && <Row label="🥣 Jejum" value={state.fastingSince} />}
           <Row label="📎 Documentos" value={`${state.attachments.length} anexado(s)${requiredCount ? ` · ${requiredCount} obrigatório(s)` : ''}`} />
           <Row label="💰 Forma de pagamento" value={state.paymentType === 'convenio' ? 'Convênio' : state.paymentType === 'private' ? `Particular${state.privateValue ? ` · R$ ${state.privateValue.toFixed(2)}` : ''}` : 'Cortesia'} />
         </dl>
+        {state.observation && (
+          <div className="rounded-md bg-muted p-3 text-xs italic">
+            " {state.observation} "
+          </div>
+        )}
         {state.attachmentOverrideReason && (
           <div className="rounded-md bg-amber-50 border border-amber-200 p-3 text-xs text-amber-800">
             ⚠️ Documentos obrigatórios não anexados. Justificativa: {state.attachmentOverrideReason}
@@ -464,9 +492,10 @@ function ReviewPanel({ state, unitName, guicheName, ticketCode }: { state: Cadas
 
 function Row({ label, value }: { label: string; value: string }) {
   return (
-    <div className="flex gap-2">
-      <dt className="font-medium text-muted-foreground w-44 shrink-0">{label}:</dt>
-      <dd className="text-foreground">{value}</dd>
+    <div className="flex justify-between py-1 border-b border-border/50 last:border-0">
+      <dt className="text-muted-foreground">{label}</dt>
+      <dd className="font-semibold text-foreground text-right">{value}</dd>
     </div>
   )
 }
+

@@ -40,25 +40,48 @@ export function LabStep1PatientReview({ state, update }: Props) {
           <div className="md:col-span-3 grid grid-cols-2 md:grid-cols-3 gap-4">
             <div className="space-y-1">
               <Label className="text-xs uppercase text-muted-foreground">Nome</Label>
-              <Input defaultValue={patient.fullName} bs-size="sm" />
+              <Input 
+                value={state.tempPatient?.fullName || patient.fullName} 
+                onChange={(e) => update({ tempPatient: { ...patient, ...state.tempPatient, fullName: e.target.value } })}
+                className="h-9"
+              />
             </div>
             <div className="space-y-1">
               <Label className="text-xs uppercase text-muted-foreground">Nome Social</Label>
-              <Input placeholder="___" />
+              <Input 
+                placeholder="___" 
+                value={state.tempPatient?.socialName || ""} 
+                onChange={(e) => update({ tempPatient: { ...patient, ...state.tempPatient, socialName: e.target.value } })}
+                className="h-9"
+              />
             </div>
             <div className="space-y-1">
               <Label className="text-xs uppercase text-muted-foreground">Nascimento</Label>
-              <Input type="date" defaultValue={patient.birthDate} />
+              <Input 
+                type="date" 
+                value={state.tempPatient?.birthDate || patient.birthDate} 
+                onChange={(e) => update({ tempPatient: { ...patient, ...state.tempPatient, birthDate: e.target.value } })}
+                className="h-9"
+              />
             </div>
             <div className="space-y-1">
               <Label className="text-xs uppercase text-muted-foreground">CPF</Label>
-              <Input defaultValue={patient.cpf} />
+              <Input 
+                value={state.tempPatient?.cpf || patient.cpf} 
+                onChange={(e) => update({ tempPatient: { ...patient, ...state.tempPatient, cpf: e.target.value } })}
+                className="h-9"
+              />
             </div>
             <div className="space-y-1">
               <Label className="text-xs uppercase text-muted-foreground">Sexo</Label>
-              <select className="w-full rounded-md border border-input bg-background px-3 py-1 text-sm">
+              <select 
+                className="w-full h-9 rounded-md border border-input bg-background px-3 py-1 text-sm"
+                value={state.tempPatient?.gender || patient.gender || "masculino"}
+                onChange={(e) => update({ tempPatient: { ...patient, ...state.tempPatient, gender: e.target.value } })}
+              >
                 <option value="masculino">Masculino</option>
                 <option value="feminino">Feminino</option>
+                <option value="outro">Outro</option>
               </select>
             </div>
           </div>
