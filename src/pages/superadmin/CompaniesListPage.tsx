@@ -142,15 +142,14 @@ export default function CompaniesListPage() {
     }
   }
 
-  // Merge mock + real, dedup by cnpj
+  // Show real DB companies, if empty fallback to valid mocks
   const allCompanies = useMemo(() => {
-    const merged = [...MOCK_COMPANIES]
-    for (const dc of dbCompanies) {
-      if (!merged.some((m) => m.cnpj === dc.cnpj)) {
-        merged.push(dc)
-      }
+    // Only show real companies from DB if they exist
+    if (dbCompanies.length > 0) {
+      return dbCompanies;
     }
-    return merged
+    // Fallback to valid mocks if DB is empty
+    return MOCK_COMPANIES;
   }, [dbCompanies])
 
   const filtered = useMemo(() => {
