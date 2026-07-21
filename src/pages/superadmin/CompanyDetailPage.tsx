@@ -269,7 +269,7 @@ export default function CompanyDetailPage() {
       {activeTab === 'settings' && (
         <div className="space-y-6">
           <div className="rounded-2xl border border-border bg-card p-6 shadow-[0_4px_24px_rgba(0,0,0,0.06)] space-y-6">
-            <h3 className="text-sm font-semibold text-foreground uppercase tracking-wider">Módulos do Sistema (Ativação)</h3>
+            <h3 className="text-sm font-semibold text-foreground uppercase tracking-wider">MÓDULOS DO SISTEMA (ATIVAÇÃO)</h3>
             <div className="space-y-4 divide-y divide-border">
               <div className="pt-0 flex items-center justify-between">
                 <div>
