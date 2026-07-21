@@ -10,18 +10,34 @@ export function LabStep2ExamData({ state, update }: any) {
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         <div className="space-y-1">
           <Label className="text-xs">Peso (kg)</Label>
-          <Input placeholder="___" />
+          <Input 
+            placeholder="___" 
+            value={state.weight || ""} 
+            onChange={(e) => update({ weight: e.target.value })}
+          />
         </div>
         <div className="space-y-1">
           <Label className="text-xs">Altura (m)</Label>
-          <Input placeholder="___" />
+          <Input 
+            placeholder="___" 
+            value={state.height || ""} 
+            onChange={(e) => update({ height: e.target.value })}
+          />
         </div>
         <div className="flex items-center gap-2 pt-6">
-          <Checkbox id="urgencia" />
+          <Checkbox 
+            id="urgencia" 
+            checked={state.isUrgent}
+            onCheckedChange={(checked) => update({ isUrgent: !!checked })}
+          />
           <Label htmlFor="urgencia">Urgência</Label>
         </div>
         <div className="flex items-center gap-2 pt-6">
-          <Checkbox id="febre" />
+          <Checkbox 
+            id="febre" 
+            checked={state.hasFever}
+            onCheckedChange={(checked) => update({ hasFever: !!checked })}
+          />
           <Label htmlFor="febre">Febre</Label>
         </div>
       </div>
@@ -29,14 +45,22 @@ export function LabStep2ExamData({ state, update }: any) {
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div className="space-y-1">
           <Label className="text-xs">Jejum Desde</Label>
-          <select className="w-full rounded-md border border-input bg-background px-3 py-1.5 text-sm">
+          <select 
+            className="w-full rounded-md border border-input bg-background px-3 py-1.5 text-sm"
+            value={state.fastingSince || "Ontem"}
+            onChange={(e) => update({ fastingSince: e.target.value })}
+          >
             <option>Ontem</option>
             <option>Hoje</option>
           </select>
         </div>
         <div className="space-y-1">
           <Label className="text-xs">Local de Entrega</Label>
-          <select className="w-full rounded-md border border-input bg-background px-3 py-1.5 text-sm">
+          <select 
+            className="w-full rounded-md border border-input bg-background px-3 py-1.5 text-sm"
+            value={state.deliveryLocation || "INTERNET/LOCAL DE CADASTRO"}
+            onChange={(e) => update({ deliveryLocation: e.target.value })}
+          >
             <option>INTERNET/LOCAL DE CADASTRO</option>
           </select>
         </div>
@@ -44,7 +68,13 @@ export function LabStep2ExamData({ state, update }: any) {
 
       <div className="space-y-2">
         <Label className="text-xs">Observação do Atendimento</Label>
-        <Textarea placeholder="Observações..." className="resize-none" maxLength={255} />
+        <Textarea 
+          placeholder="Observações..." 
+          className="resize-none" 
+          maxLength={255} 
+          value={state.observation || ""}
+          onChange={(e) => update({ observation: e.target.value })}
+        />
       </div>
     </div>
   );
