@@ -181,29 +181,96 @@ export function LabStep1PatientReview({ state, update }: Props) {
 
         {activeTab === 'convenios' && (
           <div className="space-y-6">
-            <div className="flex items-center gap-2 border-b border-border pb-3">
-              <ShieldCheck className="h-5 w-5 text-primary" />
-              <h3 className="text-sm font-bold uppercase tracking-wider">Convênios Vinculados</h3>
+            <div className="flex items-center justify-between border-b border-border pb-3">
+              <div className="flex items-center gap-2">
+                <ShieldCheck className="h-5 w-5 text-primary" />
+                <h3 className="text-sm font-bold uppercase tracking-wider">Convênios Vinculados</h3>
+              </div>
+              <Button size="sm" className="h-8 gap-1.5"><Plus className="h-3.5 w-3.5" /> Adicionar Convênio</Button>
             </div>
-            {mergedPatient.convenios?.length > 0 ? (
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {mergedPatient.convenios.map((c: any, i: number) => (
-                  <div key={i} className="p-4 rounded-xl border border-border bg-muted/20 relative group overflow-hidden">
-                    <div className="absolute left-0 top-0 bottom-0 w-1 gradient-bg" />
-                    <h4 className="font-bold text-sm mb-1">{c.convenioName}</h4>
-                    <p className="text-xs text-muted-foreground">Plano: {c.planName || 'Padrão'}</p>
-                    <p className="text-xs text-muted-foreground mt-2">Nº Cartão: <span className="font-mono">{c.cardNumber}</span></p>
-                    {c.cardExpiry && <p className="text-[10px] text-muted-foreground mt-1">Validade: {c.cardExpiry}</p>}
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="space-y-4">
+                <h4 className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Informações do Convênio</h4>
+                <div className="space-y-4 p-4 rounded-xl border border-border bg-muted/5">
+                  <Field label="Plano Principal">
+                    <select 
+                      className="flex h-10 w-full rounded-md border border-input bg-background px-3 text-sm"
+                      value={mergedPatient.convenios?.[0]?.convenioId || ""}
+                      onChange={(e) => {
+                        const selected = activeConvenios.find(c => c.id === e.target.value);
+                        handleUpdate({ 
+                          convenios: [{ 
+                            convenioId: e.target.value, 
+                            convenioName: selected?.name,
+                            planName: 'Padrão'
+                          }] 
+                        });
+                      }}
+                    >
+                      <option value="">Particular</option>
+                      {activeConvenios.map(c => (
+                        <option key={c.id} value={c.id}>{c.name}</option>
+                      ))}
+                    </select>
+                  </Field>
+                  <div className="grid grid-cols-2 gap-4">
+                    <Field label="Nº Cartão">
+                      <Input 
+                        value={mergedPatient.convenios?.[0]?.cardNumber || ""} 
+                        onChange={(e) => {
+                          const convs = [...(mergedPatient.convenios || [])];
+                          if (convs[0]) convs[0].cardNumber = e.target.value;
+                          else convs[0] = { cardNumber: e.target.value };
+                          handleUpdate({ convenios: convs });
+                        }}
+                        placeholder="0000 0000 0000 0000"
+                      />
+                    </Field>
+                    <Field label="Validade">
+                      <Input 
+                        type="date"
+                        value={mergedPatient.convenios?.[0]?.cardExpiry || ""} 
+                        onChange={(e) => {
+                          const convs = [...(mergedPatient.convenios || [])];
+                          if (convs[0]) convs[0].cardExpiry = e.target.value;
+                          else convs[0] = { cardExpiry: e.target.value };
+                          handleUpdate({ convenios: convs });
+                        }}
+                      />
+                    </Field>
                   </div>
-                ))}
+                </div>
               </div>
-            ) : (
-              <div className="py-12 text-center border-2 border-dashed border-border rounded-2xl bg-muted/10">
-                <ShieldCheck className="h-10 w-10 text-muted-foreground/30 mx-auto mb-3" />
-                <p className="text-sm text-muted-foreground">Nenhum convênio cadastrado para este paciente.</p>
-                <Button variant="outline" size="sm" className="mt-4">Adicionar Convênio</Button>
+
+              <div className="space-y-4">
+                <h4 className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Lista de Convênios</h4>
+                <div className="space-y-3">
+                  {mergedPatient.convenios?.length > 0 ? (
+                    mergedPatient.convenios.map((c: any, i: number) => (
+                      <div key={i} className="p-4 rounded-xl border border-border bg-card relative group overflow-hidden shadow-sm hover:shadow-md transition-all">
+                        <div className="absolute left-0 top-0 bottom-0 w-1 gradient-bg" />
+                        <div className="flex justify-between items-start">
+                          <div>
+                            <h4 className="font-bold text-sm mb-1">{c.convenioName || 'Particular'}</h4>
+                            <p className="text-xs text-muted-foreground">Plano: {c.planName || 'Padrão'}</p>
+                            <p className="text-xs text-muted-foreground mt-2">Nº Cartão: <span className="font-mono">{c.cardNumber || '—'}</span></p>
+                          </div>
+                          <Button variant="ghost" size="sm" className="h-8 w-8 p-0 text-rose-500 opacity-0 group-hover:opacity-100 transition-opacity">
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      </div>
+                    ))
+                  ) : (
+                    <div className="py-8 text-center border-2 border-dashed border-border rounded-2xl bg-muted/10">
+                      <ShieldCheck className="h-8 w-8 text-muted-foreground/20 mx-auto mb-2" />
+                      <p className="text-xs text-muted-foreground italic">Nenhum convênio cadastrado.</p>
+                    </div>
+                  )}
+                </div>
               </div>
-            )}
+            </div>
           </div>
         )}
 
