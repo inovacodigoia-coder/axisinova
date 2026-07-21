@@ -150,7 +150,7 @@ export function AttendanceCadastroModal({
     setState(s => ({ ...s, ...patch }))
   }, [])
 
-  const hasUnsavedData = !!(state.patient || state.serviceType || state.attachments.length)
+  const hasUnsavedData = !!(state.patient || state.serviceType || state.attachments.length || (state.serviceType === 'exam' && state.examMode !== 'ask'))
 
   const handleClose = () => {
     if (hasUnsavedData) {
@@ -274,6 +274,8 @@ export function AttendanceCadastroModal({
       attachmentOverrideReason: state.attachmentOverrideReason,
       scheduledAppointmentId: state.scheduledAppointmentId,
       status: state.procedureRequiresAuth && state.authorizationCode ? 'authorized' : 'open',
+      examMode: state.serviceType === 'exam' ? (state.examMode === 'ask' ? undefined : state.examMode) : undefined,
+
     })
     toast.success(`Atendimento registrado · Pedido: ${order.orderNumber}`)
     if (ticketId) clearDraft(ticketId)
@@ -539,7 +541,11 @@ function ReviewPanel({ state, unitName, guicheName, ticketCode }: { state: Cadas
           <Row label="👤 Paciente" value={`${state.tempPatient?.fullName || state.patient?.fullName} ${state.tempPatient?.age || state.patient?.age ? `(${state.tempPatient?.age || state.patient?.age} anos)` : ''}`} />
           {ticketCode && <Row label="🎫 Ficha" value={`${ticketCode}${guicheName ? ` · ${guicheName}` : ''}${unitName ? ` · ${unitName}` : ''}`} />}
           <Row label="📋 Tipo" value={state.serviceType === 'consultation' ? 'Consulta' : state.serviceType === 'exam' ? 'Exame' : 'Procedimento'} />
+          {state.serviceType === 'exam' && state.examMode && (
+            <Row label="🏢 Local Realização" value={state.examMode === 'clinic' ? 'Clínica' : 'Laboratório'} />
+          )}
           {state.doctorName && <Row label="👨‍⚕️ Médico" value={`${state.doctorName}${state.specialty ? ` · ${state.specialty}` : ''}`} />}
+
           {state.procedureName && <Row label="💊 Procedimento" value={`${state.procedureName} · TUSS: ${state.procedureCode}`} />}
           {state.paymentType === 'convenio' && state.convenioName && (
             <Row label="💳 Convênio" value={`${state.convenioName} · Nº ${state.cardNumber}`} />
@@ -552,6 +558,8 @@ function ReviewPanel({ state, unitName, guicheName, ticketCode }: { state: Cadas
           {state.isUrgent && <Row label="🚨 Urgência" value="Sim" />}
           {state.hasFever && <Row label="🌡️ Febre" value="Sim" />}
           {state.fastingSince && <Row label="🥣 Jejum" value={state.fastingSince} />}
+          {state.examMode && state.examMode !== 'ask' && <Row label="🏢 Local" value={state.examMode === 'clinic' ? 'Clínica' : 'Laboratório'} />}
+
           <Row label="📎 Documentos" value={`${state.attachments.length} anexado(s)${requiredCount ? ` · ${requiredCount} obrigatório(s)` : ''}`} />
           <Row label="💰 Forma de pagamento" value={state.paymentType === 'convenio' ? 'Convênio' : state.paymentType === 'private' ? `Particular${state.privateValue ? ` · R$ ${state.privateValue.toFixed(2)}` : ''}` : 'Cortesia'} />
         </dl>
