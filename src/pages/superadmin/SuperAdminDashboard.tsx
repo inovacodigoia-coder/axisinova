@@ -10,6 +10,7 @@ export default function SuperAdminDashboard() {
   const { metrics, monthlySignups, planDistribution, alerts } = useSuperAdminStats()
   const navigate = useNavigate()
   const recentCompanies = [...MOCK_COMPANIES].sort((a, b) => b.criadoEm.localeCompare(a.criadoEm)).slice(0, 5)
+  // In a real scenario, we would also fetch recent companies from the DB here if any exist.
 
   return (
     <div className="space-y-6">
