@@ -136,22 +136,48 @@ export function LabStep3GuidesProcedures({ state, update }: Props) {
     toast.success("Exame removido");
   };
 
+  const removeGuide = (id: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (guides.length <= 1) {
+      toast.error("Não é possível remover a última guia");
+      return;
+    }
+
+    const newGuides = guides.filter(g => g.id !== id);
+    setGuides(newGuides);
+    update({ guides: newGuides });
+    
+    if (activeGuideId === id) {
+      setActiveGuideId(newGuides[0].id);
+    }
+    toast.success("Guia removida");
+  };
+
   return (
     <div className="p-6 max-w-7xl mx-auto space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
       
       {/* Tabs */}
       <div className="flex items-center gap-2 border-b border-border pb-1">
         {guides.map((g) => (
-          <button
-            key={g.id}
-            onClick={() => setActiveGuideId(g.id)}
-            className={cn(
-              "px-4 py-2 text-xs font-bold rounded-t-lg transition-all border border-b-0",
-              activeGuideId === g.id ? "bg-white border-border text-primary" : "bg-muted text-muted-foreground border-transparent"
+          <div key={g.id} className="relative group">
+            <button
+              onClick={() => setActiveGuideId(g.id)}
+              className={cn(
+                "px-4 py-2 text-xs font-bold rounded-t-lg transition-all border border-b-0 flex items-center gap-2 pr-8",
+                activeGuideId === g.id ? "bg-white border-border text-primary" : "bg-muted text-muted-foreground border-transparent"
+              )}
+            >
+              {g.name}
+            </button>
+            {guides.length > 1 && (
+              <button
+                onClick={(e) => removeGuide(g.id, e)}
+                className="absolute right-1 top-1/2 -translate-y-1/2 p-1 text-muted-foreground hover:text-rose-500 opacity-0 group-hover:opacity-100 transition-opacity"
+              >
+                <Trash2 className="h-3 w-3" />
+              </button>
             )}
-          >
-            {g.name}
-          </button>
+          </div>
         ))}
         <Button variant="ghost" size="sm" onClick={addGuide} className="h-8 w-8 p-0"><PlusCircle className="h-4 w-4" /></Button>
       </div>
@@ -163,17 +189,18 @@ export function LabStep3GuidesProcedures({ state, update }: Props) {
              <select 
                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
                value={activeGuide?.plan} 
-               onChange={(e) => {
-                 const selectedPlan = e.target.value;
-                 const convenio = activeConvenios.find(c => c.name === selectedPlan);
-                 const newGuides = guides.map(g => g.id === activeGuideId ? { 
-                   ...g, 
-                   plan: selectedPlan,
-                   operator: convenio?.operator || selectedPlan // If not found, fallback to plan name
-                 } : g);
-                 setGuides(newGuides);
-                 update({ guides: newGuides });
-               }}
+                onChange={(e) => {
+                  const selectedPlan = e.target.value;
+                  const convenio = activeConvenios.find(c => c.name === selectedPlan);
+                  const newGuides = guides.map(g => g.id === activeGuideId ? { 
+                    ...g, 
+                    plan: selectedPlan,
+                    name: selectedPlan === 'PARTICULAR' ? `Guia ${g.id}` : selectedPlan,
+                    operator: convenio?.operator || selectedPlan // If not found, fallback to plan name
+                  } : g);
+                  setGuides(newGuides);
+                  update({ guides: newGuides });
+                }}
              >
                <option value="PARTICULAR">Particular</option>
                {activeConvenios.map(c => (
