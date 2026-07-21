@@ -173,7 +173,15 @@ function GeneralInfoSection({ isEditing }: { isEditing: boolean }) {
                 <option key={unit.name} value={unit.name}>{unit.name}</option>
               ))}
             </select>
-            <Button variant="outline" size="icon" className="shrink-0" onClick={() => toast.info("Funcionalidade para cadastrar novos materiais será implementada em breve.")}><Plus className="h-4 w-4" /></Button>
+            <Button 
+              variant="outline" 
+              size="icon" 
+              className="shrink-0" 
+              onClick={() => navigate('/app/configuracoes/laboratorio?tab=units')}
+              title="Gerenciar Unidades de Medida"
+            >
+              <Plus className="h-4 w-4" />
+            </Button>
           </div>
         </div>
         <div className="space-y-2">
