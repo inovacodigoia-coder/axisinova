@@ -274,6 +274,8 @@ export function AttendanceCadastroModal({
       attachmentOverrideReason: state.attachmentOverrideReason,
       scheduledAppointmentId: state.scheduledAppointmentId,
       status: state.procedureRequiresAuth && state.authorizationCode ? 'authorized' : 'open',
+      examMode: state.serviceType === 'exam' ? (state.examMode === 'ask' ? undefined : state.examMode) : undefined,
+
     })
     toast.success(`Atendimento registrado · Pedido: ${order.orderNumber}`)
     if (ticketId) clearDraft(ticketId)
