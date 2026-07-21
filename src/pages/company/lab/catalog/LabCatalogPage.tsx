@@ -29,31 +29,18 @@ export default function LabCatalogPage() {
   const [examToDelete, setExamToDelete] = useState<string | null>(null)
 
   const exams = useMemo(() => {
-    // If we have real exams from the database, use them
+    // Show only real exams from the database
     const labExams = registeredExams.filter(e => e.type === 'lab');
     
-    if (labExams.length > 0) {
-      return labExams.map(e => ({
-        id: e.id,
-        code: e.internalCode || e.tussCode || 'S/C',
-        name: e.name,
-        material: 'Soro', // Padrão se não houver no cadastro
-        workbench: 'Bioquímica',
-        status: e.isActive ? 'active' : 'inactive'
-      }));
-    }
-    
-    // Fallback to mock data only if not loading and no real data exists
-    if (isLoading) return [];
-
-    return [
-      { id: '1', code: 'VITD', name: '25-Hidroxivitamina D', material: 'Soro', workbench: 'Bioquímica', status: 'active' },
-      { id: '2', code: 'ACU', name: 'Ácido Úrico', material: 'Soro', workbench: 'Bioquímica', status: 'active' },
-      { id: '3', code: 'HEM', name: 'Hemograma Completo', material: 'Sangue Total EDTA', workbench: 'Hematologia', status: 'active' },
-      { id: '4', code: 'GL', name: 'Glicose', material: 'Soro/Plasma Fluoretado', workbench: 'Bioquímica', status: 'active' },
-      { id: '5', code: 'TSH', name: 'Hormônio Tireoestimulante', material: 'Soro', workbench: 'Imunologia', status: 'active' },
-    ];
-  }, [registeredExams, isLoading])
+    return labExams.map(e => ({
+      id: e.id,
+      code: e.internalCode || e.tussCode || 'S/C',
+      name: e.name,
+      material: 'Soro', // Padrão se não houver no cadastro
+      workbench: 'Bioquímica',
+      status: e.isActive ? 'active' : 'inactive'
+    }));
+  }, [registeredExams])
 
   const filteredExams = exams.filter(e => 
     e.name.toLowerCase().includes(search.toLowerCase()) || 
