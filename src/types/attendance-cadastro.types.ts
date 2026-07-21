@@ -32,6 +32,8 @@ export interface AttendanceOrder {
   originId?: string
   originCode?: number
   protocol?: string
+  examMode?: 'clinic' | 'lab'
+
 
   serviceType: AttendanceServiceType
   paymentType: AttendancePaymentType
