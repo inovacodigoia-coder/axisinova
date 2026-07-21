@@ -35,6 +35,7 @@ interface AttendanceCadastroModalProps {
 
 export interface CadastroState {
   patient?: Patient
+  tempPatient?: Partial<Patient>
   scheduledAppointmentId?: string
   serviceType?: AttendanceServiceType
   paymentType?: AttendancePaymentType
@@ -69,6 +70,13 @@ export interface CadastroState {
   originId?: string
   originCode?: number
   protocol?: string
+  weight?: string
+  height?: string
+  isUrgent?: boolean
+  hasFever?: boolean
+  fastingSince?: string
+  deliveryLocation?: string
+  observation?: string
 }
 
 const STEPS_CLINIC = ['Paciente', 'Atendimento', 'Autorização', 'Anexos'] as const
