@@ -39,6 +39,7 @@ export default function LabCatalogFormPage() {
   const { addExam, updateExam } = useRegisters()
   const [examData, setExamData] = useState({
     name: '',
+    internalCode: '',
     type: 'lab' as 'clinical' | 'lab',
     tussCode: '',
     isActive: true,
@@ -54,6 +55,7 @@ export default function LabCatalogFormPage() {
       // Por enquanto, simulamos com os dados que já estavam no mock/default
       setExamData({
         name: "25-Hidroxivitamina D",
+        internalCode: "VITD001",
         type: 'lab',
         tussCode: "VITD",
         isActive: true,
@@ -180,7 +182,7 @@ function GeneralInfoSection({ isEditing, data, onChange }: { isEditing: boolean,
 
   return (
     <Card className="p-8 space-y-8">
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         <div className="space-y-4 lg:col-span-2">
           <Label className="text-sm font-bold uppercase tracking-wider text-muted-foreground">Nome do Exame *</Label>
           <Input 
@@ -188,6 +190,15 @@ function GeneralInfoSection({ isEditing, data, onChange }: { isEditing: boolean,
             value={data.name}
             onChange={(e) => onChange({ name: e.target.value })}
             className="h-11 text-base font-medium focus:ring-primary/20 transition-all shadow-sm"
+          />
+        </div>
+        <div className="space-y-4">
+          <Label className="text-sm font-bold uppercase tracking-wider text-muted-foreground">Código *</Label>
+          <Input 
+            placeholder="Ex: GLI001" 
+            value={data.internalCode}
+            onChange={(e) => onChange({ internalCode: e.target.value })}
+            className="h-11 text-base font-medium focus:ring-primary/20 transition-all shadow-sm uppercase"
           />
         </div>
         <div className="space-y-4">
