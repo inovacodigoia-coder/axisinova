@@ -36,11 +36,34 @@ export function QuickPatientForm({ onCreate }: Props) {
   })
   const set = <K extends keyof typeof f>(k: K, v: string) => setF(s => ({ ...s, [k]: v }))
 
-  const isValid = f.fullName.trim().split(/\s+/).length >= 2 && f.birthDate.length === 10 && f.motherName.trim() && f.phone1.replace(/\D/g, '').length >= 10
+  const isValid = f.fullName.trim().split(/\s+/).length >= 2 && 
+    f.birthDate.length === 10 && 
+    f.motherName.trim() && 
+    f.phone1.replace(/\D/g, '').length >= 10 &&
+    f.cpf.replace(/\D/g, '').length === 11
 
   const submit = async () => {
-    if (!isValid) { toast.error('Preencha os campos obrigatórios'); return }
+    if (!isValid) { toast.error('Preencha os campos obrigatórios (incluindo CPF)'); return }
     if (!companyId) { toast.error('Empresa não identificada'); return }
+
+    // Check for duplicate CPF
+    try {
+      const { data: existing, error: checkError } = await supabase
+        .from('patients')
+        .select('id')
+        .eq('company_id', companyId)
+        .eq('cpf', f.cpf)
+        .maybeSingle()
+
+      if (checkError) throw checkError
+      if (existing) {
+        toast.error('Já existe um paciente cadastrado com este CPF')
+        return
+      }
+    } catch (e) {
+      console.warn('Duplicate CPF check error', e)
+    }
+
     setSaving(true)
     const [dd, mm, yyyy] = f.birthDate.split('/')
     const birthIso = `${yyyy}-${mm}-${dd}`
@@ -99,7 +122,7 @@ export function QuickPatientForm({ onCreate }: Props) {
           <input value={f.phone1} onChange={e => set('phone1', maskPhone(e.target.value))} placeholder="(00) 00000-0000"
             className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm" />
         </Field>
-        <Field label="CPF">
+        <Field label="CPF *">
           <input value={f.cpf} onChange={e => set('cpf', maskCpf(e.target.value))} placeholder="000.000.000-00"
             className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm" />
         </Field>
