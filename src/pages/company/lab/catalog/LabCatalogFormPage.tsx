@@ -319,7 +319,7 @@ function GeneralInfoSection({ isEditing, data, onChange }: { isEditing: boolean,
           <div className="flex items-center gap-2 mb-1">
             <Label>Prazo de Entrega (dias)</Label>
             <Switch 
-              className="h-4 w-7 [&>span]:h-3 [&>span]:w-3"
+              className="h-4 w-7 [&>span]:h-3 [&>span]:w-3 data-[state=checked]:bg-primary data-[state=unchecked]:bg-red-500"
               checked={data.showDeadline} 
               onCheckedChange={(val) => onChange({ showDeadline: val })} 
             />
