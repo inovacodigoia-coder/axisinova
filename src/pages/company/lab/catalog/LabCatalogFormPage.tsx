@@ -27,6 +27,8 @@ import { useNavigate, useParams } from 'react-router-dom'
 import { cn } from '@/lib/utils'
 import { toast } from 'sonner'
 import { Badge } from '@/components/ui/badge'
+import { useRegisters } from '@/context/RegistersContext'
+
 
 export default function LabCatalogFormPage() {
   const navigate = useNavigate()
@@ -34,9 +36,54 @@ export default function LabCatalogFormPage() {
   const isEditing = !!id
   const [activeTab, setActiveTab] = useState('general')
 
-  const handleSave = () => {
-    toast.success(isEditing ? 'Exame atualizado!' : 'Exame cadastrado!')
-    navigate('/app/cadastros/catalogo')
+  const { addExam, updateExam } = useRegisters()
+  const [examData, setExamData] = useState({
+    name: '',
+    type: 'lab' as 'clinical' | 'lab',
+    tussCode: '',
+    isActive: true,
+    preparationInstructions: '',
+    estimatedDurationMinutes: 30,
+    resultDeadlineDays: 1,
+    requiresAuthorization: false,
+  })
+
+  useEffect(() => {
+    if (isEditing) {
+      // Em uma implementação real, buscaríamos os dados do exame pelo ID
+      // Por enquanto, simulamos com os dados que já estavam no mock/default
+      setExamData({
+        name: "25-Hidroxivitamina D",
+        type: 'lab',
+        tussCode: "VITD",
+        isActive: true,
+        preparationInstructions: "Jejum de 8 horas.",
+        estimatedDurationMinutes: 30,
+        resultDeadlineDays: 1,
+        requiresAuthorization: false,
+      })
+    }
+  }, [isEditing, id])
+
+  const handleSave = async () => {
+    if (!examData.name) {
+      toast.error('O nome do exame é obrigatório')
+      return
+    }
+
+    try {
+      if (isEditing) {
+        await updateExam({ ...examData, id: id! } as any)
+        toast.success('Exame atualizado!')
+      } else {
+        await addExam(examData as any)
+        toast.success('Exame cadastrado!')
+      }
+      navigate('/app/cadastros/catalogo')
+    } catch (error) {
+      console.error('Erro ao salvar exame:', error)
+      toast.error('Erro ao salvar o exame')
+    }
   }
 
   return (
@@ -83,7 +130,11 @@ export default function LabCatalogFormPage() {
         </TabsList>
 
         <TabsContent value="general">
-          <GeneralInfoSection isEditing={isEditing} />
+          <GeneralInfoSection 
+            isEditing={isEditing} 
+            data={examData} 
+            onChange={(newData) => setExamData(prev => ({ ...prev, ...newData }))} 
+          />
         </TabsContent>
         <TabsContent value="parameters">
           <ParametersSection />
@@ -102,7 +153,7 @@ export default function LabCatalogFormPage() {
   )
 }
 
-function GeneralInfoSection({ isEditing }: { isEditing: boolean }) {
+function GeneralInfoSection({ isEditing, data, onChange }: { isEditing: boolean, data: any, onChange: (val: any) => void }) {
   const navigate = useNavigate()
   const materials = ['Sangue Total', 'Soro', 'Plasma', 'Urina', 'Fezes', 'Secreção', 'Líquor', 'Swab']
   const [selectedMaterials, setSelectedMaterials] = useState<string[]>(isEditing ? ['Soro'] : [])
@@ -130,7 +181,8 @@ function GeneralInfoSection({ isEditing }: { isEditing: boolean }) {
           <Label className="text-sm font-bold uppercase tracking-wider text-muted-foreground">Nome do Exame *</Label>
           <Input 
             placeholder="Ex: Hemograma Completo" 
-            defaultValue={isEditing ? "25-Hidroxivitamina D" : ""} 
+            value={data.name}
+            onChange={(e) => onChange({ name: e.target.value })}
             className="h-11 text-base font-medium focus:ring-primary/20 transition-all shadow-sm"
           />
         </div>
@@ -139,33 +191,39 @@ function GeneralInfoSection({ isEditing }: { isEditing: boolean }) {
           <div className="flex gap-4 p-1.5 bg-muted/20 rounded-xl border border-border/50">
             <button
               type="button"
+              onClick={() => onChange({ type: 'clinical' })}
               className={cn(
                 "flex-1 flex items-center justify-center gap-2 py-2 text-xs font-bold rounded-lg transition-all",
                 "hover:bg-background/50",
                 "data-[active=true]:bg-background data-[active=true]:text-primary data-[active=true]:shadow-sm data-[active=true]:border-primary/20 border border-transparent"
               )}
-              data-active={false}
+              data-active={data.type === 'clinical'}
             >
-              <div className="h-2 w-2 rounded-full border border-primary/30" />
+              <div className={cn("h-2 w-2 rounded-full border border-primary/30", data.type === 'clinical' && "bg-primary")} />
               CLÍNICA
             </button>
             <button
               type="button"
+              onClick={() => onChange({ type: 'lab' })}
               className={cn(
                 "flex-1 flex items-center justify-center gap-2 py-2 text-xs font-bold rounded-lg transition-all",
                 "hover:bg-background/50",
                 "data-[active=true]:bg-background data-[active=true]:text-primary data-[active=true]:shadow-sm data-[active=true]:border-primary/20 border border-transparent"
               )}
-              data-active={true}
+              data-active={data.type === 'lab'}
             >
-              <div className="h-2 w-2 rounded-full bg-primary shadow-[0_0_8px_rgba(var(--primary-rgb),0.5)]" />
+              <div className={cn("h-2 w-2 rounded-full border border-primary/30", data.type === 'lab' && "bg-primary shadow-[0_0_8px_rgba(var(--primary-rgb),0.5)]")} />
               LABORATÓRIO
             </button>
           </div>
         </div>
         <div className="space-y-2">
           <Label>Código TUSS</Label>
-          <Input placeholder="Ex: 40302534" defaultValue={isEditing ? "VITD" : ""} />
+          <Input 
+            placeholder="Ex: 40302534" 
+            value={data.tussCode}
+            onChange={(e) => onChange({ tussCode: e.target.value })}
+          />
         </div>
         <div className="space-y-2">
           <Label>Unidade de Medida</Label>
@@ -195,15 +253,27 @@ function GeneralInfoSection({ isEditing }: { isEditing: boolean }) {
         </div>
         <div className="space-y-2">
           <Label>Duração estimada (min)</Label>
-          <Input type="number" defaultValue={isEditing ? 30 : 30} />
+          <Input 
+            type="number" 
+            value={data.estimatedDurationMinutes}
+            onChange={(e) => onChange({ estimatedDurationMinutes: Number(e.target.value) })}
+          />
         </div>
         <div className="space-y-2">
           <Label>Prazo resultado (dias úteis)</Label>
-          <Input type="number" defaultValue={isEditing ? 1 : 1} />
+          <Input 
+            type="number" 
+            value={data.resultDeadlineDays}
+            onChange={(e) => onChange({ resultDeadlineDays: Number(e.target.value) })}
+          />
         </div>
         <div className="space-y-2">
           <Label>Prazo de Entrega (dias)</Label>
-          <Input type="number" defaultValue={isEditing ? 3 : 0} />
+          <Input 
+            type="number" 
+            value={data.resultDeadlineDays}
+            onChange={(e) => onChange({ resultDeadlineDays: Number(e.target.value) })}
+          />
         </div>
         <div className="space-y-2">
           <Label>Prazo de Entrega (dias)</Label>
@@ -216,7 +286,8 @@ function GeneralInfoSection({ isEditing }: { isEditing: boolean }) {
         <textarea 
           className="w-full h-24 p-3 rounded-lg border bg-background text-sm focus:ring-2 focus:ring-primary/20 outline-none resize-none" 
           placeholder="Orientações enviadas ao paciente (ex: jejum, preparo intestinal)"
-          defaultValue={isEditing ? "Jejum de 8 horas." : ""}
+          value={data.preparationInstructions}
+          onChange={(e) => onChange({ preparationInstructions: e.target.value })}
         />
       </div>
 
