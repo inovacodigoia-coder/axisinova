@@ -116,7 +116,7 @@ export function AttendanceCadastroModal({
     }
   })
 
-  const isLab = state.serviceType === 'exam'
+  const isLab = state.serviceType === 'exam' && state.examMode === 'lab'
   const STEPS = isLab ? STEPS_LAB : STEPS_CLINIC
   const [restorePromptShown, setRestorePromptShown] = useState(false)
 
