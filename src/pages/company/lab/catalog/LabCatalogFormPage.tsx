@@ -631,7 +631,7 @@ function ParametersSection() {
                               <Switch 
                                 checked={param.isMandatory} 
                                 onCheckedChange={(val) => updateParameter(param.id, 'isMandatory', val)}
-                                className="scale-75 shadow-sm border border-border/50"
+                                className="shadow-sm border border-border/50"
                               />
                             </TooltipTrigger>
                             <TooltipContent>
@@ -647,7 +647,7 @@ function ParametersSection() {
                               <Switch 
                                 checked={param.allowNegative} 
                                 onCheckedChange={(val) => updateParameter(param.id, 'allowNegative', val)}
-                                className="scale-75 shadow-sm border border-border/50"
+                                className="shadow-sm border border-border/50"
                               />
                             </TooltipTrigger>
                             <TooltipContent>
@@ -663,7 +663,7 @@ function ParametersSection() {
                               <Switch 
                                 checked={param.isCalculated} 
                                 onCheckedChange={(val) => updateParameter(param.id, 'isCalculated', val)}
-                                className="scale-75 shadow-sm border border-border/50"
+                                className="shadow-sm border border-border/50"
                               />
                             </TooltipTrigger>
                             <TooltipContent>
@@ -679,7 +679,7 @@ function ParametersSection() {
                               <Switch 
                                 checked={param.isHidden} 
                                 onCheckedChange={(val) => updateParameter(param.id, 'isHidden', val)}
-                                className="scale-75 shadow-sm border border-border/50"
+                                className="shadow-sm border border-border/50"
                               />
                             </TooltipTrigger>
                             <TooltipContent>
