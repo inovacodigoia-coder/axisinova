@@ -80,7 +80,7 @@ export default function LabCatalogFormPage() {
         </TabsList>
 
         <TabsContent value="general">
-          <GeneralInfoSection />
+          <GeneralInfoSection isEditing={isEditing} />
         </TabsContent>
         <TabsContent value="parameters">
           <ParametersSection />
@@ -115,26 +115,27 @@ function GeneralInfoSection() {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         <div className="space-y-2 lg:col-span-2">
           <Label>Nome do Exame *</Label>
-          <Input placeholder="Ex: Hemograma Completo" defaultValue="25-Hidroxivitamina D" />
+          <Input placeholder="Ex: Hemograma Completo" defaultValue={isEditing ? "25-Hidroxivitamina D" : ""} />
         </div>
         <div className="space-y-2">
           <Label>Código *</Label>
-          <Input placeholder="Ex: HMG" defaultValue="VITD" />
+          <Input placeholder="Ex: HMG" defaultValue={isEditing ? "VITD" : ""} />
         </div>
         <div className="space-y-2">
           <Label>Unidade de Medida</Label>
           <div className="flex gap-2">
             <select className="flex-1 h-10 px-3 rounded-lg border bg-background text-sm outline-none focus:ring-2 focus:ring-primary/20">
+              <option value="">-- Selecione --</option>
               <option>ng/mL</option>
               <option>mg/dL</option>
               <option>U/L</option>
             </select>
-            <Button variant="outline" size="icon" className="shrink-0"><Plus className="h-4 w-4" /></Button>
+            <Button variant="outline" size="icon" className="shrink-0" onClick={() => toast.info("Funcionalidade para cadastrar novos materiais será implementada em breve.")}><Plus className="h-4 w-4" /></Button>
           </div>
         </div>
         <div className="space-y-2">
           <Label>Prazo de Entrega (dias) *</Label>
-          <Input type="number" defaultValue={1} />
+          <Input type="number" defaultValue={isEditing ? 1 : 0} />
         </div>
         <div className="space-y-2">
           <Label>Bancada *</Label>
