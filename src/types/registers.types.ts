@@ -75,7 +75,8 @@ export interface Exam {
   id: string
   companyId: string
   name: string
-  tussCode?: string
+  tussCode?: string;
+  internalCode?: string;
   type: 'clinical' | 'lab'
   specialtyId?: string
   preparationInstructions?: string
