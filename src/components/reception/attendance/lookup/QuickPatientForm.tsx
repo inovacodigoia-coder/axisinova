@@ -150,11 +150,12 @@ export function QuickPatientForm({ onCreate }: Props) {
                     cpf: data.cpf || undefined,
                     gender: data.gender as any,
                     phone1: data.phone || '',
+                    phone1Type: 'mobile',
                     email: data.email || undefined,
                     status: data.status as any,
                     createdAt: data.created_at,
                     updatedAt: data.updated_at,
-                    convenios: [], // Will be loaded if needed by the caller
+                    convenios: [],
                     clinicalData: { allergies: [], chronicConditions: [], continuousMedications: [] },
                     tags: []
                   }
