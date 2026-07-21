@@ -88,6 +88,7 @@ export interface CadastroState {
   fastingSince?: string
   deliveryLocation?: string
   observation?: string
+  examMode?: 'ask' | 'clinic' | 'lab'
 }
 
 const STEPS_CLINIC = ['Paciente', 'Atendimento', 'Autorização', 'Anexos'] as const
