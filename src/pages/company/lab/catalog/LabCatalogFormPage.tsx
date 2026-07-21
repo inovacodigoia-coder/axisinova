@@ -844,69 +844,28 @@ function ReferenceValuesModal({ parameter, onClose }: { parameter: any, onClose:
 function ReferenceSection() {
   return (
     <Card className="p-8 space-y-8">
-       <div className="flex items-center justify-between">
-          <div>
-            <h3 className="text-lg font-bold">Valores de Referência</h3>
-            <p className="text-xs text-muted-foreground">Configure faixas dinâmicas baseadas em sexo e idade.</p>
+       <div className="flex flex-col gap-4 items-center justify-center py-12 text-center border-2 border-dashed rounded-xl border-muted bg-muted/5">
+          <div className="bg-primary/10 p-4 rounded-full">
+            <Scale className="h-8 w-8 text-primary" />
           </div>
-          <Button size="sm" variant="outline" className="gap-2">
-            <Plus className="h-4 w-4" /> Nova Faixa
+          <div className="space-y-1">
+            <h3 className="text-lg font-bold">Gerenciamento de Valores de Referência</h3>
+            <p className="text-sm text-muted-foreground max-w-md">
+              Os valores de referência agora são configurados individualmente por parâmetro na aba 
+              <span className="font-bold text-primary"> "Parâmetros e Máscara"</span>.
+            </p>
+          </div>
+          <Button 
+            variant="outline" 
+            className="mt-4 gap-2"
+            onClick={() => {
+              const tabList = document.querySelector('[role="tablist"]')
+              const parametersTab = tabList?.querySelector('[value="parameters"]') as HTMLButtonElement
+              parametersTab?.click()
+            }}
+          >
+            Ir para Parâmetros
           </Button>
-       </div>
-
-       <div className="space-y-6">
-         <div className="p-6 border border-border rounded-xl bg-muted/20 space-y-4">
-           <div className="flex items-center justify-between">
-             <div className="flex items-center gap-2">
-               <Badge className="gradient-bg">Vitamina D</Badge>
-               <span className="text-xs text-muted-foreground">ng/mL</span>
-             </div>
-             <Button variant="ghost" size="sm" className="h-8 w-8 p-0 text-red-600"><Trash2 className="h-3.5 w-3.5" /></Button>
-           </div>
-           
-           <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
-             <div className="space-y-1.5">
-               <Label className="text-[10px] font-bold uppercase">Sexo</Label>
-               <select className="w-full h-8 px-2 rounded-md border bg-background text-[11px] outline-none">
-                 <option>Todos</option>
-                 <option>Masculino</option>
-                 <option>Feminino</option>
-               </select>
-             </div>
-             <div className="space-y-1.5">
-               <Label className="text-[10px] font-bold uppercase">Idade De</Label>
-               <div className="flex gap-1">
-                 <Input className="h-8 px-2 text-[11px]" defaultValue={0} />
-                 <select className="h-8 px-1 rounded-md border bg-background text-[10px] outline-none">
-                   <option>Anos</option>
-                   <option>Meses</option>
-                   <option>Dias</option>
-                 </select>
-               </div>
-             </div>
-             <div className="space-y-1.5">
-               <Label className="text-[10px] font-bold uppercase">Idade Até</Label>
-               <div className="flex gap-1">
-                 <Input className="h-8 px-2 text-[11px]" defaultValue={120} />
-                 <select className="h-8 px-1 rounded-md border bg-background text-[10px] outline-none">
-                   <option>Anos</option>
-                 </select>
-               </div>
-             </div>
-             <div className="space-y-1.5">
-               <Label className="text-[10px] font-bold uppercase text-emerald-600">Mínimo</Label>
-               <Input className="h-8 px-2 text-[11px]" defaultValue={30} />
-             </div>
-             <div className="space-y-1.5">
-               <Label className="text-[10px] font-bold uppercase text-emerald-600">Máximo</Label>
-               <Input className="h-8 px-2 text-[11px]" defaultValue={100} />
-             </div>
-           </div>
-           <div className="space-y-1.5">
-             <Label className="text-[10px] font-bold uppercase">Texto de Referência (Opcional)</Label>
-             <Input className="h-8 px-2 text-[11px]" placeholder="Ex: Negativo, Não Reagente..." />
-           </div>
-         </div>
        </div>
     </Card>
   )
