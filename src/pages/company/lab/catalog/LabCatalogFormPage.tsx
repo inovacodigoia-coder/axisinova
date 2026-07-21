@@ -679,7 +679,7 @@ function ParametersSection() {
                               <Switch 
                                 checked={param.isHidden} 
                                 onCheckedChange={(val) => updateParameter(param.id, 'isHidden', val)}
-                                className="scale-75 data-[state=checked]:bg-primary shadow-sm"
+                                className="scale-75 data-[state=checked]:bg-primary data-[state=unchecked]:bg-red-500 shadow-sm"
                               />
                             </TooltipTrigger>
                             <TooltipContent>
