@@ -78,7 +78,11 @@ export interface Exam {
   tussCode?: string;
   internalCode?: string;
   type: 'clinical' | 'lab'
+  measurementUnit?: string
   specialtyId?: string
+  defaultOrigin?: string
+  defaultDestination?: string
+  reportObservations?: string
   preparationInstructions?: string
   estimatedDurationMinutes?: number
   resultDeadlineDays?: number
