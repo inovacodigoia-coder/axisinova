@@ -98,7 +98,9 @@ export default function LabCatalogFormPage() {
       machineCode: string;
       criticalAlert: boolean;
       criticalLimit: string;
-    }[]
+    }[],
+    selectedMaterials: [] as string[],
+    defaultMaterial: '',
   })
 
   const [parameters, setParameters] = useState<any[]>([])
