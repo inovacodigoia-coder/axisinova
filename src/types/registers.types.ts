@@ -62,6 +62,7 @@ export interface Exam {
   parameters?: any[]
   referenceValues?: any[]
   confirmationQuestions?: string[]
+  workbenchId?: string
   isActive: boolean
   createdAt: string
   showDuration?: boolean
@@ -161,6 +162,15 @@ export interface MeasurementUnit {
   name: string
   abbreviation: string
   isActive: boolean
+}
+
+export interface LabWorkbench {
+  id: string
+  companyId: string
+  name: string
+  description?: string
+  isActive: boolean
+  createdAt?: string
 }
 
 export interface Sector {
