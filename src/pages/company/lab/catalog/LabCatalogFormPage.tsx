@@ -110,26 +110,6 @@ export default function LabCatalogFormPage() {
         })
         if (existingExam.parameters) setParameters(existingExam.parameters)
         if (existingExam.confirmationQuestions) setConfirmationQuestions(existingExam.confirmationQuestions)
-      } else {
-        // Fallback for demo or if not found
-        setExamData({
-          name: "25-Hidroxivitamina D",
-          internalCode: "VITD001",
-          type: 'lab',
-          tussCode: "40302546",
-          isActive: true,
-          preparationInstructions: "Jejum de 8 horas.",
-          estimatedDurationMinutes: 30,
-          resultDeadlineDays: 1,
-          requiresAuthorization: false,
-          showDuration: true,
-          showDeadline: true,
-          measurementUnit: 'ng/mL',
-          specialtyId: '',
-          defaultOrigin: 'Recepção Central',
-          defaultDestination: 'Bancada Bioquímica',
-          reportObservations: '',
-        })
       }
     }
   }, [isEditing, id, exams])
