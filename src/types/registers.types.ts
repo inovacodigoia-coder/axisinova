@@ -83,6 +83,8 @@ export interface Exam {
   defaultOrigin?: string
   defaultDestination?: string
   reportObservations?: string
+  showDuration?: boolean;
+  showDeadline?: boolean;
   preparationInstructions?: string
   estimatedDurationMinutes?: number
   resultDeadlineDays?: number
