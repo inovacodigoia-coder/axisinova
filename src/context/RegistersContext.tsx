@@ -296,6 +296,8 @@ export function RegistersProvider({ children }: { children: ReactNode }) {
       reference_values: e.referenceValues || [],
       confirmation_questions: e.confirmationQuestions || [],
       is_active: e.isActive ?? true,
+      show_duration: e.showDuration ?? true,
+      show_deadline: e.showDeadline ?? true,
     } as any).select().single()
 
     if (error) {
