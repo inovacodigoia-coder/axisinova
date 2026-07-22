@@ -340,6 +340,8 @@ export type Database = {
           report_observations: string | null
           requires_authorization: boolean
           result_deadline_days: number | null
+          show_deadline: boolean | null
+          show_duration: boolean | null
           specialty_id: string | null
           tuss_code: string | null
           type: string | null
@@ -364,6 +366,8 @@ export type Database = {
           report_observations?: string | null
           requires_authorization?: boolean
           result_deadline_days?: number | null
+          show_deadline?: boolean | null
+          show_duration?: boolean | null
           specialty_id?: string | null
           tuss_code?: string | null
           type?: string | null
@@ -388,6 +392,8 @@ export type Database = {
           report_observations?: string | null
           requires_authorization?: boolean
           result_deadline_days?: number | null
+          show_deadline?: boolean | null
+          show_duration?: boolean | null
           specialty_id?: string | null
           tuss_code?: string | null
           type?: string | null
