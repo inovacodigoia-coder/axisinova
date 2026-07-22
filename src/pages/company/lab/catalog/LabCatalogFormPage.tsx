@@ -140,6 +140,7 @@ export default function LabCatalogFormPage() {
           selectedMaterials: existingExam.selectedMaterials || [],
           defaultMaterial: existingExam.defaultMaterial || "",
           workbenchId: existingExam.workbenchId || "",
+          referenceValues: existingExam.referenceValues || [],
         })
         setParameters(existingExam.parameters || [])
         setConfirmationQuestions(existingExam.confirmationQuestions || [])
