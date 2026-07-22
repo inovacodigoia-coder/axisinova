@@ -1301,16 +1301,16 @@ function InterfacingSection({ config, params, internalParameters, onChange }: {
 
   // Initialize mapping if parameters exist but mapping doesn't
   useEffect(() => {
-    if (internalParameters.length > 0 && params.length === 0) {
+    if (internalParameters && internalParameters.length > 0 && (!params || params.length === 0)) {
       const initialParams = internalParameters.map(p => ({
-        parameterName: p.name,
+        parameterName: p.name || '',
         machineCode: '',
         criticalAlert: false,
         criticalLimit: ''
       }))
       onChange({ interfacingParameters: initialParams })
     }
-  }, [internalParameters, params.length])
+  }, [internalParameters, params?.length])
 
   const updateConfig = (key: string, value: any) => {
     onChange({
