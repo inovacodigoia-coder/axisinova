@@ -89,6 +89,8 @@ function mapExamRow(row: any): Exam {
       autoSendOrders: row.interfacing_config?.autoSendOrders ?? true,
     },
     interfacingParameters: row.interfacing_parameters || [],
+    selectedMaterials: row.selected_materials || [],
+    defaultMaterial: row.default_material || '',
   }
 }
 function mapProcedureRow(row: any): Procedure {
