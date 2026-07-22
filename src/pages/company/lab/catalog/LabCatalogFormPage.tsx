@@ -87,9 +87,8 @@ export default function LabCatalogFormPage() {
   const [confirmationQuestions, setConfirmationQuestions] = useState<string[]>([])
 
   useEffect(() => {
-    if (isEditing) {
-      // Em uma implementação real, buscaríamos os dados do exame pelo ID
-      const existingExam = id ? (window as any)._allExams?.find((e: any) => e.id === id) : null;
+    if (isEditing && exams.length > 0) {
+      const existingExam = exams.find((e: any) => e.id === id)
       if (existingExam) {
         setExamData({
           name: existingExam.name || "",
@@ -112,6 +111,28 @@ export default function LabCatalogFormPage() {
         if (existingExam.parameters) setParameters(existingExam.parameters)
         if (existingExam.confirmationQuestions) setConfirmationQuestions(existingExam.confirmationQuestions)
       } else {
+        // Fallback for demo or if not found
+        setExamData({
+          name: "25-Hidroxivitamina D",
+          internalCode: "VITD001",
+          type: 'lab',
+          tussCode: "40302546",
+          isActive: true,
+          preparationInstructions: "Jejum de 8 horas.",
+          estimatedDurationMinutes: 30,
+          resultDeadlineDays: 1,
+          requiresAuthorization: false,
+          showDuration: true,
+          showDeadline: true,
+          measurementUnit: 'ng/mL',
+          specialtyId: '',
+          defaultOrigin: 'Recepção Central',
+          defaultDestination: 'Bancada Bioquímica',
+          reportObservations: '',
+        })
+      }
+    }
+  }, [isEditing, id, exams])
         // Fallback for demo or if not found
         setExamData({
           name: "25-Hidroxivitamina D",
@@ -529,22 +550,39 @@ function GeneralInfoSection({ isEditing, data, onChange }: { isEditing: boolean,
               <MessageSquare className="h-5 w-5 text-primary" />
               <Label className="text-sm font-bold uppercase tracking-wider text-muted-foreground">Perguntas de Confirmação</Label>
             </div>
-            <Button variant="outline" size="sm" className="gap-2">
+            <Button 
+              variant="outline" 
+              size="sm" 
+              className="gap-2"
+              onClick={() => setQuestions([...questions, ''])}
+            >
               <Plus className="h-4 w-4" /> Adicionar
             </Button>
           </div>
           <p className="text-[11px] text-muted-foreground">Perguntas que o atendente deverá confirmar com o paciente ao adicionar este exame.</p>
           <div className="space-y-3">
-            <div className="flex gap-3 items-center">
-              <span className="text-xs text-muted-foreground font-medium w-4">1.</span>
-              <Input 
-                defaultValue="O paciente está em jejum há pelo menos 8 horas?" 
-                className="flex-1"
-              />
-              <Button variant="ghost" size="icon" className="text-red-500">
-                <Trash2 className="h-4 w-4" />
-              </Button>
-            </div>
+            {questions.map((q, idx) => (
+              <div key={idx} className="flex gap-3 items-center">
+                <span className="text-xs text-muted-foreground font-medium w-4">{idx + 1}.</span>
+                <Input 
+                  value={q}
+                  onChange={(e) => {
+                    const newQs = [...questions]
+                    newQs[idx] = e.target.value
+                    setQuestions(newQs)
+                  }}
+                  className="flex-1"
+                />
+                <Button 
+                  variant="ghost" 
+                  size="icon" 
+                  className="text-red-500"
+                  onClick={() => setQuestions(questions.filter((_, i) => i !== idx))}
+                >
+                  <Trash2 className="h-4 w-4" />
+                </Button>
+              </div>
+            ))}
           </div>
         </div>
       </div>
