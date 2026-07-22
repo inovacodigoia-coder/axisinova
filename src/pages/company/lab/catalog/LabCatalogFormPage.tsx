@@ -605,7 +605,7 @@ function ParametersSection({ parameters, setParameters }: { parameters: any[], s
   }, [])
 
   const addParameter = () => {
-    const newId = parameters.length > 0 ? Math.max(...parameters.map(p => p.id)) + 1 : 1
+    const newId = (parameters && parameters.length > 0) ? Math.max(...parameters.map(p => p.id)) + 1 : 1
     setParameters([...parameters, { 
       id: newId, 
       name: '', 
@@ -1293,8 +1293,13 @@ function InterfacingSection({ config, params, internalParameters, onChange }: {
   
   useEffect(() => {
     const fetchEquipments = async () => {
-      const { data } = await supabase.from('lab_equipments').select('*').eq('is_active', true)
-      if (data) setEquipments(data)
+      try {
+        const { data, error } = await supabase.from('lab_equipments').select('*').eq('is_active', true)
+        if (error) throw error
+        if (data) setEquipments(data)
+      } catch (err) {
+        console.error('Error fetching equipments:', err)
+      }
     }
     fetchEquipments()
   }, [])
@@ -1343,9 +1348,9 @@ function InterfacingSection({ config, params, internalParameters, onChange }: {
                 <SelectValue placeholder="Selecione o equipamento" />
               </SelectTrigger>
               <SelectContent>
-                {equipments.length > 0 ? (
+                {equipments && equipments.length > 0 ? (
                   equipments.map(eq => (
-                    <SelectItem key={eq.id} value={eq.id}>{eq.name} ({eq.model})</SelectItem>
+                    <SelectItem key={eq.id} value={eq.id}>{eq.name} ({eq.model || 'S/M'})</SelectItem>
                   ))
                 ) : (
                   <SelectItem value="none" disabled>Nenhum equipamento cadastrado</SelectItem>
@@ -1401,7 +1406,7 @@ function InterfacingSection({ config, params, internalParameters, onChange }: {
               </tr>
             </thead>
             <tbody className="divide-y divide-border/30">
-              {params.length > 0 ? (
+              {params && params.length > 0 ? (
                 params.map((param, idx) => (
                   <tr key={idx} className="hover:bg-muted/10 transition-colors">
                     <td className="py-4 text-sm font-medium">{param.parameterName}</td>
