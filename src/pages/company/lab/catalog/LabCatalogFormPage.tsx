@@ -299,6 +299,11 @@ function GeneralInfoSection({ isEditing, data, onChange }: { isEditing: boolean,
   const materials = ['Sangue Total', 'Soro', 'Plasma', 'Urina', 'Fezes', 'Secreção', 'Líquor', 'Swab']
   const [selectedMaterials, setSelectedMaterials] = useState<string[]>(data.selectedMaterials || [])
   const [defaultMaterial, setDefaultMaterial] = useState(data.defaultMaterial || "")
+
+  useEffect(() => {
+    if (data.selectedMaterials) setSelectedMaterials(data.selectedMaterials)
+    if (data.defaultMaterial) setDefaultMaterial(data.defaultMaterial)
+  }, [data.selectedMaterials, data.defaultMaterial])
   const [measurementUnits, setMeasurementUnits] = useState<any[]>([])
 
   useEffect(() => {
