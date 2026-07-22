@@ -1368,7 +1368,7 @@ function InterfacingSection({ config, params, internalParameters, onChange }: {
         <div className="flex flex-wrap gap-8 pt-2">
           <div className="flex items-center gap-3">
             <Switch 
-              checked={config.autoReceiveResults}
+              checked={config?.autoReceiveResults ?? true}
               onCheckedChange={(val) => updateConfig('autoReceiveResults', val)}
             />
             <Label className="text-sm font-medium cursor-pointer">Receber resultados automaticamente</Label>
