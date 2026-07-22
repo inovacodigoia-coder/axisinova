@@ -178,29 +178,10 @@ export const BLOCK_REASONS = [
   'Inadimplência', 'Licença Médica', 'Desligamento', 'Férias', 'Outros'
 ];
 
-export interface ProcedureType {
-  value: string;
-  label: string;
-  color?: string;
-}
-
-export const PROCEDURE_TYPES: ProcedureType[] = [
-  { value: 'Consulta', label: 'Consulta', color: 'blue' },
-  { value: 'Exame', label: 'Exame', color: 'green' },
-  { value: 'Cirurgia', label: 'Cirurgia', color: 'red' },
-  { value: 'Pequeno Procedimento', label: 'Pequeno Procedimento', color: 'orange' },
-  { value: 'Outros', label: 'Outros', color: 'gray' }
+export const PROCEDURE_TYPES = [
+  'Consulta', 'Exame', 'Cirurgia', 'Pequeno Procedimento', 'Outros'
 ];
 
-export interface AnesthesiaType {
-  value: string;
-  label: string;
-}
-
-export const ANESTHESIA_TYPES: AnesthesiaType[] = [
-  { value: 'Local', label: 'Local' },
-  { value: 'Sedação', label: 'Sedação' },
-  { value: 'Geral', label: 'Geral' },
-  { value: 'Raque', label: 'Raque' },
-  { value: 'Peridural', label: 'Peridural' }
+export const ANESTHESIA_TYPES = [
+  'Local', 'Sedação', 'Geral', 'Raque', 'Peridural'
 ];
