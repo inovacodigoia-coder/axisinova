@@ -1375,7 +1375,7 @@ function InterfacingSection({ config, params, internalParameters, onChange }: {
           </div>
           <div className="flex items-center gap-3">
             <Switch 
-              checked={config.autoSendOrders}
+              checked={config?.autoSendOrders ?? true}
               onCheckedChange={(val) => updateConfig('autoSendOrders', val)}
             />
             <Label className="text-sm font-medium cursor-pointer">Enviar pedidos ao equipamento</Label>
