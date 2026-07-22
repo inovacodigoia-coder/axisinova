@@ -1043,7 +1043,7 @@ function RulesSection() {
   )
 }
 
-function PatientInfoSection({ questions, setQuestions }: { questions: string[], setQuestions: (q: string[]) => void }) {
+function PatientInfoSection({ questions, setQuestions, data, onChange }: { questions: string[], setQuestions: (q: string[]) => void, data: any, onChange: (val: any) => void }) {
   const [localQuestions, setLocalQuestions] = useState<string[]>(questions);
 
   useEffect(() => {
