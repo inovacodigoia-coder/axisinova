@@ -81,6 +81,14 @@ function mapExamRow(row: any): Exam {
     confirmationQuestions: row.confirmation_questions || [],
     isActive: row.is_active, createdAt: row.created_at,
     showDuration: row.show_duration, showDeadline: row.show_deadline,
+    methodology: row.methodology,
+    interfacingConfig: row.interfacing_config ? {
+      equipmentId: row.interfacing_config.equipmentId,
+      equipmentCode: row.interfacing_config.equipmentCode,
+      autoReceiveResults: row.interfacing_config.autoReceiveResults,
+      autoSendOrders: row.interfacing_config.autoSendOrders,
+    } : {},
+    interfacingParameters: row.interfacing_parameters || [],
   }
 }
 function mapProcedureRow(row: any): Procedure {
@@ -298,6 +306,9 @@ export function RegistersProvider({ children }: { children: ReactNode }) {
       is_active: e.isActive ?? true,
       show_duration: e.showDuration ?? true,
       show_deadline: e.showDeadline ?? true,
+      methodology: e.methodology || null,
+      interfacing_config: e.interfacingConfig || {},
+      interfacing_parameters: e.interfacingParameters || [],
     } as any).select().single()
 
     if (error) {
@@ -331,6 +342,9 @@ export function RegistersProvider({ children }: { children: ReactNode }) {
       is_active: e.isActive,
       show_duration: e.showDuration,
       show_deadline: e.showDeadline,
+      methodology: e.methodology || null,
+      interfacing_config: e.interfacingConfig || {},
+      interfacing_parameters: e.interfacingParameters || [],
     } as any).eq('id', e.id)
     if (error) { 
       console.error(error); 
