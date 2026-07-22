@@ -1416,3 +1416,233 @@ function InterfacingSection({ config, params, internalParameters, onChange }: {
     </div>
   )
 }
+
+function MethodologySection({ methodology, onChange }: { methodology?: string, onChange: (val: string) => void }) {
+  const commonMethodologies = [
+    'Enzimático Colorimétrico',
+    'Cromatografia Líquida de Alta Performance (HPLC)',
+    'Imunoensaio Quimioluminescente (CLIA)',
+    'Eletroforese',
+    'Reação em Cadeia da Polimerase (PCR)',
+    'Microscopia Direta',
+    'Cultura Automatizada'
+  ]
+
+  return (
+    <Card className="p-8 space-y-6">
+      <div className="space-y-4">
+        <div className="flex items-center gap-2">
+          <Beaker className="h-5 w-5 text-primary" />
+          <h3 className="text-lg font-bold">Metodologia do Exame</h3>
+        </div>
+        <p className="text-sm text-muted-foreground">
+          Selecione ou descreva a metodologia utilizada para a realização deste exame. Esta informação será exibida no laudo final.
+        </p>
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div className="space-y-4">
+          <Label>Metodologia Sugerida</Label>
+          <div className="flex flex-wrap gap-2">
+            {commonMethodologies.map(m => (
+              <button
+                key={m}
+                type="button"
+                onClick={() => onChange(m)}
+                className={cn(
+                  "px-3 py-1.5 rounded-full text-xs font-medium border transition-all",
+                  methodology === m ? "bg-primary text-white border-primary" : "bg-muted/30 text-muted-foreground border-border hover:border-primary/50"
+                )}
+              >
+                {m}
+              </button>
+            ))}
+          </div>
+        </div>
+        <div className="space-y-2">
+          <Label>Descrição Personalizada</Label>
+          <textarea
+            value={methodology}
+            onChange={(e) => onChange(e.target.value)}
+            className="w-full h-32 p-3 rounded-xl border bg-background text-sm focus:ring-2 focus:ring-primary/20 outline-none resize-none"
+            placeholder="Descreva a metodologia detalhadamente..."
+          />
+        </div>
+      </div>
+    </Card>
+  )
+}
+
+function InterfacingSection({ config, params, internalParameters, onChange }: { 
+  config: any, 
+  params: any[], 
+  internalParameters: any[],
+  onChange: (val: any) => void 
+}) {
+  const [equipments, setEquipments] = useState<any[]>([])
+  
+  useEffect(() => {
+    const fetchEquipments = async () => {
+      const { data } = await supabase.from('lab_equipments').select('*').eq('is_active', true)
+      if (data) setEquipments(data)
+    }
+    fetchEquipments()
+  }, [])
+
+  // Initialize mapping if parameters exist but mapping doesn't
+  useEffect(() => {
+    if (internalParameters.length > 0 && params.length === 0) {
+      const initialParams = internalParameters.map(p => ({
+        parameterName: p.name,
+        machineCode: '',
+        criticalAlert: false,
+        criticalLimit: ''
+      }))
+      onChange({ interfacingParameters: initialParams })
+    }
+  }, [internalParameters, params.length])
+
+  const updateConfig = (key: string, value: any) => {
+    onChange({
+      interfacingConfig: { ...config, [key]: value }
+    })
+  }
+
+  const updateParam = (index: number, key: string, value: any) => {
+    const newParams = [...params]
+    newParams[index] = { ...newParams[index], [key]: value }
+    onChange({ interfacingParameters: newParams })
+  }
+
+  return (
+    <div className="space-y-6">
+      <Card className="p-8 space-y-6">
+        <div className="flex items-center gap-2 border-b pb-4 mb-2">
+          <ArrowLeftRight className="h-5 w-5 text-primary" />
+          <h3 className="text-lg font-bold">Comunicação HL7</h3>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+          <div className="space-y-4">
+            <Label className="text-sm font-bold uppercase tracking-wider text-muted-foreground">Equipamento</Label>
+            <Select 
+              value={config.equipmentId} 
+              onValueChange={(val) => updateConfig('equipmentId', val)}
+            >
+              <SelectTrigger className="h-11 rounded-xl">
+                <SelectValue placeholder="Selecione o equipamento" />
+              </SelectTrigger>
+              <SelectContent>
+                {equipments.length > 0 ? (
+                  equipments.map(eq => (
+                    <SelectItem key={eq.id} value={eq.id}>{eq.name} ({eq.model})</SelectItem>
+                  ))
+                ) : (
+                  <SelectItem value="none" disabled>Nenhum equipamento cadastrado</SelectItem>
+                )}
+              </SelectContent>
+            </Select>
+          </div>
+          
+          <div className="space-y-4">
+            <Label className="text-sm font-bold uppercase tracking-wider text-muted-foreground">Código no Equipamento</Label>
+            <Input 
+              value={config.equipmentCode}
+              onChange={(e) => updateConfig('equipmentCode', e.target.value)}
+              placeholder="Ex: 10008"
+              className="h-11 rounded-xl"
+            />
+          </div>
+        </div>
+
+        <div className="flex flex-wrap gap-8 pt-2">
+          <div className="flex items-center gap-3">
+            <Switch 
+              checked={config.autoReceiveResults}
+              onCheckedChange={(val) => updateConfig('autoReceiveResults', val)}
+            />
+            <Label className="text-sm font-medium cursor-pointer">Receber resultados automaticamente</Label>
+          </div>
+          <div className="flex items-center gap-3">
+            <Switch 
+              checked={config.autoSendOrders}
+              onCheckedChange={(val) => updateConfig('autoSendOrders', val)}
+            />
+            <Label className="text-sm font-medium cursor-pointer">Enviar pedidos ao equipamento</Label>
+          </div>
+        </div>
+      </Card>
+
+      <Card className="p-8 space-y-6">
+        <div className="flex items-center gap-2 border-b pb-4 mb-2">
+          <ArrowLeftRight className="h-5 w-5 text-primary rotate-90" />
+          <h3 className="text-lg font-bold">Mapeamento de Parâmetros</h3>
+        </div>
+
+        <div className="overflow-x-auto">
+          <table className="w-full">
+            <thead>
+              <tr className="text-left border-b border-border/50">
+                <th className="pb-4 text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Parâmetro Interno</th>
+                <th className="pb-4 text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Código Máquina</th>
+                <th className="pb-4 text-[10px] font-bold uppercase tracking-widest text-muted-foreground text-center">Alerta Crítico</th>
+                <th className="pb-4 text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Limite Crítico</th>
+                <th className="pb-4 text-[10px] font-bold uppercase tracking-widest text-muted-foreground text-center">Status</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-border/30">
+              {params.length > 0 ? (
+                params.map((param, idx) => (
+                  <tr key={idx} className="hover:bg-muted/10 transition-colors">
+                    <td className="py-4 text-sm font-medium">{param.parameterName}</td>
+                    <td className="py-4">
+                      <Input 
+                        value={param.machineCode}
+                        onChange={(e) => updateParam(idx, 'machineCode', e.target.value)}
+                        placeholder="ex: wbc"
+                        className="h-9 w-48 text-xs rounded-lg"
+                      />
+                    </td>
+                    <td className="py-4 text-center">
+                      <Switch 
+                        checked={param.criticalAlert}
+                        onCheckedChange={(val) => updateParam(idx, 'criticalAlert', val)}
+                        className="scale-75"
+                      />
+                    </td>
+                    <td className="py-4">
+                      <Input 
+                        value={param.criticalLimit}
+                        onChange={(e) => updateParam(idx, 'criticalLimit', e.target.value)}
+                        placeholder="Valor"
+                        className="h-9 w-24 text-xs rounded-lg"
+                      />
+                    </td>
+                    <td className="py-4 text-center">
+                      <TooltipProvider>
+                        <Tooltip>
+                          <TooltipTrigger>
+                            <Link className={cn("h-4 w-4", param.machineCode ? "text-cyan-500" : "text-muted-foreground/30")} />
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            {param.machineCode ? "Mapeado corretamente" : "Aguardando mapeamento"}
+                          </TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
+                    </td>
+                  </tr>
+                ))
+              ) : (
+                <tr>
+                  <td colSpan={5} className="py-8 text-center text-sm text-muted-foreground italic">
+                    Nenhum parâmetro definido. Configure os parâmetros na aba "Parâmetros e Máscara" primeiro.
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
+      </Card>
+    </div>
+  )
+}
