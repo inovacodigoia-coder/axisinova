@@ -200,7 +200,7 @@ export default function LabCatalogFormPage() {
           </Button>
           <div>
             <h1 className="text-xl font-bold">{isEditing ? 'Editar Exame' : 'Novo Exame'}</h1>
-            <p className="text-xs text-muted-foreground">{isEditing ? `${examData.internalCode || 'S/C'} - ${examData.name || 'Carregando...'}` : 'Preencha os dados do novo exame'}</p>
+            <p className="text-xs text-muted-foreground">{isEditing ? `${examData?.internalCode || 'S/C'} - ${examData?.name || 'Carregando...'}` : 'Preencha os dados do novo exame'}</p>
           </div>
         </div>
         <div className="flex items-center gap-3">
