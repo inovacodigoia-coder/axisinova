@@ -80,6 +80,7 @@ function mapExamRow(row: any): Exam {
     referenceValues: row.reference_values || [],
     confirmationQuestions: row.confirmation_questions || [],
     isActive: row.is_active, createdAt: row.created_at,
+    showDuration: row.show_duration, showDeadline: row.show_deadline,
   }
 }
 function mapProcedureRow(row: any): Procedure {
