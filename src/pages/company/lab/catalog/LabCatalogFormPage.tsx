@@ -261,6 +261,7 @@ export default function LabCatalogFormPage() {
           <GeneralInfoSection 
             isEditing={isEditing} 
             data={examData} 
+            workbenches={workbenches}
             onChange={(newData) => setExamData(prev => ({ ...prev, ...newData }))} 
           />
         </TabsContent>
