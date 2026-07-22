@@ -8,7 +8,7 @@ export interface AttachmentRule {
   description?: string
   appliesToTypes: AppointmentType[]
   order: number
-  observations: string
+  observations?: string
   convenioId?: string;
 }
 
@@ -101,10 +101,10 @@ export interface Specialty {
 export interface Doctor {
   id: string
   companyId: string
-  name: string
+  name?: string
   fullName?: string
   crm: string
-  uf: string
+  uf?: string
   crmState?: string
   specialtyId?: string
   specialtyIds?: string[]
@@ -179,9 +179,17 @@ export const BLOCK_REASONS = [
 ];
 
 export const PROCEDURE_TYPES = [
-  'Consulta', 'Exame', 'Cirurgia', 'Pequeno Procedimento', 'Outros'
+  { value: 'Consulta', label: 'Consulta' },
+  { value: 'Exame', label: 'Exame' },
+  { value: 'Cirurgia', label: 'Cirurgia' },
+  { value: 'Pequeno Procedimento', label: 'Pequeno Procedimento' },
+  { value: 'Outros', label: 'Outros' }
 ];
 
 export const ANESTHESIA_TYPES = [
-  'Local', 'Sedação', 'Geral', 'Raque', 'Peridural'
+  { value: 'Local', label: 'Local' },
+  { value: 'Sedação', label: 'Sedação' },
+  { value: 'Geral', label: 'Geral' },
+  { value: 'Raque', label: 'Raque' },
+  { value: 'Peridural', label: 'Peridural' }
 ];
