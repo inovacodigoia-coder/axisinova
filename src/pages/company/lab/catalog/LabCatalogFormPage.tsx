@@ -673,7 +673,7 @@ function ParametersSection({ parameters, setParameters }: { parameters: any[], s
                 </tr>
               </thead>
               <tbody className="divide-y divide-border">
-                {parameters.map((param, idx) => (
+                {parameters && parameters.length > 0 && parameters.map((param, idx) => (
                   <React.Fragment key={param.id}>
                     <tr className="hover:bg-muted/5 transition-colors">
                       <td className="px-4 py-3 text-xs text-muted-foreground font-medium">{idx + 1}</td>
