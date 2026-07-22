@@ -1336,7 +1336,7 @@ function InterfacingSection({ config, params, internalParameters, onChange }: {
           <div className="space-y-4">
             <Label className="text-sm font-bold uppercase tracking-wider text-muted-foreground">Equipamento</Label>
             <Select 
-              value={config.equipmentId} 
+              value={config?.equipmentId || ''} 
               onValueChange={(val) => updateConfig('equipmentId', val)}
             >
               <SelectTrigger className="h-11 rounded-xl">
