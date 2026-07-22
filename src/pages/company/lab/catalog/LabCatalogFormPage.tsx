@@ -109,8 +109,8 @@ export default function LabCatalogFormPage() {
   const [confirmationQuestions, setConfirmationQuestions] = useState<string[]>([])
 
   useEffect(() => {
-    if (isEditing && exams.length > 0) {
-      const existingExam = exams.find((e: any) => e.id === id)
+    if (isEditing && (exams as any[]).length > 0) {
+      const existingExam = (exams as any[]).find((e: any) => e.id === id)
       if (existingExam) {
         setExamData({
           name: existingExam.name || "",
