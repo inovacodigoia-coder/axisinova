@@ -111,8 +111,14 @@ function mapProcedureRow(row: any): Procedure {
 }
 function mapWorkbenchRow(row: any): LabWorkbench {
   return {
-    id: row.id, companyId: row.company_id, name: row.name, description: row.description,
-    isActive: row.is_active, createdAt: row.created_at
+    id: row.id, 
+    companyId: row.company_id, 
+    name: row.name, 
+    description: row.description,
+    reportBreakPolicy: row.report_break_policy || 'default',
+    reportOrder: row.report_order || 0,
+    isActive: row.is_active, 
+    createdAt: row.created_at
   }
 }
 
