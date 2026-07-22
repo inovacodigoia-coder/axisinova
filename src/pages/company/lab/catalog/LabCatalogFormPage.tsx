@@ -808,6 +808,10 @@ function ReferenceValuesModal({ parameter, onClose }: { parameter: any, onClose:
     { id: 2, description: 'Adulto Feminino', minAge: 18, maxAge: 150, sex: 'Feminino', isPregnant: false, minValue: '4', maxValue: '5.4' },
   ])
 
+  const updateFaixa = (id: number, field: string, value: any) => {
+    setFaixas(prev => prev.map(f => f.id === id ? { ...f, [field]: value } : f))
+  }
+
   const addFaixa = () => {
     const newId = faixas.length > 0 ? Math.max(...faixas.map(f => f.id)) + 1 : 1
     setFaixas([...faixas, { id: newId, description: '', minAge: 0, maxAge: 120, sex: 'Todos', isPregnant: false, minValue: '', maxValue: '' }])
