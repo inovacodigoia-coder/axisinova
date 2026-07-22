@@ -156,6 +156,8 @@ export default function LabCatalogFormPage() {
         ...examData,
         parameters,
         confirmationQuestions,
+        selectedMaterials: data.selectedMaterials,
+        defaultMaterial: data.defaultMaterial
       }
 
       if (isEditing) {
