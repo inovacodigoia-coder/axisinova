@@ -68,10 +68,10 @@ export interface Exam {
   showDeadline?: boolean
   methodology?: string
   interfacingConfig?: {
-    equipmentId?: string
-    equipmentCode?: string
-    autoReceiveResults?: boolean
-    autoSendOrders?: boolean
+    equipmentId: string
+    equipmentCode: string
+    autoReceiveResults: boolean
+    autoSendOrders: boolean
   }
   interfacingParameters?: {
     parameterName: string
