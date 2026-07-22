@@ -1,4 +1,4 @@
-export type AppointmentType = 'first_time' | 'return' | 'exam' | 'procedure' | 'emergency';
+export type AppointmentType = 'first_time' | 'return' | 'exam' | 'procedure' | 'emergency' | 'consulta' | 'exame' | 'procedimento';
 
 export interface AttachmentRule {
   id: string
@@ -77,6 +77,15 @@ export interface Procedure {
   type?: string
   isActive: boolean
   createdAt: string
+  specialtyId?: string
+  estimatedDurationMinutes?: number
+  requiresAuthorization?: boolean
+  authorizationInstructions?: string
+  requiresAnesthesia?: boolean
+  anesthesiaType?: string
+  preOperativeInstructions?: string
+  postOperativeInstructions?: string
+  attachmentRules?: AttachmentRule[]
 }
 
 export interface Specialty {
@@ -108,6 +117,7 @@ export interface Doctor {
   blockedReason?: string
   blockedAt?: string
   isActive: boolean
+  createdAt?: string
 }
 
 export type Insurance = Convenio;
@@ -120,6 +130,11 @@ export interface Convenio {
   ansCode?: string
   isActive: boolean
   operator?: string
+  type?: string
+  authPhone?: string
+  email?: string
+  observations?: string
+  attachmentRules?: AttachmentRule[]
 }
 
 export interface MeasurementUnit {
