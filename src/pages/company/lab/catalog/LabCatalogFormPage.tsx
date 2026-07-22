@@ -68,7 +68,7 @@ export default function LabCatalogFormPage() {
   // Make context available globally for sub-sections
   useEffect(() => {
     (window as any)._allExams = exams
-    (window as any).workbenches = workbenches
+    (window as any)._workbenches = workbenches
   }, [exams, workbenches])
   const [examData, setExamData] = useState({
     name: '',
@@ -532,7 +532,7 @@ function GeneralInfoSection({ isEditing, data, onChange }: { isEditing: boolean,
               onChange={(e) => onChange({ workbenchId: e.target.value })}
             >
               <option value="">-- Não definido --</option>
-              {window.workbenches?.map((w: any) => (
+              {((window as any)._workbenches || [])?.map((w: any) => (
                 <option key={w.id} value={w.id}>{w.name}</option>
               ))}
             </select>
