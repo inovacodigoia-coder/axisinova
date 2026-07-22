@@ -1,8 +1,14 @@
+export type AppointmentType = 'first_time' | 'return' | 'exam' | 'procedure' | 'emergency';
+
 export interface AttachmentRule {
   id: string
-  name: string
+  name?: string
+  attachmentName: string
   isRequired: boolean
   description?: string
+  appliesToTypes: AppointmentType[]
+  order: number
+  observations: string
 }
 
 export interface ExamParameter {
@@ -68,6 +74,7 @@ export interface Procedure {
   tussCode?: string
   internalCode?: string
   price: number
+  type?: string
   isActive: boolean
   createdAt: string
 }
@@ -78,25 +85,41 @@ export interface Specialty {
   name: string
   description?: string
   isActive: boolean
+  createdAt?: string
 }
 
 export interface Doctor {
   id: string
   companyId: string
   name: string
+  fullName?: string
   crm: string
   uf: string
+  crmState?: string
   specialtyId?: string
+  specialtyIds?: string[]
+  phone?: string
+  email?: string
+  birthDate?: string
+  photo?: string
+  enabledConvenioIds?: string[]
+  scheduleConfig?: any
+  isBlocked?: boolean
+  blockedReason?: string
+  blockedAt?: string
   isActive: boolean
 }
 
-export interface Insurance {
+export type Insurance = Convenio;
+
+export interface Convenio {
   id: string
   companyId: string
   name: string
   cnpj?: string
   ansCode?: string
   isActive: boolean
+  operator?: string
 }
 
 export interface MeasurementUnit {
