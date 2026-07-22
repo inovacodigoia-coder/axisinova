@@ -1357,7 +1357,7 @@ function InterfacingSection({ config, params, internalParameters, onChange }: {
           <div className="space-y-4">
             <Label className="text-sm font-bold uppercase tracking-wider text-muted-foreground">Código no Equipamento</Label>
             <Input 
-              value={config.equipmentCode}
+              value={config?.equipmentCode || ''}
               onChange={(e) => updateConfig('equipmentCode', e.target.value)}
               placeholder="Ex: 10008"
               className="h-11 rounded-xl"
