@@ -847,33 +847,58 @@ function ReferenceValuesModal({ parameter, onClose }: { parameter: any, onClose:
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-1.5 md:col-span-2">
                   <Label className="text-[10px] font-bold uppercase text-muted-foreground">Descrição (ex: Adulto Masculino)</Label>
-                  <Input className="h-9 text-xs" value={faixa.description} placeholder="Ex: Adulto Masculino" onChange={() => {}} />
+                  <Input 
+                    className="h-9 text-xs" 
+                    value={faixa.description} 
+                    placeholder="Ex: Adulto Masculino" 
+                    onChange={(e) => updateFaixa(faixa.id, 'description', e.target.value)} 
+                  />
                 </div>
                 
                 <div className="space-y-4 border-t pt-4 md:col-span-2 grid grid-cols-2 gap-4">
                   <div className="space-y-1.5">
                     <Label className="text-[10px] font-bold uppercase text-emerald-600">Valor Mínimo</Label>
-                    <Input className="h-9 text-xs font-bold" value={faixa.minValue} placeholder="0.0" onChange={() => {}} />
+                    <Input 
+                      className="h-9 text-xs font-bold" 
+                      value={faixa.minValue} 
+                      placeholder="0.0" 
+                      onChange={(e) => updateFaixa(faixa.id, 'minValue', e.target.value)} 
+                    />
                   </div>
                   <div className="space-y-1.5">
                     <Label className="text-[10px] font-bold uppercase text-emerald-600">Valor Máximo</Label>
-                    <Input className="h-9 text-xs font-bold" value={faixa.maxValue} placeholder="0.0" onChange={() => {}} />
+                    <Input 
+                      className="h-9 text-xs font-bold" 
+                      value={faixa.maxValue} 
+                      placeholder="0.0" 
+                      onChange={(e) => updateFaixa(faixa.id, 'maxValue', e.target.value)} 
+                    />
                   </div>
                 </div>
 
                 <div className="space-y-1.5">
                   <Label className="text-[10px] font-bold uppercase text-muted-foreground">Idade Mín (anos)</Label>
-                  <Input type="number" className="h-9 text-xs" value={faixa.minAge} onChange={() => {}} />
+                  <Input 
+                    type="number" 
+                    className="h-9 text-xs" 
+                    value={faixa.minAge} 
+                    onChange={(e) => updateFaixa(faixa.id, 'minAge', Number(e.target.value))} 
+                  />
                 </div>
                 <div className="space-y-1.5">
                   <Label className="text-[10px] font-bold uppercase text-muted-foreground">Idade Máx (anos)</Label>
-                  <Input type="number" className="h-9 text-xs" value={faixa.maxAge} onChange={() => {}} />
+                  <Input 
+                    type="number" 
+                    className="h-9 text-xs" 
+                    value={faixa.maxAge} 
+                    onChange={(e) => updateFaixa(faixa.id, 'maxAge', Number(e.target.value))} 
+                  />
                 </div>
 
                 <div className="flex items-center gap-4 md:col-span-2 bg-white/50 p-2 rounded-lg border border-dashed">
                   <div className="flex-1 space-y-1.5">
                     <Label className="text-[10px] font-bold uppercase text-muted-foreground">Sexo</Label>
-                    <Select value={faixa.sex} onValueChange={() => {}}>
+                    <Select value={faixa.sex} onValueChange={(val) => updateFaixa(faixa.id, 'sex', val)}>
                       <SelectTrigger className="h-9 text-xs">
                         <SelectValue />
                       </SelectTrigger>
@@ -885,7 +910,11 @@ function ReferenceValuesModal({ parameter, onClose }: { parameter: any, onClose:
                     </Select>
                   </div>
                   <div className="flex items-center gap-2 pt-5">
-                    <Switch checked={faixa.isPregnant} className="scale-75" />
+                    <Switch 
+                      checked={faixa.isPregnant} 
+                      className="scale-75" 
+                      onCheckedChange={(val) => updateFaixa(faixa.id, 'isPregnant', val)}
+                    />
                     <Label className="text-xs cursor-pointer">Gestante</Label>
                   </div>
                 </div>
