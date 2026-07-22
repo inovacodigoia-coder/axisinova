@@ -544,7 +544,10 @@ export function LabStep3GuidesProcedures({ state, update }: Props) {
                   placeholder="Nome ou código do exame..."
                   className="pl-9"
                   value={examSearch}
-                  onChange={(e) => setExamSearch(e.target.value)}
+                  onChange={(e) => {
+                    setExamSearch(e.target.value);
+                    setSelectedExam(null);
+                  }}
                 />
                 {filteredExams.length > 0 && !selectedExam && (
                   <div className="absolute z-50 w-full mt-1 bg-popover border border-border rounded-md shadow-md max-h-60 overflow-auto">
@@ -555,7 +558,10 @@ export function LabStep3GuidesProcedures({ state, update }: Props) {
                         onClick={() => {
                           setSelectedExam(exam);
                           setExamSearch(exam.name);
-                          setExamMaterial(exam.defaultMaterial || exam.selectedMaterials?.[0] || 'Sangue');
+                          // Fix: Use configured materials from the exam
+                          const materials = exam.selectedMaterials || [];
+                          const defaultMat = exam.defaultMaterial || materials[0] || 'Sangue';
+                          setExamMaterial(defaultMat);
                         }}
                       >
                         <span className="font-medium">{exam.name}</span>
@@ -578,7 +584,10 @@ export function LabStep3GuidesProcedures({ state, update }: Props) {
             <div className="space-y-3">
               <Label>Material</Label>
               <div className="flex flex-wrap gap-2">
-                {(selectedExam?.selectedMaterials || ['Sangue Total', 'Soro', 'Plasma', 'Urina', 'Fezes', 'Secreção', 'Líquor', 'Swab']).map((mat: string) => (
+                {(selectedExam?.selectedMaterials && selectedExam.selectedMaterials.length > 0
+                  ? selectedExam.selectedMaterials
+                  : ['Sangue Total', 'Soro', 'Plasma', 'Urina', 'Fezes', 'Secreção', 'Líquor', 'Swab']
+                ).map((mat: string) => (
                   <button
                     key={mat}
                     type="button"
@@ -586,7 +595,7 @@ export function LabStep3GuidesProcedures({ state, update }: Props) {
                     className={cn(
                       "px-3 py-1.5 rounded-full border text-xs font-medium transition-all flex items-center gap-1.5",
                       examMaterial === mat 
-                        ? "bg-primary/5 border-primary text-primary shadow-sm" 
+                        ? "bg-primary/5 border-primary text-primary shadow-sm font-bold" 
                         : "bg-background border-border text-muted-foreground hover:border-primary/50"
                     )}
                   >
@@ -610,7 +619,7 @@ export function LabStep3GuidesProcedures({ state, update }: Props) {
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setShowExamModal(false)}>Cancelar</Button>
-            <Button onClick={handleAddOrUpdateExam}>
+            <Button onClick={handleAddOrUpdateExam} className="gradient-bg text-white">
               {editingExamIndex !== null ? "Salvar Alterações" : "Adicionar Exame"}
             </Button>
           </DialogFooter>
