@@ -16,6 +16,7 @@ interface RegistersContextValue {
   convenios: Convenio[]
   exams: Exam[]
   procedures: Procedure[]
+  workbenches: LabWorkbench[]
   isDemo: boolean
   isLoading: boolean
   addDoctor: (d: Doctor) => void
@@ -33,6 +34,9 @@ interface RegistersContextValue {
   addProcedure: (p: Procedure) => void
   updateProcedure: (p: Procedure) => void
   removeProcedure: (id: string) => void
+  addWorkbench: (w: LabWorkbench) => void
+  updateWorkbench: (w: LabWorkbench) => void
+  removeWorkbench: (id: string) => void
   getSpecialtyName: (id: string) => string
   getConvenioName: (id: string) => string
   getDoctorsForSpecialty: (specId: string) => Doctor[]
@@ -69,6 +73,7 @@ function mapExamRow(row: any): Exam {
     type: row.type || 'clinical',
     measurementUnit: row.measurement_unit,
     specialtyId: row.specialty_id,
+    workbenchId: row.workbench_id,
     defaultOrigin: row.default_origin,
     defaultDestination: row.default_destination,
     reportObservations: row.report_observations,
@@ -104,6 +109,12 @@ function mapProcedureRow(row: any): Procedure {
     attachmentRules: row.attachment_rules || [], isActive: row.is_active, createdAt: row.created_at,
   }
 }
+function mapWorkbenchRow(row: any): LabWorkbench {
+  return {
+    id: row.id, companyId: row.company_id, name: row.name, description: row.description,
+    isActive: row.is_active, createdAt: row.created_at
+  }
+}
 
 export function RegistersProvider({ children }: { children: ReactNode }) {
   const { user } = useAuth()
@@ -115,6 +126,7 @@ export function RegistersProvider({ children }: { children: ReactNode }) {
   const [convenios, setConvenios] = useState<Convenio[]>(isDemo ? DEMO_CONVENIOS : [])
   const [exams, setExams] = useState<Exam[]>(isDemo ? DEMO_EXAMS : [])
   const [procedures, setProcedures] = useState<Procedure[]>(isDemo ? DEMO_PROCEDURES : [])
+  const [workbenches, setWorkbenches] = useState<LabWorkbench[]>(isDemo ? [] : [])
   const [isLoading, setIsLoading] = useState(!isDemo)
 
   // Load from Supabase
@@ -130,6 +142,7 @@ export function RegistersProvider({ children }: { children: ReactNode }) {
           supabase.from('convenios').select('*').eq('company_id', companyId),
           supabase.from('exams').select('*').eq('company_id', companyId),
           supabase.from('procedures').select('*').eq('company_id', companyId),
+          supabase.from('lab_workbenches').select('*').eq('company_id', companyId),
         ]
 
         const results = await Promise.allSettled(queries)
@@ -153,6 +166,7 @@ export function RegistersProvider({ children }: { children: ReactNode }) {
               case 2: setConvenios(data.map(mapConvenioRow)); break
               case 3: setExams(data.map(mapExamRow)); break
               case 4: setProcedures(data.map(mapProcedureRow)); break
+              case 5: setWorkbenches(data.map(mapWorkbenchRow)); break
             }
           }
         })
