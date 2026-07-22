@@ -159,13 +159,13 @@ export default function LabCatalogFormPage() {
         ...examData,
         parameters,
         confirmationQuestions,
+        referenceValues: [] // Ideally these would be handled too if they had a separate state
       }
 
       if (isEditing) {
         await updateExam({ 
           ...finalData, 
-          id: id!,
-          referenceValues: [] // Ideally these would be handled too
+          id: id!
         } as any)
         toast.success('Exame atualizado com sucesso!')
       } else {
@@ -184,7 +184,8 @@ export default function LabCatalogFormPage() {
       }, 500)
     } catch (error: any) {
       console.error('Erro ao salvar exame:', error)
-      toast.error(error?.message || 'Erro ao salvar o exame. Por favor, tente novamente.')
+      const errorMsg = error?.message || (typeof error === 'string' ? error : 'Erro ao salvar o exame. Por favor, tente novamente.')
+      toast.error(errorMsg)
     } finally {
       setIsSaving(false)
     }
@@ -199,7 +200,7 @@ export default function LabCatalogFormPage() {
           </Button>
           <div>
             <h1 className="text-xl font-bold">{isEditing ? 'Editar Exame' : 'Novo Exame'}</h1>
-            <p className="text-xs text-muted-foreground">{isEditing ? `${examData.internalCode} - ${examData.name}` : 'Preencha os dados do novo exame'}</p>
+            <p className="text-xs text-muted-foreground">{isEditing ? `${examData.internalCode || 'S/C'} - ${examData.name || 'Carregando...'}` : 'Preencha os dados do novo exame'}</p>
           </div>
         </div>
         <div className="flex items-center gap-3">
