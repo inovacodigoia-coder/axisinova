@@ -9,6 +9,7 @@ export interface AttachmentRule {
   appliesToTypes: AppointmentType[]
   order: number
   observations: string
+  convenioId?: string;
 }
 
 export interface ExamParameter {
@@ -73,7 +74,7 @@ export interface Procedure {
   name: string
   tussCode?: string
   internalCode?: string
-  price: number
+  price?: number
   type?: string
   isActive: boolean
   createdAt: string
@@ -118,6 +119,7 @@ export interface Doctor {
   blockedAt?: string
   isActive: boolean
   createdAt?: string
+  updatedAt?: string;
 }
 
 export type Insurance = Convenio;
@@ -135,6 +137,7 @@ export interface Convenio {
   email?: string
   observations?: string
   attachmentRules?: AttachmentRule[]
+  createdAt?: string;
 }
 
 export interface MeasurementUnit {
@@ -152,3 +155,33 @@ export interface Sector {
   type: 'reception' | 'collection' | 'triage' | 'technical' | 'delivery'
   isActive: boolean
 }
+
+export const CONVENIO_TYPE_LABELS: Record<string, string> = {
+  'public': 'Público',
+  'private': 'Particular',
+  'insurance': 'Convênio',
+  'self_pay': 'Auto-pagamento'
+};
+
+export const CONVENIO_TYPE_COLORS: Record<string, string> = {
+  'public': 'blue',
+  'private': 'green',
+  'insurance': 'purple',
+  'self_pay': 'orange'
+};
+
+export const UF_LIST = [
+  'AC', 'AL', 'AP', 'AM', 'BA', 'CE', 'DF', 'ES', 'GO', 'MA', 'MT', 'MS', 'MG', 'PA', 'PB', 'PR', 'PE', 'PI', 'RJ', 'RN', 'RS', 'RO', 'RR', 'SC', 'SP', 'SE', 'TO'
+];
+
+export const BLOCK_REASONS = [
+  'Inadimplência', 'Licença Médica', 'Desligamento', 'Férias', 'Outros'
+];
+
+export const PROCEDURE_TYPES = [
+  'Consulta', 'Exame', 'Cirurgia', 'Pequeno Procedimento', 'Outros'
+];
+
+export const ANESTHESIA_TYPES = [
+  'Local', 'Sedação', 'Geral', 'Raque', 'Peridural'
+];
