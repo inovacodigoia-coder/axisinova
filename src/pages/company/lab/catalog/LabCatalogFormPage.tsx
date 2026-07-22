@@ -63,7 +63,7 @@ export default function LabCatalogFormPage() {
   const [activeTab, setActiveTab] = useState('general')
   const [isSaving, setIsSaving] = useState(false)
 
-  const { addExam, updateExam, exams, workbenches } = useRegisters()
+  const { addExam, updateExam, exams, workbenches } = useRegisters() as any
   
   // Make context available globally for sub-sections
   useEffect(() => {
