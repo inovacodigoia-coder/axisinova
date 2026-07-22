@@ -325,12 +325,16 @@ export type Database = {
           authorization_instructions: string | null
           company_id: string
           created_at: string
+          default_destination: string | null
+          default_origin: string | null
           estimated_duration_minutes: number | null
           id: string
           internal_code: string | null
           is_active: boolean
+          measurement_unit: string | null
           name: string
           preparation_instructions: string | null
+          report_observations: string | null
           requires_authorization: boolean
           result_deadline_days: number | null
           specialty_id: string | null
@@ -342,12 +346,16 @@ export type Database = {
           authorization_instructions?: string | null
           company_id: string
           created_at?: string
+          default_destination?: string | null
+          default_origin?: string | null
           estimated_duration_minutes?: number | null
           id?: string
           internal_code?: string | null
           is_active?: boolean
+          measurement_unit?: string | null
           name: string
           preparation_instructions?: string | null
+          report_observations?: string | null
           requires_authorization?: boolean
           result_deadline_days?: number | null
           specialty_id?: string | null
@@ -359,12 +367,16 @@ export type Database = {
           authorization_instructions?: string | null
           company_id?: string
           created_at?: string
+          default_destination?: string | null
+          default_origin?: string | null
           estimated_duration_minutes?: number | null
           id?: string
           internal_code?: string | null
           is_active?: boolean
+          measurement_unit?: string | null
           name?: string
           preparation_instructions?: string | null
+          report_observations?: string | null
           requires_authorization?: boolean
           result_deadline_days?: number | null
           specialty_id?: string | null
