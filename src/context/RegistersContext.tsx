@@ -80,6 +80,7 @@ function mapExamRow(row: any): Exam {
     referenceValues: row.reference_values || [],
     confirmationQuestions: row.confirmation_questions || [],
     isActive: row.is_active, createdAt: row.created_at,
+    showDuration: row.show_duration, showDeadline: row.show_deadline,
   }
 }
 function mapProcedureRow(row: any): Procedure {
@@ -295,6 +296,8 @@ export function RegistersProvider({ children }: { children: ReactNode }) {
       reference_values: e.referenceValues || [],
       confirmation_questions: e.confirmationQuestions || [],
       is_active: e.isActive ?? true,
+      show_duration: e.showDuration ?? true,
+      show_deadline: e.showDeadline ?? true,
     } as any).select().single()
 
     if (error) {
@@ -326,6 +329,8 @@ export function RegistersProvider({ children }: { children: ReactNode }) {
       reference_values: e.referenceValues,
       confirmation_questions: e.confirmationQuestions,
       is_active: e.isActive,
+      show_duration: e.showDuration,
+      show_deadline: e.showDeadline,
     } as any).eq('id', e.id)
     if (error) { 
       console.error(error); 

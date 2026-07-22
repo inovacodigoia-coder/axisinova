@@ -238,6 +238,8 @@ export default function LabCatalogFormPage() {
           <PatientInfoSection 
             questions={confirmationQuestions}
             setQuestions={setConfirmationQuestions}
+            data={examData}
+            onChange={(newData) => setExamData(prev => ({ ...prev, ...newData }))}
           />
         </TabsContent>
       </Tabs>
@@ -1041,7 +1043,7 @@ function RulesSection() {
   )
 }
 
-function PatientInfoSection({ questions, setQuestions }: { questions: string[], setQuestions: (q: string[]) => void }) {
+function PatientInfoSection({ questions, setQuestions, data, onChange }: { questions: string[], setQuestions: (q: string[]) => void, data: any, onChange: (val: any) => void }) {
   const [localQuestions, setLocalQuestions] = useState<string[]>(questions);
 
   useEffect(() => {
@@ -1072,19 +1074,12 @@ function PatientInfoSection({ questions, setQuestions }: { questions: string[], 
       <Card className="p-8 space-y-6">
         <div className="space-y-4">
           <div className="space-y-2">
-            <Label className="text-sm font-bold uppercase tracking-wider text-muted-foreground">Ficha Técnica</Label>
-            <textarea 
-              className="w-full h-32 p-3 rounded-lg border bg-background text-sm focus:ring-2 focus:ring-primary/20 outline-none resize-none" 
-              placeholder="Informações técnicas do exame..." 
-            />
-          </div>
-
-          <div className="space-y-2">
             <Label className="text-sm font-bold uppercase tracking-wider text-muted-foreground">Orientações ao Paciente</Label>
             <textarea 
               className="w-full h-32 p-3 rounded-lg border bg-background text-sm focus:ring-2 focus:ring-primary/20 outline-none resize-none" 
               placeholder="Ex: Jejum de 8 horas."
-              defaultValue="Jejum de 8 horas."
+              value={data.preparationInstructions}
+              onChange={(e) => onChange({ preparationInstructions: e.target.value })}
             />
             <p className="text-[11px] text-muted-foreground">Essas orientações serão exibidas para a recepção durante o cadastro de atendimentos.</p>
           </div>
@@ -1094,6 +1089,8 @@ function PatientInfoSection({ questions, setQuestions }: { questions: string[], 
             <textarea 
               className="w-full h-32 p-3 rounded-lg border bg-background text-sm focus:ring-2 focus:ring-primary/20 outline-none resize-none" 
               placeholder="Ex: A partir de 01/2026 os valores de referência foram atualizados conforme nova diretriz..." 
+              value={data.reportObservations}
+              onChange={(e) => onChange({ reportObservations: e.target.value })}
             />
             <p className="text-[11px] text-muted-foreground">Esse texto será impresso no laudo, abaixo dos resultados deste exame.</p>
           </div>

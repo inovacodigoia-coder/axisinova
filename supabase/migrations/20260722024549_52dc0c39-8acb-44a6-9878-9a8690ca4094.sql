@@ -1,0 +1,3 @@
+ALTER TABLE public.exams 
+ADD COLUMN IF NOT EXISTS show_duration BOOLEAN DEFAULT true,
+ADD COLUMN IF NOT EXISTS show_deadline BOOLEAN DEFAULT true;
