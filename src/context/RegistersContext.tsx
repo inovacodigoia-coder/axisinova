@@ -75,7 +75,11 @@ function mapExamRow(row: any): Exam {
     preparationInstructions: row.preparation_instructions,
     estimatedDurationMinutes: row.estimated_duration_minutes, resultDeadlineDays: row.result_deadline_days,
     requiresAuthorization: row.requires_authorization, authorizationInstructions: row.authorization_instructions,
-    attachmentRules: row.attachment_rules || [], isActive: row.is_active, createdAt: row.created_at,
+    attachmentRules: row.attachment_rules || [], 
+    parameters: row.parameters || [],
+    referenceValues: row.reference_values || [],
+    confirmationQuestions: row.confirmation_questions || [],
+    isActive: row.is_active, createdAt: row.created_at,
   }
 }
 function mapProcedureRow(row: any): Procedure {
@@ -287,6 +291,9 @@ export function RegistersProvider({ children }: { children: ReactNode }) {
       requires_authorization: e.requiresAuthorization,
       authorization_instructions: e.authorizationInstructions || null,
       attachment_rules: e.attachmentRules || [], 
+      parameters: e.parameters || [],
+      reference_values: e.referenceValues || [],
+      confirmation_questions: e.confirmationQuestions || [],
       is_active: e.isActive ?? true,
     } as any).select().single()
 
@@ -314,7 +321,11 @@ export function RegistersProvider({ children }: { children: ReactNode }) {
       result_deadline_days: e.resultDeadlineDays || null,
       requires_authorization: e.requiresAuthorization,
       authorization_instructions: e.authorizationInstructions || null,
-      attachment_rules: e.attachmentRules, is_active: e.isActive,
+      attachment_rules: e.attachmentRules, 
+      parameters: e.parameters,
+      reference_values: e.referenceValues,
+      confirmation_questions: e.confirmationQuestions,
+      is_active: e.isActive,
     } as any).eq('id', e.id)
     if (error) { 
       console.error(error); 
@@ -391,7 +402,7 @@ export function RegistersProvider({ children }: { children: ReactNode }) {
       addConvenio, updateConvenio, removeConvenio,
       addExam, updateExam, removeExam,
       addProcedure, updateProcedure, removeProcedure,
-      getSpecialtyName, getConvenioName, getDoctorsForSpecialty, getDoctorsForConvenio,
+      getSpecialtyName, getConvenioName, getDoctorsForSpecialty, getDoctorsForConvenio
     }}>
       {children}
     </RegistersContext.Provider>
@@ -399,7 +410,7 @@ export function RegistersProvider({ children }: { children: ReactNode }) {
 }
 
 export function useRegisters() {
-  const ctx = useContext(RegistersContext)
-  if (!ctx) throw new Error('useRegisters must be used within RegistersProvider')
-  return ctx
+  const context = useContext(RegistersContext)
+  if (!context) throw new Error('useRegisters must be used within a RegistersProvider')
+  return context
 }

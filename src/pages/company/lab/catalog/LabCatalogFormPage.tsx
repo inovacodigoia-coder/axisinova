@@ -58,7 +58,12 @@ export default function LabCatalogFormPage() {
   const [activeTab, setActiveTab] = useState('general')
   const [isSaving, setIsSaving] = useState(false)
 
-  const { addExam, updateExam } = useRegisters()
+  const { addExam, updateExam, exams } = useRegisters()
+  
+  // Make exams available globally for the initial load effect
+  useEffect(() => {
+    (window as any)._allExams = exams
+  }, [exams])
   const [examData, setExamData] = useState({
     name: '',
     internalCode: '',
@@ -78,29 +83,56 @@ export default function LabCatalogFormPage() {
     reportObservations: '',
   })
 
+  const [parameters, setParameters] = useState<any[]>([])
+  const [confirmationQuestions, setConfirmationQuestions] = useState<string[]>([])
+
   useEffect(() => {
-    if (isEditing) {
-      // Em uma implementação real, buscaríamos os dados do exame pelo ID
-      setExamData({
-        name: "25-Hidroxivitamina D",
-        internalCode: "VITD001",
-        type: 'lab',
-        tussCode: "40302546",
-        isActive: true,
-        preparationInstructions: "Jejum de 8 horas.",
-        estimatedDurationMinutes: 30,
-        resultDeadlineDays: 1,
-        requiresAuthorization: false,
-        showDuration: true,
-        showDeadline: true,
-        measurementUnit: 'ng/mL',
-        specialtyId: '',
-        defaultOrigin: 'Recepção Central',
-        defaultDestination: 'Bancada Bioquímica',
-        reportObservations: '',
-      })
+    if (isEditing && exams.length > 0) {
+      const existingExam = exams.find((e: any) => e.id === id)
+      if (existingExam) {
+        setExamData({
+          name: existingExam.name || "",
+          internalCode: existingExam.internalCode || "",
+          type: existingExam.type || 'lab',
+          tussCode: existingExam.tussCode || "",
+          isActive: existingExam.isActive ?? true,
+          preparationInstructions: existingExam.preparationInstructions || "",
+          estimatedDurationMinutes: existingExam.estimatedDurationMinutes || 30,
+          resultDeadlineDays: existingExam.resultDeadlineDays || 1,
+          requiresAuthorization: existingExam.requiresAuthorization || false,
+          showDuration: existingExam.showDuration ?? true,
+          showDeadline: existingExam.showDeadline ?? true,
+          measurementUnit: existingExam.measurementUnit || "",
+          specialtyId: existingExam.specialtyId || "",
+          defaultOrigin: existingExam.defaultOrigin || "",
+          defaultDestination: existingExam.defaultDestination || "",
+          reportObservations: existingExam.reportObservations || "",
+        })
+        if (existingExam.parameters) setParameters(existingExam.parameters)
+        if (existingExam.confirmationQuestions) setConfirmationQuestions(existingExam.confirmationQuestions)
+      } else {
+        // Fallback for demo or if not found
+        setExamData({
+          name: "25-Hidroxivitamina D",
+          internalCode: "VITD001",
+          type: 'lab',
+          tussCode: "40302546",
+          isActive: true,
+          preparationInstructions: "Jejum de 8 horas.",
+          estimatedDurationMinutes: 30,
+          resultDeadlineDays: 1,
+          requiresAuthorization: false,
+          showDuration: true,
+          showDeadline: true,
+          measurementUnit: 'ng/mL',
+          specialtyId: '',
+          defaultOrigin: 'Recepção Central',
+          defaultDestination: 'Bancada Bioquímica',
+          reportObservations: '',
+        })
+      }
     }
-  }, [isEditing, id])
+  }, [isEditing, id, exams])
 
   const handleSave = async () => {
     if (!examData.name) {
@@ -110,12 +142,22 @@ export default function LabCatalogFormPage() {
 
     setIsSaving(true)
     try {
+      const finalData = {
+        ...examData,
+        parameters,
+        confirmationQuestions,
+      }
+
       if (isEditing) {
-        await updateExam({ ...examData, id: id! } as any)
+        await updateExam({ 
+          ...finalData, 
+          id: id!,
+          referenceValues: [] // Ideally these would be handled too
+        } as any)
         toast.success('Exame atualizado com sucesso!')
       } else {
         await addExam({
-          ...examData,
+          ...finalData,
           attachmentRules: [],
           isActive: examData.isActive ?? true,
           createdAt: new Date().toISOString()
@@ -201,7 +243,10 @@ export default function LabCatalogFormPage() {
           />
         </TabsContent>
         <TabsContent value="parameters">
-          <ParametersSection />
+          <ParametersSection 
+            parameters={parameters} 
+            setParameters={setParameters} 
+          />
         </TabsContent>
         <TabsContent value="reference">
           <ReferenceSection />
@@ -210,7 +255,10 @@ export default function LabCatalogFormPage() {
            <RulesSection />
         </TabsContent>
         <TabsContent value="patient">
-          <PatientInfoSection />
+          <PatientInfoSection 
+            questions={confirmationQuestions}
+            setQuestions={setConfirmationQuestions}
+          />
         </TabsContent>
       </Tabs>
     </div>
@@ -474,38 +522,13 @@ function GeneralInfoSection({ isEditing, data, onChange }: { isEditing: boolean,
           <p className="text-[11px] text-muted-foreground">Esse texto será impresso no laudo, abaixo dos resultados deste exame.</p>
         </div>
 
-        <div className="md:col-span-2 space-y-4 pt-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <MessageSquare className="h-5 w-5 text-primary" />
-              <Label className="text-sm font-bold uppercase tracking-wider text-muted-foreground">Perguntas de Confirmação</Label>
-            </div>
-            <Button variant="outline" size="sm" className="gap-2">
-              <Plus className="h-4 w-4" /> Adicionar
-            </Button>
-          </div>
-          <p className="text-[11px] text-muted-foreground">Perguntas que o atendente deverá confirmar com o paciente ao adicionar este exame.</p>
-          <div className="space-y-3">
-            <div className="flex gap-3 items-center">
-              <span className="text-xs text-muted-foreground font-medium w-4">1.</span>
-              <Input 
-                defaultValue="O paciente está em jejum há pelo menos 8 horas?" 
-                className="flex-1"
-              />
-              <Button variant="ghost" size="icon" className="text-red-500">
-                <Trash2 className="h-4 w-4" />
-              </Button>
-            </div>
-          </div>
-        </div>
       </div>
     </Card>
   )
 }
 
-function ParametersSection() {
+function ParametersSection({ parameters, setParameters }: { parameters: any[], setParameters: (p: any[]) => void }) {
   const [measurementUnits, setMeasurementUnits] = useState<any[]>([])
-  const [parameters, setParameters] = useState<any[]>([])
   const [editingReference, setEditingReference] = useState<any>(null)
 
   useEffect(() => {
@@ -1038,16 +1061,29 @@ function RulesSection() {
   )
 }
 
-function PatientInfoSection() {
-  const [questions, setQuestions] = useState<string[]>([
-    "O paciente está em jejum há pelo menos 8 horas?"
-  ]);
+function PatientInfoSection({ questions, setQuestions }: { questions: string[], setQuestions: (q: string[]) => void }) {
+  const [localQuestions, setLocalQuestions] = useState<string[]>(questions);
 
-  const addQuestion = () => setQuestions([...questions, ""]);
-  const removeQuestion = (index: number) => setQuestions(questions.filter((_, i) => i !== index));
+  useEffect(() => {
+    setLocalQuestions(questions);
+  }, [questions]);
+
+  const addQuestion = () => {
+    const newQuestions = [...localQuestions, ""];
+    setLocalQuestions(newQuestions);
+    setQuestions(newQuestions);
+  };
+  
+  const removeQuestion = (index: number) => {
+    const newQuestions = localQuestions.filter((_, i) => i !== index);
+    setLocalQuestions(newQuestions);
+    setQuestions(newQuestions);
+  };
+  
   const updateQuestion = (index: number, value: string) => {
-    const newQuestions = [...questions];
+    const newQuestions = [...localQuestions];
     newQuestions[index] = value;
+    setLocalQuestions(newQuestions);
     setQuestions(newQuestions);
   };
 
@@ -1101,7 +1137,7 @@ function PatientInfoSection() {
         </div>
 
         <div className="space-y-3">
-          {questions.map((q, index) => (
+          {localQuestions.map((q, index) => (
             <div key={index} className="flex gap-3 items-center">
               <span className="text-xs text-muted-foreground font-medium w-4">{index + 1}.</span>
               <Input 
