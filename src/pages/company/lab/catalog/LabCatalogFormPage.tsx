@@ -109,8 +109,8 @@ export default function LabCatalogFormPage() {
   const [confirmationQuestions, setConfirmationQuestions] = useState<string[]>([])
 
   useEffect(() => {
-    if (isEditing && (exams as any[]).length > 0) {
-      const existingExam = (exams as any[]).find((e: any) => e.id === id)
+    if (isEditing && exams && exams.length > 0) {
+      const existingExam = exams.find((e: any) => e.id === id)
       if (existingExam) {
         setExamData({
           name: existingExam.name || "",
@@ -141,8 +141,13 @@ export default function LabCatalogFormPage() {
           defaultMaterial: existingExam.defaultMaterial || "",
           workbenchId: existingExam.workbenchId || "",
         })
-        if (existingExam.parameters) setParameters(existingExam.parameters)
-        if (existingExam.confirmationQuestions) setConfirmationQuestions(existingExam.confirmationQuestions)
+        setParameters(existingExam.parameters || [])
+        setConfirmationQuestions(existingExam.confirmationQuestions || [])
+      } else {
+        // Exam ID provided but not found after loading
+        console.warn(`Exame com ID ${id} não encontrado no catálogo.`)
+        // Optionally redirect if it's clear it doesn't exist
+        // navigate('/app/cadastros/catalogo')
       }
     }
   }, [isEditing, id, exams])
@@ -157,9 +162,9 @@ export default function LabCatalogFormPage() {
     try {
       const finalData = {
         ...examData,
-        parameters,
-        confirmationQuestions,
-        referenceValues: [] // Ideally these would be handled too if they had a separate state
+        parameters: parameters || [],
+        confirmationQuestions: confirmationQuestions || [],
+        referenceValues: (examData as any).referenceValues || []
       }
 
       if (isEditing) {
@@ -600,7 +605,7 @@ function ParametersSection({ parameters, setParameters }: { parameters: any[], s
   }, [])
 
   const addParameter = () => {
-    const newId = parameters.length > 0 ? Math.max(...parameters.map(p => p.id)) + 1 : 1
+    const newId = (parameters && parameters.length > 0) ? Math.max(...parameters.map(p => p.id)) + 1 : 1
     setParameters([...parameters, { 
       id: newId, 
       name: '', 
@@ -668,7 +673,7 @@ function ParametersSection({ parameters, setParameters }: { parameters: any[], s
                 </tr>
               </thead>
               <tbody className="divide-y divide-border">
-                {parameters.map((param, idx) => (
+                {parameters && parameters.length > 0 && parameters.map((param, idx) => (
                   <React.Fragment key={param.id}>
                     <tr className="hover:bg-muted/5 transition-colors">
                       <td className="px-4 py-3 text-xs text-muted-foreground font-medium">{idx + 1}</td>
@@ -1288,8 +1293,13 @@ function InterfacingSection({ config, params, internalParameters, onChange }: {
   
   useEffect(() => {
     const fetchEquipments = async () => {
-      const { data } = await supabase.from('lab_equipments').select('*').eq('is_active', true)
-      if (data) setEquipments(data)
+      try {
+        const { data, error } = await supabase.from('lab_equipments').select('*').eq('is_active', true)
+        if (error) throw error
+        if (data) setEquipments(data)
+      } catch (err) {
+        console.error('Error fetching equipments:', err)
+      }
     }
     fetchEquipments()
   }, [])
@@ -1338,9 +1348,9 @@ function InterfacingSection({ config, params, internalParameters, onChange }: {
                 <SelectValue placeholder="Selecione o equipamento" />
               </SelectTrigger>
               <SelectContent>
-                {equipments.length > 0 ? (
+                {equipments && equipments.length > 0 ? (
                   equipments.map(eq => (
-                    <SelectItem key={eq.id} value={eq.id}>{eq.name} ({eq.model})</SelectItem>
+                    <SelectItem key={eq.id} value={eq.id}>{eq.name} ({eq.model || 'S/M'})</SelectItem>
                   ))
                 ) : (
                   <SelectItem value="none" disabled>Nenhum equipamento cadastrado</SelectItem>
@@ -1396,7 +1406,7 @@ function InterfacingSection({ config, params, internalParameters, onChange }: {
               </tr>
             </thead>
             <tbody className="divide-y divide-border/30">
-              {params.length > 0 ? (
+              {params && params.length > 0 ? (
                 params.map((param, idx) => (
                   <tr key={idx} className="hover:bg-muted/10 transition-colors">
                     <td className="py-4 text-sm font-medium">{param.parameterName}</td>
