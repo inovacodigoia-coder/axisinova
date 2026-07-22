@@ -133,6 +133,8 @@ export default function LabCatalogFormPage() {
             autoSendOrders: true,
           },
           interfacingParameters: existingExam.interfacingParameters || [],
+          selectedMaterials: existingExam.selectedMaterials || [],
+          defaultMaterial: existingExam.defaultMaterial || "",
         })
         if (existingExam.parameters) setParameters(existingExam.parameters)
         if (existingExam.confirmationQuestions) setConfirmationQuestions(existingExam.confirmationQuestions)
@@ -293,8 +295,8 @@ export default function LabCatalogFormPage() {
 function GeneralInfoSection({ isEditing, data, onChange }: { isEditing: boolean, data: any, onChange: (val: any) => void }) {
   const navigate = useNavigate()
   const materials = ['Sangue Total', 'Soro', 'Plasma', 'Urina', 'Fezes', 'Secreção', 'Líquor', 'Swab']
-  const [selectedMaterials, setSelectedMaterials] = useState<string[]>(data.selectedMaterials || (isEditing ? ['Soro'] : []))
-  const [defaultMaterial, setDefaultMaterial] = useState(data.defaultMaterial || (isEditing ? 'Soro' : ''))
+  const [selectedMaterials, setSelectedMaterials] = useState<string[]>(data.selectedMaterials || [])
+  const [defaultMaterial, setDefaultMaterial] = useState(data.defaultMaterial || "")
   const [measurementUnits, setMeasurementUnits] = useState<any[]>([])
 
   useEffect(() => {
@@ -306,11 +308,15 @@ function GeneralInfoSection({ isEditing, data, onChange }: { isEditing: boolean,
   }, [])
 
   const toggleMaterial = (mat: string) => {
-    const newMaterials = selectedMaterials.includes(mat) 
-      ? selectedMaterials.filter(m => m !== mat) 
-      : [...selectedMaterials, mat]
-    setSelectedMaterials(newMaterials)
-    onChange({ selectedMaterials: newMaterials })
+    setSelectedMaterials(prev => {
+      const newMaterials = prev.includes(mat) 
+        ? prev.filter(m => m !== mat) 
+        : [...prev, mat]
+      
+      // Use setExamData to ensure it persists in the form state
+      onChange({ selectedMaterials: newMaterials })
+      return newMaterials
+    })
   }
 
   const handleSetDefault = (mat: string) => {
