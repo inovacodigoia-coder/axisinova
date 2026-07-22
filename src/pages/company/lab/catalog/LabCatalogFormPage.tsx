@@ -103,6 +103,7 @@ export default function LabCatalogFormPage() {
     selectedMaterials: [] as string[],
     defaultMaterial: '',
     workbenchId: '',
+    referenceValues: [] as any[],
   })
 
   const [parameters, setParameters] = useState<any[]>([])
@@ -140,14 +141,10 @@ export default function LabCatalogFormPage() {
           selectedMaterials: existingExam.selectedMaterials || [],
           defaultMaterial: existingExam.defaultMaterial || "",
           workbenchId: existingExam.workbenchId || "",
+          referenceValues: existingExam.referenceValues || [],
         })
         setParameters(existingExam.parameters || [])
         setConfirmationQuestions(existingExam.confirmationQuestions || [])
-      } else {
-        // Exam ID provided but not found after loading
-        console.warn(`Exame com ID ${id} não encontrado no catálogo.`)
-        // Optionally redirect if it's clear it doesn't exist
-        // navigate('/app/cadastros/catalogo')
       }
     }
   }, [isEditing, id, exams])
@@ -205,14 +202,14 @@ export default function LabCatalogFormPage() {
           </Button>
           <div>
             <h1 className="text-xl font-bold">{isEditing ? 'Editar Exame' : 'Novo Exame'}</h1>
-            <p className="text-xs text-muted-foreground">{isEditing ? `${examData.internalCode || 'S/C'} - ${examData.name || 'Carregando...'}` : 'Preencha os dados do novo exame'}</p>
+            <p className="text-xs text-muted-foreground">{isEditing ? `${examData?.internalCode || 'S/C'} - ${examData?.name || 'Carregando...'}` : 'Preencha os dados do novo exame'}</p>
           </div>
         </div>
         <div className="flex items-center gap-3">
           <div className="flex items-center gap-2 mr-4">
             <Label className="text-xs font-bold uppercase tracking-wider">Ativo</Label>
             <Switch 
-              checked={examData.isActive} 
+              checked={examData?.isActive ?? true} 
               onCheckedChange={(val) => setExamData(prev => ({ ...prev, isActive: val }))} 
               className="border border-border/50"
             />
@@ -1306,16 +1303,16 @@ function InterfacingSection({ config, params, internalParameters, onChange }: {
 
   // Initialize mapping if parameters exist but mapping doesn't
   useEffect(() => {
-    if (internalParameters.length > 0 && params.length === 0) {
+    if (internalParameters && internalParameters.length > 0 && (!params || params.length === 0)) {
       const initialParams = internalParameters.map(p => ({
-        parameterName: p.name,
+        parameterName: p.name || '',
         machineCode: '',
         criticalAlert: false,
         criticalLimit: ''
       }))
       onChange({ interfacingParameters: initialParams })
     }
-  }, [internalParameters, params.length])
+  }, [internalParameters, params?.length])
 
   const updateConfig = (key: string, value: any) => {
     onChange({
@@ -1341,7 +1338,7 @@ function InterfacingSection({ config, params, internalParameters, onChange }: {
           <div className="space-y-4">
             <Label className="text-sm font-bold uppercase tracking-wider text-muted-foreground">Equipamento</Label>
             <Select 
-              value={config.equipmentId} 
+              value={config?.equipmentId || ''} 
               onValueChange={(val) => updateConfig('equipmentId', val)}
             >
               <SelectTrigger className="h-11 rounded-xl">
@@ -1362,7 +1359,7 @@ function InterfacingSection({ config, params, internalParameters, onChange }: {
           <div className="space-y-4">
             <Label className="text-sm font-bold uppercase tracking-wider text-muted-foreground">Código no Equipamento</Label>
             <Input 
-              value={config.equipmentCode}
+              value={config?.equipmentCode || ''}
               onChange={(e) => updateConfig('equipmentCode', e.target.value)}
               placeholder="Ex: 10008"
               className="h-11 rounded-xl"
@@ -1373,14 +1370,14 @@ function InterfacingSection({ config, params, internalParameters, onChange }: {
         <div className="flex flex-wrap gap-8 pt-2">
           <div className="flex items-center gap-3">
             <Switch 
-              checked={config.autoReceiveResults}
+              checked={config?.autoReceiveResults ?? true}
               onCheckedChange={(val) => updateConfig('autoReceiveResults', val)}
             />
             <Label className="text-sm font-medium cursor-pointer">Receber resultados automaticamente</Label>
           </div>
           <div className="flex items-center gap-3">
             <Switch 
-              checked={config.autoSendOrders}
+              checked={config?.autoSendOrders ?? true}
               onCheckedChange={(val) => updateConfig('autoSendOrders', val)}
             />
             <Label className="text-sm font-medium cursor-pointer">Enviar pedidos ao equipamento</Label>
@@ -1407,7 +1404,7 @@ function InterfacingSection({ config, params, internalParameters, onChange }: {
             </thead>
             <tbody className="divide-y divide-border/30">
               {params && params.length > 0 ? (
-                params.map((param, idx) => (
+                params.map((param, idx) => param && (
                   <tr key={idx} className="hover:bg-muted/10 transition-colors">
                     <td className="py-4 text-sm font-medium">{param.parameterName}</td>
                     <td className="py-4">
