@@ -287,6 +287,9 @@ export function RegistersProvider({ children }: { children: ReactNode }) {
       requires_authorization: e.requiresAuthorization,
       authorization_instructions: e.authorizationInstructions || null,
       attachment_rules: e.attachmentRules || [], 
+      parameters: e.parameters || [],
+      reference_values: e.referenceValues || [],
+      confirmation_questions: e.confirmationQuestions || [],
       is_active: e.isActive ?? true,
     } as any).select().single()
 
@@ -314,7 +317,11 @@ export function RegistersProvider({ children }: { children: ReactNode }) {
       result_deadline_days: e.resultDeadlineDays || null,
       requires_authorization: e.requiresAuthorization,
       authorization_instructions: e.authorizationInstructions || null,
-      attachment_rules: e.attachmentRules, is_active: e.isActive,
+      attachment_rules: e.attachmentRules, 
+      parameters: e.parameters,
+      reference_values: e.referenceValues,
+      confirmation_questions: e.confirmationQuestions,
+      is_active: e.isActive,
     } as any).eq('id', e.id)
     if (error) { 
       console.error(error); 

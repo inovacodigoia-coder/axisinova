@@ -235,7 +235,10 @@ export default function LabCatalogFormPage() {
           />
         </TabsContent>
         <TabsContent value="parameters">
-          <ParametersSection />
+          <ParametersSection 
+            parameters={parameters} 
+            setParameters={setParameters} 
+          />
         </TabsContent>
         <TabsContent value="reference">
           <ReferenceSection />
@@ -244,7 +247,10 @@ export default function LabCatalogFormPage() {
            <RulesSection />
         </TabsContent>
         <TabsContent value="patient">
-          <PatientInfoSection />
+          <PatientInfoSection 
+            questions={confirmationQuestions}
+            setQuestions={setConfirmationQuestions}
+          />
         </TabsContent>
       </Tabs>
     </div>
@@ -537,9 +543,8 @@ function GeneralInfoSection({ isEditing, data, onChange }: { isEditing: boolean,
   )
 }
 
-function ParametersSection() {
+function ParametersSection({ parameters, setParameters }: { parameters: any[], setParameters: (p: any[]) => void }) {
   const [measurementUnits, setMeasurementUnits] = useState<any[]>([])
-  const [parameters, setParameters] = useState<any[]>([])
   const [editingReference, setEditingReference] = useState<any>(null)
 
   useEffect(() => {
@@ -1072,16 +1077,29 @@ function RulesSection() {
   )
 }
 
-function PatientInfoSection() {
-  const [questions, setQuestions] = useState<string[]>([
-    "O paciente está em jejum há pelo menos 8 horas?"
-  ]);
+function PatientInfoSection({ questions, setQuestions }: { questions: string[], setQuestions: (q: string[]) => void }) {
+  const [localQuestions, setLocalQuestions] = useState<string[]>(questions);
 
-  const addQuestion = () => setQuestions([...questions, ""]);
-  const removeQuestion = (index: number) => setQuestions(questions.filter((_, i) => i !== index));
+  useEffect(() => {
+    setLocalQuestions(questions);
+  }, [questions]);
+
+  const addQuestion = () => {
+    const newQuestions = [...localQuestions, ""];
+    setLocalQuestions(newQuestions);
+    setQuestions(newQuestions);
+  };
+  
+  const removeQuestion = (index: number) => {
+    const newQuestions = localQuestions.filter((_, i) => i !== index);
+    setLocalQuestions(newQuestions);
+    setQuestions(newQuestions);
+  };
+  
   const updateQuestion = (index: number, value: string) => {
-    const newQuestions = [...questions];
+    const newQuestions = [...localQuestions];
     newQuestions[index] = value;
+    setLocalQuestions(newQuestions);
     setQuestions(newQuestions);
   };
 
@@ -1135,7 +1153,7 @@ function PatientInfoSection() {
         </div>
 
         <div className="space-y-3">
-          {questions.map((q, index) => (
+          {localQuestions.map((q, index) => (
             <div key={index} className="flex gap-3 items-center">
               <span className="text-xs text-muted-foreground font-medium w-4">{index + 1}.</span>
               <Input 

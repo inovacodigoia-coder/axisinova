@@ -89,6 +89,9 @@ export interface Exam {
   requiresAuthorization: boolean
   authorizationInstructions?: string
   attachmentRules: AttachmentRule[]
+  parameters?: any[]
+  referenceValues?: any[]
+  confirmationQuestions?: string[]
   isActive: boolean
   createdAt: string
 }
