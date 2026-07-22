@@ -25,7 +25,8 @@ import {
   History,
   Calculator,
   ExternalLink,
-  MoreVertical
+  MoreVertical,
+  Loader2
 } from 'lucide-react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { cn } from '@/lib/utils'
@@ -55,6 +56,7 @@ export default function LabCatalogFormPage() {
   const { id } = useParams()
   const isEditing = !!id
   const [activeTab, setActiveTab] = useState('general')
+  const [isSaving, setIsSaving] = useState(false)
 
   const { addExam, updateExam } = useRegisters()
   const [examData, setExamData] = useState({
@@ -106,10 +108,11 @@ export default function LabCatalogFormPage() {
       return
     }
 
+    setIsSaving(true)
     try {
       if (isEditing) {
         await updateExam({ ...examData, id: id! } as any)
-        toast.success('Exame atualizado!')
+        toast.success('Exame atualizado com sucesso!')
       } else {
         await addExam({
           ...examData,
@@ -124,9 +127,11 @@ export default function LabCatalogFormPage() {
       setTimeout(() => {
         navigate('/app/cadastros/catalogo')
       }, 500)
-    } catch (error) {
+    } catch (error: any) {
       console.error('Erro ao salvar exame:', error)
-      toast.error('Erro ao salvar o exame')
+      toast.error(error?.message || 'Erro ao salvar o exame. Por favor, tente novamente.')
+    } finally {
+      setIsSaving(false)
     }
   }
 
@@ -151,9 +156,20 @@ export default function LabCatalogFormPage() {
               className="border border-border/50"
             />
           </div>
-          <Button variant="outline" onClick={() => navigate('/app/cadastros/catalogo')}>Cancelar</Button>
-          <Button onClick={handleSave} className="gradient-bg text-white gap-2 px-6">
-            <Save className="h-4 w-4" /> Salvar Exame
+          <Button variant="outline" onClick={() => navigate('/app/cadastros/catalogo')} disabled={isSaving}>
+            Cancelar
+          </Button>
+          <Button 
+            onClick={handleSave} 
+            className="gradient-bg text-white gap-2 px-6"
+            disabled={isSaving}
+          >
+            {isSaving ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : (
+              <Save className="h-4 w-4" />
+            )}
+            {isSaving ? 'Salvando...' : 'Salvar Exame'}
           </Button>
         </div>
       </div>
