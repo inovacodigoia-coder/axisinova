@@ -316,7 +316,11 @@ export function RegistersProvider({ children }: { children: ReactNode }) {
       authorization_instructions: e.authorizationInstructions || null,
       attachment_rules: e.attachmentRules, is_active: e.isActive,
     } as any).eq('id', e.id)
-    if (error) { console.error(error); toast.error('Erro ao atualizar exame') }
+    if (error) { 
+      console.error(error); 
+      toast.error('Erro ao atualizar exame');
+      throw error;
+    }
   }, [isDemo])
 
   const removeExam = useCallback(async (id: string) => {
