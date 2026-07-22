@@ -66,6 +66,19 @@ export interface Exam {
   createdAt: string
   showDuration?: boolean
   showDeadline?: boolean
+  methodology?: string
+  interfacingConfig?: {
+    equipmentId: string
+    equipmentCode: string
+    autoReceiveResults: boolean
+    autoSendOrders: boolean
+  }
+  interfacingParameters?: {
+    parameterName: string
+    machineCode: string
+    criticalAlert: boolean
+    criticalLimit: string
+  }[]
 }
 
 export interface Procedure {

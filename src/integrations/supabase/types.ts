@@ -330,9 +330,12 @@ export type Database = {
           default_origin: string | null
           estimated_duration_minutes: number | null
           id: string
+          interfacing_config: Json | null
+          interfacing_parameters: Json | null
           internal_code: string | null
           is_active: boolean
           measurement_unit: string | null
+          methodology: string | null
           name: string
           parameters: Json | null
           preparation_instructions: string | null
@@ -356,9 +359,12 @@ export type Database = {
           default_origin?: string | null
           estimated_duration_minutes?: number | null
           id?: string
+          interfacing_config?: Json | null
+          interfacing_parameters?: Json | null
           internal_code?: string | null
           is_active?: boolean
           measurement_unit?: string | null
+          methodology?: string | null
           name: string
           parameters?: Json | null
           preparation_instructions?: string | null
@@ -382,9 +388,12 @@ export type Database = {
           default_origin?: string | null
           estimated_duration_minutes?: number | null
           id?: string
+          interfacing_config?: Json | null
+          interfacing_parameters?: Json | null
           internal_code?: string | null
           is_active?: boolean
           measurement_unit?: string | null
+          methodology?: string | null
           name?: string
           parameters?: Json | null
           preparation_instructions?: string | null
@@ -401,6 +410,50 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "exams_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      lab_equipments: {
+        Row: {
+          company_id: string
+          connection_type: string | null
+          created_at: string | null
+          id: string
+          is_active: boolean | null
+          manufacturer: string | null
+          model: string | null
+          name: string
+          serial_number: string | null
+        }
+        Insert: {
+          company_id: string
+          connection_type?: string | null
+          created_at?: string | null
+          id?: string
+          is_active?: boolean | null
+          manufacturer?: string | null
+          model?: string | null
+          name: string
+          serial_number?: string | null
+        }
+        Update: {
+          company_id?: string
+          connection_type?: string | null
+          created_at?: string | null
+          id?: string
+          is_active?: boolean | null
+          manufacturer?: string | null
+          model?: string | null
+          name?: string
+          serial_number?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "lab_equipments_company_id_fkey"
             columns: ["company_id"]
             isOneToOne: false
             referencedRelation: "companies"
