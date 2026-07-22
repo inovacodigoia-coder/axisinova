@@ -324,6 +324,7 @@ export type Database = {
           attachment_rules: Json
           authorization_instructions: string | null
           company_id: string
+          confirmation_questions: Json | null
           created_at: string
           default_destination: string | null
           default_origin: string | null
@@ -333,7 +334,9 @@ export type Database = {
           is_active: boolean
           measurement_unit: string | null
           name: string
+          parameters: Json | null
           preparation_instructions: string | null
+          reference_values: Json | null
           report_observations: string | null
           requires_authorization: boolean
           result_deadline_days: number | null
@@ -345,6 +348,7 @@ export type Database = {
           attachment_rules?: Json
           authorization_instructions?: string | null
           company_id: string
+          confirmation_questions?: Json | null
           created_at?: string
           default_destination?: string | null
           default_origin?: string | null
@@ -354,7 +358,9 @@ export type Database = {
           is_active?: boolean
           measurement_unit?: string | null
           name: string
+          parameters?: Json | null
           preparation_instructions?: string | null
+          reference_values?: Json | null
           report_observations?: string | null
           requires_authorization?: boolean
           result_deadline_days?: number | null
@@ -366,6 +372,7 @@ export type Database = {
           attachment_rules?: Json
           authorization_instructions?: string | null
           company_id?: string
+          confirmation_questions?: Json | null
           created_at?: string
           default_destination?: string | null
           default_origin?: string | null
@@ -375,7 +382,9 @@ export type Database = {
           is_active?: boolean
           measurement_unit?: string | null
           name?: string
+          parameters?: Json | null
           preparation_instructions?: string | null
+          reference_values?: Json | null
           report_observations?: string | null
           requires_authorization?: boolean
           result_deadline_days?: number | null
