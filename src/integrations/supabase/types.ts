@@ -327,6 +327,7 @@ export type Database = {
           confirmation_questions: Json | null
           created_at: string
           default_destination: string | null
+          default_material: string | null
           default_origin: string | null
           estimated_duration_minutes: number | null
           id: string
@@ -343,6 +344,7 @@ export type Database = {
           report_observations: string | null
           requires_authorization: boolean
           result_deadline_days: number | null
+          selected_materials: Json | null
           show_deadline: boolean | null
           show_duration: boolean | null
           specialty_id: string | null
@@ -356,6 +358,7 @@ export type Database = {
           confirmation_questions?: Json | null
           created_at?: string
           default_destination?: string | null
+          default_material?: string | null
           default_origin?: string | null
           estimated_duration_minutes?: number | null
           id?: string
@@ -372,6 +375,7 @@ export type Database = {
           report_observations?: string | null
           requires_authorization?: boolean
           result_deadline_days?: number | null
+          selected_materials?: Json | null
           show_deadline?: boolean | null
           show_duration?: boolean | null
           specialty_id?: string | null
@@ -385,6 +389,7 @@ export type Database = {
           confirmation_questions?: Json | null
           created_at?: string
           default_destination?: string | null
+          default_material?: string | null
           default_origin?: string | null
           estimated_duration_minutes?: number | null
           id?: string
@@ -401,6 +406,7 @@ export type Database = {
           report_observations?: string | null
           requires_authorization?: boolean
           result_deadline_days?: number | null
+          selected_materials?: Json | null
           show_deadline?: boolean | null
           show_duration?: boolean | null
           specialty_id?: string | null
