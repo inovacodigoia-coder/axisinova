@@ -339,37 +339,56 @@ export function RegistersProvider({ children }: { children: ReactNode }) {
   }, [isDemo, companyId])
 
   const updateExam = useCallback(async (e: Exam) => {
+    // Optimistic update
     setExams(prev => prev.map(x => x.id === e.id ? e : x))
+    
     if (isDemo) return
-    const { error } = await supabase.from('exams').update({
-      name: e.name, tuss_code: e.tussCode || null, internal_code: e.internalCode || null, specialty_id: e.specialtyId || null,
-      type: e.type,
-      measurement_unit: e.measurementUnit || null,
-      default_origin: e.defaultOrigin || null,
-      default_destination: e.defaultDestination || null,
-      report_observations: e.reportObservations || null,
-      preparation_instructions: e.preparationInstructions || null,
-      estimated_duration_minutes: e.estimatedDurationMinutes || null,
-      result_deadline_days: e.resultDeadlineDays || null,
-      requires_authorization: e.requiresAuthorization,
-      authorization_instructions: e.authorizationInstructions || null,
-      attachment_rules: e.attachmentRules, 
-      parameters: e.parameters,
-      reference_values: e.referenceValues,
-      confirmation_questions: e.confirmationQuestions,
-      is_active: e.isActive,
-      show_duration: e.showDuration,
-      show_deadline: e.showDeadline,
-      methodology: e.methodology || null,
-      interfacing_config: e.interfacingConfig || {},
-      interfacing_parameters: e.interfacingParameters || [],
-      selected_materials: e.selectedMaterials || [],
-      default_material: e.defaultMaterial || null,
-    } as any).eq('id', e.id)
-    if (error) { 
-      console.error(error); 
-      toast.error('Erro ao atualizar exame');
-      throw error;
+    
+    try {
+      const { error } = await supabase.from('exams').update({
+        name: e.name, 
+        tuss_code: e.tussCode || null, 
+        internal_code: e.internalCode || null, 
+        specialty_id: e.specialtyId || null,
+        type: e.type,
+        measurement_unit: e.measurementUnit || null,
+        default_origin: e.defaultOrigin || null,
+        default_destination: e.defaultDestination || null,
+        report_observations: e.reportObservations || null,
+        preparation_instructions: e.preparationInstructions || null,
+        estimated_duration_minutes: e.estimatedDurationMinutes || null,
+        result_deadline_days: e.resultDeadlineDays || null,
+        requires_authorization: e.requiresAuthorization,
+        authorization_instructions: e.authorizationInstructions || null,
+        attachment_rules: e.attachmentRules || [], 
+        parameters: e.parameters || [],
+        reference_values: e.referenceValues || [],
+        confirmation_questions: e.confirmationQuestions || [],
+        is_active: e.isActive,
+        show_duration: e.showDuration,
+        show_deadline: e.showDeadline,
+        methodology: e.methodology || null,
+        interfacing_config: e.interfacingConfig || {},
+        interfacing_parameters: e.interfacingParameters || [],
+        selected_materials: e.selectedMaterials || [],
+        default_material: e.defaultMaterial || null,
+        workbench_id: e.workbenchId || null
+      } as any).eq('id', e.id)
+
+      if (error) { 
+        console.error('[updateExam] Error:', error); 
+        toast.error(`Erro ao atualizar exame: ${error.message}`);
+        
+        // Rollback state by re-fetching
+        const { data: refreshed } = await supabase.from('exams').select('*').eq('id', e.id).single()
+        if (refreshed) {
+          setExams(prev => prev.map(x => x.id === e.id ? mapExamRow(refreshed) : x))
+        }
+        throw error;
+      }
+    } catch (err) {
+      console.error('[updateExam] Caught error:', err);
+      throw err;
     }
   }, [isDemo])
 
