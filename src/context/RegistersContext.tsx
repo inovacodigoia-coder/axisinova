@@ -1,5 +1,5 @@
 import { createContext, useContext, useState, useCallback, useEffect, useMemo, type ReactNode } from 'react'
-import type { Doctor, Specialty, Convenio, Exam, Procedure } from '@/types/registers.types'
+import type { Doctor, Specialty, Convenio, Exam, Procedure, LabWorkbench } from '@/types/registers.types'
 import { DEMO_DOCTORS, DEMO_SPECIALTIES, DEMO_CONVENIOS, DEMO_EXAMS, DEMO_PROCEDURES, isDemoCompany } from '@/mocks/registers.mock'
 import { useAuth } from '@/context/AuthContext'
 import { supabase } from '@/integrations/supabase/client'
@@ -418,6 +418,38 @@ export function RegistersProvider({ children }: { children: ReactNode }) {
       attachment_rules: p.attachmentRules, is_active: p.isActive,
     } as any).eq('id', p.id)
     if (error) { console.error(error); toast.error('Erro ao atualizar procedimento') }
+  }, [isDemo])
+
+  // --- Workbenches ---
+  const addWorkbench = useCallback(async (w: LabWorkbench) => {
+    const id = ensureUUID(w.id)
+    const entity = { ...w, id, companyId: companyId || w.companyId }
+    setWorkbenches(prev => [...prev, entity])
+    if (isDemo || !companyId) return
+    const { error } = await supabase.from('lab_workbenches').insert({
+      id, company_id: companyId, name: w.name, description: w.description, is_active: w.isActive,
+    } as any)
+    if (error) {
+      console.error('[lab_workbenches.insert]', error)
+      toast.error(`Erro ao salvar bancada: ${error.message}`)
+      setWorkbenches(prev => prev.filter(x => x.id !== id))
+    }
+  }, [isDemo, companyId])
+
+  const updateWorkbench = useCallback(async (w: LabWorkbench) => {
+    setWorkbenches(prev => prev.map(x => x.id === w.id ? w : x))
+    if (isDemo) return
+    const { error } = await supabase.from('lab_workbenches').update({ 
+      name: w.name, description: w.description, is_active: w.isActive 
+    } as any).eq('id', w.id)
+    if (error) { console.error(error); toast.error('Erro ao atualizar bancada') }
+  }, [isDemo])
+
+  const removeWorkbench = useCallback(async (id: string) => {
+    setWorkbenches(prev => prev.filter(x => x.id !== id))
+    if (isDemo) return
+    const { error } = await supabase.from('lab_workbenches').delete().eq('id', id)
+    if (error) { console.error(error); toast.error('Erro ao remover bancada') }
   }, [isDemo])
 
   const removeProcedure = useCallback(async (id: string) => {
