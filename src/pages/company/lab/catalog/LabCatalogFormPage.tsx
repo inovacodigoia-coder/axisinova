@@ -83,6 +83,9 @@ export default function LabCatalogFormPage() {
     reportObservations: '',
   })
 
+  const [parameters, setParameters] = useState<any[]>([])
+  const [confirmationQuestions, setConfirmationQuestions] = useState<string[]>([])
+
   useEffect(() => {
     if (isEditing) {
       // Em uma implementação real, buscaríamos os dados do exame pelo ID
@@ -138,18 +141,22 @@ export default function LabCatalogFormPage() {
 
     setIsSaving(true)
     try {
+      const finalData = {
+        ...examData,
+        parameters,
+        confirmationQuestions,
+      }
+
       if (isEditing) {
         await updateExam({ 
-          ...examData, 
+          ...finalData, 
           id: id!,
-          parameters: parameters, // Preserve parameters during update
           referenceValues: [] // Ideally these would be handled too
         } as any)
         toast.success('Exame atualizado com sucesso!')
       } else {
         await addExam({
-          ...examData,
-          parameters: parameters,
+          ...finalData,
           attachmentRules: [],
           isActive: examData.isActive ?? true,
           createdAt: new Date().toISOString()
