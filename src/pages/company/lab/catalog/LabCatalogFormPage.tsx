@@ -261,6 +261,7 @@ export default function LabCatalogFormPage() {
           <GeneralInfoSection 
             isEditing={isEditing} 
             data={examData} 
+            workbenches={workbenches}
             onChange={(newData) => setExamData(prev => ({ ...prev, ...newData }))} 
           />
         </TabsContent>
@@ -300,7 +301,7 @@ export default function LabCatalogFormPage() {
   )
 }
 
-function GeneralInfoSection({ isEditing, data, onChange }: { isEditing: boolean, data: any, onChange: (val: any) => void }) {
+function GeneralInfoSection({ isEditing, data, workbenches, onChange }: { isEditing: boolean, data: any, workbenches: any[], onChange: (val: any) => void }) {
   const navigate = useNavigate()
   const materials = ['Sangue Total', 'Soro', 'Plasma', 'Urina', 'Fezes', 'Secreção', 'Líquor', 'Swab']
   const [selectedMaterials, setSelectedMaterials] = useState<string[]>(data.selectedMaterials || [])
@@ -420,6 +421,19 @@ function GeneralInfoSection({ isEditing, data, onChange }: { isEditing: boolean,
               <Plus className="h-4 w-4" />
             </Button>
           </div>
+        </div>
+        <div className="space-y-2">
+          <Label>Bancada Técnica</Label>
+          <select 
+            className="w-full h-10 px-3 rounded-lg border bg-background text-sm outline-none focus:ring-2 focus:ring-primary/20"
+            value={data.workbenchId}
+            onChange={(e) => onChange({ workbenchId: e.target.value })}
+          >
+            <option value="">-- Selecione --</option>
+            {workbenches?.map((wb: any) => (
+              <option key={wb.id} value={wb.id}>{wb.name}</option>
+            ))}
+          </select>
         </div>
         <div className="space-y-2">
           <Label>Especialidade</Label>

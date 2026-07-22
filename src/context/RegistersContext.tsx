@@ -327,6 +327,7 @@ export function RegistersProvider({ children }: { children: ReactNode }) {
       interfacing_parameters: e.interfacingParameters || [],
       selected_materials: e.selectedMaterials || [],
       default_material: e.defaultMaterial || null,
+      workbench_id: e.workbenchId || null,
     } as any).select().single()
 
     if (error) {
