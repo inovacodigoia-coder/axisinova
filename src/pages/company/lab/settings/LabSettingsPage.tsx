@@ -657,6 +657,8 @@ function WorkbenchesSection() {
   const [editingWorkbench, setEditingWorkbench] = useState<any>(null)
   const [workbenchName, setWorkbenchName] = useState('')
   const [workbenchDesc, setWorkbenchDesc] = useState('')
+  const [reportBreakPolicy, setReportBreakPolicy] = useState<'sequential' | 'dedicated_page' | 'default'>('default')
+  const [reportOrder, setReportOrder] = useState(0)
   const [saving, setSaving] = useState(false)
 
   const handleOpenDialog = (workbench?: any) => {
@@ -664,10 +666,14 @@ function WorkbenchesSection() {
       setEditingWorkbench(workbench)
       setWorkbenchName(workbench.name)
       setWorkbenchDesc(workbench.description || '')
+      setReportBreakPolicy(workbench.reportBreakPolicy || 'default')
+      setReportOrder(workbench.reportOrder || 0)
     } else {
       setEditingWorkbench(null)
       setWorkbenchName('')
       setWorkbenchDesc('')
+      setReportBreakPolicy('default')
+      setReportOrder(0)
     }
     setIsDialogOpen(true)
   }
@@ -683,6 +689,8 @@ function WorkbenchesSection() {
       const data = {
         name: workbenchName,
         description: workbenchDesc,
+        reportBreakPolicy,
+        reportOrder,
         isActive: true
       }
 
@@ -718,9 +726,25 @@ function WorkbenchesSection() {
         <div className="space-y-2">
           {workbenches.map(b => (
             <div key={b.id} className="p-4 border rounded-xl bg-card flex items-center justify-between hover:border-primary/30 transition-all">
-              <div>
-                <p className="font-bold text-sm">{b.name}</p>
-                <p className="text-xs text-muted-foreground">{b.description}</p>
+              <div className="grid grid-cols-[1fr_2fr_1fr_100px] gap-4 items-center w-full mr-4">
+                <div>
+                  <p className="font-bold text-sm">{b.name}</p>
+                  <p className="text-[10px] text-muted-foreground uppercase font-medium">Bancada</p>
+                </div>
+                <div>
+                  <p className="text-xs text-muted-foreground line-clamp-1">{b.description || '—'}</p>
+                </div>
+                <div>
+                  <p className="text-xs font-medium">
+                    {b.reportBreakPolicy === 'sequential' ? 'Sequencial (agrupa)' : 
+                     b.reportBreakPolicy === 'dedicated_page' ? 'Página dedicada' : 'Padrão'}
+                  </p>
+                  <p className="text-[10px] text-muted-foreground uppercase font-medium">Quebra no laudo</p>
+                </div>
+                <div className="text-center">
+                  <p className="text-xs font-bold">{b.reportOrder}</p>
+                  <p className="text-[10px] text-muted-foreground uppercase font-medium">Ordem</p>
+                </div>
               </div>
               <div className="flex gap-1">
                 <Button variant="ghost" size="sm" className="h-8 w-8 p-0" onClick={() => handleOpenDialog(b)}>
@@ -750,7 +774,7 @@ function WorkbenchesSection() {
           </DialogHeader>
           <div className="grid gap-4 py-4">
             <div className="grid gap-2">
-              <Label htmlFor="wb-name">Nome da bancada</Label>
+              <Label htmlFor="wb-name">Nome *</Label>
               <Input
                 id="wb-name"
                 value={workbenchName}
@@ -759,13 +783,39 @@ function WorkbenchesSection() {
               />
             </div>
             <div className="grid gap-2">
-              <Label htmlFor="wb-desc">Descrição (opcional)</Label>
-              <Input
+              <Label htmlFor="wb-desc">Descrição</Label>
+              <textarea
                 id="wb-desc"
                 value={workbenchDesc}
                 onChange={(e) => setWorkbenchDesc(e.target.value)}
-                placeholder="Ex: Dosagens em soro e plasma"
+                placeholder="Ex: Dosagens bioquímicas em soro e plasma"
+                className="w-full min-h-[80px] p-3 rounded-lg border bg-background text-sm resize-none focus:ring-2 focus:ring-primary/20 outline-none"
               />
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="grid gap-2">
+                <Label htmlFor="wb-policy">Política de quebra no laudo</Label>
+                <select
+                  id="wb-policy"
+                  value={reportBreakPolicy}
+                  onChange={(e) => setReportBreakPolicy(e.target.value as any)}
+                  className="w-full h-10 px-3 rounded-lg border bg-background text-sm outline-none focus:ring-2 focus:ring-primary/20"
+                >
+                  <option value="sequential">Sequencial (agrupa)</option>
+                  <option value="dedicated_page">Página dedicada</option>
+                  <option value="default">Padrão</option>
+                </select>
+              </div>
+              <div className="grid gap-2">
+                <Label htmlFor="wb-order">Ordem no laudo</Label>
+                <Input
+                  id="wb-order"
+                  type="number"
+                  value={reportOrder}
+                  onChange={(e) => setReportOrder(Number(e.target.value))}
+                />
+                <p className="text-[10px] text-muted-foreground">Menor valor aparece primeiro.</p>
+              </div>
             </div>
           </div>
           <DialogFooter>

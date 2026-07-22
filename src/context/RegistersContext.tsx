@@ -111,8 +111,14 @@ function mapProcedureRow(row: any): Procedure {
 }
 function mapWorkbenchRow(row: any): LabWorkbench {
   return {
-    id: row.id, companyId: row.company_id, name: row.name, description: row.description,
-    isActive: row.is_active, createdAt: row.created_at
+    id: row.id, 
+    companyId: row.company_id, 
+    name: row.name, 
+    description: row.description,
+    reportBreakPolicy: row.report_break_policy || 'default',
+    reportOrder: row.report_order || 0,
+    isActive: row.is_active, 
+    createdAt: row.created_at
   }
 }
 
@@ -444,32 +450,62 @@ export function RegistersProvider({ children }: { children: ReactNode }) {
   const addWorkbench = useCallback(async (w: LabWorkbench) => {
     const id = ensureUUID(w.id)
     const entity = { ...w, id, companyId: companyId || w.companyId }
-    setWorkbenches(prev => [...prev, entity])
-    if (isDemo || !companyId) return
-    const { error } = await supabase.from('lab_workbenches').insert({
-      id, company_id: companyId, name: w.name, description: w.description, is_active: w.isActive,
-    } as any)
+    
+    if (isDemo || !companyId) {
+      setWorkbenches(prev => [...prev, entity])
+      return
+    }
+
+    const { data, error } = await supabase.from('lab_workbenches').insert({
+      id,
+      company_id: companyId,
+      name: w.name,
+      description: w.description || null,
+      report_break_policy: w.reportBreakPolicy || 'default',
+      report_order: w.reportOrder || 0,
+      is_active: w.isActive ?? true
+    } as any).select().single()
+
     if (error) {
-      console.error('[lab_workbenches.insert]', error)
+      console.error('[workbenches.insert]', error)
       toast.error(`Erro ao salvar bancada: ${error.message}`)
-      setWorkbenches(prev => prev.filter(x => x.id !== id))
+      throw error
+    } else if (data) {
+      setWorkbenches(prev => [...prev, mapWorkbenchRow(data)])
     }
   }, [isDemo, companyId])
 
   const updateWorkbench = useCallback(async (w: LabWorkbench) => {
     setWorkbenches(prev => prev.map(x => x.id === w.id ? w : x))
     if (isDemo) return
-    const { error } = await supabase.from('lab_workbenches').update({ 
-      name: w.name, description: w.description, is_active: w.isActive 
+    
+    const { error } = await supabase.from('lab_workbenches').update({
+      name: w.name,
+      description: w.description || null,
+      report_break_policy: w.reportBreakPolicy || 'default',
+      report_order: w.reportOrder || 0,
+      is_active: w.isActive
     } as any).eq('id', w.id)
-    if (error) { console.error(error); toast.error('Erro ao atualizar bancada') }
+
+    if (error) {
+      console.error('[workbenches.update]', error)
+      toast.error('Erro ao atualizar bancada')
+      // Rollback
+      const { data: refreshed } = await supabase.from('lab_workbenches').select('*').eq('id', w.id).single()
+      if (refreshed) {
+        setWorkbenches(prev => prev.map(x => x.id === w.id ? mapWorkbenchRow(refreshed) : x))
+      }
+    }
   }, [isDemo])
 
   const removeWorkbench = useCallback(async (id: string) => {
     setWorkbenches(prev => prev.filter(x => x.id !== id))
     if (isDemo) return
     const { error } = await supabase.from('lab_workbenches').delete().eq('id', id)
-    if (error) { console.error(error); toast.error('Erro ao remover bancada') }
+    if (error) {
+      console.error('[workbenches.delete]', error)
+      toast.error('Erro ao remover bancada')
+    }
   }, [isDemo])
 
   const removeProcedure = useCallback(async (id: string) => {

@@ -169,6 +169,8 @@ export interface LabWorkbench {
   companyId: string
   name: string
   description?: string
+  reportBreakPolicy: 'sequential' | 'dedicated_page' | 'default'
+  reportOrder: number
   isActive: boolean
   createdAt?: string
 }
