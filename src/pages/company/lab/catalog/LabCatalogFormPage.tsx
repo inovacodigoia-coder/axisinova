@@ -238,6 +238,8 @@ export default function LabCatalogFormPage() {
           <PatientInfoSection 
             questions={confirmationQuestions}
             setQuestions={setConfirmationQuestions}
+            data={examData}
+            onChange={(newData) => setExamData(prev => ({ ...prev, ...newData }))}
           />
         </TabsContent>
       </Tabs>
