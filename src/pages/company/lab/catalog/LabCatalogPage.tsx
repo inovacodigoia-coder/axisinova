@@ -32,11 +32,16 @@ export default function LabCatalogPage() {
     // Show only real exams from the database
     const labExams = registeredExams.filter(e => e.type === 'lab');
     
-    return labExams.map(e => ({
+    // Sort by created_at descending so new ones appear first
+    const sortedExams = [...labExams].sort((a, b) => {
+      return new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime();
+    });
+    
+    return sortedExams.map(e => ({
       id: e.id,
       code: e.internalCode || e.tussCode || 'S/C',
       name: e.name,
-      material: 'Soro', // Padrão se não houver no cadastro
+      material: 'Soro', 
       workbench: 'Bioquímica',
       status: e.isActive ? 'active' : 'inactive'
     }));

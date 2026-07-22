@@ -109,7 +109,11 @@ export default function LabCatalogFormPage() {
         } as any)
         toast.success('Exame cadastrado com sucesso!')
       }
-      navigate('/app/cadastros/catalogo')
+      
+      // Delay navigation slightly to allow state to synchronize
+      setTimeout(() => {
+        navigate('/app/cadastros/catalogo')
+      }, 500)
     } catch (error) {
       console.error('Erro ao salvar exame:', error)
       toast.error('Erro ao salvar o exame')
