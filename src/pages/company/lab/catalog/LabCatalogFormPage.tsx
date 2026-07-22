@@ -103,6 +103,7 @@ export default function LabCatalogFormPage() {
     selectedMaterials: [] as string[],
     defaultMaterial: '',
     workbenchId: '',
+    referenceValues: [] as any[],
   })
 
   const [parameters, setParameters] = useState<any[]>([])
