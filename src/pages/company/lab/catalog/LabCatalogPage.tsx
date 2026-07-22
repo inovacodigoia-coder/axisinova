@@ -29,8 +29,10 @@ export default function LabCatalogPage() {
   const [examToDelete, setExamToDelete] = useState<string | null>(null)
 
   const exams = useMemo(() => {
+    if (!registeredExams) return [];
+    
     // Show only real exams from the database
-    const labExams = registeredExams.filter(e => e.type === 'lab');
+    const labExams = registeredExams.filter(e => e && e.type === 'lab');
     
     // Sort by created_at descending so new ones appear first
     const sortedExams = [...labExams].sort((a, b) => {
@@ -40,9 +42,9 @@ export default function LabCatalogPage() {
     return sortedExams.map(e => ({
       id: e.id,
       code: e.internalCode || e.tussCode || 'S/C',
-      name: e.name,
+      name: e.name || 'Sem nome',
       material: e.defaultMaterial || 'Soro', 
-      workbench: workbenches.find(w => w.id === e.workbenchId)?.name || 'Sem Bancada',
+      workbench: workbenches?.find(w => w.id === e.workbenchId)?.name || 'Sem Bancada',
       status: e.isActive ? 'active' : 'inactive'
     }));
   }, [registeredExams, workbenches])
