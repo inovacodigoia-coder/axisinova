@@ -157,9 +157,9 @@ export default function LabCatalogFormPage() {
     try {
       const finalData = {
         ...examData,
-        parameters,
-        confirmationQuestions,
-        referenceValues: [] // Ideally these would be handled too if they had a separate state
+        parameters: parameters || [],
+        confirmationQuestions: confirmationQuestions || [],
+        referenceValues: (examData as any).referenceValues || []
       }
 
       if (isEditing) {
