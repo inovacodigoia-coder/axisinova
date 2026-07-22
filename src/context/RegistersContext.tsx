@@ -329,6 +329,8 @@ export function RegistersProvider({ children }: { children: ReactNode }) {
       reference_values: e.referenceValues,
       confirmation_questions: e.confirmationQuestions,
       is_active: e.isActive,
+      show_duration: e.showDuration,
+      show_deadline: e.showDeadline,
     } as any).eq('id', e.id)
     if (error) { 
       console.error(error); 
