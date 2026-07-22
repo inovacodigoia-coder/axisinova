@@ -672,11 +672,13 @@ function ParametersSection() {
                         <div className="flex justify-center">
                           <Tooltip>
                             <TooltipTrigger asChild>
-                              <Switch 
-                                checked={param.isMandatory} 
-                                onCheckedChange={(val) => updateParameter(param.id, 'isMandatory', val)}
-                                className="shadow-sm border border-border/50 data-[state=checked]:!bg-[#00D4FF] data-[state=unchecked]:!bg-[#ef4444]"
-                              />
+                              <div>
+                                <Switch 
+                                  checked={param.isMandatory} 
+                                  onCheckedChange={(val) => updateParameter(param.id, 'isMandatory', val)}
+                                  className="shadow-sm border border-border/50 data-[state=checked]:!bg-[#00D4FF] data-[state=unchecked]:!bg-[#ef4444]"
+                                />
+                              </div>
                             </TooltipTrigger>
                             <TooltipContent>
                               <p className="text-xs">Parâmetro obrigatório: precisa ser preenchido na digitação manual de resultados</p>
@@ -688,11 +690,13 @@ function ParametersSection() {
                         <div className="flex justify-center">
                           <Tooltip>
                             <TooltipTrigger asChild>
-                              <Switch 
-                                checked={param.allowNegative} 
-                                onCheckedChange={(val) => updateParameter(param.id, 'allowNegative', val)}
-                                className="shadow-sm border border-border/50 data-[state=checked]:!bg-[#00D4FF] data-[state=unchecked]:!bg-[#ef4444]"
-                              />
+                              <div>
+                                <Switch 
+                                  checked={param.allowNegative} 
+                                  onCheckedChange={(val) => updateParameter(param.id, 'allowNegative', val)}
+                                  className="shadow-sm border border-border/50 data-[state=checked]:!bg-[#00D4FF] data-[state=unchecked]:!bg-[#ef4444]"
+                                />
+                              </div>
                             </TooltipTrigger>
                             <TooltipContent>
                               <p className="text-xs">Neg. Permite digitar valores negativos para este parâmetro.</p>
@@ -704,11 +708,13 @@ function ParametersSection() {
                         <div className="flex justify-center">
                           <Tooltip>
                             <TooltipTrigger asChild>
-                              <Switch 
-                                checked={param.isCalculated} 
-                                onCheckedChange={(val) => updateParameter(param.id, 'isCalculated', val)}
-                                className="shadow-sm border border-border/50 data-[state=checked]:!bg-[#00D4FF] data-[state=unchecked]:!bg-[#ef4444]"
-                              />
+                              <div>
+                                <Switch 
+                                  checked={param.isCalculated} 
+                                  onCheckedChange={(val) => updateParameter(param.id, 'isCalculated', val)}
+                                  className="shadow-sm border border-border/50 data-[state=checked]:!bg-[#00D4FF] data-[state=unchecked]:!bg-[#ef4444]"
+                                />
+                              </div>
                             </TooltipTrigger>
                             <TooltipContent>
                               <p className="text-xs">Calc. Parâmetro calculado automaticamente por fórmula. Não é editável manualmente.</p>
@@ -720,11 +726,13 @@ function ParametersSection() {
                         <div className="flex justify-center">
                           <Tooltip>
                             <TooltipTrigger asChild>
-                              <Switch 
-                                checked={param.isHidden} 
-                                onCheckedChange={(val) => updateParameter(param.id, 'isHidden', val)}
-                                className="shadow-sm border border-border/50 data-[state=checked]:!bg-[#00D4FF] data-[state=unchecked]:!bg-[#ef4444]"
-                              />
+                              <div>
+                                <Switch 
+                                  checked={param.isHidden} 
+                                  onCheckedChange={(val) => updateParameter(param.id, 'isHidden', val)}
+                                  className="shadow-sm border border-border/50 data-[state=checked]:!bg-[#00D4FF] data-[state=unchecked]:!bg-[#ef4444]"
+                                />
+                              </div>
                             </TooltipTrigger>
                             <TooltipContent>
                               <p className="text-xs">Oculto Laudo: O parâmetro não será exibido na impressão do laudo.</p>
