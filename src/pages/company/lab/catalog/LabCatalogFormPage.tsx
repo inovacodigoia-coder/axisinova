@@ -109,8 +109,8 @@ export default function LabCatalogFormPage() {
   const [confirmationQuestions, setConfirmationQuestions] = useState<string[]>([])
 
   useEffect(() => {
-    if (isEditing && (exams as any[]).length > 0) {
-      const existingExam = (exams as any[]).find((e: any) => e.id === id)
+    if (isEditing && exams && exams.length > 0) {
+      const existingExam = exams.find((e: any) => e.id === id)
       if (existingExam) {
         setExamData({
           name: existingExam.name || "",
@@ -141,8 +141,13 @@ export default function LabCatalogFormPage() {
           defaultMaterial: existingExam.defaultMaterial || "",
           workbenchId: existingExam.workbenchId || "",
         })
-        if (existingExam.parameters) setParameters(existingExam.parameters)
-        if (existingExam.confirmationQuestions) setConfirmationQuestions(existingExam.confirmationQuestions)
+        setParameters(existingExam.parameters || [])
+        setConfirmationQuestions(existingExam.confirmationQuestions || [])
+      } else {
+        // Exam ID provided but not found after loading
+        console.warn(`Exame com ID ${id} não encontrado no catálogo.`)
+        // Optionally redirect if it's clear it doesn't exist
+        // navigate('/app/cadastros/catalogo')
       }
     }
   }, [isEditing, id, exams])
