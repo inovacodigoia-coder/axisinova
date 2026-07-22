@@ -12,6 +12,7 @@ import {
   DialogHeader,
   DialogTitle,
   DialogFooter,
+  DialogDescription,
 } from "@/components/ui/dialog"
 import { 
   Building2, 
@@ -36,6 +37,8 @@ import { cn } from '@/lib/utils'
 import { toast } from 'sonner'
 import { supabase } from '@/integrations/supabase/client'
 
+
+import { useRegisters } from '@/context/RegistersContext'
 
 export default function LabSettingsPage() {
   const [searchParams, setSearchParams] = useSearchParams()
@@ -649,32 +652,131 @@ function MethodsSection() {
 }
 
 function WorkbenchesSection() {
-  const benches = [
-    { name: 'Bioquímica', desc: 'Dosagens bioquímicas em soro e plasma' },
-    { name: 'Hematologia', desc: 'Hemograma e provas hematológicas' },
-    { name: 'Imunologia', desc: 'Testes imunológicos e hormonais' },
-    { name: 'Uroanálise', desc: 'Exames de urina e sedimentoscopia' },
-  ]
+  const { workbenches, addWorkbench, updateWorkbench, removeWorkbench, isLoading } = useRegisters()
+  const [isDialogOpen, setIsDialogOpen] = useState(false)
+  const [editingWorkbench, setEditingWorkbench] = useState<any>(null)
+  const [workbenchName, setWorkbenchName] = useState('')
+  const [workbenchDesc, setWorkbenchDesc] = useState('')
+  const [saving, setSaving] = useState(false)
+
+  const handleOpenDialog = (workbench?: any) => {
+    if (workbench) {
+      setEditingWorkbench(workbench)
+      setWorkbenchName(workbench.name)
+      setWorkbenchDesc(workbench.description || '')
+    } else {
+      setEditingWorkbench(null)
+      setWorkbenchName('')
+      setWorkbenchDesc('')
+    }
+    setIsDialogOpen(true)
+  }
+
+  const handleSave = async () => {
+    if (!workbenchName) {
+      toast.error('Nome é obrigatório')
+      return
+    }
+
+    setSaving(true)
+    try {
+      const data = {
+        name: workbenchName,
+        description: workbenchDesc,
+        isActive: true
+      }
+
+      if (editingWorkbench) {
+        await updateWorkbench({ ...editingWorkbench, ...data })
+        toast.success('Bancada atualizada com sucesso')
+      } else {
+        await addWorkbench(data as any)
+        toast.success('Bancada criada com sucesso')
+      }
+      setIsDialogOpen(false)
+    } catch (error) {
+      toast.error('Erro ao salvar bancada')
+    } finally {
+      setSaving(false)
+    }
+  }
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <h3 className="text-lg font-bold">Bancadas Técnicas</h3>
-        <Button size="sm" className="gradient-bg text-white gap-2"><Plus className="h-4 w-4" /> Nova Bancada</Button>
+        <Button size="sm" onClick={() => handleOpenDialog()} className="gradient-bg text-white gap-2">
+          <Plus className="h-4 w-4" /> Nova Bancada
+        </Button>
       </div>
-      <div className="space-y-2">
-        {benches.map(b => (
-          <div key={b.name} className="p-4 border rounded-xl bg-card flex items-center justify-between hover:border-primary/30 transition-all">
-            <div>
-              <p className="font-bold text-sm">{b.name}</p>
-              <p className="text-xs text-muted-foreground">{b.desc}</p>
+
+      {isLoading ? (
+        <div className="flex justify-center py-12">
+          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        </div>
+      ) : (
+        <div className="space-y-2">
+          {workbenches.map(b => (
+            <div key={b.id} className="p-4 border rounded-xl bg-card flex items-center justify-between hover:border-primary/30 transition-all">
+              <div>
+                <p className="font-bold text-sm">{b.name}</p>
+                <p className="text-xs text-muted-foreground">{b.description}</p>
+              </div>
+              <div className="flex gap-1">
+                <Button variant="ghost" size="sm" className="h-8 w-8 p-0" onClick={() => handleOpenDialog(b)}>
+                  <Edit2 className="h-3.5 w-3.5" />
+                </Button>
+                <Button variant="ghost" size="sm" className="h-8 w-8 p-0 text-red-600" onClick={() => removeWorkbench(b.id)}>
+                  <Trash2 className="h-3.5 w-3.5" />
+                </Button>
+              </div>
             </div>
-            <div className="flex gap-1">
-              <Button variant="ghost" size="sm" className="h-8 w-8 p-0"><Edit2 className="h-3.5 w-3.5" /></Button>
-              <Button variant="ghost" size="sm" className="h-8 w-8 p-0 text-red-600"><Trash2 className="h-3.5 w-3.5" /></Button>
+          ))}
+          {workbenches.length === 0 && (
+            <div className="py-8 text-center text-muted-foreground text-sm">
+              Nenhuma bancada cadastrada.
+            </div>
+          )}
+        </div>
+      )}
+
+      <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+        <DialogContent className="sm:max-w-[425px]">
+          <DialogHeader>
+            <DialogTitle>{editingWorkbench ? 'Editar Bancada' : 'Nova Bancada'}</DialogTitle>
+            <DialogDescription>
+              Cadastre uma bancada técnica para organizar seus exames.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="grid gap-4 py-4">
+            <div className="grid gap-2">
+              <Label htmlFor="wb-name">Nome da bancada</Label>
+              <Input
+                id="wb-name"
+                value={workbenchName}
+                onChange={(e) => setWorkbenchName(e.target.value)}
+                placeholder="Ex: Bioquímica"
+              />
+            </div>
+            <div className="grid gap-2">
+              <Label htmlFor="wb-desc">Descrição (opcional)</Label>
+              <Input
+                id="wb-desc"
+                value={workbenchDesc}
+                onChange={(e) => setWorkbenchDesc(e.target.value)}
+                placeholder="Ex: Dosagens em soro e plasma"
+              />
             </div>
           </div>
-        ))}
-      </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsDialogOpen(false)}>Cancelar</Button>
+            <Button className="gradient-bg text-white" onClick={handleSave} disabled={saving}>
+              {saving && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
+              Salvar
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }
