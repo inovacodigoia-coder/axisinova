@@ -223,26 +223,26 @@ export default function LabCatalogFormPage() {
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-        <TabsList className="bg-card border border-border p-1 h-12 w-full justify-start gap-1">
-          <TabsTrigger value="general" className="gap-2 px-6 data-[state=active]:gradient-bg data-[state=active]:text-white">
+        <TabsList className="bg-card border border-border p-1 h-auto w-full justify-start gap-1 flex-wrap">
+          <TabsTrigger value="general" className="gap-2 px-4 py-2 data-[state=active]:gradient-bg data-[state=active]:text-white">
             <Info className="h-4 w-4" /> Informações Gerais
           </TabsTrigger>
-          <TabsTrigger value="parameters" className="gap-2 px-6 data-[state=active]:gradient-bg data-[state=active]:text-white">
+          <TabsTrigger value="parameters" className="gap-2 px-4 py-2 data-[state=active]:gradient-bg data-[state=active]:text-white">
             <Settings2 className="h-4 w-4" /> Parâmetros e Máscara
           </TabsTrigger>
-          <TabsTrigger value="reference" className="gap-2 px-6 data-[state=active]:gradient-bg data-[state=active]:text-white">
+          <TabsTrigger value="reference" className="gap-2 px-4 py-2 data-[state=active]:gradient-bg data-[state=active]:text-white">
             <Scale className="h-4 w-4" /> Valores de Referência
           </TabsTrigger>
-          <TabsTrigger value="methodology" className="gap-2 px-6 data-[state=active]:gradient-bg data-[state=active]:text-white">
+          <TabsTrigger value="methodology" className="gap-2 px-4 py-2 data-[state=active]:gradient-bg data-[state=active]:text-white">
             <Beaker className="h-4 w-4" /> Metodologias
           </TabsTrigger>
-          <TabsTrigger value="interfacing" className="gap-2 px-6 data-[state=active]:gradient-bg data-[state=active]:text-white">
+          <TabsTrigger value="interfacing" className="gap-2 px-4 py-2 data-[state=active]:gradient-bg data-[state=active]:text-white">
             <ArrowLeftRight className="h-4 w-4" /> Interfaceamento
           </TabsTrigger>
-          <TabsTrigger value="rules" className="gap-2 px-6 data-[state=active]:gradient-bg data-[state=active]:text-white">
+          <TabsTrigger value="rules" className="gap-2 px-4 py-2 data-[state=active]:gradient-bg data-[state=active]:text-white">
             <ShieldCheck className="h-4 w-4" /> Alertas e Regras
           </TabsTrigger>
-          <TabsTrigger value="patient" className="gap-2 px-6 data-[state=active]:gradient-bg data-[state=active]:text-white">
+          <TabsTrigger value="patient" className="gap-2 px-4 py-2 data-[state=active]:gradient-bg data-[state=active]:text-white">
             <UserCircle className="h-4 w-4" /> Info. ao Paciente
           </TabsTrigger>
         </TabsList>
