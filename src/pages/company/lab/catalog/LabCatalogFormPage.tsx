@@ -109,6 +109,8 @@ export default function LabCatalogFormPage() {
           defaultDestination: existingExam.defaultDestination || "",
           reportObservations: existingExam.reportObservations || "",
         })
+        if (existingExam.parameters) setParameters(existingExam.parameters)
+        if (existingExam.confirmationQuestions) setConfirmationQuestions(existingExam.confirmationQuestions)
       } else {
         // Fallback for demo or if not found
         setExamData({
