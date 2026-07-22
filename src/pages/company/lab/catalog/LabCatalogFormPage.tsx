@@ -26,7 +26,12 @@ import {
   Calculator,
   ExternalLink,
   MoreVertical,
-  Loader2
+  Loader2,
+  ArrowLeftRight,
+  Link,
+  Search,
+  CheckCircle2,
+  XCircle
 } from 'lucide-react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { cn } from '@/lib/utils'
@@ -81,6 +86,19 @@ export default function LabCatalogFormPage() {
     defaultOrigin: '',
     defaultDestination: '',
     reportObservations: '',
+    methodology: '',
+    interfacingConfig: {
+      equipmentId: '',
+      equipmentCode: '',
+      autoReceiveResults: true,
+      autoSendOrders: true,
+    },
+    interfacingParameters: [] as {
+      parameterName: string;
+      machineCode: string;
+      criticalAlert: boolean;
+      criticalLimit: string;
+    }[]
   })
 
   const [parameters, setParameters] = useState<any[]>([])
@@ -107,6 +125,14 @@ export default function LabCatalogFormPage() {
           defaultOrigin: existingExam.defaultOrigin || "",
           defaultDestination: existingExam.defaultDestination || "",
           reportObservations: existingExam.reportObservations || "",
+          methodology: existingExam.methodology || "",
+          interfacingConfig: existingExam.interfacingConfig || {
+            equipmentId: '',
+            equipmentCode: '',
+            autoReceiveResults: true,
+            autoSendOrders: true,
+          },
+          interfacingParameters: existingExam.interfacingParameters || [],
         })
         if (existingExam.parameters) setParameters(existingExam.parameters)
         if (existingExam.confirmationQuestions) setConfirmationQuestions(existingExam.confirmationQuestions)
@@ -207,6 +233,12 @@ export default function LabCatalogFormPage() {
           <TabsTrigger value="reference" className="gap-2 px-6 data-[state=active]:gradient-bg data-[state=active]:text-white">
             <Scale className="h-4 w-4" /> Valores de Referência
           </TabsTrigger>
+          <TabsTrigger value="methodology" className="gap-2 px-6 data-[state=active]:gradient-bg data-[state=active]:text-white">
+            <Beaker className="h-4 w-4" /> Metodologias
+          </TabsTrigger>
+          <TabsTrigger value="interfacing" className="gap-2 px-6 data-[state=active]:gradient-bg data-[state=active]:text-white">
+            <ArrowLeftRight className="h-4 w-4" /> Interfaceamento
+          </TabsTrigger>
           <TabsTrigger value="rules" className="gap-2 px-6 data-[state=active]:gradient-bg data-[state=active]:text-white">
             <ShieldCheck className="h-4 w-4" /> Alertas e Regras
           </TabsTrigger>
@@ -230,6 +262,17 @@ export default function LabCatalogFormPage() {
         </TabsContent>
         <TabsContent value="reference">
           <ReferenceSection />
+        </TabsContent>
+        <TabsContent value="methodology">
+          <MethodologySection methodology={examData.methodology} onChange={(val) => setExamData(prev => ({ ...prev, methodology: val }))} />
+        </TabsContent>
+        <TabsContent value="interfacing">
+          <InterfacingSection 
+            config={examData.interfacingConfig} 
+            params={examData.interfacingParameters}
+            internalParameters={parameters}
+            onChange={(newData) => setExamData(prev => ({ ...prev, ...newData }))}
+          />
         </TabsContent>
         <TabsContent value="rules">
            <RulesSection />
