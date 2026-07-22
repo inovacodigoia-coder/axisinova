@@ -75,7 +75,7 @@ export interface Procedure {
   tussCode?: string
   internalCode?: string
   price?: number
-  type?: string
+  type: string
   isActive: boolean
   createdAt: string
   specialtyId?: string
@@ -86,7 +86,7 @@ export interface Procedure {
   anesthesiaType?: string
   preOperativeInstructions?: string
   postOperativeInstructions?: string
-  attachmentRules?: AttachmentRule[]
+  attachmentRules: AttachmentRule[]
 }
 
 export interface Specialty {
@@ -178,8 +178,18 @@ export const BLOCK_REASONS = [
   'Inadimplência', 'Licença Médica', 'Desligamento', 'Férias', 'Outros'
 ];
 
-export const PROCEDURE_TYPES = [
-  'Consulta', 'Exame', 'Cirurgia', 'Pequeno Procedimento', 'Outros'
+export interface ProcedureType {
+  value: string;
+  label: string;
+  color?: string;
+}
+
+export const PROCEDURE_TYPES: ProcedureType[] = [
+  { value: 'Consulta', label: 'Consulta', color: 'bg-blue-100 text-blue-700' },
+  { value: 'Exame', label: 'Exame', color: 'bg-green-100 text-green-700' },
+  { value: 'Cirurgia', label: 'Cirurgia', color: 'bg-red-100 text-red-700' },
+  { value: 'Pequeno Procedimento', label: 'Pequeno Procedimento', color: 'bg-orange-100 text-orange-700' },
+  { value: 'Outros', label: 'Outros', color: 'bg-gray-100 text-gray-700' }
 ];
 
 export const ANESTHESIA_TYPES = [
