@@ -422,6 +422,19 @@ function GeneralInfoSection({ isEditing, data, onChange }: { isEditing: boolean,
           </div>
         </div>
         <div className="space-y-2">
+          <Label>Bancada Técnica</Label>
+          <select 
+            className="w-full h-10 px-3 rounded-lg border bg-background text-sm outline-none focus:ring-2 focus:ring-primary/20"
+            value={data.workbenchId}
+            onChange={(e) => onChange({ workbenchId: e.target.value })}
+          >
+            <option value="">-- Selecione --</option>
+            {workbenches?.map((wb: any) => (
+              <option key={wb.id} value={wb.id}>{wb.name}</option>
+            ))}
+          </select>
+        </div>
+        <div className="space-y-2">
           <Label>Especialidade</Label>
           <select className="w-full h-10 px-3 rounded-lg border bg-background text-sm outline-none focus:ring-2 focus:ring-primary/20">
             <option>Não se aplica</option>
