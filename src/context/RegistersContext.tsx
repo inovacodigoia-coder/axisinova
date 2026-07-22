@@ -284,6 +284,7 @@ export function RegistersProvider({ children }: { children: ReactNode }) {
     if (error) {
       console.error('[exams.insert]', error)
       toast.error(`Erro ao salvar exame: ${error.message}`)
+      throw error
     } else if (data) {
       setExams(prev => [...prev, mapExamRow(data)])
     }

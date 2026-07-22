@@ -327,6 +327,7 @@ export type Database = {
           created_at: string
           estimated_duration_minutes: number | null
           id: string
+          internal_code: string | null
           is_active: boolean
           name: string
           preparation_instructions: string | null
@@ -343,6 +344,7 @@ export type Database = {
           created_at?: string
           estimated_duration_minutes?: number | null
           id?: string
+          internal_code?: string | null
           is_active?: boolean
           name: string
           preparation_instructions?: string | null
@@ -359,6 +361,7 @@ export type Database = {
           created_at?: string
           estimated_duration_minutes?: number | null
           id?: string
+          internal_code?: string | null
           is_active?: boolean
           name?: string
           preparation_instructions?: string | null
