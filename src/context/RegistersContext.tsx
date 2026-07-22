@@ -467,12 +467,13 @@ export function RegistersProvider({ children }: { children: ReactNode }) {
 
   return (
     <RegistersContext.Provider value={{
-      doctors, specialties, convenios, exams, procedures, isDemo, isLoading,
+      doctors, specialties, convenios, exams, procedures, workbenches, isDemo, isLoading,
       addDoctor, updateDoctor, removeDoctor,
       addSpecialty, updateSpecialty, removeSpecialty,
       addConvenio, updateConvenio, removeConvenio,
       addExam, updateExam, removeExam,
       addProcedure, updateProcedure, removeProcedure,
+      addWorkbench, updateWorkbench, removeWorkbench,
       getSpecialtyName, getConvenioName, getDoctorsForSpecialty, getDoctorsForConvenio
     }}>
       {children}
