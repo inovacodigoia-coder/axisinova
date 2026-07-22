@@ -435,14 +435,6 @@ function GeneralInfoSection({ isEditing, data, onChange }: { isEditing: boolean,
           )}
         </div>
         <div className="space-y-2">
-          <Label>Prazo resultado (dias úteis)</Label>
-          <Input 
-            type="number" 
-            value={data.resultDeadlineDays}
-            onChange={(e) => onChange({ resultDeadlineDays: Number(e.target.value) })}
-          />
-        </div>
-        <div className="space-y-2">
           <div className="flex items-center gap-2 mb-1">
             <Label>Prazo de Entrega (dias)</Label>
             <Switch 
@@ -509,42 +501,6 @@ function GeneralInfoSection({ isEditing, data, onChange }: { isEditing: boolean,
         <Label htmlFor="pre-auth" className="cursor-pointer">Requer autorização prévia</Label>
       </div>
 
-      <div className="space-y-4 pt-4 border-t">
-        <div className="space-y-1">
-          <div className="flex items-center justify-between">
-            <Label>Materiais aceitos *</Label>
-            <Button 
-              variant="ghost" 
-              size="sm" 
-              className="h-7 text-[10px] gap-1 text-primary hover:text-primary hover:bg-primary/5"
-              onClick={() => toast.info("Funcionalidade para cadastrar novos materiais será implementada em breve.")}
-            >
-              <Plus className="h-3 w-3" /> Novo Material
-            </Button>
-          </div>
-          <p className="text-[10px] text-muted-foreground">Selecione um ou mais. Clique duplo para definir como padrão ⭐.</p>
-        </div>
-        <div className="flex flex-wrap gap-2">
-          {materials.map(mat => (
-            <button
-              key={mat}
-              type="button"
-              onClick={() => toggleMaterial(mat)}
-              onDoubleClick={() => selectedMaterials.includes(mat) && setDefaultMaterial(mat)}
-              className={cn(
-                "px-4 py-2 rounded-full text-xs font-bold border transition-all flex items-center gap-2",
-                selectedMaterials.includes(mat) 
-                  ? "bg-primary/10 border-primary text-primary" 
-                  : "bg-background border-border text-muted-foreground hover:border-primary/50",
-                defaultMaterial === mat && "ring-2 ring-primary ring-offset-2 ring-offset-card"
-              )}
-            >
-              {defaultMaterial === mat && <Star className="h-3 w-3 fill-primary" />}
-              {mat}
-            </button>
-          ))}
-        </div>
-      </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-6 border-t">
         <div className="space-y-2">
