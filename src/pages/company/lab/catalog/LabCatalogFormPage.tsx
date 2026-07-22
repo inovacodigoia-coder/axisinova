@@ -83,7 +83,7 @@ export default function LabCatalogFormPage() {
         name: "25-Hidroxivitamina D",
         internalCode: "VITD001",
         type: 'lab',
-        tussCode: "VITD",
+        tussCode: "40302546",
         isActive: true,
         preparationInstructions: "Jejum de 8 horas.",
         estimatedDurationMinutes: 30,
@@ -91,6 +91,11 @@ export default function LabCatalogFormPage() {
         requiresAuthorization: false,
         showDuration: true,
         showDeadline: true,
+        measurementUnit: 'ng/mL',
+        specialtyId: '',
+        defaultOrigin: 'Recepção Central',
+        defaultDestination: 'Bancada Bioquímica',
+        reportObservations: '',
       })
     }
   }, [isEditing, id])
@@ -280,7 +285,11 @@ function GeneralInfoSection({ isEditing, data, onChange }: { isEditing: boolean,
         <div className="space-y-2">
           <Label>Unidade de Medida</Label>
           <div className="flex gap-2">
-            <select className="flex-1 h-10 px-3 rounded-lg border bg-background text-sm outline-none focus:ring-2 focus:ring-primary/20">
+            <select 
+              className="flex-1 h-10 px-3 rounded-lg border bg-background text-sm outline-none focus:ring-2 focus:ring-primary/20"
+              value={data.measurementUnit}
+              onChange={(e) => onChange({ measurementUnit: e.target.value })}
+            >
               <option value="">-- Selecione --</option>
               {measurementUnits.map(unit => (
                 <option key={unit.name} value={unit.name}>{unit.name}</option>
@@ -404,20 +413,28 @@ function GeneralInfoSection({ isEditing, data, onChange }: { isEditing: boolean,
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-6 border-t">
         <div className="space-y-2">
           <Label>Origem padrão</Label>
-          <select className="w-full h-10 px-3 rounded-lg border bg-background text-sm outline-none focus:ring-2 focus:ring-primary/20">
-            <option>-- Não definido --</option>
-            <option>Recepção Central</option>
-            <option>Posto Ipanguaçu</option>
+          <select 
+            className="w-full h-10 px-3 rounded-lg border bg-background text-sm outline-none focus:ring-2 focus:ring-primary/20"
+            value={data.defaultOrigin}
+            onChange={(e) => onChange({ defaultOrigin: e.target.value })}
+          >
+            <option value="">-- Não definido --</option>
+            <option value="Recepção Central">Recepção Central</option>
+            <option value="Posto Ipanguaçu">Posto Ipanguaçu</option>
           </select>
         </div>
         <div className="space-y-2">
           <Label>Destino padrão</Label>
           <div className="flex gap-2">
-            <select className="flex-1 h-10 px-3 rounded-lg border bg-background text-sm outline-none focus:ring-2 focus:ring-primary/20">
-              <option>-- Não definido --</option>
-              <option>Ipanguaçu</option>
-              <option>Pardini</option>
-              <option>Bancada Bioquímica</option>
+            <select 
+              className="flex-1 h-10 px-3 rounded-lg border bg-background text-sm outline-none focus:ring-2 focus:ring-primary/20"
+              value={data.defaultDestination}
+              onChange={(e) => onChange({ defaultDestination: e.target.value })}
+            >
+              <option value="">-- Não definido --</option>
+              <option value="Ipanguaçu">Ipanguaçu</option>
+              <option value="Pardini">Pardini</option>
+              <option value="Bancada Bioquímica">Bancada Bioquímica</option>
             </select>
             <Button 
               variant="outline" 
@@ -435,6 +452,8 @@ function GeneralInfoSection({ isEditing, data, onChange }: { isEditing: boolean,
           <textarea 
             className="w-full h-24 p-3 rounded-lg border bg-background text-sm focus:ring-2 focus:ring-primary/20 outline-none resize-none" 
             placeholder="Ex: A partir de 01/2026 os valores de referência foram atualizados conforme nova diretriz..." 
+            value={data.reportObservations}
+            onChange={(e) => onChange({ reportObservations: e.target.value })}
           />
           <p className="text-[11px] text-muted-foreground">Esse texto será impresso no laudo, abaixo dos resultados deste exame.</p>
         </div>
