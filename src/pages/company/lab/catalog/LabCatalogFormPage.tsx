@@ -101,8 +101,13 @@ export default function LabCatalogFormPage() {
         await updateExam({ ...examData, id: id! } as any)
         toast.success('Exame atualizado!')
       } else {
-        await addExam(examData as any)
-        toast.success('Exame cadastrado!')
+        await addExam({
+          ...examData,
+          attachmentRules: [],
+          isActive: examData.isActive ?? true,
+          createdAt: new Date().toISOString()
+        } as any)
+        toast.success('Exame cadastrado com sucesso!')
       }
       navigate('/app/cadastros/catalogo')
     } catch (error) {
