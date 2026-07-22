@@ -82,12 +82,12 @@ function mapExamRow(row: any): Exam {
     isActive: row.is_active, createdAt: row.created_at,
     showDuration: row.show_duration, showDeadline: row.show_deadline,
     methodology: row.methodology,
-    interfacingConfig: row.interfacing_config ? {
-      equipmentId: row.interfacing_config.equipmentId,
-      equipmentCode: row.interfacing_config.equipmentCode,
-      autoReceiveResults: row.interfacing_config.autoReceiveResults,
-      autoSendOrders: row.interfacing_config.autoSendOrders,
-    } : {},
+    interfacingConfig: {
+      equipmentId: row.interfacing_config?.equipmentId || '',
+      equipmentCode: row.interfacing_config?.equipmentCode || '',
+      autoReceiveResults: row.interfacing_config?.autoReceiveResults ?? true,
+      autoSendOrders: row.interfacing_config?.autoSendOrders ?? true,
+    },
     interfacingParameters: row.interfacing_parameters || [],
   }
 }
