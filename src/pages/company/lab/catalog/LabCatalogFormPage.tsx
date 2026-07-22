@@ -522,47 +522,6 @@ function GeneralInfoSection({ isEditing, data, onChange }: { isEditing: boolean,
           <p className="text-[11px] text-muted-foreground">Esse texto será impresso no laudo, abaixo dos resultados deste exame.</p>
         </div>
 
-        <div className="md:col-span-2 space-y-4 pt-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <MessageSquare className="h-5 w-5 text-primary" />
-              <Label className="text-sm font-bold uppercase tracking-wider text-muted-foreground">Perguntas de Confirmação</Label>
-            </div>
-            <Button 
-              variant="outline" 
-              size="sm" 
-              className="gap-2"
-              onClick={() => setQuestions([...questions, ''])}
-            >
-              <Plus className="h-4 w-4" /> Adicionar
-            </Button>
-          </div>
-          <p className="text-[11px] text-muted-foreground">Perguntas que o atendente deverá confirmar com o paciente ao adicionar este exame.</p>
-          <div className="space-y-3">
-            {questions.map((q, idx) => (
-              <div key={idx} className="flex gap-3 items-center">
-                <span className="text-xs text-muted-foreground font-medium w-4">{idx + 1}.</span>
-                <Input 
-                  value={q}
-                  onChange={(e) => {
-                    const newQs = [...questions]
-                    newQs[idx] = e.target.value
-                    setQuestions(newQs)
-                  }}
-                  className="flex-1"
-                />
-                <Button 
-                  variant="ghost" 
-                  size="icon" 
-                  className="text-red-500"
-                  onClick={() => setQuestions(questions.filter((_, i) => i !== idx))}
-                >
-                  <Trash2 className="h-4 w-4" />
-                </Button>
-              </div>
-            ))}
-          </div>
-        </div>
       </div>
     </Card>
   )
