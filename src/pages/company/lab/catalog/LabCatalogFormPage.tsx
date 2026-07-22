@@ -63,12 +63,13 @@ export default function LabCatalogFormPage() {
   const [activeTab, setActiveTab] = useState('general')
   const [isSaving, setIsSaving] = useState(false)
 
-  const { addExam, updateExam, exams } = useRegisters()
+  const { addExam, updateExam, exams, workbenches } = useRegisters() as any
   
-  // Make exams available globally for the initial load effect
+  // Make context available globally for sub-sections
   useEffect(() => {
     (window as any)._allExams = exams
-  }, [exams])
+    (window as any)._workbenches = workbenches
+  }, [exams, workbenches])
   const [examData, setExamData] = useState({
     name: '',
     internalCode: '',
@@ -101,14 +102,15 @@ export default function LabCatalogFormPage() {
     }[],
     selectedMaterials: [] as string[],
     defaultMaterial: '',
+    workbenchId: '',
   })
 
   const [parameters, setParameters] = useState<any[]>([])
   const [confirmationQuestions, setConfirmationQuestions] = useState<string[]>([])
 
   useEffect(() => {
-    if (isEditing && exams.length > 0) {
-      const existingExam = exams.find((e: any) => e.id === id)
+    if (isEditing && (exams as any[]).length > 0) {
+      const existingExam = (exams as any[]).find((e: any) => e.id === id)
       if (existingExam) {
         setExamData({
           name: existingExam.name || "",
@@ -137,6 +139,7 @@ export default function LabCatalogFormPage() {
           interfacingParameters: existingExam.interfacingParameters || [],
           selectedMaterials: existingExam.selectedMaterials || [],
           defaultMaterial: existingExam.defaultMaterial || "",
+          workbenchId: existingExam.workbenchId || "",
         })
         if (existingExam.parameters) setParameters(existingExam.parameters)
         if (existingExam.confirmationQuestions) setConfirmationQuestions(existingExam.confirmationQuestions)
@@ -521,6 +524,30 @@ function GeneralInfoSection({ isEditing, data, onChange }: { isEditing: boolean,
           </select>
         </div>
         <div className="space-y-2">
+          <Label>Bancada Técnica</Label>
+          <div className="flex gap-2">
+            <select 
+              className="flex-1 h-10 px-3 rounded-lg border bg-background text-sm outline-none focus:ring-2 focus:ring-primary/20"
+              value={data.workbenchId}
+              onChange={(e) => onChange({ workbenchId: e.target.value })}
+            >
+              <option value="">-- Não definido --</option>
+              {((window as any)._workbenches || [])?.map((w: any) => (
+                <option key={w.id} value={w.id}>{w.name}</option>
+              ))}
+            </select>
+            <Button 
+              variant="outline" 
+              size="icon" 
+              className="shrink-0" 
+              onClick={() => navigate('/app/configuracoes/laboratorio?tab=workbenches')}
+              title="Gerenciar Bancadas"
+            >
+              <Plus className="h-4 w-4" />
+            </Button>
+          </div>
+        </div>
+        <div className="space-y-2">
           <Label>Destino padrão</Label>
           <div className="flex gap-2">
             <select 
@@ -531,14 +558,13 @@ function GeneralInfoSection({ isEditing, data, onChange }: { isEditing: boolean,
               <option value="">-- Não definido --</option>
               <option value="Ipanguaçu">Ipanguaçu</option>
               <option value="Pardini">Pardini</option>
-              <option value="Bancada Bioquímica">Bancada Bioquímica</option>
             </select>
             <Button 
               variant="outline" 
               size="icon" 
               className="shrink-0" 
               onClick={() => navigate('/app/configuracoes/laboratorio?tab=workbenches')}
-              title="Gerenciar Locais / Bancadas"
+              title="Gerenciar Locais"
             >
               <Plus className="h-4 w-4" />
             </Button>

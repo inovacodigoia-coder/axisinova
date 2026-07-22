@@ -22,7 +22,7 @@ import {
 
 export default function LabCatalogPage() {
   const navigate = useNavigate()
-  const { exams: registeredExams, isLoading, removeExam } = useRegisters()
+  const { exams: registeredExams, isLoading, removeExam, workbenches } = useRegisters()
   const [view, setView] = useState<'grid' | 'list'>('list')
   const [search, setSearch] = useState('')
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false)
@@ -41,11 +41,11 @@ export default function LabCatalogPage() {
       id: e.id,
       code: e.internalCode || e.tussCode || 'S/C',
       name: e.name,
-      material: 'Soro', 
-      workbench: 'Bioquímica',
+      material: e.defaultMaterial || 'Soro', 
+      workbench: workbenches.find(w => w.id === e.workbenchId)?.name || 'Sem Bancada',
       status: e.isActive ? 'active' : 'inactive'
     }));
-  }, [registeredExams])
+  }, [registeredExams, workbenches])
 
   const filteredExams = exams.filter(e => 
     e.name.toLowerCase().includes(search.toLowerCase()) || 

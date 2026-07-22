@@ -1,5 +1,5 @@
 import { createContext, useContext, useState, useCallback, useEffect, useMemo, type ReactNode } from 'react'
-import type { Doctor, Specialty, Convenio, Exam, Procedure } from '@/types/registers.types'
+import type { Doctor, Specialty, Convenio, Exam, Procedure, LabWorkbench } from '@/types/registers.types'
 import { DEMO_DOCTORS, DEMO_SPECIALTIES, DEMO_CONVENIOS, DEMO_EXAMS, DEMO_PROCEDURES, isDemoCompany } from '@/mocks/registers.mock'
 import { useAuth } from '@/context/AuthContext'
 import { supabase } from '@/integrations/supabase/client'
@@ -16,6 +16,7 @@ interface RegistersContextValue {
   convenios: Convenio[]
   exams: Exam[]
   procedures: Procedure[]
+  workbenches: LabWorkbench[]
   isDemo: boolean
   isLoading: boolean
   addDoctor: (d: Doctor) => void
@@ -33,6 +34,9 @@ interface RegistersContextValue {
   addProcedure: (p: Procedure) => void
   updateProcedure: (p: Procedure) => void
   removeProcedure: (id: string) => void
+  addWorkbench: (w: LabWorkbench) => void
+  updateWorkbench: (w: LabWorkbench) => void
+  removeWorkbench: (id: string) => void
   getSpecialtyName: (id: string) => string
   getConvenioName: (id: string) => string
   getDoctorsForSpecialty: (specId: string) => Doctor[]
@@ -69,6 +73,7 @@ function mapExamRow(row: any): Exam {
     type: row.type || 'clinical',
     measurementUnit: row.measurement_unit,
     specialtyId: row.specialty_id,
+    workbenchId: row.workbench_id,
     defaultOrigin: row.default_origin,
     defaultDestination: row.default_destination,
     reportObservations: row.report_observations,
@@ -104,6 +109,12 @@ function mapProcedureRow(row: any): Procedure {
     attachmentRules: row.attachment_rules || [], isActive: row.is_active, createdAt: row.created_at,
   }
 }
+function mapWorkbenchRow(row: any): LabWorkbench {
+  return {
+    id: row.id, companyId: row.company_id, name: row.name, description: row.description,
+    isActive: row.is_active, createdAt: row.created_at
+  }
+}
 
 export function RegistersProvider({ children }: { children: ReactNode }) {
   const { user } = useAuth()
@@ -115,6 +126,7 @@ export function RegistersProvider({ children }: { children: ReactNode }) {
   const [convenios, setConvenios] = useState<Convenio[]>(isDemo ? DEMO_CONVENIOS : [])
   const [exams, setExams] = useState<Exam[]>(isDemo ? DEMO_EXAMS : [])
   const [procedures, setProcedures] = useState<Procedure[]>(isDemo ? DEMO_PROCEDURES : [])
+  const [workbenches, setWorkbenches] = useState<LabWorkbench[]>(isDemo ? [] : [])
   const [isLoading, setIsLoading] = useState(!isDemo)
 
   // Load from Supabase
@@ -130,6 +142,7 @@ export function RegistersProvider({ children }: { children: ReactNode }) {
           supabase.from('convenios').select('*').eq('company_id', companyId),
           supabase.from('exams').select('*').eq('company_id', companyId),
           supabase.from('procedures').select('*').eq('company_id', companyId),
+          supabase.from('lab_workbenches').select('*').eq('company_id', companyId),
         ]
 
         const results = await Promise.allSettled(queries)
@@ -153,6 +166,7 @@ export function RegistersProvider({ children }: { children: ReactNode }) {
               case 2: setConvenios(data.map(mapConvenioRow)); break
               case 3: setExams(data.map(mapExamRow)); break
               case 4: setProcedures(data.map(mapProcedureRow)); break
+              case 5: setWorkbenches(data.map(mapWorkbenchRow)); break
             }
           }
         })
@@ -406,6 +420,38 @@ export function RegistersProvider({ children }: { children: ReactNode }) {
     if (error) { console.error(error); toast.error('Erro ao atualizar procedimento') }
   }, [isDemo])
 
+  // --- Workbenches ---
+  const addWorkbench = useCallback(async (w: LabWorkbench) => {
+    const id = ensureUUID(w.id)
+    const entity = { ...w, id, companyId: companyId || w.companyId }
+    setWorkbenches(prev => [...prev, entity])
+    if (isDemo || !companyId) return
+    const { error } = await supabase.from('lab_workbenches').insert({
+      id, company_id: companyId, name: w.name, description: w.description, is_active: w.isActive,
+    } as any)
+    if (error) {
+      console.error('[lab_workbenches.insert]', error)
+      toast.error(`Erro ao salvar bancada: ${error.message}`)
+      setWorkbenches(prev => prev.filter(x => x.id !== id))
+    }
+  }, [isDemo, companyId])
+
+  const updateWorkbench = useCallback(async (w: LabWorkbench) => {
+    setWorkbenches(prev => prev.map(x => x.id === w.id ? w : x))
+    if (isDemo) return
+    const { error } = await supabase.from('lab_workbenches').update({ 
+      name: w.name, description: w.description, is_active: w.isActive 
+    } as any).eq('id', w.id)
+    if (error) { console.error(error); toast.error('Erro ao atualizar bancada') }
+  }, [isDemo])
+
+  const removeWorkbench = useCallback(async (id: string) => {
+    setWorkbenches(prev => prev.filter(x => x.id !== id))
+    if (isDemo) return
+    const { error } = await supabase.from('lab_workbenches').delete().eq('id', id)
+    if (error) { console.error(error); toast.error('Erro ao remover bancada') }
+  }, [isDemo])
+
   const removeProcedure = useCallback(async (id: string) => {
     setProcedures(prev => prev.filter(x => x.id !== id))
     if (isDemo) return
@@ -421,12 +467,13 @@ export function RegistersProvider({ children }: { children: ReactNode }) {
 
   return (
     <RegistersContext.Provider value={{
-      doctors, specialties, convenios, exams, procedures, isDemo, isLoading,
+      doctors, specialties, convenios, exams, procedures, workbenches, isDemo, isLoading,
       addDoctor, updateDoctor, removeDoctor,
       addSpecialty, updateSpecialty, removeSpecialty,
       addConvenio, updateConvenio, removeConvenio,
       addExam, updateExam, removeExam,
       addProcedure, updateProcedure, removeProcedure,
+      addWorkbench, updateWorkbench, removeWorkbench,
       getSpecialtyName, getConvenioName, getDoctorsForSpecialty, getDoctorsForConvenio
     }}>
       {children}

@@ -350,6 +350,7 @@ export type Database = {
           specialty_id: string | null
           tuss_code: string | null
           type: string | null
+          workbench_id: string | null
         }
         Insert: {
           attachment_rules?: Json
@@ -381,6 +382,7 @@ export type Database = {
           specialty_id?: string | null
           tuss_code?: string | null
           type?: string | null
+          workbench_id?: string | null
         }
         Update: {
           attachment_rules?: Json
@@ -412,6 +414,7 @@ export type Database = {
           specialty_id?: string | null
           tuss_code?: string | null
           type?: string | null
+          workbench_id?: string | null
         }
         Relationships: [
           {
@@ -466,6 +469,36 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      lab_workbenches: {
+        Row: {
+          company_id: string
+          created_at: string | null
+          description: string | null
+          id: string
+          is_active: boolean | null
+          name: string
+          updated_at: string | null
+        }
+        Insert: {
+          company_id: string
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          is_active?: boolean | null
+          name: string
+          updated_at?: string | null
+        }
+        Update: {
+          company_id?: string
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          is_active?: boolean | null
+          name?: string
+          updated_at?: string | null
+        }
+        Relationships: []
       }
       measurement_units: {
         Row: {
