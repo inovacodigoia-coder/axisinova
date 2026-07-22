@@ -69,6 +69,11 @@ export default function LabCatalogFormPage() {
     requiresAuthorization: false,
     showDuration: true,
     showDeadline: true,
+    measurementUnit: '',
+    specialtyId: '',
+    defaultOrigin: '',
+    defaultDestination: '',
+    reportObservations: '',
   })
 
   useEffect(() => {
