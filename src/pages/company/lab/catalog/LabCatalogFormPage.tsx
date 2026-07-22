@@ -143,11 +143,6 @@ export default function LabCatalogFormPage() {
         })
         setParameters(existingExam.parameters || [])
         setConfirmationQuestions(existingExam.confirmationQuestions || [])
-      } else {
-        // Exam ID provided but not found after loading
-        console.warn(`Exame com ID ${id} não encontrado no catálogo.`)
-        // Optionally redirect if it's clear it doesn't exist
-        // navigate('/app/cadastros/catalogo')
       }
     }
   }, [isEditing, id, exams])
