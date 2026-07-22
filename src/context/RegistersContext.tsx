@@ -258,23 +258,34 @@ export function RegistersProvider({ children }: { children: ReactNode }) {
   const addExam = useCallback(async (e: Exam) => {
     const id = ensureUUID(e.id)
     const entity = { ...e, id, companyId: companyId || e.companyId }
-    setExams(prev => [...prev, entity])
-    if (isDemo || !companyId) return
-    const { error } = await supabase.from('exams').insert({
-      id, company_id: companyId, name: e.name, tuss_code: e.tussCode || null,
+    
+    if (isDemo || !companyId) {
+      setExams(prev => [...prev, entity])
+      return
+    }
+
+    const { data, error } = await supabase.from('exams').insert({
+      id, 
+      company_id: companyId, 
+      name: e.name, 
+      tuss_code: e.tussCode || null,
       internal_code: e.internalCode || null,
       type: e.type,
-      specialty_id: e.specialtyId || null, preparation_instructions: e.preparationInstructions || null,
+      specialty_id: e.specialtyId || null, 
+      preparation_instructions: e.preparationInstructions || null,
       estimated_duration_minutes: e.estimatedDurationMinutes || null,
       result_deadline_days: e.resultDeadlineDays || null,
       requires_authorization: e.requiresAuthorization,
       authorization_instructions: e.authorizationInstructions || null,
-      attachment_rules: e.attachmentRules, is_active: e.isActive,
-    } as any)
+      attachment_rules: e.attachmentRules || [], 
+      is_active: e.isActive ?? true,
+    } as any).select().single()
+
     if (error) {
       console.error('[exams.insert]', error)
       toast.error(`Erro ao salvar exame: ${error.message}`)
-      setExams(prev => prev.filter(x => x.id !== id))
+    } else if (data) {
+      setExams(prev => [...prev, mapExamRow(data)])
     }
   }, [isDemo, companyId])
 
