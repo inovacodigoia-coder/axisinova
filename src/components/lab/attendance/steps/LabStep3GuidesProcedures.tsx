@@ -5,7 +5,7 @@ import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
 import { 
   Plus, Search, Trash2, Stethoscope, ClipboardCheck, 
-  PlusCircle, Calendar, HelpCircle, Edit2
+  PlusCircle, Calendar, HelpCircle, Edit2, Star
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
@@ -555,7 +555,7 @@ export function LabStep3GuidesProcedures({ state, update }: Props) {
                         onClick={() => {
                           setSelectedExam(exam);
                           setExamSearch(exam.name);
-                          setExamMaterial(exam.preparationInstructions?.includes('Soro') ? 'Soro' : 'Sangue');
+                          setExamMaterial(exam.defaultMaterial || exam.selectedMaterials?.[0] || 'Sangue');
                         }}
                       >
                         <span className="font-medium">{exam.name}</span>
@@ -575,14 +575,26 @@ export function LabStep3GuidesProcedures({ state, update }: Props) {
               )}
             </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="material">Material</Label>
-              <Input
-                id="material"
-                placeholder="Ex: Soro, Sangue total com EDTA..."
-                value={examMaterial}
-                onChange={(e) => setExamMaterial(e.target.value)}
-              />
+            <div className="space-y-3">
+              <Label>Material</Label>
+              <div className="flex flex-wrap gap-2">
+                {(selectedExam?.selectedMaterials || ['Sangue Total', 'Soro', 'Plasma', 'Urina', 'Fezes', 'Secreção', 'Líquor', 'Swab']).map((mat: string) => (
+                  <button
+                    key={mat}
+                    type="button"
+                    onClick={() => setExamMaterial(mat)}
+                    className={cn(
+                      "px-3 py-1.5 rounded-full border text-xs font-medium transition-all flex items-center gap-1.5",
+                      examMaterial === mat 
+                        ? "bg-primary/5 border-primary text-primary shadow-sm" 
+                        : "bg-background border-border text-muted-foreground hover:border-primary/50"
+                    )}
+                  >
+                    {selectedExam?.defaultMaterial === mat && <Star className="h-3 w-3 fill-primary text-primary" />}
+                    {mat}
+                  </button>
+                ))}
+              </div>
             </div>
 
             <div className="flex items-center justify-between p-3 border rounded-lg">
