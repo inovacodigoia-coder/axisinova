@@ -301,7 +301,7 @@ export default function LabCatalogFormPage() {
   )
 }
 
-function GeneralInfoSection({ isEditing, data, onChange }: { isEditing: boolean, data: any, onChange: (val: any) => void }) {
+function GeneralInfoSection({ isEditing, data, workbenches, onChange }: { isEditing: boolean, data: any, workbenches: any[], onChange: (val: any) => void }) {
   const navigate = useNavigate()
   const materials = ['Sangue Total', 'Soro', 'Plasma', 'Urina', 'Fezes', 'Secreção', 'Líquor', 'Swab']
   const [selectedMaterials, setSelectedMaterials] = useState<string[]>(data.selectedMaterials || [])
