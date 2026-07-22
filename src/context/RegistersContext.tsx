@@ -89,6 +89,8 @@ function mapExamRow(row: any): Exam {
       autoSendOrders: row.interfacing_config?.autoSendOrders ?? true,
     },
     interfacingParameters: row.interfacing_parameters || [],
+    selectedMaterials: row.selected_materials || [],
+    defaultMaterial: row.default_material || '',
   }
 }
 function mapProcedureRow(row: any): Procedure {
@@ -309,6 +311,8 @@ export function RegistersProvider({ children }: { children: ReactNode }) {
       methodology: e.methodology || null,
       interfacing_config: e.interfacingConfig || {},
       interfacing_parameters: e.interfacingParameters || [],
+      selected_materials: e.selectedMaterials || [],
+      default_material: e.defaultMaterial || null,
     } as any).select().single()
 
     if (error) {
@@ -345,6 +349,8 @@ export function RegistersProvider({ children }: { children: ReactNode }) {
       methodology: e.methodology || null,
       interfacing_config: e.interfacingConfig || {},
       interfacing_parameters: e.interfacingParameters || [],
+      selected_materials: e.selectedMaterials || [],
+      default_material: e.defaultMaterial || null,
     } as any).eq('id', e.id)
     if (error) { 
       console.error(error); 

@@ -79,6 +79,8 @@ export interface Exam {
     criticalAlert: boolean
     criticalLimit: string
   }[]
+  selectedMaterials?: string[]
+  defaultMaterial?: string
 }
 
 export interface Procedure {

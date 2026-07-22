@@ -293,8 +293,8 @@ export default function LabCatalogFormPage() {
 function GeneralInfoSection({ isEditing, data, onChange }: { isEditing: boolean, data: any, onChange: (val: any) => void }) {
   const navigate = useNavigate()
   const materials = ['Sangue Total', 'Soro', 'Plasma', 'Urina', 'Fezes', 'Secreção', 'Líquor', 'Swab']
-  const [selectedMaterials, setSelectedMaterials] = useState<string[]>(isEditing ? ['Soro'] : [])
-  const [defaultMaterial, setDefaultMaterial] = useState(isEditing ? 'Soro' : '')
+  const [selectedMaterials, setSelectedMaterials] = useState<string[]>(data.selectedMaterials || (isEditing ? ['Soro'] : []))
+  const [defaultMaterial, setDefaultMaterial] = useState(data.defaultMaterial || (isEditing ? 'Soro' : ''))
   const [measurementUnits, setMeasurementUnits] = useState<any[]>([])
 
   useEffect(() => {
@@ -306,9 +306,16 @@ function GeneralInfoSection({ isEditing, data, onChange }: { isEditing: boolean,
   }, [])
 
   const toggleMaterial = (mat: string) => {
-    setSelectedMaterials(prev => 
-      prev.includes(mat) ? prev.filter(m => m !== mat) : [...prev, mat]
-    )
+    const newMaterials = selectedMaterials.includes(mat) 
+      ? selectedMaterials.filter(m => m !== mat) 
+      : [...selectedMaterials, mat]
+    setSelectedMaterials(newMaterials)
+    onChange({ selectedMaterials: newMaterials })
+  }
+
+  const handleSetDefault = (mat: string) => {
+    setDefaultMaterial(mat)
+    onChange({ defaultMaterial: mat })
   }
 
   return (
@@ -444,6 +451,38 @@ function GeneralInfoSection({ isEditing, data, onChange }: { isEditing: boolean,
               className="h-10"
             />
           )}
+        </div>
+      </div>
+
+      <div className="space-y-4 pt-4 border-t border-border">
+        <div className="flex items-center justify-between">
+          <div>
+            <Label className="text-sm font-bold uppercase tracking-wider text-muted-foreground">Materiais aceitos *</Label>
+            <p className="text-xs text-muted-foreground mt-1">Selecione um ou mais. Clique duplo para definir como padrão ⭐.</p>
+          </div>
+          <Button variant="ghost" size="sm" className="text-primary gap-1 h-8">
+            <Plus className="h-3 w-3" /> Novo Material
+          </Button>
+        </div>
+        
+        <div className="flex flex-wrap gap-2">
+          {materials.map(mat => (
+            <button
+              key={mat}
+              type="button"
+              onClick={() => toggleMaterial(mat)}
+              onDoubleClick={() => handleSetDefault(mat)}
+              className={cn(
+                "px-4 py-2 rounded-full border text-sm font-medium transition-all flex items-center gap-2",
+                selectedMaterials.includes(mat) 
+                  ? "bg-primary/5 border-primary text-primary shadow-[0_0_10px_rgba(var(--primary-rgb),0.1)]" 
+                  : "bg-background border-border text-muted-foreground hover:border-primary/50"
+              )}
+            >
+              {defaultMaterial === mat && <Star className="h-3 w-3 fill-primary text-primary" />}
+              {mat}
+            </button>
+          ))}
         </div>
       </div>
 
