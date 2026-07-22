@@ -67,8 +67,8 @@ export default function LabCatalogFormPage() {
   
   // Make context available globally for sub-sections
   useEffect(() => {
-    (window as any)._allExams = exams
-    (window as any)._workbenches = workbenches
+    ;(window as any)._allExams = exams;
+    ;(window as any)._workbenches = workbenches;
   }, [exams, workbenches])
   const [examData, setExamData] = useState({
     name: '',
