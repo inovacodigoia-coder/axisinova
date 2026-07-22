@@ -1402,7 +1402,7 @@ function InterfacingSection({ config, params, internalParameters, onChange }: {
             </thead>
             <tbody className="divide-y divide-border/30">
               {params && params.length > 0 ? (
-                params.map((param, idx) => (
+                params.map((param, idx) => param && (
                   <tr key={idx} className="hover:bg-muted/10 transition-colors">
                     <td className="py-4 text-sm font-medium">{param.parameterName}</td>
                     <td className="py-4">
