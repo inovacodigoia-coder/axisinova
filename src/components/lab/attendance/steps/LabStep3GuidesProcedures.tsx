@@ -154,7 +154,8 @@ export function LabStep3GuidesProcedures({ state, update }: Props) {
       ...selectedExam,
       material: examMaterial,
       collected: examCollected,
-      quantity: 1
+      quantity: 1,
+      expectedDeliveryDate: examDeadline || (selectedExam.resultDeadlineDays ? calculateDeadline(selectedExam.resultDeadlineDays) : null)
     };
 
     const newGuides = guides.map(g => {
