@@ -25,6 +25,7 @@ import { LabStep2ExamData } from '@/components/lab/attendance/steps/LabStep2Exam
 import { LabStep3GuidesProcedures } from '@/components/lab/attendance/steps/LabStep3GuidesProcedures'
 import { QueueAllocationModal } from './queue-allocation/QueueAllocationModal'
 import { LabStep4Payment } from '@/components/lab/attendance/steps/LabStep4Payment'
+import { LabStep6Summary } from '@/components/lab/attendance/steps/LabStep6Summary'
 import { useAttendanceCadastro, useDraftAutosave, loadDraft, clearDraft } from '@/hooks/useAttendanceCadastro'
 import { usePrinterConfig } from '@/hooks/usePrinterConfig'
 import { useAuth } from '@/context/AuthContext'
@@ -217,7 +218,10 @@ export function AttendanceCadastroModal({
   const next = () => {
     if (!canAdvance) return
     const maxStep = isLab ? STEPS_LAB_DYNAMIC.length - 1 : 3
-    if (step === maxStep) setShowReview(true)
+    if (step === maxStep) {
+      if (!isLab) setShowReview(true)
+      // For Lab, we don't use setShowReview(true) anymore as Step 6 is the final screen before button changes
+    }
     else setStep(step + 1)
   }
   const prev = () => {
@@ -413,31 +417,35 @@ export function AttendanceCadastroModal({
           {isLab && !showReview && step === 4 && hasParticularGuideWithPrice && <LabStep4Payment state={state} update={update} />}
           {isLab && !showReview && step === (hasParticularGuideWithPrice ? 5 : 4) && <div className="p-8 text-center text-muted-foreground">Passo {hasParticularGuideWithPrice ? 5 : 4}: Autorização (Implementação em breve...)</div>}
           
-          {showReview && <ReviewPanel state={state} unitName={unitName} guicheName={guicheName} ticketCode={ticketCode} />}
+          {isLab && !showReview && step === (hasParticularGuideWithPrice ? 6 : 5) && <LabStep6Summary state={state} unitName={unitName} />}
+          {!isLab && showReview && <ReviewPanel state={state} unitName={unitName} guicheName={guicheName} ticketCode={ticketCode} />}
         </div>
 
         {/* Footer */}
         <div className="flex items-center justify-between border-t border-border px-6 py-4 bg-card">
-          <Button variant="outline" onClick={prev} disabled={step === 0 && !showReview}>
-            <ArrowLeft className="h-4 w-4 mr-1" /> Voltar
-          </Button>
-          {!showReview ? (
+          {step > 0 && (
+            <button onClick={prev} className="inline-flex items-center gap-1 rounded-md bg-muted px-4 py-2 text-sm font-semibold text-muted-foreground hover:bg-muted/80 transition-all uppercase">
+              <ArrowLeft className="h-4 w-4" /> Voltar
+            </button>
+          )}
+          <div className="flex-1" />
+          {!showReview && (step < (isLab ? STEPS_LAB_DYNAMIC.length - 1 : 3)) ? (
             <button
               onClick={next}
               disabled={!canAdvance}
               className={cn(
-                'inline-flex items-center gap-1 rounded-md gradient-bg px-6 py-2 text-sm font-semibold text-white shadow-sm transition-all',
+                'inline-flex items-center gap-1 rounded-md gradient-bg px-6 py-2 text-sm font-semibold text-white shadow-sm hover:opacity-90 transition-all uppercase',
                 !canAdvance && 'opacity-50 cursor-not-allowed'
               )}
             >
-              {step === (isLab ? STEPS_LAB_DYNAMIC.length - 1 : 3) ? 'Revisar' : 'Próximo'} <ArrowRight className="h-4 w-4" />
+              Próximo <ArrowRight className="h-4 w-4" />
             </button>
           ) : (
             <button
               onClick={handleFinalize}
-              className="inline-flex items-center gap-1 rounded-md bg-emerald-500 px-6 py-2 text-sm font-semibold text-white shadow-sm hover:bg-emerald-600 transition-colors"
+              className="inline-flex items-center gap-1 rounded-md bg-blue-600 px-8 py-2 text-sm font-bold text-white shadow-md hover:bg-blue-700 transition-all uppercase tracking-wide"
             >
-              <Check className="h-4 w-4" /> Confirmar Atendimento
+              <Check className="h-4 w-4" /> Criar
             </button>
           )}
         </div>
