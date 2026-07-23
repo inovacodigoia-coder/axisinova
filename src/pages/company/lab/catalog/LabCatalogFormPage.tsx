@@ -566,9 +566,6 @@ function GeneralInfoSection({ isEditing, data, workbenches, onChange }: { isEdit
     </Card>
   )
 }
-    </Card>
-  )
-}
 
 function ParametersSection({ parameters, setParameters }: { parameters: any[], setParameters: (p: any[]) => void }) {
   const [measurementUnits, setMeasurementUnits] = useState<any[]>([])
