@@ -191,7 +191,8 @@ export function AttendanceCadastroModal({
       if (s === 1) return true
       if (s === 2) return true
       if (s === 3) return (state.guides?.length || 0) > 0
-      if (s === 4 && hasParticularGuideWithPrice) return true // Requirement to allow progression to next step
+      if (s === 4 && hasParticularGuideWithPrice) return true 
+      if (s === (hasParticularGuideWithPrice ? 5 : 4)) return true // Authorization step (Step3Authorization)
       return true
     }
 
