@@ -10,14 +10,15 @@ import { SYSTEM_VERSION } from '@/utils/version'
 interface UserSystemModalsProps {
   open: boolean
   onClose: () => void
+  type?: 'about' | 'shortcuts'
 }
 
-export function UserSystemModals({ open, onClose }: UserSystemModalsProps) {
-  const { user, signOut } = useAuth()
+export function UserSystemModals({ open, onClose, type }: UserSystemModalsProps) {
+  const { user, logout } = useAuth()
   const navigate = useNavigate()
 
   const handleSignOut = async () => {
-    await signOut()
+    await logout()
     onClose()
   }
 
@@ -77,11 +78,11 @@ export function UserSystemModals({ open, onClose }: UserSystemModalsProps) {
               <User className="h-8 w-8" />
             </div>
             <div>
-              <h2 className="text-xl font-bold leading-tight">{user?.user_metadata?.full_name || 'Usuário'}</h2>
+              <h2 className="text-xl font-bold leading-tight">{user?.name || 'Usuário'}</h2>
               <p className="text-white/70 text-sm font-medium">{user?.email}</p>
               <div className="mt-2 inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-white/20 text-[10px] font-bold uppercase tracking-wider">
                 <Shield className="h-3 w-3" />
-                {user?.user_metadata?.role === 'admin' ? 'Administrador' : 'Usuário Padrão'}
+                {user?.role === 'admin' ? 'Administrador' : 'Usuário Padrão'}
               </div>
             </div>
           </div>
