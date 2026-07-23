@@ -286,7 +286,10 @@ export function RegistersProvider({ children }: { children: ReactNode }) {
     const { error } = await supabase.from('convenios').update({
       name: c.name, ans_code: c.ansCode || null, type: c.type, cnpj: c.cnpj || null,
       auth_phone: c.authPhone || null, email: c.email || null,
-      observations: c.observations || null, attachment_rules: c.attachmentRules, is_active: c.isActive,
+      observations: c.observations || null, 
+      attachment_rules: c.attachmentRules, 
+      exam_prices: c.examPrices || [],
+      is_active: c.isActive,
     } as any).eq('id', c.id)
     if (error) { console.error(error); toast.error('Erro ao atualizar convênio') }
   }, [isDemo])
