@@ -64,6 +64,11 @@ export function LabStep3GuidesProcedures({ state, update }: Props) {
   const [selectedExam, setSelectedExam] = useState<any>(null);
   const [examMaterial, setExamMaterial] = useState('');
   const [examCollected, setExamCollected] = useState(false);
+  const [examDeadline, setExamDeadline] = useState<string | null>(null);
+  const [showDeadlineModal, setShowDeadlineModal] = useState(false);
+  const [tempDeadline, setTempDeadline] = useState('');
+  const [tempCollectionDate, setTempCollectionDate] = useState('');
+
 
   const addGuide = () => {
     const newId = (guides.length + 1).toString();
