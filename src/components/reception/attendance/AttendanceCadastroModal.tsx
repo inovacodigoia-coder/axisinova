@@ -128,11 +128,27 @@ export function AttendanceCadastroModal({
   }, [state.guides])
 
   const isLab = state.serviceType === 'exam' && state.examMode === 'lab'
+  
+  // Logic to determine if we should show 'Pagamento' and 'Autorização' steps
+  const showPaymentStep = hasParticularGuideWithPrice
+  const showAuthorizationStep = useMemo(() => {
+    if (!isLab) return true
+    if (!state.guides || state.guides.length === 0) return true
+    
+    // Check if any guide is NOT private
+    const hasInsuranceGuide = state.guides.some((g: any) => 
+      g.plan !== 'PARTICULAR' && g.plan !== 'private'
+    )
+    
+    return hasInsuranceGuide
+  }, [isLab, state.guides])
+
   const STEPS_LAB_DYNAMIC = useMemo(() => {
-    if (hasParticularGuideWithPrice) return STEPS_LAB
-    // If not particular with value, skip step 4 (Pagamento)
-    return STEPS_LAB.filter(s => s !== 'Pagamento')
-  }, [hasParticularGuideWithPrice])
+    let steps = [...STEPS_LAB]
+    if (!showPaymentStep) steps = steps.filter(s => s !== 'Pagamento')
+    if (!showAuthorizationStep) steps = steps.filter(s => s !== 'Autorização')
+    return steps
+  }, [showPaymentStep, showAuthorizationStep])
 
   const STEPS = isLab ? STEPS_LAB_DYNAMIC : STEPS_CLINIC
   const [restorePromptShown, setRestorePromptShown] = useState(false)
@@ -185,13 +201,13 @@ export function AttendanceCadastroModal({
   // Validação por passo
   const stepValid = (s: number): boolean => {
     if (isLab) {
-      const maxStep = STEPS_LAB_DYNAMIC.length - 1
-      if (s === 0) return !!state.patient
-      if (s === 1) return true
-      if (s === 2) return true
-      if (s === 3) return (state.guides?.length || 0) > 0
-      if (s === 4 && hasParticularGuideWithPrice) return true 
-      if (s === (hasParticularGuideWithPrice ? 5 : 4)) return true // Autorização
+      const stepLabel = STEPS_LAB_DYNAMIC[s]
+      if (stepLabel === 'Cliente') return !!state.patient
+      if (stepLabel === 'Atendimento') return true
+      if (stepLabel === 'Guias e Procedimentos') return (state.guides?.length || 0) > 0
+      if (stepLabel === 'Pagamento') return true
+      if (stepLabel === 'Autorização') return true
+      if (stepLabel === 'Resumo') return true
       return true
     }
 
@@ -412,11 +428,10 @@ export function AttendanceCadastroModal({
           {isLab && !showReview && step === 0 && <Step1PatientLookup state={state} update={update} unitId={unitId} />}
           {isLab && !showReview && step === 1 && <LabStep1PatientReview state={state} update={update} />}
           {isLab && !showReview && step === 2 && <LabStep2ExamData state={state} update={update} />}
-          {isLab && !showReview && step === 3 && <LabStep3GuidesProcedures state={state} update={update} />}
-          {isLab && !showReview && step === 4 && hasParticularGuideWithPrice && <LabStep4Payment state={state} update={update} />}
-          {isLab && !showReview && step === (hasParticularGuideWithPrice ? 4 : -1) && <LabStep4Payment state={state} update={update} />}
-          {isLab && !showReview && step === (hasParticularGuideWithPrice ? 5 : 4) && <Step3Authorization state={state} update={update} />}
-          {isLab && !showReview && step === (hasParticularGuideWithPrice ? 6 : 5) && <LabStep6Summary state={state} unitName={unitName} />}
+          {isLab && !showReview && STEPS_LAB_DYNAMIC[step] === 'Guias e Procedimentos' && <LabStep3GuidesProcedures state={state} update={update} />}
+          {isLab && !showReview && STEPS_LAB_DYNAMIC[step] === 'Pagamento' && <LabStep4Payment state={state} update={update} />}
+          {isLab && !showReview && STEPS_LAB_DYNAMIC[step] === 'Autorização' && <Step3Authorization state={state} update={update} />}
+          {isLab && !showReview && STEPS_LAB_DYNAMIC[step] === 'Resumo' && <LabStep6Summary state={state} unitName={unitName} />}
           {!isLab && showReview && <ReviewPanel state={state} unitName={unitName} guicheName={guicheName} ticketCode={ticketCode} />}
         </div>
 
