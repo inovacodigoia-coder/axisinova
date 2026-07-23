@@ -24,6 +24,7 @@ import { LabStep1PatientReview } from '@/components/lab/attendance/steps/LabStep
 import { LabStep2ExamData } from '@/components/lab/attendance/steps/LabStep2ExamData'
 import { LabStep3GuidesProcedures } from '@/components/lab/attendance/steps/LabStep3GuidesProcedures'
 import { QueueAllocationModal } from './queue-allocation/QueueAllocationModal'
+import { LabStep4Payment } from '@/components/lab/attendance/steps/LabStep4Payment'
 import { useAttendanceCadastro, useDraftAutosave, loadDraft, clearDraft } from '@/hooks/useAttendanceCadastro'
 import { usePrinterConfig } from '@/hooks/usePrinterConfig'
 import { useAuth } from '@/context/AuthContext'
@@ -89,6 +90,7 @@ export interface CadastroState {
   deliveryLocation?: string
   observation?: string
   examMode?: 'ask' | 'clinic' | 'lab'
+  guides?: any[]
 }
 
 const STEPS_CLINIC = ['Paciente', 'Atendimento', 'Autorização', 'Anexos'] as const
@@ -116,8 +118,22 @@ export function AttendanceCadastroModal({
     }
   })
 
+  const hasParticularGuideWithPrice = useMemo(() => {
+    if (!state.guides) return false
+    return state.guides.some((g: any) => 
+      (g.plan === 'PARTICULAR' || g.plan === 'private') && 
+      g.exams?.some((e: any) => typeof e.price === 'number' && e.price > 0)
+    )
+  }, [state.guides])
+
   const isLab = state.serviceType === 'exam' && state.examMode === 'lab'
-  const STEPS = isLab ? STEPS_LAB : STEPS_CLINIC
+  const STEPS_LAB_DYNAMIC = useMemo(() => {
+    if (hasParticularGuideWithPrice) return STEPS_LAB
+    // If not particular with value, skip step 4 (Pagamento)
+    return STEPS_LAB.filter(s => s !== 'Pagamento')
+  }, [hasParticularGuideWithPrice])
+
+  const STEPS = isLab ? STEPS_LAB_DYNAMIC : STEPS_CLINIC
   const [restorePromptShown, setRestorePromptShown] = useState(false)
 
   // Post-finalize flow
@@ -173,6 +189,8 @@ export function AttendanceCadastroModal({
       // For now, allow Step 1 (Review) and Step 2 (Exam Data)
       if (s === 1) return true
       if (s === 2) return true
+      if (s === 3) return (state.guides?.length || 0) > 0
+      if (s === 4 && hasParticularGuideWithPrice) return true // Requirement to allow progression to next step
       return true
     }
 
@@ -198,7 +216,7 @@ export function AttendanceCadastroModal({
 
   const next = () => {
     if (!canAdvance) return
-    const maxStep = isLab ? STEPS_LAB.length - 1 : 3
+    const maxStep = isLab ? STEPS_LAB_DYNAMIC.length - 1 : 3
     if (step === maxStep) setShowReview(true)
     else setStep(step + 1)
   }
@@ -392,8 +410,8 @@ export function AttendanceCadastroModal({
           {isLab && !showReview && step === 1 && <LabStep1PatientReview state={state} update={update} />}
           {isLab && !showReview && step === 2 && <LabStep2ExamData state={state} update={update} />}
           {isLab && !showReview && step === 3 && <LabStep3GuidesProcedures state={state} update={update} />}
-          {isLab && !showReview && step === 4 && <div className="p-8 text-center text-muted-foreground">Passo 4: Pagamento (Em implementação...)</div>}
-          {isLab && !showReview && step === 5 && <div className="p-8 text-center text-muted-foreground">Passo 5: Autorização (Em implementação...)</div>}
+          {isLab && !showReview && step === 4 && hasParticularGuideWithPrice && <LabStep4Payment state={state} update={update} />}
+          {isLab && !showReview && step === (hasParticularGuideWithPrice ? 5 : 4) && <div className="p-8 text-center text-muted-foreground">Passo {hasParticularGuideWithPrice ? 5 : 4}: Autorização (Implementação em breve...)</div>}
           
           {showReview && <ReviewPanel state={state} unitName={unitName} guicheName={guicheName} ticketCode={ticketCode} />}
         </div>
@@ -412,7 +430,7 @@ export function AttendanceCadastroModal({
                 !canAdvance && 'opacity-50 cursor-not-allowed'
               )}
             >
-              {step === 3 ? 'Revisar' : 'Próximo'} <ArrowRight className="h-4 w-4" />
+              {step === (isLab ? STEPS_LAB_DYNAMIC.length - 1 : 3) ? 'Revisar' : 'Próximo'} <ArrowRight className="h-4 w-4" />
             </button>
           ) : (
             <button
