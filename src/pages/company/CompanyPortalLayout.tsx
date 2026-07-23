@@ -94,6 +94,8 @@ import LabBudgetsPage from './lab/orcamentos/LabBudgetsPage'
 import LabBudgetFormPage from './lab/orcamentos/LabBudgetFormPage'
 import LabBudgetDetailPage from './lab/orcamentos/LabBudgetDetailPage'
 
+import DirectCadastroPage from './reception/DirectCadastroPage'
+
 import LabFinanceDashboardPage from './financeiro/LabFinanceDashboardPage'
 import LabAccountsReceivablePage from './financeiro/LabAccountsReceivablePage'
 import LabAccountsPayablePage from './financeiro/LabAccountsPayablePage'
@@ -219,6 +221,7 @@ function PortalContent() {
               <Route path="faltosos" element={<AbsenteesPage />} />
               <Route path="historico-paciente" element={<PatientHistoryPage />} />
               <Route path="recepcao" element={<ReceptionLayout />} />
+              <Route path="recepcao/cadastro-direto" element={<DirectCadastroPage />} />
               <Route path="medico" element={<MedicalDashboardPage />} />
               <Route path="atendimento/:appointmentId" element={<AttendancePage />} />
               <Route path="prontuario/:patientId" element={<PatientRecordPage />} />
