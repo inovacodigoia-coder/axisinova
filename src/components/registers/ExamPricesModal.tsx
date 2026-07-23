@@ -152,7 +152,12 @@ export function ExamPricesModal({ convenioName, examPrices: initialPrices, onClo
                 ) : (
                   filteredPrices.map(p => (
                     <tr key={p.examId} className="hover:bg-muted/30 transition-colors">
-                      <td className="px-4 py-3 font-medium">{getExamName(p.examId)}</td>
+                      <td className="px-4 py-3 font-medium text-xs">
+                        {getExamName(p.examId)}
+                        <span className="block text-[10px] text-muted-foreground font-normal">
+                          {exams.find(e => e.id === p.examId)?.internalCode || exams.find(e => e.id === p.examId)?.tussCode || ''}
+                        </span>
+                      </td>
                       <td className="px-4 py-3 w-32">
                         <div className="relative">
                           <span className="absolute left-2 top-1/2 -translate-y-1/2 text-muted-foreground text-xs">R$</span>

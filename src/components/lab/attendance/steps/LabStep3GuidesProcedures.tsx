@@ -167,11 +167,15 @@ export function LabStep3GuidesProcedures({ state, update }: Props) {
       return;
     }
 
+    const convenio = activeConvenios.find(c => c.name === activeGuide?.plan);
+    const examPrice = convenio?.examPrices?.find(p => p.examId === selectedExam.id)?.price;
+
     const examData = {
       ...selectedExam,
       material: examMaterial,
       collected: examCollected,
       quantity: 1,
+      price: activeGuide?.plan === 'PARTICULAR' || convenio?.type === 'private' ? examPrice : undefined,
       expectedDeliveryDate: examDeadline || (selectedExam.resultDeadlineDays ? calculateDeadline(selectedExam.resultDeadlineDays) : null)
     };
 
@@ -507,6 +511,9 @@ export function LabStep3GuidesProcedures({ state, update }: Props) {
               <th className="px-4 py-3 text-left">Material</th>
               <th className="px-4 py-3 text-center">Coleta</th>
               <th className="px-4 py-3 text-left">Previsão Entrega</th>
+              {(activeGuide?.plan === 'PARTICULAR' || activeConvenios.find(c => c.name === activeGuide?.plan)?.type === 'private') && (
+                <th className="px-4 py-3 text-left">Valor (R$)</th>
+              )}
               <th className="px-4 py-3 text-center">Qtd.</th>
               <th className="px-4 py-3 text-right">Ações</th>
             </tr>
@@ -542,6 +549,11 @@ export function LabStep3GuidesProcedures({ state, update }: Props) {
                         <span className="text-muted-foreground">—</span>
                       )}
                     </td>
+                    {(activeGuide?.plan === 'PARTICULAR' || activeConvenios.find(c => c.name === activeGuide?.plan)?.type === 'private') && (
+                      <td className="px-4 py-4 text-xs font-medium">
+                        {exam.price ? `R$ ${exam.price.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}` : '—'}
+                      </td>
+                    )}
                     <td className="px-4 py-4 text-center">{exam.quantity}</td>
                     <td className="px-4 py-4 text-right">
                         <div className="flex justify-end gap-2">
