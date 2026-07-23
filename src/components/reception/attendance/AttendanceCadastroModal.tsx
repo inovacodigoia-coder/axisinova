@@ -428,7 +428,7 @@ export function AttendanceCadastroModal({
                 !canAdvance && 'opacity-50 cursor-not-allowed'
               )}
             >
-              {step === 3 ? 'Revisar' : 'Próximo'} <ArrowRight className="h-4 w-4" />
+              {step === (isLab ? STEPS_LAB_DYNAMIC.length - 1 : 3) ? 'Revisar' : 'Próximo'} <ArrowRight className="h-4 w-4" />
             </button>
           ) : (
             <button
