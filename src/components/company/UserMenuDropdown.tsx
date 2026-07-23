@@ -91,7 +91,7 @@ export function UserMenuDropdown() {
         <DropdownMenuSeparator />
         <DropdownMenuItem onClick={logout} className="text-xs text-destructive"><LogOut className="h-3.5 w-3.5 mr-2" /> Sair</DropdownMenuItem>
       </DropdownMenuContent>
-      <UserSystemModals type={modalType} onClose={() => setModalType(null)} />
+      <UserSystemModals open={!!modalType} type={modalType || undefined} onClose={() => setModalType(null)} />
     </DropdownMenu>
   )
 }
