@@ -317,21 +317,6 @@ function GeneralInfoSection({ isEditing, data, workbenches, onChange }: { isEdit
 
   return (
     <Card className="p-8 space-y-8">
-      <div className="space-y-4">
-        <Label className="text-sm font-bold uppercase tracking-wider text-muted-foreground">Metodologia Analítica</Label>
-        <div className="flex gap-2">
-          <Input 
-            placeholder="Ex: Colorimétrico, Enzimático, etc." 
-            value={data.methodology}
-            onChange={(e) => onChange({ methodology: e.target.value })}
-            className="h-11"
-          />
-          <Button variant="outline" className="h-11 gap-2">
-            <Beaker className="h-4 w-4" /> Buscar Metodologia
-          </Button>
-        </div>
-      </div>
-
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         <div className="space-y-4 lg:col-span-2">
           <Label className="text-sm font-bold uppercase tracking-wider text-muted-foreground">Nome do Exame *</Label>
@@ -590,6 +575,24 @@ function GeneralInfoSection({ isEditing, data, workbenches, onChange }: { isEdit
           <p className="text-[11px] text-muted-foreground">Esse texto será impresso no laudo, abaixo dos resultados deste exame.</p>
         </div>
 
+      </div>
+
+      <div className="space-y-6 pt-6 border-t border-border">
+        <div className="flex items-center gap-2">
+          <Beaker className="h-5 w-5 text-primary" />
+          <h3 className="text-lg font-bold">Metodologia Analítica</h3>
+        </div>
+        <div className="flex gap-2">
+          <Input 
+            placeholder="Ex: Colorimétrico, Enzimático, etc." 
+            value={data.methodology}
+            onChange={(e) => onChange({ methodology: e.target.value })}
+            className="h-11"
+          />
+          <Button variant="outline" className="h-11 gap-2">
+            <Search className="h-4 w-4" /> Buscar Metodologia
+          </Button>
+        </div>
       </div>
 
       <div className="space-y-6 pt-6 border-t border-border">
