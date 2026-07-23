@@ -423,26 +423,29 @@ export function AttendanceCadastroModal({
 
         {/* Footer */}
         <div className="flex items-center justify-between border-t border-border px-6 py-4 bg-card">
-          <Button variant="outline" onClick={prev} disabled={step === 0 && !showReview}>
-            <ArrowLeft className="h-4 w-4 mr-1" /> Voltar
-          </Button>
-          {!showReview ? (
+          {step > 0 && (
+            <button onClick={prev} className="inline-flex items-center gap-1 rounded-md bg-muted px-4 py-2 text-sm font-semibold text-muted-foreground hover:bg-muted/80 transition-all uppercase">
+              <ArrowLeft className="h-4 w-4" /> Voltar
+            </button>
+          )}
+          <div className="flex-1" />
+          {!showReview && (step < (isLab ? STEPS_LAB_DYNAMIC.length - 1 : 3)) ? (
             <button
               onClick={next}
               disabled={!canAdvance}
               className={cn(
-                'inline-flex items-center gap-1 rounded-md gradient-bg px-6 py-2 text-sm font-semibold text-white shadow-sm transition-all',
+                'inline-flex items-center gap-1 rounded-md gradient-bg px-6 py-2 text-sm font-semibold text-white shadow-sm hover:opacity-90 transition-all uppercase',
                 !canAdvance && 'opacity-50 cursor-not-allowed'
               )}
             >
-              {step === (isLab ? STEPS_LAB_DYNAMIC.length - 1 : 3) ? 'Revisar' : 'Próximo'} <ArrowRight className="h-4 w-4" />
+              Próximo <ArrowRight className="h-4 w-4" />
             </button>
           ) : (
             <button
               onClick={handleFinalize}
-              className="inline-flex items-center gap-1 rounded-md bg-emerald-500 px-6 py-2 text-sm font-semibold text-white shadow-sm hover:bg-emerald-600 transition-colors"
+              className="inline-flex items-center gap-1 rounded-md bg-blue-600 px-8 py-2 text-sm font-bold text-white shadow-md hover:bg-blue-700 transition-all uppercase tracking-wide"
             >
-              <Check className="h-4 w-4" /> Confirmar Atendimento
+              <Check className="h-4 w-4" /> Criar
             </button>
           )}
         </div>
