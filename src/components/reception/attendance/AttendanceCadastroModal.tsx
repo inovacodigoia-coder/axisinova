@@ -185,14 +185,13 @@ export function AttendanceCadastroModal({
   // Validação por passo
   const stepValid = (s: number): boolean => {
     if (isLab) {
+      const maxStep = STEPS_LAB_DYNAMIC.length - 1
       if (s === 0) return !!state.patient
-      // For Lab, let's allow progression to more steps as they are developed
-      // For now, allow Step 1 (Review) and Step 2 (Exam Data)
       if (s === 1) return true
       if (s === 2) return true
       if (s === 3) return (state.guides?.length || 0) > 0
       if (s === 4 && hasParticularGuideWithPrice) return true 
-      if (s === (hasParticularGuideWithPrice ? 5 : 4)) return true // Authorization step (Step3Authorization)
+      if (s === (hasParticularGuideWithPrice ? 5 : 4)) return true // Autorização
       return true
     }
 
