@@ -189,6 +189,8 @@ export function AttendanceCadastroModal({
       // For now, allow Step 1 (Review) and Step 2 (Exam Data)
       if (s === 1) return true
       if (s === 2) return true
+      if (s === 3) return (state.guides?.length || 0) > 0
+      if (s === 4 && hasParticularGuideWithPrice) return true // Requirement to allow progression to next step
       return true
     }
 
