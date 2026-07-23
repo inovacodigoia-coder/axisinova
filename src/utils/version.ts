@@ -1,7 +1,7 @@
 export const SYSTEM_VERSION = {
   major: 1,
   minor: 0,
-  patch: 1, // Incrementing for this task
+  patch: 2, // Incrementing to 1.0.2
   get formatted() {
     return `${this.major}.${this.minor}.${this.patch}`;
   }
