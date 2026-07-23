@@ -269,7 +269,9 @@ export function RegistersProvider({ children }: { children: ReactNode }) {
       id, company_id: companyId, name: c.name, ans_code: c.ansCode || null,
       type: c.type, cnpj: c.cnpj || null, auth_phone: c.authPhone || null,
       email: c.email || null, observations: c.observations || null,
-      attachment_rules: c.attachmentRules, is_active: c.isActive,
+      attachment_rules: c.attachmentRules, 
+      exam_prices: c.examPrices || [],
+      is_active: c.isActive,
     } as any)
     if (error) {
       console.error('[convenios.insert]', error)
