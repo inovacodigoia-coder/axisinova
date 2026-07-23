@@ -185,17 +185,23 @@ export interface Sector {
 }
 
 export const CONVENIO_TYPE_LABELS: Record<string, string> = {
-  'public': 'Público',
-  'private': 'Particular',
-  'insurance': 'Convênio',
-  'self_pay': 'Auto-pagamento'
+  health_plan: 'Plano de Saúde',
+  private: 'Particular',
+  sus: 'SUS',
+  other: 'Outro',
+  public: 'Público',
+  insurance: 'Plano de Saúde',
+  self_pay: 'Particular'
 };
 
 export const CONVENIO_TYPE_COLORS: Record<string, string> = {
-  'public': 'blue',
-  'private': 'green',
-  'insurance': 'purple',
-  'self_pay': 'orange'
+  health_plan: 'bg-blue-50 text-blue-700 border border-blue-100',
+  private: 'bg-emerald-50 text-emerald-700 border border-emerald-100',
+  sus: 'bg-cyan-50 text-cyan-700 border border-cyan-100',
+  other: 'bg-slate-100 text-slate-700 border border-slate-200',
+  public: 'bg-cyan-50 text-cyan-700 border border-cyan-100',
+  insurance: 'bg-blue-50 text-blue-700 border border-blue-100',
+  self_pay: 'bg-emerald-50 text-emerald-700 border border-emerald-100'
 };
 
 export const UF_LIST = [
