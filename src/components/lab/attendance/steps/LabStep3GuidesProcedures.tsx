@@ -660,9 +660,72 @@ export function LabStep3GuidesProcedures({ state, update }: Props) {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Modal Alterar Previsao de Entrega */}
+      <Dialog open={showDeadlineModal} onOpenChange={setShowDeadlineModal}>
+        <DialogContent className="sm:max-w-xs">
+          <DialogHeader>
+            <DialogTitle className="text-sm font-bold">Alterar Previsao de Entrega</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-1.5">
+              <Label className="text-[10px] uppercase font-bold text-muted-foreground">Data Coleta *</Label>
+              <div className="relative">
+                <Input 
+                  value={tempCollectionDate} 
+                  onChange={(e) => setTempCollectionDate(e.target.value)}
+                  className="text-sm"
+                />
+                <Calendar className="h-4 w-4 absolute right-2.5 top-3 text-muted-foreground" />
+              </div>
+            </div>
+            
+            <div className="space-y-1.5">
+              <Label className="text-[10px] uppercase font-bold text-muted-foreground">Previsão de Entrega *</Label>
+              <div className="relative">
+                <Input 
+                  value={tempDeadline} 
+                  onChange={(e) => setTempDeadline(e.target.value)}
+                  className="text-sm"
+                />
+                <Calendar className="h-4 w-4 absolute right-2.5 top-3 text-muted-foreground" />
+              </div>
+            </div>
+          </div>
+          <DialogFooter className="flex-row gap-2 sm:justify-center">
+            <Button variant="ghost" className="flex-1 text-xs font-bold" onClick={() => setShowDeadlineModal(false)}>CANCELAR</Button>
+            <Button 
+              className="flex-1 text-xs font-bold gradient-bg text-white"
+              onClick={() => {
+                const newGuides = guides.map(g => {
+                  if (g.id === activeGuideId) {
+                    const newExams = g.exams.map(ex => {
+                      // Note: We need a better way to target the specific exam if there are duplicates
+                      // For now, if we match the name, we update it.
+                      if (ex.name === selectedExam?.name) {
+                        return { ...ex, expectedDeliveryDate: tempDeadline };
+                      }
+                      return ex;
+                    });
+                    return { ...g, exams: newExams };
+                  }
+                  return g;
+                });
+                setGuides(newGuides);
+                update({ guides: newGuides });
+                setShowDeadlineModal(false);
+                toast.success("Previsão de entrega atualizada");
+              }}
+            >
+              CONFIRMAR
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
+
 
 function Field({ label, children }: { label: React.ReactNode; children: React.ReactNode }) {
   return (
