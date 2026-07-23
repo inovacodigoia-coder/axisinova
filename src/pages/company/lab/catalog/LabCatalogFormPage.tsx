@@ -240,20 +240,11 @@ export default function LabCatalogFormPage() {
           <TabsTrigger value="parameters" className="gap-2 px-4 py-2 data-[state=active]:gradient-bg data-[state=active]:text-white">
             <Settings2 className="h-4 w-4" /> Parâmetros e Máscara
           </TabsTrigger>
-          <TabsTrigger value="reference" className="gap-2 px-4 py-2 data-[state=active]:gradient-bg data-[state=active]:text-white">
-            <Scale className="h-4 w-4" /> Valores de Referência
-          </TabsTrigger>
-          <TabsTrigger value="methodology" className="gap-2 px-4 py-2 data-[state=active]:gradient-bg data-[state=active]:text-white">
-            <Beaker className="h-4 w-4" /> Metodologias
-          </TabsTrigger>
           <TabsTrigger value="interfacing" className="gap-2 px-4 py-2 data-[state=active]:gradient-bg data-[state=active]:text-white">
             <ArrowLeftRight className="h-4 w-4" /> Interfaceamento
           </TabsTrigger>
           <TabsTrigger value="rules" className="gap-2 px-4 py-2 data-[state=active]:gradient-bg data-[state=active]:text-white">
             <ShieldCheck className="h-4 w-4" /> Alertas e Regras
-          </TabsTrigger>
-          <TabsTrigger value="patient" className="gap-2 px-4 py-2 data-[state=active]:gradient-bg data-[state=active]:text-white">
-            <UserCircle className="h-4 w-4" /> Info. ao Paciente
           </TabsTrigger>
         </TabsList>
 
@@ -271,12 +262,6 @@ export default function LabCatalogFormPage() {
             setParameters={setParameters} 
           />
         </TabsContent>
-        <TabsContent value="reference">
-          <ReferenceSection />
-        </TabsContent>
-        <TabsContent value="methodology">
-          <MethodologySection methodology={examData.methodology} onChange={(val) => setExamData(prev => ({ ...prev, methodology: val }))} />
-        </TabsContent>
         <TabsContent value="interfacing">
           <InterfacingSection 
             config={examData.interfacingConfig} 
@@ -287,14 +272,6 @@ export default function LabCatalogFormPage() {
         </TabsContent>
         <TabsContent value="rules">
            <RulesSection />
-        </TabsContent>
-        <TabsContent value="patient">
-          <PatientInfoSection 
-            questions={confirmationQuestions}
-            setQuestions={setConfirmationQuestions}
-            data={examData}
-            onChange={(newData) => setExamData(prev => ({ ...prev, ...newData }))}
-          />
         </TabsContent>
       </Tabs>
     </div>
