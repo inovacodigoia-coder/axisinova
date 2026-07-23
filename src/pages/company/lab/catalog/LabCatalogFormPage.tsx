@@ -365,6 +365,7 @@ function GeneralInfoSection({ isEditing, data, workbenches, onChange }: { isEdit
               <div className={cn("h-2 w-2 rounded-full border border-primary/30", data.type === 'lab' && "bg-primary shadow-[0_0_8px_rgba(var(--primary-rgb),0.5)]")} />
               LABORATÓRIO
             </button>
+          </div>
         </div>
         <div className="space-y-4">
           <Label className="text-sm font-bold uppercase tracking-wider text-muted-foreground">Bancada Técnica</Label>
@@ -396,8 +397,8 @@ function GeneralInfoSection({ isEditing, data, workbenches, onChange }: { isEdit
             <Input 
               type="number"
               min="0"
-              value={data.deliveryDeadline || 0}
-              onChange={(e) => onChange({ deliveryDeadline: parseInt(e.target.value) || 0 })}
+              value={data.resultDeadlineDays || 0}
+              onChange={(e) => onChange({ resultDeadlineDays: parseInt(e.target.value) || 0 })}
               className="border-none bg-transparent h-auto p-0 focus-visible:ring-0 text-base font-medium"
             />
           </div>
@@ -409,8 +410,8 @@ function GeneralInfoSection({ isEditing, data, workbenches, onChange }: { isEdit
             <Input 
               type="number"
               min="0"
-              value={data.estimatedDuration || 0}
-              onChange={(e) => onChange({ estimatedDuration: parseInt(e.target.value) || 0 })}
+              value={data.estimatedDurationMinutes || 0}
+              onChange={(e) => onChange({ estimatedDurationMinutes: parseInt(e.target.value) || 0 })}
               className="border-none bg-transparent h-auto p-0 focus-visible:ring-0 text-base font-medium"
             />
           </div>
@@ -424,27 +425,35 @@ function GeneralInfoSection({ isEditing, data, workbenches, onChange }: { isEdit
             <Label className="text-sm font-medium cursor-pointer">Exame Ativo</Label>
           </div>
         </div>
+        <div className="space-y-4">
+          <Label className="text-sm font-bold uppercase tracking-wider text-muted-foreground">Código TUSS</Label>
+          <Input 
+            placeholder="Ex: 40302534" 
+            value={data.tussCode}
+            onChange={(e) => onChange({ tussCode: e.target.value })}
+            className="h-11 rounded-xl"
+          />
+        </div>
       </div>
 
       <div className="space-y-4 pt-4 border-t border-border/50">
         <Label className="text-sm font-bold uppercase tracking-wider text-muted-foreground">Materiais Aceitos</Label>
         <div className="flex flex-wrap gap-2">
-          {['Soro', 'Plasma', 'Sangue Total', 'Urina', 'Fezes', 'Líquor', 'Saliva'].map(mat => (
+          {['Sangue Total', 'Soro', 'Plasma', 'Urina', 'Fezes', 'Secreção', 'Líquor', 'Swab'].map(mat => (
             <button
               key={mat}
               type="button"
-              onClick={() => handleToggleMaterial(mat)}
+              onClick={() => toggleMaterial(mat)}
+              onDoubleClick={() => handleSetDefault(mat)}
               className={cn(
-                "px-4 py-2 rounded-full text-sm font-medium border transition-all flex items-center gap-2",
-                materials.includes(mat) 
-                  ? "bg-primary/10 border-primary text-primary" 
-                  : "bg-muted/30 border-border text-muted-foreground hover:border-primary/50"
+                "px-4 py-2 rounded-full border text-sm font-medium transition-all flex items-center gap-2",
+                selectedMaterials.includes(mat) 
+                  ? "bg-primary/5 border-primary text-primary shadow-[0_0_10px_rgba(var(--primary-rgb),0.1)]" 
+                  : "bg-background border-border text-muted-foreground hover:border-primary/50"
               )}
             >
+              {defaultMaterial === mat && <Star className="h-3 w-3 fill-primary text-primary" />}
               {mat}
-              {materials.includes(mat) && (
-                <Check className="h-3 w-3" />
-              )}
             </button>
           ))}
         </div>
@@ -476,6 +485,87 @@ function GeneralInfoSection({ isEditing, data, workbenches, onChange }: { isEdit
             <Info className="h-3 w-3" /> Impresso no laudo, abaixo dos resultados.
           </p>
         </div>
+      </div>
+
+      <div className="space-y-6 pt-6 border-t border-border">
+        <div className="flex items-center gap-2">
+          <Beaker className="h-5 w-5 text-primary" />
+          <h3 className="text-lg font-bold">Metodologia Analítica</h3>
+        </div>
+        <div className="flex gap-2">
+          <Input 
+            placeholder="Ex: Colorimétrico, Enzimático, etc." 
+            value={data.methodology}
+            onChange={(e) => onChange({ methodology: e.target.value })}
+            className="h-11"
+          />
+          <Button variant="outline" className="h-11 gap-2">
+            <Search className="h-4 w-4" /> Buscar Metodologia
+          </Button>
+        </div>
+      </div>
+
+      <div className="space-y-6 pt-6 border-t border-border">
+        <div className="flex items-center gap-2">
+          <Scale className="h-5 w-5 text-primary" />
+          <h3 className="text-lg font-bold">Valores de Referência do Exame</h3>
+        </div>
+        <p className="text-sm text-muted-foreground">
+          Configure aqui os valores de referência globais para este exame. Para referências específicas por parâmetro, utilize a aba 
+          <span className="font-bold text-primary"> "Parâmetros e Máscara"</span>.
+        </p>
+        
+        <div className="bg-muted/10 border rounded-xl p-4">
+          <ReferenceValuesSection parameter={{ name: data.name }} />
+        </div>
+      </div>
+
+      <div className="space-y-6 pt-6 border-t border-border">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <MessageSquare className="h-5 w-5 text-primary" />
+            <h3 className="text-lg font-bold">Perguntas de Confirmação</h3>
+          </div>
+          <Button variant="outline" size="sm" onClick={() => {
+            const newQuestions = [...(data.confirmationQuestions || []), ""];
+            onChange({ confirmationQuestions: newQuestions });
+          }} className="gap-2">
+            <Plus className="h-4 w-4" /> Adicionar Pergunta
+          </Button>
+        </div>
+        <p className="text-xs text-muted-foreground">Perguntas que o atendente deverá confirmar com o paciente ao adicionar este exame.</p>
+        
+        <div className="space-y-3">
+          {(data.confirmationQuestions || []).map((q: string, index: number) => (
+            <div key={index} className="flex gap-3 items-center">
+              <Input 
+                value={q} 
+                onChange={(e) => {
+                  const newQuestions = [...data.confirmationQuestions];
+                  newQuestions[index] = e.target.value;
+                  onChange({ confirmationQuestions: newQuestions });
+                }}
+                placeholder="Ex: Está em uso de algum medicamento?"
+                className="h-10"
+              />
+              <Button variant="ghost" size="icon" className="h-10 w-10 text-red-500" onClick={() => {
+                const newQuestions = data.confirmationQuestions.filter((_: any, i: number) => i !== index);
+                onChange({ confirmationQuestions: newQuestions });
+              }}>
+                <Trash2 className="h-4 w-4" />
+              </Button>
+            </div>
+          ))}
+          {(!data.confirmationQuestions || data.confirmationQuestions.length === 0) && (
+            <div className="text-center py-6 border-2 border-dashed rounded-xl text-muted-foreground text-sm">
+              Nenhuma pergunta de confirmação cadastrada.
+            </div>
+          )}
+        </div>
+      </div>
+    </Card>
+  )
+}
         <div className="space-y-2">
           <Label>Código TUSS</Label>
           <Input 
