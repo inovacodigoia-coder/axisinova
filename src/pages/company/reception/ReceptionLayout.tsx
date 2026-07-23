@@ -507,25 +507,21 @@ export default function ReceptionLayout() {
           onClose={() => setFinalizeTicket(null)}
         />
       )}
-      {(cadastroTicket || lookupPatient === null && !showLookup && !showSelectQueues && !timelineTicket && !reallocateTicket && !finalizeTicket && !reprintDoc) && (
-        <AttendanceCadastroModal
-          open={!!cadastroTicket || (lookupPatient === null && !showLookup)} 
-          onClose={() => {
-            setCadastroTicket(null);
-            // This is a bit of a hack to handle the "Initiate Cadastro" without ticket
-          }}
-          ticketId={cadastroTicket?.id}
-          ticketCode={cadastroTicket?.displayCode}
-          unitId={unitId}
-          unitName={unitName}
-          guicheName={guicheName}
-        />
-      )}
+      {cadastroTicket && (
         <AttendanceCadastroModal
           open
           onClose={() => setCadastroTicket(null)}
           ticketId={cadastroTicket.id}
           ticketCode={cadastroTicket.displayCode}
+          unitId={unitId}
+          unitName={unitName}
+          guicheName={guicheName}
+        />
+      )}
+      {showDirectCadastro && (
+        <AttendanceCadastroModal
+          open
+          onClose={() => setShowDirectCadastro(false)}
           unitId={unitId}
           unitName={unitName}
           guicheName={guicheName}
