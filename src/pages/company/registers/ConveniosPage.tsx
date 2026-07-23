@@ -187,6 +187,8 @@ function ConvenioFormModal({ convenio, onClose, onSave }: { convenio: Convenio |
   const [authPhone, setAuthPhone] = useState(convenio?.authPhone || '')
   const [email, setEmail] = useState(convenio?.email || '')
   const [observations, setObservations] = useState(convenio?.observations || '')
+  const [examPrices, setExamPrices] = useState<any[]>(convenio?.examPrices || [])
+
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4" onClick={onClose}>
