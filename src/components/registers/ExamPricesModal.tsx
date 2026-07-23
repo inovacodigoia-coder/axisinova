@@ -99,7 +99,7 @@ export function ExamPricesModal({ convenioName, examPrices: initialPrices, onClo
             <div className="p-4 border border-primary/20 rounded-xl bg-primary/5 space-y-4 animate-in fade-in slide-in-from-top-2">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-1.5">
-                  <Label>Exame</Label>
+                  <Label className="text-xs font-bold uppercase text-muted-foreground">Exame</Label>
                   <select
                     value={selectedExamId}
                     onChange={e => setSelectedExamId(e.target.value)}
@@ -112,7 +112,7 @@ export function ExamPricesModal({ convenioName, examPrices: initialPrices, onClo
                   </select>
                 </div>
                 <div className="space-y-1.5">
-                  <Label>Preço (R$)</Label>
+                  <Label className="text-xs font-bold uppercase text-muted-foreground">Preço (R$)</Label>
                   <div className="relative">
                     <DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                     <Input
@@ -137,9 +137,9 @@ export function ExamPricesModal({ convenioName, examPrices: initialPrices, onClo
             <table className="w-full text-sm">
               <thead className="bg-muted/50 border-b">
                 <tr>
-                  <th className="px-4 py-3 text-left font-medium">Exame</th>
-                  <th className="px-4 py-3 text-left font-medium">Preço (R$)</th>
-                  <th className="px-4 py-3 text-right font-medium">Ações</th>
+                  <th className="px-4 py-3 text-left font-bold uppercase text-[10px] text-muted-foreground tracking-wider">Exame</th>
+                  <th className="px-4 py-3 text-left font-bold uppercase text-[10px] text-muted-foreground tracking-wider">Preço (R$)</th>
+                  <th className="px-4 py-3 text-right font-bold uppercase text-[10px] text-muted-foreground tracking-wider">Ações</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-border">
@@ -189,8 +189,8 @@ export function ExamPricesModal({ convenioName, examPrices: initialPrices, onClo
         </div>
 
         <DialogFooter className="px-6 py-4 border-t bg-muted/20">
-          <Button variant="outline" onClick={onClose}>Cancelar</Button>
-          <Button onClick={() => onSave(prices)} className="gradient-bg text-white px-8">Salvar Tabela</Button>
+          <Button variant="ghost" className="font-bold text-xs" onClick={onClose}>CANCELAR</Button>
+          <Button onClick={() => onSave(prices)} className="gradient-bg text-white px-8 font-bold text-xs uppercase">Salvar Tabela</Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>
