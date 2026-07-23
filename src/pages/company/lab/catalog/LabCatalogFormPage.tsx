@@ -31,7 +31,10 @@ import {
   Link,
   Search,
   CheckCircle2,
-  XCircle
+  XCircle,
+  Clock,
+  Timer,
+  Check
 } from 'lucide-react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { cn } from '@/lib/utils'
@@ -240,20 +243,11 @@ export default function LabCatalogFormPage() {
           <TabsTrigger value="parameters" className="gap-2 px-4 py-2 data-[state=active]:gradient-bg data-[state=active]:text-white">
             <Settings2 className="h-4 w-4" /> Parâmetros e Máscara
           </TabsTrigger>
-          <TabsTrigger value="reference" className="gap-2 px-4 py-2 data-[state=active]:gradient-bg data-[state=active]:text-white">
-            <Scale className="h-4 w-4" /> Valores de Referência
-          </TabsTrigger>
-          <TabsTrigger value="methodology" className="gap-2 px-4 py-2 data-[state=active]:gradient-bg data-[state=active]:text-white">
-            <Beaker className="h-4 w-4" /> Metodologias
-          </TabsTrigger>
           <TabsTrigger value="interfacing" className="gap-2 px-4 py-2 data-[state=active]:gradient-bg data-[state=active]:text-white">
             <ArrowLeftRight className="h-4 w-4" /> Interfaceamento
           </TabsTrigger>
           <TabsTrigger value="rules" className="gap-2 px-4 py-2 data-[state=active]:gradient-bg data-[state=active]:text-white">
             <ShieldCheck className="h-4 w-4" /> Alertas e Regras
-          </TabsTrigger>
-          <TabsTrigger value="patient" className="gap-2 px-4 py-2 data-[state=active]:gradient-bg data-[state=active]:text-white">
-            <UserCircle className="h-4 w-4" /> Info. ao Paciente
           </TabsTrigger>
         </TabsList>
 
@@ -271,12 +265,6 @@ export default function LabCatalogFormPage() {
             setParameters={setParameters} 
           />
         </TabsContent>
-        <TabsContent value="reference">
-          <ReferenceSection />
-        </TabsContent>
-        <TabsContent value="methodology">
-          <MethodologySection methodology={examData.methodology} onChange={(val) => setExamData(prev => ({ ...prev, methodology: val }))} />
-        </TabsContent>
         <TabsContent value="interfacing">
           <InterfacingSection 
             config={examData.interfacingConfig} 
@@ -287,14 +275,6 @@ export default function LabCatalogFormPage() {
         </TabsContent>
         <TabsContent value="rules">
            <RulesSection />
-        </TabsContent>
-        <TabsContent value="patient">
-          <PatientInfoSection 
-            questions={confirmationQuestions}
-            setQuestions={setConfirmationQuestions}
-            data={examData}
-            onChange={(newData) => setExamData(prev => ({ ...prev, ...newData }))}
-          />
         </TabsContent>
       </Tabs>
     </div>
@@ -390,108 +370,79 @@ function GeneralInfoSection({ isEditing, data, workbenches, onChange }: { isEdit
             </button>
           </div>
         </div>
-        <div className="space-y-2">
-          <Label>Código TUSS</Label>
+        <div className="space-y-4">
+          <Label className="text-sm font-bold uppercase tracking-wider text-muted-foreground">Bancada Técnica</Label>
+          <Select 
+            value={data.workbenchId || ''} 
+            onValueChange={(val) => onChange({ workbenchId: val })}
+          >
+            <SelectTrigger className="h-11 rounded-xl">
+              <SelectValue placeholder="Selecione a bancada" />
+            </SelectTrigger>
+            <SelectContent>
+              {workbenches && workbenches.length > 0 ? (
+                workbenches.map(wb => (
+                  <SelectItem key={wb.id} value={wb.id}>{wb.name}</SelectItem>
+                ))
+              ) : (
+                <SelectItem value="none" disabled>Nenhuma bancada cadastrada</SelectItem>
+              )}
+            </SelectContent>
+          </Select>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 pt-4 border-t border-border/50">
+        <div className="space-y-4">
+          <Label className="text-sm font-bold uppercase tracking-wider text-muted-foreground">Prazo Entrega (Dias)</Label>
+          <div className="flex items-center gap-3 h-11 px-4 bg-muted/20 rounded-xl border border-border/50">
+            <Clock className="h-4 w-4 text-muted-foreground" />
+            <Input 
+              type="number"
+              min="0"
+              value={data.resultDeadlineDays || 0}
+              onChange={(e) => onChange({ resultDeadlineDays: parseInt(e.target.value) || 0 })}
+              className="border-none bg-transparent h-auto p-0 focus-visible:ring-0 text-base font-medium"
+            />
+          </div>
+        </div>
+        <div className="space-y-4">
+          <Label className="text-sm font-bold uppercase tracking-wider text-muted-foreground">Duração Estimada (Min)</Label>
+          <div className="flex items-center gap-3 h-11 px-4 bg-muted/20 rounded-xl border border-border/50">
+            <Timer className="h-4 w-4 text-muted-foreground" />
+            <Input 
+              type="number"
+              min="0"
+              value={data.estimatedDurationMinutes || 0}
+              onChange={(e) => onChange({ estimatedDurationMinutes: parseInt(e.target.value) || 0 })}
+              className="border-none bg-transparent h-auto p-0 focus-visible:ring-0 text-base font-medium"
+            />
+          </div>
+        </div>
+        <div className="space-y-4 flex flex-col justify-end">
+          <div className="flex items-center gap-3 h-11 px-4 bg-muted/20 rounded-xl border border-border/50">
+            <Switch 
+              checked={data.isActive ?? true}
+              onCheckedChange={(val) => onChange({ isActive: val })}
+            />
+            <Label className="text-sm font-medium cursor-pointer">Exame Ativo</Label>
+          </div>
+        </div>
+        <div className="space-y-4">
+          <Label className="text-sm font-bold uppercase tracking-wider text-muted-foreground">Código TUSS</Label>
           <Input 
             placeholder="Ex: 40302534" 
             value={data.tussCode}
             onChange={(e) => onChange({ tussCode: e.target.value })}
+            className="h-11 rounded-xl"
           />
-        </div>
-        <div className="space-y-2">
-          <Label>Unidade de Medida</Label>
-          <div className="flex gap-2">
-            <select 
-              className="flex-1 h-10 px-3 rounded-lg border bg-background text-sm outline-none focus:ring-2 focus:ring-primary/20"
-              value={data.measurementUnit}
-              onChange={(e) => onChange({ measurementUnit: e.target.value })}
-            >
-              <option value="">-- Selecione --</option>
-              {measurementUnits.map(unit => (
-                <option key={unit.name} value={unit.name}>{unit.name}</option>
-              ))}
-            </select>
-            <Button 
-              variant="outline" 
-              size="icon" 
-              className="shrink-0" 
-              onClick={() => navigate('/app/configuracoes/laboratorio?tab=units')}
-              title="Gerenciar Unidades de Medida"
-            >
-              <Plus className="h-4 w-4" />
-            </Button>
-          </div>
-        </div>
-        <div className="space-y-2">
-          <Label>Bancada Técnica</Label>
-          <select 
-            className="w-full h-10 px-3 rounded-lg border bg-background text-sm outline-none focus:ring-2 focus:ring-primary/20"
-            value={data.workbenchId}
-            onChange={(e) => onChange({ workbenchId: e.target.value })}
-          >
-            <option value="">-- Selecione --</option>
-            {workbenches?.map((wb: any) => (
-              <option key={wb.id} value={wb.id}>{wb.name}</option>
-            ))}
-          </select>
-        </div>
-        <div className="space-y-2">
-          <Label>Especialidade</Label>
-          <select className="w-full h-10 px-3 rounded-lg border bg-background text-sm outline-none focus:ring-2 focus:ring-primary/20">
-            <option>Não se aplica</option>
-          </select>
-        </div>
-        <div className="space-y-2">
-          <div className="flex items-center gap-2 mb-1">
-            <Label>Duração estimada (min)</Label>
-            <Switch 
-              className="h-4 w-7 [&>span]:h-3 [&>span]:w-3 border border-border/50"
-              checked={data.showDuration} 
-              onCheckedChange={(val) => onChange({ showDuration: val })} 
-            />
-          </div>
-          {data.showDuration && (
-            <Input 
-              type="number" 
-              value={data.estimatedDurationMinutes}
-              onChange={(e) => onChange({ estimatedDurationMinutes: Number(e.target.value) })}
-              className="h-10"
-            />
-          )}
-        </div>
-        <div className="space-y-2">
-          <div className="flex items-center gap-2 mb-1">
-            <Label>Prazo de Entrega (dias)</Label>
-            <Switch 
-              className="h-4 w-7 [&>span]:h-3 [&>span]:w-3 border border-border/50"
-              checked={data.showDeadline} 
-              onCheckedChange={(val) => onChange({ showDeadline: val })} 
-            />
-          </div>
-          {data.showDeadline && (
-            <Input 
-              type="number" 
-              value={data.resultDeadlineDays}
-              onChange={(e) => onChange({ resultDeadlineDays: Number(e.target.value) })}
-              className="h-10"
-            />
-          )}
         </div>
       </div>
 
-      <div className="space-y-4 pt-4 border-t border-border">
-        <div className="flex items-center justify-between">
-          <div>
-            <Label className="text-sm font-bold uppercase tracking-wider text-muted-foreground">Materiais aceitos *</Label>
-            <p className="text-xs text-muted-foreground mt-1">Selecione um ou mais. Clique duplo para definir como padrão ⭐.</p>
-          </div>
-          <Button variant="ghost" size="sm" className="text-primary gap-1 h-8">
-            <Plus className="h-3 w-3" /> Novo Material
-          </Button>
-        </div>
-        
+      <div className="space-y-4 pt-4 border-t border-border/50">
+        <Label className="text-sm font-bold uppercase tracking-wider text-muted-foreground">Materiais Aceitos</Label>
         <div className="flex flex-wrap gap-2">
-          {materials.map(mat => (
+          {['Sangue Total', 'Soro', 'Plasma', 'Urina', 'Fezes', 'Secreção', 'Líquor', 'Swab'].map(mat => (
             <button
               key={mat}
               type="button"
@@ -511,93 +462,109 @@ function GeneralInfoSection({ isEditing, data, workbenches, onChange }: { isEdit
         </div>
       </div>
 
-      <div className="space-y-2 pt-2">
-        <Label>Instrução de preparo</Label>
-        <textarea 
-          className="w-full h-24 p-3 rounded-lg border bg-background text-sm focus:ring-2 focus:ring-primary/20 outline-none resize-none" 
-          placeholder="Orientações enviadas ao paciente (ex: jejum, preparo intestinal)"
-          value={data.preparationInstructions}
-          onChange={(e) => onChange({ preparationInstructions: e.target.value })}
-        />
-      </div>
-
-      <div className="flex items-center gap-2 py-2">
-        <input type="checkbox" id="pre-auth" className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary" />
-        <Label htmlFor="pre-auth" className="cursor-pointer">Requer autorização prévia</Label>
-      </div>
-
-
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-6 border-t">
-        <div className="space-y-2">
-          <Label>Origem padrão</Label>
-          <select 
-            className="w-full h-10 px-3 rounded-lg border bg-background text-sm outline-none focus:ring-2 focus:ring-primary/20"
-            value={data.defaultOrigin}
-            onChange={(e) => onChange({ defaultOrigin: e.target.value })}
-          >
-            <option value="">-- Não definido --</option>
-            <option value="Recepção Central">Recepção Central</option>
-            <option value="Posto Ipanguaçu">Posto Ipanguaçu</option>
-          </select>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-8 pt-4 border-t border-border/50">
+        <div className="space-y-3">
+          <Label className="text-sm font-bold uppercase tracking-wider text-muted-foreground">Orientações ao Paciente</Label>
+          <textarea 
+            className="w-full h-32 p-4 rounded-xl border bg-background text-sm focus:ring-2 focus:ring-primary/20 outline-none resize-none shadow-sm transition-all" 
+            placeholder="Ex: Jejum de 8 horas. Não ingerir bebidas alcoólicas 24h antes..."
+            value={data.preparationInstructions}
+            onChange={(e) => onChange({ preparationInstructions: e.target.value })}
+          />
+          <p className="text-[11px] text-muted-foreground flex items-center gap-1">
+            <Info className="h-3 w-3" /> Exibido para a recepção durante o cadastro.
+          </p>
         </div>
-        <div className="space-y-2">
-          <Label>Bancada Técnica</Label>
-          <div className="flex gap-2">
-            <select 
-              className="flex-1 h-10 px-3 rounded-lg border bg-background text-sm outline-none focus:ring-2 focus:ring-primary/20"
-              value={data.workbenchId}
-              onChange={(e) => onChange({ workbenchId: e.target.value })}
-            >
-              <option value="">-- Não definido --</option>
-              {((window as any)._workbenches || [])?.map((w: any) => (
-                <option key={w.id} value={w.id}>{w.name}</option>
-              ))}
-            </select>
-            <Button 
-              variant="outline" 
-              size="icon" 
-              className="shrink-0" 
-              onClick={() => navigate('/app/configuracoes/laboratorio?tab=workbenches')}
-              title="Gerenciar Bancadas"
-            >
-              <Plus className="h-4 w-4" />
-            </Button>
-          </div>
-        </div>
-        <div className="space-y-2">
-          <Label>Destino padrão</Label>
-          <div className="flex gap-2">
-            <select 
-              className="flex-1 h-10 px-3 rounded-lg border bg-background text-sm outline-none focus:ring-2 focus:ring-primary/20"
-              value={data.defaultDestination}
-              onChange={(e) => onChange({ defaultDestination: e.target.value })}
-            >
-              <option value="">-- Não definido --</option>
-              <option value="Ipanguaçu">Ipanguaçu</option>
-              <option value="Pardini">Pardini</option>
-            </select>
-            <Button 
-              variant="outline" 
-              size="icon" 
-              className="shrink-0" 
-              onClick={() => navigate('/app/configuracoes/laboratorio?tab=workbenches')}
-              title="Gerenciar Locais"
-            >
-              <Plus className="h-4 w-4" />
-            </Button>
-          </div>
-        </div>
-        <div className="md:col-span-2 space-y-2">
+
+        <div className="space-y-3">
           <Label className="text-sm font-bold uppercase tracking-wider text-muted-foreground">Observações do Laudo</Label>
           <textarea 
-            className="w-full h-24 p-3 rounded-lg border bg-background text-sm focus:ring-2 focus:ring-primary/20 outline-none resize-none" 
-            placeholder="Ex: A partir de 01/2026 os valores de referência foram atualizados conforme nova diretriz..." 
+            className="w-full h-32 p-4 rounded-xl border bg-background text-sm focus:ring-2 focus:ring-primary/20 outline-none resize-none shadow-sm transition-all" 
+            placeholder="Ex: Valores de referência atualizados conforme nova diretriz da SBPC..." 
             value={data.reportObservations}
             onChange={(e) => onChange({ reportObservations: e.target.value })}
           />
-          <p className="text-[11px] text-muted-foreground">Esse texto será impresso no laudo, abaixo dos resultados deste exame.</p>
+          <p className="text-[11px] text-muted-foreground flex items-center gap-1">
+            <Info className="h-3 w-3" /> Impresso no laudo, abaixo dos resultados.
+          </p>
         </div>
+      </div>
 
+      <div className="space-y-6 pt-6 border-t border-border">
+        <div className="flex items-center gap-2">
+          <Beaker className="h-5 w-5 text-primary" />
+          <h3 className="text-lg font-bold">Metodologia Analítica</h3>
+        </div>
+        <div className="flex gap-2">
+          <Input 
+            placeholder="Ex: Colorimétrico, Enzimático, etc." 
+            value={data.methodology}
+            onChange={(e) => onChange({ methodology: e.target.value })}
+            className="h-11"
+          />
+          <Button variant="outline" className="h-11 gap-2">
+            <Search className="h-4 w-4" /> Buscar Metodologia
+          </Button>
+        </div>
+      </div>
+
+      <div className="space-y-6 pt-6 border-t border-border">
+        <div className="flex items-center gap-2">
+          <Scale className="h-5 w-5 text-primary" />
+          <h3 className="text-lg font-bold">Valores de Referência do Exame</h3>
+        </div>
+        <p className="text-sm text-muted-foreground">
+          Configure aqui os valores de referência globais para este exame. Para referências específicas por parâmetro, utilize a aba 
+          <span className="font-bold text-primary"> "Parâmetros e Máscara"</span>.
+        </p>
+        
+        <div className="bg-muted/10 border rounded-xl p-4">
+          <ReferenceValuesSection parameter={{ name: data.name }} />
+        </div>
+      </div>
+
+      <div className="space-y-6 pt-6 border-t border-border">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <MessageSquare className="h-5 w-5 text-primary" />
+            <h3 className="text-lg font-bold">Perguntas de Confirmação</h3>
+          </div>
+          <Button variant="outline" size="sm" onClick={() => {
+            const newQuestions = [...(data.confirmationQuestions || []), ""];
+            onChange({ confirmationQuestions: newQuestions });
+          }} className="gap-2">
+            <Plus className="h-4 w-4" /> Adicionar Pergunta
+          </Button>
+        </div>
+        <p className="text-xs text-muted-foreground">Perguntas que o atendente deverá confirmar com o paciente ao adicionar este exame.</p>
+        
+        <div className="space-y-3">
+          {(data.confirmationQuestions || []).map((q: string, index: number) => (
+            <div key={index} className="flex gap-3 items-center">
+              <Input 
+                value={q} 
+                onChange={(e) => {
+                  const newQuestions = [...data.confirmationQuestions];
+                  newQuestions[index] = e.target.value;
+                  onChange({ confirmationQuestions: newQuestions });
+                }}
+                placeholder="Ex: Está em uso de algum medicamento?"
+                className="h-10"
+              />
+              <Button variant="ghost" size="icon" className="h-10 w-10 text-red-500" onClick={() => {
+                const newQuestions = data.confirmationQuestions.filter((_: any, i: number) => i !== index);
+                onChange({ confirmationQuestions: newQuestions });
+              }}>
+                <Trash2 className="h-4 w-4" />
+              </Button>
+            </div>
+          ))}
+          {(!data.confirmationQuestions || data.confirmationQuestions.length === 0) && (
+            <div className="text-center py-6 border-2 border-dashed rounded-xl text-muted-foreground text-sm">
+              Nenhuma pergunta de confirmação cadastrada.
+            </div>
+          )}
+        </div>
       </div>
     </Card>
   )
@@ -1137,106 +1104,78 @@ function RulesSection() {
   )
 }
 
-function PatientInfoSection({ questions, setQuestions, data, onChange }: { questions: string[], setQuestions: (q: string[]) => void, data: any, onChange: (val: any) => void }) {
-  const [localQuestions, setLocalQuestions] = useState<string[]>(questions);
+function ReferenceValuesSection({ parameter }: { parameter: any }) {
+  const [faixas, setFaixas] = useState<any[]>([
+    { id: 1, description: 'Adulto Masculino', minAge: 18, maxAge: 150, sex: 'Masculino', isPregnant: false, minValue: '4.5', maxValue: '6.1' },
+    { id: 2, description: 'Adulto Feminino', minAge: 18, maxAge: 150, sex: 'Feminino', isPregnant: false, minValue: '4', maxValue: '5.4' },
+  ])
 
-  useEffect(() => {
-    setLocalQuestions(questions);
-  }, [questions]);
+  const updateFaixa = (id: number, field: string, value: any) => {
+    setFaixas(prev => prev.map(f => f.id === id ? { ...f, [field]: value } : f))
+  }
 
-  const addQuestion = () => {
-    const newQuestions = [...localQuestions, ""];
-    setLocalQuestions(newQuestions);
-    setQuestions(newQuestions);
-  };
-  
-  const removeQuestion = (index: number) => {
-    const newQuestions = localQuestions.filter((_, i) => i !== index);
-    setLocalQuestions(newQuestions);
-    setQuestions(newQuestions);
-  };
-  
-  const updateQuestion = (index: number, value: string) => {
-    const newQuestions = [...localQuestions];
-    newQuestions[index] = value;
-    setLocalQuestions(newQuestions);
-    setQuestions(newQuestions);
-  };
+  const addFaixa = () => {
+    const newId = faixas.length > 0 ? Math.max(...faixas.map(f => f.id)) + 1 : 1
+    setFaixas([...faixas, { id: newId, description: '', minAge: 0, maxAge: 120, sex: 'Todos', isPregnant: false, minValue: '', maxValue: '' }])
+  }
+
+  const removeFaixa = (id: number) => {
+    setFaixas(faixas.filter(f => f.id !== id))
+  }
 
   return (
     <div className="space-y-6">
-      <Card className="p-8 space-y-6">
-        <div className="space-y-4">
-          <div className="space-y-2">
-            <Label className="text-sm font-bold uppercase tracking-wider text-muted-foreground">Orientações ao Paciente</Label>
-            <textarea 
-              className="w-full h-32 p-3 rounded-lg border bg-background text-sm focus:ring-2 focus:ring-primary/20 outline-none resize-none" 
-              placeholder="Ex: Jejum de 8 horas."
-              value={data.preparationInstructions}
-              onChange={(e) => onChange({ preparationInstructions: e.target.value })}
-            />
-            <p className="text-[11px] text-muted-foreground">Essas orientações serão exibidas para a recepção durante o cadastro de atendimentos.</p>
-          </div>
-
-          <div className="space-y-2">
-            <Label className="text-sm font-bold uppercase tracking-wider text-muted-foreground">Observações do Laudo</Label>
-            <textarea 
-              className="w-full h-32 p-3 rounded-lg border bg-background text-sm focus:ring-2 focus:ring-primary/20 outline-none resize-none" 
-              placeholder="Ex: A partir de 01/2026 os valores de referência foram atualizados conforme nova diretriz..." 
-              value={data.reportObservations}
-              onChange={(e) => onChange({ reportObservations: e.target.value })}
-            />
-            <p className="text-[11px] text-muted-foreground">Esse texto será impresso no laudo, abaixo dos resultados deste exame.</p>
-          </div>
-        </div>
-      </Card>
-
-      <Card className="p-8 space-y-6">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <div className="bg-primary/10 p-2 rounded-lg">
-              <MessageSquare className="h-5 w-5 text-primary" />
-            </div>
-            <div>
-              <h3 className="font-bold">Perguntas de Confirmação</h3>
-              <p className="text-xs text-muted-foreground">Perguntas que o atendente deverá confirmar com o paciente ao adicionar este exame.</p>
-            </div>
-          </div>
-          <Button variant="outline" size="sm" onClick={addQuestion} className="gap-2">
-            <Plus className="h-4 w-4" /> Adicionar
-          </Button>
-        </div>
-
-        <div className="space-y-3">
-          {localQuestions.map((q, index) => (
-            <div key={index} className="flex gap-3 items-center">
-              <span className="text-xs text-muted-foreground font-medium w-4">{index + 1}.</span>
-              <Input 
-                value={q} 
-                onChange={(e) => updateQuestion(index, e.target.value)}
-                placeholder="Digite a pergunta..."
-                className="flex-1"
-              />
-              <Button 
-                variant="ghost" 
-                size="icon" 
-                onClick={() => removeQuestion(index)}
-                className="text-red-500 hover:text-red-700 hover:bg-red-50"
-              >
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        {faixas.map((faixa, idx) => (
+          <div key={faixa.id} className="p-4 border border-border rounded-xl bg-background relative space-y-4 shadow-sm">
+            <div className="flex items-center justify-between">
+              <Badge variant="outline" className="bg-muted/50">Faixa {idx + 1}</Badge>
+              <Button variant="ghost" size="icon" className="h-8 w-8 text-red-500" onClick={() => removeFaixa(faixa.id)}>
                 <Trash2 className="h-4 w-4" />
               </Button>
             </div>
-          ))}
-          {questions.length === 0 && (
-            <div className="text-center py-6 border-2 border-dashed rounded-xl border-muted">
-              <p className="text-sm text-muted-foreground">Nenhuma pergunta cadastrada.</p>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-1.5 md:col-span-2">
+                <Label className="text-[10px] font-bold uppercase text-muted-foreground">Descrição</Label>
+                <Input 
+                  className="h-9 text-xs" 
+                  value={faixa.description} 
+                  placeholder="Ex: Adulto Masculino" 
+                  onChange={(e) => updateFaixa(faixa.id, 'description', e.target.value)} 
+                />
+              </div>
+              
+              <div className="space-y-1.5">
+                <Label className="text-[10px] font-bold uppercase text-emerald-600">Mínimo</Label>
+                <Input 
+                  className="h-9 text-xs font-bold" 
+                  value={faixa.minValue} 
+                  placeholder="0.0" 
+                  onChange={(e) => updateFaixa(faixa.id, 'minValue', e.target.value)} 
+                />
+              </div>
+              <div className="space-y-1.5">
+                <Label className="text-[10px] font-bold uppercase text-emerald-600">Máximo</Label>
+                <Input 
+                  className="h-9 text-xs font-bold" 
+                  value={faixa.maxValue} 
+                  placeholder="0.0" 
+                  onChange={(e) => updateFaixa(faixa.id, 'maxValue', e.target.value)} 
+                />
+              </div>
             </div>
-          )}
-        </div>
-      </Card>
+          </div>
+        ))}
+      </div>
+
+      <Button variant="outline" className="w-full border-dashed gap-2 py-4" onClick={addFaixa}>
+        <Plus className="h-4 w-4" /> Adicionar Faixa de Referência
+      </Button>
     </div>
   )
 }
+
 
 function MethodologySection({ methodology, onChange }: { methodology?: string, onChange: (val: string) => void }) {
   const commonMethodologies = [
