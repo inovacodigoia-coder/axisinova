@@ -24,6 +24,7 @@ import { LabStep1PatientReview } from '@/components/lab/attendance/steps/LabStep
 import { LabStep2ExamData } from '@/components/lab/attendance/steps/LabStep2ExamData'
 import { LabStep3GuidesProcedures } from '@/components/lab/attendance/steps/LabStep3GuidesProcedures'
 import { QueueAllocationModal } from './queue-allocation/QueueAllocationModal'
+import { LabStep4Payment } from '@/components/lab/attendance/steps/LabStep4Payment'
 import { useAttendanceCadastro, useDraftAutosave, loadDraft, clearDraft } from '@/hooks/useAttendanceCadastro'
 import { usePrinterConfig } from '@/hooks/usePrinterConfig'
 import { useAuth } from '@/context/AuthContext'
