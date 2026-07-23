@@ -185,14 +185,13 @@ export function AttendanceCadastroModal({
   // Validação por passo
   const stepValid = (s: number): boolean => {
     if (isLab) {
+      const maxStep = STEPS_LAB_DYNAMIC.length - 1
       if (s === 0) return !!state.patient
-      // For Lab, let's allow progression to more steps as they are developed
-      // For now, allow Step 1 (Review) and Step 2 (Exam Data)
       if (s === 1) return true
       if (s === 2) return true
       if (s === 3) return (state.guides?.length || 0) > 0
       if (s === 4 && hasParticularGuideWithPrice) return true 
-      if (s === (hasParticularGuideWithPrice ? 5 : 4)) return true // Authorization step (Step3Authorization)
+      if (s === (hasParticularGuideWithPrice ? 5 : 4)) return true // Autorização
       return true
     }
 
@@ -218,10 +217,9 @@ export function AttendanceCadastroModal({
 
   const next = () => {
     if (!canAdvance) return
-    const maxStep = isLab ? STEPS_LAB_DYNAMIC.length - 1 : 3
+    const maxStep = STEPS_LAB_DYNAMIC.length - 1
     if (step === maxStep) {
       if (!isLab) setShowReview(true)
-      // For Lab, we don't use setShowReview(true) anymore as Step 6 is the final screen before button changes
     }
     else setStep(step + 1)
   }
@@ -430,7 +428,7 @@ export function AttendanceCadastroModal({
             </button>
           )}
           <div className="flex-1" />
-          {!showReview && (step < (isLab ? STEPS_LAB_DYNAMIC.length - 1 : 3)) ? (
+          {!showReview && step < STEPS.length - 1 ? (
             <button
               onClick={next}
               disabled={!canAdvance}
