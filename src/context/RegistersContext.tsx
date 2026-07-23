@@ -64,7 +64,9 @@ function mapConvenioRow(row: any): Convenio {
     id: row.id, companyId: row.company_id, name: row.name, ansCode: row.ans_code,
     type: row.type as Convenio['type'], cnpj: row.cnpj, authPhone: row.auth_phone,
     email: row.email, observations: row.observations,
-    attachmentRules: row.attachment_rules || [], isActive: row.is_active, createdAt: row.created_at,
+    attachmentRules: row.attachment_rules || [], 
+    examPrices: row.exam_prices || [],
+    isActive: row.is_active, createdAt: row.created_at,
   }
 }
 function mapExamRow(row: any): Exam {
