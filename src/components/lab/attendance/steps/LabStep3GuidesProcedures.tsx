@@ -489,6 +489,7 @@ export function LabStep3GuidesProcedures({ state, update }: Props) {
               <th className="px-4 py-3 text-left">Procedimento</th>
               <th className="px-4 py-3 text-left">Material</th>
               <th className="px-4 py-3 text-center">Coleta</th>
+              <th className="px-4 py-3 text-left">Previsão Entrega</th>
               <th className="px-4 py-3 text-center">Qtd.</th>
               <th className="px-4 py-3 text-right">Ações</th>
             </tr>
@@ -496,7 +497,7 @@ export function LabStep3GuidesProcedures({ state, update }: Props) {
           <tbody>
             {activeGuide?.exams.length === 0 ? (
               <tr>
-                <td colSpan={5} className="px-4 py-8 text-center text-muted-foreground italic">
+                <td colSpan={7} className="px-4 py-8 text-center text-muted-foreground italic">
                   Nenhum exame adicionado a esta guia.
                 </td>
               </tr>
@@ -515,6 +516,15 @@ export function LabStep3GuidesProcedures({ state, update }: Props) {
                         {exam.collected ? "SIM" : "NÃO"}
                       </div>
                     </td>
+                    <td className="px-4 py-4 text-xs">
+                      {exam.collected && exam.expectedDeliveryDate ? (
+                        <div className="flex items-center gap-2 text-primary font-medium">
+                          <span>{exam.expectedDeliveryDate}</span>
+                        </div>
+                      ) : (
+                        <span className="text-muted-foreground">—</span>
+                      )}
+                    </td>
                     <td className="px-4 py-4 text-center">{exam.quantity}</td>
                     <td className="px-4 py-4 text-right">
                         <div className="flex justify-end gap-2">
@@ -526,13 +536,16 @@ export function LabStep3GuidesProcedures({ state, update }: Props) {
                             >
                               <Edit2 className="h-4 w-4" />
                             </Button>
-                            <Button 
-                              variant="ghost" 
-                              size="sm" 
-                              className="h-7 w-7 p-0"
-                            >
-                              <Calendar className="h-4 w-4" />
-                            </Button>
+                            {exam.collected && (
+                              <Button 
+                                variant="ghost" 
+                                size="sm" 
+                                className="h-7 w-7 p-0"
+                                onClick={() => handleOpenDeadlineModal(exam)}
+                              >
+                                <Calendar className="h-4 w-4" />
+                              </Button>
+                            )}
                             <Button 
                               variant="ghost" 
                               size="sm" 
