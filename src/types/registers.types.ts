@@ -153,6 +153,7 @@ export interface Convenio {
   email?: string
   observations?: string
   attachmentRules?: AttachmentRule[]
+  examPrices?: { examId: string; price: number }[]
   createdAt?: string;
 }
 
