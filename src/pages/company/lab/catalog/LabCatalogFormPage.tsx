@@ -365,7 +365,116 @@ function GeneralInfoSection({ isEditing, data, workbenches, onChange }: { isEdit
               <div className={cn("h-2 w-2 rounded-full border border-primary/30", data.type === 'lab' && "bg-primary shadow-[0_0_8px_rgba(var(--primary-rgb),0.5)]")} />
               LABORATÓRIO
             </button>
+        </div>
+        <div className="space-y-4">
+          <Label className="text-sm font-bold uppercase tracking-wider text-muted-foreground">Bancada Técnica</Label>
+          <Select 
+            value={data.workbenchId || ''} 
+            onValueChange={(val) => onChange({ workbenchId: val })}
+          >
+            <SelectTrigger className="h-11 rounded-xl">
+              <SelectValue placeholder="Selecione a bancada" />
+            </SelectTrigger>
+            <SelectContent>
+              {workbenches && workbenches.length > 0 ? (
+                workbenches.map(wb => (
+                  <SelectItem key={wb.id} value={wb.id}>{wb.name}</SelectItem>
+                ))
+              ) : (
+                <SelectItem value="none" disabled>Nenhuma bancada cadastrada</SelectItem>
+              )}
+            </SelectContent>
+          </Select>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 pt-4 border-t border-border/50">
+        <div className="space-y-4">
+          <Label className="text-sm font-bold uppercase tracking-wider text-muted-foreground">Prazo Entrega (Dias)</Label>
+          <div className="flex items-center gap-3 h-11 px-4 bg-muted/20 rounded-xl border border-border/50">
+            <Clock className="h-4 w-4 text-muted-foreground" />
+            <Input 
+              type="number"
+              min="0"
+              value={data.deliveryDeadline || 0}
+              onChange={(e) => onChange({ deliveryDeadline: parseInt(e.target.value) || 0 })}
+              className="border-none bg-transparent h-auto p-0 focus-visible:ring-0 text-base font-medium"
+            />
           </div>
+        </div>
+        <div className="space-y-4">
+          <Label className="text-sm font-bold uppercase tracking-wider text-muted-foreground">Duração Estimada (Min)</Label>
+          <div className="flex items-center gap-3 h-11 px-4 bg-muted/20 rounded-xl border border-border/50">
+            <Timer className="h-4 w-4 text-muted-foreground" />
+            <Input 
+              type="number"
+              min="0"
+              value={data.estimatedDuration || 0}
+              onChange={(e) => onChange({ estimatedDuration: parseInt(e.target.value) || 0 })}
+              className="border-none bg-transparent h-auto p-0 focus-visible:ring-0 text-base font-medium"
+            />
+          </div>
+        </div>
+        <div className="space-y-4 flex flex-col justify-end">
+          <div className="flex items-center gap-3 h-11 px-4 bg-muted/20 rounded-xl border border-border/50">
+            <Switch 
+              checked={data.isActive ?? true}
+              onCheckedChange={(val) => onChange({ isActive: val })}
+            />
+            <Label className="text-sm font-medium cursor-pointer">Exame Ativo</Label>
+          </div>
+        </div>
+      </div>
+
+      <div className="space-y-4 pt-4 border-t border-border/50">
+        <Label className="text-sm font-bold uppercase tracking-wider text-muted-foreground">Materiais Aceitos</Label>
+        <div className="flex flex-wrap gap-2">
+          {['Soro', 'Plasma', 'Sangue Total', 'Urina', 'Fezes', 'Líquor', 'Saliva'].map(mat => (
+            <button
+              key={mat}
+              type="button"
+              onClick={() => handleToggleMaterial(mat)}
+              className={cn(
+                "px-4 py-2 rounded-full text-sm font-medium border transition-all flex items-center gap-2",
+                materials.includes(mat) 
+                  ? "bg-primary/10 border-primary text-primary" 
+                  : "bg-muted/30 border-border text-muted-foreground hover:border-primary/50"
+              )}
+            >
+              {mat}
+              {materials.includes(mat) && (
+                <Check className="h-3 w-3" />
+              )}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-8 pt-4 border-t border-border/50">
+        <div className="space-y-3">
+          <Label className="text-sm font-bold uppercase tracking-wider text-muted-foreground">Orientações ao Paciente</Label>
+          <textarea 
+            className="w-full h-32 p-4 rounded-xl border bg-background text-sm focus:ring-2 focus:ring-primary/20 outline-none resize-none shadow-sm transition-all" 
+            placeholder="Ex: Jejum de 8 horas. Não ingerir bebidas alcoólicas 24h antes..."
+            value={data.preparationInstructions}
+            onChange={(e) => onChange({ preparationInstructions: e.target.value })}
+          />
+          <p className="text-[11px] text-muted-foreground flex items-center gap-1">
+            <Info className="h-3 w-3" /> Exibido para a recepção durante o cadastro.
+          </p>
+        </div>
+
+        <div className="space-y-3">
+          <Label className="text-sm font-bold uppercase tracking-wider text-muted-foreground">Observações do Laudo</Label>
+          <textarea 
+            className="w-full h-32 p-4 rounded-xl border bg-background text-sm focus:ring-2 focus:ring-primary/20 outline-none resize-none shadow-sm transition-all" 
+            placeholder="Ex: Valores de referência atualizados conforme nova diretriz da SBPC..." 
+            value={data.reportObservations}
+            onChange={(e) => onChange({ reportObservations: e.target.value })}
+          />
+          <p className="text-[11px] text-muted-foreground flex items-center gap-1">
+            <Info className="h-3 w-3" /> Impresso no laudo, abaixo dos resultados.
+          </p>
         </div>
         <div className="space-y-2">
           <Label>Código TUSS</Label>
