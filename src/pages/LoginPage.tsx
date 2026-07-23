@@ -407,7 +407,7 @@ export default function LoginPage() {
 
           {/* Footer */}
           <p className="mt-8 text-center text-xs text-muted-foreground">
-            Axis Inova v1.0.0 · Política de Privacidade · Termos de Uso
+            Axis Inova v{SYSTEM_VERSION.formatted} · Política de Privacidade · Termos de Uso
           </p>
         </div>
       </motion.div>

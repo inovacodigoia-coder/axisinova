@@ -22,7 +22,7 @@ export default function QueueSelectorPage() {
           <ModeCard icon={Settings} label="Painel Administrativo" onClick={() => navigate('/app/filas/admin')} />
         </div>
 
-        <p className="text-xs text-muted-foreground">v1.0.0</p>
+        <p className="text-xs text-muted-foreground">v{SYSTEM_VERSION.formatted}</p>
       </div>
     </div>
   )

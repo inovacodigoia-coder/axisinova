@@ -149,7 +149,7 @@ export default function ProfileSelectorPage() {
               <LogOut className="h-3.5 w-3.5" />
               Trocar de conta
             </button>
-            <span className="text-xs text-muted-foreground/50">v1.0.0</span>
+            <span className="text-xs text-muted-foreground/50">v{SYSTEM_VERSION.formatted}</span>
           </div>
         </div>
       </motion.div>
