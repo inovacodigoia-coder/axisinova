@@ -64,6 +64,11 @@ export function LabStep3GuidesProcedures({ state, update }: Props) {
   const [selectedExam, setSelectedExam] = useState<any>(null);
   const [examMaterial, setExamMaterial] = useState('');
   const [examCollected, setExamCollected] = useState(false);
+  const [examDeadline, setExamDeadline] = useState<string | null>(null);
+  const [showDeadlineModal, setShowDeadlineModal] = useState(false);
+  const [tempDeadline, setTempDeadline] = useState('');
+  const [tempCollectionDate, setTempCollectionDate] = useState('');
+
 
   const addGuide = () => {
     const newId = (guides.length + 1).toString();
@@ -114,15 +119,30 @@ export function LabStep3GuidesProcedures({ state, update }: Props) {
       setExamCollected(exam.collected || false);
       setExamSearch(exam.name);
       setEditingExamIndex(index);
+      setExamDeadline(exam.expectedDeliveryDate || null);
     } else {
       setSelectedExam(null);
       setExamMaterial('');
       setExamCollected(false);
       setExamSearch('');
       setEditingExamIndex(null);
+      setExamDeadline(null);
     }
     setShowExamModal(true);
   };
+
+  const calculateDeadline = (days: number) => {
+    const date = new Date();
+    date.setDate(date.getDate() + days);
+    return date.toLocaleString('pt-BR').split(',')[0] + ' ' + date.getHours().toString().padStart(2, '0') + ':' + date.getMinutes().toString().padStart(2, '0');
+  };
+
+  const handleOpenDeadlineModal = (exam: any) => {
+    setTempDeadline(exam.expectedDeliveryDate || calculateDeadline(exam.resultDeadlineDays || 1));
+    setTempCollectionDate(new Date().toLocaleString('pt-BR').split(',')[0] + ' ' + new Date().getHours().toString().padStart(2, '0') + ':' + new Date().getMinutes().toString().padStart(2, '0'));
+    setShowDeadlineModal(true);
+  };
+
 
   const handleAddOrUpdateExam = () => {
     if (!selectedExam) {
@@ -134,7 +154,8 @@ export function LabStep3GuidesProcedures({ state, update }: Props) {
       ...selectedExam,
       material: examMaterial,
       collected: examCollected,
-      quantity: 1
+      quantity: 1,
+      expectedDeliveryDate: examDeadline || (selectedExam.resultDeadlineDays ? calculateDeadline(selectedExam.resultDeadlineDays) : null)
     };
 
     const newGuides = guides.map(g => {
@@ -468,6 +489,7 @@ export function LabStep3GuidesProcedures({ state, update }: Props) {
               <th className="px-4 py-3 text-left">Procedimento</th>
               <th className="px-4 py-3 text-left">Material</th>
               <th className="px-4 py-3 text-center">Coleta</th>
+              <th className="px-4 py-3 text-left">Previsão Entrega</th>
               <th className="px-4 py-3 text-center">Qtd.</th>
               <th className="px-4 py-3 text-right">Ações</th>
             </tr>
@@ -475,7 +497,7 @@ export function LabStep3GuidesProcedures({ state, update }: Props) {
           <tbody>
             {activeGuide?.exams.length === 0 ? (
               <tr>
-                <td colSpan={5} className="px-4 py-8 text-center text-muted-foreground italic">
+                <td colSpan={7} className="px-4 py-8 text-center text-muted-foreground italic">
                   Nenhum exame adicionado a esta guia.
                 </td>
               </tr>
@@ -494,6 +516,15 @@ export function LabStep3GuidesProcedures({ state, update }: Props) {
                         {exam.collected ? "SIM" : "NÃO"}
                       </div>
                     </td>
+                    <td className="px-4 py-4 text-xs">
+                      {exam.collected && exam.expectedDeliveryDate ? (
+                        <div className="flex items-center gap-2 text-primary font-medium">
+                          <span>{exam.expectedDeliveryDate}</span>
+                        </div>
+                      ) : (
+                        <span className="text-muted-foreground">—</span>
+                      )}
+                    </td>
                     <td className="px-4 py-4 text-center">{exam.quantity}</td>
                     <td className="px-4 py-4 text-right">
                         <div className="flex justify-end gap-2">
@@ -505,13 +536,20 @@ export function LabStep3GuidesProcedures({ state, update }: Props) {
                             >
                               <Edit2 className="h-4 w-4" />
                             </Button>
-                            <Button 
-                              variant="ghost" 
-                              size="sm" 
-                              className="h-7 w-7 p-0"
-                            >
-                              <Calendar className="h-4 w-4" />
-                            </Button>
+                            {exam.collected && (
+                              <Button 
+                                variant="ghost" 
+                                size="sm" 
+                                className="h-7 w-7 p-0"
+                                onClick={() => {
+                                  setSelectedExam(exam);
+                                  handleOpenDeadlineModal(exam);
+                                }}
+                              >
+                                <Calendar className="h-4 w-4" />
+                              </Button>
+                            )}
+
                             <Button 
                               variant="ghost" 
                               size="sm" 
@@ -626,9 +664,72 @@ export function LabStep3GuidesProcedures({ state, update }: Props) {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Modal Alterar Previsao de Entrega */}
+      <Dialog open={showDeadlineModal} onOpenChange={setShowDeadlineModal}>
+        <DialogContent className="sm:max-w-xs">
+          <DialogHeader>
+            <DialogTitle className="text-sm font-bold">Alterar Previsao de Entrega</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-1.5">
+              <Label className="text-[10px] uppercase font-bold text-muted-foreground">Data Coleta *</Label>
+              <div className="relative">
+                <Input 
+                  value={tempCollectionDate} 
+                  onChange={(e) => setTempCollectionDate(e.target.value)}
+                  className="text-sm"
+                />
+                <Calendar className="h-4 w-4 absolute right-2.5 top-3 text-muted-foreground" />
+              </div>
+            </div>
+            
+            <div className="space-y-1.5">
+              <Label className="text-[10px] uppercase font-bold text-muted-foreground">Previsão de Entrega *</Label>
+              <div className="relative">
+                <Input 
+                  value={tempDeadline} 
+                  onChange={(e) => setTempDeadline(e.target.value)}
+                  className="text-sm"
+                />
+                <Calendar className="h-4 w-4 absolute right-2.5 top-3 text-muted-foreground" />
+              </div>
+            </div>
+          </div>
+          <DialogFooter className="flex-row gap-2 sm:justify-center">
+            <Button variant="ghost" className="flex-1 text-xs font-bold" onClick={() => setShowDeadlineModal(false)}>CANCELAR</Button>
+            <Button 
+              className="flex-1 text-xs font-bold gradient-bg text-white"
+              onClick={() => {
+                const newGuides = guides.map(g => {
+                  if (g.id === activeGuideId) {
+                    const newExams = g.exams.map(ex => {
+                      // Note: We need a better way to target the specific exam if there are duplicates
+                      // For now, if we match the name, we update it.
+                      if (ex.name === selectedExam?.name) {
+                        return { ...ex, expectedDeliveryDate: tempDeadline };
+                      }
+                      return ex;
+                    });
+                    return { ...g, exams: newExams };
+                  }
+                  return g;
+                });
+                setGuides(newGuides);
+                update({ guides: newGuides });
+                setShowDeadlineModal(false);
+                toast.success("Previsão de entrega atualizada");
+              }}
+            >
+              CONFIRMAR
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
+
 
 function Field({ label, children }: { label: React.ReactNode; children: React.ReactNode }) {
   return (
