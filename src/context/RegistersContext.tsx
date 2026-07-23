@@ -64,7 +64,9 @@ function mapConvenioRow(row: any): Convenio {
     id: row.id, companyId: row.company_id, name: row.name, ansCode: row.ans_code,
     type: row.type as Convenio['type'], cnpj: row.cnpj, authPhone: row.auth_phone,
     email: row.email, observations: row.observations,
-    attachmentRules: row.attachment_rules || [], isActive: row.is_active, createdAt: row.created_at,
+    attachmentRules: row.attachment_rules || [], 
+    examPrices: row.exam_prices || [],
+    isActive: row.is_active, createdAt: row.created_at,
   }
 }
 function mapExamRow(row: any): Exam {
@@ -267,7 +269,9 @@ export function RegistersProvider({ children }: { children: ReactNode }) {
       id, company_id: companyId, name: c.name, ans_code: c.ansCode || null,
       type: c.type, cnpj: c.cnpj || null, auth_phone: c.authPhone || null,
       email: c.email || null, observations: c.observations || null,
-      attachment_rules: c.attachmentRules, is_active: c.isActive,
+      attachment_rules: c.attachmentRules, 
+      exam_prices: c.examPrices || [],
+      is_active: c.isActive,
     } as any)
     if (error) {
       console.error('[convenios.insert]', error)
@@ -282,7 +286,10 @@ export function RegistersProvider({ children }: { children: ReactNode }) {
     const { error } = await supabase.from('convenios').update({
       name: c.name, ans_code: c.ansCode || null, type: c.type, cnpj: c.cnpj || null,
       auth_phone: c.authPhone || null, email: c.email || null,
-      observations: c.observations || null, attachment_rules: c.attachmentRules, is_active: c.isActive,
+      observations: c.observations || null, 
+      attachment_rules: c.attachmentRules, 
+      exam_prices: c.examPrices || [],
+      is_active: c.isActive,
     } as any).eq('id', c.id)
     if (error) { console.error(error); toast.error('Erro ao atualizar convênio') }
   }, [isDemo])

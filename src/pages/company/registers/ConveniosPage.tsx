@@ -3,12 +3,13 @@ import { useRegisters } from '@/context/RegistersContext'
 import { useCompanyContext } from '@/context/CompanyContext'
 import { usePaginatedList } from '@/hooks/usePaginatedList'
 import { EmptyState } from '@/components/feedback/EmptyState'
-import { Plus, Search, MoreVertical, Edit, Trash2, Paperclip } from 'lucide-react'
+import { Plus, Search, MoreVertical, Edit, Trash2, Paperclip, DollarSign } from 'lucide-react'
 import type { Convenio } from '@/types/registers.types'
 import { CONVENIO_TYPE_LABELS, CONVENIO_TYPE_COLORS } from '@/types/registers.types'
 import { toast } from 'sonner'
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu'
 import { AttachmentsModal } from '@/components/registers/AttachmentsModal'
+import { ExamPricesModal } from '@/components/registers/ExamPricesModal'
 
 export default function ConveniosPage() {
   const { canAccess } = useCompanyContext()
@@ -17,6 +18,7 @@ export default function ConveniosPage() {
   const [showForm, setShowForm] = useState(false)
   const [editing, setEditing] = useState<Convenio | null>(null)
   const [showAttachments, setShowAttachments] = useState<Convenio | null>(null)
+  const [showPrices, setShowPrices] = useState<Convenio | null>(null)
 
   const filtered = convenios.filter(c => {
     if (search && !c.name.toLowerCase().includes(search.toLowerCase()) && !c.ansCode?.includes(search)) return false
@@ -99,6 +101,9 @@ export default function ConveniosPage() {
                         <DropdownMenuContent align="end">
                           <DropdownMenuItem onClick={() => { setEditing(c); setShowForm(true) }}><Edit className="h-4 w-4 mr-2" /> Editar dados</DropdownMenuItem>
                           <DropdownMenuItem onClick={() => setShowAttachments(c)}><Paperclip className="h-4 w-4 mr-2" /> Configurar Anexos</DropdownMenuItem>
+                          {c.type === 'private' && (
+                            <DropdownMenuItem onClick={() => setShowPrices(c)}><DollarSign className="h-4 w-4 mr-2" /> Tabela de Preços</DropdownMenuItem>
+                          )}
                           <DropdownMenuSeparator />
                           <DropdownMenuItem onClick={() => { updateConvenio({ ...c, isActive: !c.isActive }); toast.success(c.isActive ? 'Convênio inativado' : 'Convênio ativado') }}>
                             {c.isActive ? '🔴 Inativar' : '✅ Ativar'}
@@ -155,6 +160,19 @@ export default function ConveniosPage() {
           }}
         />
       )}
+
+      {showPrices && (
+        <ExamPricesModal
+          convenioName={showPrices.name}
+          examPrices={showPrices.examPrices || []}
+          onClose={() => setShowPrices(null)}
+          onSave={(prices) => {
+            updateConvenio({ ...showPrices, examPrices: prices })
+            setShowPrices(null)
+            toast.success('Tabela de preços atualizada!')
+          }}
+        />
+      )}
     </div>
   )
 }
@@ -169,6 +187,9 @@ function ConvenioFormModal({ convenio, onClose, onSave }: { convenio: Convenio |
   const [authPhone, setAuthPhone] = useState(convenio?.authPhone || '')
   const [email, setEmail] = useState(convenio?.email || '')
   const [observations, setObservations] = useState(convenio?.observations || '')
+  const [examPrices, setExamPrices] = useState<any[]>(convenio?.examPrices || [])
+
+
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4" onClick={onClose}>
@@ -205,7 +226,9 @@ function ConvenioFormModal({ convenio, onClose, onSave }: { convenio: Convenio |
             if (!name) { toast.error('Nome é obrigatório'); return }
             onSave({
               id: convenio?.id || `conv_${Date.now()}`, companyId: convenio?.companyId || '', name, ansCode, operator, type, cnpj, authPhone, email, observations,
-              attachmentRules: convenio?.attachmentRules || [], isActive: convenio?.isActive ?? true, createdAt: convenio?.createdAt || new Date().toISOString(),
+              attachmentRules: convenio?.attachmentRules || [], 
+              examPrices: examPrices || [],
+              isActive: convenio?.isActive ?? true, createdAt: convenio?.createdAt || new Date().toISOString(),
             })
           }} className="gradient-bg rounded-lg px-6 py-2 text-sm font-semibold text-white">Salvar</button>
         </div>

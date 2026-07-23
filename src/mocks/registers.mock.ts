@@ -85,7 +85,12 @@ export const DEMO_CONVENIOS: Convenio[] = [
   },
   { id: 'conv_02', companyId: DEMO_COMPANY_ID, name: 'Hapvida', ansCode: '368253', type: 'health_plan', cnpj: '12.345.678/0001-02', authPhone: '0800 234 5678', isActive: true, createdAt: '2024-01-10', attachmentRules: [] },
   { id: 'conv_03', companyId: DEMO_COMPANY_ID, name: 'Bradesco Saúde', ansCode: '005711', type: 'health_plan', cnpj: '23.456.789/0001-03', authPhone: '0800 345 6789', isActive: true, createdAt: '2024-01-10', attachmentRules: [] },
-  { id: 'conv_04', companyId: DEMO_COMPANY_ID, name: 'Particular', type: 'private', isActive: true, createdAt: '2024-01-10', attachmentRules: [], observations: 'Pagamento direto no ato da consulta' },
+  { id: 'conv_04', companyId: DEMO_COMPANY_ID, name: 'Particular', type: 'private', isActive: true, createdAt: '2024-01-10', attachmentRules: [], observations: 'Pagamento direto no ato da consulta', examPrices: [
+    { examId: 'ex_01', price: 50.00 },
+    { examId: 'ex_02', price: 35.00 },
+    { examId: 'ex_03', price: 120.00 },
+    { examId: 'ex_04', price: 150.00 },
+  ] },
   { id: 'conv_05', companyId: DEMO_COMPANY_ID, name: 'SUS', ansCode: '000000', type: 'sus', isActive: true, createdAt: '2024-01-10', attachmentRules: [] },
   { id: 'conv_06', companyId: DEMO_COMPANY_ID, name: 'Amil', ansCode: '326305', type: 'health_plan', cnpj: '34.567.890/0001-04', authPhone: '0800 456 7890', isActive: true, createdAt: '2024-01-10', attachmentRules: [] },
 ]
