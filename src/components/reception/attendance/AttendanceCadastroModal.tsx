@@ -428,11 +428,10 @@ export function AttendanceCadastroModal({
           {isLab && !showReview && step === 0 && <Step1PatientLookup state={state} update={update} unitId={unitId} />}
           {isLab && !showReview && step === 1 && <LabStep1PatientReview state={state} update={update} />}
           {isLab && !showReview && step === 2 && <LabStep2ExamData state={state} update={update} />}
-          {isLab && !showReview && step === 3 && <LabStep3GuidesProcedures state={state} update={update} />}
-          {isLab && !showReview && step === 4 && hasParticularGuideWithPrice && <LabStep4Payment state={state} update={update} />}
-          {isLab && !showReview && step === (hasParticularGuideWithPrice ? 4 : -1) && <LabStep4Payment state={state} update={update} />}
-          {isLab && !showReview && step === (hasParticularGuideWithPrice ? 5 : 4) && <Step3Authorization state={state} update={update} />}
-          {isLab && !showReview && step === (hasParticularGuideWithPrice ? 6 : 5) && <LabStep6Summary state={state} unitName={unitName} />}
+          {isLab && !showReview && STEPS_LAB_DYNAMIC[step] === 'Guias e Procedimentos' && <LabStep3GuidesProcedures state={state} update={update} />}
+          {isLab && !showReview && STEPS_LAB_DYNAMIC[step] === 'Pagamento' && <LabStep4Payment state={state} update={update} />}
+          {isLab && !showReview && STEPS_LAB_DYNAMIC[step] === 'Autorização' && <Step3Authorization state={state} update={update} />}
+          {isLab && !showReview && STEPS_LAB_DYNAMIC[step] === 'Resumo' && <LabStep6Summary state={state} unitName={unitName} />}
           {!isLab && showReview && <ReviewPanel state={state} unitName={unitName} guicheName={guicheName} ticketCode={ticketCode} />}
         </div>
 
