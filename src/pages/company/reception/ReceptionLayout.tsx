@@ -83,6 +83,7 @@ export default function ReceptionLayout() {
   const [finalizeTicket, setFinalizeTicket] = useState<Ticket | null>(null)
   const [dbTickets, setDbTickets] = useState<Ticket[]>([])
   const [cadastroTicket, setCadastroTicket] = useState<Ticket | null>(null)
+  const [showDirectCadastro, setShowDirectCadastro] = useState(false)
   const [reprintDoc, setReprintDoc] = useState<AttendanceControlDocument | null>(null)
   const [showLookup, setShowLookup] = useState(false)
   const [lookupPatient, setLookupPatient] = useState<Patient | null>(null)
