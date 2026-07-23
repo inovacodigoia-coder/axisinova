@@ -1260,44 +1260,6 @@ function ReferenceValuesSection({ parameter }: { parameter: any }) {
   )
 }
 
-function MethodologySection({ methodology, onChange }: { methodology: string, onChange: (val: string) => void }) {
-  return null;
-}
-
-function ReferenceSection() {
-  return null;
-}
-
-function PatientInfoSection({ questions, setQuestions, data, onChange }: { questions: string[], setQuestions: (q: string[]) => void, data: any, onChange: (val: any) => void }) {
-  return null;
-}
-              <span className="text-xs text-muted-foreground font-medium w-4">{index + 1}.</span>
-              <Input 
-                value={q} 
-                onChange={(e) => updateQuestion(index, e.target.value)}
-                placeholder="Digite a pergunta..."
-                className="flex-1"
-              />
-              <Button 
-                variant="ghost" 
-                size="icon" 
-                onClick={() => removeQuestion(index)}
-                className="text-red-500 hover:text-red-700 hover:bg-red-50"
-              >
-                <Trash2 className="h-4 w-4" />
-              </Button>
-            </div>
-          ))}
-          {questions.length === 0 && (
-            <div className="text-center py-6 border-2 border-dashed rounded-xl border-muted">
-              <p className="text-sm text-muted-foreground">Nenhuma pergunta cadastrada.</p>
-            </div>
-          )}
-        </div>
-      </Card>
-    </div>
-  )
-}
 
 function MethodologySection({ methodology, onChange }: { methodology?: string, onChange: (val: string) => void }) {
   const commonMethodologies = [
