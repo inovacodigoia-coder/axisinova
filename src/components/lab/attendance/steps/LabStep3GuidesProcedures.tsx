@@ -1,14 +1,16 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { Card } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
 import { 
   Plus, Search, Trash2, Stethoscope, ClipboardCheck, 
-  PlusCircle, Calendar, HelpCircle, Edit2, Star
+  PlusCircle, Calendar, HelpCircle, Edit2, Star, Lock
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
+import { useAuth } from '@/context/AuthContext';
+import { useCompanyContext } from '@/context/CompanyContext';
 import {
   Popover,
   PopoverContent,
@@ -47,8 +49,23 @@ interface AttendanceGuide {
 
 export function LabStep3GuidesProcedures({ state, update }: Props) {
   const { convenios, exams: clinicExams, doctors } = useRegisters();
+  const { user } = useAuth();
+  const { activeProfile, activeSector } = useCompanyContext();
   const activeConvenios = useMemo(() => convenios.filter(c => c.isActive), [convenios]);
   const activeDoctors = useMemo(() => doctors.filter(d => d.isActive), [doctors]);
+  
+  const canEditDeadline = useMemo(() => {
+    if (!user) return false;
+    if (user.role === 'company_admin' || user.role === 'super_admin') return true;
+    
+    // Check if the current sector allows the current profile to edit deadlines
+    if (activeSector?.allowedDeadlineEditProfiles && activeProfile) {
+      return activeSector.allowedDeadlineEditProfiles.includes(activeProfile.id);
+    }
+    
+    return false;
+  }, [user, activeProfile, activeSector]);
+
   const [guides, setGuides] = useState<AttendanceGuide[]>(state.guides || [{ id: '1', name: 'Guia 1', plan: 'PARTICULAR', operator: 'PARTICULAR', number: '', exams: [], isDoctorDisabled: false }]);
   const [activeGuideId, setActiveGuideId] = useState(guides[0]?.id || '1');
   const [showDoctorPopover, setShowDoctorPopover] = useState(false);
@@ -678,10 +695,18 @@ export function LabStep3GuidesProcedures({ state, update }: Props) {
                 <Input 
                   value={tempCollectionDate} 
                   onChange={(e) => setTempCollectionDate(e.target.value)}
-                  className="text-sm"
+                  className="text-sm pr-10"
+                  disabled={!canEditDeadline}
                 />
-                <Calendar className="h-4 w-4 absolute right-2.5 top-3 text-muted-foreground" />
+                {!canEditDeadline ? (
+                  <Lock className="h-4 w-4 absolute right-2.5 top-3 text-muted-foreground/50" />
+                ) : (
+                  <Calendar className="h-4 w-4 absolute right-2.5 top-3 text-muted-foreground" />
+                )}
               </div>
+              {!canEditDeadline && (
+                <p className="text-[9px] text-rose-500 font-medium">Sem permissão para alterar data de coleta</p>
+              )}
             </div>
             
             <div className="space-y-1.5">

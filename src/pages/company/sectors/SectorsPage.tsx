@@ -245,11 +245,18 @@ function SectorForm({ sector, profiles, companyId, onSave, onCancel }: { sector:
   const [queueTypes, setQueueTypes] = useState<Set<'internal' | 'external'>>(
     new Set(sector?.allowedQueueTypes && sector.allowedQueueTypes.length ? sector.allowedQueueTypes : ['internal', 'external'])
   )
+  const [deadlineProfiles, setDeadlineProfiles] = useState<Set<string>>(new Set(sector?.allowedDeadlineEditProfiles || []))
 
   const toggle = (id: string) => {
     const next = new Set(allowed)
     next.has(id) ? next.delete(id) : next.add(id)
     setAllowed(next)
+  }
+
+  const toggleDeadline = (id: string) => {
+    const next = new Set(deadlineProfiles)
+    next.has(id) ? next.delete(id) : next.add(id)
+    setDeadlineProfiles(next)
   }
 
   const toggleQueueType = (t: 'internal' | 'external') => {
@@ -259,7 +266,7 @@ function SectorForm({ sector, profiles, companyId, onSave, onCancel }: { sector:
   }
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-4 max-h-[80vh] overflow-y-auto px-1">
       <div>
         <label className="text-sm font-medium">Nome *</label>
         <input value={name} onChange={e => setName(e.target.value)} className="mt-1 w-full rounded-lg border border-input bg-background px-3 py-2 text-sm" />
@@ -270,7 +277,7 @@ function SectorForm({ sector, profiles, companyId, onSave, onCancel }: { sector:
       </div>
       <div>
         <label className="text-sm font-medium mb-2 block">Perfis permitidos</label>
-        <div className="max-h-[200px] overflow-y-auto space-y-1">
+        <div className="max-h-[150px] overflow-y-auto space-y-1 border rounded-lg p-2">
           {profiles.filter(p => p.isActive).map(p => (
             <label key={p.id} className="flex items-center gap-2 text-sm cursor-pointer hover:bg-muted rounded px-2 py-1">
               <input type="checkbox" checked={allowed.has(p.id)} onChange={() => toggle(p.id)} className="accent-primary" />
@@ -279,6 +286,19 @@ function SectorForm({ sector, profiles, companyId, onSave, onCancel }: { sector:
           ))}
         </div>
       </div>
+
+      <div>
+        <label className="text-sm font-medium mb-2 block">Perfis permitidos para alterar Datas (Entrega/Coleta)</label>
+        <div className="max-h-[150px] overflow-y-auto space-y-1 border rounded-lg p-2">
+          {profiles.filter(p => p.isActive).map(p => (
+            <label key={p.id} className="flex items-center gap-2 text-sm cursor-pointer hover:bg-muted rounded px-2 py-1">
+              <input type="checkbox" checked={deadlineProfiles.has(p.id)} onChange={() => toggleDeadline(p.id)} className="accent-primary" />
+              {p.name}
+            </label>
+          ))}
+        </div>
+      </div>
+
       <div>
         <label className="text-sm font-medium mb-2 block">Tipos de fila visíveis na Recepção</label>
         <p className="text-xs text-muted-foreground mb-2">Controla quais abas de filas (Externa/Interna) este setor poderá visualizar.</p>
@@ -296,7 +316,7 @@ function SectorForm({ sector, profiles, companyId, onSave, onCancel }: { sector:
       <label className="flex items-center gap-2 text-sm">
         <input type="checkbox" checked={active} onChange={e => setActive(e.target.checked)} className="accent-primary" /> Ativo
       </label>
-      <div className="flex justify-end gap-3 pt-2">
+      <div className="flex justify-end gap-3 pt-4 border-t sticky bottom-0 bg-card">
         <button onClick={onCancel} className="rounded-lg border border-input px-4 py-2 text-sm hover:bg-muted">Cancelar</button>
         <button onClick={() => {
           if (!name.trim()) { toast.error('Nome é obrigatório'); return }
@@ -308,8 +328,9 @@ function SectorForm({ sector, profiles, companyId, onSave, onCancel }: { sector:
             isActive: active,
             allowedProfiles: Array.from(allowed),
             allowedQueueTypes: Array.from(queueTypes),
+            allowedDeadlineEditProfiles: Array.from(deadlineProfiles),
           })
-        }} className="gradient-bg rounded-lg px-4 py-2 text-sm font-semibold text-white">Salvar</button>
+        }} className="gradient-bg rounded-lg px-4 py-2 text-sm font-semibold text-white shadow-md">Salvar</button>
       </div>
     </div>
   )
