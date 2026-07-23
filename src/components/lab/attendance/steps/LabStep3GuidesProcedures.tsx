@@ -541,11 +541,15 @@ export function LabStep3GuidesProcedures({ state, update }: Props) {
                                 variant="ghost" 
                                 size="sm" 
                                 className="h-7 w-7 p-0"
-                                onClick={() => handleOpenDeadlineModal(exam)}
+                                onClick={() => {
+                                  setSelectedExam(exam);
+                                  handleOpenDeadlineModal(exam);
+                                }}
                               >
                                 <Calendar className="h-4 w-4" />
                               </Button>
                             )}
+
                             <Button 
                               variant="ghost" 
                               size="sm" 
