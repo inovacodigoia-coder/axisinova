@@ -116,8 +116,22 @@ export function AttendanceCadastroModal({
     }
   })
 
+  const hasParticularGuideWithPrice = useMemo(() => {
+    if (!state.guides) return false
+    return state.guides.some((g: any) => 
+      (g.plan === 'PARTICULAR' || g.plan === 'private') && 
+      g.exams?.some((e: any) => typeof e.price === 'number' && e.price > 0)
+    )
+  }, [state.guides])
+
   const isLab = state.serviceType === 'exam' && state.examMode === 'lab'
-  const STEPS = isLab ? STEPS_LAB : STEPS_CLINIC
+  const STEPS_LAB_DYNAMIC = useMemo(() => {
+    if (hasParticularGuideWithPrice) return STEPS_LAB
+    // If not particular with value, skip step 4 (Pagamento)
+    return STEPS_LAB.filter(s => s !== 'Pagamento')
+  }, [hasParticularGuideWithPrice])
+
+  const STEPS = isLab ? STEPS_LAB_DYNAMIC : STEPS_CLINIC
   const [restorePromptShown, setRestorePromptShown] = useState(false)
 
   // Post-finalize flow
