@@ -374,10 +374,11 @@ export function LabStep3GuidesProcedures({ state, update }: Props) {
                           setGuides(newGuides);
                           update({ guides: newGuides });
                           
-                          // Auto-lookup by CRM
+                          // Auto-lookup by CRM/Number
                           const found = activeDoctors.find(d => d.crm === val);
                           if (found) {
                             selectDoctor(found);
+                            toast.success(`Médico encontrado: ${found.fullName}`);
                           }
                         }}
                       />
