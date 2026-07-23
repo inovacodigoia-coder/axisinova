@@ -85,7 +85,7 @@ export default function ConveniosPage() {
                     <td className="px-4 py-3 font-medium text-foreground">{c.name}</td>
                     <td className="px-4 py-3 font-mono text-sm">{c.ansCode || '—'}</td>
                     <td className="px-4 py-3 text-sm">{c.operator || '—'}</td>
-                    <td className="px-4 py-3"><span className={`inline-flex rounded-full px-2 py-0.5 text-[10px] font-bold ${CONVENIO_TYPE_COLORS[c.type]}`}>{CONVENIO_TYPE_LABELS[c.type]}</span></td>
+                    <td className="px-4 py-3"><span className={`inline-flex rounded-full px-2 py-0.5 text-[10px] font-bold ${CONVENIO_TYPE_COLORS[c.type || 'health_plan'] || CONVENIO_TYPE_COLORS.other}`}>{CONVENIO_TYPE_LABELS[c.type || 'health_plan'] || CONVENIO_TYPE_LABELS.other}</span></td>
                     <td className="px-4 py-3 text-sm text-muted-foreground">{docCount} médicos</td>
                     <td className="px-4 py-3 text-sm text-muted-foreground">{c.attachmentRules.length} regras</td>
                     <td className="px-4 py-3">
@@ -187,7 +187,7 @@ function ConvenioFormModal({ convenio, onClose, onSave }: { convenio: Convenio |
   const [authPhone, setAuthPhone] = useState(convenio?.authPhone || '')
   const [email, setEmail] = useState(convenio?.email || '')
   const [observations, setObservations] = useState(convenio?.observations || '')
-  const [examPrices, setExamPrices] = useState<any[]>(convenio?.examPrices || [])
+  const examPrices = convenio?.examPrices || []
 
 
 
