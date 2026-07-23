@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { Monitor, Headphones, MonitorSmartphone, Settings } from 'lucide-react'
 import { useAuth } from '@/context/AuthContext'
 import { ModeCard } from '@/components/queue/selector/ModeCard'
+import { SYSTEM_VERSION } from '@/utils/version'
 
 export default function QueueSelectorPage() {
   const navigate = useNavigate()
@@ -22,7 +23,7 @@ export default function QueueSelectorPage() {
           <ModeCard icon={Settings} label="Painel Administrativo" onClick={() => navigate('/app/filas/admin')} />
         </div>
 
-        <p className="text-xs text-muted-foreground">v1.0.0</p>
+        <p className="text-xs text-muted-foreground">v{SYSTEM_VERSION.formatted}</p>
       </div>
     </div>
   )

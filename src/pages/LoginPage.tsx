@@ -6,6 +6,7 @@ import { Mail, Lock, Eye, EyeOff, AlertCircle, Calendar, FileText, DollarSign, B
 import { motion, AnimatePresence } from 'framer-motion'
 import logoImg from '@/assets/logo-axisinova.jpeg'
 import { toast } from 'sonner'
+import { SYSTEM_VERSION } from '@/utils/version'
 import { loadDevAccessConfig, type DevAccessCredential } from '@/utils/devAccessConfig'
 
 const FEATURES = [
@@ -407,7 +408,7 @@ export default function LoginPage() {
 
           {/* Footer */}
           <p className="mt-8 text-center text-xs text-muted-foreground">
-            Axis Inova v1.0.0 · Política de Privacidade · Termos de Uso
+            Axis Inova v{SYSTEM_VERSION.formatted} · Política de Privacidade · Termos de Uso
           </p>
         </div>
       </motion.div>

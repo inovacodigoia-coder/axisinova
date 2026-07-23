@@ -6,6 +6,7 @@ import { useAuth } from '@/context/AuthContext'
 import { useCompanyContext } from '@/context/CompanyContext'
 import type { Profile, Sector } from '@/types/permissions.types'
 import { cn } from '@/lib/utils'
+import { SYSTEM_VERSION } from '@/utils/version'
 
 export default function ProfileSelectorPage() {
   const { user, logout } = useAuth()
@@ -149,7 +150,7 @@ export default function ProfileSelectorPage() {
               <LogOut className="h-3.5 w-3.5" />
               Trocar de conta
             </button>
-            <span className="text-xs text-muted-foreground/50">v1.0.0</span>
+            <span className="text-xs text-muted-foreground/50">v{SYSTEM_VERSION.formatted}</span>
           </div>
         </div>
       </motion.div>
