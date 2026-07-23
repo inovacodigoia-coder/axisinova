@@ -428,7 +428,7 @@ export function AttendanceCadastroModal({
             </button>
           )}
           <div className="flex-1" />
-          {!showReview && (step < (isLab ? STEPS_LAB_DYNAMIC.length - 1 : 3)) ? (
+          {!showReview && step < STEPS.length - 1 ? (
             <button
               onClick={next}
               disabled={!canAdvance}
