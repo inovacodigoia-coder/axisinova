@@ -2,6 +2,7 @@ import React from 'react';
 import { CadastroState } from '@/components/reception/attendance/AttendanceCadastroModal';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
+import { GENDER_LABELS } from '@/types/patient.types';
 
 interface Props {
   state: CadastroState;
@@ -24,12 +25,12 @@ export function LabStep6Summary({ state, unitName }: Props) {
           
           <div className="grid grid-cols-1 md:grid-cols-4 gap-x-8 gap-y-6 text-sm">
             <div className="space-y-1 border-b border-slate-100 pb-2">
-              <span className="text-slate-400 font-medium block">Cliente</span>
+              <span className="text-slate-400 font-medium block text-xs">Cliente</span>
               <span className="text-slate-700 font-bold uppercase">{patient?.fullName || 'NÃO INFORMADO'}</span>
             </div>
             
             <div className="space-y-1 border-b border-slate-100 pb-2">
-              <span className="text-slate-400 font-medium block">Nascimento</span>
+              <span className="text-slate-400 font-medium block text-xs">Nascimento</span>
               <span className="text-slate-700 font-bold">
                 {patient?.birthDate ? format(new Date(patient.birthDate), 'dd/MM/yyyy') : '--/--/----'}
                 <span className="text-slate-400 font-normal ml-2">
@@ -39,41 +40,41 @@ export function LabStep6Summary({ state, unitName }: Props) {
             </div>
 
             <div className="space-y-1 border-b border-slate-100 pb-2">
-              <span className="text-slate-400 font-medium block">Hospital</span>
+              <span className="text-slate-400 font-medium block text-xs">Hospital</span>
               <span className="text-slate-700 font-bold uppercase">{unitName || 'CLÍNICA AXIS INOVA'}</span>
             </div>
 
             <div className="space-y-1 border-b border-slate-100 pb-2">
-              <span className="text-slate-400 font-medium block">Responsável</span>
-              <span className="text-slate-700 font-bold uppercase">{patient?.responsibleName || '-'}</span>
+              <span className="text-slate-400 font-medium block text-xs">Responsável</span>
+              <span className="text-slate-700 font-bold uppercase">{patient?.responsible?.name || '-'}</span>
             </div>
 
             <div className="space-y-1 border-b border-slate-100 pb-2">
-              <span className="text-slate-400 font-medium block">Mãe</span>
+              <span className="text-slate-400 font-medium block text-xs">Mãe</span>
               <span className="text-slate-700 font-bold uppercase">{patient?.motherName || '-'}</span>
             </div>
 
             <div className="space-y-1 border-b border-slate-100 pb-2">
-              <span className="text-slate-400 font-medium block">Data do Atendimento</span>
+              <span className="text-slate-400 font-medium block text-xs">Data do Atendimento</span>
               <span className="text-slate-700 font-bold">
                 {format(attendanceDate, "dd/MM/yyyy HH:mm", { locale: ptBR })}
               </span>
             </div>
 
             <div className="space-y-1 border-b border-slate-100 pb-2">
-              <span className="text-slate-400 font-medium block">Telefone</span>
+              <span className="text-slate-400 font-medium block text-xs">Telefone</span>
               <span className="text-slate-700 font-bold">{patient?.phone1 || '-'}</span>
             </div>
 
             <div className="space-y-1 border-b border-slate-100 pb-2">
-              <span className="text-slate-400 font-medium block">Sexo</span>
+              <span className="text-slate-400 font-medium block text-xs">Sexo</span>
               <span className="text-slate-700 font-bold uppercase">
-                {patient?.gender === 'M' ? 'Masculino' : patient?.gender === 'F' ? 'Feminino' : '-'}
+                {patient?.gender ? GENDER_LABELS[patient.gender] : '-'}
               </span>
             </div>
 
             <div className="space-y-1 border-b border-slate-100 pb-2">
-              <span className="text-slate-400 font-medium block">Jejum</span>
+              <span className="text-slate-400 font-medium block text-xs">Jejum</span>
               <span className="text-slate-700 font-bold uppercase">{state.fastingSince || 'Sem jejum'}</span>
             </div>
           </div>
@@ -147,3 +148,4 @@ export function LabStep6Summary({ state, unitName }: Props) {
     </div>
   );
 }
+
