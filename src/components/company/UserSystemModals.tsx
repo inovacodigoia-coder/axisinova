@@ -82,7 +82,7 @@ export function UserSystemModals({ open, onClose, type }: UserSystemModalsProps)
               <p className="text-white/70 text-sm font-medium">{user?.email}</p>
               <div className="mt-2 inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-white/20 text-[10px] font-bold uppercase tracking-wider">
                 <Shield className="h-3 w-3" />
-                {(user?.role === 'admin' || user?.role === 'super_admin' || user?.role === 'company_admin') ? 'Administrador' : 'Usuário Padrão'}
+                {(user?.role === 'super_admin' || user?.role === 'company_admin') ? 'Administrador' : 'Usuário Padrão'}
               </div>
             </div>
           </div>
