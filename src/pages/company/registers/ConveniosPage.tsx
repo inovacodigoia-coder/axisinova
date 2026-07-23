@@ -188,6 +188,7 @@ function ConvenioFormModal({ convenio, onClose, onSave }: { convenio: Convenio |
   const [email, setEmail] = useState(convenio?.email || '')
   const [observations, setObservations] = useState(convenio?.observations || '')
   const [examPrices, setExamPrices] = useState<any[]>(convenio?.examPrices || [])
+  const [examPrices, setExamPrices] = useState<any[]>(convenio?.examPrices || [])
 
 
   return (
