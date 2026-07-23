@@ -3,12 +3,13 @@ import { useRegisters } from '@/context/RegistersContext'
 import { useCompanyContext } from '@/context/CompanyContext'
 import { usePaginatedList } from '@/hooks/usePaginatedList'
 import { EmptyState } from '@/components/feedback/EmptyState'
-import { Plus, Search, MoreVertical, Edit, Trash2, Paperclip } from 'lucide-react'
+import { Plus, Search, MoreVertical, Edit, Trash2, Paperclip, DollarSign } from 'lucide-react'
 import type { Convenio } from '@/types/registers.types'
 import { CONVENIO_TYPE_LABELS, CONVENIO_TYPE_COLORS } from '@/types/registers.types'
 import { toast } from 'sonner'
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu'
 import { AttachmentsModal } from '@/components/registers/AttachmentsModal'
+import { ExamPricesModal } from '@/components/registers/ExamPricesModal'
 
 export default function ConveniosPage() {
   const { canAccess } = useCompanyContext()
@@ -17,6 +18,7 @@ export default function ConveniosPage() {
   const [showForm, setShowForm] = useState(false)
   const [editing, setEditing] = useState<Convenio | null>(null)
   const [showAttachments, setShowAttachments] = useState<Convenio | null>(null)
+  const [showPrices, setShowPrices] = useState<Convenio | null>(null)
 
   const filtered = convenios.filter(c => {
     if (search && !c.name.toLowerCase().includes(search.toLowerCase()) && !c.ansCode?.includes(search)) return false
@@ -99,6 +101,9 @@ export default function ConveniosPage() {
                         <DropdownMenuContent align="end">
                           <DropdownMenuItem onClick={() => { setEditing(c); setShowForm(true) }}><Edit className="h-4 w-4 mr-2" /> Editar dados</DropdownMenuItem>
                           <DropdownMenuItem onClick={() => setShowAttachments(c)}><Paperclip className="h-4 w-4 mr-2" /> Configurar Anexos</DropdownMenuItem>
+                          {c.type === 'private' && (
+                            <DropdownMenuItem onClick={() => setShowPrices(c)}><DollarSign className="h-4 w-4 mr-2" /> Tabela de Preços</DropdownMenuItem>
+                          )}
                           <DropdownMenuSeparator />
                           <DropdownMenuItem onClick={() => { updateConvenio({ ...c, isActive: !c.isActive }); toast.success(c.isActive ? 'Convênio inativado' : 'Convênio ativado') }}>
                             {c.isActive ? '🔴 Inativar' : '✅ Ativar'}
@@ -152,6 +157,19 @@ export default function ConveniosPage() {
             updateConvenio({ ...showAttachments, attachmentRules: rules })
             setShowAttachments(null)
             toast.success('Regras de anexo atualizadas!')
+          }}
+        />
+      )}
+
+      {showPrices && (
+        <ExamPricesModal
+          convenioName={showPrices.name}
+          examPrices={showPrices.examPrices || []}
+          onClose={() => setShowPrices(null)}
+          onSave={(prices) => {
+            updateConvenio({ ...showPrices, examPrices: prices })
+            setShowPrices(null)
+            toast.success('Tabela de preços atualizada!')
           }}
         />
       )}
