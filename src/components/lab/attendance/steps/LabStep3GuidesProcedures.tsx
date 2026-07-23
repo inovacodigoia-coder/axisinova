@@ -228,7 +228,7 @@ export function LabStep3GuidesProcedures({ state, update }: Props) {
                   const newGuides = guides.map(g => g.id === activeGuideId ? { 
                     ...g, 
                     plan: selectedPlan,
-                    name: selectedPlan === 'PARTICULAR' ? `Guia ${g.id}` : selectedPlan,
+                    name: selectedPlan,
                     operator: convenio?.operator || selectedPlan // If not found, fallback to plan name
                   } : g);
                   setGuides(newGuides);
