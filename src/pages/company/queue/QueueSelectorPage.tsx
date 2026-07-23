@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { Monitor, Headphones, MonitorSmartphone, Settings } from 'lucide-react'
 import { useAuth } from '@/context/AuthContext'
 import { ModeCard } from '@/components/queue/selector/ModeCard'
+import { SYSTEM_VERSION } from '@/utils/version'
 
 export default function QueueSelectorPage() {
   const navigate = useNavigate()
