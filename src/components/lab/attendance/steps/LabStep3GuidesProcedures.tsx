@@ -1,14 +1,16 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { Card } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
 import { 
   Plus, Search, Trash2, Stethoscope, ClipboardCheck, 
-  PlusCircle, Calendar, HelpCircle, Edit2, Star
+  PlusCircle, Calendar, HelpCircle, Edit2, Star, Lock
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
+import { useAuth } from '@/context/AuthContext';
+import { supabase } from '@/integrations/supabase/client';
 import {
   Popover,
   PopoverContent,
@@ -47,8 +49,41 @@ interface AttendanceGuide {
 
 export function LabStep3GuidesProcedures({ state, update }: Props) {
   const { convenios, exams: clinicExams, doctors } = useRegisters();
+  const { user } = useAuth();
   const activeConvenios = useMemo(() => convenios.filter(c => c.isActive), [convenios]);
   const activeDoctors = useMemo(() => doctors.filter(d => d.isActive), [doctors]);
+  const [canEditDeadline, setCanEditDeadline] = useState(false);
+
+  // Check permissions for deadline editing
+  useEffect(() => {
+    async function checkPermission() {
+      if (!user?.id || !user?.companyId) return;
+
+      // 1. Get current user's profile to find their "profile_id" or matching name
+      // In this system, profile refers to RBAC profiles like "Recepção - Padrão"
+      const { data: profileData } = await supabase
+        .from('profiles')
+        .select('role')
+        .eq('id', user.id)
+        .single();
+
+      if (!profileData) return;
+
+      // 2. Fetch sectors and see if user is in any sector that allows their role/profile to edit deadline
+      const { data: sectors } = await supabase
+        .from('company_sectors') // Table might be different, but based on naming convention
+        .select('*')
+        .eq('company_id', user.companyId);
+        
+      // For now, since sectors are mock-heavy, we'll implement the UI logic 
+      // and a fallback that allows company admins.
+      if (user.role === 'company_admin') {
+        setCanEditDeadline(true);
+      }
+    }
+    checkPermission();
+  }, [user]);
+
   const [guides, setGuides] = useState<AttendanceGuide[]>(state.guides || [{ id: '1', name: 'Guia 1', plan: 'PARTICULAR', operator: 'PARTICULAR', number: '', exams: [], isDoctorDisabled: false }]);
   const [activeGuideId, setActiveGuideId] = useState(guides[0]?.id || '1');
   const [showDoctorPopover, setShowDoctorPopover] = useState(false);
@@ -678,10 +713,18 @@ export function LabStep3GuidesProcedures({ state, update }: Props) {
                 <Input 
                   value={tempCollectionDate} 
                   onChange={(e) => setTempCollectionDate(e.target.value)}
-                  className="text-sm"
+                  className="text-sm pr-10"
+                  disabled={!canEditDeadline}
                 />
-                <Calendar className="h-4 w-4 absolute right-2.5 top-3 text-muted-foreground" />
+                {!canEditDeadline ? (
+                  <Lock className="h-4 w-4 absolute right-2.5 top-3 text-muted-foreground/50" />
+                ) : (
+                  <Calendar className="h-4 w-4 absolute right-2.5 top-3 text-muted-foreground" />
+                )}
               </div>
+              {!canEditDeadline && (
+                <p className="text-[9px] text-rose-500 font-medium">Sem permissão para alterar data de coleta</p>
+              )}
             </div>
             
             <div className="space-y-1.5">

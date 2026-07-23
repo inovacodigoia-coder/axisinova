@@ -38,6 +38,8 @@ export interface Sector {
   allowedProfiles: string[]
   /** Tipos de fila que este setor pode visualizar na Recepção. Se vazio/indefinido = ambos. */
   allowedQueueTypes?: ('internal' | 'external')[]
+  /** Perfis que possuem permissão para alterar datas no modal de Alterar Previsão de Entrega */
+  allowedDeadlineEditProfiles?: string[]
 }
 
 export interface MenuFunction {
