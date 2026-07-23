@@ -408,7 +408,7 @@ export function AttendanceCadastroModal({
           {isLab && !showReview && step === 1 && <LabStep1PatientReview state={state} update={update} />}
           {isLab && !showReview && step === 2 && <LabStep2ExamData state={state} update={update} />}
           {isLab && !showReview && step === 3 && <LabStep3GuidesProcedures state={state} update={update} />}
-          {isLab && !showReview && step === 4 && hasParticularGuideWithPrice && <div className="p-8 text-center text-muted-foreground">Passo 4: Pagamento (Implementação em breve...)</div>}
+          {isLab && !showReview && step === 4 && hasParticularGuideWithPrice && <LabStep4Payment state={state} update={update} />}
           {isLab && !showReview && step === (hasParticularGuideWithPrice ? 5 : 4) && <div className="p-8 text-center text-muted-foreground">Passo {hasParticularGuideWithPrice ? 5 : 4}: Autorização (Implementação em breve...)</div>}
           
           {showReview && <ReviewPanel state={state} unitName={unitName} guicheName={guicheName} ticketCode={ticketCode} />}
