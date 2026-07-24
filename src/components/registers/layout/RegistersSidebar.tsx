@@ -20,8 +20,9 @@ function usePatientsCount() {
   const { user } = useAuth()
   const [count, setCount] = useState(0)
   useEffect(() => {
-    if (!user?.companyId) return
-    supabase.from('patients').select('id', { count: 'exact', head: true }).eq('company_id', user.companyId)
+    const targetId = resolveCompanyId(user?.companyId) || (user?.companyId === 'comp_001' ? '00000000-0000-0000-0000-000000000001' : null)
+    if (!targetId) return
+    supabase.from('patients').select('id', { count: 'exact', head: true }).eq('company_id', targetId)
       .then(({ count: c }) => setCount(c || 0))
   }, [user?.companyId])
   return count
