@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo, useCallback } from 'react'
+import { useLocation } from 'react-router-dom'
 import { useQueue } from '@/context/QueueContext'
 import { useQueueSystem } from '@/context/QueueSystemContext'
 import { useAuth } from '@/context/AuthContext'
@@ -86,6 +87,7 @@ export default function ReceptionLayout() {
   const [showDirectCadastro, setShowDirectCadastro] = useState(false)
   const [reprintDoc, setReprintDoc] = useState<AttendanceControlDocument | null>(null)
   const [showLookup, setShowLookup] = useState(false)
+  const location = useLocation()
   const [lookupPatient, setLookupPatient] = useState<Patient | null>(null)
   const { orders } = useAttendanceCadastro()
 
@@ -120,6 +122,16 @@ export default function ReceptionLayout() {
     const id = setInterval(() => setTime(new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit', second: '2-digit' })), 1000)
     return () => clearInterval(id)
   }, [])
+
+  // Check for lookup query param
+  useEffect(() => {
+    const searchParams = new URLSearchParams(location.search)
+    if (searchParams.get('lookup') === 'true') {
+      setShowLookup(true)
+      // Clean up the URL
+      window.history.replaceState({}, '', location.pathname)
+    }
+  }, [location])
 
   // Restore session
   useEffect(() => {

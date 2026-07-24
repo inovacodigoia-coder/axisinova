@@ -40,9 +40,9 @@ const NAV_SECTIONS: NavSection[] = [
       { label: 'Faltosos', icon: 'Monitor', path: '/app/faltosos', module: 'scheduling' },
       { label: 'Recepção', icon: 'UserCheck', path: '/app/recepcao', module: 'reception' },
       { label: 'Iniciar Cadastro', icon: 'UserCheck', path: '/app/recepcao/cadastro-direto', module: 'reception' },
+      { label: 'Buscar Cadastro', icon: 'Search', path: '/app/recepcao?lookup=true', module: 'reception' },
       { label: 'Painel Médico', icon: 'Stethoscope', path: '/app/medico', module: 'medical_record' },
       { label: 'Prontuário', icon: 'FileText', path: '/app/prontuario', module: 'medical_record' },
-      
     ],
   },
   {
