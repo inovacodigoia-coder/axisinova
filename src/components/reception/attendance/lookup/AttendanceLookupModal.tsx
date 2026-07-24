@@ -188,7 +188,7 @@ export function AttendanceLookupModal({ open, onClose, unitName, guicheName, onA
         {/* Results Table Header */}
         <div className="bg-muted/10 border-b border-border px-6 py-2">
           <div className="grid grid-cols-[120px_140px_1fr_100px_120px_100px_140px_120px] gap-4 text-[10px] font-bold text-muted-foreground uppercase tracking-wider">
-            <div>Atendimento</div>
+            <div>Pedido / Atend.</div>
             <div>Dt. Atend.</div>
             <div>Cliente</div>
             <div>Nascimento</div>
@@ -257,7 +257,7 @@ function OrderRowModern({
   return (
     <div className="group hover:bg-muted/20 transition-colors">
       <div className="grid grid-cols-[120px_140px_1fr_100px_120px_100px_140px_120px] gap-4 px-6 py-3 items-center text-xs">
-        <div className="font-mono text-primary font-medium">{order.orderNumber}</div>
+        <div className="font-mono text-primary font-bold">{order.orderNumber}</div>
         <div className="text-muted-foreground">
           {date.toLocaleDateString('pt-BR')} {date.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
         </div>
