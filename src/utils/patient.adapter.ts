@@ -41,6 +41,7 @@ export function dbToPatient(row: DBPatient): Patient {
 
   return {
     id: row.id,
+    sequenceId: row.sequence_id,
     companyId: row.company_id,
     fullName: row.name,
     socialName: row.social_name || undefined,

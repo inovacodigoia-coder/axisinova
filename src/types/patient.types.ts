@@ -104,6 +104,7 @@ export interface InternalAlert {
 // ─── Paciente completo ──────────────────────────────────────────────
 export interface Patient {
   id: string
+  sequenceId?: number;
   companyId: string
 
   // Identificação
