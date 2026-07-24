@@ -3,10 +3,11 @@ import { Card } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
-import { Search, Printer, Download, User, Phone, ShieldCheck, Users, HeartPulse, FileText, CheckCircle2, Plus, Trash2 } from 'lucide-react';
+import { Search, Printer, Download, User, Phone, ShieldCheck, Users, HeartPulse, FileText, CheckCircle2, Plus, Trash2, X } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { GENDER_LABELS, ETHNICITY_LABELS, MARITAL_LABELS, STATUS_LABELS, BRAZIL_STATES } from '@/types/patient.types';
+import { GENDER_LABELS, ETHNICITY_LABELS, MARITAL_LABELS, STATUS_LABELS, BRAZIL_STATES, ALLERGY_SEVERITY_LABELS } from '@/types/patient.types';
 import { useRegisters } from '@/context/RegistersContext';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 
 interface Props { state: any; update: (patch: any) => void; }
 
@@ -31,8 +32,47 @@ export function LabStep1PatientReview({ state, update }: Props) {
   const tempPatient = state.tempPatient || {};
   const mergedPatient = { ...patient, ...tempPatient };
 
+  const [showAllergyModal, setShowAllergyModal] = useState(false);
+  const [showMedicationModal, setShowMedicationModal] = useState(false);
+  const [newAllergy, setNewAllergy] = useState({ substance: '', severity: 'moderate' as any, reaction: '' });
+  const [newMedication, setNewMedication] = useState({ name: '', dosage: '', frequency: '' });
+
   const handleUpdate = (patch: any) => {
     update({ tempPatient: { ...tempPatient, ...patch } });
+  };
+
+  const addAllergy = () => {
+    if (!newAllergy.substance) return;
+    const clinical = mergedPatient.clinicalData || { allergies: [], chronicConditions: [], continuousMedications: [] };
+    const updated = {
+      ...clinical,
+      allergies: [...(clinical.allergies || []), { ...newAllergy, id: Math.random().toString(36).substr(2, 9), type: 'other' }]
+    };
+    handleUpdate({ clinicalData: updated });
+    setNewAllergy({ substance: '', severity: 'moderate', reaction: '' });
+    setShowAllergyModal(false);
+  };
+
+  const addMedication = () => {
+    if (!newMedication.name) return;
+    const clinical = mergedPatient.clinicalData || { allergies: [], chronicConditions: [], continuousMedications: [] };
+    const updated = {
+      ...clinical,
+      continuousMedications: [...(clinical.continuousMedications || []), { ...newMedication, id: Math.random().toString(36).substr(2, 9) }]
+    };
+    handleUpdate({ clinicalData: updated });
+    setNewMedication({ name: '', dosage: '', frequency: '' });
+    setShowMedicationModal(false);
+  };
+
+  const removeAllergy = (id: string) => {
+    const clinical = mergedPatient.clinicalData;
+    handleUpdate({ clinicalData: { ...clinical, allergies: clinical.allergies.filter((a: any) => a.id !== id) } });
+  };
+
+  const removeMedication = (id: string) => {
+    const clinical = mergedPatient.clinicalData;
+    handleUpdate({ clinicalData: { ...clinical, continuousMedications: clinical.continuousMedications.filter((m: any) => m.id !== id) } });
   };
 
   return (
@@ -373,19 +413,32 @@ export function LabStep1PatientReview({ state, update }: Props) {
                   <h4 className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest flex items-center gap-2">
                     <ShieldCheck className="h-3 w-3" /> Alergias
                   </h4>
-                  <Button variant="outline" size="sm" className="h-7 text-[10px] gap-1"><Plus className="h-3 w-3" /> Adicionar</Button>
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    className="h-7 text-[10px] gap-1"
+                    onClick={() => setShowAllergyModal(true)}
+                  >
+                    <Plus className="h-3 w-3" /> Adicionar
+                  </Button>
                 </div>
-                <div className="p-4 rounded-xl border border-dashed border-border bg-muted/5">
+                <div className="p-4 rounded-xl border border-dashed border-border bg-muted/5 min-h-[60px]">
                   {mergedPatient.clinicalData?.allergies?.length > 0 ? (
                     <div className="flex flex-wrap gap-2">
                       {mergedPatient.clinicalData.allergies.map((a: any, i: number) => (
-                        <span key={i} className="px-2 py-1 rounded-lg bg-rose-500/10 text-rose-600 text-[10px] font-bold border border-rose-200">
-                          {a.substance} ({a.severity})
+                        <span key={a.id || i} className="group relative px-2 py-1 rounded-lg bg-rose-500/10 text-rose-600 text-[10px] font-bold border border-rose-200 flex items-center gap-1.5">
+                          {a.substance} ({ALLERGY_SEVERITY_LABELS[a.severity as keyof typeof ALLERGY_SEVERITY_LABELS] || a.severity})
+                          <button 
+                            onClick={() => removeAllergy(a.id)}
+                            className="hover:text-rose-800"
+                          >
+                            <X className="h-3 w-3" />
+                          </button>
                         </span>
                       ))}
                     </div>
                   ) : (
-                    <p className="text-[10px] text-muted-foreground italic text-center">Nenhuma alergia registrada.</p>
+                    <p className="text-[10px] text-muted-foreground italic text-center py-2">Nenhuma alergia registrada.</p>
                   )}
                 </div>
               </div>
@@ -426,20 +479,35 @@ export function LabStep1PatientReview({ state, update }: Props) {
                   <h4 className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest flex items-center gap-2">
                     <FileText className="h-3 w-3" /> Medicações contínuas
                   </h4>
-                  <Button variant="outline" size="sm" className="h-7 text-[10px] gap-1"><Plus className="h-3 w-3" /> Adicionar</Button>
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    className="h-7 text-[10px] gap-1"
+                    onClick={() => setShowMedicationModal(true)}
+                  >
+                    <Plus className="h-3 w-3" /> Adicionar
+                  </Button>
                 </div>
-                <div className="p-4 rounded-xl border border-dashed border-border bg-muted/5">
+                <div className="p-4 rounded-xl border border-dashed border-border bg-muted/5 min-h-[60px]">
                   {mergedPatient.clinicalData?.continuousMedications?.length > 0 ? (
                     <div className="space-y-2">
                       {mergedPatient.clinicalData.continuousMedications.map((m: any, i: number) => (
-                        <div key={i} className="text-[11px] font-medium flex items-center gap-2">
-                          <div className="h-1 w-1 rounded-full bg-primary" />
-                          {m.name} - {m.dosage} ({m.frequency})
+                        <div key={m.id || i} className="text-[11px] font-medium flex items-center justify-between group p-1 hover:bg-muted/50 rounded-md transition-colors">
+                          <div className="flex items-center gap-2">
+                            <div className="h-1 w-1 rounded-full bg-primary" />
+                            {m.name} - {m.dosage} ({m.frequency})
+                          </div>
+                          <button 
+                            onClick={() => removeMedication(m.id)}
+                            className="text-rose-500 hover:text-rose-700 opacity-0 group-hover:opacity-100 transition-opacity"
+                          >
+                            <Trash2 className="h-3.5 w-3.5" />
+                          </button>
                         </div>
                       ))}
                     </div>
                   ) : (
-                    <p className="text-[10px] text-muted-foreground italic text-center">Nenhuma medicação registrada.</p>
+                    <p className="text-[10px] text-muted-foreground italic text-center py-2">Nenhuma medicação registrada.</p>
                   )}
                 </div>
               </div>
@@ -533,6 +601,85 @@ export function LabStep1PatientReview({ state, update }: Props) {
           </div>
         )}
       </Card>
+
+      {/* Allergy Modal */}
+      <Dialog open={showAllergyModal} onOpenChange={setShowAllergyModal}>
+        <DialogContent className="sm:max-w-[425px]">
+          <DialogHeader>
+            <DialogTitle className="text-sm font-bold uppercase tracking-wider">Adicionar Alergia</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <Field label="Substância / Alérgeno" required>
+              <Input 
+                value={newAllergy.substance} 
+                onChange={e => setNewAllergy(prev => ({ ...prev, substance: e.target.value }))}
+                placeholder="Ex: Penicilina, Amendoim..."
+              />
+            </Field>
+            <Field label="Severidade">
+              <select 
+                className="flex h-10 w-full rounded-md border border-input bg-background px-3 text-sm"
+                value={newAllergy.severity}
+                onChange={e => setNewAllergy(prev => ({ ...prev, severity: e.target.value as any }))}
+              >
+                <option value="mild">Leve</option>
+                <option value="moderate">Moderada</option>
+                <option value="severe">Severa</option>
+                <option value="critical">Crítica</option>
+              </select>
+            </Field>
+            <Field label="Reação (opcional)">
+              <Input 
+                value={newAllergy.reaction} 
+                onChange={e => setNewAllergy(prev => ({ ...prev, reaction: e.target.value }))}
+                placeholder="Ex: Urticária, Falta de ar..."
+              />
+            </Field>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowAllergyModal(false)}>Cancelar</Button>
+            <Button onClick={addAllergy}>Adicionar</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Medication Modal */}
+      <Dialog open={showMedicationModal} onOpenChange={setShowMedicationModal}>
+        <DialogContent className="sm:max-w-[425px]">
+          <DialogHeader>
+            <DialogTitle className="text-sm font-bold uppercase tracking-wider">Adicionar Medicação Contínua</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <Field label="Nome do Medicamento" required>
+              <Input 
+                value={newMedication.name} 
+                onChange={e => setNewMedication(prev => ({ ...prev, name: e.target.value }))}
+                placeholder="Ex: Losartana Potássica"
+              />
+            </Field>
+            <div className="grid grid-cols-2 gap-4">
+              <Field label="Dosagem">
+                <Input 
+                  value={newMedication.dosage} 
+                  onChange={e => setNewMedication(prev => ({ ...prev, dosage: e.target.value }))}
+                  placeholder="Ex: 50mg"
+                />
+              </Field>
+              <Field label="Frequência">
+                <Input 
+                  value={newMedication.frequency} 
+                  onChange={e => setNewMedication(prev => ({ ...prev, frequency: e.target.value }))}
+                  placeholder="Ex: 1x ao dia"
+                />
+              </Field>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowMedicationModal(false)}>Cancelar</Button>
+            <Button onClick={addMedication}>Adicionar</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
