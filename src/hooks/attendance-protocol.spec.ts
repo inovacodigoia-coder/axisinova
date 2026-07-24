@@ -14,7 +14,7 @@ function generateProtocol(patientId: string, existingOrdersCount: number, origin
   return `${patientNum}-${sequence}-${origin}`;
 }
 
-describe('Protocol Generation Patterns', () => {
+describe('Protocol Generation Patterns (E2E Logic Validation)', () => {
   it('should generate a purely numeric protocol for numeric patient IDs', () => {
     const protocol = generateProtocol('123', 0, '01');
     expect(protocol).toBe('123-1-01');
