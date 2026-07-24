@@ -325,21 +325,141 @@ export function LabStep1PatientReview({ state, update }: Props) {
           <div className="space-y-6">
             <div className="flex items-center gap-2 border-b border-border pb-3">
               <HeartPulse className="h-5 w-5 text-primary" />
-              <h3 className="text-sm font-bold uppercase tracking-wider">Informações Clínicas</h3>
+              <h3 className="text-sm font-bold uppercase tracking-wider">Dados Clínicos</h3>
             </div>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <Field label="Tipo Sanguíneo">
-                <select className="flex h-10 w-full rounded-md border border-input bg-background px-2 text-sm" value={mergedPatient.clinicalData?.bloodType || ""} onChange={(e) => handleUpdate({ clinicalData: { ...mergedPatient.clinicalData, bloodType: e.target.value } })}>
-                  <option value="">—</option>
-                  <option value="A+">A+</option><option value="A-">A-</option>
-                  <option value="B+">B+</option><option value="B-">B-</option>
-                  <option value="AB+">AB+</option><option value="AB-">AB-</option>
-                  <option value="O+">O+</option><option value="O-">O-</option>
-                </select>
-              </Field>
-              <div className="flex items-center gap-2 pt-6">
-                <input type="checkbox" id="priority" checked={!!mergedPatient.clinicalData?.needsPriority} onChange={(e) => handleUpdate({ clinicalData: { ...mergedPatient.clinicalData, needsPriority: e.target.checked } })} className="h-4 w-4 rounded border-input" />
-                <Label htmlFor="priority" className="text-xs font-bold cursor-pointer">Atendimento Prioritário</Label>
+            
+            <div className="space-y-6">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <Field label="Tipo Sanguíneo">
+                  <select 
+                    className="flex h-10 w-full rounded-md border border-input bg-background px-3 text-sm" 
+                    value={mergedPatient.clinicalData?.bloodType || ""} 
+                    onChange={(e) => handleUpdate({ clinicalData: { ...mergedPatient.clinicalData, bloodType: e.target.value } })}
+                  >
+                    <option value="">—</option>
+                    <option value="A+">A+</option><option value="A-">A-</option>
+                    <option value="B+">B+</option><option value="B-">B-</option>
+                    <option value="AB+">AB+</option><option value="AB-">AB-</option>
+                    <option value="O+">O+</option><option value="O-">O-</option>
+                  </select>
+                </Field>
+                <div className="flex items-center gap-6 pt-6">
+                  <div className="flex items-center gap-2">
+                    <input 
+                      type="checkbox" 
+                      id="priority" 
+                      checked={!!mergedPatient.clinicalData?.needsPriority} 
+                      onChange={(e) => handleUpdate({ clinicalData: { ...mergedPatient.clinicalData, needsPriority: e.target.checked } })} 
+                      className="h-4 w-4 rounded border-input cursor-pointer" 
+                    />
+                    <Label htmlFor="priority" className="text-xs font-bold cursor-pointer">Necessita atendimento prioritário</Label>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <input 
+                      type="checkbox" 
+                      id="donor" 
+                      checked={!!mergedPatient.clinicalData?.organDonor} 
+                      onChange={(e) => handleUpdate({ clinicalData: { ...mergedPatient.clinicalData, organDonor: e.target.checked } })} 
+                      className="h-4 w-4 rounded border-input cursor-pointer" 
+                    />
+                    <Label htmlFor="donor" className="text-xs font-bold cursor-pointer">Doador de órgãos</Label>
+                  </div>
+                </div>
+              </div>
+
+              {/* Alergias */}
+              <div className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <h4 className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest flex items-center gap-2">
+                    <ShieldCheck className="h-3 w-3" /> Alergias
+                  </h4>
+                  <Button variant="outline" size="xs" className="h-7 text-[10px] gap-1"><Plus className="h-3 w-3" /> Adicionar</Button>
+                </div>
+                <div className="p-4 rounded-xl border border-dashed border-border bg-muted/5">
+                  {mergedPatient.clinicalData?.allergies?.length > 0 ? (
+                    <div className="flex flex-wrap gap-2">
+                      {mergedPatient.clinicalData.allergies.map((a: any, i: number) => (
+                        <span key={i} className="px-2 py-1 rounded-lg bg-rose-500/10 text-rose-600 text-[10px] font-bold border border-rose-200">
+                          {a.substance} ({a.severity})
+                        </span>
+                      ))}
+                    </div>
+                  ) : (
+                    <p className="text-[10px] text-muted-foreground italic text-center">Nenhuma alergia registrada.</p>
+                  )}
+                </div>
+              </div>
+
+              {/* Condições Crônicas */}
+              <div className="space-y-3">
+                <h4 className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest flex items-center gap-2">
+                  <HeartPulse className="h-3 w-3" /> Condições crônicas
+                </h4>
+                <div className="flex flex-wrap gap-2">
+                  {['HAS', 'DM Tipo 1', 'DM Tipo 2', 'Cardiopatia', 'DPOC', 'Asma', 'IRC', 'Neoplasia', 'Hipotireoidismo', 'Epilepsia', 'Depressão', 'Ansiedade', 'Obesidade', 'Artrite', 'Osteoporose'].map((cond) => {
+                    const isSelected = mergedPatient.clinicalData?.chronicConditions?.includes(cond);
+                    return (
+                      <button
+                        key={cond}
+                        onClick={() => {
+                          const current = mergedPatient.clinicalData?.chronicConditions || [];
+                          const updated = isSelected ? current.filter((c: string) => c !== cond) : [...current, cond];
+                          handleUpdate({ clinicalData: { ...mergedPatient.clinicalData, chronicConditions: updated } });
+                        }}
+                        className={cn(
+                          "px-3 py-1.5 rounded-full text-[10px] font-bold border transition-all",
+                          isSelected 
+                            ? "bg-primary text-primary-foreground border-primary" 
+                            : "bg-background text-muted-foreground border-border hover:border-primary/50"
+                        )}
+                      >
+                        {cond}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Medicações Contínuas */}
+              <div className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <h4 className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest flex items-center gap-2">
+                    <FileText className="h-3 w-3" /> Medicações contínuas
+                  </h4>
+                  <Button variant="outline" size="xs" className="h-7 text-[10px] gap-1"><Plus className="h-3 w-3" /> Adicionar</Button>
+                </div>
+                <div className="p-4 rounded-xl border border-dashed border-border bg-muted/5">
+                  {mergedPatient.clinicalData?.continuousMedications?.length > 0 ? (
+                    <div className="space-y-2">
+                      {mergedPatient.clinicalData.continuousMedications.map((m: any, i: number) => (
+                        <div key={i} className="text-[11px] font-medium flex items-center gap-2">
+                          <div className="h-1 w-1 rounded-full bg-primary" />
+                          {m.name} - {m.dosage} ({m.frequency})
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <p className="text-[10px] text-muted-foreground italic text-center">Nenhuma medicação registrada.</p>
+                  )}
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <Field label="Deficiências / Necessidades especiais">
+                  <Input 
+                    value={mergedPatient.clinicalData?.disabilities || ""} 
+                    onChange={(e) => handleUpdate({ clinicalData: { ...mergedPatient.clinicalData, disabilities: e.target.value } })} 
+                    placeholder="Descrever, se houver"
+                    className="h-10" 
+                  />
+                </Field>
+                <Field label="Observações clínicas">
+                  <Input 
+                    value={mergedPatient.clinicalData?.notes || ""} 
+                    onChange={(e) => handleUpdate({ clinicalData: { ...mergedPatient.clinicalData, notes: e.target.value } })} 
+                    className="h-10" 
+                  />
+                </Field>
               </div>
             </div>
           </div>
@@ -349,37 +469,66 @@ export function LabStep1PatientReview({ state, update }: Props) {
           <div className="space-y-6">
             <div className="flex items-center gap-2 border-b border-border pb-3">
               <FileText className="h-5 w-5 text-primary" />
-              <h3 className="text-sm font-bold uppercase tracking-wider">Observações e Alertas</h3>
+              <h3 className="text-sm font-bold uppercase tracking-wider">Observações</h3>
             </div>
-            <div className="space-y-4">
+            
+            <div className="space-y-6">
               <Field label="Observações Gerais">
                 <textarea 
-                  className="w-full min-h-[120px] rounded-md border border-input bg-background px-3 py-2 text-sm" 
+                  className="w-full min-h-[120px] rounded-xl border border-input bg-background px-4 py-3 text-sm shadow-sm focus:ring-2 focus:ring-primary/20 transition-all" 
                   value={mergedPatient.generalNotes || ""} 
                   onChange={(e) => handleUpdate({ generalNotes: e.target.value })}
                   placeholder="Anotações internas sobre o paciente..."
                 />
               </Field>
+
               {mergedPatient.internalAlerts && (
                 <div className={cn(
-                  "p-4 rounded-xl border flex gap-3 items-start",
+                  "p-5 rounded-2xl border flex gap-4 items-start shadow-sm",
                   mergedPatient.internalAlerts.color === 'red' ? "bg-rose-50 border-rose-200 text-rose-700" :
                   mergedPatient.internalAlerts.color === 'yellow' ? "bg-amber-50 border-amber-200 text-amber-700" :
                   "bg-blue-50 border-blue-200 text-blue-700"
                 )}>
-                  <div className={cn("p-2 rounded-lg", 
+                  <div className={cn("p-2.5 rounded-xl shadow-sm", 
                     mergedPatient.internalAlerts.color === 'red' ? "bg-rose-500 text-white" :
                     mergedPatient.internalAlerts.color === 'yellow' ? "bg-amber-500 text-white" :
                     "bg-blue-500 text-white"
                   )}>
-                    <FileText className="h-4 w-4" />
+                    <FileText className="h-5 w-5" />
                   </div>
-                  <div>
-                    <h4 className="font-bold text-xs uppercase mb-1">Alerta Interno</h4>
-                    <p className="text-sm">{mergedPatient.internalAlerts.message}</p>
+                  <div className="space-y-1">
+                    <h4 className="font-bold text-[10px] uppercase tracking-widest mb-1">Alerta de Atendimento</h4>
+                    <p className="text-sm font-medium leading-relaxed">{mergedPatient.internalAlerts.message}</p>
                   </div>
                 </div>
               )}
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <Field label="Observações Financeiras">
+                  <textarea 
+                    className="w-full min-h-[100px] rounded-xl border border-input bg-background px-4 py-3 text-sm shadow-sm" 
+                    value={mergedPatient.financialNotes || ""} 
+                    onChange={(e) => handleUpdate({ financialNotes: e.target.value })}
+                    placeholder="Pendências, acordos ou restrições financeiras..."
+                  />
+                </Field>
+                <div className="space-y-3">
+                  <h4 className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest flex items-center gap-2">
+                    Etiquetas (Tags)
+                  </h4>
+                  <div className="flex flex-wrap gap-2">
+                    {mergedPatient.tags?.length > 0 ? (
+                      mergedPatient.tags.map((tag: string, i: number) => (
+                        <span key={i} className="px-3 py-1 rounded-full bg-muted text-muted-foreground text-[10px] font-bold border border-border">
+                          {tag}
+                        </span>
+                      ))
+                    ) : (
+                      <p className="text-[10px] text-muted-foreground italic">Nenhuma etiqueta atribuída.</p>
+                    )}
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
         )}
