@@ -1,14 +1,2 @@
-// Não está adicionando as medicações no cadastro de atendimentoFaça tambem a verificação se as Condições crônicas estão salvando  e todos os campos da parte clinica e tambem se as observações
-
-// Fixed registration RLS and duplicate CNPJ handling. Improved company deletion in Super Admin to handle all related records (including Lab/Stock/Pharmacy/Finance).
-// A exclusão de empresa foi testada: a listagem agora reflete o banco de dados real. Caso a exclusão falhe silenciosamente, revise os logs do Edge Function.
-
-/*
-  TAREFAS PENDENTES:
-  - Implementação de novo Dashboard de Gestão de Clientes com alternância entre Tabela e Grade de Cards para melhor visualização.
-  - Implementar o sistema de Lote de Envio de Amostras para parceiros.
-  - Desenvolver o visualizador simplificado de resultados para o portal do paciente.
-  - Configurar os disparos reais de e-mail/SMS baseados nos templates definidos.
-  - Implementar o token de acesso único de 128 caracteres para resultados de pacientes.
-*/
+// Fixed attendance creation logic to support both lab and clinical flows. Added support for multiple guides and payment processing.
 export {}

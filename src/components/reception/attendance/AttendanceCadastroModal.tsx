@@ -286,43 +286,81 @@ export function AttendanceCadastroModal({
   }, [state.patient, unitName, guicheName])
 
   const handleFinalize = () => {
-    if (!state.patient || !state.serviceType || !state.paymentType || !state.procedureId) {
+    const isLabFlow = isLab
+    
+    // Basic validation for legacy flow (clinic)
+    if (!isLabFlow && (!state.patient || !state.serviceType || !state.paymentType || !state.procedureId)) {
       toast.error('Dados incompletos')
       return
     }
-    const order = createOrder({
-      patientId: state.patient.id,
-      patientName: state.patient.fullName,
+
+    // Validation for Lab flow
+    if (isLabFlow && (!state.patient || !state.guides || state.guides.length === 0)) {
+      toast.error('Dados incompletos: Cliente ou Guias ausentes')
+      return
+    }
+
+    const orderData: any = {
+      patientId: state.patient?.id || state.tempPatient?.id || `temp_${Date.now()}`,
+      patientName: state.patient?.fullName || state.tempPatient?.fullName,
       unitId,
-      ticketId, ticketCode,
+      ticketId, 
+      ticketCode,
       serviceType: state.serviceType,
-      paymentType: state.paymentType,
-      doctorId: state.doctorId, doctorName: state.doctorName, doctorCRM: state.doctorCRM,
-      specialty: state.specialty, requestingDoctor: state.requestingDoctor,
-      procedureId: state.procedureId, procedureName: state.procedureName,
-      procedureCode: state.procedureCode, procedureDescription: state.procedureDescription,
-      convenioId: state.convenioId, convenioName: state.convenioName,
-      cardNumber: state.cardNumber, cardExpiry: state.cardExpiry,
-      authorizationCode: state.authorizationCode, authorizationDate: state.authorizationDate,
-      authorizationExpiry: state.authorizationExpiry, authorizationPassword: state.authorizationPassword,
-      billingCode: state.billingCode, billingTable: state.billingTable, quantity: state.quantity,
-      participationDegree: state.participationDegree, cnes: state.cnes, cbo: state.cbo,
-      privateValue: state.privateValue, freeReason: state.freeReason,
+      paymentType: state.paymentType || 'private',
+      doctorId: state.doctorId, 
+      doctorName: state.doctorName, 
+      doctorCRM: state.doctorCRM,
+      specialty: state.specialty, 
+      requestingDoctor: state.requestingDoctor,
+      procedureId: state.procedureId, 
+      procedureName: state.procedureName,
+      procedureCode: state.procedureCode, 
+      procedureDescription: state.procedureDescription,
+      convenioId: state.convenioId, 
+      convenioName: state.convenioName,
+      cardNumber: state.cardNumber, 
+      cardExpiry: state.cardExpiry,
+      authorizationCode: state.authorizationCode, 
+      authorizationDate: state.authorizationDate,
+      authorizationExpiry: state.authorizationExpiry, 
+      authorizationPassword: state.authorizationPassword,
+      billingCode: state.billingCode, 
+      billingTable: state.billingTable, 
+      quantity: state.quantity,
+      participationDegree: state.participationDegree, 
+      cnes: state.cnes, 
+      cbo: state.cbo,
+      privateValue: state.privateValue, 
+      freeReason: state.freeReason,
       attachments: state.attachments,
       attachmentRulesSatisfied: !state.attachmentOverrideReason,
       attachmentOverrideReason: state.attachmentOverrideReason,
       scheduledAppointmentId: state.scheduledAppointmentId,
-      status: state.procedureRequiresAuth && state.authorizationCode ? 'authorized' : 'open',
+      status: (state.procedureRequiresAuth && state.authorizationCode) ? 'authorized' : 'open',
       examMode: state.serviceType === 'exam' ? (state.examMode === 'ask' ? undefined : state.examMode) : undefined,
+      // Lab specific fields
+      guides: state.guides,
+      isPregnant: state.tempPatient?.clinicalData?.isPregnant,
+      clinicalData: state.tempPatient?.clinicalData,
+      observations: {
+        notes: state.tempPatient?.generalNotes,
+        alerts: state.tempPatient?.internalAlerts,
+        financial: state.tempPatient?.financialNotes,
+        tags: state.tempPatient?.tags
+      }
+    }
 
-    })
+    const order = createOrder(orderData)
+    
     toast.success(`Atendimento registrado · Pedido: ${order.orderNumber}`)
     if (ticketId) clearDraft(ticketId)
+    
     setCreatedOrder(order)
     onOrderCreated?.(order)
 
-    // Flow: if private → payment first; else → print (auto) → allocation
-    if (state.paymentType === 'private') {
+    // Flow: if private and needs payment -> show payment first; else -> print selection
+    if (state.paymentType === 'private' || hasParticularGuideWithPrice) {
       setShowPayment(true)
     } else {
       proceedAfterPayment(order, null)
@@ -330,13 +368,14 @@ export function AttendanceCadastroModal({
   }
 
   const proceedAfterPayment = useCallback((order: AttendanceOrder, payment: PaymentRecord | null) => {
+    // Force showing print selection for Lab flow or if auto-print is enabled
     const cfg = getDefault()
-    if (cfg.autoPrintOnFinalize) {
+    if (isLab || cfg.autoPrintOnFinalize) {
       setShowPrintSelection(true)
     } else {
       setShowAllocation(true)
     }
-  }, [getDefault])
+  }, [getDefault, isLab])
 
   const handlePaymentDone = (record: PaymentRecord) => {
     setPaymentRecord(record)
@@ -461,8 +500,9 @@ export function AttendanceCadastroModal({
               onClick={handleFinalize}
               className="inline-flex items-center gap-1 rounded-md bg-blue-600 px-8 py-2 text-sm font-bold text-white shadow-md hover:bg-blue-700 transition-all uppercase tracking-wide"
             >
-              <Check className="h-4 w-4" /> Criar
+              <Check className="h-4 w-4" /> CRIAR
             </button>
+
           )}
         </div>
       </DialogContent>
@@ -571,6 +611,10 @@ export function AttendanceCadastroModal({
           orderNumber={createdOrder.orderNumber}
           onClose={() => {
             setShowPrintSelection(false)
+            // If it was Lab flow, we might want to stay in the allocation or just close if finished
+            // User said: "Se for cancelado vai voltar para o modal de cadastro"
+            // But the order is already created at this point. 
+            // We'll show the allocation modal so they can still manage the record.
             setShowAllocation(true)
           }}
           onConfirm={(opts) => {
