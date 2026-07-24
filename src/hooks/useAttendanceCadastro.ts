@@ -10,12 +10,19 @@ export function useAttendanceCadastro() {
 
   const refresh = useCallback(() => setOrders(getMockOrders(companyId)), [companyId])
 
-  const createOrder = useCallback((data: Omit<AttendanceOrder, 'id' | 'orderNumber' | 'companyId' | 'registeredBy' | 'registeredAt' | 'updatedAt'>): AttendanceOrder => {
+  const createOrder = useCallback((data: any): AttendanceOrder => {
     const now = new Date().toISOString()
+    
+    // Protocol formula: [idPaciente] - [nSequencial] - [idOrigem]
+    const patientNum = data.patientId.split('-')[0] || data.patientId.substring(0, 4);
+    const sequence = orders.filter(o => o.patientId === data.patientId).length + 1;
+    const origin = String(data.originCode || '00').padStart(2, '0');
+    const protocol = `${patientNum}-${sequence}-${origin}`;
+
     const order: AttendanceOrder = {
       ...data,
       id: `ord_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`,
-      orderNumber: nextOrderNumber(companyId),
+      orderNumber: protocol, // Protocol is the primary reference
       companyId,
       registeredBy: user?.id || 'user_unknown',
       registeredByName: user?.name,
@@ -25,7 +32,7 @@ export function useAttendanceCadastro() {
     addMockOrder(order)
     refresh()
     return order
-  }, [companyId, user, refresh])
+  }, [companyId, user, refresh, orders])
 
   const updateOrder = useCallback((orderId: string, patch: Partial<AttendanceOrder>) => {
     updateMockOrder(orderId, patch)
