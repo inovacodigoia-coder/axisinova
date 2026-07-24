@@ -1,4 +1,4 @@
-// Verify that patients, doctors, and other records load correctly after a page refresh and after login.
+// As informações dos Dados Clínicos dos pacientes, dentre outras informações não estão aparecendo no modal Cadastro de Atendimento.Deve aparecer todos os campos do mesmo jeito quando está em Cadastros Editar paciente todas as informações Clínico e tambem de Observações
 
 // Fixed registration RLS and duplicate CNPJ handling. Improved company deletion in Super Admin to handle all related records (including Lab/Stock/Pharmacy/Finance).
 // A exclusão de empresa foi testada: a listagem agora reflete o banco de dados real. Caso a exclusão falhe silenciosamente, revise os logs do Edge Function.
