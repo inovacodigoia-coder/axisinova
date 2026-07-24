@@ -42,46 +42,7 @@ export const DEMO_CATALOG: CatalogProcedure[] = [
 
 // Estado mutável em memória
 let _orderSequence = 5
-let _mockOrders: AttendanceOrder[] = [
-  {
-    id: 'ord_001', orderNumber: '1-1-00',
-    patientId: 'pat_001', patientName: 'João da Silva',
-    companyId: DEMO_COMPANY_ID, unitId: 'unit_01',
-    ticketCode: 'P001', serviceType: 'consultation', paymentType: 'convenio',
-    doctorId: 'doc_01', doctorName: 'Dr. Henrique Lima', doctorCRM: '654321', specialty: 'Cardiologia',
-    procedureId: 'cat_c1', procedureName: 'Consulta Cardiológica', procedureCode: '10101012',
-    convenioId: 'conv_01', convenioName: 'Unimed',
-    status: 'authorized',
-    registeredBy: 'user_001', registeredAt: '2025-04-07T09:00:00', updatedAt: '2025-04-07T09:15:00',
-  },
-  {
-    id: 'ord_lab_003', orderNumber: '1-2-00',
-    patientId: 'pat_003', patientName: 'Danielle Beatriz',
-    companyId: DEMO_COMPANY_ID, unitId: 'unit_01',
-    protocol: '1-2-00',
-    serviceType: 'exam', paymentType: 'convenio',
-    status: 'waiting_collection',
-    registeredBy: 'user_001', registeredAt: '2025-04-07T09:00:00', updatedAt: '2025-04-07T09:15:00',
-  } as any,
-  {
-    id: 'ord_lab_002', orderNumber: '2-3-00',
-    patientId: 'pat_002', patientName: 'Alex Souza',
-    companyId: DEMO_COMPANY_ID, unitId: 'unit_01',
-    protocol: '2-3-00',
-    serviceType: 'exam', paymentType: 'private',
-    status: 'waiting_collection',
-    registeredBy: 'user_001', registeredAt: '2025-04-07T09:00:00', updatedAt: '2025-04-07T09:15:00',
-  } as any,
-  {
-    id: 'ord_lab_001', orderNumber: '2-4-00',
-    patientId: 'pat_002', patientName: 'Alex Souza',
-    companyId: DEMO_COMPANY_ID, unitId: 'unit_01',
-    protocol: '2-4-00',
-    serviceType: 'exam', paymentType: 'convenio',
-    status: 'waiting_collection',
-    registeredBy: 'user_001', registeredAt: '2025-04-07T09:00:00', updatedAt: '2025-04-07T09:15:00',
-  } as any,
-]
+let _mockOrders: AttendanceOrder[] = []
 
 export function getMockOrders(companyId: string): AttendanceOrder[] {
   return _mockOrders.filter(o => o.companyId === companyId)
