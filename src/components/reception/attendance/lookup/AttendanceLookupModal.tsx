@@ -63,6 +63,7 @@ export function AttendanceLookupModal({ open, onClose, unitName, guicheName, onA
   const { orders, updateOrder } = useAttendanceCadastro()
   const { patients } = usePatients()
   const [search, setSearch] = useState('')
+  const [patientSearch, setPatientSearch] = useState('')
   const [expanded, setExpanded] = useState<Set<string>>(new Set())
   const [editing, setEditing] = useState<AttendanceOrder | null>(null)
   const [printDoc, setPrintDoc] = useState<AttendanceControlDocument | null>(null)
@@ -75,16 +76,25 @@ export function AttendanceLookupModal({ open, onClose, unitName, guicheName, onA
 
   const grouped = useMemo(() => {
     const term = normalize(search.trim())
+    const pTerm = normalize(patientSearch.trim())
     const list = orders.filter(o => {
-      if (!term) return true
       const p = patientById.get(o.patientId)
-      const haystack = [
-        o.orderNumber,
-        o.patientName,
-        p?.cpf,
-        p?.motherName,
-      ].filter(Boolean).map(v => normalize(String(v))).join(' ')
-      return haystack.includes(term)
+      
+      if (term) {
+        const haystack = [
+          o.orderNumber,
+          p?.cpf,
+          p?.motherName,
+        ].filter(Boolean).map(v => normalize(String(v))).join(' ')
+        if (!haystack.includes(term)) return false
+      }
+
+      if (pTerm) {
+        const pName = normalize(o.patientName || '')
+        if (!pName.includes(pTerm)) return false
+      }
+
+      return true
     })
     const byPatient = new Map<string, AttendanceOrder[]>()
     list.forEach(o => {
@@ -100,7 +110,7 @@ export function AttendanceLookupModal({ open, onClose, unitName, guicheName, onA
         items: items.sort((a, b) => b.registeredAt.localeCompare(a.registeredAt)),
       }))
       .sort((a, b) => a.patientName.localeCompare(b.patientName))
-  }, [orders, patientById, search])
+  }, [orders, patientById, search, patientSearch])
 
   const togglePatient = (pid: string) => {
     setExpanded(prev => {
@@ -127,7 +137,7 @@ export function AttendanceLookupModal({ open, onClose, unitName, guicheName, onA
               <Search className="h-5 w-5" />
             </div>
             <div>
-              <h2 className="text-lg font-bold text-foreground">Buscar Cadastros de Atendimento</h2>
+              <h2 className="text-lg font-bold text-foreground">Busca de Atendimentos</h2>
               <p className="text-xs text-muted-foreground">Consultas anteriores, procedimentos e exames realizados</p>
             </div>
           </div>
@@ -136,19 +146,41 @@ export function AttendanceLookupModal({ open, onClose, unitName, guicheName, onA
           </button>
         </div>
 
-        {/* Search bar */}
-        <div className="border-b border-border bg-muted/30 px-6 py-3">
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-            <input
-              autoFocus
-              value={search}
-              onChange={e => setSearch(e.target.value)}
-              placeholder="Buscar por protocolo, nome do paciente, CPF ou nome da mãe..."
-              className="w-full rounded-lg border border-input bg-background pl-10 pr-3 py-2.5 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
-            />
+        {/* Filters/Search bar */}
+        <div className="border-b border-border bg-muted/30 px-6 py-4 space-y-4">
+          <div className="flex flex-col md:flex-row gap-4 items-end">
+            <div className="flex-1 space-y-1.5">
+              <label className="text-xs font-medium text-muted-foreground ml-1">Atend./amostra/integração</label>
+              <div className="relative">
+                <input
+                  autoFocus
+                  value={search}
+                  onChange={e => setSearch(e.target.value)}
+                  placeholder="Buscar por protocolo, CPF ou nome da mãe..."
+                  className="w-full rounded-lg border border-input bg-background pl-3 pr-10 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+                />
+                <Search className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              </div>
+            </div>
+            
+            <div className="flex-1 space-y-1.5">
+              <label className="text-xs font-medium text-muted-foreground ml-1">Nome do Cliente</label>
+              <div className="relative">
+                <input
+                  value={patientSearch}
+                  onChange={e => setPatientSearch(e.target.value)}
+                  placeholder="Nome do Cliente"
+                  className="w-full rounded-lg border border-input bg-background pl-3 pr-10 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+                />
+                <Search className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              </div>
+            </div>
+
+            <Button variant="ghost" size="icon" className="h-9 w-9 shrink-0">
+              <Search className="h-4 w-4" />
+            </Button>
           </div>
-          <p className="text-xs text-muted-foreground mt-1.5">
+          <p className="text-xs text-muted-foreground">
             {grouped.length} paciente{grouped.length === 1 ? '' : 's'} · {grouped.reduce((s, g) => s + g.items.length, 0)} atendimento{grouped.reduce((s, g) => s + g.items.length, 0) === 1 ? '' : 's'}
           </p>
         </div>
