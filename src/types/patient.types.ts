@@ -90,6 +90,7 @@ export interface PatientClinicalData {
   continuousMedications: ContinuousMedication[]
   disabilities?: string
   needsPriority?: boolean
+  isPregnant?: boolean
   organDonor?: boolean
   notes?: string
 }
