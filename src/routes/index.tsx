@@ -1,4 +1,4 @@
-// Verificar se Médicos, Convênios e demais cadastros também passam a carregar corretamente após recarregar a página e no login.
+// Verify that patients, doctors, and other records load correctly after a page refresh and after login.
 
 // Fixed registration RLS and duplicate CNPJ handling. Improved company deletion in Super Admin to handle all related records (including Lab/Stock/Pharmacy/Finance).
 // A exclusão de empresa foi testada: a listagem agora reflete o banco de dados real. Caso a exclusão falhe silenciosamente, revise os logs do Edge Function.
