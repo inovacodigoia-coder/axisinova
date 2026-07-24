@@ -19,7 +19,7 @@ const NAV_ITEMS = [
 
 function usePatientsCount() {
   const { user } = useAuth()
-  const [count, setCount] = useState(0)
+  const [count, setCount] = useState<number | null>(null)
   useEffect(() => {
     const targetId = resolveCompanyId(user?.companyId) || (user?.companyId === 'comp_001' ? '00000000-0000-0000-0000-000000000001' : null)
     if (!targetId) return
@@ -36,8 +36,11 @@ export function RegistersSidebar() {
 
   const getCount = (key: string | null) => {
     if (!key) return null
-    const map: Record<string, number> = {
-      patients: patientsCount,
+    if (reg.isLoading && key !== 'patients') return 'loading'
+    if (patientsCount === null && key === 'patients') return 'loading'
+    
+    const map: Record<string, number | 'loading'> = {
+      patients: patientsCount ?? 0,
       doctors: reg.doctors.length,
       specialties: reg.specialties.length,
       convenios: reg.convenios.length,
@@ -73,7 +76,11 @@ export function RegistersSidebar() {
                   'rounded-full px-1.5 py-0.5 text-[10px] font-bold min-w-[20px] text-center',
                   active ? 'bg-white/20 text-white' : 'bg-muted text-muted-foreground'
                 )}>
-                  {count}
+                  {count === 'loading' ? (
+                    <div className="h-2 w-4 bg-current/20 animate-pulse rounded" />
+                  ) : (
+                    count
+                  )}
                 </span>
               )}
             </NavLink>
