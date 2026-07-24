@@ -23,8 +23,18 @@ function usePatientsCount() {
   useEffect(() => {
     const targetId = resolveCompanyId(user?.companyId) || (user?.companyId === 'comp_001' ? '00000000-0000-0000-0000-000000000001' : null)
     if (!targetId) return
-    supabase.from('patients').select('id', { count: 'exact', head: true }).eq('company_id', targetId)
-      .then(({ count: c }) => setCount(c || 0))
+    let cancelled = false
+    const load = async () => {
+      const { data: sessionData } = await supabase.auth.getSession()
+      if (!sessionData?.session) return
+      const { count: c } = await supabase.from('patients').select('id', { count: 'exact', head: true }).eq('company_id', targetId)
+      if (!cancelled) setCount(c || 0)
+    }
+    load()
+    const { data: sub } = supabase.auth.onAuthStateChange((event) => {
+      if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') load()
+    })
+    return () => { cancelled = true; sub.subscription.unsubscribe() }
   }, [user?.companyId])
   return count
 }
