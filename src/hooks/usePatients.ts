@@ -40,6 +40,13 @@ export function usePatients(options: UsePatientsOptions = {}): UsePatientsResult
     }
     setLoading(true)
     setError(null)
+    // Ensure Supabase auth session is hydrated before RLS-protected queries
+    const { data: sessionData } = await supabase.auth.getSession()
+    if (!sessionData?.session) {
+      setPatients([])
+      setLoading(false)
+      return
+    }
     const { data, error: err } = await supabase
       .from('patients')
       .select('*')
@@ -57,6 +64,10 @@ export function usePatients(options: UsePatientsOptions = {}): UsePatientsResult
 
   useEffect(() => {
     if (autoFetch) refresh()
+    const { data: sub } = supabase.auth.onAuthStateChange((event) => {
+      if (autoFetch && (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED')) refresh()
+    })
+    return () => { sub.subscription.unsubscribe() }
   }, [autoFetch, refresh])
 
   const filtered = useMemo(() => applyFilters(patients, filters), [patients, filters])
