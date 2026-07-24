@@ -647,6 +647,7 @@ export type Database = {
           rg_issue_date: string | null
           rg_issuer: string | null
           rg_state: string | null
+          sequence_id: number
           social_name: string | null
           status: string
           tags: string[] | null
@@ -698,6 +699,7 @@ export type Database = {
           rg_issue_date?: string | null
           rg_issuer?: string | null
           rg_state?: string | null
+          sequence_id?: number
           social_name?: string | null
           status?: string
           tags?: string[] | null
@@ -749,6 +751,7 @@ export type Database = {
           rg_issue_date?: string | null
           rg_issuer?: string | null
           rg_state?: string | null
+          sequence_id?: number
           social_name?: string | null
           status?: string
           tags?: string[] | null

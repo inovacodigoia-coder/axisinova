@@ -26,8 +26,8 @@ export function LabStep6Summary({ state, unitName }: Props) {
           
           <div className="grid grid-cols-1 md:grid-cols-4 gap-x-8 gap-y-6 text-sm">
             <div className="space-y-1 border-b border-slate-100 pb-2">
-              <span className="text-slate-400 font-medium block text-xs">Cliente</span>
-              <span className="text-slate-700 font-bold uppercase">{patient?.fullName || 'NÃO INFORMADO'}</span>
+              <span className="text-slate-400 font-medium block text-xs">ID / Cliente</span>
+              <span className="text-slate-700 font-bold uppercase">{patient?.sequenceId ? `#${patient.sequenceId} - ` : ''}{patient?.fullName || 'NÃO INFORMADO'}</span>
             </div>
             
             <div className="space-y-1 border-b border-slate-100 pb-2">
