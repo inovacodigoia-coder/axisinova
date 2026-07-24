@@ -5,6 +5,7 @@ import { useRegisters } from '@/context/RegistersContext'
 import { useEffect, useState } from 'react'
 import { supabase } from '@/integrations/supabase/client'
 import { useAuth } from '@/context/AuthContext'
+import { resolveCompanyId } from '@/utils/companyId'
 
 const NAV_ITEMS = [
   { path: '/app/cadastros/pacientes', label: 'Pacientes', icon: Users, countKey: 'patients' as const },
