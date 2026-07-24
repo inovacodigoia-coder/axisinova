@@ -24,8 +24,8 @@ interface Props {
 export function AttendancePrintSelectionModal({ open, onClose, onConfirm, orderNumber }: Props) {
   const [showPreview, setShowPreview] = useState(false);
   const [options, setOptions] = useState<PrintOption[]>([
-    { id: 'comprovante', label: 'Comprovante', enabled: true, formats: ['A4', 'A5', 'TÉRMICA', 'ETIQUETA'], selectedFormat: 'A4' },
-    { id: 'controle_interno', label: 'Controle Interno', enabled: false, formats: ['A4', 'A5', 'TÉRMICA'], selectedFormat: 'A4' },
+    { id: 'comprovante', label: 'Comprovante', enabled: true, formats: ['A4', 'A5', 'TÉRMICA', 'ETIQUETA'], selectedFormat: 'TÉRMICA' },
+    { id: 'controle_interno', label: 'Controle Interno', enabled: false, formats: ['A4', 'A5', 'TÉRMICA'], selectedFormat: 'TÉRMICA' },
     { id: 'termo_consentimento', label: 'Termo de Consentimento', enabled: false, formats: ['A4', 'A5'], selectedFormat: 'A4' },
   ]);
 
