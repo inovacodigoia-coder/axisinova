@@ -144,6 +144,14 @@ export function RegistersProvider({ children }: { children: ReactNode }) {
 
     const load = async () => {
       try {
+        // Ensure Supabase auth session is hydrated before RLS-protected queries
+        const { data: sessionData } = await supabase.auth.getSession()
+        if (!sessionData?.session) {
+          console.warn('[RegistersContext] No active Supabase session — RLS will block queries. Skipping load.')
+          setIsLoading(false)
+          return
+        }
+
         const queries = [
           supabase.from('specialties').select('*').eq('company_id', companyId),
           supabase.from('doctors').select('*').eq('company_id', companyId),
@@ -185,6 +193,14 @@ export function RegistersProvider({ children }: { children: ReactNode }) {
       }
     }
     load()
+
+    // Re-run when auth state changes (e.g. session hydrated after mount)
+    const { data: authSub } = supabase.auth.onAuthStateChange((event) => {
+      if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
+        load()
+      }
+    })
+    return () => { authSub.subscription.unsubscribe() }
   }, [isDemo, companyId])
 
   // --- Specialties ---
