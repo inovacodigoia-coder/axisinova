@@ -130,6 +130,22 @@ export function LabStep1PatientReview({ state, update }: Props) {
                       {Object.entries(GENDER_LABELS).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
                     </select>
                   </Field>
+                  {mergedPatient.gender === 'female' && (
+                    <div className="flex items-center gap-2 pt-6">
+                      <input 
+                        type="checkbox" 
+                        id="isPregnant" 
+                        checked={!!mergedPatient.clinicalData?.isPregnant} 
+                        onChange={(e) => handleUpdate({ 
+                          clinicalData: { ...mergedPatient.clinicalData, isPregnant: e.target.checked } 
+                        })} 
+                        className="h-4 w-4 rounded border-input cursor-pointer" 
+                      />
+                      <Label htmlFor="isPregnant" className="text-xs font-bold cursor-pointer text-rose-600 flex items-center gap-1.5">
+                        🤰 Gestante
+                      </Label>
+                    </div>
+                  )}
                   <Field label="Etnia">
                     <select className="flex h-10 w-full rounded-md border border-input bg-background px-2 text-sm" value={mergedPatient.ethnicity || ""} onChange={(e) => handleUpdate({ ethnicity: e.target.value })}>
                       <option value="">—</option>
