@@ -1,8 +1,10 @@
 import React, { useState } from 'react';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { CheckCircle2, Printer, X, Download } from 'lucide-react';
+import { CheckCircle2, Printer, X, Download, Eye } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { ScrollArea } from '@/components/ui/scroll-area';
+
 
 interface PrintOption {
   id: string;
@@ -20,6 +22,7 @@ interface Props {
 }
 
 export function AttendancePrintSelectionModal({ open, onClose, onConfirm, orderNumber }: Props) {
+  const [showPreview, setShowPreview] = useState(false);
   const [options, setOptions] = useState<PrintOption[]>([
     { id: 'comprovante', label: 'Comprovante', enabled: true, formats: ['A4', 'A5', 'TÉRMICA', 'ETIQUETA'], selectedFormat: 'A4' },
     { id: 'controle_interno', label: 'Controle Interno', enabled: false, formats: ['A4', 'A5', 'TÉRMICA'], selectedFormat: 'A4' },
@@ -40,9 +43,10 @@ export function AttendancePrintSelectionModal({ open, onClose, onConfirm, orderN
     setOptions(prev => prev.map(opt => opt.id === id ? { ...opt, selectedFormat: format } : opt));
   };
 
+
   return (
     <Dialog open={open} onOpenChange={(o) => !o && onClose()}>
-      <DialogContent className="max-w-[800px] p-0 overflow-hidden border-none shadow-2xl">
+      <DialogContent className="max-w-[1000px] p-0 overflow-hidden border-none shadow-2xl">
         <div className="bg-white">
           {/* Success Header */}
           <div className="bg-emerald-50 p-6 flex items-center justify-between border-b border-emerald-100">
@@ -55,30 +59,113 @@ export function AttendancePrintSelectionModal({ open, onClose, onConfirm, orderN
                 <p className="text-sm text-emerald-700">Pedido #{orderNumber || '---'}</p>
               </div>
             </div>
-            <button onClick={onClose} className="text-emerald-400 hover:text-emerald-600">
-              <X className="h-6 w-6" />
-            </button>
+            <div className="flex items-center gap-3">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setShowPreview(!showPreview)}
+                className={cn(
+                  "flex items-center gap-2 font-bold uppercase text-[10px]",
+                  showPreview ? "text-blue-600 bg-blue-50" : "text-slate-500"
+                )}
+              >
+                <Eye className="h-4 w-4" />
+                {showPreview ? 'Ocultar Prévia' : 'Ver Prévia'}
+              </Button>
+              <button onClick={onClose} className="text-emerald-400 hover:text-emerald-600">
+                <X className="h-6 w-6" />
+              </button>
+            </div>
           </div>
 
-          <div className="p-8 grid grid-cols-1 md:grid-cols-[280px_1fr] gap-8">
-            {/* Left: Illustration */}
-            <div className="flex flex-col items-center justify-center bg-slate-50 rounded-xl p-6 border border-slate-100">
-              <img 
-                src="https://illustrations.popsy.co/blue/document-management.svg" 
-                alt="Impressão"
-                className="w-full h-auto max-w-[200px] mb-4"
-              />
-              <p className="text-xs text-slate-400 text-center px-4 leading-relaxed">
-                Selecione os documentos que deseja imprimir agora.
-              </p>
+          <div className={cn(
+            "p-8 grid gap-8 transition-all duration-300",
+            showPreview ? "grid-cols-1 md:grid-cols-[1fr_350px]" : "grid-cols-1 md:grid-cols-[280px_1fr]"
+          )}>
+            {/* Left/Main Column: Preview or Illustration */}
+            <div className="flex flex-col h-full min-h-[400px]">
+              {showPreview ? (
+                <div className="flex-1 bg-slate-100 rounded-xl border border-slate-200 p-4 overflow-hidden flex flex-col">
+                  <div className="flex items-center justify-between mb-3">
+                    <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Pré-visualização do Documento</span>
+                    <span className="bg-blue-100 text-blue-600 px-2 py-0.5 rounded text-[10px] font-bold uppercase">
+                      {options.find(o => o.enabled)?.selectedFormat || 'A4'}
+                    </span>
+                  </div>
+                  <ScrollArea className="flex-1 bg-white shadow-sm rounded-lg p-8">
+                    {/* Mock Document Content */}
+                    <div className="max-w-[500px] mx-auto space-y-6 text-slate-800">
+                      <div className="flex justify-between border-b pb-4">
+                        <div className="w-12 h-12 bg-slate-200 rounded"></div>
+                        <div className="text-right">
+                          <h4 className="font-bold text-sm uppercase">Comprovante de Atendimento</h4>
+                          <p className="text-[10px] text-slate-500">Emitido em: {new Date().toLocaleDateString('pt-BR')}</p>
+                        </div>
+                      </div>
+                      
+                      <div className="space-y-2">
+                        <div className="flex justify-between text-xs">
+                          <span className="font-bold">PACIENTE:</span>
+                          <span>JOÃO DA SILVA SAURO</span>
+                        </div>
+                        <div className="flex justify-between text-xs">
+                          <span className="font-bold">PEDIDO:</span>
+                          <span className="font-mono">#{orderNumber || '00234'}</span>
+                        </div>
+                      </div>
+
+                      <table className="w-full text-[10px] border-collapse">
+                        <thead>
+                          <tr className="border-b-2 border-slate-200">
+                            <th className="text-left py-2">EXAME</th>
+                            <th className="text-right py-2">PRAZO</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          <tr className="border-b border-slate-100">
+                            <td className="py-2">HEMOGRAMA COMPLETO</td>
+                            <td className="text-right py-2">24h</td>
+                          </tr>
+                          <tr className="border-b border-slate-100">
+                            <td className="py-2">GLICOSE EM JEJUM</td>
+                            <td className="text-right py-2">12h</td>
+                          </tr>
+                        </tbody>
+                      </table>
+
+                      <div className="flex justify-center pt-8">
+                        <div className="w-24 h-24 bg-slate-100 border flex items-center justify-center">
+                          <span className="text-[8px] text-slate-400">QR CODE</span>
+                        </div>
+                      </div>
+
+                      <div className="pt-8 text-center text-[8px] text-slate-400 italic">
+                        Este documento é um comprovante interno para conferência.
+                      </div>
+                    </div>
+                  </ScrollArea>
+                </div>
+              ) : (
+                <div className="flex flex-col items-center justify-center bg-slate-50 rounded-xl p-6 border border-slate-100 h-full">
+                  <img 
+                    src="https://illustrations.popsy.co/blue/document-management.svg" 
+                    alt="Impressão"
+                    className="w-full h-auto max-w-[200px] mb-4"
+                  />
+                  <p className="text-xs text-slate-400 text-center px-4 leading-relaxed">
+                    Selecione os documentos que deseja imprimir agora. Clique em "Ver Prévia" para conferir o layout.
+                  </p>
+                </div>
+              )}
             </div>
 
-            {/* Right: Options */}
-            <div className="space-y-6">
+
+            <div className="space-y-6 flex flex-col justify-center">
               <div className="flex items-center justify-between">
-                <h3 className="font-bold text-slate-800">Escolha o Tipo de Impressão</h3>
+                <h3 className="font-bold text-slate-800 uppercase text-xs tracking-wider">Opções de Impressão</h3>
                 <Download className="h-4 w-4 text-amber-500 cursor-pointer hover:scale-110 transition-transform" />
               </div>
+
 
               <div className="space-y-4">
                 {options.map((opt) => (
