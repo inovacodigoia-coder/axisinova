@@ -368,13 +368,14 @@ export function AttendanceCadastroModal({
   }
 
   const proceedAfterPayment = useCallback((order: AttendanceOrder, payment: PaymentRecord | null) => {
+    // Force showing print selection for Lab flow or if auto-print is enabled
     const cfg = getDefault()
-    if (cfg.autoPrintOnFinalize) {
+    if (isLab || cfg.autoPrintOnFinalize) {
       setShowPrintSelection(true)
     } else {
       setShowAllocation(true)
     }
-  }, [getDefault])
+  }, [getDefault, isLab])
 
   const handlePaymentDone = (record: PaymentRecord) => {
     setPaymentRecord(record)
