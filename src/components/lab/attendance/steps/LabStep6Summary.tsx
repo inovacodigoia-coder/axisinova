@@ -14,8 +14,9 @@ export function LabStep6Summary({ state, unitName }: Props) {
   const attendanceDate = new Date();
 
   return (
-    <div className="flex flex-col h-full bg-white overflow-y-auto">
-      <div className="p-8 space-y-12 max-w-[1400px] mx-auto w-full">
+    <div className="flex flex-col h-full bg-white">
+      <div className="flex-1 overflow-y-auto">
+        <div className="p-8 space-y-12 max-w-[1400px] mx-auto w-full pb-20">
         
         {/* Section: Cliente */}
         <section className="space-y-4">
@@ -144,8 +145,8 @@ export function LabStep6Summary({ state, unitName }: Props) {
             </div>
           )}
         </section>
+        </div>
       </div>
     </div>
   );
 }
-
