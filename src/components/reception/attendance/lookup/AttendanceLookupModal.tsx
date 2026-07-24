@@ -63,6 +63,7 @@ export function AttendanceLookupModal({ open, onClose, unitName, guicheName, onA
   const { orders, updateOrder } = useAttendanceCadastro()
   const { patients } = usePatients()
   const [search, setSearch] = useState('')
+  const [patientSearch, setPatientSearch] = useState('')
   const [expanded, setExpanded] = useState<Set<string>>(new Set())
   const [editing, setEditing] = useState<AttendanceOrder | null>(null)
   const [printDoc, setPrintDoc] = useState<AttendanceControlDocument | null>(null)
@@ -75,16 +76,25 @@ export function AttendanceLookupModal({ open, onClose, unitName, guicheName, onA
 
   const grouped = useMemo(() => {
     const term = normalize(search.trim())
+    const pTerm = normalize(patientSearch.trim())
     const list = orders.filter(o => {
-      if (!term) return true
       const p = patientById.get(o.patientId)
-      const haystack = [
-        o.orderNumber,
-        o.patientName,
-        p?.cpf,
-        p?.motherName,
-      ].filter(Boolean).map(v => normalize(String(v))).join(' ')
-      return haystack.includes(term)
+      
+      if (term) {
+        const haystack = [
+          o.orderNumber,
+          p?.cpf,
+          p?.motherName,
+        ].filter(Boolean).map(v => normalize(String(v))).join(' ')
+        if (!haystack.includes(term)) return false
+      }
+
+      if (pTerm) {
+        const pName = normalize(o.patientName || '')
+        if (!pName.includes(pTerm)) return false
+      }
+
+      return true
     })
     const byPatient = new Map<string, AttendanceOrder[]>()
     list.forEach(o => {
@@ -100,7 +110,7 @@ export function AttendanceLookupModal({ open, onClose, unitName, guicheName, onA
         items: items.sort((a, b) => b.registeredAt.localeCompare(a.registeredAt)),
       }))
       .sort((a, b) => a.patientName.localeCompare(b.patientName))
-  }, [orders, patientById, search])
+  }, [orders, patientById, search, patientSearch])
 
   const togglePatient = (pid: string) => {
     setExpanded(prev => {
@@ -127,7 +137,7 @@ export function AttendanceLookupModal({ open, onClose, unitName, guicheName, onA
               <Search className="h-5 w-5" />
             </div>
             <div>
-              <h2 className="text-lg font-bold text-foreground">Buscar Cadastros de Atendimento</h2>
+              <h2 className="text-lg font-bold text-foreground">Busca de Atendimentos</h2>
               <p className="text-xs text-muted-foreground">Consultas anteriores, procedimentos e exames realizados</p>
             </div>
           </div>
@@ -136,78 +146,79 @@ export function AttendanceLookupModal({ open, onClose, unitName, guicheName, onA
           </button>
         </div>
 
-        {/* Search bar */}
-        <div className="border-b border-border bg-muted/30 px-6 py-3">
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-            <input
-              autoFocus
-              value={search}
-              onChange={e => setSearch(e.target.value)}
-              placeholder="Buscar por protocolo, nome do paciente, CPF ou nome da mãe..."
-              className="w-full rounded-lg border border-input bg-background pl-10 pr-3 py-2.5 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
-            />
+        {/* Filters/Search bar */}
+        <div className="border-b border-border bg-muted/30 px-6 py-4 space-y-4">
+          <div className="flex flex-col md:flex-row gap-4 items-end">
+            <div className="flex-1 space-y-1.5">
+              <label className="text-xs font-medium text-muted-foreground ml-1">Atend./amostra/integração</label>
+              <div className="relative">
+                <input
+                  autoFocus
+                  value={search}
+                  onChange={e => setSearch(e.target.value)}
+                  placeholder="Buscar por protocolo, CPF ou nome da mãe..."
+                  className="w-full rounded-lg border border-input bg-background pl-3 pr-10 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+                />
+                <Search className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              </div>
+            </div>
+            
+            <div className="flex-1 space-y-1.5">
+              <label className="text-xs font-medium text-muted-foreground ml-1">Nome do Cliente</label>
+              <div className="relative">
+                <input
+                  value={patientSearch}
+                  onChange={e => setPatientSearch(e.target.value)}
+                  placeholder="Nome do Cliente"
+                  className="w-full rounded-lg border border-input bg-background pl-3 pr-10 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+                />
+                <Search className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              </div>
+            </div>
+
+            <Button variant="ghost" size="icon" className="h-9 w-9 shrink-0">
+              <Search className="h-4 w-4" />
+            </Button>
           </div>
-          <p className="text-xs text-muted-foreground mt-1.5">
+          <p className="text-xs text-muted-foreground">
             {grouped.length} paciente{grouped.length === 1 ? '' : 's'} · {grouped.reduce((s, g) => s + g.items.length, 0)} atendimento{grouped.reduce((s, g) => s + g.items.length, 0) === 1 ? '' : 's'}
           </p>
         </div>
 
+        {/* Results Table Header */}
+        <div className="bg-muted/10 border-b border-border px-6 py-2">
+          <div className="grid grid-cols-[120px_140px_1fr_100px_120px_100px_140px_120px] gap-4 text-[10px] font-bold text-muted-foreground uppercase tracking-wider">
+            <div>Atendimento</div>
+            <div>Dt. Atend.</div>
+            <div>Cliente</div>
+            <div>Nascimento</div>
+            <div>Convênio</div>
+            <div>Prev. Entrega</div>
+            <div>Origem</div>
+            <div className="text-right">Ações</div>
+          </div>
+        </div>
+
         {/* Results */}
-        <div className="flex-1 overflow-y-auto bg-background p-4 space-y-2">
+        <div className="flex-1 overflow-y-auto bg-background">
           {!grouped.length && (
             <div className="text-center py-12 text-muted-foreground text-sm">
-              {search ? 'Nenhum cadastro encontrado para sua busca.' : 'Digite para buscar cadastros de atendimento.'}
+              {search || patientSearch ? 'Nenhum cadastro encontrado para sua busca.' : 'Digite para buscar atendimentos.'}
             </div>
           )}
-          {grouped.map(g => {
-            const isOpen = expanded.has(g.patientId)
-            return (
-              <div key={g.patientId} className="rounded-lg border border-border bg-card overflow-hidden">
-                <button
-                  onClick={() => togglePatient(g.patientId)}
-                  className="w-full flex items-center justify-between px-4 py-3 hover:bg-muted/40 transition-colors text-left"
-                >
-                  <div className="flex items-center gap-3">
-                    {isOpen ? <ChevronDown className="h-4 w-4 text-muted-foreground" /> : <ChevronRight className="h-4 w-4 text-muted-foreground" />}
-                    <User className="h-4 w-4 text-primary" />
-                    <div>
-                      <div className="font-semibold text-foreground text-sm">{g.patientName}</div>
-                      <div className="text-xs text-muted-foreground">
-                        {g.patient?.cpf && `CPF: ${g.patient.cpf}`}
-                        {g.patient?.motherName && ` · Mãe: ${g.patient.motherName}`}
-                      </div>
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-3">
-                    <span className="rounded-full bg-primary/10 text-primary text-xs font-semibold px-2.5 py-0.5">
-                      {g.items.length} atendimento{g.items.length === 1 ? '' : 's'}
-                    </span>
-                    {g.patient && (
-                      <button
-                        onClick={(e) => { e.stopPropagation(); onAddProcedure(g.patient!) }}
-                        className="inline-flex items-center gap-1 rounded-md bg-emerald-500 text-white text-xs font-semibold px-2.5 py-1 hover:bg-emerald-600"
-                      >
-                        <Plus className="h-3 w-3" /> Adicionar exame/procedimento
-                      </button>
-                    )}
-                  </div>
-                </button>
-                {isOpen && (
-                  <div className="border-t border-border divide-y divide-border">
-                    {g.items.map(order => (
-                      <OrderRow
-                        key={order.id}
-                        order={order}
-                        onPrint={() => setPrintDoc(buildDoc(order, g.patient, unitName, guicheName))}
-                        onEdit={() => setEditing(order)}
-                      />
-                    ))}
-                  </div>
-                )}
-              </div>
-            )
-          })}
+          
+          <div className="divide-y divide-border">
+            {grouped.flatMap(g => g.items.map(order => (
+              <OrderRowModern
+                key={order.id}
+                order={order}
+                patient={g.patient}
+                onPrint={() => setPrintDoc(buildDoc(order, g.patient, unitName, guicheName))}
+                onEdit={() => setEditing(order)}
+                onAddProcedure={() => g.patient && onAddProcedure(g.patient)}
+              />
+            )))}
+          </div>
         </div>
       </DialogContent>
 
@@ -226,55 +237,65 @@ export function AttendanceLookupModal({ open, onClose, unitName, guicheName, onA
   )
 }
 
-function OrderRow({ order, onPrint, onEdit }: { order: AttendanceOrder; onPrint: () => void; onEdit: () => void }) {
+function OrderRowModern({ 
+  order, 
+  patient, 
+  onPrint, 
+  onEdit, 
+  onAddProcedure 
+}: { 
+  order: AttendanceOrder; 
+  patient?: Patient; 
+  onPrint: () => void; 
+  onEdit: () => void; 
+  onAddProcedure: () => void;
+}) {
   const [open, setOpen] = useState(false)
   const date = new Date(order.registeredAt)
+  const deliveryDate = order.deliveryDate ? new Date(order.deliveryDate) : null
+
   return (
-    <div className="px-4 py-3">
-      <div className="flex items-center justify-between gap-3 flex-wrap">
-        <div className="flex items-center gap-3 min-w-0">
-          <Calendar className="h-4 w-4 text-muted-foreground shrink-0" />
-          <div className="min-w-0">
-            <div className="text-sm font-medium text-foreground truncate">
-              {date.toLocaleDateString('pt-BR')} {date.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })} ·{' '}
-              <span className="text-primary">{order.orderNumber}</span>
-            </div>
-            <div className="text-xs text-muted-foreground truncate">
-              {order.serviceType === 'consultation' ? 'Consulta' : order.serviceType === 'exam' ? 'Exame' : 'Procedimento'}
-              {order.procedureName ? ` · ${order.procedureName}` : ''}
-              {order.doctorName ? ` · ${order.doctorName}` : ''}
-            </div>
-          </div>
+    <div className="group hover:bg-muted/20 transition-colors">
+      <div className="grid grid-cols-[120px_140px_1fr_100px_120px_100px_140px_120px] gap-4 px-6 py-3 items-center text-xs">
+        <div className="font-mono text-primary font-medium">{order.orderNumber}</div>
+        <div className="text-muted-foreground">
+          {date.toLocaleDateString('pt-BR')} {date.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
         </div>
-        <div className="flex items-center gap-1.5 flex-wrap">
-          <span className={cn('rounded-full text-[10px] font-semibold px-2 py-0.5',
-            order.status === 'authorized' && 'bg-emerald-100 text-emerald-700',
-            order.status === 'open' && 'bg-amber-100 text-amber-700',
-            order.status === 'completed' && 'bg-blue-100 text-blue-700',
-            order.status === 'cancelled' && 'bg-red-100 text-red-700',
-          )}>{order.status === 'authorized' ? 'Autorizado' : order.status === 'open' ? 'Aberto' : order.status === 'completed' ? 'Concluído' : 'Cancelado'}</span>
-          <Button size="sm" variant="outline" onClick={() => setOpen(o => !o)}>
-            <Eye className="h-3.5 w-3.5 mr-1" /> {open ? 'Ocultar' : 'Ver'}
+        <div className="font-semibold text-foreground truncate uppercase">{order.patientName}</div>
+        <div className="text-muted-foreground">{patient?.birthDate ? new Date(patient.birthDate).toLocaleDateString('pt-BR') : '-'}</div>
+        <div className="truncate uppercase">{order.convenioName || 'Particular'}</div>
+        <div className="text-muted-foreground">{deliveryDate ? deliveryDate.toLocaleDateString('pt-BR') : '-'}</div>
+        <div className="truncate text-muted-foreground uppercase">{order.originName || 'Apartamentos'}</div>
+        <div className="flex items-center justify-end gap-1">
+          <Button size="icon" variant="ghost" className="h-8 w-8 text-muted-foreground hover:text-primary" onClick={onEdit} title="Editar">
+            <Pencil className="h-3.5 w-3.5" />
           </Button>
-          <Button size="sm" variant="outline" onClick={onEdit}>
-            <Pencil className="h-3.5 w-3.5 mr-1" /> Editar
+          <Button size="icon" variant="ghost" className="h-8 w-8 text-muted-foreground hover:text-primary" onClick={onPrint} title="Imprimir">
+            <Printer className="h-3.5 w-3.5" />
           </Button>
-          <Button size="sm" variant="outline" onClick={onPrint}>
-            <Printer className="h-3.5 w-3.5 mr-1" /> Comprovante
+          <Button size="icon" variant="ghost" className="h-8 w-8 text-muted-foreground hover:text-emerald-600" onClick={onAddProcedure} title="Adicionar">
+            <Plus className="h-3.5 w-3.5" />
+          </Button>
+          <Button size="icon" variant="ghost" className="h-8 w-8 text-muted-foreground" onClick={() => setOpen(!open)} title="Ver detalhes">
+            {open ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
           </Button>
         </div>
       </div>
 
       {open && (
-        <div className="mt-3 rounded-md bg-muted/40 p-3 text-xs space-y-1.5">
-          <Detail label="Pagamento" value={order.paymentType === 'convenio' ? `Convênio · ${order.convenioName || ''}` : order.paymentType === 'private' ? `Particular${order.privateValue ? ` · R$ ${order.privateValue.toFixed(2)}` : ''}` : `Cortesia${order.freeReason ? ` · ${order.freeReason}` : ''}`} />
-          {order.cardNumber && <Detail label="Carteirinha" value={order.cardNumber} />}
-          {order.authorizationCode && <Detail label="Autorização" value={`${order.authorizationCode}${order.authorizationExpiry ? ` (val. ${order.authorizationExpiry})` : ''}`} />}
-          {order.procedureCode && <Detail label="TUSS" value={order.procedureCode} />}
-          {order.specialty && <Detail label="Especialidade" value={order.specialty} />}
-          {order.ticketCode && <Detail label="Ficha" value={order.ticketCode} />}
-          {order.attachments.length > 0 && <Detail label="Anexos" value={`${order.attachments.length} arquivo(s)`} />}
-          {order.registeredByName && <Detail label="Registrado por" value={order.registeredByName} />}
+        <div className="px-6 pb-4 pt-1">
+          <div className="rounded-lg border border-border bg-muted/30 p-4 space-y-3">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-y-3 gap-x-8">
+              <Detail label="Tipo" value={order.serviceType === 'consultation' ? 'Consulta' : order.serviceType === 'exam' ? 'Exame' : 'Procedimento'} />
+              <Detail label="Procedimento" value={order.procedureName || '-'} />
+              <Detail label="Médico" value={order.doctorName || '-'} />
+              <Detail label="Status" value={order.status === 'authorized' ? 'Autorizado' : order.status === 'open' ? 'Aberto' : order.status === 'completed' ? 'Concluído' : 'Cancelado'} />
+              <Detail label="Pagamento" value={order.paymentType === 'convenio' ? `Convênio · ${order.convenioName || ''}` : order.paymentType === 'private' ? `Particular${order.privateValue ? ` · R$ ${order.privateValue.toFixed(2)}` : ''}` : `Cortesia${order.freeReason ? ` · ${order.freeReason}` : ''}`} />
+              {order.cardNumber && <Detail label="Carteirinha" value={order.cardNumber} />}
+              {patient?.motherName && <Detail label="Nome da Mãe" value={patient.motherName} />}
+              {order.registeredByName && <Detail label="Registrado por" value={order.registeredByName} />}
+            </div>
+          </div>
         </div>
       )}
     </div>
