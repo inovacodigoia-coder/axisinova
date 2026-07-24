@@ -373,7 +373,7 @@ export function LabStep1PatientReview({ state, update }: Props) {
                   <h4 className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest flex items-center gap-2">
                     <ShieldCheck className="h-3 w-3" /> Alergias
                   </h4>
-                  <Button variant="outline" size="xs" className="h-7 text-[10px] gap-1"><Plus className="h-3 w-3" /> Adicionar</Button>
+                  <Button variant="outline" size="sm" className="h-7 text-[10px] gap-1"><Plus className="h-3 w-3" /> Adicionar</Button>
                 </div>
                 <div className="p-4 rounded-xl border border-dashed border-border bg-muted/5">
                   {mergedPatient.clinicalData?.allergies?.length > 0 ? (
@@ -426,7 +426,7 @@ export function LabStep1PatientReview({ state, update }: Props) {
                   <h4 className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest flex items-center gap-2">
                     <FileText className="h-3 w-3" /> Medicações contínuas
                   </h4>
-                  <Button variant="outline" size="xs" className="h-7 text-[10px] gap-1"><Plus className="h-3 w-3" /> Adicionar</Button>
+                  <Button variant="outline" size="sm" className="h-7 text-[10px] gap-1"><Plus className="h-3 w-3" /> Adicionar</Button>
                 </div>
                 <div className="p-4 rounded-xl border border-dashed border-border bg-muted/5">
                   {mergedPatient.clinicalData?.continuousMedications?.length > 0 ? (
