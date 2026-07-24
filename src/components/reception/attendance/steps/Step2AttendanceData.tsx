@@ -1,7 +1,8 @@
-import { useMemo, useEffect } from 'react'
+import { useMemo, useEffect, useState } from 'react'
 import { useRegisters } from '@/context/RegistersContext'
 import { DEMO_CATALOG } from '@/mocks/attendance-cadastro.mock'
 import { Stethoscope, FlaskConical, Activity, CreditCard, Banknote, Gift, Search, Check } from 'lucide-react'
+import { supabase } from '@/integrations/supabase/client'
 import { cn } from '@/lib/utils'
 import type { CadastroState } from '../AttendanceCadastroModal'
 import type { AttendanceServiceType, AttendancePaymentType } from '@/types/attendance-cadastro.types'
@@ -22,6 +23,16 @@ const PAYMENT_BTNS: { value: AttendancePaymentType; icon: any; label: string }[]
 
 export function Step2AttendanceData({ state, update }: Props) {
   const { doctors, specialties, convenios } = useRegisters()
+  const [origins, setOrigins] = useState<any[]>([])
+
+  useEffect(() => {
+    const fetchOrigins = async () => {
+      // Usando mock ou bypass se os tipos não estiverem atualizados no cliente Supabase
+      const { data } = await (supabase.from('attendance_origins' as any) as any).select('*').eq('is_active', true).order('code')
+      if (data) setOrigins(data)
+    }
+    fetchOrigins()
+  }, [])
 
   // Pré-popular convênio do paciente
   useEffect(() => {
@@ -29,7 +40,7 @@ export function Step2AttendanceData({ state, update }: Props) {
       const c = state.patient.convenios[0]
       update({ convenioId: c.convenioId, convenioName: c.convenioName, cardNumber: c.cardNumber, cardExpiry: c.cardExpiry })
     }
-  }, [state.paymentType, state.convenioId, state.patient])
+  }, [state.paymentType, state.convenioId, state.patient, update])
 
   const availableProcedures = useMemo(() => {
     return DEMO_CATALOG.filter(p =>
@@ -140,14 +151,22 @@ export function Step2AttendanceData({ state, update }: Props) {
                 value={state.originId || ''} 
                 onChange={e => {
                   const val = e.target.value;
-                  const code = val === 'orig_00' ? 0 : val === 'orig_01' ? 1 : 2;
-                  update({ originId: val, originCode: code });
+                  const origin = origins.find(o => o.id === val);
+                  update({ originId: val, originCode: origin?.code || '00' });
                 }}
                 className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm"
               >
-                <option value="orig_00">Matriz (00)</option>
-                <option value="orig_01">Filial Norte (01)</option>
-                <option value="orig_02">Filial Sul (02)</option>
+                <option value="">Selecione...</option>
+                {origins.map(o => (
+                  <option key={o.id} value={o.id}>{o.name} ({o.code})</option>
+                ))}
+                {origins.length === 0 && (
+                  <>
+                    <option value="orig_00">Matriz (00)</option>
+                    <option value="orig_01">Filial Norte (01)</option>
+                    <option value="orig_02">Filial Sul (02)</option>
+                  </>
+                )}
               </select>
             </Field>
           </section>
