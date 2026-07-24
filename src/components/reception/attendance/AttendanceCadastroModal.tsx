@@ -343,7 +343,12 @@ export function AttendanceCadastroModal({
       guides: state.guides,
       isPregnant: state.tempPatient?.clinicalData?.isPregnant,
       clinicalData: state.tempPatient?.clinicalData,
-      observations: state.tempPatient?.observations,
+      observations: {
+        notes: state.tempPatient?.generalNotes,
+        alerts: state.tempPatient?.internalAlerts,
+        financial: state.tempPatient?.financialNotes,
+        tags: state.tempPatient?.tags
+      }
     }
 
     const order = createOrder(orderData)
