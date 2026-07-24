@@ -5,6 +5,7 @@ import { useRegisters } from '@/context/RegistersContext'
 import { useEffect, useState } from 'react'
 import { supabase } from '@/integrations/supabase/client'
 import { useAuth } from '@/context/AuthContext'
+import { resolveCompanyId } from '@/utils/companyId'
 
 const NAV_ITEMS = [
   { path: '/app/cadastros/pacientes', label: 'Pacientes', icon: Users, countKey: 'patients' as const },
@@ -20,8 +21,9 @@ function usePatientsCount() {
   const { user } = useAuth()
   const [count, setCount] = useState(0)
   useEffect(() => {
-    if (!user?.companyId) return
-    supabase.from('patients').select('id', { count: 'exact', head: true }).eq('company_id', user.companyId)
+    const targetId = resolveCompanyId(user?.companyId) || (user?.companyId === 'comp_001' ? '00000000-0000-0000-0000-000000000001' : null)
+    if (!targetId) return
+    supabase.from('patients').select('id', { count: 'exact', head: true }).eq('company_id', targetId)
       .then(({ count: c }) => setCount(c || 0))
   }, [user?.companyId])
   return count

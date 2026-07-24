@@ -126,8 +126,8 @@ function mapWorkbenchRow(row: any): LabWorkbench {
 
 export function RegistersProvider({ children }: { children: ReactNode }) {
   const { user } = useAuth()
-  const companyId = resolveCompanyId(user?.companyId)
   const isDemo = isDemoCompany(user?.companyId)
+  const companyId = resolveCompanyId(user?.companyId) || (isDemo ? '00000000-0000-0000-0000-000000000001' : null)
 
   const [doctors, setDoctors] = useState<Doctor[]>(isDemo ? DEMO_DOCTORS : [])
   const [specialties, setSpecialties] = useState<Specialty[]>(isDemo ? DEMO_SPECIALTIES : [])
