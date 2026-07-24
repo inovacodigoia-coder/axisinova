@@ -55,8 +55,8 @@ export function AttendancePrintSelectionModal({ open, onClose, onConfirm, orderN
                 <CheckCircle2 className="h-6 w-6" />
               </div>
               <div>
-                <h2 className="text-xl font-bold text-emerald-900">Cadastro realizado com sucesso!</h2>
-                <p className="text-sm text-emerald-700">Pedido #{orderNumber || '---'}</p>
+                <h2 className="text-xl font-bold text-emerald-900">✅ Atendimento registrado!</h2>
+                <p className="text-sm text-emerald-700">Pedido: {orderNumber || '---'}</p>
               </div>
             </div>
             <div className="flex items-center gap-3">
@@ -110,7 +110,7 @@ export function AttendancePrintSelectionModal({ open, onClose, onConfirm, orderN
                         </div>
                         <div className="flex justify-between text-xs">
                           <span className="font-bold">PEDIDO:</span>
-                          <span className="font-mono">#{orderNumber || '00234'}</span>
+                          <span className="font-mono">{orderNumber || '00234'}</span>
                         </div>
                       </div>
 
