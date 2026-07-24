@@ -81,6 +81,13 @@ export function LabStep1PatientReview({ state, update }: Props) {
       <div className="flex items-center justify-between bg-card border border-border p-4 rounded-xl shadow-sm">
         <div className="flex items-center gap-6">
           <div className="flex flex-col">
+            <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider mb-1">ID do Paciente</span>
+            <div className="flex gap-2">
+              <Badge className="bg-primary/10 text-primary gap-1.5"><User className="h-3 w-3" /> #{patient.sequenceId || '—'}</Badge>
+            </div>
+          </div>
+          <div className="h-8 w-px bg-border hidden md:block" />
+          <div className="flex flex-col">
             <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider mb-1">Quantidade de Pedidos</span>
             <div className="flex gap-2">
               <Badge className="bg-primary/10 text-primary gap-1.5"><User className="h-3 w-3" /> 16</Badge>

@@ -40,6 +40,7 @@ export function PatientResultCard({ patient, compact = true, rightSlot }: Props)
       </div>
       <div className="flex-1 min-w-0">
         <div className="flex items-center gap-2">
+          {patient.sequenceId && <span className="text-[10px] font-bold text-primary mr-1">#{patient.sequenceId}</span>}
           <span className="font-semibold text-foreground truncate">{patient.fullName}</span>
           {age != null && <span className="text-xs text-muted-foreground">{age} anos</span>}
           <span className="ml-auto text-[10px] px-1.5 py-0.5 rounded bg-emerald-100 text-emerald-700">● Ativo</span>

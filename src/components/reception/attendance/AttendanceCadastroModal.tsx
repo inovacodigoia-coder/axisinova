@@ -340,6 +340,7 @@ export function AttendanceCadastroModal({
       status: (state.procedureRequiresAuth && state.authorizationCode) ? 'authorized' : 'open',
       examMode: state.serviceType === 'exam' ? (state.examMode === 'ask' ? undefined : state.examMode) : undefined,
       // Lab specific fields
+      patientSequenceId: state.patient?.sequenceId || state.tempPatient?.sequenceId,
       guides: state.guides,
       isPregnant: state.tempPatient?.clinicalData?.isPregnant,
       clinicalData: state.tempPatient?.clinicalData,
