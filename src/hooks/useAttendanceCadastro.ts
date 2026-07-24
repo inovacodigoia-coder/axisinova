@@ -14,9 +14,10 @@ export function useAttendanceCadastro() {
     const now = new Date().toISOString()
     
     // Protocol formula: [idPacienteNumOnly] - [nSequencial] - [idOrigem]
-    const patientNum = data.patientId.replace(/\D/g, '') || '0';
+    // Clean patientId to get only numbers, handle potential non-numeric IDs gracefully
+    const patientNum = data.patientId.replace(/\D/g, '') || (data.patientId.charCodeAt(0) % 1000).toString();
     const sequence = orders.filter(o => o.patientId === data.patientId).length + 1;
-    const origin = String(data.originCode || '00').padStart(2, '0');
+    const origin = String(data.originCode || '00').replace(/\D/g, '').padStart(2, '0');
     const protocol = `${patientNum}-${sequence}-${origin}`;
 
     const order: AttendanceOrder = {
