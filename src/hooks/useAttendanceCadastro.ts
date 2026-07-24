@@ -13,13 +13,14 @@ export function useAttendanceCadastro() {
   const createOrder = useCallback((data: any): AttendanceOrder => {
     const now = new Date().toISOString()
     
-    // Protocol formula: [idPacienteNumOnly] - [nSequencial] - [idOrigem]
-    // Protocol formula: [idPacienteNumOnly] - [nSequencial] - [idOrigem]
-    // Use sequenceId if available, fallback to numeric hash of UUID
-    const patientNum = data.patientSequenceId || data.patientId.replace(/\D/g, '') || (Math.abs(data.patientId.split('').reduce((a: any, b: any) => (((a << 5) - a) + b.charCodeAt(0)) | 0, 0)) % 1000).toString();
-    const sequence = orders.filter(o => o.patientId === data.patientId).length + 1;
+    // Protocol formula: [idPaciente] - [nSequencial] - [idOrigem]
+    // idPaciente: sequenceId (order of creation)
+    // nSequencial: total creation order (count + 1)
+    // idOrigem: last 2 digits of origin code
+    const patientNum = data.patientSequenceId || '0';
+    const totalOrderCount = orders.length + 1; // Global order sequence across all patients
     const origin = String(data.originCode || '00').replace(/\D/g, '').padStart(2, '0');
-    const protocol = `${patientNum}-${sequence}-${origin}`;
+    const protocol = `${patientNum}-${totalOrderCount}-${origin}`;
 
     const order: AttendanceOrder = {
       ...data,
