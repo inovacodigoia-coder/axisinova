@@ -31,8 +31,10 @@ import {
   Trash2,
   Edit2,
   Info,
-  Loader2
+  Loader2,
+  Globe
 } from 'lucide-react'
+import { LabOriginsSettings } from '@/components/lab/settings/LabOriginsSettings'
 import { cn } from '@/lib/utils'
 import { toast } from 'sonner'
 import { supabase } from '@/integrations/supabase/client'
@@ -66,6 +68,7 @@ export default function LabSettingsPage() {
           <NavItem active={activeTab === 'tiss'} onClick={() => setActiveTab('tiss')} icon={<ShieldCheck className="h-4 w-4" />} label="Configurações TISS" />
           <NavItem active={activeTab === 'signature'} onClick={() => setActiveTab('signature')} icon={<Signature className="h-4 w-4" />} label="Assinatura Digital" />
           <NavItem active={activeTab === 'printer'} onClick={() => setActiveTab('printer')} icon={<Printer className="h-4 w-4" />} label="Impressora / Etiqueta" />
+          <NavItem active={activeTab === 'origins'} onClick={() => setActiveTab('origins')} icon={<Globe className="h-4 w-4" />} label="Origens" />
           
           <p className="px-3 py-2 mt-4 text-[10px] font-bold text-muted-foreground uppercase tracking-wider">Técnico</p>
           <NavItem active={activeTab === 'equipment'} onClick={() => setActiveTab('equipment')} icon={<Monitor className="h-4 w-4" />} label="Máquinas / Equip." />
@@ -91,6 +94,7 @@ export default function LabSettingsPage() {
             {activeTab === 'workbenches' && <WorkbenchesSection />}
             {activeTab === 'equipment' && <EquipmentRedirect />}
             {activeTab === 'collection-reasons' && <CollectionReasonsSection />}
+            {activeTab === 'origins' && <LabOriginsSettings />}
             {activeTab === 'logs' && <LogsSection />}
             
             <div className="mt-8 pt-6 border-t flex justify-end">
