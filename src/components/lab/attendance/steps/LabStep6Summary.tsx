@@ -145,8 +145,8 @@ export function LabStep6Summary({ state, unitName }: Props) {
             </div>
           )}
         </section>
+        </div>
       </div>
     </div>
   );
 }
-
