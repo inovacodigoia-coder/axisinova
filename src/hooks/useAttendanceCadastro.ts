@@ -13,8 +13,8 @@ export function useAttendanceCadastro() {
   const createOrder = useCallback((data: any): AttendanceOrder => {
     const now = new Date().toISOString()
     
-    // Protocol formula: [idPaciente] - [nSequencial] - [idOrigem]
-    const patientNum = data.patientId.split('-')[0] || data.patientId.substring(0, 4);
+    // Protocol formula: [idPacienteNumOnly] - [nSequencial] - [idOrigem]
+    const patientNum = data.patientId.replace(/\D/g, '') || '0';
     const sequence = orders.filter(o => o.patientId === data.patientId).length + 1;
     const origin = String(data.originCode || '00').padStart(2, '0');
     const protocol = `${patientNum}-${sequence}-${origin}`;
