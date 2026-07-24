@@ -27,7 +27,8 @@ export function Step2AttendanceData({ state, update }: Props) {
 
   useEffect(() => {
     const fetchOrigins = async () => {
-      const { data } = await supabase.from('attendance_origins').select('*').eq('is_active', true).order('code')
+      // Usando mock ou bypass se os tipos não estiverem atualizados no cliente Supabase
+      const { data } = await (supabase.from('attendance_origins' as any) as any).select('*').eq('is_active', true).order('code')
       if (data) setOrigins(data)
     }
     fetchOrigins()
