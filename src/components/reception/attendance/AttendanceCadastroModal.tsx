@@ -500,8 +500,9 @@ export function AttendanceCadastroModal({
               onClick={handleFinalize}
               className="inline-flex items-center gap-1 rounded-md bg-blue-600 px-8 py-2 text-sm font-bold text-white shadow-md hover:bg-blue-700 transition-all uppercase tracking-wide"
             >
-              <Check className="h-4 w-4" /> Criar
+              <Check className="h-4 w-4" /> CRIAR
             </button>
+
           )}
         </div>
       </DialogContent>
