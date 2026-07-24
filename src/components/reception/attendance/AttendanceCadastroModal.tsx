@@ -20,6 +20,7 @@ import { Step3Authorization } from './steps/Step3Authorization'
 import { Step4Attachments } from './steps/Step4Attachments'
 import { PaymentModal } from './payment/PaymentModal'
 import { AttendancePrintModal } from './print/AttendancePrintModal'
+import { AttendancePrintSelectionModal } from './print/AttendancePrintSelectionModal'
 import { LabStep1PatientReview } from '@/components/lab/attendance/steps/LabStep1PatientReview'
 import { LabStep2ExamData } from '@/components/lab/attendance/steps/LabStep2ExamData'
 import { LabStep3GuidesProcedures } from '@/components/lab/attendance/steps/LabStep3GuidesProcedures'
@@ -159,6 +160,7 @@ export function AttendanceCadastroModal({
   const [showPayment, setShowPayment] = useState(false)
   const [showPrint, setShowPrint] = useState(false)
   const [showAllocation, setShowAllocation] = useState(false)
+  const [showPrintSelection, setShowPrintSelection] = useState(false)
 
   // Carrega rascunho ao abrir
   useEffect(() => {
@@ -330,7 +332,7 @@ export function AttendanceCadastroModal({
   const proceedAfterPayment = useCallback((order: AttendanceOrder, payment: PaymentRecord | null) => {
     const cfg = getDefault()
     if (cfg.autoPrintOnFinalize) {
-      setShowPrint(true)
+      setShowPrintSelection(true)
     } else {
       setShowAllocation(true)
     }
@@ -561,6 +563,21 @@ export function AttendanceCadastroModal({
           doctorName={createdOrder.doctorName}
           doctorId={createdOrder.doctorId}
           onPrint={() => setShowPrint(true)}
+        />
+      )}
+      {showPrintSelection && createdOrder && (
+        <AttendancePrintSelectionModal
+          open
+          orderNumber={createdOrder.orderNumber}
+          onClose={() => {
+            setShowPrintSelection(false)
+            setShowAllocation(true)
+          }}
+          onConfirm={(opts) => {
+            console.log('Selected print options:', opts)
+            setShowPrintSelection(false)
+            setShowPrint(true)
+          }}
         />
       )}
     </Dialog>
