@@ -100,7 +100,15 @@ export function RegistersMobileNav() {
   const reg = useRegisters()
   const getCount = (key: string | null) => {
     if (!key) return null
-    const map: Record<string, number> = { doctors: reg.doctors.length, specialties: reg.specialties.length, convenios: reg.convenios.length, exams: reg.exams.length, procedures: reg.procedures.length }
+    if (reg.isLoading) return '...'
+    const map: Record<string, number | string> = { 
+      patients: '...', // Mobilie nav usually loads after main counts or uses different pattern, keep simple
+      doctors: reg.doctors.length, 
+      specialties: reg.specialties.length, 
+      convenios: reg.convenios.length, 
+      exams: reg.exams.length, 
+      procedures: reg.procedures.length 
+    }
     return map[key] ?? null
   }
   const current = NAV_ITEMS.find(i => location.pathname === i.path)
@@ -114,7 +122,7 @@ export function RegistersMobileNav() {
       >
         {NAV_ITEMS.filter(i => !i.indent).map(item => {
           const count = getCount(item.countKey)
-          return <option key={item.path} value={item.path}>{item.label} {count !== null ? `(${count})` : ''}</option>
+          return <option key={item.path} value={item.path}>{item.label} {count !== null && count !== '...' ? `(${count})` : ''}</option>
         })}
       </select>
     </div>
