@@ -31,8 +31,11 @@ export interface AttendanceOrder {
   // Lab specific
   originId?: string
   originCode?: number
+  originName?: string
   protocol?: string
   examMode?: 'clinic' | 'lab'
+  deliveryDate?: string
+  labGuides?: any[]
 
 
   serviceType: AttendanceServiceType
