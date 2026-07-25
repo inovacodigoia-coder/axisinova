@@ -116,7 +116,7 @@ export function AttendanceCadastroModal({
     return { 
       attachments: [], 
       patient: initialPatient,
-      originId: origin?.originId,
+      originId: origin?.originId || undefined,
       originCode: origin?.originCode || '00'
     }
   })
