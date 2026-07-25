@@ -67,6 +67,194 @@ export type Database = {
           },
         ]
       }
+      attendance_orders: {
+        Row: {
+          attachments: Json | null
+          authorization_code: string | null
+          authorization_date: string | null
+          authorization_expiry: string | null
+          authorization_password: string | null
+          card_expiry: string | null
+          card_number: string | null
+          company_id: string
+          convenio_id: string | null
+          convenio_name: string | null
+          created_at: string
+          delivery_date: string | null
+          doctor_crm: string | null
+          doctor_id: string | null
+          doctor_name: string | null
+          exam_mode: string | null
+          hash: string | null
+          id: string
+          lab_guides: Json | null
+          order_number: string
+          origin_code: string | null
+          origin_id: string | null
+          origin_name: string | null
+          patient_id: string
+          patient_name: string | null
+          payment_type: string
+          private_value: number | null
+          protocol: string
+          registered_by: string | null
+          registered_by_name: string | null
+          requesting_doctor: string | null
+          service_type: string
+          specialty: string | null
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          attachments?: Json | null
+          authorization_code?: string | null
+          authorization_date?: string | null
+          authorization_expiry?: string | null
+          authorization_password?: string | null
+          card_expiry?: string | null
+          card_number?: string | null
+          company_id: string
+          convenio_id?: string | null
+          convenio_name?: string | null
+          created_at?: string
+          delivery_date?: string | null
+          doctor_crm?: string | null
+          doctor_id?: string | null
+          doctor_name?: string | null
+          exam_mode?: string | null
+          hash?: string | null
+          id?: string
+          lab_guides?: Json | null
+          order_number: string
+          origin_code?: string | null
+          origin_id?: string | null
+          origin_name?: string | null
+          patient_id: string
+          patient_name?: string | null
+          payment_type: string
+          private_value?: number | null
+          protocol: string
+          registered_by?: string | null
+          registered_by_name?: string | null
+          requesting_doctor?: string | null
+          service_type: string
+          specialty?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          attachments?: Json | null
+          authorization_code?: string | null
+          authorization_date?: string | null
+          authorization_expiry?: string | null
+          authorization_password?: string | null
+          card_expiry?: string | null
+          card_number?: string | null
+          company_id?: string
+          convenio_id?: string | null
+          convenio_name?: string | null
+          created_at?: string
+          delivery_date?: string | null
+          doctor_crm?: string | null
+          doctor_id?: string | null
+          doctor_name?: string | null
+          exam_mode?: string | null
+          hash?: string | null
+          id?: string
+          lab_guides?: Json | null
+          order_number?: string
+          origin_code?: string | null
+          origin_id?: string | null
+          origin_name?: string | null
+          patient_id?: string
+          patient_name?: string | null
+          payment_type?: string
+          private_value?: number | null
+          protocol?: string
+          registered_by?: string | null
+          registered_by_name?: string | null
+          requesting_doctor?: string | null
+          service_type?: string
+          specialty?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "attendance_orders_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "attendance_orders_convenio_id_fkey"
+            columns: ["convenio_id"]
+            isOneToOne: false
+            referencedRelation: "convenios"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "attendance_orders_doctor_id_fkey"
+            columns: ["doctor_id"]
+            isOneToOne: false
+            referencedRelation: "doctors"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "attendance_orders_origin_id_fkey"
+            columns: ["origin_id"]
+            isOneToOne: false
+            referencedRelation: "attendance_origins"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "attendance_orders_patient_id_fkey"
+            columns: ["patient_id"]
+            isOneToOne: false
+            referencedRelation: "patients"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      attendance_origins: {
+        Row: {
+          code: string
+          company_id: string
+          created_at: string | null
+          id: string
+          is_active: boolean | null
+          name: string
+          updated_at: string | null
+        }
+        Insert: {
+          code: string
+          company_id: string
+          created_at?: string | null
+          id?: string
+          is_active?: boolean | null
+          name: string
+          updated_at?: string | null
+        }
+        Update: {
+          code?: string
+          company_id?: string
+          created_at?: string | null
+          id?: string
+          is_active?: boolean | null
+          name?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "attendance_origins_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       companies: {
         Row: {
           armazenamento_limite_gb: number | null
