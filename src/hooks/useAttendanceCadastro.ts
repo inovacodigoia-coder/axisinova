@@ -84,7 +84,7 @@ export function useAttendanceCadastro() {
           company_id: companyId,
           patient_id: data.patientId,
           patient_name: data.patientName,
-          origin_id: data.originId,
+          origin_id: data.originId || null,
           origin_code: String(data.originCode || '00'),
           origin_name: data.originName,
           order_number: protocol,
