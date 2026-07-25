@@ -17,6 +17,13 @@ interface PrintOption {
   selectedFormat: 'A4' | 'A5' | 'TÉRMICA' | 'ETIQUETA';
 }
 
+interface PrinterSettings {
+  dpi: number;
+  orientation: 'portrait' | 'landscape';
+  scale: number;
+  batchSize: number;
+}
+
 interface Props {
   open: boolean;
   onClose: () => void;
@@ -28,10 +35,17 @@ export function AttendancePrintSelectionModal({ open, onClose, onConfirm, order 
   const orderNumber = order?.orderNumber;
   const [showPreview, setShowPreview] = useState(false);
   const [options, setOptions] = useState<PrintOption[]>([
-    { id: 'comprovante', label: 'Comprovante', enabled: true, formats: ['A4', 'A5', 'TÉRMICA', 'ETIQUETA'], selectedFormat: 'ETIQUETA' },,
+    { id: 'comprovante', label: 'Comprovante', enabled: true, formats: ['A4', 'A5', 'TÉRMICA', 'ETIQUETA'], selectedFormat: 'ETIQUETA' },
     { id: 'controle_interno', label: 'Controle Interno', enabled: false, formats: ['A4', 'A5', 'TÉRMICA'], selectedFormat: 'TÉRMICA' },
     { id: 'termo_consentimento', label: 'Termo de Consentimento', enabled: false, formats: ['A4', 'A5'], selectedFormat: 'A4' },
   ]);
+
+  const [printerSettings, setPrinterSettings] = useState<PrinterSettings>({
+    dpi: 203,
+    orientation: 'portrait',
+    scale: 100,
+    batchSize: order?.labGuides?.reduce((acc, g) => acc + (g.exams?.length || 0), 0) || 1
+  });
 
   const [extras, setExtras] = useState({
     amostras: true,
@@ -150,33 +164,97 @@ export function AttendancePrintSelectionModal({ open, onClose, onConfirm, order 
                   </ScrollArea>
                 </div>
               ) : (
-                <div className="flex flex-col items-center justify-center bg-slate-50 rounded-xl p-6 border border-slate-100 h-full overflow-y-auto">
-                  <div className="mb-6">
-                    <SampleLabel 
-                      orderNumber={order?.orderNumber || '1-00'}
-                      patientName={order?.patientName || 'PACIENTE TESTE'}
-                      birthDate="01/01/1990"
-                      material="SANGUE"
-                      tube="EDTA"
-                      workbench="HEMATOLOGIA"
-                      hash={order?.hash || 'S2DDW9'}
-                      printDate={new Date().toLocaleDateString('pt-BR') + ' ' + new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
-                      labelIndex={1}
-                      isUrgent={order?.status === 'waiting_collection'}
-                    />
-                  </div>
-                  <p className="text-xs text-slate-400 text-center px-4 leading-relaxed">
-                    Visualização da etiqueta de amostra. O sistema gera automaticamente uma etiqueta para cada exame/material.
+                <div className="flex flex-col items-center bg-slate-50 rounded-xl p-6 border border-slate-100 h-full overflow-hidden">
+                  <ScrollArea className="w-full flex-1">
+                    <div className="flex flex-col items-center gap-6 py-4">
+                      {Array.from({ length: Math.min(printerSettings.batchSize, 20) }).map((_, idx) => (
+                        <div key={idx} className="relative group shadow-md hover:shadow-lg transition-shadow bg-white rounded-lg">
+                          <SampleLabel 
+                            orderNumber={order?.orderNumber || '1-00'}
+                            patientName={order?.patientName || 'PACIENTE TESTE'}
+                            birthDate="01/01/1990"
+                            material="SANGUE"
+                            tube="EDTA"
+                            workbench="HEMATOLOGIA"
+                            hash={order?.hash || 'S2DDW9'}
+                            printDate={new Date().toLocaleDateString('pt-BR') + ' ' + new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
+                            labelIndex={idx + 1}
+                            isUrgent={order?.status === 'waiting_collection'}
+                          />
+                          <div className="absolute -top-2 -right-2 bg-blue-600 text-white text-[8px] font-bold w-4 h-4 rounded-full flex items-center justify-center shadow-sm">
+                            {idx + 1}
+                          </div>
+                        </div>
+                      ))}
+                      {printerSettings.batchSize > 20 && (
+                        <div className="text-[10px] text-slate-400 font-medium bg-slate-100 px-3 py-1 rounded-full border border-slate-200">
+                          + {printerSettings.batchSize - 20} etiquetas em lote...
+                        </div>
+                      )}
+                    </div>
+                  </ScrollArea>
+                  <p className="text-[10px] text-slate-400 text-center px-4 leading-relaxed mt-4">
+                    Visualização das etiquetas de amostra ({printerSettings.batchSize} unid.). O sistema gera automaticamente uma etiqueta para cada exame/material.
                   </p>
                 </div>
               )}
             </div>
 
 
-            <div className="space-y-6 flex flex-col justify-center">
+            <div className="space-y-6 flex flex-col">
               <div className="flex items-center justify-between">
-                <h3 className="font-bold text-slate-800 uppercase text-xs tracking-wider">Opções de Impressão</h3>
+                <h3 className="font-bold text-slate-800 uppercase text-xs tracking-wider">Configurações de Impressão</h3>
                 <Download className="h-4 w-4 text-amber-500 cursor-pointer hover:scale-110 transition-transform" />
+              </div>
+
+              {/* Advanced Printer Settings */}
+              <div className="grid grid-cols-2 gap-3 bg-slate-50 p-3 rounded-lg border border-slate-200">
+                <div className="space-y-1">
+                  <label className="text-[9px] font-bold text-slate-500 uppercase">DPI (Resolução)</label>
+                  <select 
+                    value={printerSettings.dpi}
+                    onChange={(e) => setPrinterSettings(s => ({ ...s, dpi: Number(e.target.value) }))}
+                    className="w-full text-xs p-1 rounded border border-slate-300 bg-white"
+                  >
+                    <option value={203}>203 DPI</option>
+                    <option value={300}>300 DPI</option>
+                    <option value={600}>600 DPI</option>
+                  </select>
+                </div>
+                <div className="space-y-1">
+                  <label className="text-[9px] font-bold text-slate-500 uppercase">Escala (%)</label>
+                  <input 
+                    type="number"
+                    value={printerSettings.scale}
+                    onChange={(e) => setPrinterSettings(s => ({ ...s, scale: Number(e.target.value) }))}
+                    className="w-full text-xs p-1 rounded border border-slate-300 bg-white"
+                  />
+                </div>
+                <div className="space-y-1">
+                  <label className="text-[9px] font-bold text-slate-500 uppercase">Orientação</label>
+                  <select 
+                    value={printerSettings.orientation}
+                    onChange={(e) => setPrinterSettings(s => ({ ...s, orientation: e.target.value as any }))}
+                    className="w-full text-xs p-1 rounded border border-slate-300 bg-white"
+                  >
+                    <option value="portrait">Retrato</option>
+                    <option value="landscape">Paisagem</option>
+                  </select>
+                </div>
+                <div className="space-y-1">
+                  <label className="text-[9px] font-bold text-slate-500 uppercase">Qtde (Lote)</label>
+                  <input 
+                    type="number"
+                    min={1}
+                    value={printerSettings.batchSize}
+                    onChange={(e) => setPrinterSettings(s => ({ ...s, batchSize: Number(e.target.value) }))}
+                    className="w-full text-xs p-1 rounded border border-slate-300 bg-white"
+                  />
+                </div>
+              </div>
+
+              <div className="flex items-center justify-between">
+                <h3 className="font-bold text-slate-800 uppercase text-xs tracking-wider">Documentos</h3>
               </div>
 
 
@@ -273,7 +351,7 @@ export function AttendancePrintSelectionModal({ open, onClose, onConfirm, order 
               Cancelar
             </Button>
             <Button 
-              onClick={() => onConfirm({ options, extras })}
+              onClick={() => onConfirm({ options, extras, printerSettings })}
               className="px-8 font-bold bg-blue-600 hover:bg-blue-700 text-white shadow-lg uppercase text-xs h-10"
             >
               Imprimir
