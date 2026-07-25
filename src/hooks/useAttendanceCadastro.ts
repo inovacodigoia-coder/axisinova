@@ -14,8 +14,8 @@ export function useAttendanceCadastro() {
     queryKey: ['attendance_orders', companyId],
     queryFn: async () => {
       if (!companyId) return []
-      const { data, error } = await supabase
-        .from('attendance_orders')
+      const { data, error } = await (supabase
+        .from('attendance_orders' as any) as any)
         .select('*')
         .eq('company_id', companyId)
         .order('created_at', { ascending: false })
@@ -23,7 +23,7 @@ export function useAttendanceCadastro() {
       if (error) throw error
       
       // Map database fields back to camelCase AttendanceOrder interface
-      return (data || []).map(item => ({
+      return (data || []).map((item: any) => ({
         id: item.id,
         orderNumber: item.order_number,
         patientId: item.patient_id,
@@ -70,8 +70,8 @@ export function useAttendanceCadastro() {
 
     try {
       // Get current count for sequential ID
-      const { count } = await supabase
-        .from('attendance_orders')
+      const { count } = await (supabase
+        .from('attendance_orders' as any) as any)
         .select('*', { count: 'exact', head: true })
         .eq('company_id', companyId)
 
@@ -80,8 +80,8 @@ export function useAttendanceCadastro() {
       const protocol = `${totalOrderCount}-${originStr}`
       const hash = Math.random().toString(36).substring(2, 8).toUpperCase()
 
-      const { data: newOrder, error } = await supabase
-        .from('attendance_orders')
+      const { data: newOrder, error } = await (supabase
+        .from('attendance_orders' as any) as any)
         .insert({
           company_id: companyId,
           patient_id: data.patientId,
@@ -128,13 +128,45 @@ export function useAttendanceCadastro() {
       refresh()
       
       // Map result back
+      const item = newOrder as any
       return {
-        ...newOrder,
-        id: newOrder.id,
-        orderNumber: newOrder.order_number,
-        patientId: newOrder.patient_id,
-        // ... more mapping if needed, but the caller usually just needs success
-      } as any
+        id: item.id,
+        orderNumber: item.order_number,
+        patientId: item.patient_id,
+        patientName: item.patient_name || '',
+        companyId: item.company_id,
+        unitId: '', 
+        originId: item.origin_id,
+        originCode: item.origin_code ? Number(item.origin_code) : undefined,
+        originName: item.origin_name,
+        protocol: item.protocol,
+        hash: item.hash,
+        examMode: item.exam_mode as 'clinic' | 'lab',
+        deliveryDate: item.delivery_date,
+        labGuides: item.lab_guides as any[],
+        serviceType: item.service_type as any,
+        paymentType: item.payment_type as any,
+        doctorId: item.doctor_id,
+        doctorName: item.doctor_name,
+        doctorCRM: item.doctor_crm,
+        specialty: item.specialty,
+        requestingDoctor: item.requesting_doctor,
+        convenioId: item.convenio_id,
+        convenioName: item.convenio_name,
+        cardNumber: item.card_number,
+        cardExpiry: item.card_expiry,
+        authorizationCode: item.authorization_code,
+        authorizationDate: item.authorization_date,
+        authorizationExpiry: item.authorization_expiry,
+        authorizationPassword: item.authorization_password,
+        privateValue: item.private_value,
+        attachments: (item.attachments as any[]) || [],
+        status: item.status as any,
+        registeredBy: item.registered_by,
+        registeredByName: item.registered_by_name,
+        registeredAt: item.created_at,
+        updatedAt: item.updated_at,
+      } as AttendanceOrder
     } catch (error: any) {
       toast({
         variant: "destructive",
@@ -147,13 +179,11 @@ export function useAttendanceCadastro() {
 
   const updateOrder = useCallback(async (orderId: string, patch: Partial<AttendanceOrder>) => {
     try {
-      // Map camelCase back to snake_case for update if needed
       const updateData: any = {}
       if (patch.status) updateData.status = patch.status
-      // ... more mappings if status updates are needed elsewhere
       
-      const { error } = await supabase
-        .from('attendance_orders')
+      const { error } = await (supabase
+        .from('attendance_orders' as any) as any)
         .update(updateData)
         .eq('id', orderId)
 
@@ -195,4 +225,3 @@ export function useDraftAutosave(ticketId: string | undefined, data: any, enable
     return () => clearTimeout(id)
   }, [ticketId, data, enabled])
 }
-
