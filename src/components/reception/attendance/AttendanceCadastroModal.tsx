@@ -93,6 +93,7 @@ export interface CadastroState {
   observation?: string
   examMode?: 'ask' | 'clinic' | 'lab'
   guides?: any[]
+  verifiedExams?: string[]
 }
 
 const STEPS_CLINIC = ['Paciente', 'Atendimento', 'Autorização', 'Anexos'] as const
