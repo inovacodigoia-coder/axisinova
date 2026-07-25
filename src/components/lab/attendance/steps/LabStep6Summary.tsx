@@ -9,23 +9,28 @@ interface Props {
   unitName?: string;
 }
 
-export function LabStep6Summary({ state, unitName }: Props) {
+export function LabStep6Summary({ state, update, unitName }: Props & { update: (patch: any) => void }) {
   const patient = state.patient || state.tempPatient;
   const attendanceDate = new Date();
   const [agreed, setAgreed] = React.useState(false);
   const [registrationSuccess, setRegistrationSuccess] = React.useState<boolean | null>(null);
 
+  const totalExams = React.useMemo(() => {
+    return state.guides?.reduce((acc, guide) => acc + (guide.exams?.length || 0), 0) || 0;
+  }, [state.guides]);
+
+  const allExamsVerified = (state.verifiedExams?.length || 0) >= totalExams && totalExams > 0;
+
   React.useEffect(() => {
     if (agreed) {
       setRegistrationSuccess(null);
       const timer = setTimeout(() => {
-        // Simple verification: must have patient and guides
-        const isValid = !!(state.patient && state.guides && state.guides.length > 0);
+        const isValid = !!(state.patient && state.guides && state.guides.length > 0 && allExamsVerified);
         setRegistrationSuccess(isValid);
       }, 1500);
       return () => clearTimeout(timer);
     }
-  }, [agreed, state.patient, state.guides]);
+  }, [agreed, state.patient, state.guides, allExamsVerified]);
 
   return (
     <div className="flex flex-col h-full bg-white">
@@ -122,35 +127,52 @@ export function LabStep6Summary({ state, unitName }: Props) {
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-100 text-sm">
-                    {guide.exams?.map((exam: any, eIdx: number) => (
-                      <tr key={exam.id || eIdx} className="hover:bg-slate-50/50">
-                        <td className="px-4 py-3">
-                          <div className="flex items-center gap-3">
-                            <span className="flex h-6 w-6 items-center justify-center rounded bg-blue-600 text-[10px] font-bold text-white shrink-0">H</span>
-                            <span className="font-bold text-slate-700 text-xs uppercase">{exam.name}</span>
-                          </div>
-                        </td>
-                        <td className="px-4 py-3 text-slate-500 font-medium text-xs">{exam.internalCode || exam.code || '-'}</td>
-                        <td className="px-4 py-3 text-slate-700 font-bold text-xs">
-                          {exam.price ? `R$ ${exam.price.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}` : 'R$ 0,00'}
-                        </td>
-                        <td className="px-4 py-3 text-slate-500 text-xs">
-                          {exam.selectedMaterial || exam.material || '-'}
-                        </td>
-                        <td className="px-4 py-3 text-slate-500 text-xs">
-                          {exam.collected ? 'Sim' : 'Não'}
-                        </td>
-                        <td className="px-4 py-3 text-slate-500 text-xs">
-                          {exam.collected ? (exam.deliveryDate ? format(new Date(exam.deliveryDate), 'dd/MM/yyyy - HH:mm') : '-') : '-'}
-                        </td>
-                        <td className="px-4 py-3 text-slate-500 text-xs">
-                          {state.authorizationCode ? '1 de 1' : '0 de 1'}
-                        </td>
-                        <td className="px-4 py-3 text-slate-500 text-xs">
-                          {state.authorizationPassword || '-'}
-                        </td>
-                      </tr>
-                    ))}
+                    {guide.exams?.map((exam: any, eIdx: number) => {
+                      const examKey = `${guide.id}-${exam.id}-${eIdx}`;
+                      const isChecked = state.verifiedExams?.includes(examKey);
+                      
+                      return (
+                        <tr key={exam.id || eIdx} className={cn("hover:bg-slate-50/50 transition-colors", isChecked && "bg-emerald-50/30")}>
+                          <td className="px-4 py-3">
+                            <div className="flex items-center gap-3">
+                              <input 
+                                type="checkbox"
+                                checked={isChecked}
+                                onChange={(e) => {
+                                  const current = state.verifiedExams || [];
+                                  const next = e.target.checked 
+                                    ? [...current, examKey]
+                                    : current.filter(k => k !== examKey);
+                                  update({ verifiedExams: next });
+                                }}
+                                className="h-4 w-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500 cursor-pointer"
+                              />
+                              <span className="flex h-6 w-6 items-center justify-center rounded bg-blue-600 text-[10px] font-bold text-white shrink-0">H</span>
+                              <span className="font-bold text-slate-700 text-xs uppercase">{exam.name}</span>
+                            </div>
+                          </td>
+                          <td className="px-4 py-3 text-slate-500 font-medium text-xs">{exam.internalCode || exam.code || '-'}</td>
+                          <td className="px-4 py-3 text-slate-700 font-bold text-xs">
+                            {exam.price ? `R$ ${exam.price.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}` : 'R$ 0,00'}
+                          </td>
+                          <td className="px-4 py-3 text-slate-500 text-xs">
+                            {exam.selectedMaterial || exam.material || '-'}
+                          </td>
+                          <td className="px-4 py-3 text-slate-500 text-xs">
+                            {exam.collected ? 'Sim' : 'Não'}
+                          </td>
+                          <td className="px-4 py-3 text-slate-500 text-xs">
+                            {exam.expectedDeliveryDate || (exam.resultDeadlineDays ? format(new Date(new Date().getTime() + (exam.resultDeadlineDays * 24 * 60 * 60 * 1000)), 'dd/MM/yyyy - HH:mm') : '-')}
+                          </td>
+                          <td className="px-4 py-3 text-slate-500 text-xs">
+                            {state.authorizationCode ? '1 de 1' : '0 de 1'}
+                          </td>
+                          <td className="px-4 py-3 text-slate-500 text-xs">
+                            {state.authorizationPassword || '-'}
+                          </td>
+                        </tr>
+                      );
+                    })}
                   </tbody>
                 </table>
               </div>
@@ -202,7 +224,11 @@ export function LabStep6Summary({ state, unitName }: Props) {
                   {registrationSuccess === false && (
                     <>
                       <AlertTriangle className="h-5 w-5" />
-                      <span className="text-sm font-bold">Atenção: Verifique se todos os campos obrigatórios foram preenchidos.</span>
+                      <span className="text-sm font-bold">
+                        {!allExamsVerified 
+                          ? "Atenção: Você precisa marcar o check de verificação em todos os exames acima." 
+                          : "Atenção: Verifique se todos os campos obrigatórios foram preenchidos."}
+                      </span>
                     </>
                   )}
                 </div>
