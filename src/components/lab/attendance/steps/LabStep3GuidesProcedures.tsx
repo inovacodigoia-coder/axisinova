@@ -307,7 +307,10 @@ export function LabStep3GuidesProcedures({ state, update }: Props) {
             <Input />
           </Field>
           <Field label="Senha Autorização">
-            <Input />
+            <Input 
+              value={state.authorizationPassword || ''} 
+              onChange={(e) => update({ authorizationPassword: e.target.value })} 
+            />
           </Field>
           <Field label="Data Autorização">
              <Input type="date" />
