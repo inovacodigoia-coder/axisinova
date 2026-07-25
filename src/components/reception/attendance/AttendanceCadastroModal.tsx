@@ -609,19 +609,15 @@ export function AttendanceCadastroModal({
       {showPrintSelection && createdOrder && (
         <AttendancePrintSelectionModal
           open
-          orderNumber={createdOrder.orderNumber}
+          order={createdOrder}
           onClose={() => {
             setShowPrintSelection(false)
-            // If it was Lab flow, we might want to stay in the allocation or just close if finished
-            // User said: "Se for cancelado vai voltar para o modal de cadastro"
-            // But the order is already created at this point. 
-            // We'll show the allocation modal so they can still manage the record.
             setShowAllocation(true)
           }}
           onConfirm={(opts) => {
             console.log('Selected print options:', opts)
             setShowPrintSelection(false)
-            setShowPrint(true)
+            setShowAllocation(true)
           }}
         />
       )}
