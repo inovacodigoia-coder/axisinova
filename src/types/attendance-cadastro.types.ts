@@ -33,6 +33,7 @@ export interface AttendanceOrder {
   originCode?: number
   originName?: string
   protocol?: string
+  hash?: string
   examMode?: 'clinic' | 'lab'
   deliveryDate?: string
   labGuides?: any[]

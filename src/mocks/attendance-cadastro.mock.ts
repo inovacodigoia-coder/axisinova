@@ -56,10 +56,9 @@ export function updateMockOrder(orderId: string, patch: Partial<AttendanceOrder>
   _mockOrders = _mockOrders.map(o => o.id === orderId ? { ...o, ...patch, updatedAt: new Date().toISOString() } : o)
 }
 
-export function nextOrderNumber(companyId: string): string {
+export function nextOrderNumber(companyId: string, originCode: string = '00'): string {
   _orderSequence += 1
-  const year = new Date().getFullYear()
-  return `ATD-${year}-${String(_orderSequence).padStart(6, '0')}`
+  return `${_orderSequence}-${originCode}`
 }
 
 export const DOCUMENT_TYPES = [
