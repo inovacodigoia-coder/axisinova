@@ -211,6 +211,7 @@ export function AttendanceCadastroModal({
       if (stepLabel === 'Autorização') return true
       if (stepLabel === 'Resumo') return true
       return true
+      return true
     }
 
     if (s === 0) return !!state.patient
