@@ -201,11 +201,16 @@ export function AttendanceLookupModal({ open, onClose, unitName, guicheName, onA
 
         {/* Results */}
         <div className="flex-1 overflow-y-auto bg-background">
-          {!grouped.length && (
+          {(loading || patientsLoading) ? (
+            <div className="flex items-center justify-center py-20">
+              <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent"></div>
+            </div>
+          ) : !grouped.length && (
             <div className="text-center py-12 text-muted-foreground text-sm">
               {search || patientSearch ? 'Nenhum cadastro encontrado para sua busca.' : 'Digite para buscar atendimentos.'}
             </div>
           )}
+
           
           <div className="divide-y divide-border">
             {grouped.flatMap(g => g.items.map(order => (
