@@ -18,7 +18,7 @@ interface Props {
   open: boolean;
   onClose: () => void;
   onConfirm: (options: any) => void;
-  orderNumber?: string;
+  order: AttendanceOrder | null;
 }
 
 export function AttendancePrintSelectionModal({ open, onClose, onConfirm, orderNumber }: Props) {
