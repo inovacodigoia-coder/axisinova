@@ -10,7 +10,7 @@ export function useAttendanceCadastro() {
   const { toast } = useToast()
   const companyId = user?.companyId
 
-  const { data: orders = [], refetch: refresh } = useQuery({
+  const { data: orders = [], refetch: refresh, isLoading: loading } = useQuery({
     queryKey: ['attendance_orders', companyId],
     queryFn: async () => {
       if (!companyId) return []
@@ -22,14 +22,13 @@ export function useAttendanceCadastro() {
       
       if (error) throw error
       
-      // Map database fields back to camelCase AttendanceOrder interface
       return (data || []).map((item: any) => ({
         id: item.id,
         orderNumber: item.order_number,
         patientId: item.patient_id,
         patientName: item.patient_name || '',
         companyId: item.company_id,
-        unitId: '', // Unit management to be implemented
+        unitId: '', 
         originId: item.origin_id,
         originCode: item.origin_code ? Number(item.origin_code) : undefined,
         originName: item.origin_name,
@@ -69,7 +68,6 @@ export function useAttendanceCadastro() {
     if (!companyId || !user) return null
 
     try {
-      // Get current count for sequential ID
       const { count } = await (supabase
         .from('attendance_orders' as any) as any)
         .select('*', { count: 'exact', head: true })
@@ -125,9 +123,8 @@ export function useAttendanceCadastro() {
         description: "Atendimento registrado no banco de dados.",
       })
 
-      refresh()
+      await refresh()
       
-      // Map result back
       const item = newOrder as any
       return {
         id: item.id,
@@ -181,6 +178,9 @@ export function useAttendanceCadastro() {
     try {
       const updateData: any = {}
       if (patch.status) updateData.status = patch.status
+      if (patch.cardNumber) updateData.card_number = patch.cardNumber
+      if (patch.authorizationCode) updateData.authorization_code = patch.authorizationCode
+      if (patch.authorizationExpiry) updateData.authorization_expiry = patch.authorizationExpiry
       
       const { error } = await (supabase
         .from('attendance_orders' as any) as any)
@@ -188,7 +188,7 @@ export function useAttendanceCadastro() {
         .eq('id', orderId)
 
       if (error) throw error
-      refresh()
+      await refresh()
     } catch (error: any) {
       toast({
         variant: "destructive",
@@ -198,7 +198,7 @@ export function useAttendanceCadastro() {
     }
   }, [refresh, toast])
 
-  return { orders, createOrder, updateOrder, refresh }
+  return { orders, createOrder, updateOrder, refresh, loading }
 }
 
 const DRAFT_PREFIX = 'attendance_draft_'

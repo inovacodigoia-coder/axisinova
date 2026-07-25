@@ -60,8 +60,8 @@ function buildDoc(order: AttendanceOrder, patient: Patient | undefined, unitName
 }
 
 export function AttendanceLookupModal({ open, onClose, unitName, guicheName, onAddProcedure }: AttendanceLookupModalProps) {
-  const { orders, updateOrder } = useAttendanceCadastro()
-  const { patients } = usePatients()
+  const { orders, updateOrder, loading } = useAttendanceCadastro()
+  const { patients, loading: patientsLoading } = usePatients()
   const [search, setSearch] = useState('')
   const [patientSearch, setPatientSearch] = useState('')
   const [expanded, setExpanded] = useState<Set<string>>(new Set())
