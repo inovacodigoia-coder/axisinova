@@ -12,6 +12,20 @@ interface Props {
 export function LabStep6Summary({ state, unitName }: Props) {
   const patient = state.patient || state.tempPatient;
   const attendanceDate = new Date();
+  const [agreed, setAgreed] = React.useState(false);
+  const [registrationSuccess, setRegistrationSuccess] = React.useState<boolean | null>(null);
+
+  React.useEffect(() => {
+    if (agreed) {
+      setRegistrationSuccess(null);
+      const timer = setTimeout(() => {
+        // Simple verification: must have patient and guides
+        const isValid = !!(state.patient && state.guides && state.guides.length > 0);
+        setRegistrationSuccess(isValid);
+      }, 1500);
+      return () => clearTimeout(timer);
+    }
+  }, [agreed, state.patient, state.guides]);
 
   return (
     <div className="flex flex-col h-full bg-white">
@@ -90,7 +104,7 @@ export function LabStep6Summary({ state, unitName }: Props) {
           {state.guides?.map((guide, gIdx) => (
             <div key={guide.id || gIdx} className="space-y-4">
               <h4 className="text-sm font-bold text-slate-700">
-                {gIdx + 1}. {guide.convenioName || 'PARTICULAR'} {guide.plan ? `- ${guide.plan}` : ''}
+                {gIdx + 1}. {guide.plan === 'PARTICULAR' ? 'PARTICULAR' : guide.convenioName || 'PARTICULAR'}
               </h4>
 
               <div className="overflow-x-auto">
@@ -103,7 +117,6 @@ export function LabStep6Summary({ state, unitName }: Props) {
                       <th className="px-4 py-3">Material</th>
                       <th className="px-4 py-3">Coletado</th>
                       <th className="px-4 py-3">Previsão de Entrega</th>
-                      <th className="px-4 py-3">Complemento</th>
                       <th className="px-4 py-3">Qtde. Autorizada</th>
                       <th className="px-4 py-3">Senha</th>
                     </tr>
@@ -124,13 +137,18 @@ export function LabStep6Summary({ state, unitName }: Props) {
                         <td className="px-4 py-3 text-slate-500 text-xs">
                           {exam.selectedMaterial || exam.material || '-'}
                         </td>
-                        <td className="px-4 py-3 text-slate-500 text-xs">{exam.collected ? 'Sim' : 'Não'}</td>
                         <td className="px-4 py-3 text-slate-500 text-xs">
-                          {exam.deliveryDate ? format(new Date(exam.deliveryDate), 'dd/MM/yyyy - HH:mm') : '-'}
+                          {exam.collected ? 'Sim' : 'Não'}
                         </td>
-                        <td className="px-4 py-3 text-slate-500 text-xs">-</td>
-                        <td className="px-4 py-3 text-slate-500 text-xs">0 de 1</td>
-                        <td className="px-4 py-3 text-slate-500 text-xs">-</td>
+                        <td className="px-4 py-3 text-slate-500 text-xs">
+                          {exam.collected ? (exam.deliveryDate ? format(new Date(exam.deliveryDate), 'dd/MM/yyyy - HH:mm') : '-') : '-'}
+                        </td>
+                        <td className="px-4 py-3 text-slate-500 text-xs">
+                          {state.authorizationCode ? '1 de 1' : '0 de 1'}
+                        </td>
+                        <td className="px-4 py-3 text-slate-500 text-xs">
+                          {state.authorizationPassword || '-'}
+                        </td>
                       </tr>
                     ))}
                   </tbody>
@@ -145,8 +163,58 @@ export function LabStep6Summary({ state, unitName }: Props) {
             </div>
           )}
         </section>
+
+        {/* Verification Check */}
+        <section className="pt-6 border-t border-slate-100">
+          <div className="flex flex-col gap-4">
+            <label className="flex items-center gap-3 p-4 rounded-xl border border-slate-200 bg-slate-50/50 cursor-pointer hover:bg-slate-50 transition-colors">
+              <input 
+                type="checkbox" 
+                checked={agreed} 
+                onChange={(e) => setAgreed(e.target.checked)}
+                className="h-5 w-5 rounded border-slate-300 text-blue-600 focus:ring-blue-500"
+              />
+              <span className="text-sm font-medium text-slate-700">
+                Confirmo que todas as informações acima estão corretas e foram verificadas.
+              </span>
+            </label>
+
+            {agreed && (
+              <div className="animate-in fade-in slide-in-from-top-2 duration-300">
+                <div className={cn(
+                  "p-4 rounded-xl border flex items-center gap-3",
+                  registrationSuccess === true ? "bg-emerald-50 border-emerald-200 text-emerald-700" : 
+                  registrationSuccess === false ? "bg-rose-50 border-rose-200 text-rose-700" :
+                  "bg-blue-50 border-blue-200 text-blue-700"
+                )}>
+                  {registrationSuccess === null && (
+                    <>
+                      <div className="h-4 w-4 border-2 border-blue-600 border-t-transparent rounded-full animate-spin" />
+                      <span className="text-sm font-bold">Validando dados do cadastro...</span>
+                    </>
+                  )}
+                  {registrationSuccess === true && (
+                    <>
+                      <CheckCircle2 className="h-5 w-5" />
+                      <span className="text-sm font-bold">Cadastro verificado com sucesso! Pronto para criar.</span>
+                    </>
+                  )}
+                  {registrationSuccess === false && (
+                    <>
+                      <AlertTriangle className="h-5 w-5" />
+                      <span className="text-sm font-bold">Atenção: Verifique se todos os campos obrigatórios foram preenchidos.</span>
+                    </>
+                  )}
+                </div>
+              </div>
+            )}
+          </div>
+        </section>
         </div>
       </div>
     </div>
   );
 }
+
+import { cn } from '@/lib/utils';
+import { CheckCircle2, AlertTriangle } from 'lucide-react';
