@@ -60,7 +60,7 @@ export function AttendancePrintSelectionModal({ open, onClose, onConfirm, order 
               </div>
               <div>
                 <h2 className="text-xl font-bold text-emerald-900">✅ Atendimento registrado!</h2>
-                <p className="text-sm text-emerald-700">Pedido: {orderNumber || '---'}</p>
+                <p className="text-sm text-emerald-700">Pedido / Amostra: {orderNumber || '---'}</p>
               </div>
             </div>
             <div className="flex items-center gap-3">
