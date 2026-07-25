@@ -4,6 +4,9 @@ CREATE TABLE public.attendance_orders (
     patient_id UUID NOT NULL REFERENCES public.patients(id) ON DELETE CASCADE,
     origin_id UUID REFERENCES public.attendance_origins(id) ON DELETE SET NULL,
     
+    patient_name TEXT,
+    origin_code TEXT,
+    origin_name TEXT,
     order_number TEXT NOT NULL,
     protocol TEXT NOT NULL,
     hash TEXT,
