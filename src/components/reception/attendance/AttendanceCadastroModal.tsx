@@ -285,7 +285,7 @@ export function AttendanceCadastroModal({
     }
   }, [state.patient, unitName, guicheName])
 
-  const handleFinalize = () => {
+  const handleFinalize = async () => {
     const isLabFlow = isLab
     
     // Basic validation for legacy flow (clinic)
@@ -340,6 +340,8 @@ export function AttendanceCadastroModal({
       status: (state.procedureRequiresAuth && state.authorizationCode) ? 'authorized' : 'open',
       examMode: state.serviceType === 'exam' ? (state.examMode === 'ask' ? undefined : state.examMode) : undefined,
       // Lab specific fields
+      originId: state.originId,
+      originCode: state.originCode,
       patientSequenceId: state.patient?.sequenceId || state.tempPatient?.sequenceId,
       guides: state.guides,
       isPregnant: state.tempPatient?.clinicalData?.isPregnant,
@@ -352,21 +354,24 @@ export function AttendanceCadastroModal({
       }
     }
 
-    const order = createOrder(orderData)
+    const order = await createOrder(orderData)
     
-    toast.success(`Atendimento registrado · Pedido: ${order.orderNumber}`)
-    if (ticketId) clearDraft(ticketId)
-    
-    setCreatedOrder(order)
-    onOrderCreated?.(order)
+    if (order) {
+      toast.success(`Atendimento registrado · Pedido: ${order.orderNumber}`)
+      if (ticketId) clearDraft(ticketId)
+      
+      setCreatedOrder(order)
+      onOrderCreated?.(order)
 
-    // Flow: if private and needs payment -> show payment first; else -> print selection
-    if (state.paymentType === 'private' || hasParticularGuideWithPrice) {
-      setShowPayment(true)
-    } else {
-      proceedAfterPayment(order, null)
+      // Flow: if private and needs payment -> show payment first; else -> print selection
+      if (state.paymentType === 'private' || hasParticularGuideWithPrice) {
+        setShowPayment(true)
+      } else {
+        proceedAfterPayment(order, null)
+      }
     }
   }
+
 
   const proceedAfterPayment = useCallback((order: AttendanceOrder, payment: PaymentRecord | null) => {
     // Force showing print selection for Lab flow or if auto-print is enabled
