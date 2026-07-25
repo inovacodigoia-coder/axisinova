@@ -109,8 +109,8 @@ export function AttendancePrintSelectionModal({ open, onClose, onConfirm, orderN
                           <span>JOÃO DA SILVA SAURO</span>
                         </div>
                         <div className="flex justify-between text-xs">
-                          <span className="font-bold">PEDIDO:</span>
-                          <span className="font-mono">{orderNumber || '00234'}</span>
+                          <span className="font-bold">PEDIDO / AMOSTRA:</span>
+                          <span className="font-mono">{orderNumber || '00234'}-1</span>
                         </div>
                       </div>
 
