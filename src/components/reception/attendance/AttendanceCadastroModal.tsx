@@ -93,6 +93,7 @@ export interface CadastroState {
   observation?: string
   examMode?: 'ask' | 'clinic' | 'lab'
   guides?: any[]
+  verifiedExams?: string[]
 }
 
 const STEPS_CLINIC = ['Paciente', 'Atendimento', 'Autorização', 'Anexos'] as const
@@ -479,7 +480,7 @@ export function AttendanceCadastroModal({
           {isLab && !showReview && STEPS_LAB_DYNAMIC[step] === 'Guias e Procedimentos' && <LabStep3GuidesProcedures state={state} update={update} />}
           {isLab && !showReview && STEPS_LAB_DYNAMIC[step] === 'Pagamento' && <LabStep4Payment state={state} update={update} />}
           {isLab && !showReview && STEPS_LAB_DYNAMIC[step] === 'Autorização' && <Step3Authorization state={state} update={update} />}
-          {isLab && !showReview && STEPS_LAB_DYNAMIC[step] === 'Resumo' && <LabStep6Summary state={state} unitName={unitName} />}
+          {isLab && !showReview && STEPS_LAB_DYNAMIC[step] === 'Resumo' && <LabStep6Summary state={state} update={update} unitName={unitName} />}
           {!isLab && showReview && <ReviewPanel state={state} unitName={unitName} guicheName={guicheName} ticketCode={ticketCode} />}
         </div>
 
