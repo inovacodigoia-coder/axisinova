@@ -68,6 +68,7 @@ export const SampleLabel = ({
         <div className="flex justify-between text-[6px] font-medium">
           <span>NASC: {birthDate}</span>
           <span className="font-black">{material} ({tube})</span>
+          <span className="font-bold border-l border-slate-300 pl-1 ml-1">{originSigla}</span>
         </div>
       </div>
     </div>
