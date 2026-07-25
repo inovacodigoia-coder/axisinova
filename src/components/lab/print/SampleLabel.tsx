@@ -1,5 +1,6 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { QRCodeSVG } from 'qrcode.react';
+import Barcode from 'react-barcode';
 
 interface LabelProps {
   orderNumber: string;
@@ -28,7 +29,16 @@ export const SampleLabel = ({
   labelIndex,
   originSigla = 'H'
 }: LabelProps) => {
-  const sampleId = `${orderNumber}-${labelIndex}`;
+  const sampleId = useMemo(() => {
+    if (!orderNumber || typeof labelIndex !== 'number') return 'INVALID-ID';
+    return `${orderNumber}-${labelIndex}`;
+  }, [orderNumber, labelIndex]);
+
+  const barcodeValue = useMemo(() => {
+    // Validating content for Code 128
+    // Code 128 supports all 128 ASCII characters, but we ensure it's not empty
+    return sampleId || 'ERROR';
+  }, [sampleId]);
 
   return (
     <div className="w-[50mm] h-[30mm] bg-white border border-slate-200 p-2 flex flex-col justify-between text-[#1A202C] font-sans overflow-hidden">
@@ -36,44 +46,56 @@ export const SampleLabel = ({
       <div className="flex justify-between items-start text-[7px] leading-tight font-bold uppercase border-b border-slate-100 pb-0.5 mb-1">
         <div className="flex flex-col">
           {isUrgent && <span className="text-red-600">URG (Urgência)</span>}
-          <span>BAN: {workbench}</span>
+          <span>BAN: {workbench || '---'}</span>
         </div>
         <div className="text-right flex flex-col items-end">
-          <span>{printDate}</span>
+          <span>{printDate || '---'}</span>
           <span className="text-[10px] font-black text-blue-600">{originSigla}</span>
         </div>
       </div>
 
       {/* Barcode / Main ID Area */}
-      <div className="flex-1 flex gap-2 items-center">
-        <div className="flex-1 flex flex-col justify-center">
-          <div className="text-[11px] font-black leading-none mb-1">
+      <div className="flex-1 flex gap-2 items-center overflow-hidden">
+        <div className="flex-1 flex flex-col justify-center min-w-0">
+          <div className="text-[11px] font-black leading-none mb-0.5 truncate">
             {sampleId}
           </div>
-          <div className="h-6 w-full bg-slate-100 flex items-center justify-center border border-slate-200 overflow-hidden">
-            {/* Barcode representation */}
-            <div className="w-[95%] h-4 bg-[repeating-linear-gradient(90deg,#000,#000_1px,#fff_1px,#fff_2px,#000_2px,#000_4px,#fff_4px,#fff_5px)]"></div>
+          <div className="h-7 w-full flex items-center justify-center overflow-hidden scale-[0.85] origin-left">
+            {/* Real Barcode Code 128 */}
+            <Barcode 
+              value={barcodeValue}
+              format="CODE128"
+              width={1.2}
+              height={20}
+              displayValue={false}
+              margin={0}
+              background="transparent"
+            />
           </div>
           <div className="text-[7px] font-bold mt-0.5 text-center tracking-widest uppercase">
-             ({hash})
+             ({hash || '---'})
           </div>
         </div>
-        <div className="w-10 h-10 flex-shrink-0">
-          <QRCodeSVG value={sampleId} size={40} />
+        <div className="w-10 h-10 flex-shrink-0 bg-white p-0.5 border border-slate-100 rounded-sm">
+          {sampleId !== 'INVALID-ID' ? (
+            <QRCodeSVG value={sampleId} size={36} includeMargin={false} />
+          ) : (
+            <div className="w-full h-full bg-slate-50 flex items-center justify-center text-[5px] text-red-500">ERR</div>
+          )}
         </div>
       </div>
 
       {/* Patient Data */}
       <div className="mt-1 space-y-0.5 border-t border-slate-100 pt-1">
         <div className="text-[8px] font-bold uppercase truncate">
-          {patientName}
+          {patientName || 'PACIENTE NÃO INFORMADO'}
         </div>
         <div className="flex justify-between text-[6px] font-medium items-end">
           <div className="flex flex-col">
-             <span>NASC: {birthDate}</span>
+             <span>NASC: {birthDate || '--/--/----'}</span>
           </div>
           <div className="text-right font-black uppercase max-w-[60%] truncate">
-            {material} ({tube})
+            {material || '---'} ({tube || '---'})
           </div>
         </div>
       </div>
