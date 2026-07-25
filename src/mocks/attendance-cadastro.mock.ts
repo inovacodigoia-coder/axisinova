@@ -40,9 +40,30 @@ export const DEMO_CATALOG: CatalogProcedure[] = [
   { id: 'cat_p4', type: 'procedure', name: 'Infiltração Articular', tussCode: '30714119', price: 280, specialtyId: 'spec_02', doctorIds: ['doc_02'], durationMinutes: 30, requiresAuthorization: true },
 ]
 
-// Estado mutável em memória
+// Persistência local no navegador para evitar perda de dados ao recarregar a página
+const PERSISTENCE_KEY = 'axis_inova_mock_orders'
+
+function loadPersistentOrders(): AttendanceOrder[] {
+  try {
+    const saved = localStorage.getItem(PERSISTENCE_KEY)
+    return saved ? JSON.parse(saved) : []
+  } catch (e) {
+    console.error('Failed to load mock orders from persistence:', e)
+    return []
+  }
+}
+
+function savePersistentOrders(orders: AttendanceOrder[]) {
+  try {
+    localStorage.setItem(PERSISTENCE_KEY, JSON.stringify(orders))
+  } catch (e) {
+    console.error('Failed to save mock orders to persistence:', e)
+  }
+}
+
+// Estado mutável em memória, inicializado a partir do localStorage
 let _orderSequence = 5
-let _mockOrders: AttendanceOrder[] = []
+let _mockOrders: AttendanceOrder[] = loadPersistentOrders()
 
 export function getMockOrders(companyId: string): AttendanceOrder[] {
   return _mockOrders.filter(o => o.companyId === companyId)
@@ -50,10 +71,12 @@ export function getMockOrders(companyId: string): AttendanceOrder[] {
 
 export function addMockOrder(order: AttendanceOrder) {
   _mockOrders = [..._mockOrders, order]
+  savePersistentOrders(_mockOrders)
 }
 
 export function updateMockOrder(orderId: string, patch: Partial<AttendanceOrder>) {
   _mockOrders = _mockOrders.map(o => o.id === orderId ? { ...o, ...patch, updatedAt: new Date().toISOString() } : o)
+  savePersistentOrders(_mockOrders)
 }
 
 export function nextOrderNumber(companyId: string, originCode: string = '00'): string {
