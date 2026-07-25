@@ -17,6 +17,13 @@ interface PrintOption {
   selectedFormat: 'A4' | 'A5' | 'TÉRMICA' | 'ETIQUETA';
 }
 
+interface PrinterSettings {
+  dpi: number;
+  orientation: 'portrait' | 'landscape';
+  scale: number;
+  batchSize: number;
+}
+
 interface Props {
   open: boolean;
   onClose: () => void;
@@ -28,10 +35,17 @@ export function AttendancePrintSelectionModal({ open, onClose, onConfirm, order 
   const orderNumber = order?.orderNumber;
   const [showPreview, setShowPreview] = useState(false);
   const [options, setOptions] = useState<PrintOption[]>([
-    { id: 'comprovante', label: 'Comprovante', enabled: true, formats: ['A4', 'A5', 'TÉRMICA', 'ETIQUETA'], selectedFormat: 'ETIQUETA' },,
+    { id: 'comprovante', label: 'Comprovante', enabled: true, formats: ['A4', 'A5', 'TÉRMICA', 'ETIQUETA'], selectedFormat: 'ETIQUETA' },
     { id: 'controle_interno', label: 'Controle Interno', enabled: false, formats: ['A4', 'A5', 'TÉRMICA'], selectedFormat: 'TÉRMICA' },
     { id: 'termo_consentimento', label: 'Termo de Consentimento', enabled: false, formats: ['A4', 'A5'], selectedFormat: 'A4' },
   ]);
+
+  const [printerSettings, setPrinterSettings] = useState<PrinterSettings>({
+    dpi: 203,
+    orientation: 'portrait',
+    scale: 100,
+    batchSize: order?.labGuides?.reduce((acc, g) => acc + (g.exams?.length || 0), 0) || 1
+  });
 
   const [extras, setExtras] = useState({
     amostras: true,
@@ -173,10 +187,60 @@ export function AttendancePrintSelectionModal({ open, onClose, onConfirm, order 
             </div>
 
 
-            <div className="space-y-6 flex flex-col justify-center">
+            <div className="space-y-6 flex flex-col">
               <div className="flex items-center justify-between">
-                <h3 className="font-bold text-slate-800 uppercase text-xs tracking-wider">Opções de Impressão</h3>
+                <h3 className="font-bold text-slate-800 uppercase text-xs tracking-wider">Configurações de Impressão</h3>
                 <Download className="h-4 w-4 text-amber-500 cursor-pointer hover:scale-110 transition-transform" />
+              </div>
+
+              {/* Advanced Printer Settings */}
+              <div className="grid grid-cols-2 gap-3 bg-slate-50 p-3 rounded-lg border border-slate-200">
+                <div className="space-y-1">
+                  <label className="text-[9px] font-bold text-slate-500 uppercase">DPI (Resolução)</label>
+                  <select 
+                    value={printerSettings.dpi}
+                    onChange={(e) => setPrinterSettings(s => ({ ...s, dpi: Number(e.target.value) }))}
+                    className="w-full text-xs p-1 rounded border border-slate-300 bg-white"
+                  >
+                    <option value={203}>203 DPI</option>
+                    <option value={300}>300 DPI</option>
+                    <option value={600}>600 DPI</option>
+                  </select>
+                </div>
+                <div className="space-y-1">
+                  <label className="text-[9px] font-bold text-slate-500 uppercase">Escala (%)</label>
+                  <input 
+                    type="number"
+                    value={printerSettings.scale}
+                    onChange={(e) => setPrinterSettings(s => ({ ...s, scale: Number(e.target.value) }))}
+                    className="w-full text-xs p-1 rounded border border-slate-300 bg-white"
+                  />
+                </div>
+                <div className="space-y-1">
+                  <label className="text-[9px] font-bold text-slate-500 uppercase">Orientação</label>
+                  <select 
+                    value={printerSettings.orientation}
+                    onChange={(e) => setPrinterSettings(s => ({ ...s, orientation: e.target.value as any }))}
+                    className="w-full text-xs p-1 rounded border border-slate-300 bg-white"
+                  >
+                    <option value="portrait">Retrato</option>
+                    <option value="landscape">Paisagem</option>
+                  </select>
+                </div>
+                <div className="space-y-1">
+                  <label className="text-[9px] font-bold text-slate-500 uppercase">Qtde (Lote)</label>
+                  <input 
+                    type="number"
+                    min={1}
+                    value={printerSettings.batchSize}
+                    onChange={(e) => setPrinterSettings(s => ({ ...s, batchSize: Number(e.target.value) }))}
+                    className="w-full text-xs p-1 rounded border border-slate-300 bg-white"
+                  />
+                </div>
+              </div>
+
+              <div className="flex items-center justify-between">
+                <h3 className="font-bold text-slate-800 uppercase text-xs tracking-wider">Documentos</h3>
               </div>
 
 
@@ -273,7 +337,7 @@ export function AttendancePrintSelectionModal({ open, onClose, onConfirm, order 
               Cancelar
             </Button>
             <Button 
-              onClick={() => onConfirm({ options, extras })}
+              onClick={() => onConfirm({ options, extras, printerSettings })}
               className="px-8 font-bold bg-blue-600 hover:bg-blue-700 text-white shadow-lg uppercase text-xs h-10"
             >
               Imprimir
