@@ -4,6 +4,9 @@ import { Button } from '@/components/ui/button';
 import { CheckCircle2, Printer, X, Download, Eye } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { SampleLabel } from '@/components/lab/print/SampleLabel';
+import type { AttendanceOrder } from '@/types/attendance-cadastro.types';
+
 
 
 interface PrintOption {
@@ -21,7 +24,8 @@ interface Props {
   order: AttendanceOrder | null;
 }
 
-export function AttendancePrintSelectionModal({ open, onClose, onConfirm, orderNumber }: Props) {
+export function AttendancePrintSelectionModal({ open, onClose, onConfirm, order }: Props) {
+  const orderNumber = order?.orderNumber;
   const [showPreview, setShowPreview] = useState(false);
   const [options, setOptions] = useState<PrintOption[]>([
     { id: 'comprovante', label: 'Comprovante', enabled: true, formats: ['A4', 'A5', 'TÉRMICA', 'ETIQUETA'], selectedFormat: 'TÉRMICA' },
@@ -146,14 +150,23 @@ export function AttendancePrintSelectionModal({ open, onClose, onConfirm, orderN
                   </ScrollArea>
                 </div>
               ) : (
-                <div className="flex flex-col items-center justify-center bg-slate-50 rounded-xl p-6 border border-slate-100 h-full">
-                  <img 
-                    src="https://illustrations.popsy.co/blue/document-management.svg" 
-                    alt="Impressão"
-                    className="w-full h-auto max-w-[200px] mb-4"
-                  />
+                <div className="flex flex-col items-center justify-center bg-slate-50 rounded-xl p-6 border border-slate-100 h-full overflow-y-auto">
+                  <div className="mb-6">
+                    <SampleLabel 
+                      orderNumber={order?.orderNumber || '1-00'}
+                      patientName={order?.patientName || 'PACIENTE TESTE'}
+                      birthDate="01/01/1990"
+                      material="SANGUE"
+                      tube="EDTA"
+                      workbench="HEMATOLOGIA"
+                      hash={order?.hash || 'S2DDW9'}
+                      printDate={new Date().toLocaleDateString('pt-BR') + ' ' + new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
+                      labelIndex={1}
+                      isUrgent={order?.status === 'waiting_collection'}
+                    />
+                  </div>
                   <p className="text-xs text-slate-400 text-center px-4 leading-relaxed">
-                    Selecione os documentos que deseja imprimir agora. Clique em "Ver Prévia" para conferir o layout.
+                    Visualização da etiqueta de amostra. O sistema gera automaticamente uma etiqueta para cada exame/material.
                   </p>
                 </div>
               )}
