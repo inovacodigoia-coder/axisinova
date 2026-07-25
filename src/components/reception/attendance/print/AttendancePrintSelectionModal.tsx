@@ -164,23 +164,37 @@ export function AttendancePrintSelectionModal({ open, onClose, onConfirm, order 
                   </ScrollArea>
                 </div>
               ) : (
-                <div className="flex flex-col items-center justify-center bg-slate-50 rounded-xl p-6 border border-slate-100 h-full overflow-y-auto">
-                  <div className="mb-6">
-                    <SampleLabel 
-                      orderNumber={order?.orderNumber || '1-00'}
-                      patientName={order?.patientName || 'PACIENTE TESTE'}
-                      birthDate="01/01/1990"
-                      material="SANGUE"
-                      tube="EDTA"
-                      workbench="HEMATOLOGIA"
-                      hash={order?.hash || 'S2DDW9'}
-                      printDate={new Date().toLocaleDateString('pt-BR') + ' ' + new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
-                      labelIndex={1}
-                      isUrgent={order?.status === 'waiting_collection'}
-                    />
-                  </div>
-                  <p className="text-xs text-slate-400 text-center px-4 leading-relaxed">
-                    Visualização da etiqueta de amostra. O sistema gera automaticamente uma etiqueta para cada exame/material.
+                <div className="flex flex-col items-center bg-slate-50 rounded-xl p-6 border border-slate-100 h-full overflow-hidden">
+                  <ScrollArea className="w-full flex-1">
+                    <div className="flex flex-col items-center gap-6 py-4">
+                      {Array.from({ length: Math.min(printerSettings.batchSize, 20) }).map((_, idx) => (
+                        <div key={idx} className="relative group shadow-md hover:shadow-lg transition-shadow bg-white rounded-lg">
+                          <SampleLabel 
+                            orderNumber={order?.orderNumber || '1-00'}
+                            patientName={order?.patientName || 'PACIENTE TESTE'}
+                            birthDate="01/01/1990"
+                            material="SANGUE"
+                            tube="EDTA"
+                            workbench="HEMATOLOGIA"
+                            hash={order?.hash || 'S2DDW9'}
+                            printDate={new Date().toLocaleDateString('pt-BR') + ' ' + new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
+                            labelIndex={idx + 1}
+                            isUrgent={order?.status === 'waiting_collection'}
+                          />
+                          <div className="absolute -top-2 -right-2 bg-blue-600 text-white text-[8px] font-bold w-4 h-4 rounded-full flex items-center justify-center shadow-sm">
+                            {idx + 1}
+                          </div>
+                        </div>
+                      ))}
+                      {printerSettings.batchSize > 20 && (
+                        <div className="text-[10px] text-slate-400 font-medium bg-slate-100 px-3 py-1 rounded-full border border-slate-200">
+                          + {printerSettings.batchSize - 20} etiquetas em lote...
+                        </div>
+                      )}
+                    </div>
+                  </ScrollArea>
+                  <p className="text-[10px] text-slate-400 text-center px-4 leading-relaxed mt-4">
+                    Visualização das etiquetas de amostra ({printerSettings.batchSize} unid.). O sistema gera automaticamente uma etiqueta para cada exame/material.
                   </p>
                 </div>
               )}
