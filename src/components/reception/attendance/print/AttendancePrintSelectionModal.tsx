@@ -72,24 +72,14 @@ export function AttendancePrintSelectionModal({ open, onClose, onConfirm, order 
           <div className="bg-white p-6 flex items-center justify-between border-b border-slate-100">
             <h2 className="text-xl font-bold text-[#007AFF]">Escolha o Tipo de Impressão</h2>
             <div className="flex items-center gap-3">
-              <Download className="h-4 w-4 text-amber-500 cursor-pointer hover:scale-110 transition-transform" />
-              <button onClick={onClose} className="text-slate-400 hover:text-slate-600">
+              <button onClick={onClose} className="text-slate-400 hover:text-slate-600 transition-colors">
                 <X className="h-6 w-6" />
               </button>
             </div>
           </div>
 
-          <div className="p-8 grid grid-cols-1 md:grid-cols-[1fr_2fr] gap-8">
-            {/* Left: Illustration */}
-            <div className="flex items-center justify-center p-4">
-              <img 
-                src="https://img.freepik.com/free-vector/office-concept-illustration_114360-1248.jpg" 
-                alt="Printer illustration"
-                className="max-w-full h-auto grayscale opacity-80"
-              />
-            </div>
-
-            {/* Right: Options */}
+          <div className="p-8">
+            {/* Options */}
             <div className="space-y-6">
               {options.map((opt) => (
                 <div key={opt.id} className="flex flex-col gap-2 border-b border-slate-50 pb-4 last:border-0">
