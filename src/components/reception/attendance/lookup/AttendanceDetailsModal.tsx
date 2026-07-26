@@ -36,7 +36,7 @@ export function AttendanceDetailsModal({ open, onClose, order, patient }: Attend
 
   return (
     <Dialog open={open} onOpenChange={(o) => !o && onClose()}>
-      <DialogContent className="max-w-[1200px] w-[95vw] h-[90vh] p-0 flex flex-col gap-0 overflow-hidden bg-[#F8FAFC] [&>button]:hidden">
+      <DialogContent className="max-w-[1200px] w-[95vw] h-[90vh] p-0 flex flex-col gap-0 overflow-hidden bg-[#F8FAFC] border-none shadow-2xl [&>button]:hidden">
         {/* Header Navigation */}
         <div className="flex items-center justify-between px-4 py-2 bg-white border-b border-border">
           <div className="flex items-center gap-2">
@@ -55,7 +55,7 @@ export function AttendanceDetailsModal({ open, onClose, order, patient }: Attend
         {/* Info Cards Row */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4 p-4">
           {/* Attendance ID Card */}
-          <div className="bg-[#007AFF] rounded-lg p-4 text-white flex flex-col justify-between shadow-sm relative overflow-hidden min-h-[100px]">
+          <div className="bg-[#007AFF] rounded-lg p-4 text-white flex flex-col justify-between shadow-lg relative overflow-hidden min-h-[100px] hover:shadow-xl transition-shadow">
             <div className="flex justify-between items-start relative z-10">
               <span className="text-[10px] font-bold tracking-widest uppercase opacity-80">ATENDIMENTO</span>
               <div className="flex gap-1">
@@ -193,7 +193,7 @@ export function AttendanceDetailsModal({ open, onClose, order, patient }: Attend
         </div>
 
         {/* Main Content Tabs */}
-        <div className="flex-1 flex flex-col min-h-0 bg-white">
+        <div className="flex-1 flex flex-col min-h-0 bg-white rounded-t-2xl shadow-inner">
           <Tabs defaultValue="guias" className="flex-1 flex flex-col">
             <div className="px-4 border-b border-border flex justify-center">
               <TabsList className="bg-transparent h-12 gap-8">

@@ -70,7 +70,7 @@ export function AttendancePrintSelectionModal({ open, onClose, onConfirm, order 
         <div className="bg-white">
           {/* Header */}
           <div className="bg-white p-6 flex items-center justify-between border-b border-slate-100">
-            <h2 className="text-xl font-bold text-slate-800">Escolha o Tipo de Impressão</h2>
+            <h2 className="text-xl font-bold text-[#007AFF]">Escolha o Tipo de Impressão</h2>
             <div className="flex items-center gap-3">
               <Download className="h-4 w-4 text-amber-500 cursor-pointer hover:scale-110 transition-transform" />
               <button onClick={onClose} className="text-slate-400 hover:text-slate-600">
@@ -99,7 +99,7 @@ export function AttendancePrintSelectionModal({ open, onClose, onConfirm, order 
                         onClick={() => toggleOption(opt.id)}
                         className={cn(
                           "w-5 h-5 rounded border flex items-center justify-center cursor-pointer transition-all",
-                          opt.enabled ? "bg-blue-600 border-blue-600" : "bg-white border-slate-300"
+                          opt.enabled ? "bg-[#007AFF] border-[#007AFF]" : "bg-white border-slate-300"
                         )}
                       >
                         {opt.enabled && <CheckCircle2 className="h-3 w-3 text-white" />}
@@ -114,13 +114,13 @@ export function AttendancePrintSelectionModal({ open, onClose, onConfirm, order 
                         <div className="flex bg-slate-100 rounded p-0.5 border border-slate-200">
                           <button 
                             onClick={() => setWatermark(false)}
-                            className={cn("px-2 py-1 text-[9px] font-bold rounded uppercase transition-all", !watermark ? "bg-white text-blue-600 shadow-sm" : "text-slate-400")}
+                            className={cn("px-2 py-1 text-[9px] font-bold rounded uppercase transition-all", !watermark ? "bg-white text-[#007AFF] shadow-sm" : "text-slate-400")}
                           >
                             Sem Marca d'água
                           </button>
                           <button 
                             onClick={() => setWatermark(true)}
-                            className={cn("px-2 py-1 text-[9px] font-bold rounded uppercase transition-all", watermark ? "bg-white text-blue-600 shadow-sm" : "text-slate-400")}
+                            className={cn("px-2 py-1 text-[9px] font-bold rounded uppercase transition-all", watermark ? "bg-white text-[#007AFF] shadow-sm" : "text-slate-400")}
                           >
                             Com Marca d'água
                           </button>
@@ -128,13 +128,13 @@ export function AttendancePrintSelectionModal({ open, onClose, onConfirm, order 
                         <div className="flex bg-slate-100 rounded p-0.5 border border-slate-200">
                           <button 
                             onClick={() => setEmptyFields(false)}
-                            className={cn("px-2 py-1 text-[9px] font-bold rounded uppercase transition-all", !emptyFields ? "bg-white text-blue-600 shadow-sm" : "text-slate-400")}
+                            className={cn("px-2 py-1 text-[9px] font-bold rounded uppercase transition-all", !emptyFields ? "bg-white text-[#007AFF] shadow-sm" : "text-slate-400")}
                           >
                             Sem Campos Vazios
                           </button>
                           <button 
                             onClick={() => setEmptyFields(true)}
-                            className={cn("px-2 py-1 text-[9px] font-bold rounded uppercase transition-all", emptyFields ? "bg-white text-blue-600 shadow-sm" : "text-slate-400")}
+                            className={cn("px-2 py-1 text-[9px] font-bold rounded uppercase transition-all", emptyFields ? "bg-white text-[#007AFF] shadow-sm" : "text-slate-400")}
                           >
                             Com Campos Vazios
                           </button>
@@ -150,7 +150,7 @@ export function AttendancePrintSelectionModal({ open, onClose, onConfirm, order 
                             className={cn(
                               "px-3 py-1 text-[10px] font-bold rounded transition-all uppercase",
                               opt.selectedFormat === fmt && opt.enabled 
-                                ? "bg-white text-blue-600 shadow-sm border border-blue-50" 
+                                ? "bg-white text-[#007AFF] shadow-sm border border-blue-50" 
                                 : "text-slate-400 hover:text-slate-600"
                             )}
                           >
@@ -168,7 +168,7 @@ export function AttendancePrintSelectionModal({ open, onClose, onConfirm, order 
                 <label className="flex items-center gap-2 cursor-pointer group">
                   <div 
                     onClick={() => setExtras(e => ({ ...e, amostras: !e.amostras }))}
-                    className={cn("w-4 h-4 rounded border flex items-center justify-center transition-all", extras.amostras ? "bg-blue-600 border-blue-600" : "bg-white border-slate-300")}
+                    className={cn("w-4 h-4 rounded border flex items-center justify-center transition-all", extras.amostras ? "bg-[#007AFF] border-[#007AFF]" : "bg-white border-slate-300")}
                   >
                     {extras.amostras && <CheckCircle2 className="h-2.5 w-2.5 text-white" />}
                   </div>
@@ -177,7 +177,7 @@ export function AttendancePrintSelectionModal({ open, onClose, onConfirm, order 
                 <label className="flex items-center gap-2 cursor-pointer group">
                   <div 
                     onClick={() => setExtras(e => ({ ...e, guias: !e.guias }))}
-                    className={cn("w-4 h-4 rounded border flex items-center justify-center transition-all", extras.guias ? "bg-blue-600 border-blue-600" : "bg-white border-slate-300")}
+                    className={cn("w-4 h-4 rounded border flex items-center justify-center transition-all", extras.guias ? "bg-[#007AFF] border-[#007AFF]" : "bg-white border-slate-300")}
                   >
                     {extras.guias && <CheckCircle2 className="h-2.5 w-2.5 text-white" />}
                   </div>
@@ -186,7 +186,7 @@ export function AttendancePrintSelectionModal({ open, onClose, onConfirm, order 
                 <label className="flex items-center gap-2 cursor-pointer group">
                   <div 
                     onClick={() => setExtras(e => ({ ...e, capa_guia: !e.capa_guia }))}
-                    className={cn("w-4 h-4 rounded border flex items-center justify-center transition-all", extras.capa_guia ? "bg-blue-600 border-blue-600" : "bg-white border-slate-300")}
+                    className={cn("w-4 h-4 rounded border flex items-center justify-center transition-all", extras.capa_guia ? "bg-[#007AFF] border-[#007AFF]" : "bg-white border-slate-300")}
                   >
                     {extras.capa_guia && <CheckCircle2 className="h-2.5 w-2.5 text-white" />}
                   </div>
@@ -195,7 +195,7 @@ export function AttendancePrintSelectionModal({ open, onClose, onConfirm, order 
                 <label className="flex items-center gap-2 cursor-pointer group">
                   <div 
                     onClick={() => setExtras(e => ({ ...e, etiqueta_cliente: !e.etiqueta_cliente }))}
-                    className={cn("w-4 h-4 rounded border flex items-center justify-center transition-all", extras.etiqueta_cliente ? "bg-blue-600 border-blue-600" : "bg-white border-slate-300")}
+                    className={cn("w-4 h-4 rounded border flex items-center justify-center transition-all", extras.etiqueta_cliente ? "bg-[#007AFF] border-[#007AFF]" : "bg-white border-slate-300")}
                   >
                     {extras.etiqueta_cliente && <CheckCircle2 className="h-2.5 w-2.5 text-white" />}
                   </div>
@@ -216,7 +216,7 @@ export function AttendancePrintSelectionModal({ open, onClose, onConfirm, order 
             </Button>
             <Button 
               onClick={() => onConfirm({ options, extras, printerSettings, watermark, emptyFields })}
-              className="px-8 font-bold bg-blue-600 hover:bg-blue-700 text-white shadow-lg uppercase text-xs h-10"
+              className="px-8 font-bold bg-[#007AFF] hover:bg-blue-700 text-white shadow-lg uppercase text-xs h-10"
             >
               IMPRIMIR
             </Button>
