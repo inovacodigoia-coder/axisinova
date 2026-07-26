@@ -66,7 +66,7 @@ export function AttendancePrintSelectionModal({ open, onClose, onConfirm, order 
 
   return (
     <Dialog open={open} onOpenChange={(o) => !o && onClose()}>
-      <DialogContent className="max-w-[1000px] p-0 overflow-hidden border-none shadow-2xl">
+      <DialogContent className="max-w-[1000px] p-0 overflow-hidden border-none shadow-2xl [&>button]:hidden">
         <div className="bg-white">
           {/* Header */}
           <div className="bg-white p-6 flex items-center justify-between border-b border-slate-100">
