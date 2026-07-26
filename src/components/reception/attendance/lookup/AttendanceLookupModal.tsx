@@ -7,6 +7,7 @@ import { toast } from 'sonner'
 import { useAttendanceCadastro } from '@/hooks/useAttendanceCadastro'
 import { usePatients } from '@/hooks/usePatients'
 import { AttendancePrintModal } from '../print/AttendancePrintModal'
+import { AttendanceDetailsModal } from './AttendanceDetailsModal'
 import type { AttendanceOrder } from '@/types/attendance-cadastro.types'
 import type { Patient } from '@/types/patient.types'
 import type { AttendanceControlDocument } from '@/types/payment-print.types'
@@ -67,6 +68,7 @@ export function AttendanceLookupModal({ open, onClose, unitName, guicheName, onA
   const [expanded, setExpanded] = useState<Set<string>>(new Set())
   const [editing, setEditing] = useState<AttendanceOrder | null>(null)
   const [printDoc, setPrintDoc] = useState<AttendanceControlDocument | null>(null)
+  const [detailsOrder, setDetailsOrder] = useState<AttendanceOrder | null>(null)
 
   const patientById = useMemo(() => {
     const m = new Map<string, Patient>()
@@ -220,6 +222,7 @@ export function AttendanceLookupModal({ open, onClose, unitName, guicheName, onA
                 patient={g.patient}
                 onPrint={() => setPrintDoc(buildDoc(order, g.patient, unitName, guicheName))}
                 onEdit={() => setEditing(order)}
+                onDetails={() => setDetailsOrder(order)}
                 onAddProcedure={() => g.patient && onAddProcedure(g.patient)}
               />
             )))}
@@ -238,6 +241,15 @@ export function AttendanceLookupModal({ open, onClose, unitName, guicheName, onA
           onSave={handleSaveEdit}
         />
       )}
+
+      {detailsOrder && (
+        <AttendanceDetailsModal
+          open
+          onClose={() => setDetailsOrder(null)}
+          order={detailsOrder}
+          patient={patientById.get(detailsOrder.patientId)}
+        />
+      )}
     </Dialog>
   )
 }
@@ -247,12 +259,14 @@ function OrderRowModern({
   patient, 
   onPrint, 
   onEdit, 
+  onDetails,
   onAddProcedure 
 }: { 
   order: AttendanceOrder; 
   patient?: Patient; 
   onPrint: () => void; 
   onEdit: () => void; 
+  onDetails: () => void;
   onAddProcedure: () => void;
 }) {
   const [open, setOpen] = useState(false)
@@ -260,7 +274,10 @@ function OrderRowModern({
   const deliveryDate = order.deliveryDate ? new Date(order.deliveryDate) : null
 
   return (
-    <div className="group hover:bg-muted/20 transition-colors">
+    <div 
+      className="group hover:bg-muted/20 transition-colors cursor-pointer"
+      onDoubleClick={onDetails}
+    >
       <div className="grid grid-cols-[120px_140px_1fr_100px_120px_100px_140px_120px] gap-4 px-6 py-3 items-center text-xs">
         <div className="font-mono text-primary font-bold">{order.orderNumber}-1</div>
         <div className="text-muted-foreground">

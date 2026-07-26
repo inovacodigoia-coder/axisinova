@@ -1,0 +1,321 @@
+import { Dialog, DialogContent } from '@/components/ui/dialog'
+import { X, Printer, Pencil, Trash2, Plus, ArrowLeft, MoreVertical, CreditCard, Droplets, ShieldCheck, DollarSign, Calendar, Clock, MapPin, User, FileText } from 'lucide-react'
+import { Button } from '@/components/ui/button'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import type { AttendanceOrder } from '@/types/attendance-cadastro.types'
+import type { Patient } from '@/types/patient.types'
+import { cn } from '@/lib/utils'
+
+interface AttendanceDetailsModalProps {
+  open: boolean
+  onClose: () => void
+  order: AttendanceOrder
+  patient?: Patient
+}
+
+export function AttendanceDetailsModal({ open, onClose, order, patient }: AttendanceDetailsModalProps) {
+  return (
+    <Dialog open={open} onOpenChange={(o) => !o && onClose()}>
+      <DialogContent className="max-w-[1200px] w-[95vw] h-[90vh] p-0 flex flex-col gap-0 overflow-hidden bg-[#F8FAFC] [&>button]:hidden">
+        {/* Header Navigation */}
+        <div className="flex items-center justify-between px-4 py-2 bg-white border-b border-border">
+          <div className="flex items-center gap-2">
+            <Button variant="ghost" size="icon" onClick={onClose} className="h-8 w-8">
+              <ArrowLeft className="h-4 w-4" />
+            </Button>
+            <span className="text-sm font-medium text-muted-foreground">Detalhes Atendimento</span>
+          </div>
+          <div className="flex items-center gap-2 text-xs text-muted-foreground">
+            <span>Atendimento</span>
+            <span className="text-foreground font-medium">/</span>
+            <span className="text-foreground font-medium">{order.orderNumber}</span>
+          </div>
+        </div>
+
+        {/* Info Cards Row */}
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 p-4">
+          {/* Attendance ID Card */}
+          <div className="bg-[#007AFF] rounded-lg p-4 text-white flex flex-col justify-between shadow-sm relative overflow-hidden min-h-[100px]">
+            <div className="flex justify-between items-start relative z-10">
+              <span className="text-[10px] font-bold tracking-widest uppercase opacity-80">ATENDIMENTO</span>
+              <div className="flex gap-1">
+                <Button size="icon" variant="ghost" className="h-6 w-6 text-white hover:bg-white/20">
+                  <Printer className="h-3.5 w-3.5" />
+                </Button>
+                <Button size="icon" variant="ghost" className="h-6 w-6 text-white hover:bg-white/20">
+                  <MoreVertical className="h-3.5 w-3.5" />
+                </Button>
+              </div>
+            </div>
+            <div className="text-xl font-bold relative z-10">{order.orderNumber}</div>
+            <div className="absolute -bottom-2 -right-2 opacity-10">
+              <Clock className="h-16 w-16 rotate-12" />
+            </div>
+          </div>
+
+          {/* Client Card */}
+          <div className="bg-white rounded-lg p-4 border border-border flex flex-col justify-between shadow-sm min-h-[100px]">
+            <div className="flex justify-between items-start">
+              <span className="text-[10px] font-bold tracking-widest uppercase text-muted-foreground">CLIENTE</span>
+              <Button size="icon" variant="ghost" className="h-6 w-6 text-muted-foreground">
+                <MoreVertical className="h-3.5 w-3.5" />
+              </Button>
+            </div>
+            <div className="text-sm font-bold text-foreground truncate uppercase">{order.patientName}</div>
+          </div>
+
+          {/* Forecast Card */}
+          <div className="bg-white rounded-lg p-4 border border-border flex flex-col justify-between shadow-sm min-h-[100px]">
+            <div className="flex justify-between items-start">
+              <span className="text-[10px] font-bold tracking-widest uppercase text-muted-foreground">PREVISÃO</span>
+              <Button size="icon" variant="ghost" className="h-6 w-6 text-muted-foreground">
+                <Pencil className="h-3.5 w-3.5" />
+              </Button>
+            </div>
+            <div className="text-sm font-bold text-foreground">
+              {order.deliveryDate ? new Date(order.deliveryDate).toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' }) : '--/--/---- --:--'}
+            </div>
+          </div>
+
+          {/* Date Card */}
+          <div className="bg-white rounded-lg p-4 border border-border flex flex-col justify-between shadow-sm min-h-[100px]">
+            <div className="flex justify-between items-start">
+              <span className="text-[10px] font-bold tracking-widest uppercase text-muted-foreground">DATA DO ATENDIMENTO</span>
+            </div>
+            <div className="text-sm font-bold text-foreground">
+              {new Date(order.registeredAt).toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' })}
+            </div>
+          </div>
+        </div>
+
+        {/* Main Content Tabs */}
+        <div className="flex-1 flex flex-col min-h-0 bg-white">
+          <Tabs defaultValue="guias" className="flex-1 flex flex-col">
+            <div className="px-4 border-b border-border flex justify-center">
+              <TabsList className="bg-transparent h-12 gap-8">
+                <TabsTrigger value="guias" className="data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-[#007AFF] rounded-none px-4 flex gap-2">
+                  <FileText className="h-4 w-4" />
+                  <span className="text-xs font-bold uppercase tracking-wider">Guias</span>
+                </TabsTrigger>
+                <TabsTrigger value="amostras" className="data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-[#007AFF] rounded-none px-4 flex gap-2">
+                  <Droplets className="h-4 w-4" />
+                  <span className="text-xs font-bold uppercase tracking-wider">Amostras</span>
+                </TabsTrigger>
+                <TabsTrigger value="autorizacao" className="data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-[#007AFF] rounded-none px-4 flex gap-2">
+                  <ShieldCheck className="h-4 w-4" />
+                  <span className="text-xs font-bold uppercase tracking-wider">Autorização</span>
+                </TabsTrigger>
+                <TabsTrigger value="pagamentos" className="data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-[#007AFF] rounded-none px-4 flex gap-2">
+                  <CreditCard className="h-4 w-4" />
+                  <span className="text-xs font-bold uppercase tracking-wider">Pagamentos</span>
+                </TabsTrigger>
+              </TabsList>
+            </div>
+
+            <div className="flex-1 overflow-auto p-4 bg-[#F8FAFC]">
+              <TabsContent value="guias" className="m-0 space-y-4">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-4">
+                    <div className="flex items-center gap-1.5 bg-white border border-border rounded-full px-3 py-1 shadow-sm">
+                      <span className="text-[10px] font-bold text-muted-foreground uppercase">Guias</span>
+                      <span className="bg-[#007AFF] text-white text-[10px] font-bold rounded-full w-4 h-4 flex items-center justify-center">1</span>
+                    </div>
+                    <div className="flex items-center gap-1.5 bg-white border border-border rounded-full px-3 py-1 shadow-sm">
+                      <span className="text-[10px] font-bold text-muted-foreground uppercase">Convênio</span>
+                      <span className="text-[10px] font-extrabold text-[#007AFF] uppercase">{order.convenioName || 'PARTICULAR'}</span>
+                    </div>
+                  </div>
+                  <div className="flex gap-2">
+                    <Button variant="outline" size="sm" className="bg-white h-8 text-[10px] font-bold uppercase tracking-wider">
+                      <Plus className="h-3.5 w-3.5 mr-1" /> Guia
+                    </Button>
+                    <Button variant="outline" size="sm" className="bg-white h-8 text-[10px] font-bold uppercase tracking-wider">
+                      Conferir Guias
+                    </Button>
+                  </div>
+                </div>
+
+                <div className="bg-white rounded-lg border border-border shadow-sm overflow-hidden">
+                  <div className="p-4 border-b border-border bg-muted/5 flex items-center justify-between">
+                    <div className="flex flex-col gap-1">
+                      <div className="flex items-center gap-2">
+                        <span className="text-xs font-bold text-[#007AFF] uppercase">1. {order.convenioName || 'PARTICULAR'}</span>
+                      </div>
+                      <div className="flex items-center gap-1 text-[10px] text-muted-foreground">
+                        <User className="h-3 w-3" />
+                        <span>{order.doctorName || 'SEM MÉDICO INFORMADO'}</span>
+                        {order.doctorCRM && <span>({order.doctorCRM})</span>}
+                      </div>
+                    </div>
+                    <div className="flex gap-1">
+                      {[Pencil, Printer, Trash2].map((Icon, i) => (
+                        <Button key={i} size="icon" variant="ghost" className="h-8 w-8 text-muted-foreground hover:bg-muted">
+                          <Icon className="h-4 w-4" />
+                        </Button>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-left border-collapse">
+                      <thead className="bg-muted/30 text-[10px] font-bold text-muted-foreground uppercase tracking-wider">
+                        <tr>
+                          <th className="px-4 py-2 border-b border-border w-10"><input type="checkbox" className="rounded border-border" /></th>
+                          <th className="px-4 py-2 border-b border-border">Procedimentos</th>
+                          <th className="px-4 py-2 border-b border-border">Referência</th>
+                          <th className="px-4 py-2 border-b border-border text-center">Cobrado</th>
+                          <th className="px-4 py-2 border-b border-border text-center">Coleta</th>
+                          <th className="px-4 py-2 border-b border-border">Material</th>
+                          <th className="px-4 py-2 border-b border-border">Previsão Entrega</th>
+                          <th className="px-4 py-2 border-b border-border text-center">Status</th>
+                          <th className="px-4 py-2 border-b border-border text-right">Ações</th>
+                        </tr>
+                      </thead>
+                      <tbody className="text-[11px] divide-y divide-border">
+                        <tr className="hover:bg-muted/10 group">
+                          <td className="px-4 py-3"><input type="checkbox" className="rounded border-border" /></td>
+                          <td className="px-4 py-3">
+                            <div className="flex items-center gap-2">
+                              <span className="bg-[#007AFF] text-white rounded-full px-1.5 py-0.5 text-[8px] font-bold">EX</span>
+                              <span className="font-medium text-foreground uppercase">{order.procedureName}</span>
+                            </div>
+                          </td>
+                          <td className="px-4 py-3 text-muted-foreground font-mono">{order.procedureCode || '0000000'}</td>
+                          <td className="px-4 py-3 text-center">
+                            <div className="flex justify-center">
+                              <div className="w-4 h-4 rounded bg-[#007AFF] flex items-center justify-center text-white">
+                                <ShieldCheck className="h-3 w-3" />
+                              </div>
+                            </div>
+                          </td>
+                          <td className="px-4 py-3 text-center">
+                            <div className="w-3 h-3 rounded-full bg-emerald-500 mx-auto" />
+                          </td>
+                          <td className="px-4 py-3 text-muted-foreground uppercase">SANGUE TOTAL</td>
+                          <td className="px-4 py-3 text-muted-foreground">
+                            {order.deliveryDate ? new Date(order.deliveryDate).toLocaleDateString('pt-BR') : '--/--/----'}
+                          </td>
+                          <td className="px-4 py-3 text-center">
+                            <div className="w-6 h-6 rounded-full bg-emerald-100 flex items-center justify-center text-emerald-600 mx-auto">
+                              <Printer className="h-3.5 w-3.5" />
+                            </div>
+                          </td>
+                          <td className="px-4 py-3 text-right">
+                            <div className="flex justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                              <Button size="icon" variant="ghost" className="h-7 w-7"><Pencil className="h-3.5 w-3.5" /></Button>
+                              <Button size="icon" variant="ghost" className="h-7 w-7"><Calendar className="h-3.5 w-3.5" /></Button>
+                            </div>
+                          </td>
+                        </tr>
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              </TabsContent>
+
+              <TabsContent value="amostras" className="m-0 space-y-4">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-1.5 bg-white border border-border rounded-full px-3 py-1 shadow-sm">
+                    <span className="text-[10px] font-bold text-muted-foreground uppercase">Amostras</span>
+                    <span className="bg-[#007AFF] text-white text-[10px] font-bold rounded-full w-4 h-4 flex items-center justify-center">1</span>
+                  </div>
+                  <div className="flex gap-2">
+                    <Button variant="outline" size="sm" className="bg-white h-8 text-[10px] font-bold uppercase tracking-wider">RESTRIÇÕES</Button>
+                    <Button variant="outline" size="sm" className="bg-white h-8 text-[10px] font-bold uppercase tracking-wider">COLETA</Button>
+                  </div>
+                </div>
+                
+                <div className="bg-white rounded-lg border border-border shadow-sm overflow-hidden">
+                  <table className="w-full text-left border-collapse">
+                    <thead className="bg-muted/30 text-[10px] font-bold text-muted-foreground uppercase tracking-wider">
+                      <tr>
+                        <th className="px-4 py-2 border-b border-border w-10"></th>
+                        <th className="px-4 py-2 border-b border-border">Código</th>
+                        <th className="px-4 py-2 border-b border-border">Descrição</th>
+                        <th className="px-4 py-2 border-b border-border">Material</th>
+                        <th className="px-4 py-2 border-b border-border">Setor</th>
+                        <th className="px-4 py-2 border-b border-border">Procedimentos</th>
+                        <th className="px-4 py-2 border-b border-border">Status</th>
+                        <th className="px-4 py-2 border-b border-border">Data Coleta</th>
+                        <th className="px-4 py-2 border-b border-border text-right">Ações</th>
+                      </tr>
+                    </thead>
+                    <tbody className="text-[11px] divide-y divide-border">
+                      <tr>
+                        <td className="px-4 py-3"><input type="checkbox" className="rounded border-border" /></td>
+                        <td className="px-4 py-3">
+                          <span className="bg-[#007AFF] text-white rounded-full px-2 py-0.5 text-[9px] font-bold">
+                            {order.orderNumber}-1
+                          </span>
+                        </td>
+                        <td className="px-4 py-3 text-muted-foreground font-bold">TUBO ROXO (EDTA)</td>
+                        <td className="px-4 py-3 text-muted-foreground uppercase">SANGUE</td>
+                        <td className="px-4 py-3 text-muted-foreground uppercase">HEMATO</td>
+                        <td className="px-4 py-3 text-muted-foreground uppercase">{order.procedureName}</td>
+                        <td className="px-4 py-3">
+                          <span className="text-emerald-600 font-bold uppercase">Coletado</span>
+                        </td>
+                        <td className="px-4 py-3 text-muted-foreground">
+                          {new Date(order.registeredAt).toLocaleDateString('pt-BR')}
+                        </td>
+                        <td className="px-4 py-3 text-right">
+                          <div className="flex justify-end gap-1">
+                            <Button size="icon" variant="ghost" className="h-8 w-8"><Printer className="h-4 w-4" /></Button>
+                            <Button size="icon" variant="ghost" className="h-8 w-8"><Trash2 className="h-4 w-4" /></Button>
+                          </div>
+                        </td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+              </TabsContent>
+
+              <TabsContent value="autorizacao" className="m-0">
+                <div className="bg-white rounded-lg border border-border shadow-sm p-8 text-center">
+                  <ShieldCheck className="h-12 w-12 text-[#007AFF] mx-auto mb-4 opacity-20" />
+                  <h3 className="text-sm font-bold text-foreground mb-1 uppercase">Autorização do Plano</h3>
+                  <p className="text-xs text-muted-foreground">
+                    Código: <span className="font-bold text-foreground">{order.authorizationCode || 'NÃO INFORMADO'}</span>
+                  </p>
+                </div>
+              </TabsContent>
+
+              <TabsContent value="pagamentos" className="m-0 space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-4 lg:grid-cols-7 gap-3">
+                  <PaymentCard icon={<DollarSign className="h-4 w-4" />} label="TOTAL" value={`R$ ${order.privateValue?.toFixed(2) || '0,00'}`} color="bg-[#007AFF]" />
+                  <PaymentCard icon={<span className="font-bold">%</span>} label="DESCONTO" value="R$ 0,00" color="bg-slate-500" />
+                  <PaymentCard icon={<DollarSign className="h-4 w-4" />} label="TOTAL GERAL" value={`R$ ${order.privateValue?.toFixed(2) || '0,00'}`} color="bg-slate-500" />
+                  <PaymentCard icon={<ArrowLeft className="h-4 w-4 rotate-270" />} label="PAGO" value="R$ 0,00" color="bg-emerald-500" />
+                  <PaymentCard icon={<ArrowLeft className="h-4 w-4 rotate-90" />} label="CRÉDITO" value="R$ 0,00" color="bg-[#007AFF]" />
+                  <PaymentCard icon={<FileText className="h-4 w-4" />} label="NOTA FISCAL" value="NÃO GERADA" color="bg-slate-500" />
+                  <PaymentCard icon={<User className="h-4 w-4" />} label="RESP. FINANCEIRO" value="NÃO INFORMADO" color="bg-slate-500" />
+                </div>
+                
+                <div className="bg-white rounded-lg border border-border shadow-sm p-8 text-center border-dashed">
+                  <p className="text-xs font-bold text-muted-foreground uppercase tracking-widest">Pedido não requer pagamento ou já foi faturado pelo convênio</p>
+                </div>
+              </TabsContent>
+            </div>
+          </Tabs>
+        </div>
+      </DialogContent>
+    </Dialog>
+  )
+}
+
+function PaymentCard({ icon, label, value, color }: { icon: React.ReactNode; label: string; value: string; color: string }) {
+  return (
+    <div className="bg-white rounded-lg border border-border flex overflow-hidden shadow-sm h-14">
+      <div className={cn("w-10 flex items-center justify-center text-white shrink-0", color)}>
+        {icon}
+      </div>
+      <div className="flex-1 px-3 flex flex-col justify-center min-w-0">
+        <span className="text-[8px] font-black text-muted-foreground uppercase tracking-tighter leading-tight">{label}</span>
+        <span className="text-[10px] font-black text-foreground uppercase truncate leading-tight">{value}</span>
+      </div>
+      <div className="w-6 flex items-center justify-center border-l border-border hover:bg-muted cursor-pointer">
+        <MoreVertical className="h-3 w-3 text-muted-foreground" />
+      </div>
+    </div>
+  )
+}
