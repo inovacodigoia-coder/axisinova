@@ -275,7 +275,7 @@ function OrderRowModern({
 
   return (
     <div 
-      className="group hover:bg-muted/20 transition-colors cursor-pointer"
+      className="group hover:bg-[#007AFF]/10 transition-colors cursor-pointer border-l-4 border-transparent hover:border-[#007AFF]"
       onClick={onDetails}
       onDoubleClick={onDetails}
     >
