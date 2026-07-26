@@ -1,12 +1,23 @@
 import { useState } from 'react'
 import { Dialog, DialogContent } from '@/components/ui/dialog'
-import { X, Printer, Pencil, Trash2, Plus, ArrowLeft, MoreVertical, CreditCard, Droplets, ShieldCheck, DollarSign, Calendar, Clock, MapPin, User, FileText } from 'lucide-react'
+import { X, Printer, Pencil, Trash2, Plus, ArrowLeft, MoreVertical, CreditCard, Droplets, ShieldCheck, DollarSign, Calendar, Clock, MapPin, User, FileText, ChevronDown, History, BarChart3, Database, RefreshCw, Info } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import type { AttendanceOrder } from '@/types/attendance-cadastro.types'
 import type { Patient } from '@/types/patient.types'
 import { cn } from '@/lib/utils'
 import { AttendancePrintSelectionModal } from '../print/AttendancePrintSelectionModal'
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+  DropdownMenuSub,
+  DropdownMenuSubContent,
+  DropdownMenuSubTrigger,
+} from "@/components/ui/dropdown-menu"
+
 
 interface AttendanceDetailsModalProps {
   open: boolean
@@ -51,9 +62,65 @@ export function AttendanceDetailsModal({ open, onClose, order, patient }: Attend
                 >
                   <Printer className="h-3.5 w-3.5" />
                 </Button>
-                <Button size="icon" variant="ghost" className="h-6 w-6 text-white hover:bg-white/20">
-                  <MoreVertical className="h-3.5 w-3.5" />
-                </Button>
+                
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button size="icon" variant="ghost" className="h-6 w-6 text-white hover:bg-white/20">
+                      <MoreVertical className="h-3.5 w-3.5" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end" className="w-56">
+                    <DropdownMenuItem className="flex items-center gap-2">
+                      <Pencil className="h-4 w-4" />
+                      <span>Editar</span>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem className="flex items-center gap-2">
+                      <BarChart3 className="h-4 w-4" />
+                      <span>Auditoria</span>
+                    </DropdownMenuItem>
+                    <DropdownMenuSub>
+                      <DropdownMenuSubTrigger className="flex items-center gap-2">
+                        <Droplets className="h-4 w-4" />
+                        <span>Pulse</span>
+                      </DropdownMenuSubTrigger>
+                      <DropdownMenuSubContent>
+                        <DropdownMenuItem>Status da Amostra</DropdownMenuItem>
+                        <DropdownMenuItem>Rastreabilidade</DropdownMenuItem>
+                      </DropdownMenuSubContent>
+                    </DropdownMenuSub>
+                    <DropdownMenuItem className="flex items-center gap-2">
+                      <History className="h-4 w-4" />
+                      <span>Histórico de Impressões</span>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem className="flex items-center gap-2">
+                      <FileText className="h-4 w-4" />
+                      <span>Laudo por Versão</span>
+                    </DropdownMenuItem>
+                    <DropdownMenuSub>
+                      <DropdownMenuSubTrigger className="flex items-center gap-2">
+                        <RefreshCw className="h-4 w-4" />
+                        <span>Integração Atendimento</span>
+                      </DropdownMenuSubTrigger>
+                      <DropdownMenuSubContent>
+                        <DropdownMenuItem>Sincronizar Agora</DropdownMenuItem>
+                        <DropdownMenuItem>Logs de Integração</DropdownMenuItem>
+                      </DropdownMenuSubContent>
+                    </DropdownMenuSub>
+                    <DropdownMenuItem className="flex items-center gap-2">
+                      <Database className="h-4 w-4" />
+                      <span>Laudo Evolutivo</span>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem className="flex items-center gap-2">
+                      <Info className="h-4 w-4" />
+                      <span>Mais Informações</span>
+                    </DropdownMenuItem>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem className="flex items-center gap-2 text-red-600 focus:text-red-600">
+                      <Trash2 className="h-4 w-4" />
+                      <span>Excluir Pedido</span>
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
               </div>
             </div>
             <div className="text-xl font-bold relative z-10">{order.orderNumber}</div>
@@ -66,9 +133,27 @@ export function AttendanceDetailsModal({ open, onClose, order, patient }: Attend
           <div className="bg-white rounded-lg p-4 border border-border flex flex-col justify-between shadow-sm min-h-[100px]">
             <div className="flex justify-between items-start">
               <span className="text-[10px] font-bold tracking-widest uppercase text-muted-foreground">CLIENTE</span>
-              <Button size="icon" variant="ghost" className="h-6 w-6 text-muted-foreground">
-                <MoreVertical className="h-3.5 w-3.5" />
-              </Button>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button size="icon" variant="ghost" className="h-6 w-6 text-muted-foreground">
+                    <MoreVertical className="h-3.5 w-3.5" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-56">
+                  <DropdownMenuItem className="flex items-center gap-2">
+                    <Info className="h-4 w-4" />
+                    <span>Mais Informações do Cliente</span>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem className="flex items-center gap-2">
+                    <User className="h-4 w-4" />
+                    <span>Editar Perfil</span>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem className="flex items-center gap-2">
+                    <History className="h-4 w-4" />
+                    <span>Histórico de Consultas</span>
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
             </div>
             <div className="text-sm font-bold text-foreground truncate uppercase">{order.patientName}</div>
           </div>
@@ -77,7 +162,15 @@ export function AttendanceDetailsModal({ open, onClose, order, patient }: Attend
           <div className="bg-white rounded-lg p-4 border border-border flex flex-col justify-between shadow-sm min-h-[100px]">
             <div className="flex justify-between items-start">
               <span className="text-[10px] font-bold tracking-widest uppercase text-muted-foreground">PREVISÃO</span>
-              <Button size="icon" variant="ghost" className="h-6 w-6 text-muted-foreground">
+              <Button 
+                size="icon" 
+                variant="ghost" 
+                className="h-6 w-6 text-muted-foreground"
+                onClick={() => {
+                  // This would trigger the Alterar Previsão modal from image-354.png
+                  console.log('Opening Alterar Previsão modal');
+                }}
+              >
                 <Pencil className="h-3.5 w-3.5" />
               </Button>
             </div>
