@@ -259,6 +259,7 @@ function OrderRowModern({
   patient, 
   onPrint, 
   onEdit, 
+  onDetails,
   onAddProcedure 
 }: { 
   order: AttendanceOrder; 
