@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import { Dialog, DialogContent } from '@/components/ui/dialog'
 import { X, Printer, Pencil, Trash2, Plus, ArrowLeft, MoreVertical, CreditCard, Droplets, ShieldCheck, DollarSign, Calendar, Clock, MapPin, User, FileText } from 'lucide-react'
 import { Button } from '@/components/ui/button'
@@ -5,6 +6,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import type { AttendanceOrder } from '@/types/attendance-cadastro.types'
 import type { Patient } from '@/types/patient.types'
 import { cn } from '@/lib/utils'
+import { AttendancePrintSelectionModal } from '../print/AttendancePrintSelectionModal'
 
 interface AttendanceDetailsModalProps {
   open: boolean
@@ -14,6 +16,8 @@ interface AttendanceDetailsModalProps {
 }
 
 export function AttendanceDetailsModal({ open, onClose, order, patient }: AttendanceDetailsModalProps) {
+  const [printModalOpen, setPrintModalOpen] = useState(false)
+
   return (
     <Dialog open={open} onOpenChange={(o) => !o && onClose()}>
       <DialogContent className="max-w-[1200px] w-[95vw] h-[90vh] p-0 flex flex-col gap-0 overflow-hidden bg-[#F8FAFC] [&>button]:hidden">
@@ -39,7 +43,12 @@ export function AttendanceDetailsModal({ open, onClose, order, patient }: Attend
             <div className="flex justify-between items-start relative z-10">
               <span className="text-[10px] font-bold tracking-widest uppercase opacity-80">ATENDIMENTO</span>
               <div className="flex gap-1">
-                <Button size="icon" variant="ghost" className="h-6 w-6 text-white hover:bg-white/20">
+                <Button 
+                  size="icon" 
+                  variant="ghost" 
+                  className="h-6 w-6 text-white hover:bg-white/20"
+                  onClick={() => setPrintModalOpen(true)}
+                >
                   <Printer className="h-3.5 w-3.5" />
                 </Button>
                 <Button size="icon" variant="ghost" className="h-6 w-6 text-white hover:bg-white/20">
@@ -299,6 +308,16 @@ export function AttendanceDetailsModal({ open, onClose, order, patient }: Attend
           </Tabs>
         </div>
       </DialogContent>
+
+      <AttendancePrintSelectionModal 
+        open={printModalOpen}
+        onClose={() => setPrintModalOpen(false)}
+        onConfirm={(options) => {
+          console.log('Printing with options:', options);
+          setPrintModalOpen(false);
+        }}
+        order={order}
+      />
     </Dialog>
   )
 }
