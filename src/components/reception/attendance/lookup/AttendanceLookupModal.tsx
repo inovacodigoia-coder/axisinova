@@ -220,7 +220,7 @@ export function AttendanceLookupModal({ open, onClose, unitName, guicheName, onA
                 key={order.id}
                 order={order}
                 patient={g.patient}
-                onPrint={() => setPrintDoc(buildDoc(order, g.patient, unitName, guicheName))}
+                onPrint={() => setDetailsOrder(order)}
                 onEdit={() => setEditing(order)}
                 onDetails={() => setDetailsOrder(order)}
                 onAddProcedure={() => g.patient && onAddProcedure(g.patient)}
