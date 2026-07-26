@@ -276,10 +276,11 @@ function OrderRowModern({
   return (
     <div 
       className="group hover:bg-muted/20 transition-colors cursor-pointer"
+      onClick={onDetails}
       onDoubleClick={onDetails}
     >
       <div className="grid grid-cols-[120px_140px_1fr_100px_120px_100px_140px_120px] gap-4 px-6 py-3 items-center text-xs">
-        <div className="font-mono text-primary font-bold">{order.orderNumber}-1</div>
+        <div className="font-mono text-primary font-bold hover:underline" onClick={(e) => { e.stopPropagation(); onDetails(); }}>{order.orderNumber}-1</div>
         <div className="text-muted-foreground">
           {date.toLocaleDateString('pt-BR')} {date.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
         </div>
