@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { Dialog, DialogContent } from '@/components/ui/dialog'
-import { X, Printer, Pencil, Trash2, Plus, ArrowLeft, MoreVertical, CreditCard, Droplets, ShieldCheck, DollarSign, Calendar, Clock, MapPin, User, FileText, ChevronDown, History, BarChart3, Database, RefreshCw, Info } from 'lucide-react'
+import { X, Printer, Pencil, Trash2, Plus, ArrowLeft, MoreVertical, CreditCard, Droplets, ShieldCheck, DollarSign, Calendar, Clock, MapPin, User, FileText, ChevronDown, History, BarChart3, Database, RefreshCw, Info, Smartphone, Calculator } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import type { AttendanceOrder } from '@/types/attendance-cadastro.types'
@@ -17,6 +17,9 @@ import {
   DropdownMenuSubContent,
   DropdownMenuSubTrigger,
 } from "@/components/ui/dropdown-menu"
+import { ScrollArea } from '@/components/ui/scroll-area'
+import { Checkbox } from '@/components/ui/checkbox'
+
 
 
 interface AttendanceDetailsModalProps {
@@ -28,6 +31,8 @@ interface AttendanceDetailsModalProps {
 
 export function AttendanceDetailsModal({ open, onClose, order, patient }: AttendanceDetailsModalProps) {
   const [printModalOpen, setPrintModalOpen] = useState(false)
+  const [forecastModalOpen, setForecastModalOpen] = useState(false)
+
 
   return (
     <Dialog open={open} onOpenChange={(o) => !o && onClose()}>
@@ -166,10 +171,7 @@ export function AttendanceDetailsModal({ open, onClose, order, patient }: Attend
                 size="icon" 
                 variant="ghost" 
                 className="h-6 w-6 text-muted-foreground"
-                onClick={() => {
-                  // This would trigger the Alterar Previsão modal from image-354.png
-                  console.log('Opening Alterar Previsão modal');
-                }}
+                onClick={() => setForecastModalOpen(true)}
               >
                 <Pencil className="h-3.5 w-3.5" />
               </Button>
@@ -411,6 +413,107 @@ export function AttendanceDetailsModal({ open, onClose, order, patient }: Attend
         }}
         order={order}
       />
+
+      {/* Alterar Previsão Modal */}
+      <Dialog open={forecastModalOpen} onOpenChange={setForecastModalOpen}>
+        <DialogContent className="max-w-[700px] p-0 overflow-hidden bg-white">
+          <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100">
+            <h3 className="text-lg font-medium text-slate-800">Alterar Previsão</h3>
+            <Button variant="ghost" size="icon" onClick={() => setForecastModalOpen(false)} className="h-8 w-8">
+              <X className="h-4 w-4" />
+            </Button>
+          </div>
+
+          <ScrollArea className="max-h-[500px]">
+            <div className="p-6 space-y-8">
+              <div className="space-y-6">
+                <div className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">GUIA 1. INTER-LIGA</div>
+                
+                <div className="space-y-6 pl-4">
+                  <div className="flex items-center justify-between gap-4">
+                    <div className="flex items-center gap-2 flex-1">
+                      <span className="text-xs font-bold text-slate-700 uppercase">H</span>
+                      <span className="text-[10px] font-medium text-slate-500 uppercase">- HEMOGRAMA COM CONTAG (STE)</span>
+                    </div>
+                    <div className="w-48 relative">
+                      <label className="absolute -top-2 left-2 px-1 bg-white text-[9px] font-medium text-slate-400 z-10">Previsão</label>
+                      <div className="flex items-center gap-2 border border-slate-200 rounded-md px-3 py-2 bg-slate-50">
+                        <span className="text-xs text-slate-600">24/07/2026 11:00</span>
+                        <Calendar className="h-3.5 w-3.5 text-slate-400 ml-auto" />
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center justify-between gap-4">
+                    <div className="flex items-center gap-2 flex-1">
+                      <span className="text-xs font-bold text-slate-700 uppercase">PCRQT</span>
+                      <span className="text-[10px] font-medium text-slate-500 uppercase">- PROTEINA C REATIVA, (SOR)</span>
+                    </div>
+                    <div className="w-48 relative">
+                      <label className="absolute -top-2 left-2 px-1 bg-white text-[9px] font-medium text-slate-400 z-10">Previsão</label>
+                      <div className="flex items-center gap-2 border border-slate-200 rounded-md px-3 py-2 bg-slate-50">
+                        <span className="text-xs text-slate-600">24/07/2026 11:00</span>
+                        <Calendar className="h-3.5 w-3.5 text-slate-400 ml-auto" />
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center justify-between gap-4">
+                    <div className="flex items-center gap-2 flex-1">
+                      <span className="text-xs font-bold text-slate-700 uppercase">U</span>
+                      <span className="text-[10px] font-medium text-slate-500 uppercase">- URÉIA (SOR)</span>
+                    </div>
+                    <div className="w-48 relative">
+                      <label className="absolute -top-2 left-2 px-1 bg-white text-[9px] font-medium text-slate-400 z-10">Previsão</label>
+                      <div className="flex items-center gap-2 border border-slate-200 rounded-md px-3 py-2 bg-slate-50">
+                        <span className="text-xs text-slate-600">24/07/2026 11:00</span>
+                        <Calendar className="h-3.5 w-3.5 text-slate-400 ml-auto" />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex items-center justify-between pt-6 border-t border-slate-50">
+                <div className="flex items-center gap-6">
+                  <div className="flex items-center gap-2">
+                    <div className="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center">
+                      <Smartphone className="h-4 w-4 text-slate-500" />
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Checkbox id="notificar" className="h-4 w-4 border-slate-300" />
+                      <label htmlFor="notificar" className="text-xs font-medium text-slate-600">Notificar Cliente</label>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="w-48 relative">
+                  <label className="absolute -top-2 left-2 px-1 bg-white text-[9px] font-medium text-slate-400 z-10">Meio</label>
+                  <div className="flex items-center gap-2 border border-slate-200 rounded-md px-3 py-2 bg-white">
+                    <span className="text-xs text-slate-400">Telefone</span>
+                    <ChevronDown className="h-3.5 w-3.5 text-slate-400 ml-auto" />
+                  </div>
+                </div>
+              </div>
+            </div>
+          </ScrollArea>
+
+          <div className="flex items-center justify-between p-6 border-t border-slate-100 bg-slate-50/30">
+            <Button variant="ghost" onClick={() => setForecastModalOpen(false)} className="text-xs font-bold uppercase tracking-widest text-slate-600">
+              CANCELAR
+            </Button>
+            <div className="flex gap-4">
+              <Button variant="ghost" className="text-xs font-bold uppercase tracking-widest text-slate-800 flex gap-2">
+                <Calculator className="h-4 w-4" />
+                RECALCULAR
+              </Button>
+              <Button className="bg-[#007AFF] hover:bg-blue-700 text-white px-8 text-xs font-bold uppercase tracking-widest h-10 shadow-lg">
+                SALVAR
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </Dialog>
   )
 }
