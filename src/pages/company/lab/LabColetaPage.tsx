@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { Card } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Search, ChevronDown, User, Beaker, ClipboardList, Printer, Check, X, AlertCircle, Filter, History, Clock, Menu, RotateCw } from 'lucide-react'
@@ -10,6 +10,7 @@ import { toast } from 'sonner'
 import { useAuth } from '@/context/AuthContext'
 import { Skeleton } from '@/components/ui/skeleton'
 import { useNavigate } from 'react-router-dom'
+import { Badge } from '@/components/ui/badge'
 
 export default function LabColetaPage() {
   const { user } = useAuth()
@@ -35,7 +36,17 @@ export default function LabColetaPage() {
     }
   }, [refresh])
 
-  const { workbenches } = useRegisters()
+  const registersContext = useRegisters()
+  const workbenches = registersContext?.workbenches || []
+  
+  // Se o contexto não estiver pronto, mostramos um loading ou vazio para evitar erro de hook
+  if (!registersContext) {
+    return (
+      <div className="flex items-center justify-center p-12">
+        <Skeleton className="h-48 w-full rounded-2xl" />
+      </div>
+    )
+  }
 
   const collectionOrders = (orders || []).filter(o => 
     o?.status === 'waiting_collection' || o?.status === 'waiting'
@@ -455,3 +466,4 @@ export default function LabColetaPage() {
     </div>
   )
 }
+

@@ -6,6 +6,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { AuthProvider } from "@/context/AuthContext";
 import { QueueSystemProvider } from "@/context/QueueSystemContext";
 import { CompanyProvider } from "@/context/CompanyContext";
+import { RegistersProvider } from "@/context/RegistersContext";
 import { QueueProvider } from "@/context/QueueContext";
 import { SchedulingProvider } from "@/context/SchedulingContext";
 import { ErrorBoundary } from "@/components/feedback/ErrorBoundary";
@@ -47,8 +48,9 @@ const App = () => (
         <BrowserRouter>
           <AuthProvider>
             <CompanyProvider>
-              <QueueProvider>
-              <Routes>
+              <RegistersProvider>
+                <QueueProvider>
+                  <Routes>
                 {/* Public */}
                 <Route path="/" element={<LandingPage />} />
                 <Route path="/verde" element={<GreenScreenPage />} />
@@ -97,8 +99,9 @@ const App = () => (
                 <Route path="/app/*" element={<PrivateRoute><CompanyPortalLayout /></PrivateRoute>} />
 
                 <Route path="*" element={<NotFound />} />
-              </Routes>
-              </QueueProvider>
+                </Routes>
+                </QueueProvider>
+              </RegistersProvider>
             </CompanyProvider>
           </AuthProvider>
         </BrowserRouter>
