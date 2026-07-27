@@ -886,7 +886,7 @@ function ParametersSection({ parameters, setParameters, onUpdateReference }: { p
   )
 }
 
-function ReferenceValuesModal({ parameter, onClose }: { parameter: any, onClose: () => void }) {
+function ReferenceValuesModal({ parameter, onClose, onSave }: { parameter: any, onClose: () => void, onSave?: (val: any) => void }) {
   const [faixas, setFaixas] = useState<any[]>([
     { id: 1, description: 'Adulto Masculino', minAge: 18, maxAge: 150, sex: 'Masculino', isPregnant: false, minValue: '4.5', maxValue: '6.1' },
     { id: 2, description: 'Adulto Feminino', minAge: 18, maxAge: 150, sex: 'Feminino', isPregnant: false, minValue: '4', maxValue: '5.4' },
