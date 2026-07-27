@@ -117,8 +117,6 @@ export function useAttendanceCadastro() {
           }, null),
           lab_guides: data.labGuides || [],
           status: data.labGuides?.some((g: any) => g.exams?.some((e: any) => e.collected)) ? 'waiting' : 'open',
-            return latest
-          }, null),
           registered_by: user.id,
           registered_by_name: user.name,
         })
