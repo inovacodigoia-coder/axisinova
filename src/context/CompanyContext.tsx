@@ -1,21 +1,27 @@
 import { createContext, useCallback, useContext, useEffect, useState, type ReactNode } from 'react'
 import { useAuth } from '@/context/AuthContext'
 import type { Profile, Sector, MenuFunction, SystemModule, PermissionAction } from '@/types/permissions.types'
-import type { CompanyUser } from '@/types/company-portal.types'
+import type { CompanyUser, Origin } from '@/types/company-portal.types'
 import { MOCK_COMPANY_PROFILES, MOCK_COMPANY_USERS, MOCK_SECTORS, getFunctionsForProfile, getUtilitiesForProfile } from '@/mocks/company.mock'
+import { supabase } from '@/integrations/supabase/client'
+import { toast } from 'sonner'
 
 const SESSION_KEY = 'axis_inova_company_session'
+const ORIGIN_KEY = 'axis_inova_active_origin'
 
 interface CompanyContextValue {
   companyUser: CompanyUser | null
   profiles: Profile[]
   activeProfile: Profile | null
   activeSector: Sector | null
+  activeOrigin: Origin | null
   availableSectors: Sector[]
+  availableOrigins: Origin[]
   availableFunctions: MenuFunction[]
   availableUtilities: MenuFunction[]
   selectProfile: (profile: Profile) => void
   selectSector: (sector: Sector) => void
+  selectOrigin: (origin: Origin) => void
   confirmSession: () => void
   clearSession: () => void
   switchProfile: (profileId: string) => void
@@ -26,6 +32,7 @@ interface CompanyContextValue {
   allProfiles: Profile[]
   allSectors: Sector[]
   allUsers: CompanyUser[]
+  refreshOrigins: () => Promise<void>
 }
 
 const CompanyContext = createContext<CompanyContextValue | null>(null)
