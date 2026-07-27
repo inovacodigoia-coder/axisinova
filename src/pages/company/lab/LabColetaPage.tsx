@@ -42,6 +42,7 @@ export default function LabColetaPage() {
 
   const registersContext = useRegisters()
   const workbenches = registersContext?.workbenches || []
+  const convenios = registersContext?.convenios || []
   
   // Se o contexto não estiver pronto, mostramos um loading ou vazio para evitar erro de hook
   if (!registersContext) {
@@ -51,6 +52,19 @@ export default function LabColetaPage() {
       </div>
     )
   }
+
+  // Helper para cálculos seguros de data
+  const getWaitTimeInMinutes = (dateStr: string | null | undefined) => {
+    if (!dateStr) return 0;
+    try {
+      const start = new Date(dateStr).getTime();
+      const now = new Date().getTime();
+      const diff = Math.max(0, Math.floor((now - start) / 60000));
+      return isNaN(diff) ? 0 : diff;
+    } catch (e) {
+      return 0;
+    }
+  };
 
   const collectionOrders = (orders || []).filter(o => 
     o?.status === 'waiting_collection' || o?.status === 'waiting'
@@ -65,22 +79,20 @@ export default function LabColetaPage() {
     
     const matchesWorkbench = filterWorkbench === 'all' || 
       order.exams?.some(exam => exam?.workbench === filterWorkbench)
+
+    const matchesConvenio = filterConvenio === 'all' || 
+      order.convenioId === filterConvenio || 
+      order.convenioName === filterConvenio
+
+    const waitTime = getWaitTimeInMinutes(order.registeredAt)
+    let matchesWaitTime = true
+    if (filterWaitTime === 'low') matchesWaitTime = waitTime < 15
+    else if (filterWaitTime === 'medium') matchesWaitTime = waitTime >= 15 && waitTime <= 30
+    else if (filterWaitTime === 'high') matchesWaitTime = waitTime > 30
     
-    return matchesSearch && matchesWorkbench && (order.status === 'waiting_collection' || order.status === 'waiting')
+    return matchesSearch && matchesWorkbench && matchesConvenio && matchesWaitTime
   })
 
-  // Helper para cálculos seguros de data
-  const getWaitTimeInMinutes = (dateStr: string | null | undefined) => {
-    if (!dateStr) return 0;
-    try {
-      const start = new Date(dateStr).getTime();
-      const now = new Date().getTime();
-      const diff = Math.max(0, Math.floor((now - start) / 60000));
-      return isNaN(diff) ? 0 : diff;
-    } catch (e) {
-      return 0;
-    }
-  };
 
   const calculateAge = (birthDate: string | null | undefined) => {
     if (!birthDate) return 0;
