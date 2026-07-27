@@ -74,7 +74,7 @@ export function CompanyProvider({ children }: { children: ReactNode }) {
 
   const refreshOrigins = useCallback(async () => {
     if (!user) return
-    const { data, error } = await supabase
+    const { data, error } = await (supabase as any)
       .from('origins')
       .select('*')
       .order('name')
@@ -85,28 +85,38 @@ export function CompanyProvider({ children }: { children: ReactNode }) {
     setAvailableOrigins(data || [])
     
     // Check for default origin preference
-    const { data: pref } = await supabase
+    const { data: pref } = await (supabase as any)
       .from('user_origin_preferences')
       .select('origin_id')
       .eq('user_id', user.id)
       .eq('is_default', true)
-      .single()
+      .maybeSingle()
     
     if (pref && data) {
-      const defaultOrigin = data.find(o => o.id === pref.origin_id)
+      const defaultOrigin = data.find((o: any) => o.id === pref.origin_id)
       if (defaultOrigin && !activeOrigin) {
         setActiveOrigin(defaultOrigin)
       }
     } else if (data && data.length > 0 && !activeOrigin) {
-      // If no default, pick "MATRIZ" or the first one
-      const matriz = data.find(o => o.name.toUpperCase().includes('MATRIZ'))
-      setActiveOrigin(matriz || data[0])
+      const savedOriginId = localStorage.getItem(ORIGIN_KEY)
+      const savedOrigin = data.find((o: any) => o.id === savedOriginId)
+      if (savedOrigin) {
+        setActiveOrigin(savedOrigin)
+      } else {
+        const matriz = data.find((o: any) => o.name.toUpperCase().includes('MATRIZ'))
+        setActiveOrigin(matriz || data[0])
+      }
     }
   }, [user, activeOrigin])
 
   useEffect(() => {
     if (user) refreshOrigins()
-  }, [user])
+  }, [user, refreshOrigins])
+
+  const selectOrigin = useCallback((origin: Origin) => {
+    setActiveOrigin(origin)
+    localStorage.setItem(ORIGIN_KEY, origin.id)
+  }, [])
 
   const companyUserId = user ? getCompanyUserId(user.id) : null
   const companyUser = companyUserId ? MOCK_COMPANY_USERS.find(u => u.id === companyUserId) || null : null
