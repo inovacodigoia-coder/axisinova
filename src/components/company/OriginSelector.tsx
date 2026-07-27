@@ -155,12 +155,13 @@ export function OriginSelector() {
                   <div
                     key={origin.id}
                     onClick={() => {
-                      selectOrigin(origin)
-                      setIsOpen(false)
+                      selectOrigin(origin);
+                      setIsOpen(false);
+                      setSearch('');
                     }}
                     className={`group flex items-center justify-between p-3 rounded-lg border transition-all cursor-pointer ${
                       activeOrigin?.id === origin.id 
-                        ? 'border-primary bg-primary/5 shadow-sm' 
+                        ? 'border-primary bg-primary/5 shadow-sm ring-1 ring-primary/20' 
                         : favorites.includes(origin.id)
                           ? 'border-rose-100 bg-rose-50/30 hover:border-rose-300'
                           : 'border-border hover:border-primary/50 hover:bg-muted/50'
