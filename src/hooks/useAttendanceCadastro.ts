@@ -115,7 +115,7 @@ export function useAttendanceCadastro() {
             if (!latest || maxDate > latest) return maxDate
             return latest
           }, null),
-          lab_guides: data.labGuides || [],
+          lab_guides: data.guides || data.labGuides || [],
           status: data.labGuides?.some((g: any) => g.exams?.some((e: any) => e.collected)) ? 'waiting' : 'open',
           registered_by: user.id,
           registered_by_name: user.name,
