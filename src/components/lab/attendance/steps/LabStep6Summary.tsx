@@ -153,7 +153,7 @@ export function LabStep6Summary({ state, update, unitName }: Props & { update: (
                           </td>
                           <td className="px-4 py-3 text-slate-500 font-medium text-xs">{exam.internalCode || exam.code || '-'}</td>
                           <td className="px-4 py-3 text-slate-700 font-bold text-xs">
-                            {exam.price ? `R$ ${exam.price.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}` : 'R$ 0,00'}
+                            {exam.price > 0 ? `R$ ${exam.price.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}` : 'R$ 0,00'}
                           </td>
                           <td className="px-4 py-3 text-slate-500 text-xs">
                             {exam.selectedMaterial || exam.material || '-'}
