@@ -3,7 +3,7 @@ import { Card } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Skeleton } from '@/components/ui/skeleton'
-import { Search, Plus, Filter, LayoutGrid, List, MoreVertical, Edit2, Trash2, Beaker, AlertTriangle } from 'lucide-react'
+import { Search, Plus, Filter, LayoutGrid, List, Edit2, Trash2, Beaker, AlertTriangle, ChevronLeft, ChevronRight } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
 import { useNavigate } from 'react-router-dom'
 import { cn } from '@/lib/utils'
@@ -19,6 +19,23 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+  DropdownMenuRadioGroup,
+  DropdownMenuRadioItem,
+} from "@/components/ui/dropdown-menu"
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
 
 export default function LabCatalogPage() {
   const navigate = useNavigate()
@@ -27,6 +44,11 @@ export default function LabCatalogPage() {
   const [search, setSearch] = useState('')
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false)
   const [examToDelete, setExamToDelete] = useState<string | null>(null)
+  
+  // Pagination & Filtering state
+  const [pageSize, setPageSize] = useState(10)
+  const [currentPage, setCurrentPage] = useState(1)
+  const [selectedWorkbench, setSelectedWorkbench] = useState<string>('all')
 
   const exams = useMemo(() => {
     if (!registeredExams) return [];
@@ -41,18 +63,37 @@ export default function LabCatalogPage() {
     
     return sortedExams.map(e => ({
       id: e.id,
-      code: e.internalCode || e.tussCode || 'S/C',
+      code: (e.internalCode || e.tussCode || 'S/C').toUpperCase(),
       name: e.name || 'Sem nome',
       material: e.defaultMaterial || 'Soro', 
+      workbenchId: e.workbenchId,
       workbench: workbenches?.find(w => w.id === e.workbenchId)?.name || 'Sem Bancada',
       status: e.isActive ? 'active' : 'inactive'
     }));
   }, [registeredExams, workbenches])
 
-  const filteredExams = exams.filter(e => 
-    e.name.toLowerCase().includes(search.toLowerCase()) || 
-    e.code.toLowerCase().includes(search.toLowerCase())
-  )
+  const filteredExams = useMemo(() => {
+    return exams.filter(e => {
+      const matchesSearch = e.name.toLowerCase().includes(search.toLowerCase()) || 
+        e.code.toLowerCase().includes(search.toLowerCase());
+      
+      const matchesWorkbench = selectedWorkbench === 'all' || e.workbenchId === selectedWorkbench;
+      
+      return matchesSearch && matchesWorkbench;
+    });
+  }, [exams, search, selectedWorkbench]);
+
+  // Pagination logic
+  const totalPages = Math.ceil(filteredExams.length / pageSize)
+  const paginatedExams = useMemo(() => {
+    const start = (currentPage - 1) * pageSize
+    return filteredExams.slice(start, start + pageSize)
+  }, [filteredExams, currentPage, pageSize])
+
+  // Reset to first page when filters change
+  useEffect(() => {
+    setCurrentPage(1)
+  }, [search, selectedWorkbench, pageSize])
 
   const handleDelete = async () => {
     if (!examToDelete) return
@@ -114,9 +155,23 @@ export default function LabCatalogPage() {
               <LayoutGrid className="h-4 w-4" />
             </Button>
           </div>
-          <Button variant="outline" size="sm" className="gap-2">
-            <Filter className="h-4 w-4" /> Filtros
-          </Button>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline" size="sm" className={cn("gap-2", selectedWorkbench !== 'all' && "border-primary text-primary")}>
+                <Filter className="h-4 w-4" /> Filtros
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-56">
+              <DropdownMenuLabel>Filtrar por Bancada</DropdownMenuLabel>
+              <DropdownMenuSeparator />
+              <DropdownMenuRadioGroup value={selectedWorkbench} onValueChange={setSelectedWorkbench}>
+                <DropdownMenuRadioItem value="all">Todas as Bancadas</DropdownMenuRadioItem>
+                {workbenches?.map(w => (
+                  <DropdownMenuRadioItem key={w.id} value={w.id}>{w.name}</DropdownMenuRadioItem>
+                ))}
+              </DropdownMenuRadioGroup>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
       </div>
 
@@ -143,87 +198,199 @@ export default function LabCatalogPage() {
             <p className="text-muted-foreground">Ajuste sua busca ou cadastre um novo exame.</p>
           </div>
         ) : view === 'list' ? (
-          <Card className="overflow-hidden border-border">
-            <table className="w-full text-left text-sm">
-              <thead className="bg-muted/50 border-b">
-                <tr>
-                  <th className="px-6 py-3 font-bold uppercase tracking-wider text-[10px] text-muted-foreground">Exame</th>
-                  <th className="px-6 py-3 font-bold uppercase tracking-wider text-[10px] text-muted-foreground">Código</th>
-                  <th className="px-6 py-3 font-bold uppercase tracking-wider text-[10px] text-muted-foreground">Material</th>
-                  <th className="px-6 py-3 font-bold uppercase tracking-wider text-[10px] text-muted-foreground">Bancada</th>
-                  <th className="px-6 py-3 font-bold uppercase tracking-wider text-[10px] text-muted-foreground">Status</th>
-                  <th className="px-6 py-3 text-right"></th>
-                </tr>
-              </thead>
-              <tbody className="divide-y">
-                {filteredExams.map((exam) => (
-                  <tr key={exam.id} className="hover:bg-muted/30 transition-colors group">
-                    <td className="px-6 py-4">
-                      <p className="font-bold text-foreground">{exam.name}</p>
-                    </td>
-                    <td className="px-6 py-4">
-                      <Badge variant="outline" className="font-mono text-[10px]">{exam.code}</Badge>
-                    </td>
-                    <td className="px-6 py-4 text-muted-foreground">{exam.material}</td>
-                    <td className="px-6 py-4">
-                      <span className="text-xs font-medium px-2 py-1 bg-primary/5 text-primary rounded-md">{exam.workbench}</span>
-                    </td>
-                    <td className="px-6 py-4">
-                      <div className="flex items-center gap-1.5">
-                        <div className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
-                        <span className="text-xs">Ativo</span>
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 text-right">
-                      <div className="flex justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                        <Button variant="ghost" size="sm" className="h-8 w-8 p-0" onClick={() => navigate(`${exam.id}/editar`)}>
-                          <Edit2 className="h-3.5 w-3.5" />
-                        </Button>
-                        <Button 
-                          variant="ghost" 
-                          size="sm" 
-                          className="h-8 w-8 p-0 text-red-600 hover:text-red-700 hover:bg-red-50"
-                          onClick={() => openDeleteConfirm(exam.id)}
-                        >
-                          <Trash2 className="h-3.5 w-3.5" />
-                        </Button>
-                      </div>
-                    </td>
+          <div className="space-y-4">
+            <Card className="overflow-hidden border-border">
+              <table className="w-full text-left text-sm">
+                <thead className="bg-muted/50 border-b">
+                  <tr>
+                    <th className="px-6 py-3 font-bold uppercase tracking-wider text-[10px] text-muted-foreground">Exame</th>
+                    <th className="px-6 py-3 font-bold uppercase tracking-wider text-[10px] text-muted-foreground">Código</th>
+                    <th className="px-6 py-3 font-bold uppercase tracking-wider text-[10px] text-muted-foreground">Material</th>
+                    <th className="px-6 py-3 font-bold uppercase tracking-wider text-[10px] text-muted-foreground">Bancada</th>
+                    <th className="px-6 py-3 font-bold uppercase tracking-wider text-[10px] text-muted-foreground">Status</th>
+                    <th className="px-6 py-3 text-right"></th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
-          </Card>
+                </thead>
+                <tbody className="divide-y">
+                  {paginatedExams.map((exam) => (
+                    <tr key={exam.id} className="hover:bg-muted/30 transition-colors group">
+                      <td className="px-6 py-4">
+                        <p className="font-bold text-foreground">{exam.name}</p>
+                      </td>
+                      <td className="px-6 py-4">
+                        <Badge variant="outline" className="font-mono text-[10px]">{exam.code}</Badge>
+                      </td>
+                      <td className="px-6 py-4 text-muted-foreground">{exam.material}</td>
+                      <td className="px-6 py-4">
+                        <span className="text-xs font-medium px-2 py-1 bg-primary/5 text-primary rounded-md">{exam.workbench}</span>
+                      </td>
+                      <td className="px-6 py-4">
+                        <div className="flex items-center gap-1.5">
+                          <div className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
+                          <span className="text-xs">Ativo</span>
+                        </div>
+                      </td>
+                      <td className="px-6 py-4 text-right">
+                        <div className="flex justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                          <Button variant="ghost" size="sm" className="h-8 w-8 p-0" onClick={() => navigate(`${exam.id}/editar`)}>
+                            <Edit2 className="h-3.5 w-3.5" />
+                          </Button>
+                          <Button 
+                            variant="ghost" 
+                            size="sm" 
+                            className="h-8 w-8 p-0 text-red-600 hover:text-red-700 hover:bg-red-50"
+                            onClick={() => openDeleteConfirm(exam.id)}
+                          >
+                            <Trash2 className="h-3.5 w-3.5" />
+                          </Button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </Card>
+
+            {/* Pagination Controls */}
+            <div className="flex items-center justify-between px-2 py-4">
+              <div className="flex items-center gap-2">
+                <p className="text-xs text-muted-foreground">Mostrar</p>
+                <Select value={pageSize.toString()} onValueChange={(v) => setPageSize(parseInt(v))}>
+                  <SelectTrigger className="h-8 w-[70px]">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="10">10</SelectItem>
+                    <SelectItem value="20">20</SelectItem>
+                    <SelectItem value="30">30</SelectItem>
+                    <SelectItem value="50">50</SelectItem>
+                  </SelectContent>
+                </Select>
+                <p className="text-xs text-muted-foreground">por página</p>
+              </div>
+
+              <div className="flex items-center gap-4">
+                <p className="text-xs text-muted-foreground">
+                  {Math.min((currentPage - 1) * pageSize + 1, filteredExams.length)} - {Math.min(currentPage * pageSize, filteredExams.length)} de {filteredExams.length}
+                </p>
+                <div className="flex items-center gap-1">
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    className="h-8 w-8 p-0" 
+                    onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                    disabled={currentPage === 1}
+                  >
+                    <ChevronLeft className="h-4 w-4" />
+                  </Button>
+                  <div className="flex items-center gap-1">
+                    {Array.from({ length: totalPages }, (_, i) => i + 1)
+                      .filter(p => p === 1 || p === totalPages || (p >= currentPage - 1 && p <= currentPage + 1))
+                      .map((p, i, arr) => (
+                        <div key={p} className="flex items-center">
+                          {i > 0 && arr[i-1] !== p - 1 && <span className="text-muted-foreground mx-1 text-xs">...</span>}
+                          <Button 
+                            variant={currentPage === p ? "default" : "outline"} 
+                            size="sm" 
+                            className="h-8 w-8 p-0"
+                            onClick={() => setCurrentPage(p)}
+                          >
+                            {p}
+                          </Button>
+                        </div>
+                      ))
+                    }
+                  </div>
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    className="h-8 w-8 p-0" 
+                    onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                    disabled={currentPage === totalPages || totalPages === 0}
+                  >
+                    <ChevronRight className="h-4 w-4" />
+                  </Button>
+                </div>
+              </div>
+            </div>
+          </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {filteredExams.map((exam) => (
-              <Card key={exam.id} className="p-4 hover:border-primary/30 transition-all group">
-                <div className="flex items-start justify-between mb-4">
-                  <div className="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center text-primary">
-                    <Beaker className="h-5 w-5" />
+          <div className="space-y-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {paginatedExams.map((exam) => (
+                <Card key={exam.id} className="p-4 hover:border-primary/30 transition-all group">
+                  <div className="flex items-start justify-between mb-4">
+                    <div className="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center text-primary">
+                      <Beaker className="h-5 w-5" />
+                    </div>
+                    <Badge variant="outline" className="font-mono">{exam.code}</Badge>
                   </div>
-                  <Badge variant="outline" className="font-mono">{exam.code}</Badge>
-                </div>
-                <h3 className="font-bold text-foreground mb-1">{exam.name}</h3>
-                <p className="text-xs text-muted-foreground mb-3">{exam.material}</p>
-                <div className="flex items-center justify-between pt-3 border-t">
-                  <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">{exam.workbench}</span>
-                  <div className="flex gap-1">
-                    <Button variant="ghost" size="sm" className="h-8 w-8 p-0" onClick={() => navigate(`${exam.id}/editar`)}>
-                      <Edit2 className="h-3.5 w-3.5" />
-                    </Button>
-                    <Button 
-                      variant="ghost" 
-                      size="sm" 
-                      className="h-8 w-8 p-0 text-red-600"
-                      onClick={() => openDeleteConfirm(exam.id)}
-                    >
-                      <Trash2 className="h-3.5 w-3.5" />
-                    </Button>
+                  <h3 className="font-bold text-foreground mb-1">{exam.name}</h3>
+                  <p className="text-xs text-muted-foreground mb-3">{exam.material}</p>
+                  <div className="flex items-center justify-between pt-3 border-t">
+                    <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">{exam.workbench}</span>
+                    <div className="flex gap-1">
+                      <Button variant="ghost" size="sm" className="h-8 w-8 p-0" onClick={() => navigate(`${exam.id}/editar`)}>
+                        <Edit2 className="h-3.5 w-3.5" />
+                      </Button>
+                      <Button 
+                        variant="ghost" 
+                        size="sm" 
+                        className="h-8 w-8 p-0 text-red-600"
+                        onClick={() => openDeleteConfirm(exam.id)}
+                      >
+                        <Trash2 className="h-3.5 w-3.5" />
+                      </Button>
+                    </div>
                   </div>
+                </Card>
+              ))}
+            </div>
+
+            {/* Pagination for Grid View */}
+            <div className="flex items-center justify-between px-2 py-4">
+              <div className="flex items-center gap-2">
+                <p className="text-xs text-muted-foreground">Mostrar</p>
+                <Select value={pageSize.toString()} onValueChange={(v) => setPageSize(parseInt(v))}>
+                  <SelectTrigger className="h-8 w-[70px]">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="10">10</SelectItem>
+                    <SelectItem value="20">20</SelectItem>
+                    <SelectItem value="30">30</SelectItem>
+                    <SelectItem value="50">50</SelectItem>
+                  </SelectContent>
+                </Select>
+                <p className="text-xs text-muted-foreground">por página</p>
+              </div>
+
+              <div className="flex items-center gap-4">
+                <p className="text-xs text-muted-foreground">
+                  {Math.min((currentPage - 1) * pageSize + 1, filteredExams.length)} - {Math.min(currentPage * pageSize, filteredExams.length)} de {filteredExams.length}
+                </p>
+                <div className="flex items-center gap-1">
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    className="h-8 w-8 p-0" 
+                    onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                    disabled={currentPage === 1}
+                  >
+                    <ChevronLeft className="h-4 w-4" />
+                  </Button>
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    className="h-8 w-8 p-0" 
+                    onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                    disabled={currentPage === totalPages || totalPages === 0}
+                  >
+                    <ChevronRight className="h-4 w-4" />
+                  </Button>
                 </div>
-              </Card>
-            ))}
+              </div>
+            </div>
           </div>
         )}
       </div>
