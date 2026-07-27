@@ -39,8 +39,9 @@ export default function LabColetaPage() {
       order.protocol?.toLowerCase().includes(search.toLowerCase())
     
     // Filtro por bancada real: verifica se algum exame do pedido pertence à bancada selecionada
+    // Nota: O campo na ordem é 'workbench' (string nome ou ID)
     const matchesWorkbench = filterWorkbench === 'all' || 
-      order.exams?.some(exam => exam.workbenchId === filterWorkbench)
+      order.exams?.some(exam => exam.workbench === filterWorkbench)
     
     return matchesSearch && matchesWorkbench && order.status === 'waiting_collection'
   })
@@ -49,10 +50,10 @@ export default function LabColetaPage() {
   const totalWaiting = filteredOrders.length
   
   // Total de tubos únicos necessários para todos os pedidos na fila
+  // Agrupa por material para ter uma contagem mais real
   const totalTubes = filteredOrders.reduce((acc, order) => {
-    // Se o pedido tiver exames com materiais definidos, poderíamos contar aqui.
-    // Como simplificação para o mock/campo atual, vamos somar tubos baseados nos exames
-    return acc + (order.exams?.length || 1) 
+    const uniqueMaterials = new Set(order.exams?.map(e => e.material).filter(Boolean))
+    return acc + (uniqueMaterials.size || 1)
   }, 0)
 
   // Tempo médio de espera (simulado com base na data de criação se disponível, ou fixo se não)
