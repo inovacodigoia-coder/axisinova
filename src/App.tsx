@@ -48,8 +48,9 @@ const App = () => (
         <BrowserRouter>
           <AuthProvider>
             <CompanyProvider>
-              <QueueProvider>
-              <Routes>
+              <RegistersProvider>
+                <QueueProvider>
+                  <Routes>
                 {/* Public */}
                 <Route path="/" element={<LandingPage />} />
                 <Route path="/verde" element={<GreenScreenPage />} />
@@ -75,7 +76,7 @@ const App = () => (
                 {/* Profile Selector */}
                 <Route path="/selecionar-perfil" element={<PrivateRoute><ProfileSelectorPage /></PrivateRoute>} />
                 <Route path="/selecionar-origem" element={<PrivateRoute><OriginSelectorPage /></PrivateRoute>} />
-                <Route path="/app/lab/coleta" element={<PrivateRoute><RegistersProvider><LabColetaPage /></RegistersProvider></PrivateRoute>} />
+                <Route path="/app/lab/coleta" element={<PrivateRoute><LabColetaPage /></PrivateRoute>} />
 
                 {/* Super Admin */}
                 <Route path="/superadmin" element={<SuperAdminRoute><SuperAdminLayout /></SuperAdminRoute>}>
@@ -98,8 +99,9 @@ const App = () => (
                 <Route path="/app/*" element={<PrivateRoute><CompanyPortalLayout /></PrivateRoute>} />
 
                 <Route path="*" element={<NotFound />} />
-              </Routes>
-              </QueueProvider>
+                </Routes>
+                </QueueProvider>
+              </RegistersProvider>
             </CompanyProvider>
           </AuthProvider>
         </BrowserRouter>
