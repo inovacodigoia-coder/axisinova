@@ -508,20 +508,26 @@ function GeneralInfoSection({ isEditing, data, workbenches, onChange }: { isEdit
         </div>
       </div>
 
-      <div className="space-y-6 pt-6 border-t border-border">
-        <div className="flex items-center gap-2">
-          <Scale className="h-5 w-5 text-primary" />
-          <h3 className="text-lg font-bold">Valores de Referência do Exame</h3>
+      {data.referenceValues && data.referenceValues.length > 0 && (
+        <div className="space-y-6 pt-6 border-t border-border">
+          <div className="flex items-center gap-2">
+            <Scale className="h-5 w-5 text-primary" />
+            <h3 className="text-lg font-bold">Valores de Referência do Exame</h3>
+          </div>
+          <p className="text-sm text-muted-foreground">
+            Estes são os valores de referência globais configurados para este exame. Para referências específicas por parâmetro, utilize a aba 
+            <span className="font-bold text-primary"> "Parâmetros e Máscara"</span>.
+          </p>
+          
+          <div className="bg-muted/10 border rounded-xl p-4">
+            <ReferenceValuesSection 
+              parameter={{ name: data.name }} 
+              referenceValues={data.referenceValues}
+            />
+          </div>
         </div>
-        <p className="text-sm text-muted-foreground">
-          Configure aqui os valores de referência globais para este exame. Para referências específicas por parâmetro, utilize a aba 
-          <span className="font-bold text-primary"> "Parâmetros e Máscara"</span>.
-        </p>
-        
-        <div className="bg-muted/10 border rounded-xl p-4">
-          <ReferenceValuesSection parameter={{ name: data.name }} />
-        </div>
-      </div>
+      )}
+
 
       <div className="space-y-6 pt-6 border-t border-border">
         <div className="flex items-center justify-between">
