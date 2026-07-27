@@ -1014,12 +1014,13 @@ function ReferenceValuesModal({ parameter, onClose, onSave }: { parameter: any, 
         <DialogFooter className="gap-2">
           <Button variant="outline" onClick={onClose}>Cancelar</Button>
           <Button className="gradient-bg text-white px-8" onClick={() => {
-            // Update the global exam reference values if this is the "main" parameter or just sync
-            // For now, we assume the user wants this synced
-            onChange({ referenceValues: faixas });
+            if (onSave) {
+              onSave({ referenceValues: faixas });
+            }
             onClose();
           }}>Salvar</Button>
         </DialogFooter>
+
 
       </DialogContent>
     </Dialog>
