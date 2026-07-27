@@ -90,10 +90,11 @@ export function AttendanceLookupModal({ open, onClose, unitName, guicheName, onA
     return m
   }, [patients])
 
-  const grouped = useMemo(() => {
+  const filtered = useMemo(() => {
     const term = normalize(search.trim())
     const pTerm = normalize(patientSearch.trim())
-    const list = orders.filter(o => {
+    
+    return orders.filter(o => {
       const p = patientById.get(o.patientId)
       
       if (statusFilter !== 'all' && o.status !== statusFilter) return false
@@ -113,21 +114,7 @@ export function AttendanceLookupModal({ open, onClose, unitName, guicheName, onA
       }
 
       return true
-    })
-    const byPatient = new Map<string, AttendanceOrder[]>()
-    list.forEach(o => {
-      const arr = byPatient.get(o.patientId) || []
-      arr.push(o)
-      byPatient.set(o.patientId, arr)
-    })
-    return Array.from(byPatient.entries())
-      .map(([pid, items]) => ({
-        patientId: pid,
-        patient: patientById.get(pid),
-        patientName: items[0].patientName,
-        items: items.sort((a, b) => b.registeredAt.localeCompare(a.registeredAt)),
-      }))
-      .sort((a, b) => a.patientName.localeCompare(b.patientName))
+    }).sort((a, b) => b.registeredAt.localeCompare(a.registeredAt))
   }, [orders, patientById, search, patientSearch, statusFilter])
 
   const togglePatient = (pid: string) => {
@@ -216,7 +203,7 @@ export function AttendanceLookupModal({ open, onClose, unitName, guicheName, onA
             </Button>
           </div>
           <p className="text-xs text-muted-foreground">
-            {grouped.length} paciente{grouped.length === 1 ? '' : 's'} · {grouped.reduce((s, g) => s + g.items.length, 0)} atendimento{grouped.reduce((s, g) => s + g.items.length, 0) === 1 ? '' : 's'}
+            {filtered.length} atendimento{filtered.length === 1 ? '' : 's'}
           </p>
         </div>
 
