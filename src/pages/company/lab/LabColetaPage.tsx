@@ -390,21 +390,25 @@ export default function LabColetaPage() {
                               <History className="h-3 w-3" /> Trilha de Auditoria
                             </label>
                             <div className="space-y-2 max-h-32 overflow-y-auto pr-2 custom-scrollbar">
-                              {order.auditTrail?.slice().reverse().map((entry, idx) => (
-                                <div key={idx} className="flex gap-3 text-[11px] leading-tight">
-                                  <div className="text-muted-foreground whitespace-nowrap pt-0.5">
-                                    {new Date(entry.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                              {order.auditTrail?.slice().reverse().map((entry, idx) => {
+                                const time = entry.timestamp ? new Date(entry.timestamp) : null;
+                                const isValid = time && !isNaN(time.getTime());
+                                return (
+                                  <div key={idx} className="flex gap-3 text-[11px] leading-tight">
+                                    <div className="text-muted-foreground whitespace-nowrap pt-0.5">
+                                      {isValid ? time.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '--:--'}
+                                    </div>
+                                    <div>
+                                      <span className="font-bold text-foreground">
+                                        {entry.action === 'opened' ? 'Iniciou atendimento' : 
+                                         entry.action === 'confirmed' ? 'Confirmou coleta' :
+                                         entry.action === 'reprinted' ? 'Reimprimiu etiquetas' : 'Adiou atendimento'}
+                                      </span>
+                                      <span className="text-muted-foreground ml-1">por {entry.userName}</span>
+                                    </div>
                                   </div>
-                                  <div>
-                                    <span className="font-bold text-foreground">
-                                      {entry.action === 'opened' ? 'Iniciou atendimento' : 
-                                       entry.action === 'confirmed' ? 'Confirmou coleta' :
-                                       entry.action === 'reprinted' ? 'Reimprimiu etiquetas' : 'Adiou atendimento'}
-                                    </span>
-                                    <span className="text-muted-foreground ml-1">por {entry.userName}</span>
-                                  </div>
-                                </div>
-                              ))}
+                                );
+                              })}
                               {(!order.auditTrail || order.auditTrail.length === 0) && (
                                 <p className="text-[11px] text-muted-foreground italic">Nenhum histórico registrado.</p>
                               )}
