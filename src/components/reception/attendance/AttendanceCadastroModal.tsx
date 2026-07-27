@@ -283,9 +283,8 @@ export function AttendanceCadastroModal({
     
     // Se estiver no passo do paciente e houver alterações não sincronizadas
     if (isLab && STEPS_LAB_DYNAMIC[step] === 'Cliente' && state.patientUpdatedLocally) {
-      // O usuário clicou em Próximo mas tem alterações pendentes
-      // De acordo com o prompt: "se for Próximo continuar sem atualização"
-      // Mas o botão "Nova informações no cadastro atualizar antes de continuar" deve estar visível
+      const confirmNext = window.confirm('Existem alterações no cadastro que não foram salvas. Deseja atualizar o cadastro antes de prosseguir? \n\nClique em CANCELAR para atualizar ou OK para continuar sem salvar.');
+      if (!confirmNext) return;
     }
 
     const maxStep = STEPS_LAB_DYNAMIC.length - 1
