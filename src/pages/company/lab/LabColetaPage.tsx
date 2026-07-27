@@ -309,9 +309,10 @@ export default function LabColetaPage() {
                 onChange={(e) => setFilterWaitTime(e.target.value as any)}
               >
                 <option value="all">Qualquer tempo</option>
-                <option value="low">Curto (< 15 min)</option>
+                <option value="low">Curto (&lt; 15 min)</option>
                 <option value="medium">Médio (15 - 30 min)</option>
-                <option value="high">Longo (> 30 min)</option>
+                <option value="high">Longo (&gt; 30 min)</option>
+
               </select>
             </div>
 
