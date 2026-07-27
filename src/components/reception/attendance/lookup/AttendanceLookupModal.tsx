@@ -317,7 +317,7 @@ function OrderRowModern({
             {ATTENDANCE_STATUS_LABELS[order.status]?.label || order.status}
           </span>
         </div>
-        <div className="text-muted-foreground">{deliveryDate ? deliveryDate.toLocaleDateString('pt-BR') : '-'}</div>
+        <div className="text-muted-foreground">{deliveryDate && order.status === 'waiting' ? deliveryDate.toLocaleDateString('pt-BR') : '-'}</div>
         <div className="truncate text-muted-foreground uppercase">{order.originName || 'Apartamentos'}</div>
       </div>
 
