@@ -111,15 +111,20 @@ export function OriginSelector() {
         <DialogContent className="sm:max-w-[500px]">
           <DialogHeader>
             <DialogTitle className="text-lg font-semibold flex items-center justify-between">
-              Seleção de Origem
-              <div className="flex items-center gap-2">
-                 <button 
-                  onClick={() => setOnlyFavorites(!onlyFavorites)}
-                  className={`p-2 rounded-lg transition-colors ${onlyFavorites ? 'bg-primary/10 text-primary' : 'hover:bg-muted text-muted-foreground'}`}
-                  title="Mostrar apenas favoritos"
-                >
-                  <Heart className={`h-4 w-4 ${onlyFavorites ? 'fill-current' : ''}`} />
-                </button>
+              <div className="flex items-center justify-between w-full pr-6">
+                <span>Seleção de Origem</span>
+                <div className="flex items-center gap-2">
+                   <button 
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      setOnlyFavorites(!onlyFavorites)
+                    }}
+                    className={`p-2 rounded-lg transition-colors border ${onlyFavorites ? 'bg-rose-50 border-rose-200 text-rose-500' : 'hover:bg-muted text-muted-foreground border-transparent'}`}
+                    title={onlyFavorites ? "Mostrar todas" : "Mostrar apenas favoritas"}
+                  >
+                    <Heart className={`h-4 w-4 ${onlyFavorites ? 'fill-current' : ''}`} />
+                  </button>
+                </div>
               </div>
             </DialogTitle>
           </DialogHeader>
