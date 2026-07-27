@@ -210,7 +210,7 @@ export function AttendanceLookupModal({ open, onClose, unitName, guicheName, onA
         {/* Results Table Header */}
         <div className="bg-muted/10 border-b border-border px-6 py-2">
           <div className="grid grid-cols-[120px_140px_1fr_100px_120px_120px_100px_140px_120px] gap-4 text-[10px] font-bold text-muted-foreground uppercase tracking-wider">
-            <div>Pedido / Amostra</div>
+            <div>Pedido</div>
             <div>Dt. Atend.</div>
             <div>Cliente</div>
             <div>Nascimento</div>
@@ -303,7 +303,7 @@ function OrderRowModern({
       onDoubleClick={onDetails}
     >
       <div className="grid grid-cols-[120px_140px_1fr_100px_120px_120px_100px_140px_120px] gap-4 px-6 py-3 items-center text-xs">
-        <div className="font-mono text-primary font-bold hover:underline" onClick={(e) => { e.stopPropagation(); onDetails(); }}>{order.orderNumber}-1</div>
+        <div className="font-mono text-primary font-bold hover:underline" onClick={(e) => { e.stopPropagation(); onDetails(); }}>{order.orderNumber}</div>
         <div className="text-muted-foreground">
           {date.toLocaleDateString('pt-BR')} {date.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
         </div>
@@ -321,16 +321,7 @@ function OrderRowModern({
         <div className="text-muted-foreground">{deliveryDate ? deliveryDate.toLocaleDateString('pt-BR') : '-'}</div>
         <div className="truncate text-muted-foreground uppercase">{order.originName || 'Apartamentos'}</div>
         <div className="flex items-center justify-end gap-1">
-          <Button size="icon" variant="ghost" className="h-8 w-8 text-muted-foreground hover:text-primary" onClick={onEdit} title="Editar">
-            <Pencil className="h-3.5 w-3.5" />
-          </Button>
-          <Button size="icon" variant="ghost" className="h-8 w-8 text-muted-foreground hover:text-primary" onClick={onPrint} title="Imprimir">
-            <Printer className="h-3.5 w-3.5" />
-          </Button>
-          <Button size="icon" variant="ghost" className="h-8 w-8 text-muted-foreground hover:text-emerald-600" onClick={onAddProcedure} title="Adicionar">
-            <Plus className="h-3.5 w-3.5" />
-          </Button>
-          <Button size="icon" variant="ghost" className="h-8 w-8 text-muted-foreground" onClick={() => setOpen(!open)} title="Ver detalhes">
+          <Button size="icon" variant="ghost" className="h-8 w-8 text-muted-foreground" onClick={(e) => { e.stopPropagation(); setOpen(!open); }} title="Ver detalhes">
             {open ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
           </Button>
         </div>
@@ -348,6 +339,20 @@ function OrderRowModern({
               {order.cardNumber && <Detail label="Carteirinha" value={order.cardNumber} />}
               {patient?.motherName && <Detail label="Nome da Mãe" value={patient.motherName} />}
               {order.registeredByName && <Detail label="Registrado por" value={order.registeredByName} />}
+              <div className="flex items-center gap-2 pt-2 border-t border-border mt-2 col-span-full">
+                <Button size="sm" variant="outline" className="h-8 gap-2 text-primary border-primary/20 hover:bg-primary/5" onClick={(e) => { e.stopPropagation(); onEdit(); }}>
+                  <Pencil className="h-3.5 w-3.5" />
+                  Editar
+                </Button>
+                <Button size="sm" variant="outline" className="h-8 gap-2 text-primary border-primary/20 hover:bg-primary/5" onClick={(e) => { e.stopPropagation(); onPrint(); }}>
+                  <Printer className="h-3.5 w-3.5" />
+                  Imprimir
+                </Button>
+                <Button size="sm" variant="outline" className="h-8 gap-2 text-emerald-600 border-emerald-200 hover:bg-emerald-50" onClick={(e) => { e.stopPropagation(); onAddProcedure(); }}>
+                  <Plus className="h-3.5 w-3.5" />
+                  Adicionar
+                </Button>
+              </div>
             </div>
           </div>
         </div>
