@@ -80,11 +80,36 @@ export default function EstablishmentsSettingsPage() {
         .update(payload)
         .eq('id', editingEstablishment.id)
       error = err
+
+      // Sync/create matching origin
+      if (!err) {
+        const existingOrigins = (editingEstablishment as any).origins || []
+        if (existingOrigins.length === 0) {
+          await (supabase as any).from('origins').insert([{
+            company_id: user?.companyId,
+            establishment_id: editingEstablishment.id,
+            name: formData.name,
+            internal_code: formData.internal_code || null,
+          }])
+        }
+      }
     } else {
-      const { error: err } = await (supabase as any)
+      const { data: newEst, error: err } = await (supabase as any)
         .from('establishments')
         .insert([payload])
+        .select()
+        .single()
       error = err
+
+      // Auto-create matching origin for the new establishment
+      if (!err && newEst) {
+        await (supabase as any).from('origins').insert([{
+          company_id: user?.companyId,
+          establishment_id: newEst.id,
+          name: formData.name,
+          internal_code: formData.internal_code || null,
+        }])
+      }
     }
 
     if (error) {
