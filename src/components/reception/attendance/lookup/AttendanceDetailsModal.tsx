@@ -226,7 +226,7 @@ export function AttendanceDetailsModal({ open, onClose, order, patient }: Attend
                     </div>
                     <div className="flex items-center gap-1.5 bg-white border border-border rounded-full px-3 py-1 shadow-sm">
                       <span className="text-[10px] font-bold text-muted-foreground uppercase">Convênio</span>
-                      <span className="text-[10px] font-extrabold text-[#007AFF] uppercase">{order.convenioName || 'PARTICULAR'}</span>
+                      <span className="text-[10px] font-extrabold text-[#007AFF] uppercase">{order.convenioName || 'Particular'}</span>
                     </div>
                   </div>
                   <div className="flex gap-2">
@@ -243,7 +243,7 @@ export function AttendanceDetailsModal({ open, onClose, order, patient }: Attend
                   <div className="p-4 border-b border-border bg-muted/5 flex items-center justify-between">
                     <div className="flex flex-col gap-1">
                       <div className="flex items-center gap-2">
-                        <span className="text-xs font-bold text-[#007AFF] uppercase">1. {order.convenioName || 'PARTICULAR'}</span>
+                        <span className="text-xs font-bold text-[#007AFF] uppercase">1. {order.convenioName || 'Particular'}</span>
                       </div>
                       <div className="flex items-center gap-1 text-[10px] text-muted-foreground">
                         <User className="h-3 w-3" />

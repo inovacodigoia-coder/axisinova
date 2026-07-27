@@ -122,8 +122,8 @@ export function useAttendanceCadastro() {
 
       // Prioritize the convenio/plan from the first guide if available
       const firstGuide = (data.guides || data.labGuides)?.[0]
-      const convenioId = data.convenioId || firstGuide?.id || firstGuide?.convenioId
-      const convenioName = data.convenioName || firstGuide?.name || firstGuide?.convenioName || (firstGuide?.plan === 'PARTICULAR' ? 'Particular' : firstGuide?.plan)
+      const convenioId = firstGuide?.convenioId || data.convenioId
+      const convenioName = firstGuide?.convenioName || firstGuide?.name || firstGuide?.plan || data.convenioName || 'Particular'
 
       const { data: newOrder, error } = await (supabase
         .from('attendance_orders' as any) as any)

@@ -71,7 +71,7 @@ export function LabStep3GuidesProcedures({ state, update }: Props) {
 
   useEffect(() => {
     if (guides.length === 0) {
-      const initialGuide = { id: '1', name: 'Particular', plan: 'PARTICULAR', operator: 'PARTICULAR', number: '', exams: [], isDoctorDisabled: false };
+      const initialGuide = { id: '1', name: 'Particular', plan: 'PARTICULAR', convenioName: 'Particular', convenioId: null, operator: 'PARTICULAR', number: '', exams: [], isDoctorDisabled: false };
       setGuides([initialGuide]);
       setActiveGuideId('1');
       update({ guides: [initialGuide] });
@@ -98,7 +98,7 @@ export function LabStep3GuidesProcedures({ state, update }: Props) {
 
   const addGuide = () => {
     const newId = (guides.length + 1).toString();
-    const newGuide = { id: newId, name: 'PARTICULAR', plan: 'PARTICULAR', operator: 'PARTICULAR', number: '', exams: [], isDoctorDisabled: false };
+    const newGuide = { id: newId, name: 'PARTICULAR', plan: 'PARTICULAR', convenioName: 'Particular', convenioId: null, operator: 'PARTICULAR', number: '', exams: [], isDoctorDisabled: false };
     setGuides([...guides, newGuide]);
     setActiveGuideId(newId);
     update({ guides: [...guides, newGuide] });
@@ -292,6 +292,7 @@ export function LabStep3GuidesProcedures({ state, update }: Props) {
                     plan: selectedPlan,
                     name: selectedPlan,
                     convenioName: selectedPlan,
+                    convenioId: convenio?.id || null,
                     operator: convenio?.operator || selectedPlan
                   } : g);
                   setGuides(newGuides);
