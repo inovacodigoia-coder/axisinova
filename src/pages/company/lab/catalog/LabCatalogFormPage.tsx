@@ -878,7 +878,9 @@ function ParametersSection({ parameters, setParameters, onUpdateReference }: { p
         <ReferenceValuesModal 
           parameter={editingReference} 
           onClose={() => setEditingReference(null)} 
+          onSave={onUpdateReference}
         />
+
       </Card>
     </TooltipProvider>
   )
