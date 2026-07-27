@@ -109,7 +109,7 @@ export function LabStep6Summary({ state, update, unitName }: Props & { update: (
           {state.guides?.filter(guide => guide.exams && guide.exams.length > 0).map((guide, gIdx) => (
             <div key={guide.id || gIdx} className="space-y-4">
               <h4 className="text-sm font-bold text-slate-700">
-                {gIdx + 1}. {guide.name || guide.plan || 'PARTICULAR'}
+                {gIdx + 1}. {guide.name}
               </h4>
 
               <div className="overflow-x-auto">
