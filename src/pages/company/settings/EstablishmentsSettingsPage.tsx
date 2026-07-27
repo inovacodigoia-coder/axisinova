@@ -150,9 +150,13 @@ export default function EstablishmentsSettingsPage() {
                     <span className="flex items-center gap-1"><Globe className="h-3 w-3" /> {e.cnpj || 'Sem CNPJ'}</span>
                     <span className="flex items-center gap-1"><MapPin className="h-3 w-3" /> {e.city || 'Cidade não informada'}</span>
                     {(e as any).origins?.length > 0 && (
-                      <span className="flex items-center gap-1 bg-primary/5 px-1.5 py-0.5 rounded text-primary font-medium">
-                        {(e as any).origins.length} {(e as any).origins.length === 1 ? 'Origem' : 'Origens'}
-                      </span>
+                      <div className="flex flex-wrap gap-2 mt-2">
+                        {(e as any).origins.map((o: any) => (
+                          <span key={o.id} className="text-[10px] bg-primary/5 text-primary border border-primary/10 px-2 py-0.5 rounded-full font-medium">
+                            {o.name}
+                          </span>
+                        ))}
+                      </div>
                     )}
                   </div>
                 </div>
