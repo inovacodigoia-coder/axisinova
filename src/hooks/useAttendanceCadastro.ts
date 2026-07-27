@@ -107,7 +107,14 @@ export function useAttendanceCadastro() {
           authorization_expiry: data.authorizationExpiry,
           authorization_password: data.authorizationPassword,
           private_value: data.privateValue,
-          delivery_date: data.deliveryDate,
+          delivery_date: data.deliveryDate || data.labGuides?.reduce((latest: string | null, guide: any) => {
+            if (!guide.exams) return latest
+            const dates = guide.exams.map((e: any) => e.deliveryDate).filter(Boolean)
+            if (dates.length === 0) return latest
+            const maxDate = dates.sort().reverse()[0]
+            if (!latest || maxDate > latest) return maxDate
+            return latest
+          }, null),
           lab_guides: data.labGuides || [],
           status: data.labGuides?.some((g: any) => g.exams?.some((e: any) => e.collected)) ? 'waiting' : 'open',
           delivery_date: data.labGuides?.reduce((latest: string | null, guide: any) => {
