@@ -155,9 +155,23 @@ export default function LabCatalogPage() {
               <LayoutGrid className="h-4 w-4" />
             </Button>
           </div>
-          <Button variant="outline" size="sm" className="gap-2">
-            <Filter className="h-4 w-4" /> Filtros
-          </Button>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline" size="sm" className={cn("gap-2", selectedWorkbench !== 'all' && "border-primary text-primary")}>
+                <Filter className="h-4 w-4" /> Filtros
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-56">
+              <DropdownMenuLabel>Filtrar por Bancada</DropdownMenuLabel>
+              <DropdownMenuSeparator />
+              <DropdownMenuRadioGroup value={selectedWorkbench} onValueChange={setSelectedWorkbench}>
+                <DropdownMenuRadioItem value="all">Todas as Bancadas</DropdownMenuRadioItem>
+                {workbenches?.map(w => (
+                  <DropdownMenuRadioItem key={w.id} value={w.id}>{w.name}</DropdownMenuRadioItem>
+                ))}
+              </DropdownMenuRadioGroup>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
       </div>
 
