@@ -88,7 +88,9 @@ export function OriginSelector() {
   }
 
   const filteredOrigins = availableOrigins.filter(o => {
-    const matchesSearch = o.name.toLowerCase().includes(search.toLowerCase())
+    const searchLower = search.toLowerCase()
+    const matchesSearch = o.name.toLowerCase().includes(searchLower) || 
+                         (o.internal_code && o.internal_code.toLowerCase().includes(searchLower))
     const matchesFavorites = onlyFavorites ? favorites.includes(o.id) : true
     return matchesSearch && matchesFavorites
   })
