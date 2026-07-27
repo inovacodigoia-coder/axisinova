@@ -26,7 +26,10 @@ export default function EstablishmentsSettingsPage() {
     setIsLoading(true)
     const { data, error } = await (supabase as any)
       .from('establishments')
-      .select('*')
+      .select(`
+        *,
+        origins (*)
+      `)
       .order('created_at', { ascending: true })
     
     if (error) {
@@ -109,11 +112,11 @@ export default function EstablishmentsSettingsPage() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-foreground">Estabelecimentos e Unidades</h1>
-          <p className="text-sm text-muted-foreground">Gerencie as unidades físicas da sua empresa</p>
+          <h1 className="text-2xl font-bold text-foreground">Estabelecimentos e Origem</h1>
+          <p className="text-sm text-muted-foreground">Gerencie as unidades físicas e pontos de atendimento da sua empresa</p>
         </div>
         <Button onClick={() => handleOpenModal()} className="gradient-bg text-white gap-2">
-          <Plus className="h-4 w-4" /> Adicionar Unidade
+          <Plus className="h-4 w-4" /> Adicionar Estabelecimento
         </Button>
       </div>
 
@@ -125,40 +128,52 @@ export default function EstablishmentsSettingsPage() {
         ) : establishments.length === 0 ? (
           <div className="text-center py-12 bg-card rounded-xl border border-dashed border-border">
             <Building2 className="h-12 w-12 text-muted-foreground mx-auto mb-4 opacity-20" />
-            <p className="text-muted-foreground">Nenhuma unidade cadastrada.</p>
+            <p className="text-muted-foreground">Nenhum estabelecimento cadastrado.</p>
           </div>
         ) : (
           establishments.map(e => (
-            <div key={e.id} className="group flex items-center justify-between rounded-xl border border-border bg-card p-4 hover:border-primary/50 transition-all shadow-sm">
-              <div className="flex items-center gap-4">
-                <div className={`p-3 rounded-lg ${e.is_main_branch ? 'bg-primary/10 text-primary' : 'bg-muted text-muted-foreground'}`}>
-                  {e.is_main_branch ? <ShieldCheck className="h-6 w-6" /> : <Building2 className="h-6 w-6" />}
-                </div>
-                <div>
-                  <div className="flex items-center gap-2">
-                    <p className="font-semibold text-foreground">{e.name}</p>
-                    {e.is_main_branch && (
-                      <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-primary/10 text-primary font-bold uppercase tracking-wider border border-primary/20">
-                        Matriz
-                      </span>
-                    )}
+            <div key={e.id} className="group flex flex-col gap-4 rounded-xl border border-border bg-card p-4 hover:border-primary/50 transition-all shadow-sm">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-4">
+                  <div className={`p-3 rounded-lg ${e.is_main_branch ? 'bg-primary/10 text-primary' : 'bg-muted text-muted-foreground'}`}>
+                    {e.is_main_branch ? <ShieldCheck className="h-6 w-6" /> : <Building2 className="h-6 w-6" />}
                   </div>
-                  <div className="flex items-center gap-3 mt-1 text-xs text-muted-foreground">
-                    <span className="flex items-center gap-1"><Globe className="h-3 w-3" /> {e.cnpj || 'Sem CNPJ'}</span>
-                    <span className="flex items-center gap-1"><MapPin className="h-3 w-3" /> {e.city || 'Cidade não informada'}</span>
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <p className="font-semibold text-foreground">{e.name}</p>
+                      {e.is_main_branch && (
+                        <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-primary/10 text-primary font-bold uppercase tracking-wider border border-primary/20">
+                          Matriz
+                        </span>
+                      )}
+                    </div>
+                    <div className="flex flex-wrap items-center gap-3 mt-1 text-xs text-muted-foreground">
+                      <span className="flex items-center gap-1"><Globe className="h-3 w-3" /> {e.cnpj || 'Sem CNPJ'}</span>
+                      <span className="flex items-center gap-1"><MapPin className="h-3 w-3" /> {e.city || 'Cidade não informada'}</span>
+                    </div>
                   </div>
                 </div>
-              </div>
-              <div className="flex items-center gap-2">
-                <Button variant="ghost" size="icon" onClick={() => handleOpenModal(e)} className="hover:text-primary">
-                  <Edit2 className="h-4 w-4" />
-                </Button>
-                {!e.is_main_branch && (
-                  <Button variant="ghost" size="icon" onClick={() => handleDelete(e.id)} className="hover:text-destructive">
-                    <Trash2 className="h-4 w-4" />
+                <div className="flex items-center gap-2">
+                  <Button variant="ghost" size="icon" onClick={() => handleOpenModal(e)} className="hover:text-primary">
+                    <Edit2 className="h-4 w-4" />
                   </Button>
-                )}
+                  {!e.is_main_branch && (
+                    <Button variant="ghost" size="icon" onClick={() => handleDelete(e.id)} className="hover:text-destructive">
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  )}
+                </div>
               </div>
+              
+              {(e as any).origins?.length > 0 && (
+                <div className="flex flex-wrap gap-2 pt-3 border-t border-border/50">
+                  {(e as any).origins.map((o: any) => (
+                    <span key={o.id} className="text-[10px] bg-primary/5 text-primary border border-primary/10 px-2 py-0.5 rounded-full font-medium uppercase tracking-tight">
+                      {o.name}
+                    </span>
+                  ))}
+                </div>
+              )}
             </div>
           ))
         )}
@@ -167,16 +182,16 @@ export default function EstablishmentsSettingsPage() {
       <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>{editingEstablishment ? 'Editar Unidade' : 'Nova Unidade'}</DialogTitle>
+            <DialogTitle>{editingEstablishment ? 'Editar Estabelecimento' : 'Novo Estabelecimento'}</DialogTitle>
           </DialogHeader>
           <div className="space-y-4 py-4">
             <div className="space-y-2">
-              <Label htmlFor="name">Nome da Unidade</Label>
+              <Label htmlFor="name">Nome do Estabelecimento</Label>
               <Input
                 id="name"
                 value={formData.name}
                 onChange={e => setFormData({ ...formData, name: e.target.value })}
-                placeholder="Ex: Unidade Centro"
+                placeholder="Ex: Unidade Centro ou Matriz"
               />
             </div>
             <div className="grid grid-cols-2 gap-4">
@@ -207,12 +222,12 @@ export default function EstablishmentsSettingsPage() {
                 onChange={e => setFormData({ ...formData, is_main_branch: e.target.checked })}
                 className="rounded border-gray-300 text-primary focus:ring-primary"
               />
-              <Label htmlFor="is_main" className="text-sm font-normal">Esta é a unidade Matriz</Label>
+              <Label htmlFor="is_main" className="text-sm font-normal">Este é o estabelecimento Matriz</Label>
             </div>
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setIsModalOpen(false)}>Cancelar</Button>
-            <Button onClick={handleSave} className="gradient-bg text-white">Salvar Unidade</Button>
+            <Button onClick={handleSave} className="gradient-bg text-white">Salvar Estabelecimento</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

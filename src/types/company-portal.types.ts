@@ -37,6 +37,7 @@ export interface Establishment {
   city?: string
   is_main_branch: boolean
   created_at?: string
+  origins?: Origin[]
 }
 
 export interface Origin {

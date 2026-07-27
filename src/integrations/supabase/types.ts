@@ -510,6 +510,47 @@ export type Database = {
           },
         ]
       }
+      establishments: {
+        Row: {
+          city: string | null
+          cnpj: string | null
+          company_id: string
+          created_at: string | null
+          id: string
+          is_main_branch: boolean | null
+          name: string
+          updated_at: string | null
+        }
+        Insert: {
+          city?: string | null
+          cnpj?: string | null
+          company_id: string
+          created_at?: string | null
+          id?: string
+          is_main_branch?: boolean | null
+          name: string
+          updated_at?: string | null
+        }
+        Update: {
+          city?: string | null
+          cnpj?: string | null
+          company_id?: string
+          created_at?: string | null
+          id?: string
+          is_main_branch?: boolean | null
+          name?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "establishments_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       exams: {
         Row: {
           attachment_rules: Json
@@ -785,6 +826,51 @@ export type Database = {
             columns: ["patient_id"]
             isOneToOne: false
             referencedRelation: "patients"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      origins: {
+        Row: {
+          company_id: string
+          created_at: string | null
+          establishment_id: string
+          id: string
+          internal_code: string | null
+          name: string
+          updated_at: string | null
+        }
+        Insert: {
+          company_id: string
+          created_at?: string | null
+          establishment_id: string
+          id?: string
+          internal_code?: string | null
+          name: string
+          updated_at?: string | null
+        }
+        Update: {
+          company_id?: string
+          created_at?: string | null
+          establishment_id?: string
+          id?: string
+          internal_code?: string | null
+          name?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "origins_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "origins_establishment_id_fkey"
+            columns: ["establishment_id"]
+            isOneToOne: false
+            referencedRelation: "establishments"
             referencedColumns: ["id"]
           },
         ]
@@ -1572,6 +1658,54 @@ export type Database = {
             columns: ["company_id"]
             isOneToOne: false
             referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      user_origin_preferences: {
+        Row: {
+          company_id: string
+          created_at: string | null
+          id: string
+          is_default: boolean | null
+          is_favorite: boolean | null
+          origin_id: string
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          company_id: string
+          created_at?: string | null
+          id?: string
+          is_default?: boolean | null
+          is_favorite?: boolean | null
+          origin_id: string
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          company_id?: string
+          created_at?: string | null
+          id?: string
+          is_default?: boolean | null
+          is_favorite?: boolean | null
+          origin_id?: string
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_origin_preferences_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "user_origin_preferences_origin_id_fkey"
+            columns: ["origin_id"]
+            isOneToOne: false
+            referencedRelation: "origins"
             referencedColumns: ["id"]
           },
         ]
