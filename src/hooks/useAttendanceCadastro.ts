@@ -109,7 +109,7 @@ export function useAttendanceCadastro() {
           private_value: data.privateValue,
           delivery_date: data.deliveryDate,
           lab_guides: data.labGuides || [],
-          status: 'open',
+          status: 'waiting',
           registered_by: user.id,
           registered_by_name: user.name,
         })
