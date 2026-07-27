@@ -1,7 +1,7 @@
 import { useState, useCallback, useEffect, useMemo, useRef } from 'react'
 import { Dialog, DialogContent } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
-import { X, ArrowLeft, ArrowRight, Check, UserPlus, AlertTriangle } from 'lucide-react'
+import { X, ArrowLeft, ArrowRight, Check, UserPlus, AlertTriangle, Loader2 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { toast } from 'sonner'
 import {
@@ -165,6 +165,7 @@ export function AttendanceCadastroModal({
   const [showPrintSelection, setShowPrintSelection] = useState(false)
   const [savingPatient, setSavingPatient] = useState(false)
   const [showSyncSuccess, setShowSyncSuccess] = useState(false)
+  const [showSyncWarning, setShowSyncWarning] = useState(false)
 
   const handleUpdatePatient = async () => {
     if (!state.patient?.id || !state.tempPatient) return
@@ -283,9 +284,8 @@ export function AttendanceCadastroModal({
     
     // Se estiver no passo do paciente e houver alterações não sincronizadas
     if (isLab && STEPS_LAB_DYNAMIC[step] === 'Cliente' && state.patientUpdatedLocally) {
-      // O usuário clicou em Próximo mas tem alterações pendentes
-      // De acordo com o prompt: "se for Próximo continuar sem atualização"
-      // Mas o botão "Nova informações no cadastro atualizar antes de continuar" deve estar visível
+      setShowSyncWarning(true)
+      return
     }
 
     const maxStep = STEPS_LAB_DYNAMIC.length - 1
@@ -542,7 +542,28 @@ export function AttendanceCadastroModal({
               <ArrowLeft className="h-4 w-4" /> Voltar
             </button>
           )}
-          <div className="flex-1" />
+          <div className="flex-1 flex items-center justify-center gap-4">
+            {isLab && step === 1 && state.patientUpdatedLocally && (
+              <button 
+                onClick={handleUpdatePatient}
+                disabled={savingPatient}
+                className="inline-flex items-center gap-2 rounded-md bg-amber-500 px-4 py-2 text-sm font-bold text-white shadow-sm hover:bg-amber-600 transition-all uppercase"
+              >
+                {savingPatient ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <UserPlus className="h-4 w-4" />
+                )}
+                Novas Informações - Atualizar
+              </button>
+            )}
+            {showSyncSuccess && (
+              <div className="flex items-center gap-2 text-emerald-600 font-bold animate-in fade-in zoom-in duration-300">
+                <Check className="h-4 w-4" />
+                <span className="text-xs uppercase">Cadastro Atualizado!</span>
+              </div>
+            )}
+          </div>
           {!showReview && step < STEPS.length - 1 ? (
             <button
               onClick={next}
@@ -679,6 +700,44 @@ export function AttendanceCadastroModal({
           }}
         />
       )}
+      {/* Aviso de Sincronização Pendente */}
+      <AlertDialog open={showSyncWarning} onOpenChange={setShowSyncWarning}>
+        <AlertDialogContent className="max-w-[400px]">
+          <AlertDialogHeader>
+            <div className="flex items-center gap-3 text-amber-500 mb-2">
+              <div className="p-2 bg-amber-50 rounded-full">
+                <AlertTriangle className="h-6 w-6" />
+              </div>
+              <AlertDialogTitle className="text-xl">Alterações Pendentes</AlertDialogTitle>
+            </div>
+            <AlertDialogDescription className="text-sm text-muted-foreground leading-relaxed">
+              Existem alterações no cadastro que não foram sincronizadas com o banco de dados. 
+              Deseja atualizar agora ou prosseguir sem salvar?
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter className="mt-6">
+            <AlertDialogCancel 
+              onClick={() => {
+                setShowSyncWarning(false)
+                setStep(step + 1)
+              }}
+              className="font-bold"
+            >
+              PROSSEGUIR SEM SALVAR
+            </AlertDialogCancel>
+            <AlertDialogAction 
+              onClick={async () => {
+                await handleUpdatePatient()
+                setShowSyncWarning(false)
+                setStep(step + 1)
+              }}
+              className="gradient-bg text-white font-bold px-6"
+            >
+              ATUALIZAR E CONTINUAR
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </Dialog>
   )
 }
