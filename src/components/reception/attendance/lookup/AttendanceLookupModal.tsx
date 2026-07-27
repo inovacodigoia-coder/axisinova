@@ -60,11 +60,25 @@ function buildDoc(order: AttendanceOrder, patient: Patient | undefined, unitName
   }
 }
 
+const ATTENDANCE_STATUS_LABELS: Record<string, { label: string, color: string }> = {
+  waiting: { label: 'Aguardando', color: 'bg-slate-500' },
+  waiting_collection: { label: 'Coleta', color: 'bg-amber-500' },
+  collection_done: { label: 'Realizada', color: 'bg-emerald-500' },
+  in_analysis: { label: 'Em Análise', color: 'bg-blue-500' },
+  validation: { label: 'Validação', color: 'bg-purple-500' },
+  released: { label: 'Liberado', color: 'bg-emerald-600' },
+  cancelled: { label: 'Cancelado', color: 'bg-red-500' },
+  open: { label: 'Aberto', color: 'bg-blue-400' },
+  authorized: { label: 'Autorizado', color: 'bg-indigo-500' },
+  completed: { label: 'Concluído', color: 'bg-emerald-700' },
+}
+
 export function AttendanceLookupModal({ open, onClose, unitName, guicheName, onAddProcedure }: AttendanceLookupModalProps) {
   const { orders, updateOrder, loading } = useAttendanceCadastro()
   const { patients, loading: patientsLoading } = usePatients()
   const [search, setSearch] = useState('')
   const [patientSearch, setPatientSearch] = useState('')
+  const [statusFilter, setStatusFilter] = useState<string>('all')
   const [expanded, setExpanded] = useState<Set<string>>(new Set())
   const [editing, setEditing] = useState<AttendanceOrder | null>(null)
   const [printDoc, setPrintDoc] = useState<AttendanceControlDocument | null>(null)
