@@ -165,6 +165,7 @@ export function AttendanceCadastroModal({
   const [showPrintSelection, setShowPrintSelection] = useState(false)
   const [savingPatient, setSavingPatient] = useState(false)
   const [showSyncSuccess, setShowSyncSuccess] = useState(false)
+  const [showSyncWarning, setShowSyncWarning] = useState(false)
 
   const handleUpdatePatient = async () => {
     if (!state.patient?.id || !state.tempPatient) return
@@ -283,8 +284,8 @@ export function AttendanceCadastroModal({
     
     // Se estiver no passo do paciente e houver alterações não sincronizadas
     if (isLab && STEPS_LAB_DYNAMIC[step] === 'Cliente' && state.patientUpdatedLocally) {
-      const confirmNext = window.confirm('Existem alterações no cadastro que não foram salvas. Deseja atualizar o cadastro antes de prosseguir? \n\nClique em CANCELAR para atualizar ou OK para continuar sem salvar.');
-      if (!confirmNext) return;
+      setShowSyncWarning(true)
+      return
     }
 
     const maxStep = STEPS_LAB_DYNAMIC.length - 1
@@ -699,6 +700,44 @@ export function AttendanceCadastroModal({
           }}
         />
       )}
+      {/* Aviso de Sincronização Pendente */}
+      <AlertDialog open={showSyncWarning} onOpenChange={setShowSyncWarning}>
+        <AlertDialogContent className="max-w-[400px]">
+          <AlertDialogHeader>
+            <div className="flex items-center gap-3 text-amber-500 mb-2">
+              <div className="p-2 bg-amber-50 rounded-full">
+                <AlertTriangle className="h-6 w-6" />
+              </div>
+              <AlertDialogTitle className="text-xl">Alterações Pendentes</AlertDialogTitle>
+            </div>
+            <AlertDialogDescription className="text-sm text-muted-foreground leading-relaxed">
+              Existem alterações no cadastro que não foram sincronizadas com o banco de dados. 
+              Deseja atualizar agora ou prosseguir sem salvar?
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter className="mt-6">
+            <AlertDialogCancel 
+              onClick={() => {
+                setShowSyncWarning(false)
+                setStep(step + 1)
+              }}
+              className="font-bold"
+            >
+              PROSSEGUIR SEM SALVAR
+            </AlertDialogCancel>
+            <AlertDialogAction 
+              onClick={async () => {
+                await handleUpdatePatient()
+                setShowSyncWarning(false)
+                setStep(step + 1)
+              }}
+              className="gradient-bg text-white font-bold px-6"
+            >
+              ATUALIZAR E CONTINUAR
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </Dialog>
   )
 }
