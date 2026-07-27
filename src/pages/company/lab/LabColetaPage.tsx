@@ -124,7 +124,20 @@ export default function LabColetaPage() {
     ? Math.floor(filteredOrders.reduce((acc, o) => acc + getWaitTimeInMinutes(o.registeredAt), 0) / filteredOrders.length)
     : 0
 
+  const getOrderTubes = (order: LabAttendanceOrder) => {
+    const materials = new Set(order.exams?.map(e => e.material).filter(Boolean))
+    return TUBE_TYPES.filter(tube => 
+      materials.has(tube.label) || 
+      materials.has(tube.type) ||
+      (tube.type === 'gel' && materials.has('Soro')) ||
+      (tube.type === 'edta' && (materials.has('Sangue Total') || materials.has('Sangue'))) ||
+      (tube.type === 'citrato' && materials.has('Plasma')) ||
+      (tube.type === 'urina' && (materials.has('Urina') || materials.has('Urina Amostra')))
+    )
+  }
+
   const addAudit = (order: LabAttendanceOrder, action: any, details?: string) => {
+
     const trail = order.auditTrail || []
     const newEntry = {
       action,
