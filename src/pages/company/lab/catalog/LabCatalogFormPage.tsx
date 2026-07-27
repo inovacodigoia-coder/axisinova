@@ -263,8 +263,10 @@ export default function LabCatalogFormPage() {
           <ParametersSection 
             parameters={parameters} 
             setParameters={setParameters} 
+            onUpdateReference={(val) => setExamData(prev => ({ ...prev, ...val }))}
           />
         </TabsContent>
+
         <TabsContent value="interfacing">
           <InterfacingSection 
             config={examData.interfacingConfig} 
@@ -508,20 +510,26 @@ function GeneralInfoSection({ isEditing, data, workbenches, onChange }: { isEdit
         </div>
       </div>
 
-      <div className="space-y-6 pt-6 border-t border-border">
-        <div className="flex items-center gap-2">
-          <Scale className="h-5 w-5 text-primary" />
-          <h3 className="text-lg font-bold">Valores de Referência do Exame</h3>
+      {data.referenceValues && data.referenceValues.length > 0 && (
+        <div className="space-y-6 pt-6 border-t border-border">
+          <div className="flex items-center gap-2">
+            <Scale className="h-5 w-5 text-primary" />
+            <h3 className="text-lg font-bold">Valores de Referência do Exame</h3>
+          </div>
+          <p className="text-sm text-muted-foreground">
+            Estes são os valores de referência globais configurados para este exame. Para referências específicas por parâmetro, utilize a aba 
+            <span className="font-bold text-primary"> "Parâmetros e Máscara"</span>.
+          </p>
+          
+          <div className="bg-muted/10 border rounded-xl p-4">
+            <ReferenceValuesSection 
+              parameter={{ name: data.name }} 
+              referenceValues={data.referenceValues}
+            />
+          </div>
         </div>
-        <p className="text-sm text-muted-foreground">
-          Configure aqui os valores de referência globais para este exame. Para referências específicas por parâmetro, utilize a aba 
-          <span className="font-bold text-primary"> "Parâmetros e Máscara"</span>.
-        </p>
-        
-        <div className="bg-muted/10 border rounded-xl p-4">
-          <ReferenceValuesSection parameter={{ name: data.name }} />
-        </div>
-      </div>
+      )}
+
 
       <div className="space-y-6 pt-6 border-t border-border">
         <div className="flex items-center justify-between">
@@ -570,7 +578,7 @@ function GeneralInfoSection({ isEditing, data, workbenches, onChange }: { isEdit
   )
 }
 
-function ParametersSection({ parameters, setParameters }: { parameters: any[], setParameters: (p: any[]) => void }) {
+function ParametersSection({ parameters, setParameters, onUpdateReference }: { parameters: any[], setParameters: (p: any[]) => void, onUpdateReference?: (val: any) => void }) {
   const [measurementUnits, setMeasurementUnits] = useState<any[]>([])
   const [editingReference, setEditingReference] = useState<any>(null)
 
@@ -870,13 +878,15 @@ function ParametersSection({ parameters, setParameters }: { parameters: any[], s
         <ReferenceValuesModal 
           parameter={editingReference} 
           onClose={() => setEditingReference(null)} 
+          onSave={onUpdateReference}
         />
+
       </Card>
     </TooltipProvider>
   )
 }
 
-function ReferenceValuesModal({ parameter, onClose }: { parameter: any, onClose: () => void }) {
+function ReferenceValuesModal({ parameter, onClose, onSave }: { parameter: any, onClose: () => void, onSave?: (val: any) => void }) {
   const [faixas, setFaixas] = useState<any[]>([
     { id: 1, description: 'Adulto Masculino', minAge: 18, maxAge: 150, sex: 'Masculino', isPregnant: false, minValue: '4.5', maxValue: '6.1' },
     { id: 2, description: 'Adulto Feminino', minAge: 18, maxAge: 150, sex: 'Feminino', isPregnant: false, minValue: '4', maxValue: '5.4' },
@@ -1003,8 +1013,15 @@ function ReferenceValuesModal({ parameter, onClose }: { parameter: any, onClose:
 
         <DialogFooter className="gap-2">
           <Button variant="outline" onClick={onClose}>Cancelar</Button>
-          <Button className="gradient-bg text-white px-8" onClick={onClose}>Salvar</Button>
+          <Button className="gradient-bg text-white px-8" onClick={() => {
+            if (onSave) {
+              onSave({ referenceValues: faixas });
+            }
+            onClose();
+          }}>Salvar</Button>
         </DialogFooter>
+
+
       </DialogContent>
     </Dialog>
   )
@@ -1104,77 +1121,63 @@ function RulesSection() {
   )
 }
 
-function ReferenceValuesSection({ parameter }: { parameter: any }) {
-  const [faixas, setFaixas] = useState<any[]>([
-    { id: 1, description: 'Adulto Masculino', minAge: 18, maxAge: 150, sex: 'Masculino', isPregnant: false, minValue: '4.5', maxValue: '6.1' },
-    { id: 2, description: 'Adulto Feminino', minAge: 18, maxAge: 150, sex: 'Feminino', isPregnant: false, minValue: '4', maxValue: '5.4' },
-  ])
-
-  const updateFaixa = (id: number, field: string, value: any) => {
-    setFaixas(prev => prev.map(f => f.id === id ? { ...f, [field]: value } : f))
-  }
-
-  const addFaixa = () => {
-    const newId = faixas.length > 0 ? Math.max(...faixas.map(f => f.id)) + 1 : 1
-    setFaixas([...faixas, { id: newId, description: '', minAge: 0, maxAge: 120, sex: 'Todos', isPregnant: false, minValue: '', maxValue: '' }])
-  }
-
-  const removeFaixa = (id: number) => {
-    setFaixas(faixas.filter(f => f.id !== id))
+function ReferenceValuesSection({ parameter, referenceValues = [] }: { parameter?: any, referenceValues?: any[] }) {
+  // If no reference values are provided, don't show anything
+  if (!referenceValues || referenceValues.length === 0) {
+    return null;
   }
 
   return (
     <div className="space-y-6">
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        {faixas.map((faixa, idx) => (
-          <div key={faixa.id} className="p-4 border border-border rounded-xl bg-background relative space-y-4 shadow-sm">
+        {referenceValues.map((faixa, idx) => (
+          <div key={faixa.id || idx} className="p-4 border border-border rounded-xl bg-background relative space-y-4 shadow-sm">
             <div className="flex items-center justify-between">
               <Badge variant="outline" className="bg-muted/50">Faixa {idx + 1}</Badge>
-              <Button variant="ghost" size="icon" className="h-8 w-8 text-red-500" onClick={() => removeFaixa(faixa.id)}>
-                <Trash2 className="h-4 w-4" />
-              </Button>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-1.5 md:col-span-2">
                 <Label className="text-[10px] font-bold uppercase text-muted-foreground">Descrição</Label>
-                <Input 
-                  className="h-9 text-xs" 
-                  value={faixa.description} 
-                  placeholder="Ex: Adulto Masculino" 
-                  onChange={(e) => updateFaixa(faixa.id, 'description', e.target.value)} 
-                />
+                <div className="h-9 px-3 flex items-center bg-muted/20 rounded-lg text-xs font-medium">
+                  {faixa.description || 'S/D'}
+                </div>
               </div>
               
               <div className="space-y-1.5">
                 <Label className="text-[10px] font-bold uppercase text-emerald-600">Mínimo</Label>
-                <Input 
-                  className="h-9 text-xs font-bold" 
-                  value={faixa.minValue} 
-                  placeholder="0.0" 
-                  onChange={(e) => updateFaixa(faixa.id, 'minValue', e.target.value)} 
-                />
+                <div className="h-9 px-3 flex items-center bg-muted/20 rounded-lg text-xs font-bold text-emerald-700">
+                  {faixa.minValue || '0.0'}
+                </div>
               </div>
               <div className="space-y-1.5">
                 <Label className="text-[10px] font-bold uppercase text-emerald-600">Máximo</Label>
-                <Input 
-                  className="h-9 text-xs font-bold" 
-                  value={faixa.maxValue} 
-                  placeholder="0.0" 
-                  onChange={(e) => updateFaixa(faixa.id, 'maxValue', e.target.value)} 
-                />
+                <div className="h-9 px-3 flex items-center bg-muted/20 rounded-lg text-xs font-bold text-emerald-700">
+                  {faixa.maxValue || '0.0'}
+                </div>
+              </div>
+
+              <div className="space-y-1.5">
+                <Label className="text-[10px] font-bold uppercase text-muted-foreground">Idade Mín/Máx</Label>
+                <div className="h-9 px-3 flex items-center bg-muted/20 rounded-lg text-xs">
+                  {faixa.minAge ?? 0} a {faixa.maxAge ?? 150} anos
+                </div>
+              </div>
+
+              <div className="space-y-1.5">
+                <Label className="text-[10px] font-bold uppercase text-muted-foreground">Sexo</Label>
+                <div className="h-9 px-3 flex items-center bg-muted/20 rounded-lg text-xs">
+                  {faixa.sex || 'Todos'} {faixa.isPregnant ? '(Gestante)' : ''}
+                </div>
               </div>
             </div>
           </div>
         ))}
       </div>
-
-      <Button variant="outline" className="w-full border-dashed gap-2 py-4" onClick={addFaixa}>
-        <Plus className="h-4 w-4" /> Adicionar Faixa de Referência
-      </Button>
     </div>
   )
 }
+
 
 
 function MethodologySection({ methodology, onChange }: { methodology?: string, onChange: (val: string) => void }) {
