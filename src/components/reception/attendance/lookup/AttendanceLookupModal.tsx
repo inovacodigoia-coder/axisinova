@@ -339,6 +339,20 @@ function OrderRowModern({
               {order.cardNumber && <Detail label="Carteirinha" value={order.cardNumber} />}
               {patient?.motherName && <Detail label="Nome da Mãe" value={patient.motherName} />}
               {order.registeredByName && <Detail label="Registrado por" value={order.registeredByName} />}
+              <div className="flex items-center gap-2 pt-2 border-t border-border mt-2 col-span-full">
+                <Button size="sm" variant="outline" className="h-8 gap-2 text-primary border-primary/20 hover:bg-primary/5" onClick={(e) => { e.stopPropagation(); onEdit(); }}>
+                  <Pencil className="h-3.5 w-3.5" />
+                  Editar
+                </Button>
+                <Button size="sm" variant="outline" className="h-8 gap-2 text-primary border-primary/20 hover:bg-primary/5" onClick={(e) => { e.stopPropagation(); onPrint(); }}>
+                  <Printer className="h-3.5 w-3.5" />
+                  Imprimir
+                </Button>
+                <Button size="sm" variant="outline" className="h-8 gap-2 text-emerald-600 border-emerald-200 hover:bg-emerald-50" onClick={(e) => { e.stopPropagation(); onAddProcedure(); }}>
+                  <Plus className="h-3.5 w-3.5" />
+                  Adicionar
+                </Button>
+              </div>
             </div>
           </div>
         </div>
