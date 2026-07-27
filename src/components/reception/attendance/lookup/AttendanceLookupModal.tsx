@@ -324,15 +324,19 @@ function OrderRowModern({
       {open && (
         <div className="px-6 pb-6 pt-1">
           <div className="rounded-xl border border-primary/20 bg-primary/5 p-6 shadow-sm space-y-4">
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-y-3 gap-x-8">
-              <Detail label="Tipo" value={order.serviceType === 'consultation' ? 'Consulta' : order.serviceType === 'exam' ? 'Exame' : 'Procedimento'} />
-              <Detail label="Procedimento" value={order.procedureName || '-'} />
-              <Detail label="Médico" value={order.doctorName || '-'} />
-              <Detail label="Status" value={order.status === 'authorized' ? 'Autorizado' : order.status === 'open' ? 'Aberto' : order.status === 'completed' ? 'Concluído' : 'Cancelado'} />
-              <Detail label="Pagamento" value={order.paymentType === 'convenio' ? `Convênio · ${order.convenioName || ''}` : order.paymentType === 'private' ? `Particular${order.privateValue ? ` · R$ ${order.privateValue.toFixed(2)}` : ''}` : `Cortesia${order.freeReason ? ` · ${order.freeReason}` : ''}`} />
-              {order.cardNumber && <Detail label="Carteirinha" value={order.cardNumber} />}
-              {patient?.motherName && <Detail label="Nome da Mãe" value={patient.motherName} />}
-              {order.registeredByName && <Detail label="Registrado por" value={order.registeredByName} />}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-y-4 gap-x-12">
+              <div className="space-y-3">
+                <Detail label="Tipo" value={order.serviceType === 'consultation' ? 'Consulta' : order.serviceType === 'exam' ? 'Exame' : 'Procedimento'} />
+                <Detail label="Procedimento" value={order.procedureName || '-'} />
+                <Detail label="Médico" value={order.doctorName || '-'} />
+                <Detail label="Status" value={ATTENDANCE_STATUS_LABELS[order.status]?.label || order.status} />
+              </div>
+              <div className="space-y-3">
+                <Detail label="Pagamento" value={order.paymentType === 'convenio' ? `Convênio · ${order.convenioName || ''}` : order.paymentType === 'private' ? `Particular${order.privateValue ? ` · R$ ${order.privateValue.toFixed(2)}` : ''}` : `Cortesia${order.freeReason ? ` · ${order.freeReason}` : ''}`} />
+                {order.cardNumber && <Detail label="Carteirinha" value={order.cardNumber} />}
+                {patient?.motherName && <Detail label="Nome da Mãe" value={patient.motherName} />}
+                {order.registeredByName && <Detail label="Registrado por" value={order.registeredByName} />}
+              </div>
               <div className="flex items-center gap-2 pt-2 border-t border-border mt-2 col-span-full">
                 <Button size="sm" variant="outline" className="h-8 gap-2 text-primary border-primary/20 hover:bg-primary/5" onClick={(e) => { e.stopPropagation(); onEdit(); }}>
                   <Pencil className="h-3.5 w-3.5" />
