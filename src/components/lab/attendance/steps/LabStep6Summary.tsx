@@ -106,10 +106,10 @@ export function LabStep6Summary({ state, update, unitName }: Props & { update: (
             <h3 className="text-lg font-bold text-blue-600 uppercase tracking-tight">Guias</h3>
           </div>
 
-          {state.guides?.map((guide, gIdx) => (
+          {state.guides?.filter(guide => guide.exams && guide.exams.length > 0).map((guide, gIdx) => (
             <div key={guide.id || gIdx} className="space-y-4">
               <h4 className="text-sm font-bold text-slate-700">
-                {gIdx + 1}. {guide.plan === 'PARTICULAR' ? 'PARTICULAR' : guide.convenioName || 'PARTICULAR'}
+                {gIdx + 1}. {guide.plan === 'PARTICULAR' || guide.plan === 'private' ? 'PARTICULAR' : guide.convenioName || guide.plan || 'PARTICULAR'}
               </h4>
 
               <div className="overflow-x-auto">

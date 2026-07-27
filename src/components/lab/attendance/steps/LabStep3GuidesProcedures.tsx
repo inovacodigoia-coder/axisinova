@@ -66,8 +66,17 @@ export function LabStep3GuidesProcedures({ state, update }: Props) {
     return false;
   }, [user, activeProfile, activeSector]);
 
-  const [guides, setGuides] = useState<AttendanceGuide[]>(state.guides || [{ id: '1', name: 'Guia 1', plan: 'PARTICULAR', operator: 'PARTICULAR', number: '', exams: [], isDoctorDisabled: false }]);
-  const [activeGuideId, setActiveGuideId] = useState(guides[0]?.id || '1');
+  const [guides, setGuides] = useState<AttendanceGuide[]>(state.guides || []);
+  const [activeGuideId, setActiveGuideId] = useState(guides[0]?.id || '');
+
+  useEffect(() => {
+    if (guides.length === 0) {
+      const initialGuide = { id: '1', name: 'Particular', plan: 'PARTICULAR', operator: 'PARTICULAR', number: '', exams: [], isDoctorDisabled: false };
+      setGuides([initialGuide]);
+      setActiveGuideId('1');
+      update({ guides: [initialGuide] });
+    }
+  }, []);
   const [showDoctorPopover, setShowDoctorPopover] = useState(false);
   
   // Doctor search state
