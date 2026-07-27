@@ -38,7 +38,10 @@ export function LabStep1PatientReview({ state, update }: Props) {
   const [newMedication, setNewMedication] = useState({ name: '', dosage: '', frequency: '' });
 
   const handleUpdate = (patch: any) => {
-    update({ tempPatient: { ...tempPatient, ...patch } });
+    update({ 
+      tempPatient: { ...tempPatient, ...patch },
+      patientUpdatedLocally: true
+    });
   };
 
   const addAllergy = () => {
