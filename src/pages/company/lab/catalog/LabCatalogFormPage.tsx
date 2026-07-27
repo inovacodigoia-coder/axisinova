@@ -576,7 +576,7 @@ function GeneralInfoSection({ isEditing, data, workbenches, onChange }: { isEdit
   )
 }
 
-function ParametersSection({ parameters, setParameters }: { parameters: any[], setParameters: (p: any[]) => void }) {
+function ParametersSection({ parameters, setParameters, onUpdateReference }: { parameters: any[], setParameters: (p: any[]) => void, onUpdateReference?: (val: any) => void }) {
   const [measurementUnits, setMeasurementUnits] = useState<any[]>([])
   const [editingReference, setEditingReference] = useState<any>(null)
 
