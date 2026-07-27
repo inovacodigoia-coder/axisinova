@@ -517,6 +517,7 @@ export type Database = {
           company_id: string
           created_at: string | null
           id: string
+          internal_code: string | null
           is_main_branch: boolean | null
           name: string
           updated_at: string | null
@@ -527,6 +528,7 @@ export type Database = {
           company_id: string
           created_at?: string | null
           id?: string
+          internal_code?: string | null
           is_main_branch?: boolean | null
           name: string
           updated_at?: string | null
@@ -537,6 +539,7 @@ export type Database = {
           company_id?: string
           created_at?: string | null
           id?: string
+          internal_code?: string | null
           is_main_branch?: boolean | null
           name?: string
           updated_at?: string | null

@@ -33,6 +33,7 @@ export interface Establishment {
   id: string
   company_id: string
   name: string
+  internal_code?: string
   cnpj?: string
   city?: string
   is_main_branch: boolean
