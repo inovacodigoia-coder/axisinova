@@ -132,7 +132,8 @@ export default function EstablishmentsSettingsPage() {
           </div>
         ) : (
           establishments.map(e => (
-            <div key={e.id} className="group flex items-center justify-between rounded-xl border border-border bg-card p-4 hover:border-primary/50 transition-all shadow-sm">
+            <div key={e.id} className="group flex flex-col gap-4 rounded-xl border border-border bg-card p-4 hover:border-primary/50 transition-all shadow-sm">
+              <div className="flex items-center justify-between">
               <div className="flex items-center gap-4">
                 <div className={`p-3 rounded-lg ${e.is_main_branch ? 'bg-primary/10 text-primary' : 'bg-muted text-muted-foreground'}`}>
                   {e.is_main_branch ? <ShieldCheck className="h-6 w-6" /> : <Building2 className="h-6 w-6" />}
@@ -149,16 +150,17 @@ export default function EstablishmentsSettingsPage() {
                   <div className="flex flex-wrap items-center gap-3 mt-1 text-xs text-muted-foreground">
                     <span className="flex items-center gap-1"><Globe className="h-3 w-3" /> {e.cnpj || 'Sem CNPJ'}</span>
                     <span className="flex items-center gap-1"><MapPin className="h-3 w-3" /> {e.city || 'Cidade não informada'}</span>
-                    {(e as any).origins?.length > 0 && (
-                      <div className="flex flex-wrap gap-2 mt-2">
-                        {(e as any).origins.map((o: any) => (
-                          <span key={o.id} className="text-[10px] bg-primary/5 text-primary border border-primary/10 px-2 py-0.5 rounded-full font-medium">
-                            {o.name}
-                          </span>
-                        ))}
-                      </div>
-                    )}
                   </div>
+                  {(e as any).origins?.length > 0 && (
+                    <div className="flex flex-wrap gap-2 mt-3 pt-3 border-t border-border/50">
+                      {(e as any).origins.map((o: any) => (
+                        <span key={o.id} className="text-[10px] bg-primary/5 text-primary border border-primary/10 px-2 py-0.5 rounded-full font-medium uppercase tracking-tight">
+                          {o.name}
+                        </span>
+                      ))}
+                </div>
+              </div>
+                  )}
                 </div>
               </div>
               <div className="flex items-center gap-2">
