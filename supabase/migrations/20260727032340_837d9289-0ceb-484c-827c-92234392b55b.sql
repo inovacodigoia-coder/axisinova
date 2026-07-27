@@ -1,0 +1,1 @@
+CREATE INDEX IF NOT EXISTS idx_attendance_orders_company_origin ON public.attendance_orders (company_id, origin_id);
