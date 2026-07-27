@@ -41,7 +41,7 @@ export function OriginSelector() {
     e.stopPropagation()
     const isFavorite = favorites.includes(originId)
     
-    const { error } = await (supabase as any)
+    const { error } = await supabase
       .from('user_origin_preferences')
       .upsert({
         user_id: user?.id,
@@ -63,14 +63,14 @@ export function OriginSelector() {
     e.stopPropagation()
     
     // First, clear existing default
-    await (supabase as any)
+    await supabase
       .from('user_origin_preferences')
       .update({ is_default: false })
       .eq('user_id', user?.id)
       .eq('company_id', user?.companyId)
 
     // Set new default
-    const { error } = await (supabase as any)
+    const { error } = await supabase
       .from('user_origin_preferences')
       .upsert({
         user_id: user?.id,
@@ -118,10 +118,10 @@ export function OriginSelector() {
                   e.stopPropagation()
                   setOnlyFavorites(!onlyFavorites)
                 }}
-                className={`p-2 rounded-lg transition-colors border ${onlyFavorites ? 'bg-rose-50 border-rose-200 text-rose-50' : 'hover:bg-muted text-muted-foreground border-transparent'}`}
+                className={`p-2 rounded-lg transition-colors border ${onlyFavorites ? 'bg-rose-50 border-rose-200 text-rose-500' : 'hover:bg-muted text-muted-foreground border-transparent'}`}
                 title={onlyFavorites ? "Mostrar todas" : "Mostrar apenas favoritas"}
               >
-                <Heart className={`h-4 w-4 ${onlyFavorites ? 'fill-rose-500 text-rose-500' : ''}`} />
+                <Heart className={`h-4 w-4 ${onlyFavorites ? 'fill-rose-500' : ''}`} />
               </button>
             </DialogTitle>
           </DialogHeader>
