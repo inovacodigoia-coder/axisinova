@@ -120,6 +120,11 @@ export function useAttendanceCadastro() {
         return latest
       }, null)
 
+      // Prioritize the convenio/plan from the first guide if available
+      const firstGuide = (data.guides || data.labGuides)?.[0]
+      const convenioId = data.convenioId || firstGuide?.id || firstGuide?.convenioId
+      const convenioName = data.convenioName || firstGuide?.name || firstGuide?.convenioName || (firstGuide?.plan === 'PARTICULAR' ? 'Particular' : firstGuide?.plan)
+
       const { data: newOrder, error } = await (supabase
         .from('attendance_orders' as any) as any)
         .insert({
@@ -140,9 +145,9 @@ export function useAttendanceCadastro() {
           doctor_crm: data.doctorCRM,
           specialty: data.specialty,
           requesting_doctor: data.requestingDoctor,
-          convenio_id: data.convenioId,
-          convenio_name: data.convenioName,
-          card_number: data.cardNumber,
+          convenio_id: convenioId,
+          convenio_name: convenioName,
+          card_number: data.cardNumber || firstGuide?.number,
           card_expiry: ensureIsoDate(data.cardExpiry),
           authorization_code: data.authorizationCode,
           authorization_date: ensureIsoDate(data.authorizationDate),
@@ -151,7 +156,7 @@ export function useAttendanceCadastro() {
           private_value: data.privateValue,
           delivery_date: ensureIsoDate(data.deliveryDate) || calculatedDeliveryDate,
           lab_guides: data.guides || data.labGuides || [],
-          status: data.labGuides?.some((g: any) => g.exams?.some((e: any) => e.collected)) ? 'waiting' : 'open',
+          status: (data.guides || data.labGuides)?.some((g: any) => g.exams?.some((e: any) => e.collected)) ? 'waiting' : 'open',
           registered_by: user.id,
           registered_by_name: user.name,
         })
