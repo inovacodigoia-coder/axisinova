@@ -93,7 +93,7 @@ export function CompanyProvider({ children }: { children: ReactNode }) {
     setAvailableOrigins(data || [])
     
     // Check for default origin preference
-    const { data: pref } = await (supabase as any)
+    const { data: pref } = await supabase
       .from('user_origin_preferences')
       .select('origin_id')
       .eq('user_id', user.id)
