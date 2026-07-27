@@ -38,7 +38,7 @@ export default function LabColetaPage() {
     // In a real app, workbench filtering would look at order.exams
     const matchesWorkbench = filterWorkbench === 'all' || true 
     
-    // Mostra se o status for especificamente waiting_collection
+    // Mostra se o status for especificamente waiting_collection (AGUARDANDO)
     return matchesSearch && matchesWorkbench && order.status === 'waiting_collection'
   })
 

@@ -199,8 +199,17 @@ export function CompanySidebar({ mobileOpen, onMobileClose, collapsed = false, o
       <div className="flex items-center justify-between border-b border-white/10 px-4 py-5">
         {!collapsed ? (
           <div className="flex-1 min-w-0">
-            <div className="flex items-center gap-2">
-              <span className="text-lg font-bold">Axis<span className="text-white/70">Inova</span></span>
+            <div className="flex items-center justify-between gap-2">
+              <div className="flex items-center gap-2">
+                <span className="text-lg font-bold">Axis<span className="text-white/70">Inova</span></span>
+              </div>
+              <button 
+                onClick={() => navigate('/app/dashboard')} 
+                className="rounded-lg p-1.5 hover:bg-white/10 text-white/40 hover:text-white transition-colors"
+                title="Menu do Sistema"
+              >
+                <Menu className="h-5 w-5" />
+              </button>
             </div>
             <p className="mt-1 truncate text-xs text-white/40">{user?.companyName || 'Portal da Empresa'}</p>
             {activeProfile && (
@@ -211,15 +220,6 @@ export function CompanySidebar({ mobileOpen, onMobileClose, collapsed = false, o
           <div className="mx-auto flex h-8 w-8 items-center justify-center rounded-full gradient-bg text-xs font-bold">
             {user?.name?.charAt(0) || 'U'}
           </div>
-        )}
-        {!collapsed && (
-          <button 
-            onClick={() => navigate('/app/dashboard')} 
-            className="ml-2 rounded-lg p-1 hover:bg-white/10"
-            title="Menu do Sistema"
-          >
-            <Menu className="h-5 w-5" />
-          </button>
         )}
         {mobileOpen && (
           <button onClick={onMobileClose} className="ml-2 rounded-lg p-1 hover:bg-white/10 lg:hidden">
