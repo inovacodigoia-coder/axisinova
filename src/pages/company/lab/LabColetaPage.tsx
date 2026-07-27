@@ -30,28 +30,28 @@ export default function LabColetaPage() {
     }, 30000)
 
     return () => {
-      clearTimeout(timer)
-      clearInterval(interval)
+      if (timer) clearTimeout(timer)
+      if (interval) clearInterval(interval)
     }
   }, [refresh])
 
   const { workbenches } = useRegisters()
 
-  const collectionOrders = (orders as unknown as LabAttendanceOrder[]).filter(o => 
-    o.status === 'waiting_collection' || o.status === 'waiting'
-  )
+  const collectionOrders = (orders || []).filter(o => 
+    o?.status === 'waiting_collection' || o?.status === 'waiting'
+  ) as LabAttendanceOrder[]
 
   const filteredOrders = collectionOrders.filter(order => {
+    if (!order) return false;
+    
     const matchesSearch = 
-      order.patientName.toLowerCase().includes(search.toLowerCase()) || 
-      order.protocol?.toLowerCase().includes(search.toLowerCase())
+      (order.patientName || "").toLowerCase().includes(search.toLowerCase()) || 
+      (order.protocol || "").toLowerCase().includes(search.toLowerCase())
     
-    // Filtro por bancada real: verifica se algum exame do pedido pertence à bancada selecionada
-    // Nota: O campo na ordem é 'workbench' (string nome ou ID)
     const matchesWorkbench = filterWorkbench === 'all' || 
-      order.exams?.some(exam => exam.workbench === filterWorkbench)
+      order.exams?.some(exam => exam?.workbench === filterWorkbench)
     
-    return matchesSearch && matchesWorkbench && order.status === 'waiting_collection'
+    return matchesSearch && matchesWorkbench && (order.status === 'waiting_collection' || order.status === 'waiting')
   })
 
   // Cálculos Reais para os Cards
