@@ -103,7 +103,7 @@ export function CompanyProvider({ children }: { children: ReactNode }) {
       if (savedOrigin) {
         setActiveOrigin(savedOrigin)
       } else {
-        const matriz = data.find((o: any) => o.name.toUpperCase().includes('MATRIZ'))
+        const matriz = data.find((o: any) => o.name.toUpperCase().includes('MATRIZ') || o.internal_code === '00')
         setActiveOrigin(matriz || data[0])
       }
     }
