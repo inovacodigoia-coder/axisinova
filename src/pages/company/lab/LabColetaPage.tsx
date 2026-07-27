@@ -481,7 +481,7 @@ export default function LabColetaPage() {
                           <h3 className="font-bold">Materiais para Coleta</h3>
                         </div>
                         <div className="space-y-3">
-                          {TUBE_TYPES.map(tube => (
+                          {getOrderTubes(order).map(tube => (
                             <div key={tube.type} className={cn(
                               "p-4 rounded-xl border border-border transition-all cursor-pointer group",
                               tubesSelected.includes(tube.type) ? "bg-emerald-50 border-emerald-200" : "bg-card hover:border-primary/30"
@@ -497,7 +497,17 @@ export default function LabColetaPage() {
                                     <div className={cn("w-3 h-3 rounded-full", tube.color)}></div>
                                     <p className="text-sm font-bold text-foreground">{tube.label} ({tube.volume})</p>
                                   </div>
-                                  <p className="text-xs text-muted-foreground">Exames vinculados a este material</p>
+                                  <p className="text-xs text-muted-foreground">
+                                    Exames: {order.exams?.filter(e => 
+                                      e.material === tube.label || 
+                                      e.material === tube.type ||
+                                      (tube.type === 'gel' && e.material === 'Soro') ||
+                                      (tube.type === 'edta' && (e.material === 'Sangue Total' || e.material === 'Sangue')) ||
+                                      (tube.type === 'citrato' && e.material === 'Plasma') ||
+                                      (tube.type === 'urina' && (e.material === 'Urina' || e.material === 'Urina Amostra'))
+                                    ).map(e => e.name).join(', ')}
+                                  </p>
+
                                   <p className="text-[10px] font-mono font-bold text-primary">Rótulo: {order.protocol}-A</p>
                                 </div>
                               </div>
