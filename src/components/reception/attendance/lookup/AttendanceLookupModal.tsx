@@ -228,26 +228,28 @@ export function AttendanceLookupModal({ open, onClose, unitName, guicheName, onA
             <div className="flex items-center justify-center py-20">
               <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent"></div>
             </div>
-          ) : !grouped.length && (
+          ) : !filtered.length ? (
             <div className="text-center py-12 text-muted-foreground text-sm">
               {search || patientSearch ? 'Nenhum cadastro encontrado para sua busca.' : 'Digite para buscar atendimentos.'}
             </div>
+          ) : (
+            <div className="divide-y divide-border">
+              {filtered.map(order => (
+                <OrderRowModern
+                  key={order.id}
+                  order={order}
+                  patient={patientById.get(order.patientId)}
+                  onPrint={() => setDetailsOrder(order)}
+                  onEdit={() => setEditing(order)}
+                  onDetails={() => setDetailsOrder(order)}
+                  onAddProcedure={() => {
+                    const p = patientById.get(order.patientId)
+                    if (p) onAddProcedure(p)
+                  }}
+                />
+              ))}
+            </div>
           )}
-
-          
-          <div className="divide-y divide-border">
-            {grouped.flatMap(g => g.items.map(order => (
-              <OrderRowModern
-                key={order.id}
-                order={order}
-                patient={g.patient}
-                onPrint={() => setDetailsOrder(order)}
-                onEdit={() => setEditing(order)}
-                onDetails={() => setDetailsOrder(order)}
-                onAddProcedure={() => g.patient && onAddProcedure(g.patient)}
-              />
-            )))}
-          </div>
         </div>
       </DialogContent>
 
