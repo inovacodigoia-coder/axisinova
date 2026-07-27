@@ -163,7 +163,7 @@ export function useAttendanceCadastro() {
           private_value: data.privateValue,
           delivery_date: ensureIsoDate(data.deliveryDate) || calculatedDeliveryDate,
           lab_guides: data.guides || data.labGuides || [],
-          status: (data.guides || data.labGuides)?.some((g: any) => g.exams?.some((e: any) => e.collected)) ? 'waiting' : 'open',
+          status: data.examMode === 'lab' ? 'waiting_collection' : ((data.guides || data.labGuides)?.some((g: any) => g.exams?.some((e: any) => e.collected)) ? 'waiting' : 'open'),
           registered_by: user.id,
           registered_by_name: user.name,
         })
