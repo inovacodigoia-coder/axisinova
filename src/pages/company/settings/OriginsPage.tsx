@@ -30,8 +30,8 @@ export default function OriginsPage() {
     setIsLoading(true);
     
     const [originsRes, establishmentsRes] = await Promise.all([
-      supabase.from('origins').select('*, establishments(name)').order('name'),
-      supabase.from('establishments').select('*').order('name')
+      (supabase as any).from('origins').select('*, establishments(name)').order('name'),
+      (supabase as any).from('establishments').select('*').order('name')
     ]);
 
     if (originsRes.error) toast.error('Erro ao carregar origens');
@@ -79,13 +79,13 @@ export default function OriginsPage() {
 
     let error;
     if (editingOrigin) {
-      const { error: err } = await supabase
+      const { error: err } = await (supabase as any)
         .from('origins')
         .update(payload)
         .eq('id', editingOrigin.id);
       error = err;
     } else {
-      const { error: err } = await supabase
+      const { error: err } = await (supabase as any)
         .from('origins')
         .insert([payload]);
       error = err;
@@ -102,7 +102,7 @@ export default function OriginsPage() {
   };
 
   const handleDelete = async (id: string) => {
-    const { error } = await supabase
+    const { error } = await (supabase as any)
       .from('origins')
       .delete()
       .eq('id', id);

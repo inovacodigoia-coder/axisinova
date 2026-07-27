@@ -24,7 +24,7 @@ export default function EstablishmentsSettingsPage() {
 
   const loadEstablishments = async () => {
     setIsLoading(true)
-    const { data, error } = await supabase
+    const { data, error } = await (supabase as any)
       .from('establishments')
       .select(`
         *,
@@ -73,13 +73,13 @@ export default function EstablishmentsSettingsPage() {
 
     let error
     if (editingEstablishment) {
-      const { error: err } = await supabase
+      const { error: err } = await (supabase as any)
         .from('establishments')
         .update(payload)
         .eq('id', editingEstablishment.id)
       error = err
     } else {
-      const { error: err } = await supabase
+      const { error: err } = await (supabase as any)
         .from('establishments')
         .insert([payload])
       error = err
@@ -95,7 +95,7 @@ export default function EstablishmentsSettingsPage() {
   }
 
   const handleDelete = async (id: string) => {
-    const { error } = await supabase
+    const { error } = await (supabase as any)
       .from('establishments')
       .delete()
       .eq('id', id)
