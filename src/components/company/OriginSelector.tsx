@@ -22,10 +22,11 @@ export function OriginSelector() {
   }, [user, isOpen])
 
   const loadPreferences = async () => {
-    const { data, error } = await (supabase as any)
+    const { data, error } = await supabase
       .from('user_origin_preferences')
       .select('origin_id, is_favorite, is_default')
       .eq('user_id', user?.id)
+      .eq('company_id', user?.companyId)
     
     if (error) {
       console.error('Error loading preferences:', error)
