@@ -109,7 +109,7 @@ export function AttendanceLookupModal({ open, onClose, unitName, guicheName, onA
       }
 
       if (pTerm) {
-        const pName = normalize(o.patientName || '')
+        const pName = normalize(p?.fullName || o.patientName || '')
         if (!pName.includes(pTerm)) return false
       }
 
@@ -209,7 +209,7 @@ export function AttendanceLookupModal({ open, onClose, unitName, guicheName, onA
 
         {/* Results Table Header */}
         <div className="bg-muted/10 border-b border-border px-6 py-2">
-          <div className="grid grid-cols-[120px_140px_1fr_100px_120px_120px_100px_140px_120px] gap-4 text-[10px] font-bold text-muted-foreground uppercase tracking-wider">
+          <div className="grid grid-cols-[120px_100px_1fr_100px_120px_120px_100px_140px] gap-4 text-[10px] font-bold text-muted-foreground uppercase tracking-wider">
             <div>Pedido</div>
             <div>Dt. Atend.</div>
             <div>Cliente</div>
@@ -218,7 +218,6 @@ export function AttendanceLookupModal({ open, onClose, unitName, guicheName, onA
             <div>Status</div>
             <div>Prev. Entrega</div>
             <div>Origem</div>
-            <div className="text-right">Ações</div>
           </div>
         </div>
 
@@ -302,12 +301,12 @@ function OrderRowModern({
       onClick={onDetails}
       onDoubleClick={onDetails}
     >
-      <div className="grid grid-cols-[120px_140px_1fr_100px_120px_120px_100px_140px_120px] gap-4 px-6 py-3 items-center text-xs">
+      <div className="grid grid-cols-[120px_100px_1fr_100px_120px_120px_100px_140px] gap-4 px-6 py-3 items-center text-xs">
         <div className="font-mono text-primary font-bold hover:underline" onClick={(e) => { e.stopPropagation(); onDetails(); }}>{order.orderNumber}</div>
         <div className="text-muted-foreground">
-          {date.toLocaleDateString('pt-BR')} {date.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
+          {date.toLocaleDateString('pt-BR')}
         </div>
-        <div className="font-semibold text-foreground truncate uppercase">{order.patientName}</div>
+        <div className="font-semibold text-foreground truncate uppercase">{patient?.fullName || order.patientName}</div>
         <div className="text-muted-foreground">{patient?.birthDate ? new Date(patient.birthDate).toLocaleDateString('pt-BR') : '-'}</div>
         <div className="truncate uppercase">{order.convenioName || 'Particular'}</div>
         <div>
@@ -320,25 +319,24 @@ function OrderRowModern({
         </div>
         <div className="text-muted-foreground">{deliveryDate ? deliveryDate.toLocaleDateString('pt-BR') : '-'}</div>
         <div className="truncate text-muted-foreground uppercase">{order.originName || 'Apartamentos'}</div>
-        <div className="flex items-center justify-end gap-1">
-          <Button size="icon" variant="ghost" className="h-8 w-8 text-muted-foreground" onClick={(e) => { e.stopPropagation(); setOpen(!open); }} title="Ver detalhes">
-            {open ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
-          </Button>
-        </div>
       </div>
 
       {open && (
-        <div className="px-6 pb-4 pt-1">
-          <div className="rounded-lg border border-border bg-muted/30 p-4 space-y-3">
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-y-3 gap-x-8">
-              <Detail label="Tipo" value={order.serviceType === 'consultation' ? 'Consulta' : order.serviceType === 'exam' ? 'Exame' : 'Procedimento'} />
-              <Detail label="Procedimento" value={order.procedureName || '-'} />
-              <Detail label="Médico" value={order.doctorName || '-'} />
-              <Detail label="Status" value={order.status === 'authorized' ? 'Autorizado' : order.status === 'open' ? 'Aberto' : order.status === 'completed' ? 'Concluído' : 'Cancelado'} />
-              <Detail label="Pagamento" value={order.paymentType === 'convenio' ? `Convênio · ${order.convenioName || ''}` : order.paymentType === 'private' ? `Particular${order.privateValue ? ` · R$ ${order.privateValue.toFixed(2)}` : ''}` : `Cortesia${order.freeReason ? ` · ${order.freeReason}` : ''}`} />
-              {order.cardNumber && <Detail label="Carteirinha" value={order.cardNumber} />}
-              {patient?.motherName && <Detail label="Nome da Mãe" value={patient.motherName} />}
-              {order.registeredByName && <Detail label="Registrado por" value={order.registeredByName} />}
+        <div className="px-6 pb-6 pt-1">
+          <div className="rounded-xl border border-primary/20 bg-primary/5 p-6 shadow-sm space-y-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-y-4 gap-x-12">
+              <div className="space-y-3">
+                <Detail label="Tipo" value={order.serviceType === 'consultation' ? 'Consulta' : order.serviceType === 'exam' ? 'Exame' : 'Procedimento'} />
+                <Detail label="Procedimento" value={order.procedureName || '-'} />
+                <Detail label="Médico" value={order.doctorName || '-'} />
+                <Detail label="Status" value={ATTENDANCE_STATUS_LABELS[order.status]?.label || order.status} />
+              </div>
+              <div className="space-y-3">
+                <Detail label="Pagamento" value={order.paymentType === 'convenio' ? `Convênio · ${order.convenioName || ''}` : order.paymentType === 'private' ? `Particular${order.privateValue ? ` · R$ ${order.privateValue.toFixed(2)}` : ''}` : `Cortesia${order.freeReason ? ` · ${order.freeReason}` : ''}`} />
+                {order.cardNumber && <Detail label="Carteirinha" value={order.cardNumber} />}
+                {patient?.motherName && <Detail label="Nome da Mãe" value={patient.motherName} />}
+                {order.registeredByName && <Detail label="Registrado por" value={order.registeredByName} />}
+              </div>
               <div className="flex items-center gap-2 pt-2 border-t border-border mt-2 col-span-full">
                 <Button size="sm" variant="outline" className="h-8 gap-2 text-primary border-primary/20 hover:bg-primary/5" onClick={(e) => { e.stopPropagation(); onEdit(); }}>
                   <Pencil className="h-3.5 w-3.5" />
