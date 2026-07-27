@@ -103,7 +103,11 @@ export function useAttendanceCadastro() {
         .eq('company_id', companyId)
 
       const totalOrderCount = (count || 0) + 1
-      const originStr = String(data.originCode || '00').replace(/\D/g, '').padStart(2, '0')
+      
+      // Use active origin code or default to MATRIZ '00'
+      const originCode = data.originCode !== undefined ? data.originCode : '00'
+      
+      const originStr = String(originCode).replace(/\D/g, '').padStart(2, '0')
       const protocol = `${totalOrderCount}-${originStr}`
       const hash = Math.random().toString(36).substring(2, 8).toUpperCase()
 
@@ -132,8 +136,8 @@ export function useAttendanceCadastro() {
           patient_id: data.patientId,
           patient_name: data.patientName,
           origin_id: data.originId || null,
-          origin_code: String(data.originCode || '00'),
-          origin_name: data.originName,
+          origin_code: String(data.originCode !== undefined ? data.originCode : '00'),
+          origin_name: data.originName || (data.originId ? 'Origem Selecionada' : 'MATRIZ'),
           order_number: protocol,
           protocol: protocol,
           hash: hash,

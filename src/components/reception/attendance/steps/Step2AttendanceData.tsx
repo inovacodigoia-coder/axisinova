@@ -1,5 +1,6 @@
 import { useMemo, useEffect, useState } from 'react'
 import { useRegisters } from '@/context/RegistersContext'
+import { useCompanyContext } from '@/context/CompanyContext'
 import { DEMO_CATALOG } from '@/mocks/attendance-cadastro.mock'
 import { Stethoscope, FlaskConical, Activity, CreditCard, Banknote, Gift, Search, Check } from 'lucide-react'
 import { supabase } from '@/integrations/supabase/client'
@@ -23,16 +24,17 @@ const PAYMENT_BTNS: { value: AttendancePaymentType; icon: any; label: string }[]
 
 export function Step2AttendanceData({ state, update }: Props) {
   const { doctors, specialties, convenios } = useRegisters()
-  const [origins, setOrigins] = useState<any[]>([])
+  const { availableOrigins, activeOrigin } = useCompanyContext()
 
+  // Sincronizar origem ativa se não houver uma selecionada no estado
   useEffect(() => {
-    const fetchOrigins = async () => {
-      // Usando mock ou bypass se os tipos não estiverem atualizados no cliente Supabase
-      const { data } = await (supabase.from('attendance_origins' as any) as any).select('*').eq('is_active', true).order('code')
-      if (data) setOrigins(data)
+    if (activeOrigin && !state.originId) {
+      update({ 
+        originId: activeOrigin.id, 
+        originCode: activeOrigin.internal_code ? Number(activeOrigin.internal_code) : 0 
+      })
     }
-    fetchOrigins()
-  }, [])
+  }, [activeOrigin, state.originId, update])
 
   // Pré-popular convênio do paciente
   useEffect(() => {
@@ -151,22 +153,15 @@ export function Step2AttendanceData({ state, update }: Props) {
                 value={state.originId || ''} 
                 onChange={e => {
                   const val = e.target.value;
-                  const origin = origins.find(o => o.id === val);
-                  update({ originId: val, originCode: origin?.code || '00' });
+                  const origin = availableOrigins.find(o => o.id === val);
+                  update({ originId: val, originCode: origin?.internal_code ? Number(origin.internal_code) : 0 });
                 }}
                 className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm"
               >
                 <option value="">Selecione...</option>
-                {origins.map(o => (
-                  <option key={o.id} value={o.id}>{o.name} ({o.code})</option>
+                {availableOrigins.map(o => (
+                  <option key={o.id} value={o.id}>{o.name} ({o.internal_code})</option>
                 ))}
-                {origins.length === 0 && (
-                  <>
-                    <option value="orig_00">Matriz (00)</option>
-                    <option value="orig_01">Filial Norte (01)</option>
-                    <option value="orig_02">Filial Sul (02)</option>
-                  </>
-                )}
               </select>
             </Field>
           </section>

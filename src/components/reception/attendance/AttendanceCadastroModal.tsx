@@ -30,6 +30,7 @@ import { LabStep6Summary } from '@/components/lab/attendance/steps/LabStep6Summa
 import { useAttendanceCadastro, useDraftAutosave, loadDraft, clearDraft } from '@/hooks/useAttendanceCadastro'
 import { usePrinterConfig } from '@/hooks/usePrinterConfig'
 import { useAuth } from '@/context/AuthContext'
+import { useCompanyContext } from '@/context/CompanyContext'
 import type { AttendanceOrder, AttendanceServiceType, AttendancePaymentType, AttendanceAttachment } from '@/types/attendance-cadastro.types'
 import type { Patient } from '@/types/patient.types'
 import type { AttendanceControlDocument, PaymentRecord } from '@/types/payment-print.types'
@@ -104,6 +105,7 @@ export function AttendanceCadastroModal({
   open, onClose, ticketId, ticketCode, unitId, unitName, guicheName, initialPatient, onOrderCreated,
 }: AttendanceCadastroModalProps) {
   const { user } = useAuth()
+  const { activeOrigin } = useCompanyContext()
   const { createOrder } = useAttendanceCadastro()
   const { getDefault } = usePrinterConfig()
   const [step, setStep] = useState(initialPatient ? 1 : 0)
@@ -112,13 +114,11 @@ export function AttendanceCadastroModal({
   const [showRestoreConfirm, setShowRestoreConfirm] = useState(false)
   const [pendingDraft, setPendingDraft] = useState<any>(null)
   const [state, setState] = useState<CadastroState>(() => {
-    const activeOrigin = sessionStorage.getItem('activeOrigin');
-    const origin = activeOrigin ? JSON.parse(activeOrigin) : null;
     return { 
       attachments: [], 
       patient: initialPatient,
-      originId: origin?.originId || undefined,
-      originCode: origin?.originCode || '00',
+      originId: activeOrigin?.id || undefined,
+      originCode: activeOrigin?.internal_code ? Number(activeOrigin.internal_code) : 0,
       guides: []
     }
   })
@@ -396,6 +396,7 @@ export function AttendanceCadastroModal({
       // Lab specific fields
       originId: state.originId,
       originCode: state.originCode,
+      originName: state.originId === activeOrigin?.id ? activeOrigin?.name : undefined,
       patientSequenceId: state.patient?.sequenceId || state.tempPatient?.sequenceId,
       guides: state.guides,
       isPregnant: state.tempPatient?.clinicalData?.isPregnant,
@@ -453,6 +454,17 @@ export function AttendanceCadastroModal({
     () => createdOrder ? buildControlDocument(createdOrder, paymentRecord) : null,
     [createdOrder, paymentRecord, buildControlDocument],
   )
+
+  // Update state if activeOrigin changes
+  useEffect(() => {
+    if (activeOrigin && !state.originId) {
+      setState(prev => ({
+        ...prev,
+        originId: activeOrigin.id,
+        originCode: activeOrigin.internal_code ? Number(activeOrigin.internal_code) : 0
+      }))
+    }
+  }, [activeOrigin])
 
   return (
     <Dialog open={open} onOpenChange={(o) => !o && handleClose()}>
