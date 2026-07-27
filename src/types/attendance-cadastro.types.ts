@@ -77,7 +77,7 @@ export interface AttendanceOrder {
   attachmentRulesSatisfied: boolean
   attachmentOverrideReason?: string
 
-  status: 'open' | 'authorized' | 'completed' | 'cancelled' | 'waiting_collection'
+  status: 'waiting' | 'waiting_collection' | 'collection_done' | 'in_analysis' | 'validation' | 'released' | 'cancelled' | 'open' | 'authorized' | 'completed'
   scheduledAppointmentId?: string
   registeredBy: string
   registeredByName?: string
