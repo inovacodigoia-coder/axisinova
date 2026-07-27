@@ -17,6 +17,7 @@ export default function EstablishmentsSettingsPage() {
   const [editingEstablishment, setEditingEstablishment] = useState<Establishment | null>(null)
   const [formData, setFormData] = useState({
     name: '',
+    internal_code: '',
     cnpj: '',
     city: '',
     is_main_branch: false
@@ -49,13 +50,14 @@ export default function EstablishmentsSettingsPage() {
       setEditingEstablishment(establishment)
       setFormData({
         name: establishment.name,
+        internal_code: establishment.internal_code || '',
         cnpj: establishment.cnpj || '',
         city: establishment.city || '',
         is_main_branch: establishment.is_main_branch
       })
     } else {
       setEditingEstablishment(null)
-      setFormData({ name: '', cnpj: '', city: '', is_main_branch: false })
+      setFormData({ name: '', internal_code: '', cnpj: '', city: '', is_main_branch: false })
     }
     setIsModalOpen(true)
   }
@@ -148,6 +150,7 @@ export default function EstablishmentsSettingsPage() {
                       )}
                     </div>
                     <div className="flex flex-wrap items-center gap-3 mt-1 text-xs text-muted-foreground">
+                      <span className="flex items-center gap-1 font-medium text-primary/80 bg-primary/5 px-1.5 py-0.5 rounded border border-primary/10">Código: {e.internal_code || '--'}</span>
                       <span className="flex items-center gap-1"><Globe className="h-3 w-3" /> {e.cnpj || 'Sem CNPJ'}</span>
                       <span className="flex items-center gap-1"><MapPin className="h-3 w-3" /> {e.city || 'Cidade não informada'}</span>
                     </div>
@@ -185,14 +188,25 @@ export default function EstablishmentsSettingsPage() {
             <DialogTitle>{editingEstablishment ? 'Editar Estabelecimento' : 'Novo Estabelecimento'}</DialogTitle>
           </DialogHeader>
           <div className="space-y-4 py-4">
-            <div className="space-y-2">
-              <Label htmlFor="name">Nome do Estabelecimento</Label>
-              <Input
-                id="name"
-                value={formData.name}
-                onChange={e => setFormData({ ...formData, name: e.target.value })}
-                placeholder="Ex: Unidade Centro ou Matriz"
-              />
+            <div className="grid grid-cols-3 gap-4">
+              <div className="col-span-2 space-y-2">
+                <Label htmlFor="name">Nome do Estabelecimento</Label>
+                <Input
+                  id="name"
+                  value={formData.name}
+                  onChange={e => setFormData({ ...formData, name: e.target.value })}
+                  placeholder="Ex: Unidade Centro ou Matriz"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="internal_code">Código</Label>
+                <Input
+                  id="internal_code"
+                  value={formData.internal_code}
+                  onChange={e => setFormData({ ...formData, internal_code: e.target.value })}
+                  placeholder="Ex: 00, 01"
+                />
+              </div>
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
