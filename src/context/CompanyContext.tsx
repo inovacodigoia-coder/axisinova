@@ -74,7 +74,7 @@ export function CompanyProvider({ children }: { children: ReactNode }) {
 
   const refreshOrigins = useCallback(async () => {
     if (!user) return
-    const { data, error } = await (supabase as any)
+    const { data, error } = await supabase
       .from('origins')
       .select(`
         *,
@@ -84,6 +84,7 @@ export function CompanyProvider({ children }: { children: ReactNode }) {
           internal_code
         )
       `)
+      .eq('company_id', user.companyId)
       .order('name')
     if (error) {
       console.error('Error fetching origins:', error)
@@ -92,10 +93,11 @@ export function CompanyProvider({ children }: { children: ReactNode }) {
     setAvailableOrigins(data || [])
     
     // Check for default origin preference
-    const { data: pref } = await (supabase as any)
+    const { data: pref } = await supabase
       .from('user_origin_preferences')
       .select('origin_id')
       .eq('user_id', user.id)
+      .eq('company_id', user.companyId)
       .eq('is_default', true)
       .maybeSingle()
     
@@ -110,7 +112,7 @@ export function CompanyProvider({ children }: { children: ReactNode }) {
       if (savedOrigin) {
         setActiveOrigin(savedOrigin)
       } else {
-        const matriz = data.find((o: any) => o.name.toUpperCase().includes('MATRIZ') || o.internal_code === '00')
+        const matriz = data.find((o: any) => o.internal_code === '00' || o.name.toUpperCase().includes('MATRIZ'))
         setActiveOrigin(matriz || data[0])
       }
     }
