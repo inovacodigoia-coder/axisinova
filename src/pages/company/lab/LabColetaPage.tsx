@@ -228,15 +228,40 @@ export default function LabColetaPage() {
             </Card>
           ))
         ) : filteredOrders.length === 0 ? (
-          <div className="flex flex-col items-center justify-center py-12 text-center bg-muted/20 rounded-2xl border-2 border-dashed border-border">
-            <div className="bg-muted p-4 rounded-full mb-4">
-              <Search className="h-8 w-8 text-muted-foreground" />
+          <div className="bg-white rounded-2xl border border-dashed border-gray-300 p-12 flex flex-col items-center justify-center text-center">
+            <div className="h-20 w-20 rounded-full bg-gray-50 flex items-center justify-center mb-6">
+              <ClipboardList className="h-10 w-10 text-gray-300" />
             </div>
-            <h3 className="font-bold text-lg">Nenhum paciente encontrado</h3>
-            <p className="text-muted-foreground max-w-xs">Tente ajustar seus filtros ou busca para localizar o atendimento.</p>
-            {search && (
-              <Button variant="link" onClick={() => setSearch('')} className="mt-2 text-primary">Limpar busca</Button>
-            )}
+            <h3 className="text-xl font-semibold text-gray-900 mb-2">Fila de coleta vazia</h3>
+            <p className="text-gray-500 max-w-sm mb-8">
+              Não há atendimentos aguardando coleta no momento {filterWorkbench !== 'all' ? 'para esta bancada' : ''}. 
+              Novos pedidos realizados na recepção aparecerão aqui automaticamente.
+            </p>
+            <div className="flex flex-col sm:flex-row gap-3">
+              <Button 
+                variant="outline" 
+                onClick={() => {
+                  setLoading(true);
+                  refresh().finally(() => setLoading(false));
+                }}
+                className="gap-2 h-10"
+              >
+                <RotateCw className={cn("h-4 w-4", loading && "animate-spin")} />
+                Verificar novos pedidos
+              </Button>
+              {(search || filterWorkbench !== 'all') && (
+                <Button 
+                  variant="ghost" 
+                  onClick={() => {
+                    setSearch('');
+                    setFilterWorkbench('all');
+                  }}
+                  className="h-10"
+                >
+                  Limpar todos os filtros
+                </Button>
+              )}
+            </div>
           </div>
         ) : (
           filteredOrders.map((order) => {
