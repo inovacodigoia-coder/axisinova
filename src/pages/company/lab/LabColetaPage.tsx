@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button'
 import { Search, ChevronDown, User, Beaker, ClipboardList, Printer, Check, X, AlertCircle, Filter, History, Clock, Menu, RotateCw } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { useAttendanceCadastro } from '@/hooks/useAttendanceCadastro'
-import { useRegisters, RegistersProvider } from '@/context/RegistersContext'
+import { useRegisters } from '@/context/RegistersContext'
 import { TUBE_TYPES, LabAttendanceOrder } from '@/types/lab.types'
 import { toast } from 'sonner'
 import { useAuth } from '@/context/AuthContext'
@@ -12,7 +12,7 @@ import { Skeleton } from '@/components/ui/skeleton'
 import { useNavigate } from 'react-router-dom'
 import { Badge } from '@/components/ui/badge'
 
-function LabColetaContent() {
+export default function LabColetaPage() {
   const { user } = useAuth()
   const { orders, updateOrder, refresh } = useAttendanceCadastro()
   const navigate = useNavigate()
@@ -467,6 +467,3 @@ function LabColetaContent() {
   )
 }
 
-export default function LabColetaPage() {
-  return <LabColetaContent />
-}
