@@ -1,7 +1,7 @@
 import { useState, useCallback, useEffect, useMemo, useRef } from 'react'
 import { Dialog, DialogContent } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
-import { X, ArrowLeft, ArrowRight, Check, UserPlus, AlertTriangle } from 'lucide-react'
+import { X, ArrowLeft, ArrowRight, Check, UserPlus, AlertTriangle, Loader2 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { toast } from 'sonner'
 import {
