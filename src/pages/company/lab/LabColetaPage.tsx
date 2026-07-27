@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { Card } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
-import { Search, ChevronDown, User, Beaker, ClipboardList, Printer, Check, X, AlertCircle, Filter, History, Clock, Menu } from 'lucide-react'
+import { Search, ChevronDown, User, Beaker, ClipboardList, Printer, Check, X, AlertCircle, Filter, History, Clock, Menu, RotateCw } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { useAttendanceCadastro } from '@/hooks/useAttendanceCadastro'
 import { useRegisters } from '@/context/RegistersContext'
@@ -13,7 +13,7 @@ import { useNavigate } from 'react-router-dom'
 
 export default function LabColetaPage() {
   const { user } = useAuth()
-  const { orders, updateOrder } = useAttendanceCadastro()
+  const { orders, updateOrder, refresh } = useAttendanceCadastro()
   const navigate = useNavigate()
   const [loading, setLoading] = useState(true)
   const [expandedId, setExpandedId] = useState<string | null>(null)
@@ -21,11 +21,19 @@ export default function LabColetaPage() {
   const [search, setSearch] = useState('')
   const [filterWorkbench, setFilterWorkbench] = useState<string>('all')
   
-  // Polling simulation & initial loading
+  // Polling para atualização automática (cada 30 segundos)
   useEffect(() => {
-    const timer = setTimeout(() => setLoading(false), 1200)
-    return () => clearTimeout(timer)
-  }, [])
+    const timer = setTimeout(() => setLoading(false), 800)
+    
+    const interval = setInterval(() => {
+      refresh()
+    }, 30000)
+
+    return () => {
+      clearTimeout(timer)
+      clearInterval(interval)
+    }
+  }, [refresh])
 
   const { workbenches } = useRegisters()
 
@@ -111,14 +119,28 @@ export default function LabColetaPage() {
           <h1 className="text-2xl font-bold">Fila de Coleta</h1>
           <p className="text-sm text-muted-foreground">Gerencie a fila de pacientes aguardando e registre a coleta de amostras.</p>
         </div>
-        <Button 
-          variant="outline" 
-          onClick={() => navigate('/app/dashboard')}
-          className="gap-2"
-        >
-          <Menu className="h-4 w-4" />
-          Menu do Sistema
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button 
+            variant="outline" 
+            size="sm"
+            onClick={() => {
+              setLoading(true)
+              refresh().finally(() => setLoading(false))
+            }}
+            className="gap-2 h-10 border-border"
+          >
+            <RotateCw className={cn("h-4 w-4", loading && "animate-spin")} />
+            Atualizar
+          </Button>
+          <Button 
+            variant="outline" 
+            onClick={() => navigate('/app/dashboard')}
+            className="gap-2 h-10 border-border"
+          >
+            <Menu className="h-4 w-4" />
+            Menu do Sistema
+          </Button>
+        </div>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
