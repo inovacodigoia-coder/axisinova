@@ -137,7 +137,7 @@ export function useAttendanceCadastro() {
           patient_name: data.patientName,
           origin_id: data.originId || null,
           origin_code: String(data.originCode !== undefined ? data.originCode : '00'),
-          origin_name: data.originName || (data.originId ? 'Origem Selecionada' : 'MATRIZ'),
+          origin_name: data.originName,
           order_number: protocol,
           protocol: protocol,
           hash: hash,

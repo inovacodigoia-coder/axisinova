@@ -205,7 +205,7 @@ export type Database = {
             foreignKeyName: "attendance_orders_origin_id_fkey"
             columns: ["origin_id"]
             isOneToOne: false
-            referencedRelation: "attendance_origins"
+            referencedRelation: "origins"
             referencedColumns: ["id"]
           },
           {
