@@ -164,7 +164,11 @@ export function LabStep6Summary({ state, update, unitName }: Props & { update: (
                             {exam.collected ? 'Sim' : 'Não'}
                           </td>
                           <td className="px-4 py-3 text-slate-500 text-xs">
-                            {exam.expectedDeliveryDate || '-'}
+                            {exam.expectedDeliveryDate ? (
+                              /^\d{4}-\d{2}-\d{2}/.test(exam.expectedDeliveryDate) 
+                                ? format(new Date(exam.expectedDeliveryDate), 'dd/MM/yyyy HH:mm')
+                                : exam.expectedDeliveryDate
+                            ) : '-'}
                           </td>
                           <td className="px-4 py-3 text-slate-500 text-xs">
                             {state.authorizationCode ? '1 de 1' : '0 de 1'}
