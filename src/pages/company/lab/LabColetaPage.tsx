@@ -232,7 +232,9 @@ export default function LabColetaPage() {
                     </div>
                     <div className="space-y-1">
                       <p className="font-bold text-foreground leading-none">{order.patientName}</p>
-                      <p className="text-xs text-muted-foreground">Masc, 37 anos • {order.convenioName || 'Particular'}</p>
+                      <p className="text-xs text-muted-foreground">
+                        {order.patientGender === 'M' ? 'Masc' : 'Fem'}, {new Date().getFullYear() - new Date(order.patientBirthDate).getFullYear()} anos • {order.convenioName || 'Particular'}
+                      </p>
                     </div>
                   </div>
 
@@ -244,7 +246,9 @@ export default function LabColetaPage() {
                     </div>
                     <div className="text-right">
                       <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Espera</p>
-                      <p className="text-sm font-black text-red-600">7 min</p>
+                      <p className="text-sm font-black text-red-600">
+                        {Math.floor((new Date().getTime() - new Date(order.createdAt).getTime()) / (1000 * 60))} min
+                      </p>
                     </div>
                     {isExpanded ? (
                       <Button variant="ghost" size="sm" onClick={() => setExpandedId(null)} className="rounded-full h-8 w-8 p-0 hover:bg-muted">
