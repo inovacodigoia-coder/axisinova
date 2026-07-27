@@ -263,8 +263,10 @@ export default function LabCatalogFormPage() {
           <ParametersSection 
             parameters={parameters} 
             setParameters={setParameters} 
+            onUpdateReference={(val) => setExamData(prev => ({ ...prev, ...val }))}
           />
         </TabsContent>
+
         <TabsContent value="interfacing">
           <InterfacingSection 
             config={examData.interfacingConfig} 
