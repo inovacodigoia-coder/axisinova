@@ -369,18 +369,21 @@ export default function LabColetaPage() {
                 <RotateCw className={cn("h-4 w-4", loading && "animate-spin")} />
                 Verificar novos pedidos
               </Button>
-              {(search || filterWorkbench !== 'all') && (
+              {(search !== '' || filterWorkbench !== 'all' || filterConvenio !== 'all' || filterWaitTime !== 'all') && (
                 <Button 
                   variant="ghost" 
                   onClick={() => {
                     setSearch('');
                     setFilterWorkbench('all');
+                    setFilterConvenio('all');
+                    setFilterWaitTime('all');
                   }}
                   className="h-10"
                 >
                   Limpar todos os filtros
                 </Button>
               )}
+
             </div>
           </div>
         ) : (
