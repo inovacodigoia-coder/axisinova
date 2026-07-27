@@ -109,7 +109,7 @@ export function AttendanceLookupModal({ open, onClose, unitName, guicheName, onA
       }
 
       if (pTerm) {
-        const pName = normalize(o.patientName || '')
+        const pName = normalize(p?.fullName || o.patientName || '')
         if (!pName.includes(pTerm)) return false
       }
 
@@ -306,7 +306,7 @@ function OrderRowModern({
         <div className="text-muted-foreground">
           {date.toLocaleDateString('pt-BR')}
         </div>
-        <div className="font-semibold text-foreground truncate uppercase">{order.patientName}</div>
+        <div className="font-semibold text-foreground truncate uppercase">{patient?.fullName || order.patientName}</div>
         <div className="text-muted-foreground">{patient?.birthDate ? new Date(patient.birthDate).toLocaleDateString('pt-BR') : '-'}</div>
         <div className="truncate uppercase">{order.convenioName || 'Particular'}</div>
         <div>
@@ -322,8 +322,8 @@ function OrderRowModern({
       </div>
 
       {open && (
-        <div className="px-6 pb-4 pt-1">
-          <div className="rounded-lg border border-border bg-muted/30 p-4 space-y-3">
+        <div className="px-6 pb-6 pt-1">
+          <div className="rounded-xl border border-primary/20 bg-primary/5 p-6 shadow-sm space-y-4">
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-y-3 gap-x-8">
               <Detail label="Tipo" value={order.serviceType === 'consultation' ? 'Consulta' : order.serviceType === 'exam' ? 'Exame' : 'Procedimento'} />
               <Detail label="Procedimento" value={order.procedureName || '-'} />
