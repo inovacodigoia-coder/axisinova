@@ -9,11 +9,7 @@ import { GENDER_LABELS, ETHNICITY_LABELS, MARITAL_LABELS, STATUS_LABELS, BRAZIL_
 import { useRegisters } from '@/context/RegistersContext';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 
-interface Props { 
-  state: any; 
-  update: (patch: any) => void; 
-  onPatientUpdated?: () => void;
-}
+interface Props { state: any; update: (patch: any) => void; }
 
 type TabType = 'pessoal' | 'contato' | 'convenios' | 'responsavel' | 'clinico' | 'observacoes';
 

@@ -94,6 +94,7 @@ export interface CadastroState {
   examMode?: 'ask' | 'clinic' | 'lab'
   guides?: any[]
   patientUpdatedLocally?: boolean
+  verifiedExams?: string[]
 }
 
 const STEPS_CLINIC = ['Paciente', 'Atendimento', 'Autorização', 'Anexos'] as const
@@ -161,6 +162,7 @@ export function AttendanceCadastroModal({
   const [showPayment, setShowPayment] = useState(false)
   const [showPrint, setShowPrint] = useState(false)
   const [showAllocation, setShowAllocation] = useState(false)
+  const [showPrintSelection, setShowPrintSelection] = useState(false)
   const [savingPatient, setSavingPatient] = useState(false)
   const [showSyncSuccess, setShowSyncSuccess] = useState(false)
 
@@ -175,7 +177,7 @@ export function AttendanceCadastroModal({
       const payload = patientToDb(state.tempPatient)
       const { data, error } = await supabase
         .from('patients')
-        .update(payload)
+        .update(payload as any)
         .eq('id', state.patient.id)
         .select()
         .single()
