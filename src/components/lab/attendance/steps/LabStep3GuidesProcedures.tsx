@@ -280,7 +280,8 @@ export function LabStep3GuidesProcedures({ state, update }: Props) {
                     ...g, 
                     plan: selectedPlan,
                     name: selectedPlan,
-                    operator: convenio?.operator || selectedPlan // If not found, fallback to plan name
+                    convenioName: selectedPlan,
+                    operator: convenio?.operator || selectedPlan
                   } : g);
                   setGuides(newGuides);
                   update({ guides: newGuides });
