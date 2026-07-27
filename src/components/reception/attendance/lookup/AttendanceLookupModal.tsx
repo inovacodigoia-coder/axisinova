@@ -190,8 +190,8 @@ export function AttendanceLookupModal({ open, onClose, unitName, guicheName, onA
                   className="w-full rounded-lg border border-input bg-background pl-3 pr-8 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring appearance-none"
                 >
                   <option value="all">Todos Status</option>
-                  <option value="waiting_collection">Aguardando Coleta</option>
-                  <option value="open">Aberto</option>
+                  <option value="AGUARDANDO">Aguardando Coleta</option>
+                  <option value="ABERTO">Aberto</option>
                   {Object.entries(ATTENDANCE_STATUS_LABELS).map(([key, val]) => (
                     key !== 'waiting_collection' && key !== 'open' && (
                       <option key={key} value={key}>{val.label}</option>
