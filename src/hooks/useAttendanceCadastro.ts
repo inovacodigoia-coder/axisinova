@@ -64,6 +64,35 @@ export function useAttendanceCadastro() {
     enabled: !!companyId
   })
 
+  const ensureIsoDate = (dateStr: any) => {
+    if (!dateStr) return null;
+    if (dateStr instanceof Date) return dateStr.toISOString();
+    
+    // Check if already ISO
+    if (/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}/.test(dateStr)) return dateStr;
+
+    // Handle DD/MM/YYYY HH:mm
+    const brDateTimeMatch = dateStr.match(/^(\d{2})\/(\d{2})\/(\d{4})\s+(\d{2}):(\d{2})/);
+    if (brDateTimeMatch) {
+      const [_, day, month, year, hour, minute] = brDateTimeMatch;
+      return new Date(Number(year), Number(month) - 1, Number(day), Number(hour), Number(minute)).toISOString();
+    }
+
+    // Handle DD/MM/YYYY
+    const brDateMatch = dateStr.match(/^(\d{2})\/(\d{2})\/(\d{4})/);
+    if (brDateMatch) {
+      const [_, day, month, year] = brDateMatch;
+      return new Date(Number(year), Number(month) - 1, Number(day)).toISOString();
+    }
+
+    try {
+      const parsed = new Date(dateStr);
+      return isNaN(parsed.getTime()) ? null : parsed.toISOString();
+    } catch {
+      return null;
+    }
+  };
+
   const createOrder = useCallback(async (data: any): Promise<AttendanceOrder | null> => {
     if (!companyId || !user) return null
 
@@ -77,6 +106,19 @@ export function useAttendanceCadastro() {
       const originStr = String(data.originCode || '00').replace(/\D/g, '').padStart(2, '0')
       const protocol = `${totalOrderCount}-${originStr}`
       const hash = Math.random().toString(36).substring(2, 8).toUpperCase()
+
+      // Calculate max delivery date from guides
+      const calculatedDeliveryDate = (data.guides || data.labGuides)?.reduce((latest: string | null, guide: any) => {
+        if (!guide.exams) return latest
+        const dates = guide.exams.map((e: any) => e.expectedDeliveryDate || e.deliveryDate).filter(Boolean)
+        if (dates.length === 0) return latest
+        // Normalize all dates to ISO before sorting
+        const isoDates = dates.map(ensureIsoDate).filter(Boolean) as string[]
+        if (isoDates.length === 0) return latest
+        const maxDate = isoDates.sort().reverse()[0]
+        if (!latest || maxDate > latest) return maxDate
+        return latest
+      }, null)
 
       const { data: newOrder, error } = await (supabase
         .from('attendance_orders' as any) as any)
@@ -101,20 +143,13 @@ export function useAttendanceCadastro() {
           convenio_id: data.convenioId,
           convenio_name: data.convenioName,
           card_number: data.cardNumber,
-          card_expiry: data.cardExpiry,
+          card_expiry: ensureIsoDate(data.cardExpiry),
           authorization_code: data.authorizationCode,
-          authorization_date: data.authorizationDate,
-          authorization_expiry: data.authorizationExpiry,
+          authorization_date: ensureIsoDate(data.authorizationDate),
+          authorization_expiry: ensureIsoDate(data.authorizationExpiry),
           authorization_password: data.authorizationPassword,
           private_value: data.privateValue,
-          delivery_date: data.deliveryDate || (data.guides || data.labGuides)?.reduce((latest: string | null, guide: any) => {
-            if (!guide.exams) return latest
-            const dates = guide.exams.map((e: any) => e.expectedDeliveryDate || e.deliveryDate).filter(Boolean)
-            if (dates.length === 0) return latest
-            const maxDate = dates.sort().reverse()[0]
-            if (!latest || maxDate > latest) return maxDate
-            return latest
-          }, null),
+          delivery_date: ensureIsoDate(data.deliveryDate) || calculatedDeliveryDate,
           lab_guides: data.guides || data.labGuides || [],
           status: data.labGuides?.some((g: any) => g.exams?.some((e: any) => e.collected)) ? 'waiting' : 'open',
           registered_by: user.id,
