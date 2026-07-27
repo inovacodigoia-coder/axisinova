@@ -57,7 +57,9 @@ export default function LabColetaPage() {
   }, 0)
 
   // Tempo médio de espera (simulado com base na data de criação se disponível, ou fixo se não)
-  const avgWaitTime = filteredOrders.length > 0 ? "12" : "0"
+  const avgWaitTime = filteredOrders.length > 0 
+    ? Math.floor(filteredOrders.reduce((acc, o) => acc + (new Date().getTime() - new Date(o.registeredAt).getTime()) / (1000 * 60), 0) / filteredOrders.length)
+    : 0
 
   const addAudit = (order: LabAttendanceOrder, action: any, details?: string) => {
     const trail = order.auditTrail || []
