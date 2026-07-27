@@ -16,9 +16,10 @@ export function useAttendanceCadastro() {
       if (!companyId) return []
       const { data, error } = await (supabase
         .from('attendance_orders' as any) as any)
-        .select('*')
+        .select('*, patients(birth_date, gender)')
         .eq('company_id', companyId)
         .order('created_at', { ascending: false })
+
       
       if (error) throw error
       
