@@ -247,7 +247,7 @@ export default function LabColetaPage() {
                     <div className="text-right">
                       <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Espera</p>
                       <p className="text-sm font-black text-red-600">
-                        {Math.floor((new Date().getTime() - new Date(order.createdAt).getTime()) / (1000 * 60))} min
+                        {Math.floor((new Date().getTime() - new Date(order.registeredAt).getTime()) / (1000 * 60))} min
                       </p>
                     </div>
                     {isExpanded ? (
