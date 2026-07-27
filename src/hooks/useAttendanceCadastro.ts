@@ -120,35 +120,6 @@ export function useAttendanceCadastro() {
         return latest
       }, null)
 
-      const { data: newOrder, error } = await (supabase
-        .from('attendance_orders' as any) as any)
-        .insert({
-          company_id: companyId,
-          patient_id: data.patientId,
-          patient_name: data.patientName,
-          origin_id: data.originId || null,
-          origin_code: String(data.originCode || '00'),
-          origin_name: data.originName,
-          order_number: protocol,
-          protocol: protocol,
-          hash: hash,
-          service_type: data.serviceType,
-          payment_type: data.paymentType,
-          exam_mode: data.examMode,
-          doctor_id: data.doctorId,
-          doctor_name: data.doctorName,
-          doctor_crm: data.doctorCRM,
-          specialty: data.specialty,
-          requesting_doctor: data.requestingDoctor,
-          convenio_id: data.convenioId,
-          convenio_name: data.convenioName,
-          card_number: data.cardNumber,
-          card_expiry: ensureIsoDate(data.cardExpiry),
-          authorization_code: data.authorizationCode,
-          authorization_date: ensureIsoDate(data.authorizationDate),
-          authorization_expiry: ensureIsoDate(data.authorizationExpiry),
-          authorization_password: data.authorizationPassword,
-          private_value: data.privateValue,
       // Prioritize the convenio/plan from the first guide if available
       const firstGuide = (data.guides || data.labGuides)?.[0]
       const convenioId = data.convenioId || firstGuide?.id || firstGuide?.convenioId
