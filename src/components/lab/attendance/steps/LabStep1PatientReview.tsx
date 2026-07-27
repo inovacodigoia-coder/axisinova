@@ -9,7 +9,11 @@ import { GENDER_LABELS, ETHNICITY_LABELS, MARITAL_LABELS, STATUS_LABELS, BRAZIL_
 import { useRegisters } from '@/context/RegistersContext';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 
-interface Props { state: any; update: (patch: any) => void; }
+interface Props { 
+  state: any; 
+  update: (patch: any) => void; 
+  onPatientUpdated?: () => void;
+}
 
 type TabType = 'pessoal' | 'contato' | 'convenios' | 'responsavel' | 'clinico' | 'observacoes';
 
@@ -38,7 +42,10 @@ export function LabStep1PatientReview({ state, update }: Props) {
   const [newMedication, setNewMedication] = useState({ name: '', dosage: '', frequency: '' });
 
   const handleUpdate = (patch: any) => {
-    update({ tempPatient: { ...tempPatient, ...patch } });
+    update({ 
+      tempPatient: { ...tempPatient, ...patch },
+      patientUpdatedLocally: true
+    });
   };
 
   const addAllergy = () => {

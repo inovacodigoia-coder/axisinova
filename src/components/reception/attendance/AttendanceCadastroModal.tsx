@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect, useMemo } from 'react'
+import { useState, useCallback, useEffect, useMemo, useRef } from 'react'
 import { Dialog, DialogContent } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
 import { X, ArrowLeft, ArrowRight, Check, UserPlus, AlertTriangle } from 'lucide-react'
@@ -93,7 +93,7 @@ export interface CadastroState {
   observation?: string
   examMode?: 'ask' | 'clinic' | 'lab'
   guides?: any[]
-  verifiedExams?: string[]
+  patientUpdatedLocally?: boolean
 }
 
 const STEPS_CLINIC = ['Paciente', 'Atendimento', 'Autorização', 'Anexos'] as const
@@ -161,7 +161,48 @@ export function AttendanceCadastroModal({
   const [showPayment, setShowPayment] = useState(false)
   const [showPrint, setShowPrint] = useState(false)
   const [showAllocation, setShowAllocation] = useState(false)
-  const [showPrintSelection, setShowPrintSelection] = useState(false)
+  const [savingPatient, setSavingPatient] = useState(false)
+  const [showSyncSuccess, setShowSyncSuccess] = useState(false)
+
+  const handleUpdatePatient = async () => {
+    if (!state.patient?.id || !state.tempPatient) return
+    
+    setSavingPatient(true)
+    try {
+      const { patientToDb } = await import('@/utils/patient.adapter')
+      const { supabase } = await import('@/integrations/supabase/client')
+      
+      const payload = patientToDb(state.tempPatient)
+      const { data, error } = await supabase
+        .from('patients')
+        .update(payload)
+        .eq('id', state.patient.id)
+        .select()
+        .single()
+
+      if (error) throw error
+
+      const { dbToPatient } = await import('@/utils/patient.adapter')
+      const updatedPatient = dbToPatient(data)
+      
+      setState(prev => ({
+        ...prev,
+        patient: updatedPatient,
+        tempPatient: {},
+        patientUpdatedLocally: false
+      }))
+      
+      setShowSyncSuccess(true)
+      setTimeout(() => setShowSyncSuccess(false), 3000)
+      toast.success('Cadastro do paciente atualizado com sucesso!')
+    } catch (error: any) {
+      console.error('Error updating patient:', error)
+      toast.error('Erro ao atualizar cadastro: ' + error.message)
+    } finally {
+      setSavingPatient(false)
+    }
+  }
+
 
   // Carrega rascunho ao abrir
   useEffect(() => {
@@ -235,8 +276,16 @@ export function AttendanceCadastroModal({
 
   const canAdvance = stepValid(step)
 
-  const next = () => {
+  const next = async () => {
     if (!canAdvance) return
+    
+    // Se estiver no passo do paciente e houver alterações não sincronizadas
+    if (isLab && STEPS_LAB_DYNAMIC[step] === 'Cliente' && state.patientUpdatedLocally) {
+      // O usuário clicou em Próximo mas tem alterações pendentes
+      // De acordo com o prompt: "se for Próximo continuar sem atualização"
+      // Mas o botão "Nova informações no cadastro atualizar antes de continuar" deve estar visível
+    }
+
     const maxStep = STEPS_LAB_DYNAMIC.length - 1
     if (step === maxStep) {
       if (!isLab) setShowReview(true)
