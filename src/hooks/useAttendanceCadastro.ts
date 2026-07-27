@@ -97,18 +97,21 @@ export function useAttendanceCadastro() {
     if (!companyId || !user) return null
 
     try {
+      const originId = data.originId || null
+      
       const { count } = await (supabase
         .from('attendance_orders' as any) as any)
         .select('*', { count: 'exact', head: true })
         .eq('company_id', companyId)
+        .eq('origin_id', originId)
 
-      const totalOrderCount = (count || 0) + 1
+      const originOrderCount = (count || 0) + 1
       
       // Use active origin code or default to MATRIZ '00'
       const originCode = data.originCode !== undefined ? data.originCode : '00'
       
       const originStr = String(originCode).replace(/\D/g, '').padStart(2, '0')
-      const protocol = `${totalOrderCount}-${originStr}`
+      const protocol = `${originOrderCount}-${originStr}`
       const hash = Math.random().toString(36).substring(2, 8).toUpperCase()
 
       // Calculate max delivery date from guides
