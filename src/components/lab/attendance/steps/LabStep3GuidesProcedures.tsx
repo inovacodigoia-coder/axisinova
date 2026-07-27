@@ -98,7 +98,7 @@ export function LabStep3GuidesProcedures({ state, update }: Props) {
 
   const addGuide = () => {
     const newId = (guides.length + 1).toString();
-    const newGuide = { id: newId, name: `Guia ${newId}`, plan: 'PARTICULAR', operator: 'PARTICULAR', number: '', exams: [], isDoctorDisabled: false };
+    const newGuide = { id: newId, name: 'PARTICULAR', plan: 'PARTICULAR', operator: 'PARTICULAR', number: '', exams: [], isDoctorDisabled: false };
     setGuides([...guides, newGuide]);
     setActiveGuideId(newId);
     update({ guides: [...guides, newGuide] });
