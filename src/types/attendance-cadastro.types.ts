@@ -24,6 +24,9 @@ export interface AttendanceOrder {
   patientId: string
   patientName: string
   companyId: string
+  patientBirthDate?: string
+  patientGender?: string
+
   unitId: string
   ticketId?: string
   ticketCode?: string

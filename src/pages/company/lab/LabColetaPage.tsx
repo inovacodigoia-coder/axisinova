@@ -5,7 +5,7 @@ import { Search, ChevronDown, User, Beaker, ClipboardList, Printer, Check, X, Al
 import { cn } from '@/lib/utils'
 import { useAttendanceCadastro } from '@/hooks/useAttendanceCadastro'
 import { useRegisters } from '@/context/RegistersContext'
-import { TUBE_TYPES, LabAttendanceOrder } from '@/types/lab.types'
+import { TUBE_TYPES, LabAttendanceOrder, LabExam } from '@/types/lab.types'
 import { toast } from 'sonner'
 import { useAuth } from '@/context/AuthContext'
 import { Skeleton } from '@/components/ui/skeleton'
@@ -66,9 +66,22 @@ export default function LabColetaPage() {
     }
   };
 
-  const collectionOrders = (orders || []).filter(o => 
-    o?.status === 'waiting_collection' || o?.status === 'waiting'
-  ) as LabAttendanceOrder[]
+  const collectionOrders = useMemo(() => {
+    return (orders || [])
+      .filter(o => o?.status === 'waiting_collection' || o?.status === 'waiting')
+      .map(o => {
+        const allExams = (o.labGuides || []).flatMap(guide => (guide.exams || []).map((e: any) => ({
+          ...e,
+          examId: e.examId || e.id,
+          material: e.material || e.selectedMaterial || 'Soro'
+        })))
+        return {
+          ...o,
+          exams: allExams
+        }
+      }) as LabAttendanceOrder[]
+  }, [orders])
+
 
   const filteredOrders = collectionOrders.filter(order => {
     if (!order) return false;
@@ -124,7 +137,20 @@ export default function LabColetaPage() {
     ? Math.floor(filteredOrders.reduce((acc, o) => acc + getWaitTimeInMinutes(o.registeredAt), 0) / filteredOrders.length)
     : 0
 
+  const getOrderTubes = (order: LabAttendanceOrder) => {
+    const materials = new Set(order.exams?.map(e => e.material).filter(Boolean))
+    return TUBE_TYPES.filter(tube => 
+      materials.has(tube.label) || 
+      materials.has(tube.type) ||
+      (tube.type === 'gel' && materials.has('Soro')) ||
+      (tube.type === 'edta' && (materials.has('Sangue Total') || materials.has('Sangue'))) ||
+      (tube.type === 'citrato' && materials.has('Plasma')) ||
+      (tube.type === 'urina' && (materials.has('Urina') || materials.has('Urina Amostra')))
+    )
+  }
+
   const addAudit = (order: LabAttendanceOrder, action: any, details?: string) => {
+
     const trail = order.auditTrail || []
     const newEntry = {
       action,
@@ -404,18 +430,30 @@ export default function LabColetaPage() {
                     </div>
                     <div className="space-y-1">
                       <p className="font-bold text-foreground leading-none">{order.patientName}</p>
-                      <p className="text-xs text-muted-foreground">
-                        {order.patientGender === 'M' ? 'Masc' : 'Fem'}, {calculateAge(order.patientBirthDate)} anos • {order.convenioName || 'Particular'}
-                      </p>
+                      <div className="flex flex-col">
+                        <p className="text-xs text-muted-foreground">
+                          {order.patientGender === 'M' || order.patientGender === 'male' ? 'Masc' : 
+                           order.patientGender === 'F' || order.patientGender === 'female' ? 'Fem' : 'N/I'}, {calculateAge(order.patientBirthDate)} anos • {order.convenioName || 'Particular'}
+                        </p>
+                        <p className="text-[10px] text-primary font-medium mt-0.5 truncate max-w-[300px]" title={order.exams?.map(e => e.name).join(', ')}>
+                          {order.exams?.map(e => e.name).join(', ')}
+                        </p>
+                      </div>
                     </div>
                   </div>
 
                   <div className="flex items-center gap-8">
-                    <div className="flex gap-1.5">
-                      {TUBE_TYPES.map(t => (
-                        <div key={t.type} className={cn("w-3 h-3 rounded-full", t.color)} title={t.label}></div>
-                      ))}
+                    <div className="flex flex-col items-end gap-1">
+                      <div className="flex gap-1.5">
+                        {getOrderTubes(order).map(t => (
+                          <div key={t.type} className={cn("w-3 h-3 rounded-full", t.color)} title={t.label}></div>
+                        ))}
+                      </div>
+                      <p className="text-[10px] text-muted-foreground font-medium">
+                        {order.exams?.length || 0} exames
+                      </p>
                     </div>
+
                     <div className="text-right">
                       <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Espera</p>
                       <p className="text-sm font-black text-red-600">
@@ -443,7 +481,7 @@ export default function LabColetaPage() {
                           <h3 className="font-bold">Materiais para Coleta</h3>
                         </div>
                         <div className="space-y-3">
-                          {TUBE_TYPES.map(tube => (
+                          {getOrderTubes(order).map(tube => (
                             <div key={tube.type} className={cn(
                               "p-4 rounded-xl border border-border transition-all cursor-pointer group",
                               tubesSelected.includes(tube.type) ? "bg-emerald-50 border-emerald-200" : "bg-card hover:border-primary/30"
@@ -459,7 +497,17 @@ export default function LabColetaPage() {
                                     <div className={cn("w-3 h-3 rounded-full", tube.color)}></div>
                                     <p className="text-sm font-bold text-foreground">{tube.label} ({tube.volume})</p>
                                   </div>
-                                  <p className="text-xs text-muted-foreground">Exames vinculados a este material</p>
+                                  <p className="text-xs text-muted-foreground">
+                                    Exames: {order.exams?.filter(e => 
+                                      e.material === tube.label || 
+                                      e.material === tube.type ||
+                                      (tube.type === 'gel' && e.material === 'Soro') ||
+                                      (tube.type === 'edta' && (e.material === 'Sangue Total' || e.material === 'Sangue')) ||
+                                      (tube.type === 'citrato' && e.material === 'Plasma') ||
+                                      (tube.type === 'urina' && (e.material === 'Urina' || e.material === 'Urina Amostra'))
+                                    ).map(e => e.name).join(', ')}
+                                  </p>
+
                                   <p className="text-[10px] font-mono font-bold text-primary">Rótulo: {order.protocol}-A</p>
                                 </div>
                               </div>

@@ -80,7 +80,8 @@ export interface LabAttendanceOrder extends AttendanceOrder {
   originCode: number;
   protocol: string;
   patientBirthDate: string;
-  patientGender: 'M' | 'F' | 'Other';
+  patientGender: 'M' | 'F' | 'Other' | 'male' | 'female' | 'not_informed' | string;
+
   exams: {
     examId: string;
     code: string;
