@@ -1,17 +1,19 @@
 import { useState, useEffect } from 'react'
 import { Card } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
-import { Search, ChevronDown, User, Beaker, ClipboardList, Printer, Check, X, AlertCircle, Filter, History, Clock } from 'lucide-react'
+import { Search, ChevronDown, User, Beaker, ClipboardList, Printer, Check, X, AlertCircle, Filter, History, Clock, Menu } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { useAttendanceCadastro } from '@/hooks/useAttendanceCadastro'
 import { TUBE_TYPES, LabAttendanceOrder } from '@/types/lab.types'
 import { toast } from 'sonner'
 import { useAuth } from '@/context/AuthContext'
 import { Skeleton } from '@/components/ui/skeleton'
+import { useNavigate } from 'react-router-dom'
 
 export default function LabColetaPage() {
   const { user } = useAuth()
   const { orders, updateOrder } = useAttendanceCadastro()
+  const navigate = useNavigate()
   const [loading, setLoading] = useState(true)
   const [expandedId, setExpandedId] = useState<string | null>(null)
   const [selectedTubes, setSelectedTubes] = useState<Record<string, string[]>>({})
@@ -25,7 +27,7 @@ export default function LabColetaPage() {
   }, [])
 
   const collectionOrders = (orders as unknown as LabAttendanceOrder[]).filter(o => 
-    o.status === 'waiting_collection' || (o.status === 'completed' && o.serviceType === 'exam')
+    o.status === 'waiting_collection' || o.status === 'waiting'
   )
 
   const filteredOrders = collectionOrders.filter(order => {
@@ -36,6 +38,7 @@ export default function LabColetaPage() {
     // In a real app, workbench filtering would look at order.exams
     const matchesWorkbench = filterWorkbench === 'all' || true 
     
+    // Mostra se o status for especificamente waiting_collection (AGUARDANDO)
     return matchesSearch && matchesWorkbench && order.status === 'waiting_collection'
   })
 
@@ -84,9 +87,19 @@ export default function LabColetaPage() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold">Fila de Coleta</h1>
-        <p className="text-sm text-muted-foreground">Gerencie a fila de pacientes aguardando e registre a coleta de amostras.</p>
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl font-bold">Fila de Coleta</h1>
+          <p className="text-sm text-muted-foreground">Gerencie a fila de pacientes aguardando e registre a coleta de amostras.</p>
+        </div>
+        <Button 
+          variant="outline" 
+          onClick={() => navigate('/app/dashboard')}
+          className="gap-2"
+        >
+          <Menu className="h-4 w-4" />
+          Menu do Sistema
+        </Button>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">

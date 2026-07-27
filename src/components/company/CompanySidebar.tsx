@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { NavLink, useLocation } from 'react-router-dom'
+import { NavLink, useLocation, useNavigate } from 'react-router-dom'
 import { useAuth } from '@/context/AuthContext'
 import { useCompanyContext } from '@/context/CompanyContext'
 import { supabase } from '@/integrations/supabase/client'
@@ -7,7 +7,7 @@ import {
   Home, Calendar, UserCheck, FileText, DollarSign, FlaskConical, BarChart3,
   TrendingUp, Users, Settings, Database, Monitor, Building2, Lock,
   LogOut, ChevronLeft, ChevronRight, X, Stethoscope, TicketCheck, ShieldCheck, Ruler, Layout, Beaker as BeakerIcon,
-  PieChart, Warehouse, Package as PackageIcon, UserPlus, FileSearch
+  PieChart, Warehouse, Package as PackageIcon, UserPlus, FileSearch, Menu
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
@@ -163,6 +163,7 @@ export function CompanySidebar({ mobileOpen, onMobileClose, collapsed = false, o
   const { user, logout } = useAuth()
   const { canAccess, activeProfile } = useCompanyContext()
   const location = useLocation()
+  const navigate = useNavigate()
   const [sidebarBg, setSidebarBg] = useState<string | undefined>(undefined)
 
   // Load branding from DB
@@ -198,8 +199,17 @@ export function CompanySidebar({ mobileOpen, onMobileClose, collapsed = false, o
       <div className="flex items-center justify-between border-b border-white/10 px-4 py-5">
         {!collapsed ? (
           <div className="flex-1 min-w-0">
-            <div className="flex items-center gap-2">
-              <span className="text-lg font-bold">Axis<span className="text-white/70">Inova</span></span>
+            <div className="flex items-center justify-between gap-2">
+              <div className="flex items-center gap-2">
+                <span className="text-lg font-bold">Axis<span className="text-white/70">Inova</span></span>
+              </div>
+              <button 
+                onClick={() => navigate('/app/dashboard')} 
+                className="rounded-lg p-1.5 hover:bg-white/10 text-white/40 hover:text-white transition-colors"
+                title="Menu do Sistema"
+              >
+                <Menu className="h-5 w-5" />
+              </button>
             </div>
             <p className="mt-1 truncate text-xs text-white/40">{user?.companyName || 'Portal da Empresa'}</p>
             {activeProfile && (
