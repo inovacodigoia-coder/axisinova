@@ -3,6 +3,8 @@ import { CadastroState } from '@/components/reception/attendance/AttendanceCadas
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { GENDER_LABELS } from '@/types/patient.types';
+import { cn } from '@/lib/utils';
+import { CheckCircle2, AlertTriangle } from 'lucide-react';
 
 interface Props {
   state: CadastroState;
@@ -242,5 +244,3 @@ export function LabStep6Summary({ state, update, unitName }: Props & { update: (
   );
 }
 
-import { cn } from '@/lib/utils';
-import { CheckCircle2, AlertTriangle } from 'lucide-react';
