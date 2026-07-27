@@ -371,7 +371,7 @@ export function AttendanceCadastroModal({
       procedureName: state.procedureName,
       procedureCode: state.procedureCode, 
       procedureDescription: state.procedureDescription,
-      convenioId: state.guides?.[0]?.convenioId || state.guides?.[0]?.id || state.convenioId, 
+      convenioId: state.guides?.[0]?.convenioId || state.convenioId, 
       convenioName: state.guides?.[0]?.convenioName || state.guides?.[0]?.name || state.guides?.[0]?.plan || state.convenioName,
       cardNumber: state.cardNumber, 
       cardExpiry: state.cardExpiry,
