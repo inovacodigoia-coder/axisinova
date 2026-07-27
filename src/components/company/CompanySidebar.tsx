@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { NavLink, useLocation } from 'react-router-dom'
+import { NavLink, useLocation, useNavigate } from 'react-router-dom'
 import { useAuth } from '@/context/AuthContext'
 import { useCompanyContext } from '@/context/CompanyContext'
 import { supabase } from '@/integrations/supabase/client'
@@ -7,7 +7,7 @@ import {
   Home, Calendar, UserCheck, FileText, DollarSign, FlaskConical, BarChart3,
   TrendingUp, Users, Settings, Database, Monitor, Building2, Lock,
   LogOut, ChevronLeft, ChevronRight, X, Stethoscope, TicketCheck, ShieldCheck, Ruler, Layout, Beaker as BeakerIcon,
-  PieChart, Warehouse, Package as PackageIcon, UserPlus, FileSearch
+  PieChart, Warehouse, Package as PackageIcon, UserPlus, FileSearch, Menu
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
@@ -163,6 +163,7 @@ export function CompanySidebar({ mobileOpen, onMobileClose, collapsed = false, o
   const { user, logout } = useAuth()
   const { canAccess, activeProfile } = useCompanyContext()
   const location = useLocation()
+  const navigate = useNavigate()
   const [sidebarBg, setSidebarBg] = useState<string | undefined>(undefined)
 
   // Load branding from DB
@@ -210,6 +211,15 @@ export function CompanySidebar({ mobileOpen, onMobileClose, collapsed = false, o
           <div className="mx-auto flex h-8 w-8 items-center justify-center rounded-full gradient-bg text-xs font-bold">
             {user?.name?.charAt(0) || 'U'}
           </div>
+        )}
+        {!collapsed && (
+          <button 
+            onClick={() => navigate('/app/dashboard')} 
+            className="ml-2 rounded-lg p-1 hover:bg-white/10"
+            title="Menu do Sistema"
+          >
+            <Menu className="h-5 w-5" />
+          </button>
         )}
         {mobileOpen && (
           <button onClick={onMobileClose} className="ml-2 rounded-lg p-1 hover:bg-white/10 lg:hidden">

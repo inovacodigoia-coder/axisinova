@@ -25,7 +25,7 @@ export default function LabColetaPage() {
   }, [])
 
   const collectionOrders = (orders as unknown as LabAttendanceOrder[]).filter(o => 
-    o.status === 'waiting_collection' || (o.status === 'completed' && o.serviceType === 'exam')
+    o.status === 'waiting_collection' || o.status === 'waiting'
   )
 
   const filteredOrders = collectionOrders.filter(order => {
@@ -36,6 +36,7 @@ export default function LabColetaPage() {
     // In a real app, workbench filtering would look at order.exams
     const matchesWorkbench = filterWorkbench === 'all' || true 
     
+    // Mostra se o status for especificamente waiting_collection
     return matchesSearch && matchesWorkbench && order.status === 'waiting_collection'
   })
 
