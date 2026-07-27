@@ -24,9 +24,12 @@ export default function EstablishmentsSettingsPage() {
 
   const loadEstablishments = async () => {
     setIsLoading(true)
-    const { data, error } = await (supabase as any)
+    const { data, error } = await supabase
       .from('establishments')
-      .select('*')
+      .select(`
+        *,
+        origins (*)
+      `)
       .order('created_at', { ascending: true })
     
     if (error) {
@@ -70,13 +73,13 @@ export default function EstablishmentsSettingsPage() {
 
     let error
     if (editingEstablishment) {
-      const { error: err } = await (supabase as any)
+      const { error: err } = await supabase
         .from('establishments')
         .update(payload)
         .eq('id', editingEstablishment.id)
       error = err
     } else {
-      const { error: err } = await (supabase as any)
+      const { error: err } = await supabase
         .from('establishments')
         .insert([payload])
       error = err
@@ -92,7 +95,7 @@ export default function EstablishmentsSettingsPage() {
   }
 
   const handleDelete = async (id: string) => {
-    const { error } = await (supabase as any)
+    const { error } = await supabase
       .from('establishments')
       .delete()
       .eq('id', id)
@@ -109,11 +112,11 @@ export default function EstablishmentsSettingsPage() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-foreground">Estabelecimentos e Unidades</h1>
-          <p className="text-sm text-muted-foreground">Gerencie as unidades físicas da sua empresa</p>
+          <h1 className="text-2xl font-bold text-foreground">Estabelecimentos e Origem</h1>
+          <p className="text-sm text-muted-foreground">Gerencie as unidades físicas e pontos de atendimento da sua empresa</p>
         </div>
         <Button onClick={() => handleOpenModal()} className="gradient-bg text-white gap-2">
-          <Plus className="h-4 w-4" /> Adicionar Unidade
+          <Plus className="h-4 w-4" /> Adicionar Estabelecimento
         </Button>
       </div>
 
@@ -125,7 +128,7 @@ export default function EstablishmentsSettingsPage() {
         ) : establishments.length === 0 ? (
           <div className="text-center py-12 bg-card rounded-xl border border-dashed border-border">
             <Building2 className="h-12 w-12 text-muted-foreground mx-auto mb-4 opacity-20" />
-            <p className="text-muted-foreground">Nenhuma unidade cadastrada.</p>
+            <p className="text-muted-foreground">Nenhum estabelecimento cadastrado.</p>
           </div>
         ) : (
           establishments.map(e => (
@@ -143,9 +146,14 @@ export default function EstablishmentsSettingsPage() {
                       </span>
                     )}
                   </div>
-                  <div className="flex items-center gap-3 mt-1 text-xs text-muted-foreground">
+                  <div className="flex flex-wrap items-center gap-3 mt-1 text-xs text-muted-foreground">
                     <span className="flex items-center gap-1"><Globe className="h-3 w-3" /> {e.cnpj || 'Sem CNPJ'}</span>
                     <span className="flex items-center gap-1"><MapPin className="h-3 w-3" /> {e.city || 'Cidade não informada'}</span>
+                    {(e as any).origins?.length > 0 && (
+                      <span className="flex items-center gap-1 bg-primary/5 px-1.5 py-0.5 rounded text-primary font-medium">
+                        {(e as any).origins.length} {(e as any).origins.length === 1 ? 'Origem' : 'Origens'}
+                      </span>
+                    )}
                   </div>
                 </div>
               </div>
@@ -167,16 +175,16 @@ export default function EstablishmentsSettingsPage() {
       <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>{editingEstablishment ? 'Editar Unidade' : 'Nova Unidade'}</DialogTitle>
+            <DialogTitle>{editingEstablishment ? 'Editar Estabelecimento' : 'Novo Estabelecimento'}</DialogTitle>
           </DialogHeader>
           <div className="space-y-4 py-4">
             <div className="space-y-2">
-              <Label htmlFor="name">Nome da Unidade</Label>
+              <Label htmlFor="name">Nome do Estabelecimento</Label>
               <Input
                 id="name"
                 value={formData.name}
                 onChange={e => setFormData({ ...formData, name: e.target.value })}
-                placeholder="Ex: Unidade Centro"
+                placeholder="Ex: Unidade Centro ou Matriz"
               />
             </div>
             <div className="grid grid-cols-2 gap-4">
@@ -207,12 +215,12 @@ export default function EstablishmentsSettingsPage() {
                 onChange={e => setFormData({ ...formData, is_main_branch: e.target.checked })}
                 className="rounded border-gray-300 text-primary focus:ring-primary"
               />
-              <Label htmlFor="is_main" className="text-sm font-normal">Esta é a unidade Matriz</Label>
+              <Label htmlFor="is_main" className="text-sm font-normal">Este é o estabelecimento Matriz</Label>
             </div>
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setIsModalOpen(false)}>Cancelar</Button>
-            <Button onClick={handleSave} className="gradient-bg text-white">Salvar Unidade</Button>
+            <Button onClick={handleSave} className="gradient-bg text-white">Salvar Estabelecimento</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
