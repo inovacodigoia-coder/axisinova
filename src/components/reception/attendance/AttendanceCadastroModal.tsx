@@ -396,7 +396,7 @@ export function AttendanceCadastroModal({
       // Lab specific fields
       originId: state.originId,
       originCode: state.originCode,
-      originName: state.originId === activeOrigin?.id ? activeOrigin?.name : undefined,
+      originName: state.originId === activeOrigin?.id ? activeOrigin?.name : state.guides?.[0]?.originName,
       patientSequenceId: state.patient?.sequenceId || state.tempPatient?.sequenceId,
       guides: state.guides,
       isPregnant: state.tempPatient?.clinicalData?.isPregnant,
