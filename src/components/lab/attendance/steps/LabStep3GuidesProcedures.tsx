@@ -292,6 +292,7 @@ export function LabStep3GuidesProcedures({ state, update }: Props) {
                     plan: selectedPlan,
                     name: selectedPlan,
                     convenioName: selectedPlan,
+                    convenioId: convenio?.id || null,
                     operator: convenio?.operator || selectedPlan
                   } : g);
                   setGuides(newGuides);
