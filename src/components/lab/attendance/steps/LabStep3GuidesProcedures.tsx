@@ -160,7 +160,7 @@ export function LabStep3GuidesProcedures({ state, update }: Props) {
   const calculateDeadline = (days: number) => {
     const date = new Date();
     date.setDate(date.getDate() + days);
-    return date.toLocaleString('pt-BR').split(',')[0] + ' ' + date.getHours().toString().padStart(2, '0') + ':' + date.getMinutes().toString().padStart(2, '0');
+    return date.toISOString();
   };
 
   const handleOpenDeadlineModal = (exam: any) => {
