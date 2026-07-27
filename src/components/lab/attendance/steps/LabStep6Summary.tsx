@@ -3,6 +3,8 @@ import { CadastroState } from '@/components/reception/attendance/AttendanceCadas
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { GENDER_LABELS } from '@/types/patient.types';
+import { cn } from '@/lib/utils';
+import { CheckCircle2, AlertTriangle } from 'lucide-react';
 
 interface Props {
   state: CadastroState;
@@ -106,10 +108,10 @@ export function LabStep6Summary({ state, update, unitName }: Props & { update: (
             <h3 className="text-lg font-bold text-blue-600 uppercase tracking-tight">Guias</h3>
           </div>
 
-          {state.guides?.map((guide, gIdx) => (
+          {state.guides?.filter(guide => guide.exams && guide.exams.length > 0).map((guide, gIdx) => (
             <div key={guide.id || gIdx} className="space-y-4">
-              <h4 className="text-sm font-bold text-slate-700">
-                {gIdx + 1}. {guide.plan === 'PARTICULAR' ? 'PARTICULAR' : guide.convenioName || 'PARTICULAR'}
+              <h4 className="text-sm font-bold text-slate-700 uppercase">
+                {gIdx + 1}. {guide.name}
               </h4>
 
               <div className="overflow-x-auto">
@@ -153,7 +155,7 @@ export function LabStep6Summary({ state, update, unitName }: Props & { update: (
                           </td>
                           <td className="px-4 py-3 text-slate-500 font-medium text-xs">{exam.internalCode || exam.code || '-'}</td>
                           <td className="px-4 py-3 text-slate-700 font-bold text-xs">
-                            {exam.price ? `R$ ${exam.price.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}` : 'R$ 0,00'}
+                            {exam.price > 0 ? `R$ ${exam.price.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}` : 'R$ 0,00'}
                           </td>
                           <td className="px-4 py-3 text-slate-500 text-xs">
                             {exam.selectedMaterial || exam.material || '-'}
@@ -162,7 +164,7 @@ export function LabStep6Summary({ state, update, unitName }: Props & { update: (
                             {exam.collected ? 'Sim' : 'Não'}
                           </td>
                           <td className="px-4 py-3 text-slate-500 text-xs">
-                            {exam.expectedDeliveryDate || (exam.resultDeadlineDays ? format(new Date(new Date().getTime() + (exam.resultDeadlineDays * 24 * 60 * 60 * 1000)), 'dd/MM/yyyy - HH:mm') : '-')}
+                            {exam.expectedDeliveryDate || '-'}
                           </td>
                           <td className="px-4 py-3 text-slate-500 text-xs">
                             {state.authorizationCode ? '1 de 1' : '0 de 1'}
@@ -242,5 +244,3 @@ export function LabStep6Summary({ state, update, unitName }: Props & { update: (
   );
 }
 
-import { cn } from '@/lib/utils';
-import { CheckCircle2, AlertTriangle } from 'lucide-react';

@@ -66,8 +66,17 @@ export function LabStep3GuidesProcedures({ state, update }: Props) {
     return false;
   }, [user, activeProfile, activeSector]);
 
-  const [guides, setGuides] = useState<AttendanceGuide[]>(state.guides || [{ id: '1', name: 'Guia 1', plan: 'PARTICULAR', operator: 'PARTICULAR', number: '', exams: [], isDoctorDisabled: false }]);
-  const [activeGuideId, setActiveGuideId] = useState(guides[0]?.id || '1');
+  const [guides, setGuides] = useState<AttendanceGuide[]>(state.guides || []);
+  const [activeGuideId, setActiveGuideId] = useState(guides[0]?.id || '');
+
+  useEffect(() => {
+    if (guides.length === 0) {
+      const initialGuide = { id: '1', name: 'Particular', plan: 'PARTICULAR', operator: 'PARTICULAR', number: '', exams: [], isDoctorDisabled: false };
+      setGuides([initialGuide]);
+      setActiveGuideId('1');
+      update({ guides: [initialGuide] });
+    }
+  }, []);
   const [showDoctorPopover, setShowDoctorPopover] = useState(false);
   
   // Doctor search state
@@ -89,7 +98,7 @@ export function LabStep3GuidesProcedures({ state, update }: Props) {
 
   const addGuide = () => {
     const newId = (guides.length + 1).toString();
-    const newGuide = { id: newId, name: `Guia ${newId}`, plan: 'PARTICULAR', operator: 'PARTICULAR', number: '', exams: [], isDoctorDisabled: false };
+    const newGuide = { id: newId, name: 'PARTICULAR', plan: 'PARTICULAR', operator: 'PARTICULAR', number: '', exams: [], isDoctorDisabled: false };
     setGuides([...guides, newGuide]);
     setActiveGuideId(newId);
     update({ guides: [...guides, newGuide] });
@@ -271,7 +280,8 @@ export function LabStep3GuidesProcedures({ state, update }: Props) {
                     ...g, 
                     plan: selectedPlan,
                     name: selectedPlan,
-                    operator: convenio?.operator || selectedPlan // If not found, fallback to plan name
+                    convenioName: selectedPlan,
+                    operator: convenio?.operator || selectedPlan
                   } : g);
                   setGuides(newGuides);
                   update({ guides: newGuides });
