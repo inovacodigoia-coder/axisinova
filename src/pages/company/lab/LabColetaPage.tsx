@@ -417,18 +417,30 @@ export default function LabColetaPage() {
                     </div>
                     <div className="space-y-1">
                       <p className="font-bold text-foreground leading-none">{order.patientName}</p>
-                      <p className="text-xs text-muted-foreground">
-                        {order.patientGender === 'M' ? 'Masc' : 'Fem'}, {calculateAge(order.patientBirthDate)} anos • {order.convenioName || 'Particular'}
-                      </p>
+                      <div className="flex flex-col">
+                        <p className="text-xs text-muted-foreground">
+                          {order.patientGender === 'M' || order.patientGender === 'male' ? 'Masc' : 
+                           order.patientGender === 'F' || order.patientGender === 'female' ? 'Fem' : 'N/I'}, {calculateAge(order.patientBirthDate)} anos • {order.convenioName || 'Particular'}
+                        </p>
+                        <p className="text-[10px] text-primary font-medium mt-0.5 truncate max-w-[300px]" title={order.exams?.map(e => e.name).join(', ')}>
+                          {order.exams?.map(e => e.name).join(', ')}
+                        </p>
+                      </div>
                     </div>
                   </div>
 
                   <div className="flex items-center gap-8">
-                    <div className="flex gap-1.5">
-                      {TUBE_TYPES.map(t => (
-                        <div key={t.type} className={cn("w-3 h-3 rounded-full", t.color)} title={t.label}></div>
-                      ))}
+                    <div className="flex flex-col items-end gap-1">
+                      <div className="flex gap-1.5">
+                        {getOrderTubes(order).map(t => (
+                          <div key={t.type} className={cn("w-3 h-3 rounded-full", t.color)} title={t.label}></div>
+                        ))}
+                      </div>
+                      <p className="text-[10px] text-muted-foreground font-medium">
+                        {order.exams?.length || 0} exames
+                      </p>
                     </div>
+
                     <div className="text-right">
                       <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Espera</p>
                       <p className="text-sm font-black text-red-600">
