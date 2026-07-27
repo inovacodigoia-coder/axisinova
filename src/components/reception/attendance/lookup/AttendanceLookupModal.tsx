@@ -209,7 +209,7 @@ export function AttendanceLookupModal({ open, onClose, unitName, guicheName, onA
 
         {/* Results Table Header */}
         <div className="bg-muted/10 border-b border-border px-6 py-2">
-          <div className="grid grid-cols-[120px_140px_1fr_100px_120px_120px_100px_140px_120px] gap-4 text-[10px] font-bold text-muted-foreground uppercase tracking-wider">
+          <div className="grid grid-cols-[120px_100px_1fr_100px_120px_120px_100px_140px] gap-4 text-[10px] font-bold text-muted-foreground uppercase tracking-wider">
             <div>Pedido</div>
             <div>Dt. Atend.</div>
             <div>Cliente</div>
@@ -218,7 +218,6 @@ export function AttendanceLookupModal({ open, onClose, unitName, guicheName, onA
             <div>Status</div>
             <div>Prev. Entrega</div>
             <div>Origem</div>
-            <div className="text-right">Ações</div>
           </div>
         </div>
 
@@ -302,10 +301,10 @@ function OrderRowModern({
       onClick={onDetails}
       onDoubleClick={onDetails}
     >
-      <div className="grid grid-cols-[120px_140px_1fr_100px_120px_120px_100px_140px_120px] gap-4 px-6 py-3 items-center text-xs">
+      <div className="grid grid-cols-[120px_100px_1fr_100px_120px_120px_100px_140px] gap-4 px-6 py-3 items-center text-xs">
         <div className="font-mono text-primary font-bold hover:underline" onClick={(e) => { e.stopPropagation(); onDetails(); }}>{order.orderNumber}</div>
         <div className="text-muted-foreground">
-          {date.toLocaleDateString('pt-BR')} {date.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
+          {date.toLocaleDateString('pt-BR')}
         </div>
         <div className="font-semibold text-foreground truncate uppercase">{order.patientName}</div>
         <div className="text-muted-foreground">{patient?.birthDate ? new Date(patient.birthDate).toLocaleDateString('pt-BR') : '-'}</div>
@@ -320,11 +319,6 @@ function OrderRowModern({
         </div>
         <div className="text-muted-foreground">{deliveryDate ? deliveryDate.toLocaleDateString('pt-BR') : '-'}</div>
         <div className="truncate text-muted-foreground uppercase">{order.originName || 'Apartamentos'}</div>
-        <div className="flex items-center justify-end gap-1">
-          <Button size="icon" variant="ghost" className="h-8 w-8 text-muted-foreground" onClick={(e) => { e.stopPropagation(); setOpen(!open); }} title="Ver detalhes">
-            {open ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
-          </Button>
-        </div>
       </div>
 
       {open && (
