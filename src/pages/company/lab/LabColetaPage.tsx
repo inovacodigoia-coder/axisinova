@@ -459,9 +459,5 @@ function LabColetaContent() {
 }
 
 export default function LabColetaPage() {
-  return (
-    <RegistersProvider>
-      <LabColetaContent />
-    </RegistersProvider>
-  )
+  return <LabColetaContent />
 }
