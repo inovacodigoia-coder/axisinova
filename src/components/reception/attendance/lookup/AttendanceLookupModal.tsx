@@ -90,10 +90,11 @@ export function AttendanceLookupModal({ open, onClose, unitName, guicheName, onA
     return m
   }, [patients])
 
-  const grouped = useMemo(() => {
+  const filtered = useMemo(() => {
     const term = normalize(search.trim())
     const pTerm = normalize(patientSearch.trim())
-    const list = orders.filter(o => {
+    
+    return orders.filter(o => {
       const p = patientById.get(o.patientId)
       
       if (statusFilter !== 'all' && o.status !== statusFilter) return false
@@ -113,21 +114,7 @@ export function AttendanceLookupModal({ open, onClose, unitName, guicheName, onA
       }
 
       return true
-    })
-    const byPatient = new Map<string, AttendanceOrder[]>()
-    list.forEach(o => {
-      const arr = byPatient.get(o.patientId) || []
-      arr.push(o)
-      byPatient.set(o.patientId, arr)
-    })
-    return Array.from(byPatient.entries())
-      .map(([pid, items]) => ({
-        patientId: pid,
-        patient: patientById.get(pid),
-        patientName: items[0].patientName,
-        items: items.sort((a, b) => b.registeredAt.localeCompare(a.registeredAt)),
-      }))
-      .sort((a, b) => a.patientName.localeCompare(b.patientName))
+    }).sort((a, b) => b.registeredAt.localeCompare(a.registeredAt))
   }, [orders, patientById, search, patientSearch, statusFilter])
 
   const togglePatient = (pid: string) => {
@@ -216,7 +203,7 @@ export function AttendanceLookupModal({ open, onClose, unitName, guicheName, onA
             </Button>
           </div>
           <p className="text-xs text-muted-foreground">
-            {grouped.length} paciente{grouped.length === 1 ? '' : 's'} · {grouped.reduce((s, g) => s + g.items.length, 0)} atendimento{grouped.reduce((s, g) => s + g.items.length, 0) === 1 ? '' : 's'}
+            {filtered.length} atendimento{filtered.length === 1 ? '' : 's'}
           </p>
         </div>
 
@@ -241,26 +228,28 @@ export function AttendanceLookupModal({ open, onClose, unitName, guicheName, onA
             <div className="flex items-center justify-center py-20">
               <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent"></div>
             </div>
-          ) : !grouped.length && (
+          ) : !filtered.length ? (
             <div className="text-center py-12 text-muted-foreground text-sm">
               {search || patientSearch ? 'Nenhum cadastro encontrado para sua busca.' : 'Digite para buscar atendimentos.'}
             </div>
+          ) : (
+            <div className="divide-y divide-border">
+              {filtered.map(order => (
+                <OrderRowModern
+                  key={order.id}
+                  order={order}
+                  patient={patientById.get(order.patientId)}
+                  onPrint={() => setDetailsOrder(order)}
+                  onEdit={() => setEditing(order)}
+                  onDetails={() => setDetailsOrder(order)}
+                  onAddProcedure={() => {
+                    const p = patientById.get(order.patientId)
+                    if (p) onAddProcedure(p)
+                  }}
+                />
+              ))}
+            </div>
           )}
-
-          
-          <div className="divide-y divide-border">
-            {grouped.flatMap(g => g.items.map(order => (
-              <OrderRowModern
-                key={order.id}
-                order={order}
-                patient={g.patient}
-                onPrint={() => setDetailsOrder(order)}
-                onEdit={() => setEditing(order)}
-                onDetails={() => setDetailsOrder(order)}
-                onAddProcedure={() => g.patient && onAddProcedure(g.patient)}
-              />
-            )))}
-          </div>
         </div>
       </DialogContent>
 
