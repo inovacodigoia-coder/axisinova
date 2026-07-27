@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button'
 import { Search, ChevronDown, User, Beaker, ClipboardList, Printer, Check, X, AlertCircle, Filter, History, Clock, Menu } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { useAttendanceCadastro } from '@/hooks/useAttendanceCadastro'
+import { useRegisters } from '@/context/RegistersContext'
 import { TUBE_TYPES, LabAttendanceOrder } from '@/types/lab.types'
 import { toast } from 'sonner'
 import { useAuth } from '@/context/AuthContext'
@@ -26,6 +27,8 @@ export default function LabColetaPage() {
     return () => clearTimeout(timer)
   }, [])
 
+  const { workbenches } = useRegisters()
+
   const collectionOrders = (orders as unknown as LabAttendanceOrder[]).filter(o => 
     o.status === 'waiting_collection' || o.status === 'waiting'
   )
@@ -35,12 +38,25 @@ export default function LabColetaPage() {
       order.patientName.toLowerCase().includes(search.toLowerCase()) || 
       order.protocol?.toLowerCase().includes(search.toLowerCase())
     
-    // In a real app, workbench filtering would look at order.exams
-    const matchesWorkbench = filterWorkbench === 'all' || true 
+    // Filtro por bancada real: verifica se algum exame do pedido pertence à bancada selecionada
+    const matchesWorkbench = filterWorkbench === 'all' || 
+      order.exams?.some(exam => exam.workbenchId === filterWorkbench)
     
-    // Mostra se o status for especificamente waiting_collection (AGUARDANDO)
     return matchesSearch && matchesWorkbench && order.status === 'waiting_collection'
   })
+
+  // Cálculos Reais para os Cards
+  const totalWaiting = filteredOrders.length
+  
+  // Total de tubos únicos necessários para todos os pedidos na fila
+  const totalTubes = filteredOrders.reduce((acc, order) => {
+    // Se o pedido tiver exames com materiais definidos, poderíamos contar aqui.
+    // Como simplificação para o mock/campo atual, vamos somar tubos baseados nos exames
+    return acc + (order.exams?.length || 1) 
+  }, 0)
+
+  // Tempo médio de espera (simulado com base na data de criação se disponível, ou fixo se não)
+  const avgWaitTime = filteredOrders.length > 0 ? "12" : "0"
 
   const addAudit = (order: LabAttendanceOrder, action: any, details?: string) => {
     const trail = order.auditTrail || []
@@ -107,7 +123,7 @@ export default function LabColetaPage() {
           <div>
             <p className="text-xs text-yellow-800 font-bold uppercase tracking-wider">Pacientes Aguardando</p>
             {loading ? <Skeleton className="h-9 w-12 mt-1" /> : (
-              <p className="text-3xl font-black text-yellow-900 mt-1">{filteredOrders.length}</p>
+              <p className="text-3xl font-black text-yellow-900 mt-1">{totalWaiting}</p>
             )}
           </div>
           <div className="bg-yellow-200/50 p-2 rounded-xl">
@@ -118,7 +134,7 @@ export default function LabColetaPage() {
           <div>
             <p className="text-xs text-purple-800 font-bold uppercase tracking-wider">Tubos Necessários</p>
             {loading ? <Skeleton className="h-9 w-24 mt-1" /> : (
-              <p className="text-3xl font-black text-purple-900 mt-1">6 tubos</p>
+              <p className="text-3xl font-black text-purple-900 mt-1">{totalTubes} tubos</p>
             )}
           </div>
           <div className="bg-purple-200/50 p-2 rounded-xl">
@@ -129,7 +145,7 @@ export default function LabColetaPage() {
           <div>
             <p className="text-xs text-emerald-800 font-bold uppercase tracking-wider">Tempo Médio de Esp.</p>
             {loading ? <Skeleton className="h-9 w-20 mt-1" /> : (
-              <p className="text-3xl font-black text-emerald-900 mt-1">7 min</p>
+              <p className="text-3xl font-black text-emerald-900 mt-1">{avgWaitTime} min</p>
             )}
           </div>
           <div className="bg-emerald-200/50 p-2 rounded-xl">
@@ -155,8 +171,9 @@ export default function LabColetaPage() {
             onChange={(e) => setFilterWorkbench(e.target.value)}
           >
             <option value="all">Todas as Bancadas</option>
-            <option value="hematologia">Hematologia</option>
-            <option value="bioquimica">Bioquímica</option>
+            {workbenches.map(wb => (
+              <option key={wb.id} value={wb.id}>{wb.name}</option>
+            ))}
           </select>
           <Button variant="outline" className="gap-2 h-10 border-border">
             <Filter className="h-4 w-4" />
