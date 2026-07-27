@@ -109,41 +109,37 @@ export function OriginSelector() {
       </button>
 
       <Dialog open={isOpen} onOpenChange={setIsOpen}>
-        <DialogContent className="sm:max-w-[500px]">
-          <DialogHeader>
+        <DialogContent className="sm:max-w-[500px] h-[80vh] sm:h-auto flex flex-col p-0 overflow-hidden">
+          <DialogHeader className="p-4 border-b">
             <DialogTitle className="text-lg font-semibold flex items-center justify-between">
-              <div className="flex items-center justify-between w-full pr-6">
-                <span>Seleção de Origem</span>
-                <div className="flex items-center gap-2">
-                   <button 
-                    onClick={(e) => {
-                      e.stopPropagation()
-                      setOnlyFavorites(!onlyFavorites)
-                    }}
-                    className={`p-2 rounded-lg transition-colors border ${onlyFavorites ? 'bg-rose-50 border-rose-200 text-rose-500' : 'hover:bg-muted text-muted-foreground border-transparent'}`}
-                    title={onlyFavorites ? "Mostrar todas" : "Mostrar apenas favoritas"}
-                  >
-                    <Heart className={`h-4 w-4 ${onlyFavorites ? 'fill-current' : ''}`} />
-                  </button>
-                </div>
-              </div>
+              <span>Seleção de Origem</span>
+              <button 
+                onClick={(e) => {
+                  e.stopPropagation()
+                  setOnlyFavorites(!onlyFavorites)
+                }}
+                className={`p-2 rounded-lg transition-colors border ${onlyFavorites ? 'bg-rose-50 border-rose-200 text-rose-50' : 'hover:bg-muted text-muted-foreground border-transparent'}`}
+                title={onlyFavorites ? "Mostrar todas" : "Mostrar apenas favoritas"}
+              >
+                <Heart className={`h-4 w-4 ${onlyFavorites ? 'fill-rose-500 text-rose-500' : ''}`} />
+              </button>
             </DialogTitle>
           </DialogHeader>
 
-          <div className="space-y-4 py-4">
+          <div className="p-4 space-y-4 flex-1 flex flex-col min-h-0">
             <div className="relative">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <input
                 type="text"
-                placeholder="Busque a origem desejada..."
-                className="w-full pl-10 pr-4 py-2 rounded-lg border border-input bg-background text-sm focus:outline-none focus:ring-2 focus:ring-primary/20"
+                placeholder="Busque a origem por nome ou código..."
+                className="w-full pl-10 pr-4 py-2.5 rounded-lg border border-input bg-background text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all"
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 autoFocus
               />
             </div>
 
-            <div className="max-h-[300px] overflow-y-auto space-y-2 pr-1 custom-scrollbar">
+            <div className="flex-1 overflow-y-auto space-y-2 pr-1 custom-scrollbar min-h-[300px]">
               {filteredOrigins.length === 0 ? (
                 <div className="py-10 text-center space-y-4">
                   <div className="mx-auto w-12 h-12 rounded-full bg-muted flex items-center justify-center">
