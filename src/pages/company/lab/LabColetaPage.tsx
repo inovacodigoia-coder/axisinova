@@ -21,6 +21,10 @@ export default function LabColetaPage() {
   const [selectedTubes, setSelectedTubes] = useState<Record<string, string[]>>({})
   const [search, setSearch] = useState('')
   const [filterWorkbench, setFilterWorkbench] = useState<string>('all')
+  const [filterConvenio, setFilterConvenio] = useState<string>('all')
+  const [filterWaitTime, setFilterWaitTime] = useState<'all' | 'low' | 'medium' | 'high'>('all')
+  const [showAdvancedFilters, setShowAdvancedFilters] = useState(false)
+
   
   // Polling para atualização automática (cada 30 segundos)
   useEffect(() => {
