@@ -10,6 +10,7 @@ import { MedicalProvider } from '@/context/MedicalContext'
 import { BillingProvider } from '@/context/BillingContext'
 import { CompanySidebar } from '@/components/company/CompanySidebar'
 import { UserMenuDropdown } from '@/components/company/UserMenuDropdown'
+import { OriginSelector } from '@/components/company/OriginSelector'
 import { NotificationCenter } from '@/components/notifications/NotificationCenter'
 import { NotificationBadge } from '@/components/notifications/NotificationBadge'
 import { CommandPalette } from '@/components/global/CommandPalette'
@@ -203,6 +204,7 @@ function PortalContent() {
               <Bell className="h-5 w-5 text-muted-foreground" />
               <NotificationBadge count={unreadCount} animate={unreadCount > 0} />
             </button>
+            <OriginSelector />
             <UserMenuDropdown />
           </div>
         </header>

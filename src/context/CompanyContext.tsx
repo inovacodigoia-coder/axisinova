@@ -1,21 +1,27 @@
 import { createContext, useCallback, useContext, useEffect, useState, type ReactNode } from 'react'
 import { useAuth } from '@/context/AuthContext'
 import type { Profile, Sector, MenuFunction, SystemModule, PermissionAction } from '@/types/permissions.types'
-import type { CompanyUser } from '@/types/company-portal.types'
+import type { CompanyUser, Origin } from '@/types/company-portal.types'
 import { MOCK_COMPANY_PROFILES, MOCK_COMPANY_USERS, MOCK_SECTORS, getFunctionsForProfile, getUtilitiesForProfile } from '@/mocks/company.mock'
+import { supabase } from '@/integrations/supabase/client'
+import { toast } from 'sonner'
 
 const SESSION_KEY = 'axis_inova_company_session'
+const ORIGIN_KEY = 'axis_inova_active_origin'
 
 interface CompanyContextValue {
   companyUser: CompanyUser | null
   profiles: Profile[]
   activeProfile: Profile | null
   activeSector: Sector | null
+  activeOrigin: Origin | null
   availableSectors: Sector[]
+  availableOrigins: Origin[]
   availableFunctions: MenuFunction[]
   availableUtilities: MenuFunction[]
   selectProfile: (profile: Profile) => void
   selectSector: (sector: Sector) => void
+  selectOrigin: (origin: Origin) => void
   confirmSession: () => void
   clearSession: () => void
   switchProfile: (profileId: string) => void
@@ -26,6 +32,7 @@ interface CompanyContextValue {
   allProfiles: Profile[]
   allSectors: Sector[]
   allUsers: CompanyUser[]
+  refreshOrigins: () => Promise<void>
 }
 
 const CompanyContext = createContext<CompanyContextValue | null>(null)
@@ -60,8 +67,56 @@ export function CompanyProvider({ children }: { children: ReactNode }) {
   const { user } = useAuth()
   const [activeProfile, setActiveProfile] = useState<Profile | null>(null)
   const [activeSector, setActiveSector] = useState<Sector | null>(null)
+  const [activeOrigin, setActiveOrigin] = useState<Origin | null>(null)
+  const [availableOrigins, setAvailableOrigins] = useState<Origin[]>([])
   const [isSessionReady, setIsSessionReady] = useState(false)
   const [isSessionHydrated, setIsSessionHydrated] = useState(false)
+
+  const refreshOrigins = useCallback(async () => {
+    if (!user) return
+    const { data, error } = await (supabase as any)
+      .from('origins')
+      .select('*')
+      .order('name')
+    if (error) {
+      console.error('Error fetching origins:', error)
+      return
+    }
+    setAvailableOrigins(data || [])
+    
+    // Check for default origin preference
+    const { data: pref } = await (supabase as any)
+      .from('user_origin_preferences')
+      .select('origin_id')
+      .eq('user_id', user.id)
+      .eq('is_default', true)
+      .maybeSingle()
+    
+    if (pref && data) {
+      const defaultOrigin = data.find((o: any) => o.id === pref.origin_id)
+      if (defaultOrigin && !activeOrigin) {
+        setActiveOrigin(defaultOrigin)
+      }
+    } else if (data && data.length > 0 && !activeOrigin) {
+      const savedOriginId = localStorage.getItem(ORIGIN_KEY)
+      const savedOrigin = data.find((o: any) => o.id === savedOriginId)
+      if (savedOrigin) {
+        setActiveOrigin(savedOrigin)
+      } else {
+        const matriz = data.find((o: any) => o.name.toUpperCase().includes('MATRIZ'))
+        setActiveOrigin(matriz || data[0])
+      }
+    }
+  }, [user, activeOrigin])
+
+  useEffect(() => {
+    if (user) refreshOrigins()
+  }, [user, refreshOrigins])
+
+  const selectOrigin = useCallback((origin: Origin) => {
+    setActiveOrigin(origin)
+    localStorage.setItem(ORIGIN_KEY, origin.id)
+  }, [])
 
   const companyUserId = user ? getCompanyUserId(user.id) : null
   const companyUser = companyUserId ? MOCK_COMPANY_USERS.find(u => u.id === companyUserId) || null : null
@@ -218,11 +273,12 @@ export function CompanyProvider({ children }: { children: ReactNode }) {
 
   return (
     <CompanyContext.Provider value={{
-      companyUser, profiles, activeProfile, activeSector, availableSectors,
-      availableFunctions, availableUtilities,
-      selectProfile, selectSector, confirmSession, clearSession,
+      companyUser, profiles, activeProfile, activeSector, activeOrigin,
+      availableSectors, availableOrigins, availableFunctions, availableUtilities,
+      selectProfile, selectSector, selectOrigin, confirmSession, clearSession,
       switchProfile, switchSector, canAccess, isSessionReady, isSessionHydrated,
       allProfiles: MOCK_COMPANY_PROFILES, allSectors: MOCK_SECTORS, allUsers: MOCK_COMPANY_USERS,
+      refreshOrigins,
     }}>
       {children}
     </CompanyContext.Provider>
