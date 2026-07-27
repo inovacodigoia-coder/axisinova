@@ -122,7 +122,7 @@ export function useAttendanceCadastro() {
 
       // Prioritize the convenio/plan from the first guide if available
       const firstGuide = (data.guides || data.labGuides)?.[0]
-      const convenioId = firstGuide?.convenioId || firstGuide?.id || data.convenioId
+      const convenioId = firstGuide?.convenioId || data.convenioId
       const convenioName = firstGuide?.convenioName || firstGuide?.name || firstGuide?.plan || data.convenioName || 'Particular'
 
       const { data: newOrder, error } = await (supabase
