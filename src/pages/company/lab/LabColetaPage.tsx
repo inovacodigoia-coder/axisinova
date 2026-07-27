@@ -54,19 +54,47 @@ export default function LabColetaPage() {
     return matchesSearch && matchesWorkbench && (order.status === 'waiting_collection' || order.status === 'waiting')
   })
 
+  // Helper para cálculos seguros de data
+  const getWaitTimeInMinutes = (dateStr: string | null | undefined) => {
+    if (!dateStr) return 0;
+    try {
+      const start = new Date(dateStr).getTime();
+      const now = new Date().getTime();
+      const diff = Math.max(0, Math.floor((now - start) / 60000));
+      return isNaN(diff) ? 0 : diff;
+    } catch (e) {
+      return 0;
+    }
+  };
+
+  const calculateAge = (birthDate: string | null | undefined) => {
+    if (!birthDate) return 0;
+    try {
+      const birth = new Date(birthDate);
+      const today = new Date();
+      let age = today.getFullYear() - birth.getFullYear();
+      const m = today.getMonth() - birth.getMonth();
+      if (m < 0 || (m === 0 && today.getDate() < birth.getDate())) {
+        age--;
+      }
+      return isNaN(age) ? 0 : age;
+    } catch (e) {
+      return 0;
+    }
+  };
+
   // Cálculos Reais para os Cards
   const totalWaiting = filteredOrders.length
   
   // Total de tubos únicos necessários para todos os pedidos na fila
-  // Agrupa por material para ter uma contagem mais real
   const totalTubes = filteredOrders.reduce((acc, order) => {
     const uniqueMaterials = new Set(order.exams?.map(e => e.material).filter(Boolean))
     return acc + (uniqueMaterials.size || 1)
   }, 0)
 
-  // Tempo médio de espera (simulado com base na data de criação se disponível, ou fixo se não)
+  // Tempo médio de espera
   const avgWaitTime = filteredOrders.length > 0 
-    ? Math.floor(filteredOrders.reduce((acc, o) => acc + (new Date().getTime() - new Date(o.registeredAt).getTime()) / (1000 * 60), 0) / filteredOrders.length)
+    ? Math.floor(filteredOrders.reduce((acc, o) => acc + getWaitTimeInMinutes(o.registeredAt), 0) / filteredOrders.length)
     : 0
 
   const addAudit = (order: LabAttendanceOrder, action: any, details?: string) => {
@@ -282,7 +310,7 @@ export default function LabColetaPage() {
                     <div className="space-y-1">
                       <p className="font-bold text-foreground leading-none">{order.patientName}</p>
                       <p className="text-xs text-muted-foreground">
-                        {order.patientGender === 'M' ? 'Masc' : 'Fem'}, {new Date().getFullYear() - new Date(order.patientBirthDate).getFullYear()} anos • {order.convenioName || 'Particular'}
+                        {order.patientGender === 'M' ? 'Masc' : 'Fem'}, {calculateAge(order.patientBirthDate)} anos • {order.convenioName || 'Particular'}
                       </p>
                     </div>
                   </div>
@@ -296,7 +324,7 @@ export default function LabColetaPage() {
                     <div className="text-right">
                       <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Espera</p>
                       <p className="text-sm font-black text-red-600">
-                        {Math.floor((new Date().getTime() - new Date(order.registeredAt).getTime()) / (1000 * 60))} min
+                        {getWaitTimeInMinutes(order.registeredAt)} min
                       </p>
                     </div>
                     {isExpanded ? (
