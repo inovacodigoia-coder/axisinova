@@ -6,6 +6,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { AuthProvider } from "@/context/AuthContext";
 import { QueueSystemProvider } from "@/context/QueueSystemContext";
 import { CompanyProvider } from "@/context/CompanyContext";
+import { RegistersProvider } from "@/context/RegistersContext";
 import { QueueProvider } from "@/context/QueueContext";
 import { SchedulingProvider } from "@/context/SchedulingContext";
 import { ErrorBoundary } from "@/components/feedback/ErrorBoundary";
@@ -74,7 +75,7 @@ const App = () => (
                 {/* Profile Selector */}
                 <Route path="/selecionar-perfil" element={<PrivateRoute><ProfileSelectorPage /></PrivateRoute>} />
                 <Route path="/selecionar-origem" element={<PrivateRoute><OriginSelectorPage /></PrivateRoute>} />
-                <Route path="/app/lab/coleta" element={<PrivateRoute><LabColetaPage /></PrivateRoute>} />
+                <Route path="/app/lab/coleta" element={<PrivateRoute><RegistersProvider><LabColetaPage /></RegistersProvider></PrivateRoute>} />
 
                 {/* Super Admin */}
                 <Route path="/superadmin" element={<SuperAdminRoute><SuperAdminLayout /></SuperAdminRoute>}>
