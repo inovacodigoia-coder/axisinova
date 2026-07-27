@@ -543,6 +543,7 @@ export function AttendanceCadastroModal({
             </button>
           )}
           <div className="flex-1" />
+          {/* Test Match */}
           {!showReview && step < STEPS.length - 1 ? (
             <button
               onClick={next}
