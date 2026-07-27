@@ -3,7 +3,7 @@ import { Card } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Skeleton } from '@/components/ui/skeleton'
-import { Search, Plus, Filter, LayoutGrid, List, MoreVertical, Edit2, Trash2, Beaker, AlertTriangle } from 'lucide-react'
+import { Search, Plus, Filter, LayoutGrid, List, Edit2, Trash2, Beaker, AlertTriangle, ChevronLeft, ChevronRight } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
 import { useNavigate } from 'react-router-dom'
 import { cn } from '@/lib/utils'
@@ -19,6 +19,23 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+  DropdownMenuRadioGroup,
+  DropdownMenuRadioItem,
+} from "@/components/ui/dropdown-menu"
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
 
 export default function LabCatalogPage() {
   const navigate = useNavigate()
