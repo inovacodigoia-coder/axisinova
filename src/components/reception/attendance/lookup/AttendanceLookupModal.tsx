@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react'
 import { Dialog, DialogContent } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
-import { X, Search, Eye, Printer, Pencil, Plus, ChevronDown, ChevronRight, Calendar, User } from 'lucide-react'
+import { X, Search, Eye, Printer, Pencil, Plus, ChevronDown, ChevronRight, Calendar, User, Filter } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { toast } from 'sonner'
 import { useAttendanceCadastro } from '@/hooks/useAttendanceCadastro'
@@ -82,6 +82,8 @@ export function AttendanceLookupModal({ open, onClose, unitName, guicheName, onA
     const list = orders.filter(o => {
       const p = patientById.get(o.patientId)
       
+      if (statusFilter !== 'all' && o.status !== statusFilter) return false
+
       if (term) {
         const haystack = [
           o.orderNumber,
@@ -112,7 +114,7 @@ export function AttendanceLookupModal({ open, onClose, unitName, guicheName, onA
         items: items.sort((a, b) => b.registeredAt.localeCompare(a.registeredAt)),
       }))
       .sort((a, b) => a.patientName.localeCompare(b.patientName))
-  }, [orders, patientById, search, patientSearch])
+  }, [orders, patientById, search, patientSearch, statusFilter])
 
   const togglePatient = (pid: string) => {
     setExpanded(prev => {
@@ -178,6 +180,23 @@ export function AttendanceLookupModal({ open, onClose, unitName, guicheName, onA
               </div>
             </div>
 
+            <div className="flex-1 space-y-1.5 md:max-w-[180px]">
+              <label className="text-xs font-medium text-muted-foreground ml-1">Status</label>
+              <div className="relative">
+                <select
+                  value={statusFilter}
+                  onChange={e => setStatusFilter(e.target.value)}
+                  className="w-full rounded-lg border border-input bg-background pl-3 pr-8 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring appearance-none"
+                >
+                  <option value="all">Todos Status</option>
+                  {Object.entries(ATTENDANCE_STATUS_LABELS).map(([key, val]) => (
+                    <option key={key} value={key}>{val.label}</option>
+                  ))}
+                </select>
+                <Filter className="absolute right-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground pointer-events-none" />
+              </div>
+            </div>
+
             <Button variant="ghost" size="icon" className="h-9 w-9 shrink-0">
               <Search className="h-4 w-4" />
             </Button>
@@ -189,12 +208,13 @@ export function AttendanceLookupModal({ open, onClose, unitName, guicheName, onA
 
         {/* Results Table Header */}
         <div className="bg-muted/10 border-b border-border px-6 py-2">
-          <div className="grid grid-cols-[120px_140px_1fr_100px_120px_100px_140px_120px] gap-4 text-[10px] font-bold text-muted-foreground uppercase tracking-wider">
+          <div className="grid grid-cols-[120px_140px_1fr_100px_120px_120px_100px_140px_120px] gap-4 text-[10px] font-bold text-muted-foreground uppercase tracking-wider">
             <div>Pedido / Amostra</div>
             <div>Dt. Atend.</div>
             <div>Cliente</div>
             <div>Nascimento</div>
             <div>Convênio</div>
+            <div>Status</div>
             <div>Prev. Entrega</div>
             <div>Origem</div>
             <div className="text-right">Ações</div>
@@ -279,7 +299,7 @@ function OrderRowModern({
       onClick={onDetails}
       onDoubleClick={onDetails}
     >
-      <div className="grid grid-cols-[120px_140px_1fr_100px_120px_100px_140px_120px] gap-4 px-6 py-3 items-center text-xs">
+      <div className="grid grid-cols-[120px_140px_1fr_100px_120px_120px_100px_140px_120px] gap-4 px-6 py-3 items-center text-xs">
         <div className="font-mono text-primary font-bold hover:underline" onClick={(e) => { e.stopPropagation(); onDetails(); }}>{order.orderNumber}-1</div>
         <div className="text-muted-foreground">
           {date.toLocaleDateString('pt-BR')} {date.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
@@ -287,6 +307,14 @@ function OrderRowModern({
         <div className="font-semibold text-foreground truncate uppercase">{order.patientName}</div>
         <div className="text-muted-foreground">{patient?.birthDate ? new Date(patient.birthDate).toLocaleDateString('pt-BR') : '-'}</div>
         <div className="truncate uppercase">{order.convenioName || 'Particular'}</div>
+        <div>
+          <span className={cn(
+            "px-2 py-0.5 rounded-full text-[10px] font-bold text-white uppercase whitespace-nowrap",
+            ATTENDANCE_STATUS_LABELS[order.status]?.color || 'bg-slate-400'
+          )}>
+            {ATTENDANCE_STATUS_LABELS[order.status]?.label || order.status}
+          </span>
+        </div>
         <div className="text-muted-foreground">{deliveryDate ? deliveryDate.toLocaleDateString('pt-BR') : '-'}</div>
         <div className="truncate text-muted-foreground uppercase">{order.originName || 'Apartamentos'}</div>
         <div className="flex items-center justify-end gap-1">
@@ -349,11 +377,10 @@ function EditOrderModal({ order, onClose, onSave }: { order: AttendanceOrder; on
         </div>
         <div className="p-5 space-y-3">
           <Field label="Status">
-            <select value={status} onChange={e => setStatus(e.target.value as AttendanceOrder['status'])} className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm">
-              <option value="open">Aberto</option>
-              <option value="authorized">Autorizado</option>
-              <option value="completed">Concluído</option>
-              <option value="cancelled">Cancelado</option>
+            <select value={status} onChange={e => setStatus(e.target.value as AttendanceOrder['status'])} className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm uppercase">
+              {Object.entries(ATTENDANCE_STATUS_LABELS).map(([key, val]) => (
+                <option key={key} value={key}>{val.label}</option>
+              ))}
             </select>
           </Field>
           {order.paymentType === 'convenio' && (
