@@ -234,34 +234,98 @@ export default function LabColetaPage() {
         </Card>
       </div>
 
-      <div className="flex flex-wrap gap-4 items-center bg-card p-4 rounded-xl border border-border">
-        <div className="relative flex-1 min-w-[280px]">
-          <Search className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
-          <input 
-            className="w-full pl-9 pr-4 py-2 rounded-lg border border-input bg-background focus:ring-2 focus:ring-primary/20 outline-none transition-all" 
-            placeholder="Buscar por nome, CPF ou protocolo..."
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-          />
+      <div className="flex flex-col gap-4 bg-card p-4 rounded-xl border border-border">
+        <div className="flex flex-wrap gap-4 items-center">
+          <div className="relative flex-1 min-w-[280px]">
+            <Search className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
+            <input 
+              className="w-full pl-9 pr-4 py-2 rounded-lg border border-input bg-background focus:ring-2 focus:ring-primary/20 outline-none transition-all" 
+              placeholder="Buscar por nome, CPF ou protocolo..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+            />
+          </div>
+          <div className="flex gap-2">
+            <select 
+              className="h-10 px-3 rounded-lg border border-input bg-background text-sm font-medium outline-none focus:ring-2 focus:ring-primary/20 min-w-[160px]"
+              value={filterWorkbench}
+              onChange={(e) => setFilterWorkbench(e.target.value)}
+            >
+              <option value="all">Todas as Bancadas</option>
+              {workbenches.map(wb => (
+                <option key={wb.id} value={wb.id}>{wb.name}</option>
+              ))}
+            </select>
+            
+            <Button 
+              variant="outline" 
+              onClick={() => setShowAdvancedFilters(!showAdvancedFilters)}
+              className={cn("gap-2 h-10 border-border", showAdvancedFilters && "bg-primary/5 border-primary/30 text-primary")}
+            >
+              <Filter className="h-4 w-4" />
+              Filtros Avançados
+              <ChevronDown className={cn("h-4 w-4 transition-transform", showAdvancedFilters && "rotate-180")} />
+            </Button>
+            
+            {(search !== '' || filterWorkbench !== 'all' || filterConvenio !== 'all' || filterWaitTime !== 'all') && (
+              <Button 
+                variant="ghost" 
+                onClick={() => {
+                  setSearch('')
+                  setFilterWorkbench('all')
+                  setFilterConvenio('all')
+                  setFilterWaitTime('all')
+                }}
+                className="h-10 text-muted-foreground hover:text-destructive"
+              >
+                Limpar
+              </Button>
+            )}
+          </div>
         </div>
-        <div className="flex gap-2">
-          <select 
-            className="h-10 px-3 rounded-lg border border-input bg-background text-sm font-medium outline-none focus:ring-2 focus:ring-primary/20"
-            value={filterWorkbench}
-            onChange={(e) => setFilterWorkbench(e.target.value)}
-          >
-            <option value="all">Todas as Bancadas</option>
-            {workbenches.map(wb => (
-              <option key={wb.id} value={wb.id}>{wb.name}</option>
-            ))}
-          </select>
-          <Button variant="outline" className="gap-2 h-10 border-border">
-            <Filter className="h-4 w-4" />
-            Intervalo: <span className="text-primary font-bold">Hoje</span>
-            <ChevronDown className="h-4 w-4" />
-          </Button>
-        </div>
+
+        {showAdvancedFilters && (
+          <div className="flex flex-wrap gap-4 pt-4 border-t border-border animate-in fade-in slide-in-from-top-2 duration-200">
+            <div className="flex flex-col gap-1.5 min-w-[200px]">
+              <label className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground ml-1">Convênio / Plano</label>
+              <select 
+                className="h-10 px-3 rounded-lg border border-input bg-background text-sm font-medium outline-none focus:ring-2 focus:ring-primary/20"
+                value={filterConvenio}
+                onChange={(e) => setFilterConvenio(e.target.value)}
+              >
+                <option value="all">Todos os Planos</option>
+                <option value="Particular">Particular</option>
+                {convenios.map(c => (
+                  <option key={c.id} value={c.id}>{c.name}</option>
+                ))}
+              </select>
+            </div>
+
+            <div className="flex flex-col gap-1.5 min-w-[200px]">
+              <label className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground ml-1">Tempo de Espera</label>
+              <select 
+                className="h-10 px-3 rounded-lg border border-input bg-background text-sm font-medium outline-none focus:ring-2 focus:ring-primary/20"
+                value={filterWaitTime}
+                onChange={(e) => setFilterWaitTime(e.target.value as any)}
+              >
+                <option value="all">Qualquer tempo</option>
+                <option value="low">Curto (< 15 min)</option>
+                <option value="medium">Médio (15 - 30 min)</option>
+                <option value="high">Longo (> 30 min)</option>
+              </select>
+            </div>
+
+            <div className="flex flex-col gap-1.5 min-w-[200px]">
+              <label className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground ml-1">Data do Pedido</label>
+              <Button variant="outline" className="gap-2 h-10 border-border justify-start font-normal text-muted-foreground">
+                <Clock className="h-4 w-4" />
+                Intervalo: <span className="text-primary font-bold">Hoje</span>
+              </Button>
+            </div>
+          </div>
+        )}
       </div>
+
 
       <div className="space-y-3">
         {loading ? (
