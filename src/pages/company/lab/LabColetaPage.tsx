@@ -5,7 +5,7 @@ import { Search, ChevronDown, User, Beaker, ClipboardList, Printer, Check, X, Al
 import { cn } from '@/lib/utils'
 import { useAttendanceCadastro } from '@/hooks/useAttendanceCadastro'
 import { useRegisters } from '@/context/RegistersContext'
-import { TUBE_TYPES, LabAttendanceOrder } from '@/types/lab.types'
+import { TUBE_TYPES, LabAttendanceOrder, LabExam } from '@/types/lab.types'
 import { toast } from 'sonner'
 import { useAuth } from '@/context/AuthContext'
 import { Skeleton } from '@/components/ui/skeleton'
