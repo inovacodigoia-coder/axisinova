@@ -164,8 +164,19 @@ export function LabStep3GuidesProcedures({ state, update }: Props) {
   };
 
   const handleOpenDeadlineModal = (exam: any) => {
-    setTempDeadline(exam.expectedDeliveryDate || calculateDeadline(exam.resultDeadlineDays || 1));
-    setTempCollectionDate(new Date().toLocaleString('pt-BR').split(',')[0] + ' ' + new Date().getHours().toString().padStart(2, '0') + ':' + new Date().getMinutes().toString().padStart(2, '0'));
+    const normalizeToIso = (val: any) => {
+      if (!val) return new Date().toISOString();
+      if (/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}/.test(val)) return val;
+      const match = val.match(/^(\d{2})\/(\d{2})\/(\d{4})\s+(\d{2}):(\d{2})/);
+      if (match) {
+        const [_, d, m, y, h, min] = match;
+        return new Date(Number(y), Number(m) - 1, Number(d), Number(h), Number(min)).toISOString();
+      }
+      return new Date().toISOString();
+    };
+
+    setTempDeadline(normalizeToIso(exam.expectedDeliveryDate || calculateDeadline(exam.resultDeadlineDays || 1)));
+    setTempCollectionDate(new Date().toISOString());
     setShowDeadlineModal(true);
   };
 
@@ -718,15 +729,14 @@ export function LabStep3GuidesProcedures({ state, update }: Props) {
               <Label className="text-[10px] uppercase font-bold text-muted-foreground">Data Coleta *</Label>
               <div className="relative">
                 <Input 
-                  value={tempCollectionDate} 
-                  onChange={(e) => setTempCollectionDate(e.target.value)}
+                  type="datetime-local"
+                  value={tempCollectionDate ? tempCollectionDate.slice(0, 16) : ''} 
+                  onChange={(e) => setTempCollectionDate(new Date(e.target.value).toISOString())}
                   className="text-sm pr-10"
                   disabled={!canEditDeadline}
                 />
-                {!canEditDeadline ? (
+                {!canEditDeadline && (
                   <Lock className="h-4 w-4 absolute right-2.5 top-3 text-muted-foreground/50" />
-                ) : (
-                  <Calendar className="h-4 w-4 absolute right-2.5 top-3 text-muted-foreground" />
                 )}
               </div>
               {!canEditDeadline && (
@@ -738,11 +748,11 @@ export function LabStep3GuidesProcedures({ state, update }: Props) {
               <Label className="text-[10px] uppercase font-bold text-muted-foreground">Previsão de Entrega *</Label>
               <div className="relative">
                 <Input 
-                  value={tempDeadline} 
-                  onChange={(e) => setTempDeadline(e.target.value)}
+                  type="datetime-local"
+                  value={tempDeadline ? tempDeadline.slice(0, 16) : ''} 
+                  onChange={(e) => setTempDeadline(new Date(e.target.value).toISOString())}
                   className="text-sm"
                 />
-                <Calendar className="h-4 w-4 absolute right-2.5 top-3 text-muted-foreground" />
               </div>
             </div>
           </div>
