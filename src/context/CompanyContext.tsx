@@ -273,11 +273,12 @@ export function CompanyProvider({ children }: { children: ReactNode }) {
 
   return (
     <CompanyContext.Provider value={{
-      companyUser, profiles, activeProfile, activeSector, availableSectors,
-      availableFunctions, availableUtilities,
-      selectProfile, selectSector, confirmSession, clearSession,
+      companyUser, profiles, activeProfile, activeSector, activeOrigin,
+      availableSectors, availableOrigins, availableFunctions, availableUtilities,
+      selectProfile, selectSector, selectOrigin, confirmSession, clearSession,
       switchProfile, switchSector, canAccess, isSessionReady, isSessionHydrated,
       allProfiles: MOCK_COMPANY_PROFILES, allSectors: MOCK_SECTORS, allUsers: MOCK_COMPANY_USERS,
+      refreshOrigins,
     }}>
       {children}
     </CompanyContext.Provider>
