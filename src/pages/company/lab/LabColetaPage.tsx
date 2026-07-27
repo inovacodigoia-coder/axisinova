@@ -66,9 +66,22 @@ export default function LabColetaPage() {
     }
   };
 
-  const collectionOrders = (orders || []).filter(o => 
-    o?.status === 'waiting_collection' || o?.status === 'waiting'
-  ) as LabAttendanceOrder[]
+  const collectionOrders = useMemo(() => {
+    return (orders || [])
+      .filter(o => o?.status === 'waiting_collection' || o?.status === 'waiting')
+      .map(o => {
+        const allExams = (o.labGuides || []).flatMap(guide => (guide.exams || []).map((e: any) => ({
+          ...e,
+          examId: e.examId || e.id,
+          material: e.material || e.selectedMaterial || 'Soro'
+        })))
+        return {
+          ...o,
+          exams: allExams
+        }
+      }) as LabAttendanceOrder[]
+  }, [orders])
+
 
   const filteredOrders = collectionOrders.filter(order => {
     if (!order) return false;
