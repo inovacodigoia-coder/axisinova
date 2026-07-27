@@ -21,6 +21,10 @@ export default function LabColetaPage() {
   const [selectedTubes, setSelectedTubes] = useState<Record<string, string[]>>({})
   const [search, setSearch] = useState('')
   const [filterWorkbench, setFilterWorkbench] = useState<string>('all')
+  const [filterConvenio, setFilterConvenio] = useState<string>('all')
+  const [filterWaitTime, setFilterWaitTime] = useState<'all' | 'low' | 'medium' | 'high'>('all')
+  const [showAdvancedFilters, setShowAdvancedFilters] = useState(false)
+
   
   // Polling para atualização automática (cada 30 segundos)
   useEffect(() => {
@@ -38,6 +42,7 @@ export default function LabColetaPage() {
 
   const registersContext = useRegisters()
   const workbenches = registersContext?.workbenches || []
+  const convenios = registersContext?.convenios || []
   
   // Se o contexto não estiver pronto, mostramos um loading ou vazio para evitar erro de hook
   if (!registersContext) {
@@ -47,6 +52,19 @@ export default function LabColetaPage() {
       </div>
     )
   }
+
+  // Helper para cálculos seguros de data
+  const getWaitTimeInMinutes = (dateStr: string | null | undefined) => {
+    if (!dateStr) return 0;
+    try {
+      const start = new Date(dateStr).getTime();
+      const now = new Date().getTime();
+      const diff = Math.max(0, Math.floor((now - start) / 60000));
+      return isNaN(diff) ? 0 : diff;
+    } catch (e) {
+      return 0;
+    }
+  };
 
   const collectionOrders = (orders || []).filter(o => 
     o?.status === 'waiting_collection' || o?.status === 'waiting'
@@ -61,22 +79,20 @@ export default function LabColetaPage() {
     
     const matchesWorkbench = filterWorkbench === 'all' || 
       order.exams?.some(exam => exam?.workbench === filterWorkbench)
+
+    const matchesConvenio = filterConvenio === 'all' || 
+      order.convenioId === filterConvenio || 
+      order.convenioName === filterConvenio
+
+    const waitTime = getWaitTimeInMinutes(order.registeredAt)
+    let matchesWaitTime = true
+    if (filterWaitTime === 'low') matchesWaitTime = waitTime < 15
+    else if (filterWaitTime === 'medium') matchesWaitTime = waitTime >= 15 && waitTime <= 30
+    else if (filterWaitTime === 'high') matchesWaitTime = waitTime > 30
     
-    return matchesSearch && matchesWorkbench && (order.status === 'waiting_collection' || order.status === 'waiting')
+    return matchesSearch && matchesWorkbench && matchesConvenio && matchesWaitTime
   })
 
-  // Helper para cálculos seguros de data
-  const getWaitTimeInMinutes = (dateStr: string | null | undefined) => {
-    if (!dateStr) return 0;
-    try {
-      const start = new Date(dateStr).getTime();
-      const now = new Date().getTime();
-      const diff = Math.max(0, Math.floor((now - start) / 60000));
-      return isNaN(diff) ? 0 : diff;
-    } catch (e) {
-      return 0;
-    }
-  };
 
   const calculateAge = (birthDate: string | null | undefined) => {
     if (!birthDate) return 0;
@@ -218,34 +234,99 @@ export default function LabColetaPage() {
         </Card>
       </div>
 
-      <div className="flex flex-wrap gap-4 items-center bg-card p-4 rounded-xl border border-border">
-        <div className="relative flex-1 min-w-[280px]">
-          <Search className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
-          <input 
-            className="w-full pl-9 pr-4 py-2 rounded-lg border border-input bg-background focus:ring-2 focus:ring-primary/20 outline-none transition-all" 
-            placeholder="Buscar por nome, CPF ou protocolo..."
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-          />
+      <div className="flex flex-col gap-4 bg-card p-4 rounded-xl border border-border">
+        <div className="flex flex-wrap gap-4 items-center">
+          <div className="relative flex-1 min-w-[280px]">
+            <Search className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
+            <input 
+              className="w-full pl-9 pr-4 py-2 rounded-lg border border-input bg-background focus:ring-2 focus:ring-primary/20 outline-none transition-all" 
+              placeholder="Buscar por nome, CPF ou protocolo..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+            />
+          </div>
+          <div className="flex gap-2">
+            <select 
+              className="h-10 px-3 rounded-lg border border-input bg-background text-sm font-medium outline-none focus:ring-2 focus:ring-primary/20 min-w-[160px]"
+              value={filterWorkbench}
+              onChange={(e) => setFilterWorkbench(e.target.value)}
+            >
+              <option value="all">Todas as Bancadas</option>
+              {workbenches.map(wb => (
+                <option key={wb.id} value={wb.id}>{wb.name}</option>
+              ))}
+            </select>
+            
+            <Button 
+              variant="outline" 
+              onClick={() => setShowAdvancedFilters(!showAdvancedFilters)}
+              className={cn("gap-2 h-10 border-border", showAdvancedFilters && "bg-primary/5 border-primary/30 text-primary")}
+            >
+              <Filter className="h-4 w-4" />
+              Filtros Avançados
+              <ChevronDown className={cn("h-4 w-4 transition-transform", showAdvancedFilters && "rotate-180")} />
+            </Button>
+            
+            {(search !== '' || filterWorkbench !== 'all' || filterConvenio !== 'all' || filterWaitTime !== 'all') && (
+              <Button 
+                variant="ghost" 
+                onClick={() => {
+                  setSearch('')
+                  setFilterWorkbench('all')
+                  setFilterConvenio('all')
+                  setFilterWaitTime('all')
+                }}
+                className="h-10 text-muted-foreground hover:text-destructive"
+              >
+                Limpar
+              </Button>
+            )}
+          </div>
         </div>
-        <div className="flex gap-2">
-          <select 
-            className="h-10 px-3 rounded-lg border border-input bg-background text-sm font-medium outline-none focus:ring-2 focus:ring-primary/20"
-            value={filterWorkbench}
-            onChange={(e) => setFilterWorkbench(e.target.value)}
-          >
-            <option value="all">Todas as Bancadas</option>
-            {workbenches.map(wb => (
-              <option key={wb.id} value={wb.id}>{wb.name}</option>
-            ))}
-          </select>
-          <Button variant="outline" className="gap-2 h-10 border-border">
-            <Filter className="h-4 w-4" />
-            Intervalo: <span className="text-primary font-bold">Hoje</span>
-            <ChevronDown className="h-4 w-4" />
-          </Button>
-        </div>
+
+        {showAdvancedFilters && (
+          <div className="flex flex-wrap gap-4 pt-4 border-t border-border animate-in fade-in slide-in-from-top-2 duration-200">
+            <div className="flex flex-col gap-1.5 min-w-[200px]">
+              <label className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground ml-1">Convênio / Plano</label>
+              <select 
+                className="h-10 px-3 rounded-lg border border-input bg-background text-sm font-medium outline-none focus:ring-2 focus:ring-primary/20"
+                value={filterConvenio}
+                onChange={(e) => setFilterConvenio(e.target.value)}
+              >
+                <option value="all">Todos os Planos</option>
+                <option value="Particular">Particular</option>
+                {convenios.map(c => (
+                  <option key={c.id} value={c.id}>{c.name}</option>
+                ))}
+              </select>
+            </div>
+
+            <div className="flex flex-col gap-1.5 min-w-[200px]">
+              <label className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground ml-1">Tempo de Espera</label>
+              <select 
+                className="h-10 px-3 rounded-lg border border-input bg-background text-sm font-medium outline-none focus:ring-2 focus:ring-primary/20"
+                value={filterWaitTime}
+                onChange={(e) => setFilterWaitTime(e.target.value as any)}
+              >
+                <option value="all">Qualquer tempo</option>
+                <option value="low">Curto (&lt; 15 min)</option>
+                <option value="medium">Médio (15 - 30 min)</option>
+                <option value="high">Longo (&gt; 30 min)</option>
+
+              </select>
+            </div>
+
+            <div className="flex flex-col gap-1.5 min-w-[200px]">
+              <label className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground ml-1">Data do Pedido</label>
+              <Button variant="outline" className="gap-2 h-10 border-border justify-start font-normal text-muted-foreground">
+                <Clock className="h-4 w-4" />
+                Intervalo: <span className="text-primary font-bold">Hoje</span>
+              </Button>
+            </div>
+          </div>
+        )}
       </div>
+
 
       <div className="space-y-3">
         {loading ? (
@@ -288,18 +369,21 @@ export default function LabColetaPage() {
                 <RotateCw className={cn("h-4 w-4", loading && "animate-spin")} />
                 Verificar novos pedidos
               </Button>
-              {(search || filterWorkbench !== 'all') && (
+              {(search !== '' || filterWorkbench !== 'all' || filterConvenio !== 'all' || filterWaitTime !== 'all') && (
                 <Button 
                   variant="ghost" 
                   onClick={() => {
                     setSearch('');
                     setFilterWorkbench('all');
+                    setFilterConvenio('all');
+                    setFilterWaitTime('all');
                   }}
                   className="h-10"
                 >
                   Limpar todos os filtros
                 </Button>
               )}
+
             </div>
           </div>
         ) : (
