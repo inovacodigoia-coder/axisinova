@@ -165,9 +165,16 @@ export function OriginSelector() {
                       </div>
                       <div>
                         <p className="text-sm font-semibold text-foreground uppercase">{origin.name}</p>
-                        {origin.internal_code && (
-                          <p className="text-[10px] text-muted-foreground font-medium uppercase">Código: {origin.internal_code}</p>
-                        )}
+                        <div className="flex items-center gap-2">
+                          {origin.internal_code && (
+                            <p className="text-[10px] text-muted-foreground font-medium uppercase">Código: {origin.internal_code}</p>
+                          )}
+                          {(origin as any).establishments?.name && (
+                            <p className="text-[10px] text-primary/60 font-medium uppercase truncate max-w-[150px]">
+                              • {(origin as any).establishments.name}
+                            </p>
+                          )}
+                        </div>
                       </div>
                     </div>
 
