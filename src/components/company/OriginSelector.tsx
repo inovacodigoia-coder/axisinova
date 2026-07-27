@@ -88,7 +88,9 @@ export function OriginSelector() {
   }
 
   const filteredOrigins = availableOrigins.filter(o => {
-    const matchesSearch = o.name.toLowerCase().includes(search.toLowerCase())
+    const searchLower = search.toLowerCase()
+    const matchesSearch = o.name.toLowerCase().includes(searchLower) || 
+                         (o.internal_code && o.internal_code.toLowerCase().includes(searchLower))
     const matchesFavorites = onlyFavorites ? favorites.includes(o.id) : true
     return matchesSearch && matchesFavorites
   })
@@ -109,15 +111,20 @@ export function OriginSelector() {
         <DialogContent className="sm:max-w-[500px]">
           <DialogHeader>
             <DialogTitle className="text-lg font-semibold flex items-center justify-between">
-              Seleção de Origem
-              <div className="flex items-center gap-2">
-                 <button 
-                  onClick={() => setOnlyFavorites(!onlyFavorites)}
-                  className={`p-2 rounded-lg transition-colors ${onlyFavorites ? 'bg-primary/10 text-primary' : 'hover:bg-muted text-muted-foreground'}`}
-                  title="Mostrar apenas favoritos"
-                >
-                  <Heart className={`h-4 w-4 ${onlyFavorites ? 'fill-current' : ''}`} />
-                </button>
+              <div className="flex items-center justify-between w-full pr-6">
+                <span>Seleção de Origem</span>
+                <div className="flex items-center gap-2">
+                   <button 
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      setOnlyFavorites(!onlyFavorites)
+                    }}
+                    className={`p-2 rounded-lg transition-colors border ${onlyFavorites ? 'bg-rose-50 border-rose-200 text-rose-500' : 'hover:bg-muted text-muted-foreground border-transparent'}`}
+                    title={onlyFavorites ? "Mostrar todas" : "Mostrar apenas favoritas"}
+                  >
+                    <Heart className={`h-4 w-4 ${onlyFavorites ? 'fill-current' : ''}`} />
+                  </button>
+                </div>
               </div>
             </DialogTitle>
           </DialogHeader>
@@ -154,7 +161,9 @@ export function OriginSelector() {
                     className={`group flex items-center justify-between p-3 rounded-lg border transition-all cursor-pointer ${
                       activeOrigin?.id === origin.id 
                         ? 'border-primary bg-primary/5 shadow-sm' 
-                        : 'border-border hover:border-primary/50 hover:bg-muted/50'
+                        : favorites.includes(origin.id)
+                          ? 'border-rose-100 bg-rose-50/30 hover:border-rose-300'
+                          : 'border-border hover:border-primary/50 hover:bg-muted/50'
                     }`}
                   >
                     <div className="flex items-center gap-3">
@@ -163,9 +172,16 @@ export function OriginSelector() {
                       </div>
                       <div>
                         <p className="text-sm font-semibold text-foreground uppercase">{origin.name}</p>
-                        {origin.internal_code && (
-                          <p className="text-[10px] text-muted-foreground font-medium uppercase">Código: {origin.internal_code}</p>
-                        )}
+                        <div className="flex items-center gap-2">
+                          {origin.internal_code && (
+                            <p className="text-[10px] text-muted-foreground font-medium uppercase">Código: {origin.internal_code}</p>
+                          )}
+                          {(origin as any).establishments?.name && (
+                            <p className="text-[10px] text-primary/60 font-medium uppercase truncate max-w-[150px]">
+                              • {(origin as any).establishments.name}
+                            </p>
+                          )}
+                        </div>
                       </div>
                     </div>
 

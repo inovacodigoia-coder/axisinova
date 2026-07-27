@@ -76,7 +76,14 @@ export function CompanyProvider({ children }: { children: ReactNode }) {
     if (!user) return
     const { data, error } = await (supabase as any)
       .from('origins')
-      .select('*')
+      .select(`
+        *,
+        establishments (
+          id,
+          name,
+          internal_code
+        )
+      `)
       .order('name')
     if (error) {
       console.error('Error fetching origins:', error)
