@@ -29,10 +29,36 @@ export interface CompanyUser {
   forcePasswordChange?: boolean
 }
 
+export interface Establishment {
+  id: string
+  company_id: string
+  name: string
+  cnpj?: string
+  city?: string
+  is_main_branch: boolean
+  created_at?: string
+}
+
+export interface Origin {
+  id: string
+  company_id: string
+  establishment_id: string
+  name: string
+  internal_code?: string
+  created_at?: string
+}
+
+export interface OriginPreference {
+  origin_id: string
+  is_favorite: boolean
+  is_default: boolean
+}
+
 export interface CompanySession {
   user: CompanyUser
   activeProfile: Profile
   activeSector: Sector | null
+  activeOrigin: Origin | null
   availableFunctions: MenuFunction[]
   availableUtilities: MenuFunction[]
 }
