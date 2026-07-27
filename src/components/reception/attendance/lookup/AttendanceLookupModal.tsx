@@ -308,7 +308,7 @@ function OrderRowModern({
         </div>
         <div className="font-semibold text-foreground truncate uppercase">{patient?.fullName || order.patientName}</div>
         <div className="text-muted-foreground">{patient?.birthDate ? new Date(patient.birthDate).toLocaleDateString('pt-BR') : '-'}</div>
-        <div className="truncate uppercase">{order.convenioName || 'Particular'}</div>
+        <div className="truncate uppercase">{order.convenioName || patient?.convenios?.[0]?.convenioName || 'Particular'}</div>
         <div>
           <span className={cn(
             "px-2 py-0.5 rounded-full text-[10px] font-bold text-white uppercase whitespace-nowrap",
@@ -317,7 +317,7 @@ function OrderRowModern({
             {ATTENDANCE_STATUS_LABELS[order.status]?.label || order.status}
           </span>
         </div>
-        <div className="text-muted-foreground">{deliveryDate && order.status === 'waiting' ? deliveryDate.toLocaleDateString('pt-BR') : '-'}</div>
+        <div className="text-muted-foreground">{(order.deliveryDate || order.status === 'waiting') ? (order.deliveryDate ? new Date(order.deliveryDate).toLocaleDateString('pt-BR') : '-') : '-'}</div>
         <div className="truncate text-muted-foreground uppercase">{order.originName || 'Apartamentos'}</div>
       </div>
 
