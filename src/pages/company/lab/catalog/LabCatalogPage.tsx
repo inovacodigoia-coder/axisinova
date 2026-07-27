@@ -27,6 +27,11 @@ export default function LabCatalogPage() {
   const [search, setSearch] = useState('')
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false)
   const [examToDelete, setExamToDelete] = useState<string | null>(null)
+  
+  // Pagination & Filtering state
+  const [pageSize, setPageSize] = useState(10)
+  const [currentPage, setCurrentPage] = useState(1)
+  const [selectedWorkbench, setSelectedWorkbench] = useState<string>('all')
 
   const exams = useMemo(() => {
     if (!registeredExams) return [];
@@ -41,18 +46,37 @@ export default function LabCatalogPage() {
     
     return sortedExams.map(e => ({
       id: e.id,
-      code: e.internalCode || e.tussCode || 'S/C',
+      code: (e.internalCode || e.tussCode || 'S/C').toUpperCase(),
       name: e.name || 'Sem nome',
       material: e.defaultMaterial || 'Soro', 
+      workbenchId: e.workbenchId,
       workbench: workbenches?.find(w => w.id === e.workbenchId)?.name || 'Sem Bancada',
       status: e.isActive ? 'active' : 'inactive'
     }));
   }, [registeredExams, workbenches])
 
-  const filteredExams = exams.filter(e => 
-    e.name.toLowerCase().includes(search.toLowerCase()) || 
-    e.code.toLowerCase().includes(search.toLowerCase())
-  )
+  const filteredExams = useMemo(() => {
+    return exams.filter(e => {
+      const matchesSearch = e.name.toLowerCase().includes(search.toLowerCase()) || 
+        e.code.toLowerCase().includes(search.toLowerCase());
+      
+      const matchesWorkbench = selectedWorkbench === 'all' || e.workbenchId === selectedWorkbench;
+      
+      return matchesSearch && matchesWorkbench;
+    });
+  }, [exams, search, selectedWorkbench]);
+
+  // Pagination logic
+  const totalPages = Math.ceil(filteredExams.length / pageSize)
+  const paginatedExams = useMemo(() => {
+    const start = (currentPage - 1) * pageSize
+    return filteredExams.slice(start, start + pageSize)
+  }, [filteredExams, currentPage, pageSize])
+
+  // Reset to first page when filters change
+  useEffect(() => {
+    setCurrentPage(1)
+  }, [search, selectedWorkbench, pageSize])
 
   const handleDelete = async () => {
     if (!examToDelete) return
