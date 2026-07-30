@@ -95,8 +95,9 @@ export function HeroSection() {
               </h1>
 
               <p className="mt-6 max-w-xl text-base leading-relaxed text-muted-foreground md:text-lg" style={{ textWrap: 'pretty' }}>
-                Do agendamento ao faturamento TISS, da recepção ao BI estratégico. Tudo integrado, tudo em tempo real.
+                Do agendamento e totem à coleta laboratorial, do faturamento TISS ao BI estratégico. Multi-unidades, tudo integrado e em tempo real.
               </p>
+
 
               <div className="mt-8 flex flex-col items-center gap-3 sm:flex-row lg:justify-start">
                 <Link to="/cadastro">
