@@ -1,47 +1,48 @@
-import { Calendar, Monitor, ClipboardList, CreditCard, FileText, BarChart3 } from 'lucide-react';
+import { Calendar, Monitor, ClipboardList, CreditCard, FlaskConical, BarChart3 } from 'lucide-react';
 import { motion } from 'framer-motion';
 
 const features = [
   {
     icon: Calendar,
     title: 'Agendamento Inteligente',
-    desc: 'Agenda multi-profissional com detecção automática de primeira vez ou retorno, confirmação por WhatsApp/SMS e controle de faltosos.',
+    desc: 'Agenda multi-profissional com regras por convênio, bloqueios, intervalos e exceções de feriado, além de controle de faltosos e confirmações.',
   },
   {
     icon: Monitor,
-    title: 'Totem e Recepção Digital',
-    desc: 'Check-in autônomo pelo totem, fila digital com painel de chamada para TV e painel exclusivo do médico.',
+    title: 'Totem, Fila e Painel de TV',
+    desc: 'Check-in autônomo no totem, senhas por prioridade, chamada por voz e painel de TV com logo, split-screen de Últimas/Próximos e modo mídia.',
+  },
+  {
+    icon: FlaskConical,
+    title: 'Laboratório Completo',
+    desc: 'Cadastro de atendimento em 6 passos, fila de coleta com tubos e bancadas, digitação de resultados com delta check, laudos em PDF e soroteca.',
   },
   {
     icon: ClipboardList,
-    title: 'Prontuário Eletrônico',
-    desc: 'Linha do tempo completa do paciente, inserção de dados clínicos, histórico de exames e prescrições integradas.',
+    title: 'Recepção e Prontuário',
+    desc: 'Busca de cadastros por protocolo, CPF ou nome, guichês, impressão térmica/A4, etiquetas de amostra e prontuário com linha do tempo do paciente.',
   },
   {
     icon: CreditCard,
-    title: 'Faturamento TISS/TUSS',
-    desc: 'Gestão completa de guias, controle de glosas, ciclo de correção recepção↔faturamento e lotes de cobrança.',
-  },
-  {
-    icon: FileText,
-    title: 'Digitalização de Guias',
-    desc: 'Upload e indexação de documentos por atendimento, com regras configuráveis por convênio para reduzir erros.',
+    title: 'Faturamento TISS/TUSS e Financeiro',
+    desc: 'Guias, lotes, glosas com prazos e recursos, tabelas de preço particular, pagamentos com QR Code e dashboard financeiro integrado.',
   },
   {
     icon: BarChart3,
     title: 'BI Estratégico em Tempo Real',
-    desc: 'Dashboard executivo com indicadores de produção, faturamento, faltosos, convênios e performance por médico.',
+    desc: 'Indicadores de produção, faturamento, faltosos, filas e performance por médico, com exportação em CSV/PDF e modo claro/escuro.',
   },
 ];
 
 const subFeatures = [
-  { title: 'Gestão Laboratorial', desc: 'Módulo completo com Soroteca, Interfaceamento e Laudos.' },
-  { title: 'Gestão Hospitalar', desc: 'Controle de leitos, Farmácia e Prontuário de Alta Complexidade.' },
-  { title: 'Conformidade LGPD', desc: 'Dados criptografados e controle de acesso rigoroso.' },
-  { title: 'Multi-unidades', desc: 'Gerencie múltiplas filiais em um único painel central.' },
-  { title: 'API Aberta', desc: 'Integre com outros softwares e laboratórios parceiros.' },
+  { title: 'Multi-estabelecimentos', desc: 'Origens com código próprio e numeração de pedidos independente.' },
+  { title: 'Portal do Paciente', desc: 'PWA de resultados com acesso por CPF e data de nascimento.' },
+  { title: 'Estoque e Farmácia', desc: 'Controle de insumos, lotes e dispensação integrados.' },
+  { title: 'Perfis e Permissões', desc: 'RBAC por módulo, ação e setor, com auditoria de acessos.' },
+  { title: 'Conformidade LGPD', desc: 'Dados protegidos por RLS e isolamento total por empresa.' },
   { title: 'Suporte VIP', desc: 'Atendimento humanizado em menos de 5 minutos por chat.' },
 ];
+
 
 export function FeaturesSection() {
   return (
