@@ -39,7 +39,12 @@ export function AttendanceDetailsModal({ open, onClose, order, patient }: Attend
 
   // Transform labGuides into flat exams list if available
   const orderExams = useMemo(() => {
-    if (labOrder.exams && labOrder.exams.length > 0) return labOrder.exams;
+    if (labOrder.exams && labOrder.exams.length > 0) {
+      return labOrder.exams.map(e => ({
+        ...e,
+        isColeta: e.isColeta || order.status === 'collection_done' || order.status === 'waiting_collection' || order.status === 'in_analysis' || order.status === 'validation' || order.status === 'released'
+      }));
+    }
     
     // Fallback or mapping from labGuides if standard exams not present
     if (labOrder.labGuides) {
@@ -48,7 +53,8 @@ export function AttendanceDetailsModal({ open, onClose, order, patient }: Attend
           ...exam,
           convenioName: guide.convenioName || order.convenioName,
           doctorName: guide.doctorName || order.doctorName,
-          doctorCRM: guide.doctorCRM || order.doctorCRM
+          doctorCRM: guide.doctorCRM || order.doctorCRM,
+          isColeta: exam.isColeta || order.status === 'collection_done' || order.status === 'waiting_collection' || order.status === 'in_analysis' || order.status === 'validation' || order.status === 'released'
         }))
       );
     }
@@ -61,9 +67,8 @@ export function AttendanceDetailsModal({ open, onClose, order, patient }: Attend
       material: 'SANGUE TOTAL',
       status: order.status === 'collection_done' ? 'liberado' : 'pending',
       isCobrado: true,
-      isColeta: order.status === 'collection_done',
+      isColeta: order.status === 'collection_done' || order.status === 'waiting_collection' || order.status === 'in_analysis' || order.status === 'validation' || order.status === 'released',
       previsaoEntrega: order.deliveryDate || '',
-      valor: order.privateValue || 0,
       convenioName: order.convenioName,
       doctorName: order.doctorName,
       doctorCRM: order.doctorCRM
@@ -100,7 +105,12 @@ export function AttendanceDetailsModal({ open, onClose, order, patient }: Attend
     }
   };
 
-  const isCollected = order.status === 'collection_done' || labOrder.collectionStatus === 'collected';
+  const isCollected = order.status === 'collection_done' || 
+                      order.status === 'waiting_collection' || 
+                      order.status === 'in_analysis' || 
+                      order.status === 'validation' || 
+                      order.status === 'released' || 
+                      labOrder.collectionStatus === 'collected';
 
 
 
@@ -454,12 +464,12 @@ export function AttendanceDetailsModal({ open, onClose, order, patient }: Attend
                             {orderExams.filter(e => e.material === tube.label || (tube.type === 'gel' && e.material === 'Soro')).map(e => e.name).join(', ') || 'N/A'}
                           </td>
                           <td className="px-4 py-3">
-                            <span className={cn("font-bold uppercase", isCollected ? "text-emerald-600" : "text-slate-400")}>
+                            <span className={cn("font-bold uppercase", isCollected ? "text-emerald-600" : "text-amber-500")}>
                               {isCollected ? 'Coletado' : 'Pendente'}
                             </span>
                           </td>
                           <td className="px-4 py-3 text-muted-foreground">
-                            {isCollected ? new Date(order.registeredAt).toLocaleDateString('pt-BR') : '--/--/----'}
+                            {new Date(order.registeredAt).toLocaleDateString('pt-BR')} {new Date(order.registeredAt).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
                           </td>
                           <td className="px-4 py-3 text-right">
                             <div className="flex justify-end gap-1">
