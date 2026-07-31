@@ -432,30 +432,42 @@ export function AttendanceDetailsModal({ open, onClose, order, patient }: Attend
                       </tr>
                     </thead>
                     <tbody className="text-[11px] divide-y divide-border">
-                      <tr>
-                        <td className="px-4 py-3"><input type="checkbox" className="rounded border-border" /></td>
-                        <td className="px-4 py-3">
-                          <span className="bg-[#007AFF] text-white rounded-full px-2 py-0.5 text-[9px] font-bold">
-                            {order.orderNumber}-1
-                          </span>
-                        </td>
-                        <td className="px-4 py-3 text-muted-foreground font-bold">TUBO ROXO (EDTA)</td>
-                        <td className="px-4 py-3 text-muted-foreground uppercase">SANGUE</td>
-                        <td className="px-4 py-3 text-muted-foreground uppercase">HEMATO</td>
-                        <td className="px-4 py-3 text-muted-foreground uppercase">{order.procedureName}</td>
-                        <td className="px-4 py-3">
-                          <span className="text-emerald-600 font-bold uppercase">Coletado</span>
-                        </td>
-                        <td className="px-4 py-3 text-muted-foreground">
-                          {new Date(order.registeredAt).toLocaleDateString('pt-BR')}
-                        </td>
-                        <td className="px-4 py-3 text-right">
-                          <div className="flex justify-end gap-1">
-                            <Button size="icon" variant="ghost" className="h-8 w-8"><Printer className="h-4 w-4" /></Button>
-                            <Button size="icon" variant="ghost" className="h-8 w-8"><Trash2 className="h-4 w-4" /></Button>
-                          </div>
-                        </td>
-                      </tr>
+                      {patientTubes.length > 0 ? patientTubes.map((tube, tubeIdx) => (
+                        <tr key={tubeIdx}>
+                          <td className="px-4 py-3"><input type="checkbox" className="rounded border-border" /></td>
+                          <td className="px-4 py-3">
+                            <span className={cn("text-white rounded-full px-2 py-0.5 text-[9px] font-bold", tube.color)}>
+                              {order.orderNumber}-{tubeIdx + 1}
+                            </span>
+                          </td>
+                          <td className="px-4 py-3 text-muted-foreground font-bold">{tube.label.toUpperCase()} ({tube.type.toUpperCase()})</td>
+                          <td className="px-4 py-3 text-muted-foreground uppercase">{orderExams.find(e => e.material === tube.label)?.workbench || 'GERAL'}</td>
+                          <td className="px-4 py-3 text-muted-foreground uppercase">SANGUE</td>
+                          <td className="px-4 py-3 text-muted-foreground uppercase truncate max-w-[200px]">
+                            {orderExams.filter(e => e.material === tube.label || (tube.type === 'gel' && e.material === 'Soro')).map(e => e.name).join(', ') || 'N/A'}
+                          </td>
+                          <td className="px-4 py-3">
+                            <span className={cn("font-bold uppercase", isCollected ? "text-emerald-600" : "text-slate-400")}>
+                              {isCollected ? 'Coletado' : 'Pendente'}
+                            </span>
+                          </td>
+                          <td className="px-4 py-3 text-muted-foreground">
+                            {isCollected ? new Date(order.registeredAt).toLocaleDateString('pt-BR') : '--/--/----'}
+                          </td>
+                          <td className="px-4 py-3 text-right">
+                            <div className="flex justify-end gap-1">
+                              <Button size="icon" variant="ghost" className="h-8 w-8"><Printer className="h-4 w-4" /></Button>
+                              <Button size="icon" variant="ghost" className="h-8 w-8"><Trash2 className="h-4 w-4" /></Button>
+                            </div>
+                          </td>
+                        </tr>
+                      )) : (
+                        <tr>
+                          <td colSpan={9} className="px-4 py-8 text-center text-muted-foreground uppercase text-[10px] font-bold tracking-widest">
+                            Nenhuma amostra identificada para os exames deste pedido
+                          </td>
+                        </tr>
+                      )}
                     </tbody>
                   </table>
                 </div>
