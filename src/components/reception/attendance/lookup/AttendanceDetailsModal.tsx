@@ -408,7 +408,7 @@ export function AttendanceDetailsModal({ open, onClose, order, patient }: Attend
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-1.5 bg-white border border-border rounded-full px-3 py-1 shadow-sm">
                     <span className="text-[10px] font-bold text-muted-foreground uppercase">Amostras</span>
-                    <span className="bg-[#007AFF] text-white text-[10px] font-bold rounded-full w-4 h-4 flex items-center justify-center">1</span>
+                    <span className="bg-[#007AFF] text-white text-[10px] font-bold rounded-full w-4 h-4 flex items-center justify-center">{patientTubes.length}</span>
                   </div>
                   <div className="flex gap-2">
                     <Button variant="outline" size="sm" className="bg-white h-8 text-[10px] font-bold uppercase tracking-wider">RESTRIÇÕES</Button>
