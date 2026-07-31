@@ -17,6 +17,7 @@ const storageKey = (kind: string, slug: string) => `axis_device_auth__${kind}__$
 export function DeviceAuthGate({ deviceKind, slug, expectedUsername, expectedPassword, deviceName, children, loading }: Props) {
   const hasCredentials = !!(expectedUsername && expectedPassword)
   const [authed, setAuthed] = useState<boolean>(() => {
+    if (!expectedUsername || !expectedPassword) return true
     try { return sessionStorage.getItem(storageKey(deviceKind, slug)) === '1' } catch { return false }
   })
   const [username, setUsername] = useState('')
@@ -42,7 +43,7 @@ export function DeviceAuthGate({ deviceKind, slug, expectedUsername, expectedPas
     )
   }
 
-  if (!hasCredentials || authed) return <>{children}</>
+  if (authed) return <>{children}</>
 
   const handleSubmit = (e: FormEvent) => {
     e.preventDefault()

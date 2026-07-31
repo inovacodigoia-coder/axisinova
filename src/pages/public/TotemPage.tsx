@@ -75,9 +75,10 @@ export default function TotemPage() {
         // Set a timeout to check if loading takes too long
         timeoutId = setTimeout(() => {
           if (!cancelled && !totem) {
-            toast.error('O carregamento está demorando mais que o esperado. Verifique sua conexão.')
+            // Se demorar muito, mostramos a tela de login forçada
+            setTotem({ id: 'fallback', unit_id: '', company_id: '', name: 'Totem', slug, access_username: '...', access_password: '...' } as any)
           }
-        }, 8000)
+        }, 5000)
 
         const { data: totemRow, error: totemError } = await supabase
           .from('queue_totems')
