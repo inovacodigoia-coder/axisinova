@@ -35,6 +35,74 @@ export function AttendanceDetailsModal({ open, onClose, order, patient }: Attend
   const [printModalOpen, setPrintModalOpen] = useState(false)
   const [forecastModalOpen, setForecastModalOpen] = useState(false)
 
+  const labOrder = order as LabAttendanceOrder;
+
+  // Transform labGuides into flat exams list if available
+  const orderExams = useMemo(() => {
+    if (labOrder.exams && labOrder.exams.length > 0) return labOrder.exams;
+    
+    // Fallback or mapping from labGuides if standard exams not present
+    if (labOrder.labGuides) {
+      return labOrder.labGuides.flatMap(guide => 
+        (guide.exams || []).map((exam: any) => ({
+          ...exam,
+          convenioName: guide.convenioName || order.convenioName,
+          doctorName: guide.doctorName || order.doctorName,
+          doctorCRM: guide.doctorCRM || order.doctorCRM
+        }))
+      );
+    }
+    
+    // Legacy mapping for direct orders
+    return [{
+      examId: order.procedureId || 'legacy',
+      code: order.procedureCode || '0000000',
+      name: order.procedureName || 'Procedimento',
+      material: 'SANGUE TOTAL',
+      status: order.status === 'collection_done' ? 'liberado' : 'pending',
+      isCobrado: true,
+      isColeta: order.status === 'collection_done',
+      previsaoEntrega: order.deliveryDate || '',
+      valor: order.privateValue || 0,
+      convenioName: order.convenioName,
+      doctorName: order.doctorName,
+      doctorCRM: order.doctorCRM
+    }];
+  }, [labOrder, order]);
+
+  // Derived tubes list
+  const patientTubes = useMemo(() => {
+    const materials = new Set(orderExams.map(e => e.material).filter(Boolean));
+    return TUBE_TYPES.filter(tube => 
+      materials.has(tube.label) || 
+      materials.has(tube.type) ||
+      (tube.type === 'gel' && materials.has('Soro')) ||
+      (tube.type === 'edta' && (materials.has('Sangue Total') || materials.has('Sangue'))) ||
+      (tube.type === 'citrato' && materials.has('Plasma')) ||
+      (tube.type === 'urina' && (materials.has('Urina') || materials.has('Urina Amostra')))
+    );
+  }, [orderExams]);
+
+  const getStatusColor = (status: string) => {
+    switch(status?.toLowerCase()) {
+      case 'open':
+      case 'waiting':
+      case 'waiting_collection':
+        return 'bg-blue-500';
+      case 'collection_done':
+      case 'collected':
+      case 'liberado':
+        return 'bg-emerald-500';
+      case 'cancelled':
+        return 'bg-red-500';
+      default:
+        return 'bg-slate-400';
+    }
+  };
+
+  const isCollected = order.status === 'collection_done' || labOrder.collectionStatus === 'collected';
+
+
 
   return (
     <Dialog open={open} onOpenChange={(o) => !o && onClose()}>
