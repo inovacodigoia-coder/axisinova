@@ -311,82 +311,97 @@ export function AttendanceDetailsModal({ open, onClose, order, patient }: Attend
                   </div>
                 </div>
 
-                <div className="bg-white rounded-lg border border-border shadow-sm overflow-hidden">
-                  <div className="p-4 border-b border-border bg-muted/5 flex items-center justify-between">
-                    <div className="flex flex-col gap-1">
-                      <div className="flex items-center gap-2">
-                        <span className="text-xs font-bold text-[#007AFF] uppercase">1. {order.convenioName || 'Particular'}</span>
+                {/* Groups exams by guide/convenio */}
+                {Array.from(new Set(orderExams.map(e => e.convenioName || order.convenioName || 'Particular'))).map((convenio, idx) => {
+                  const examsInGroup = orderExams.filter(e => (e.convenioName || order.convenioName || 'Particular') === convenio);
+                  const firstExam = examsInGroup[0];
+                  
+                  return (
+                    <div key={idx} className="bg-white rounded-lg border border-border shadow-sm overflow-hidden mb-4">
+                      <div className="p-4 border-b border-border bg-muted/5 flex items-center justify-between">
+                        <div className="flex flex-col gap-1">
+                          <div className="flex items-center gap-2">
+                            <span className="text-xs font-bold text-[#007AFF] uppercase">{idx + 1}. {convenio}</span>
+                          </div>
+                          <div className="flex items-center gap-1 text-[10px] text-muted-foreground">
+                            <User className="h-3 w-3" />
+                            <span>{firstExam.doctorName || order.doctorName || 'SEM MÉDICO INFORMADO'}</span>
+                            {(firstExam.doctorCRM || order.doctorCRM) && <span>({firstExam.doctorCRM || order.doctorCRM})</span>}
+                          </div>
+                        </div>
+                        <div className="flex gap-1">
+                          {[Pencil, Printer, Trash2].map((Icon, i) => (
+                            <Button key={i} size="icon" variant="ghost" className="h-8 w-8 text-muted-foreground hover:bg-muted">
+                              <Icon className="h-4 w-4" />
+                            </Button>
+                          ))}
+                        </div>
                       </div>
-                      <div className="flex items-center gap-1 text-[10px] text-muted-foreground">
-                        <User className="h-3 w-3" />
-                        <span>{order.doctorName || 'SEM MÉDICO INFORMADO'}</span>
-                        {order.doctorCRM && <span>({order.doctorCRM})</span>}
-                      </div>
-                    </div>
-                    <div className="flex gap-1">
-                      {[Pencil, Printer, Trash2].map((Icon, i) => (
-                        <Button key={i} size="icon" variant="ghost" className="h-8 w-8 text-muted-foreground hover:bg-muted">
-                          <Icon className="h-4 w-4" />
-                        </Button>
-                      ))}
-                    </div>
-                  </div>
 
-                  <div className="overflow-x-auto">
-                    <table className="w-full text-left border-collapse">
-                      <thead className="bg-muted/30 text-[10px] font-bold text-muted-foreground uppercase tracking-wider">
-                        <tr>
-                          <th className="px-4 py-2 border-b border-border w-10"><input type="checkbox" className="rounded border-border" /></th>
-                          <th className="px-4 py-2 border-b border-border">Procedimentos</th>
-                          <th className="px-4 py-2 border-b border-border">Referência</th>
-                          <th className="px-4 py-2 border-b border-border text-center">Cobrado</th>
-                          <th className="px-4 py-2 border-b border-border text-center">Coleta</th>
-                          <th className="px-4 py-2 border-b border-border">Material</th>
-                          <th className="px-4 py-2 border-b border-border">Previsão Entrega</th>
-                          <th className="px-4 py-2 border-b border-border text-center">Status</th>
-                          <th className="px-4 py-2 border-b border-border text-right">Ações</th>
-                        </tr>
-                      </thead>
-                      <tbody className="text-[11px] divide-y divide-border">
-                        <tr className="hover:bg-muted/10 group">
-                          <td className="px-4 py-3"><input type="checkbox" className="rounded border-border" /></td>
-                          <td className="px-4 py-3">
-                            <div className="flex items-center gap-2">
-                              <span className="bg-[#007AFF] text-white rounded-full px-1.5 py-0.5 text-[8px] font-bold">EX</span>
-                              <span className="font-medium text-foreground uppercase">{order.procedureName}</span>
-                            </div>
-                          </td>
-                          <td className="px-4 py-3 text-muted-foreground font-mono">{order.procedureCode || '0000000'}</td>
-                          <td className="px-4 py-3 text-center">
-                            <div className="flex justify-center">
-                              <div className="w-4 h-4 rounded bg-[#007AFF] flex items-center justify-center text-white">
-                                <ShieldCheck className="h-3 w-3" />
-                              </div>
-                            </div>
-                          </td>
-                          <td className="px-4 py-3 text-center">
-                            <div className="w-3 h-3 rounded-full bg-emerald-500 mx-auto" />
-                          </td>
-                          <td className="px-4 py-3 text-muted-foreground uppercase">SANGUE TOTAL</td>
-                          <td className="px-4 py-3 text-muted-foreground">
-                            {order.deliveryDate ? new Date(order.deliveryDate).toLocaleDateString('pt-BR') : '--/--/----'}
-                          </td>
-                          <td className="px-4 py-3 text-center">
-                            <div className="w-6 h-6 rounded-full bg-emerald-100 flex items-center justify-center text-emerald-600 mx-auto">
-                              <Printer className="h-3.5 w-3.5" />
-                            </div>
-                          </td>
-                          <td className="px-4 py-3 text-right">
-                            <div className="flex justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                              <Button size="icon" variant="ghost" className="h-7 w-7"><Pencil className="h-3.5 w-3.5" /></Button>
-                              <Button size="icon" variant="ghost" className="h-7 w-7"><Calendar className="h-3.5 w-3.5" /></Button>
-                            </div>
-                          </td>
-                        </tr>
-                      </tbody>
-                    </table>
-                  </div>
-                </div>
+                      <div className="overflow-x-auto">
+                        <table className="w-full text-left border-collapse">
+                          <thead className="bg-muted/30 text-[10px] font-bold text-muted-foreground uppercase tracking-wider">
+                            <tr>
+                              <th className="px-4 py-2 border-b border-border w-10"><input type="checkbox" className="rounded border-border" /></th>
+                              <th className="px-4 py-2 border-b border-border">Procedimentos</th>
+                              <th className="px-4 py-2 border-b border-border">Referência</th>
+                              <th className="px-4 py-2 border-b border-border text-center">Cobrado</th>
+                              <th className="px-4 py-2 border-b border-border text-center">Coleta</th>
+                              <th className="px-4 py-2 border-b border-border">Material</th>
+                              <th className="px-4 py-2 border-b border-border">Previsão Entrega</th>
+                              <th className="px-4 py-2 border-b border-border text-center">Status</th>
+                              <th className="px-4 py-2 border-b border-border text-right">Ações</th>
+                            </tr>
+                          </thead>
+                          <tbody className="text-[11px] divide-y divide-border">
+                            {examsInGroup.map((exam, examIdx) => {
+                              const examIsCollected = exam.isColeta || isCollected;
+                              return (
+                                <tr key={examIdx} className="hover:bg-muted/10 group">
+                                  <td className="px-4 py-3"><input type="checkbox" className="rounded border-border" /></td>
+                                  <td className="px-4 py-3">
+                                    <div className="flex items-center gap-2">
+                                      <span className="bg-[#007AFF] text-white rounded-full px-1.5 py-0.5 text-[8px] font-bold">EX</span>
+                                      <span className="font-medium text-foreground uppercase">{exam.name}</span>
+                                    </div>
+                                  </td>
+                                  <td className="px-4 py-3 text-muted-foreground font-mono">{exam.code || '0000000'}</td>
+                                  <td className="px-4 py-3 text-center">
+                                    <div className="flex justify-center">
+                                      <div className={cn("w-4 h-4 rounded flex items-center justify-center text-white", exam.isCobrado ? "bg-[#007AFF]" : "bg-slate-200")}>
+                                        <ShieldCheck className="h-3 w-3" />
+                                      </div>
+                                    </div>
+                                  </td>
+                                  <td className="px-4 py-3 text-center">
+                                    <div className={cn("w-3 h-3 rounded-full mx-auto", examIsCollected ? "bg-emerald-500" : "bg-slate-300")} />
+                                  </td>
+                                  <td className="px-4 py-3 text-muted-foreground uppercase">{exam.material || 'SANGUE'}</td>
+                                  <td className="px-4 py-3 text-muted-foreground">
+                                    {examIsCollected && (exam.previsaoEntrega || order.deliveryDate) 
+                                      ? new Date(exam.previsaoEntrega || order.deliveryDate!).toLocaleDateString('pt-BR') 
+                                      : '--/--/----'}
+                                  </td>
+                                  <td className="px-4 py-3 text-center">
+                                    <div className={cn("w-6 h-6 rounded-full flex items-center justify-center mx-auto", examIsCollected ? "bg-emerald-100 text-emerald-600" : "bg-slate-100 text-slate-400")}>
+                                      <Printer className="h-3.5 w-3.5" />
+                                    </div>
+                                  </td>
+                                  <td className="px-4 py-3 text-right">
+                                    <div className="flex justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                                      <Button size="icon" variant="ghost" className="h-7 w-7"><Pencil className="h-3.5 w-3.5" /></Button>
+                                      <Button size="icon" variant="ghost" className="h-7 w-7"><Calendar className="h-3.5 w-3.5" /></Button>
+                                    </div>
+                                  </td>
+                                </tr>
+                              );
+                            })}
+                          </tbody>
+                        </table>
+                      </div>
+                    </div>
+                  );
+                })}
               </TabsContent>
 
               <TabsContent value="amostras" className="m-0 space-y-4">
