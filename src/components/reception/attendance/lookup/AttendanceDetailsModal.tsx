@@ -464,7 +464,7 @@ export function AttendanceDetailsModal({ open, onClose, order, patient }: Attend
                             {orderExams.filter(e => e.material === tube.label || (tube.type === 'gel' && e.material === 'Soro')).map(e => e.name).join(', ') || 'N/A'}
                           </td>
                           <td className="px-4 py-3">
-                            <span className={cn("font-bold uppercase", isCollected ? "text-emerald-600" : "text-slate-400")}>
+                            <span className={cn("font-bold uppercase", isCollected ? "text-emerald-600" : "text-amber-500")}>
                               {isCollected ? 'Coletado' : 'Pendente'}
                             </span>
                           </td>
