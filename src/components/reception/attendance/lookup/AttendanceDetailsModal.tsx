@@ -469,7 +469,7 @@ export function AttendanceDetailsModal({ open, onClose, order, patient }: Attend
                             </span>
                           </td>
                           <td className="px-4 py-3 text-muted-foreground">
-                            {isCollected ? new Date(order.registeredAt).toLocaleDateString('pt-BR') : '--/--/----'}
+                            {new Date(order.registeredAt).toLocaleDateString('pt-BR')} {new Date(order.registeredAt).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
                           </td>
                           <td className="px-4 py-3 text-right">
                             <div className="flex justify-end gap-1">
