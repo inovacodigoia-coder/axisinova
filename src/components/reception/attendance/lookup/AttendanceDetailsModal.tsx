@@ -374,14 +374,15 @@ export function AttendanceDetailsModal({ open, onClose, order, patient }: Attend
                                     </div>
                                   </td>
                                   <td className="px-4 py-3 text-center">
-                                    <div className={cn("w-5 h-5 rounded-full mx-auto flex items-center justify-center text-[8px] font-bold text-white shadow-sm", examIsCollected ? "bg-emerald-500" : "bg-slate-300")}>
+                                    <div className={cn("w-6 h-6 rounded-full mx-auto flex items-center justify-center text-[8px] font-bold text-white shadow-sm transition-colors", examIsCollected ? "bg-emerald-500" : "bg-slate-300")}>
                                       {examIsCollected ? 'SIM' : 'NÃO'}
                                     </div>
                                   </td>
+                                  <td className="px-4 py-3 text-muted-foreground uppercase">{exam.material || 'SANGUE'}</td>
                                   <td className="px-4 py-3 text-muted-foreground">
                                     {examIsCollected && (exam.previsaoEntrega || order.deliveryDate) 
                                       ? (
-                                        <div className="flex items-center gap-1.5 text-blue-600 font-bold">
+                                        <div className="flex items-center gap-1.5 text-[#007AFF] font-bold">
                                           <Calendar className="h-3 w-3" />
                                           {new Date(exam.previsaoEntrega || order.deliveryDate!).toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' })}
                                         </div>
