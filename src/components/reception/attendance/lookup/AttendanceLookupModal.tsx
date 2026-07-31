@@ -321,7 +321,11 @@ function OrderRowModern({
             {ATTENDANCE_STATUS_LABELS[order.status]?.label || order.status}
           </span>
         </div>
-        <div className="text-muted-foreground">{(order.deliveryDate || order.status === 'waiting') ? (order.deliveryDate ? new Date(order.deliveryDate).toLocaleDateString('pt-BR') : '-') : '-'}</div>
+        <div className="text-muted-foreground">
+          {(order.status === 'collection_done' || order.status === 'collected' || order.status === 'released') && order.deliveryDate 
+            ? new Date(order.deliveryDate).toLocaleDateString('pt-BR') 
+            : '-'}
+        </div>
         <div className="truncate text-muted-foreground uppercase">{order.originName || 'MATRIZ'}</div>
       </div>
 
