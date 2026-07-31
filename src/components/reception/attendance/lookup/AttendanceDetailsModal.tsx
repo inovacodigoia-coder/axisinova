@@ -293,8 +293,8 @@ export function AttendanceDetailsModal({ open, onClose, order, patient }: Attend
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-4">
                     <div className="flex items-center gap-1.5 bg-white border border-border rounded-full px-3 py-1 shadow-sm">
-                      <span className="text-[10px] font-bold text-muted-foreground uppercase">Guias</span>
-                      <span className="bg-[#007AFF] text-white text-[10px] font-bold rounded-full w-4 h-4 flex items-center justify-center">1</span>
+                      <span className="text-[10px] font-bold text-muted-foreground uppercase">Exames</span>
+                      <span className="bg-[#007AFF] text-white text-[10px] font-bold rounded-full w-4 h-4 flex items-center justify-center">{orderExams.length}</span>
                     </div>
                     <div className="flex items-center gap-1.5 bg-white border border-border rounded-full px-3 py-1 shadow-sm">
                       <span className="text-[10px] font-bold text-muted-foreground uppercase">Convênio</span>
