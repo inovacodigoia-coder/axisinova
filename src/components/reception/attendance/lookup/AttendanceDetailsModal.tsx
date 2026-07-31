@@ -247,7 +247,9 @@ export function AttendanceDetailsModal({ open, onClose, order, patient }: Attend
               </Button>
             </div>
             <div className="text-sm font-bold text-foreground">
-              {order.deliveryDate ? new Date(order.deliveryDate).toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' }) : '--/--/---- --:--'}
+              {isCollected && order.deliveryDate 
+                ? new Date(order.deliveryDate).toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' }) 
+                : '--/--/---- --:--'}
             </div>
           </div>
 
