@@ -36,10 +36,19 @@ export interface PrinterConfig {
   unitId?: string
   printerName: string
   printerType: 'thermal' | 'laser' | 'inkjet' | 'virtual_pdf'
-  connectionType: 'usb' | 'network' | 'bluetooth' | 'virtual'
+  connectionType: 'usb' | 'network' | 'bluetooth' | 'virtual' | 'label'
   ipAddress?: string
   port?: number
-  paperSize: 'a4' | 'a5' | '80mm' | '58mm'
+  paperSize: 'a4' | 'a5' | '80mm' | '58mm' | 'label'
+  
+  // Per-area overrides
+  areas?: Array<{
+    area: 'laudo' | 'comprovante' | 'controle_interno' | 'termo_consentimento' | 'etiqueta_amostra'
+    defaultFormat: 'a4' | 'a5' | '80mm' | '58mm' | 'label'
+    autoPrint: boolean
+    enabled: boolean
+  }>
+
   orientation: 'portrait' | 'landscape'
   marginTop: number
   marginBottom: number
