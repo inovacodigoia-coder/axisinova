@@ -238,7 +238,85 @@ function PrinterForm({ config, onClose, onSave }: { config: PrinterConfig; onClo
               </div>
             </Section>
 
-            <Section title="5. Rodapé e Assinaturas">
+            <Section title="5. Áreas de Impressão Associadas">
+              <div className="space-y-4">
+                {[
+                  { id: 'comprovante', label: 'Comprovante (Paciente)' },
+                  { id: 'controle_interno', label: 'Controle Interno (Receita)' },
+                  { id: 'laudo', label: 'Laudo Técnico' },
+                  { id: 'termo_consentimento', label: 'Termos e Consentimentos' },
+                  { id: 'etiqueta_amostra', label: 'Etiquetas de Amostra' }
+                ].map((area) => {
+                  const areaConfig = data.areas?.find(a => a.area === area.id) || {
+                    area: area.id as any,
+                    defaultFormat: data.paperSize,
+                    autoPrint: false,
+                    enabled: false
+                  };
+
+                  const updateArea = (updates: Partial<typeof areaConfig>) => {
+                    const newAreas = [...(data.areas || [])];
+                    const idx = newAreas.findIndex(a => a.area === area.id);
+                    if (idx >= 0) {
+                      newAreas[idx] = { ...newAreas[idx], ...updates };
+                    } else {
+                      newAreas.push({ ...areaConfig, ...updates });
+                    }
+                    set('areas', newAreas);
+                  };
+
+                  return (
+                    <div key={area.id} className="border border-border/50 rounded-md p-3 space-y-3 bg-muted/5">
+                      <div className="flex items-center justify-between">
+                        <label className="flex items-center gap-2 cursor-pointer">
+                          <input 
+                            type="checkbox" 
+                            checked={areaConfig.enabled} 
+                            onChange={(e) => updateArea({ enabled: e.target.checked })}
+                            className="rounded border-border text-primary focus:ring-primary"
+                          />
+                          <span className="text-sm font-bold">{area.label}</span>
+                        </label>
+                        {areaConfig.enabled && (
+                          <span className="text-[10px] font-bold text-primary uppercase">Configurado</span>
+                        )}
+                      </div>
+
+                      {areaConfig.enabled && (
+                        <div className="grid grid-cols-2 gap-3 pt-1">
+                          <Field label="Formato Padrão">
+                            <select 
+                              value={areaConfig.defaultFormat}
+                              onChange={(e) => updateArea({ defaultFormat: e.target.value as any })}
+                              className="w-full rounded-md border border-border bg-background px-2 py-1.5 text-xs"
+                            >
+                              <option value="a4">A4</option>
+                              <option value="a5">A5</option>
+                              <option value="80mm">80mm</option>
+                              <option value="58mm">58mm</option>
+                              <option value="label">Etiqueta</option>
+                            </select>
+                          </Field>
+                          <div className="flex items-end pb-2">
+                            <label className="flex items-center gap-2 cursor-pointer text-xs">
+                              <input 
+                                type="checkbox" 
+                                checked={areaConfig.autoPrint} 
+                                onChange={(e) => updateArea({ autoPrint: e.target.checked })}
+                                className="rounded border-border text-primary focus:ring-primary"
+                              />
+                              <span>Auto-imprimir</span>
+                            </label>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            </Section>
+
+            <Section title="6. Rodapé e Assinaturas">
               <Field label="Texto do rodapé">
                 <textarea value={data.footerText || ''} onChange={(e) => set('footerText', e.target.value)} rows={2}
                   className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm" />
@@ -247,7 +325,7 @@ function PrinterForm({ config, onClose, onSave }: { config: PrinterConfig; onClo
               <Toggle k="showTimestamp" label="Data/hora de impressão" />
             </Section>
 
-            <Section title="6. Configurações de Impressão">
+            <Section title="7. Configurações de Estado">
               <div className="grid grid-cols-2 gap-3">
                 <Field label="Cópias padrão">
                   <select value={data.defaultCopies} onChange={(e) => set('defaultCopies', parseInt(e.target.value))}
@@ -260,6 +338,7 @@ function PrinterForm({ config, onClose, onSave }: { config: PrinterConfig; onClo
               <Toggle k="isDefault" label="Definir como impressora padrão" />
               <Toggle k="isActive" label="Impressora ativa" />
             </Section>
+
           </div>
 
           {/* Preview */}
