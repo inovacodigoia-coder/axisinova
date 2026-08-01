@@ -97,7 +97,7 @@ export function AttendancePrintModal({ open, onClose, document: doc, autoPrint, 
           <div className="print-receipt flex flex-col gap-0 items-center">
             {Array.from({ length: copies }).map((_, copyIdx) => (
               vias.map((via) => (
-                <div key={`${copyIdx}-${via}`} className="print:break-after-page mb-8 last:mb-0 print:mb-0">
+                <div key={`${copyIdx}-${via}`} className="print:break-after-page print:mb-0">
                   <AttendanceReceiptVia document={doc} config={selectedConfig} via={via} />
                 </div>
               ))
