@@ -105,7 +105,15 @@ export default function ReceptionLayout() {
       orderTime: now.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }),
       patientId: order.patientId, patientName: order.patientName,
       serviceType: order.serviceType === 'consultation' ? 'Consulta' : order.serviceType === 'exam' ? 'Exame' : 'Procedimento',
-      procedureName: order.procedureName || '', procedureCode: order.procedureCode || '',
+      exams: order.labGuides?.flatMap(guide => 
+        (guide.exams || []).map((exam: any) => ({
+          name: exam.name,
+          code: exam.code || '',
+          forecastDate: exam.forecastDate || '',
+          doctorName: guide.doctorName || order.doctorName,
+          doctorCRM: guide.doctorCRM || order.doctorCRM
+        }))
+      ) || [],
       doctorName: order.doctorName, doctorCRM: order.doctorCRM, specialty: order.specialty,
       unitName: unitName, guicheName, ticketCode: order.ticketCode,
       paymentType: order.paymentType === 'convenio' ? 'Convênio' : order.paymentType === 'private' ? 'Particular' : 'Cortesia',
