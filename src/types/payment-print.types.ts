@@ -110,6 +110,9 @@ export interface AttendanceControlDocument {
   companyLogo?: string
   locatorCode?: string
   password?: string
+  doctorName?: string
+  doctorCRM?: string
+  specialty?: string
 }
 
 export const PAYMENT_METHOD_LABELS: Record<PaymentMethod, string> = {
