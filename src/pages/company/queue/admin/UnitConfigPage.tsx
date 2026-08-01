@@ -492,8 +492,8 @@ export default function UnitConfigPage() {
             <div className="rounded-lg border border-border bg-muted/40 p-3 space-y-2">
               <div className="flex items-center justify-between">
                 <span className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Link de acesso do Totem</span>
-                <a href={totemUrl(tSlug)} target="_blank" rel="noopener noreferrer" className="text-xs text-primary hover:underline inline-flex items-center gap-1 bg-primary/10 px-2 py-1 rounded">
-                  Abrir Link Público <ExternalLink className="h-3 w-3" />
+                <a href={totemUrl(tSlug)} target="_blank" rel="noopener noreferrer" className="text-xs text-primary hover:underline inline-flex items-center gap-1">
+                  Abrir <ExternalLink className="h-3 w-3" />
                 </a>
               </div>
               <div className="flex gap-2">

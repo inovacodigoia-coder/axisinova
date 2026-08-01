@@ -83,27 +83,14 @@ export default function CallingPanelPage() {
     let cancelled = false
     async function loadTv() {
       setLoadingPanel(true)
-      
       const { data, error } = await supabase
         .from('queue_tvs')
         .select('id, unit_id, company_id, name, slug, voice_type, access_username, access_password, media_mode, media_attachments')
         .eq('slug', slug)
         .maybeSingle()
-      
       if (cancelled) return
-
       if (error || !data) {
-        console.warn('TV não encontrada ou erro, habilitando login fallback', error)
-        // Se não encontrar, mostra o login para permitir entrada com credenciais
-        setTv({ 
-          id: 'fallback', 
-          unit_id: '', 
-          company_id: '', 
-          name: 'Painel', 
-          slug, 
-          access_username: '', 
-          access_password: '' 
-        } as any)
+        console.error('TV não encontrada', error)
         setLoadingPanel(false)
         return
       }

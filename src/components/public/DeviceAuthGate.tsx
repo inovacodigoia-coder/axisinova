@@ -1,6 +1,5 @@
 import { useState, useEffect, FormEvent } from 'react'
 import { Lock, Eye, EyeOff, LogIn } from 'lucide-react'
-import { supabase } from '@/integrations/supabase/client'
 
 interface Props {
   deviceKind: 'totem' | 'tv' | 'painel'
@@ -16,12 +15,8 @@ interface Props {
 const storageKey = (kind: string, slug: string) => `axis_device_auth__${kind}__${slug}`
 
 export function DeviceAuthGate({ deviceKind, slug, expectedUsername, expectedPassword, deviceName, children, loading }: Props) {
-  // We consider it "no credentials required" ONLY if both fields are literally null/empty AND it's not the fallback state
-  const isFallback = expectedUsername === '...'
-  const hasCredentials = !!(expectedUsername && expectedPassword && !isFallback)
-  
+  const hasCredentials = !!(expectedUsername && expectedPassword)
   const [authed, setAuthed] = useState<boolean>(() => {
-    if (!hasCredentials && !isFallback) return true
     try { return sessionStorage.getItem(storageKey(deviceKind, slug)) === '1' } catch { return false }
   })
   const [username, setUsername] = useState('')
@@ -35,7 +30,7 @@ export function DeviceAuthGate({ deviceKind, slug, expectedUsername, expectedPas
     } catch {}
   }, [deviceKind, slug])
 
-  if (loading && !isFallback) {
+  if (loading) {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center bg-[#0F172A] text-white p-6 text-center">
         <div className="w-12 h-12 border-4 border-primary/30 border-t-primary rounded-full animate-spin mb-4" />
@@ -47,44 +42,14 @@ export function DeviceAuthGate({ deviceKind, slug, expectedUsername, expectedPas
     )
   }
 
-  // If authed OR no credentials actually required (and not fallback waiting for query)
-  if (authed || (!hasCredentials && !isFallback)) return <>{children}</>
+  if (!hasCredentials || authed) return <>{children}</>
 
-  const handleSubmit = async (e: FormEvent) => {
+  const handleSubmit = (e: FormEvent) => {
     e.preventDefault()
-    setError('')
-
-    // Se for fallback, precisamos buscar as credenciais reais agora que o usuário quer logar
-    let targetUser = expectedUsername
-    let targetPass = expectedPassword
-
-    if (isFallback || !targetUser || !targetPass) {
-      const table = deviceKind === 'totem' ? 'queue_totems' : 'queue_tvs'
-      const { data, error } = await supabase
-        .from(table as any)
-        .select('access_username, access_password')
-        .eq('slug', slug)
-        .maybeSingle()
-      
-      if (error || !data) {
-        setError('Dispositivo não encontrado ou erro de conexão.')
-        return
-      }
-      targetUser = (data as any).access_username
-      targetPass = (data as any).access_password
-    }
-
-    const inputUser = username.trim()
-    const inputPass = password.trim()
-    const dbUser = (targetUser || '').trim()
-    const dbPass = (targetPass || '').trim()
-
-    if (inputUser === dbUser && inputPass === dbPass) {
+    if (username.trim() === (expectedUsername || '') && password === (expectedPassword || '')) {
       try { sessionStorage.setItem(storageKey(deviceKind, slug), '1') } catch {}
       setAuthed(true)
       setError('')
-      // Se for fallback, recarrega a página para pegar o estado completo do banco
-      if (isFallback) window.location.reload()
     } else {
       setError('Usuário ou senha incorretos')
     }
