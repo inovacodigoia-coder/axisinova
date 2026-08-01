@@ -480,12 +480,6 @@ export function AttendanceDetailsModal({ open, onClose, order, patient }: Attend
                           <td className="px-4 py-3 text-muted-foreground">
                             {new Date(order.registeredAt).toLocaleDateString('pt-BR')} {new Date(order.registeredAt).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
                           </td>
-                          <td className="px-4 py-3 text-right">
-                            <div className="flex justify-end gap-1">
-                              <Button size="icon" variant="ghost" className="h-8 w-8"><Printer className="h-4 w-4" /></Button>
-                              <Button size="icon" variant="ghost" className="h-8 w-8"><Trash2 className="h-4 w-4" /></Button>
-                            </div>
-                          </td>
                         </tr>
                       )) : (
                         <tr>
