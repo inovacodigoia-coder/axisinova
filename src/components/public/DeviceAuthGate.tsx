@@ -1,21 +1,23 @@
 import { useState, useEffect, FormEvent } from 'react'
 import { Lock, Eye, EyeOff, LogIn } from 'lucide-react'
+import { supabase } from '@/integrations/supabase/client'
 
 interface Props {
-  deviceKind: 'totem' | 'tv' | 'painel'
+  deviceKind: 'totem' | 'tv'
   slug: string
-  expectedUsername?: string | null
-  expectedPassword?: string | null
+  /** True when the device has credentials configured in the admin panel. */
+  requiresAuth?: boolean
   deviceName?: string
   children: React.ReactNode
   /** While true, gate waits (shows nothing) instead of letting children through. Use while credentials are still loading. */
   loading?: boolean
+  /** Optional error message when the device could not be loaded. */
+  errorMessage?: string | null
 }
 
 const storageKey = (kind: string, slug: string) => `axis_device_auth__${kind}__${slug}`
 
-export function DeviceAuthGate({ deviceKind, slug, expectedUsername, expectedPassword, deviceName, children, loading }: Props) {
-  const hasCredentials = !!(expectedUsername && expectedPassword)
+export function DeviceAuthGate({ deviceKind, slug, requiresAuth, deviceName, children, loading, errorMessage }: Props) {
   const [authed, setAuthed] = useState<boolean>(() => {
     try { return sessionStorage.getItem(storageKey(deviceKind, slug)) === '1' } catch { return false }
   })
@@ -23,12 +25,25 @@ export function DeviceAuthGate({ deviceKind, slug, expectedUsername, expectedPas
   const [password, setPassword] = useState('')
   const [showPwd, setShowPwd] = useState(false)
   const [error, setError] = useState('')
+  const [checking, setChecking] = useState(false)
 
   useEffect(() => {
     try {
       setAuthed(sessionStorage.getItem(storageKey(deviceKind, slug)) === '1')
     } catch {}
   }, [deviceKind, slug])
+
+  if (errorMessage) {
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center bg-[#0F172A] text-white p-6 text-center">
+        <div className="w-14 h-14 rounded-full bg-destructive/20 flex items-center justify-center mb-4">
+          <Lock className="h-7 w-7 text-destructive" />
+        </div>
+        <h2 className="text-xl font-semibold mb-2">Dispositivo não encontrado</h2>
+        <p className="text-slate-400 max-w-sm">{errorMessage}</p>
+      </div>
+    )
+  }
 
   if (loading) {
     return (
@@ -42,18 +57,31 @@ export function DeviceAuthGate({ deviceKind, slug, expectedUsername, expectedPas
     )
   }
 
-  if (!hasCredentials || authed) return <>{children}</>
+  if (!requiresAuth || authed) return <>{children}</>
 
-  const handleSubmit = (e: FormEvent) => {
+  const handleSubmit = async (e: FormEvent) => {
     e.preventDefault()
-    if (username.trim() === (expectedUsername || '') && password === (expectedPassword || '')) {
+    setChecking(true)
+    setError('')
+    const { data, error: rpcError } = await supabase.rpc('device_verify_access', {
+      _kind: deviceKind,
+      _slug: slug,
+      _username: username.trim(),
+      _password: password,
+    })
+    setChecking(false)
+    if (rpcError) {
+      setError('Erro de conexão. Tente novamente.')
+      return
+    }
+    if (data === true) {
       try { sessionStorage.setItem(storageKey(deviceKind, slug), '1') } catch {}
       setAuthed(true)
-      setError('')
     } else {
       setError('Usuário ou senha incorretos')
     }
   }
+
 
   const title = deviceKind === 'totem' ? 'Acesso ao Totem' : 'Acesso ao Painel/TV'
 
