@@ -455,7 +455,6 @@ export function AttendanceDetailsModal({ open, onClose, order, patient }: Attend
                         <th className="px-4 py-2 border-b border-border">Procedimentos</th>
                         <th className="px-4 py-2 border-b border-border">Status</th>
                         <th className="px-4 py-2 border-b border-border">Data Coleta</th>
-                        <th className="px-4 py-2 border-b border-border text-right">Ações</th>
                       </tr>
                     </thead>
                     <tbody className="text-[11px] divide-y divide-border">
