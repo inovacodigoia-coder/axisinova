@@ -158,6 +158,14 @@
 
 /* ====== Print styles — controle de atendimento ====== */
 @media print {
+  @page {
+    margin: 0;
+    size: auto;
+  }
+  body {
+    margin: 0 !important;
+    padding: 0 !important;
+  }
   body * { visibility: hidden !important; }
   .print-receipt, .print-receipt * { visibility: visible !important; }
   .print-receipt {
@@ -168,12 +176,6 @@
     background: white !important;
     color: black !important;
     font-family: Arial, sans-serif !important;
-    font-size: 10pt !important;
-  }
-  .print-receipt .via { page-break-after: always; }
-  .print-receipt .via:last-child { page-break-after: auto; }
-  .print-receipt .corte-linha::before {
-    content: '✂ ─────────────── RECORTE AQUI ─────────────── ✂';
   }
   .no-print { display: none !important; }
 }
