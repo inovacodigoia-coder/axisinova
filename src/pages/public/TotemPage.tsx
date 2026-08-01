@@ -88,8 +88,8 @@ export default function TotemPage() {
             company_id: '', 
             name: 'Totem', 
             slug, 
-            access_username: '...', 
-            access_password: '...' 
+            access_username: '', // Mudado de '...' para vazio para evitar confusão no input
+            access_password: '' 
           } as any)
           return
         }

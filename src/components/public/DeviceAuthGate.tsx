@@ -58,7 +58,7 @@ export function DeviceAuthGate({ deviceKind, slug, expectedUsername, expectedPas
     let targetUser = expectedUsername
     let targetPass = expectedPassword
 
-    if (isFallback) {
+    if (isFallback || !targetUser || !targetPass) {
       const table = deviceKind === 'totem' ? 'queue_totems' : 'queue_tvs'
       const { data, error } = await supabase
         .from(table as any)
@@ -74,7 +74,12 @@ export function DeviceAuthGate({ deviceKind, slug, expectedUsername, expectedPas
       targetPass = (data as any).access_password
     }
 
-    if (username.trim() === (targetUser || '') && password === (targetPass || '')) {
+    const inputUser = username.trim()
+    const inputPass = password.trim()
+    const dbUser = (targetUser || '').trim()
+    const dbPass = (targetPass || '').trim()
+
+    if (inputUser === dbUser && inputPass === dbPass) {
       try { sessionStorage.setItem(storageKey(deviceKind, slug), '1') } catch {}
       setAuthed(true)
       setError('')

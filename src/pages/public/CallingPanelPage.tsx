@@ -101,8 +101,8 @@ export default function CallingPanelPage() {
           company_id: '', 
           name: 'Painel', 
           slug, 
-          access_username: '...', 
-          access_password: '...' 
+          access_username: '', 
+          access_password: '' 
         } as any)
         setLoadingPanel(false)
         return
