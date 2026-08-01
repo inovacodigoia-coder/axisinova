@@ -1718,7 +1718,57 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      device_public_info: {
+        Args: { _kind: string; _slug: string }
+        Returns: Json
+      }
+      device_verify_access: {
+        Args: {
+          _kind: string
+          _password: string
+          _slug: string
+          _username: string
+        }
+        Returns: boolean
+      }
+      panel_tickets: {
+        Args: { _slug: string }
+        Returns: {
+          attendant_name: string
+          call_count: number
+          called_at: string
+          display_code: string
+          generated_at: string
+          guiche_name: string
+          id: string
+          queue_line_name: string
+          status: string
+          tv_id: string
+          unit_id: string
+        }[]
+      }
+      totem_create_ticket: {
+        Args: { _preferential?: boolean; _queue_line_id: string; _slug: string }
+        Returns: Json
+      }
+      totem_queue_lines: {
+        Args: { _slug: string }
+        Returns: {
+          allow_totem_choice: boolean
+          color: string
+          company_id: string
+          has_preferential: boolean
+          has_preferential_80: boolean
+          id: string
+          is_active: boolean
+          name: string
+          prefix: string
+          prefix_alt: string
+          show_on_totem: boolean
+          totem_id: string
+          unit_id: string
+        }[]
+      }
     }
     Enums: {
       appointment_status: "confirmed" | "waiting" | "cancelled"

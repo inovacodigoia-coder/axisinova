@@ -41,8 +41,7 @@ interface TotemRow {
   company_id: string
   name: string
   slug: string | null
-  access_username?: string | null
-  access_password?: string | null
+  requires_auth?: boolean
 }
 
 export default function TotemPage() {
@@ -56,6 +55,7 @@ export default function TotemPage() {
   const [countdown, setCountdown] = useState(10)
 
   const [totem, setTotem] = useState<TotemRow | null>(null)
+  const [deviceError, setDeviceError] = useState<string | null>(null)
   const [queueLines, setQueueLines] = useState<QueueLineRow[]>([])
 
   const { addToQueue, state } = useQueue()
@@ -80,32 +80,20 @@ export default function TotemPage() {
         }, 8000)
 
         const { data: totemRow, error: totemError } = await supabase
-          .from('queue_totems')
-          .select('id, unit_id, company_id, name, slug, access_username, access_password')
-          .eq('slug', slug)
-          .maybeSingle()
-        
+          .rpc('device_public_info', { _kind: 'totem', _slug: slug })
+
         if (cancelled) return
 
         if (totemError || !totemRow) {
-          toast.error('Totem não encontrado ou erro de conexão. Redirecionando...')
-          setTimeout(() => {
-            window.location.href = '/login'
-          }, 3000)
+          setDeviceError('Não localizamos este totem. Verifique se o link está correto ou gere um novo link no painel administrativo.')
           return
         }
 
-        setTotem(totemRow as TotemRow)
-        
-        const { data: lines } = await supabase
-          .from('queue_lines')
-          .select('id, unit_id, company_id, name, prefix, prefix_alt, color, has_preferential, has_preferential_80, allow_totem_choice, show_on_totem, is_active, totem_id')
-          .eq('totem_id', totemRow.id)
-          .eq('is_active', true)
-          .eq('show_on_totem', true)
-          .order('sort_order', { ascending: true })
-        
-        if (!cancelled) setQueueLines((lines || []) as QueueLineRow[])
+        setTotem(totemRow as unknown as TotemRow)
+
+        const { data: lines } = await supabase.rpc('totem_queue_lines', { _slug: slug })
+
+        if (!cancelled) setQueueLines((lines || []) as unknown as QueueLineRow[])
       } else if (fallbackCompanyId) {
         const { data: lines } = await supabase
           .from('queue_lines')
@@ -201,39 +189,20 @@ export default function TotemPage() {
 
   // Pick a queue (no-appointment flow) — generate persistent ticket
   const handlePickQueue = useCallback(async (line: QueueLineRow, preferential: boolean) => {
-    const prefix = preferential && line.prefix_alt ? line.prefix_alt : line.prefix
-    const companyId = line.company_id
-    const unitId = line.unit_id
-    // count today's tickets for this queue+prefix
-    const startOfDay = new Date(); startOfDay.setHours(0,0,0,0)
-    const { data: existing } = await supabase
-      .from('queue_tickets')
-      .select('number')
-      .eq('queue_line_id', line.id)
-      .eq('prefix', prefix)
-      .gte('generated_at', startOfDay.toISOString())
-      .order('number', { ascending: false })
-      .limit(1)
-    const nextNumber = (existing?.[0]?.number || 0) + 1
-    const displayCode = `${prefix}${String(nextNumber).padStart(3, '0')}`
-    const { error } = await supabase.from('queue_tickets').insert({
-      company_id: companyId,
-      unit_id: unitId,
-      queue_line_id: line.id,
-      queue_line_name: line.name,
-      prefix,
-      number: nextNumber,
-      display_code: displayCode,
-      status: 'waiting',
+    const { data, error } = await supabase.rpc('totem_create_ticket', {
+      _slug: slug || '',
+      _queue_line_id: line.id,
+      _preferential: preferential,
     })
-    if (error) {
-      toast.error('Erro ao gerar ficha: ' + error.message)
+    if (error || !data) {
+      toast.error('Erro ao gerar ficha: ' + (error?.message || 'tente novamente'))
       return
     }
+    const displayCode = (data as any).display_code as string
     setGeneratedTicket(displayCode)
     setScreen('ticket')
     setCountdown(10)
-  }, [])
+  }, [slug])
 
   const NumKey = ({ val, onPress }: { val: string; onPress: (v: string) => void }) => (
     <button onClick={() => onPress(val)} className="h-16 rounded-xl bg-white/10 text-white text-2xl font-bold hover:bg-white/20 active:scale-95 transition-all">
@@ -474,7 +443,7 @@ export default function TotemPage() {
   )
 
   return (
-    <DeviceAuthGate deviceKind="totem" slug={slug || 'default'} expectedUsername={totem?.access_username} expectedPassword={totem?.access_password} deviceName={totem?.name} loading={!!slug && !totem}>
+    <DeviceAuthGate deviceKind="totem" slug={slug || 'default'} requiresAuth={!!totem?.requires_auth} deviceName={totem?.name} loading={!!slug && !totem && !deviceError} errorMessage={deviceError}>
       {content}
     </DeviceAuthGate>
   )
