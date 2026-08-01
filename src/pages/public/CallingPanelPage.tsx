@@ -84,25 +84,26 @@ export default function CallingPanelPage() {
     async function loadTv() {
       setLoadingPanel(true)
       
-      // Set a timeout to check if loading takes too long
-      const timeoutId = setTimeout(() => {
-        if (!cancelled && !tv) {
-          // Se demorar muito, mostramos a tela de login forçada
-          setTv({ id: 'fallback', unit_id: '', company_id: '', name: 'Painel', slug, access_username: '...', access_password: '...' } as any)
-        }
-      }, 5000)
-
       const { data, error } = await supabase
         .from('queue_tvs')
         .select('id, unit_id, company_id, name, slug, voice_type, access_username, access_password, media_mode, media_attachments')
         .eq('slug', slug)
         .maybeSingle()
       
-      clearTimeout(timeoutId)
-      
       if (cancelled) return
+
       if (error || !data) {
-        console.error('TV não encontrada', error)
+        console.warn('TV não encontrada ou erro, habilitando login fallback', error)
+        // Se não encontrar, mostra o login para permitir entrada com credenciais
+        setTv({ 
+          id: 'fallback', 
+          unit_id: '', 
+          company_id: '', 
+          name: 'Painel', 
+          slug, 
+          access_username: '...', 
+          access_password: '...' 
+        } as any)
         setLoadingPanel(false)
         return
       }

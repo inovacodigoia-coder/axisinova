@@ -1,4 +1,5 @@
 import { useState, useEffect, FormEvent } from 'react'
+import { supabase } from '@/integrations/supabase/client'
 import { Lock, Eye, EyeOff, LogIn } from 'lucide-react'
 
 interface Props {
@@ -15,9 +16,12 @@ interface Props {
 const storageKey = (kind: string, slug: string) => `axis_device_auth__${kind}__${slug}`
 
 export function DeviceAuthGate({ deviceKind, slug, expectedUsername, expectedPassword, deviceName, children, loading }: Props) {
-  const hasCredentials = !!(expectedUsername && expectedPassword)
+  // We consider it "no credentials required" ONLY if both fields are literally null/empty AND it's not the fallback state
+  const isFallback = expectedUsername === '...'
+  const hasCredentials = !!(expectedUsername && expectedPassword && !isFallback)
+  
   const [authed, setAuthed] = useState<boolean>(() => {
-    if (!expectedUsername || !expectedPassword) return true
+    if (!hasCredentials && !isFallback) return true
     try { return sessionStorage.getItem(storageKey(deviceKind, slug)) === '1' } catch { return false }
   })
   const [username, setUsername] = useState('')
@@ -31,7 +35,7 @@ export function DeviceAuthGate({ deviceKind, slug, expectedUsername, expectedPas
     } catch {}
   }, [deviceKind, slug])
 
-  if (loading) {
+  if (loading && !isFallback) {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center bg-[#0F172A] text-white p-6 text-center">
         <div className="w-12 h-12 border-4 border-primary/30 border-t-primary rounded-full animate-spin mb-4" />
@@ -43,7 +47,8 @@ export function DeviceAuthGate({ deviceKind, slug, expectedUsername, expectedPas
     )
   }
 
-  if (authed) return <>{children}</>
+  // If authed OR no credentials actually required (and not fallback waiting for query)
+  if (authed || (!hasCredentials && !isFallback)) return <>{children}</>
 
   const handleSubmit = (e: FormEvent) => {
     e.preventDefault()
