@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { NavLink, useLocation, useNavigate } from 'react-router-dom'
 import { useAuth } from '@/context/AuthContext'
 import { useCompanyContext } from '@/context/CompanyContext'
+import { useAttendanceCadastro } from '@/hooks/useAttendanceCadastro'
 import { supabase } from '@/integrations/supabase/client'
 import {
   Home, Calendar, UserCheck, FileText, DollarSign, FlaskConical, BarChart3,
@@ -161,7 +162,7 @@ interface CompanySidebarProps {
 
 export function CompanySidebar({ mobileOpen, onMobileClose, collapsed = false, onToggleCollapse }: CompanySidebarProps) {
   const { user, logout } = useAuth()
-  const { canAccess, activeProfile } = useCompanyContext()
+  const { canAccess, activeProfile, activeSector } = useCompanyContext()
   const location = useLocation()
   const navigate = useNavigate()
   const [sidebarBg, setSidebarBg] = useState<string | undefined>(undefined)
@@ -241,7 +242,9 @@ export function CompanySidebar({ mobileOpen, onMobileClose, collapsed = false, o
                 const active = location.pathname.startsWith(item.path)
                 const Icon = ICON_MAP[item.icon] || Home
 
-                const badge = item.path === '/app/lab/coleta' ? 3 : item.path === '/app/lab/caixa-entrada' ? 70 : null
+                const { orders } = useAttendanceCadastro()
+                const waitingCollectionCount = orders.filter(o => o.status === 'waiting_collection' || o.status === 'waiting').length
+                const badge = item.path === '/app/lab/coleta' ? waitingCollectionCount : item.path === '/app/lab/caixa-entrada' ? 70 : null
 
                 const link = (
                   <NavLink
