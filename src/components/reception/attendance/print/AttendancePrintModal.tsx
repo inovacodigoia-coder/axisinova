@@ -94,12 +94,11 @@ export function AttendancePrintModal({ open, onClose, document: doc, autoPrint, 
 
         {/* Preview */}
         <div className="flex-1 overflow-y-auto bg-muted/20 p-6">
-          <div className="print-receipt grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <div className="print-receipt flex flex-col gap-0 items-center">
             {Array.from({ length: copies }).map((_, copyIdx) => (
               vias.map((via) => (
-                <div key={`${copyIdx}-${via}`}>
+                <div key={`${copyIdx}-${via}`} className="print:break-after-page mb-8 last:mb-0 print:mb-0">
                   <AttendanceReceiptVia document={doc} config={selectedConfig} via={via} />
-                  <div className="corte-linha lg:hidden" />
                 </div>
               ))
             ))}
