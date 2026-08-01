@@ -81,30 +81,51 @@ export const labelPrinterConfig: PrinterConfig = {
   ]
 }
 
-function loadJSON<T>(key: string, fallback: T): T {
-  try { const raw = sessionStorage.getItem(key); return raw ? JSON.parse(raw) : fallback } catch { return fallback }
-}
-function saveJSON(key: string, data: unknown) {
-  try { sessionStorage.setItem(key, JSON.stringify(data)) } catch {}
-}
-
 const DEFAULT_PRINTERS_LIST = [defaultPrinterConfig, thermalPrinterConfig, labelPrinterConfig]
 
+function loadJSON<T>(key: string, fallback: T): T {
+  try {
+    const raw = sessionStorage.getItem(key)
+    if (!raw) return fallback
+    return JSON.parse(raw)
+  } catch {
+    return fallback
+  }
+}
+
+function saveJSON(key: string, data: unknown) {
+  try {
+    sessionStorage.setItem(key, JSON.stringify(data))
+  } catch {}
+}
+
 export function getPrinters(companyId: string): PrinterConfig[] {
-  const all = loadJSON<PrinterConfig[]>(STORAGE_KEY_PRINTERS, DEFAULT_PRINTERS_LIST)
+  // Always ensure companyId matches for the mock defaults if it's the first time
+  const all = loadJSON<PrinterConfig[]>(STORAGE_KEY_PRINTERS, DEFAULT_PRINTERS_LIST.map(p => ({ ...p, companyId })))
   return all.filter(p => p.companyId === companyId)
 }
+
 export function savePrinter(p: PrinterConfig) {
-  const all = loadJSON<PrinterConfig[]>(STORAGE_KEY_PRINTERS, DEFAULT_PRINTERS_LIST)
+  const all = loadJSON<PrinterConfig[]>(STORAGE_KEY_PRINTERS, DEFAULT_PRINTERS_LIST.map(pr => ({ ...pr, companyId: p.companyId })))
   const idx = all.findIndex(x => x.id === p.id)
-  if (p.isDefault) all.forEach(x => { if (x.companyId === p.companyId) x.isDefault = false })
-  if (idx >= 0) all[idx] = p; else all.push(p)
+  if (p.isDefault) {
+    all.forEach(x => {
+      if (x.companyId === p.companyId) x.isDefault = false
+    })
+  }
+  if (idx >= 0) {
+    all[idx] = p
+  } else {
+    all.push(p)
+  }
   saveJSON(STORAGE_KEY_PRINTERS, all)
 }
+
 export function removePrinter(id: string) {
   const all = loadJSON<PrinterConfig[]>(STORAGE_KEY_PRINTERS, DEFAULT_PRINTERS_LIST)
   saveJSON(STORAGE_KEY_PRINTERS, all.filter(x => x.id !== id))
 }
+
 export function getDefaultPrinter(companyId: string): PrinterConfig {
   const list = getPrinters(companyId)
   return list.find(p => p.isDefault && p.isActive) || list[0] || defaultPrinterConfig
@@ -113,14 +134,17 @@ export function getDefaultPrinter(companyId: string): PrinterConfig {
 export function getPayments(companyId: string): PaymentRecord[] {
   return loadJSON<PaymentRecord[]>(STORAGE_KEY_PAYMENTS, []).filter(p => p.companyId === companyId)
 }
+
 export function addPayment(p: PaymentRecord) {
   const all = loadJSON<PaymentRecord[]>(STORAGE_KEY_PAYMENTS, [])
   all.push(p)
   saveJSON(STORAGE_KEY_PAYMENTS, all)
 }
+
 export function getPaymentByOrder(orderId: string): PaymentRecord | undefined {
   return loadJSON<PaymentRecord[]>(STORAGE_KEY_PAYMENTS, []).find(p => p.orderId === orderId)
 }
+
 export function nextReceiptNumber(): string {
   const seq = (parseInt(sessionStorage.getItem(STORAGE_KEY_RECEIPT_SEQ) || '88', 10)) + 1
   sessionStorage.setItem(STORAGE_KEY_RECEIPT_SEQ, String(seq))
