@@ -167,7 +167,9 @@ function PrinterForm({ config, onClose, onSave }: { config: PrinterConfig; onClo
                     <option value="usb">USB</option>
                     <option value="network">Rede (IP)</option>
                     <option value="bluetooth">Bluetooth</option>
+                    <option value="label">Etiquetadora</option>
                     <option value="virtual">Virtual</option>
+
                   </select>
                 </Field>
               </div>
