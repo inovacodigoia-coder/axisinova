@@ -462,7 +462,7 @@ export function AttendanceDetailsModal({ open, onClose, order, patient }: Attend
                   <table className="w-full text-left border-collapse">
                     <thead className="bg-muted/30 text-[10px] font-bold text-muted-foreground uppercase tracking-wider">
                       <tr>
-                        <th className="px-4 py-2 border-b border-border w-10"></th>
+                        <th className="px-4 py-2 border-b border-border w-10"><Checkbox className="h-3.5 w-3.5" /></th>
                         <th className="px-4 py-2 border-b border-border">Código</th>
                         <th className="px-4 py-2 border-b border-border">Descrição</th>
                         <th className="px-4 py-2 border-b border-border">Material</th>
@@ -475,7 +475,7 @@ export function AttendanceDetailsModal({ open, onClose, order, patient }: Attend
                     <tbody className="text-[11px] divide-y divide-border">
                       {patientTubes.length > 0 ? patientTubes.map((tube, tubeIdx) => (
                         <tr key={tubeIdx}>
-                          <td className="px-4 py-3"><input type="checkbox" className="rounded border-border" /></td>
+                          <td className="px-4 py-3"><Checkbox className="h-3.5 w-3.5" /></td>
                           <td className="px-4 py-3">
                             <span className={cn("text-white rounded-full px-2 py-0.5 text-[9px] font-bold", tube.color)}>
                               {order.orderNumber}-{tubeIdx + 1}
