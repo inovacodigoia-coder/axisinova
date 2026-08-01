@@ -534,6 +534,16 @@ export function AttendanceDetailsModal({ open, onClose, order, patient }: Attend
           console.log('Printing with result:', result);
           setPrintSelectionOpen(false);
           
+          // Determine which vias to print based on selection
+          const vias: ('patient' | 'establishment')[] = [];
+          const hasComprovante = result.options.some((o: any) => o.enabled && o.id === 'comprovante');
+          const hasControleInterno = result.options.some((o: any) => o.enabled && o.id === 'controle_interno');
+
+          if (hasComprovante) vias.push('patient');
+          if (hasControleInterno) vias.push('establishment');
+          
+          setEnabledVias(vias);
+          
           // Identify the primary selected area (e.g., Comprovante) to pick paper size
           const mainOption = result.options.find((o: any) => o.enabled && o.id === 'comprovante') || 
                              result.options.find((o: any) => o.enabled);
@@ -611,6 +621,7 @@ export function AttendanceDetailsModal({ open, onClose, order, patient }: Attend
           document={printDoc}
           autoPrint={true}
           overrideConfig={selectedPrinterOverride}
+          vias={enabledVias}
         />
       )}
 
