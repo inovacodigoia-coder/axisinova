@@ -76,16 +76,19 @@ export interface AttendanceControlDocument {
   patientId: string
   patientName: string
   patientBirthDate?: string
-  patientAge?: number
+  patientAge?: string
+  patientGender?: string
   patientCPF?: string
   patientPhone?: string
   motherName?: string
   serviceType: string
-  procedureName: string
-  procedureCode: string
-  doctorName?: string
-  doctorCRM?: string
-  specialty?: string
+  exams: Array<{
+    name: string
+    code: string
+    forecastDate: string
+    doctorName?: string
+    doctorCRM?: string
+  }>
   unitName: string
   guicheName?: string
   ticketCode?: string
@@ -105,6 +108,8 @@ export interface AttendanceControlDocument {
   companyCNPJ?: string
   companyPhone?: string
   companyLogo?: string
+  locatorCode?: string
+  password?: string
 }
 
 export const PAYMENT_METHOD_LABELS: Record<PaymentMethod, string> = {
