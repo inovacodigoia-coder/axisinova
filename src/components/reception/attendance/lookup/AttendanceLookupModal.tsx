@@ -68,9 +68,8 @@ function buildDoc(order: AttendanceOrder, patient: Patient | undefined, unitName
 }
 
 const ATTENDANCE_STATUS_LABELS: Record<string, { label: string, color: string }> = {
-  waiting: { label: 'Aguardando', color: 'bg-slate-500' },
   waiting_collection: { label: 'AGUARDANDO', color: 'bg-amber-500' },
-  collection_done: { label: 'Realizada', color: 'bg-emerald-500' },
+  collection_done: { label: 'COLETA REALIZADA', color: 'bg-emerald-500' },
   in_analysis: { label: 'Em Análise', color: 'bg-blue-500' },
   validation: { label: 'Validação', color: 'bg-purple-500' },
   released: { label: 'Liberado', color: 'bg-emerald-600' },
@@ -198,9 +197,10 @@ export function AttendanceLookupModal({ open, onClose, unitName, guicheName, onA
                 >
                   <option value="all">Todos Status</option>
                   <option value="waiting_collection">AGUARDANDO</option>
+                  <option value="collection_done">COLETA REALIZADA</option>
                   <option value="open">ABERTO</option>
                   {Object.entries(ATTENDANCE_STATUS_LABELS).map(([key, val]) => (
-                    key !== 'waiting_collection' && key !== 'open' && (
+                    key !== 'waiting_collection' && key !== 'open' && key !== 'collection_done' && (
                       <option key={key} value={key}>{val.label}</option>
                     )
                   ))}
