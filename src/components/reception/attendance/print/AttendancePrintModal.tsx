@@ -20,7 +20,7 @@ export function AttendancePrintModal({ open, onClose, document: doc, autoPrint, 
   const { printers, getDefault } = usePrinterConfig()
   const defaultConfig = useMemo(() => overrideConfig || getDefault(), [overrideConfig, getDefault])
   const [selectedPrinterId, setSelectedPrinterId] = useState<string>(defaultConfig.id)
-  const [copies, setCopies] = useState<number>(defaultConfig.defaultCopies || 2)
+  const [copies, setCopies] = useState<number>(1)
 
   const selectedConfig = overrideConfig
     || printers.find(p => p.id === selectedPrinterId)
