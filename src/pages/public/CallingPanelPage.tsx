@@ -67,8 +67,6 @@ export default function CallingPanelPage() {
   }, [])
 
   const loadPanelData = useCallback(async (currentTv: TVRow) => {
-    const startOfDay = new Date()
-    startOfDay.setHours(0, 0, 0, 0)
     const { data, error } = await supabase.rpc('panel_tickets', { _slug: currentTv.slug || '' })
     if (error) {
       console.error('Erro ao carregar painel da TV', error)
