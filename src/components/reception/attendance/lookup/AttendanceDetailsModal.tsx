@@ -483,7 +483,7 @@ export function AttendanceDetailsModal({ open, onClose, order, patient }: Attend
                         </tr>
                       )) : (
                         <tr>
-                          <td colSpan={9} className="px-4 py-8 text-center text-muted-foreground uppercase text-[10px] font-bold tracking-widest">
+                          <td colSpan={8} className="px-4 py-8 text-center text-muted-foreground uppercase text-[10px] font-bold tracking-widest">
                             Nenhuma amostra identificada para os exames deste pedido
                           </td>
                         </tr>
