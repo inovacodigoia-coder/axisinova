@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button'
 import { Printer, X, FileText } from 'lucide-react'
 import { AttendanceReceiptVia } from './AttendanceReceiptVia'
 import { usePrinterConfig } from '@/hooks/usePrinterConfig'
+import { cn } from '@/lib/utils'
 import type { AttendanceControlDocument, PrinterConfig } from '@/types/payment-print.types'
 
 interface Props {
@@ -94,13 +95,19 @@ export function AttendancePrintModal({ open, onClose, document: doc, autoPrint, 
 
         {/* Preview */}
         <div className="flex-1 overflow-y-auto bg-muted/20 p-6">
-          <div className="print-receipt flex flex-col gap-0 items-center">
-            {Array.from({ length: copies }).map((_, copyIdx) => (
-              vias.map((via) => (
-                <div key={`${copyIdx}-${via}`} className="print:break-after-page print:mb-0">
-                  <AttendanceReceiptVia document={doc} config={selectedConfig} via={via} />
-                </div>
-              ))
+          <div className="print-receipt flex flex-col gap-0 items-center overflow-visible">
+            {vias.map((via, viaIdx) => (
+              <div 
+                key={`${viaIdx}-${via}`} 
+                className={cn(
+                  "bg-white shadow-md print:shadow-none print:m-0 print:p-0",
+                  viaIdx > 0 ? "mt-4 print:mt-0" : "",
+                  "print:break-after-page"
+                )}
+                style={{ breakAfter: 'page' }}
+              >
+                <AttendanceReceiptVia document={doc} config={selectedConfig} via={via} />
+              </div>
             ))}
           </div>
         </div>
