@@ -13,9 +13,10 @@ interface Props {
   autoPrint?: boolean
   testMode?: boolean
   overrideConfig?: PrinterConfig
+  vias?: ('patient' | 'establishment')[]
 }
 
-export function AttendancePrintModal({ open, onClose, document: doc, autoPrint, testMode, overrideConfig }: Props) {
+export function AttendancePrintModal({ open, onClose, document: doc, autoPrint, testMode, overrideConfig, vias: propVias }: Props) {
   const { printers, getDefault } = usePrinterConfig()
   const defaultConfig = useMemo(() => overrideConfig || getDefault(), [overrideConfig, getDefault])
   const [selectedPrinterId, setSelectedPrinterId] = useState<string>(defaultConfig.id)
@@ -34,7 +35,7 @@ export function AttendancePrintModal({ open, onClose, document: doc, autoPrint, 
 
   if (!open) return null
 
-  const vias: ('patient' | 'establishment')[] = ['patient', 'establishment']
+  const vias = propVias || (['patient', 'establishment'] as ('patient' | 'establishment')[])
 
   return (
     <Dialog open={open} onOpenChange={(o) => !o && onClose()}>
