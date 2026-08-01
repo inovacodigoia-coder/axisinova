@@ -9,6 +9,7 @@ import type { LabAttendanceOrder } from '@/types/lab.types'
 import { TUBE_TYPES } from '@/types/lab.types'
 import { cn } from '@/lib/utils'
 import { AttendancePrintSelectionModal } from '../print/AttendancePrintSelectionModal'
+import { AttendancePrintModal } from '../print/AttendancePrintModal'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -21,6 +22,8 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { Checkbox } from '@/components/ui/checkbox'
+import type { AttendanceControlDocument } from '@/types/payment-print.types'
+import { format } from 'date-fns'
 
 
 
@@ -32,7 +35,9 @@ interface AttendanceDetailsModalProps {
 }
 
 export function AttendanceDetailsModal({ open, onClose, order, patient }: AttendanceDetailsModalProps) {
+  const [printSelectionOpen, setPrintSelectionOpen] = useState(false)
   const [printModalOpen, setPrintModalOpen] = useState(false)
+  const [printDoc, setPrintDoc] = useState<AttendanceControlDocument | null>(null)
   const [forecastModalOpen, setForecastModalOpen] = useState(false)
 
   const labOrder = order as LabAttendanceOrder;
@@ -143,7 +148,7 @@ export function AttendanceDetailsModal({ open, onClose, order, patient }: Attend
                   size="icon" 
                   variant="ghost" 
                   className="h-6 w-6 text-white hover:bg-white/20"
-                  onClick={() => setPrintModalOpen(true)}
+                  onClick={() => setPrintSelectionOpen(true)}
                 >
                   <Printer className="h-3.5 w-3.5" />
                 </Button>
@@ -521,14 +526,59 @@ export function AttendanceDetailsModal({ open, onClose, order, patient }: Attend
       </DialogContent>
 
       <AttendancePrintSelectionModal 
-        open={printModalOpen}
-        onClose={() => setPrintModalOpen(false)}
+        open={printSelectionOpen}
+        onClose={() => setPrintSelectionOpen(false)}
         onConfirm={(options) => {
           console.log('Printing with options:', options);
-          setPrintModalOpen(false);
+          setPrintSelectionOpen(false);
+          
+          // Transform order to print document
+          const doc: AttendanceControlDocument = {
+            orderNumber: order.orderNumber,
+            orderDate: format(new Date(order.registeredAt), 'dd/MM/yyyy'),
+            orderTime: format(new Date(order.registeredAt), 'HH:mm'),
+            patientId: order.patientId,
+            patientName: order.patientName,
+            patientBirthDate: order.patientBirthDate || patient?.birthDate,
+            patientAge: (order as any).patientAge || patient?.age?.toString() || '0 anos',
+            patientGender: order.patientGender === 'female' ? 'F' : 'M',
+            patientCPF: (order as any).patientCPF || patient?.cpf,
+            serviceType: (order.serviceType as string) === 'lab' ? 'LABORATÓRIO' : 'CLÍNICA',
+            unitName: (order as any).unitName || 'MATRIZ',
+            companyName: 'AXIS INOVA',
+            companyLogo: undefined, // Will be filled if available in state
+            companyAddress: 'Av. Afonso Pena, 952 - Tirol, Natal - Tel: (84) 4007-2595',
+            companyCNPJ: '00.000.000/0001-00',
+            companyPhone: '(84) 4007-2595',
+            registeredByName: order.registeredByName || 'Sistema',
+            convenioName: order.convenioName || 'PARTICULAR',
+            paymentType: order.paymentType === 'private' ? 'PARTICULAR' : 'CONVÊNIO',
+            locatorCode: order.orderNumber.replace('-', ''),
+            password: Math.floor(1000 + Math.random() * 9000).toString(),
+            attachments: [],
+            exams: orderExams.map(exam => ({
+              name: exam.name,
+              code: exam.code || '',
+              forecastDate: exam.previsaoEntrega || order.deliveryDate || '',
+              doctorName: exam.doctorName || order.doctorName,
+              doctorCRM: exam.doctorCRM || order.doctorCRM
+            }))
+          };
+          
+          setPrintDoc(doc);
+          setPrintModalOpen(true);
         }}
         order={order}
       />
+
+      {printDoc && (
+        <AttendancePrintModal
+          open={printModalOpen}
+          onClose={() => setPrintModalOpen(false)}
+          document={printDoc}
+          autoPrint={true}
+        />
+      )}
 
       {/* Alterar Previsão Modal */}
       <Dialog open={forecastModalOpen} onOpenChange={setForecastModalOpen}>

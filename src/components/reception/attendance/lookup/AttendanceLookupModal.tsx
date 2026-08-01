@@ -33,13 +33,20 @@ function buildDoc(order: AttendanceOrder, patient: Patient | undefined, unitName
     patientId: order.patientId,
     patientName: order.patientName,
     patientBirthDate: patient?.birthDate,
-    patientAge: patient?.age,
+    patientAge: patient?.age?.toString() || '0 anos',
     patientCPF: patient?.cpf,
     patientPhone: patient?.phone1,
     motherName: patient?.motherName,
     serviceType: order.serviceType === 'consultation' ? 'Consulta' : order.serviceType === 'exam' ? 'Exame' : 'Procedimento',
-    procedureName: order.procedureName || '',
-    procedureCode: order.procedureCode || '',
+    exams: order.labGuides?.flatMap(guide => 
+      (guide.exams || []).map((exam: any) => ({
+        name: exam.name,
+        code: exam.code || '',
+        forecastDate: exam.forecastDate || '',
+        doctorName: guide.doctorName || order.doctorName,
+        doctorCRM: guide.doctorCRM || order.doctorCRM
+      }))
+    ) || [],
     doctorName: order.doctorName,
     doctorCRM: order.doctorCRM,
     specialty: order.specialty,

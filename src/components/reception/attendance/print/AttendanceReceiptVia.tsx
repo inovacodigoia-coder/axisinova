@@ -1,5 +1,6 @@
 import { QRCodeSVG } from 'qrcode.react'
 import type { AttendanceControlDocument, PrinterConfig } from '@/types/payment-print.types'
+import { format } from 'date-fns'
 
 interface Props {
   document: AttendanceControlDocument
@@ -7,145 +8,106 @@ interface Props {
   via: 'patient' | 'establishment'
 }
 
-function maskCPF(cpf?: string) {
-  if (!cpf) return '—'
-  const d = cpf.replace(/\D/g, '')
-  if (d.length < 11) return cpf
-  return `${d.slice(0, 3)}.***.***-${d.slice(-2)}`
-}
-function maskCard(card?: string) {
-  if (!card) return '—'
-  return card.length > 8 ? `${card.slice(0, 4)} **** **** ${card.slice(-4)}` : card
-}
-
 export function AttendanceReceiptVia({ document: doc, config, via }: Props) {
   const isPatient = via === 'patient'
-  const widthClass = config.paperSize === '80mm' || config.paperSize === '58mm' ? 'w-[80mm]' : 'w-[140mm]'
+  const isThermal = config.paperSize === '80mm' || config.paperSize === '58mm'
+  const widthClass = isThermal ? 'w-[80mm]' : 'w-[140mm]'
+  
+  // Calculate general delivery forecast (max date)
+  const generalForecast = doc.exams.reduce((max, exam) => {
+    if (!exam.forecastDate) return max
+    return !max || exam.forecastDate > max ? exam.forecastDate : max
+  }, '')
 
   return (
-    <div className={`via mx-auto ${widthClass} border border-dashed border-black/40 bg-white text-black p-4 text-[10pt] leading-tight font-sans`}>
-      {/* Header */}
+    <div className={`via mx-auto ${widthClass} border border-dashed border-black/40 bg-white text-black p-4 text-[9pt] leading-tight font-sans`}>
+      {/* 1. Laboratório Info */}
       <div className="text-center border-b border-black pb-2 mb-2">
         {config.showLogo && doc.companyLogo && (
           <img src={doc.companyLogo} alt="logo" className="h-10 mx-auto mb-1" />
         )}
-        {config.showCompanyName && <div className="font-bold uppercase">{doc.companyName}</div>}
-        {config.showAddress && doc.companyAddress && <div className="text-[8pt]">{doc.companyAddress}</div>}
+        <div className="font-bold uppercase text-[11pt]">{doc.companyName}</div>
+        {doc.companyAddress && <div className="text-[8pt]">{doc.companyAddress}</div>}
         <div className="text-[8pt]">
-          {config.showPhone && doc.companyPhone ? doc.companyPhone : ''}
-          {config.showPhone && doc.companyPhone && config.showCNPJ && doc.companyCNPJ ? ' · ' : ''}
-          {config.showCNPJ && doc.companyCNPJ ? `CNPJ: ${doc.companyCNPJ}` : ''}
+          {doc.companyPhone ? `Tel: ${doc.companyPhone}` : ''}
+          {doc.companyPhone && doc.companyCNPJ ? ' · ' : ''}
+          {doc.companyCNPJ ? `CNPJ: ${doc.companyCNPJ}` : ''}
         </div>
-        {config.showUnitName && doc.unitName && <div className="text-[8pt] font-semibold">Unidade: {doc.unitName}</div>}
       </div>
 
       <div className="text-center font-bold uppercase border-b border-black pb-1 mb-2">
-        {isPatient ? 'Via do Paciente' : 'Via do Estabelecimento'}
+        {via === 'patient' ? 'COMPROVANTE DO PACIENTE' : 'CONTROLE INTERNO'}
       </div>
 
-      <div className="space-y-1 border-b border-black pb-2 mb-2">
-        <div><strong>Nº Pedido:</strong> {doc.orderNumber}</div>
-        <div><strong>Data/Hora:</strong> {doc.orderDate} {doc.orderTime}</div>
-        {doc.ticketCode && <div><strong>Ficha:</strong> {doc.ticketCode}{doc.guicheName ? ` · ${doc.guicheName}` : ''}</div>}
+      {/* 2. Nome do Paciente */}
+      <div className="text-center font-bold text-[12pt] border-b border-black pb-1 mb-2 uppercase">
+        {doc.patientName}
       </div>
 
-      {/* Paciente */}
-      <div className="mb-2">
-        <div className="font-bold text-[9pt] uppercase mb-1">Paciente</div>
-        <div><strong>Nome:</strong> {doc.patientName}</div>
-        {doc.patientBirthDate && <div><strong>Nasc.:</strong> {doc.patientBirthDate} {doc.patientAge ? `(${doc.patientAge} anos)` : ''}</div>}
-        <div><strong>CPF:</strong> {isPatient ? maskCPF(doc.patientCPF) : (doc.patientCPF || '—')}</div>
-        {doc.patientPhone && <div><strong>Tel:</strong> {doc.patientPhone}</div>}
-        {!isPatient && doc.motherName && <div><strong>Mãe:</strong> {doc.motherName}</div>}
+      {/* 3. Detalhes do atendimento */}
+      <div className="grid grid-cols-2 gap-x-2 text-[8pt] border-b border-black pb-2 mb-2">
+        <div><strong>Pedido:</strong> {doc.orderNumber}</div>
+        <div><strong>Atend.:</strong> {doc.orderDate} {doc.orderTime}</div>
+        <div><strong>Nasc.:</strong> {doc.patientBirthDate} ({doc.patientAge})</div>
+        <div><strong>Sexo:</strong> {doc.patientGender}</div>
       </div>
 
-      {/* Atendimento */}
-      <div className="border-t border-black pt-2 mb-2">
-        <div className="font-bold text-[9pt] uppercase mb-1">Atendimento</div>
-        <div><strong>Tipo:</strong> {doc.serviceType}</div>
-        {config.showDoctorInfo && doc.doctorName && (
-          <div><strong>Médico:</strong> {doc.doctorName}{doc.doctorCRM ? ` · CRM ${doc.doctorCRM}` : ''}</div>
-        )}
-        {doc.specialty && <div><strong>Especialidade:</strong> {doc.specialty}</div>}
-        <div><strong>Procedimento:</strong> {doc.procedureName}</div>
-        <div><strong>Código:</strong> {doc.procedureCode}</div>
+      {/* 4. Solicitantes (Médicos) */}
+      <div className="border-b border-black pb-2 mb-2">
+        <div className="font-bold text-[8pt] uppercase mb-1">Solicitante(s)</div>
+        {Array.from(new Set(doc.exams.map(e => e.doctorName))).filter(Boolean).map((doctor, idx) => (
+          <div key={idx} className="flex justify-between text-[8pt]">
+            <span>{doctor}</span>
+            <span className="text-[7pt]">CRM {doc.exams.find(e => e.doctorName === doctor)?.doctorCRM}</span>
+          </div>
+        ))}
       </div>
 
-      {/* Convênio / Pagamento */}
-      {config.showConvenioInfo && doc.convenioName && (
-        <div className="border-t border-black pt-2 mb-2">
-          <div className="font-bold text-[9pt] uppercase mb-1">Convênio</div>
-          <div><strong>Convênio:</strong> {doc.convenioName}</div>
-          {doc.cardNumber && <div><strong>Carteirinha:</strong> {maskCard(doc.cardNumber)}</div>}
-          {config.showAuthorizationInfo && doc.authorizationCode && (
-            <div><strong>Autorização:</strong> {doc.authorizationCode}{doc.authorizationExpiry ? ` · Vál: ${doc.authorizationExpiry}` : ''}</div>
-          )}
+      {/* 5. Lista de exames */}
+      <div className="border-b border-black pb-2 mb-2">
+        <div className="flex justify-between font-bold text-[8pt] border-b border-black/50 pb-1 mb-1">
+          <span>Exames</span>
+          <span>Previsão</span>
         </div>
-      )}
-
-      {/* Pagamento (estabelecimento + particular) */}
-      {!isPatient && doc.paymentMethod && (
-        <div className="border-t border-black pt-2 mb-2">
-          <div className="font-bold text-[9pt] uppercase mb-1">Pagamento</div>
-          <div><strong>Método:</strong> {doc.paymentMethod}</div>
-          {typeof doc.paidValue === 'number' && (
-            <div><strong>Valor pago:</strong> R$ {doc.paidValue.toFixed(2).replace('.', ',')}</div>
-          )}
-          {doc.receiptNumber && <div><strong>Recibo:</strong> {doc.receiptNumber}</div>}
-        </div>
-      )}
-
-      {/* Documentos */}
-      {config.showAttachmentChecklist && doc.attachments.length > 0 && (
-        <div className="border-t border-black pt-2 mb-2">
-          <div className="font-bold text-[9pt] uppercase mb-1">Documentos Entregues</div>
-          {doc.attachments.map((a, i) => (
-            <div key={i}>✓ {a.name}</div>
+        <div className="space-y-1">
+          {doc.exams.map((exam, i) => (
+            <div key={i} className="flex justify-between text-[8pt] items-start">
+              <span className="pr-2">{exam.name}</span>
+              <span className="whitespace-nowrap">{exam.forecastDate}</span>
+            </div>
           ))}
         </div>
-      )}
+      </div>
 
-      {/* Dados internos */}
-      {!isPatient && doc.registeredByName && (
-        <div className="border-t border-black pt-2 mb-2">
-          <div className="font-bold text-[9pt] uppercase mb-1">Dados Internos</div>
-          <div><strong>Registrado por:</strong> {doc.registeredByName}{doc.guicheName ? ` (${doc.guicheName})` : ''}</div>
+      {/* 6. Instruções e QR Code */}
+      <div className="border-b border-black pb-2 mb-2 flex items-start gap-4">
+        <div className="flex-1 text-[8pt]">
+          <div className="font-bold mb-1">Resultados:</div>
+          <div>Leia o QR Code ao lado ou acesse o portal do paciente.</div>
+          {doc.locatorCode && (
+            <div className="mt-2">
+              <div><strong>Localizador:</strong> {doc.locatorCode}</div>
+              <div><strong>Senha:</strong> {doc.password}</div>
+            </div>
+          )}
         </div>
-      )}
+        <div className="flex flex-col items-center">
+          <QRCodeSVG value={`https://axisinova.lovable.app/resultado?l=${doc.locatorCode}`} size={70} />
+          <div className="text-[7pt] mt-1 font-mono">{doc.locatorCode}</div>
+        </div>
+      </div>
 
-      {/* Observações */}
-      {config.showObservations && doc.observations && (
-        <div className="border-t border-black pt-2 mb-2">
-          <div className="font-bold text-[9pt] uppercase mb-1">Observações</div>
-          <div className="whitespace-pre-wrap">{doc.observations}</div>
-        </div>
-      )}
+      {/* 7. Previsão Geral */}
+      <div className="text-center bg-black/5 py-2 mb-2 border border-black/10">
+        <div className="text-[8pt] font-bold">PREVISÃO GERAL PARA RETIRADA:</div>
+        <div className="text-[10pt] font-black">{generalForecast || 'Sob Consulta'}</div>
+      </div>
 
-      {/* QR Code */}
-      {config.showQRCode && (
-        <div className="border-t border-black pt-2 mb-2 flex flex-col items-center">
-          <QRCodeSVG value={doc.orderNumber} size={70} />
-          <div className="text-[8pt] mt-1 font-mono">{doc.orderNumber}</div>
-        </div>
-      )}
-
-      {/* Assinatura */}
-      {config.showSignatureLine && (
-        <div className="mt-4 border-t border-black pt-3 text-[9pt]">
-          {isPatient ? 'Assinatura do paciente: ____________________________'
-                     : 'Assinatura do atendente: __________________________'}
-        </div>
-      )}
-
-      {/* Rodapé */}
-      {config.footerText && (
-        <div className="mt-3 text-center text-[8pt] italic">{config.footerText}</div>
-      )}
-      {config.showTimestamp && (
-        <div className="mt-1 text-center text-[7pt] text-black/60">
-          Impresso em {new Date().toLocaleString('pt-BR')}
-        </div>
-      )}
+      {/* 8. Rodapé (Quem cadastrou) */}
+      <div className="text-[7pt] text-black/60 italic mt-2">
+        <div>Atendido por: {doc.registeredByName}</div>
+        <div>Impresso em: {format(new Date(), 'dd/MM/yyyy HH:mm')}</div>
+      </div>
     </div>
   )
 }
