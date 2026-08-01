@@ -437,6 +437,9 @@ export function AttendanceDetailsModal({ open, onClose, order, patient }: Attend
                   <div className="flex gap-2">
                     <Button variant="outline" size="sm" className="bg-white h-8 text-[10px] font-bold uppercase tracking-wider">RESTRIÇÕES</Button>
                     <Button variant="outline" size="sm" className="bg-white h-8 text-[10px] font-bold uppercase tracking-wider">COLETA</Button>
+                    <Button size="icon" variant="ghost" className="h-8 w-8 text-muted-foreground ml-1">
+                      <Printer className="h-4 w-4" />
+                    </Button>
                   </div>
                 </div>
                 
