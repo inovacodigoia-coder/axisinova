@@ -31,7 +31,7 @@ export function AttendanceReceiptVia({ document: doc, config, via }: Props) {
   }, '')
 
   return (
-    <div className={`via mx-auto ${widthClass} bg-white text-black p-4 text-[9pt] leading-tight font-sans print:m-0 print:border-none`}>
+    <div className={`via mx-auto ${widthClass} bg-white text-black p-4 text-[9pt] leading-tight font-sans print:m-0 print:border-none print:shadow-none print:w-full`}>
       {/* 1. Laboratório Info */}
       <div className="text-center border-b border-black pb-2 mb-2">
         {config.showLogo && doc.companyLogo && (
@@ -109,8 +109,8 @@ export function AttendanceReceiptVia({ document: doc, config, via }: Props) {
       </div>
 
       {/* 7. Previsão Geral */}
-      <div className="text-center bg-black/5 py-2 mb-2 border border-black/10">
-        <div className="text-[8pt] font-bold">PREVISÃO GERAL PARA RETIRADA:</div>
+      <div className="text-center bg-black/5 py-1.5 mb-2 border border-black/10">
+        <div className="text-[7pt] font-bold">PREVISÃO GERAL PARA RETIRADA:</div>
         <div className="text-[10pt] font-black">{formatDateTime(generalForecast)}</div>
       </div>
 

@@ -20,7 +20,7 @@ export function AttendancePrintModal({ open, onClose, document: doc, autoPrint, 
   const { printers, getDefault } = usePrinterConfig()
   const defaultConfig = useMemo(() => overrideConfig || getDefault(), [overrideConfig, getDefault])
   const [selectedPrinterId, setSelectedPrinterId] = useState<string>(defaultConfig.id)
-  const [copies, setCopies] = useState<number>(defaultConfig.defaultCopies || 2)
+  const [copies, setCopies] = useState<number>(1)
 
   const selectedConfig = overrideConfig
     || printers.find(p => p.id === selectedPrinterId)
@@ -97,7 +97,7 @@ export function AttendancePrintModal({ open, onClose, document: doc, autoPrint, 
           <div className="print-receipt flex flex-col gap-0 items-center">
             {Array.from({ length: copies }).map((_, copyIdx) => (
               vias.map((via) => (
-                <div key={`${copyIdx}-${via}`} className="print:break-after-page mb-8 last:mb-0 print:mb-0">
+                <div key={`${copyIdx}-${via}`} className="print:break-after-page print:mb-0">
                   <AttendanceReceiptVia document={doc} config={selectedConfig} via={via} />
                 </div>
               ))
