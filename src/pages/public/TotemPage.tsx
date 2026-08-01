@@ -68,18 +68,10 @@ export default function TotemPage() {
   // Load totem + queue lines linked to this totem
   useEffect(() => {
     let cancelled = false
-    let timeoutId: NodeJS.Timeout
 
     async function load() {
       if (slug) {
-        // Set a timeout to check if loading takes too long
-        timeoutId = setTimeout(() => {
-          if (!cancelled && !totem) {
-            // Se demorar muito, mostramos a tela de login forçada
-            setTotem({ id: 'fallback', unit_id: '', company_id: '', name: 'Totem', slug, access_username: '...', access_password: '...' } as any)
-          }
-        }, 5000)
-
+        // Tenta buscar o totem
         const { data: totemRow, error: totemError } = await supabase
           .from('queue_totems')
           .select('id, unit_id, company_id, name, slug, access_username, access_password')
@@ -88,11 +80,17 @@ export default function TotemPage() {
         
         if (cancelled) return
 
+        // Se não encontrar ou der erro, mas houver slug, habilitamos login fallback
         if (totemError || !totemRow) {
-          toast.error('Totem não encontrado ou erro de conexão. Redirecionando...')
-          setTimeout(() => {
-            window.location.href = '/login'
-          }, 3000)
+          setTotem({ 
+            id: 'fallback', 
+            unit_id: '', 
+            company_id: '', 
+            name: 'Totem', 
+            slug, 
+            access_username: '...', 
+            access_password: '...' 
+          } as any)
           return
         }
 
@@ -121,7 +119,6 @@ export default function TotemPage() {
     load()
     return () => { 
       cancelled = true
-      if (timeoutId) clearTimeout(timeoutId)
     }
   }, [slug, fallbackCompanyId])
 
