@@ -38,6 +38,7 @@ export function AttendanceDetailsModal({ open, onClose, order, patient }: Attend
   const [printSelectionOpen, setPrintSelectionOpen] = useState(false)
   const [printModalOpen, setPrintModalOpen] = useState(false)
   const [printDoc, setPrintDoc] = useState<AttendanceControlDocument | null>(null)
+  const [selectedPrinterOverride, setSelectedPrinterOverride] = useState<PrinterConfig | undefined>(undefined)
   const [forecastModalOpen, setForecastModalOpen] = useState(false)
 
   const labOrder = order as LabAttendanceOrder;

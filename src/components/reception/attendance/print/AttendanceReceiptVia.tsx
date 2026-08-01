@@ -10,8 +10,8 @@ interface Props {
 
 export function AttendanceReceiptVia({ document: doc, config, via }: Props) {
   const isPatient = via === 'patient'
-  const isThermal = config.paperSize === '80mm' || config.paperSize === '58mm'
-  const widthClass = isThermal ? 'w-[80mm]' : 'w-[140mm]'
+  const isThermal = config.paperSize === '80mm' || config.paperSize === '58mm' || config.paperSize === 'label'
+  const widthClass = isThermal ? 'w-[80mm]' : (config.paperSize === 'a5' ? 'w-[148mm]' : 'w-[210mm]')
   
   // Calculate general delivery forecast (max date)
   const generalForecast = doc.exams.reduce((max, exam) => {
