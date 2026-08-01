@@ -162,12 +162,22 @@
     margin: 0;
     size: auto;
   }
+  
   body {
     margin: 0 !important;
     padding: 0 !important;
+    background: white !important;
   }
-  body * { visibility: hidden !important; }
-  .print-receipt, .print-receipt * { visibility: visible !important; }
+  
+  body * { 
+    visibility: hidden !important; 
+  }
+  
+  .print-receipt, 
+  .print-receipt * { 
+    visibility: visible !important; 
+  }
+  
   .print-receipt {
     position: absolute !important;
     left: 0 !important;
@@ -177,7 +187,20 @@
     color: black !important;
     font-family: Arial, sans-serif !important;
   }
-  .no-print { display: none !important; }
+
+  .via {
+    visibility: visible !important;
+    margin: 0 !important;
+    padding: 2mm !important;
+    width: 100% !important;
+    box-shadow: none !important;
+    border: none !important;
+  }
+
+  .no-print { 
+    display: none !important; 
+    visibility: hidden !important;
+  }
 }
 .corte-linha {
   border-top: 1px dashed currentColor;
