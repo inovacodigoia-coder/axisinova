@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button'
 import { Printer, X, FileText } from 'lucide-react'
 import { AttendanceReceiptVia } from './AttendanceReceiptVia'
 import { usePrinterConfig } from '@/hooks/usePrinterConfig'
+import { cn } from '@/lib/utils'
 import type { AttendanceControlDocument, PrinterConfig } from '@/types/payment-print.types'
 
 interface Props {
