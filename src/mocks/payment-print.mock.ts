@@ -86,7 +86,13 @@ const DEFAULT_PRINTERS_LIST = [defaultPrinterConfig, thermalPrinterConfig, label
 function loadJSON<T>(key: string, fallback: T): T {
   try {
     const raw = sessionStorage.getItem(key)
-    if (!raw) return fallback
+    if (!raw) {
+      // Seed on first read if it's the printers key
+      if (key === STORAGE_KEY_PRINTERS) {
+        sessionStorage.setItem(key, JSON.stringify(fallback))
+      }
+      return fallback
+    }
     return JSON.parse(raw)
   } catch {
     return fallback
@@ -100,13 +106,22 @@ function saveJSON(key: string, data: unknown) {
 }
 
 export function getPrinters(companyId: string): PrinterConfig[] {
-  // Always ensure companyId matches for the mock defaults if it's the first time
-  const all = loadJSON<PrinterConfig[]>(STORAGE_KEY_PRINTERS, DEFAULT_PRINTERS_LIST.map(p => ({ ...p, companyId })))
-  return all.filter(p => p.companyId === companyId)
+  // Map companyId to defaults if we need to
+  const defaults = DEFAULT_PRINTERS_LIST.map(p => ({ ...p, companyId }))
+  const all = loadJSON<PrinterConfig[]>(STORAGE_KEY_PRINTERS, defaults)
+  
+  const companyPrinters = all.filter(p => p.companyId === companyId)
+  if (companyPrinters.length === 0) {
+    // If we have nothing for this company specifically, add defaults for it
+    const updated = [...all, ...defaults]
+    saveJSON(STORAGE_KEY_PRINTERS, updated)
+    return defaults
+  }
+  return companyPrinters
 }
 
 export function savePrinter(p: PrinterConfig) {
-  const all = loadJSON<PrinterConfig[]>(STORAGE_KEY_PRINTERS, DEFAULT_PRINTERS_LIST.map(pr => ({ ...pr, companyId: p.companyId })))
+  const all = loadJSON<PrinterConfig[]>(STORAGE_KEY_PRINTERS, DEFAULT_PRINTERS_LIST)
   const idx = all.findIndex(x => x.id === p.id)
   if (p.isDefault) {
     all.forEach(x => {
