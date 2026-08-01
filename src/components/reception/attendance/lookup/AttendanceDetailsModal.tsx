@@ -437,6 +437,9 @@ export function AttendanceDetailsModal({ open, onClose, order, patient }: Attend
                   <div className="flex gap-2">
                     <Button variant="outline" size="sm" className="bg-white h-8 text-[10px] font-bold uppercase tracking-wider">RESTRIÇÕES</Button>
                     <Button variant="outline" size="sm" className="bg-white h-8 text-[10px] font-bold uppercase tracking-wider">COLETA</Button>
+                    <Button size="icon" variant="ghost" className="h-8 w-8 text-muted-foreground ml-1">
+                      <Printer className="h-4 w-4" />
+                    </Button>
                   </div>
                 </div>
                 
@@ -452,7 +455,6 @@ export function AttendanceDetailsModal({ open, onClose, order, patient }: Attend
                         <th className="px-4 py-2 border-b border-border">Procedimentos</th>
                         <th className="px-4 py-2 border-b border-border">Status</th>
                         <th className="px-4 py-2 border-b border-border">Data Coleta</th>
-                        <th className="px-4 py-2 border-b border-border text-right">Ações</th>
                       </tr>
                     </thead>
                     <tbody className="text-[11px] divide-y divide-border">
@@ -478,16 +480,10 @@ export function AttendanceDetailsModal({ open, onClose, order, patient }: Attend
                           <td className="px-4 py-3 text-muted-foreground">
                             {new Date(order.registeredAt).toLocaleDateString('pt-BR')} {new Date(order.registeredAt).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
                           </td>
-                          <td className="px-4 py-3 text-right">
-                            <div className="flex justify-end gap-1">
-                              <Button size="icon" variant="ghost" className="h-8 w-8"><Printer className="h-4 w-4" /></Button>
-                              <Button size="icon" variant="ghost" className="h-8 w-8"><Trash2 className="h-4 w-4" /></Button>
-                            </div>
-                          </td>
                         </tr>
                       )) : (
                         <tr>
-                          <td colSpan={9} className="px-4 py-8 text-center text-muted-foreground uppercase text-[10px] font-bold tracking-widest">
+                          <td colSpan={8} className="px-4 py-8 text-center text-muted-foreground uppercase text-[10px] font-bold tracking-widest">
                             Nenhuma amostra identificada para os exames deste pedido
                           </td>
                         </tr>
