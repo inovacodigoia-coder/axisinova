@@ -110,8 +110,11 @@ export default function CallingPanelPage() {
       .channel(`calling_panel_${tv.id}`)
       .on('postgres_changes', { event: '*', schema: 'public', table: 'queue_tickets', filter: `unit_id=eq.${tv.unit_id}` }, () => loadPanelData(tv))
       .subscribe()
-    return () => { supabase.removeChannel(channel) }
+    // Fallback polling (public devices may not receive realtime events)
+    const poll = setInterval(() => loadPanelData(tv), 5000)
+    return () => { supabase.removeChannel(channel); clearInterval(poll) }
   }, [slug, tv, loadPanelData])
+
 
   const panelCalled = useMemo(() => {
     if (!tv) return null
