@@ -7,11 +7,10 @@ const STORAGE_KEY_RECEIPT_SEQ = 'mock_receipt_seq_v1'
 export const defaultPrinterConfig: PrinterConfig = {
   id: 'printer_001',
   companyId: 'comp_001',
-  printerName: 'Impressora Padrão',
+  printerName: 'Impressora Padrão (Multifuncional)',
   printerType: 'laser',
   connectionType: 'virtual',
-  paperSize: '80mm',
-
+  paperSize: 'a4',
   orientation: 'portrait',
   marginTop: 10, marginBottom: 10, marginLeft: 10, marginRight: 10,
   showLogo: true, showCompanyName: true, showUnitName: true,
@@ -25,8 +24,59 @@ export const defaultPrinterConfig: PrinterConfig = {
   isDefault: true, isActive: true,
   createdAt: '2025-01-01T00:00:00', updatedAt: '2025-01-01T00:00:00',
   areas: [
+    { area: 'comprovante', defaultFormat: 'a4', autoPrint: true, enabled: true },
+    { area: 'controle_interno', defaultFormat: 'a4', autoPrint: true, enabled: true },
+    { area: 'termo_consentimento', defaultFormat: 'a4', autoPrint: true, enabled: true },
+    { area: 'laudo', defaultFormat: 'a4', autoPrint: false, enabled: true },
+    { area: 'etiqueta_amostra', defaultFormat: 'label', autoPrint: true, enabled: true }
+  ]
+}
+
+export const thermalPrinterConfig: PrinterConfig = {
+  id: 'printer_002',
+  companyId: 'comp_001',
+  printerName: 'Impressora Térmica 80mm',
+  printerType: 'thermal',
+  connectionType: 'usb',
+  paperSize: '80mm',
+  orientation: 'portrait',
+  marginTop: 0, marginBottom: 0, marginLeft: 0, marginRight: 0,
+  showLogo: true, showCompanyName: true, showUnitName: true,
+  showAddress: false, showPhone: true, showCNPJ: true,
+  showQRCode: true, showBarcode: true,
+  showDoctorInfo: true, showConvenioInfo: true, showAuthorizationInfo: true,
+  showAttachmentChecklist: false, showObservations: true,
+  footerText: 'Comprovante não fiscal.',
+  showSignatureLine: false, showTimestamp: true,
+  defaultCopies: 1, autoPrintOnFinalize: true,
+  isDefault: false, isActive: true,
+  createdAt: '2025-01-01T00:00:00', updatedAt: '2025-01-01T00:00:00',
+  areas: [
     { area: 'comprovante', defaultFormat: '80mm', autoPrint: true, enabled: true },
-    { area: 'controle_interno', defaultFormat: '80mm', autoPrint: true, enabled: true },
+    { area: 'controle_interno', defaultFormat: '80mm', autoPrint: true, enabled: true }
+  ]
+}
+
+export const labelPrinterConfig: PrinterConfig = {
+  id: 'printer_003',
+  companyId: 'comp_001',
+  printerName: 'Impressora de Etiquetas',
+  printerType: 'thermal',
+  connectionType: 'label',
+  paperSize: 'label',
+  orientation: 'portrait',
+  marginTop: 0, marginBottom: 0, marginLeft: 0, marginRight: 0,
+  showLogo: false, showCompanyName: false, showUnitName: false,
+  showAddress: false, showPhone: false, showCNPJ: false,
+  showQRCode: false, showBarcode: true,
+  showDoctorInfo: false, showConvenioInfo: false, showAuthorizationInfo: false,
+  showAttachmentChecklist: false, showObservations: false,
+  footerText: '',
+  showSignatureLine: false, showTimestamp: true,
+  defaultCopies: 1, autoPrintOnFinalize: true,
+  isDefault: false, isActive: true,
+  createdAt: '2025-01-01T00:00:00', updatedAt: '2025-01-01T00:00:00',
+  areas: [
     { area: 'etiqueta_amostra', defaultFormat: 'label', autoPrint: true, enabled: true }
   ]
 }
@@ -38,19 +88,21 @@ function saveJSON(key: string, data: unknown) {
   try { sessionStorage.setItem(key, JSON.stringify(data)) } catch {}
 }
 
+const DEFAULT_PRINTERS_LIST = [defaultPrinterConfig, thermalPrinterConfig, labelPrinterConfig]
+
 export function getPrinters(companyId: string): PrinterConfig[] {
-  const all = loadJSON<PrinterConfig[]>(STORAGE_KEY_PRINTERS, [defaultPrinterConfig])
+  const all = loadJSON<PrinterConfig[]>(STORAGE_KEY_PRINTERS, DEFAULT_PRINTERS_LIST)
   return all.filter(p => p.companyId === companyId)
 }
 export function savePrinter(p: PrinterConfig) {
-  const all = loadJSON<PrinterConfig[]>(STORAGE_KEY_PRINTERS, [defaultPrinterConfig])
+  const all = loadJSON<PrinterConfig[]>(STORAGE_KEY_PRINTERS, DEFAULT_PRINTERS_LIST)
   const idx = all.findIndex(x => x.id === p.id)
   if (p.isDefault) all.forEach(x => { if (x.companyId === p.companyId) x.isDefault = false })
   if (idx >= 0) all[idx] = p; else all.push(p)
   saveJSON(STORAGE_KEY_PRINTERS, all)
 }
 export function removePrinter(id: string) {
-  const all = loadJSON<PrinterConfig[]>(STORAGE_KEY_PRINTERS, [defaultPrinterConfig])
+  const all = loadJSON<PrinterConfig[]>(STORAGE_KEY_PRINTERS, DEFAULT_PRINTERS_LIST)
   saveJSON(STORAGE_KEY_PRINTERS, all.filter(x => x.id !== id))
 }
 export function getDefaultPrinter(companyId: string): PrinterConfig {
