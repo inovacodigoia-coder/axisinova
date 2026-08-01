@@ -531,6 +531,7 @@ export function AttendanceDetailsModal({ open, onClose, order, patient }: Attend
         open={printSelectionOpen}
         onClose={() => setPrintSelectionOpen(false)}
         onConfirm={(result) => {
+          console.log('Printing with result:', result);
           setPrintSelectionOpen(false);
           
           // Determine which vias to print based on selection
@@ -552,7 +553,7 @@ export function AttendanceDetailsModal({ open, onClose, order, patient }: Attend
             const isThermal = formatSelected === 'TÉRMICA';
             
             const configOverride: any = {
-              paperSize: isThermal ? '80mm' : (formatSelected === 'A5' ? 'a5' : (formatSelected === 'ETIQUETA' ? 'label' : 'a4')),
+              paperSize: isThermal ? '80mm' : (formatSelected === 'A5' ? 'a5' : 'a4'),
               showLogo: true,
               showCompanyName: true,
               showUnitName: true,
@@ -568,7 +569,7 @@ export function AttendanceDetailsModal({ open, onClose, order, patient }: Attend
               showObservations: true,
               showSignatureLine: !isThermal,
               showTimestamp: true,
-              defaultCopies: 1, // Force exactly 1 copy by default as requested
+              defaultCopies: result.printerSettings?.batchSize || 1,
             };
             
             setSelectedPrinterOverride(configOverride);

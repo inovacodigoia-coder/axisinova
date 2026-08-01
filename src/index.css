@@ -163,11 +163,10 @@
     size: auto;
   }
   
-  html, body {
+  body {
     margin: 0 !important;
     padding: 0 !important;
-    height: auto !important;
-    overflow: visible !important;
+    background: white !important;
   }
   
   body * { 
@@ -184,9 +183,9 @@
     left: 0 !important;
     top: 0 !important;
     width: 100% !important;
-    margin: 0 !important;
-    padding: 0 !important;
-    display: block !important;
+    background: white !important;
+    color: black !important;
+    font-family: Arial, sans-serif !important;
   }
 
   .via {
@@ -196,9 +195,6 @@
     width: 100% !important;
     box-shadow: none !important;
     border: none !important;
-    page-break-after: always !important;
-    break-after: page !important;
-    display: block !important;
   }
 
   .no-print { 
