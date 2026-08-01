@@ -1,6 +1,6 @@
 import { QRCodeSVG } from 'qrcode.react'
 import type { AttendanceControlDocument, PrinterConfig } from '@/types/payment-print.types'
-import { format } from 'date-fns'
+import { format, parseISO, isValid } from 'date-fns'
 
 interface Props {
   document: AttendanceControlDocument
@@ -12,6 +12,17 @@ export function AttendanceReceiptVia({ document: doc, config, via }: Props) {
   const isPatient = via === 'patient'
   const isThermal = config.paperSize === '80mm' || config.paperSize === '58mm' || config.paperSize === 'label'
   const widthClass = isThermal ? 'w-[80mm]' : (config.paperSize === 'a5' ? 'w-[148mm]' : 'w-[210mm]')
+
+  const formatDateTime = (dateStr?: string) => {
+    if (!dateStr) return 'Sob Consulta'
+    try {
+      const date = parseISO(dateStr)
+      if (!isValid(date)) return dateStr
+      return format(date, 'dd/MM/yyyy HH:mm')
+    } catch (e) {
+      return dateStr
+    }
+  }
   
   // Calculate general delivery forecast (max date)
   const generalForecast = doc.exams.reduce((max, exam) => {
@@ -20,7 +31,7 @@ export function AttendanceReceiptVia({ document: doc, config, via }: Props) {
   }, '')
 
   return (
-    <div className={`via mx-auto ${widthClass} border border-dashed border-black/40 bg-white text-black p-4 text-[9pt] leading-tight font-sans`}>
+    <div className={`via mx-auto ${widthClass} bg-white text-black p-4 text-[9pt] leading-tight font-sans print:m-0 print:border-none`}>
       {/* 1. Laboratório Info */}
       <div className="text-center border-b border-black pb-2 mb-2">
         {config.showLogo && doc.companyLogo && (
@@ -73,7 +84,7 @@ export function AttendanceReceiptVia({ document: doc, config, via }: Props) {
           {doc.exams.map((exam, i) => (
             <div key={i} className="flex justify-between text-[8pt] items-start">
               <span className="pr-2">{exam.name}</span>
-              <span className="whitespace-nowrap">{exam.forecastDate}</span>
+              <span className="whitespace-nowrap">{formatDateTime(exam.forecastDate)}</span>
             </div>
           ))}
         </div>
@@ -86,7 +97,7 @@ export function AttendanceReceiptVia({ document: doc, config, via }: Props) {
           <div>Leia o QR Code ao lado ou acesse o portal do paciente.</div>
           {doc.locatorCode && (
             <div className="mt-2">
-              <div><strong>Localizador:</strong> {doc.locatorCode}</div>
+              <div><strong>Acesso:</strong> {doc.locatorCode}</div>
               <div><strong>Senha:</strong> {doc.password}</div>
             </div>
           )}
@@ -100,7 +111,7 @@ export function AttendanceReceiptVia({ document: doc, config, via }: Props) {
       {/* 7. Previsão Geral */}
       <div className="text-center bg-black/5 py-2 mb-2 border border-black/10">
         <div className="text-[8pt] font-bold">PREVISÃO GERAL PARA RETIRADA:</div>
-        <div className="text-[10pt] font-black">{generalForecast || 'Sob Consulta'}</div>
+        <div className="text-[10pt] font-black">{formatDateTime(generalForecast)}</div>
       </div>
 
       {/* 8. Rodapé (Quem cadastrou) */}
