@@ -22,7 +22,7 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { Checkbox } from '@/components/ui/checkbox'
-import type { AttendanceControlDocument } from '@/types/payment-print.types'
+import type { AttendanceControlDocument, PrinterConfig } from '@/types/payment-print.types'
 import { format } from 'date-fns'
 
 
@@ -38,6 +38,7 @@ export function AttendanceDetailsModal({ open, onClose, order, patient }: Attend
   const [printSelectionOpen, setPrintSelectionOpen] = useState(false)
   const [printModalOpen, setPrintModalOpen] = useState(false)
   const [printDoc, setPrintDoc] = useState<AttendanceControlDocument | null>(null)
+  const [selectedPrinterOverride, setSelectedPrinterOverride] = useState<PrinterConfig | undefined>(undefined)
   const [forecastModalOpen, setForecastModalOpen] = useState(false)
 
   const labOrder = order as LabAttendanceOrder;
@@ -528,10 +529,41 @@ export function AttendanceDetailsModal({ open, onClose, order, patient }: Attend
       <AttendancePrintSelectionModal 
         open={printSelectionOpen}
         onClose={() => setPrintSelectionOpen(false)}
-        onConfirm={(options) => {
-          console.log('Printing with options:', options);
+        onConfirm={(result) => {
+          console.log('Printing with result:', result);
           setPrintSelectionOpen(false);
           
+          // Identify the primary selected area (e.g., Comprovante) to pick paper size
+          const mainOption = result.options.find((o: any) => o.enabled && o.id === 'comprovante') || 
+                             result.options.find((o: any) => o.enabled);
+          
+          if (mainOption) {
+            const formatSelected = mainOption.selectedFormat;
+            const isThermal = formatSelected === 'TÉRMICA';
+            
+            const configOverride: any = {
+              paperSize: isThermal ? '80mm' : (formatSelected === 'A5' ? 'a5' : 'a4'),
+              showLogo: true,
+              showCompanyName: true,
+              showUnitName: true,
+              showAddress: !isThermal,
+              showPhone: true,
+              showCNPJ: true,
+              showQRCode: true,
+              showBarcode: isThermal,
+              showDoctorInfo: true,
+              showConvenioInfo: true,
+              showAuthorizationInfo: true,
+              showAttachmentChecklist: !isThermal,
+              showObservations: true,
+              showSignatureLine: !isThermal,
+              showTimestamp: true,
+              defaultCopies: result.printerSettings?.batchSize || 1,
+            };
+            
+            setSelectedPrinterOverride(configOverride);
+          }
+
           // Transform order to print document
           const doc: AttendanceControlDocument = {
             orderNumber: order.orderNumber,
@@ -546,7 +578,7 @@ export function AttendanceDetailsModal({ open, onClose, order, patient }: Attend
             serviceType: (order.serviceType as string) === 'lab' ? 'LABORATÓRIO' : 'CLÍNICA',
             unitName: (order as any).unitName || 'MATRIZ',
             companyName: 'AXIS INOVA',
-            companyLogo: undefined, // Will be filled if available in state
+            companyLogo: undefined,
             companyAddress: 'Av. Afonso Pena, 952 - Tirol, Natal - Tel: (84) 4007-2595',
             companyCNPJ: '00.000.000/0001-00',
             companyPhone: '(84) 4007-2595',
@@ -577,6 +609,7 @@ export function AttendanceDetailsModal({ open, onClose, order, patient }: Attend
           onClose={() => setPrintModalOpen(false)}
           document={printDoc}
           autoPrint={true}
+          overrideConfig={selectedPrinterOverride}
         />
       )}
 
