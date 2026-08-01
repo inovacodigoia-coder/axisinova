@@ -202,7 +202,7 @@ export default function TotemPage() {
     setGeneratedTicket(displayCode)
     setScreen('ticket')
     setCountdown(10)
-  }, [])
+  }, [slug])
 
   const NumKey = ({ val, onPress }: { val: string; onPress: (v: string) => void }) => (
     <button onClick={() => onPress(val)} className="h-16 rounded-xl bg-white/10 text-white text-2xl font-bold hover:bg-white/20 active:scale-95 transition-all">

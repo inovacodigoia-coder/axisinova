@@ -14,8 +14,11 @@ interface TVRow {
   name: string
   slug: string | null
   voice_type?: string | null
-  access_username?: string | null
-  access_password?: string | null
+  requires_auth?: boolean
+  company_name?: string | null
+  logo_url?: string | null
+  primary_color?: string | null
+  secondary_color?: string | null
   media_mode?: string | null
   media_attachments?: any
 }
@@ -50,6 +53,7 @@ export default function CallingPanelPage() {
   const [tv, setTv] = useState<TVRow | null>(null)
   const [tickets, setTickets] = useState<QueueTicketRow[]>([])
   const [loadingPanel, setLoadingPanel] = useState(!!slug)
+  const [deviceError, setDeviceError] = useState<string | null>(null)
   const [audioEnabled, setAudioEnabled] = useState(false)
   const lastCalledKeyRef = useRef<string | null>(null)
   const audioEnabledRef = useRef(false)
@@ -65,12 +69,7 @@ export default function CallingPanelPage() {
   const loadPanelData = useCallback(async (currentTv: TVRow) => {
     const startOfDay = new Date()
     startOfDay.setHours(0, 0, 0, 0)
-    const { data, error } = await supabase
-      .from('queue_tickets')
-      .select('*')
-      .eq('unit_id', currentTv.unit_id)
-      .gte('generated_at', startOfDay.toISOString())
-      .order('generated_at', { ascending: true })
+    const { data, error } = await supabase.rpc('panel_tickets', { _slug: currentTv.slug || '' })
     if (error) {
       console.error('Erro ao carregar painel da TV', error)
       return
@@ -83,33 +82,22 @@ export default function CallingPanelPage() {
     let cancelled = false
     async function loadTv() {
       setLoadingPanel(true)
-      const { data, error } = await supabase
-        .from('queue_tvs')
-        .select('id, unit_id, company_id, name, slug, voice_type, access_username, access_password, media_mode, media_attachments')
-        .eq('slug', slug)
-        .maybeSingle()
+      const { data, error } = await supabase.rpc('device_public_info', { _kind: 'tv', _slug: slug })
       if (cancelled) return
       if (error || !data) {
         console.error('TV não encontrada', error)
+        setDeviceError('Não localizamos esta TV/painel. Verifique se o link está correto ou gere um novo link no painel administrativo.')
         setLoadingPanel(false)
         return
       }
-      const currentTv = data as TVRow
+      const currentTv = data as unknown as TVRow
       setTv(currentTv)
-
-      // Load branding (company name + logo + colors)
-      const [{ data: companyRow }, { data: brandRow }] = await Promise.all([
-        supabase.from('companies').select('name, nome_fantasia').eq('id', currentTv.company_id).maybeSingle(),
-        supabase.from('company_branding').select('primary_color, secondary_color, logo_url').eq('company_id', currentTv.company_id).maybeSingle(),
-      ])
-      if (!cancelled) {
-        setBranding({
-          companyName: (companyRow as any)?.nome_fantasia || (companyRow as any)?.name || 'Clínica',
-          logoUrl: (brandRow as any)?.logo_url || null,
-          primaryColor: (brandRow as any)?.primary_color,
-          secondaryColor: (brandRow as any)?.secondary_color,
-        })
-      }
+      setBranding({
+        companyName: currentTv.company_name || 'Clínica',
+        logoUrl: currentTv.logo_url || null,
+        primaryColor: currentTv.primary_color || undefined,
+        secondaryColor: currentTv.secondary_color || undefined,
+      })
 
       await loadPanelData(currentTv)
       setLoadingPanel(false)
@@ -256,7 +244,7 @@ export default function CallingPanelPage() {
     const attendanceCount = tickets.filter(t => t.status === 'in_attendance').length
 
     return (
-      <DeviceAuthGate deviceKind="tv" slug={slug} expectedUsername={tv?.access_username} expectedPassword={tv?.access_password} deviceName={tv?.name} loading={loadingPanel || !tv}>
+      <DeviceAuthGate deviceKind="tv" slug={slug} requiresAuth={!!tv?.requires_auth} deviceName={tv?.name} loading={(loadingPanel || !tv) && !deviceError} errorMessage={deviceError}>
       <div className="fixed inset-0 flex flex-col bg-background text-foreground">
         {!audioEnabled && (
           <button
