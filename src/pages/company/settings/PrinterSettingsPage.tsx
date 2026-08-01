@@ -191,7 +191,7 @@ function PrinterForm({ config, onClose, onSave }: { config: PrinterConfig; onClo
                   <select value={data.paperSize} onChange={(e) => set('paperSize', e.target.value as any)}
                     className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm">
                     <option value="a4">A4</option><option value="a5">A5</option>
-                    <option value="80mm">80mm</option><option value="58mm">58mm</option>
+                    <option value="80mm">80mm</option><option value="58mm">58mm</option><option value="label">Etiqueta</option>
                   </select>
                 </Field>
                 <Field label="Orientação">
