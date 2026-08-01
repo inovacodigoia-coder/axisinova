@@ -9,6 +9,7 @@ import type { LabAttendanceOrder } from '@/types/lab.types'
 import { TUBE_TYPES } from '@/types/lab.types'
 import { cn } from '@/lib/utils'
 import { AttendancePrintSelectionModal } from '../print/AttendancePrintSelectionModal'
+import { AttendancePrintModal } from '../print/AttendancePrintModal'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -21,6 +22,8 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { Checkbox } from '@/components/ui/checkbox'
+import type { AttendanceControlDocument } from '@/types/payment-print.types'
+import { format } from 'date-fns'
 
 
 
@@ -32,7 +35,9 @@ interface AttendanceDetailsModalProps {
 }
 
 export function AttendanceDetailsModal({ open, onClose, order, patient }: AttendanceDetailsModalProps) {
+  const [printSelectionOpen, setPrintSelectionOpen] = useState(false)
   const [printModalOpen, setPrintModalOpen] = useState(false)
+  const [printDoc, setPrintDoc] = useState<AttendanceControlDocument | null>(null)
   const [forecastModalOpen, setForecastModalOpen] = useState(false)
 
   const labOrder = order as LabAttendanceOrder;
