@@ -10,7 +10,8 @@ export const defaultPrinterConfig: PrinterConfig = {
   printerName: 'Impressora Padrão',
   printerType: 'laser',
   connectionType: 'virtual',
-  paperSize: 'a5',
+  paperSize: '80mm',
+
   orientation: 'portrait',
   marginTop: 10, marginBottom: 10, marginLeft: 10, marginRight: 10,
   showLogo: true, showCompanyName: true, showUnitName: true,
@@ -23,6 +24,11 @@ export const defaultPrinterConfig: PrinterConfig = {
   defaultCopies: 2, autoPrintOnFinalize: false,
   isDefault: true, isActive: true,
   createdAt: '2025-01-01T00:00:00', updatedAt: '2025-01-01T00:00:00',
+  areas: [
+    { area: 'comprovante', defaultFormat: '80mm', autoPrint: true, enabled: true },
+    { area: 'controle_interno', defaultFormat: '80mm', autoPrint: true, enabled: true },
+    { area: 'etiqueta_amostra', defaultFormat: 'label', autoPrint: true, enabled: true }
+  ]
 }
 
 function loadJSON<T>(key: string, fallback: T): T {
