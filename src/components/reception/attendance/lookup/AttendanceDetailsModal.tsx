@@ -371,7 +371,21 @@ export function AttendanceDetailsModal({ open, onClose, order, patient }: Attend
                           <table className="w-full text-left border-collapse">
                             <thead className="bg-muted/30 text-[10px] font-bold text-muted-foreground uppercase tracking-wider">
                               <tr>
-                                <th className="px-4 py-2 border-b border-border w-10"><Checkbox className="h-3.5 w-3.5" /></th>
+                                <th className="px-4 py-2 border-b border-border w-10">
+                                  <Checkbox 
+                                    className="h-3.5 w-3.5" 
+                                    checked={examsInGuide.length > 0 && examsInGuide.every((exam: any) => selectedExams.has(exam.examId || exam.id))}
+                                    onCheckedChange={(checked) => {
+                                      const newSelected = new Set(selectedExams);
+                                      examsInGuide.forEach((exam: any) => {
+                                        const id = exam.examId || exam.id;
+                                        if (checked) newSelected.add(id);
+                                        else newSelected.delete(id);
+                                      });
+                                      setSelectedExams(newSelected);
+                                    }}
+                                  />
+                                </th>
                                 <th className="px-4 py-2 border-b border-border">Procedimentos</th>
                                 <th className="px-4 py-2 border-b border-border">Referência</th>
                                 <th className="px-4 py-2 border-b border-border text-center">Cobrado</th>
