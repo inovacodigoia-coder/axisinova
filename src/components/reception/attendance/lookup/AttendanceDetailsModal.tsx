@@ -41,6 +41,8 @@ export function AttendanceDetailsModal({ open, onClose, order, patient }: Attend
   const [selectedPrinterOverride, setSelectedPrinterOverride] = useState<PrinterConfig | undefined>(undefined)
   const [enabledVias, setEnabledVias] = useState<('patient' | 'establishment')[]>(['patient'])
   const [forecastModalOpen, setForecastModalOpen] = useState(false)
+  const [selectedExams, setSelectedExams] = useState<Set<string>>(new Set())
+  const [selectedTubes, setSelectedTubes] = useState<Set<string>>(new Set())
 
   const labOrder = order as LabAttendanceOrder;
 
