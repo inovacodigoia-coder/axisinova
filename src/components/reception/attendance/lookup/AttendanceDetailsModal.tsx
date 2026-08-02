@@ -403,7 +403,19 @@ export function AttendanceDetailsModal({ open, onClose, order, patient }: Attend
                                 const examIsCollected = exam.isColeta || isCollected;
                                 return (
                                   <tr key={examIdx} className="hover:bg-muted/10 group">
-                                    <td className="px-4 py-3"><Checkbox className="h-3.5 w-3.5" /></td>
+                                    <td className="px-4 py-3">
+                                      <Checkbox 
+                                        className="h-3.5 w-3.5" 
+                                        checked={selectedExams.has(exam.examId || exam.id)}
+                                        onCheckedChange={(checked) => {
+                                          const newSelected = new Set(selectedExams);
+                                          const id = exam.examId || exam.id;
+                                          if (checked) newSelected.add(id);
+                                          else newSelected.delete(id);
+                                          setSelectedExams(newSelected);
+                                        }}
+                                      />
+                                    </td>
                                     <td className="px-4 py-3">
                                       <div className="flex items-center gap-2">
                                         <span className="bg-[#007AFF] text-white rounded-full px-1.5 py-0.5 text-[8px] font-bold">EX</span>
