@@ -517,7 +517,19 @@ export function AttendanceDetailsModal({ open, onClose, order, patient }: Attend
                     <tbody className="text-[11px] divide-y divide-border">
                       {patientTubes.length > 0 ? patientTubes.map((tube, tubeIdx) => (
                         <tr key={tubeIdx}>
-                          <td className="px-4 py-3"><Checkbox className="h-3.5 w-3.5" /></td>
+                          <td className="px-4 py-3">
+                            <Checkbox 
+                              className="h-3.5 w-3.5" 
+                              checked={selectedTubes.has(`${order.orderNumber}-${tubeIdx + 1}`)}
+                              onCheckedChange={(checked) => {
+                                const newSelected = new Set(selectedTubes);
+                                const id = `${order.orderNumber}-${tubeIdx + 1}`;
+                                if (checked) newSelected.add(id);
+                                else newSelected.delete(id);
+                                setSelectedTubes(newSelected);
+                              }}
+                            />
+                          </td>
                           <td className="px-4 py-3">
                             <span className={cn("text-white rounded-full px-2 py-0.5 text-[9px] font-bold", tube.color)}>
                               {order.orderNumber}-{tubeIdx + 1}
