@@ -41,6 +41,8 @@ export function AttendanceDetailsModal({ open, onClose, order, patient }: Attend
   const [selectedPrinterOverride, setSelectedPrinterOverride] = useState<PrinterConfig | undefined>(undefined)
   const [enabledVias, setEnabledVias] = useState<('patient' | 'establishment')[]>(['patient'])
   const [forecastModalOpen, setForecastModalOpen] = useState(false)
+  const [selectedExams, setSelectedExams] = useState<Set<string>>(new Set())
+  const [selectedTubes, setSelectedTubes] = useState<Set<string>>(new Set())
 
   const labOrder = order as LabAttendanceOrder;
 
@@ -369,7 +371,21 @@ export function AttendanceDetailsModal({ open, onClose, order, patient }: Attend
                           <table className="w-full text-left border-collapse">
                             <thead className="bg-muted/30 text-[10px] font-bold text-muted-foreground uppercase tracking-wider">
                               <tr>
-                                <th className="px-4 py-2 border-b border-border w-10"><Checkbox className="h-3.5 w-3.5" /></th>
+                                <th className="px-4 py-2 border-b border-border w-10">
+                                  <Checkbox 
+                                    className="h-3.5 w-3.5" 
+                                    checked={examsInGuide.length > 0 && examsInGuide.every((exam: any) => selectedExams.has(exam.examId || exam.id))}
+                                    onCheckedChange={(checked) => {
+                                      const newSelected = new Set(selectedExams);
+                                      examsInGuide.forEach((exam: any) => {
+                                        const id = exam.examId || exam.id;
+                                        if (checked) newSelected.add(id);
+                                        else newSelected.delete(id);
+                                      });
+                                      setSelectedExams(newSelected);
+                                    }}
+                                  />
+                                </th>
                                 <th className="px-4 py-2 border-b border-border">Procedimentos</th>
                                 <th className="px-4 py-2 border-b border-border">Referência</th>
                                 <th className="px-4 py-2 border-b border-border text-center">Cobrado</th>
@@ -387,7 +403,19 @@ export function AttendanceDetailsModal({ open, onClose, order, patient }: Attend
                                 const examIsCollected = exam.isColeta || isCollected;
                                 return (
                                   <tr key={examIdx} className="hover:bg-muted/10 group">
-                                    <td className="px-4 py-3"><Checkbox className="h-3.5 w-3.5" /></td>
+                                    <td className="px-4 py-3">
+                                      <Checkbox 
+                                        className="h-3.5 w-3.5" 
+                                        checked={selectedExams.has(exam.examId || exam.id)}
+                                        onCheckedChange={(checked) => {
+                                          const newSelected = new Set(selectedExams);
+                                          const id = exam.examId || exam.id;
+                                          if (checked) newSelected.add(id);
+                                          else newSelected.delete(id);
+                                          setSelectedExams(newSelected);
+                                        }}
+                                      />
+                                    </td>
                                     <td className="px-4 py-3">
                                       <div className="flex items-center gap-2">
                                         <span className="bg-[#007AFF] text-white rounded-full px-1.5 py-0.5 text-[8px] font-bold">EX</span>
@@ -452,7 +480,12 @@ export function AttendanceDetailsModal({ open, onClose, order, patient }: Attend
                   <div className="flex gap-2">
                     <Button variant="outline" size="sm" className="bg-white h-8 text-[10px] font-bold uppercase tracking-wider">RESTRIÇÕES</Button>
                     <Button variant="outline" size="sm" className="bg-white h-8 text-[10px] font-bold uppercase tracking-wider">COLETA</Button>
-                    <Button size="icon" variant="ghost" className="h-8 w-8 text-muted-foreground ml-1">
+                    <Button 
+                      size="icon" 
+                      variant="ghost" 
+                      className="h-8 w-8 text-muted-foreground ml-1"
+                      onClick={() => setPrintSelectionOpen(true)}
+                    >
                       <Printer className="h-4 w-4" />
                     </Button>
                   </div>
@@ -462,7 +495,21 @@ export function AttendanceDetailsModal({ open, onClose, order, patient }: Attend
                   <table className="w-full text-left border-collapse">
                     <thead className="bg-muted/30 text-[10px] font-bold text-muted-foreground uppercase tracking-wider">
                       <tr>
-                        <th className="px-4 py-2 border-b border-border w-10"><Checkbox className="h-3.5 w-3.5" /></th>
+                        <th className="px-4 py-2 border-b border-border w-10">
+                          <Checkbox 
+                            className="h-3.5 w-3.5" 
+                            checked={patientTubes.length > 0 && patientTubes.every((_, idx) => selectedTubes.has(`${order.orderNumber}-${idx + 1}`))}
+                            onCheckedChange={(checked) => {
+                              const newSelected = new Set(selectedTubes);
+                              patientTubes.forEach((_, idx) => {
+                                const id = `${order.orderNumber}-${idx + 1}`;
+                                if (checked) newSelected.add(id);
+                                else newSelected.delete(id);
+                              });
+                              setSelectedTubes(newSelected);
+                            }}
+                          />
+                        </th>
                         <th className="px-4 py-2 border-b border-border">Código</th>
                         <th className="px-4 py-2 border-b border-border">Descrição</th>
                         <th className="px-4 py-2 border-b border-border">Material</th>
@@ -475,7 +522,19 @@ export function AttendanceDetailsModal({ open, onClose, order, patient }: Attend
                     <tbody className="text-[11px] divide-y divide-border">
                       {patientTubes.length > 0 ? patientTubes.map((tube, tubeIdx) => (
                         <tr key={tubeIdx}>
-                          <td className="px-4 py-3"><Checkbox className="h-3.5 w-3.5" /></td>
+                          <td className="px-4 py-3">
+                            <Checkbox 
+                              className="h-3.5 w-3.5" 
+                              checked={selectedTubes.has(`${order.orderNumber}-${tubeIdx + 1}`)}
+                              onCheckedChange={(checked) => {
+                                const newSelected = new Set(selectedTubes);
+                                const id = `${order.orderNumber}-${tubeIdx + 1}`;
+                                if (checked) newSelected.add(id);
+                                else newSelected.delete(id);
+                                setSelectedTubes(newSelected);
+                              }}
+                            />
+                          </td>
                           <td className="px-4 py-3">
                             <span className={cn("text-white rounded-full px-2 py-0.5 text-[9px] font-bold", tube.color)}>
                               {order.orderNumber}-{tubeIdx + 1}
