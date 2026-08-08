@@ -56,7 +56,7 @@ export default function LabCatalogPage() {
     if (!registeredExams) return [];
     
     // Show only real exams from the database
-    const labExams = registeredExams.filter(e => e && (e.type === 'lab' || e.type === 'LABORATÓRIO' || e.type === 'LABORATORIO'));
+    const labExams = registeredExams.filter(e => e && (String(e.type).toLowerCase() === 'lab' || String(e.type).toLowerCase() === 'laboratório' || String(e.type).toLowerCase() === 'laboratorio'));
     
     // Sort by created_at descending so new ones appear first
     const sortedExams = [...labExams].sort((a, b) => {
