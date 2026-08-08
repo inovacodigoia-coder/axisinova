@@ -207,7 +207,7 @@ export function AttendancePrintSelectionModal({ open, onClose, onConfirm, order 
               CANCELAR
             </Button>
             <Button 
-              onClick={() => onConfirm({ options, extras, printerSettings, watermark, emptyFields })}
+              onClick={() => onConfirm({ options, extras, printerSettings, watermark, emptyFields, selectedExams, selectedTubes })}
               className="px-8 font-bold bg-[#007AFF] hover:bg-blue-700 text-white shadow-lg uppercase text-xs h-10"
             >
               IMPRIMIR
