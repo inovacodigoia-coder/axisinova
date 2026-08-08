@@ -41,10 +41,12 @@ interface ExamImportData {
   materiaisAceitos: string;
   bancada: string;
   prazoEntrega: number;
-  // ... other fields are optional or for future use
+  parameters: any[];
+  referenceValues: any[];
 }
 
 export const ImportarPlanilhaModal = ({ isOpen, onClose, existingCodes = [] }: ImportarPlanilhaModalProps) => {
+  const { addExam, updateExam, exams, workbenches } = useRegisters();
   const [state, setState] = useState<ImportState>('upload');
   const [fileName, setFileName] = useState<string>('');
   const [newExams, setNewExams] = useState<string[]>([]);
@@ -52,7 +54,7 @@ export const ImportarPlanilhaModal = ({ isOpen, onClose, existingCodes = [] }: I
   const [errors, setErrors] = useState<RowError[]>([]);
   const [totalParams, setTotalParams] = useState(0);
   const [totalRefs, setTotalRefs] = useState(0);
-  const [isPregnant, setIsPregnant] = useState(false); // For visual reference if needed later
+  const [parsedExams, setParsedExams] = useState<ExamImportData[]>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const resetState = () => {
@@ -63,6 +65,7 @@ export const ImportarPlanilhaModal = ({ isOpen, onClose, existingCodes = [] }: I
     setErrors([]);
     setTotalParams(0);
     setTotalRefs(0);
+    setParsedExams([]);
   };
 
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -107,14 +110,14 @@ export const ImportarPlanilhaModal = ({ isOpen, onClose, existingCodes = [] }: I
         const foundNew: string[] = [];
         const foundUpdate: string[] = [];
         const foundErrors: RowError[] = [];
+        const validExams: ExamImportData[] = [];
 
         catalogData.forEach((row, index) => {
           const lineNum = index + 2;
           
-          // Flexible mapping for column names
           const name = row['Nome'] || row['NOME'] || row['Exame'] || row['EXAME'];
           const code = String(row['Código'] || row['CÓDIGO'] || row['Codigo'] || row['CODIGO'] || '').trim();
-          const materials = row['Materiais aceitos'] || row['Materiais'] || row['MATERIAIS'] || row['Material'];
+          const materials = String(row['Materiais aceitos'] || row['Materiais'] || row['MATERIAIS'] || row['Material'] || '');
           const workbench = row['Bancada'] || row['BANCADA'] || row['Setor'] || row['SETOR'];
           const deadline = row['Prazo de entrega (dias)'] || row['Prazo'] || row['PRAZO'] || row['Prazo de Entrega'];
 
@@ -133,7 +136,26 @@ export const ImportarPlanilhaModal = ({ isOpen, onClose, existingCodes = [] }: I
             return;
           }
 
-          // Force "LABORATÓRIO" type for all imported exams as requested
+          // Link parameters and reference ranges
+          const examParams = paramsData.filter((p: any) => String(p['Código do Exame'] || p['CÓDIGO EXAME'] || p['Codigo'] || '').trim() === code);
+          const examRefs: any[] = [];
+          
+          examParams.forEach((param: any) => {
+            const paramName = param['Nome'] || param['NOME'] || param['Parâmetro'] || param['PARAMETRO'];
+            const refs = refsData.filter((r: any) => (r['Nome do Parâmetro'] || r['PARÂMETRO'] || r['Nome'] || '') === paramName);
+            examRefs.push(...refs);
+          });
+
+          validExams.push({
+            nome: name,
+            codigo: code,
+            materiaisAceitos: materials,
+            bancada: workbench,
+            prazoEntrega: Number(deadline),
+            parameters: examParams,
+            referenceValues: examRefs
+          });
+
           if (existingCodes.includes(code)) {
             foundUpdate.push(code);
           } else {
@@ -141,12 +163,12 @@ export const ImportarPlanilhaModal = ({ isOpen, onClose, existingCodes = [] }: I
           }
         });
 
-        // Use real counts from data if available, or fallbacks if data is small
-        setNewExams(foundNew.length > 0 ? foundNew : []);
-        setUpdateExams(foundUpdate.length > 0 ? foundUpdate : []);
+        setParsedExams(validExams);
+        setNewExams(foundNew);
+        setUpdateExams(foundUpdate);
         setErrors(foundErrors); 
-        setTotalParams(paramsData.length || 95);
-        setTotalRefs(refsData.length || 311);
+        setTotalParams(paramsData.length);
+        setTotalRefs(refsData.length);
         setState('preview');
       } catch (error: any) {
         console.error(error);
@@ -161,13 +183,55 @@ export const ImportarPlanilhaModal = ({ isOpen, onClose, existingCodes = [] }: I
     setState('importando');
     
     try {
-      // Get the full workbook data again or process from a stored state
-      // For now, let's re-parse or use the current found lists
-      // In a real scenario, we'd iterate through the parsed data and call addExam/updateExam
+      const results = { new: 0, updated: 0 };
       
-      // Simulate API delay
-      await new Promise(resolve => setTimeout(resolve, 2000));
+      for (const examData of parsedExams) {
+        // Find or create workbench
+        let wbId = workbenches.find(w => w.name.toLowerCase() === examData.bancada.toLowerCase())?.id;
+        
+        const examPayload: any = {
+          name: examData.nome,
+          internalCode: examData.codigo,
+          type: 'lab', // Always 'lab' for laboratory module
+          resultDeadlineDays: examData.prazoEntrega,
+          selectedMaterials: examData.materiaisAceitos.split(',').map(m => m.trim()),
+          defaultMaterial: examData.materiaisAceitos.split(',')[0]?.trim() || '',
+          workbenchId: wbId,
+          isActive: true,
+          showDeadline: true,
+          // Map parameters to the format expected by the DB/app
+          parameters: examData.parameters.map((p: any) => ({
+            id: crypto.randomUUID(),
+            name: p['Nome'] || p['NOME'] || p['Parâmetro'] || p['PARAMETRO'],
+            unit: p['Unidade'] || p['UNIDADE'] || '',
+            type: (p['Tipo'] || p['TIPO'] || 'numeric').toLowerCase(),
+            formula: p['Fórmula'] || p['FORMULA'] || '',
+          })),
+          // Map reference values
+          referenceValues: examData.referenceValues.map((r: any) => ({
+            id: crypto.randomUUID(),
+            parameterName: r['Nome do Parâmetro'] || r['PARÂMETRO'] || r['Nome'] || '',
+            gender: (r['Sexo'] || r['Gênero'] || 'both').toLowerCase(),
+            ageMin: Number(r['Idade Mín'] || r['Idade Mínima'] || 0),
+            ageMax: Number(r['Idade Máx'] || r['Idade Máxima'] || 120),
+            minValue: r['Mínimo'] || r['MIN'] || '',
+            maxValue: r['Máximo'] || r['MAX'] || '',
+            textRange: r['Referência Texto'] || r['Texto'] || '',
+          }))
+        };
+
+        const existing = exams.find(e => e.internalCode === examData.codigo);
+        if (existing) {
+          await updateExam({ ...existing, ...examPayload });
+          results.updated++;
+        } else {
+          await addExam(examPayload);
+          results.new++;
+        }
+      }
       
+      setNewExams(Array(results.new).fill('')); // Just to update the count in UI
+      setUpdateExams(Array(results.updated).fill(''));
       setState('concluido');
     } catch (error: any) {
       console.error(error);
