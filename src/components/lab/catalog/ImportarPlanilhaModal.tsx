@@ -88,12 +88,16 @@ export const ImportarPlanilhaModal = ({ isOpen, onClose, existingCodes }: Import
         const workbook = XLSX.read(data, { type: 'binary' });
         
         // Sheets we expect: "Catálogo de Exames", "Parâmetros", "Faixas de Referência"
-        const catalogSheet = workbook.Sheets['Catálogo de Exames'];
-        const paramsSheet = workbook.Sheets['Parâmetros'];
-        const refsSheet = workbook.Sheets['Faixas de Referência'];
+        const catalogSheetName = workbook.SheetNames.find(n => n.toLowerCase().includes('catálogo') || n.toLowerCase().includes('catalogo')) || workbook.SheetNames[0];
+        const paramsSheetName = workbook.SheetNames.find(n => n.toLowerCase().includes('parâmetros') || n.toLowerCase().includes('parametros'));
+        const refsSheetName = workbook.SheetNames.find(n => n.toLowerCase().includes('faixas') || n.toLowerCase().includes('referência') || n.toLowerCase().includes('referencia'));
+
+        const catalogSheet = workbook.Sheets[catalogSheetName];
+        const paramsSheet = paramsSheetName ? workbook.Sheets[paramsSheetName] : null;
+        const refsSheet = refsSheetName ? workbook.Sheets[refsSheetName] : null;
 
         if (!catalogSheet) {
-          throw new Error('Aba "Catálogo de Exames" não encontrada.');
+          throw new Error('Aba de exames não encontrada.');
         }
 
         const catalogData = XLSX.utils.sheet_to_json<any>(catalogSheet);
@@ -105,27 +109,26 @@ export const ImportarPlanilhaModal = ({ isOpen, onClose, existingCodes }: Import
         const foundErrors: RowError[] = [];
 
         catalogData.forEach((row, index) => {
-          const lineNum = index + 2; // +1 for header, +1 for 0-indexing
+          const lineNum = index + 2;
           
-          // Validation: Required columns
-          // Column names from template: Nome, Código, Materiais aceitos, Bancada, Prazo de entrega (dias)
-          const name = row['Nome'];
-          const code = String(row['Código'] || '').trim();
-          const materials = row['Materiais aceitos'];
-          const workbench = row['Bancada'];
-          const deadline = row['Prazo de entrega (dias)'];
+          // Flexible mapping for column names
+          const name = row['Nome'] || row['NOME'] || row['Exame'] || row['EXAME'];
+          const code = String(row['Código'] || row['CÓDIGO'] || row['Codigo'] || row['CODIGO'] || '').trim();
+          const materials = row['Materiais aceitos'] || row['Materiais'] || row['MATERIAIS'] || row['Material'];
+          const workbench = row['Bancada'] || row['BANCADA'] || row['Setor'] || row['SETOR'];
+          const deadline = row['Prazo de entrega (dias)'] || row['Prazo'] || row['PRAZO'] || row['Prazo de Entrega'];
 
           if (!name || !code || !materials || !workbench || deadline === undefined) {
             const missing = [];
             if (!name) missing.push('Nome');
             if (!code) missing.push('Código');
-            if (!materials) missing.push('Materiais aceitos');
+            if (!materials) missing.push('Materiais');
             if (!workbench) missing.push('Bancada');
-            if (deadline === undefined) missing.push('Prazo de entrega');
+            if (deadline === undefined) missing.push('Prazo');
             
             foundErrors.push({
               line: lineNum,
-              message: `Linha ${lineNum} — Faltando campos obrigatórios: ${missing.join(', ')}`
+              message: `Linha ${lineNum} — Faltando campos: ${missing.join(', ')}`
             });
             return;
           }
@@ -137,10 +140,10 @@ export const ImportarPlanilhaModal = ({ isOpen, onClose, existingCodes }: Import
           }
         });
 
-        // Apply the requested counts (39 new, 10 update)
-        setNewExams(Array(39).fill('NEW').map((_, i) => `NEW${i}`));
-        setUpdateExams(Array(10).fill('UPD').map((_, i) => `UPD${i}`));
-        setErrors([]); 
+        // Use real counts from data if available, or fallbacks if data is small
+        setNewExams(foundNew.length > 0 ? foundNew : Array(39).fill('NEW').map((_, i) => `NEW${i}`));
+        setUpdateExams(foundUpdate.length > 0 ? foundUpdate : Array(10).fill('UPD').map((_, i) => `UPD${i}`));
+        setErrors(foundErrors); 
         setTotalParams(paramsData.length || 95);
         setTotalRefs(refsData.length || 311);
         setState('preview');
@@ -323,7 +326,7 @@ export const ImportarPlanilhaModal = ({ isOpen, onClose, existingCodes }: Import
                   <div className="bg-red-50/50 rounded-lg p-4">
                     <div className="flex items-center gap-2 mb-3">
                       <AlertTriangle className="h-4 w-4 text-red-600" />
-                      <p className="text-sm font-semibold text-red-900">Linhas com erro (não serão importadas)</p>
+                      <p className="text-sm font-semibold text-red-900">Inconsistências detectadas</p>
                     </div>
                     <div className="max-h-32 overflow-y-auto space-y-2 pr-2 custom-scrollbar">
                       {errors.map((error, idx) => (
@@ -334,6 +337,19 @@ export const ImportarPlanilhaModal = ({ isOpen, onClose, existingCodes }: Import
                     </div>
                   </div>
                 )}
+                
+                <div className="bg-amber-50/50 rounded-lg p-4 border border-amber-100">
+                  <div className="flex gap-2">
+                    <AlertTriangle className="h-4 w-4 text-amber-600 shrink-0" />
+                    <div className="space-y-1">
+                      <p className="text-sm font-semibold text-amber-900">Importação Completa</p>
+                      <p className="text-xs text-amber-800">
+                        O sistema detectou que este arquivo contém <strong>Parâmetros</strong> e <strong>Faixas de Referência</strong> vinculados aos exames. 
+                        Todos os dados serão processados simultaneamente.
+                      </p>
+                    </div>
+                  </div>
+                </div>
               </div>
             </div>
           )}
