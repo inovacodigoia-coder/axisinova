@@ -315,7 +315,7 @@ export const ImportarPlanilhaModal = ({ isOpen, onClose, existingCodes }: Import
                   <div>
                     <p className="text-xs font-semibold text-slate-500 uppercase mb-2">Códigos novos</p>
                     <div className="flex flex-wrap gap-1.5">
-                      {['HEM001', 'DDIM', 'VB12', 'VITD', 'INS', 'LH', 'PRL', 'PSAL', 'PSAT', 'TSH', 'TGB', 'T4'].map(code => (
+                      {newExams.slice(0, 12).map(code => (
                         <Badge key={code} variant="secondary" className="bg-[#ECFDF5] text-[#059669] border-[#D1FAE5] font-medium text-[10px] px-3 py-1 rounded-full">
                           {code}
                         </Badge>
