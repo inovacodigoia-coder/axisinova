@@ -326,7 +326,7 @@ export const ImportarPlanilhaModal = ({ isOpen, onClose, existingCodes }: Import
                   <div className="bg-red-50/50 rounded-lg p-4">
                     <div className="flex items-center gap-2 mb-3">
                       <AlertTriangle className="h-4 w-4 text-red-600" />
-                      <p className="text-sm font-semibold text-red-900">Linhas com erro (não serão importadas)</p>
+                      <p className="text-sm font-semibold text-red-900">Inconsistências detectadas</p>
                     </div>
                     <div className="max-h-32 overflow-y-auto space-y-2 pr-2 custom-scrollbar">
                       {errors.map((error, idx) => (
@@ -337,6 +337,19 @@ export const ImportarPlanilhaModal = ({ isOpen, onClose, existingCodes }: Import
                     </div>
                   </div>
                 )}
+                
+                <div className="bg-amber-50/50 rounded-lg p-4 border border-amber-100">
+                  <div className="flex gap-2">
+                    <AlertTriangle className="h-4 w-4 text-amber-600 shrink-0" />
+                    <div className="space-y-1">
+                      <p className="text-sm font-semibold text-amber-900">Importação Completa</p>
+                      <p className="text-xs text-amber-800">
+                        O sistema detectou que este arquivo contém <strong>Parâmetros</strong> e <strong>Faixas de Referência</strong> vinculados aos exames. 
+                        Todos os dados serão processados simultaneamente.
+                      </p>
+                    </div>
+                  </div>
+                </div>
               </div>
             </div>
           )}
