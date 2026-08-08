@@ -193,7 +193,7 @@ export const ImportarPlanilhaModal = ({ isOpen, onClose, existingCodes = [] }: I
         const examPayload: any = {
           name: examData.nome,
           internalCode: examData.codigo,
-          type: 'lab', // Always 'lab' for laboratory module
+          type: 'LABORATÓRIO', // Always 'LABORATÓRIO' as requested
           resultDeadlineDays: examData.prazoEntrega,
           selectedMaterials: examData.materiaisAceitos.split(',').map(m => m.trim()),
           defaultMaterial: examData.materiaisAceitos.split(',')[0]?.trim() || '',
