@@ -307,9 +307,10 @@ export function AttendanceDetailsModal({ open, onClose, order, patient }: Attend
               </TabsList>
             </div>
 
-              <div className="flex-1 overflow-y-auto p-4 bg-[#F8FAFC] custom-scrollbar">
-              <TabsContent value="guias" className="m-0 focus-visible:outline-none">
-                <div className="flex flex-col gap-4">
+              <div className="flex-1 min-h-0 bg-[#F8FAFC]">
+                <TabsContent value="guias" className="h-full m-0 flex flex-col focus-visible:outline-none">
+                  <div className="p-4 space-y-4 bg-white border-b border-border shadow-sm z-10">
+                    <div className="flex flex-col gap-4">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-4">
                       <div className="flex items-center gap-1.5 bg-white border border-border rounded-full px-3 py-1 shadow-sm">
@@ -393,10 +394,11 @@ export function AttendanceDetailsModal({ open, onClose, order, patient }: Attend
                       <span className="text-[9px] font-bold text-muted-foreground uppercase group-hover:text-red-600">Excluir</span>
                     </div>
                   </div>
-                </div>
+                  </div>
 
-                {/* Groups exams by guide/convenio */}
-                {(() => {
+                  <div className="flex-1 overflow-y-auto p-4 space-y-4 custom-scrollbar">
+                    {/* Groups exams by guide/convenio */}
+                    {(() => {
                   const guides = labOrder.labGuides && labOrder.labGuides.length > 0 
                     ? labOrder.labGuides 
                     : [{ 
@@ -623,19 +625,23 @@ export function AttendanceDetailsModal({ open, onClose, order, patient }: Attend
                     </tbody>
                   </table>
                 </div>
-              </TabsContent>
+                  </div>
+                </TabsContent>
 
-              <TabsContent value="autorizacao" className="m-0">
+                <TabsContent value="autorizacao" className="h-full m-0 flex flex-col focus-visible:outline-none">
+                  <div className="flex-1 overflow-y-auto p-4 custom-scrollbar">
                 <div className="bg-white rounded-lg border border-border shadow-sm p-8 text-center">
                   <ShieldCheck className="h-12 w-12 text-[#007AFF] mx-auto mb-4 opacity-20" />
                   <h3 className="text-sm font-bold text-foreground mb-1 uppercase">Autorização do Plano</h3>
                   <p className="text-xs text-muted-foreground">
                     Código: <span className="font-bold text-foreground">{order.authorizationCode || 'NÃO INFORMADO'}</span>
-                  </p>
+                    </p>
+                  </div>
                 </div>
               </TabsContent>
 
-              <TabsContent value="pagamentos" className="m-0 space-y-4">
+              <TabsContent value="pagamentos" className="h-full m-0 flex flex-col focus-visible:outline-none">
+                <div className="flex-1 overflow-y-auto p-4 space-y-4 custom-scrollbar">
                 <div className="grid grid-cols-1 md:grid-cols-4 lg:grid-cols-7 gap-3">
                   <PaymentCard icon={<DollarSign className="h-4 w-4" />} label="TOTAL" value={`R$ ${order.privateValue?.toFixed(2) || '0,00'}`} color="bg-[#007AFF]" />
                   <PaymentCard icon={<span className="font-bold">%</span>} label="DESCONTO" value="R$ 0,00" color="bg-slate-500" />
@@ -649,7 +655,8 @@ export function AttendanceDetailsModal({ open, onClose, order, patient }: Attend
                 <div className="bg-white rounded-lg border border-border shadow-sm p-8 text-center border-dashed">
                   <p className="text-xs font-bold text-muted-foreground uppercase tracking-widest">Pedido não requer pagamento ou já foi faturado pelo convênio</p>
                 </div>
-              </TabsContent>
+              </div>
+            </TabsContent>
             </div>
           </Tabs>
         </div>
