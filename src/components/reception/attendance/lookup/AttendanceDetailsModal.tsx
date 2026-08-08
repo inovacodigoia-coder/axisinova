@@ -211,15 +211,14 @@ export function AttendanceDetailsModal({ open, onClose, order, patient }: Attend
                   </div>
                 </div>
                 <div className="flex-1 overflow-y-auto p-4 space-y-4 custom-scrollbar">
-                  <div className="flex-1 overflow-y-auto p-4 space-y-4 custom-scrollbar">
-                    {Object.entries(
-                      orderExams.reduce((acc, exam) => {
-                        const key = exam.convenioName || 'Particular';
-                        if (!acc[key]) acc[key] = [];
-                        acc[key].push(exam);
-                        return acc;
-                      }, {} as Record<string, typeof orderExams>)
-                    ).map(([convenio, exams], idx) => (
+                  {Object.entries(
+                    orderExams.reduce((acc, exam) => {
+                      const key = exam.convenioName || 'Particular';
+                      if (!acc[key]) acc[key] = [];
+                      acc[key].push(exam);
+                      return acc;
+                    }, {} as Record<string, (typeof orderExams[0])[]>)
+                  ).map(([convenio, exams], idx) => (
                       <div key={idx} className="bg-white rounded-lg border border-border overflow-hidden shadow-sm">
                         <div className="bg-[#F8FAFC] px-4 py-2 border-b border-border flex items-center justify-between">
                           <div className="flex items-center gap-2">
