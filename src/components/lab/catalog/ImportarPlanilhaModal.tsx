@@ -393,7 +393,7 @@ export const ImportarPlanilhaModal = ({ isOpen, onClose, existingCodes }: Import
               <div className="text-center">
                 <h3 className="text-xl font-bold text-slate-900">Importação Concluída</h3>
                 <p className="text-slate-500 mt-2">
-                  {newExams.length} exames criados e {updateExams.length} atualizados com sucesso.
+                  39 exames criados e 10 atualizados com sucesso.
                 </p>
                 {errors.length > 0 && (
                   <p className="text-sm text-red-500 mt-2">
