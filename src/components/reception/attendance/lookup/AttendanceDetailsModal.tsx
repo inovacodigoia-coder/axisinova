@@ -483,7 +483,7 @@ export function AttendanceDetailsModal({ open, onClose, order, patient }: Attend
                                         <span className="font-medium text-foreground uppercase">{exam.name}</span>
                                       </div>
                                     </td>
-                                    <td className="px-4 py-3 text-muted-foreground font-mono">{exam.code || exam.internalCode || '0000000'}</td>
+                                    <td className="px-4 py-3 text-muted-foreground font-mono uppercase">{(exam.code || exam.internalCode || '0000000').toUpperCase()}</td>
                                     <td className="px-4 py-3 text-center">
                                       <div className="flex justify-center">
                                         <div className={cn("w-4 h-4 rounded flex items-center justify-center text-white", exam.isCobrado ? "bg-emerald-500" : "bg-slate-200")}>
