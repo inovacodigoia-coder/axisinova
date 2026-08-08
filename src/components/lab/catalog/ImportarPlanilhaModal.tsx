@@ -396,7 +396,7 @@ export const ImportarPlanilhaModal = ({ isOpen, onClose, existingCodes = [] }: I
           )}
         </div>
 
-        <DialogFooter className="p-6 border-t border-slate-100 gap-2">
+        <DialogFooter className="p-6 border-t border-slate-100 gap-2 shrink-0">
           {state !== 'concluido' && state !== 'importando' && (
             <Button variant="outline" onClick={onClose} className="border-slate-200 text-slate-700 hover:bg-slate-50">
               Cancelar
