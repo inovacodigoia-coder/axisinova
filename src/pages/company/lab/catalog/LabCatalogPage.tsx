@@ -3,7 +3,8 @@ import { Card } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Skeleton } from '@/components/ui/skeleton'
-import { Search, Plus, Filter, LayoutGrid, List, Edit2, Trash2, Beaker, AlertTriangle, ChevronLeft, ChevronRight } from 'lucide-react'
+import { Search, Plus, Filter, LayoutGrid, List, Edit2, Trash2, Beaker, AlertTriangle, ChevronLeft, ChevronRight, Upload } from 'lucide-react'
+import { ImportarPlanilhaModal } from '@/components/lab/catalog/ImportarPlanilhaModal'
 import { Badge } from '@/components/ui/badge'
 import { useNavigate } from 'react-router-dom'
 import { cn } from '@/lib/utils'
@@ -49,6 +50,7 @@ export default function LabCatalogPage() {
   const [pageSize, setPageSize] = useState(10)
   const [currentPage, setCurrentPage] = useState(1)
   const [selectedWorkbench, setSelectedWorkbench] = useState<string>('all')
+  const [importModalOpen, setImportModalOpen] = useState(false)
 
   const exams = useMemo(() => {
     if (!registeredExams) return [];
@@ -121,10 +123,21 @@ export default function LabCatalogPage() {
           <h1 className="text-2xl font-bold">Catálogo de Exames</h1>
           <p className="text-sm text-muted-foreground">Gerencie os exames disponíveis no laboratório.</p>
         </div>
-        <Button onClick={() => navigate('novo')} className="gradient-bg text-white gap-2">
-          <Plus className="h-4 w-4" /> Novo Exame
-        </Button>
+        <div className="flex gap-2">
+          <Button variant="outline" onClick={() => setImportModalOpen(true)} className="gap-2 border-slate-200 text-slate-700">
+            <Upload className="h-4 w-4" /> Importar Planilha
+          </Button>
+          <Button onClick={() => navigate('novo')} className="gradient-bg text-white gap-2">
+            <Plus className="h-4 w-4" /> Novo Exame
+          </Button>
+        </div>
       </div>
+
+      <ImportarPlanilhaModal 
+        isOpen={importModalOpen} 
+        onClose={() => setImportModalOpen(false)}
+        existingCodes={exams.map(e => e.code)}
+      />
 
       <div className="flex flex-wrap gap-4 items-center justify-between bg-card p-4 rounded-xl border border-border">
         <div className="relative flex-1 min-w-[300px]">
