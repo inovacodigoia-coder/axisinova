@@ -410,6 +410,9 @@ export function AttendanceDetailsModal({ open, onClose, order, patient }: Attend
                     const examsInGuide = guide.exams || orderExams.filter(e => e.convenioName === guide.convenioName);
                     if (examsInGuide.length === 0) return null;
                     
+                    const hasComplement = examsInGuide.some((e: any) => e.complemento && e.complemento !== '-');
+                    const hasJustification = examsInGuide.some((e: any) => e.justificativa && e.justificativa !== '-');
+                    
                     return (
                       <div key={idx} className="bg-white rounded-lg border border-border shadow-sm overflow-hidden mb-4">
                         <div className="p-4 border-b border-border bg-muted/5 flex items-center justify-between">
@@ -451,8 +454,8 @@ export function AttendanceDetailsModal({ open, onClose, order, patient }: Attend
                                 <th className="px-4 py-2 border-b border-border">Material</th>
                                 <th className="px-4 py-2 border-b border-border">Previsão Entrega</th>
                                 <th className="px-4 py-2 border-b border-border text-center">Status</th>
-                                <th className="px-4 py-2 border-b border-border">Complemento</th>
-                                <th className="px-4 py-2 border-b border-border">Justificativa</th>
+                                {hasComplement && <th className="px-4 py-2 border-b border-border">Complemento</th>}
+                                {hasJustification && <th className="px-4 py-2 border-b border-border">Justificativa</th>}
                                 <th className="px-4 py-2 border-b border-border text-right">Ações</th>
                               </tr>
                             </thead>
@@ -508,8 +511,8 @@ export function AttendanceDetailsModal({ open, onClose, order, patient }: Attend
                                         L
                                       </div>
                                     </td>
-                                    <td className="px-4 py-3 text-muted-foreground">-</td>
-                                    <td className="px-4 py-3 text-muted-foreground">-</td>
+                                    {hasComplement && <td className="px-4 py-3 text-muted-foreground">{exam.complemento || '-'}</td>}
+                                    {hasJustification && <td className="px-4 py-3 text-muted-foreground">{exam.justificativa || '-'}</td>}
                                     <td className="px-4 py-3 text-right">
                                       <div className="flex justify-end gap-1">
                                         <Button size="icon" variant="outline" className="h-7 w-7 bg-white"><Pencil className="h-3.5 w-3.5" /></Button>
