@@ -184,7 +184,30 @@ export function AttendanceDetailsModal({ open, onClose, order, patient }: Attend
                     </div>
                   </div>
                   <div className="flex items-center gap-6 py-2 px-1 border-y border-border/50 bg-white/50 rounded-lg">
-                     {/* Action Icons */}
+                    <Button variant="ghost" size="sm" className="h-8 gap-2 text-xs" onClick={() => {}}>
+                      <Plus className="h-3.5 w-3.5 text-primary" /> Guia
+                    </Button>
+                    <Button variant="ghost" size="sm" className="h-8 gap-2 text-xs" onClick={() => {}}>
+                      <ShieldCheck className="h-3.5 w-3.5 text-secondary" /> Conferir
+                    </Button>
+                    <Button variant="ghost" size="sm" className="h-8 gap-2 text-xs" onClick={() => setPrintSelectionOpen(true)}>
+                      <Printer className="h-3.5 w-3.5 text-primary" /> Imprimir
+                    </Button>
+                    <Button variant="ghost" size="sm" className="h-8 gap-2 text-xs" onClick={() => {}}>
+                      <History className="h-3.5 w-3.5 text-muted-foreground" /> Histórico
+                    </Button>
+                    <Button variant="ghost" size="sm" className="h-8 gap-2 text-xs" onClick={() => {}}>
+                      <RefreshCw className="h-3.5 w-3.5 text-primary" /> Atualizar
+                    </Button>
+                    <div className="h-4 w-px bg-border/50" />
+                    <Button variant="ghost" size="sm" className="h-8 gap-2 text-xs text-red-500 hover:text-red-600 hover:bg-red-50" onClick={() => {}}>
+                      <Trash2 className="h-3.5 w-3.5" /> Excluir
+                    </Button>
+                  </div>
+                  <div className="flex gap-2">
+                    <Button variant="outline" size="sm" className="text-xs h-7" onClick={() => {}}>Editar Guia</Button>
+                    <Button variant="outline" size="sm" className="text-xs h-7" onClick={() => {}}>Trocar Convênio</Button>
+                    <Button variant="outline" size="sm" className="text-xs h-7" onClick={() => setPrintSelectionOpen(true)}>Imprimir Guia</Button>
                   </div>
                 </div>
                 <div className="flex-1 overflow-y-auto p-4 space-y-4 custom-scrollbar">
