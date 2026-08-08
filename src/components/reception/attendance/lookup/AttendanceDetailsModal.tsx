@@ -549,7 +549,7 @@ export function AttendanceDetailsModal({ open, onClose, order, patient }: Attend
                   </div>
                 </div>
                 
-                <div className="bg-white rounded-lg border border-border shadow-sm overflow-hidden">
+                <div className="bg-white rounded-lg border border-border shadow-sm overflow-x-auto custom-scrollbar">
                   <table className="w-full text-left border-collapse">
                     <thead className="bg-muted/30 text-[10px] font-bold text-muted-foreground uppercase tracking-wider">
                       <tr>
