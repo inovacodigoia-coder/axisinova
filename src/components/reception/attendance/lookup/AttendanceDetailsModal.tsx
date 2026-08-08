@@ -424,31 +424,6 @@ export function AttendanceDetailsModal({ open, onClose, order, patient }: Attend
                             </div>
                           </div>
                           <div className="flex gap-1 items-center">
-                            <Button 
-                              size="sm" 
-                              variant="outline" 
-                              className="h-8 bg-white text-[10px] font-bold uppercase tracking-wider flex gap-1.5"
-                            >
-                              <Pencil className="h-3.5 w-3.5 text-[#007AFF]" />
-                              Editar Guia
-                            </Button>
-                            <Button 
-                              size="sm" 
-                              variant="outline" 
-                              className="h-8 bg-white text-[10px] font-bold uppercase tracking-wider flex gap-1.5"
-                            >
-                              <RefreshCw className="h-3.5 w-3.5 text-emerald-600" />
-                              Trocar Convênio
-                            </Button>
-                            <Button 
-                              size="sm" 
-                              variant="outline" 
-                              className="h-8 bg-white text-[10px] font-bold uppercase tracking-wider flex gap-1.5"
-                              onClick={() => setPrintSelectionOpen(true)}
-                            >
-                              <Printer className="h-3.5 w-3.5 text-slate-600" />
-                              Imprimir Guia
-                            </Button>
                           </div>
                         </div>
 
