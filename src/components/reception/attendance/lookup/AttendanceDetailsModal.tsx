@@ -528,8 +528,9 @@ export function AttendanceDetailsModal({ open, onClose, order, patient }: Attend
                       </div>
                     );
                   });
-                })()}
-              </TabsContent>
+                    })()}
+                  </div>
+                </TabsContent>
 
               <TabsContent value="amostras" className="m-0 space-y-4">
                 <div className="flex items-center justify-between">
