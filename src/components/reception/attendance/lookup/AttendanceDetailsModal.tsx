@@ -360,6 +360,32 @@ export function AttendanceDetailsModal({ open, onClose, order, patient }: Attend
                       <span className="text-[9px] font-bold text-muted-foreground uppercase group-hover:text-[#007AFF]">Atualizar</span>
                     </div>
 
+                    <div className="flex flex-col items-center gap-1 group cursor-pointer">
+                      <Button size="icon" variant="ghost" className="h-9 w-9 rounded-full bg-white shadow-sm border border-border group-hover:text-[#007AFF] group-hover:border-[#007AFF] transition-all">
+                        <Pencil className="h-4 w-4 text-[#007AFF]" />
+                      </Button>
+                      <span className="text-[9px] font-bold text-muted-foreground uppercase group-hover:text-[#007AFF]">Editar Guia</span>
+                    </div>
+
+                    <div className="flex flex-col items-center gap-1 group cursor-pointer">
+                      <Button size="icon" variant="ghost" className="h-9 w-9 rounded-full bg-white shadow-sm border border-border group-hover:text-emerald-600 group-hover:border-emerald-600 transition-all">
+                        <RefreshCw className="h-4 w-4 text-emerald-600" />
+                      </Button>
+                      <span className="text-[9px] font-bold text-muted-foreground uppercase group-hover:text-emerald-600 text-center">Trocar<br/>Convênio</span>
+                    </div>
+
+                    <div className="flex flex-col items-center gap-1 group cursor-pointer">
+                      <Button 
+                        size="icon" 
+                        variant="ghost" 
+                        className="h-9 w-9 rounded-full bg-white shadow-sm border border-border group-hover:text-slate-600 group-hover:border-slate-600 transition-all"
+                        onClick={() => setPrintSelectionOpen(true)}
+                      >
+                        <Printer className="h-4 w-4 text-slate-600" />
+                      </Button>
+                      <span className="text-[9px] font-bold text-muted-foreground uppercase group-hover:text-slate-600 text-center">Imprimir<br/>Guia</span>
+                    </div>
+
                     <div className="flex flex-col items-center gap-1 group cursor-pointer ml-auto">
                       <Button size="icon" variant="ghost" className="h-9 w-9 rounded-full bg-white shadow-sm border border-border group-hover:text-red-600 group-hover:border-red-600 transition-all">
                         <Trash2 className="h-4 w-4" />
