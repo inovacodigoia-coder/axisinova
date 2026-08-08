@@ -193,7 +193,7 @@ export const ImportarPlanilhaModal = ({ isOpen, onClose, existingCodes = [] }: I
         const examPayload: any = {
           name: examData.nome,
           internalCode: examData.codigo,
-          type: 'lab', // Using 'lab' as enforced by the database check constraint
+          type: 'lab', // Use 'lab' to satisfy database constraint while frontend displays as 'LABORATÓRIO'
           resultDeadlineDays: examData.prazoEntrega,
           selectedMaterials: examData.materiaisAceitos.split(',').map(m => m.trim()),
           defaultMaterial: examData.materiaisAceitos.split(',')[0]?.trim() || '',
