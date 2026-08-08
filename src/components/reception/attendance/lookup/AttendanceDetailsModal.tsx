@@ -511,8 +511,8 @@ export function AttendanceDetailsModal({ open, onClose, order, patient }: Attend
                                         L
                                       </div>
                                     </td>
-                                    <td className="px-4 py-3 text-muted-foreground">-</td>
-                                    <td className="px-4 py-3 text-muted-foreground">-</td>
+                                    {hasComplement && <td className="px-4 py-3 text-muted-foreground">{exam.complemento || '-'}</td>}
+                                    {hasJustification && <td className="px-4 py-3 text-muted-foreground">{exam.justificativa || '-'}</td>}
                                     <td className="px-4 py-3 text-right">
                                       <div className="flex justify-end gap-1">
                                         <Button size="icon" variant="outline" className="h-7 w-7 bg-white"><Pencil className="h-3.5 w-3.5" /></Button>
