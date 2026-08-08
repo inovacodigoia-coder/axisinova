@@ -288,7 +288,7 @@ export default function LabCatalogPage() {
 
               <div className="flex items-center gap-4">
                 <p className="text-xs text-muted-foreground">
-                  {Math.min((currentPage - 1) * pageSize + 1, filteredExams.length)} - {Math.min(currentPage * pageSize, filteredExams.length)} de {filteredExams.length}
+                  {filteredExams.length > 0 ? Math.min((currentPage - 1) * pageSize + 1, filteredExams.length) : 0} - {Math.min(currentPage * pageSize, filteredExams.length)} de {filteredExams.length}
                 </p>
                 <div className="flex items-center gap-1">
                   <Button 
@@ -384,7 +384,7 @@ export default function LabCatalogPage() {
 
               <div className="flex items-center gap-4">
                 <p className="text-xs text-muted-foreground">
-                  {Math.min((currentPage - 1) * pageSize + 1, filteredExams.length)} - {Math.min(currentPage * pageSize, filteredExams.length)} de {filteredExams.length}
+                  {filteredExams.length > 0 ? Math.min((currentPage - 1) * pageSize + 1, filteredExams.length) : 0} - {Math.min(currentPage * pageSize, filteredExams.length)} de {filteredExams.length}
                 </p>
                 <div className="flex items-center gap-1">
                   <Button 
