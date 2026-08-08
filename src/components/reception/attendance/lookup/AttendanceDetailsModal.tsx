@@ -669,13 +669,15 @@ export function AttendanceDetailsModal({ open, onClose, order, patient }: Attend
             locatorCode: order.orderNumber.replace('-', ''),
             password: Math.floor(1000 + Math.random() * 9000).toString(),
             attachments: [],
-            exams: orderExams.map(exam => ({
-              name: exam.name,
-              code: exam.code || '',
-              forecastDate: exam.previsaoEntrega || order.deliveryDate || '',
-              doctorName: exam.doctorName || order.doctorName,
-              doctorCRM: exam.doctorCRM || order.doctorCRM
-            }))
+            exams: orderExams
+              .filter(exam => selectedExams.size === 0 || selectedExams.has(exam.examId || exam.id))
+              .map(exam => ({
+                name: exam.name,
+                code: exam.code || '',
+                forecastDate: exam.previsaoEntrega || order.deliveryDate || '',
+                doctorName: exam.doctorName || order.doctorName,
+                doctorCRM: exam.doctorCRM || order.doctorCRM
+              }))
           };
           
           setPrintDoc(doc);
