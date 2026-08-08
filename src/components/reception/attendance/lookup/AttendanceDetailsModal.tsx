@@ -218,7 +218,9 @@ export function AttendanceDetailsModal({ open, onClose, order, patient }: Attend
                       acc[key].push(exam);
                       return acc;
                     }, {} as Record<string, (typeof orderExams[0])[]>)
-                  ).map(([convenio, exams], idx) => (
+                  ).map(([convenio, examsArr], idx) => {
+                    const exams = examsArr as (typeof orderExams[0])[];
+                    return (
                       <div key={idx} className="bg-white rounded-lg border border-border overflow-hidden shadow-sm">
                         <div className="bg-[#F8FAFC] px-4 py-2 border-b border-border flex items-center justify-between">
                           <div className="flex items-center gap-2">
