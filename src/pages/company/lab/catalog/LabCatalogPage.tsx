@@ -56,7 +56,7 @@ export default function LabCatalogPage() {
     if (!registeredExams) return [];
     
     // Show only real exams from the database
-    const labExams = registeredExams.filter(e => e && e.type === 'lab');
+    const labExams = registeredExams.filter(e => e && (String(e.type).toLowerCase() === 'lab' || String(e.type).toLowerCase() === 'laboratório' || String(e.type).toLowerCase() === 'laboratorio'));
     
     // Sort by created_at descending so new ones appear first
     const sortedExams = [...labExams].sort((a, b) => {
@@ -135,7 +135,11 @@ export default function LabCatalogPage() {
 
       <ImportarPlanilhaModal 
         isOpen={importModalOpen} 
-        onClose={() => setImportModalOpen(false)}
+        onClose={() => {
+          setImportModalOpen(false);
+          // Refresh data from Supabase/Context after import
+          window.location.reload(); 
+        }}
         existingCodes={exams.map(e => e.code)}
       />
 
@@ -284,7 +288,7 @@ export default function LabCatalogPage() {
 
               <div className="flex items-center gap-4">
                 <p className="text-xs text-muted-foreground">
-                  {Math.min((currentPage - 1) * pageSize + 1, filteredExams.length)} - {Math.min(currentPage * pageSize, filteredExams.length)} de {filteredExams.length}
+                  {filteredExams.length > 0 ? Math.min((currentPage - 1) * pageSize + 1, filteredExams.length) : 0} - {Math.min(currentPage * pageSize, filteredExams.length)} de {filteredExams.length}
                 </p>
                 <div className="flex items-center gap-1">
                   <Button 
@@ -380,7 +384,7 @@ export default function LabCatalogPage() {
 
               <div className="flex items-center gap-4">
                 <p className="text-xs text-muted-foreground">
-                  {Math.min((currentPage - 1) * pageSize + 1, filteredExams.length)} - {Math.min(currentPage * pageSize, filteredExams.length)} de {filteredExams.length}
+                  {filteredExams.length > 0 ? Math.min((currentPage - 1) * pageSize + 1, filteredExams.length) : 0} - {Math.min(currentPage * pageSize, filteredExams.length)} de {filteredExams.length}
                 </p>
                 <div className="flex items-center gap-1">
                   <Button 
