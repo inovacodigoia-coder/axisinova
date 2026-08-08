@@ -324,7 +324,7 @@ export function AttendanceDetailsModal({ open, onClose, order, patient }: Attend
                   </div>
 
                   {/* Guide Action Icons */}
-                  <div className="flex items-center gap-6 py-2 px-1 border-y border-border/50 bg-white/50 rounded-lg">
+                  <div className="flex items-center gap-3 sm:gap-6 py-2 px-2 border-y border-border/50 bg-white/50 rounded-lg overflow-x-auto no-scrollbar">
                     <div className="flex flex-col items-center gap-1 group cursor-pointer">
                       <Button size="icon" variant="ghost" className="h-9 w-9 rounded-full bg-white shadow-sm border border-border group-hover:text-primary group-hover:border-primary transition-all">
                         <Plus className="h-4 w-4" />
