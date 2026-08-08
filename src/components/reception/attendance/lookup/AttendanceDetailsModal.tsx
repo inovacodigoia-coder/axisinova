@@ -454,8 +454,8 @@ export function AttendanceDetailsModal({ open, onClose, order, patient }: Attend
                                 <th className="px-4 py-2 border-b border-border">Material</th>
                                 <th className="px-4 py-2 border-b border-border">Previsão Entrega</th>
                                 <th className="px-4 py-2 border-b border-border text-center">Status</th>
-                                <th className="px-4 py-2 border-b border-border">Complemento</th>
-                                <th className="px-4 py-2 border-b border-border">Justificativa</th>
+                                {hasComplement && <th className="px-4 py-2 border-b border-border">Complemento</th>}
+                                {hasJustification && <th className="px-4 py-2 border-b border-border">Justificativa</th>}
                                 <th className="px-4 py-2 border-b border-border text-right">Ações</th>
                               </tr>
                             </thead>
