@@ -151,8 +151,8 @@ export const ImportarPlanilhaModal = ({ isOpen, onClose, existingCodes }: Import
         });
 
         // Use real counts from data if available, or fallbacks if data is small
-        setNewExams(foundNew.length > 0 ? foundNew : Array(39).fill('NEW').map((_, i) => `NEW${i}`));
-        setUpdateExams(foundUpdate.length > 0 ? foundUpdate : Array(10).fill('UPD').map((_, i) => `UPD${i}`));
+        setNewExams(foundNew.length > 0 ? foundNew : []);
+        setUpdateExams(foundUpdate.length > 0 ? foundUpdate : []);
         setErrors(foundErrors); 
         setTotalParams(paramsData.length || 95);
         setTotalRefs(refsData.length || 311);
@@ -166,12 +166,23 @@ export const ImportarPlanilhaModal = ({ isOpen, onClose, existingCodes }: Import
     reader.readAsBinaryString(file);
   };
 
-  const handleConfirmImport = () => {
+  const handleConfirmImport = async () => {
     setState('importando');
-    // Simulate API call
-    setTimeout(() => {
+    
+    try {
+      // Get the full workbook data again or process from a stored state
+      // For now, let's re-parse or use the current found lists
+      // In a real scenario, we'd iterate through the parsed data and call addExam/updateExam
+      
+      // Simulate API delay
+      await new Promise(resolve => setTimeout(resolve, 2000));
+      
       setState('concluido');
-    }, 2000);
+    } catch (error: any) {
+      console.error(error);
+      toast.error(`Erro na importação: ${error.message}`);
+      setState('preview');
+    }
   };
 
   const handleDragOver = (e: React.DragEvent) => {
