@@ -190,8 +190,8 @@ export const ImportarPlanilhaModal = ({ isOpen, onClose, existingCodes = [] }: I
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && state !== 'importando' && onClose()}>
-      <DialogContent className="max-w-xl p-0 overflow-hidden bg-white border-slate-200 rounded-xl">
-        <DialogHeader className="p-6 border-b border-slate-100 flex-row items-center justify-between space-y-0">
+      <DialogContent className="max-w-xl p-0 overflow-hidden bg-white border-slate-200 rounded-xl max-h-[90vh] flex flex-col">
+        <DialogHeader className="p-6 border-b border-slate-100 flex-row items-center justify-between space-y-0 shrink-0">
           <div className="flex items-center gap-3">
             {state === 'preview' && (
               <Button variant="ghost" size="sm" className="h-8 w-8 p-0" onClick={() => setState('upload')}>
@@ -213,7 +213,7 @@ export const ImportarPlanilhaModal = ({ isOpen, onClose, existingCodes = [] }: I
           )}
         </DialogHeader>
 
-        <div className="max-h-[85vh] overflow-y-auto p-6">
+        <div className="flex-1 overflow-y-auto p-6">
           {state === 'upload' && (
             <div className="space-y-6">
               <div 
