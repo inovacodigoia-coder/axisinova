@@ -17,6 +17,7 @@ const footerLinks = {
     { label: 'Privacidade', href: '#' },
     { label: 'Termos de Uso', href: '#' },
     { label: 'LGPD', href: '#' },
+    { label: 'Design System', href: '/design-system' },
   ],
   Contato: [
     { label: 'contato@axisinova.com.br', href: 'mailto:contato@axisinova.com.br' },

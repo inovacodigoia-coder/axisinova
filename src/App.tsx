@@ -40,6 +40,7 @@ const NotFound = lazy(() => import("./pages/NotFound"));
 const GreenScreenPage = lazy(() => import("./pages/GreenScreenPage"));
 const OriginSelectorPage = lazy(() => import("./pages/company/OriginSelectorPage"));
 const LabColetaPage = lazy(() => import("./pages/company/lab/LabColetaPage"));
+const DesignSystemPage = lazy(() => import("./pages/DesignSystemPage"));
 
 const queryClient = new QueryClient();
 
@@ -59,6 +60,7 @@ const App = () => (
                       {/* Public */}
                       <Route path="/" element={<LandingPage />} />
                       <Route path="/verde" element={<GreenScreenPage />} />
+                      <Route path="/design-system" element={<DesignSystemPage />} />
                       <Route path="/cadastro" element={<RegisterPage />} />
                       <Route path="/login" element={<LoginPage />} />
                       <Route path="/forgot-password" element={<ForgotPasswordPage />} />
