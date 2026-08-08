@@ -299,7 +299,8 @@ export function AttendanceDetailsModal({ open, onClose, order, patient }: Attend
                           </tbody>
                         </table>
                       </div>
-                    ))}
+                    );
+                  })}
                 </div>
               </TabsContent>
             </div>
