@@ -104,7 +104,7 @@ export function HeroSection() {
                   <GradientButton className="h-12 px-8 text-base">Começar Grátis por 14 Dias</GradientButton>
                 </Link>
                 <OutlineButton variant="gray" className="h-12 px-6 text-base" onClick={() => setShowDemo(true)}>
-                  <Play className="h-4 w-4" /> Demo em 2 min (CTR+)
+                  <Play className="h-4 w-4" /> Assista a Demonstração
                 </OutlineButton>
               </div>
 
@@ -154,46 +154,80 @@ export function HeroSection() {
               >
                 <X className="h-8 w-8" />
               </button>
-              <div className="rounded-2xl overflow-hidden shadow-2xl bg-black">
-                {/* Mockup do vídeo com os ganchos solicitados (Antes/Depois e Demonstração) */}
-                <div className="relative aspect-video bg-neutral-900 flex flex-col items-center justify-center p-8 text-center">
-                  <div className="absolute inset-0 bg-gradient-to-br from-primary/20 to-secondary/20 opacity-50" />
-                  
-                  <div className="z-10 space-y-6">
-                    <motion.div
-                      initial={{ opacity: 0, y: 10 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ delay: 0.2 }}
-                    >
-                      <h3 className="text-2xl font-bold text-white mb-2">🚀 Axis Inova: A Revolução da sua Clínica</h3>
-                      <p className="text-white/70">Acompanhe como transformamos a gestão de saúde (0:00 - 2:00)</p>
-                    </motion.div>
+              <div className="rounded-2xl overflow-hidden shadow-2xl bg-[#F8FAFC] border border-white/20 aspect-video relative group">
+                {/* Interface Mockup Animation */}
+                <div className="absolute inset-0 bg-white overflow-hidden p-4 md:p-8 flex flex-col gap-6">
+                  {/* Top Bar Mockup */}
+                  <div className="h-12 w-full bg-slate-50 border border-slate-200 rounded-lg flex items-center px-4 gap-4">
+                    <div className="h-6 w-32 bg-slate-200 rounded animate-pulse" />
+                    <div className="flex-1" />
+                    <div className="h-8 w-8 rounded-full bg-primary/20 animate-pulse" />
+                  </div>
 
-                    <div className="grid grid-cols-2 gap-4 max-w-lg mx-auto">
-                      <div className="bg-red-500/10 border border-red-500/20 p-4 rounded-xl">
-                        <span className="block text-red-500 font-bold mb-1">ANTES</span>
-                        <p className="text-xs text-white/60">Papelada, Glosas constantes, Filas intermináveis e descontrole financeiro.</p>
-                      </div>
-                      <div className="bg-green-500/10 border border-green-500/20 p-4 rounded-xl">
-                        <span className="block text-green-500 font-bold mb-1">DEPOIS</span>
-                        <p className="text-xs text-white/60">Faturamento 100% TISS, Totem Digital, BI em tempo real e eficiência máxima.</p>
-                      </div>
+                  <div className="flex-1 flex gap-6">
+                    {/* Sidebar Mockup */}
+                    <div className="w-48 flex flex-col gap-3">
+                      {[1, 2, 3, 4, 5].map((i) => (
+                        <div key={i} className="h-10 w-full bg-slate-50 border border-slate-100 rounded-md animate-pulse" style={{ animationDelay: `${i * 150}ms` }} />
+                      ))}
                     </div>
 
-                    <div className="flex items-center justify-center gap-4">
-                      <div className="h-1 w-32 bg-white/20 rounded-full overflow-hidden">
+                    {/* Main Content Mockup */}
+                    <div className="flex-1 flex flex-col gap-6">
+                      <div className="grid grid-cols-3 gap-4">
+                        {[1, 2, 3].map((i) => (
+                          <div key={i} className="h-24 bg-white border border-slate-200 rounded-xl p-4 shadow-sm animate-pulse" style={{ animationDelay: `${i * 200}ms` }}>
+                             <div className="h-3 w-16 bg-slate-100 rounded mb-2" />
+                             <div className="h-6 w-24 bg-slate-200 rounded" />
+                          </div>
+                        ))}
+                      </div>
+
+                      <div className="flex-1 bg-white border border-slate-200 rounded-xl p-6 shadow-sm relative overflow-hidden">
+                        {/* Simulated Navigation/Interaction Overlay */}
                         <motion.div 
-                          className="h-full bg-primary"
-                          animate={{ width: ["0%", "100%"] }}
-                          transition={{ duration: 10, repeat: Infinity, ease: "linear" }}
-                        />
-                      </div>
-                      <span className="text-white/50 text-xs font-mono">01:12 / 02:00</span>
-                    </div>
+                          className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-10 flex flex-col items-center"
+                          animate={{ 
+                            y: [0, -20, 0],
+                            scale: [1, 1.05, 1]
+                          }}
+                          transition={{ duration: 4, repeat: Infinity }}
+                        >
+                          <div className="h-16 w-16 rounded-full bg-primary/10 flex items-center justify-center mb-4">
+                            <Play className="h-8 w-8 text-primary fill-primary/20" />
+                          </div>
+                          <h4 className="text-xl font-bold text-slate-800">Navegação em Tempo Real</h4>
+                          <p className="text-sm text-slate-500">Veja como é fácil operar o sistema Axis Inova</p>
+                        </motion.div>
 
-                    <p className="text-primary font-semibold text-sm animate-pulse">
-                      Reproduzindo: Demonstração do Módulo de Faturamento e BI...
-                    </p>
+                        <div className="space-y-4 opacity-30">
+                          <div className="h-4 w-1/2 bg-slate-100 rounded" />
+                          <div className="h-4 w-full bg-slate-50 rounded" />
+                          <div className="h-4 w-3/4 bg-slate-50 rounded" />
+                          <div className="h-4 w-full bg-slate-50 rounded" />
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Video Progress Bar Overlay */}
+                  <div className="absolute bottom-0 left-0 right-0 h-1.5 bg-slate-100">
+                    <motion.div 
+                      className="h-full bg-primary shadow-[0_0_10px_rgba(0,122,255,0.5)]"
+                      animate={{ width: ["0%", "100%"] }}
+                      transition={{ duration: 15, repeat: Infinity, ease: "linear" }}
+                    />
+                  </div>
+                </div>
+
+                {/* Content Overlay */}
+                <div className="absolute inset-0 bg-gradient-to-t from-slate-900/40 to-transparent flex flex-col justify-end p-8 pointer-events-none">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <div className="bg-red-500 h-2 w-2 rounded-full animate-pulse" />
+                      <span className="text-white text-xs font-bold tracking-wider uppercase">Live Demo em Execução</span>
+                    </div>
+                    <span className="text-white/80 text-xs font-mono">Simulação de Fluxo de Atendimento</span>
                   </div>
                 </div>
               </div>
