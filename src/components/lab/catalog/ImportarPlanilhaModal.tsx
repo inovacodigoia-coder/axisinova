@@ -52,6 +52,7 @@ export const ImportarPlanilhaModal = ({ isOpen, onClose, existingCodes }: Import
   const [errors, setErrors] = useState<RowError[]>([]);
   const [totalParams, setTotalParams] = useState(0);
   const [totalRefs, setTotalRefs] = useState(0);
+  const [isPregnant, setIsPregnant] = useState(false); // For visual reference if needed later
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const resetState = () => {
