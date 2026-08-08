@@ -31,7 +31,7 @@ interface Props {
   selectedTubes?: string[];
 }
 
-export function AttendancePrintSelectionModal({ open, onClose, onConfirm, order }: Props) {
+export function AttendancePrintSelectionModal({ open, onClose, onConfirm, order, selectedExams, selectedTubes }: Props) {
   const orderNumber = order?.orderNumber;
   const [showPreview, setShowPreview] = useState(false);
   const [options, setOptions] = useState<PrintOption[]>([
