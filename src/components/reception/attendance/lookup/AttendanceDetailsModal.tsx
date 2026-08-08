@@ -423,8 +423,6 @@ export function AttendanceDetailsModal({ open, onClose, order, patient }: Attend
                               {(guide.doctorCRM || order.doctorCRM) && <span>({guide.doctorCRM || order.doctorCRM})</span>}
                             </div>
                           </div>
-                          <div className="flex gap-1 items-center">
-                          </div>
                         </div>
 
                         <div className="overflow-x-auto">
