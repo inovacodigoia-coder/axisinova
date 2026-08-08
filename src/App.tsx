@@ -60,6 +60,7 @@ const App = () => (
                       {/* Public */}
                       <Route path="/" element={<LandingPage />} />
                       <Route path="/verde" element={<GreenScreenPage />} />
+                      <Route path="/design-system" element={<DesignSystemPage />} />
                       <Route path="/cadastro" element={<RegisterPage />} />
                       <Route path="/login" element={<LoginPage />} />
                       <Route path="/forgot-password" element={<ForgotPasswordPage />} />
