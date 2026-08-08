@@ -14,9 +14,7 @@ export default function LandingPage() {
         Pular para o conteúdo principal
       </a>
       
-      <header>
-        <Navbar />
-      </header>
+      <Navbar />
       
       <main id="main-content">
         <HeroSection />
