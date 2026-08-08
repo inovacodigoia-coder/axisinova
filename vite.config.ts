@@ -18,4 +18,20 @@ export default defineConfig(({ mode }) => ({
       "@": path.resolve(__dirname, "./src"),
     },
   },
+  build: {
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          'react-vendor': ['react', 'react-dom', 'react-router-dom'],
+          'ui-vendor': ['framer-motion', 'lucide-react'],
+          'chart-vendor': ['recharts'],
+        }
+      }
+    },
+    chunkSizeWarningLimit: 600,
+  },
+  // Minificação agressiva
+  esbuild: {
+    drop: mode === 'production' ? ['console', 'debugger'] : [], // remove logs em produção
+  }
 }));
