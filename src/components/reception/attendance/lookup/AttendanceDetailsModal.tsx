@@ -142,7 +142,7 @@ export function AttendanceDetailsModal({ open, onClose, order, patient }: Attend
         </div>
 
         {/* Info Cards Row */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 p-4">
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 p-3 sm:p-4">
           {/* Attendance ID Card */}
           <div className="gradient-bg rounded-lg p-4 text-white flex flex-col justify-between shadow-lg relative overflow-hidden min-h-[100px] hover:shadow-xl transition-shadow">
             <div className="flex justify-between items-start relative z-10">
