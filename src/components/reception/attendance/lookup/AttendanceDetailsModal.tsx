@@ -444,7 +444,7 @@ export function AttendanceDetailsModal({ open, onClose, order, patient }: Attend
                                     }}
                                   />
                                 </th>
-                                <th className="px-4 py-2 border-b border-border">Procedimentos</th>
+                                 <th className="px-4 py-2 border-b border-border min-w-[200px]">Procedimentos</th>
                                 <th className="px-4 py-2 border-b border-border">Referência</th>
                                 <th className="px-4 py-2 border-b border-border text-center">Cobrado</th>
                                 <th className="px-4 py-2 border-b border-border text-center">Coleta</th>
