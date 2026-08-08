@@ -44,7 +44,7 @@ interface ExamImportData {
   // ... other fields are optional or for future use
 }
 
-export const ImportarPlanilhaModal = ({ isOpen, onClose, existingCodes }: ImportarPlanilhaModalProps) => {
+export const ImportarPlanilhaModal = ({ isOpen, onClose, existingCodes = [] }: ImportarPlanilhaModalProps) => {
   const [state, setState] = useState<ImportState>('upload');
   const [fileName, setFileName] = useState<string>('');
   const [newExams, setNewExams] = useState<string[]>([]);
