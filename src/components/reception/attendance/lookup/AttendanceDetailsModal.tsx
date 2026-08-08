@@ -307,8 +307,8 @@ export function AttendanceDetailsModal({ open, onClose, order, patient }: Attend
               </TabsList>
             </div>
 
-              <div className="flex-1 overflow-y-auto p-4 bg-[#F8FAFC]">
-              <TabsContent value="guias" className="m-0 space-y-4">
+              <div className="flex-1 overflow-y-auto p-4 bg-[#F8FAFC] custom-scrollbar">
+              <TabsContent value="guias" className="m-0 focus-visible:outline-none">
                 <div className="flex flex-col gap-4">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-4">
