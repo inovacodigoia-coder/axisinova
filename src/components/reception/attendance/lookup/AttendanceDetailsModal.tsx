@@ -410,6 +410,9 @@ export function AttendanceDetailsModal({ open, onClose, order, patient }: Attend
                     const examsInGuide = guide.exams || orderExams.filter(e => e.convenioName === guide.convenioName);
                     if (examsInGuide.length === 0) return null;
                     
+                    const hasComplement = examsInGuide.some((e: any) => e.complemento && e.complemento !== '-');
+                    const hasJustification = examsInGuide.some((e: any) => e.justificativa && e.justificativa !== '-');
+                    
                     return (
                       <div key={idx} className="bg-white rounded-lg border border-border shadow-sm overflow-hidden mb-4">
                         <div className="p-4 border-b border-border bg-muted/5 flex items-center justify-between">
