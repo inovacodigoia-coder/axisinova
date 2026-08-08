@@ -125,7 +125,7 @@ export function AttendanceDetailsModal({ open, onClose, order, patient }: Attend
 
   return (
     <Dialog open={open} onOpenChange={(o) => !o && onClose()}>
-      <DialogContent className="max-w-[1200px] w-[95vw] h-[90vh] p-0 flex flex-col gap-0 overflow-hidden bg-[#F8FAFC] border-none shadow-2xl [&>button]:hidden">
+      <DialogContent className="max-w-[1400px] w-[98vw] h-[96vh] max-h-[98vh] p-0 flex flex-col gap-0 overflow-hidden bg-[#F8FAFC] border-none shadow-2xl [&>button]:hidden sm:rounded-xl">
         {/* Header Navigation */}
         <div className="flex items-center justify-between px-4 py-2 bg-white border-b border-border">
           <div className="flex items-center gap-2">
@@ -142,9 +142,9 @@ export function AttendanceDetailsModal({ open, onClose, order, patient }: Attend
         </div>
 
         {/* Info Cards Row */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 p-4">
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 p-3 sm:p-4">
           {/* Attendance ID Card */}
-          <div className="gradient-bg rounded-lg p-4 text-white flex flex-col justify-between shadow-lg relative overflow-hidden min-h-[100px] hover:shadow-xl transition-shadow">
+          <div className="gradient-bg rounded-lg p-3 sm:p-4 text-white flex flex-col justify-between shadow-lg relative overflow-hidden min-h-[85px] sm:min-h-[100px] hover:shadow-xl transition-shadow">
             <div className="flex justify-between items-start relative z-10">
               <span className="text-[10px] font-bold tracking-widest uppercase opacity-80">ATENDIMENTO</span>
               <div className="flex gap-1">
@@ -224,7 +224,7 @@ export function AttendanceDetailsModal({ open, onClose, order, patient }: Attend
           </div>
 
           {/* Client Card */}
-          <div className="bg-white rounded-lg p-4 border border-border flex flex-col justify-between shadow-sm min-h-[100px]">
+          <div className="bg-white rounded-lg p-3 sm:p-4 border border-border flex flex-col justify-between shadow-sm min-h-[85px] sm:min-h-[100px]">
             <div className="flex justify-between items-start">
               <span className="text-[10px] font-bold tracking-widest uppercase text-muted-foreground">CLIENTE</span>
               <DropdownMenu>
@@ -253,7 +253,7 @@ export function AttendanceDetailsModal({ open, onClose, order, patient }: Attend
           </div>
 
           {/* Forecast Card */}
-          <div className="bg-white rounded-lg p-4 border border-border flex flex-col justify-between shadow-sm min-h-[100px]">
+          <div className="bg-white rounded-lg p-3 sm:p-4 border border-border flex flex-col justify-between shadow-sm min-h-[85px] sm:min-h-[100px]">
             <div className="flex justify-between items-start">
               <span className="text-[10px] font-bold tracking-widest uppercase text-muted-foreground">PREVISÃO</span>
               <Button 
@@ -273,7 +273,7 @@ export function AttendanceDetailsModal({ open, onClose, order, patient }: Attend
           </div>
 
           {/* Date Card */}
-          <div className="bg-white rounded-lg p-4 border border-border flex flex-col justify-between shadow-sm min-h-[100px]">
+          <div className="bg-white rounded-lg p-3 sm:p-4 border border-border flex flex-col justify-between shadow-sm min-h-[85px] sm:min-h-[100px]">
             <div className="flex justify-between items-start">
               <span className="text-[10px] font-bold tracking-widest uppercase text-muted-foreground">DATA DO ATENDIMENTO</span>
             </div>
@@ -307,7 +307,7 @@ export function AttendanceDetailsModal({ open, onClose, order, patient }: Attend
               </TabsList>
             </div>
 
-              <div className="flex-1 overflow-y-auto p-4 bg-[#F8FAFC]">
+              <div className="flex-1 overflow-y-auto p-3 sm:p-4 bg-[#F8FAFC] min-h-0 custom-scrollbar">
               <TabsContent value="guias" className="m-0 space-y-4">
                 <div className="flex flex-col gap-4">
                   <div className="flex items-center justify-between">
@@ -324,7 +324,7 @@ export function AttendanceDetailsModal({ open, onClose, order, patient }: Attend
                   </div>
 
                   {/* Guide Action Icons */}
-                  <div className="flex items-center gap-6 py-2 px-1 border-y border-border/50 bg-white/50 rounded-lg">
+                  <div className="flex items-center gap-3 sm:gap-6 py-2 px-2 border-y border-border/50 bg-white/50 rounded-lg overflow-x-auto no-scrollbar">
                     <div className="flex flex-col items-center gap-1 group cursor-pointer">
                       <Button size="icon" variant="ghost" className="h-9 w-9 rounded-full bg-white shadow-sm border border-border group-hover:text-primary group-hover:border-primary transition-all">
                         <Plus className="h-4 w-4" />
@@ -444,7 +444,7 @@ export function AttendanceDetailsModal({ open, onClose, order, patient }: Attend
                                     }}
                                   />
                                 </th>
-                                <th className="px-4 py-2 border-b border-border">Procedimentos</th>
+                                 <th className="px-4 py-2 border-b border-border min-w-[200px]">Procedimentos</th>
                                 <th className="px-4 py-2 border-b border-border">Referência</th>
                                 <th className="px-4 py-2 border-b border-border text-center">Cobrado</th>
                                 <th className="px-4 py-2 border-b border-border text-center">Coleta</th>
@@ -549,7 +549,7 @@ export function AttendanceDetailsModal({ open, onClose, order, patient }: Attend
                   </div>
                 </div>
                 
-                <div className="bg-white rounded-lg border border-border shadow-sm overflow-hidden">
+                <div className="bg-white rounded-lg border border-border shadow-sm overflow-x-auto custom-scrollbar">
                   <table className="w-full text-left border-collapse">
                     <thead className="bg-muted/30 text-[10px] font-bold text-muted-foreground uppercase tracking-wider">
                       <tr>
