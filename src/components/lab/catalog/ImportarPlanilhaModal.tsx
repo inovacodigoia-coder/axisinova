@@ -134,15 +134,6 @@ export const ImportarPlanilhaModal = ({ isOpen, onClose, existingCodes = [] }: I
           }
 
           // Force "LABORATÓRIO" type for all imported exams as requested
-          const examToImport = {
-            nome: name,
-            codigo: code,
-            materiaisAceitos: materials,
-            bancada: workbench,
-            prazoEntrega: Number(deadline),
-            type: 'LABORATORIO'
-          };
-
           if (existingCodes.includes(code)) {
             foundUpdate.push(code);
           } else {
