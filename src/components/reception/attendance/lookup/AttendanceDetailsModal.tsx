@@ -211,7 +211,95 @@ export function AttendanceDetailsModal({ open, onClose, order, patient }: Attend
                   </div>
                 </div>
                 <div className="flex-1 overflow-y-auto p-4 space-y-4 custom-scrollbar">
-                    {/* Groups exams */}
+                  <div className="flex-1 overflow-y-auto p-4 space-y-4 custom-scrollbar">
+                    {Object.entries(
+                      orderExams.reduce((acc, exam) => {
+                        const key = exam.convenioName || 'Particular';
+                        if (!acc[key]) acc[key] = [];
+                        acc[key].push(exam);
+                        return acc;
+                      }, {} as Record<string, typeof orderExams>)
+                    ).map(([convenio, exams], idx) => (
+                      <div key={idx} className="bg-white rounded-lg border border-border overflow-hidden shadow-sm">
+                        <div className="bg-[#F8FAFC] px-4 py-2 border-b border-border flex items-center justify-between">
+                          <div className="flex items-center gap-2">
+                            <div className="bg-primary text-white text-[10px] font-bold h-5 w-5 rounded-full flex items-center justify-center">
+                              {idx + 1}
+                            </div>
+                            <span className="text-xs font-bold text-foreground uppercase">{convenio}</span>
+                          </div>
+                        </div>
+                        <table className="w-full text-xs">
+                          <thead className="bg-[#F8FAFC] text-muted-foreground uppercase text-[10px] font-bold">
+                            <tr>
+                              <th className="px-4 py-2 text-left w-10">
+                                <Checkbox 
+                                  checked={exams.every(e => selectedExams.has(e.examId))}
+                                  onCheckedChange={(checked) => {
+                                    const newSelected = new Set(selectedExams);
+                                    exams.forEach(e => checked ? newSelected.add(e.examId) : newSelected.delete(e.examId));
+                                    setSelectedExams(newSelected);
+                                  }}
+                                />
+                              </th>
+                              <th className="px-4 py-2 text-left">Procedimento</th>
+                              <th className="px-4 py-2 text-left">Referência</th>
+                              <th className="px-4 py-2 text-center">Cobrado</th>
+                              <th className="px-4 py-2 text-center">Coleta</th>
+                              <th className="px-4 py-2 text-left">Material</th>
+                              <th className="px-4 py-2 text-left">Previsão</th>
+                              <th className="px-4 py-2 text-left">Entrega</th>
+                              <th className="px-4 py-2 text-left">Status</th>
+                            </tr>
+                          </thead>
+                          <tbody className="divide-y divide-border">
+                            {exams.map((exam) => (
+                              <tr key={exam.examId} className="hover:bg-muted/30 transition-colors">
+                                <td className="px-4 py-2">
+                                  <Checkbox 
+                                    checked={selectedExams.has(exam.examId)}
+                                    onCheckedChange={(checked) => {
+                                      const newSelected = new Set(selectedExams);
+                                      checked ? newSelected.add(exam.examId) : newSelected.delete(exam.examId);
+                                      setSelectedExams(newSelected);
+                                    }}
+                                  />
+                                </td>
+                                <td className="px-4 py-2">
+                                  <div className="font-medium text-foreground">{exam.name}</div>
+                                  <div className="text-[10px] text-muted-foreground">{exam.code}</div>
+                                </td>
+                                <td className="px-4 py-2 text-muted-foreground">00000000</td>
+                                <td className="px-4 py-2 text-center">
+                                  <div className={cn("w-2 h-2 rounded-full mx-auto", exam.isCobrado ? "bg-emerald-500" : "bg-red-500")} />
+                                </td>
+                                <td className="px-4 py-2 text-center">
+                                  <div className={cn("w-2 h-2 rounded-full mx-auto", exam.isColeta ? "bg-emerald-500" : "bg-slate-300")} />
+                                </td>
+                                <td className="px-4 py-2">
+                                  <span className="px-2 py-0.5 bg-secondary/10 text-secondary rounded-full text-[10px] font-bold uppercase">
+                                    {exam.material}
+                                  </span>
+                                </td>
+                                <td className="px-4 py-2 text-muted-foreground">
+                                  {isCollected ? format(new Date(order.deliveryDate || Date.now()), 'dd/MM/yyyy HH:mm') : '--/--/----'}
+                                </td>
+                                <td className="px-4 py-2 text-muted-foreground">--/--/----</td>
+                                <td className="px-4 py-2">
+                                  <span className={cn(
+                                    "px-2 py-0.5 rounded-full text-[10px] font-bold uppercase text-white",
+                                    exam.isColeta ? "bg-emerald-500" : "bg-blue-500"
+                                  )}>
+                                    {exam.isColeta ? "Coletado" : "Pendente"}
+                                  </span>
+                                </td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    ))}
+                  </div>
                 </div>
               </TabsContent>
             </div>
