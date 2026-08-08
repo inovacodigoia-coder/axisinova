@@ -1,14 +1,19 @@
-User-agent: Googlebot
-Allow: /
-
-User-agent: Bingbot
-Allow: /
-
-User-agent: Twitterbot
-Allow: /
-
-User-agent: facebookexternalhit
-Allow: /
-
 User-agent: *
 Allow: /
+Allow: /cadastro
+Allow: /login
+Allow: /blog/
+Allow: /sobre
+Allow: /planos
+Allow: /contato
+Allow: /politica-de-privacidade
+Allow: /termos-de-uso
+
+# Bloquear rotas internas do app
+Disallow: /app/
+Disallow: /superadmin/
+Disallow: /portal/
+Disallow: /api/
+
+# Sitemaps
+Sitemap: https://axisinova.lovable.app/sitemap.xml
