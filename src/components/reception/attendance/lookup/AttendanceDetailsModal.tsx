@@ -273,7 +273,7 @@ export function AttendanceDetailsModal({ open, onClose, order, patient }: Attend
           </div>
 
           {/* Date Card */}
-          <div className="bg-white rounded-lg p-4 border border-border flex flex-col justify-between shadow-sm min-h-[100px]">
+          <div className="bg-white rounded-lg p-3 sm:p-4 border border-border flex flex-col justify-between shadow-sm min-h-[85px] sm:min-h-[100px]">
             <div className="flex justify-between items-start">
               <span className="text-[10px] font-bold tracking-widest uppercase text-muted-foreground">DATA DO ATENDIMENTO</span>
             </div>
