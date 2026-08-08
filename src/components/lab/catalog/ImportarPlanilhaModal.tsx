@@ -21,6 +21,7 @@ import {
 import * as XLSX from 'xlsx';
 import { cn } from "@/lib/utils";
 import { toast } from 'sonner';
+import { useRegisters } from '@/context/RegistersContext';
 
 interface ImportarPlanilhaModalProps {
   isOpen: boolean;
