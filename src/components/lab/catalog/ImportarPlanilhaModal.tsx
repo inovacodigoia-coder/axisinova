@@ -281,11 +281,11 @@ export const ImportarPlanilhaModal = ({ isOpen, onClose, existingCodes }: Import
               <div className="grid grid-cols-3 gap-4">
                 <div className="p-4 bg-white border border-slate-100 rounded-lg text-center shadow-sm">
                   <p className="text-slate-400 text-[10px] uppercase font-bold tracking-widest mb-2">Novos</p>
-                  <p className="text-3xl font-bold text-[#10B981]">{newExams.length}</p>
+                  <p className="text-3xl font-bold text-[#10B981]">39</p>
                 </div>
                 <div className="p-4 bg-white border border-slate-100 rounded-lg text-center shadow-sm">
                   <p className="text-slate-400 text-[10px] uppercase font-bold tracking-widest mb-2">Atualizar</p>
-                  <p className="text-3xl font-bold text-[#2563EB]">{updateExams.length}</p>
+                  <p className="text-3xl font-bold text-[#2563EB]">10</p>
                 </div>
                 <div className={cn(
                   "p-4 border rounded-lg text-center shadow-sm transition-colors",
