@@ -255,20 +255,20 @@ export const ImportarPlanilhaModal = ({ isOpen, onClose, existingCodes }: Import
               </div>
 
               <div className="grid grid-cols-3 gap-4">
-                <div className="p-4 bg-white border border-slate-200 rounded-lg text-center">
-                  <p className="text-slate-500 text-xs uppercase font-bold tracking-wider mb-1">Novos</p>
-                  <p className="text-2xl font-bold text-emerald-600">{newExams.length}</p>
+                <div className="p-4 bg-white border border-slate-100 rounded-lg text-center shadow-sm">
+                  <p className="text-slate-400 text-[10px] uppercase font-bold tracking-widest mb-2">Novos</p>
+                  <p className="text-3xl font-bold text-[#10B981]">{newExams.length}</p>
                 </div>
-                <div className="p-4 bg-white border border-slate-200 rounded-lg text-center">
-                  <p className="text-slate-500 text-xs uppercase font-bold tracking-wider mb-1">Atualizar</p>
-                  <p className="text-2xl font-bold text-blue-600">{updateExams.length}</p>
+                <div className="p-4 bg-white border border-slate-100 rounded-lg text-center shadow-sm">
+                  <p className="text-slate-400 text-[10px] uppercase font-bold tracking-widest mb-2">Atualizar</p>
+                  <p className="text-3xl font-bold text-[#2563EB]">{updateExams.length}</p>
                 </div>
                 <div className={cn(
-                  "p-4 border rounded-lg text-center transition-colors",
-                  errors.length > 0 ? "bg-red-50 border-red-200" : "bg-white border-slate-200"
+                  "p-4 border rounded-lg text-center shadow-sm transition-colors",
+                  errors.length > 0 ? "bg-red-50 border-red-200" : "bg-white border-slate-100"
                 )}>
-                  <p className="text-slate-500 text-xs uppercase font-bold tracking-wider mb-1">Erros</p>
-                  <p className={cn("text-2xl font-bold", errors.length > 0 ? "text-red-600" : "text-slate-400")}>
+                  <p className="text-slate-400 text-[10px] uppercase font-bold tracking-widest mb-2">Erros</p>
+                  <p className={cn("text-3xl font-bold", errors.length > 0 ? "text-red-600" : "text-slate-400")}>
                     {errors.length}
                   </p>
                 </div>
