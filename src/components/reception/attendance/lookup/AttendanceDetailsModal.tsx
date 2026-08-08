@@ -309,24 +309,63 @@ export function AttendanceDetailsModal({ open, onClose, order, patient }: Attend
 
             <div className="flex-1 overflow-auto p-4 bg-[#F8FAFC]">
               <TabsContent value="guias" className="m-0 space-y-4">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-4">
-                    <div className="flex items-center gap-1.5 bg-white border border-border rounded-full px-3 py-1 shadow-sm">
-                      <span className="text-[10px] font-bold text-muted-foreground uppercase">Exames</span>
-                      <span className="bg-[#007AFF] text-white text-[10px] font-bold rounded-full w-4 h-4 flex items-center justify-center">{orderExams.length}</span>
-                    </div>
-                    <div className="flex items-center gap-1.5 bg-white border border-border rounded-full px-3 py-1 shadow-sm">
-                      <span className="text-[10px] font-bold text-muted-foreground uppercase">Convênio</span>
-                      <span className="text-[10px] font-extrabold text-[#007AFF] uppercase">{order.convenioName || 'Particular'}</span>
+                <div className="flex flex-col gap-4">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-4">
+                      <div className="flex items-center gap-1.5 bg-white border border-border rounded-full px-3 py-1 shadow-sm">
+                        <span className="text-[10px] font-bold text-muted-foreground uppercase">Exames</span>
+                        <span className="bg-[#007AFF] text-white text-[10px] font-bold rounded-full w-4 h-4 flex items-center justify-center">{orderExams.length}</span>
+                      </div>
+                      <div className="flex items-center gap-1.5 bg-white border border-border rounded-full px-3 py-1 shadow-sm">
+                        <span className="text-[10px] font-bold text-muted-foreground uppercase">Convênio</span>
+                        <span className="text-[10px] font-extrabold text-[#007AFF] uppercase">{order.convenioName || 'Particular'}</span>
+                      </div>
                     </div>
                   </div>
-                  <div className="flex gap-2">
-                    <Button variant="outline" size="sm" className="bg-white h-8 text-[10px] font-bold uppercase tracking-wider">
-                      <Plus className="h-3.5 w-3.5 mr-1" /> Guia
-                    </Button>
-                    <Button variant="outline" size="sm" className="bg-white h-8 text-[10px] font-bold uppercase tracking-wider">
-                      Conferir Guias
-                    </Button>
+
+                  {/* Guide Action Icons */}
+                  <div className="flex items-center gap-6 py-2 px-1 border-y border-border/50 bg-white/50 rounded-lg">
+                    <div className="flex flex-col items-center gap-1 group cursor-pointer">
+                      <Button size="icon" variant="ghost" className="h-9 w-9 rounded-full bg-white shadow-sm border border-border group-hover:text-[#007AFF] group-hover:border-[#007AFF] transition-all">
+                        <Plus className="h-4 w-4" />
+                      </Button>
+                      <span className="text-[9px] font-bold text-muted-foreground uppercase group-hover:text-[#007AFF]">Guia</span>
+                    </div>
+                    
+                    <div className="flex flex-col items-center gap-1 group cursor-pointer">
+                      <Button size="icon" variant="ghost" className="h-9 w-9 rounded-full bg-white shadow-sm border border-border group-hover:text-[#007AFF] group-hover:border-[#007AFF] transition-all">
+                        <ShieldCheck className="h-4 w-4" />
+                      </Button>
+                      <span className="text-[9px] font-bold text-muted-foreground uppercase group-hover:text-[#007AFF]">Conferir</span>
+                    </div>
+
+                    <div className="flex flex-col items-center gap-1 group cursor-pointer">
+                      <Button size="icon" variant="ghost" className="h-9 w-9 rounded-full bg-white shadow-sm border border-border group-hover:text-[#007AFF] group-hover:border-[#007AFF] transition-all">
+                        <Printer className="h-4 w-4" />
+                      </Button>
+                      <span className="text-[9px] font-bold text-muted-foreground uppercase group-hover:text-[#007AFF]">Imprimir</span>
+                    </div>
+
+                    <div className="flex flex-col items-center gap-1 group cursor-pointer">
+                      <Button size="icon" variant="ghost" className="h-9 w-9 rounded-full bg-white shadow-sm border border-border group-hover:text-[#007AFF] group-hover:border-[#007AFF] transition-all">
+                        <History className="h-4 w-4" />
+                      </Button>
+                      <span className="text-[9px] font-bold text-muted-foreground uppercase group-hover:text-[#007AFF]">Histórico</span>
+                    </div>
+
+                    <div className="flex flex-col items-center gap-1 group cursor-pointer">
+                      <Button size="icon" variant="ghost" className="h-9 w-9 rounded-full bg-white shadow-sm border border-border group-hover:text-[#007AFF] group-hover:border-[#007AFF] transition-all">
+                        <RefreshCw className="h-4 w-4" />
+                      </Button>
+                      <span className="text-[9px] font-bold text-muted-foreground uppercase group-hover:text-[#007AFF]">Atualizar</span>
+                    </div>
+
+                    <div className="flex flex-col items-center gap-1 group cursor-pointer ml-auto">
+                      <Button size="icon" variant="ghost" className="h-9 w-9 rounded-full bg-white shadow-sm border border-border group-hover:text-red-600 group-hover:border-red-600 transition-all">
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                      <span className="text-[9px] font-bold text-muted-foreground uppercase group-hover:text-red-600">Excluir</span>
+                    </div>
                   </div>
                 </div>
 
@@ -358,12 +397,32 @@ export function AttendanceDetailsModal({ open, onClose, order, patient }: Attend
                               {(guide.doctorCRM || order.doctorCRM) && <span>({guide.doctorCRM || order.doctorCRM})</span>}
                             </div>
                           </div>
-                          <div className="flex gap-1">
-                            {[Pencil, Printer, History, RefreshCw, Trash2].map((Icon, i) => (
-                              <Button key={i} size="icon" variant="ghost" className="h-8 w-8 text-muted-foreground hover:bg-muted">
-                                <Icon className="h-4 w-4" />
-                              </Button>
-                            ))}
+                          <div className="flex gap-1 items-center">
+                            <Button 
+                              size="sm" 
+                              variant="outline" 
+                              className="h-8 bg-white text-[10px] font-bold uppercase tracking-wider flex gap-1.5"
+                            >
+                              <Pencil className="h-3.5 w-3.5 text-[#007AFF]" />
+                              Editar Guia
+                            </Button>
+                            <Button 
+                              size="sm" 
+                              variant="outline" 
+                              className="h-8 bg-white text-[10px] font-bold uppercase tracking-wider flex gap-1.5"
+                            >
+                              <RefreshCw className="h-3.5 w-3.5 text-emerald-600" />
+                              Trocar Convênio
+                            </Button>
+                            <Button 
+                              size="sm" 
+                              variant="outline" 
+                              className="h-8 bg-white text-[10px] font-bold uppercase tracking-wider flex gap-1.5"
+                              onClick={() => setPrintSelectionOpen(true)}
+                            >
+                              <Printer className="h-3.5 w-3.5 text-slate-600" />
+                              Imprimir Guia
+                            </Button>
                           </div>
                         </div>
 
