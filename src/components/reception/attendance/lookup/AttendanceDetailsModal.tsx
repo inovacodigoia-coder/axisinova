@@ -125,7 +125,7 @@ export function AttendanceDetailsModal({ open, onClose, order, patient }: Attend
 
   return (
     <Dialog open={open} onOpenChange={(o) => !o && onClose()}>
-      <DialogContent className="max-w-[1280px] w-[98vw] h-[96vh] p-0 flex flex-col gap-0 overflow-hidden bg-[#F8FAFC] border-none shadow-2xl [&>button]:hidden">
+      <DialogContent className="max-w-[1280px] w-[98vw] h-[96vh] max-h-[98vh] p-0 flex flex-col gap-0 overflow-hidden bg-[#F8FAFC] border-none shadow-2xl [&>button]:hidden sm:rounded-xl">
         {/* Header Navigation */}
         <div className="flex items-center justify-between px-4 py-2 bg-white border-b border-border">
           <div className="flex items-center gap-2">
