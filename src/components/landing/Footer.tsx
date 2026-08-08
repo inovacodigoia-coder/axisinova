@@ -32,17 +32,17 @@ export function Footer() {
           {/* Brand */}
           <div className="max-w-xs">
             <Link to="/" className="flex items-center gap-2 text-xl font-bold">
-              <img src={logoImg} alt="Axis Inova" className="h-8 w-8 rounded-lg" />
+              <img src={logoImg} alt="Axis Inova — Sistema de gestão em saúde" className="h-8 w-8 rounded-lg" />
               <span className="text-white">Axis</span>
               <span className="gradient-text">Inova</span>
             </Link>
             <p className="mt-3 text-sm text-white/50">
-              Plataforma completa de gestão clínica para profissionais de saúde.
+              Sistema SaaS completo para gestão de clínicas, hospitais e laboratórios. Agendamento, prontuário eletrônico e faturamento TISS.
             </p>
           </div>
 
           {/* Link columns */}
-          <div className="grid grid-cols-2 gap-8 sm:grid-cols-4">
+          <nav className="grid grid-cols-2 gap-8 sm:grid-cols-4" aria-label="Links úteis">
             {Object.entries(footerLinks).map(([title, links]) => (
               <div key={title}>
                 <h4 className="mb-3 text-sm font-semibold text-white/80">{title}</h4>
@@ -57,7 +57,7 @@ export function Footer() {
                 </ul>
               </div>
             ))}
-          </div>
+          </nav>
         </div>
 
         <div className="mt-12 border-t border-white/10 pt-6 text-center text-sm text-white/40">

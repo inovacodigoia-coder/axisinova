@@ -6,10 +6,10 @@ import { Play, Check, Calendar, TrendingUp, Users, X } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 const badges = [
-'Sem cartão de crédito',
-'Configuração em 10 min',
-'Suporte incluso'];
-
+  'Sem cartão de crédito',
+  'Configuração em 10 min',
+  'Suporte incluso'
+];
 
 function DashboardMockup() {
   return (
@@ -17,39 +17,39 @@ function DashboardMockup() {
       {/* Top metrics */}
       <div className="grid grid-cols-3 gap-3 mb-4">
         {[
-        { label: 'Atendimentos', value: '1.284', icon: Users, color: 'text-primary' },
-        { label: 'Faturamento', value: 'R$ 89k', icon: TrendingUp, color: 'text-secondary' },
-        { label: 'Agendados', value: '47', icon: Calendar, color: 'text-primary' }].
-        map((m) =>
-        <div key={m.label} className="rounded-xl bg-white p-3 shadow-sm">
-            <m.icon className={`h-4 w-4 ${m.color} mb-1`} />
+          { label: 'Atendimentos', value: '1.284', icon: Users, color: 'text-primary' },
+          { label: 'Faturamento', value: 'R$ 89k', icon: TrendingUp, color: 'text-secondary' },
+          { label: 'Agendados', value: '47', icon: Calendar, color: 'text-primary' }
+        ].map((m) => (
+          <div key={m.label} className="rounded-xl bg-white p-3 shadow-sm">
+            <m.icon className={`h-4 w-4 ${m.color} mb-1`} aria-hidden="true" />
             <p className="text-lg font-bold text-foreground leading-tight">{m.value}</p>
             <p className="text-[11px] text-muted-foreground">{m.label}</p>
           </div>
-        )}
+        ))}
       </div>
       {/* Mini chart */}
       <div className="rounded-xl bg-white p-3 shadow-sm mb-3">
         <p className="text-xs font-semibold text-foreground mb-2">Atendimentos / semana</p>
         <div className="flex items-end gap-1.5 h-12">
-          {[40, 65, 50, 80, 60, 90, 75].map((h, i) =>
-          <div
-            key={i}
-            className="flex-1 rounded-t gradient-bg opacity-70"
-            style={{ height: `${h}%` }} />
-
-          )}
+          {[40, 65, 50, 80, 60, 90, 75].map((h, i) => (
+            <div
+              key={i}
+              className="flex-1 rounded-t gradient-bg opacity-70"
+              style={{ height: `${h}%` }} 
+            />
+          ))}
         </div>
       </div>
       {/* Appointments list */}
       <div className="rounded-xl bg-white p-3 shadow-sm">
         <p className="text-xs font-semibold text-foreground mb-2">Próximos agendamentos</p>
         {[
-        { name: 'Maria S.', time: '09:00', type: 'Retorno' },
-        { name: 'Carlos R.', time: '09:30', type: '1ª vez' },
-        { name: 'Ana L.', time: '10:00', type: 'Retorno' }].
-        map((a) =>
-        <div key={a.name} className="flex items-center justify-between py-1.5 border-b border-border last:border-0">
+          { name: 'Maria S.', time: '09:00', type: 'Retorno' },
+          { name: 'Carlos R.', time: '09:30', type: '1ª vez' },
+          { name: 'Ana L.', time: '10:00', type: 'Retorno' }
+        ].map((a) => (
+          <div key={a.name} className="flex items-center justify-between py-1.5 border-b border-border last:border-0">
             <div className="flex items-center gap-2">
               <div className="h-6 w-6 rounded-full gradient-bg flex items-center justify-center text-[10px] font-bold text-white">
                 {a.name[0]}
@@ -58,10 +58,10 @@ function DashboardMockup() {
             </div>
             <span className="text-[10px] text-muted-foreground">{a.time} · {a.type}</span>
           </div>
-        )}
+        ))}
       </div>
-    </div>);
-
+    </div>
+  );
 }
 
 export function HeroSection() {
@@ -81,7 +81,8 @@ export function HeroSection() {
               className="flex-[3] text-center lg:text-left"
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}>
+              transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
+            >
               
               {/* Badge */}
               <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-secondary/20 bg-gradient-to-r from-primary/[0.08] to-secondary/[0.08] px-4 py-1.5 text-[13px] font-semibold text-foreground">
@@ -98,22 +99,21 @@ export function HeroSection() {
                 Do agendamento e totem à coleta laboratorial, do faturamento TISS ao BI estratégico. Multi-unidades, tudo integrado e em tempo real.
               </p>
 
-
               <div className="mt-8 flex flex-col items-center gap-3 sm:flex-row lg:justify-start">
                 <Link to="/cadastro">
                   <GradientButton className="h-12 px-8 text-base">Começar Grátis por 14 Dias</GradientButton>
                 </Link>
                 <OutlineButton variant="gray" className="h-12 px-6 text-base" onClick={() => setShowDemo(true)}>
-                  <Play className="h-4 w-4" /> Assista a Demonstração
+                  <Play className="h-4 w-4" aria-hidden="true" /> Assista a Demonstração
                 </OutlineButton>
               </div>
 
               <div className="mt-6 flex flex-wrap justify-center gap-4 lg:justify-start">
-                {badges.map((b) =>
-                <span key={b} className="flex items-center gap-1.5 text-sm text-muted-foreground">
-                    <Check className="h-4 w-4 text-[hsl(var(--axis-success))]" /> {b}
+                {badges.map((b) => (
+                  <span key={b} className="flex items-center gap-1.5 text-sm text-muted-foreground">
+                    <Check className="h-4 w-4 text-[hsl(var(--axis-success))]" aria-hidden="true" /> {b}
                   </span>
-                )}
+                ))}
               </div>
             </motion.div>
 
@@ -122,8 +122,8 @@ export function HeroSection() {
               className="flex-[2] w-full max-w-md lg:max-w-none"
               initial={{ opacity: 0, x: 30 }}
               animate={{ opacity: 1, x: 0 }}
-              transition={{ duration: 0.7, delay: 0.2, ease: [0.16, 1, 0.3, 1] }}>
-              
+              transition={{ duration: 0.7, delay: 0.2, ease: [0.16, 1, 0.3, 1] }}
+            >
               <DashboardMockup />
             </motion.div>
           </div>
@@ -135,6 +135,9 @@ export function HeroSection() {
         {showDemo && (
           <motion.div
             className="fixed inset-0 z-50 flex items-center justify-center bg-black/80"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="demo-modal-title"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
@@ -151,12 +154,14 @@ export function HeroSection() {
               <button
                 onClick={() => setShowDemo(false)}
                 className="absolute -top-12 right-0 text-white/80 hover:text-white transition-colors"
+                aria-label="Fechar modal"
               >
                 <X className="h-8 w-8" />
               </button>
               <div className="rounded-2xl overflow-hidden shadow-2xl bg-[#F8FAFC] border border-white/20 aspect-video relative group">
+                <h2 id="demo-modal-title" className="sr-only">Demonstração Axis Inova</h2>
                 {/* Interface Mockup Animation */}
-                <div className="absolute inset-0 bg-white overflow-hidden p-4 md:p-8 flex flex-col gap-6">
+                <div className="absolute inset-0 bg-white overflow-hidden p-4 md:p-8 flex flex-col gap-6" aria-hidden="true">
                   {/* Top Bar Mockup */}
                   <div className="h-12 w-full bg-slate-50 border border-slate-200 rounded-lg flex items-center px-4 gap-4">
                     <div className="h-6 w-32 bg-slate-200 rounded animate-pulse" />
@@ -184,7 +189,6 @@ export function HeroSection() {
                       </div>
 
                       <div className="flex-1 bg-white border border-slate-200 rounded-xl p-6 shadow-sm relative overflow-hidden">
-                        {/* Simulated Navigation/Interaction Overlay */}
                         <motion.div 
                           className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-10 flex flex-col items-center"
                           animate={{ 

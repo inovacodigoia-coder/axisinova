@@ -33,7 +33,7 @@ export function Navbar() {
     >
       <nav className="mx-auto flex h-16 max-w-[1200px] items-center justify-between px-4 md:px-6">
         {/* Logo */}
-        <Link to="/" className="flex items-center gap-2 text-xl font-bold">
+        <Link to="/" className="flex items-center gap-2 text-xl font-bold" aria-label="Axis Inova Home">
           <img src={logoImg} alt="Axis Inova" className="h-8 w-8 rounded-lg" />
           <span className="text-foreground">Axis</span>
           <span className="gradient-text">Inova</span>

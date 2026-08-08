@@ -59,13 +59,13 @@ export function FeaturesSection() {
             Tudo que sua operação precisa
           </h2>
           <p className="mt-3 text-base text-muted-foreground">
-            Módulos integrados que cobrem todo o fluxo da sua clínica.
+            Módulos integrados que cobrem todo o fluxo da sua clínica ou laboratório.
           </p>
         </motion.div>
 
         <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
           {features.map((f, i) => (
-            <motion.div
+            <motion.article
               key={f.title}
               className="group rounded-2xl border border-border bg-card p-8 shadow-[0_4px_24px_rgba(0,0,0,0.06)] transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_12px_40px_hsl(var(--axis-secondary)/0.15)]"
               initial={{ opacity: 0, y: 20 }}
@@ -74,11 +74,11 @@ export function FeaturesSection() {
               transition={{ duration: 0.5, delay: i * 0.08, ease: [0.16, 1, 0.3, 1] }}
             >
               <div className={`mb-4 flex h-12 w-12 items-center justify-center rounded-xl gradient-bg-subtle`}>
-                <f.icon className={`h-6 w-6 ${i % 2 === 0 ? 'text-primary' : 'text-secondary'}`} />
+                <f.icon className={`h-6 w-6 ${i % 2 === 0 ? 'text-primary' : 'text-secondary'}`} aria-hidden="true" />
               </div>
               <h3 className="text-lg font-semibold text-foreground">{f.title}</h3>
               <p className="mt-2 text-sm leading-relaxed text-muted-foreground">{f.desc}</p>
-            </motion.div>
+            </motion.article>
           ))}
         </div>
 
