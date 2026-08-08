@@ -682,8 +682,14 @@ export function AttendanceDetailsModal({ open, onClose, order, patient }: Attend
           
           setPrintDoc(doc);
           setPrintModalOpen(true);
+          
+          // Se for etiqueta, podemos querer passar os tubos selecionados
+          // mas o AttendancePrintModal atual parece focado em A4/A5/Térmica
+          // O AttendanceReceiptVia é que renderiza o conteúdo.
         }}
         order={order}
+        selectedExams={Array.from(selectedExams)}
+        selectedTubes={Array.from(selectedTubes)}
       />
 
       {printDoc && (

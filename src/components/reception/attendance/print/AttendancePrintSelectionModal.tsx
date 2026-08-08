@@ -27,6 +27,8 @@ interface Props {
   onClose: () => void;
   onConfirm: (options: any) => void;
   order: AttendanceOrder | null;
+  selectedExams?: string[];
+  selectedTubes?: string[];
 }
 
 export function AttendancePrintSelectionModal({ open, onClose, onConfirm, order }: Props) {
