@@ -135,7 +135,11 @@ export default function LabCatalogPage() {
 
       <ImportarPlanilhaModal 
         isOpen={importModalOpen} 
-        onClose={() => setImportModalOpen(false)}
+        onClose={() => {
+          setImportModalOpen(false);
+          // Refresh data from Supabase/Context after import
+          window.location.reload(); 
+        }}
         existingCodes={exams.map(e => e.code)}
       />
 
