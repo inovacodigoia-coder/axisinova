@@ -144,7 +144,7 @@ export function AttendanceDetailsModal({ open, onClose, order, patient }: Attend
         {/* Info Cards Row */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4 p-4">
           {/* Attendance ID Card */}
-          <div className="bg-[#007AFF] rounded-lg p-4 text-white flex flex-col justify-between shadow-lg relative overflow-hidden min-h-[100px] hover:shadow-xl transition-shadow">
+          <div className="gradient-bg rounded-lg p-4 text-white flex flex-col justify-between shadow-lg relative overflow-hidden min-h-[100px] hover:shadow-xl transition-shadow">
             <div className="flex justify-between items-start relative z-10">
               <span className="text-[10px] font-bold tracking-widest uppercase opacity-80">ATENDIMENTO</span>
               <div className="flex gap-1">
@@ -288,19 +288,19 @@ export function AttendanceDetailsModal({ open, onClose, order, patient }: Attend
           <Tabs defaultValue="guias" className="flex-1 flex flex-col">
             <div className="px-4 border-b border-border flex justify-center">
               <TabsList className="bg-transparent h-12 gap-8">
-                <TabsTrigger value="guias" className="data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-[#007AFF] rounded-none px-4 flex gap-2">
+                <TabsTrigger value="guias" className="data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-secondary rounded-none px-4 flex gap-2">
                   <FileText className="h-4 w-4" />
                   <span className="text-xs font-bold uppercase tracking-wider">Guias</span>
                 </TabsTrigger>
-                <TabsTrigger value="amostras" className="data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-[#007AFF] rounded-none px-4 flex gap-2">
+                <TabsTrigger value="amostras" className="data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-secondary rounded-none px-4 flex gap-2">
                   <Droplets className="h-4 w-4" />
                   <span className="text-xs font-bold uppercase tracking-wider">Amostras</span>
                 </TabsTrigger>
-                <TabsTrigger value="autorizacao" className="data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-[#007AFF] rounded-none px-4 flex gap-2">
+                <TabsTrigger value="autorizacao" className="data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-secondary rounded-none px-4 flex gap-2">
                   <ShieldCheck className="h-4 w-4" />
                   <span className="text-xs font-bold uppercase tracking-wider">Autorização</span>
                 </TabsTrigger>
-                <TabsTrigger value="pagamentos" className="data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-[#007AFF] rounded-none px-4 flex gap-2">
+                <TabsTrigger value="pagamentos" className="data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-secondary rounded-none px-4 flex gap-2">
                   <CreditCard className="h-4 w-4" />
                   <span className="text-xs font-bold uppercase tracking-wider">Pagamentos</span>
                 </TabsTrigger>
@@ -314,11 +314,11 @@ export function AttendanceDetailsModal({ open, onClose, order, patient }: Attend
                     <div className="flex items-center gap-4">
                       <div className="flex items-center gap-1.5 bg-white border border-border rounded-full px-3 py-1 shadow-sm">
                         <span className="text-[10px] font-bold text-muted-foreground uppercase">Exames</span>
-                        <span className="bg-[#007AFF] text-white text-[10px] font-bold rounded-full w-4 h-4 flex items-center justify-center">{orderExams.length}</span>
+                        <span className="bg-primary text-white text-[10px] font-bold rounded-full w-4 h-4 flex items-center justify-center">{orderExams.length}</span>
                       </div>
                       <div className="flex items-center gap-1.5 bg-white border border-border rounded-full px-3 py-1 shadow-sm">
                         <span className="text-[10px] font-bold text-muted-foreground uppercase">Convênio</span>
-                        <span className="text-[10px] font-extrabold text-[#007AFF] uppercase">{order.convenioName || 'Particular'}</span>
+                        <span className="text-[10px] font-extrabold text-secondary uppercase">{order.convenioName || 'Particular'}</span>
                       </div>
                     </div>
                   </div>
@@ -326,45 +326,45 @@ export function AttendanceDetailsModal({ open, onClose, order, patient }: Attend
                   {/* Guide Action Icons */}
                   <div className="flex items-center gap-6 py-2 px-1 border-y border-border/50 bg-white/50 rounded-lg">
                     <div className="flex flex-col items-center gap-1 group cursor-pointer">
-                      <Button size="icon" variant="ghost" className="h-9 w-9 rounded-full bg-white shadow-sm border border-border group-hover:text-[#007AFF] group-hover:border-[#007AFF] transition-all">
+                      <Button size="icon" variant="ghost" className="h-9 w-9 rounded-full bg-white shadow-sm border border-border group-hover:text-primary group-hover:border-primary transition-all">
                         <Plus className="h-4 w-4" />
                       </Button>
-                      <span className="text-[9px] font-bold text-muted-foreground uppercase group-hover:text-[#007AFF]">Guia</span>
+                      <span className="text-[9px] font-bold text-muted-foreground uppercase group-hover:text-primary">Guia</span>
                     </div>
                     
                     <div className="flex flex-col items-center gap-1 group cursor-pointer">
-                      <Button size="icon" variant="ghost" className="h-9 w-9 rounded-full bg-white shadow-sm border border-border group-hover:text-[#007AFF] group-hover:border-[#007AFF] transition-all">
+                      <Button size="icon" variant="ghost" className="h-9 w-9 rounded-full bg-white shadow-sm border border-border group-hover:text-primary group-hover:border-primary transition-all">
                         <ShieldCheck className="h-4 w-4" />
                       </Button>
-                      <span className="text-[9px] font-bold text-muted-foreground uppercase group-hover:text-[#007AFF]">Conferir</span>
+                      <span className="text-[9px] font-bold text-muted-foreground uppercase group-hover:text-primary">Conferir</span>
                     </div>
 
                     <div className="flex flex-col items-center gap-1 group cursor-pointer">
-                      <Button size="icon" variant="ghost" className="h-9 w-9 rounded-full bg-white shadow-sm border border-border group-hover:text-[#007AFF] group-hover:border-[#007AFF] transition-all">
+                      <Button size="icon" variant="ghost" className="h-9 w-9 rounded-full bg-white shadow-sm border border-border group-hover:text-primary group-hover:border-primary transition-all">
                         <Printer className="h-4 w-4" />
                       </Button>
-                      <span className="text-[9px] font-bold text-muted-foreground uppercase group-hover:text-[#007AFF]">Imprimir</span>
+                      <span className="text-[9px] font-bold text-muted-foreground uppercase group-hover:text-primary">Imprimir</span>
                     </div>
 
                     <div className="flex flex-col items-center gap-1 group cursor-pointer">
-                      <Button size="icon" variant="ghost" className="h-9 w-9 rounded-full bg-white shadow-sm border border-border group-hover:text-[#007AFF] group-hover:border-[#007AFF] transition-all">
+                      <Button size="icon" variant="ghost" className="h-9 w-9 rounded-full bg-white shadow-sm border border-border group-hover:text-primary group-hover:border-primary transition-all">
                         <History className="h-4 w-4" />
                       </Button>
-                      <span className="text-[9px] font-bold text-muted-foreground uppercase group-hover:text-[#007AFF]">Histórico</span>
+                      <span className="text-[9px] font-bold text-muted-foreground uppercase group-hover:text-primary">Histórico</span>
                     </div>
 
                     <div className="flex flex-col items-center gap-1 group cursor-pointer">
-                      <Button size="icon" variant="ghost" className="h-9 w-9 rounded-full bg-white shadow-sm border border-border group-hover:text-[#007AFF] group-hover:border-[#007AFF] transition-all">
+                      <Button size="icon" variant="ghost" className="h-9 w-9 rounded-full bg-white shadow-sm border border-border group-hover:text-primary group-hover:border-primary transition-all">
                         <RefreshCw className="h-4 w-4" />
                       </Button>
-                      <span className="text-[9px] font-bold text-muted-foreground uppercase group-hover:text-[#007AFF]">Atualizar</span>
+                      <span className="text-[9px] font-bold text-muted-foreground uppercase group-hover:text-primary">Atualizar</span>
                     </div>
 
                     <div className="flex flex-col items-center gap-1 group cursor-pointer">
-                      <Button size="icon" variant="ghost" className="h-9 w-9 rounded-full bg-white shadow-sm border border-border group-hover:text-[#007AFF] group-hover:border-[#007AFF] transition-all">
-                        <Pencil className="h-4 w-4 text-[#007AFF]" />
+                      <Button size="icon" variant="ghost" className="h-9 w-9 rounded-full bg-white shadow-sm border border-border group-hover:text-primary group-hover:border-primary transition-all">
+                        <Pencil className="h-4 w-4 text-primary" />
                       </Button>
-                      <span className="text-[9px] font-bold text-muted-foreground uppercase group-hover:text-[#007AFF]">Editar Guia</span>
+                      <span className="text-[9px] font-bold text-muted-foreground uppercase group-hover:text-primary">Editar Guia</span>
                     </div>
 
                     <div className="flex flex-col items-center gap-1 group cursor-pointer">
@@ -415,7 +415,7 @@ export function AttendanceDetailsModal({ open, onClose, order, patient }: Attend
                         <div className="p-4 border-b border-border bg-muted/5 flex items-center justify-between">
                           <div className="flex flex-col gap-1">
                             <div className="flex items-center gap-2">
-                              <span className="text-xs font-bold text-[#007AFF] uppercase">{idx + 1}. {guide.convenioName || order.convenioName || 'Particular'}</span>
+                              <span className="text-xs font-bold text-secondary uppercase">{idx + 1}. {guide.convenioName || order.convenioName || 'Particular'}</span>
                             </div>
                             <div className="flex items-center gap-1 text-[10px] text-muted-foreground">
                               <User className="h-3 w-3" />
@@ -476,7 +476,7 @@ export function AttendanceDetailsModal({ open, onClose, order, patient }: Attend
                                     </td>
                                     <td className="px-4 py-3">
                                       <div className="flex items-center gap-2">
-                                        <span className="bg-[#007AFF] text-white rounded-full px-1.5 py-0.5 text-[8px] font-bold">EX</span>
+                                        <span className="bg-primary text-white rounded-full px-1.5 py-0.5 text-[8px] font-bold">EX</span>
                                         <span className="font-medium text-foreground uppercase">{exam.name}</span>
                                       </div>
                                     </td>
@@ -533,7 +533,7 @@ export function AttendanceDetailsModal({ open, onClose, order, patient }: Attend
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-1.5 bg-white border border-border rounded-full px-3 py-1 shadow-sm">
                     <span className="text-[10px] font-bold text-muted-foreground uppercase">Amostras</span>
-                    <span className="bg-[#007AFF] text-white text-[10px] font-bold rounded-full w-4 h-4 flex items-center justify-center">{patientTubes.length}</span>
+                    <span className="bg-primary text-white text-[10px] font-bold rounded-full w-4 h-4 flex items-center justify-center">{patientTubes.length}</span>
                   </div>
                   <div className="flex gap-2">
                     <Button variant="outline" size="sm" className="bg-white h-8 text-[10px] font-bold uppercase tracking-wider">RESTRIÇÕES</Button>
