@@ -875,76 +875,40 @@ function ParametersSection({ parameters, setParameters }: { parameters: any[], s
                           {param.referenceValues?.length > 0 ? `${param.referenceValues.length} Faixas` : 'Definir'}
                         </Button>
                       </td>
-                      <td className="px-4 py-3">
+                      <td className="px-2 py-2">
                         <div className="flex justify-center">
-                          <Tooltip>
-                            <TooltipTrigger asChild>
-                              <div className="cursor-pointer">
-                                <Switch 
-                                  checked={param.isMandatory} 
-                                  onCheckedChange={(val) => updateParameter(param.id, 'isMandatory', val)}
-                                  className="shadow-sm border border-border/50 data-[state=checked]:!bg-[#00D4FF] data-[state=unchecked]:!bg-[#ef4444]"
-                                />
-                              </div>
-                            </TooltipTrigger>
-                            <TooltipContent>
-                              <p className="text-xs">Parâmetro obrigatório: precisa ser preenchido na digitação manual de resultados</p>
-                            </TooltipContent>
-                          </Tooltip>
+                          <Switch 
+                            checked={param.isMandatory} 
+                            onCheckedChange={(val) => updateParameter(param.id, 'isMandatory', val)}
+                            className="scale-[0.6] shadow-sm border border-border/50 data-[state=checked]:!bg-[#00D4FF] data-[state=unchecked]:!bg-muted"
+                          />
                         </div>
                       </td>
-                      <td className="px-4 py-3">
+                      <td className="px-2 py-2">
                         <div className="flex justify-center">
-                          <Tooltip>
-                            <TooltipTrigger asChild>
-                              <div className="cursor-pointer">
-                                <Switch 
-                                  checked={param.allowNegative} 
-                                  onCheckedChange={(val) => updateParameter(param.id, 'allowNegative', val)}
-                                  className="shadow-sm border border-border/50 data-[state=checked]:!bg-[#00D4FF] data-[state=unchecked]:!bg-[#ef4444]"
-                                />
-                              </div>
-                            </TooltipTrigger>
-                            <TooltipContent>
-                              <p className="text-xs">Neg. Permite digitar valores negativos para este parâmetro.</p>
-                            </TooltipContent>
-                          </Tooltip>
+                          <Switch 
+                            checked={param.allowNegative} 
+                            onCheckedChange={(val) => updateParameter(param.id, 'allowNegative', val)}
+                            className="scale-[0.6] shadow-sm border border-border/50 data-[state=checked]:!bg-[#00D4FF] data-[state=unchecked]:!bg-muted"
+                          />
                         </div>
                       </td>
-                      <td className="px-4 py-3">
+                      <td className="px-2 py-2">
                         <div className="flex justify-center">
-                          <Tooltip>
-                            <TooltipTrigger asChild>
-                              <div className="cursor-pointer">
-                                <Switch 
-                                  checked={param.isCalculated} 
-                                  onCheckedChange={(val) => updateParameter(param.id, 'isCalculated', val)}
-                                  className="shadow-sm border border-border/50 data-[state=checked]:!bg-[#00D4FF] data-[state=unchecked]:!bg-[#ef4444]"
-                                />
-                              </div>
-                            </TooltipTrigger>
-                            <TooltipContent>
-                              <p className="text-xs">Calc. Parâmetro calculado automaticamente por fórmula. Não é editável manualmente.</p>
-                            </TooltipContent>
-                          </Tooltip>
+                          <Switch 
+                            checked={param.isCalculated} 
+                            onCheckedChange={(val) => updateParameter(param.id, 'isCalculated', val)}
+                            className="scale-[0.6] shadow-sm border border-border/50 data-[state=checked]:!bg-[#00D4FF] data-[state=unchecked]:!bg-muted"
+                          />
                         </div>
                       </td>
-                      <td className="px-4 py-3">
+                      <td className="px-2 py-2">
                         <div className="flex justify-center">
-                          <Tooltip>
-                            <TooltipTrigger asChild>
-                              <div className="cursor-pointer">
-                                <Switch 
-                                  checked={param.isHidden} 
-                                  onCheckedChange={(val) => updateParameter(param.id, 'isHidden', val)}
-                                  className="shadow-sm border border-border/50 data-[state=checked]:!bg-[#00D4FF] data-[state=unchecked]:!bg-[#ef4444]"
-                                />
-                              </div>
-                            </TooltipTrigger>
-                            <TooltipContent>
-                              <p className="text-xs">Oculto Laudo: O parâmetro não será exibido na impressão do laudo.</p>
-                            </TooltipContent>
-                          </Tooltip>
+                          <Switch 
+                            checked={param.isHidden} 
+                            onCheckedChange={(val) => updateParameter(param.id, 'isHidden', val)}
+                            className="scale-[0.6] shadow-sm border border-border/50 data-[state=checked]:!bg-[#00D4FF] data-[state=unchecked]:!bg-muted"
+                          />
                         </div>
                       </td>
                       <td className="px-4 py-3 text-right">
