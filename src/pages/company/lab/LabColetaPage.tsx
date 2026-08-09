@@ -68,7 +68,7 @@ export default function LabColetaPage() {
 
   const collectionOrders = useMemo(() => {
     return (orders || [])
-      .filter(o => o?.status === 'waiting_collection' || o?.status === 'waiting')
+      .filter(o => o?.status === 'waiting_collection')
       .map(o => {
         const allExams = (o.labGuides || []).flatMap(guide => (guide.exams || []).map((e: any) => ({
           ...e,
