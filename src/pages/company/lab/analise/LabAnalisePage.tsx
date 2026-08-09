@@ -96,15 +96,16 @@ export default function LabAnalisePage() {
           patientBirthDate: order.patientBirthDate,
           patientGender: order.patientGender,
           registeredAt: order.registeredAt,
+          collectionDate: order.updatedAt, // Assumindo updatedAt como data da coleta se status for collection_done
           originId: order.originId,
           originName: order.originName,
           status: e.status || 'pending'
         }))
       );
       
-      // Apenas status 'collection_done' (Coleta Realizada)
+      // Filtro por Status: Apenas exames com coleta realizada ou em processamento
       exams.forEach(exam => {
-        if (exam.status === 'collection_done' || exam.status === 'processing') {
+        if (exam.status === 'collection_done' || exam.status === 'processing' || order.status === 'collection_done') {
           allExams.push(exam);
         }
       });
@@ -116,17 +117,34 @@ export default function LabAnalisePage() {
       
       const matchesProtocol = protocolSearch === '' || exam.protocol.includes(protocolSearch);
       
+      // Filtro de Bancada: Se selecionado, filtra apenas os exames DAQUELA bancada
       const matchesWorkbench = selectedWorkbenches.length === 0 || 
                                selectedWorkbenches.includes(exam.workbench || '');
       
+      // Filtro de Origem
       const matchesOrigin = selectedEstablishments.length === 0 || 
                              selectedEstablishments.includes(exam.originId || '');
 
-      // Filtro de período (simplificado para o mock)
+      // Filtro de Período baseado na data de coleta (ou registro como fallback)
+      const dateToCompare = exam.collectionDate || exam.registeredAt;
+      const examDate = new Date(dateToCompare);
+      const today = new Date();
+      
       let matchesPeriod = true;
       if (period === 'hoje') {
-        const today = format(new Date(), 'yyyy-MM-dd');
-        matchesPeriod = format(new Date(exam.registeredAt), 'yyyy-MM-dd') === today;
+        matchesPeriod = format(examDate, 'yyyy-MM-dd') === format(today, 'yyyy-MM-dd');
+      } else if (period === '7d') {
+        const sevenDaysAgo = new Date();
+        sevenDaysAgo.setDate(today.getDate() - 7);
+        matchesPeriod = examDate >= sevenDaysAgo;
+      } else if (period === '30d') {
+        const thirtyDaysAgo = new Date();
+        thirtyDaysAgo.setDate(today.getDate() - 30);
+        matchesPeriod = examDate >= thirtyDaysAgo;
+      } else if (period === 'este-mes') {
+        matchesPeriod = examDate.getMonth() === today.getMonth() && examDate.getFullYear() === today.getFullYear();
+      } else if (period === 'custom' && dateFrom && dateTo) {
+        matchesPeriod = examDate >= dateFrom && examDate <= dateTo;
       }
 
       return matchesSearch && matchesProtocol && matchesWorkbench && matchesOrigin && matchesPeriod;
