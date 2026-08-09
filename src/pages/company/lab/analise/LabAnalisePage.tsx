@@ -34,6 +34,7 @@ import { toast } from 'sonner';
 import { useRegisters } from '@/context/RegistersContext';
 import { useAttendanceCadastro } from '@/hooks/useAttendanceCadastro';
 import { useCompanyContext } from '@/context/CompanyContext';
+import { ResultEntryModal } from '@/components/lab/analise/ResultEntryModal';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -66,6 +67,7 @@ export default function LabAnalisePage() {
   const [protocolSearch, setProtocolSearch] = useState('');
   const [selectedOrderId, setSelectedOrderId] = useState<string | null>(null);
   const [selectedExamId, setSelectedExamId] = useState<string | null>(null);
+  const [isResultModalOpen, setIsResultModalOpen] = useState(false);
   
   // Filtros
   const [period, setPeriod] = useState('hoje');
@@ -91,6 +93,8 @@ export default function LabAnalisePage() {
           orderId: order.id,
           protocol: order.protocol,
           patientName: order.patientName,
+          patientBirthDate: order.patientBirthDate,
+          patientGender: order.patientGender,
           registeredAt: order.registeredAt,
           originId: order.originId,
           originName: order.originName,
@@ -331,9 +335,17 @@ export default function LabAnalisePage() {
                             onChange={(e) => setSearch(e.target.value)}
                           />
                         </div>
-                        <Button variant="outline" className="h-9 gap-1 px-2 text-[10px] font-bold uppercase gradient-bg text-white border-none shadow-md">
-                          <ClipboardCheck className="h-3.5 w-3.5" /> Digitação em Lote
-                        </Button>
+                        <div className="flex gap-2">
+                          <Button 
+                            onClick={() => setIsResultModalOpen(true)}
+                            className="h-9 gap-1 px-4 text-[10px] font-black uppercase tracking-widest gradient-bg text-white border-none shadow-md hover:shadow-primary/20 transition-all active:scale-95"
+                          >
+                            <Beaker className="h-3.5 w-3.5" /> Digitação
+                          </Button>
+                          <Button variant="outline" className="h-9 gap-1 px-2 text-[10px] font-bold uppercase border-slate-200 text-slate-600 hover:bg-slate-50">
+                            <ClipboardCheck className="h-3.5 w-3.5" /> Lote
+                          </Button>
+                        </div>
                       </div>
 
                       <ScrollArea className="flex-1">
@@ -445,6 +457,19 @@ export default function LabAnalisePage() {
         </Tabs>
       </div>
       
+      <ResultEntryModal 
+        isOpen={isResultModalOpen}
+        onClose={() => setIsResultModalOpen(false)}
+        filteredExams={filteredExams}
+        filters={{
+          period,
+          workbenches: selectedWorkbenches,
+          establishments: selectedEstablishments,
+          protocol: protocolSearch
+        }}
+        workbenchNames={workbenches.reduce((acc, wb) => ({ ...acc, [wb.id]: wb.name }), {})}
+        establishmentNames={establishments.reduce((acc, est) => ({ ...acc, [est.id]: est.name }), {})}
+      />
     </div>
   );
 }
