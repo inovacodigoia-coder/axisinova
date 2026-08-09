@@ -91,7 +91,7 @@ export const ImportarPlanilhaModal = ({ isOpen, onClose, existingCodes = [] }: I
         const data = e.target?.result;
         const workbook = XLSX.read(data, { type: 'binary' });
         
-        // Sheets we expect: "Catálogo de Exames", "Parâmetros", "Faixas de Referência"
+        // Sheets we expect: "Catálogo de Exames", "Parâmetros do Exame", "Faixas de Referência"
         const catalogSheetName = workbook.SheetNames.find(n => n.toLowerCase().includes('catálogo') || n.toLowerCase().includes('catalogo')) || workbook.SheetNames[0];
         const paramsSheetName = workbook.SheetNames.find(n => n.toLowerCase().includes('parâmetros') || n.toLowerCase().includes('parametros'));
         const refsSheetName = workbook.SheetNames.find(n => n.toLowerCase().includes('faixas') || n.toLowerCase().includes('referência') || n.toLowerCase().includes('referencia'));
