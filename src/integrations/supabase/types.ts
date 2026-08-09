@@ -779,6 +779,78 @@ export type Database = {
           },
         ]
       }
+      lab_exam_reference_values: {
+        Row: {
+          age_max: number | null
+          age_min: number | null
+          company_id: string
+          created_at: string | null
+          description: string | null
+          exam_id: string | null
+          gender: string | null
+          id: string
+          internal_code: string | null
+          max_value: string | null
+          min_value: string | null
+          parameter_id: string | null
+          parameter_name: string | null
+          sort_order: number | null
+          text_range: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          age_max?: number | null
+          age_min?: number | null
+          company_id: string
+          created_at?: string | null
+          description?: string | null
+          exam_id?: string | null
+          gender?: string | null
+          id?: string
+          internal_code?: string | null
+          max_value?: string | null
+          min_value?: string | null
+          parameter_id?: string | null
+          parameter_name?: string | null
+          sort_order?: number | null
+          text_range?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          age_max?: number | null
+          age_min?: number | null
+          company_id?: string
+          created_at?: string | null
+          description?: string | null
+          exam_id?: string | null
+          gender?: string | null
+          id?: string
+          internal_code?: string | null
+          max_value?: string | null
+          min_value?: string | null
+          parameter_id?: string | null
+          parameter_name?: string | null
+          sort_order?: number | null
+          text_range?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "lab_exam_reference_values_exam_id_fkey"
+            columns: ["exam_id"]
+            isOneToOne: false
+            referencedRelation: "exams"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "lab_exam_reference_values_parameter_id_fkey"
+            columns: ["parameter_id"]
+            isOneToOne: false
+            referencedRelation: "lab_exam_parameters"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       lab_workbenches: {
         Row: {
           company_id: string
