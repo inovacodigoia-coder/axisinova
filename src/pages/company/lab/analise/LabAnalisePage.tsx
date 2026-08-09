@@ -33,6 +33,7 @@ import { LabAttendanceOrder } from '@/types/lab.types';
 import { toast } from 'sonner';
 import { useRegisters } from '@/context/RegistersContext';
 import { useAttendanceCadastro } from '@/hooks/useAttendanceCadastro';
+import { useCompanyContext } from '@/context/CompanyContext';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -56,8 +57,9 @@ const SUB_TABS = [
 
 export default function LabAnalisePage() {
   const [activeTab, setActiveTab] = useState('analise');
-  const { orders, refresh } = useAttendanceCadastro();
-  const { workbenches, establishments } = useRegisters();
+  const { orders } = useAttendanceCadastro();
+  const { workbenches } = useRegisters();
+  const { availableOrigins: establishments } = useCompanyContext();
   
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
