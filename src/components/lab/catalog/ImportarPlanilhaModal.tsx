@@ -304,12 +304,13 @@ export const ImportarPlanilhaModal = ({ isOpen, onClose, existingCodes = [] }: I
                   internal_code: examData.codigo,
                   parameter_name: paramName,
                   description: r['Descrição'] || r['DESCRIÇÃO'] || '',
-                  min_value: r['Valor mín'] || r['Valor Mínimo'] || r['Mínimo'] || r['MIN']?.toString() || null,
-                  max_value: r['Valor máx'] || r['Valor Máximo'] || r['Máximo'] || r['MAX']?.toString() || null,
+                  min_value: r['Valor mínimo'] || r['Valor mín'] || r['Valor Mínimo'] || r['Mínimo'] || r['MIN']?.toString() || null,
+                  max_value: r['Valor máximo'] || r['Valor máx'] || r['Valor Máximo'] || r['Máximo'] || r['MAX']?.toString() || null,
                   text_range: r['Valor texto'] || r['Referência Texto'] || r['Texto'] || null,
-                  age_min: Number(r['Idade mini'] || r['Idade Mín'] || r['Idade Mínima'] || 0),
-                  age_max: Number(r['Idade máxi'] || r['Idade Máx'] || r['Idade Máxima'] || 150),
+                  age_min: Number(r['Idade mínima (anos)'] || r['Idade mini'] || r['Idade Mín'] || r['Idade Mínima'] || 0),
+                  age_max: Number(r['Idade máxima (anos)'] || r['Idade máxi'] || r['Idade Máx'] || r['Idade Máxima'] || 150),
                   gender: r['Sexo'] || r['Gênero'] || 'Todos',
+                  is_pregnant: r['Gestante'] === 'Sim' || !!r['Gestante'],
                 }));
 
                 await supabase.from('lab_exam_reference_values').insert(refsToInsert);
