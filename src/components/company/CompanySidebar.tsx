@@ -244,7 +244,8 @@ export function CompanySidebar({ mobileOpen, onMobileClose, collapsed = false, o
 
                 const { orders } = useAttendanceCadastro()
                 const waitingCollectionCount = orders.filter(o => o.status === 'waiting_collection' || o.status === 'waiting').length
-                const badge = item.path === '/app/lab/coleta' ? waitingCollectionCount : item.path === '/app/lab/analise' ? 70 : null
+                const analiseCount = orders.filter(o => o.status === 'collection_done' || o.status === 'processing').length
+                const badge = item.path === '/app/lab/coleta' ? waitingCollectionCount : item.path === '/app/lab/analise' ? analiseCount : null
 
                 const link = (
                   <NavLink

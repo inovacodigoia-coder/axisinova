@@ -68,6 +68,7 @@ export default function LabAnalisePage() {
   const [selectedOrderId, setSelectedOrderId] = useState<string | null>(null);
   const [selectedExamId, setSelectedExamId] = useState<string | null>(null);
   const [isResultModalOpen, setIsResultModalOpen] = useState(false);
+  const [expandedGroups, setExpandedGroups] = useState<Record<string, boolean>>({});
   
   // Filtros
   const [period, setPeriod] = useState('hoje');
@@ -172,6 +173,13 @@ export default function LabAnalisePage() {
   const handleSelectExam = (orderId: string, examId: string) => {
     setSelectedOrderId(orderId);
     setSelectedExamId(examId);
+  };
+
+  const toggleGroup = (protocol: string) => {
+    setExpandedGroups(prev => ({
+      ...prev,
+      [protocol]: !prev[protocol]
+    }));
   };
 
   const clearFilters = () => {
@@ -385,53 +393,68 @@ export default function LabAnalisePage() {
                               )}
                             </div>
                           ) : (
-                            groupedExams.map((group) => (
-                              <div key={group.protocol} className="space-y-1.5">
-                                <div className="flex items-center justify-between px-1">
-                                  <div className="flex items-center gap-2">
-                                    <input type="checkbox" className="rounded border-gray-300 h-3 w-3" />
-                                    <span className="text-[10px] font-black font-mono text-muted-foreground">{group.protocol}</span>
-                                  </div>
-                                  <span className="flex items-center gap-1 text-[10px] text-muted-foreground font-bold">
-                                    <Clock className="h-3 w-3" /> 10m
-                                  </span>
-                                </div>
-                                
-                                {group.exams.map((exam: any) => (
-                                  <button
-                                    key={exam.id}
-                                    onClick={() => handleSelectExam(group.id, exam.id)}
-                                    className={cn(
-                                      "w-full text-left p-3 rounded-xl border transition-all hover:border-primary/50 group",
-                                      selectedExamId === exam.id
-                                        ? "bg-primary/5 border-primary shadow-sm"
-                                        : "bg-card border-border shadow-sm"
-                                    )}
-                                  >
-                                    <div className="flex justify-between items-start mb-1.5">
-                                      <div className="flex flex-col min-w-0">
-                                        <span className="font-black text-sm truncate uppercase tracking-tight">{group.patientName}</span>
-                                        <div className="flex items-center gap-2 mt-0.5">
-                                          <Badge variant="outline" className="bg-primary/5 text-primary border-primary/20 text-[9px] font-black h-4 uppercase">{exam.code}</Badge>
-                                          <span className="text-[10px] text-muted-foreground font-medium truncate">{exam.name}</span>
-                                        </div>
-                                      </div>
-                                      <Badge 
-                                        variant="secondary" 
-                                        className={cn(
-                                          "text-[9px] font-black h-4 uppercase",
-                                          exam.workbench === 'Bioquímica' ? "bg-blue-100 text-blue-700" :
-                                          exam.workbench === 'Hematologia' ? "bg-purple-100 text-purple-700" :
-                                          "bg-slate-100 text-slate-700"
-                                        )}
+                            groupedExams.map((group) => {
+                              const isExpanded = !!expandedGroups[group.protocol];
+                              return (
+                                <div key={group.protocol} className="space-y-1.5">
+                                  <div className="flex items-center justify-between px-1">
+                                    <div className="flex items-center gap-2">
+                                      <Button 
+                                        variant="ghost" 
+                                        size="icon" 
+                                        className="h-5 w-5 p-0 hover:bg-primary/10 text-primary transition-all"
+                                        onClick={() => toggleGroup(group.protocol)}
                                       >
-                                        {exam.workbench || 'Bancada'}
-                                      </Badge>
+                                        {isExpanded ? (
+                                          <XCircle className="h-3.5 w-3.5" />
+                                        ) : (
+                                          <Layout className="h-3.5 w-3.5" />
+                                        )}
+                                      </Button>
+                                      <input type="checkbox" className="rounded border-gray-300 h-3 w-3" />
+                                      <span className="text-[10px] font-black font-mono text-muted-foreground">Protocolo {group.protocol}</span>
                                     </div>
-                                  </button>
-                                ))}
-                              </div>
-                            ))
+                                    <span className="flex items-center gap-1 text-[10px] text-muted-foreground font-bold">
+                                      <Clock className="h-3 w-3" /> 10m
+                                    </span>
+                                  </div>
+                                  
+                                  {isExpanded && group.exams.map((exam: any) => (
+                                    <button
+                                      key={exam.id}
+                                      onClick={() => handleSelectExam(group.id, exam.id)}
+                                      className={cn(
+                                        "w-full text-left p-3 rounded-xl border transition-all hover:border-primary/50 group",
+                                        selectedExamId === exam.id
+                                          ? "bg-primary/5 border-primary shadow-sm"
+                                          : "bg-card border-border shadow-sm"
+                                      )}
+                                    >
+                                      <div className="flex justify-between items-start mb-1.5">
+                                        <div className="flex flex-col min-w-0">
+                                          <span className="font-black text-sm truncate uppercase tracking-tight">{group.patientName}</span>
+                                          <div className="flex items-center gap-2 mt-0.5">
+                                            <Badge variant="outline" className="bg-primary/5 text-primary border-primary/20 text-[9px] font-black h-4 uppercase">{exam.code}</Badge>
+                                            <span className="text-[10px] text-muted-foreground font-medium truncate">{exam.name}</span>
+                                          </div>
+                                        </div>
+                                        <Badge 
+                                          variant="secondary" 
+                                          className={cn(
+                                            "text-[9px] font-black h-4 uppercase",
+                                            exam.workbench === 'Bioquímica' ? "bg-blue-100 text-blue-700" :
+                                            exam.workbench === 'Hematologia' ? "bg-purple-100 text-purple-700" :
+                                            "bg-slate-100 text-slate-700"
+                                          )}
+                                        >
+                                          {exam.workbench || 'Bancada'}
+                                        </Badge>
+                                      </div>
+                                    </button>
+                                  ))}
+                                </div>
+                              );
+                            })
                           )}
                         </div>
                       </ScrollArea>
