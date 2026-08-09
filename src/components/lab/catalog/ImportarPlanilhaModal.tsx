@@ -1,4 +1,5 @@
 import React, { useState, useRef, useMemo } from 'react';
+import { supabase } from '@/integrations/supabase/client';
 import { 
   Dialog, 
   DialogContent, 
@@ -194,6 +195,17 @@ export const ImportarPlanilhaModal = ({ isOpen, onClose, existingCodes = [] }: I
     try {
       const results = { new: 0, updated: 0 };
       
+      // Get company_id once at the start
+      const { data: { user } } = await supabase.auth.getUser();
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('company_id')
+        .eq('id', user?.id)
+        .single();
+      const companyId = profile?.company_id;
+
+      if (!companyId) throw new Error('Company ID not found');
+      
       for (const examData of parsedExams) {
         // Find or create workbench
         let wbId = workbenches.find(w => w.name.toLowerCase() === examData.bancada.toLowerCase())?.id;
@@ -207,57 +219,110 @@ export const ImportarPlanilhaModal = ({ isOpen, onClose, existingCodes = [] }: I
           defaultMaterial: examData.materiaisAceitos.split(',')[0]?.trim() || '',
           measurementUnit: examData.unidadeMedida || '',
           workbenchId: wbId,
-
           isActive: true,
           showDeadline: true,
           confirmationQuestions: [], 
           attachmentRules: [],
-          // Map parameters to the format expected by the DB/app
-          parameters: examData.parameters.map((p: any) => ({
-            id: crypto.randomUUID(),
-            name: p['Nome'] || p['NOME'] || p['Parâmetro'] || p['PARAMETRO'] || p['Nome do parâmetro'],
-            section: p['Seção'] || p['SEÇÃO'] || p['Setor'] || p['SETOR'] || '',
-            equipCode: p['Cód. Equip.'] || p['CÓD. EQUIP.'] || p['Código Equipamento'] || p['COD_EQUIP'] || '',
-            type: (p['Tipo'] || p['TIPO'] || 'numerical').toLowerCase() === 'numérico' ? 'numerical' : 
-                  (p['Tipo'] || p['TIPO'] || 'texto').toLowerCase() === 'texto' ? 'text' : 
-                  (p['Tipo'] || p['TIPO'] || 'numerical').toLowerCase(),
-            origin: (p['Origem'] || p['ORIGEM'] || 'manual').toLowerCase() === 'equipamento' ? 'equipment' : (p['Origem'] || p['ORIGEM'] || 'manual').toLowerCase(),
-
-            unit: p['Unidade'] || p['UNIDADE'] || '',
-            isMandatory: p['Obrig.'] || p['OBRIG.'] || p['Obrigatório'] || true,
-            allowNegative: p['Neg.'] || p['NEG.'] || p['Permite Negativo'] || false,
-            isCalculated: p['Calc.'] || p['CALC.'] || p['Calculado'] || false,
-            isHidden: p['Oculto'] || p['OCULTO'] || p['Ocultar Laudo'] || false,
-            formula: p['Fórmula'] || p['FORMULA'] || '',
-            referenceValues: examData.referenceValues
-              .filter((r: any) => (r['Nome do parâmetro'] || r['Nome do Parâmetro'] || r['PARÂMETRO'] || r['Nome'] || '') === (p['Nome'] || p['NOME'] || p['Parâmetro'] || p['PARAMETRO'] || p['Nome do parâmetro']))
-              .map((r: any) => ({
-                id: crypto.randomUUID(),
-                description: r['Descrição'] || r['DESCRIÇÃO'] || '',
-                minValue: r['Valor mín'] || r['Valor Mínimo'] || r['Mínimo'] || r['MIN'] || '',
-                maxValue: r['Valor máx'] || r['Valor Máximo'] || r['Máximo'] || r['MAX'] || '',
-                textRange: r['Valor texto'] || r['Referência Texto'] || r['Texto'] || '',
-                minAge: Number(r['Idade mini'] || r['Idade Mín'] || r['Idade Mínima'] || 0),
-                maxAge: Number(r['Idade máxi'] || r['Idade Máx'] || r['Idade Máxima'] || 150),
-                sex: r['Sexo'] || r['Gênero'] || 'Todos',
-                isPregnant: String(r['Gestante'] || '').toLowerCase() === 'sim' || !!r['Gestante']
-              }))
-          })),
         };
 
         const existing = exams.find(e => e.internalCode === examData.codigo);
+        let examId = existing?.id;
+
         if (existing) {
           await updateExam({ ...existing, ...examPayload });
           results.updated++;
         } else {
-          await addExam(examPayload);
+          const newExam = await addExam(examPayload);
+          examId = newExam?.id;
           results.new++;
+        }
+
+        // Process Parameters and Reference Values if we have an examId
+        if (examId) {
+          for (const p of examData.parameters) {
+            const paramName = p['Nome'] || p['NOME'] || p['Parâmetro'] || p['PARAMETRO'] || p['Nome do parâmetro'];
+            
+            const paramPayload = {
+              exam_id: examId,
+              company_id: companyId,
+              name: paramName,
+              section: p['Seção'] || p['SEÇÃO'] || p['Setor'] || p['SETOR'] || '',
+              equipment_code: p['Cód. Equip.'] || p['CÓD. EQUIP.'] || p['Código Equipamento'] || p['COD_EQUIP'] || '',
+              type: (p['Tipo'] || p['TIPO'] || 'numerical').toLowerCase() === 'numérico' ? 'numerical' : 
+                    (p['Tipo'] || p['TIPO'] || 'texto').toLowerCase() === 'texto' ? 'text' : 
+                    (p['Tipo'] || p['TIPO'] || 'numerical').toLowerCase(),
+              origin: (p['Origem'] || p['ORIGEM'] || 'manual').toLowerCase() === 'equipamento' ? 'equipment' : (p['Origem'] || p['ORIGEM'] || 'manual').toLowerCase(),
+              unit: p['Unidade'] || p['UNIDADE'] || '',
+              is_required: p['Obrig.'] || p['OBRIG.'] || p['Obrigatório'] || true,
+              allow_negative: p['Neg.'] || p['NEG.'] || p['Permite Negativo'] || false,
+              is_calculated: p['Calc.'] || p['CALC.'] || p['Calculado'] || false,
+              is_hidden: p['Oculto'] || p['OCULTO'] || p['Ocultar Laudo'] || false,
+              formula: p['Fórmula'] || p['FORMULA'] || '',
+            };
+
+            // Upsert parameter by exam_id and name
+            const { data: existingParam } = await supabase
+              .from('lab_exam_parameters')
+              .select('id')
+              .eq('exam_id', examId)
+              .eq('name', paramName)
+              .maybeSingle();
+
+            let parameterId = existingParam?.id;
+
+            if (parameterId) {
+              await supabase.from('lab_exam_parameters').update(paramPayload).eq('id', parameterId);
+            } else {
+              const { data: newParam } = await supabase
+                .from('lab_exam_parameters')
+                .insert(paramPayload)
+                .select()
+                .single();
+              parameterId = newParam?.id;
+            }
+
+            // Sync Reference Values for this parameter
+            if (parameterId) {
+              const refsForParam = examData.referenceValues.filter((r: any) => 
+                (r['Nome do parâmetro'] || r['Nome do Parâmetro'] || r['PARÂMETRO'] || r['Nome'] || '') === paramName
+              );
+
+              // Delete old refs to ensure fresh state from spreadsheet
+              await supabase.from('lab_exam_reference_values').delete().eq('parameter_id', parameterId);
+
+              if (refsForParam.length > 0) {
+                const refsToInsert = refsForParam.map((r: any) => ({
+                  exam_id: examId,
+                  parameter_id: parameterId,
+                  company_id: companyId,
+                  internal_code: examData.codigo,
+                  parameter_name: paramName,
+                  description: r['Descrição'] || r['DESCRIÇÃO'] || '',
+                  min_value: r['Valor mín'] || r['Valor Mínimo'] || r['Mínimo'] || r['MIN']?.toString() || null,
+                  max_value: r['Valor máx'] || r['Valor Máximo'] || r['Máximo'] || r['MAX']?.toString() || null,
+                  text_range: r['Valor texto'] || r['Referência Texto'] || r['Texto'] || null,
+                  age_min: Number(r['Idade mini'] || r['Idade Mín'] || r['Idade Mínima'] || 0),
+                  age_max: Number(r['Idade máxi'] || r['Idade Máx'] || r['Idade Máxima'] || 150),
+                  gender: r['Sexo'] || r['Gênero'] || 'Todos',
+                  is_pregnant: String(r['Gestante'] || '').toLowerCase() === 'sim' || !!r['Gestante']
+                }));
+
+                await supabase.from('lab_exam_reference_values').insert(refsToInsert);
+              }
+            }
+          }
         }
       }
       
-      setNewExams(Array(results.new).fill('')); // Just to update the count in UI
+      setNewExams(Array(results.new).fill('')); 
       setUpdateExams(Array(results.updated).fill(''));
       setState('concluido');
+      
+      // Auto-reload to refresh the list with new DB state
+      setTimeout(() => {
+        window.location.reload();
+      }, 1500);
+
     } catch (error: any) {
       console.error(error);
       toast.error(`Erro na importação: ${error.message}`);
