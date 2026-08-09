@@ -104,9 +104,9 @@ export default function LabAnalisePage() {
         }))
       );
       
-      // Filtro por Status: Apenas exames com coleta realizada ou em processamento
+      // Filtro por Status: Apenas exames com coleta realizada ou em análise
       exams.forEach(exam => {
-        if (exam.status === 'collection_done' || exam.status === 'processing' || order.status === 'collection_done') {
+        if (exam.status === 'collection_done' || (exam.status as string) === 'processing' || order.status === 'collection_done' || (order.status as string) === 'in_analysis') {
           allExams.push(exam);
         }
       });
