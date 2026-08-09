@@ -217,10 +217,52 @@ export const ImportarPlanilhaModal = ({ isOpen, onClose, existingCodes = [] }: I
 
       if (!companyId) throw new Error('Company ID not found');
       
+      const getParamName = (p: any) => String(p['Nome do parâmetro'] || p['Nome'] || p['NOME'] || p['Parâmetro'] || p['PARAMETRO'] || '').trim();
+
       for (const examData of parsedExams) {
         // Find or create workbench
         let wbId = workbenches.find(w => w.name.toLowerCase() === examData.bancada.toLowerCase())?.id;
-        
+
+        // Build app-shaped parameters (persisted in the exam JSON, read by the edit screen)
+        const appParameters = examData.parameters
+          .map((p: any, idx: number) => {
+            const paramName = getParamName(p);
+            if (!paramName) return null;
+            const rawType = String(p['Tipo'] || p['TIPO'] || '').toLowerCase();
+            const refs = examData.referenceValues
+              .filter((r: any) => getParamName(r) === paramName)
+              .map((r: any, rIdx: number) => ({
+                id: `${idx + 1}-${rIdx + 1}`,
+                description: String(r['Descrição'] || r['DESCRIÇÃO'] || ''),
+                minValue: r['Valor mínimo'] ?? r['Valor Mínimo'] ?? r['Mínimo'] ?? '',
+                maxValue: r['Valor máximo'] ?? r['Valor Máximo'] ?? r['Máximo'] ?? '',
+                normalText: r['Valor texto'] ?? r['Texto'] ?? '',
+                minAge: Number(r['Idade mínima (anos)'] || r['Idade Mínima'] || 0),
+                maxAge: Number(r['Idade máxima (anos)'] || r['Idade Máxima'] || 150),
+                sex: (String(r['Sexo'] || r['Gênero'] || '').toUpperCase().startsWith('M') ? 'M'
+                  : String(r['Sexo'] || r['Gênero'] || '').toUpperCase().startsWith('F') ? 'F' : 'Both'),
+                isPregnant: r['Gestante'] === 'Sim' || r['Gestante'] === true,
+                order: rIdx + 1,
+              }));
+
+            return {
+              id: idx + 1,
+              name: paramName,
+              section: String(p['Seção'] || p['SEÇÃO'] || p['Setor'] || p['SETOR'] || ''),
+              equipCode: String(p['Código no equipamento'] || p['Cód. Equip.'] || p['Código Equipamento'] || ''),
+              type: rawType.includes('calc') ? 'calculation' : rawType.includes('text') ? 'text' : 'numerical',
+              origin: String(p['Origem'] || p['ORIGEM'] || '').toLowerCase() === 'equipamento' ? 'interface' : 'manual',
+              unit: String(p['Unidade de medida'] || p['Unidade'] || p['UNIDADE'] || ''),
+              isMandatory: p['Obrigatório'] === 'Sim' || p['Obrigatório'] === true,
+              allowNegative: p['Permite negativo'] === 'Sim' || p['Permite negativo'] === true,
+              isCalculated: p['Calculado'] === 'Sim' || p['Calculado'] === true,
+              isHidden: p['Oculto'] === 'Sim' || p['Oculto'] === true,
+              formula: String(p['Fórmula do parâmetro'] || p['Fórmula'] || ''),
+              referenceValues: refs,
+            };
+          })
+          .filter(Boolean) as any[];
+
         const examPayload: any = {
           name: examData.nome,
           internalCode: examData.codigo,
@@ -234,6 +276,8 @@ export const ImportarPlanilhaModal = ({ isOpen, onClose, existingCodes = [] }: I
           showDeadline: true,
           confirmationQuestions: [], 
           attachmentRules: [],
+          parameters: appParameters,
+          referenceValues: appParameters.flatMap(p => p.referenceValues || []),
         };
 
         const existing = exams.find(e => e.internalCode === examData.codigo);
