@@ -931,7 +931,7 @@ function ParametersSection({ parameters, setParameters }: { parameters: any[], s
                               <Calculator className="h-3 w-3" />
                               Fórmula de cálculo de "{param.name || 'Parâmetro'}"
                             </div>
-                            <div className="flex flex-wrap gap-1.5">
+                            <div className="flex flex-wrap gap-1">
                               {availableVariables.filter(v => v !== param.name).map(v => (
                                 <button
                                   key={v}
@@ -940,16 +940,16 @@ function ParametersSection({ parameters, setParameters }: { parameters: any[], s
                                     const currentFormula = param.formula || ''
                                     updateParameter(param.id, 'formula', currentFormula + ` [${v}] `)
                                   }}
-                                  className="px-2 py-1 rounded bg-white border border-border text-[10px] font-bold hover:bg-primary/5 hover:border-primary/30 transition-all shadow-sm"
+                                  className="px-2 py-0.5 rounded-md bg-white border border-blue-200 text-[9px] font-bold text-blue-700 hover:bg-blue-600 hover:text-white transition-all shadow-sm"
                                 >
                                   [{v}]
                                 </button>
                               ))}
-                              <button className="px-2 py-1 rounded bg-white border border-border text-[10px] font-bold opacity-50">{"{peso}"}</button>
-                              <button className="px-2 py-1 rounded bg-white border border-border text-[10px] font-bold opacity-50">{"{sexo}"}</button>
+                              <button className="px-2 py-0.5 rounded-md bg-white border border-border text-[9px] font-bold opacity-40">{"{peso}"}</button>
+                              <button className="px-2 py-0.5 rounded-md bg-white border border-border text-[9px] font-bold opacity-40">{"{sexo}"}</button>
                             </div>
                             <textarea
-                              className="w-full h-16 p-3 rounded-lg border bg-white text-xs font-mono focus:ring-2 focus:ring-primary/20 outline-none resize-none shadow-inner"
+                              className="w-full h-12 p-2 rounded-lg border bg-white text-[11px] font-mono focus:ring-2 focus:ring-blue-200 outline-none resize-none shadow-inner"
                               placeholder="Ex: [Hematócrito] / [Hemácias] * 10"
                               value={param.formula}
                               onChange={(e) => updateParameter(param.id, 'formula', e.target.value)}
@@ -960,10 +960,10 @@ function ParametersSection({ parameters, setParameters }: { parameters: any[], s
                     )}
                   </React.Fragment>
                 ))}
-                {parameters.length === 0 && (
+                {(!parameters || parameters.length === 0) && (
                   <tr>
-                    <td colSpan={12} className="px-4 py-12 text-center text-muted-foreground italic">
-                      Nenhum parâmetro cadastrado. Clique em "Adicionar Parâmetro" para começar.
+                    <td colSpan={13} className="px-4 py-10 text-center text-muted-foreground italic text-xs">
+                      Nenhum parâmetro cadastrado. Utilize o botão acima para adicionar.
                     </td>
                   </tr>
                 )}
