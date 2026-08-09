@@ -637,21 +637,37 @@ function GeneralInfoSection({ isEditing, data, workbenches, onChange }: { isEdit
 
       {data.referenceValues && data.referenceValues.length > 0 && (
         <div className="space-y-6 pt-6 border-t border-border">
-          <div className="flex items-center gap-2">
-            <Scale className="h-5 w-5 text-primary" />
-            <h3 className="text-lg font-bold">Valores de Referência do Exame</h3>
+          <div 
+            className="flex items-center justify-between cursor-pointer group"
+            onClick={() => setShowGlobalRefs(!showGlobalRefs)}
+          >
+            <div className="flex items-center gap-2">
+              <Scale className="h-5 w-5 text-primary" />
+              <h3 className="text-lg font-bold">Valores de Referência do Exame</h3>
+              <Badge variant="outline" className="ml-2 bg-primary/5 text-primary border-primary/20">
+                {data.referenceValues.length} {data.referenceValues.length === 1 ? 'faixa' : 'faixas'}
+              </Badge>
+            </div>
+            <Button variant="ghost" size="sm" className="h-8 w-8 p-0 rounded-full group-hover:bg-muted transition-colors">
+              {showGlobalRefs ? <Minus className="h-4 w-4" /> : <Plus className="h-4 w-4" />}
+            </Button>
           </div>
-          <p className="text-sm text-muted-foreground">
-            Estes são os valores de referência globais configurados para este exame. Para referências específicas por parâmetro, utilize a aba 
-            <span className="font-bold text-primary"> "Parâmetros e Máscara"</span>.
-          </p>
           
-          <div className="bg-muted/10 border rounded-xl p-4">
-            <ReferenceValuesSection 
-              parameter={{ name: data.name }} 
-              referenceValues={data.referenceValues}
-            />
-          </div>
+          {showGlobalRefs && (
+            <div className="space-y-4 animate-in fade-in slide-in-from-top-2 duration-300">
+              <p className="text-sm text-muted-foreground">
+                Estes são os valores de referência globais configurados para este exame. Para referências específicas por parâmetro, utilize a aba 
+                <span className="font-bold text-primary"> "Parâmetros e Máscara"</span>.
+              </p>
+              
+              <div className="bg-muted/10 border rounded-xl p-4">
+                <ReferenceValuesSection 
+                  parameter={{ name: data.name }} 
+                  referenceValues={data.referenceValues}
+                />
+              </div>
+            </div>
+          )}
         </div>
       )}
 
