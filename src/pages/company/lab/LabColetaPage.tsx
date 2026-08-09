@@ -170,7 +170,7 @@ export default function LabColetaPage() {
   const handleConfirmColeta = (order: LabAttendanceOrder) => {
     updateOrder(order.id, { status: 'collection_done' })
     addAudit(order, 'confirmed')
-    toast.success('Coleta realizada com sucesso!')
+    toast.success('Coleta Realizada com sucesso!')
     setExpandedId(null)
   }
 
