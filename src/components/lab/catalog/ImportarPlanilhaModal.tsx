@@ -203,22 +203,31 @@ export const ImportarPlanilhaModal = ({ isOpen, onClose, existingCodes = [] }: I
           // Map parameters to the format expected by the DB/app
           parameters: examData.parameters.map((p: any) => ({
             id: crypto.randomUUID(),
-            name: p['Nome'] || p['NOME'] || p['Parâmetro'] || p['PARAMETRO'],
+            name: p['Nome'] || p['NOME'] || p['Parâmetro'] || p['PARAMETRO'] || p['Nome do parâmetro'],
+            section: p['Seção'] || p['SEÇÃO'] || p['Setor'] || p['SETOR'] || '',
+            equipCode: p['Cód. Equip.'] || p['CÓD. EQUIP.'] || p['Código Equipamento'] || p['COD_EQUIP'] || '',
+            type: (p['Tipo'] || p['TIPO'] || 'numerical').toLowerCase() === 'numérico' ? 'numerical' : (p['Tipo'] || p['TIPO'] || 'numerical').toLowerCase(),
+            origin: (p['Origem'] || p['ORIGEM'] || 'manual').toLowerCase() === 'equipamento' ? 'equipment' : (p['Origem'] || p['ORIGEM'] || 'manual').toLowerCase(),
             unit: p['Unidade'] || p['UNIDADE'] || '',
-            type: (p['Tipo'] || p['TIPO'] || 'numeric').toLowerCase(),
+            isMandatory: p['Obrig.'] || p['OBRIG.'] || p['Obrigatório'] || true,
+            allowNegative: p['Neg.'] || p['NEG.'] || p['Permite Negativo'] || false,
+            isCalculated: p['Calc.'] || p['CALC.'] || p['Calculado'] || false,
+            isHidden: p['Oculto'] || p['OCULTO'] || p['Ocultar Laudo'] || false,
             formula: p['Fórmula'] || p['FORMULA'] || '',
+            referenceValues: examData.referenceValues
+              .filter((r: any) => (r['Nome do parâmetro'] || r['Nome do Parâmetro'] || r['PARÂMETRO'] || r['Nome'] || '') === (p['Nome'] || p['NOME'] || p['Parâmetro'] || p['PARAMETRO'] || p['Nome do parâmetro']))
+              .map((r: any) => ({
+                id: crypto.randomUUID(),
+                description: r['Descrição'] || r['DESCRIÇÃO'] || '',
+                minValue: r['Valor mín'] || r['Valor Mínimo'] || r['Mínimo'] || r['MIN'] || '',
+                maxValue: r['Valor máx'] || r['Valor Máximo'] || r['Máximo'] || r['MAX'] || '',
+                textRange: r['Valor texto'] || r['Referência Texto'] || r['Texto'] || '',
+                minAge: Number(r['Idade mini'] || r['Idade Mín'] || r['Idade Mínima'] || 0),
+                maxAge: Number(r['Idade máxi'] || r['Idade Máx'] || r['Idade Máxima'] || 150),
+                sex: r['Sexo'] || r['Gênero'] || 'Todos',
+                isPregnant: String(r['Gestante'] || '').toLowerCase() === 'sim' || !!r['Gestante']
+              }))
           })),
-          // Map reference values
-          referenceValues: examData.referenceValues.map((r: any) => ({
-            id: crypto.randomUUID(),
-            parameterName: r['Nome do Parâmetro'] || r['PARÂMETRO'] || r['Nome'] || '',
-            gender: (r['Sexo'] || r['Gênero'] || 'both').toLowerCase(),
-            ageMin: Number(r['Idade Mín'] || r['Idade Mínima'] || 0),
-            ageMax: Number(r['Idade Máx'] || r['Idade Máxima'] || 120),
-            minValue: r['Mínimo'] || r['MIN'] || '',
-            maxValue: r['Máximo'] || r['MAX'] || '',
-            textRange: r['Referência Texto'] || r['Texto'] || '',
-          }))
         };
 
         const existing = exams.find(e => e.internalCode === examData.codigo);
