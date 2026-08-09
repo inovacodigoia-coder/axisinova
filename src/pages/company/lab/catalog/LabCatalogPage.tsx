@@ -3,7 +3,7 @@ import { Card } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Skeleton } from '@/components/ui/skeleton'
-import { Search, Plus, Filter, LayoutGrid, List, Edit2, Trash2, Beaker, AlertTriangle, ChevronLeft, ChevronRight, Upload } from 'lucide-react'
+import { Search, Plus, Filter, LayoutGrid, List, Edit2, Trash2, Beaker, AlertTriangle, ChevronLeft, ChevronRight, Upload, Download, Loader2 } from 'lucide-react'
 import { ImportarPlanilhaModal } from '@/components/lab/catalog/ImportarPlanilhaModal'
 import { Badge } from '@/components/ui/badge'
 import { useNavigate } from 'react-router-dom'
@@ -51,6 +51,7 @@ export default function LabCatalogPage() {
   const [currentPage, setCurrentPage] = useState(1)
   const [selectedWorkbench, setSelectedWorkbench] = useState<string>('all')
   const [importModalOpen, setImportModalOpen] = useState(false)
+  const [isExporting, setIsExporting] = useState(false)
 
   const exams = useMemo(() => {
     if (!registeredExams) return [];
@@ -111,6 +112,100 @@ export default function LabCatalogPage() {
     }
   }
 
+  const handleExport = async () => {
+    setIsExporting(true)
+    try {
+      const XLSX = await import('xlsx')
+      
+      const labExams = registeredExams.filter(e => 
+        e && (String(e.type).toLowerCase() === 'lab' || String(e.type).toLowerCase() === 'laboratório' || String(e.type).toLowerCase() === 'laboratorio')
+      )
+
+      if (labExams.length === 0) {
+        toast.error('Não há exames para exportar')
+        setIsExporting(false)
+        return
+      }
+
+      // 1. Catálogo de Exames
+      const catalogData = labExams.map(e => ({
+        'Nome': e.name,
+        'Código': e.internalCode || e.tussCode || '',
+        'Materiais': (e.selectedMaterials || []).join(', '),
+        'Bancada': workbenches?.find(w => w.id === e.workbenchId)?.name || '',
+        'Prazo de Entrega': e.resultDeadlineDays || 0,
+        'Status': e.isActive ? 'Ativo' : 'Inativo',
+        'Unidade de Medida': e.measurementUnit || '',
+        'Instruções de Preparo': e.preparationInstructions || '',
+        'Duração Estimada (min)': e.estimatedDurationMinutes || 0,
+        'Exige Autorização': e.requiresAuthorization ? 'Sim' : 'Não',
+        'Metodologia': e.methodology || '',
+        'Observações do Laudo': e.reportObservations || '',
+        'Equipamento Interface': e.interfacingConfig?.equipmentCode || ''
+      }))
+
+      // 2. Parâmetros e Máscara
+      const paramsData: any[] = []
+      labExams.forEach(e => {
+        if (e.parameters && Array.isArray(e.parameters)) {
+          e.parameters.forEach((p: any) => {
+            paramsData.push({
+              'Código do Exame': e.internalCode || e.tussCode || '',
+              'Nome do Exame': e.name,
+              'Nome do Parâmetro': p.name || '',
+              'Unidade': p.unit || '',
+              'Tipo': p.type || 'numeric',
+              'Fórmula': p.formula || ''
+            })
+          })
+        }
+      })
+
+      // 3. Faixas de Referência
+      const refsData: any[] = []
+      labExams.forEach(e => {
+        if (e.referenceValues && Array.isArray(e.referenceValues)) {
+          e.referenceValues.forEach((r: any) => {
+            refsData.push({
+              'Código do Exame': e.internalCode || e.tussCode || '',
+              'Nome do Exame': e.name,
+              'Parâmetro': r.parameterName || '',
+              'Sexo': r.gender || 'both',
+              'Idade Mínima': r.ageMin || 0,
+              'Idade Máxima': r.ageMax || 120,
+              'Valor Mínimo': r.minValue || '',
+              'Valor Máximo': r.maxValue || '',
+              'Referência Texto': r.textRange || ''
+            })
+          })
+        }
+      })
+
+      const wb = XLSX.utils.book_new()
+      
+      const wsCatalog = XLSX.utils.json_to_sheet(catalogData)
+      XLSX.utils.book_append_sheet(wb, wsCatalog, "Catálogo de Exames")
+      
+      if (paramsData.length > 0) {
+        const wsParams = XLSX.utils.json_to_sheet(paramsData)
+        XLSX.utils.book_append_sheet(wb, wsParams, "Parâmetros")
+      }
+      
+      if (refsData.length > 0) {
+        const wsRefs = XLSX.utils.json_to_sheet(refsData)
+        XLSX.utils.book_append_sheet(wb, wsRefs, "Faixas de Referência")
+      }
+
+      XLSX.writeFile(wb, `Catalogo_Exames_${new Date().toISOString().split('T')[0]}.xlsx`)
+      toast.success('Catálogo exportado com sucesso!')
+    } catch (error) {
+      console.error('Erro ao exportar:', error)
+      toast.error('Erro ao exportar o catálogo')
+    } finally {
+      setIsExporting(false)
+    }
+  }
+
   const openDeleteConfirm = (id: string) => {
     setExamToDelete(id)
     setDeleteConfirmOpen(true)
@@ -124,6 +219,15 @@ export default function LabCatalogPage() {
           <p className="text-sm text-muted-foreground">Gerencie os exames disponíveis no laboratório.</p>
         </div>
         <div className="flex gap-2">
+          <Button 
+            variant="outline" 
+            onClick={handleExport} 
+            disabled={isExporting}
+            className="gap-2 border-slate-200 text-slate-700"
+          >
+            {isExporting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4" />} 
+            Exportar Catálogo
+          </Button>
           <Button variant="outline" onClick={() => setImportModalOpen(true)} className="gap-2 border-slate-200 text-slate-700">
             <Upload className="h-4 w-4" /> Importar Planilha
           </Button>
