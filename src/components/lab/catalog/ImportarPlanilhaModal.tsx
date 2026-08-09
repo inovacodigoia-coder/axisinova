@@ -310,7 +310,7 @@ export const ImportarPlanilhaModal = ({ isOpen, onClose, existingCodes = [] }: I
                   age_min: Number(r['Idade mínima (anos)'] || r['Idade mini'] || r['Idade Mín'] || r['Idade Mínima'] || 0),
                   age_max: Number(r['Idade máxima (anos)'] || r['Idade máxi'] || r['Idade Máx'] || r['Idade Máxima'] || 150),
                   gender: r['Sexo'] || r['Gênero'] || 'Todos',
-                  is_pregnant: r['Gestante'] === 'Sim' || !!r['Gestante'],
+                  is_pregnant: r['Gestante'] === 'Sim' || r['Gestante'] === true || !!(r['Gestante'] || false),
                 }));
 
                 await supabase.from('lab_exam_reference_values').insert(refsToInsert);

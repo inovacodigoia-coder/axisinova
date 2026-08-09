@@ -793,6 +793,7 @@ export type Database = {
           gender: string | null
           id: string
           internal_code: string | null
+          is_pregnant: boolean | null
           max_value: string | null
           min_value: string | null
           parameter_id: string | null
@@ -811,6 +812,7 @@ export type Database = {
           gender?: string | null
           id?: string
           internal_code?: string | null
+          is_pregnant?: boolean | null
           max_value?: string | null
           min_value?: string | null
           parameter_id?: string | null
@@ -829,6 +831,7 @@ export type Database = {
           gender?: string | null
           id?: string
           internal_code?: string | null
+          is_pregnant?: boolean | null
           max_value?: string | null
           min_value?: string | null
           parameter_id?: string | null
