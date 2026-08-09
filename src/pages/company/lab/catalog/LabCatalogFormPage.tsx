@@ -72,6 +72,7 @@ export default function LabCatalogFormPage() {
   const isEditing = !!id
   const [activeTab, setActiveTab] = useState('general')
   const [isSaving, setIsSaving] = useState(false)
+  const [showGlobalRefs, setShowGlobalRefs] = useState(false)
 
   const { addExam, updateExam, exams, workbenches } = useRegisters() as any
   
