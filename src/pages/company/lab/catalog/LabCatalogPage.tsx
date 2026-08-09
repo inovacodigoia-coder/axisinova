@@ -10,6 +10,8 @@ import { useNavigate } from 'react-router-dom'
 import { cn } from '@/lib/utils'
 import { useRegisters } from '@/context/RegistersContext'
 import { toast } from 'sonner'
+import { supabase } from '@/integrations/supabase/client'
+
 import {
   AlertDialog,
   AlertDialogAction,
