@@ -788,85 +788,91 @@ function ParametersSection({ parameters, setParameters }: { parameters: any[], s
               <tbody className="divide-y divide-border">
                 {parameters && parameters.length > 0 && parameters.map((param, idx) => (
                   <React.Fragment key={param.id}>
-                    <tr className="hover:bg-muted/5 transition-colors">
-                      <td className="px-4 py-3 text-xs text-muted-foreground font-medium">{idx + 1}</td>
-                      <td className="px-4 py-3 min-w-[200px]">
-                        <div className="flex items-center gap-2">
+                    <tr className="hover:bg-muted/10 transition-colors group">
+                      <td className="px-3 py-2 text-[10px] text-muted-foreground font-bold text-center border-r bg-muted/5">{idx + 1}</td>
+                      <td className="px-4 py-2">
+                        <div className="flex items-center gap-1.5">
                           <Input 
-                            className="h-9 text-xs font-medium focus:ring-primary/20" 
+                            className="h-8 text-xs font-semibold focus:ring-primary/20 border-transparent hover:border-border focus:border-primary group-hover:bg-white bg-transparent transition-all" 
                             value={param.name} 
                             onChange={(e) => updateParameter(param.id, 'name', e.target.value)}
-                            placeholder="Nome do parâmetro"
+                            placeholder="Ex: Hemoglobina"
                           />
-                          <Button variant="ghost" size="sm" className="h-7 text-[10px] px-2 text-muted-foreground hover:text-primary">
-                            <History className="h-3 w-3 mr-1" /> Hist.
-                          </Button>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <Button variant="ghost" size="icon" className="h-7 w-7 text-muted-foreground hover:text-primary">
+                                <History className="h-3.5 w-3.5" />
+                              </Button>
+                            </TooltipTrigger>
+                            <TooltipContent>Histórico de alterações</TooltipContent>
+                          </Tooltip>
                         </div>
                       </td>
-                      <td className="px-4 py-3">
+                      <td className="px-1 py-2">
                         <Input 
-                          className="h-9 text-xs text-center uppercase" 
+                          className="h-8 text-[10px] text-center uppercase border-transparent hover:border-border focus:border-primary group-hover:bg-white bg-transparent" 
                           value={param.section} 
                           onChange={(e) => updateParameter(param.id, 'section', e.target.value)}
-                          placeholder="Ex: ER"
+                          placeholder="ER"
                         />
                       </td>
-                      <td className="px-4 py-3">
+                      <td className="px-1 py-2">
                         <Input 
-                          className="h-9 text-xs text-center" 
+                          className="h-8 text-[10px] text-center border-transparent hover:border-border focus:border-primary group-hover:bg-white bg-transparent" 
                           value={param.equipCode} 
                           onChange={(e) => updateParameter(param.id, 'equipCode', e.target.value)}
-                          placeholder="ex"
+                          placeholder="00"
                         />
                       </td>
-                      <td className="px-4 py-3">
+                      <td className="px-2 py-2">
                         <Select value={param.type} onValueChange={(val) => updateParameter(param.id, 'type', val)}>
-                          <SelectTrigger className="h-9 text-xs">
+                          <SelectTrigger className="h-8 text-[10px] border-transparent hover:border-border focus:border-primary group-hover:bg-white bg-transparent px-2">
                             <SelectValue />
                           </SelectTrigger>
                           <SelectContent>
-                            <SelectItem value="numerical">Numérico</SelectItem>
-                            <SelectItem value="text">Texto</SelectItem>
-                            <SelectItem value="selection">Seleção</SelectItem>
+                            <SelectItem value="numerical" className="text-[10px]">Numérico</SelectItem>
+                            <SelectItem value="text" className="text-[10px]">Texto</SelectItem>
+                            <SelectItem value="selection" className="text-[10px]">Seleção</SelectItem>
                           </SelectContent>
                         </Select>
                       </td>
-                      <td className="px-4 py-3">
+                      <td className="px-2 py-2">
                         <Select value={param.origin} onValueChange={(val) => updateParameter(param.id, 'origin', val)}>
-                          <SelectTrigger className="h-9 text-xs">
+                          <SelectTrigger className="h-8 text-[10px] border-transparent hover:border-border focus:border-primary group-hover:bg-white bg-transparent px-2">
                             <SelectValue />
                           </SelectTrigger>
                           <SelectContent>
-                            <SelectItem value="manual">Manual</SelectItem>
-                            <SelectItem value="equipment">Equipamento</SelectItem>
+                            <SelectItem value="manual" className="text-[10px]">Manual</SelectItem>
+                            <SelectItem value="equipment" className="text-[10px]">Equipamento</SelectItem>
                           </SelectContent>
                         </Select>
                       </td>
-                      <td className="px-4 py-3">
+                      <td className="px-2 py-2">
                         <div className="flex gap-1 items-center">
                           <Select value={param.unit} onValueChange={(val) => updateParameter(param.id, 'unit', val)}>
-                            <SelectTrigger className="h-9 text-xs flex-1">
-                              <SelectValue placeholder="Unidade" />
+                            <SelectTrigger className="h-8 text-[10px] flex-1 border-transparent hover:border-border focus:border-primary group-hover:bg-white bg-transparent px-2">
+                              <SelectValue placeholder="Unid." />
                             </SelectTrigger>
                             <SelectContent>
                               {measurementUnits.map(unit => (
-                                <SelectItem key={unit.name} value={unit.name}>{unit.name}</SelectItem>
+                                <SelectItem key={unit.name} value={unit.name} className="text-[10px]">{unit.name}</SelectItem>
                               ))}
                             </SelectContent>
                           </Select>
-                          <Button variant="ghost" size="icon" className="h-7 w-7 text-primary shrink-0">
-                            <Plus className="h-3 w-3" />
-                          </Button>
                         </div>
                       </td>
-                      <td className="px-4 py-3">
+                      <td className="px-2 py-2">
                         <Button 
-                          variant="outline" 
+                          variant={param.referenceValues?.length > 0 ? "outline" : "ghost"} 
                           size="sm" 
-                          className="h-8 text-[10px] gap-1 px-2 w-full"
+                          className={cn(
+                            "h-7 text-[9px] gap-1 px-2 w-full uppercase font-bold transition-all",
+                            param.referenceValues?.length > 0 ? "border-emerald-500/30 text-emerald-600 bg-emerald-50/50" : "text-muted-foreground"
+                          )}
                           onClick={() => setEditingReference(param)}
                         >
-                          <Settings2 className="h-3 w-3" /> Editar
+                          <Settings2 className="h-3 w-3" /> 
+                          {param.referenceValues?.length > 0 ? `${param.referenceValues.length} Faixas` : 'Definir'}
                         </Button>
                       </td>
                       <td className="px-4 py-3">
