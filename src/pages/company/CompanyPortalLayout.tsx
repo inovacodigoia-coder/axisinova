@@ -263,6 +263,7 @@ function PortalContent() {
               <Route path="configuracoes/estabelecimentos" element={<EstablishmentsSettingsPage />} />
               <Route path="configuracoes/origens" element={<OriginsPage />} />
               <Route path="configuracoes/laboratorio" element={<LabSettingsPage />} />
+              <Route path="configuracoes/sessao" element={<SessionSettingsPage />} />
               <Route path="configuracoes/abreviaturas" element={<LabAbbreviationsPage />} />
               <Route path="cadastros/catalogo" element={<LabCatalogPage />} />
               <Route path="cadastros/catalogo/novo" element={<LabCatalogFormPage />} />
