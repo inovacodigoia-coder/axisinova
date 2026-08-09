@@ -201,17 +201,46 @@ export default function LabCatalogPage() {
       })
 
       // 3. Faixas de Referência
+      const { data: dbRefs, error: refsError } = await supabase
+        .from('lab_exam_reference_values')
+        .select('*')
+        .in('exam_id', labExams.map(e => e.id))
+      
+      if (refsError) {
+        console.error('Erro ao buscar referências do banco:', refsError)
+      }
+
       const refsData: any[] = []
       labExams.forEach(e => {
-        if (e.referenceValues && Array.isArray(e.referenceValues)) {
+        const examCode = e.internalCode || e.tussCode || '';
+        const examDbRefs = dbRefs?.filter(r => r.exam_id === e.id) || [];
+
+        if (examDbRefs.length > 0) {
+          examDbRefs.forEach(r => {
+            refsData.push({
+              'Código do Exame': examCode,
+              'Nome do Exame': e.name,
+              'Parâmetro': r.parameter_name || '',
+              'Descrição': r.description || '',
+              'Sexo': r.gender || 'Ambos',
+              'Idade Mínima': r.age_min ?? 0,
+              'Idade Máxima': r.age_max ?? 120,
+              'Valor Mínimo': r.min_value || '',
+              'Valor Máximo': r.max_value || '',
+              'Referência Texto': r.text_range || ''
+            })
+          })
+        } else if (e.referenceValues && Array.isArray(e.referenceValues)) {
+          // Fallback context values
           e.referenceValues.forEach((r: any) => {
             refsData.push({
-              'Código do Exame': e.internalCode || e.tussCode || '',
+              'Código do Exame': examCode,
               'Nome do Exame': e.name,
               'Parâmetro': r.parameterName || '',
-              'Sexo': r.gender || 'both',
-              'Idade Mínima': r.ageMin || 0,
-              'Idade Máxima': r.ageMax || 120,
+              'Descrição': r.description || '',
+              'Sexo': r.gender || 'Ambos',
+              'Idade Mínima': r.ageMin ?? 0,
+              'Idade Máxima': r.ageMax ?? 120,
               'Valor Mínimo': r.minValue || '',
               'Valor Máximo': r.maxValue || '',
               'Referência Texto': r.textRange || ''
