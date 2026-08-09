@@ -201,24 +201,58 @@ export default function LabCatalogPage() {
       })
 
       // 3. Faixas de Referência
+      const { data: dbReferences, error: refsError } = await supabase
+        .from('lab_exam_reference_values')
+        .select('*')
+        .in('exam_id', labExams.map(e => e.id))
+      
+      if (refsError) {
+        console.error('Erro ao buscar faixas de referência do banco:', refsError)
+      }
+
       const refsData: any[] = []
       labExams.forEach(e => {
-        if (e.referenceValues && Array.isArray(e.referenceValues)) {
+        const examCode = e.internalCode || e.tussCode || '';
+        
+        // Use database references if they exist
+        const examDbRefs = dbReferences?.filter(r => r.exam_id === e.id) || [];
+        
+        if (examDbRefs.length > 0) {
+          examDbRefs.forEach(r => {
+            const paramName = dbParameters?.find(p => p.id === r.parameter_id)?.name || r.parameter_name || '';
+            refsData.push({
+              'Código': examCode,
+              'Nome do parâmetro': paramName,
+              'Descrição': r.description || '',
+              'Valor mínimo': r.min_value ?? '',
+              'Valor máximo': r.max_value ?? '',
+              'Valor texto': r.text_range || '',
+              'Idade mínima (anos)': r.age_min ?? 0,
+              'Idade máxima (anos)': r.age_max ?? 120,
+              'Sexo': r.gender || 'both',
+              'Gestante': 'N/A' // Need to check if is_pregnant exists in DB or just use N/A for now
+            })
+          })
+        } else if (e.referenceValues && Array.isArray(e.referenceValues)) {
+
+          // Fallback to legacy referenceValues from JSON
           e.referenceValues.forEach((r: any) => {
             refsData.push({
-              'Código do Exame': e.internalCode || e.tussCode || '',
-              'Nome do Exame': e.name,
-              'Parâmetro': r.parameterName || '',
-              'Sexo': r.gender || 'both',
-              'Idade Mínima': r.ageMin || 0,
-              'Idade Máxima': r.ageMax || 120,
-              'Valor Mínimo': r.minValue || '',
-              'Valor Máximo': r.maxValue || '',
-              'Referência Texto': r.textRange || ''
+              'Código': examCode,
+              'Nome do parâmetro': r.parameterName || e.name || '',
+              'Descrição': r.description || '',
+              'Valor mínimo': r.minValue ?? '',
+              'Valor máximo': r.maxValue ?? '',
+              'Valor texto': r.textRange || '',
+              'Idade mínima (anos)': r.minAge ?? 0,
+              'Idade máxima (anos)': r.maxAge ?? 120,
+              'Sexo': r.sex || 'both',
+              'Gestante': r.isPregnant ? 'Sim' : 'Não'
             })
           })
         }
       })
+
 
       const wb = XLSX.utils.book_new()
       
