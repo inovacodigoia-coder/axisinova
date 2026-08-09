@@ -199,3 +199,18 @@
   margin: 4mm 0;
   opacity: 0.6;
 }
+
+/* Hide Lovable badge */
+#lovable-badge,
+.lovable-badge,
+a[href*="lovable.app"],
+[class*="lovable"] {
+  display: none !important;
+  visibility: hidden !important;
+  opacity: 0 !important;
+  pointer-events: none !important;
+  width: 0 !important;
+  height: 0 !important;
+  position: absolute !important;
+  left: -9999px !important;
+}
