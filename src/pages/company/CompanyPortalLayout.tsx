@@ -121,6 +121,7 @@ import ExternalPortalsPage from './lab/portals/ExternalPortalsPage'
 import PartnerPortalPage from './lab/portals/PartnerPortalPage'
 import PatientPortalPage from './lab/portals/PatientPortalPage'
 import DoctorPortalPage from './lab/portals/DoctorPortalPage'
+import SessionSettingsPage from './settings/SessionSettingsPage'
 
 
 
