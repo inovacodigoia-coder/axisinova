@@ -348,6 +348,7 @@ export function AttendanceCadastroModal({
   }, [state.patient, unitName, guicheName])
 
   const handleFinalize = async () => {
+    if (isFinalizing) return
     const isLabFlow = isLab
     
     // Basic validation for legacy flow (clinic)
@@ -362,75 +363,78 @@ export function AttendanceCadastroModal({
       return
     }
 
-    const orderData: any = {
-      patientId: state.patient?.id || state.tempPatient?.id || `temp_${Date.now()}`,
-      patientName: state.patient?.fullName || state.tempPatient?.fullName,
-      unitId,
-      ticketId, 
-      ticketCode,
-      serviceType: state.serviceType,
-      paymentType: state.paymentType || 'private',
-      doctorId: state.doctorId, 
-      doctorName: state.doctorName, 
-      doctorCRM: state.doctorCRM,
-      specialty: state.specialty, 
-      requestingDoctor: state.requestingDoctor,
-      procedureId: state.procedureId, 
-      procedureName: state.procedureName,
-      procedureCode: state.procedureCode, 
-      procedureDescription: state.procedureDescription,
-      convenioId: state.guides?.[0]?.convenioId || state.convenioId, 
-      convenioName: state.guides?.[0]?.convenioName || state.guides?.[0]?.name || state.guides?.[0]?.plan || state.convenioName,
-      cardNumber: state.cardNumber, 
-      cardExpiry: state.cardExpiry,
-      authorizationCode: state.authorizationCode, 
-      authorizationDate: state.authorizationDate,
-      authorizationExpiry: state.authorizationExpiry, 
-      authorizationPassword: state.authorizationPassword,
-      billingCode: state.billingCode, 
-      billingTable: state.billingTable, 
-      quantity: state.quantity,
-      participationDegree: state.participationDegree, 
-      cnes: state.cnes, 
-      cbo: state.cbo,
-      privateValue: state.privateValue, 
-      freeReason: state.freeReason,
-      attachments: state.attachments,
-      attachmentRulesSatisfied: !state.attachmentOverrideReason,
-      attachmentOverrideReason: state.attachmentOverrideReason,
-      scheduledAppointmentId: state.scheduledAppointmentId,
-      status: (state.procedureRequiresAuth && state.authorizationCode) ? 'authorized' : 'open',
-      examMode: state.serviceType === 'exam' ? (state.examMode === 'ask' ? undefined : state.examMode) : undefined,
-      // Lab specific fields
-      originId: state.originId,
-      originCode: state.originCode,
-      originName: state.originId === activeOrigin?.id ? activeOrigin?.name : state.guides?.[0]?.originName,
-      patientSequenceId: state.patient?.sequenceId || state.tempPatient?.sequenceId,
-      guides: state.guides,
-      isPregnant: state.tempPatient?.clinicalData?.isPregnant,
-      clinicalData: state.tempPatient?.clinicalData,
-      observations: {
-        notes: state.tempPatient?.generalNotes,
-        alerts: state.tempPatient?.internalAlerts,
-        financial: state.tempPatient?.financialNotes,
-        tags: state.tempPatient?.tags
+    setIsFinalizing(true)
+    try {
+      const orderData: any = {
+        patientId: state.patient?.id || state.tempPatient?.id || `temp_${Date.now()}`,
+        patientName: state.patient?.fullName || state.tempPatient?.fullName,
+        unitId,
+        ticketId, 
+        ticketCode,
+        serviceType: state.serviceType,
+        paymentType: state.paymentType || 'private',
+        doctorId: state.doctorId, 
+        doctorName: state.doctorName, 
+        doctorCRM: state.doctorCRM,
+        specialty: state.specialty, 
+        requestingDoctor: state.requestingDoctor,
+        procedureId: state.procedureId, 
+        procedureName: state.procedureName,
+        procedureCode: state.procedureCode, 
+        procedureDescription: state.procedureDescription,
+        convenioId: state.guides?.[0]?.convenioId || state.convenioId, 
+        convenioName: state.guides?.[0]?.convenioName || state.guides?.[0]?.name || state.guides?.[0]?.plan || state.convenioName,
+        cardNumber: state.cardNumber, 
+        cardExpiry: state.cardExpiry,
+        authorizationCode: state.authorizationCode, 
+        authorizationDate: state.authorizationDate,
+        authorizationExpiry: state.authorizationExpiry, 
+        authorizationPassword: state.authorizationPassword,
+        billingCode: state.billingCode, 
+        billingTable: state.billingTable, 
+        quantity: state.quantity,
+        participationDegree: state.participationDegree, 
+        cnes: state.cnes, 
+        cbo: state.cbo,
+        privateValue: state.privateValue, 
+        freeReason: state.freeReason,
+        attachments: state.attachments,
+        attachmentRulesSatisfied: !state.attachmentOverrideReason,
+        attachmentOverrideReason: state.attachmentOverrideReason,
+        scheduledAppointmentId: state.scheduledAppointmentId,
+        status: (state.procedureRequiresAuth && state.authorizationCode) ? 'authorized' : 'open',
+        examMode: state.serviceType === 'exam' ? (state.examMode === 'ask' ? undefined : state.examMode) : undefined,
+        // Lab specific fields
+        originId: state.originId,
+        originCode: state.originCode,
+        originName: state.originId === activeOrigin?.id ? activeOrigin?.name : state.guides?.[0]?.originName,
+        patientSequenceId: state.patient?.sequenceId || state.tempPatient?.sequenceId,
+        guides: state.guides,
+        isPregnant: state.tempPatient?.clinicalData?.isPregnant,
+        clinicalData: state.tempPatient?.clinicalData,
+        observations: {
+          notes: state.tempPatient?.generalNotes,
+          alerts: state.tempPatient?.internalAlerts,
+          financial: state.tempPatient?.financialNotes,
+          tags: state.tempPatient?.tags
+        }
       }
-    }
 
-    const order = await createOrder(orderData)
-    
-    if (order) {
-      toast.success(`Atendimento registrado · Pedido: ${order.orderNumber}`)
-      if (ticketId) clearDraft(ticketId)
+      const order = await createOrder(orderData)
       
-      setCreatedOrder(order)
-      onOrderCreated?.(order)
+      if (order) {
+        toast.success(`Atendimento registrado · Pedido: ${order.orderNumber}`)
+        if (ticketId) clearDraft(ticketId)
+        
+        setCreatedOrder(order)
+        onOrderCreated?.(order)
 
-      // Flow: if private and needs payment -> show payment first; else -> print selection
-      if (state.paymentType === 'private' || hasParticularGuideWithPrice) {
-        setShowPayment(true)
-      } else {
-        proceedAfterPayment(order, null)
+        // Flow: if private and needs payment -> show payment first; else -> print selection
+        if (state.paymentType === 'private' || hasParticularGuideWithPrice) {
+          setShowPayment(true)
+        } else {
+          proceedAfterPayment(order, null)
+        }
       }
     } finally {
       setIsFinalizing(false)
