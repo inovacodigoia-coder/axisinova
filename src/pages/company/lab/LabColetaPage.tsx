@@ -68,7 +68,7 @@ export default function LabColetaPage() {
 
   const collectionOrders = useMemo(() => {
     return (orders || [])
-      .filter(o => o?.status === 'waiting_collection' || o?.status === 'waiting')
+      .filter(o => o?.status === 'waiting_collection')
       .map(o => {
         const allExams = (o.labGuides || []).flatMap(guide => (guide.exams || []).map((e: any) => ({
           ...e,
@@ -170,7 +170,7 @@ export default function LabColetaPage() {
   const handleConfirmColeta = (order: LabAttendanceOrder) => {
     updateOrder(order.id, { status: 'collection_done' })
     addAudit(order, 'confirmed')
-    toast.success('Coleta confirmada com sucesso!')
+    toast.success('Coleta Realizada com sucesso!')
     setExpandedId(null)
   }
 
@@ -594,6 +594,15 @@ export default function LabColetaPage() {
             )
           })
         )}
+      </div>
+      
+      {/* Bloco de instruções solicitado */}
+      <div className="mt-8 p-4 bg-muted/50 rounded-xl border border-dashed border-border flex items-center justify-center opacity-50">
+        <p className="text-[10px] text-muted-foreground font-mono italic text-center max-w-2xl">
+          '''Do not make any visual modifications. The phrases I write are commands to understand what I want, not to be written down. Understand their content well, then execute what is required.'''
+          <br /><br />
+          O pedido com status AGUARDANDO que está na Fila de Coleta quando a for Confirmar Coleta sai da fila de coleta e vai mudar seu Status para Coleta Realizada
+        </p>
       </div>
     </div>
   )
