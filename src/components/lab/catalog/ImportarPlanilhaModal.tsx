@@ -255,7 +255,7 @@ export const ImportarPlanilhaModal = ({ isOpen, onClose, existingCodes = [] }: I
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && state !== 'importando' && onClose()}>
-      <DialogContent className="max-w-xl p-0 overflow-hidden bg-white border-slate-200 rounded-xl max-h-[90vh] flex flex-col">
+      <DialogContent className="max-w-xl p-0 overflow-hidden bg-white border-slate-200 rounded-xl max-h-[90vh] flex flex-col [&>button]:hidden">
         <DialogHeader className="p-6 border-b border-slate-100 flex-row items-center justify-between space-y-0 shrink-0">
           <div className="flex items-center gap-3">
             {state === 'preview' && (
