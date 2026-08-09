@@ -188,7 +188,7 @@ export default function LabCatalogFormPage() {
       }
 
       // Save Parameters to the new table
-      if (examId && parameters.length > 0) {
+      if (examId && (parameters.length > 0 || isEditing)) {
         // Get company_id from profile
         const { data: profile } = await supabase.auth.getUser();
         const { data: profileData } = await supabase
@@ -200,87 +200,77 @@ export default function LabCatalogFormPage() {
         const companyId = profileData?.company_id;
 
         if (companyId) {
+          // If editing, we might need to handle deletions or just refresh all
+          // For safety in this complex wizard, we'll ensure parameters match the current state
+          
           // Upsert parameters
           for (const param of parameters) {
             const paramPayload = {
               exam_id: examId,
               company_id: companyId,
               name: param.name,
-              section: param.section,
-              equipment_code: param.equipCode,
-              type: param.type,
-              origin: param.origin,
-              unit: param.unit,
-              is_required: param.isMandatory,
-              allow_negative: param.allowNegative,
-              is_calculated: param.isCalculated,
-              is_hidden: param.isHidden,
-              formula: param.formula,
+              section: param.section || '',
+              equipment_code: param.equipCode || '',
+              type: param.type || 'numerical',
+              origin: param.origin || 'manual',
+              unit: param.unit || '',
+              is_required: param.isMandatory ?? true,
+              allow_negative: param.allowNegative ?? false,
+              is_calculated: param.isCalculated ?? false,
+              is_hidden: param.isHidden ?? false,
+              formula: param.formula || '',
               reference_values: param.referenceValues ? JSON.stringify(param.referenceValues) : null
             };
 
-            // If param has a DB id, update it, otherwise insert
-            const { data: existingParam, error: fetchErr } = await supabase
+            // If param has a DB id, update it, otherwise search by name to avoid duplicates
+            const { data: existingParam } = await supabase
               .from('lab_exam_parameters')
               .select('id')
               .eq('exam_id', examId)
               .eq('name', param.name)
               .maybeSingle();
 
-            if (existingParam?.id) {
-              await supabase.from('lab_exam_parameters').update(paramPayload).eq('id', existingParam.id);
-              
-              // Now save reference values for this parameter
-              if (param.referenceValues && Array.isArray(param.referenceValues)) {
-                // Delete existing ones for this parameter to refresh
-                await supabase.from('lab_exam_reference_values').delete().eq('parameter_id', existingParam.id);
-                
-                for (const ref of param.referenceValues) {
-                  await supabase.from('lab_exam_reference_values').insert({
-                    exam_id: examId,
-                    parameter_id: existingParam.id,
-                    company_id: companyId,
-                    internal_code: examData.internalCode,
-                    description: ref.description,
-                    min_value: ref.minValue?.toString(),
-                    max_value: ref.maxValue?.toString(),
-                    text_range: ref.textRange,
-                    age_min: ref.minAge,
-                    age_max: ref.maxAge,
-                    gender: ref.sex || 'both',
-                    parameter_name: param.name
-                  });
-                }
-              }
+            let parameterId = existingParam?.id;
+
+            if (parameterId) {
+              await supabase.from('lab_exam_parameters').update(paramPayload).eq('id', parameterId);
             } else {
               const { data: newParam } = await supabase
                 .from('lab_exam_parameters')
                 .insert(paramPayload)
                 .select()
                 .single();
+              parameterId = newParam?.id;
+            }
+            
+            // Now save reference values for this parameter
+            if (parameterId && param.referenceValues && Array.isArray(param.referenceValues)) {
+              // Delete existing ones for this parameter to refresh
+              await supabase.from('lab_exam_reference_values').delete().eq('parameter_id', parameterId);
               
-              if (newParam?.id && param.referenceValues && Array.isArray(param.referenceValues)) {
-                for (const ref of param.referenceValues) {
-                  await supabase.from('lab_exam_reference_values').insert({
-                    exam_id: examId,
-                    parameter_id: newParam.id,
-                    company_id: companyId,
-                    internal_code: examData.internalCode,
-                    description: ref.description,
-                    min_value: ref.minValue?.toString(),
-                    max_value: ref.maxValue?.toString(),
-                    text_range: ref.textRange,
-                    age_min: ref.minAge,
-                    age_max: ref.maxAge,
-                    gender: ref.sex || 'both',
-                    parameter_name: param.name
-                  });
-                }
+              const refValuesToInsert = param.referenceValues.map((ref: any) => ({
+                exam_id: examId,
+                parameter_id: parameterId,
+                company_id: companyId,
+                internal_code: examData.internalCode,
+                description: ref.description || '',
+                min_value: ref.minValue?.toString() || null,
+                max_value: ref.maxValue?.toString() || null,
+                text_range: ref.textRange || null,
+                age_min: ref.minAge ?? 0,
+                age_max: ref.maxAge ?? 150,
+                gender: ref.sex || 'both',
+                parameter_name: param.name
+              }));
+
+              if (refValuesToInsert.length > 0) {
+                await supabase.from('lab_exam_reference_values').insert(refValuesToInsert);
               }
             }
           }
         }
       }
+
       
       toast.success(isEditing ? 'Exame atualizado com sucesso!' : 'Exame cadastrado com sucesso!')
       

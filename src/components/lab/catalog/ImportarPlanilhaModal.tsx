@@ -42,6 +42,7 @@ interface ExamImportData {
   materiaisAceitos: string;
   bancada: string;
   prazoEntrega: number;
+  unidadeMedida?: string;
   parameters: any[];
   referenceValues: any[];
 }
@@ -121,6 +122,8 @@ export const ImportarPlanilhaModal = ({ isOpen, onClose, existingCodes = [] }: I
           const materials = String(row['Materiais aceitos'] || row['Materiais'] || row['MATERIAIS'] || row['Material'] || '');
           const workbench = row['Bancada'] || row['BANCADA'] || row['Setor'] || row['SETOR'];
           const deadline = row['Prazo de entrega (dias)'] || row['Prazo'] || row['PRAZO'] || row['Prazo de Entrega'];
+          const unit = row['Unidade de Medida'] || row['UNIDADE'] || row['Unidade'] || '';
+
 
           if (!name || !code || !materials || !workbench || deadline === undefined) {
             const missing = [];
@@ -156,9 +159,11 @@ export const ImportarPlanilhaModal = ({ isOpen, onClose, existingCodes = [] }: I
             materiaisAceitos: materials,
             bancada: workbench,
             prazoEntrega: Number(deadline),
+            unidadeMedida: unit,
             parameters: examParams,
             referenceValues: examRefs
           });
+
 
           if (existingCodes.includes(code)) {
             foundUpdate.push(code);
@@ -200,7 +205,9 @@ export const ImportarPlanilhaModal = ({ isOpen, onClose, existingCodes = [] }: I
           resultDeadlineDays: examData.prazoEntrega,
           selectedMaterials: examData.materiaisAceitos.split(',').map(m => m.trim()),
           defaultMaterial: examData.materiaisAceitos.split(',')[0]?.trim() || '',
+          measurementUnit: examData.unidadeMedida || '',
           workbenchId: wbId,
+
           isActive: true,
           showDeadline: true,
           confirmationQuestions: [], 
@@ -211,8 +218,11 @@ export const ImportarPlanilhaModal = ({ isOpen, onClose, existingCodes = [] }: I
             name: p['Nome'] || p['NOME'] || p['Parâmetro'] || p['PARAMETRO'] || p['Nome do parâmetro'],
             section: p['Seção'] || p['SEÇÃO'] || p['Setor'] || p['SETOR'] || '',
             equipCode: p['Cód. Equip.'] || p['CÓD. EQUIP.'] || p['Código Equipamento'] || p['COD_EQUIP'] || '',
-            type: (p['Tipo'] || p['TIPO'] || 'numerical').toLowerCase() === 'numérico' ? 'numerical' : (p['Tipo'] || p['TIPO'] || 'numerical').toLowerCase(),
+            type: (p['Tipo'] || p['TIPO'] || 'numerical').toLowerCase() === 'numérico' ? 'numerical' : 
+                  (p['Tipo'] || p['TIPO'] || 'texto').toLowerCase() === 'texto' ? 'text' : 
+                  (p['Tipo'] || p['TIPO'] || 'numerical').toLowerCase(),
             origin: (p['Origem'] || p['ORIGEM'] || 'manual').toLowerCase() === 'equipamento' ? 'equipment' : (p['Origem'] || p['ORIGEM'] || 'manual').toLowerCase(),
+
             unit: p['Unidade'] || p['UNIDADE'] || '',
             isMandatory: p['Obrig.'] || p['OBRIG.'] || p['Obrigatório'] || true,
             allowNegative: p['Neg.'] || p['NEG.'] || p['Permite Negativo'] || false,
