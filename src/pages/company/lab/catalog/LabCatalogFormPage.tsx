@@ -110,90 +110,46 @@ export default function LabCatalogFormPage() {
   })
 
   const [parameters, setParameters] = useState<any[]>([])
-  const [dbReferenceValues, setDbReferenceValues] = useState<any[]>([])
   const [confirmationQuestions, setConfirmationQuestions] = useState<string[]>([])
 
   useEffect(() => {
-    const fetchExamData = async () => {
-      if (isEditing && id) {
-        // Fetch parameters from DB
-        const { data: dbParams } = await supabase
-          .from('lab_exam_parameters')
-          .select('*')
-          .eq('exam_id', id)
-          .order('sort_order', { ascending: true })
-
-        if (dbParams && dbParams.length > 0) {
-          const mappedParams = dbParams.map(p => ({
-            id: p.id,
-            name: p.name,
-            section: p.section || '',
-            equipCode: p.equipment_code || '',
-            type: p.type || 'numerical',
-            origin: p.origin || 'manual',
-            unit: p.unit || '',
-            referenceValues: p.reference_values || [],
-            isMandatory: p.is_required ?? true,
-            allowNegative: p.allow_negative ?? false,
-            isCalculated: p.is_calculated ?? false,
-            formula: p.formula || '',
-            isHidden: p.is_hidden ?? false,
-            sortOrder: p.sort_order
-          }))
-          setParameters(mappedParams)
-        }
-
-        // Fetch reference values from DB
-        const { data: dbRefs } = await supabase
-          .from('lab_exam_reference_values')
-          .select('*')
-          .eq('exam_id', id)
-          .order('sort_order', { ascending: true })
-        
-        if (dbRefs) {
-          setDbReferenceValues(dbRefs)
-        }
-
-        const existingExam = exams.find((e: any) => e.id === id)
-        if (existingExam) {
-          setExamData({
-            name: existingExam.name || "",
-            internalCode: existingExam.internalCode || "",
-            type: existingExam.type || 'lab',
-            tussCode: existingExam.tussCode || "",
-            isActive: existingExam.isActive ?? true,
-            preparationInstructions: existingExam.preparationInstructions || "",
-            estimatedDurationMinutes: existingExam.estimatedDurationMinutes || 30,
-            resultDeadlineDays: existingExam.resultDeadlineDays || 1,
-            requiresAuthorization: existingExam.requiresAuthorization || false,
-            showDuration: existingExam.showDuration ?? true,
-            showDeadline: existingExam.showDeadline ?? true,
-            measurementUnit: existingExam.measurementUnit || "",
-            specialtyId: existingExam.specialtyId || "",
-            defaultOrigin: existingExam.defaultOrigin || "",
-            defaultDestination: existingExam.defaultDestination || "",
-            reportObservations: existingExam.reportObservations || "",
-            methodology: existingExam.methodology || "",
-            interfacingConfig: existingExam.interfacingConfig || {
-              equipmentId: '',
-              equipmentCode: '',
-              autoReceiveResults: true,
-              autoSendOrders: true,
-            },
-            interfacingParameters: existingExam.interfacingParameters || [],
-            selectedMaterials: existingExam.selectedMaterials || [],
-            defaultMaterial: existingExam.defaultMaterial || "",
-            workbenchId: existingExam.workbenchId || "",
-            referenceValues: existingExam.referenceValues || [],
-          })
-          
-          if (!dbParams) setParameters(existingExam.parameters || [])
-          setConfirmationQuestions(existingExam.confirmationQuestions || [])
-        }
+    if (isEditing && exams && exams.length > 0) {
+      const existingExam = exams.find((e: any) => e.id === id)
+      if (existingExam) {
+        setExamData({
+          name: existingExam.name || "",
+          internalCode: existingExam.internalCode || "",
+          type: existingExam.type || 'lab',
+          tussCode: existingExam.tussCode || "",
+          isActive: existingExam.isActive ?? true,
+          preparationInstructions: existingExam.preparationInstructions || "",
+          estimatedDurationMinutes: existingExam.estimatedDurationMinutes || 30,
+          resultDeadlineDays: existingExam.resultDeadlineDays || 1,
+          requiresAuthorization: existingExam.requiresAuthorization || false,
+          showDuration: existingExam.showDuration ?? true,
+          showDeadline: existingExam.showDeadline ?? true,
+          measurementUnit: existingExam.measurementUnit || "",
+          specialtyId: existingExam.specialtyId || "",
+          defaultOrigin: existingExam.defaultOrigin || "",
+          defaultDestination: existingExam.defaultDestination || "",
+          reportObservations: existingExam.reportObservations || "",
+          methodology: existingExam.methodology || "",
+          interfacingConfig: existingExam.interfacingConfig || {
+            equipmentId: '',
+            equipmentCode: '',
+            autoReceiveResults: true,
+            autoSendOrders: true,
+          },
+          interfacingParameters: existingExam.interfacingParameters || [],
+          selectedMaterials: existingExam.selectedMaterials || [],
+          defaultMaterial: existingExam.defaultMaterial || "",
+          workbenchId: existingExam.workbenchId || "",
+          referenceValues: existingExam.referenceValues || [],
+        })
+        setParameters(existingExam.parameters || [])
+        setConfirmationQuestions(existingExam.confirmationQuestions || [])
       }
     }
-    
-    fetchExamData()
   }, [isEditing, id, exams])
 
   // Effect to sync parameters back to examData for persistence
@@ -209,96 +165,29 @@ export default function LabCatalogFormPage() {
 
     setIsSaving(true)
     try {
-      const { data: { user } } = await supabase.auth.getUser()
-      const companyId = user?.app_metadata?.company_id
-      
-      if (!companyId) throw new Error("ID da empresa não encontrado")
-
       const finalData = {
         ...examData,
         parameters: parameters || [],
         confirmationQuestions: confirmationQuestions || [],
       }
 
-      let examId = id;
       if (isEditing) {
         await updateExam({ 
           ...finalData, 
           id: id!
         } as any)
+        toast.success('Exame atualizado com sucesso!')
       } else {
-        const newExam = await addExam({
+        await addExam({
           ...finalData,
           attachmentRules: [],
           isActive: examData.isActive ?? true,
           createdAt: new Date().toISOString()
         } as any)
-        examId = newExam?.id;
+        toast.success('Exame cadastrado com sucesso!')
       }
-
-      if (examId) {
-        // Save parameters to lab_exam_parameters table
-        const paramsToSave = parameters.map((p, index) => ({
-          exam_id: examId,
-          company_id: companyId,
-          internal_code: examData.internalCode,
-          name: p.name,
-          section: p.section,
-          type: p.type,
-          origin: p.origin,
-          unit: p.unit,
-          reference_values: p.referenceValues || [],
-          is_required: p.isMandatory ?? p.isRequired ?? true,
-          allow_negative: p.allowNegative ?? false,
-          is_calculated: p.isCalculated ?? false,
-          formula: p.formula,
-          equipment_code: p.equipCode || p.equipmentCode,
-          is_hidden: p.isHidden ?? false,
-          sort_order: index
-        }))
-
-        // First, delete old parameters to ensure sync (or use upsert if we have IDs)
-        await supabase.from('lab_exam_parameters').delete().eq('exam_id', examId)
-        
-        if (paramsToSave.length > 0) {
-          const { error: pError } = await supabase.from('lab_exam_parameters').insert(paramsToSave)
-          if (pError) console.error("Error saving parameters:", pError)
-        }
-
-        // Save reference values to lab_exam_reference_values table
-        const refsToSave: any[] = []
-        parameters.forEach(p => {
-          if (p.referenceValues && Array.isArray(p.referenceValues)) {
-            p.referenceValues.forEach((r, idx) => {
-              refsToSave.push({
-                exam_id: examId,
-                company_id: companyId,
-                internal_code: examData.internalCode,
-                parameter_id: p.id && typeof p.id === 'string' ? p.id : null,
-                parameter_name: p.name,
-                description: r.description,
-                gender: r.sex === 'Masculino' ? 'male' : (r.sex === 'Feminino' ? 'female' : 'both'),
-                age_min: r.minAge,
-                age_max: r.maxAge,
-                min_value: String(r.minValue || ''),
-                max_value: String(r.maxValue || ''),
-                text_range: r.textRange || '',
-                sort_order: idx
-              })
-            })
-          }
-        })
-
-        await supabase.from('lab_exam_reference_values').delete().eq('exam_id', examId)
-        
-        if (refsToSave.length > 0) {
-          const { error: rError } = await supabase.from('lab_exam_reference_values').insert(refsToSave)
-          if (rError) console.error("Error saving reference values:", rError)
-        }
-      }
-
-      toast.success(isEditing ? 'Exame atualizado com sucesso!' : 'Exame cadastrado com sucesso!')
       
+      // Delay navigation slightly to allow state to synchronize
       setTimeout(() => {
         navigate('/app/cadastros/catalogo')
       }, 500)
