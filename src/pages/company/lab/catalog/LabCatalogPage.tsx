@@ -219,21 +219,22 @@ export default function LabCatalogPage() {
         
         if (examDbRefs.length > 0) {
           examDbRefs.forEach(r => {
-            const paramName = dbParameters?.find(p => p.id === r.parameter_id)?.name || '';
+            const paramName = dbParameters?.find(p => p.id === r.parameter_id)?.name || r.parameter_name || '';
             refsData.push({
               'Código': examCode,
               'Nome do parâmetro': paramName,
               'Descrição': r.description || '',
               'Valor mínimo': r.min_value ?? '',
               'Valor máximo': r.max_value ?? '',
-              'Valor texto': r.text_value || '',
-              'Idade mínima (anos)': r.age_min_years ?? 0,
-              'Idade máxima (anos)': r.age_max_years ?? 120,
+              'Valor texto': r.text_range || '',
+              'Idade mínima (anos)': r.age_min ?? 0,
+              'Idade máxima (anos)': r.age_max ?? 120,
               'Sexo': r.gender || 'both',
-              'Gestante': r.is_pregnant ? 'Sim' : 'Não'
+              'Gestante': 'N/A' // Need to check if is_pregnant exists in DB or just use N/A for now
             })
           })
         } else if (e.referenceValues && Array.isArray(e.referenceValues)) {
+
           // Fallback to legacy referenceValues from JSON
           e.referenceValues.forEach((r: any) => {
             refsData.push({
