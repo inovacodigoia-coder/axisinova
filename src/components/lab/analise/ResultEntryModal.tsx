@@ -10,7 +10,9 @@ import {
   Calendar as CalendarIcon,
   Save,
   ChevronDown,
-  RefreshCcw
+  RefreshCcw,
+  MinusCircle,
+  PlusCircle
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -52,6 +54,7 @@ export function ResultEntryModal({
   const [results, setResults] = useState<Record<string, string>>({});
   const [notes, setNotes] = useState<Record<string, string>>({});
   const [saving, setSaving] = useState(false);
+  const [expandedPatients, setExpandedPatients] = useState<Record<string, boolean>>({});
 
   // Agrupamento por paciente/pedido
   const groupedPatients = useMemo(() => {
@@ -76,6 +79,13 @@ export function ResultEntryModal({
 
   const totalExams = filteredExams.length;
   const filledExamsCount = Object.keys(results).filter(key => results[key]?.trim() !== '').length;
+
+  const togglePatient = (protocol: string) => {
+    setExpandedPatients(prev => ({
+      ...prev,
+      [protocol]: !prev[protocol]
+    }));
+  };
 
   const handleSave = (isDraft: boolean) => {
     setSaving(true);
@@ -153,14 +163,26 @@ export function ResultEntryModal({
               </Button>
             </div>
           ) : (
-            groupedPatients.map((patient, pIdx) => (
-              <div key={patient.protocol} className="bg-card rounded-2xl border border-border shadow-sm overflow-hidden animate-in slide-in-from-bottom-4 duration-300" style={{ animationDelay: `${pIdx * 50}ms` }}>
-                {/* Cabeçalho do Paciente */}
-                <div className="bg-slate-800 text-white px-6 py-3 flex items-center justify-between">
-                  <div className="flex items-center gap-4">
-                    <span className="h-6 w-6 rounded bg-white/20 flex items-center justify-center text-[10px] font-black">
-                      {pIdx + 1}
-                    </span>
+            groupedPatients.map((patient, pIdx) => {
+              const isExpanded = !!expandedPatients[patient.protocol];
+              return (
+                <div key={patient.protocol} className="bg-card rounded-2xl border border-border shadow-sm overflow-hidden animate-in slide-in-from-bottom-4 duration-300" style={{ animationDelay: `${pIdx * 50}ms` }}>
+                  {/* Cabeçalho do Paciente */}
+                  <div 
+                    className="bg-slate-800 text-white px-6 py-3 flex items-center justify-between cursor-pointer hover:bg-slate-700 transition-colors"
+                    onClick={() => togglePatient(patient.protocol)}
+                  >
+                    <div className="flex items-center gap-4">
+                      <div className="flex items-center gap-2">
+                        {isExpanded ? (
+                          <MinusCircle className="h-4 w-4 text-white/60" />
+                        ) : (
+                          <PlusCircle className="h-4 w-4 text-white/60" />
+                        )}
+                        <span className="h-6 w-6 rounded bg-white/20 flex items-center justify-center text-[10px] font-black">
+                          {pIdx + 1}
+                        </span>
+                      </div>
                     <div className="flex items-baseline gap-2">
                       <span className="text-base font-black uppercase tracking-tight">{patient.patientName}</span>
                       <span className="text-[10px] font-bold text-white/60 uppercase">
@@ -175,8 +197,9 @@ export function ResultEntryModal({
                 </div>
 
                 {/* Exames do Paciente */}
-                <div className="p-6 space-y-6">
-                  {patient.exams.map((exam: any) => (
+                {isExpanded && (
+                  <div className="p-6 space-y-6 border-t border-slate-100 animate-in slide-in-from-top-2 duration-200">
+                    {patient.exams.map((exam: any) => (
                     <div key={exam.id} className="relative bg-slate-50 rounded-xl border border-slate-200 p-5 space-y-4">
                       {/* Título do Exame */}
                       <div className="flex items-start justify-between">
@@ -295,9 +318,11 @@ export function ResultEntryModal({
                       </div>
                     </div>
                   ))}
-                </div>
+                  </div>
+                )}
               </div>
-            ))
+            );
+          })
           )}
         </div>
       </ScrollArea>
