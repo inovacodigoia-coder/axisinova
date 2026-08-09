@@ -918,13 +918,23 @@ function ParametersSection({ parameters, setParameters }: { parameters: any[], s
                         </div>
                       </td>
                       <td className="px-3 py-2 text-right">
-                         <div className="flex justify-end gap-0.5">
-                            <Button variant="ghost" size="icon" className="h-7 w-7 text-muted-foreground hover:bg-muted">
-                              <MoreVertical className="h-3.5 w-3.5" />
-                            </Button>
-                            <Button variant="ghost" size="icon" className="h-7 w-7 text-red-400 hover:text-red-600 hover:bg-red-50" onClick={() => removeParameter(param.id)}>
-                              <Trash2 className="h-3.5 w-3.5" />
-                            </Button>
+                         <div className="flex justify-end">
+                            <DropdownMenu>
+                              <DropdownMenuTrigger asChild>
+                                <Button variant="ghost" size="icon" className="h-7 w-7 text-muted-foreground hover:bg-muted rounded-full">
+                                  <MoreVertical className="h-3.5 w-3.5" />
+                                </Button>
+                              </DropdownMenuTrigger>
+                              <DropdownMenuContent align="end" className="w-32">
+                                <DropdownMenuItem 
+                                  className="text-red-500 focus:text-red-500 focus:bg-red-50 cursor-pointer gap-2"
+                                  onClick={() => removeParameter(param.id)}
+                                >
+                                  <Trash2 className="h-3.5 w-3.5" />
+                                  Excluir
+                                </DropdownMenuItem>
+                              </DropdownMenuContent>
+                            </DropdownMenu>
                          </div>
                       </td>
                     </tr>
