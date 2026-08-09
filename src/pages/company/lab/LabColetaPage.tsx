@@ -160,7 +160,7 @@ export default function LabColetaPage() {
       action,
       timestamp: new Date().toISOString(),
       userId: user?.id || 'unknown',
-      userName: user?.name || 'Sistema',
+      userName: tempResponsible[order.id]?.name || user?.name || 'Sistema',
       details
     }
     updateOrder(order.id, { auditTrail: [...trail, newEntry] } as any)
