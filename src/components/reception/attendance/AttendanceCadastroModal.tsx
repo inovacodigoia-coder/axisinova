@@ -608,7 +608,7 @@ export function AttendanceCadastroModal({
               disabled={isFinalizing}
               className="inline-flex items-center gap-1 rounded-md bg-blue-600 px-8 py-2 text-sm font-bold text-white shadow-md hover:bg-blue-700 transition-all uppercase tracking-wide disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              <Check className="h-4 w-4" /> CRIAR
+              {isFinalizing ? <Loader2 className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4" />} CRIAR
             </button>
 
           )}
