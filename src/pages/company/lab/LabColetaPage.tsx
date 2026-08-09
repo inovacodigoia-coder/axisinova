@@ -197,7 +197,40 @@ export default function LabColetaPage() {
     })
   }
 
+  const handleCredentialChange = (orderId: string, field: 'username' | 'password', value: string) => {
+    setResponsibleCredentials(prev => {
+      const next = { ...prev, [field]: value }
+      
+      // Simulação de reconhecimento automático de crachá (bipado)
+      // Se tiver um formato específico de crachá ou preencher ambos, valida
+      if (next.username && next.password) {
+        // Mock de validação de técnico
+        // Em um sistema real, isso faria uma chamada ao backend ou verificaria um hash
+        const techniciansMock = [
+          { id: 'tech-001', name: 'Alexsandro de Souza', badge: 'TECH001' },
+          { id: 'tech-002', name: 'Maria Silva', badge: 'TECH002' },
+          { id: 'tech-003', name: 'João Técnico', badge: 'TECH003' }
+        ]
+
+        const found = techniciansMock.find(t => t.badge === next.username || t.name.toLowerCase().includes(next.username.toLowerCase()))
+        
+        if (found) {
+          setTempResponsible(prevTemp => ({
+            ...prevTemp,
+            [orderId]: { id: found.id, name: found.name }
+          }))
+          setIsChangingResponsible(null)
+          setResponsibleCredentials({ username: '', password: '' })
+          toast.success(`Responsável alterado para: ${found.name}`)
+        }
+      }
+      
+      return next
+    })
+  }
+
   return (
+
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
