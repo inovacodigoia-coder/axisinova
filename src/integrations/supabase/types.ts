@@ -705,6 +705,80 @@ export type Database = {
           },
         ]
       }
+      lab_exam_parameters: {
+        Row: {
+          allow_negative: boolean | null
+          company_id: string
+          created_at: string | null
+          equipment_code: string | null
+          exam_id: string | null
+          formula: string | null
+          id: string
+          internal_code: string | null
+          is_calculated: boolean | null
+          is_hidden: boolean | null
+          is_required: boolean | null
+          name: string
+          origin: string | null
+          reference_values: string | null
+          section: string | null
+          sort_order: number | null
+          type: string | null
+          unit: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          allow_negative?: boolean | null
+          company_id: string
+          created_at?: string | null
+          equipment_code?: string | null
+          exam_id?: string | null
+          formula?: string | null
+          id?: string
+          internal_code?: string | null
+          is_calculated?: boolean | null
+          is_hidden?: boolean | null
+          is_required?: boolean | null
+          name: string
+          origin?: string | null
+          reference_values?: string | null
+          section?: string | null
+          sort_order?: number | null
+          type?: string | null
+          unit?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          allow_negative?: boolean | null
+          company_id?: string
+          created_at?: string | null
+          equipment_code?: string | null
+          exam_id?: string | null
+          formula?: string | null
+          id?: string
+          internal_code?: string | null
+          is_calculated?: boolean | null
+          is_hidden?: boolean | null
+          is_required?: boolean | null
+          name?: string
+          origin?: string | null
+          reference_values?: string | null
+          section?: string | null
+          sort_order?: number | null
+          type?: string | null
+          unit?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "lab_exam_parameters_exam_id_fkey"
+            columns: ["exam_id"]
+            isOneToOne: false
+            referencedRelation: "exams"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       lab_workbenches: {
         Row: {
           company_id: string
