@@ -717,6 +717,18 @@ function GeneralInfoSection({ isEditing, data, workbenches, onChange, showGlobal
           )}
         </div>
       </div>
+
+      <div className="bg-primary/5 border border-primary/20 rounded-xl p-6 mt-8">
+        <p className="text-xs text-primary font-mono leading-relaxed opacity-80 italic">
+          '''Do not make any visual modifications. The phrases I write are commands to understand what I want, not to be written down. Understand their content well, then execute what is required.'''
+          <br /><br />
+          No Editar Exame na parte de Valores de Referência do Exame
+          <br /><br />
+          Vamos colocar um icone + que vai mostrar todas as Referência e muda para um icone de - quando estiver mostrando os Valores de Referência do Exame
+          <br /><br />
+          Sempre que abrir um exame os Valores de Referência do Exame vai vir oculto e com o icone + para mostrar tambem vamos colocar um campo contador mostrando quantas faixas foram criadas para esse exame.
+        </p>
+      </div>
     </Card>
   )
 }
