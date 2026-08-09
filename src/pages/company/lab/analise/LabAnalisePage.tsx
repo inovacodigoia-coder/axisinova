@@ -164,7 +164,7 @@ export default function LabAnalisePage() {
   const isFiltered = period !== 'hoje' || selectedWorkbenches.length > 0 || selectedEstablishments.length > 0 || protocolSearch !== '';
 
   return (
-    <div className="flex flex-col h-[calc(100vh-120px)] overflow-hidden">
+    <div className="flex flex-col h-full overflow-hidden">
       {/* Sub-navegação */}
       <div className="border-b bg-card mb-4">
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
@@ -184,14 +184,14 @@ export default function LabAnalisePage() {
         </Tabs>
       </div>
 
-      <div className="flex-1 overflow-hidden px-4 pb-4">
+      <div className="flex-1 overflow-hidden px-4 pb-2">
         <Tabs value={activeTab} className="h-full">
           {SUB_TABS.map(tab => (
             <TabsContent key={tab.id} value={tab.id} className="h-full m-0">
               {tab.id === 'analise' ? (
                 <div className="flex h-full gap-4">
                   {/* Fila Lateral e Painel de Filtros */}
-                  <div className="w-[450px] flex flex-col gap-4">
+                  <div className="w-[380px] flex flex-col gap-4">
                     {/* Painel de Filtros */}
                     <Card className="p-4 space-y-4 shadow-sm border-border">
                       <div className="flex items-center justify-between">
@@ -331,7 +331,7 @@ export default function LabAnalisePage() {
                             onChange={(e) => setSearch(e.target.value)}
                           />
                         </div>
-                        <Button variant="outline" className="h-9 gap-2 text-[10px] font-bold uppercase gradient-bg text-white border-none shadow-md">
+                        <Button variant="outline" className="h-9 gap-1 px-2 text-[10px] font-bold uppercase gradient-bg text-white border-none shadow-md">
                           <ClipboardCheck className="h-3.5 w-3.5" /> Digitação em Lote
                         </Button>
                       </div>
@@ -445,18 +445,6 @@ export default function LabAnalisePage() {
         </Tabs>
       </div>
       
-      {/* Bloco de Instruções */}
-      <div className="px-4 pb-4">
-        <div className="bg-primary/5 border border-primary/20 rounded-xl p-4 opacity-50">
-          <p className="text-[10px] text-primary font-mono leading-relaxed italic">
-            '''Do not make any visual modifications. The phrases I write are commands to understand what I want, not to be written down. Understand their content well, then execute what is required.'''
-            <br /><br />
-            PROMPT LOVABLE — Módulo de Análise (Etapa 1)
-            <br />
-            Estrutura de Navegação + Aba "Digitação de Resultados" (Painel de Filtros e Listagem)
-          </p>
-        </div>
-      </div>
     </div>
   );
 }
