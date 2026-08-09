@@ -34,6 +34,7 @@ import { toast } from 'sonner';
 import { useRegisters } from '@/context/RegistersContext';
 import { useAttendanceCadastro } from '@/hooks/useAttendanceCadastro';
 import { useCompanyContext } from '@/context/CompanyContext';
+import { ResultEntryModal } from '@/components/lab/analise/ResultEntryModal';
 import {
   DropdownMenu,
   DropdownMenuContent,
