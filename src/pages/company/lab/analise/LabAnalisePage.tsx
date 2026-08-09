@@ -457,6 +457,19 @@ export default function LabAnalisePage() {
         </Tabs>
       </div>
       
+      <ResultEntryModal 
+        isOpen={isResultModalOpen}
+        onClose={() => setIsResultModalOpen(false)}
+        filteredExams={filteredExams}
+        filters={{
+          period,
+          workbenches: selectedWorkbenches,
+          establishments: selectedEstablishments,
+          protocol: protocolSearch
+        }}
+        workbenchNames={workbenches.reduce((acc, wb) => ({ ...acc, [wb.id]: wb.name }), {})}
+        establishmentNames={establishments.reduce((acc, est) => ({ ...acc, [est.id]: est.name }), {})}
+      />
     </div>
   );
 }
