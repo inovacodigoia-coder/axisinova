@@ -142,14 +142,19 @@ export const ImportarPlanilhaModal = ({ isOpen, onClose, existingCodes = [] }: I
           }
 
           // Link parameters and reference ranges
-          const examParams = paramsData.filter((p: any) => String(p['Código do Exame'] || p['CÓDIGO EXAME'] || p['Codigo'] || '').trim() === code);
+          const examParams = paramsData.filter((p: any) => {
+            const pCode = String(p['Código'] || p['CÓDIGO'] || p['Código do Exame'] || p['CÓDIGO EXAME'] || p['Codigo'] || '').trim();
+            return pCode === code;
+          });
+          
           const examRefs: any[] = [];
           
           examParams.forEach((param: any) => {
             const paramName = param['Nome'] || param['NOME'] || param['Parâmetro'] || param['PARAMETRO'] || param['Nome do parâmetro'];
             const refs = refsData.filter((r: any) => {
+              const rCode = String(r['Código'] || r['CÓDIGO'] || r['Código do Exame'] || r['CÓDIGO EXAME'] || r['Codigo'] || '').trim();
               const rParamName = r['Nome do parâmetro'] || r['Nome do Parâmetro'] || r['PARÂMETRO'] || r['Nome'] || '';
-              return String(rParamName).trim() === String(paramName).trim();
+              return rCode === code && String(rParamName).trim() === String(paramName).trim();
             });
             examRefs.push(...refs);
           });
