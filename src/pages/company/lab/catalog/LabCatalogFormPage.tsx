@@ -745,39 +745,44 @@ function ParametersSection({ parameters, setParameters }: { parameters: any[], s
   return (
     <TooltipProvider>
       <Card className="p-0 border-none shadow-none bg-transparent space-y-6">
-        <div className="flex items-center justify-between bg-card p-4 rounded-xl border border-border">
+        <div className="flex items-center justify-between bg-card p-4 rounded-xl border border-border shadow-sm">
           <div className="flex items-center gap-2">
-            <Beaker className="h-5 w-5 text-primary" />
-            <h3 className="text-lg font-bold">Parâmetros do Exame</h3>
+            <div className="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center">
+              <Beaker className="h-5 w-5 text-primary" />
+            </div>
+            <div>
+              <h3 className="text-lg font-bold">Parâmetros do Exame</h3>
+              <p className="text-[10px] text-muted-foreground uppercase tracking-wider font-medium">Definição técnica e valores de referência</p>
+            </div>
           </div>
           <div className="flex gap-2">
-            <Button size="sm" variant="outline" className="gap-2" onClick={addParameter}>
+            <Button size="sm" variant="outline" className="gap-2 border-primary/20 hover:border-primary/50 text-primary" onClick={addParameter}>
               <Plus className="h-4 w-4" /> Adicionar Parâmetro
             </Button>
             <Button size="sm" variant="outline" className="gap-2">
-              <ExternalLink className="h-4 w-4" /> Vincular exame existente
+              <ExternalLink className="h-4 w-4" /> Vincular existente
             </Button>
           </div>
         </div>
 
-        <div className="border rounded-xl overflow-hidden bg-card shadow-sm">
+        <div className="border rounded-xl overflow-hidden bg-card shadow-md">
           <div className="overflow-x-auto">
-            <table className="w-full text-left text-sm">
-              <thead className="bg-muted/30 border-b">
+            <table className="w-full text-left text-sm border-collapse">
+              <thead className="bg-muted/50 border-b">
                 <tr>
-                  <th className="px-4 py-3 font-bold text-[10px] uppercase text-muted-foreground w-10">#</th>
-                  <th className="px-4 py-3 font-bold text-[10px] uppercase text-muted-foreground">Nome</th>
-                  <th className="px-4 py-3 font-bold text-[10px] uppercase text-muted-foreground w-20">Seção</th>
-                  <th className="px-4 py-3 font-bold text-[10px] uppercase text-muted-foreground w-24">Cód. Equip.</th>
-                  <th className="px-4 py-3 font-bold text-[10px] uppercase text-muted-foreground w-32">Tipo</th>
-                  <th className="px-4 py-3 font-bold text-[10px] uppercase text-muted-foreground w-32">Origem</th>
-                  <th className="px-4 py-3 font-bold text-[10px] uppercase text-muted-foreground w-40">Unidade</th>
-                  <th className="px-4 py-3 font-bold text-[10px] uppercase text-muted-foreground w-32">Referências</th>
-                  <th className="px-4 py-3 font-bold text-[10px] uppercase text-muted-foreground text-center">Obrig.</th>
-                  <th className="px-4 py-3 font-bold text-[10px] uppercase text-muted-foreground text-center">Neg.</th>
-                  <th className="px-4 py-3 font-bold text-[10px] uppercase text-muted-foreground text-center">Calc.</th>
-                  <th className="px-4 py-3 font-bold text-[10px] uppercase text-muted-foreground text-center">Oculto</th>
-                  <th className="px-4 py-3 text-right"></th>
+                  <th className="px-3 py-3 font-bold text-[10px] uppercase text-muted-foreground w-8 text-center border-r">#</th>
+                  <th className="px-4 py-3 font-bold text-[10px] uppercase text-muted-foreground min-w-[220px]">Nome do Parâmetro</th>
+                  <th className="px-2 py-3 font-bold text-[10px] uppercase text-muted-foreground w-16 text-center">Seção</th>
+                  <th className="px-2 py-3 font-bold text-[10px] uppercase text-muted-foreground w-16 text-center">Equip.</th>
+                  <th className="px-3 py-3 font-bold text-[10px] uppercase text-muted-foreground w-28">Tipo</th>
+                  <th className="px-3 py-3 font-bold text-[10px] uppercase text-muted-foreground w-28">Origem</th>
+                  <th className="px-3 py-3 font-bold text-[10px] uppercase text-muted-foreground w-32">Unidade</th>
+                  <th className="px-3 py-3 font-bold text-[10px] uppercase text-muted-foreground w-24 text-center">Ref.</th>
+                  <th className="px-2 py-3 font-bold text-[10px] uppercase text-muted-foreground text-center">Obrig</th>
+                  <th className="px-2 py-3 font-bold text-[10px] uppercase text-muted-foreground text-center">Neg</th>
+                  <th className="px-2 py-3 font-bold text-[10px] uppercase text-muted-foreground text-center">Calc</th>
+                  <th className="px-2 py-3 font-bold text-[10px] uppercase text-muted-foreground text-center">Oculto</th>
+                  <th className="px-3 py-3 text-right"></th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-border">
