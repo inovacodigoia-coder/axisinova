@@ -123,19 +123,21 @@ export default function LabCatalogFormPage() {
           .eq('exam_id', id)
           .order('sort_order', { ascending: true })
 
-        if (dbParams) {
+        if (dbParams && dbParams.length > 0) {
           const mappedParams = dbParams.map(p => ({
             id: p.id,
             name: p.name,
-            type: p.type || 'numeric',
+            section: p.section || '',
+            equipCode: p.equipment_code || '',
+            type: p.type || 'numerical',
+            origin: p.origin || 'manual',
             unit: p.unit || '',
-            referenceValues: p.reference_values || '',
-            isRequired: p.is_required,
-            allowNegative: p.allow_negative,
-            isCalculated: p.is_calculated,
+            referenceValues: p.reference_values || [],
+            isMandatory: p.is_required ?? true,
+            allowNegative: p.allow_negative ?? false,
+            isCalculated: p.is_calculated ?? false,
             formula: p.formula || '',
-            equipmentCode: p.equipment_code || '',
-            isHidden: p.is_hidden,
+            isHidden: p.is_hidden ?? false,
             sortOrder: p.sort_order
           }))
           setParameters(mappedParams)
@@ -241,15 +243,17 @@ export default function LabCatalogFormPage() {
           company_id: companyId,
           internal_code: examData.internalCode,
           name: p.name,
+          section: p.section,
           type: p.type,
+          origin: p.origin,
           unit: p.unit,
-          reference_values: p.referenceValues,
-          is_required: p.isRequired,
-          allow_negative: p.allowNegative,
-          is_calculated: p.isCalculated,
+          reference_values: p.referenceValues || [],
+          is_required: p.isMandatory ?? p.isRequired ?? true,
+          allow_negative: p.allowNegative ?? false,
+          is_calculated: p.isCalculated ?? false,
           formula: p.formula,
-          equipment_code: p.equipmentCode,
-          is_hidden: p.isHidden,
+          equipment_code: p.equipCode || p.equipmentCode,
+          is_hidden: p.isHidden ?? false,
           sort_order: index
         }))
 
@@ -270,6 +274,7 @@ export default function LabCatalogFormPage() {
                 exam_id: examId,
                 company_id: companyId,
                 internal_code: examData.internalCode,
+                parameter_id: p.id && typeof p.id === 'string' ? p.id : null,
                 parameter_name: p.name,
                 description: r.description,
                 gender: r.sex === 'Masculino' ? 'male' : (r.sex === 'Feminino' ? 'female' : 'both'),
