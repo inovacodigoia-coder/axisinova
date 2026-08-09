@@ -252,17 +252,17 @@ export const ImportarPlanilhaModal = ({ isOpen, onClose, existingCodes = [] }: I
               company_id: companyId,
               name: paramName,
               section: p['Seção'] || p['SEÇÃO'] || p['Setor'] || p['SETOR'] || '',
-              equipment_code: p['Cód. Equip.'] || p['CÓD. EQUIP.'] || p['Código Equipamento'] || p['COD_EQUIP'] || '',
-              type: (p['Tipo'] || p['TIPO'] || 'numerical').toLowerCase() === 'numérico' ? 'numerical' : 
+              equipment_code: p['Código no equipamento'] || p['Cód. Equip.'] || p['CÓD. EQUIP.'] || p['Código Equipamento'] || p['COD_EQUIP'] || '',
+              type: (p['Tipo'] || p['TIPO'] || 'numerical').toLowerCase() === 'numérico' || (p['Tipo'] || p['TIPO'] || '').toLowerCase() === 'numerico' ? 'numerical' : 
                     (p['Tipo'] || p['TIPO'] || 'texto').toLowerCase() === 'texto' ? 'text' : 
                     (p['Tipo'] || p['TIPO'] || 'numerical').toLowerCase(),
               origin: (p['Origem'] || p['ORIGEM'] || 'manual').toLowerCase() === 'equipamento' ? 'equipment' : (p['Origem'] || p['ORIGEM'] || 'manual').toLowerCase(),
-              unit: p['Unidade'] || p['UNIDADE'] || '',
-              is_required: !!(p['Obrig.'] || p['OBRIG.'] || p['Obrigatório'] || true),
-              allow_negative: !!(p['Neg.'] || p['NEG.'] || p['Permite Negativo'] || false),
-              is_calculated: !!(p['Calc.'] || p['CALC.'] || p['Calculado'] || false),
+              unit: p['Unidade de medida'] || p['Unidade'] || p['UNIDADE'] || '',
+              is_required: p['Obrigatório'] === 'Sim' || p['Obrigatório'] === true || !!(p['Obrig.'] || p['OBRIG.'] || false),
+              allow_negative: p['Permite negativo'] === 'Sim' || !!(p['Neg.'] || p['NEG.'] || false),
+              is_calculated: p['Calculado'] === 'Sim' || !!(p['Calc.'] || p['CALC.'] || false),
               is_hidden: !!(p['Oculto'] || p['OCULTO'] || p['Ocultar Laudo'] || false),
-              formula: p['Fórmula'] || p['FORMULA'] || '',
+              formula: p['Fórmula do parâmetro'] || p['Fórmula'] || p['FORMULA'] || '',
               internal_code: examData.codigo,
             };
 
