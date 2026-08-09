@@ -67,6 +67,7 @@ export default function LabAnalisePage() {
   const [protocolSearch, setProtocolSearch] = useState('');
   const [selectedOrderId, setSelectedOrderId] = useState<string | null>(null);
   const [selectedExamId, setSelectedExamId] = useState<string | null>(null);
+  const [isResultModalOpen, setIsResultModalOpen] = useState(false);
   
   // Filtros
   const [period, setPeriod] = useState('hoje');
