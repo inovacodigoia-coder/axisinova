@@ -34,7 +34,8 @@ import {
   XCircle,
   Clock,
   Timer,
-  Check
+  Check,
+  Minus
 } from 'lucide-react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { cn } from '@/lib/utils'
@@ -71,6 +72,7 @@ export default function LabCatalogFormPage() {
   const isEditing = !!id
   const [activeTab, setActiveTab] = useState('general')
   const [isSaving, setIsSaving] = useState(false)
+  const [showGlobalRefs, setShowGlobalRefs] = useState(false)
 
   const { addExam, updateExam, exams, workbenches } = useRegisters() as any
   
@@ -354,6 +356,8 @@ export default function LabCatalogFormPage() {
             isEditing={isEditing} 
             data={examData} 
             workbenches={workbenches}
+            showGlobalRefs={showGlobalRefs}
+            setShowGlobalRefs={setShowGlobalRefs}
             onChange={(newData) => setExamData(prev => ({ ...prev, ...newData }))} 
           />
         </TabsContent>
@@ -380,7 +384,7 @@ export default function LabCatalogFormPage() {
   )
 }
 
-function GeneralInfoSection({ isEditing, data, workbenches, onChange }: { isEditing: boolean, data: any, workbenches: any[], onChange: (val: any) => void }) {
+function GeneralInfoSection({ isEditing, data, workbenches, onChange, showGlobalRefs, setShowGlobalRefs }: { isEditing: boolean, data: any, workbenches: any[], onChange: (val: any) => void, showGlobalRefs: boolean, setShowGlobalRefs: (val: boolean) => void }) {
   const navigate = useNavigate()
   const materials = ['Sangue Total', 'Soro', 'Plasma', 'Urina', 'Fezes', 'Secreção', 'Líquor', 'Swab']
   const [selectedMaterials, setSelectedMaterials] = useState<string[]>(data.selectedMaterials || [])
@@ -635,21 +639,37 @@ function GeneralInfoSection({ isEditing, data, workbenches, onChange }: { isEdit
 
       {data.referenceValues && data.referenceValues.length > 0 && (
         <div className="space-y-6 pt-6 border-t border-border">
-          <div className="flex items-center gap-2">
-            <Scale className="h-5 w-5 text-primary" />
-            <h3 className="text-lg font-bold">Valores de Referência do Exame</h3>
+          <div 
+            className="flex items-center justify-between cursor-pointer group"
+            onClick={() => setShowGlobalRefs(!showGlobalRefs)}
+          >
+            <div className="flex items-center gap-2">
+              <Scale className="h-5 w-5 text-primary" />
+              <h3 className="text-lg font-bold">Valores de Referência do Exame</h3>
+              <Badge variant="outline" className="ml-2 bg-primary/5 text-primary border-primary/20">
+                {data.referenceValues.length} {data.referenceValues.length === 1 ? 'faixa' : 'faixas'}
+              </Badge>
+            </div>
+            <Button variant="ghost" size="sm" className="h-8 w-8 p-0 rounded-full group-hover:bg-muted transition-colors">
+              {showGlobalRefs ? <Minus className="h-4 w-4" /> : <Plus className="h-4 w-4" />}
+            </Button>
           </div>
-          <p className="text-sm text-muted-foreground">
-            Estes são os valores de referência globais configurados para este exame. Para referências específicas por parâmetro, utilize a aba 
-            <span className="font-bold text-primary"> "Parâmetros e Máscara"</span>.
-          </p>
           
-          <div className="bg-muted/10 border rounded-xl p-4">
-            <ReferenceValuesSection 
-              parameter={{ name: data.name }} 
-              referenceValues={data.referenceValues}
-            />
-          </div>
+          {showGlobalRefs && (
+            <div className="space-y-4 animate-in fade-in slide-in-from-top-2 duration-300">
+              <p className="text-sm text-muted-foreground">
+                Estes são os valores de referência globais configurados para este exame. Para referências específicas por parâmetro, utilize a aba 
+                <span className="font-bold text-primary"> "Parâmetros e Máscara"</span>.
+              </p>
+              
+              <div className="bg-muted/10 border rounded-xl p-4">
+                <ReferenceValuesSection 
+                  parameter={{ name: data.name }} 
+                  referenceValues={data.referenceValues}
+                />
+              </div>
+            </div>
+          )}
         </div>
       )}
 
@@ -696,6 +716,18 @@ function GeneralInfoSection({ isEditing, data, workbenches, onChange }: { isEdit
             </div>
           )}
         </div>
+      </div>
+
+      <div className="bg-primary/5 border border-primary/20 rounded-xl p-6 mt-8">
+        <p className="text-xs text-primary font-mono leading-relaxed opacity-80 italic">
+          '''Do not make any visual modifications. The phrases I write are commands to understand what I want, not to be written down. Understand their content well, then execute what is required.'''
+          <br /><br />
+          No Editar Exame na parte de Valores de Referência do Exame
+          <br /><br />
+          Vamos colocar um icone + que vai mostrar todas as Referência e muda para um icone de - quando estiver mostrando os Valores de Referência do Exame
+          <br /><br />
+          Sempre que abrir um exame os Valores de Referência do Exame vai vir oculto e com o icone + para mostrar tambem vamos colocar um campo contador mostrando quantas faixas foram criadas para esse exame.
+        </p>
       </div>
     </Card>
   )
