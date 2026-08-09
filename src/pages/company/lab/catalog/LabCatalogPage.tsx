@@ -219,7 +219,8 @@ export default function LabCatalogPage() {
         
         if (examDbRefs.length > 0) {
           examDbRefs.forEach(r => {
-            const paramName = dbParameters?.find(p => p.id === r.parameter_id)?.name || r.parameter_name || '';
+            const param = dbParameters?.find(p => p.id === r.parameter_id);
+            const paramName = param?.name || r.parameter_name || '';
             refsData.push({
               'Código': examCode,
               'Nome do parâmetro': paramName,
@@ -230,12 +231,31 @@ export default function LabCatalogPage() {
               'Idade mínima (anos)': r.age_min ?? 0,
               'Idade máxima (anos)': r.age_max ?? 120,
               'Sexo': r.gender || 'both',
-              'Gestante': 'N/A' // Need to check if is_pregnant exists in DB or just use N/A for now
+              'Gestante': 'Não'
             })
           })
+        } else if (e.parameters && Array.isArray(e.parameters)) {
+          // Fallback to searching inside parameters (nested reference values)
+          e.parameters.forEach((p: any) => {
+            if (p.referenceValues && Array.isArray(p.referenceValues)) {
+              p.referenceValues.forEach((r: any) => {
+                refsData.push({
+                  'Código': examCode,
+                  'Nome do parâmetro': p.name || '',
+                  'Descrição': r.description || '',
+                  'Valor mínimo': r.minValue ?? '',
+                  'Valor máximo': r.maxValue ?? '',
+                  'Valor texto': r.textRange || '',
+                  'Idade mínima (anos)': r.minAge ?? 0,
+                  'Idade máxima (anos)': r.maxAge ?? 120,
+                  'Sexo': r.sex || 'both',
+                  'Gestante': r.isPregnant ? 'Sim' : 'Não'
+                })
+              })
+            }
+          })
         } else if (e.referenceValues && Array.isArray(e.referenceValues)) {
-
-          // Fallback to legacy referenceValues from JSON
+          // Legacy direct referenceValues on exam
           e.referenceValues.forEach((r: any) => {
             refsData.push({
               'Código': examCode,
