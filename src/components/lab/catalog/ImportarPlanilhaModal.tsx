@@ -309,7 +309,7 @@ export const ImportarPlanilhaModal = ({ isOpen, onClose, existingCodes = [] }: I
                   <p className="text-sm font-medium text-blue-900">Instruções da Planilha</p>
                 </div>
                 <ul className="text-sm text-blue-800 space-y-1 ml-7 list-disc">
-                  <li>O arquivo deve conter 4 abas: Catálogo de Exames, Parâmetros, Faixas de Referência e Instruções.</li>
+                  <li>O arquivo deve conter 4 abas: Catálogo de Exames, Parâmetros do Exame, Faixas de Referência e Instruções.</li>
                   <li>A coluna <strong>Código</strong> é a chave única. Se já existir, o exame será atualizado.</li>
                   <li>Campos obrigatórios: Nome, Código, Materiais, Bancada e Prazo.</li>
                 </ul>
