@@ -260,7 +260,6 @@ export const ImportarPlanilhaModal = ({ isOpen, onClose, existingCodes = [] }: I
               formula: p['Fórmula'] || p['FORMULA'] || '',
               internal_code: examData.codigo,
             };
-            };
 
             // Upsert parameter by exam_id and name
             const { data: existingParam } = await supabase
