@@ -115,6 +115,12 @@ export const ImportarPlanilhaModal = ({ isOpen, onClose, existingCodes = [] }: I
         const foundErrors: RowError[] = [];
         const validExams: ExamImportData[] = [];
 
+        console.log('[ImportarPlanilhaModal] Parsing spreadsheet data:', { 
+          catalogRows: catalogData.length, 
+          paramRows: paramsData.length, 
+          refRows: refsData.length 
+        });
+
         catalogData.forEach((row, index) => {
           const lineNum = index + 2;
           
@@ -124,7 +130,6 @@ export const ImportarPlanilhaModal = ({ isOpen, onClose, existingCodes = [] }: I
           const workbench = row['Bancada'] || row['BANCADA'] || row['Setor'] || row['SETOR'];
           const deadline = row['Prazo de entrega (dias)'] || row['Prazo'] || row['PRAZO'] || row['Prazo de Entrega'];
           const unit = row['Unidade de Medida'] || row['UNIDADE'] || row['Unidade'] || '';
-
 
           if (!name || !code || !materials || !workbench || deadline === undefined) {
             const missing = [];
@@ -143,18 +148,18 @@ export const ImportarPlanilhaModal = ({ isOpen, onClose, existingCodes = [] }: I
 
           // Link parameters and reference ranges
           const examParams = paramsData.filter((p: any) => {
-            const pCode = String(p['Código'] || p['CÓDIGO'] || p['Código do Exame'] || p['CÓDIGO EXAME'] || p['Codigo'] || '').trim();
+            const pCode = String(p['Código'] || p['CÓDIGO'] || p['Código do Exame'] || p['CÓDIGO EXAME'] || p['Codigo'] || p['CODIGO'] || '').trim();
             return pCode === code;
           });
           
           const examRefs: any[] = [];
           
           examParams.forEach((param: any) => {
-            const paramName = param['Nome'] || param['NOME'] || param['Parâmetro'] || param['PARAMETRO'] || param['Nome do parâmetro'];
+            const paramName = String(param['Nome'] || param['NOME'] || param['Parâmetro'] || param['PARAMETRO'] || param['Nome do parâmetro'] || '').trim();
             const refs = refsData.filter((r: any) => {
-              const rCode = String(r['Código'] || r['CÓDIGO'] || r['Código do Exame'] || r['CÓDIGO EXAME'] || r['Codigo'] || '').trim();
-              const rParamName = r['Nome do parâmetro'] || r['Nome do Parâmetro'] || r['PARÂMETRO'] || r['Nome'] || '';
-              return rCode === code && String(rParamName).trim() === String(paramName).trim();
+              const rCode = String(r['Código'] || r['CÓDIGO'] || r['Código do Exame'] || r['CÓDIGO EXAME'] || r['Codigo'] || r['CODIGO'] || '').trim();
+              const rParamName = String(r['Nome do parâmetro'] || r['Nome do Parâmetro'] || r['PARÂMETRO'] || r['Nome'] || '').trim();
+              return rCode === code && rParamName === paramName;
             });
             examRefs.push(...refs);
           });
@@ -170,13 +175,14 @@ export const ImportarPlanilhaModal = ({ isOpen, onClose, existingCodes = [] }: I
             referenceValues: examRefs
           });
 
-
           if (existingCodes.includes(code)) {
             foundUpdate.push(code);
           } else {
             foundNew.push(code);
           }
         });
+
+        console.log('[ImportarPlanilhaModal] Validated exams:', validExams.map(e => ({ code: e.codigo, paramsCount: e.parameters.length })));
 
         setParsedExams(validExams);
         setNewExams(foundNew);
