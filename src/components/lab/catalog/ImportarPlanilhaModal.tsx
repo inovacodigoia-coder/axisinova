@@ -421,7 +421,7 @@ export const ImportarPlanilhaModal = ({ isOpen, onClose, existingCodes = [] }: I
                     <div className="space-y-1">
                       <p className="text-sm font-semibold text-amber-900">Importação Completa</p>
                       <p className="text-xs text-amber-800">
-                        O sistema detectou que este arquivo contém <strong>Parâmetros</strong> e <strong>Faixas de Referência</strong> vinculados aos exames. 
+                        O sistema detectou que este arquivo contém <strong>Parâmetros do Exame</strong> e <strong>Faixas de Referência</strong> vinculados aos exames. 
                         Todos os dados serão processados simultaneamente.
                       </p>
                     </div>
