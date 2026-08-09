@@ -60,6 +60,12 @@ export function ResultEntryModal({
   const groupedPatients = useMemo(() => {
     const groups: Record<string, any> = {};
     filteredExams.forEach(exam => {
+      // Aplicar filtro de bancada também no modal para garantir consistência
+      const matchesWorkbench = filters.workbenches.length === 0 || 
+                               filters.workbenches.includes(exam.workbenchId || exam.workbench || '');
+      
+      if (!matchesWorkbench) return;
+
       const key = exam.protocol;
       if (!groups[key]) {
         groups[key] = {

@@ -118,9 +118,11 @@ export default function LabAnalisePage() {
       
       const matchesProtocol = protocolSearch === '' || exam.protocol.includes(protocolSearch);
       
-      // Filtro de Bancada: Se selecionado, filtra apenas os exames DAQUELA bancada
+      // Filtro de Bancada: Deve filtrar exames individuais, mas a lista principal
+      // é agrupada por paciente. O filtro de bancada afeta quais exames aparecem
+      // dentro do grupo do paciente.
       const matchesWorkbench = selectedWorkbenches.length === 0 || 
-                               selectedWorkbenches.includes(exam.workbench || '');
+                               selectedWorkbenches.includes(exam.workbenchId || exam.workbench || '');
       
       // Filtro de Origem
       const matchesOrigin = selectedEstablishments.length === 0 || 
