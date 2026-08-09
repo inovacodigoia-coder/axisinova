@@ -120,7 +120,7 @@ export function LabStep6Summary({ state, update, unitName }: Props & { update: (
                     <tr className="bg-slate-50 text-[11px] uppercase text-slate-500 font-bold border-b border-slate-200">
                       <th className="px-4 py-3">Exames(s) Solicitado(s)</th>
                       <th className="px-4 py-3">Referência</th>
-                      <th className="px-4 py-3">Preço</th>
+                      {guide.exams?.some((e: any) => e.price > 0) && <th className="px-4 py-3">Preço</th>}
                       <th className="px-4 py-3">Material</th>
                       <th className="px-4 py-3">Coletado</th>
                       <th className="px-4 py-3">Previsão de Entrega</th>
