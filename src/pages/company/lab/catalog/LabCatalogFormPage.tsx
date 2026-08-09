@@ -152,6 +152,11 @@ export default function LabCatalogFormPage() {
     }
   }, [isEditing, id, exams])
 
+  // Effect to sync parameters back to examData for persistence
+  useEffect(() => {
+    setExamData(prev => ({ ...prev, parameters }))
+  }, [parameters])
+
   const handleSave = async () => {
     if (!examData.name) {
       toast.error('O nome do exame é obrigatório')
@@ -164,7 +169,6 @@ export default function LabCatalogFormPage() {
         ...examData,
         parameters: parameters || [],
         confirmationQuestions: confirmationQuestions || [],
-        referenceValues: (examData as any).referenceValues || []
       }
 
       if (isEditing) {
@@ -604,7 +608,7 @@ function GeneralInfoSection({ isEditing, data, workbenches, onChange }: { isEdit
   )
 }
 
-function ParametersSection({ parameters, setParameters, onUpdateReference }: { parameters: any[], setParameters: (p: any[]) => void, onUpdateReference?: (val: any) => void }) {
+function ParametersSection({ parameters, setParameters }: { parameters: any[], setParameters: (p: any[]) => void }) {
   const [measurementUnits, setMeasurementUnits] = useState<any[]>([])
   const [editingReference, setEditingReference] = useState<any>(null)
 
@@ -636,6 +640,11 @@ function ParametersSection({ parameters, setParameters, onUpdateReference }: { p
 
   const updateParameter = (id: number, field: string, value: any) => {
     setParameters(parameters.map(p => p.id === id ? { ...p, [field]: value } : p))
+  }
+
+  const handleSaveReference = (referenceData: any) => {
+    if (!editingReference) return;
+    updateParameter(editingReference.id, 'referenceValues', referenceData.referenceValues);
   }
 
   const removeParameter = (id: number) => {
@@ -904,7 +913,7 @@ function ParametersSection({ parameters, setParameters, onUpdateReference }: { p
         <ReferenceValuesModal 
           parameter={editingReference} 
           onClose={() => setEditingReference(null)} 
-          onSave={onUpdateReference}
+          onSave={handleSaveReference}
         />
 
       </Card>
@@ -913,10 +922,18 @@ function ParametersSection({ parameters, setParameters, onUpdateReference }: { p
 }
 
 function ReferenceValuesModal({ parameter, onClose, onSave }: { parameter: any, onClose: () => void, onSave?: (val: any) => void }) {
-  const [faixas, setFaixas] = useState<any[]>([
-    { id: 1, description: 'Adulto Masculino', minAge: 18, maxAge: 150, sex: 'Masculino', isPregnant: false, minValue: '4.5', maxValue: '6.1' },
-    { id: 2, description: 'Adulto Feminino', minAge: 18, maxAge: 150, sex: 'Feminino', isPregnant: false, minValue: '4', maxValue: '5.4' },
-  ])
+  const [faixas, setFaixas] = useState<any[]>([])
+
+  useEffect(() => {
+    if (parameter && parameter.referenceValues) {
+      setFaixas(parameter.referenceValues)
+    } else {
+      setFaixas([
+        { id: 1, description: 'Adulto Masculino', minAge: 18, maxAge: 150, sex: 'Masculino', isPregnant: false, minValue: '4.5', maxValue: '6.1' },
+        { id: 2, description: 'Adulto Feminino', minAge: 18, maxAge: 150, sex: 'Feminino', isPregnant: false, minValue: '4', maxValue: '5.4' },
+      ])
+    }
+  }, [parameter])
 
   const updateFaixa = (id: number, field: string, value: any) => {
     setFaixas(prev => prev.map(f => f.id === id ? { ...f, [field]: value } : f))
