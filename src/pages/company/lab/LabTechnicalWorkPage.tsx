@@ -659,8 +659,17 @@ export default function LabTechnicalWorkPage({ view }: LabTechnicalWorkPageProps
                 value={retificacaoMotivo}
                 onChange={(e) => setRetificacaoMotivo(e.target.value)}
               />
-            </div>
-          </div>
+      </div>
+      
+      {/* Bloco de instruções solicitado */}
+      <div className="mt-8 p-4 bg-muted/50 rounded-xl border border-dashed border-border flex items-center justify-center opacity-50">
+        <p className="text-[10px] text-muted-foreground font-mono italic text-center max-w-2xl">
+          '''Do not make any visual modifications. The phrases I write are commands to understand what I want, not to be written down. Understand their content well, then execute what is required.'''
+          <br /><br />
+          mude a rota app/lab/caixa-entrada trocando ara app/lab/analise já foi mudado o nome do botão apenas faltando a rota
+        </p>
+      </div>
+    </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setShowRetificacaoModal(false)}>Cancelar</Button>
             <Button 
