@@ -79,7 +79,7 @@ const NAV_SECTIONS: NavSection[] = [
     items: [
       { label: 'Coleta', icon: 'FlaskConical', path: '/app/lab/coleta', module: 'reception' },
       { label: 'Mapa de Trabalho', icon: 'FileText', path: '/app/lab/mapa', module: 'reception' },
-      { label: 'Análise', icon: 'Database', path: '/app/lab/caixa-entrada', module: 'reception' },
+      { label: 'Análise', icon: 'Database', path: '/app/lab/analise', module: 'reception' },
       { label: 'Validação', icon: 'ShieldCheck', path: '/app/lab/validacao', module: 'reception' },
       { label: 'Laudos', icon: 'FileText', path: '/app/lab/laudos', module: 'reception' },
     ],
@@ -244,7 +244,7 @@ export function CompanySidebar({ mobileOpen, onMobileClose, collapsed = false, o
 
                 const { orders } = useAttendanceCadastro()
                 const waitingCollectionCount = orders.filter(o => o.status === 'waiting_collection' || o.status === 'waiting').length
-                const badge = item.path === '/app/lab/coleta' ? waitingCollectionCount : item.path === '/app/lab/caixa-entrada' ? 70 : null
+                const badge = item.path === '/app/lab/coleta' ? waitingCollectionCount : item.path === '/app/lab/analise' ? 70 : null
 
                 const link = (
                   <NavLink
