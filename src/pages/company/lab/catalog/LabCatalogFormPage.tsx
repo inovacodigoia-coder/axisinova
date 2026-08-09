@@ -911,13 +911,13 @@ function ParametersSection({ parameters, setParameters }: { parameters: any[], s
                           />
                         </div>
                       </td>
-                      <td className="px-4 py-3 text-right">
-                         <div className="flex justify-end gap-1">
-                            <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground">
-                              <MoreVertical className="h-4 w-4" />
+                      <td className="px-3 py-2 text-right">
+                         <div className="flex justify-end gap-0.5">
+                            <Button variant="ghost" size="icon" className="h-7 w-7 text-muted-foreground hover:bg-muted">
+                              <MoreVertical className="h-3.5 w-3.5" />
                             </Button>
-                            <Button variant="ghost" size="icon" className="h-8 w-8 text-red-500" onClick={() => removeParameter(param.id)}>
-                              <Trash2 className="h-4 w-4" />
+                            <Button variant="ghost" size="icon" className="h-7 w-7 text-red-400 hover:text-red-600 hover:bg-red-50" onClick={() => removeParameter(param.id)}>
+                              <Trash2 className="h-3.5 w-3.5" />
                             </Button>
                          </div>
                       </td>
@@ -925,11 +925,11 @@ function ParametersSection({ parameters, setParameters }: { parameters: any[], s
                     
                     {param.isCalculated && (
                       <tr>
-                        <td colSpan={12} className="px-4 py-4 bg-muted/20 border-t border-b border-border">
-                          <div className="space-y-3">
-                            <div className="flex items-center gap-2 text-[10px] font-bold uppercase text-primary">
+                        <td colSpan={13} className="px-4 py-3 bg-blue-50/30 border-t border-b border-blue-100">
+                          <div className="space-y-2">
+                            <div className="flex items-center gap-2 text-[9px] font-bold uppercase text-blue-600">
                               <Calculator className="h-3 w-3" />
-                              Fórmula de cálculo de "{param.name || 'Novo Parâmetro'}"
+                              Fórmula de cálculo de "{param.name || 'Parâmetro'}"
                             </div>
                             <div className="flex flex-wrap gap-1.5">
                               {availableVariables.filter(v => v !== param.name).map(v => (
