@@ -24,6 +24,10 @@ export default function LabColetaPage() {
   const [filterConvenio, setFilterConvenio] = useState<string>('all')
   const [filterWaitTime, setFilterWaitTime] = useState<'all' | 'low' | 'medium' | 'high'>('all')
   const [showAdvancedFilters, setShowAdvancedFilters] = useState(false)
+  const [isChangingResponsible, setIsChangingResponsible] = useState<string | null>(null)
+  const [responsibleCredentials, setResponsibleCredentials] = useState({ username: '', password: '' })
+  const [tempResponsible, setTempResponsible] = useState<Record<string, { id: string, name: string }>>({})
+
 
   
   // Polling para atualização automática (cada 30 segundos)
