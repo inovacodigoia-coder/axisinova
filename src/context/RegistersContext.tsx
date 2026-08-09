@@ -28,7 +28,7 @@ interface RegistersContextValue {
   addConvenio: (c: Convenio) => void
   updateConvenio: (c: Convenio) => void
   removeConvenio: (id: string) => void
-  addExam: (e: Exam) => void
+  addExam: (e: Exam) => Promise<Exam | undefined>
   updateExam: (e: Exam) => void
   removeExam: (id: string) => void
   addProcedure: (p: Procedure) => void
