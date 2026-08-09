@@ -883,38 +883,70 @@ function ParametersSection({ parameters, setParameters }: { parameters: any[], s
                       </td>
                       <td className="px-2 py-2">
                         <div className="flex justify-center">
-                          <Switch 
-                            checked={param.isMandatory} 
-                            onCheckedChange={(val) => updateParameter(param.id, 'isMandatory', val)}
-                            className="scale-[0.6] shadow-sm border border-border/50 data-[state=checked]:!bg-[#00D4FF] data-[state=unchecked]:!bg-muted"
-                          />
+                          <button
+                            type="button"
+                            onClick={() => updateParameter(param.id, 'isMandatory', !param.isMandatory)}
+                            className={cn(
+                              "h-5 w-8 rounded-full transition-all relative flex items-center border border-border/50 shadow-sm",
+                              param.isMandatory ? "bg-[#00D4FF]" : "bg-muted"
+                            )}
+                          >
+                            <div className={cn(
+                              "h-3 w-3 rounded-full bg-white shadow-sm transition-all absolute",
+                              param.isMandatory ? "left-[16px]" : "left-[3px]"
+                            )} />
+                          </button>
                         </div>
                       </td>
                       <td className="px-2 py-2">
                         <div className="flex justify-center">
-                          <Switch 
-                            checked={param.allowNegative} 
-                            onCheckedChange={(val) => updateParameter(param.id, 'allowNegative', val)}
-                            className="scale-[0.6] shadow-sm border border-border/50 data-[state=checked]:!bg-[#00D4FF] data-[state=unchecked]:!bg-muted"
-                          />
+                          <button
+                            type="button"
+                            onClick={() => updateParameter(param.id, 'allowNegative', !param.allowNegative)}
+                            className={cn(
+                              "h-5 w-8 rounded-full transition-all relative flex items-center border border-border/50 shadow-sm",
+                              param.allowNegative ? "bg-[#00D4FF]" : "bg-muted"
+                            )}
+                          >
+                            <div className={cn(
+                              "h-3 w-3 rounded-full bg-white shadow-sm transition-all absolute",
+                              param.allowNegative ? "left-[16px]" : "left-[3px]"
+                            )} />
+                          </button>
                         </div>
                       </td>
                       <td className="px-2 py-2">
                         <div className="flex justify-center">
-                          <Switch 
-                            checked={param.isCalculated} 
-                            onCheckedChange={(val) => updateParameter(param.id, 'isCalculated', val)}
-                            className="scale-[0.6] shadow-sm border border-border/50 data-[state=checked]:!bg-[#00D4FF] data-[state=unchecked]:!bg-muted"
-                          />
+                          <button
+                            type="button"
+                            onClick={() => updateParameter(param.id, 'isCalculated', !param.isCalculated)}
+                            className={cn(
+                              "h-5 w-8 rounded-full transition-all relative flex items-center border border-border/50 shadow-sm",
+                              param.isCalculated ? "bg-[#00D4FF]" : "bg-muted"
+                            )}
+                          >
+                            <div className={cn(
+                              "h-3 w-3 rounded-full bg-white shadow-sm transition-all absolute",
+                              param.isCalculated ? "left-[16px]" : "left-[3px]"
+                            )} />
+                          </button>
                         </div>
                       </td>
                       <td className="px-2 py-2">
                         <div className="flex justify-center">
-                          <Switch 
-                            checked={param.isHidden} 
-                            onCheckedChange={(val) => updateParameter(param.id, 'isHidden', val)}
-                            className="scale-[0.6] shadow-sm border border-border/50 data-[state=checked]:!bg-[#00D4FF] data-[state=unchecked]:!bg-muted"
-                          />
+                          <button
+                            type="button"
+                            onClick={() => updateParameter(param.id, 'isHidden', !param.isHidden)}
+                            className={cn(
+                              "h-5 w-8 rounded-full transition-all relative flex items-center border border-border/50 shadow-sm",
+                              param.isHidden ? "bg-[#00D4FF]" : "bg-muted"
+                            )}
+                          >
+                            <div className={cn(
+                              "h-3 w-3 rounded-full bg-white shadow-sm transition-all absolute",
+                              param.isHidden ? "left-[16px]" : "left-[3px]"
+                            )} />
+                          </button>
                         </div>
                       </td>
                       <td className="px-3 py-2 text-right">
