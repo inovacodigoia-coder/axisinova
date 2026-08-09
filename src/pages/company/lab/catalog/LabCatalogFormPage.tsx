@@ -356,6 +356,8 @@ export default function LabCatalogFormPage() {
             isEditing={isEditing} 
             data={examData} 
             workbenches={workbenches}
+            showGlobalRefs={showGlobalRefs}
+            setShowGlobalRefs={setShowGlobalRefs}
             onChange={(newData) => setExamData(prev => ({ ...prev, ...newData }))} 
           />
         </TabsContent>
