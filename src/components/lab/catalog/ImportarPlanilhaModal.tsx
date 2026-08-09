@@ -142,8 +142,11 @@ export const ImportarPlanilhaModal = ({ isOpen, onClose, existingCodes = [] }: I
           const examRefs: any[] = [];
           
           examParams.forEach((param: any) => {
-            const paramName = param['Nome'] || param['NOME'] || param['Parâmetro'] || param['PARAMETRO'];
-            const refs = refsData.filter((r: any) => (r['Nome do Parâmetro'] || r['PARÂMETRO'] || r['Nome'] || '') === paramName);
+            const paramName = param['Nome'] || param['NOME'] || param['Parâmetro'] || param['PARAMETRO'] || param['Nome do parâmetro'];
+            const refs = refsData.filter((r: any) => {
+              const rParamName = r['Nome do parâmetro'] || r['Nome do Parâmetro'] || r['PARÂMETRO'] || r['Nome'] || '';
+              return String(rParamName).trim() === String(paramName).trim();
+            });
             examRefs.push(...refs);
           });
 
