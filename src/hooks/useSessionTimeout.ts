@@ -87,6 +87,3 @@ export function useSessionTimeout() {
 
   return { showWarning, countdown, extendSession: resetTimer }
 }
-
-  return { showWarning, countdown, extendSession: resetTimer }
-}
