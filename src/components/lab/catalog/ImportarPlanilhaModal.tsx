@@ -91,7 +91,7 @@ export const ImportarPlanilhaModal = ({ isOpen, onClose, existingCodes = [] }: I
         const data = e.target?.result;
         const workbook = XLSX.read(data, { type: 'binary' });
         
-        // Sheets we expect: "Catálogo de Exames", "Parâmetros", "Faixas de Referência"
+        // Sheets we expect: "Catálogo de Exames", "Parâmetros do Exame", "Faixas de Referência"
         const catalogSheetName = workbook.SheetNames.find(n => n.toLowerCase().includes('catálogo') || n.toLowerCase().includes('catalogo')) || workbook.SheetNames[0];
         const paramsSheetName = workbook.SheetNames.find(n => n.toLowerCase().includes('parâmetros') || n.toLowerCase().includes('parametros'));
         const refsSheetName = workbook.SheetNames.find(n => n.toLowerCase().includes('faixas') || n.toLowerCase().includes('referência') || n.toLowerCase().includes('referencia'));
@@ -309,7 +309,7 @@ export const ImportarPlanilhaModal = ({ isOpen, onClose, existingCodes = [] }: I
                   <p className="text-sm font-medium text-blue-900">Instruções da Planilha</p>
                 </div>
                 <ul className="text-sm text-blue-800 space-y-1 ml-7 list-disc">
-                  <li>O arquivo deve conter 4 abas: Catálogo de Exames, Parâmetros, Faixas de Referência e Instruções.</li>
+                  <li>O arquivo deve conter 4 abas: Catálogo de Exames, Parâmetros do Exame, Faixas de Referência e Instruções.</li>
                   <li>A coluna <strong>Código</strong> é a chave única. Se já existir, o exame será atualizado.</li>
                   <li>Campos obrigatórios: Nome, Código, Materiais, Bancada e Prazo.</li>
                 </ul>
@@ -421,7 +421,7 @@ export const ImportarPlanilhaModal = ({ isOpen, onClose, existingCodes = [] }: I
                     <div className="space-y-1">
                       <p className="text-sm font-semibold text-amber-900">Importação Completa</p>
                       <p className="text-xs text-amber-800">
-                        O sistema detectou que este arquivo contém <strong>Parâmetros</strong> e <strong>Faixas de Referência</strong> vinculados aos exames. 
+                        O sistema detectou que este arquivo contém <strong>Parâmetros do Exame</strong> e <strong>Faixas de Referência</strong> vinculados aos exames. 
                         Todos os dados serão processados simultaneamente.
                       </p>
                     </div>
