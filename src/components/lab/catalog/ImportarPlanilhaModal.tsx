@@ -250,54 +250,68 @@ export const ImportarPlanilhaModal = ({ isOpen, onClose, existingCodes = [] }: I
 
         // Process Parameters and Reference Values if we have an examId
         if (examId) {
+          console.log(`[ImportarPlanilhaModal] Processing ${examData.parameters.length} parameters for exam ${examData.codigo}`);
+          
           for (const p of examData.parameters) {
-            const paramName = p['Nome'] || p['NOME'] || p['Parâmetro'] || p['PARAMETRO'] || p['Nome do parâmetro'];
-            
+            const paramName = String(p['Nome'] || p['NOME'] || p['Parâmetro'] || p['PARAMETRO'] || p['Nome do parâmetro'] || '').trim();
+            if (!paramName) continue;
+
             const paramPayload = {
               exam_id: examId,
               company_id: companyId,
               name: paramName,
-              section: p['Seção'] || p['SEÇÃO'] || p['Setor'] || p['SETOR'] || '',
-              equipment_code: p['Código no equipamento'] || p['Cód. Equip.'] || p['CÓD. EQUIP.'] || p['Código Equipamento'] || p['COD_EQUIP'] || '',
-              type: (p['Tipo'] || p['TIPO'] || 'numerical').toLowerCase() === 'numérico' || (p['Tipo'] || p['TIPO'] || '').toLowerCase() === 'numerico' ? 'numerical' : 
-                    (p['Tipo'] || p['TIPO'] || 'texto').toLowerCase() === 'texto' ? 'text' : 
-                    (p['Tipo'] || p['TIPO'] || 'numerical').toLowerCase(),
-              origin: (p['Origem'] || p['ORIGEM'] || 'manual').toLowerCase() === 'equipamento' ? 'equipment' : (p['Origem'] || p['ORIGEM'] || 'manual').toLowerCase(),
-              unit: p['Unidade de medida'] || p['Unidade'] || p['UNIDADE'] || '',
+              section: String(p['Seção'] || p['SEÇÃO'] || p['Setor'] || p['SETOR'] || ''),
+              equipment_code: String(p['Código no equipamento'] || p['Cód. Equip.'] || p['CÓD. EQUIP.'] || p['Código Equipamento'] || p['COD_EQUIP'] || ''),
+              type: (p['Tipo'] || p['TIPO'] || 'numerical').toLowerCase().includes('numér') || (p['Tipo'] || p['TIPO'] || '').toLowerCase().includes('numer') ? 'numerical' : 
+                    (p['Tipo'] || p['TIPO'] || '').toLowerCase().includes('text') ? 'text' : 
+                    'numerical',
+              origin: (p['Origem'] || p['ORIGEM'] || 'manual').toLowerCase() === 'equipamento' ? 'equipment' : 'manual',
+              unit: String(p['Unidade de medida'] || p['Unidade'] || p['UNIDADE'] || ''),
               is_required: p['Obrigatório'] === 'Sim' || p['Obrigatório'] === true || !!(p['Obrig.'] || p['OBRIG.'] || false),
               allow_negative: p['Permite negativo'] === 'Sim' || !!(p['Neg.'] || p['NEG.'] || false),
               is_calculated: p['Calculado'] === 'Sim' || !!(p['Calc.'] || p['CALC.'] || false),
               is_hidden: !!(p['Oculto'] || p['OCULTO'] || p['Ocultar Laudo'] || false),
-              formula: p['Fórmula do parâmetro'] || p['Fórmula'] || p['FORMULA'] || '',
+              formula: String(p['Fórmula do parâmetro'] || p['Fórmula'] || p['FORMULA'] || ''),
               internal_code: examData.codigo,
             };
 
             // Upsert parameter by exam_id and name
-            const { data: existingParam } = await supabase
+            const { data: existingParam, error: selectError } = await supabase
               .from('lab_exam_parameters')
               .select('id')
               .eq('exam_id', examId)
               .eq('name', paramName)
               .maybeSingle();
 
+            if (selectError) console.error('[ImportarPlanilhaModal] Error checking existing param:', selectError);
+
             let parameterId = existingParam?.id;
 
             if (parameterId) {
-              await supabase.from('lab_exam_parameters').update(paramPayload).eq('id', parameterId);
+              const { error: updateError } = await supabase.from('lab_exam_parameters').update(paramPayload).eq('id', parameterId);
+              if (updateError) console.error('[ImportarPlanilhaModal] Error updating param:', updateError);
             } else {
-              const { data: newParam } = await supabase
+              const { data: newParam, error: insertError } = await supabase
                 .from('lab_exam_parameters')
                 .insert(paramPayload)
                 .select()
                 .single();
-              parameterId = newParam?.id;
+              
+              if (insertError) {
+                console.error('[ImportarPlanilhaModal] Error inserting param:', insertError);
+              } else {
+                parameterId = newParam?.id;
+              }
             }
 
             // Sync Reference Values for this parameter
             if (parameterId) {
-              const refsForParam = examData.referenceValues.filter((r: any) => 
-                (r['Nome do parâmetro'] || r['Nome do Parâmetro'] || r['PARÂMETRO'] || r['Nome'] || '') === paramName
-              );
+              const refsForParam = examData.referenceValues.filter((r: any) => {
+                const rParamName = String(r['Nome do parâmetro'] || r['Nome do Parâmetro'] || r['PARÂMETRO'] || r['Nome'] || '').trim();
+                return rParamName === paramName;
+              });
+
+              console.log(`[ImportarPlanilhaModal] Syncing ${refsForParam.length} references for parameter ${paramName}`);
 
               // Delete old refs to ensure fresh state from spreadsheet
               await supabase.from('lab_exam_reference_values').delete().eq('parameter_id', parameterId);
@@ -309,7 +323,7 @@ export const ImportarPlanilhaModal = ({ isOpen, onClose, existingCodes = [] }: I
                   company_id: companyId,
                   internal_code: examData.codigo,
                   parameter_name: paramName,
-                  description: r['Descrição'] || r['DESCRIÇÃO'] || '',
+                  description: String(r['Descrição'] || r['DESCRIÇÃO'] || ''),
                   min_value: r['Valor mínimo'] || r['Valor mín'] || r['Valor Mínimo'] || r['Mínimo'] || r['MIN']?.toString() || null,
                   max_value: r['Valor máximo'] || r['Valor máx'] || r['Valor Máximo'] || r['Máximo'] || r['MAX']?.toString() || null,
                   text_range: r['Valor texto'] || r['Referência Texto'] || r['Texto'] || null,
@@ -319,7 +333,8 @@ export const ImportarPlanilhaModal = ({ isOpen, onClose, existingCodes = [] }: I
                   is_pregnant: r['Gestante'] === 'Sim' || r['Gestante'] === true || !!(r['Gestante'] || false),
                 }));
 
-                await supabase.from('lab_exam_reference_values').insert(refsToInsert);
+                const { error: refsError } = await supabase.from('lab_exam_reference_values').insert(refsToInsert);
+                if (refsError) console.error('[ImportarPlanilhaModal] Error inserting references:', refsError);
               }
             }
           }
