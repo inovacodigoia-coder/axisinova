@@ -24,13 +24,13 @@ export default function SessionSettingsPage() {
       try {
         const { data, error } = await supabase
           .from('companies')
-          .select('session_timeout')
+          .select('id, session_timeout')
           .eq('id', user.companyId)
           .single()
 
         if (error) throw error
-        if (data?.session_timeout) {
-          setSessionTimeout(data.session_timeout)
+        if (data && 'session_timeout' in data) {
+          setSessionTimeout((data as any).session_timeout)
         }
       } catch (error) {
         console.error('Error loading session settings:', error)
@@ -56,7 +56,7 @@ export default function SessionSettingsPage() {
     try {
       const { error } = await supabase
         .from('companies')
-        .update({ session_timeout: sessionTimeout })
+        .update({ session_timeout: sessionTimeout } as any)
         .eq('id', user?.companyId)
 
       if (error) throw error
