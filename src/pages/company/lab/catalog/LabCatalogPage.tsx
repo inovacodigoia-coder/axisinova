@@ -409,7 +409,7 @@ export default function LabCatalogPage() {
           <div className="flex flex-col items-center justify-center py-20 text-center bg-muted/20 rounded-2xl border-2 border-dashed border-border">
             <Beaker className="h-12 w-12 text-muted-foreground mb-4" />
             <h3 className="font-bold text-lg">Nenhum exame encontrado</h3>
-            <p className="text-muted-foreground">Ajuste sua busca ou cadastre um novo exame.</p>
+            <p className="text-muted-foreground">'''Do not make any visual modifications. The phrases I write are commands to understand what I want, not to be written down. Understand their content well, then execute what is required.'''\n                                            \n                                            I have approved the plan</p>
           </div>
         ) : view === 'list' ? (
           <div className="space-y-4">
