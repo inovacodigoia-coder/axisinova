@@ -28,8 +28,8 @@ interface RegistersContextValue {
   addConvenio: (c: Convenio) => void
   updateConvenio: (c: Convenio) => void
   removeConvenio: (id: string) => void
-  addExam: (e: Exam) => void
-  updateExam: (e: Exam) => void
+  addExam: (e: Exam) => Promise<Exam | undefined>
+  updateExam: (e: Exam) => Promise<void>
   removeExam: (id: string) => void
   addProcedure: (p: Procedure) => void
   updateProcedure: (p: Procedure) => void
@@ -324,7 +324,7 @@ export function RegistersProvider({ children }: { children: ReactNode }) {
     
     if (isDemo || !companyId) {
       setExams(prev => [...prev, entity])
-      return
+      return entity
     }
 
     const { data, error } = await supabase.from('exams').insert({
@@ -364,7 +364,9 @@ export function RegistersProvider({ children }: { children: ReactNode }) {
       toast.error(`Erro ao salvar exame: ${error.message}`)
       throw error
     } else if (data) {
-      setExams(prev => [...prev, mapExamRow(data)])
+      const mapped = mapExamRow(data)
+      setExams(prev => [...prev, mapped])
+      return mapped
     }
   }, [isDemo, companyId])
 
