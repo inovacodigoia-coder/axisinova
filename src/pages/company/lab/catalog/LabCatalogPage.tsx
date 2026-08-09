@@ -10,6 +10,8 @@ import { useNavigate } from 'react-router-dom'
 import { cn } from '@/lib/utils'
 import { useRegisters } from '@/context/RegistersContext'
 import { toast } from 'sonner'
+import { supabase } from '@/integrations/supabase/client'
+
 import {
   AlertDialog,
   AlertDialogAction,
@@ -127,6 +129,16 @@ export default function LabCatalogPage() {
         return
       }
 
+      // Fetch ALL parameters for these exams from the new table
+      const { data: dbParameters, error: paramsError } = await supabase
+        .from('lab_exam_parameters')
+        .select('*')
+        .in('exam_id', labExams.map(e => e.id))
+      
+      if (paramsError) {
+        console.error('Erro ao buscar parâmetros do banco:', paramsError)
+      }
+
       // 1. Catálogo de Exames
       const catalogData = labExams.map(e => ({
         'Nome': e.name,
@@ -146,16 +158,43 @@ export default function LabCatalogPage() {
 
       // 2. Parâmetros e Máscara
       const paramsData: any[] = []
+      
+      // Merge database parameters with context parameters (migration period)
       labExams.forEach(e => {
-        if (e.parameters && Array.isArray(e.parameters)) {
+        const examCode = e.internalCode || e.tussCode || '';
+        
+        // Use parameters from the new table if they exist
+        const examDbParams = dbParameters?.filter(p => p.exam_id === e.id) || [];
+        
+        if (examDbParams.length > 0) {
+          examDbParams.sort((a, b) => (a.sort_order || 0) - (b.sort_order || 0)).forEach(p => {
+            paramsData.push({
+              'Código': examCode,
+              'Nome do parâmetro': p.name || '',
+              'Tipo': p.type || 'numeric',
+              'Unidade de medida': p.unit || '',
+              'Faixa de referência (texto livre)': p.reference_values || '',
+              'Obrigatório': p.is_required ? 'Sim' : 'Não',
+              'Permite negativo': p.allow_negative ? 'Sim' : 'Não',
+              'Calculado': p.is_calculated ? 'Sim' : 'Não',
+              'Fórmula do parâmetro': p.formula || '',
+              'Código no equipamento': p.equipment_code || ''
+            })
+          })
+        } else if (e.parameters && Array.isArray(e.parameters)) {
+          // Fallback to existing jsonb parameters if table is empty
           e.parameters.forEach((p: any) => {
             paramsData.push({
-              'Código do Exame': e.internalCode || e.tussCode || '',
-              'Nome do Exame': e.name,
-              'Nome do Parâmetro': p.name || '',
-              'Unidade': p.unit || '',
+              'Código': examCode,
+              'Nome do parâmetro': p.name || '',
               'Tipo': p.type || 'numeric',
-              'Fórmula': p.formula || ''
+              'Unidade de medida': p.unit || '',
+              'Faixa de referência (texto livre)': p.referenceValues || '',
+              'Obrigatório': p.isRequired ? 'Sim' : 'Não',
+              'Permite negativo': p.allowNegative ? 'Sim' : 'Não',
+              'Calculado': p.isCalculated ? 'Sim' : 'Não',
+              'Fórmula do parâmetro': p.formula || '',
+              'Código no equipamento': p.equipmentCode || ''
             })
           })
         }
@@ -188,7 +227,7 @@ export default function LabCatalogPage() {
       
       if (paramsData.length > 0) {
         const wsParams = XLSX.utils.json_to_sheet(paramsData)
-        XLSX.utils.book_append_sheet(wb, wsParams, "Parâmetros")
+        XLSX.utils.book_append_sheet(wb, wsParams, "Parâmetros do Exame")
       }
       
       if (refsData.length > 0) {
