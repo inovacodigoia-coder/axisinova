@@ -745,204 +745,179 @@ function ParametersSection({ parameters, setParameters }: { parameters: any[], s
   return (
     <TooltipProvider>
       <Card className="p-0 border-none shadow-none bg-transparent space-y-6">
-        <div className="flex items-center justify-between bg-card p-4 rounded-xl border border-border">
+        <div className="flex items-center justify-between bg-card p-4 rounded-xl border border-border shadow-sm">
           <div className="flex items-center gap-2">
-            <Beaker className="h-5 w-5 text-primary" />
-            <h3 className="text-lg font-bold">Parâmetros do Exame</h3>
+            <div className="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center">
+              <Beaker className="h-5 w-5 text-primary" />
+            </div>
+            <div>
+              <h3 className="text-lg font-bold">Parâmetros do Exame</h3>
+              <p className="text-[10px] text-muted-foreground uppercase tracking-wider font-medium">Definição técnica e valores de referência</p>
+            </div>
           </div>
           <div className="flex gap-2">
-            <Button size="sm" variant="outline" className="gap-2" onClick={addParameter}>
+            <Button size="sm" variant="outline" className="gap-2 border-primary/20 hover:border-primary/50 text-primary" onClick={addParameter}>
               <Plus className="h-4 w-4" /> Adicionar Parâmetro
             </Button>
             <Button size="sm" variant="outline" className="gap-2">
-              <ExternalLink className="h-4 w-4" /> Vincular exame existente
+              <ExternalLink className="h-4 w-4" /> Vincular existente
             </Button>
           </div>
         </div>
 
-        <div className="border rounded-xl overflow-hidden bg-card shadow-sm">
+        <div className="border rounded-xl overflow-hidden bg-card shadow-md">
           <div className="overflow-x-auto">
-            <table className="w-full text-left text-sm">
-              <thead className="bg-muted/30 border-b">
+            <table className="w-full text-left text-sm border-collapse">
+              <thead className="bg-muted/50 border-b">
                 <tr>
-                  <th className="px-4 py-3 font-bold text-[10px] uppercase text-muted-foreground w-10">#</th>
-                  <th className="px-4 py-3 font-bold text-[10px] uppercase text-muted-foreground">Nome</th>
-                  <th className="px-4 py-3 font-bold text-[10px] uppercase text-muted-foreground w-20">Seção</th>
-                  <th className="px-4 py-3 font-bold text-[10px] uppercase text-muted-foreground w-24">Cód. Equip.</th>
-                  <th className="px-4 py-3 font-bold text-[10px] uppercase text-muted-foreground w-32">Tipo</th>
-                  <th className="px-4 py-3 font-bold text-[10px] uppercase text-muted-foreground w-32">Origem</th>
-                  <th className="px-4 py-3 font-bold text-[10px] uppercase text-muted-foreground w-40">Unidade</th>
-                  <th className="px-4 py-3 font-bold text-[10px] uppercase text-muted-foreground w-32">Referências</th>
-                  <th className="px-4 py-3 font-bold text-[10px] uppercase text-muted-foreground text-center">Obrig.</th>
-                  <th className="px-4 py-3 font-bold text-[10px] uppercase text-muted-foreground text-center">Neg.</th>
-                  <th className="px-4 py-3 font-bold text-[10px] uppercase text-muted-foreground text-center">Calc.</th>
-                  <th className="px-4 py-3 font-bold text-[10px] uppercase text-muted-foreground text-center">Oculto</th>
-                  <th className="px-4 py-3 text-right"></th>
+                  <th className="px-3 py-3 font-bold text-[10px] uppercase text-muted-foreground w-8 text-center border-r">#</th>
+                  <th className="px-4 py-3 font-bold text-[10px] uppercase text-muted-foreground min-w-[220px]">Nome do Parâmetro</th>
+                  <th className="px-2 py-3 font-bold text-[10px] uppercase text-muted-foreground w-16 text-center">Seção</th>
+                  <th className="px-2 py-3 font-bold text-[10px] uppercase text-muted-foreground w-16 text-center">Equip.</th>
+                  <th className="px-3 py-3 font-bold text-[10px] uppercase text-muted-foreground w-28">Tipo</th>
+                  <th className="px-3 py-3 font-bold text-[10px] uppercase text-muted-foreground w-28">Origem</th>
+                  <th className="px-3 py-3 font-bold text-[10px] uppercase text-muted-foreground w-32">Unidade</th>
+                  <th className="px-3 py-3 font-bold text-[10px] uppercase text-muted-foreground w-24 text-center">Ref.</th>
+                  <th className="px-2 py-3 font-bold text-[10px] uppercase text-muted-foreground text-center">Obrig</th>
+                  <th className="px-2 py-3 font-bold text-[10px] uppercase text-muted-foreground text-center">Neg</th>
+                  <th className="px-2 py-3 font-bold text-[10px] uppercase text-muted-foreground text-center">Calc</th>
+                  <th className="px-2 py-3 font-bold text-[10px] uppercase text-muted-foreground text-center">Oculto</th>
+                  <th className="px-3 py-3 text-right"></th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-border">
                 {parameters && parameters.length > 0 && parameters.map((param, idx) => (
                   <React.Fragment key={param.id}>
-                    <tr className="hover:bg-muted/5 transition-colors">
-                      <td className="px-4 py-3 text-xs text-muted-foreground font-medium">{idx + 1}</td>
-                      <td className="px-4 py-3 min-w-[200px]">
-                        <div className="flex items-center gap-2">
+                    <tr className="hover:bg-muted/10 transition-colors group">
+                      <td className="px-3 py-2 text-[10px] text-muted-foreground font-bold text-center border-r bg-muted/5">{idx + 1}</td>
+                      <td className="px-4 py-2">
+                        <div className="flex items-center gap-1.5">
                           <Input 
-                            className="h-9 text-xs font-medium focus:ring-primary/20" 
+                            className="h-8 text-xs font-semibold focus:ring-primary/20 border-transparent hover:border-border focus:border-primary group-hover:bg-white bg-transparent transition-all" 
                             value={param.name} 
                             onChange={(e) => updateParameter(param.id, 'name', e.target.value)}
-                            placeholder="Nome do parâmetro"
+                            placeholder="Ex: Hemoglobina"
                           />
-                          <Button variant="ghost" size="sm" className="h-7 text-[10px] px-2 text-muted-foreground hover:text-primary">
-                            <History className="h-3 w-3 mr-1" /> Hist.
-                          </Button>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <Button variant="ghost" size="icon" className="h-7 w-7 text-muted-foreground hover:text-primary">
+                                <History className="h-3.5 w-3.5" />
+                              </Button>
+                            </TooltipTrigger>
+                            <TooltipContent>Histórico de alterações</TooltipContent>
+                          </Tooltip>
                         </div>
                       </td>
-                      <td className="px-4 py-3">
+                      <td className="px-1 py-2">
                         <Input 
-                          className="h-9 text-xs text-center uppercase" 
+                          className="h-8 text-[10px] text-center uppercase border-transparent hover:border-border focus:border-primary group-hover:bg-white bg-transparent" 
                           value={param.section} 
                           onChange={(e) => updateParameter(param.id, 'section', e.target.value)}
-                          placeholder="Ex: ER"
+                          placeholder="ER"
                         />
                       </td>
-                      <td className="px-4 py-3">
+                      <td className="px-1 py-2">
                         <Input 
-                          className="h-9 text-xs text-center" 
+                          className="h-8 text-[10px] text-center border-transparent hover:border-border focus:border-primary group-hover:bg-white bg-transparent" 
                           value={param.equipCode} 
                           onChange={(e) => updateParameter(param.id, 'equipCode', e.target.value)}
-                          placeholder="ex"
+                          placeholder="00"
                         />
                       </td>
-                      <td className="px-4 py-3">
+                      <td className="px-2 py-2">
                         <Select value={param.type} onValueChange={(val) => updateParameter(param.id, 'type', val)}>
-                          <SelectTrigger className="h-9 text-xs">
+                          <SelectTrigger className="h-8 text-[10px] border-transparent hover:border-border focus:border-primary group-hover:bg-white bg-transparent px-2">
                             <SelectValue />
                           </SelectTrigger>
                           <SelectContent>
-                            <SelectItem value="numerical">Numérico</SelectItem>
-                            <SelectItem value="text">Texto</SelectItem>
-                            <SelectItem value="selection">Seleção</SelectItem>
+                            <SelectItem value="numerical" className="text-[10px]">Numérico</SelectItem>
+                            <SelectItem value="text" className="text-[10px]">Texto</SelectItem>
+                            <SelectItem value="selection" className="text-[10px]">Seleção</SelectItem>
                           </SelectContent>
                         </Select>
                       </td>
-                      <td className="px-4 py-3">
+                      <td className="px-2 py-2">
                         <Select value={param.origin} onValueChange={(val) => updateParameter(param.id, 'origin', val)}>
-                          <SelectTrigger className="h-9 text-xs">
+                          <SelectTrigger className="h-8 text-[10px] border-transparent hover:border-border focus:border-primary group-hover:bg-white bg-transparent px-2">
                             <SelectValue />
                           </SelectTrigger>
                           <SelectContent>
-                            <SelectItem value="manual">Manual</SelectItem>
-                            <SelectItem value="equipment">Equipamento</SelectItem>
+                            <SelectItem value="manual" className="text-[10px]">Manual</SelectItem>
+                            <SelectItem value="equipment" className="text-[10px]">Equipamento</SelectItem>
                           </SelectContent>
                         </Select>
                       </td>
-                      <td className="px-4 py-3">
+                      <td className="px-2 py-2">
                         <div className="flex gap-1 items-center">
                           <Select value={param.unit} onValueChange={(val) => updateParameter(param.id, 'unit', val)}>
-                            <SelectTrigger className="h-9 text-xs flex-1">
-                              <SelectValue placeholder="Unidade" />
+                            <SelectTrigger className="h-8 text-[10px] flex-1 border-transparent hover:border-border focus:border-primary group-hover:bg-white bg-transparent px-2">
+                              <SelectValue placeholder="Unid." />
                             </SelectTrigger>
                             <SelectContent>
                               {measurementUnits.map(unit => (
-                                <SelectItem key={unit.name} value={unit.name}>{unit.name}</SelectItem>
+                                <SelectItem key={unit.name} value={unit.name} className="text-[10px]">{unit.name}</SelectItem>
                               ))}
                             </SelectContent>
                           </Select>
-                          <Button variant="ghost" size="icon" className="h-7 w-7 text-primary shrink-0">
-                            <Plus className="h-3 w-3" />
-                          </Button>
                         </div>
                       </td>
-                      <td className="px-4 py-3">
+                      <td className="px-2 py-2">
                         <Button 
-                          variant="outline" 
+                          variant={param.referenceValues?.length > 0 ? "outline" : "ghost"} 
                           size="sm" 
-                          className="h-8 text-[10px] gap-1 px-2 w-full"
+                          className={cn(
+                            "h-7 text-[9px] gap-1 px-2 w-full uppercase font-bold transition-all",
+                            param.referenceValues?.length > 0 ? "border-emerald-500/30 text-emerald-600 bg-emerald-50/50" : "text-muted-foreground"
+                          )}
                           onClick={() => setEditingReference(param)}
                         >
-                          <Settings2 className="h-3 w-3" /> Editar
+                          <Settings2 className="h-3 w-3" /> 
+                          {param.referenceValues?.length > 0 ? `${param.referenceValues.length} Faixas` : 'Definir'}
                         </Button>
                       </td>
-                      <td className="px-4 py-3">
+                      <td className="px-2 py-2">
                         <div className="flex justify-center">
-                          <Tooltip>
-                            <TooltipTrigger asChild>
-                              <div className="cursor-pointer">
-                                <Switch 
-                                  checked={param.isMandatory} 
-                                  onCheckedChange={(val) => updateParameter(param.id, 'isMandatory', val)}
-                                  className="shadow-sm border border-border/50 data-[state=checked]:!bg-[#00D4FF] data-[state=unchecked]:!bg-[#ef4444]"
-                                />
-                              </div>
-                            </TooltipTrigger>
-                            <TooltipContent>
-                              <p className="text-xs">Parâmetro obrigatório: precisa ser preenchido na digitação manual de resultados</p>
-                            </TooltipContent>
-                          </Tooltip>
+                          <Switch 
+                            checked={param.isMandatory} 
+                            onCheckedChange={(val) => updateParameter(param.id, 'isMandatory', val)}
+                            className="scale-[0.6] shadow-sm border border-border/50 data-[state=checked]:!bg-[#00D4FF] data-[state=unchecked]:!bg-muted"
+                          />
                         </div>
                       </td>
-                      <td className="px-4 py-3">
+                      <td className="px-2 py-2">
                         <div className="flex justify-center">
-                          <Tooltip>
-                            <TooltipTrigger asChild>
-                              <div className="cursor-pointer">
-                                <Switch 
-                                  checked={param.allowNegative} 
-                                  onCheckedChange={(val) => updateParameter(param.id, 'allowNegative', val)}
-                                  className="shadow-sm border border-border/50 data-[state=checked]:!bg-[#00D4FF] data-[state=unchecked]:!bg-[#ef4444]"
-                                />
-                              </div>
-                            </TooltipTrigger>
-                            <TooltipContent>
-                              <p className="text-xs">Neg. Permite digitar valores negativos para este parâmetro.</p>
-                            </TooltipContent>
-                          </Tooltip>
+                          <Switch 
+                            checked={param.allowNegative} 
+                            onCheckedChange={(val) => updateParameter(param.id, 'allowNegative', val)}
+                            className="scale-[0.6] shadow-sm border border-border/50 data-[state=checked]:!bg-[#00D4FF] data-[state=unchecked]:!bg-muted"
+                          />
                         </div>
                       </td>
-                      <td className="px-4 py-3">
+                      <td className="px-2 py-2">
                         <div className="flex justify-center">
-                          <Tooltip>
-                            <TooltipTrigger asChild>
-                              <div className="cursor-pointer">
-                                <Switch 
-                                  checked={param.isCalculated} 
-                                  onCheckedChange={(val) => updateParameter(param.id, 'isCalculated', val)}
-                                  className="shadow-sm border border-border/50 data-[state=checked]:!bg-[#00D4FF] data-[state=unchecked]:!bg-[#ef4444]"
-                                />
-                              </div>
-                            </TooltipTrigger>
-                            <TooltipContent>
-                              <p className="text-xs">Calc. Parâmetro calculado automaticamente por fórmula. Não é editável manualmente.</p>
-                            </TooltipContent>
-                          </Tooltip>
+                          <Switch 
+                            checked={param.isCalculated} 
+                            onCheckedChange={(val) => updateParameter(param.id, 'isCalculated', val)}
+                            className="scale-[0.6] shadow-sm border border-border/50 data-[state=checked]:!bg-[#00D4FF] data-[state=unchecked]:!bg-muted"
+                          />
                         </div>
                       </td>
-                      <td className="px-4 py-3">
+                      <td className="px-2 py-2">
                         <div className="flex justify-center">
-                          <Tooltip>
-                            <TooltipTrigger asChild>
-                              <div className="cursor-pointer">
-                                <Switch 
-                                  checked={param.isHidden} 
-                                  onCheckedChange={(val) => updateParameter(param.id, 'isHidden', val)}
-                                  className="shadow-sm border border-border/50 data-[state=checked]:!bg-[#00D4FF] data-[state=unchecked]:!bg-[#ef4444]"
-                                />
-                              </div>
-                            </TooltipTrigger>
-                            <TooltipContent>
-                              <p className="text-xs">Oculto Laudo: O parâmetro não será exibido na impressão do laudo.</p>
-                            </TooltipContent>
-                          </Tooltip>
+                          <Switch 
+                            checked={param.isHidden} 
+                            onCheckedChange={(val) => updateParameter(param.id, 'isHidden', val)}
+                            className="scale-[0.6] shadow-sm border border-border/50 data-[state=checked]:!bg-[#00D4FF] data-[state=unchecked]:!bg-muted"
+                          />
                         </div>
                       </td>
-                      <td className="px-4 py-3 text-right">
-                         <div className="flex justify-end gap-1">
-                            <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground">
-                              <MoreVertical className="h-4 w-4" />
+                      <td className="px-3 py-2 text-right">
+                         <div className="flex justify-end gap-0.5">
+                            <Button variant="ghost" size="icon" className="h-7 w-7 text-muted-foreground hover:bg-muted">
+                              <MoreVertical className="h-3.5 w-3.5" />
                             </Button>
-                            <Button variant="ghost" size="icon" className="h-8 w-8 text-red-500" onClick={() => removeParameter(param.id)}>
-                              <Trash2 className="h-4 w-4" />
+                            <Button variant="ghost" size="icon" className="h-7 w-7 text-red-400 hover:text-red-600 hover:bg-red-50" onClick={() => removeParameter(param.id)}>
+                              <Trash2 className="h-3.5 w-3.5" />
                             </Button>
                          </div>
                       </td>
@@ -950,13 +925,13 @@ function ParametersSection({ parameters, setParameters }: { parameters: any[], s
                     
                     {param.isCalculated && (
                       <tr>
-                        <td colSpan={12} className="px-4 py-4 bg-muted/20 border-t border-b border-border">
-                          <div className="space-y-3">
-                            <div className="flex items-center gap-2 text-[10px] font-bold uppercase text-primary">
+                        <td colSpan={13} className="px-4 py-3 bg-blue-50/30 border-t border-b border-blue-100">
+                          <div className="space-y-2">
+                            <div className="flex items-center gap-2 text-[9px] font-bold uppercase text-blue-600">
                               <Calculator className="h-3 w-3" />
-                              Fórmula de cálculo de "{param.name || 'Novo Parâmetro'}"
+                              Fórmula de cálculo de "{param.name || 'Parâmetro'}"
                             </div>
-                            <div className="flex flex-wrap gap-1.5">
+                            <div className="flex flex-wrap gap-1">
                               {availableVariables.filter(v => v !== param.name).map(v => (
                                 <button
                                   key={v}
@@ -965,16 +940,16 @@ function ParametersSection({ parameters, setParameters }: { parameters: any[], s
                                     const currentFormula = param.formula || ''
                                     updateParameter(param.id, 'formula', currentFormula + ` [${v}] `)
                                   }}
-                                  className="px-2 py-1 rounded bg-white border border-border text-[10px] font-bold hover:bg-primary/5 hover:border-primary/30 transition-all shadow-sm"
+                                  className="px-2 py-0.5 rounded-md bg-white border border-blue-200 text-[9px] font-bold text-blue-700 hover:bg-blue-600 hover:text-white transition-all shadow-sm"
                                 >
                                   [{v}]
                                 </button>
                               ))}
-                              <button className="px-2 py-1 rounded bg-white border border-border text-[10px] font-bold opacity-50">{"{peso}"}</button>
-                              <button className="px-2 py-1 rounded bg-white border border-border text-[10px] font-bold opacity-50">{"{sexo}"}</button>
+                              <button className="px-2 py-0.5 rounded-md bg-white border border-border text-[9px] font-bold opacity-40">{"{peso}"}</button>
+                              <button className="px-2 py-0.5 rounded-md bg-white border border-border text-[9px] font-bold opacity-40">{"{sexo}"}</button>
                             </div>
                             <textarea
-                              className="w-full h-16 p-3 rounded-lg border bg-white text-xs font-mono focus:ring-2 focus:ring-primary/20 outline-none resize-none shadow-inner"
+                              className="w-full h-12 p-2 rounded-lg border bg-white text-[11px] font-mono focus:ring-2 focus:ring-blue-200 outline-none resize-none shadow-inner"
                               placeholder="Ex: [Hematócrito] / [Hemácias] * 10"
                               value={param.formula}
                               onChange={(e) => updateParameter(param.id, 'formula', e.target.value)}
@@ -985,10 +960,10 @@ function ParametersSection({ parameters, setParameters }: { parameters: any[], s
                     )}
                   </React.Fragment>
                 ))}
-                {parameters.length === 0 && (
+                {(!parameters || parameters.length === 0) && (
                   <tr>
-                    <td colSpan={12} className="px-4 py-12 text-center text-muted-foreground italic">
-                      Nenhum parâmetro cadastrado. Clique em "Adicionar Parâmetro" para começar.
+                    <td colSpan={13} className="px-4 py-10 text-center text-muted-foreground italic text-xs">
+                      Nenhum parâmetro cadastrado. Utilize o botão acima para adicionar.
                     </td>
                   </tr>
                 )}
