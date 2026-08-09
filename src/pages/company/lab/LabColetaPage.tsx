@@ -556,14 +556,54 @@ export default function LabColetaPage() {
                       <div className="p-6 space-y-6 flex flex-col">
                         <div className="flex-1 space-y-6">
                           <div className="space-y-2">
-                            <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Responsável pela Coleta</label>
-                            <div className="flex items-center gap-2 p-3 bg-card border border-border rounded-xl">
-                              <div className="w-8 h-8 rounded-full gradient-bg flex items-center justify-center text-[10px] font-bold text-white">
-                                {user?.name?.substring(0,2).toUpperCase() || 'US'}
-                              </div>
-                              <span className="text-sm font-medium">{user?.name || 'Usuário logado'}</span>
+                            <div className="flex items-center justify-between">
+                              <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Responsável pela Coleta</label>
+                              <button 
+                                onClick={() => setIsChangingResponsible(isChangingResponsible === order.id ? null : order.id)}
+                                className="text-[10px] font-bold text-primary hover:underline uppercase"
+                              >
+                                {isChangingResponsible === order.id ? 'Cancelar' : 'Alterar'}
+                              </button>
                             </div>
+                            
+                            {isChangingResponsible === order.id ? (
+                              <div className="space-y-2 p-3 bg-primary/5 border border-primary/20 rounded-xl animate-in fade-in zoom-in-95 duration-200">
+                                <p className="text-[10px] font-medium text-primary mb-2 flex items-center gap-1">
+                                  <User className="h-3 w-3" /> Bipe o crachá ou insira as credenciais
+                                </p>
+                                <div className="grid grid-cols-2 gap-2">
+                                  <input 
+                                    autoFocus
+                                    type="text" 
+                                    placeholder="Usuário/Crachá"
+                                    className="h-9 px-3 bg-background border border-primary/20 rounded-lg text-xs outline-none focus:ring-2 focus:ring-primary/20 w-full"
+                                    value={responsibleCredentials.username}
+                                    onChange={(e) => handleCredentialChange(order.id, 'username', e.target.value)}
+                                  />
+                                  <input 
+                                    type="password" 
+                                    placeholder="Senha"
+                                    className="h-9 px-3 bg-background border border-primary/20 rounded-lg text-xs outline-none focus:ring-2 focus:ring-primary/20 w-full"
+                                    value={responsibleCredentials.password}
+                                    onChange={(e) => handleCredentialChange(order.id, 'password', e.target.value)}
+                                  />
+                                </div>
+                              </div>
+                            ) : (
+                              <div className="flex items-center gap-2 p-3 bg-card border border-border rounded-xl">
+                                <div className="w-8 h-8 rounded-full gradient-bg flex items-center justify-center text-[10px] font-bold text-white shadow-sm">
+                                  {(tempResponsible[order.id]?.name || user?.name || 'US').substring(0,2).toUpperCase()}
+                                </div>
+                                <div className="flex flex-col">
+                                  <span className="text-sm font-bold text-foreground leading-tight">
+                                    {tempResponsible[order.id]?.name || user?.name || 'Usuário logado'}
+                                  </span>
+                                  <span className="text-[10px] text-muted-foreground font-medium">Técnico em Coleta</span>
+                                </div>
+                              </div>
+                            )}
                           </div>
+
 
                           <div className="space-y-3">
                             <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-2">
