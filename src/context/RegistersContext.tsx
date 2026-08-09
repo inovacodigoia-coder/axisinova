@@ -324,7 +324,7 @@ export function RegistersProvider({ children }: { children: ReactNode }) {
     
     if (isDemo || !companyId) {
       setExams(prev => [...prev, entity])
-      return
+      return entity
     }
 
     const { data, error } = await supabase.from('exams').insert({
@@ -332,7 +332,7 @@ export function RegistersProvider({ children }: { children: ReactNode }) {
       company_id: companyId, 
       name: e.name, 
       tuss_code: e.tussCode || null,
-      internal_code: e.internalCode || null,
+      internal_code: e.internal_code || null,
       type: e.type,
       specialty_id: e.specialtyId || null, 
       measurement_unit: e.measurementUnit || null,
@@ -364,7 +364,9 @@ export function RegistersProvider({ children }: { children: ReactNode }) {
       toast.error(`Erro ao salvar exame: ${error.message}`)
       throw error
     } else if (data) {
-      setExams(prev => [...prev, mapExamRow(data)])
+      const mapped = mapExamRow(data)
+      setExams(prev => [...prev, mapped])
+      return mapped
     }
   }, [isDemo, companyId])
 
