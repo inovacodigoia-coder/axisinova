@@ -335,9 +335,17 @@ export default function LabAnalisePage() {
                             onChange={(e) => setSearch(e.target.value)}
                           />
                         </div>
-                        <Button variant="outline" className="h-9 gap-1 px-2 text-[10px] font-bold uppercase gradient-bg text-white border-none shadow-md">
-                          <ClipboardCheck className="h-3.5 w-3.5" /> Digitação em Lote
-                        </Button>
+                        <div className="flex gap-2">
+                          <Button 
+                            onClick={() => setIsResultModalOpen(true)}
+                            className="h-9 gap-1 px-4 text-[10px] font-black uppercase tracking-widest gradient-bg text-white border-none shadow-md hover:shadow-primary/20 transition-all active:scale-95"
+                          >
+                            <Beaker className="h-3.5 w-3.5" /> Digitação
+                          </Button>
+                          <Button variant="outline" className="h-9 gap-1 px-2 text-[10px] font-bold uppercase border-slate-200 text-slate-600 hover:bg-slate-50">
+                            <ClipboardCheck className="h-3.5 w-3.5" /> Lote
+                          </Button>
+                        </div>
                       </div>
 
                       <ScrollArea className="flex-1">
