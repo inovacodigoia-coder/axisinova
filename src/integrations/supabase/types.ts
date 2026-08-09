@@ -276,6 +276,7 @@ export type Database = {
           numero: string | null
           plano: string | null
           segmento: string | null
+          session_timeout: number | null
           status: string | null
           telefone: string | null
           updated_at: string
@@ -304,6 +305,7 @@ export type Database = {
           numero?: string | null
           plano?: string | null
           segmento?: string | null
+          session_timeout?: number | null
           status?: string | null
           telefone?: string | null
           updated_at?: string
@@ -332,6 +334,7 @@ export type Database = {
           numero?: string | null
           plano?: string | null
           segmento?: string | null
+          session_timeout?: number | null
           status?: string | null
           telefone?: string | null
           updated_at?: string
