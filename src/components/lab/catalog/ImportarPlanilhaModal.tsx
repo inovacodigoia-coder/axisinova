@@ -196,13 +196,15 @@ export const ImportarPlanilhaModal = ({ isOpen, onClose, existingCodes = [] }: I
         const examPayload: any = {
           name: examData.nome,
           internalCode: examData.codigo,
-          type: 'lab', // Use 'lab' to satisfy database constraint while frontend displays as 'LABORATÓRIO'
+          type: 'lab', 
           resultDeadlineDays: examData.prazoEntrega,
           selectedMaterials: examData.materiaisAceitos.split(',').map(m => m.trim()),
           defaultMaterial: examData.materiaisAceitos.split(',')[0]?.trim() || '',
           workbenchId: wbId,
           isActive: true,
           showDeadline: true,
+          confirmationQuestions: [], 
+          attachmentRules: [],
           // Map parameters to the format expected by the DB/app
           parameters: examData.parameters.map((p: any) => ({
             id: crypto.randomUUID(),
