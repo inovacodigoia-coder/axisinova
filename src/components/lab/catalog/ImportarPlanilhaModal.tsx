@@ -253,11 +253,13 @@ export const ImportarPlanilhaModal = ({ isOpen, onClose, existingCodes = [] }: I
                     (p['Tipo'] || p['TIPO'] || 'numerical').toLowerCase(),
               origin: (p['Origem'] || p['ORIGEM'] || 'manual').toLowerCase() === 'equipamento' ? 'equipment' : (p['Origem'] || p['ORIGEM'] || 'manual').toLowerCase(),
               unit: p['Unidade'] || p['UNIDADE'] || '',
-              is_required: p['Obrig.'] || p['OBRIG.'] || p['Obrigatório'] || true,
-              allow_negative: p['Neg.'] || p['NEG.'] || p['Permite Negativo'] || false,
-              is_calculated: p['Calc.'] || p['CALC.'] || p['Calculado'] || false,
-              is_hidden: p['Oculto'] || p['OCULTO'] || p['Ocultar Laudo'] || false,
+              is_required: !!(p['Obrig.'] || p['OBRIG.'] || p['Obrigatório'] || true),
+              allow_negative: !!(p['Neg.'] || p['NEG.'] || p['Permite Negativo'] || false),
+              is_calculated: !!(p['Calc.'] || p['CALC.'] || p['Calculado'] || false),
+              is_hidden: !!(p['Oculto'] || p['OCULTO'] || p['Ocultar Laudo'] || false),
               formula: p['Fórmula'] || p['FORMULA'] || '',
+              internal_code: examData.codigo,
+            };
             };
 
             // Upsert parameter by exam_id and name
