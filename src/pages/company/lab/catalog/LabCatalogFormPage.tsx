@@ -288,17 +288,23 @@ function GeneralInfoSection({ isEditing, data, workbenches, onChange }: { isEdit
   const materials = ['Sangue Total', 'Soro', 'Plasma', 'Urina', 'Fezes', 'Secreção', 'Líquor', 'Swab']
   const [selectedMaterials, setSelectedMaterials] = useState<string[]>(data.selectedMaterials || [])
   const [defaultMaterial, setDefaultMaterial] = useState(data.defaultMaterial || "")
+  const [measurementUnits, setMeasurementUnits] = useState<any[]>([])
 
   useEffect(() => {
     if (data.selectedMaterials) setSelectedMaterials(data.selectedMaterials)
     if (data.defaultMaterial) setDefaultMaterial(data.defaultMaterial)
   }, [data.selectedMaterials, data.defaultMaterial])
-  const [measurementUnits, setMeasurementUnits] = useState<any[]>([])
 
   useEffect(() => {
     const fetchUnits = async () => {
-      const { data } = await supabase.from('measurement_units').select('name').order('name')
-      if (data) setMeasurementUnits(data)
+      const { data: units, error } = await supabase
+        .from('measurement_units')
+        .select('name')
+        .order('name')
+      
+      if (!error && units) {
+        setMeasurementUnits(units)
+      }
     }
     fetchUnits()
   }, [])
@@ -388,6 +394,26 @@ function GeneralInfoSection({ isEditing, data, workbenches, onChange }: { isEdit
                 ))
               ) : (
                 <SelectItem value="none" disabled>Nenhuma bancada cadastrada</SelectItem>
+              )}
+            </SelectContent>
+          </Select>
+        </div>
+        <div className="space-y-4">
+          <Label className="text-sm font-bold uppercase tracking-wider text-muted-foreground">Unidade de Medida</Label>
+          <Select 
+            value={data.measurementUnit || ''} 
+            onValueChange={(val) => onChange({ measurementUnit: val })}
+          >
+            <SelectTrigger className="h-11 rounded-xl">
+              <SelectValue placeholder="Selecione a unidade" />
+            </SelectTrigger>
+            <SelectContent>
+              {measurementUnits && measurementUnits.length > 0 ? (
+                measurementUnits.map((unit: any) => (
+                  <SelectItem key={unit.name} value={unit.name}>{unit.name}</SelectItem>
+                ))
+              ) : (
+                <SelectItem value="none" disabled>Nenhuma unidade cadastrada</SelectItem>
               )}
             </SelectContent>
           </Select>
