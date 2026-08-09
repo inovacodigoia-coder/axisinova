@@ -243,15 +243,17 @@ export default function LabCatalogFormPage() {
           company_id: companyId,
           internal_code: examData.internalCode,
           name: p.name,
+          section: p.section,
           type: p.type,
+          origin: p.origin,
           unit: p.unit,
-          reference_values: p.referenceValues,
-          is_required: p.isRequired,
-          allow_negative: p.allowNegative,
-          is_calculated: p.isCalculated,
+          reference_values: p.referenceValues || [],
+          is_required: p.isMandatory ?? p.isRequired ?? true,
+          allow_negative: p.allowNegative ?? false,
+          is_calculated: p.isCalculated ?? false,
           formula: p.formula,
-          equipment_code: p.equipmentCode,
-          is_hidden: p.isHidden,
+          equipment_code: p.equipCode || p.equipmentCode,
+          is_hidden: p.isHidden ?? false,
           sort_order: index
         }))
 
