@@ -9,7 +9,8 @@ import {
   CheckCircle2, 
   Calendar as CalendarIcon,
   Save,
-  ChevronDown
+  ChevronDown,
+  RefreshCcw
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
