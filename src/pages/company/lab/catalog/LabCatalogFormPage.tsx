@@ -34,7 +34,8 @@ import {
   XCircle,
   Clock,
   Timer,
-  Check
+  Check,
+  Minus
 } from 'lucide-react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { cn } from '@/lib/utils'
