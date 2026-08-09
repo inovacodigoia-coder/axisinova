@@ -171,21 +171,116 @@ export default function LabCatalogFormPage() {
         confirmationQuestions: confirmationQuestions || [],
       }
 
+      let examId = id;
       if (isEditing) {
         await updateExam({ 
           ...finalData, 
           id: id!
         } as any)
-        toast.success('Exame atualizado com sucesso!')
       } else {
-        await addExam({
+        const newExam = await addExam({
           ...finalData,
           attachmentRules: [],
           isActive: examData.isActive ?? true,
           createdAt: new Date().toISOString()
         } as any)
-        toast.success('Exame cadastrado com sucesso!')
+        examId = newExam?.id;
       }
+
+      // Save Parameters to the new table
+      if (examId && parameters.length > 0) {
+        // Get company_id from profile
+        const { data: profile } = await supabase.auth.getUser();
+        const { data: profileData } = await supabase
+          .from('profiles')
+          .select('company_id')
+          .eq('id', profile.user?.id)
+          .single();
+        
+        const companyId = profileData?.company_id;
+
+        if (companyId) {
+          // Upsert parameters
+          for (const param of parameters) {
+            const paramPayload = {
+              exam_id: examId,
+              company_id: companyId,
+              name: param.name,
+              section: param.section,
+              equipment_code: param.equipCode,
+              type: param.type,
+              origin: param.origin,
+              unit: param.unit,
+              is_required: param.isMandatory,
+              allow_negative: param.allowNegative,
+              is_calculated: param.isCalculated,
+              is_hidden: param.isHidden,
+              formula: param.formula,
+              reference_values: param.referenceValues ? JSON.stringify(param.referenceValues) : null
+            };
+
+            // If param has a DB id, update it, otherwise insert
+            const { data: existingParam, error: fetchErr } = await supabase
+              .from('lab_exam_parameters')
+              .select('id')
+              .eq('exam_id', examId)
+              .eq('name', param.name)
+              .maybeSingle();
+
+            if (existingParam?.id) {
+              await supabase.from('lab_exam_parameters').update(paramPayload).eq('id', existingParam.id);
+              
+              // Now save reference values for this parameter
+              if (param.referenceValues && Array.isArray(param.referenceValues)) {
+                // Delete existing ones for this parameter to refresh
+                await supabase.from('lab_exam_reference_values').delete().eq('parameter_id', existingParam.id);
+                
+                for (const ref of param.referenceValues) {
+                  await supabase.from('lab_exam_reference_values').insert({
+                    exam_id: examId,
+                    parameter_id: existingParam.id,
+                    company_id: companyId,
+                    description: ref.description,
+                    min_value: ref.minValue?.toString(),
+                    max_value: ref.maxValue?.toString(),
+                    text_range: ref.textRange,
+                    age_min: ref.minAge,
+                    age_max: ref.maxAge,
+                    gender: ref.sex || 'both',
+                    parameter_name: param.name
+                  });
+                }
+              }
+            } else {
+              const { data: newParam } = await supabase
+                .from('lab_exam_parameters')
+                .insert(paramPayload)
+                .select()
+                .single();
+              
+              if (newParam?.id && param.referenceValues && Array.isArray(param.referenceValues)) {
+                for (const ref of param.referenceValues) {
+                  await supabase.from('lab_exam_reference_values').insert({
+                    exam_id: examId,
+                    parameter_id: newParam.id,
+                    company_id: companyId,
+                    description: ref.description,
+                    min_value: ref.minValue?.toString(),
+                    max_value: ref.maxValue?.toString(),
+                    text_range: ref.textRange,
+                    age_min: ref.minAge,
+                    age_max: ref.maxAge,
+                    gender: ref.sex || 'both',
+                    parameter_name: param.name
+                  });
+                }
+              }
+            }
+          }
+        }
+      }
+      
+      toast.success(isEditing ? 'Exame atualizado com sucesso!' : 'Exame cadastrado com sucesso!')
       
       // Delay navigation slightly to allow state to synchronize
       setTimeout(() => {
@@ -198,6 +293,7 @@ export default function LabCatalogFormPage() {
     } finally {
       setIsSaving(false)
     }
+
   }
 
   return (
