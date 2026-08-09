@@ -149,13 +149,15 @@ export function LabStep6Summary({ state, update, unitName }: Props & { update: (
                                 }}
                                 className="h-4 w-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500 cursor-pointer"
                               />
-                              <span className="flex h-6 w-6 items-center justify-center rounded bg-blue-600 text-[10px] font-bold text-white shrink-0">H</span>
+                              <span className="flex h-6 w-6 items-center justify-center rounded bg-blue-600 text-[10px] font-bold text-white shrink-0">
+                                {String(exam.internalCode || exam.code || 'H').toUpperCase()}
+                              </span>
                               <span className="font-bold text-slate-700 text-xs uppercase">{exam.name}</span>
                             </div>
                           </td>
                           <td className="px-4 py-3 text-slate-500 font-medium text-xs">{exam.internalCode || exam.code || '-'}</td>
                           <td className="px-4 py-3 text-slate-700 font-bold text-xs">
-                            {exam.price > 0 ? `R$ ${exam.price.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}` : 'R$ 0,00'}
+                            {exam.price > 0 ? `R$ ${exam.price.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}` : ''}
                           </td>
                           <td className="px-4 py-3 text-slate-500 text-xs">
                             {exam.selectedMaterial || exam.material || '-'}
