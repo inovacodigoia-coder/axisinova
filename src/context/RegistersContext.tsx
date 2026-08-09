@@ -332,7 +332,7 @@ export function RegistersProvider({ children }: { children: ReactNode }) {
       company_id: companyId, 
       name: e.name, 
       tuss_code: e.tussCode || null,
-      internal_code: e.internal_code || null,
+      internal_code: e.internalCode || null,
       type: e.type,
       specialty_id: e.specialtyId || null, 
       measurement_unit: e.measurementUnit || null,
