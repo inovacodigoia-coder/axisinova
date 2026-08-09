@@ -392,6 +392,26 @@ function GeneralInfoSection({ isEditing, data, workbenches, onChange }: { isEdit
             </SelectContent>
           </Select>
         </div>
+        <div className="space-y-4">
+          <Label className="text-sm font-bold uppercase tracking-wider text-muted-foreground">Unidade de Medida</Label>
+          <Select 
+            value={data.measurementUnit || ''} 
+            onValueChange={(val) => onChange({ measurementUnit: val })}
+          >
+            <SelectTrigger className="h-11 rounded-xl">
+              <SelectValue placeholder="Selecione a unidade" />
+            </SelectTrigger>
+            <SelectContent>
+              {measurementUnits && measurementUnits.length > 0 ? (
+                measurementUnits.map((unit: any) => (
+                  <SelectItem key={unit.name} value={unit.name}>{unit.name}</SelectItem>
+                ))
+              ) : (
+                <SelectItem value="none" disabled>Nenhuma unidade cadastrada</SelectItem>
+              )}
+            </SelectContent>
+          </Select>
+        </div>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 pt-4 border-t border-border/50">
