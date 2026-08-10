@@ -97,26 +97,28 @@ export function ResultEntryModal({
       const newActions: Record<string, any> = {};
 
       filteredExams.forEach(exam => {
+        const keyBase = `${exam.orderId}_${exam.id}`;
+        
         if (exam.results && Array.isArray(exam.results)) {
           exam.results.forEach((r: any) => {
             if (r.value) {
-              newResults[`${exam.id}_${r.parameterId}`] = r.value;
+              newResults[`${keyBase}_${r.parameterId}`] = r.value;
             }
           });
         }
         if (exam.internalObservations) {
-          newNotes[exam.id] = exam.internalObservations;
+          newNotes[keyBase] = exam.internalObservations;
         }
         if (exam.status) {
-          newStatuses[exam.id] = exam.status === 'processing' ? 'digitized' : 
+          newStatuses[keyBase] = exam.status === 'processing' ? 'digitized' : 
                                  exam.status === 'liberado' ? 'released' : 
                                  exam.status === 'cancelled' ? 'cancelled' : 'pending';
         }
         // Recover actions if encoded in status or metadata
         if (exam.status === 'retest_requested') {
-          newActions[exam.id] = { type: 'reteste' };
+          newActions[keyBase] = { type: 'reteste' };
         } else if (exam.status === 'waiting_recollection') {
-          newActions[exam.id] = { type: 'recoleta' };
+          newActions[keyBase] = { type: 'recoleta' };
         }
       });
 
