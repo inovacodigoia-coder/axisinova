@@ -139,28 +139,54 @@ export default function LabSettingsPage() {
                 <p className="text-sm text-muted-foreground">Carregando configurações...</p>
               </div>
             ) : (
-              <>
-                {activeTab === 'lab-data' && <LabDataSection />}
-                {activeTab === 'tiss' && <TISSSection />}
-                {activeTab === 'signature' && <SignatureSection />}
-                {activeTab === 'security' && <SecuritySection />}
-                {activeTab === 'printer' && <PrinterLabelSection />}
-                {activeTab === 'units' && <UnitsSection />}
-                {activeTab === 'methods' && <MethodsSection />}
-                {activeTab === 'workbenches' && <WorkbenchesSection />}
-                {activeTab === 'equipment' && <EquipmentRedirect />}
-                {activeTab === 'collection-reasons' && <CollectionReasonsSection />}
-                {activeTab === 'origins' && <LabOriginsSettings />}
-                {activeTab === 'report-layout' && <ReportLayoutSection settings={settings} setSettings={setSettings} />}
-                {activeTab === 'logs' && <LogsSection />}
-                
-                <div className="mt-8 pt-6 border-t flex justify-end">
-                  <Button onClick={handleSave} disabled={isSaving} className="gradient-bg text-white gap-2 px-8">
-                    {isSaving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />} 
-                    Salvar Alterações
-                  </Button>
-                </div>
-              </>
+            <>
+              <div className={activeTab === 'lab-data' ? 'block' : 'hidden'}>
+                <LabDataSection />
+              </div>
+              <div className={activeTab === 'tiss' ? 'block' : 'hidden'}>
+                <TISSSection />
+              </div>
+              <div className={activeTab === 'signature' ? 'block' : 'hidden'}>
+                <SignatureSection />
+              </div>
+              <div className={activeTab === 'security' ? 'block' : 'hidden'}>
+                <SecuritySection />
+              </div>
+              <div className={activeTab === 'printer' ? 'block' : 'hidden'}>
+                <PrinterLabelSection />
+              </div>
+              <div className={activeTab === 'units' ? 'block' : 'hidden'}>
+                <UnitsSection />
+              </div>
+              <div className={activeTab === 'methods' ? 'block' : 'hidden'}>
+                <MethodsSection />
+              </div>
+              <div className={activeTab === 'workbenches' ? 'block' : 'hidden'}>
+                <WorkbenchesSection />
+              </div>
+              <div className={activeTab === 'equipment' ? 'block' : 'hidden'}>
+                <EquipmentRedirect />
+              </div>
+              <div className={activeTab === 'collection-reasons' ? 'block' : 'hidden'}>
+                <CollectionReasonsSection />
+              </div>
+              <div className={activeTab === 'origins' ? 'block' : 'hidden'}>
+                <LabOriginsSettings />
+              </div>
+              <div className={activeTab === 'report-layout' ? 'block' : 'hidden'}>
+                <ReportLayoutSection settings={settings} setSettings={setSettings} />
+              </div>
+              <div className={activeTab === 'logs' ? 'block' : 'hidden'}>
+                <LogsSection />
+              </div>
+              
+              <div className="mt-8 pt-6 border-t flex justify-end">
+                <Button onClick={handleSave} disabled={isSaving} className="gradient-bg text-white gap-2 px-8">
+                  {isSaving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />} 
+                  Salvar Alterações
+                </Button>
+              </div>
+            </>
             )}
           </Card>
         </div>
