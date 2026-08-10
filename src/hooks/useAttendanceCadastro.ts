@@ -256,7 +256,51 @@ export function useAttendanceCadastro() {
     }
   }, [refresh, toast])
 
-  return { orders, createOrder, updateOrder, refresh, loading }
+  const saveExamResults = useCallback(async (orderId: string, examResults: any[]) => {
+    try {
+      const { data: order, error: fetchError } = await (supabase
+        .from('attendance_orders' as any) as any)
+        .select('lab_guides')
+        .eq('id', orderId)
+        .single()
+
+      if (fetchError) throw fetchError
+
+      // Update lab_guides with results
+      const updatedGuides = (order.lab_guides || []).map((guide: any) => ({
+        ...guide,
+        exams: (guide.exams || []).map((exam: any) => {
+          const match = examResults.find(r => r.examId === exam.examId || r.id === exam.id || r.code === exam.code)
+          if (match) {
+            return {
+              ...exam,
+              ...match,
+              updatedAt: new Date().toISOString()
+            }
+          }
+          return exam
+        })
+      }))
+
+      const { error: updateError } = await (supabase
+        .from('attendance_orders' as any) as any)
+        .update({ lab_guides: updatedGuides, updated_at: new Date().toISOString() })
+        .eq('id', orderId)
+
+      if (updateError) throw updateError
+      await refresh()
+      return true
+    } catch (error: any) {
+      toast({
+        variant: "destructive",
+        title: "Erro ao salvar resultados",
+        description: error.message,
+      })
+      return false
+    }
+  }, [refresh, toast])
+
+  return { orders, createOrder, updateOrder, saveExamResults, refresh, loading }
 }
 
 const DRAFT_PREFIX = 'attendance_draft_'
