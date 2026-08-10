@@ -302,9 +302,10 @@ function ReportLayoutSection({ settings, setSettings }: { settings: any, setSett
       // Use a functional update and force a state refresh
       setSettings((prev: any) => {
         const next = { ...prev, [field]: publicUrl };
-        console.log("Updating settings with new logo URL:", publicUrl);
+        console.log("Updating settings with new logo URL:", field, publicUrl);
         return next;
       });
+
       toast.success('Upload realizado com sucesso!');
     } catch (error) {
       console.error('Error uploading logo:', error)
