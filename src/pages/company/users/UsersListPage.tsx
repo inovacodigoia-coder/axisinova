@@ -380,6 +380,12 @@ function EditUserModal({ profile, onClose, onSaved }: { profile: ProfileRow | nu
                               <div class="barcode-container">
                                 <div class="barcode">*${badgeCode}*</div>
                               </div>
+                              <div style="font-size: 5.5pt; color: #333; margin-top: -1mm;">
+                                ${new Date().toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
+                              </div>
+                              <div style="font-size: 5pt; color: #555; font-weight: 500;">
+                                Crachá - ${fullName}
+                              </div>
                               <div class="footer">Axis Inova - LabSaúde</div>
                             </div>
                             <button class="no-print" style="padding: 6px 16px; cursor: pointer; background: #00D4FF; border: none; color: white; border-radius: 4px; font-weight: bold; font-size: 11px; box-shadow: 0 2px 4px rgba(0,0,0,0.2);" onclick="window.print()">Imprimir</button>
