@@ -40,7 +40,7 @@ Deno.serve(async (req) => {
     }
 
     const body = await req.json();
-    const { email, password, full_name, cpf, role, company_id } = body;
+    const { email, password, full_name, cpf, role, company_id, badge_code } = body;
 
     // If no JWT auth succeeded, use the company_id from the body (for mock-auth users)
     const effectiveCompanyId = callerCompanyId || company_id;
@@ -69,6 +69,7 @@ Deno.serve(async (req) => {
         cpf: cpf || null,
         role,
         company_id: effectiveCompanyId,
+        badge_code: badge_code || null,
       },
     });
 
