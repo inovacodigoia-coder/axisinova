@@ -301,6 +301,7 @@ export function ResultEntryModal({
     const exam = filteredExams.find(e => e.id === examId);
     if (!exam) return;
 
+    const keyBase = `${exam.orderId}_${exam.id}`;
     setSaving(true);
     try {
       const success = await saveExamResults(exam.orderId, [{
@@ -309,7 +310,7 @@ export function ResultEntryModal({
       }]);
 
       if (success) {
-        setExamStatuses(prev => ({ ...prev, [examId]: 'released' }));
+        setExamStatuses(prev => ({ ...prev, [keyBase]: 'released' }));
         toast.success("Exame liberado com sucesso!");
       }
     } finally {
@@ -321,15 +322,20 @@ export function ResultEntryModal({
     setSaving(true);
     try {
       const ordersToUpdate: Record<string, any[]> = {};
-      const digitizedIds: string[] = [];
+      const digitizedKeys: string[] = [];
 
-      Object.keys(examStatuses).forEach(id => {
-        if (examStatuses[id] === 'digitized') {
-          const exam = filteredExams.find(e => e.id === id);
+      Object.keys(examStatuses).forEach(key => {
+        if (examStatuses[key] === 'digitized') {
+          // split key back to orderId and examId
+          const parts = key.split('_');
+          const orderId = parts[0];
+          const examId = parts.slice(1).join('_');
+
+          const exam = filteredExams.find(e => e.id === examId && e.orderId === orderId);
           if (exam) {
-            if (!ordersToUpdate[exam.orderId]) ordersToUpdate[exam.orderId] = [];
-            ordersToUpdate[exam.orderId].push({ examId: id, status: 'liberado' });
-            digitizedIds.push(id);
+            if (!ordersToUpdate[orderId]) ordersToUpdate[orderId] = [];
+            ordersToUpdate[orderId].push({ examId: exam.id, status: 'liberado' });
+            digitizedKeys.push(key);
           }
         }
       });
@@ -342,9 +348,9 @@ export function ResultEntryModal({
       
       if (success.every(s => s)) {
         const newStatuses = { ...examStatuses };
-        digitizedIds.forEach(id => { newStatuses[id] = 'released'; });
+        digitizedKeys.forEach(key => { newStatuses[key] = 'released'; });
         setExamStatuses(newStatuses);
-        toast.success(`${digitizedIds.length} exames liberados com sucesso!`);
+        toast.success(`${digitizedKeys.length} exames liberados com sucesso!`);
       }
     } finally {
       setSaving(false);
@@ -355,18 +361,20 @@ export function ResultEntryModal({
     const exam = filteredExams.find(e => e.id === examId);
     if (!exam) return;
 
+    const keyBase = `${exam.orderId}_${exam.id}`;
+
     if (actionType === 'cancelar') {
-      if (examStatuses[examId] === 'cancelled') {
-        const success = await saveExamResults(exam.orderId, [{ examId, status: 'processing' }]);
+      if (examStatuses[keyBase] === 'cancelled') {
+        const success = await saveExamResults(exam.orderId, [{ examId: exam.id, status: 'processing' }]);
         if (success) {
           setExamStatuses(prev => {
             const next = { ...prev };
-            next[examId] = 'digitized';
+            next[keyBase] = 'digitized';
             return next;
           });
           setExamActions(prev => {
             const next = { ...prev };
-            delete next[examId];
+            delete next[keyBase];
             return next;
           });
           toast.success("Cancelamento revertido.");
@@ -375,38 +383,38 @@ export function ResultEntryModal({
         setCancelModal({ isOpen: true, exam });
       }
     } else if (actionType === 'reteste') {
-      if (examActions[examId]?.type === 'reteste') {
-        const success = await saveExamResults(exam.orderId, [{ examId, status: 'processing' }]);
+      if (examActions[keyBase]?.type === 'reteste') {
+        const success = await saveExamResults(exam.orderId, [{ examId: exam.id, status: 'processing' }]);
         if (success) {
           setExamActions(prev => {
             const next = { ...prev };
-            delete next[examId];
+            delete next[keyBase];
             return next;
           });
           toast.info("Ação de reteste removida.");
         }
       } else {
-        const success = await saveExamResults(exam.orderId, [{ examId, status: 'retest_requested' }]);
+        const success = await saveExamResults(exam.orderId, [{ examId: exam.id, status: 'retest_requested' }]);
         if (success) {
-          setExamActions(prev => ({ ...prev, [examId]: { type: 'reteste', reason: '', details: '' } }));
+          setExamActions(prev => ({ ...prev, [keyBase]: { type: 'reteste', reason: '', details: '' } }));
           toast.info("Reteste solicitado e salvo.");
         }
       }
     } else if (actionType === 'recoleta') {
-      if (examActions[examId]?.type === 'recoleta') {
-        const success = await saveExamResults(exam.orderId, [{ examId, status: 'processing' }]);
+      if (examActions[keyBase]?.type === 'recoleta') {
+        const success = await saveExamResults(exam.orderId, [{ examId: exam.id, status: 'processing' }]);
         if (success) {
           setExamActions(prev => {
             const next = { ...prev };
-            delete next[examId];
+            delete next[keyBase];
             return next;
           });
           toast.info("Ação de recoleta removida.");
         }
       } else {
-        const success = await saveExamResults(exam.orderId, [{ examId, status: 'waiting_recollection' }]);
+        const success = await saveExamResults(exam.orderId, [{ examId: exam.id, status: 'waiting_recollection' }]);
         if (success) {
-          setExamActions(prev => ({ ...prev, [examId]: { type: 'recoleta', reason: '', details: '' } }));
+          setExamActions(prev => ({ ...prev, [keyBase]: { type: 'recoleta', reason: '', details: '' } }));
           toast.info("Recoleta solicitada e salva.");
         }
       }
@@ -417,15 +425,16 @@ export function ResultEntryModal({
     const exam = filteredExams.find(e => e.id === examId);
     if (!exam) return;
 
+    const keyBase = `${exam.orderId}_${exam.id}`;
     const success = await saveExamResults(exam.orderId, [{
       examId: exam.id,
       status: 'cancelled',
-      internalObservations: `Cancelado: ${reason}. ${notes[examId] || ''}`
+      internalObservations: `Cancelado: ${reason}. ${notes[keyBase] || ''}`
     }]);
 
     if (success) {
-      setExamStatuses(prev => ({ ...prev, [examId]: 'cancelled' }));
-      setExamActions(prev => ({ ...prev, [examId]: { type: 'cancelado', reason } }));
+      setExamStatuses(prev => ({ ...prev, [keyBase]: 'cancelled' }));
+      setExamActions(prev => ({ ...prev, [keyBase]: { type: 'cancelado', reason } }));
       setCancelModal(null);
       toast.error("Exame cancelado com sucesso!");
     }
@@ -435,15 +444,16 @@ export function ResultEntryModal({
     const exam = filteredExams.find(e => e.id === examId);
     if (!exam) return;
 
+    const keyBase = `${exam.orderId}_${exam.id}`;
     const success = await saveExamResults(exam.orderId, [{
       examId: exam.id,
       status: 'retest_requested',
-      internalObservations: `Reteste: ${reason} - ${details}. ${notes[examId] || ''}`
+      internalObservations: `Reteste: ${reason} - ${details}. ${notes[keyBase] || ''}`
     }]);
 
     if (success) {
-      setRetestReasons(prev => ({ ...prev, [examId]: { reason, details } }));
-      setExamActions(prev => ({ ...prev, [examId]: { type: 'reteste', reason, details } }));
+      setRetestReasons(prev => ({ ...prev, [keyBase]: { reason, details } }));
+      setExamActions(prev => ({ ...prev, [keyBase]: { type: 'reteste', reason, details } }));
       toast.info("Solicitação de reteste salva.");
     }
   };
@@ -452,15 +462,16 @@ export function ResultEntryModal({
     const exam = filteredExams.find(e => e.id === examId);
     if (!exam) return;
 
+    const keyBase = `${exam.orderId}_${exam.id}`;
     const success = await saveExamResults(exam.orderId, [{
       examId: exam.id,
       status: 'waiting_recollection',
-      internalObservations: `Recoleta: ${reason} - ${details}. ${notes[examId] || ''}`
+      internalObservations: `Recoleta: ${reason} - ${details}. ${notes[keyBase] || ''}`
     }]);
 
     if (success) {
-      setRecoletaReasons(prev => ({ ...prev, [examId]: { reason, details } }));
-      setExamActions(prev => ({ ...prev, [examId]: { type: 'recoleta', reason, details } }));
+      setRecoletaReasons(prev => ({ ...prev, [keyBase]: { reason, details } }));
+      setExamActions(prev => ({ ...prev, [keyBase]: { type: 'recoleta', reason, details } }));
       toast.info("Solicitação de recoleta salva.");
     }
   };
