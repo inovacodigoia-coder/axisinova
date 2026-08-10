@@ -156,13 +156,15 @@ export function ResultEntryModal({
 
   const totalExams = filteredExams.length;
   
-  // Calculate filled exams only for expanded patients
+  // Calculate filled exams only for VISIBLE/EXPANDED patients
   const filledExamsCount = useMemo(() => {
     let count = 0;
     filteredExams.forEach(exam => {
-      // Only count if patient is expanded AND exam is not released
-      if (expandedPatients[exam.protocol] && examStatuses[exam.id] !== 'released') {
-        // Must have results for ALL parameters to be considered "filled"
+      // Only count if patient is expanded AND exam is not released AND NOT cancelled
+      if (expandedPatients[exam.protocol] && 
+          examStatuses[exam.id] !== 'released' && 
+          examStatuses[exam.id] !== 'cancelled') {
+        
         const params = exam.parameters?.length ? exam.parameters : [{id: '1'}];
         const allFilled = params.every((p: any) => 
           results[`${exam.id}_${p.id}`]?.trim() !== ''
@@ -173,11 +175,13 @@ export function ResultEntryModal({
     return count;
   }, [results, filteredExams, expandedPatients, examStatuses]);
 
-  // Calculate total required exams only for expanded patients (excluding already released ones)
+  // Calculate total required exams only for expanded patients (excluding already released or cancelled ones)
   const totalRequiredExams = useMemo(() => {
     let count = 0;
     filteredExams.forEach(exam => {
-      if (expandedPatients[exam.protocol] && examStatuses[exam.id] !== 'released') {
+      if (expandedPatients[exam.protocol] && 
+          examStatuses[exam.id] !== 'released' && 
+          examStatuses[exam.id] !== 'cancelled') {
         count++;
       }
     });
@@ -201,9 +205,10 @@ export function ResultEntryModal({
       
       const newStatuses = { ...examStatuses };
       
-      filteredExams.forEach(exam => {
-        if (!expandedPatients[exam.protocol] && isDraft) return;
+      // Filter exams belonging only to expanded patients
+      const examsToSave = filteredExams.filter(exam => expandedPatients[exam.protocol]);
 
+      examsToSave.forEach(exam => {
         const params = exam.parameters?.length ? exam.parameters : [{id: '1', code: exam.code}];
         const examResultsData = params.map((p: any) => ({
           parameterId: p.id,
@@ -216,12 +221,14 @@ export function ResultEntryModal({
         const allFilled = examResultsData.every(r => r.value.trim() !== '');
         
         let finalStatus = examStatuses[exam.id] || 'pending';
-        if (!isDraft && allFilled) {
+        
+        // Se estamos salvando como conclusão (isDraft = false) e tudo está preenchido, marca como digitado
+        // mas APENAS se não estiver já liberado ou cancelado
+        if (!isDraft && allFilled && finalStatus !== 'released' && finalStatus !== 'cancelled') {
           finalStatus = 'digitized';
           newStatuses[exam.id] = 'digitized';
         }
 
-        // Map internal status to DB status
         const dbStatus = finalStatus === 'digitized' ? 'processing' : 
                          finalStatus === 'released' ? 'liberado' : 
                          finalStatus === 'cancelled' ? 'cancelled' : 'pending';
@@ -236,7 +243,6 @@ export function ResultEntryModal({
         });
       });
 
-      // Execute updates
       const updatePromises = Object.entries(ordersToUpdate).map(([orderId, examResults]) => 
         saveExamResults(orderId, examResults)
       );
