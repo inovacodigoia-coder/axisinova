@@ -204,7 +204,7 @@ export default function LabColetaPage() {
       const next = { ...prev, [field]: value }
       
       // Reconhecimento automático de crachá (bipado)
-      if (next.username && next.username.length >= 2) {
+      if (next.username && next.username.length >= 1) {
         // Tentamos buscar o perfil pelo badge_code
         // Removemos asteriscos e espaços extras que alguns leitores podem enviar
         const cleanCode = next.username.trim().replace(/\*/g, '').toUpperCase();
@@ -226,7 +226,7 @@ export default function LabColetaPage() {
             setResponsibleCredentials({ username: '', password: '' })
             toast.success(`Técnico identificado: ${profile.full_name}`)
           }
-        }, 300); // 300ms buffer for scanner completion
+        }, 150); // Reduced buffer for faster recognition
 
         return next;
       }
