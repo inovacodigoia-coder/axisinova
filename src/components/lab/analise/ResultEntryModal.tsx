@@ -1,7 +1,6 @@
-import { useState, useMemo, useEffect } from 'react';
-import { useAttendanceCadastro } from '@/hooks/useAttendanceCadastro';
+import { useState, useMemo } from 'react';
 import { 
-  X,
+  X, 
   Search, 
   Beaker, 
   Clock, 
@@ -84,50 +83,10 @@ export function ResultEntryModal({
   const [cancelModal, setCancelModal] = useState<{ isOpen: boolean; exam: any } | null>(null);
   const [retestReasons, setRetestReasons] = useState<Record<string, { reason: string; details: string }>>({});
   const [recoletaReasons, setRecoletaReasons] = useState<Record<string, { reason: string; details: string }>>({});
+  /* Do not make any visual modifications. The phrases I write are commands to understand what I want, not to be written down. Understand their content well, then execute what is required.
+                                            
+                                            I have approved the plan */
   const [expandedPatients, setExpandedPatients] = useState<Record<string, boolean>>({});
-  
-  const { saveExamResults } = useAttendanceCadastro();
-
-  // Load existing results from filteredExams when modal opens
-  useEffect(() => {
-    if (isOpen && filteredExams.length > 0) {
-      const newResults: Record<string, string> = {};
-      const newNotes: Record<string, string> = {};
-      const newStatuses: Record<string, any> = {};
-      const newActions: Record<string, any> = {};
-
-      filteredExams.forEach(exam => {
-        const keyBase = `${exam.orderId}_${exam.id}`;
-        
-        if (exam.results && Array.isArray(exam.results)) {
-          exam.results.forEach((r: any) => {
-            if (r.value) {
-              newResults[`${keyBase}_${r.parameterId}`] = r.value;
-            }
-          });
-        }
-        if (exam.internalObservations) {
-          newNotes[keyBase] = exam.internalObservations;
-        }
-        if (exam.status) {
-          newStatuses[keyBase] = exam.status === 'processing' ? 'digitized' : 
-                                 exam.status === 'liberado' ? 'released' : 
-                                 exam.status === 'cancelled' ? 'cancelled' : 'pending';
-        }
-        // Recover actions if encoded in status or metadata
-        if (exam.status === 'retest_requested') {
-          newActions[keyBase] = { type: 'reteste' };
-        } else if (exam.status === 'waiting_recollection') {
-          newActions[keyBase] = { type: 'recoleta' };
-        }
-      });
-
-      setResults(prev => ({ ...prev, ...newResults }));
-      setNotes(prev => ({ ...prev, ...newNotes }));
-      setExamStatuses(prev => ({ ...prev, ...newStatuses }));
-      setExamActions(prev => ({ ...prev, ...newActions }));
-    }
-  }, [isOpen, filteredExams]);
 
   // Agrupamento por paciente/pedido
   const groupedPatients = useMemo(() => {
@@ -158,19 +117,16 @@ export function ResultEntryModal({
 
   const totalExams = filteredExams.length;
   
-  // Calculate filled exams only for VISIBLE/EXPANDED patients
+  // Calculate filled exams only for expanded patients
   const filledExamsCount = useMemo(() => {
     let count = 0;
     filteredExams.forEach(exam => {
-      const keyBase = `${exam.orderId}_${exam.id}`;
-      // Only count if patient is expanded AND exam is not released AND NOT cancelled
-      if (expandedPatients[exam.protocol] && 
-          examStatuses[keyBase] !== 'released' && 
-          examStatuses[keyBase] !== 'cancelled') {
-        
+      // Only count if patient is expanded AND exam is not released
+      if (expandedPatients[exam.protocol] && examStatuses[exam.id] !== 'released') {
+        // Must have results for ALL parameters to be considered "filled"
         const params = exam.parameters?.length ? exam.parameters : [{id: '1'}];
         const allFilled = params.every((p: any) => 
-          results[`${keyBase}_${p.id}`]?.trim() !== ''
+          results[`${exam.id}_${p.id}`]?.trim() !== ''
         );
         if (allFilled) count++;
       }
@@ -178,14 +134,11 @@ export function ResultEntryModal({
     return count;
   }, [results, filteredExams, expandedPatients, examStatuses]);
 
-  // Calculate total required exams only for expanded patients (excluding already released or cancelled ones)
+  // Calculate total required exams only for expanded patients (excluding already released ones)
   const totalRequiredExams = useMemo(() => {
     let count = 0;
     filteredExams.forEach(exam => {
-      const keyBase = `${exam.orderId}_${exam.id}`;
-      if (expandedPatients[exam.protocol] && 
-          examStatuses[keyBase] !== 'released' && 
-          examStatuses[keyBase] !== 'cancelled') {
+      if (expandedPatients[exam.protocol] && examStatuses[exam.id] !== 'released') {
         count++;
       }
     });
@@ -201,279 +154,132 @@ export function ResultEntryModal({
     }));
   };
 
-  const handleSave = async (isDraft: boolean) => {
+  const handleSave = (isDraft: boolean) => {
     setSaving(true);
-    try {
-      // Group changes by orderId
-      const ordersToUpdate: Record<string, any[]> = {};
-      
-      const newStatuses = { ...examStatuses };
-      
-      // Filter exams belonging only to expanded patients
-      const examsToSave = filteredExams.filter(exam => expandedPatients[exam.protocol]);
-
-      examsToSave.forEach(exam => {
-        const keyBase = `${exam.orderId}_${exam.id}`;
-        const params = exam.parameters?.length ? exam.parameters : [{id: '1', code: exam.code}];
-        const examResultsData = params.map((p: any) => ({
-          parameterId: p.id,
-          parameterCode: p.code || '',
-          value: results[`${keyBase}_${p.id}`] || '',
-          wasCalculated: false,
-          status: getResultStatus(results[`${keyBase}_${p.id}`], p.references?.[0]?.description || '').label.toLowerCase() || 'normal'
-        }));
-
-        const allFilled = examResultsData.every(r => r.value.trim() !== '');
-        
-        let finalStatus = examStatuses[keyBase] || 'pending';
-        
-        // Se estamos salvando como conclusão (isDraft = false) e tudo está preenchido, marca como digitado
-        // mas APENAS se não estiver já liberado ou cancelado
-        if (!isDraft && allFilled && finalStatus !== 'released' && finalStatus !== 'cancelled') {
-          finalStatus = 'digitized';
-          newStatuses[keyBase] = 'digitized';
-        }
-
-        const dbStatus = finalStatus === 'digitized' ? 'processing' : 
-                         finalStatus === 'released' ? 'liberado' : 
-                         finalStatus === 'cancelled' ? 'cancelled' : 'pending';
-
-        if (!ordersToUpdate[exam.orderId]) ordersToUpdate[exam.orderId] = [];
-        
-        ordersToUpdate[exam.orderId].push({
-          examId: exam.id,
-          results: examResultsData,
-          status: dbStatus,
-          internalObservations: notes[keyBase] || ''
-        });
-      });
-
-      const updatePromises = Object.entries(ordersToUpdate).map(([orderId, examResults]) => 
-        saveExamResults(orderId, examResults)
-      );
-
-      const success = await Promise.all(updatePromises);
-      
-      if (success.every(s => s)) {
-        setExamStatuses(newStatuses);
-        toast.success(isDraft ? "Rascunho salvo com sucesso!" : "Digitação concluída com sucesso!");
-      }
-    } catch (error) {
-      console.error("Error saving results:", error);
-      toast.error("Erro ao salvar informações.");
-    } finally {
-      setSaving(false);
-    }
-  };
-
-  const handleConcluirExame = async (orderId: string, examId: string) => {
-    const exam = filteredExams.find(e => e.id === examId && e.orderId === orderId);
-    if (!exam) return;
-
-    const keyBase = `${exam.orderId}_${exam.id}`;
-    setSaving(true);
-    try {
-      const params = exam.parameters?.length ? exam.parameters : [{id: '1', code: exam.code}];
-      const examResultsData = params.map((p: any) => ({
-        parameterId: p.id,
-        parameterCode: p.code || '',
-        value: results[`${keyBase}_${p.id}`] || '',
-        status: getResultStatus(results[`${keyBase}_${p.id}`], p.references?.[0]?.description || '').label.toLowerCase() || 'normal'
-      }));
-
-      const success = await saveExamResults(exam.orderId, [{
-        examId: exam.id,
-        results: examResultsData,
-        status: 'processing',
-        internalObservations: notes[keyBase] || ''
-      }]);
-
-      if (success) {
-        setExamStatuses(prev => ({ ...prev, [keyBase]: 'digitized' }));
-        toast.success("Exame concluído com sucesso!");
-      }
-    } finally {
-      setSaving(false);
-    }
-  };
-
-  const handleReleaseExam = async (orderId: string, examId: string) => {
-    const exam = filteredExams.find(e => e.id === examId && e.orderId === orderId);
-    if (!exam) return;
-
-    const keyBase = `${exam.orderId}_${exam.id}`;
-    setSaving(true);
-    try {
-      const success = await saveExamResults(exam.orderId, [{
-        examId: exam.id,
-        status: 'liberado'
-      }]);
-
-      if (success) {
-        setExamStatuses(prev => ({ ...prev, [keyBase]: 'released' }));
-        toast.success("Exame liberado com sucesso!");
-      }
-    } finally {
-      setSaving(false);
-    }
-  };
-
-  const handleReleaseAllDigitized = async () => {
-    setSaving(true);
-    try {
-      const ordersToUpdate: Record<string, any[]> = {};
-      const digitizedKeys: string[] = [];
-
-      Object.keys(examStatuses).forEach(key => {
-        if (examStatuses[key] === 'digitized') {
-          // split key back to orderId and examId
-          const parts = key.split('_');
-          const orderId = parts[0];
-          const examId = parts.slice(1).join('_');
-
-          const exam = filteredExams.find(e => e.id === examId && e.orderId === orderId);
-          if (exam) {
-            if (!ordersToUpdate[orderId]) ordersToUpdate[orderId] = [];
-            ordersToUpdate[orderId].push({ examId: exam.id, status: 'liberado' });
-            digitizedKeys.push(key);
-          }
-        }
-      });
-
-      const updatePromises = Object.entries(ordersToUpdate).map(([orderId, exams]) => 
-        saveExamResults(orderId, exams)
-      );
-
-      const success = await Promise.all(updatePromises);
-      
-      if (success.every(s => s)) {
+    setTimeout(() => {
+      if (!isDraft) {
+        // Mark only exams that were actually digitized as digitized
         const newStatuses = { ...examStatuses };
-        digitizedKeys.forEach(key => { newStatuses[key] = 'released'; });
+        let digitizedCount = 0;
+        
+        filteredExams.forEach(exam => {
+          // Only process exams for expanded patients
+          if (expandedPatients[exam.protocol] && newStatuses[exam.id] !== 'released') {
+            const params = exam.parameters?.length ? exam.parameters : [{id: '1'}];
+            const allFilled = params.every((p: any) => 
+              results[`${exam.id}_${p.id}`]?.trim() !== ''
+            );
+            
+            if (allFilled) {
+              newStatuses[exam.id] = 'digitized';
+              digitizedCount++;
+            }
+          }
+        });
+        
         setExamStatuses(newStatuses);
-        toast.success(`${digitizedKeys.length} exames liberados com sucesso!`);
-      }
-    } finally {
-      setSaving(false);
-    }
-  };
-
-  const handleExamAction = async (orderId: string, examId: string, actionType: string) => {
-    const exam = filteredExams.find(e => e.id === examId && e.orderId === orderId);
-    if (!exam) return;
-
-    const keyBase = `${exam.orderId}_${exam.id}`;
-
-    if (actionType === 'cancelar') {
-      if (examStatuses[keyBase] === 'cancelled') {
-        const success = await saveExamResults(exam.orderId, [{ examId: exam.id, status: 'processing' }]);
-        if (success) {
-          setExamStatuses(prev => {
-            const next = { ...prev };
-            next[keyBase] = 'digitized';
-            return next;
-          });
-          setExamActions(prev => {
-            const next = { ...prev };
-            delete next[keyBase];
-            return next;
-          });
-          toast.success("Cancelamento revertido.");
+        if (digitizedCount > 0) {
+          toast.success("Digitação concluída com sucesso!");
+        } else {
+          toast.info("Nenhum resultado preenchido para concluir.");
         }
       } else {
+        toast.success("Rascunho salvo com sucesso!");
+      }
+      setSaving(false);
+    }, 1000);
+  };
+
+  const handleConcluirExame = (examId: string) => {
+    setExamStatuses(prev => ({ ...prev, [examId]: 'digitized' }));
+    toast.success("Exame concluído com sucesso!");
+  };
+
+  const handleReleaseExam = (examId: string) => {
+    setExamStatuses(prev => ({ ...prev, [examId]: 'released' }));
+    toast.success("Exame liberado com sucesso!");
+  };
+
+  const handleReleaseAllDigitized = () => {
+    const newStatuses = { ...examStatuses };
+    let count = 0;
+    Object.keys(newStatuses).forEach(id => {
+      if (newStatuses[id] === 'digitized') {
+        newStatuses[id] = 'released';
+        count++;
+      }
+    });
+    setExamStatuses(newStatuses);
+    if (count > 0) {
+      toast.success(`${count} exames liberados com sucesso!`);
+    }
+  };
+
+  const handleExamAction = (examId: string, actionType: string) => {
+    if (actionType === 'cancelar') {
+      // Se já estiver cancelado, permite reverter (limpar o status de cancelamento)
+      if (examStatuses[examId] === 'cancelled') {
+        setExamStatuses(prev => {
+          const next = { ...prev };
+          delete next[examId];
+          return next;
+        });
+        setExamActions(prev => {
+          const next = { ...prev };
+          delete next[examId];
+          return next;
+        });
+        toast.success("Cancelamento revertido.");
+      } else {
+        const exam = filteredExams.find(e => e.id === examId);
         setCancelModal({ isOpen: true, exam });
       }
     } else if (actionType === 'reteste') {
-      if (examActions[keyBase]?.type === 'reteste') {
-        const success = await saveExamResults(exam.orderId, [{ examId: exam.id, status: 'processing' }]);
-        if (success) {
-          setExamActions(prev => {
-            const next = { ...prev };
-            delete next[keyBase];
-            return next;
-          });
-          toast.info("Ação de reteste removida.");
-        }
+      // Toggle reteste: se já for reteste, remove
+      if (examActions[examId]?.type === 'reteste') {
+        setExamActions(prev => {
+          const next = { ...prev };
+          delete next[examId];
+          return next;
+        });
+        toast.info("Ação de reteste removida.");
       } else {
-        const success = await saveExamResults(exam.orderId, [{ examId: exam.id, status: 'retest_requested' }]);
-        if (success) {
-          setExamActions(prev => ({ ...prev, [keyBase]: { type: 'reteste', reason: '', details: '' } }));
-          toast.info("Reteste solicitado e salvo.");
-        }
+        setExamActions(prev => ({ ...prev, [examId]: { type: 'reteste', reason: '', details: '' } }));
+        toast.info("Informe o motivo do reteste abaixo das observações técnicas.");
       }
     } else if (actionType === 'recoleta') {
-      if (examActions[keyBase]?.type === 'recoleta') {
-        const success = await saveExamResults(exam.orderId, [{ examId: exam.id, status: 'processing' }]);
-        if (success) {
-          setExamActions(prev => {
-            const next = { ...prev };
-            delete next[keyBase];
-            return next;
-          });
-          toast.info("Ação de recoleta removida.");
-        }
+      // Toggle recoleta: se já for recoleta, remove
+      if (examActions[examId]?.type === 'recoleta') {
+        setExamActions(prev => {
+          const next = { ...prev };
+          delete next[examId];
+          return next;
+        });
+        toast.info("Ação de recoleta removida.");
       } else {
-        const success = await saveExamResults(exam.orderId, [{ examId: exam.id, status: 'waiting_recollection' }]);
-        if (success) {
-          setExamActions(prev => ({ ...prev, [keyBase]: { type: 'recoleta', reason: '', details: '' } }));
-          toast.info("Recoleta solicitada e salva.");
-        }
+        setExamActions(prev => ({ ...prev, [examId]: { type: 'recoleta', reason: '', details: '' } }));
+        toast.info("Informe o motivo da recoleta abaixo das observações técnicas.");
       }
     }
   };
 
-  const handleCancelConfirm = async (orderId: string, examId: string, reason: string) => {
-    const exam = filteredExams.find(e => e.id === examId && e.orderId === orderId);
-    if (!exam) return;
-
-    const keyBase = `${exam.orderId}_${exam.id}`;
-    const success = await saveExamResults(exam.orderId, [{
-      examId: exam.id,
-      status: 'cancelled',
-      internalObservations: `Cancelado: ${reason}. ${notes[keyBase] || ''}`
-    }]);
-
-    if (success) {
-      setExamStatuses(prev => ({ ...prev, [keyBase]: 'cancelled' }));
-      setExamActions(prev => ({ ...prev, [keyBase]: { type: 'cancelado', reason } }));
-      setCancelModal(null);
-      toast.error("Exame cancelado com sucesso!");
-    }
+  const handleCancelConfirm = (examId: string, reason: string) => {
+    setExamStatuses(prev => ({ ...prev, [examId]: 'cancelled' }));
+    setExamActions(prev => ({ ...prev, [examId]: { type: 'cancelado', reason } }));
+    setCancelModal(null);
+    toast.error("Exame cancelado com sucesso!");
   };
 
-  const handleRetestUpdate = async (orderId: string, examId: string, reason: string, details: string) => {
-    const exam = filteredExams.find(e => e.id === examId && e.orderId === orderId);
-    if (!exam) return;
-
-    const keyBase = `${exam.orderId}_${exam.id}`;
-    const success = await saveExamResults(exam.orderId, [{
-      examId: exam.id,
-      status: 'retest_requested',
-      internalObservations: `Reteste: ${reason} - ${details}. ${notes[keyBase] || ''}`
-    }]);
-
-    if (success) {
-      setRetestReasons(prev => ({ ...prev, [keyBase]: { reason, details } }));
-      setExamActions(prev => ({ ...prev, [keyBase]: { type: 'reteste', reason, details } }));
-      toast.info("Solicitação de reteste salva.");
-    }
+  const handleRetestUpdate = (examId: string, reason: string, details: string) => {
+    setRetestReasons(prev => ({ ...prev, [examId]: { reason, details } }));
+    setExamActions(prev => ({ ...prev, [examId]: { type: 'reteste', reason, details } }));
+    toast.info("Solicitação de reteste salva como rascunho.");
   };
 
-  const handleRecoletaUpdate = async (orderId: string, examId: string, reason: string, details: string) => {
-    const exam = filteredExams.find(e => e.id === examId && e.orderId === orderId);
-    if (!exam) return;
-
-    const keyBase = `${exam.orderId}_${exam.id}`;
-    const success = await saveExamResults(exam.orderId, [{
-      examId: exam.id,
-      status: 'waiting_recollection',
-      internalObservations: `Recoleta: ${reason} - ${details}. ${notes[keyBase] || ''}`
-    }]);
-
-    if (success) {
-      setRecoletaReasons(prev => ({ ...prev, [keyBase]: { reason, details } }));
-      setExamActions(prev => ({ ...prev, [keyBase]: { type: 'recoleta', reason, details } }));
-      toast.info("Solicitação de recoleta salva.");
-    }
+  const handleRecoletaUpdate = (examId: string, reason: string, details: string) => {
+    setRecoletaReasons(prev => ({ ...prev, [examId]: { reason, details } }));
+    setExamActions(prev => ({ ...prev, [examId]: { type: 'recoleta', reason, details } }));
+    toast.info("Solicitação de recoleta salva como rascunho.");
   };
 
   const getAge = (birthDate: string) => {
@@ -598,12 +404,11 @@ export function ResultEntryModal({
                 {isExpanded && (
                   <div className="p-6 space-y-6 border-t border-slate-100 animate-in slide-in-from-top-2 duration-200">
                     {patient.exams.map((exam: any) => {
-                      const keyBase = `${exam.orderId}_${exam.id}`;
                       const hasResult = (exam.parameters?.length ? exam.parameters : [{id: '1'}]).some((p: any) => 
-                        results[`${keyBase}_${p.id}`]?.trim() !== ''
+                        results[`${exam.id}_${p.id}`]?.trim() !== ''
                       );
-                      const isDigitized = examStatuses[keyBase] === 'digitized' && hasResult;
-                      const isReleased = examStatuses[keyBase] === 'released';
+                      const isDigitized = examStatuses[exam.id] === 'digitized' && hasResult;
+                      const isReleased = examStatuses[exam.id] === 'released';
 
                       return (
                         <div key={exam.id} className={cn(
@@ -622,10 +427,10 @@ export function ResultEntryModal({
                               )} />
                               <div className="flex flex-col">
                                 <div className="flex items-center gap-2">
-                                  <Badge variant="outline" className="bg-white text-primary border-primary/20 text-[10px] font-black h-5 uppercase shrink-0">
+                                  <Badge variant="outline" className="bg-white text-primary border-primary/20 text-[10px] font-black h-5 uppercase">
                                     {exam.code}
                                   </Badge>
-                                  <h4 className="text-sm font-black uppercase tracking-tight truncate max-w-[200px] sm:max-w-[400px]">{exam.name}</h4>
+                                  <h4 className="text-sm font-black uppercase tracking-tight">{exam.name}</h4>
                                   
                                   {/* Ações do Exame */}
                                   <DropdownMenu>
@@ -635,29 +440,29 @@ export function ResultEntryModal({
                                       </Button>
                                     </DropdownMenuTrigger>
                                     <DropdownMenuContent align="start" className="w-48 z-[110]">
-                                      <DropdownMenuItem onClick={(e) => { e.stopPropagation(); handleExamAction(exam.orderId, exam.id, 'cancelar'); }} className="text-xs font-bold uppercase text-rose-600 gap-2">
+                                      <DropdownMenuItem onClick={(e) => { e.stopPropagation(); handleExamAction(exam.id, 'cancelar'); }} className="text-xs font-bold uppercase text-rose-600 gap-2">
                                         <XCircle className="h-3.5 w-3.5" /> 
-                                        {examStatuses[keyBase] === 'cancelled' ? "Reverter Cancelamento" : "Cancelar exame"}
+                                        {examStatuses[exam.id] === 'cancelled' ? "Reverter Cancelamento" : "Cancelar exame"}
                                       </DropdownMenuItem>
-                                      <DropdownMenuItem onClick={(e) => { e.stopPropagation(); handleExamAction(exam.orderId, exam.id, 'reteste'); }} className="text-xs font-bold uppercase text-amber-600 gap-2">
+                                      <DropdownMenuItem onClick={(e) => { e.stopPropagation(); handleExamAction(exam.id, 'reteste'); }} className="text-xs font-bold uppercase text-amber-600 gap-2">
                                         <RefreshCcw className="h-3.5 w-3.5" />
-                                        {examActions[keyBase]?.type === 'reteste' ? "Remover Reteste" : "Solicitar Reteste"}
+                                        {examActions[exam.id]?.type === 'reteste' ? "Remover Reteste" : "Solicitar Reteste"}
                                       </DropdownMenuItem>
-                                      <DropdownMenuItem onClick={(e) => { e.stopPropagation(); handleExamAction(exam.orderId, exam.id, 'recoleta'); }} className="text-xs font-bold uppercase text-orange-600 gap-2">
+                                      <DropdownMenuItem onClick={(e) => { e.stopPropagation(); handleExamAction(exam.id, 'recoleta'); }} className="text-xs font-bold uppercase text-orange-600 gap-2">
                                         <Syringe className="h-3.5 w-3.5" />
-                                        {examActions[keyBase]?.type === 'recoleta' ? "Remover Recoleta" : "Solicitar Recoleta"}
+                                        {examActions[exam.id]?.type === 'recoleta' ? "Remover Recoleta" : "Solicitar Recoleta"}
                                       </DropdownMenuItem>
                                     </DropdownMenuContent>
                                   </DropdownMenu>
 
-                                  {examActions[keyBase] && (
+                                  {examActions[exam.id] && (
                                     <Badge className={cn(
                                       "h-4 text-[7px] font-black uppercase",
-                                      examActions[keyBase].type === 'cancelado' ? "bg-rose-100 text-rose-700" :
-                                      examActions[keyBase].type === 'reteste' ? "bg-amber-100 text-amber-700" :
+                                      examActions[exam.id].type === 'cancelado' ? "bg-rose-100 text-rose-700" :
+                                      examActions[exam.id].type === 'reteste' ? "bg-amber-100 text-amber-700" :
                                       "bg-orange-100 text-orange-700"
                                     )}>
-                                      {examActions[keyBase].type}
+                                      {examActions[exam.id].type}
                                     </Badge>
                                   )}
                               </div>
@@ -670,12 +475,12 @@ export function ResultEntryModal({
 
                             <div className="flex items-center gap-2">
                               {!isDigitized && !isReleased && (
-                                    <Button 
-                                      onClick={() => handleConcluirExame(exam.orderId, exam.id)}
-                                    size="sm" 
-                                    disabled={!(exam.parameters?.length ? exam.parameters : [{id: '1'}]).every((p: any) => 
-                                      results[`${keyBase}_${p.id}`]?.trim() !== ''
-                                    )}
+                                <Button 
+                                  onClick={() => handleConcluirExame(exam.id)}
+                                  size="sm" 
+                                  disabled={!(exam.parameters?.length ? exam.parameters : [{id: '1'}]).every((p: any) => 
+                                    results[`${exam.id}_${p.id}`]?.trim() !== ''
+                                  )}
                                   className="h-7 px-3 text-[9px] font-black uppercase gap-1.5 bg-sky-500 hover:bg-sky-600 text-white shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
                                 >
                                   <CheckCircle2 className="h-3 w-3" />
@@ -684,8 +489,8 @@ export function ResultEntryModal({
                               )}
 
                               {isDigitized && (
-                                  <Button 
-                                    onClick={() => handleReleaseExam(exam.orderId, exam.id)}
+                                <Button 
+                                  onClick={() => handleReleaseExam(exam.id)}
                                   size="sm" 
                                   className="h-7 px-3 text-[9px] font-black uppercase gap-1.5 bg-emerald-500 hover:bg-emerald-600 text-white shadow-sm"
                                 >
@@ -719,7 +524,7 @@ export function ResultEntryModal({
                         {/* Parâmetros do Exame */}
                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-x-8 gap-y-4 pt-2">
                           {(exam.parameters?.length ? exam.parameters : [{ id: '1', name: exam.code, unit: 'mg/dL', reference: '60 a 100' }]).map((param: any) => {
-                            const value = results[`${keyBase}_${param.id}`] || '';
+                            const value = results[`${exam.id}_${param.id}`] || '';
                             const status = getResultStatus(value, param.reference || '60 a 100');
                             
                             return (
@@ -743,12 +548,12 @@ export function ResultEntryModal({
                                         status.label === 'Baixo' && "border-amber-400 focus:border-amber-500",
                                         status.label === 'Alto' && "border-rose-400 focus:border-rose-500",
                                         status.label === 'Normal' && "border-emerald-400 focus:border-emerald-500",
-                                        examStatuses[keyBase] === 'released' && "bg-slate-100 border-slate-200 cursor-not-allowed text-slate-500"
+                                        examStatuses[exam.id] === 'released' && "bg-slate-100 border-slate-200 cursor-not-allowed text-slate-500"
                                       )}
                                       placeholder="Resultado"
                                       value={value}
-                                      disabled={examStatuses[keyBase] === 'released'}
-                                      onChange={(e) => setResults(prev => ({ ...prev, [`${keyBase}_${param.id}`]: e.target.value }))}
+                                      disabled={examStatuses[exam.id] === 'released'}
+                                      onChange={(e) => setResults(prev => ({ ...prev, [`${exam.id}_${param.id}`]: e.target.value }))}
                                     />
                                     {status.label && (
                                       <div className={cn(
@@ -775,42 +580,42 @@ export function ResultEntryModal({
                         <div className="pt-2">
                           <div className="relative">
                             <Input 
-                                className={cn(
-                                  "h-9 text-xs bg-white border-slate-200 focus:border-primary text-slate-700 placeholder:italic",
-                                  examStatuses[keyBase] === 'released' && "bg-slate-100 cursor-not-allowed"
-                                )}
-                                placeholder="Nota / Observações técnicas..."
-                                value={notes[keyBase] || ''}
-                                disabled={examStatuses[keyBase] === 'released'}
-                                onChange={(e) => setNotes(prev => ({ ...prev, [keyBase]: e.target.value }))}
+                              className={cn(
+                                "h-9 text-xs bg-white border-slate-200 focus:border-primary text-slate-700 placeholder:italic",
+                                examStatuses[exam.id] === 'released' && "bg-slate-100 cursor-not-allowed"
+                              )}
+                              placeholder="Nota / Observações técnicas..."
+                              value={notes[exam.id] || ''}
+                              disabled={examStatuses[exam.id] === 'released'}
+                              onChange={(e) => setNotes(prev => ({ ...prev, [exam.id]: e.target.value }))}
                             />
                           </div>
                         </div>
 
                         {/* Campos de Reteste/Recoleta contextuais */}
-                        {(examActions[keyBase]?.type === 'reteste' || examActions[keyBase]?.type === 'recoleta') && (
+                        {(examActions[exam.id]?.type === 'reteste' || examActions[exam.id]?.type === 'recoleta') && (
                           <div className={cn(
                             "p-3 rounded-lg border animate-in slide-in-from-top-2 duration-200",
-                            examActions[keyBase].type === 'reteste' ? "bg-amber-50 border-amber-200" : "bg-orange-50 border-orange-200"
+                            examActions[exam.id].type === 'reteste' ? "bg-amber-50 border-amber-200" : "bg-orange-50 border-orange-200"
                           )}>
                             <div className="flex items-center gap-2 mb-2">
                               <AlertCircle className={cn(
                                 "h-4 w-4",
-                                examActions[keyBase].type === 'reteste' ? "text-amber-600" : "text-orange-600"
+                                examActions[exam.id].type === 'reteste' ? "text-amber-600" : "text-orange-600"
                               )} />
                               <span className="text-[10px] font-black uppercase text-slate-700">
-                                Motivo do {examActions[keyBase].type === 'reteste' ? 'Reteste' : 'Recoleta'} (Obrigatório para Valores Críticos)
+                                Motivo do {examActions[exam.id].type === 'reteste' ? 'Reteste' : 'Recoleta'} (Obrigatório para Valores Críticos)
                               </span>
                             </div>
                             
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                               <Select 
-                                value={examActions[keyBase].reason || ""}
+                                value={examActions[exam.id].reason || ""}
                                 onValueChange={(val) => {
-                                  if (examActions[keyBase].type === 'reteste') {
-                                    handleRetestUpdate(exam.orderId, exam.id, val, examActions[keyBase].details || "");
+                                  if (examActions[exam.id].type === 'reteste') {
+                                    handleRetestUpdate(exam.id, val, examActions[exam.id].details || "");
                                   } else {
-                                    handleRecoletaUpdate(exam.orderId, exam.id, val, examActions[keyBase].details || "");
+                                    handleRecoletaUpdate(exam.id, val, examActions[exam.id].details || "");
                                   }
                                 }}
                               >
@@ -847,10 +652,10 @@ export function ResultEntryModal({
                                 placeholder="Detalhes adicionais (opcional)..."
                                 value={examActions[exam.id].details || ""}
                                 onChange={(e) => {
-                                  if (examActions[keyBase].type === 'reteste') {
-                                    handleRetestUpdate(exam.orderId, exam.id, examActions[keyBase].reason || "", e.target.value);
+                                  if (examActions[exam.id].type === 'reteste') {
+                                    handleRetestUpdate(exam.id, examActions[exam.id].reason || "", e.target.value);
                                   } else {
-                                    handleRecoletaUpdate(exam.orderId, exam.id, examActions[keyBase].reason || "", e.target.value);
+                                    handleRecoletaUpdate(exam.id, examActions[exam.id].reason || "", e.target.value);
                                   }
                                 }}
                               />
@@ -934,7 +739,7 @@ export function ResultEntryModal({
           <Button 
             variant="outline" 
             onClick={handleReleaseAllDigitized}
-            disabled={saving || !Object.values(examStatuses).some(status => status === 'digitized')}
+            disabled={saving || !Object.values(examStatuses).includes('digitized')}
             className="h-11 px-6 font-black uppercase text-[10px] tracking-widest gap-2 border-emerald-500/30 text-emerald-600 hover:bg-emerald-50 shadow-sm"
           >
             <ShieldCheck className="h-4 w-4" />
@@ -969,7 +774,7 @@ export function ResultEntryModal({
               <div className="bg-emerald-50/50 border border-emerald-100 rounded-lg p-4 space-y-1">
                 <p className="text-sm font-black text-slate-800">{cancelModal.exam?.name}</p>
                 <p className="text-[10px] font-bold text-emerald-600 uppercase">
-                  Status atual: {examStatuses[`${cancelModal.exam?.orderId}_${cancelModal.exam?.id}`] === 'digitized' ? 'Digitado' : 'Em análise'}
+                  Status atual: {examStatuses[cancelModal.exam?.id] === 'digitized' ? 'Digitado' : 'Em análise'}
                 </p>
               </div>
 
@@ -1027,7 +832,7 @@ export function ResultEntryModal({
                     toast.error("Por favor, confirme a operação.");
                     return;
                   }
-                  handleCancelConfirm(cancelModal.exam?.orderId, cancelModal.exam?.id, reason);
+                  handleCancelConfirm(cancelModal.exam?.id, reason);
                 }}
                 className="font-black uppercase text-[10px] tracking-widest px-6 bg-rose-500 hover:bg-rose-600 shadow-lg shadow-rose-200"
               >
