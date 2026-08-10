@@ -25,6 +25,7 @@ interface ProfileRow {
   council_type: string | null
   council_uf: string | null
   council_number: string | null
+  badge_code: string | null
 }
 
 const roleLabelMap: Record<string, string> = {
@@ -185,6 +186,7 @@ function EditUserModal({ profile, onClose, onSaved }: { profile: ProfileRow | nu
   const [councilType, setCouncilType] = useState('')
   const [councilUf, setCouncilUf] = useState('')
   const [councilNumber, setCouncilNumber] = useState('')
+  const [badgeCode, setBadgeCode] = useState('')
   const [saving, setSaving] = useState(false)
   const [sendingReset, setSendingReset] = useState(false)
 
@@ -198,6 +200,7 @@ function EditUserModal({ profile, onClose, onSaved }: { profile: ProfileRow | nu
       setCouncilType(profile.council_type || '')
       setCouncilUf(profile.council_uf || '')
       setCouncilNumber(profile.council_number || '')
+      setBadgeCode(profile.badge_code || '')
     }
   }, [profile])
 
@@ -217,7 +220,8 @@ function EditUserModal({ profile, onClose, onSaved }: { profile: ProfileRow | nu
         professional_title: professionalTitle || null,
         council_type: councilType || null,
         council_uf: councilUf || null,
-        council_number: councilNumber || null
+        council_number: councilNumber || null,
+        badge_code: badgeCode || null
       })
       .eq('id', profile.id)
 
@@ -272,6 +276,76 @@ function EditUserModal({ profile, onClose, onSaved }: { profile: ProfileRow | nu
         </DialogHeader>
         
         <div className="space-y-6 py-2">
+          {/* Crachá e Identificação */}
+          <div className="bg-primary/5 p-4 rounded-xl border border-primary/20 space-y-3">
+            <div className="flex items-center justify-between">
+              <h3 className="text-sm font-bold text-primary flex items-center gap-2">
+                <div className="w-2 h-2 rounded-full bg-primary animate-pulse" />
+                CRACHÁ E IDENTIFICAÇÃO
+              </h3>
+              {badgeCode && (
+                <Button 
+                  variant="ghost" 
+                  size="sm" 
+                  className="h-7 text-[10px] uppercase font-bold text-primary hover:text-primary hover:bg-primary/10"
+                  onClick={() => {
+                    const win = window.open('', '_blank');
+                    if (win) {
+                      win.document.write(`
+                        <html>
+                          <head>
+                            <title>Crachá - ${fullName}</title>
+                            <style>
+                              body { font-family: sans-serif; display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; margin: 0; }
+                              .card { border: 2px solid #000; padding: 20px; border-radius: 10px; text-align: center; width: 300px; }
+                              .name { font-size: 18px; font-weight: bold; margin-bottom: 10px; }
+                              .code { font-family: 'Libre Barcode 39', 'Courier New', Courier, monospace; font-size: 40px; margin: 15px 0; }
+                              .code-text { font-size: 14px; letter-spacing: 2px; }
+                              @media print { .no-print { display: none; } }
+                            </style>
+                          </head>
+                          <body>
+                            <div class="card">
+                              <div class="name">${fullName.toUpperCase()}</div>
+                              <div class="code-text">${badgeCode}</div>
+                              <div class="code" style="font-size: 24px;">*${badgeCode}*</div>
+                              <div style="margin-top: 10px; font-size: 12px; color: #666;">Axis Inova - LabSaúde</div>
+                            </div>
+                            <button class="no-print" style="margin-top: 20px;" onclick="window.print()">Imprimir</button>
+                          </body>
+                        </html>
+                      `);
+                      win.document.close();
+                    }
+                  }}
+                >
+                  Imprimir Crachá
+                </Button>
+              )}
+            </div>
+            <div className="grid grid-cols-1 gap-4">
+              <div className="space-y-2">
+                <Label className="text-xs font-semibold text-muted-foreground uppercase">Código do Crachá (Código de Barras)</Label>
+                <div className="relative">
+                  <Input 
+                    value={badgeCode} 
+                    onChange={e => setBadgeCode(e.target.value.toUpperCase())} 
+                    placeholder="Bipe o crachá ou digite o código único" 
+                    className="bg-background border-primary/30 focus-visible:ring-primary font-mono tracking-widest"
+                  />
+                  {badgeCode && (
+                    <div className="absolute right-3 top-1/2 -translate-y-1/2 text-[10px] font-bold text-primary/60">
+                      ÚNICO
+                    </div>
+                  )}
+                </div>
+                <p className="text-[10px] text-muted-foreground italic">
+                  Este código é utilizado para autenticação rápida em coletores e bancadas técnicas.
+                </p>
+              </div>
+            </div>
+          </div>
+
           {/* Dados Básicos */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2">
