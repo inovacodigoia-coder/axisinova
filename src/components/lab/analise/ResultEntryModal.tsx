@@ -290,24 +290,31 @@ export function ResultEntryModal({
                 {/* Exames do Paciente */}
                 {isExpanded && (
                   <div className="p-6 space-y-6 border-t border-slate-100 animate-in slide-in-from-top-2 duration-200">
-                    {patient.exams.map((exam: any) => (
-                      <div key={exam.id} className={cn(
-                        "relative bg-slate-50 rounded-xl border border-slate-200 p-5 space-y-4 transition-all duration-300",
-                        examStatuses[exam.id] === 'released' && "opacity-80 grayscale-[0.2]"
-                      )}>
-                        {/* Título do Exame */}
-                        <div className="flex items-start justify-between">
-                          <div className="flex items-center gap-3">
-                            <div className={cn(
-                              "h-3 w-3 rounded-full shadow-sm transition-colors",
-                              examStatuses[exam.id] === 'released' || examStatuses[exam.id] === 'digitized' ? "bg-emerald-500" :
-                              exam.workbench === 'Bioquímica' ? "bg-blue-500" :
-                              exam.workbench === 'Hematologia' ? "bg-purple-500" :
-                              "bg-slate-400"
-                            )} />
-                            <div className="flex flex-col">
-                              <div className="flex items-center gap-2">
-                                <Badge variant="outline" className="bg-white text-primary border-primary/20 text-[10px] font-black h-5 uppercase">
+                    {patient.exams.map((exam: any) => {
+                      const hasResult = (exam.parameters?.length ? exam.parameters : [{id: '1'}]).some((p: any) => 
+                        results[`${exam.id}_${p.id}`]?.trim() !== ''
+                      );
+                      const isDigitized = examStatuses[exam.id] === 'digitized' && hasResult;
+                      const isReleased = examStatuses[exam.id] === 'released';
+
+                      return (
+                        <div key={exam.id} className={cn(
+                          "relative bg-slate-50 rounded-xl border border-slate-200 p-5 space-y-4 transition-all duration-300",
+                          isReleased && "opacity-80 grayscale-[0.2]"
+                        )}>
+                          {/* Título do Exame */}
+                          <div className="flex items-start justify-between">
+                            <div className="flex items-center gap-3">
+                              <div className={cn(
+                                "h-3 w-3 rounded-full shadow-sm transition-colors",
+                                isReleased || isDigitized ? "bg-emerald-500" :
+                                exam.workbench === 'Bioquímica' ? "bg-blue-500" :
+                                exam.workbench === 'Hematologia' ? "bg-purple-500" :
+                                "bg-slate-400"
+                              )} />
+                              <div className="flex flex-col">
+                                <div className="flex items-center gap-2">
+                                  <Badge variant="outline" className="bg-white text-primary border-primary/20 text-[10px] font-black h-5 uppercase">
                                   {exam.code}
                                 </Badge>
                                 <h4 className="text-sm font-black uppercase tracking-tight">{exam.name}</h4>
