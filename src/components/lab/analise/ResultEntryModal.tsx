@@ -969,7 +969,7 @@ export function ResultEntryModal({
               <div className="bg-emerald-50/50 border border-emerald-100 rounded-lg p-4 space-y-1">
                 <p className="text-sm font-black text-slate-800">{cancelModal.exam?.name}</p>
                 <p className="text-[10px] font-bold text-emerald-600 uppercase">
-                  Status atual: {examStatuses[cancelModal.exam?.id] === 'digitized' ? 'Digitado' : 'Em análise'}
+                  Status atual: {examStatuses[`${cancelModal.exam?.orderId}_${cancelModal.exam?.id}`] === 'digitized' ? 'Digitado' : 'Em análise'}
                 </p>
               </div>
 
