@@ -477,11 +477,14 @@ export function ResultEntryModal({
                           </div>
 
                             <div className="flex items-center gap-2">
-                              {!isDigitized && !isReleased && hasResult && (
+                              {!isDigitized && !isReleased && (
                                 <Button 
                                   onClick={() => handleConcluirExame(exam.id)}
                                   size="sm" 
-                                  className="h-7 px-3 text-[9px] font-black uppercase gap-1.5 bg-sky-500 hover:bg-sky-600 text-white shadow-sm"
+                                  disabled={!(exam.parameters?.length ? exam.parameters : [{id: '1'}]).every((p: any) => 
+                                    results[`${exam.id}_${p.id}`]?.trim() !== ''
+                                  )}
+                                  className="h-7 px-3 text-[9px] font-black uppercase gap-1.5 bg-sky-500 hover:bg-sky-600 text-white shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
                                 >
                                   <CheckCircle2 className="h-3 w-3" />
                                   Concluir Exame
