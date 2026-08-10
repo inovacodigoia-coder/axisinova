@@ -582,7 +582,6 @@ export default function LabColetaPage() {
                                     onChange={(e) => handleCredentialChange(order.id, 'username', e.target.value)}
                                   />
                                 </div>
-                                </div>
                               </div>
                             ) : (
                               <div className="flex items-center gap-2 p-3 bg-card border border-border rounded-xl">
