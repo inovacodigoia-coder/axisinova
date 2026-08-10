@@ -354,18 +354,18 @@ export function ResultEntryModal({
                                   {/* Ações do Exame */}
                                   <DropdownMenu>
                                     <DropdownMenuTrigger asChild>
-                                      <Button variant="ghost" size="icon" className="h-6 w-6 text-slate-400 hover:text-primary">
+                                      <Button variant="ghost" size="icon" className="h-6 w-6 text-slate-400 hover:text-primary z-10">
                                         <MoreVertical className="h-3.5 w-3.5" />
                                       </Button>
                                     </DropdownMenuTrigger>
-                                    <DropdownMenuContent align="start" className="w-48">
-                                      <DropdownMenuItem onClick={() => handleExamAction(exam.id, 'cancelar')} className="text-xs font-bold uppercase text-rose-600 gap-2">
+                                    <DropdownMenuContent align="start" className="w-48 z-[110]">
+                                      <DropdownMenuItem onClick={(e) => { e.stopPropagation(); handleExamAction(exam.id, 'cancelar'); }} className="text-xs font-bold uppercase text-rose-600 gap-2">
                                         <XCircle className="h-3.5 w-3.5" /> Cancelar exame
                                       </DropdownMenuItem>
-                                      <DropdownMenuItem onClick={() => handleExamAction(exam.id, 'reteste')} className="text-xs font-bold uppercase text-amber-600 gap-2">
+                                      <DropdownMenuItem onClick={(e) => { e.stopPropagation(); handleExamAction(exam.id, 'reteste'); }} className="text-xs font-bold uppercase text-amber-600 gap-2">
                                         <RefreshCcw className="h-3.5 w-3.5" /> Solicitar Reteste
                                       </DropdownMenuItem>
-                                      <DropdownMenuItem onClick={() => handleExamAction(exam.id, 'recoleta')} className="text-xs font-bold uppercase text-orange-600 gap-2">
+                                      <DropdownMenuItem onClick={(e) => { e.stopPropagation(); handleExamAction(exam.id, 'recoleta'); }} className="text-xs font-bold uppercase text-orange-600 gap-2">
                                         <Syringe className="h-3.5 w-3.5" /> Solicitar Recoleta
                                       </DropdownMenuItem>
                                     </DropdownMenuContent>
