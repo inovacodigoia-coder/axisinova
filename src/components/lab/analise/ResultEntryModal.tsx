@@ -218,14 +218,49 @@ export function ResultEntryModal({
 
   const handleExamAction = (examId: string, actionType: string) => {
     if (actionType === 'cancelar') {
-      const exam = filteredExams.find(e => e.id === examId);
-      setCancelModal({ isOpen: true, exam });
+      // Se já estiver cancelado, permite reverter (limpar o status de cancelamento)
+      if (examStatuses[examId] === 'cancelled') {
+        setExamStatuses(prev => {
+          const next = { ...prev };
+          delete next[examId];
+          return next;
+        });
+        setExamActions(prev => {
+          const next = { ...prev };
+          delete next[examId];
+          return next;
+        });
+        toast.success("Cancelamento revertido.");
+      } else {
+        const exam = filteredExams.find(e => e.id === examId);
+        setCancelModal({ isOpen: true, exam });
+      }
     } else if (actionType === 'reteste') {
-      setExamActions(prev => ({ ...prev, [examId]: { type: 'reteste', reason: '', details: '' } }));
-      toast.info("Informe o motivo do reteste abaixo das observações técnicas.");
+      // Toggle reteste: se já for reteste, remove
+      if (examActions[examId]?.type === 'reteste') {
+        setExamActions(prev => {
+          const next = { ...prev };
+          delete next[examId];
+          return next;
+        });
+        toast.info("Ação de reteste removida.");
+      } else {
+        setExamActions(prev => ({ ...prev, [examId]: { type: 'reteste', reason: '', details: '' } }));
+        toast.info("Informe o motivo do reteste abaixo das observações técnicas.");
+      }
     } else if (actionType === 'recoleta') {
-      setExamActions(prev => ({ ...prev, [examId]: { type: 'recoleta', reason: '', details: '' } }));
-      toast.info("Informe o motivo da recoleta abaixo das observações técnicas.");
+      // Toggle recoleta: se já for recoleta, remove
+      if (examActions[examId]?.type === 'recoleta') {
+        setExamActions(prev => {
+          const next = { ...prev };
+          delete next[examId];
+          return next;
+        });
+        toast.info("Ação de recoleta removida.");
+      } else {
+        setExamActions(prev => ({ ...prev, [examId]: { type: 'recoleta', reason: '', details: '' } }));
+        toast.info("Informe o motivo da recoleta abaixo das observações técnicas.");
+      }
     }
   };
 
