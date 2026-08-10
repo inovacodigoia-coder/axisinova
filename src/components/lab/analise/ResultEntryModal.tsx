@@ -17,7 +17,9 @@ import {
   XCircle,
   Syringe,
   Check,
-  ShieldCheck
+  ShieldCheck,
+  Ban,
+  AlertCircle
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -32,6 +34,23 @@ import {
   DropdownMenuItem, 
   DropdownMenuTrigger 
 } from '@/components/ui/dropdown-menu';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "@/components/ui/dialog";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Textarea } from "@/components/ui/textarea";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Label } from "@/components/ui/label";
 import { format, differenceInYears } from 'date-fns';
 
 interface ResultEntryModalProps {
@@ -59,8 +78,11 @@ export function ResultEntryModal({
   const [results, setResults] = useState<Record<string, string>>({});
   const [notes, setNotes] = useState<Record<string, string>>({});
   const [saving, setSaving] = useState(false);
-  const [examStatuses, setExamStatuses] = useState<Record<string, 'pending' | 'digitized' | 'released'>>({});
-  const [examActions, setExamActions] = useState<Record<string, string>>({});
+  const [examStatuses, setExamStatuses] = useState<Record<string, 'pending' | 'digitized' | 'released' | 'cancelled'>>({});
+  const [examActions, setExamActions] = useState<Record<string, { type: string; reason?: string; details?: string }>>({});
+  const [cancelModal, setCancelModal] = useState<{ isOpen: boolean; exam: any } | null>(null);
+  const [retestReasons, setRetestReasons] = useState<Record<string, { reason: string; details: string }>>({});
+  const [recoletaReasons, setRecoletaReasons] = useState<Record<string, { reason: string; details: string }>>({});
   /* Do not make any visual modifications. The phrases I write are commands to understand what I want, not to be written down. Understand their content well, then execute what is required.
                                             
                                             I have approved the plan */
@@ -191,14 +213,39 @@ export function ResultEntryModal({
     setExamStatuses(newStatuses);
     if (count > 0) {
       toast.success(`${count} exames liberados com sucesso!`);
-    } else {
-      toast.info("Nenhum exame pendente de liberação.");
     }
   };
 
-  const handleExamAction = (examId: string, action: string) => {
-    setExamActions(prev => ({ ...prev, [examId]: action }));
-    toast.info(`Ação registrada: ${action}`);
+  const handleExamAction = (examId: string, actionType: string) => {
+    if (actionType === 'cancelar') {
+      const exam = filteredExams.find(e => e.id === examId);
+      setCancelModal({ isOpen: true, exam });
+    } else if (actionType === 'reteste') {
+      setExamActions(prev => ({ ...prev, [examId]: { type: 'reteste', reason: '', details: '' } }));
+      toast.info("Informe o motivo do reteste abaixo das observações técnicas.");
+    } else if (actionType === 'recoleta') {
+      setExamActions(prev => ({ ...prev, [examId]: { type: 'recoleta', reason: '', details: '' } }));
+      toast.info("Informe o motivo da recoleta abaixo das observações técnicas.");
+    }
+  };
+
+  const handleCancelConfirm = (examId: string, reason: string) => {
+    setExamStatuses(prev => ({ ...prev, [examId]: 'cancelled' }));
+    setExamActions(prev => ({ ...prev, [examId]: { type: 'cancelado', reason } }));
+    setCancelModal(null);
+    toast.error("Exame cancelado com sucesso!");
+  };
+
+  const handleRetestUpdate = (examId: string, reason: string, details: string) => {
+    setRetestReasons(prev => ({ ...prev, [examId]: { reason, details } }));
+    setExamActions(prev => ({ ...prev, [examId]: { type: 'reteste', reason, details } }));
+    toast.info("Solicitação de reteste salva como rascunho.");
+  };
+
+  const handleRecoletaUpdate = (examId: string, reason: string, details: string) => {
+    setRecoletaReasons(prev => ({ ...prev, [examId]: { reason, details } }));
+    setExamActions(prev => ({ ...prev, [examId]: { type: 'recoleta', reason, details } }));
+    toast.info("Solicitação de recoleta salva como rascunho.");
   };
 
   const getAge = (birthDate: string) => {
@@ -372,8 +419,13 @@ export function ResultEntryModal({
                                   </DropdownMenu>
 
                                   {examActions[exam.id] && (
-                                    <Badge className="h-4 text-[7px] font-black bg-slate-200 text-slate-700 uppercase">
-                                      {examActions[exam.id]}
+                                    <Badge className={cn(
+                                      "h-4 text-[7px] font-black uppercase",
+                                      examActions[exam.id].type === 'cancelado' ? "bg-rose-100 text-rose-700" :
+                                      examActions[exam.id].type === 'reteste' ? "bg-amber-100 text-amber-700" :
+                                      "bg-orange-100 text-orange-700"
+                                    )}>
+                                      {examActions[exam.id].type}
                                     </Badge>
                                   )}
                               </div>
@@ -500,6 +552,77 @@ export function ResultEntryModal({
                           </div>
                         </div>
 
+                        {/* Campos de Reteste/Recoleta contextuais */}
+                        {(examActions[exam.id]?.type === 'reteste' || examActions[exam.id]?.type === 'recoleta') && (
+                          <div className={cn(
+                            "p-3 rounded-lg border animate-in slide-in-from-top-2 duration-200",
+                            examActions[exam.id].type === 'reteste' ? "bg-amber-50 border-amber-200" : "bg-orange-50 border-orange-200"
+                          )}>
+                            <div className="flex items-center gap-2 mb-2">
+                              <AlertCircle className={cn(
+                                "h-4 w-4",
+                                examActions[exam.id].type === 'reteste' ? "text-amber-600" : "text-orange-600"
+                              )} />
+                              <span className="text-[10px] font-black uppercase text-slate-700">
+                                Motivo do {examActions[exam.id].type === 'reteste' ? 'Reteste' : 'Recoleta'} (Obrigatório para Valores Críticos)
+                              </span>
+                            </div>
+                            
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                              <Select 
+                                value={examActions[exam.id].reason || ""}
+                                onValueChange={(val) => {
+                                  if (examActions[exam.id].type === 'reteste') {
+                                    handleRetestUpdate(exam.id, val, examActions[exam.id].details || "");
+                                  } else {
+                                    handleRecoletaUpdate(exam.id, val, examActions[exam.id].details || "");
+                                  }
+                                }}
+                              >
+                                <SelectTrigger className="h-9 text-xs bg-white border-slate-200">
+                                  <SelectValue placeholder="Selecione um motivo..." />
+                                </SelectTrigger>
+                                <SelectContent className="z-[120]">
+                                  {examActions[exam.id].type === 'reteste' ? (
+                                    <>
+                                      <SelectItem value="Valor crítico / pânico">Valor crítico / pânico</SelectItem>
+                                      <SelectItem value="Discrepância clínica">Discrepância clínica</SelectItem>
+                                      <SelectItem value="Resultado inconsistente com histórico">Resultado inconsistente com histórico</SelectItem>
+                                      <SelectItem value="Falha técnica do equipamento">Falha técnica do equipamento</SelectItem>
+                                      <SelectItem value="Suspeita de interferência">Suspeita de interferência</SelectItem>
+                                      <SelectItem value="Outro">Outro</SelectItem>
+                                    </>
+                                  ) : (
+                                    <>
+                                      <SelectItem value="Amostra hemolisada">Amostra hemolisada</SelectItem>
+                                      <SelectItem value="Amostra lipêmica">Amostra lipêmica</SelectItem>
+                                      <SelectItem value="Amostra ictérica">Amostra ictérica</SelectItem>
+                                      <SelectItem value="Coágulo na amostra">Coágulo na amostra</SelectItem>
+                                      <SelectItem value="Volume insuficiente">Volume insuficiente</SelectItem>
+                                      <SelectItem value="Tubo inadequado">Tubo inadequado</SelectItem>
+                                      <SelectItem value="Identificação incorreta">Identificação incorreta</SelectItem>
+                                      <SelectItem value="Outro">Outro</SelectItem>
+                                    </>
+                                  )}
+                                </SelectContent>
+                              </Select>
+
+                              <Input 
+                                className="h-9 text-xs bg-white border-slate-200"
+                                placeholder="Detalhes adicionais (opcional)..."
+                                value={examActions[exam.id].details || ""}
+                                onChange={(e) => {
+                                  if (examActions[exam.id].type === 'reteste') {
+                                    handleRetestUpdate(exam.id, examActions[exam.id].reason || "", e.target.value);
+                                  } else {
+                                    handleRecoletaUpdate(exam.id, examActions[exam.id].reason || "", e.target.value);
+                                  }
+                                }}
+                              />
+                            </div>
+                          </div>
+                        )}
+
                         {/* Resultados Anteriores (Mock) */}
                         <div className="mt-4 pt-4 border-t border-slate-200/60">
                           <div className="flex items-center gap-2 mb-3">
@@ -593,6 +716,92 @@ export function ResultEntryModal({
           </Button>
         </div>
       </footer>
+
+      {/* Modal de Cancelamento */}
+      {cancelModal && (
+        <Dialog open={cancelModal.isOpen} onOpenChange={(open) => !open && setCancelModal(null)}>
+          <DialogContent className="sm:max-w-[450px] p-0 overflow-hidden border-none shadow-2xl z-[150]">
+            <DialogHeader className="p-6 bg-white flex flex-row items-center gap-3 border-b">
+              <div className="h-10 w-10 rounded-full bg-rose-50 flex items-center justify-center">
+                <Ban className="h-5 w-5 text-rose-600" />
+              </div>
+              <DialogTitle className="text-xl font-black uppercase tracking-tight text-slate-800">
+                Cancelar exame
+              </DialogTitle>
+            </DialogHeader>
+
+            <div className="p-6 space-y-4">
+              <div className="bg-emerald-50/50 border border-emerald-100 rounded-lg p-4 space-y-1">
+                <p className="text-sm font-black text-slate-800">{cancelModal.exam?.name}</p>
+                <p className="text-[10px] font-bold text-emerald-600 uppercase">
+                  Status atual: {examStatuses[cancelModal.exam?.id] === 'digitized' ? 'Digitado' : 'Em análise'}
+                </p>
+              </div>
+
+              <div className="bg-amber-50 border border-amber-100 rounded-lg p-4 flex gap-3">
+                <AlertTriangle className="h-5 w-5 text-amber-600 shrink-0 mt-0.5" />
+                <div className="space-y-1">
+                  <p className="text-xs font-black text-amber-900 uppercase">O exame ficará cancelado no histórico do atendimento.</p>
+                  <p className="text-[10px] leading-relaxed text-amber-800/80 font-medium">
+                    A coleta e os resultados já registrados serão preservados por rastreabilidade — o exame apenas some das filas de coleta, análise, validação e do laudo ativo.
+                  </p>
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <Label className="text-[10px] font-black uppercase text-slate-500 flex items-center gap-1">
+                  Motivo do cancelamento <span className="text-rose-500">*</span>
+                </Label>
+                <Textarea 
+                  placeholder="Ex.: solicitação equivocada, paciente desistiu, material insuficiente..."
+                  className="min-h-[100px] text-xs resize-none bg-slate-50 border-slate-200 focus:border-rose-500 transition-colors"
+                  id="cancel-reason"
+                />
+                <p className="text-[9px] text-slate-400 font-bold uppercase text-right">Mínimo 10 caracteres · 0/500</p>
+              </div>
+
+              <div className="flex items-center space-x-2 pt-2">
+                <Checkbox id="confirm-cancel" className="border-slate-300 data-[state=checked]:bg-rose-500 data-[state=checked]:border-rose-500" />
+                <label
+                  htmlFor="confirm-cancel"
+                  className="text-[10px] font-bold text-slate-600 uppercase cursor-pointer leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                >
+                  Confirmo que revi as consequências e desejo cancelar este exame.
+                </label>
+              </div>
+            </div>
+
+            <DialogFooter className="p-6 bg-slate-50 flex items-center justify-end gap-3 sm:justify-end">
+              <Button 
+                variant="outline" 
+                onClick={() => setCancelModal(null)}
+                className="font-black uppercase text-[10px] tracking-widest px-6"
+              >
+                Voltar
+              </Button>
+              <Button 
+                variant="destructive"
+                onClick={() => {
+                  const reason = (document.getElementById('cancel-reason') as HTMLTextAreaElement)?.value;
+                  const confirmed = (document.getElementById('confirm-cancel') as HTMLInputElement)?.checked;
+                  if (!reason || reason.length < 10) {
+                    toast.error("Por favor, informe um motivo válido (mín. 10 caracteres).");
+                    return;
+                  }
+                  if (!confirmed) {
+                    toast.error("Por favor, confirme a operação.");
+                    return;
+                  }
+                  handleCancelConfirm(cancelModal.exam?.id, reason);
+                }}
+                className="font-black uppercase text-[10px] tracking-widest px-6 bg-rose-500 hover:bg-rose-600 shadow-lg shadow-rose-200"
+              >
+                Cancelar exame
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+      )}
     </div>
   );
 }
