@@ -142,6 +142,11 @@ export function ResultEntryModal({
     }, 1000);
   };
 
+  const handleConcluirExame = (examId: string) => {
+    setExamStatuses(prev => ({ ...prev, [examId]: 'digitized' }));
+    toast.success("Exame concluído com sucesso!");
+  };
+
   const handleReleaseExam = (examId: string) => {
     setExamStatuses(prev => ({ ...prev, [examId]: 'released' }));
     toast.success("Exame liberado com sucesso!");
@@ -353,6 +358,17 @@ export function ResultEntryModal({
                           </div>
 
                             <div className="flex items-center gap-2">
+                              {!isDigitized && !isReleased && hasResult && (
+                                <Button 
+                                  onClick={() => handleConcluirExame(exam.id)}
+                                  size="sm" 
+                                  className="h-7 px-3 text-[9px] font-black uppercase gap-1.5 bg-sky-500 hover:bg-sky-600 text-white shadow-sm"
+                                >
+                                  <CheckCircle2 className="h-3 w-3" />
+                                  Concluir Exame
+                                </Button>
+                              )}
+
                               {isDigitized && (
                                 <Button 
                                   onClick={() => handleReleaseExam(exam.id)}
