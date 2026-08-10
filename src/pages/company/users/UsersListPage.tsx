@@ -289,7 +289,7 @@ function EditUserModal({ profile, onClose, onSaved }: { profile: ProfileRow | nu
                   size="sm" 
                   className="h-7 text-[10px] uppercase font-bold text-primary hover:text-primary hover:bg-primary/10"
                   onClick={() => {
-                    const win = window.open('', '_blank');
+                    const win = window.open('', '_blank', 'width=400,height=300');
                     if (win) {
                       win.document.write(`
                         <html>
@@ -297,49 +297,67 @@ function EditUserModal({ profile, onClose, onSaved }: { profile: ProfileRow | nu
                             <title>Crachá - ${fullName}</title>
                             <link href="https://fonts.googleapis.com/css2?family=Libre+Barcode+39&display=swap" rel="stylesheet">
                             <style>
+                              @page {
+                                size: 50mm 30mm;
+                                margin: 0;
+                              }
                               body { 
-                                font-family: sans-serif; 
-                                display: flex; 
-                                flex-direction: column; 
-                                items-align: center; 
-                                justify-content: center; 
-                                height: 100vh; 
+                                font-family: 'Inter', sans-serif; 
                                 margin: 0; 
-                                background: #f4f4f4; 
+                                padding: 0;
+                                width: 50mm;
+                                height: 30mm;
+                                display: flex;
+                                flex-direction: column;
+                                justify-content: center;
+                                align-items: center;
+                                background: white;
                               }
                               .card { 
-                                border: 2px solid #000; 
-                                padding: 25px; 
-                                border-radius: 12px; 
-                                text-align: center; 
-                                width: 320px; 
-                                background: white; 
-                                box-shadow: 0 4px 6px rgba(0,0,0,0.1); 
+                                border: 1px solid #000; 
+                                width: 48mm;
+                                height: 28mm;
+                                display: flex;
+                                flex-direction: column;
+                                justify-content: center;
+                                align-items: center;
+                                text-align: center;
+                                box-sizing: border-box;
+                                padding: 2mm;
+                                border-radius: 2mm;
                               }
                               .name { 
-                                font-size: 18px; 
+                                font-size: 8pt; 
                                 font-weight: bold; 
-                                margin-bottom: 20px; 
-                                color: #333; 
+                                margin-bottom: 1mm; 
+                                color: #000; 
                                 text-transform: uppercase;
+                                white-space: nowrap;
+                                overflow: hidden;
+                                width: 100%;
                               }
                               .barcode { 
                                 font-family: 'Libre Barcode 39', cursive; 
-                                font-size: 70px; 
-                                margin: 20px 0; 
+                                font-size: 32pt; 
+                                margin: 0; 
                                 line-height: 1; 
-                                display: block;
+                                color: #000;
                               }
                               .footer { 
-                                margin-top: 15px; 
-                                font-size: 12px; 
-                                color: #666; 
-                                font-weight: 500; 
+                                font-size: 6pt; 
+                                color: #333; 
+                                font-weight: 500;
+                                margin-top: 1mm;
+                              }
+                              .no-print { 
+                                position: fixed;
+                                bottom: 5px;
+                                left: 50%;
+                                transform: translateX(-50%);
                               }
                               @media print { 
                                 .no-print { display: none; } 
-                                body { background: white; }
-                                .card { box-shadow: none; border: 1px solid #000; margin: 0 auto; }
+                                body { width: 50mm; height: 30mm; }
                               }
                             </style>
                           </head>
@@ -349,7 +367,7 @@ function EditUserModal({ profile, onClose, onSaved }: { profile: ProfileRow | nu
                               <div class="barcode">*${badgeCode}*</div>
                               <div class="footer">Axis Inova - LabSaúde</div>
                             </div>
-                            <button class="no-print" style="margin-top: 25px; padding: 10px 20px; cursor: pointer; background: #00D4FF; border: none; color: white; border-radius: 6px; font-weight: bold;" onclick="window.print()">Imprimir</button>
+                            <button class="no-print" style="padding: 4px 12px; cursor: pointer; background: #00D4FF; border: none; color: white; border-radius: 4px; font-weight: bold; font-size: 10px;" onclick="window.print()">Imprimir</button>
                           </body>
                         </html>
                       `);
