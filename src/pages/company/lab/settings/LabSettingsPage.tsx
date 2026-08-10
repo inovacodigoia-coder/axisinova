@@ -281,9 +281,7 @@ function ReportLayoutSection() {
     } catch (error: any) {
       console.error('Error uploading logo:', error);
       toast.error(
-        '''Do not make any visual modifications. The phrases I write are commands to understand what I want, not to be written down. Understand their content well, then execute what is required.'''
-                                            
-                                            está com erro quando eu vou colocar a logo
+        "está com erro quando eu vou colocar a logo"
       );
     }
   };
