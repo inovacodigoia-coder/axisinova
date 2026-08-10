@@ -324,7 +324,18 @@ function ReportLayoutSection({ settings, setSettings }: { settings: any, setSett
           <FileText className="h-5 w-5 text-primary" />
           <h3 className="text-lg font-bold">Cabeçalho e Rodapé do Laudo</h3>
         </div>
-        <Button variant="outline" size="sm" className="gap-2">
+        <Button 
+          variant="outline" 
+          size="sm" 
+          className="gap-2"
+          onClick={() => {
+            if (typeof (window as any).openReportExample === 'function') {
+              (window as any).openReportExample(settings);
+            } else {
+              toast.error('Erro ao abrir visualização. Tente novamente.');
+            }
+          }}
+        >
           <FileText className="h-4 w-4" /> Gerar laudo de exemplo
         </Button>
       </div>
