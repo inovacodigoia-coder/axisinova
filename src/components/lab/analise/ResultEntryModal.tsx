@@ -193,64 +193,149 @@ export function ResultEntryModal({
     }));
   };
 
-  const handleSave = (isDraft: boolean) => {
+  const handleSave = async (isDraft: boolean) => {
     setSaving(true);
-    setTimeout(() => {
-      if (!isDraft) {
-        // Mark only exams that were actually digitized as digitized
-        const newStatuses = { ...examStatuses };
-        let digitizedCount = 0;
+    try {
+      // Group changes by orderId
+      const ordersToUpdate: Record<string, any[]> = {};
+      
+      const newStatuses = { ...examStatuses };
+      
+      filteredExams.forEach(exam => {
+        if (!expandedPatients[exam.protocol] && isDraft) return;
+
+        const params = exam.parameters?.length ? exam.parameters : [{id: '1', code: exam.code}];
+        const examResultsData = params.map((p: any) => ({
+          parameterId: p.id,
+          parameterCode: p.code || '',
+          value: results[`${exam.id}_${p.id}`] || '',
+          wasCalculated: false,
+          status: getResultStatus(results[`${exam.id}_${p.id}`], p.references?.[0]?.description || '').label.toLowerCase() || 'normal'
+        }));
+
+        const allFilled = examResultsData.every(r => r.value.trim() !== '');
         
-        filteredExams.forEach(exam => {
-          // Only process exams for expanded patients
-          if (expandedPatients[exam.protocol] && newStatuses[exam.id] !== 'released') {
-            const params = exam.parameters?.length ? exam.parameters : [{id: '1'}];
-            const allFilled = params.every((p: any) => 
-              results[`${exam.id}_${p.id}`]?.trim() !== ''
-            );
-            
-            if (allFilled) {
-              newStatuses[exam.id] = 'digitized';
-              digitizedCount++;
-            }
-          }
-        });
-        
-        setExamStatuses(newStatuses);
-        if (digitizedCount > 0) {
-          toast.success("Digitação concluída com sucesso!");
-        } else {
-          toast.info("Nenhum resultado preenchido para concluir.");
+        let finalStatus = examStatuses[exam.id] || 'pending';
+        if (!isDraft && allFilled) {
+          finalStatus = 'digitized';
+          newStatuses[exam.id] = 'digitized';
         }
-      } else {
-        toast.success("Rascunho salvo com sucesso!");
+
+        // Map internal status to DB status
+        const dbStatus = finalStatus === 'digitized' ? 'processing' : 
+                         finalStatus === 'released' ? 'liberado' : 
+                         finalStatus === 'cancelled' ? 'cancelled' : 'pending';
+
+        if (!ordersToUpdate[exam.orderId]) ordersToUpdate[exam.orderId] = [];
+        
+        ordersToUpdate[exam.orderId].push({
+          examId: exam.id,
+          results: examResultsData,
+          status: dbStatus,
+          internalObservations: notes[exam.id] || ''
+        });
+      });
+
+      // Execute updates
+      const updatePromises = Object.entries(ordersToUpdate).map(([orderId, examResults]) => 
+        saveExamResults(orderId, examResults)
+      );
+
+      const success = await Promise.all(updatePromises);
+      
+      if (success.every(s => s)) {
+        setExamStatuses(newStatuses);
+        toast.success(isDraft ? "Rascunho salvo com sucesso!" : "Digitação concluída com sucesso!");
       }
+    } catch (error) {
+      console.error("Error saving results:", error);
+      toast.error("Erro ao salvar informações.");
+    } finally {
       setSaving(false);
-    }, 1000);
+    }
   };
 
-  const handleConcluirExame = (examId: string) => {
-    setExamStatuses(prev => ({ ...prev, [examId]: 'digitized' }));
-    toast.success("Exame concluído com sucesso!");
-  };
+  const handleConcluirExame = async (examId: string) => {
+    const exam = filteredExams.find(e => e.id === examId);
+    if (!exam) return;
 
-  const handleReleaseExam = (examId: string) => {
-    setExamStatuses(prev => ({ ...prev, [examId]: 'released' }));
-    toast.success("Exame liberado com sucesso!");
-  };
+    setSaving(true);
+    try {
+      const params = exam.parameters?.length ? exam.parameters : [{id: '1', code: exam.code}];
+      const examResultsData = params.map((p: any) => ({
+        parameterId: p.id,
+        parameterCode: p.code || '',
+        value: results[`${exam.id}_${p.id}`] || '',
+        status: getResultStatus(results[`${exam.id}_${p.id}`], p.references?.[0]?.description || '').label.toLowerCase() || 'normal'
+      }));
 
-  const handleReleaseAllDigitized = () => {
-    const newStatuses = { ...examStatuses };
-    let count = 0;
-    Object.keys(newStatuses).forEach(id => {
-      if (newStatuses[id] === 'digitized') {
-        newStatuses[id] = 'released';
-        count++;
+      const success = await saveExamResults(exam.orderId, [{
+        examId: exam.id,
+        results: examResultsData,
+        status: 'processing',
+        internalObservations: notes[exam.id] || ''
+      }]);
+
+      if (success) {
+        setExamStatuses(prev => ({ ...prev, [examId]: 'digitized' }));
+        toast.success("Exame concluído com sucesso!");
       }
-    });
-    setExamStatuses(newStatuses);
-    if (count > 0) {
-      toast.success(`${count} exames liberados com sucesso!`);
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleReleaseExam = async (examId: string) => {
+    const exam = filteredExams.find(e => e.id === examId);
+    if (!exam) return;
+
+    setSaving(true);
+    try {
+      const success = await saveExamResults(exam.orderId, [{
+        examId: exam.id,
+        status: 'liberado'
+      }]);
+
+      if (success) {
+        setExamStatuses(prev => ({ ...prev, [examId]: 'released' }));
+        toast.success("Exame liberado com sucesso!");
+      }
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleReleaseAllDigitized = async () => {
+    setSaving(true);
+    try {
+      const ordersToUpdate: Record<string, any[]> = {};
+      const digitizedIds: string[] = [];
+
+      Object.keys(examStatuses).forEach(id => {
+        if (examStatuses[id] === 'digitized') {
+          const exam = filteredExams.find(e => e.id === id);
+          if (exam) {
+            if (!ordersToUpdate[exam.orderId]) ordersToUpdate[exam.orderId] = [];
+            ordersToUpdate[exam.orderId].push({ examId: id, status: 'liberado' });
+            digitizedIds.push(id);
+          }
+        }
+      });
+
+      const updatePromises = Object.entries(ordersToUpdate).map(([orderId, exams]) => 
+        saveExamResults(orderId, exams)
+      );
+
+      const success = await Promise.all(updatePromises);
+      
+      if (success.every(s => s)) {
+        const newStatuses = { ...examStatuses };
+        digitizedIds.forEach(id => { newStatuses[id] = 'released'; });
+        setExamStatuses(newStatuses);
+        toast.success(`${digitizedIds.length} exames liberados com sucesso!`);
+      }
+    } finally {
+      setSaving(false);
     }
   };
 
