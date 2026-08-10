@@ -162,14 +162,15 @@ export function ResultEntryModal({
   const filledExamsCount = useMemo(() => {
     let count = 0;
     filteredExams.forEach(exam => {
+      const keyBase = `${exam.orderId}_${exam.id}`;
       // Only count if patient is expanded AND exam is not released AND NOT cancelled
       if (expandedPatients[exam.protocol] && 
-          examStatuses[exam.id] !== 'released' && 
-          examStatuses[exam.id] !== 'cancelled') {
+          examStatuses[keyBase] !== 'released' && 
+          examStatuses[keyBase] !== 'cancelled') {
         
         const params = exam.parameters?.length ? exam.parameters : [{id: '1'}];
         const allFilled = params.every((p: any) => 
-          results[`${exam.id}_${p.id}`]?.trim() !== ''
+          results[`${keyBase}_${p.id}`]?.trim() !== ''
         );
         if (allFilled) count++;
       }
@@ -181,9 +182,10 @@ export function ResultEntryModal({
   const totalRequiredExams = useMemo(() => {
     let count = 0;
     filteredExams.forEach(exam => {
+      const keyBase = `${exam.orderId}_${exam.id}`;
       if (expandedPatients[exam.protocol] && 
-          examStatuses[exam.id] !== 'released' && 
-          examStatuses[exam.id] !== 'cancelled') {
+          examStatuses[keyBase] !== 'released' && 
+          examStatuses[keyBase] !== 'cancelled') {
         count++;
       }
     });
