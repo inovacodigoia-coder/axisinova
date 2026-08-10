@@ -331,7 +331,7 @@ function EditUserModal({ profile, onClose, onSaved }: { profile: ProfileRow | nu
                                 position: relative;
                               }
                               .name { 
-                                font-size: 7pt; 
+                                font-size: 8pt; 
                                 font-weight: bold; 
                                 color: #000; 
                                 text-transform: uppercase;
@@ -347,19 +347,21 @@ function EditUserModal({ profile, onClose, onSaved }: { profile: ProfileRow | nu
                                 justify-content: center;
                                 width: 100%;
                                 overflow: hidden;
+                                padding: 1mm 0;
                               }
                               .barcode { 
                                 font-family: 'Libre Barcode 39', cursive; 
-                                font-size: 28pt; 
+                                font-size: 34pt; 
                                 margin: 0; 
                                 line-height: 1; 
                                 color: #000;
                                 white-space: nowrap;
                               }
                               .footer { 
-                                font-size: 5pt; 
+                                font-size: 6pt; 
                                 color: #333; 
-                                font-weight: 500;
+                                font-weight: 600;
+                                margin-top: 0.5mm;
                               }
                               .no-print { 
                                 position: fixed;
