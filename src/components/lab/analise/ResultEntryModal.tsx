@@ -705,7 +705,6 @@ export function ResultEntryModal({
           </Button>
         </div>
       </footer>
-      </footer>
 
       {/* Modal de Cancelamento */}
       {cancelModal && (
