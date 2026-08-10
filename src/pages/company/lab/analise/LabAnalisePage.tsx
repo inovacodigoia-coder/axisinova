@@ -235,7 +235,9 @@ export default function LabAnalisePage() {
                         </div>
                         {isFiltered && (
                           <Button variant="ghost" size="sm" onClick={clearFilters} className="h-7 text-[10px] text-destructive font-bold uppercase">
-                            Limpar Filtros
+                            '''Do not make any visual modifications. The phrases I write are commands to understand what I want, not to be written down. Understand their content well, then execute what is required.'''
+                                            
+                                            Remover todos
                           </Button>
                         )}
                       </div>
