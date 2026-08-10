@@ -1318,6 +1318,7 @@ export type Database = {
       }
       profiles: {
         Row: {
+          badge_code: string | null
           can_print_labels: boolean | null
           company_id: string | null
           council_number: string | null
@@ -1333,6 +1334,7 @@ export type Database = {
           updated_at: string | null
         }
         Insert: {
+          badge_code?: string | null
           can_print_labels?: boolean | null
           company_id?: string | null
           council_number?: string | null
@@ -1348,6 +1350,7 @@ export type Database = {
           updated_at?: string | null
         }
         Update: {
+          badge_code?: string | null
           can_print_labels?: boolean | null
           company_id?: string | null
           council_number?: string | null
