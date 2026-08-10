@@ -49,17 +49,17 @@ export default function LabSettingsPage() {
   const [isLoading, setIsLoading] = useState(false)
   const [isSaving, setIsSaving] = useState(false)
   const [settings, setSettings] = useState<any>(null)
-  const { userProfile } = useRegisters()
+  const { user } = useAuth()
 
   const setActiveTab = (tab: string) => {
     setSearchParams({ tab })
   }
 
   useEffect(() => {
-    if (userProfile?.company_id) {
+    if (user?.companyId) {
       fetchSettings()
     }
-  }, [userProfile?.company_id])
+  }, [user?.companyId])
 
   const fetchSettings = async () => {
     try {
@@ -67,7 +67,7 @@ export default function LabSettingsPage() {
       const { data, error } = await supabase
         .from('lab_settings')
         .select('*')
-        .eq('company_id', userProfile.company_id)
+        .eq('company_id', user?.companyId)
         .maybeSingle()
 
       if (error) throw error
@@ -80,14 +80,14 @@ export default function LabSettingsPage() {
   }
 
   const handleSave = async () => {
-    if (!userProfile?.company_id) return
+    if (!user?.companyId) return
 
     try {
       setIsSaving(true)
       const { error } = await supabase
         .from('lab_settings')
         .upsert({
-          company_id: userProfile.company_id,
+          company_id: user.companyId,
           ...settings,
           updated_at: new Date().toISOString()
         })
