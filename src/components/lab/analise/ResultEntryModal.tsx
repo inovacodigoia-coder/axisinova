@@ -637,27 +637,27 @@ export function ResultEntryModal({
                                     <DropdownMenuContent align="start" className="w-48 z-[110]">
                                       <DropdownMenuItem onClick={(e) => { e.stopPropagation(); handleExamAction(exam.id, 'cancelar'); }} className="text-xs font-bold uppercase text-rose-600 gap-2">
                                         <XCircle className="h-3.5 w-3.5" /> 
-                                        {examStatuses[exam.id] === 'cancelled' ? "Reverter Cancelamento" : "Cancelar exame"}
+                                        {examStatuses[keyBase] === 'cancelled' ? "Reverter Cancelamento" : "Cancelar exame"}
                                       </DropdownMenuItem>
                                       <DropdownMenuItem onClick={(e) => { e.stopPropagation(); handleExamAction(exam.id, 'reteste'); }} className="text-xs font-bold uppercase text-amber-600 gap-2">
                                         <RefreshCcw className="h-3.5 w-3.5" />
-                                        {examActions[exam.id]?.type === 'reteste' ? "Remover Reteste" : "Solicitar Reteste"}
+                                        {examActions[keyBase]?.type === 'reteste' ? "Remover Reteste" : "Solicitar Reteste"}
                                       </DropdownMenuItem>
                                       <DropdownMenuItem onClick={(e) => { e.stopPropagation(); handleExamAction(exam.id, 'recoleta'); }} className="text-xs font-bold uppercase text-orange-600 gap-2">
                                         <Syringe className="h-3.5 w-3.5" />
-                                        {examActions[exam.id]?.type === 'recoleta' ? "Remover Recoleta" : "Solicitar Recoleta"}
+                                        {examActions[keyBase]?.type === 'recoleta' ? "Remover Recoleta" : "Solicitar Recoleta"}
                                       </DropdownMenuItem>
                                     </DropdownMenuContent>
                                   </DropdownMenu>
 
-                                  {examActions[exam.id] && (
+                                  {examActions[keyBase] && (
                                     <Badge className={cn(
                                       "h-4 text-[7px] font-black uppercase",
-                                      examActions[exam.id].type === 'cancelado' ? "bg-rose-100 text-rose-700" :
-                                      examActions[exam.id].type === 'reteste' ? "bg-amber-100 text-amber-700" :
+                                      examActions[keyBase].type === 'cancelado' ? "bg-rose-100 text-rose-700" :
+                                      examActions[keyBase].type === 'reteste' ? "bg-amber-100 text-amber-700" :
                                       "bg-orange-100 text-orange-700"
                                     )}>
-                                      {examActions[exam.id].type}
+                                      {examActions[keyBase].type}
                                     </Badge>
                                   )}
                               </div>
