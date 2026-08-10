@@ -705,6 +705,93 @@ export function ResultEntryModal({
           </Button>
         </div>
       </footer>
+      </footer>
+
+      {/* Modal de Cancelamento */}
+      {cancelModal && (
+        <Dialog open={cancelModal.isOpen} onOpenChange={(open) => !open && setCancelModal(null)}>
+          <DialogContent className="sm:max-w-[450px] p-0 overflow-hidden border-none shadow-2xl z-[150]">
+            <DialogHeader className="p-6 bg-white flex flex-row items-center gap-3 border-b">
+              <div className="h-10 w-10 rounded-full bg-rose-50 flex items-center justify-center">
+                <Ban className="h-5 w-5 text-rose-600" />
+              </div>
+              <DialogTitle className="text-xl font-black uppercase tracking-tight text-slate-800">
+                Cancelar exame
+              </DialogTitle>
+            </DialogHeader>
+
+            <div className="p-6 space-y-4">
+              <div className="bg-emerald-50/50 border border-emerald-100 rounded-lg p-4 space-y-1">
+                <p className="text-sm font-black text-slate-800">{cancelModal.exam?.name}</p>
+                <p className="text-[10px] font-bold text-emerald-600 uppercase">
+                  Status atual: {examStatuses[cancelModal.exam?.id] === 'digitized' ? 'Digitado' : 'Em análise'}
+                </p>
+              </div>
+
+              <div className="bg-amber-50 border border-amber-100 rounded-lg p-4 flex gap-3">
+                <AlertTriangle className="h-5 w-5 text-amber-600 shrink-0 mt-0.5" />
+                <div className="space-y-1">
+                  <p className="text-xs font-black text-amber-900 uppercase">O exame ficará cancelado no histórico do atendimento.</p>
+                  <p className="text-[10px] leading-relaxed text-amber-800/80 font-medium">
+                    A coleta e os resultados já registrados serão preservados por rastreabilidade — o exame apenas some das filas de coleta, análise, validação e do laudo ativo.
+                  </p>
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <Label className="text-[10px] font-black uppercase text-slate-500 flex items-center gap-1">
+                  Motivo do cancelamento <span className="text-rose-500">*</span>
+                </Label>
+                <Textarea 
+                  placeholder="Ex.: solicitação equivocada, paciente desistiu, material insuficiente..."
+                  className="min-h-[100px] text-xs resize-none bg-slate-50 border-slate-200 focus:border-rose-500 transition-colors"
+                  id="cancel-reason"
+                />
+                <p className="text-[9px] text-slate-400 font-bold uppercase text-right">Mínimo 10 caracteres · 0/500</p>
+              </div>
+
+              <div className="flex items-center space-x-2 pt-2">
+                <Checkbox id="confirm-cancel" className="border-slate-300 data-[state=checked]:bg-rose-500 data-[state=checked]:border-rose-500" />
+                <label
+                  htmlFor="confirm-cancel"
+                  className="text-[10px] font-bold text-slate-600 uppercase cursor-pointer leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                >
+                  Confirmo que revi as consequências e desejo cancelar este exame.
+                </label>
+              </div>
+            </div>
+
+            <DialogFooter className="p-6 bg-slate-50 flex items-center justify-end gap-3 sm:justify-end">
+              <Button 
+                variant="outline" 
+                onClick={() => setCancelModal(null)}
+                className="font-black uppercase text-[10px] tracking-widest px-6"
+              >
+                Voltar
+              </Button>
+              <Button 
+                variant="destructive"
+                onClick={() => {
+                  const reason = (document.getElementById('cancel-reason') as HTMLTextAreaElement)?.value;
+                  const confirmed = (document.getElementById('confirm-cancel') as HTMLInputElement)?.checked;
+                  if (!reason || reason.length < 10) {
+                    toast.error("Por favor, informe um motivo válido (mín. 10 caracteres).");
+                    return;
+                  }
+                  if (!confirmed) {
+                    toast.error("Por favor, confirme a operação.");
+                    return;
+                  }
+                  handleCancelConfirm(cancelModal.exam?.id, reason);
+                }}
+                className="font-black uppercase text-[10px] tracking-widest px-6 bg-rose-500 hover:bg-rose-600 shadow-lg shadow-rose-200"
+              >
+                Cancelar exame
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+      )}
     </div>
   );
 }
