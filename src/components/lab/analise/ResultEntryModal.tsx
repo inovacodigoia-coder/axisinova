@@ -99,8 +99,8 @@ export function ResultEntryModal({
   const filledExamsCount = useMemo(() => {
     let count = 0;
     filteredExams.forEach(exam => {
-      // Only count if patient is expanded
-      if (expandedPatients[exam.protocol]) {
+      // Only count if patient is expanded AND exam is not released
+      if (expandedPatients[exam.protocol] && examStatuses[exam.id] !== 'released') {
         const hasResult = (exam.parameters?.length ? exam.parameters : [{id: '1'}]).some((p: any) => 
           results[`${exam.id}_${p.id}`]?.trim() !== ''
         );
@@ -108,18 +108,18 @@ export function ResultEntryModal({
       }
     });
     return count;
-  }, [results, filteredExams, expandedPatients]);
+  }, [results, filteredExams, expandedPatients, examStatuses]);
 
-  // Calculate total required exams only for expanded patients
+  // Calculate total required exams only for expanded patients (excluding already released ones)
   const totalRequiredExams = useMemo(() => {
     let count = 0;
     filteredExams.forEach(exam => {
-      if (expandedPatients[exam.protocol]) {
+      if (expandedPatients[exam.protocol] && examStatuses[exam.id] !== 'released') {
         count++;
       }
     });
     return count;
-  }, [filteredExams, expandedPatients]);
+  }, [filteredExams, expandedPatients, examStatuses]);
 
   const isConcluirDisabled = saving || totalRequiredExams === 0 || filledExamsCount < totalRequiredExams;
 
