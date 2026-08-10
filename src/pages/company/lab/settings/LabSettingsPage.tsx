@@ -257,17 +257,18 @@ function ReportLayoutSection({ settings, setSettings }: { settings: any, setSett
 
     try {
       const fileExt = file.name.split('.').pop()
-      const fileName = `${Math.random()}.${fileExt}`
-      const filePath = `lab-settings/${fileName}`
+      const fileName = `${crypto.randomUUID()}.${fileExt}`
+      const filePath = `${fileName}` // Using root of bucket for simplicity
 
+      // First try to upload to attendance-attachments which we know exists and has policies
       const { error: uploadError } = await supabase.storage
-        .from('company-assets')
+        .from('attendance-attachments')
         .upload(filePath, file)
 
       if (uploadError) throw uploadError
 
       const { data: { publicUrl } } = supabase.storage
-        .from('company-assets')
+        .from('attendance-attachments')
         .getPublicUrl(filePath)
 
       setSettings({ ...settings, [field]: publicUrl })
