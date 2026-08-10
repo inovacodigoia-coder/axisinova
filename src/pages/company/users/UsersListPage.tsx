@@ -296,7 +296,7 @@ function EditUserModal({ profile, onClose, onSaved }: { profile: ProfileRow | nu
                         <html>
                           <head>
                             <title>Crachá - ${fullName}</title>
-                            <link href="https://fonts.googleapis.com/css2?family=Libre+Barcode+39&display=swap" rel="stylesheet">
+                            <link href="https://fonts.googleapis.com/css2?family=Libre+Barcode+128&display=swap" rel="stylesheet">
                             <style>
                               @page {
                                 size: 50mm 30mm;
@@ -350,14 +350,15 @@ function EditUserModal({ profile, onClose, onSaved }: { profile: ProfileRow | nu
                                 overflow: hidden;
                                 padding: 0;
                               }
-                              .barcode { 
-                                font-family: 'Libre Barcode 39', cursive; 
-                                font-size: 38pt; 
-                                margin: 0; 
-                                line-height: 0.8; 
-                                color: #000;
-                                white-space: nowrap;
-                              }
+                                .barcode { 
+                                  font-family: 'Libre Barcode 128', cursive; 
+                                  font-size: 42pt; 
+                                  margin: 0; 
+                                  line-height: 1; 
+                                  color: #000;
+                                  white-space: nowrap;
+                                  letter-spacing: 0.5mm;
+                                }
                               .info-group {
                                 display: flex;
                                 flex-direction: column;
@@ -396,7 +397,7 @@ function EditUserModal({ profile, onClose, onSaved }: { profile: ProfileRow | nu
                             <div class="card">
                               <div class="name">${fullName}</div>
                               <div class="barcode-container">
-                                <div class="barcode">*${badgeCode}*</div>
+                                <div class="barcode">${badgeCode}</div>
                               </div>
                               <div class="info-group">
                                 <div class="date">${new Date().toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' }).replace(',', '')}</div>
