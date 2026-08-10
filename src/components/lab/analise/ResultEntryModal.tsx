@@ -315,29 +315,29 @@ export function ResultEntryModal({
                               <div className="flex flex-col">
                                 <div className="flex items-center gap-2">
                                   <Badge variant="outline" className="bg-white text-primary border-primary/20 text-[10px] font-black h-5 uppercase">
-                                  {exam.code}
-                                </Badge>
-                                <h4 className="text-sm font-black uppercase tracking-tight">{exam.name}</h4>
-                                
-                                {/* Ações do Exame */}
-                                <DropdownMenu>
-                                  <DropdownMenuTrigger asChild>
-                                    <Button variant="ghost" size="icon" className="h-6 w-6 text-slate-400 hover:text-primary">
-                                      <MoreVertical className="h-3.5 w-3.5" />
-                                    </Button>
-                                  </DropdownMenuTrigger>
-                                  <DropdownMenuContent align="start" className="w-48">
-                                    <DropdownMenuItem onClick={() => handleExamAction(exam.id, 'cancelar')} className="text-xs font-bold uppercase text-rose-600 gap-2">
-                                      <XCircle className="h-3.5 w-3.5" /> Cancelar exame
-                                    </DropdownMenuItem>
-                                    <DropdownMenuItem onClick={() => handleExamAction(exam.id, 'reteste')} className="text-xs font-bold uppercase text-amber-600 gap-2">
-                                      <RefreshCcw className="h-3.5 w-3.5" /> Solicitar reteste
-                                    </DropdownMenuItem>
-                                    <DropdownMenuItem onClick={() => handleExamAction(exam.id, 'recoleta')} className="text-xs font-bold uppercase text-orange-600 gap-2">
-                                      <Syringe className="h-3.5 w-3.5" /> Solicitar Recoleta
-                                    </DropdownMenuItem>
-                                  </DropdownMenuContent>
-                                </DropdownMenu>
+                                    {exam.code}
+                                  </Badge>
+                                  <h4 className="text-sm font-black uppercase tracking-tight">{exam.name}</h4>
+                                  
+                                  {/* Ações do Exame */}
+                                  <DropdownMenu>
+                                    <DropdownMenuTrigger asChild>
+                                      <Button variant="ghost" size="icon" className="h-6 w-6 text-slate-400 hover:text-primary">
+                                        <MoreVertical className="h-3.5 w-3.5" />
+                                      </Button>
+                                    </DropdownMenuTrigger>
+                                    <DropdownMenuContent align="start" className="w-48">
+                                      <DropdownMenuItem onClick={() => handleExamAction(exam.id, 'cancelar')} className="text-xs font-bold uppercase text-rose-600 gap-2">
+                                        <XCircle className="h-3.5 w-3.5" /> Cancelar exame
+                                      </DropdownMenuItem>
+                                      <DropdownMenuItem onClick={() => handleExamAction(exam.id, 'reteste')} className="text-xs font-bold uppercase text-amber-600 gap-2">
+                                        <RefreshCcw className="h-3.5 w-3.5" /> Solicitar Reteste
+                                      </DropdownMenuItem>
+                                      <DropdownMenuItem onClick={() => handleExamAction(exam.id, 'recoleta')} className="text-xs font-bold uppercase text-orange-600 gap-2">
+                                        <Syringe className="h-3.5 w-3.5" /> Solicitar Recoleta
+                                      </DropdownMenuItem>
+                                    </DropdownMenuContent>
+                                  </DropdownMenu>
 
                                 {examActions[exam.id] && (
                                   <Badge className="h-4 text-[7px] font-black bg-slate-200 text-slate-700 uppercase">
