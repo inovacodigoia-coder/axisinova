@@ -36,6 +36,7 @@ export function CreateUserModal({ open, onOpenChange, onCreated }: CreateUserMod
   const [role, setRole] = useState('')
   const [password, setPassword] = useState('')
   const [customRole, setCustomRole] = useState('')
+  const [badgeCode, setBadgeCode] = useState('')
   const [saving, setSaving] = useState(false)
 
   const resetForm = () => {
@@ -45,6 +46,7 @@ export function CreateUserModal({ open, onOpenChange, onCreated }: CreateUserMod
     setRole('')
     setPassword('')
     setCustomRole('')
+    setBadgeCode('')
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -71,6 +73,7 @@ export function CreateUserModal({ open, onOpenChange, onCreated }: CreateUserMod
           password,
           full_name: fullName,
           cpf: cpf || null,
+          badge_code: badgeCode || null,
           role: role === 'other' ? customRole : role,
           company_id: user?.companyId || null,
         },
@@ -119,6 +122,17 @@ export function CreateUserModal({ open, onOpenChange, onCreated }: CreateUserMod
           <div className="space-y-2">
             <Label htmlFor="cpf">CPF</Label>
             <Input id="cpf" value={cpf} onChange={e => setCpf(e.target.value)} placeholder="000.000.000-00" />
+          </div>
+          <div className="space-y-2 p-3 bg-primary/5 rounded-lg border border-primary/20">
+            <Label htmlFor="badgeCode" className="text-primary font-bold text-xs uppercase">Código do Crachá</Label>
+            <Input 
+              id="badgeCode" 
+              value={badgeCode} 
+              onChange={e => setBadgeCode(e.target.value.toUpperCase())} 
+              placeholder="Bipe o código do crachá" 
+              className="border-primary/30 font-mono"
+            />
+            <p className="text-[10px] text-muted-foreground mt-1">Identificador único para login por bipe de crachá.</p>
           </div>
           <div className="space-y-2">
             <Label htmlFor="role">Função *</Label>
