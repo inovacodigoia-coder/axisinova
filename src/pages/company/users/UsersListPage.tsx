@@ -295,24 +295,58 @@ function EditUserModal({ profile, onClose, onSaved }: { profile: ProfileRow | nu
                         <html>
                           <head>
                             <title>Crachá - ${fullName}</title>
-                            <link href="https://fonts.googleapis.com/css2?family=Libre+Barcode+128&display=swap" rel="stylesheet">
+                            <link href="https://fonts.googleapis.com/css2?family=Libre+Barcode+39&display=swap" rel="stylesheet">
                             <style>
-                              body { font-family: sans-serif; display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; margin: 0; background: #f4f4f4; }
-                              .card { border: 2px solid #000; padding: 25px; border-radius: 12px; text-align: center; width: 320px; background: white; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
-                              .name { font-size: 18px; font-weight: bold; margin-bottom: 20px; color: #333; }
-                              .barcode { font-family: 'Libre Barcode 128', cursive; font-size: 60px; margin: 15px 0; line-height: 1; }
-                              .footer { margin-top: 15px; font-size: 12px; color: #666; font-weight: 500; }
+                              body { 
+                                font-family: sans-serif; 
+                                display: flex; 
+                                flex-direction: column; 
+                                items-align: center; 
+                                justify-content: center; 
+                                height: 100vh; 
+                                margin: 0; 
+                                background: #f4f4f4; 
+                              }
+                              .card { 
+                                border: 2px solid #000; 
+                                padding: 25px; 
+                                border-radius: 12px; 
+                                text-align: center; 
+                                width: 320px; 
+                                background: white; 
+                                box-shadow: 0 4px 6px rgba(0,0,0,0.1); 
+                              }
+                              .name { 
+                                font-size: 18px; 
+                                font-weight: bold; 
+                                margin-bottom: 20px; 
+                                color: #333; 
+                                text-transform: uppercase;
+                              }
+                              .barcode { 
+                                font-family: 'Libre Barcode 39', cursive; 
+                                font-size: 70px; 
+                                margin: 20px 0; 
+                                line-height: 1; 
+                                display: block;
+                              }
+                              .footer { 
+                                margin-top: 15px; 
+                                font-size: 12px; 
+                                color: #666; 
+                                font-weight: 500; 
+                              }
                               @media print { 
                                 .no-print { display: none; } 
                                 body { background: white; }
-                                .card { box-shadow: none; border: 1px solid #000; }
+                                .card { box-shadow: none; border: 1px solid #000; margin: 0 auto; }
                               }
                             </style>
                           </head>
                           <body>
                             <div class="card">
-                              <div class="name">${fullName.toUpperCase()}</div>
-                              <div class="barcode">${badgeCode}</div>
+                              <div class="name">${fullName}</div>
+                              <div class="barcode">*${badgeCode}*</div>
                               <div class="footer">Axis Inova - LabSaúde</div>
                             </div>
                             <button class="no-print" style="margin-top: 25px; padding: 10px 20px; cursor: pointer; background: #00D4FF; border: none; color: white; border-radius: 6px; font-weight: bold;" onclick="window.print()">Imprimir</button>

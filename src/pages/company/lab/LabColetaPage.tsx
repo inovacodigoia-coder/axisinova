@@ -204,15 +204,16 @@ export default function LabColetaPage() {
       const next = { ...prev, [field]: value }
       
       // Reconhecimento automático de crachá (bipado)
-      // O código de crachá é bipado no campo username.
-      if (next.username) {
+      if (next.username && next.username.length >= 4) {
         // Tentamos buscar o perfil pelo badge_code
-        // Fazemos uma busca assíncrona, mas como o estado é síncrono, gerenciamos o feedback
+        // O leitor geralmente envia o código limpo, mas adicionamos suporte a * se vier no bip
+        const cleanCode = next.username.replace(/\*/g, '').toUpperCase();
+        
         (async () => {
           const { data: profile, error } = await supabase
             .from('profiles')
             .select('id, full_name, badge_code')
-            .eq('badge_code', next.username.toUpperCase())
+            .eq('badge_code', cleanCode)
             .single()
 
           if (profile) {
