@@ -211,16 +211,35 @@ export function ResultEntryModal({
       }
     });
     setExamStatuses(newStatuses);
-    if (count > 0) {
-      toast.success(`${count} exames liberados com sucesso!`);
-    } else {
-      toast.info("Nenhum exame pendente de liberação.");
     }
   };
 
-  const handleExamAction = (examId: string, action: string) => {
-    setExamActions(prev => ({ ...prev, [examId]: action }));
-    toast.info(`Ação registrada: ${action}`);
+  const handleExamAction = (examId: string, actionType: string) => {
+    if (actionType === 'cancelar') {
+      const exam = filteredExams.find(e => e.id === examId);
+      setCancelModal({ isOpen: true, exam });
+    } else {
+      toast.info(`Ação rápida: ${actionType}. Use os campos abaixo para detalhes.`);
+    }
+  };
+
+  const handleCancelConfirm = (examId: string, reason: string) => {
+    setExamStatuses(prev => ({ ...prev, [examId]: 'cancelled' }));
+    setExamActions(prev => ({ ...prev, [examId]: { type: 'cancelado', reason } }));
+    setCancelModal(null);
+    toast.error("Exame cancelado com sucesso!");
+  };
+
+  const handleRetestUpdate = (examId: string, reason: string, details: string) => {
+    setRetestReasons(prev => ({ ...prev, [examId]: { reason, details } }));
+    setExamActions(prev => ({ ...prev, [examId]: { type: 'reteste', reason, details } }));
+    toast.info("Solicitação de reteste salva como rascunho.");
+  };
+
+  const handleRecoletaUpdate = (examId: string, reason: string, details: string) => {
+    setRecoletaReasons(prev => ({ ...prev, [examId]: { reason, details } }));
+    setExamActions(prev => ({ ...prev, [examId]: { type: 'recoleta', reason, details } }));
+    toast.info("Solicitação de recoleta salva como rascunho.");
   };
 
   const getAge = (birthDate: string) => {
