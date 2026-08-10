@@ -442,13 +442,16 @@ export function ResultEntryModal({
                                     </DropdownMenuTrigger>
                                     <DropdownMenuContent align="start" className="w-48 z-[110]">
                                       <DropdownMenuItem onClick={(e) => { e.stopPropagation(); handleExamAction(exam.id, 'cancelar'); }} className="text-xs font-bold uppercase text-rose-600 gap-2">
-                                        <XCircle className="h-3.5 w-3.5" /> Cancelar exame
+                                        <XCircle className="h-3.5 w-3.5" /> 
+                                        {examStatuses[exam.id] === 'cancelled' ? "Reverter Cancelamento" : "Cancelar exame"}
                                       </DropdownMenuItem>
                                       <DropdownMenuItem onClick={(e) => { e.stopPropagation(); handleExamAction(exam.id, 'reteste'); }} className="text-xs font-bold uppercase text-amber-600 gap-2">
-                                        <RefreshCcw className="h-3.5 w-3.5" /> Solicitar Reteste
+                                        <RefreshCcw className="h-3.5 w-3.5" />
+                                        {examActions[exam.id]?.type === 'reteste' ? "Remover Reteste" : "Solicitar Reteste"}
                                       </DropdownMenuItem>
                                       <DropdownMenuItem onClick={(e) => { e.stopPropagation(); handleExamAction(exam.id, 'recoleta'); }} className="text-xs font-bold uppercase text-orange-600 gap-2">
-                                        <Syringe className="h-3.5 w-3.5" /> Solicitar Recoleta
+                                        <Syringe className="h-3.5 w-3.5" />
+                                        {examActions[exam.id]?.type === 'recoleta' ? "Remover Recoleta" : "Solicitar Recoleta"}
                                       </DropdownMenuItem>
                                     </DropdownMenuContent>
                                   </DropdownMenu>
