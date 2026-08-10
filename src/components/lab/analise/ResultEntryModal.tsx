@@ -601,7 +601,7 @@ export function ResultEntryModal({
                                   <Badge variant="outline" className="bg-white text-primary border-primary/20 text-[10px] font-black h-5 uppercase shrink-0">
                                     {exam.code}
                                   </Badge>
-                                  <h4 className="text-sm font-black uppercase tracking-tight">{exam.name}</h4>
+                                  <h4 className="text-sm font-black uppercase tracking-tight truncate max-w-[200px] sm:max-w-[400px]">{exam.name}</h4>
                                   
                                   {/* Ações do Exame */}
                                   <DropdownMenu>
