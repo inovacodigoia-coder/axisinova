@@ -270,25 +270,26 @@ export function ResultEntryModal({
     const exam = filteredExams.find(e => e.id === examId);
     if (!exam) return;
 
+    const keyBase = `${exam.orderId}_${exam.id}`;
     setSaving(true);
     try {
       const params = exam.parameters?.length ? exam.parameters : [{id: '1', code: exam.code}];
       const examResultsData = params.map((p: any) => ({
         parameterId: p.id,
         parameterCode: p.code || '',
-        value: results[`${exam.id}_${p.id}`] || '',
-        status: getResultStatus(results[`${exam.id}_${p.id}`], p.references?.[0]?.description || '').label.toLowerCase() || 'normal'
+        value: results[`${keyBase}_${p.id}`] || '',
+        status: getResultStatus(results[`${keyBase}_${p.id}`], p.references?.[0]?.description || '').label.toLowerCase() || 'normal'
       }));
 
       const success = await saveExamResults(exam.orderId, [{
         examId: exam.id,
         results: examResultsData,
         status: 'processing',
-        internalObservations: notes[exam.id] || ''
+        internalObservations: notes[keyBase] || ''
       }]);
 
       if (success) {
-        setExamStatuses(prev => ({ ...prev, [examId]: 'digitized' }));
+        setExamStatuses(prev => ({ ...prev, [keyBase]: 'digitized' }));
         toast.success("Exame concluído com sucesso!");
       }
     } finally {
