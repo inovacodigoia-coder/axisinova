@@ -413,8 +413,13 @@ export function ResultEntryModal({
                                   </DropdownMenu>
 
                                   {examActions[exam.id] && (
-                                    <Badge className="h-4 text-[7px] font-black bg-slate-200 text-slate-700 uppercase">
-                                      {examActions[exam.id]}
+                                    <Badge className={cn(
+                                      "h-4 text-[7px] font-black uppercase",
+                                      examActions[exam.id].type === 'cancelado' ? "bg-rose-100 text-rose-700" :
+                                      examActions[exam.id].type === 'reteste' ? "bg-amber-100 text-amber-700" :
+                                      "bg-orange-100 text-orange-700"
+                                    )}>
+                                      {examActions[exam.id].type}
                                     </Badge>
                                   )}
                               </div>
