@@ -322,7 +322,7 @@ export function ResultEntryModal({
                         <div className="pt-2">
                           <div className="relative">
                             <Input 
-                              className="h-9 text-xs bg-white/50 border-slate-200/50 focus:border-primary/50 text-muted-foreground italic"
+                              className="h-9 text-xs bg-white border-slate-200 focus:border-primary text-slate-700 placeholder:italic"
                               placeholder="Nota / Observações técnicas..."
                               value={notes[exam.id] || ''}
                               onChange={(e) => setNotes(prev => ({ ...prev, [exam.id]: e.target.value }))}
