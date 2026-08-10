@@ -123,10 +123,12 @@ export function ResultEntryModal({
     filteredExams.forEach(exam => {
       // Only count if patient is expanded AND exam is not released
       if (expandedPatients[exam.protocol] && examStatuses[exam.id] !== 'released') {
-        const hasResult = (exam.parameters?.length ? exam.parameters : [{id: '1'}]).some((p: any) => 
+        // Must have results for ALL parameters to be considered "filled"
+        const params = exam.parameters?.length ? exam.parameters : [{id: '1'}];
+        const allFilled = params.every((p: any) => 
           results[`${exam.id}_${p.id}`]?.trim() !== ''
         );
-        if (hasResult) count++;
+        if (allFilled) count++;
       }
     });
     return count;
