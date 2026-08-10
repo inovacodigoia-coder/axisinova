@@ -12,7 +12,11 @@ import {
   ChevronDown,
   RefreshCcw,
   MinusCircle,
-  PlusCircle
+  PlusCircle,
+  MoreVertical,
+  XCircle,
+  Syringe,
+  Check
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -54,6 +58,8 @@ export function ResultEntryModal({
   const [results, setResults] = useState<Record<string, string>>({});
   const [notes, setNotes] = useState<Record<string, string>>({});
   const [saving, setSaving] = useState(false);
+  const [examStatuses, setExamStatuses] = useState<Record<string, 'pending' | 'digitized' | 'released'>>({});
+  const [examActions, setExamActions] = useState<Record<string, string>>({});
   /* Do not make any visual modifications. The phrases I write are commands to understand what I want, not to be written down. Understand their content well, then execute what is required.
                                             
                                             I have approved the plan */
@@ -99,10 +105,52 @@ export function ResultEntryModal({
   const handleSave = (isDraft: boolean) => {
     setSaving(true);
     setTimeout(() => {
+      setSaving(true);
+      if (!isDraft) {
+        // Mark all exams with at least one result as digitized
+        const newStatuses = { ...examStatuses };
+        filteredExams.forEach(exam => {
+          const hasResult = (exam.parameters?.length ? exam.parameters : [{id: '1'}]).some((p: any) => 
+            results[`${exam.id}_${p.id}`]?.trim() !== ''
+          );
+          if (hasResult && newStatuses[exam.id] !== 'released') {
+            newStatuses[exam.id] = 'digitized';
+          }
+        });
+        setExamStatuses(newStatuses);
+        toast.success("Digitação concluída com sucesso!");
+      } else {
+        toast.success("Rascunho salvo com sucesso!");
+      }
       setSaving(false);
-      toast.success(isDraft ? "Rascunho salvo com sucesso!" : "Digitação concluída com sucesso!");
-      if (!isDraft) onClose();
     }, 1000);
+  };
+
+  const handleReleaseExam = (examId: string) => {
+    setExamStatuses(prev => ({ ...prev, [examId]: 'released' }));
+    toast.success("Exame liberado com sucesso!");
+  };
+
+  const handleReleaseAllDigitized = () => {
+    const newStatuses = { ...examStatuses };
+    let count = 0;
+    Object.keys(newStatuses).forEach(id => {
+      if (newStatuses[id] === 'digitized') {
+        newStatuses[id] = 'released';
+        count++;
+      }
+    });
+    setExamStatuses(newStatuses);
+    if (count > 0) {
+      toast.success(`${count} exames liberados com sucesso!`);
+    } else {
+      toast.info("Nenhum exame pendente de liberação.");
+    }
+  };
+
+  const handleExamAction = (examId: string, action: string) => {
+    setExamActions(prev => ({ ...prev, [examId]: action }));
+    toast.info(`Ação registrada: ${action}`);
   };
 
   const getAge = (birthDate: string) => {
@@ -227,22 +275,52 @@ export function ResultEntryModal({
                 {isExpanded && (
                   <div className="p-6 space-y-6 border-t border-slate-100 animate-in slide-in-from-top-2 duration-200">
                     {patient.exams.map((exam: any) => (
-                      <div key={exam.id} className="relative bg-slate-50 rounded-xl border border-slate-200 p-5 space-y-4">
+                      <div key={exam.id} className={cn(
+                        "relative bg-slate-50 rounded-xl border border-slate-200 p-5 space-y-4 transition-all duration-300",
+                        examStatuses[exam.id] === 'released' && "opacity-80 grayscale-[0.2]"
+                      )}>
                         {/* Título do Exame */}
                         <div className="flex items-start justify-between">
                           <div className="flex items-center gap-3">
                             <div className={cn(
-                              "h-3 w-3 rounded-full shadow-sm",
+                              "h-3 w-3 rounded-full shadow-sm transition-colors",
+                              examStatuses[exam.id] === 'released' || examStatuses[exam.id] === 'digitized' ? "bg-emerald-500" :
                               exam.workbench === 'Bioquímica' ? "bg-blue-500" :
                               exam.workbench === 'Hematologia' ? "bg-purple-500" :
                               "bg-slate-400"
                             )} />
-                            <div>
+                            <div className="flex flex-col">
                               <div className="flex items-center gap-2">
                                 <Badge variant="outline" className="bg-white text-primary border-primary/20 text-[10px] font-black h-5 uppercase">
                                   {exam.code}
                                 </Badge>
                                 <h4 className="text-sm font-black uppercase tracking-tight">{exam.name}</h4>
+                                
+                                {/* Ações do Exame */}
+                                <DropdownMenu>
+                                  <DropdownMenuTrigger asChild>
+                                    <Button variant="ghost" size="icon" className="h-6 w-6 text-slate-400 hover:text-primary">
+                                      <MoreVertical className="h-3.5 w-3.5" />
+                                    </Button>
+                                  </DropdownMenuTrigger>
+                                  <DropdownMenuContent align="start" className="w-48">
+                                    <DropdownMenuItem onClick={() => handleExamAction(exam.id, 'cancelar')} className="text-xs font-bold uppercase text-rose-600 gap-2">
+                                      <XCircle className="h-3.5 w-3.5" /> Cancelar exame
+                                    </DropdownMenuItem>
+                                    <DropdownMenuItem onClick={() => handleExamAction(exam.id, 'reteste')} className="text-xs font-bold uppercase text-amber-600 gap-2">
+                                      <RefreshCcw className="h-3.5 w-3.5" /> Solicitar reteste
+                                    </DropdownMenuItem>
+                                    <DropdownMenuItem onClick={() => handleExamAction(exam.id, 'recoleta')} className="text-xs font-bold uppercase text-orange-600 gap-2">
+                                      <Syringe className="h-3.5 w-3.5" /> Solicitar Recoleta
+                                    </DropdownMenuItem>
+                                  </DropdownMenuContent>
+                                </DropdownMenu>
+
+                                {examActions[exam.id] && (
+                                  <Badge className="h-4 text-[7px] font-black bg-slate-200 text-slate-700 uppercase">
+                                    {examActions[exam.id]}
+                                  </Badge>
+                                )}
                               </div>
                               <div className="flex items-center gap-2 mt-1 text-[10px] text-muted-foreground font-bold uppercase">
                                 <CalendarIcon className="h-3 w-3" />
@@ -251,18 +329,38 @@ export function ResultEntryModal({
                             </div>
                           </div>
 
-                          <DropdownMenu>
-                            <DropdownMenuTrigger asChild>
-                              <Button variant="outline" size="sm" className="h-7 px-2 text-[9px] font-black uppercase gap-1 bg-white border-slate-200">
-                                Versão: 1
-                                <ChevronDown className="h-3 w-3 opacity-50" />
+                          <div className="flex items-center gap-2">
+                            {examStatuses[exam.id] === 'digitized' && (
+                              <Button 
+                                onClick={() => handleReleaseExam(exam.id)}
+                                size="sm" 
+                                className="h-7 px-3 text-[9px] font-black uppercase gap-1.5 bg-emerald-500 hover:bg-emerald-600 text-white shadow-sm"
+                              >
+                                <CheckCircle2 className="h-3 w-3" />
+                                Liberar exame
                               </Button>
-                            </DropdownMenuTrigger>
-                            <DropdownMenuContent align="end">
-                              <DropdownMenuItem className="text-xs font-bold uppercase">Versão 1 (Padrão)</DropdownMenuItem>
-                              <DropdownMenuItem className="text-xs font-bold uppercase">Versão 2 (Metodologia B)</DropdownMenuItem>
-                            </DropdownMenuContent>
-                          </DropdownMenu>
+                            )}
+                            
+                            {examStatuses[exam.id] === 'released' && (
+                              <Badge className="h-7 px-3 text-[9px] font-black uppercase gap-1.5 bg-emerald-100 text-emerald-700 border-emerald-200">
+                                <Check className="h-3 w-3" />
+                                Liberado
+                              </Badge>
+                            )}
+
+                            <DropdownMenu>
+                              <DropdownMenuTrigger asChild>
+                                <Button variant="outline" size="sm" className="h-7 px-2 text-[9px] font-black uppercase gap-1 bg-white border-slate-200">
+                                  Versão: 1
+                                  <ChevronDown className="h-3 w-3 opacity-50" />
+                                </Button>
+                              </DropdownMenuTrigger>
+                              <DropdownMenuContent align="end">
+                                <DropdownMenuItem className="text-xs font-bold uppercase">Versão 1 (Padrão)</DropdownMenuItem>
+                                <DropdownMenuItem className="text-xs font-bold uppercase">Versão 2 (Metodologia B)</DropdownMenuItem>
+                              </DropdownMenuContent>
+                            </DropdownMenu>
+                          </div>
                         </div>
 
                         {/* Parâmetros do Exame */}
@@ -291,10 +389,12 @@ export function ResultEntryModal({
                                         "h-10 text-sm font-bold bg-white border-slate-200 focus:border-primary transition-all pr-12",
                                         status.label === 'Baixo' && "border-amber-400 focus:border-amber-500",
                                         status.label === 'Alto' && "border-rose-400 focus:border-rose-500",
-                                        status.label === 'Normal' && "border-emerald-400 focus:border-emerald-500"
+                                        status.label === 'Normal' && "border-emerald-400 focus:border-emerald-500",
+                                        examStatuses[exam.id] === 'released' && "bg-slate-100 border-slate-200 cursor-not-allowed text-slate-500"
                                       )}
                                       placeholder="Resultado"
                                       value={value}
+                                      disabled={examStatuses[exam.id] === 'released'}
                                       onChange={(e) => setResults(prev => ({ ...prev, [`${exam.id}_${param.id}`]: e.target.value }))}
                                     />
                                     {status.label && (
@@ -322,9 +422,13 @@ export function ResultEntryModal({
                         <div className="pt-2">
                           <div className="relative">
                             <Input 
-                              className="h-9 text-xs bg-white border-slate-200 focus:border-primary text-slate-700 placeholder:italic"
+                              className={cn(
+                                "h-9 text-xs bg-white border-slate-200 focus:border-primary text-slate-700 placeholder:italic",
+                                examStatuses[exam.id] === 'released' && "bg-slate-100 cursor-not-allowed"
+                              )}
                               placeholder="Nota / Observações técnicas..."
                               value={notes[exam.id] || ''}
+                              disabled={examStatuses[exam.id] === 'released'}
                               onChange={(e) => setNotes(prev => ({ ...prev, [exam.id]: e.target.value }))}
                             />
                           </div>
@@ -401,6 +505,17 @@ export function ResultEntryModal({
             <Save className="h-4 w-4" />
             Salvar Rascunho
           </Button>
+          
+          <Button 
+            variant="outline" 
+            onClick={handleReleaseAllDigitized}
+            disabled={saving || !Object.values(examStatuses).includes('digitized')}
+            className="h-11 px-6 font-black uppercase text-[10px] tracking-widest gap-2 border-emerald-500/30 text-emerald-600 hover:bg-emerald-50 shadow-sm"
+          >
+            <ShieldCheck className="h-4 w-4" />
+            Liberar Digitados
+          </Button>
+
           <Button 
             onClick={() => handleSave(false)}
             disabled={saving || filledExamsCount === 0}
