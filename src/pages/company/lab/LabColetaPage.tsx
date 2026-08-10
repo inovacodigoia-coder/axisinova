@@ -198,32 +198,32 @@ export default function LabColetaPage() {
     })
   }
 
-  const handleCredentialChange = (orderId: string, field: 'username' | 'password', value: string) => {
+  const handleCredentialChange = async (orderId: string, field: 'username' | 'password', value: string) => {
     setResponsibleCredentials(prev => {
       const next = { ...prev, [field]: value }
       
-      // Simulação de reconhecimento automático de crachá (bipado)
-      // Se tiver um formato específico de crachá ou preencher ambos, valida
-      if (next.username && next.password) {
-        // Mock de validação de técnico
-        // Em um sistema real, isso faria uma chamada ao backend ou verificaria um hash
-        const techniciansMock = [
-          { id: 'tech-001', name: 'Alexsandro de Souza', badge: 'TECH001' },
-          { id: 'tech-002', name: 'Maria Silva', badge: 'TECH002' },
-          { id: 'tech-003', name: 'João Técnico', badge: 'TECH003' }
-        ]
+      // Reconhecimento automático de crachá (bipado)
+      // O código de crachá é bipado no campo username.
+      if (next.username) {
+        // Tentamos buscar o perfil pelo badge_code
+        // Fazemos uma busca assíncrona, mas como o estado é síncrono, gerenciamos o feedback
+        (async () => {
+          const { data: profile, error } = await supabase
+            .from('profiles')
+            .select('id, full_name, badge_code')
+            .eq('badge_code', next.username.toUpperCase())
+            .single()
 
-        const found = techniciansMock.find(t => t.badge === next.username || t.name.toLowerCase().includes(next.username.toLowerCase()))
-        
-        if (found) {
-          setTempResponsible(prevTemp => ({
-            ...prevTemp,
-            [orderId]: { id: found.id, name: found.name }
-          }))
-          setIsChangingResponsible(null)
-          setResponsibleCredentials({ username: '', password: '' })
-          toast.success(`Responsável alterado para: ${found.name}`)
-        }
+          if (profile) {
+            setTempResponsible(prevTemp => ({
+              ...prevTemp,
+              [orderId]: { id: profile.id, name: profile.full_name }
+            }))
+            setIsChangingResponsible(null)
+            setResponsibleCredentials({ username: '', password: '' })
+            toast.success(`Técnico identificado: ${profile.full_name}`)
+          }
+        })()
       }
       
       return next
@@ -570,24 +570,18 @@ export default function LabColetaPage() {
                             {isChangingResponsible === order.id ? (
                               <div className="space-y-2 p-3 bg-primary/5 border border-primary/20 rounded-xl animate-in fade-in zoom-in-95 duration-200">
                                 <p className="text-[10px] font-medium text-primary mb-2 flex items-center gap-1">
-                                  <User className="h-3 w-3" /> Bipe o crachá ou insira as credenciais
+                                  <Beaker className="h-3 w-3" /> Bipe o Crachá do Técnico
                                 </p>
-                                <div className="grid grid-cols-2 gap-2">
+                                <div className="grid grid-cols-1 gap-2">
                                   <input 
                                     autoFocus
                                     type="text" 
-                                    placeholder="Usuário/Crachá"
-                                    className="h-9 px-3 bg-background border border-primary/20 rounded-lg text-xs outline-none focus:ring-2 focus:ring-primary/20 w-full"
+                                    placeholder="Aguardando bipagem do crachá..."
+                                    className="h-10 px-3 bg-background border-2 border-primary/40 rounded-lg text-sm outline-none focus:ring-4 focus:ring-primary/20 w-full font-mono text-center tracking-[0.2em]"
                                     value={responsibleCredentials.username}
                                     onChange={(e) => handleCredentialChange(order.id, 'username', e.target.value)}
                                   />
-                                  <input 
-                                    type="password" 
-                                    placeholder="Senha"
-                                    className="h-9 px-3 bg-background border border-primary/20 rounded-lg text-xs outline-none focus:ring-2 focus:ring-primary/20 w-full"
-                                    value={responsibleCredentials.password}
-                                    onChange={(e) => handleCredentialChange(order.id, 'password', e.target.value)}
-                                  />
+                                </div>
                                 </div>
                               </div>
                             ) : (
