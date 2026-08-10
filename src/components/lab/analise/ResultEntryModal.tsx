@@ -371,11 +371,11 @@ export function ResultEntryModal({
                                     </DropdownMenuContent>
                                   </DropdownMenu>
 
-                                {examActions[exam.id] && (
-                                  <Badge className="h-4 text-[7px] font-black bg-slate-200 text-slate-700 uppercase">
-                                    {examActions[exam.id]}
-                                  </Badge>
-                                )}
+                                  {examActions[exam.id] && (
+                                    <Badge className="h-4 text-[7px] font-black bg-slate-200 text-slate-700 uppercase">
+                                      {examActions[exam.id]}
+                                    </Badge>
+                                  )}
                               </div>
                               <div className="flex items-center gap-2 mt-1 text-[10px] text-muted-foreground font-bold uppercase">
                                 <CalendarIcon className="h-3 w-3" />
