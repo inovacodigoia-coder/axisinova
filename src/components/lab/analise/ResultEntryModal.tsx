@@ -266,8 +266,8 @@ export function ResultEntryModal({
     }
   };
 
-  const handleConcluirExame = async (examId: string) => {
-    const exam = filteredExams.find(e => e.id === examId);
+  const handleConcluirExame = async (orderId: string, examId: string) => {
+    const exam = filteredExams.find(e => e.id === examId && e.orderId === orderId);
     if (!exam) return;
 
     const keyBase = `${exam.orderId}_${exam.id}`;
@@ -297,8 +297,8 @@ export function ResultEntryModal({
     }
   };
 
-  const handleReleaseExam = async (examId: string) => {
-    const exam = filteredExams.find(e => e.id === examId);
+  const handleReleaseExam = async (orderId: string, examId: string) => {
+    const exam = filteredExams.find(e => e.id === examId && e.orderId === orderId);
     if (!exam) return;
 
     const keyBase = `${exam.orderId}_${exam.id}`;
@@ -357,8 +357,8 @@ export function ResultEntryModal({
     }
   };
 
-  const handleExamAction = async (examId: string, actionType: string) => {
-    const exam = filteredExams.find(e => e.id === examId);
+  const handleExamAction = async (orderId: string, examId: string, actionType: string) => {
+    const exam = filteredExams.find(e => e.id === examId && e.orderId === orderId);
     if (!exam) return;
 
     const keyBase = `${exam.orderId}_${exam.id}`;
@@ -421,8 +421,8 @@ export function ResultEntryModal({
     }
   };
 
-  const handleCancelConfirm = async (examId: string, reason: string) => {
-    const exam = filteredExams.find(e => e.id === examId);
+  const handleCancelConfirm = async (orderId: string, examId: string, reason: string) => {
+    const exam = filteredExams.find(e => e.id === examId && e.orderId === orderId);
     if (!exam) return;
 
     const keyBase = `${exam.orderId}_${exam.id}`;
