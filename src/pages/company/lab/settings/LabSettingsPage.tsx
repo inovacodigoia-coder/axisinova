@@ -194,6 +194,128 @@ function LabDataSection() {
 }
 
 function ReportLayoutSection() {
+  const [settings, setSettings] = useState<any>({
+    report_header_title: '',
+    report_header_subtitle: '',
+    report_logo_primary_url: '',
+    report_logo_secondary_url: '',
+    report_institutional_warning: '',
+    report_footer_text: '',
+    report_watermark_enabled: true,
+    report_watermark_text: '[ CÓPIA NÃO AUTENTICADA ]'
+  });
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+
+  useEffect(() => {
+    fetchSettings();
+  }, []);
+
+  const fetchSettings = async () => {
+    try {
+      setLoading(true);
+      const { data: userData } = await supabase.auth.getUser();
+      if (!userData.user) return;
+
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('company_id')
+        .eq('id', userData.user.id)
+        .single();
+
+      if (!profile) return;
+
+      const { data, error } = await supabase
+        .from('lab_settings')
+        .select('*')
+        .eq('company_id', profile.company_id)
+        .maybeSingle();
+
+      if (error) throw error;
+      if (data) {
+        setSettings(data);
+      }
+    } catch (error) {
+      console.error('Error fetching lab settings:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleUpdate = (field: string, value: any) => {
+    setSettings(prev => ({ ...prev, [field]: value }));
+  };
+
+  const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>, field: string) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    try {
+      const { data: userData } = await supabase.auth.getUser();
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('company_id')
+        .eq('id', userData.user?.id)
+        .single();
+
+      const fileExt = file.name.split('.').pop();
+      const fileName = `${profile.company_id}/${field}-${Math.random()}.${fileExt}`;
+      const filePath = `lab-logos/${fileName}`;
+
+      const { error: uploadError } = await supabase.storage
+        .from('company-assets')
+        .upload(filePath, file);
+
+      if (uploadError) throw uploadError;
+
+      const { data: { publicUrl } } = supabase.storage
+        .from('company-assets')
+        .getPublicUrl(filePath);
+
+      handleUpdate(field, publicUrl);
+      toast.success('Logo enviada com sucesso');
+    } catch (error) {
+      console.error('Error uploading logo:', error);
+      toast.error('Erro ao enviar logo');
+    }
+  };
+
+  const handleSave = async () => {
+    try {
+      setSaving(true);
+      const { data: userData } = await supabase.auth.getUser();
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('company_id')
+        .eq('id', userData.user?.id)
+        .single();
+
+      const { error } = await supabase
+        .from('lab_settings')
+        .upsert({
+          company_id: profile.company_id,
+          ...settings,
+          updated_at: new Date().toISOString()
+        }, { onConflict: 'company_id' });
+
+      if (error) throw error;
+      toast.success('Configurações de layout salvas');
+    } catch (error) {
+      console.error('Error saving lab settings:', error);
+      toast.error('Erro ao salvar configurações');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="flex justify-center py-12">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-8">
       <div className="flex items-center justify-between">
@@ -201,9 +323,15 @@ function ReportLayoutSection() {
           <FileText className="h-5 w-5 text-primary" />
           <h3 className="text-lg font-bold">Cabeçalho e Rodapé do Laudo</h3>
         </div>
-        <Button variant="outline" size="sm" className="gap-2">
-          <FileText className="h-4 w-4" /> Gerar laudo de exemplo
-        </Button>
+        <div className="flex gap-2">
+          <Button variant="outline" size="sm" className="gap-2">
+            <FileText className="h-4 w-4" /> Gerar laudo de exemplo
+          </Button>
+          <Button onClick={handleSave} disabled={saving} className="gradient-bg text-white gap-2 px-6">
+            {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
+            Salvar Layout
+          </Button>
+        </div>
       </div>
       
       <p className="text-xs text-muted-foreground -mt-4">
@@ -213,12 +341,20 @@ function ReportLayoutSection() {
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <div className="space-y-2">
           <Label>Título do cabeçalho</Label>
-          <Input placeholder="Ex: LABORATÓRIO MUNICIPAL CENTRAL" />
+          <Input 
+            value={settings.report_header_title || ''} 
+            onChange={(e) => handleUpdate('report_header_title', e.target.value)}
+            placeholder="Ex: LABORATÓRIO MUNICIPAL CENTRAL" 
+          />
           <p className="text-[10px] text-muted-foreground">Fallback: nome do laboratório.</p>
         </div>
         <div className="space-y-2">
           <Label>Subtítulo (opcional)</Label>
-          <Input placeholder="Ex: Secretaria Municipal de Saúde" />
+          <Input 
+            value={settings.report_header_subtitle || ''} 
+            onChange={(e) => handleUpdate('report_header_subtitle', e.target.value)}
+            placeholder="Ex: Secretaria Municipal de Saúde" 
+          />
         </div>
       </div>
 
@@ -226,10 +362,28 @@ function ReportLayoutSection() {
         <div className="space-y-3">
           <Label>Logo principal (esquerda)</Label>
           <div className="flex items-center gap-4 p-4 border rounded-xl bg-muted/20">
-            <div className="h-12 w-12 bg-card border rounded flex items-center justify-center text-[8px] text-muted-foreground font-bold">LOGO</div>
-            <div className="flex flex-col gap-2">
-              <input type="file" className="text-xs w-full" />
-              <button className="text-[10px] text-red-500 font-bold text-left">Remover</button>
+            <div className="h-16 w-16 bg-card border rounded flex items-center justify-center overflow-hidden">
+              {settings.report_logo_primary_url ? (
+                <img src={settings.report_logo_primary_url} alt="Logo Principal" className="max-h-full max-w-full object-contain" />
+              ) : (
+                <span className="text-[8px] text-muted-foreground font-bold uppercase tracking-widest">LOGO</span>
+              )}
+            </div>
+            <div className="flex flex-col gap-2 flex-1">
+              <input 
+                type="file" 
+                accept="image/*"
+                onChange={(e) => handleFileUpload(e, 'report_logo_primary_url')}
+                className="text-xs w-full file:mr-4 file:py-1 file:px-2 file:rounded-md file:border-0 file:text-[10px] file:font-bold file:bg-primary file:text-white hover:file:bg-primary/90 cursor-pointer" 
+              />
+              {settings.report_logo_primary_url && (
+                <button 
+                  onClick={() => handleUpdate('report_logo_primary_url', null)}
+                  className="text-[10px] text-red-500 font-bold text-left hover:underline"
+                >
+                  Remover
+                </button>
+              )}
             </div>
           </div>
         </div>
@@ -237,10 +391,28 @@ function ReportLayoutSection() {
         <div className="space-y-3">
           <Label>Logo secundário (direita, opcional)</Label>
           <div className="flex items-center gap-4 p-4 border rounded-xl bg-muted/20">
-            <div className="h-12 w-12 bg-card border rounded flex items-center justify-center text-[8px] text-muted-foreground font-bold">LOGO</div>
-            <div className="flex flex-col gap-2">
-              <input type="file" className="text-xs w-full" />
-              <button className="text-[10px] text-red-500 font-bold text-left">Remover</button>
+            <div className="h-16 w-16 bg-card border rounded flex items-center justify-center overflow-hidden">
+              {settings.report_logo_secondary_url ? (
+                <img src={settings.report_logo_secondary_url} alt="Logo Secundário" className="max-h-full max-w-full object-contain" />
+              ) : (
+                <span className="text-[8px] text-muted-foreground font-bold uppercase tracking-widest">LOGO</span>
+              )}
+            </div>
+            <div className="flex flex-col gap-2 flex-1">
+              <input 
+                type="file" 
+                accept="image/*"
+                onChange={(e) => handleFileUpload(e, 'report_logo_secondary_url')}
+                className="text-xs w-full file:mr-4 file:py-1 file:px-2 file:rounded-md file:border-0 file:text-[10px] file:font-bold file:bg-primary file:text-white hover:file:bg-primary/90 cursor-pointer" 
+              />
+              {settings.report_logo_secondary_url && (
+                <button 
+                  onClick={() => handleUpdate('report_logo_secondary_url', null)}
+                  className="text-[10px] text-red-500 font-bold text-left hover:underline"
+                >
+                  Remover
+                </button>
+              )}
             </div>
           </div>
           <p className="text-[10px] text-muted-foreground italic">Ex: brasão da prefeitura. Recomendado PNG transparente.</p>
@@ -250,6 +422,8 @@ function ReportLayoutSection() {
       <div className="space-y-2">
         <Label>Aviso institucional (abaixo dos dados do paciente na 1ª página)</Label>
         <textarea 
+          value={settings.report_institutional_warning || ''}
+          onChange={(e) => handleUpdate('report_institutional_warning', e.target.value)}
           className="w-full min-h-[100px] p-3 rounded-lg border bg-background text-sm resize-none focus:ring-2 focus:ring-primary/20 outline-none" 
           placeholder="Texto livre exibido apenas na primeira página, logo abaixo do bloco do paciente."
         />
@@ -258,6 +432,8 @@ function ReportLayoutSection() {
       <div className="space-y-2">
         <Label>Rodapé do Laudo</Label>
         <textarea 
+          value={settings.report_footer_text || ''}
+          onChange={(e) => handleUpdate('report_footer_text', e.target.value)}
           className="w-full min-h-[100px] p-3 rounded-lg border bg-background text-sm resize-none focus:ring-2 focus:ring-primary/20 outline-none" 
           placeholder="Aparece na lateral esquerda do rodapé em todas as páginas."
         />
@@ -269,12 +445,19 @@ function ReportLayoutSection() {
             <Label className="text-sm font-bold">Marca d'água em laudos não assinados</Label>
             <p className="text-[10px] text-muted-foreground">Impressa no topo de cada página quando o laudo ainda não foi liberado.</p>
           </div>
-          <Switch defaultChecked />
+          <Switch 
+            checked={settings.report_watermark_enabled} 
+            onCheckedChange={(val) => handleUpdate('report_watermark_enabled', val)}
+          />
         </div>
         
         <div className="space-y-2">
           <Label className="text-xs font-bold uppercase text-muted-foreground">Texto da marca d'água</Label>
-          <Input defaultValue="[ CÓPIA NÃO AUTENTICADA ]" className="max-w-xs" />
+          <Input 
+            value={settings.report_watermark_text || ''} 
+            onChange={(e) => handleUpdate('report_watermark_text', e.target.value)}
+            className="max-w-xs" 
+          />
         </div>
       </div>
     </div>
