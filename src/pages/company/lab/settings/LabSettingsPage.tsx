@@ -32,7 +32,8 @@ import {
   Edit2,
   Info,
   Loader2,
-  Globe
+  Globe,
+  FileText
 } from 'lucide-react'
 import { LabOriginsSettings } from '@/components/lab/settings/LabOriginsSettings'
 import { cn } from '@/lib/utils'
@@ -69,6 +70,7 @@ export default function LabSettingsPage() {
           <NavItem active={activeTab === 'signature'} onClick={() => setActiveTab('signature')} icon={<Signature className="h-4 w-4" />} label="Assinatura Digital" />
           <NavItem active={activeTab === 'printer'} onClick={() => setActiveTab('printer')} icon={<Printer className="h-4 w-4" />} label="Impressora / Etiqueta" />
           <NavItem active={activeTab === 'origins'} onClick={() => setActiveTab('origins')} icon={<Globe className="h-4 w-4" />} label="Origens" />
+          <NavItem active={activeTab === 'report-layout'} onClick={() => setActiveTab('report-layout')} icon={<FileText className="h-4 w-4" />} label="Layout do Laudo" />
           
           <p className="px-3 py-2 mt-4 text-[10px] font-bold text-muted-foreground uppercase tracking-wider">Técnico</p>
           <NavItem active={activeTab === 'equipment'} onClick={() => setActiveTab('equipment')} icon={<Monitor className="h-4 w-4" />} label="Máquinas / Equip." />
@@ -95,6 +97,7 @@ export default function LabSettingsPage() {
             {activeTab === 'equipment' && <EquipmentRedirect />}
             {activeTab === 'collection-reasons' && <CollectionReasonsSection />}
             {activeTab === 'origins' && <LabOriginsSettings />}
+            {activeTab === 'report-layout' && <ReportLayoutSection />}
             {activeTab === 'logs' && <LogsSection />}
             
             <div className="mt-8 pt-6 border-t flex justify-end">
@@ -184,6 +187,94 @@ function LabDataSection() {
             <Label>Exibir logo no laudo</Label>
             <Switch />
           </div>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+function ReportLayoutSection() {
+  return (
+    <div className="space-y-8">
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <FileText className="h-5 w-5 text-primary" />
+          <h3 className="text-lg font-bold">Cabeçalho e Rodapé do Laudo</h3>
+        </div>
+        <Button variant="outline" size="sm" className="gap-2">
+          <FileText className="h-4 w-4" /> Gerar laudo de exemplo
+        </Button>
+      </div>
+      
+      <p className="text-xs text-muted-foreground -mt-4">
+        Título, subtítulo, logos e marca d'água aparecem no topo de cada página do PDF. Use o botão acima para visualizar sem salvar.
+      </p>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div className="space-y-2">
+          <Label>Título do cabeçalho</Label>
+          <Input placeholder="Ex: LABORATÓRIO MUNICIPAL CENTRAL" />
+          <p className="text-[10px] text-muted-foreground">Fallback: nome do laboratório.</p>
+        </div>
+        <div className="space-y-2">
+          <Label>Subtítulo (opcional)</Label>
+          <Input placeholder="Ex: Secretaria Municipal de Saúde" />
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div className="space-y-3">
+          <Label>Logo principal (esquerda)</Label>
+          <div className="flex items-center gap-4 p-4 border rounded-xl bg-muted/20">
+            <div className="h-12 w-12 bg-card border rounded flex items-center justify-center text-[8px] text-muted-foreground font-bold">LOGO</div>
+            <div className="flex flex-col gap-2">
+              <input type="file" className="text-xs w-full" />
+              <button className="text-[10px] text-red-500 font-bold text-left">Remover</button>
+            </div>
+          </div>
+        </div>
+        
+        <div className="space-y-3">
+          <Label>Logo secundário (direita, opcional)</Label>
+          <div className="flex items-center gap-4 p-4 border rounded-xl bg-muted/20">
+            <div className="h-12 w-12 bg-card border rounded flex items-center justify-center text-[8px] text-muted-foreground font-bold">LOGO</div>
+            <div className="flex flex-col gap-2">
+              <input type="file" className="text-xs w-full" />
+              <button className="text-[10px] text-red-500 font-bold text-left">Remover</button>
+            </div>
+          </div>
+          <p className="text-[10px] text-muted-foreground italic">Ex: brasão da prefeitura. Recomendado PNG transparente.</p>
+        </div>
+      </div>
+
+      <div className="space-y-2">
+        <Label>Aviso institucional (abaixo dos dados do paciente na 1ª página)</Label>
+        <textarea 
+          className="w-full min-h-[100px] p-3 rounded-lg border bg-background text-sm resize-none focus:ring-2 focus:ring-primary/20 outline-none" 
+          placeholder="Texto livre exibido apenas na primeira página, logo abaixo do bloco do paciente."
+        />
+      </div>
+
+      <div className="space-y-2">
+        <Label>Rodapé do Laudo</Label>
+        <textarea 
+          className="w-full min-h-[100px] p-3 rounded-lg border bg-background text-sm resize-none focus:ring-2 focus:ring-primary/20 outline-none" 
+          placeholder="Aparece na lateral esquerda do rodapé em todas as páginas."
+        />
+      </div>
+
+      <div className="p-4 bg-muted/30 rounded-xl border border-border flex flex-col gap-4">
+        <div className="flex items-center justify-between">
+          <div className="space-y-0.5">
+            <Label className="text-sm font-bold">Marca d'água em laudos não assinados</Label>
+            <p className="text-[10px] text-muted-foreground">Impressa no topo de cada página quando o laudo ainda não foi liberado.</p>
+          </div>
+          <Switch defaultChecked />
+        </div>
+        
+        <div className="space-y-2">
+          <Label className="text-xs font-bold uppercase text-muted-foreground">Texto da marca d'água</Label>
+          <Input defaultValue="[ CÓPIA NÃO AUTENTICADA ]" className="max-w-xs" />
         </div>
       </div>
     </div>
