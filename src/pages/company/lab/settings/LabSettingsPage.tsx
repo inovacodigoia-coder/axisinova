@@ -273,9 +273,13 @@ function ReportLayoutSection({ settings, setSettings }: { settings: any, setSett
         .from('attendance-attachments')
         .getPublicUrl(filePath)
 
-      // Use a functional update to ensure we have the latest settings
-      setSettings((prev: any) => ({ ...prev, [field]: publicUrl }))
-      toast.success('Upload realizado com sucesso!')
+      // Use a functional update and force a state refresh
+      setSettings((prev: any) => {
+        const next = { ...prev, [field]: publicUrl };
+        console.log("Updating settings with new logo URL:", publicUrl);
+        return next;
+      });
+      toast.success('Upload realizado com sucesso!');
     } catch (error) {
       console.error('Error uploading logo:', error)
       toast.error('Erro ao fazer upload da logo')
