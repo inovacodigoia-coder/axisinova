@@ -585,7 +585,7 @@ export function ResultEntryModal({
 
           <Button 
             onClick={() => handleSave(false)}
-            disabled={saving || filledExamsCount === 0}
+            disabled={isConcluirDisabled}
             className="h-11 px-8 font-black uppercase text-[10px] tracking-widest gap-2 bg-primary text-white hover:bg-primary/90 shadow-lg shadow-primary/20"
           >
             <CheckCircle2 className="h-4 w-4" />
