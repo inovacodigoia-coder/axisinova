@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback } from 'react'
 import { useAuth } from '@/context/AuthContext'
 import { supabase } from '@/integrations/supabase/client'
 import { DataTable } from '@/components/ui/DataTable'
-import { Search, Plus, Users, Edit, Loader2, ToggleLeft, ToggleRight } from 'lucide-react'
+import { Search, Plus, Users, Edit, Loader2, ToggleLeft, ToggleRight, RefreshCw } from 'lucide-react'
 import { toast } from 'sonner'
 import { CreateUserModal } from '@/components/company/users/CreateUserModal'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
@@ -295,23 +295,27 @@ function EditUserModal({ profile, onClose, onSaved }: { profile: ProfileRow | nu
                         <html>
                           <head>
                             <title>Crachá - ${fullName}</title>
+                            <link href="https://fonts.googleapis.com/css2?family=Libre+Barcode+128&display=swap" rel="stylesheet">
                             <style>
-                              body { font-family: sans-serif; display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; margin: 0; }
-                              .card { border: 2px solid #000; padding: 20px; border-radius: 10px; text-align: center; width: 300px; }
-                              .name { font-size: 18px; font-weight: bold; margin-bottom: 10px; }
-                              .code { font-family: 'Libre Barcode 39', 'Courier New', Courier, monospace; font-size: 40px; margin: 15px 0; }
-                              .code-text { font-size: 14px; letter-spacing: 2px; }
-                              @media print { .no-print { display: none; } }
+                              body { font-family: sans-serif; display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; margin: 0; background: #f4f4f4; }
+                              .card { border: 2px solid #000; padding: 25px; border-radius: 12px; text-align: center; width: 320px; background: white; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+                              .name { font-size: 18px; font-weight: bold; margin-bottom: 20px; color: #333; }
+                              .barcode { font-family: 'Libre Barcode 128', cursive; font-size: 60px; margin: 15px 0; line-height: 1; }
+                              .footer { margin-top: 15px; font-size: 12px; color: #666; font-weight: 500; }
+                              @media print { 
+                                .no-print { display: none; } 
+                                body { background: white; }
+                                .card { box-shadow: none; border: 1px solid #000; }
+                              }
                             </style>
                           </head>
                           <body>
                             <div class="card">
                               <div class="name">${fullName.toUpperCase()}</div>
-                              <div class="code-text">${badgeCode}</div>
-                              <div class="code" style="font-size: 24px;">*${badgeCode}*</div>
-                              <div style="margin-top: 10px; font-size: 12px; color: #666;">Axis Inova - LabSaúde</div>
+                              <div class="barcode">${badgeCode}</div>
+                              <div class="footer">Axis Inova - LabSaúde</div>
                             </div>
-                            <button class="no-print" style="margin-top: 20px;" onclick="window.print()">Imprimir</button>
+                            <button class="no-print" style="margin-top: 25px; padding: 10px 20px; cursor: pointer; background: #00D4FF; border: none; color: white; border-radius: 6px; font-weight: bold;" onclick="window.print()">Imprimir</button>
                           </body>
                         </html>
                       `);
@@ -326,18 +330,33 @@ function EditUserModal({ profile, onClose, onSaved }: { profile: ProfileRow | nu
             <div className="grid grid-cols-1 gap-4">
               <div className="space-y-2">
                 <Label className="text-xs font-semibold text-muted-foreground uppercase">Código do Crachá (Código de Barras)</Label>
-                <div className="relative">
-                  <Input 
-                    value={badgeCode} 
-                    onChange={e => setBadgeCode(e.target.value.toUpperCase())} 
-                    placeholder="Bipe o crachá ou digite o código único" 
-                    className="bg-background border-primary/30 focus-visible:ring-primary font-mono tracking-widest"
-                  />
-                  {badgeCode && (
-                    <div className="absolute right-3 top-1/2 -translate-y-1/2 text-[10px] font-bold text-primary/60">
-                      ÚNICO
-                    </div>
-                  )}
+                <div className="relative flex gap-2">
+                  <div className="relative flex-1">
+                    <Input 
+                      value={badgeCode} 
+                      onChange={e => setBadgeCode(e.target.value.toUpperCase())} 
+                      placeholder="Bipe o crachá ou digite o código único" 
+                      className="bg-background border-primary/30 focus-visible:ring-primary font-mono tracking-widest pr-16"
+                    />
+                    {badgeCode && (
+                      <div className="absolute right-3 top-1/2 -translate-y-1/2 text-[10px] font-bold text-primary/60">
+                        ÚNICO
+                      </div>
+                    )}
+                  </div>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="icon"
+                    className="shrink-0 border-primary/30 text-primary hover:bg-primary/10"
+                    title="Gerar código aleatório"
+                    onClick={() => {
+                      const randomCode = Math.random().toString(36).substring(2, 10).toUpperCase();
+                      setBadgeCode(randomCode);
+                    }}
+                  >
+                    <RefreshCw className="h-4 w-4" />
+                  </Button>
                 </div>
                 <p className="text-[10px] text-muted-foreground italic">
                   Este código é utilizado para autenticação rápida em coletores e bancadas técnicas.

@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { Loader2 } from 'lucide-react'
+import { Loader2, RefreshCw } from 'lucide-react'
 import { supabase } from '@/integrations/supabase/client'
 import { useAuth } from '@/context/AuthContext'
 import { toast } from 'sonner'
@@ -125,13 +125,28 @@ export function CreateUserModal({ open, onOpenChange, onCreated }: CreateUserMod
           </div>
           <div className="space-y-2 p-3 bg-primary/5 rounded-lg border border-primary/20">
             <Label htmlFor="badgeCode" className="text-primary font-bold text-xs uppercase">Código do Crachá</Label>
-            <Input 
-              id="badgeCode" 
-              value={badgeCode} 
-              onChange={e => setBadgeCode(e.target.value.toUpperCase())} 
-              placeholder="Bipe o código do crachá" 
-              className="border-primary/30 font-mono"
-            />
+            <div className="flex gap-2">
+              <Input 
+                id="badgeCode" 
+                value={badgeCode} 
+                onChange={e => setBadgeCode(e.target.value.toUpperCase())} 
+                placeholder="Bipe o código do crachá" 
+                className="border-primary/30 font-mono"
+              />
+              <Button
+                type="button"
+                variant="outline"
+                size="icon"
+                className="shrink-0 border-primary/30 text-primary hover:bg-primary/10"
+                title="Gerar código aleatório"
+                onClick={() => {
+                  const randomCode = Math.random().toString(36).substring(2, 10).toUpperCase();
+                  setBadgeCode(randomCode);
+                }}
+              >
+                <RefreshCw className="h-4 w-4" />
+              </Button>
+            </div>
             <p className="text-[10px] text-muted-foreground mt-1">Identificador único para login por bipe de crachá.</p>
           </div>
           <div className="space-y-2">
