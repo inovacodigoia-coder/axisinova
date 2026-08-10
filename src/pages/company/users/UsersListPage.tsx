@@ -289,7 +289,9 @@ function EditUserModal({ profile, onClose, onSaved }: { profile: ProfileRow | nu
                   size="sm" 
                   className="h-7 text-[10px] uppercase font-bold text-primary hover:text-primary hover:bg-primary/10"
                   onClick={() => {
-                    const win = window.open('', '_blank', 'width=400,height=300');
+                    const left = (window.screen.width - 400) / 2;
+                    const top = (window.screen.height - 300) / 2;
+                    const win = window.open('', '_blank', `width=400,height=300,left=${left},top=${top}`);
                     if (win) {
                       win.document.write(`
                         <html>
@@ -312,48 +314,59 @@ function EditUserModal({ profile, onClose, onSaved }: { profile: ProfileRow | nu
                                 justify-content: center;
                                 align-items: center;
                                 background: white;
+                                overflow: hidden;
                               }
                               .card { 
                                 border: 1px solid #000; 
-                                width: 48mm;
-                                height: 28mm;
+                                width: 46mm;
+                                height: 26mm;
                                 display: flex;
                                 flex-direction: column;
-                                justify-content: center;
+                                justify-content: space-between;
                                 align-items: center;
                                 text-align: center;
                                 box-sizing: border-box;
                                 padding: 2mm;
                                 border-radius: 2mm;
+                                position: relative;
                               }
                               .name { 
-                                font-size: 8pt; 
+                                font-size: 7pt; 
                                 font-weight: bold; 
-                                margin-bottom: 1mm; 
                                 color: #000; 
                                 text-transform: uppercase;
-                                white-space: nowrap;
-                                overflow: hidden;
                                 width: 100%;
+                                overflow: hidden;
+                                text-overflow: ellipsis;
+                                white-space: nowrap;
+                              }
+                              .barcode-container {
+                                flex: 1;
+                                display: flex;
+                                align-items: center;
+                                justify-content: center;
+                                width: 100%;
+                                overflow: hidden;
                               }
                               .barcode { 
                                 font-family: 'Libre Barcode 39', cursive; 
-                                font-size: 32pt; 
+                                font-size: 28pt; 
                                 margin: 0; 
                                 line-height: 1; 
                                 color: #000;
+                                white-space: nowrap;
                               }
                               .footer { 
-                                font-size: 6pt; 
+                                font-size: 5pt; 
                                 color: #333; 
                                 font-weight: 500;
-                                margin-top: 1mm;
                               }
                               .no-print { 
                                 position: fixed;
-                                bottom: 5px;
+                                bottom: 10px;
                                 left: 50%;
                                 transform: translateX(-50%);
+                                z-index: 100;
                               }
                               @media print { 
                                 .no-print { display: none; } 
@@ -364,10 +377,12 @@ function EditUserModal({ profile, onClose, onSaved }: { profile: ProfileRow | nu
                           <body>
                             <div class="card">
                               <div class="name">${fullName}</div>
-                              <div class="barcode">*${badgeCode}*</div>
+                              <div class="barcode-container">
+                                <div class="barcode">*${badgeCode}*</div>
+                              </div>
                               <div class="footer">Axis Inova - LabSaúde</div>
                             </div>
-                            <button class="no-print" style="padding: 4px 12px; cursor: pointer; background: #00D4FF; border: none; color: white; border-radius: 4px; font-weight: bold; font-size: 10px;" onclick="window.print()">Imprimir</button>
+                            <button class="no-print" style="padding: 6px 16px; cursor: pointer; background: #00D4FF; border: none; color: white; border-radius: 4px; font-weight: bold; font-size: 11px; box-shadow: 0 2px 4px rgba(0,0,0,0.2);" onclick="window.print()">Imprimir</button>
                           </body>
                         </html>
                       `);
