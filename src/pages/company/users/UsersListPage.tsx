@@ -303,30 +303,32 @@ function EditUserModal({ profile, onClose, onSaved }: { profile: ProfileRow | nu
                                 size: 50mm 30mm;
                                 margin: 0;
                               }
-                              body { 
-                                font-family: 'Inter', sans-serif; 
-                                margin: 0; 
+                              html, body {
+                                margin: 0;
                                 padding: 0;
                                 width: 50mm;
                                 height: 30mm;
+                                overflow: hidden;
+                              }
+                              body { 
+                                font-family: 'Inter', sans-serif; 
                                 display: flex;
                                 flex-direction: column;
                                 justify-content: center;
                                 align-items: center;
                                 background: white;
-                                overflow: hidden;
                               }
                               .card { 
                                 border: 1px solid #000; 
-                                width: 46mm;
-                                height: 26mm;
+                                width: 48mm;
+                                height: 28mm;
                                 display: flex;
                                 flex-direction: column;
                                 justify-content: space-between;
                                 align-items: center;
                                 text-align: center;
                                 box-sizing: border-box;
-                                padding: 2mm;
+                                padding: 1.5mm;
                                 border-radius: 2mm;
                                 position: relative;
                               }
@@ -347,32 +349,47 @@ function EditUserModal({ profile, onClose, onSaved }: { profile: ProfileRow | nu
                                 justify-content: center;
                                 width: 100%;
                                 overflow: hidden;
-                                padding: 1mm 0;
+                                padding: 0;
                               }
                               .barcode { 
                                 font-family: 'Libre Barcode 39', cursive; 
-                                font-size: 34pt; 
+                                font-size: 38pt; 
                                 margin: 0; 
-                                line-height: 1; 
+                                line-height: 0.8; 
                                 color: #000;
                                 white-space: nowrap;
                               }
+                              .info-group {
+                                display: flex;
+                                flex-direction: column;
+                                gap: 0.2mm;
+                                width: 100%;
+                              }
+                              .date {
+                                font-size: 5.5pt;
+                                color: #333;
+                                font-weight: 500;
+                              }
+                              .desc {
+                                font-size: 5pt;
+                                color: #444;
+                              }
                               .footer { 
                                 font-size: 6pt; 
-                                color: #333; 
-                                font-weight: 600;
-                                margin-top: 0.5mm;
+                                color: #000; 
+                                font-weight: 700;
                               }
                               .no-print { 
                                 position: fixed;
-                                bottom: 10px;
-                                left: 50%;
-                                transform: translateX(-50%);
+                                bottom: 5px;
+                                right: 5px;
                                 z-index: 100;
+                                opacity: 0.7;
                               }
+                              .no-print:hover { opacity: 1; }
                               @media print { 
-                                .no-print { display: none; } 
-                                body { width: 50mm; height: 30mm; }
+                                .no-print { display: none !important; } 
+                                body { margin: 0; padding: 0; }
                               }
                             </style>
                           </head>
@@ -382,15 +399,13 @@ function EditUserModal({ profile, onClose, onSaved }: { profile: ProfileRow | nu
                               <div class="barcode-container">
                                 <div class="barcode">*${badgeCode}*</div>
                               </div>
-                              <div style="font-size: 5.5pt; color: #333; margin-top: -1mm;">
-                                ${new Date().toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
+                              <div class="info-group">
+                                <div class="date">${new Date().toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' }).replace(',', '')}</div>
+                                <div class="desc">Crachá - ${fullName}</div>
+                                <div class="footer">Axis Inova - LabSaúde</div>
                               </div>
-                              <div style="font-size: 5pt; color: #555; font-weight: 500;">
-                                Crachá - ${fullName}
-                              </div>
-                              <div class="footer">Axis Inova - LabSaúde</div>
                             </div>
-                            <button class="no-print" style="padding: 6px 16px; cursor: pointer; background: #00D4FF; border: none; color: white; border-radius: 4px; font-weight: bold; font-size: 11px; box-shadow: 0 2px 4px rgba(0,0,0,0.2);" onclick="window.print()">Imprimir</button>
+                            <button class="no-print" style="padding: 4px 10px; cursor: pointer; background: #00D4FF; border: none; color: white; border-radius: 4px; font-weight: bold; font-size: 10px; box-shadow: 0 2px 4px rgba(0,0,0,0.2);" onclick="window.print()">Imprimir</button>
                           </body>
                         </html>
                       `);
