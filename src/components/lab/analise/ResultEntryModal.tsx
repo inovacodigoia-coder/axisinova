@@ -142,6 +142,11 @@ export function ResultEntryModal({
     }, 1000);
   };
 
+  const handleConcluirExame = (examId: string) => {
+    setExamStatuses(prev => ({ ...prev, [examId]: 'digitized' }));
+    toast.success("Exame concluído com sucesso!");
+  };
+
   const handleReleaseExam = (examId: string) => {
     setExamStatuses(prev => ({ ...prev, [examId]: 'released' }));
     toast.success("Exame liberado com sucesso!");
