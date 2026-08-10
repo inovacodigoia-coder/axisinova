@@ -670,12 +670,12 @@ export function ResultEntryModal({
 
                             <div className="flex items-center gap-2">
                               {!isDigitized && !isReleased && (
-                                <Button 
-                                  onClick={() => handleConcluirExame(exam.id)}
-                                  size="sm" 
-                                  disabled={!(exam.parameters?.length ? exam.parameters : [{id: '1'}]).every((p: any) => 
-                                    results[`${exam.id}_${p.id}`]?.trim() !== ''
-                                  )}
+                                  <Button 
+                                    onClick={() => handleConcluirExame(exam.id)}
+                                    size="sm" 
+                                    disabled={!(exam.parameters?.length ? exam.parameters : [{id: '1'}]).every((p: any) => 
+                                      results[`${keyBase}_${p.id}`]?.trim() !== ''
+                                    )}
                                   className="h-7 px-3 text-[9px] font-black uppercase gap-1.5 bg-sky-500 hover:bg-sky-600 text-white shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
                                 >
                                   <CheckCircle2 className="h-3 w-3" />
@@ -719,7 +719,7 @@ export function ResultEntryModal({
                         {/* Parâmetros do Exame */}
                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-x-8 gap-y-4 pt-2">
                           {(exam.parameters?.length ? exam.parameters : [{ id: '1', name: exam.code, unit: 'mg/dL', reference: '60 a 100' }]).map((param: any) => {
-                            const value = results[`${exam.id}_${param.id}`] || '';
+                            const value = results[`${keyBase}_${param.id}`] || '';
                             const status = getResultStatus(value, param.reference || '60 a 100');
                             
                             return (
@@ -743,12 +743,12 @@ export function ResultEntryModal({
                                         status.label === 'Baixo' && "border-amber-400 focus:border-amber-500",
                                         status.label === 'Alto' && "border-rose-400 focus:border-rose-500",
                                         status.label === 'Normal' && "border-emerald-400 focus:border-emerald-500",
-                                        examStatuses[exam.id] === 'released' && "bg-slate-100 border-slate-200 cursor-not-allowed text-slate-500"
+                                        examStatuses[keyBase] === 'released' && "bg-slate-100 border-slate-200 cursor-not-allowed text-slate-500"
                                       )}
                                       placeholder="Resultado"
                                       value={value}
-                                      disabled={examStatuses[exam.id] === 'released'}
-                                      onChange={(e) => setResults(prev => ({ ...prev, [`${exam.id}_${param.id}`]: e.target.value }))}
+                                      disabled={examStatuses[keyBase] === 'released'}
+                                      onChange={(e) => setResults(prev => ({ ...prev, [`${keyBase}_${param.id}`]: e.target.value }))}
                                     />
                                     {status.label && (
                                       <div className={cn(
@@ -775,14 +775,14 @@ export function ResultEntryModal({
                         <div className="pt-2">
                           <div className="relative">
                             <Input 
-                              className={cn(
-                                "h-9 text-xs bg-white border-slate-200 focus:border-primary text-slate-700 placeholder:italic",
-                                examStatuses[exam.id] === 'released' && "bg-slate-100 cursor-not-allowed"
-                              )}
-                              placeholder="Nota / Observações técnicas..."
-                              value={notes[exam.id] || ''}
-                              disabled={examStatuses[exam.id] === 'released'}
-                              onChange={(e) => setNotes(prev => ({ ...prev, [exam.id]: e.target.value }))}
+                                className={cn(
+                                  "h-9 text-xs bg-white border-slate-200 focus:border-primary text-slate-700 placeholder:italic",
+                                  examStatuses[keyBase] === 'released' && "bg-slate-100 cursor-not-allowed"
+                                )}
+                                placeholder="Nota / Observações técnicas..."
+                                value={notes[keyBase] || ''}
+                                disabled={examStatuses[keyBase] === 'released'}
+                                onChange={(e) => setNotes(prev => ({ ...prev, [keyBase]: e.target.value }))}
                             />
                           </div>
                         </div>
