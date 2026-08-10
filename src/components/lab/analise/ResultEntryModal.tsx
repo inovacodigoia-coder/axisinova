@@ -934,7 +934,7 @@ export function ResultEntryModal({
           <Button 
             variant="outline" 
             onClick={handleReleaseAllDigitized}
-            disabled={saving || !Object.values(examStatuses).includes('digitized')}
+            disabled={saving || !Object.values(examStatuses).some(status => status === 'digitized')}
             className="h-11 px-6 font-black uppercase text-[10px] tracking-widest gap-2 border-emerald-500/30 text-emerald-600 hover:bg-emerald-50 shadow-sm"
           >
             <ShieldCheck className="h-4 w-4" />
