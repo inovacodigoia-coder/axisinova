@@ -290,47 +290,54 @@ export function ResultEntryModal({
                 {/* Exames do Paciente */}
                 {isExpanded && (
                   <div className="p-6 space-y-6 border-t border-slate-100 animate-in slide-in-from-top-2 duration-200">
-                    {patient.exams.map((exam: any) => (
-                      <div key={exam.id} className={cn(
-                        "relative bg-slate-50 rounded-xl border border-slate-200 p-5 space-y-4 transition-all duration-300",
-                        examStatuses[exam.id] === 'released' && "opacity-80 grayscale-[0.2]"
-                      )}>
-                        {/* Título do Exame */}
-                        <div className="flex items-start justify-between">
-                          <div className="flex items-center gap-3">
-                            <div className={cn(
-                              "h-3 w-3 rounded-full shadow-sm transition-colors",
-                              examStatuses[exam.id] === 'released' || examStatuses[exam.id] === 'digitized' ? "bg-emerald-500" :
-                              exam.workbench === 'Bioquímica' ? "bg-blue-500" :
-                              exam.workbench === 'Hematologia' ? "bg-purple-500" :
-                              "bg-slate-400"
-                            )} />
-                            <div className="flex flex-col">
-                              <div className="flex items-center gap-2">
-                                <Badge variant="outline" className="bg-white text-primary border-primary/20 text-[10px] font-black h-5 uppercase">
-                                  {exam.code}
-                                </Badge>
-                                <h4 className="text-sm font-black uppercase tracking-tight">{exam.name}</h4>
-                                
-                                {/* Ações do Exame */}
-                                <DropdownMenu>
-                                  <DropdownMenuTrigger asChild>
-                                    <Button variant="ghost" size="icon" className="h-6 w-6 text-slate-400 hover:text-primary">
-                                      <MoreVertical className="h-3.5 w-3.5" />
-                                    </Button>
-                                  </DropdownMenuTrigger>
-                                  <DropdownMenuContent align="start" className="w-48">
-                                    <DropdownMenuItem onClick={() => handleExamAction(exam.id, 'cancelar')} className="text-xs font-bold uppercase text-rose-600 gap-2">
-                                      <XCircle className="h-3.5 w-3.5" /> Cancelar exame
-                                    </DropdownMenuItem>
-                                    <DropdownMenuItem onClick={() => handleExamAction(exam.id, 'reteste')} className="text-xs font-bold uppercase text-amber-600 gap-2">
-                                      <RefreshCcw className="h-3.5 w-3.5" /> Solicitar reteste
-                                    </DropdownMenuItem>
-                                    <DropdownMenuItem onClick={() => handleExamAction(exam.id, 'recoleta')} className="text-xs font-bold uppercase text-orange-600 gap-2">
-                                      <Syringe className="h-3.5 w-3.5" /> Solicitar Recoleta
-                                    </DropdownMenuItem>
-                                  </DropdownMenuContent>
-                                </DropdownMenu>
+                    {patient.exams.map((exam: any) => {
+                      const hasResult = (exam.parameters?.length ? exam.parameters : [{id: '1'}]).some((p: any) => 
+                        results[`${exam.id}_${p.id}`]?.trim() !== ''
+                      );
+                      const isDigitized = examStatuses[exam.id] === 'digitized' && hasResult;
+                      const isReleased = examStatuses[exam.id] === 'released';
+
+                      return (
+                        <div key={exam.id} className={cn(
+                          "relative bg-slate-50 rounded-xl border border-slate-200 p-5 space-y-4 transition-all duration-300",
+                          isReleased && "opacity-80 grayscale-[0.2]"
+                        )}>
+                          {/* Título do Exame */}
+                          <div className="flex items-start justify-between">
+                            <div className="flex items-center gap-3">
+                              <div className={cn(
+                                "h-3 w-3 rounded-full shadow-sm transition-colors",
+                                isReleased || isDigitized ? "bg-emerald-500" :
+                                exam.workbench === 'Bioquímica' ? "bg-blue-500" :
+                                exam.workbench === 'Hematologia' ? "bg-purple-500" :
+                                "bg-slate-400"
+                              )} />
+                              <div className="flex flex-col">
+                                <div className="flex items-center gap-2">
+                                  <Badge variant="outline" className="bg-white text-primary border-primary/20 text-[10px] font-black h-5 uppercase">
+                                    {exam.code}
+                                  </Badge>
+                                  <h4 className="text-sm font-black uppercase tracking-tight">{exam.name}</h4>
+                                  
+                                  {/* Ações do Exame */}
+                                  <DropdownMenu>
+                                    <DropdownMenuTrigger asChild>
+                                      <Button variant="ghost" size="icon" className="h-6 w-6 text-slate-400 hover:text-primary">
+                                        <MoreVertical className="h-3.5 w-3.5" />
+                                      </Button>
+                                    </DropdownMenuTrigger>
+                                    <DropdownMenuContent align="start" className="w-48">
+                                      <DropdownMenuItem onClick={() => handleExamAction(exam.id, 'cancelar')} className="text-xs font-bold uppercase text-rose-600 gap-2">
+                                        <XCircle className="h-3.5 w-3.5" /> Cancelar exame
+                                      </DropdownMenuItem>
+                                      <DropdownMenuItem onClick={() => handleExamAction(exam.id, 'reteste')} className="text-xs font-bold uppercase text-amber-600 gap-2">
+                                        <RefreshCcw className="h-3.5 w-3.5" /> Solicitar Reteste
+                                      </DropdownMenuItem>
+                                      <DropdownMenuItem onClick={() => handleExamAction(exam.id, 'recoleta')} className="text-xs font-bold uppercase text-orange-600 gap-2">
+                                        <Syringe className="h-3.5 w-3.5" /> Solicitar Recoleta
+                                      </DropdownMenuItem>
+                                    </DropdownMenuContent>
+                                  </DropdownMenu>
 
                                 {examActions[exam.id] && (
                                   <Badge className="h-4 text-[7px] font-black bg-slate-200 text-slate-700 uppercase">
@@ -345,24 +352,24 @@ export function ResultEntryModal({
                             </div>
                           </div>
 
-                          <div className="flex items-center gap-2">
-                            {examStatuses[exam.id] === 'digitized' && (
-                              <Button 
-                                onClick={() => handleReleaseExam(exam.id)}
-                                size="sm" 
-                                className="h-7 px-3 text-[9px] font-black uppercase gap-1.5 bg-emerald-500 hover:bg-emerald-600 text-white shadow-sm"
-                              >
-                                <CheckCircle2 className="h-3 w-3" />
-                                Liberar exame
-                              </Button>
-                            )}
-                            
-                            {examStatuses[exam.id] === 'released' && (
-                              <Badge className="h-7 px-3 text-[9px] font-black uppercase gap-1.5 bg-emerald-100 text-emerald-700 border-emerald-200">
-                                <Check className="h-3 w-3" />
-                                Liberado
-                              </Badge>
-                            )}
+                            <div className="flex items-center gap-2">
+                              {isDigitized && (
+                                <Button 
+                                  onClick={() => handleReleaseExam(exam.id)}
+                                  size="sm" 
+                                  className="h-7 px-3 text-[9px] font-black uppercase gap-1.5 bg-emerald-500 hover:bg-emerald-600 text-white shadow-sm"
+                                >
+                                  <CheckCircle2 className="h-3 w-3" />
+                                  Liberar exame
+                                </Button>
+                              )}
+                              
+                              {isReleased && (
+                                <Badge className="h-7 px-3 text-[9px] font-black uppercase gap-1.5 bg-emerald-100 text-emerald-700 border-emerald-200">
+                                  <Check className="h-3 w-3" />
+                                  Liberado
+                                </Badge>
+                              )}
 
                             <DropdownMenu>
                               <DropdownMenuTrigger asChild>
@@ -480,15 +487,16 @@ export function ResultEntryModal({
                           </ScrollArea>
                         </div>
                       </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-              );
-            })
-          )}
-        </div>
-      </ScrollArea>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+          );
+        })
+      )}
+    </div>
+  </ScrollArea>
 
       {/* Rodapé Fixo */}
       <footer className="h-20 border-t bg-card px-8 flex items-center justify-between shrink-0 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)]">
