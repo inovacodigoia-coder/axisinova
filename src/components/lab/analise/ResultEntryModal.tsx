@@ -487,7 +487,7 @@ export function ResultEntryModal({
                           </ScrollArea>
                         </div>
                       </div>
-                    ))}
+                    })}
                   </div>
                 )}
               </div>
