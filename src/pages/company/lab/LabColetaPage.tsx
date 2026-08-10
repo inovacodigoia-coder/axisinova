@@ -204,13 +204,14 @@ export default function LabColetaPage() {
       const next = { ...prev, [field]: value }
       
       // Reconhecimento automático de crachá (bipado)
-      if (next.username && next.username.length >= 4) {
+      if (next.username && next.username.length >= 2) {
         // Tentamos buscar o perfil pelo badge_code
-        // O leitor geralmente envia o código limpo, mas adicionamos suporte a * se vier no bip
-        const cleanCode = next.username.replace(/\*/g, '').toUpperCase();
+        // Removemos asteriscos e espaços extras que alguns leitores podem enviar
+        const cleanCode = next.username.trim().replace(/\*/g, '').toUpperCase();
         
-        (async () => {
-          const { data: profile, error } = await supabase
+        // Use a small delay to ensure the scanner finished its input
+        const timeoutId = setTimeout(async () => {
+          const { data: profile } = await supabase
             .from('profiles')
             .select('id, full_name, badge_code')
             .eq('badge_code', cleanCode)
@@ -225,7 +226,9 @@ export default function LabColetaPage() {
             setResponsibleCredentials({ username: '', password: '' })
             toast.success(`Técnico identificado: ${profile.full_name}`)
           }
-        })()
+        }, 300); // 300ms buffer for scanner completion
+
+        return next;
       }
       
       return next
