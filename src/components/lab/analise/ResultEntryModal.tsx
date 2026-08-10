@@ -106,20 +106,35 @@ export function ResultEntryModal({
   const handleSave = (isDraft: boolean) => {
     setSaving(true);
     setTimeout(() => {
-      setSaving(true);
       if (!isDraft) {
-        // Mark all exams with at least one result as digitized
+        // Mark only exams that were actually digitized as digitized
         const newStatuses = { ...examStatuses };
+        let digitizedCount = 0;
+        
         filteredExams.forEach(exam => {
           const hasResult = (exam.parameters?.length ? exam.parameters : [{id: '1'}]).some((p: any) => 
             results[`${exam.id}_${p.id}`]?.trim() !== ''
           );
-          if (hasResult && newStatuses[exam.id] !== 'released') {
-            newStatuses[exam.id] = 'digitized';
+          
+          if (hasResult) {
+            if (newStatuses[exam.id] !== 'released') {
+              newStatuses[exam.id] = 'digitized';
+              digitizedCount++;
+            }
+          } else {
+            // Se não tem resultado e não estava liberado, volta para pendente
+            if (newStatuses[exam.id] !== 'released') {
+              newStatuses[exam.id] = 'pending';
+            }
           }
         });
+        
         setExamStatuses(newStatuses);
-        toast.success("Digitação concluída com sucesso!");
+        if (digitizedCount > 0) {
+          toast.success("Digitação concluída com sucesso!");
+        } else {
+          toast.info("Nenhum resultado preenchido para concluir.");
+        }
       } else {
         toast.success("Rascunho salvo com sucesso!");
       }
