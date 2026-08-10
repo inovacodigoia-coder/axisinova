@@ -10,6 +10,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import JsBarcode from 'jsbarcode'
 
 interface ProfileRow {
   id: string
@@ -246,6 +247,57 @@ function EditUserModal({ profile, onClose, onSaved }: { profile: ProfileRow | nu
     toast.warning('Funcionalidade de reset manual disponível apenas para Super Admins ou via suporte AxisInova.')
   }
 
+  const printBadge = () => {
+    const cleanBadgeCode = badgeCode.trim().replace(/[\r\n]/g, '')
+    if (!cleanBadgeCode) return
+
+    const barcodeSvg = document.createElementNS('http://www.w3.org/2000/svg', 'svg')
+    JsBarcode(barcodeSvg, cleanBadgeCode, {
+      format: 'CODE128',
+      width: 2,
+      height: 58,
+      margin: 4,
+      displayValue: true,
+      fontSize: 12,
+      textMargin: 2,
+    })
+
+    const left = (window.screen.width - 400) / 2
+    const top = (window.screen.height - 300) / 2
+    const win = window.open('', '_blank', `width=400,height=300,left=${left},top=${top}`)
+    if (!win) return
+
+    win.document.write(`
+      <html>
+        <head>
+          <title>Crachá - ${fullName}</title>
+          <style>
+            @page { size: 50mm 30mm; margin: 0; }
+            html, body { margin: 0; padding: 0; width: 50mm; height: 30mm; overflow: hidden; }
+            body { font-family: Arial, sans-serif; display: flex; align-items: center; justify-content: center; background: white; }
+            .card { border: 1px solid #000; width: 48mm; height: 28mm; box-sizing: border-box; padding: 1mm; display: flex; flex-direction: column; align-items: center; text-align: center; }
+            .name { width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 8pt; font-weight: bold; text-transform: uppercase; }
+            .barcode { width: 45mm; height: 16mm; }
+            .info { margin-top: auto; font-size: 5pt; line-height: 1.15; }
+            .footer { font-size: 6pt; font-weight: bold; }
+            .no-print { position: fixed; right: 5px; bottom: 5px; }
+            @media print { .no-print { display: none !important; } }
+          </style>
+        </head>
+        <body>
+          <div class="card">
+            <div class="name">${fullName}</div>
+            <div class="barcode">${barcodeSvg.outerHTML}</div>
+            <div class="info">Crachá - ${fullName}</div>
+            <div class="footer">Axis Inova - LabSaúde</div>
+          </div>
+          <button class="no-print" onclick="window.print()">Imprimir</button>
+        </body>
+      </html>
+    `)
+    win.document.close()
+  }
+
   return (
     <Dialog open={!!profile} onOpenChange={open => { if (!open) onClose() }}>
       <DialogContent className="sm:max-w-2xl max-h-[90vh] overflow-y-auto">
@@ -287,131 +339,7 @@ function EditUserModal({ profile, onClose, onSaved }: { profile: ProfileRow | nu
                   variant="ghost" 
                   size="sm" 
                   className="h-7 text-[10px] uppercase font-bold text-primary hover:text-primary hover:bg-primary/10"
-                  onClick={() => {
-                    const left = (window.screen.width - 400) / 2;
-                    const top = (window.screen.height - 300) / 2;
-                    const win = window.open('', '_blank', `width=400,height=300,left=${left},top=${top}`);
-                    if (win) {
-                      win.document.write(`
-                        <html>
-                          <head>
-                            <title>Crachá - ${fullName}</title>
-                            <link href="https://fonts.googleapis.com/css2?family=Libre+Barcode+128&display=swap" rel="stylesheet">
-                            <style>
-                              @page {
-                                size: 50mm 30mm;
-                                margin: 0;
-                              }
-                              html, body {
-                                margin: 0;
-                                padding: 0;
-                                width: 50mm;
-                                height: 30mm;
-                                overflow: hidden;
-                              }
-                              body { 
-                                font-family: 'Inter', sans-serif; 
-                                display: flex;
-                                flex-direction: column;
-                                justify-content: center;
-                                align-items: center;
-                                background: white;
-                              }
-                              .card { 
-                                border: 1px solid #000; 
-                                width: 48mm;
-                                height: 28mm;
-                                display: flex;
-                                flex-direction: column;
-                                justify-content: space-between;
-                                align-items: center;
-                                text-align: center;
-                                box-sizing: border-box;
-                                padding: 1.5mm;
-                                border-radius: 2mm;
-                                position: relative;
-                              }
-                              .name { 
-                                font-size: 8pt; 
-                                font-weight: bold; 
-                                color: #000; 
-                                text-transform: uppercase;
-                                width: 100%;
-                                overflow: hidden;
-                                text-overflow: ellipsis;
-                                white-space: nowrap;
-                              }
-                              .barcode-container {
-                                flex: 1;
-                                display: flex;
-                                align-items: center;
-                                justify-content: center;
-                                width: 100%;
-                                overflow: hidden;
-                                padding: 0;
-                              }
-                                  .barcode { 
-                                    font-family: 'Libre Barcode 128', cursive; 
-                                    font-size: 52pt; 
-                                    margin: 0; 
-                                    line-height: 0.8; 
-                                    color: #000;
-                                    white-space: nowrap;
-                                    letter-spacing: -0.5mm;
-                                  }
-                              .info-group {
-                                display: flex;
-                                flex-direction: column;
-                                gap: 0.2mm;
-                                width: 100%;
-                              }
-                              .date {
-                                font-size: 5.5pt;
-                                color: #333;
-                                font-weight: 500;
-                              }
-                              .desc {
-                                font-size: 5pt;
-                                color: #444;
-                              }
-                              .footer { 
-                                font-size: 6pt; 
-                                color: #000; 
-                                font-weight: 700;
-                              }
-                              .no-print { 
-                                position: fixed;
-                                bottom: 5px;
-                                right: 5px;
-                                z-index: 100;
-                                opacity: 0.7;
-                              }
-                              .no-print:hover { opacity: 1; }
-                              @media print { 
-                                .no-print { display: none !important; } 
-                                body { margin: 0; padding: 0; }
-                              }
-                            </style>
-                          </head>
-                          <body>
-                            <div class="card">
-                              <div class="name">${fullName}</div>
-                              <div class="barcode-container">
-                                <div class="barcode">${badgeCode}</div>
-                              </div>
-                              <div class="info-group">
-                                <div class="date">${new Date().toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' }).replace(',', '')}</div>
-                                <div class="desc">Crachá - ${fullName}</div>
-                                <div class="footer">Axis Inova - LabSaúde</div>
-                              </div>
-                            </div>
-                            <button class="no-print" style="padding: 4px 10px; cursor: pointer; background: #00D4FF; border: none; color: white; border-radius: 4px; font-weight: bold; font-size: 10px; box-shadow: 0 2px 4px rgba(0,0,0,0.2);" onclick="window.print()">Imprimir</button>
-                          </body>
-                        </html>
-                      `);
-                      win.document.close();
-                    }
-                  }}
+                  onClick={printBadge}
                 >
                   Imprimir Crachá
                 </Button>
