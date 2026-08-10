@@ -84,10 +84,48 @@ export function ResultEntryModal({
   const [cancelModal, setCancelModal] = useState<{ isOpen: boolean; exam: any } | null>(null);
   const [retestReasons, setRetestReasons] = useState<Record<string, { reason: string; details: string }>>({});
   const [recoletaReasons, setRecoletaReasons] = useState<Record<string, { reason: string; details: string }>>({});
-  /* Do not make any visual modifications. The phrases I write are commands to understand what I want, not to be written down. Understand their content well, then execute what is required.
-                                            
-                                            I have approved the plan */
   const [expandedPatients, setExpandedPatients] = useState<Record<string, boolean>>({});
+  
+  const { saveExamResults } = useAttendanceCadastro();
+
+  // Load existing results from filteredExams when modal opens
+  useEffect(() => {
+    if (isOpen && filteredExams.length > 0) {
+      const newResults: Record<string, string> = {};
+      const newNotes: Record<string, string> = {};
+      const newStatuses: Record<string, any> = {};
+      const newActions: Record<string, any> = {};
+
+      filteredExams.forEach(exam => {
+        if (exam.results && Array.isArray(exam.results)) {
+          exam.results.forEach((r: any) => {
+            if (r.value) {
+              newResults[`${exam.id}_${r.parameterId}`] = r.value;
+            }
+          });
+        }
+        if (exam.internalObservations) {
+          newNotes[exam.id] = exam.internalObservations;
+        }
+        if (exam.status) {
+          newStatuses[exam.id] = exam.status === 'processing' ? 'digitized' : 
+                                 exam.status === 'liberado' ? 'released' : 
+                                 exam.status === 'cancelled' ? 'cancelled' : 'pending';
+        }
+        // Recover actions if encoded in status or metadata
+        if (exam.status === 'retest_requested') {
+          newActions[exam.id] = { type: 'reteste' };
+        } else if (exam.status === 'waiting_recollection') {
+          newActions[exam.id] = { type: 'recoleta' };
+        }
+      });
+
+      setResults(prev => ({ ...prev, ...newResults }));
+      setNotes(prev => ({ ...prev, ...newNotes }));
+      setExamStatuses(prev => ({ ...prev, ...newStatuses }));
+      setExamActions(prev => ({ ...prev, ...newActions }));
+    }
+  }, [isOpen, filteredExams]);
 
   // Agrupamento por paciente/pedido
   const groupedPatients = useMemo(() => {
