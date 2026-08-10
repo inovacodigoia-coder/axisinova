@@ -339,71 +339,118 @@ export function ResultEntryModal({
     }
   };
 
-  const handleExamAction = (examId: string, actionType: string) => {
+  const handleExamAction = async (examId: string, actionType: string) => {
+    const exam = filteredExams.find(e => e.id === examId);
+    if (!exam) return;
+
     if (actionType === 'cancelar') {
-      // Se já estiver cancelado, permite reverter (limpar o status de cancelamento)
       if (examStatuses[examId] === 'cancelled') {
-        setExamStatuses(prev => {
-          const next = { ...prev };
-          delete next[examId];
-          return next;
-        });
-        setExamActions(prev => {
-          const next = { ...prev };
-          delete next[examId];
-          return next;
-        });
-        toast.success("Cancelamento revertido.");
+        const success = await saveExamResults(exam.orderId, [{ examId, status: 'processing' }]);
+        if (success) {
+          setExamStatuses(prev => {
+            const next = { ...prev };
+            next[examId] = 'digitized';
+            return next;
+          });
+          setExamActions(prev => {
+            const next = { ...prev };
+            delete next[examId];
+            return next;
+          });
+          toast.success("Cancelamento revertido.");
+        }
       } else {
-        const exam = filteredExams.find(e => e.id === examId);
         setCancelModal({ isOpen: true, exam });
       }
     } else if (actionType === 'reteste') {
-      // Toggle reteste: se já for reteste, remove
       if (examActions[examId]?.type === 'reteste') {
-        setExamActions(prev => {
-          const next = { ...prev };
-          delete next[examId];
-          return next;
-        });
-        toast.info("Ação de reteste removida.");
+        const success = await saveExamResults(exam.orderId, [{ examId, status: 'processing' }]);
+        if (success) {
+          setExamActions(prev => {
+            const next = { ...prev };
+            delete next[examId];
+            return next;
+          });
+          toast.info("Ação de reteste removida.");
+        }
       } else {
-        setExamActions(prev => ({ ...prev, [examId]: { type: 'reteste', reason: '', details: '' } }));
-        toast.info("Informe o motivo do reteste abaixo das observações técnicas.");
+        const success = await saveExamResults(exam.orderId, [{ examId, status: 'retest_requested' }]);
+        if (success) {
+          setExamActions(prev => ({ ...prev, [examId]: { type: 'reteste', reason: '', details: '' } }));
+          toast.info("Reteste solicitado e salvo.");
+        }
       }
     } else if (actionType === 'recoleta') {
-      // Toggle recoleta: se já for recoleta, remove
       if (examActions[examId]?.type === 'recoleta') {
-        setExamActions(prev => {
-          const next = { ...prev };
-          delete next[examId];
-          return next;
-        });
-        toast.info("Ação de recoleta removida.");
+        const success = await saveExamResults(exam.orderId, [{ examId, status: 'processing' }]);
+        if (success) {
+          setExamActions(prev => {
+            const next = { ...prev };
+            delete next[examId];
+            return next;
+          });
+          toast.info("Ação de recoleta removida.");
+        }
       } else {
-        setExamActions(prev => ({ ...prev, [examId]: { type: 'recoleta', reason: '', details: '' } }));
-        toast.info("Informe o motivo da recoleta abaixo das observações técnicas.");
+        const success = await saveExamResults(exam.orderId, [{ examId, status: 'waiting_recollection' }]);
+        if (success) {
+          setExamActions(prev => ({ ...prev, [examId]: { type: 'recoleta', reason: '', details: '' } }));
+          toast.info("Recoleta solicitada e salva.");
+        }
       }
     }
   };
 
-  const handleCancelConfirm = (examId: string, reason: string) => {
-    setExamStatuses(prev => ({ ...prev, [examId]: 'cancelled' }));
-    setExamActions(prev => ({ ...prev, [examId]: { type: 'cancelado', reason } }));
-    setCancelModal(null);
-    toast.error("Exame cancelado com sucesso!");
+  const handleCancelConfirm = async (examId: string, reason: string) => {
+    const exam = filteredExams.find(e => e.id === examId);
+    if (!exam) return;
+
+    const success = await saveExamResults(exam.orderId, [{
+      examId: exam.id,
+      status: 'cancelled',
+      internalObservations: `Cancelado: ${reason}. ${notes[examId] || ''}`
+    }]);
+
+    if (success) {
+      setExamStatuses(prev => ({ ...prev, [examId]: 'cancelled' }));
+      setExamActions(prev => ({ ...prev, [examId]: { type: 'cancelado', reason } }));
+      setCancelModal(null);
+      toast.error("Exame cancelado com sucesso!");
+    }
   };
 
-  const handleRetestUpdate = (examId: string, reason: string, details: string) => {
-    setRetestReasons(prev => ({ ...prev, [examId]: { reason, details } }));
-    setExamActions(prev => ({ ...prev, [examId]: { type: 'reteste', reason, details } }));
-    toast.info("Solicitação de reteste salva como rascunho.");
+  const handleRetestUpdate = async (examId: string, reason: string, details: string) => {
+    const exam = filteredExams.find(e => e.id === examId);
+    if (!exam) return;
+
+    const success = await saveExamResults(exam.orderId, [{
+      examId: exam.id,
+      status: 'retest_requested',
+      internalObservations: `Reteste: ${reason} - ${details}. ${notes[examId] || ''}`
+    }]);
+
+    if (success) {
+      setRetestReasons(prev => ({ ...prev, [examId]: { reason, details } }));
+      setExamActions(prev => ({ ...prev, [examId]: { type: 'reteste', reason, details } }));
+      toast.info("Solicitação de reteste salva.");
+    }
   };
 
-  const handleRecoletaUpdate = (examId: string, reason: string, details: string) => {
-    setRecoletaReasons(prev => ({ ...prev, [examId]: { reason, details } }));
-    setExamActions(prev => ({ ...prev, [examId]: { type: 'recoleta', reason, details } }));
-    toast.info("Solicitação de recoleta salva como rascunho.");
+  const handleRecoletaUpdate = async (examId: string, reason: string, details: string) => {
+    const exam = filteredExams.find(e => e.id === examId);
+    if (!exam) return;
+
+    const success = await saveExamResults(exam.orderId, [{
+      examId: exam.id,
+      status: 'waiting_recollection',
+      internalObservations: `Recoleta: ${reason} - ${details}. ${notes[examId] || ''}`
+    }]);
+
+    if (success) {
+      setRecoletaReasons(prev => ({ ...prev, [examId]: { reason, details } }));
+      setExamActions(prev => ({ ...prev, [examId]: { type: 'recoleta', reason, details } }));
+      toast.info("Solicitação de recoleta salva.");
+    }
   };
 
   const getAge = (birthDate: string) => {
