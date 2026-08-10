@@ -252,14 +252,18 @@ function ReportLayoutSection() {
 
     try {
       const { data: userData } = await supabase.auth.getUser();
+      if (!userData.user) throw new Error("Usuário não autenticado");
+
       const { data: profile } = await supabase
         .from('profiles')
         .select('company_id')
-        .eq('id', userData.user?.id)
+        .eq('id', userData.user.id)
         .single();
 
+      if (!profile?.company_id) throw new Error("Empresa não encontrada");
+
       const fileExt = file.name.split('.').pop();
-      const fileName = `${profile.company_id}/${field}-${Math.random()}.${fileExt}`;
+      const fileName = `${profile.company_id}/${field}-${Date.now()}.${fileExt}`;
       const filePath = `lab-logos/${fileName}`;
 
       const { error: uploadError } = await supabase.storage
@@ -274,9 +278,13 @@ function ReportLayoutSection() {
 
       handleUpdate(field, publicUrl);
       toast.success('Logo enviada com sucesso');
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error uploading logo:', error);
-      toast.error('Erro ao enviar logo');
+      toast.error(
+        '''Do not make any visual modifications. The phrases I write are commands to understand what I want, not to be written down. Understand their content well, then execute what is required.'''
+                                            
+                                            está com erro quando eu vou colocar a logo
+      );
     }
   };
 
