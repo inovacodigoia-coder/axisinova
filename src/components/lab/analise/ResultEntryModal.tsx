@@ -440,8 +440,8 @@ export function ResultEntryModal({
     }
   };
 
-  const handleRetestUpdate = async (examId: string, reason: string, details: string) => {
-    const exam = filteredExams.find(e => e.id === examId);
+  const handleRetestUpdate = async (orderId: string, examId: string, reason: string, details: string) => {
+    const exam = filteredExams.find(e => e.id === examId && e.orderId === orderId);
     if (!exam) return;
 
     const keyBase = `${exam.orderId}_${exam.id}`;
@@ -458,8 +458,8 @@ export function ResultEntryModal({
     }
   };
 
-  const handleRecoletaUpdate = async (examId: string, reason: string, details: string) => {
-    const exam = filteredExams.find(e => e.id === examId);
+  const handleRecoletaUpdate = async (orderId: string, examId: string, reason: string, details: string) => {
+    const exam = filteredExams.find(e => e.id === examId && e.orderId === orderId);
     if (!exam) return;
 
     const keyBase = `${exam.orderId}_${exam.id}`;
@@ -635,15 +635,15 @@ export function ResultEntryModal({
                                       </Button>
                                     </DropdownMenuTrigger>
                                     <DropdownMenuContent align="start" className="w-48 z-[110]">
-                                      <DropdownMenuItem onClick={(e) => { e.stopPropagation(); handleExamAction(exam.id, 'cancelar'); }} className="text-xs font-bold uppercase text-rose-600 gap-2">
+                                      <DropdownMenuItem onClick={(e) => { e.stopPropagation(); handleExamAction(exam.orderId, exam.id, 'cancelar'); }} className="text-xs font-bold uppercase text-rose-600 gap-2">
                                         <XCircle className="h-3.5 w-3.5" /> 
                                         {examStatuses[keyBase] === 'cancelled' ? "Reverter Cancelamento" : "Cancelar exame"}
                                       </DropdownMenuItem>
-                                      <DropdownMenuItem onClick={(e) => { e.stopPropagation(); handleExamAction(exam.id, 'reteste'); }} className="text-xs font-bold uppercase text-amber-600 gap-2">
+                                      <DropdownMenuItem onClick={(e) => { e.stopPropagation(); handleExamAction(exam.orderId, exam.id, 'reteste'); }} className="text-xs font-bold uppercase text-amber-600 gap-2">
                                         <RefreshCcw className="h-3.5 w-3.5" />
                                         {examActions[keyBase]?.type === 'reteste' ? "Remover Reteste" : "Solicitar Reteste"}
                                       </DropdownMenuItem>
-                                      <DropdownMenuItem onClick={(e) => { e.stopPropagation(); handleExamAction(exam.id, 'recoleta'); }} className="text-xs font-bold uppercase text-orange-600 gap-2">
+                                      <DropdownMenuItem onClick={(e) => { e.stopPropagation(); handleExamAction(exam.orderId, exam.id, 'recoleta'); }} className="text-xs font-bold uppercase text-orange-600 gap-2">
                                         <Syringe className="h-3.5 w-3.5" />
                                         {examActions[keyBase]?.type === 'recoleta' ? "Remover Recoleta" : "Solicitar Recoleta"}
                                       </DropdownMenuItem>
@@ -670,8 +670,8 @@ export function ResultEntryModal({
 
                             <div className="flex items-center gap-2">
                               {!isDigitized && !isReleased && (
-                                  <Button 
-                                    onClick={() => handleConcluirExame(exam.id)}
+                                    <Button 
+                                      onClick={() => handleConcluirExame(exam.orderId, exam.id)}
                                     size="sm" 
                                     disabled={!(exam.parameters?.length ? exam.parameters : [{id: '1'}]).every((p: any) => 
                                       results[`${keyBase}_${p.id}`]?.trim() !== ''
@@ -684,8 +684,8 @@ export function ResultEntryModal({
                               )}
 
                               {isDigitized && (
-                                <Button 
-                                  onClick={() => handleReleaseExam(exam.id)}
+                                  <Button 
+                                    onClick={() => handleReleaseExam(exam.orderId, exam.id)}
                                   size="sm" 
                                   className="h-7 px-3 text-[9px] font-black uppercase gap-1.5 bg-emerald-500 hover:bg-emerald-600 text-white shadow-sm"
                                 >
@@ -808,9 +808,9 @@ export function ResultEntryModal({
                                 value={examActions[keyBase].reason || ""}
                                 onValueChange={(val) => {
                                   if (examActions[keyBase].type === 'reteste') {
-                                    handleRetestUpdate(exam.id, val, examActions[keyBase].details || "");
+                                    handleRetestUpdate(exam.orderId, exam.id, val, examActions[keyBase].details || "");
                                   } else {
-                                    handleRecoletaUpdate(exam.id, val, examActions[keyBase].details || "");
+                                    handleRecoletaUpdate(exam.orderId, exam.id, val, examActions[keyBase].details || "");
                                   }
                                 }}
                               >
@@ -847,10 +847,10 @@ export function ResultEntryModal({
                                 placeholder="Detalhes adicionais (opcional)..."
                                 value={examActions[exam.id].details || ""}
                                 onChange={(e) => {
-                                  if (examActions[exam.id].type === 'reteste') {
-                                    handleRetestUpdate(exam.id, examActions[exam.id].reason || "", e.target.value);
+                                  if (examActions[keyBase].type === 'reteste') {
+                                    handleRetestUpdate(exam.orderId, exam.id, examActions[keyBase].reason || "", e.target.value);
                                   } else {
-                                    handleRecoletaUpdate(exam.id, examActions[exam.id].reason || "", e.target.value);
+                                    handleRecoletaUpdate(exam.orderId, exam.id, examActions[keyBase].reason || "", e.target.value);
                                   }
                                 }}
                               />
@@ -1027,7 +1027,7 @@ export function ResultEntryModal({
                     toast.error("Por favor, confirme a operação.");
                     return;
                   }
-                  handleCancelConfirm(cancelModal.exam?.id, reason);
+                  handleCancelConfirm(cancelModal.exam?.orderId, cancelModal.exam?.id, reason);
                 }}
                 className="font-black uppercase text-[10px] tracking-widest px-6 bg-rose-500 hover:bg-rose-600 shadow-lg shadow-rose-200"
               >
