@@ -33,26 +33,73 @@ import {
   Info,
   Loader2,
   Globe,
-  FileText
+  FileText,
+  X
 } from 'lucide-react'
 import { LabOriginsSettings } from '@/components/lab/settings/LabOriginsSettings'
 import { cn } from '@/lib/utils'
 import { toast } from 'sonner'
 import { supabase } from '@/integrations/supabase/client'
-
-
+import { useAuth } from '@/context/AuthContext'
 import { useRegisters } from '@/context/RegistersContext'
 
 export default function LabSettingsPage() {
   const [searchParams, setSearchParams] = useSearchParams()
   const activeTab = searchParams.get('tab') || 'lab-data'
+  const [isLoading, setIsLoading] = useState(false)
+  const [isSaving, setIsSaving] = useState(false)
+  const [settings, setSettings] = useState<any>(null)
+  const { user } = useAuth()
 
   const setActiveTab = (tab: string) => {
     setSearchParams({ tab })
   }
 
-  const handleSave = () => {
-    toast.success('Configurações salvas com sucesso!')
+  useEffect(() => {
+    if (user?.companyId) {
+      fetchSettings()
+    }
+  }, [user?.companyId])
+
+  const fetchSettings = async () => {
+    try {
+      setIsLoading(true)
+      const { data, error } = await supabase
+        .from('lab_settings')
+        .select('*')
+        .eq('company_id', user?.companyId)
+        .maybeSingle()
+
+      if (error) throw error
+      if (data) setSettings(data)
+    } catch (error) {
+      console.error('Error fetching lab settings:', error)
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  const handleSave = async () => {
+    if (!user?.companyId) return
+
+    try {
+      setIsSaving(true)
+      const { error } = await supabase
+        .from('lab_settings')
+        .upsert({
+          company_id: user.companyId,
+          ...settings,
+          updated_at: new Date().toISOString()
+        })
+
+      if (error) throw error
+      toast.success('Configurações salvas com sucesso!')
+    } catch (error) {
+      console.error('Error saving lab settings:', error)
+      toast.error('Erro ao salvar configurações')
+    } finally {
+      setIsSaving(false)
+    }
   }
 
   return (
@@ -86,25 +133,35 @@ export default function LabSettingsPage() {
 
         <div className="flex-1 min-w-0">
           <Card className="p-6">
-            {activeTab === 'lab-data' && <LabDataSection />}
-            {activeTab === 'tiss' && <TISSSection />}
-            {activeTab === 'signature' && <SignatureSection />}
-            {activeTab === 'security' && <SecuritySection />}
-            {activeTab === 'printer' && <PrinterLabelSection />}
-            {activeTab === 'units' && <UnitsSection />}
-            {activeTab === 'methods' && <MethodsSection />}
-            {activeTab === 'workbenches' && <WorkbenchesSection />}
-            {activeTab === 'equipment' && <EquipmentRedirect />}
-            {activeTab === 'collection-reasons' && <CollectionReasonsSection />}
-            {activeTab === 'origins' && <LabOriginsSettings />}
-            {activeTab === 'report-layout' && <ReportLayoutSection />}
-            {activeTab === 'logs' && <LogsSection />}
-            
-            <div className="mt-8 pt-6 border-t flex justify-end">
-              <Button onClick={handleSave} className="gradient-bg text-white gap-2 px-8">
-                <Save className="h-4 w-4" /> Salvar Alterações
-              </Button>
-            </div>
+            {isLoading ? (
+              <div className="flex flex-col items-center justify-center py-12 gap-3">
+                <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                <p className="text-sm text-muted-foreground">Carregando configurações...</p>
+              </div>
+            ) : (
+              <>
+                {activeTab === 'lab-data' && <LabDataSection />}
+                {activeTab === 'tiss' && <TISSSection />}
+                {activeTab === 'signature' && <SignatureSection />}
+                {activeTab === 'security' && <SecuritySection />}
+                {activeTab === 'printer' && <PrinterLabelSection />}
+                {activeTab === 'units' && <UnitsSection />}
+                {activeTab === 'methods' && <MethodsSection />}
+                {activeTab === 'workbenches' && <WorkbenchesSection />}
+                {activeTab === 'equipment' && <EquipmentRedirect />}
+                {activeTab === 'collection-reasons' && <CollectionReasonsSection />}
+                {activeTab === 'origins' && <LabOriginsSettings />}
+                {activeTab === 'report-layout' && <ReportLayoutSection settings={settings} setSettings={setSettings} />}
+                {activeTab === 'logs' && <LogsSection />}
+                
+                <div className="mt-8 pt-6 border-t flex justify-end">
+                  <Button onClick={handleSave} disabled={isSaving} className="gradient-bg text-white gap-2 px-8">
+                    {isSaving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />} 
+                    Salvar Alterações
+                  </Button>
+                </div>
+              </>
+            )}
           </Card>
         </div>
       </div>
@@ -193,7 +250,38 @@ function LabDataSection() {
   )
 }
 
-function ReportLayoutSection() {
+function ReportLayoutSection({ settings, setSettings }: { settings: any, setSettings: (s: any) => void }) {
+  const handleUpload = async (e: React.ChangeEvent<HTMLInputElement>, field: string) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+
+    try {
+      const fileExt = file.name.split('.').pop()
+      const fileName = `${Math.random()}.${fileExt}`
+      const filePath = `lab-settings/${fileName}`
+
+      const { error: uploadError } = await supabase.storage
+        .from('company-assets')
+        .upload(filePath, file)
+
+      if (uploadError) throw uploadError
+
+      const { data: { publicUrl } } = supabase.storage
+        .from('company-assets')
+        .getPublicUrl(filePath)
+
+      setSettings({ ...settings, [field]: publicUrl })
+      toast.success('Upload realizado com sucesso!')
+    } catch (error) {
+      console.error('Error uploading logo:', error)
+      toast.error('Erro ao fazer upload da logo')
+    }
+  }
+
+  const removeLogo = (field: string) => {
+    setSettings({ ...settings, [field]: null })
+  }
+
   return (
     <div className="space-y-8">
       <div className="flex items-center justify-between">
@@ -213,12 +301,20 @@ function ReportLayoutSection() {
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <div className="space-y-2">
           <Label>Título do cabeçalho</Label>
-          <Input placeholder="Ex: LABORATÓRIO MUNICIPAL CENTRAL" />
+          <Input 
+            value={settings?.report_header_title || ''} 
+            onChange={(e) => setSettings({ ...settings, report_header_title: e.target.value })}
+            placeholder="Ex: LABORATÓRIO MUNICIPAL CENTRAL" 
+          />
           <p className="text-[10px] text-muted-foreground">Fallback: nome do laboratório.</p>
         </div>
         <div className="space-y-2">
           <Label>Subtítulo (opcional)</Label>
-          <Input placeholder="Ex: Secretaria Municipal de Saúde" />
+          <Input 
+            value={settings?.report_header_subtitle || ''}
+            onChange={(e) => setSettings({ ...settings, report_header_subtitle: e.target.value })}
+            placeholder="Ex: Secretaria Municipal de Saúde" 
+          />
         </div>
       </div>
 
@@ -226,10 +322,18 @@ function ReportLayoutSection() {
         <div className="space-y-3">
           <Label>Logo principal (esquerda)</Label>
           <div className="flex items-center gap-4 p-4 border rounded-xl bg-muted/20">
-            <div className="h-12 w-12 bg-card border rounded flex items-center justify-center text-[8px] text-muted-foreground font-bold">LOGO</div>
+            {settings?.report_logo_primary_url ? (
+              <img src={settings.report_logo_primary_url} alt="Logo Principal" className="h-12 w-12 object-contain" />
+            ) : (
+              <div className="h-12 w-12 bg-card border rounded flex items-center justify-center text-[8px] text-muted-foreground font-bold">LOGO</div>
+            )}
             <div className="flex flex-col gap-2">
-              <input type="file" className="text-xs w-full" />
-              <button className="text-[10px] text-red-500 font-bold text-left">Remover</button>
+              <Input type="file" accept="image/*" className="text-xs w-full h-auto" onChange={(e) => handleUpload(e, 'report_logo_primary_url')} />
+              {settings?.report_logo_primary_url && (
+                <button onClick={() => removeLogo('report_logo_primary_url')} className="text-[10px] text-red-500 font-bold text-left flex items-center gap-1">
+                  <X className="h-3 w-3" /> Remover
+                </button>
+              )}
             </div>
           </div>
         </div>
@@ -237,10 +341,18 @@ function ReportLayoutSection() {
         <div className="space-y-3">
           <Label>Logo secundário (direita, opcional)</Label>
           <div className="flex items-center gap-4 p-4 border rounded-xl bg-muted/20">
-            <div className="h-12 w-12 bg-card border rounded flex items-center justify-center text-[8px] text-muted-foreground font-bold">LOGO</div>
+            {settings?.report_logo_secondary_url ? (
+              <img src={settings.report_logo_secondary_url} alt="Logo Secundário" className="h-12 w-12 object-contain" />
+            ) : (
+              <div className="h-12 w-12 bg-card border rounded flex items-center justify-center text-[8px] text-muted-foreground font-bold">LOGO</div>
+            )}
             <div className="flex flex-col gap-2">
-              <input type="file" className="text-xs w-full" />
-              <button className="text-[10px] text-red-500 font-bold text-left">Remover</button>
+              <Input type="file" accept="image/*" className="text-xs w-full h-auto" onChange={(e) => handleUpload(e, 'report_logo_secondary_url')} />
+              {settings?.report_logo_secondary_url && (
+                <button onClick={() => removeLogo('report_logo_secondary_url')} className="text-[10px] text-red-500 font-bold text-left flex items-center gap-1">
+                  <X className="h-3 w-3" /> Remover
+                </button>
+              )}
             </div>
           </div>
           <p className="text-[10px] text-muted-foreground italic">Ex: brasão da prefeitura. Recomendado PNG transparente.</p>
@@ -252,6 +364,8 @@ function ReportLayoutSection() {
         <textarea 
           className="w-full min-h-[100px] p-3 rounded-lg border bg-background text-sm resize-none focus:ring-2 focus:ring-primary/20 outline-none" 
           placeholder="Texto livre exibido apenas na primeira página, logo abaixo do bloco do paciente."
+          value={settings?.report_institutional_warning || ''}
+          onChange={(e) => setSettings({ ...settings, report_institutional_warning: e.target.value })}
         />
       </div>
 
@@ -260,6 +374,8 @@ function ReportLayoutSection() {
         <textarea 
           className="w-full min-h-[100px] p-3 rounded-lg border bg-background text-sm resize-none focus:ring-2 focus:ring-primary/20 outline-none" 
           placeholder="Aparece na lateral esquerda do rodapé em todas as páginas."
+          value={settings?.report_footer_text || ''}
+          onChange={(e) => setSettings({ ...settings, report_footer_text: e.target.value })}
         />
       </div>
 
@@ -269,12 +385,20 @@ function ReportLayoutSection() {
             <Label className="text-sm font-bold">Marca d'água em laudos não assinados</Label>
             <p className="text-[10px] text-muted-foreground">Impressa no topo de cada página quando o laudo ainda não foi liberado.</p>
           </div>
-          <Switch defaultChecked />
+          <Switch 
+            checked={settings?.report_watermark_enabled ?? true} 
+            onCheckedChange={(checked) => setSettings({ ...settings, report_watermark_enabled: checked })}
+          />
         </div>
         
         <div className="space-y-2">
           <Label className="text-xs font-bold uppercase text-muted-foreground">Texto da marca d'água</Label>
-          <Input defaultValue="[ CÓPIA NÃO AUTENTICADA ]" className="max-w-xs" />
+          <Input 
+            value={settings?.report_watermark_text || ''} 
+            onChange={(e) => setSettings({ ...settings, report_watermark_text: e.target.value })}
+            placeholder="[ CÓPIA NÃO AUTENTICADA ]" 
+            className="max-w-xs" 
+          />
         </div>
       </div>
     </div>
