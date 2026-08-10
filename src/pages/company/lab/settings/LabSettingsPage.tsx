@@ -258,12 +258,14 @@ function ReportLayoutSection({ settings, setSettings }: { settings: any, setSett
     try {
       const fileExt = file.name.split('.').pop()
       const fileName = `${crypto.randomUUID()}.${fileExt}`
-      const filePath = `${fileName}` // Using root of bucket for simplicity
+      const filePath = `lab-logos/${fileName}`
 
-      // First try to upload to attendance-attachments which we know exists and has policies
       const { error: uploadError } = await supabase.storage
         .from('attendance-attachments')
-        .upload(filePath, file)
+        .upload(filePath, file, {
+          cacheControl: '3600',
+          upsert: false
+        })
 
       if (uploadError) throw uploadError
 
@@ -271,7 +273,8 @@ function ReportLayoutSection({ settings, setSettings }: { settings: any, setSett
         .from('attendance-attachments')
         .getPublicUrl(filePath)
 
-      setSettings({ ...settings, [field]: publicUrl })
+      // Use a functional update to ensure we have the latest settings
+      setSettings((prev: any) => ({ ...prev, [field]: publicUrl }))
       toast.success('Upload realizado com sucesso!')
     } catch (error) {
       console.error('Error uploading logo:', error)
@@ -323,15 +326,18 @@ function ReportLayoutSection({ settings, setSettings }: { settings: any, setSett
         <div className="space-y-3">
           <Label>Logo principal (esquerda)</Label>
           <div className="flex items-center gap-4 p-4 border rounded-xl bg-muted/20">
-            <div className="h-16 w-16 bg-card border rounded flex items-center justify-center overflow-hidden">
+            <div className="h-16 w-16 bg-card border rounded flex items-center justify-center overflow-hidden shrink-0">
               {settings?.report_logo_primary_url ? (
                 <img 
-                  key={`primary-${settings.report_logo_primary_url}`}
+                  key={settings.report_logo_primary_url}
                   src={settings.report_logo_primary_url} 
                   alt="Logo Principal" 
-                  className="h-full w-full object-contain" 
+                  className="h-full w-full object-contain"
+                  onLoad={() => console.log("Primary logo loaded:", settings.report_logo_primary_url)}
                   onError={(e) => {
-                    console.error("Error loading primary logo", e);
+                    console.error("Error loading primary logo", settings.report_logo_primary_url);
+                    const target = e.target as HTMLImageElement;
+                    target.style.display = 'none';
                   }}
                 />
               ) : (
@@ -352,15 +358,18 @@ function ReportLayoutSection({ settings, setSettings }: { settings: any, setSett
         <div className="space-y-3">
           <Label>Logo secundário (direita, opcional)</Label>
           <div className="flex items-center gap-4 p-4 border rounded-xl bg-muted/20">
-            <div className="h-16 w-16 bg-card border rounded flex items-center justify-center overflow-hidden">
+            <div className="h-16 w-16 bg-card border rounded flex items-center justify-center overflow-hidden shrink-0">
               {settings?.report_logo_secondary_url ? (
                 <img 
-                  key={`secondary-${settings.report_logo_secondary_url}`}
+                  key={settings.report_logo_secondary_url}
                   src={settings.report_logo_secondary_url} 
                   alt="Logo Secundário" 
                   className="h-full w-full object-contain"
+                  onLoad={() => console.log("Secondary logo loaded:", settings.report_logo_secondary_url)}
                   onError={(e) => {
-                    console.error("Error loading secondary logo", e);
+                    console.error("Error loading secondary logo", settings.report_logo_secondary_url);
+                    const target = e.target as HTMLImageElement;
+                    target.style.display = 'none';
                   }}
                 />
               ) : (
