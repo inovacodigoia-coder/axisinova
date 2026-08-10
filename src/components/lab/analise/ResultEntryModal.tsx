@@ -84,7 +84,7 @@ export function ResultEntryModal({
       groups[key].exams.push(exam);
     });
     return Object.values(groups);
-  }, [filteredExams]);
+  }, [filteredExams, filters.workbenches]);
 
   const totalExams = filteredExams.length;
   const filledExamsCount = Object.keys(results).filter(key => results[key]?.trim() !== '').length;
@@ -125,6 +125,24 @@ export function ResultEntryModal({
     if (filters.protocol) parts.push(`Protocolo: ${filters.protocol}`);
     return parts.join(' · ');
   }, [filters, workbenchNames, establishmentNames]);
+
+  const getResultStatus = (value: string, reference: string) => {
+    if (!value || !reference) return { label: '', color: '', bgColor: '' };
+    
+    const numValue = parseFloat(value.replace(',', '.'));
+    if (isNaN(numValue)) return { label: '', color: '', bgColor: '' };
+
+    const parts = reference.match(/([0-9]+[.,]?[0-9]*)/g);
+    if (!parts || parts.length < 2) return { label: 'Normal', color: 'text-emerald-600', bgColor: 'bg-emerald-500/10' };
+
+    const min = parseFloat(parts[0].replace(',', '.'));
+    const max = parseFloat(parts[1].replace(',', '.'));
+
+    if (numValue < min) return { label: 'Baixo', color: 'text-amber-600', bgColor: 'bg-amber-400/20' };
+    if (numValue > max) return { label: 'Alto', color: 'text-rose-600', bgColor: 'bg-rose-500/10' };
+    
+    return { label: 'Normal', color: 'text-emerald-600', bgColor: 'bg-emerald-500/10' };
+  };
 
   if (!isOpen) return null;
 
@@ -209,129 +227,145 @@ export function ResultEntryModal({
                 {isExpanded && (
                   <div className="p-6 space-y-6 border-t border-slate-100 animate-in slide-in-from-top-2 duration-200">
                     {patient.exams.map((exam: any) => (
-                    <div key={exam.id} className="relative bg-slate-50 rounded-xl border border-slate-200 p-5 space-y-4">
-                      {/* Título do Exame */}
-                      <div className="flex items-start justify-between">
-                        <div className="flex items-center gap-3">
-                          <div className={cn(
-                            "h-3 w-3 rounded-full shadow-sm",
-                            exam.workbench === 'Bioquímica' ? "bg-blue-500" :
-                            exam.workbench === 'Hematologia' ? "bg-purple-500" :
-                            "bg-slate-400"
-                          )} />
-                          <div>
-                            <div className="flex items-center gap-2">
-                              <Badge variant="outline" className="bg-white text-primary border-primary/20 text-[10px] font-black h-5 uppercase">
-                                {exam.code}
-                              </Badge>
-                              <h4 className="text-sm font-black uppercase tracking-tight">{exam.name}</h4>
-                            </div>
-                            <div className="flex items-center gap-2 mt-1 text-[10px] text-muted-foreground font-bold uppercase">
-                              <CalendarIcon className="h-3 w-3" />
-                              Coleta: {format(new Date(exam.registeredAt), 'dd/MM/yyyy HH:mm')}
-                            </div>
-                          </div>
-                        </div>
-
-                        <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                            <Button variant="outline" size="sm" className="h-7 px-2 text-[9px] font-black uppercase gap-1 bg-white border-slate-200">
-                              Versão: 1
-                              <ChevronDown className="h-3 w-3 opacity-50" />
-                            </Button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end">
-                            <DropdownMenuItem className="text-xs font-bold uppercase">Versão 1 (Padrão)</DropdownMenuItem>
-                            <DropdownMenuItem className="text-xs font-bold uppercase">Versão 2 (Metodologia B)</DropdownMenuItem>
-                          </DropdownMenuContent>
-                        </DropdownMenu>
-                      </div>
-
-                      {/* Parâmetros do Exame */}
-                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-x-8 gap-y-4 pt-2">
-                        {/* Mock de parâmetros se não existirem */}
-                        {(exam.parameters?.length ? exam.parameters : [{ id: '1', name: exam.code, unit: 'mg/dL', reference: '60 a 100' }]).map((param: any) => (
-                          <div key={param.id} className="space-y-1.5">
-                            <div className="flex justify-between items-center">
-                              <label className="text-[10px] font-black uppercase text-slate-600 ml-1">
-                                {param.name}
-                              </label>
-                              <span className="text-[9px] font-bold text-slate-400 uppercase italic">
-                                {param.unit}
-                              </span>
-                            </div>
-                            <div className="flex items-center gap-3">
-                              <div className="relative flex-1 group">
-                                <Input 
-                                  className={cn(
-                                    "h-10 text-sm font-bold bg-white border-slate-200 focus:border-primary transition-all pr-12",
-                                    results[`${exam.id}_${param.id}`] && parseFloat(results[`${exam.id}_${param.id}`]) > 100 && "border-destructive focus:border-destructive text-destructive"
-                                  )}
-                                  placeholder="Resultado"
-                                  value={results[`${exam.id}_${param.id}`] || ''}
-                                  onChange={(e) => setResults(prev => ({ ...prev, [`${exam.id}_${param.id}`]: e.target.value }))}
-                                />
-                                {results[`${exam.id}_${param.id}`] && parseFloat(results[`${exam.id}_${param.id}`]) > 100 && (
-                                  <AlertTriangle className="absolute right-3 top-2.5 h-5 w-5 text-destructive animate-pulse" />
-                                )}
+                      <div key={exam.id} className="relative bg-slate-50 rounded-xl border border-slate-200 p-5 space-y-4">
+                        {/* Título do Exame */}
+                        <div className="flex items-start justify-between">
+                          <div className="flex items-center gap-3">
+                            <div className={cn(
+                              "h-3 w-3 rounded-full shadow-sm",
+                              exam.workbench === 'Bioquímica' ? "bg-blue-500" :
+                              exam.workbench === 'Hematologia' ? "bg-purple-500" :
+                              "bg-slate-400"
+                            )} />
+                            <div>
+                              <div className="flex items-center gap-2">
+                                <Badge variant="outline" className="bg-white text-primary border-primary/20 text-[10px] font-black h-5 uppercase">
+                                  {exam.code}
+                                </Badge>
+                                <h4 className="text-sm font-black uppercase tracking-tight">{exam.name}</h4>
                               </div>
-                              <div className="w-32 bg-slate-200/50 rounded px-2 py-1 flex flex-col justify-center">
-                                <span className="text-[8px] font-black text-slate-400 uppercase leading-tight">Referência</span>
-                                <span className="text-[10px] font-bold text-slate-600 truncate">{param.reference || '60 a 100'}</span>
+                              <div className="flex items-center gap-2 mt-1 text-[10px] text-muted-foreground font-bold uppercase">
+                                <CalendarIcon className="h-3 w-3" />
+                                Coleta: {format(new Date(exam.registeredAt), 'dd/MM/yyyy HH:mm')}
                               </div>
                             </div>
                           </div>
-                        ))}
-                      </div>
 
-                      {/* Campo Nota */}
-                      <div className="pt-2">
-                        <div className="relative">
-                          <Input 
-                            className="h-9 text-xs bg-white/50 border-slate-200/50 focus:border-primary/50 text-muted-foreground italic"
-                            placeholder="Nota / Observações técnicas..."
-                            value={notes[exam.id] || ''}
-                            onChange={(e) => setNotes(prev => ({ ...prev, [exam.id]: e.target.value }))}
-                          />
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <Button variant="outline" size="sm" className="h-7 px-2 text-[9px] font-black uppercase gap-1 bg-white border-slate-200">
+                                Versão: 1
+                                <ChevronDown className="h-3 w-3 opacity-50" />
+                              </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end">
+                              <DropdownMenuItem className="text-xs font-bold uppercase">Versão 1 (Padrão)</DropdownMenuItem>
+                              <DropdownMenuItem className="text-xs font-bold uppercase">Versão 2 (Metodologia B)</DropdownMenuItem>
+                            </DropdownMenuContent>
+                          </DropdownMenu>
                         </div>
-                      </div>
 
-                      {/* Resultados Anteriores (Mock) */}
-                      <div className="mt-4 pt-4 border-t border-slate-200/60">
-                        <div className="flex items-center gap-2 mb-3">
-                          <History className="h-3.5 w-3.5 text-primary" />
-                          <h5 className="text-[10px] font-black uppercase text-slate-500 tracking-wider">
-                            {exam.code} - Resultados Anteriores:
-                          </h5>
-                        </div>
-                        <ScrollArea className="w-full">
-                          <div className="flex gap-3 pb-2">
-                            {[1, 2, 3].map(i => (
-                              <div key={i} className="shrink-0 bg-white border border-slate-200 rounded-lg p-2 min-w-[140px] shadow-sm">
-                                <div className="flex justify-between items-start mb-1">
-                                  <span className="text-[9px] font-bold text-slate-400">
-                                    {format(new Date(2026, 7, 10 - i, 10, 30), 'dd/MM/yy HH:mm')}
+                        {/* Parâmetros do Exame */}
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-x-8 gap-y-4 pt-2">
+                          {(exam.parameters?.length ? exam.parameters : [{ id: '1', name: exam.code, unit: 'mg/dL', reference: '60 a 100' }]).map((param: any) => {
+                            const value = results[`${exam.id}_${param.id}`] || '';
+                            const status = getResultStatus(value, param.reference || '60 a 100');
+                            
+                            return (
+                              <div key={param.id} className={cn(
+                                "space-y-1.5 p-3 rounded-lg transition-colors duration-300",
+                                status.bgColor
+                              )}>
+                                <div className="flex justify-between items-center">
+                                  <label className="text-[10px] font-black uppercase text-slate-600 ml-1">
+                                    {param.name}
+                                  </label>
+                                  <span className="text-[9px] font-bold text-slate-400 uppercase italic">
+                                    {param.unit}
                                   </span>
-                                  <Badge className="h-3 text-[7px] font-black bg-slate-100 text-slate-600 border-none uppercase">
-                                    {exam.code}
-                                  </Badge>
                                 </div>
-                                <div className="flex items-baseline gap-1">
-                                  <span className="text-sm font-black text-slate-700">{85 + i * 5}</span>
-                                  <span className="text-[9px] font-bold text-slate-400">mg/dL</span>
+                                <div className="flex items-center gap-3">
+                                  <div className="relative flex-1 group">
+                                    <Input 
+                                      className={cn(
+                                        "h-10 text-sm font-bold bg-white border-slate-200 focus:border-primary transition-all pr-12",
+                                        status.label === 'Baixo' && "border-amber-400 focus:border-amber-500",
+                                        status.label === 'Alto' && "border-rose-400 focus:border-rose-500",
+                                        status.label === 'Normal' && "border-emerald-400 focus:border-emerald-500"
+                                      )}
+                                      placeholder="Resultado"
+                                      value={value}
+                                      onChange={(e) => setResults(prev => ({ ...prev, [`${exam.id}_${param.id}`]: e.target.value }))}
+                                    />
+                                    {status.label && (
+                                      <div className={cn(
+                                        "absolute right-2 top-2.5 px-1.5 py-0.5 rounded text-[8px] font-black uppercase tracking-tighter",
+                                        status.label === 'Baixo' ? "bg-amber-100 text-amber-700" :
+                                        status.label === 'Alto' ? "bg-rose-100 text-rose-700" :
+                                        "bg-emerald-100 text-emerald-700"
+                                      )}>
+                                        {status.label}
+                                      </div>
+                                    )}
+                                  </div>
+                                  <div className="w-32 bg-slate-200/50 rounded px-2 py-1 flex flex-col justify-center">
+                                    <span className="text-[8px] font-black text-slate-400 uppercase leading-tight">Referência</span>
+                                    <span className="text-[10px] font-bold text-slate-600 truncate">{param.reference || '60 a 100'}</span>
+                                  </div>
                                 </div>
                               </div>
-                            ))}
+                            );
+                          })}
+                        </div>
+
+                        {/* Campo Nota */}
+                        <div className="pt-2">
+                          <div className="relative">
+                            <Input 
+                              className="h-9 text-xs bg-white/50 border-slate-200/50 focus:border-primary/50 text-muted-foreground italic"
+                              placeholder="Nota / Observações técnicas..."
+                              value={notes[exam.id] || ''}
+                              onChange={(e) => setNotes(prev => ({ ...prev, [exam.id]: e.target.value }))}
+                            />
                           </div>
-                        </ScrollArea>
+                        </div>
+
+                        {/* Resultados Anteriores (Mock) */}
+                        <div className="mt-4 pt-4 border-t border-slate-200/60">
+                          <div className="flex items-center gap-2 mb-3">
+                            <History className="h-3.5 w-3.5 text-primary" />
+                            <h5 className="text-[10px] font-black uppercase text-slate-500 tracking-wider">
+                              {exam.code} - Resultados Anteriores:
+                            </h5>
+                          </div>
+                          <ScrollArea className="w-full">
+                            <div className="flex gap-3 pb-2">
+                              {[1, 2, 3].map(i => (
+                                <div key={i} className="shrink-0 bg-white border border-slate-200 rounded-lg p-2 min-w-[140px] shadow-sm">
+                                  <div className="flex justify-between items-start mb-1">
+                                    <span className="text-[9px] font-bold text-slate-400">
+                                      {format(new Date(2026, 7, 10 - i, 10, 30), 'dd/MM/yy HH:mm')}
+                                    </span>
+                                    <Badge className="h-3 text-[7px] font-black bg-slate-100 text-slate-600 border-none uppercase">
+                                      {exam.code}
+                                    </Badge>
+                                  </div>
+                                  <div className="flex items-baseline gap-1">
+                                    <span className="text-sm font-black text-slate-700">{85 + i * 5}</span>
+                                    <span className="text-[9px] font-bold text-slate-400">mg/dL</span>
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+                          </ScrollArea>
+                        </div>
                       </div>
-                    </div>
-                  ))}
+                    ))}
                   </div>
                 )}
               </div>
-            );
-          })
+              );
+            })
           )}
         </div>
       </ScrollArea>
@@ -370,9 +404,9 @@ export function ResultEntryModal({
           <Button 
             onClick={() => handleSave(false)}
             disabled={saving || filledExamsCount === 0}
-            className="h-11 px-10 font-black uppercase text-[10px] tracking-widest gap-2 gradient-bg text-white border-none shadow-lg hover:shadow-primary/20 transition-all hover:-translate-y-0.5"
+            className="h-11 px-8 font-black uppercase text-[10px] tracking-widest gap-2 bg-primary text-white hover:bg-primary/90 shadow-lg shadow-primary/20"
           >
-            {saving ? <RefreshCcw className="h-4 w-4 animate-spin" /> : <CheckCircle2 className="h-4 w-4" />}
+            <CheckCircle2 className="h-4 w-4" />
             Concluir Digitação
           </Button>
         </div>
