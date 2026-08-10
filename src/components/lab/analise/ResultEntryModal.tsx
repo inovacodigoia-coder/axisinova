@@ -352,24 +352,24 @@ export function ResultEntryModal({
                             </div>
                           </div>
 
-                          <div className="flex items-center gap-2">
-                            {examStatuses[exam.id] === 'digitized' && (
-                              <Button 
-                                onClick={() => handleReleaseExam(exam.id)}
-                                size="sm" 
-                                className="h-7 px-3 text-[9px] font-black uppercase gap-1.5 bg-emerald-500 hover:bg-emerald-600 text-white shadow-sm"
-                              >
-                                <CheckCircle2 className="h-3 w-3" />
-                                Liberar exame
-                              </Button>
-                            )}
-                            
-                            {examStatuses[exam.id] === 'released' && (
-                              <Badge className="h-7 px-3 text-[9px] font-black uppercase gap-1.5 bg-emerald-100 text-emerald-700 border-emerald-200">
-                                <Check className="h-3 w-3" />
-                                Liberado
-                              </Badge>
-                            )}
+                            <div className="flex items-center gap-2">
+                              {isDigitized && (
+                                <Button 
+                                  onClick={() => handleReleaseExam(exam.id)}
+                                  size="sm" 
+                                  className="h-7 px-3 text-[9px] font-black uppercase gap-1.5 bg-emerald-500 hover:bg-emerald-600 text-white shadow-sm"
+                                >
+                                  <CheckCircle2 className="h-3 w-3" />
+                                  Liberar exame
+                                </Button>
+                              )}
+                              
+                              {isReleased && (
+                                <Badge className="h-7 px-3 text-[9px] font-black uppercase gap-1.5 bg-emerald-100 text-emerald-700 border-emerald-200">
+                                  <Check className="h-3 w-3" />
+                                  Liberado
+                                </Badge>
+                              )}
 
                             <DropdownMenu>
                               <DropdownMenuTrigger asChild>
