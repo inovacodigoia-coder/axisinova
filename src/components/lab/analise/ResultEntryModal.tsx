@@ -1,6 +1,7 @@
 import { useState, useMemo, useEffect } from 'react';
+import { useAttendanceCadastro } from '@/hooks/useAttendanceCadastro';
 import { 
-  X, 
+  X,
   Search, 
   Beaker, 
   Clock, 
