@@ -126,6 +126,25 @@ export function ResultEntryModal({
     return parts.join(' · ');
   }, [filters, workbenchNames, establishmentNames]);
 
+  const getResultStatus = (value: string, reference: string) => {
+    if (!value || !reference) return { label: '', color: '', bgColor: '' };
+    
+    const numValue = parseFloat(value.replace(',', '.'));
+    if (isNaN(numValue)) return { label: '', color: '', bgColor: '' };
+
+    // Tentar extrair min/max da string de referência (ex: "60 a 100" ou "1.24 - 8.62")
+    const parts = reference.match(/([0-9]+[.,]?[0-9]*)/g);
+    if (!parts || parts.length < 2) return { label: 'Normal', color: 'text-emerald-600', bgColor: 'bg-emerald-500/10' };
+
+    const min = parseFloat(parts[0].replace(',', '.'));
+    const max = parseFloat(parts[1].replace(',', '.'));
+
+    if (numValue < min) return { label: 'Baixo', color: 'text-amber-600', bgColor: 'bg-amber-400/20' };
+    if (numValue > max) return { label: 'Alto', color: 'text-rose-600', bgColor: 'bg-rose-500/10' };
+    
+    return { label: 'Normal', color: 'text-emerald-600', bgColor: 'bg-emerald-500/10' };
+  };
+
   if (!isOpen) return null;
 
   return (
@@ -208,7 +227,8 @@ export function ResultEntryModal({
                 {/* Exames do Paciente */}
                 {isExpanded && (
                   <div className="p-6 space-y-6 border-t border-slate-100 animate-in slide-in-from-top-2 duration-200">
-                    {patient.exams.map((exam: any) => (
+                    {patient.exams.map((exam: any) => {
+                      return (
                     <div key={exam.id} className="relative bg-slate-50 rounded-xl border border-slate-200 p-5 space-y-4">
                       {/* Título do Exame */}
                       <div className="flex items-start justify-between">
@@ -250,11 +270,18 @@ export function ResultEntryModal({
                       {/* Parâmetros do Exame */}
                       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-x-8 gap-y-4 pt-2">
                         {/* Mock de parâmetros se não existirem */}
-                        {(exam.parameters?.length ? exam.parameters : [{ id: '1', name: exam.code, unit: 'mg/dL', reference: '60 a 100' }]).map((param: any) => (
-                          <div key={param.id} className="space-y-1.5">
+                        {(exam.parameters?.length ? exam.parameters : [{ id: '1', name: exam.code, unit: 'mg/dL', reference: '60 a 100' }]).map((param: any) => {
+                          const value = results[`${exam.id}_${param.id}`] || '';
+                          const status = getResultStatus(value, param.reference || '60 a 100');
+                          
+                          return (
+                          <div key={param.id} className={cn(
+                            "space-y-1.5 p-3 rounded-lg transition-colors duration-300",
+                            status.bgColor
+                          )}>
                             <div className="flex justify-between items-center">
                               <label className="text-[10px] font-black uppercase text-slate-600 ml-1">
-                                {param.name}
+                                {param.name} {param.required && <span className="text-destructive">*</span>}
                               </label>
                               <span className="text-[9px] font-bold text-slate-400 uppercase italic">
                                 {param.unit}
@@ -265,14 +292,23 @@ export function ResultEntryModal({
                                 <Input 
                                   className={cn(
                                     "h-10 text-sm font-bold bg-white border-slate-200 focus:border-primary transition-all pr-12",
-                                    results[`${exam.id}_${param.id}`] && parseFloat(results[`${exam.id}_${param.id}`]) > 100 && "border-destructive focus:border-destructive text-destructive"
+                                    status.label === 'Baixo' && "border-amber-400 focus:border-amber-500",
+                                    status.label === 'Alto' && "border-rose-400 focus:border-rose-500",
+                                    status.label === 'Normal' && "border-emerald-400 focus:border-emerald-500"
                                   )}
                                   placeholder="Resultado"
-                                  value={results[`${exam.id}_${param.id}`] || ''}
+                                  value={value}
                                   onChange={(e) => setResults(prev => ({ ...prev, [`${exam.id}_${param.id}`]: e.target.value }))}
                                 />
-                                {results[`${exam.id}_${param.id}`] && parseFloat(results[`${exam.id}_${param.id}`]) > 100 && (
-                                  <AlertTriangle className="absolute right-3 top-2.5 h-5 w-5 text-destructive animate-pulse" />
+                                {status.label && (
+                                  <div className={cn(
+                                    "absolute right-3 top-2.5 px-1.5 py-0.5 rounded text-[8px] font-black uppercase tracking-tighter",
+                                    status.label === 'Baixo' ? "bg-amber-100 text-amber-700" :
+                                    status.label === 'Alto' ? "bg-rose-100 text-rose-700" :
+                                    "bg-emerald-100 text-emerald-700"
+                                  )}>
+                                    {status.label}
+                                  </div>
                                 )}
                               </div>
                               <div className="w-32 bg-slate-200/50 rounded px-2 py-1 flex flex-col justify-center">
@@ -281,7 +317,7 @@ export function ResultEntryModal({
                               </div>
                             </div>
                           </div>
-                        ))}
+                        )})}
                       </div>
 
                       {/* Campo Nota */}
@@ -321,7 +357,8 @@ export function ResultEntryModal({
                                   <span className="text-[9px] font-bold text-slate-400">mg/dL</span>
                                 </div>
                               </div>
-                            ))}
+                      );
+                    })}
                           </div>
                         </ScrollArea>
                       </div>
