@@ -541,6 +541,77 @@ export function ResultEntryModal({
                           </div>
                         </div>
 
+                        {/* Campos de Reteste/Recoleta contextuais */}
+                        {(examActions[exam.id]?.type === 'reteste' || examActions[exam.id]?.type === 'recoleta') && (
+                          <div className={cn(
+                            "p-3 rounded-lg border animate-in slide-in-from-top-2 duration-200",
+                            examActions[exam.id].type === 'reteste' ? "bg-amber-50 border-amber-200" : "bg-orange-50 border-orange-200"
+                          )}>
+                            <div className="flex items-center gap-2 mb-2">
+                              <AlertCircle className={cn(
+                                "h-4 w-4",
+                                examActions[exam.id].type === 'reteste' ? "text-amber-600" : "text-orange-600"
+                              )} />
+                              <span className="text-[10px] font-black uppercase text-slate-700">
+                                Motivo do {examActions[exam.id].type === 'reteste' ? 'Reteste' : 'Recoleta'} (Obrigatório para Valores Críticos)
+                              </span>
+                            </div>
+                            
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                              <Select 
+                                value={examActions[exam.id].reason || ""}
+                                onValueChange={(val) => {
+                                  if (examActions[exam.id].type === 'reteste') {
+                                    handleRetestUpdate(exam.id, val, examActions[exam.id].details || "");
+                                  } else {
+                                    handleRecoletaUpdate(exam.id, val, examActions[exam.id].details || "");
+                                  }
+                                }}
+                              >
+                                <SelectTrigger className="h-9 text-xs bg-white border-slate-200">
+                                  <SelectValue placeholder="Selecione um motivo..." />
+                                </SelectTrigger>
+                                <SelectContent className="z-[120]">
+                                  {examActions[exam.id].type === 'reteste' ? (
+                                    <>
+                                      <SelectItem value="Valor crítico / pânico">Valor crítico / pânico</SelectItem>
+                                      <SelectItem value="Discrepância clínica">Discrepância clínica</SelectItem>
+                                      <SelectItem value="Resultado inconsistente com histórico">Resultado inconsistente com histórico</SelectItem>
+                                      <SelectItem value="Falha técnica do equipamento">Falha técnica do equipamento</SelectItem>
+                                      <SelectItem value="Suspeita de interferência">Suspeita de interferência</SelectItem>
+                                      <SelectItem value="Outro">Outro</SelectItem>
+                                    </>
+                                  ) : (
+                                    <>
+                                      <SelectItem value="Amostra hemolisada">Amostra hemolisada</SelectItem>
+                                      <SelectItem value="Amostra lipêmica">Amostra lipêmica</SelectItem>
+                                      <SelectItem value="Amostra ictérica">Amostra ictérica</SelectItem>
+                                      <SelectItem value="Coágulo na amostra">Coágulo na amostra</SelectItem>
+                                      <SelectItem value="Volume insuficiente">Volume insuficiente</SelectItem>
+                                      <SelectItem value="Tubo inadequado">Tubo inadequado</SelectItem>
+                                      <SelectItem value="Identificação incorreta">Identificação incorreta</SelectItem>
+                                      <SelectItem value="Outro">Outro</SelectItem>
+                                    </>
+                                  )}
+                                </SelectContent>
+                              </Select>
+
+                              <Input 
+                                className="h-9 text-xs bg-white border-slate-200"
+                                placeholder="Detalhes adicionais (opcional)..."
+                                value={examActions[exam.id].details || ""}
+                                onChange={(e) => {
+                                  if (examActions[exam.id].type === 'reteste') {
+                                    handleRetestUpdate(exam.id, examActions[exam.id].reason || "", e.target.value);
+                                  } else {
+                                    handleRecoletaUpdate(exam.id, examActions[exam.id].reason || "", e.target.value);
+                                  }
+                                }}
+                              />
+                            </div>
+                          </div>
+                        )}
+
                         {/* Resultados Anteriores (Mock) */}
                         <div className="mt-4 pt-4 border-t border-slate-200/60">
                           <div className="flex items-center gap-2 mb-3">
