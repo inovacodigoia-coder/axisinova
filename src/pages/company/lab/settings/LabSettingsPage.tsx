@@ -46,13 +46,60 @@ import { useRegisters } from '@/context/RegistersContext'
 export default function LabSettingsPage() {
   const [searchParams, setSearchParams] = useSearchParams()
   const activeTab = searchParams.get('tab') || 'lab-data'
+  const [isLoading, setIsLoading] = useState(false)
+  const [isSaving, setIsSaving] = useState(false)
+  const [settings, setSettings] = useState<any>(null)
+  const { userProfile } = useRegisters()
 
   const setActiveTab = (tab: string) => {
     setSearchParams({ tab })
   }
 
-  const handleSave = () => {
-    toast.success('Configurações salvas com sucesso!')
+  useEffect(() => {
+    if (userProfile?.company_id) {
+      fetchSettings()
+    }
+  }, [userProfile?.company_id])
+
+  const fetchSettings = async () => {
+    try {
+      setIsLoading(true)
+      const { data, error } = await supabase
+        .from('lab_settings')
+        .select('*')
+        .eq('company_id', userProfile.company_id)
+        .maybeSingle()
+
+      if (error) throw error
+      if (data) setSettings(data)
+    } catch (error) {
+      console.error('Error fetching lab settings:', error)
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  const handleSave = async () => {
+    if (!userProfile?.company_id) return
+
+    try {
+      setIsSaving(true)
+      const { error } = await supabase
+        .from('lab_settings')
+        .upsert({
+          company_id: userProfile.company_id,
+          ...settings,
+          updated_at: new Date().toISOString()
+        })
+
+      if (error) throw error
+      toast.success('Configurações salvas com sucesso!')
+    } catch (error) {
+      console.error('Error saving lab settings:', error)
+      toast.error('Erro ao salvar configurações')
+    } finally {
+      setIsSaving(false)
+    }
   }
 
   return (
@@ -86,25 +133,35 @@ export default function LabSettingsPage() {
 
         <div className="flex-1 min-w-0">
           <Card className="p-6">
-            {activeTab === 'lab-data' && <LabDataSection />}
-            {activeTab === 'tiss' && <TISSSection />}
-            {activeTab === 'signature' && <SignatureSection />}
-            {activeTab === 'security' && <SecuritySection />}
-            {activeTab === 'printer' && <PrinterLabelSection />}
-            {activeTab === 'units' && <UnitsSection />}
-            {activeTab === 'methods' && <MethodsSection />}
-            {activeTab === 'workbenches' && <WorkbenchesSection />}
-            {activeTab === 'equipment' && <EquipmentRedirect />}
-            {activeTab === 'collection-reasons' && <CollectionReasonsSection />}
-            {activeTab === 'origins' && <LabOriginsSettings />}
-            {activeTab === 'report-layout' && <ReportLayoutSection />}
-            {activeTab === 'logs' && <LogsSection />}
-            
-            <div className="mt-8 pt-6 border-t flex justify-end">
-              <Button onClick={handleSave} className="gradient-bg text-white gap-2 px-8">
-                <Save className="h-4 w-4" /> Salvar Alterações
-              </Button>
-            </div>
+            {isLoading ? (
+              <div className="flex flex-col items-center justify-center py-12 gap-3">
+                <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                <p className="text-sm text-muted-foreground">Carregando configurações...</p>
+              </div>
+            ) : (
+              <>
+                {activeTab === 'lab-data' && <LabDataSection />}
+                {activeTab === 'tiss' && <TISSSection />}
+                {activeTab === 'signature' && <SignatureSection />}
+                {activeTab === 'security' && <SecuritySection />}
+                {activeTab === 'printer' && <PrinterLabelSection />}
+                {activeTab === 'units' && <UnitsSection />}
+                {activeTab === 'methods' && <MethodsSection />}
+                {activeTab === 'workbenches' && <WorkbenchesSection />}
+                {activeTab === 'equipment' && <EquipmentRedirect />}
+                {activeTab === 'collection-reasons' && <CollectionReasonsSection />}
+                {activeTab === 'origins' && <LabOriginsSettings />}
+                {activeTab === 'report-layout' && <ReportLayoutSection settings={settings} setSettings={setSettings} />}
+                {activeTab === 'logs' && <LogsSection />}
+                
+                <div className="mt-8 pt-6 border-t flex justify-end">
+                  <Button onClick={handleSave} disabled={isSaving} className="gradient-bg text-white gap-2 px-8">
+                    {isSaving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />} 
+                    Salvar Alterações
+                  </Button>
+                </div>
+              </>
+            )}
           </Card>
         </div>
       </div>
