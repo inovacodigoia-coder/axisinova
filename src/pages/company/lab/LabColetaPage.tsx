@@ -199,40 +199,27 @@ export default function LabColetaPage() {
     })
   }
 
-  const handleCredentialChange = async (orderId: string, field: 'username' | 'password', value: string) => {
-    setResponsibleCredentials(prev => {
-      const next = { ...prev, [field]: value }
-      
-      // Reconhecimento automático de crachá (bipado)
-      if (next.username && next.username.length >= 1) {
-        // Tentamos buscar o perfil pelo badge_code
-        // Removemos asteriscos e espaços extras que alguns leitores podem enviar
-        const cleanCode = next.username.trim().replace(/\*/g, '').toUpperCase();
-        
-        // Use a small delay to ensure the scanner finished its input
-        const timeoutId = setTimeout(async () => {
-          const { data: profile } = await supabase
-            .from('profiles')
-            .select('id, full_name, badge_code')
-            .eq('badge_code', cleanCode)
-            .single()
+  const identifyBadge = async (orderId: string, rawCode: string) => {
+    const cleanCode = rawCode.replace(/[\r\n\t*]/g, '').trim().toUpperCase()
+    if (!cleanCode) return
 
-          if (profile) {
-            setTempResponsible(prevTemp => ({
-              ...prevTemp,
-              [orderId]: { id: profile.id, name: profile.full_name }
-            }))
-            setIsChangingResponsible(null)
-            setResponsibleCredentials({ username: '', password: '' })
-            toast.success(`Técnico identificado: ${profile.full_name}`)
-          }
-        }, 150); // Reduced buffer for faster recognition
+    const { data: profile, error } = await supabase
+      .from('profiles')
+      .select('id, full_name, badge_code')
+      .eq('company_id', user?.companyId || '')
+      .ilike('badge_code', cleanCode)
+      .maybeSingle()
 
-        return next;
-      }
-      
-      return next
-    })
+    if (error || !profile) {
+      toast.error('Crachá não identificado')
+      setResponsibleCredentials({ username: '', password: '' })
+      return
+    }
+
+    setTempResponsible(prev => ({ ...prev, [orderId]: { id: profile.id, name: profile.full_name } }))
+    setIsChangingResponsible(null)
+    setResponsibleCredentials({ username: '', password: '' })
+    toast.success(`Técnico identificado: ${profile.full_name}`)
   }
 
   return (
@@ -584,7 +571,13 @@ export default function LabColetaPage() {
                                     placeholder="Aguardando bipagem do crachá..."
                                     className="h-10 px-3 bg-background border-2 border-primary/40 rounded-lg text-sm outline-none focus:ring-4 focus:ring-primary/20 w-full font-mono text-center tracking-[0.2em]"
                                     value={responsibleCredentials.username}
-                                    onChange={(e) => handleCredentialChange(order.id, 'username', e.target.value)}
+                                    onChange={(e) => setResponsibleCredentials(prev => ({ ...prev, username: e.target.value }))}
+                                    onKeyDown={(e) => {
+                                      if (e.key === 'Enter' || e.key === 'Tab') {
+                                        e.preventDefault()
+                                        void identifyBadge(order.id, e.currentTarget.value)
+                                      }
+                                    }}
                                   />
                                 </div>
                               </div>
