@@ -211,6 +211,8 @@ export function ResultEntryModal({
       }
     });
     setExamStatuses(newStatuses);
+    if (count > 0) {
+      toast.success(`${count} exames liberados com sucesso!`);
     }
   };
 
