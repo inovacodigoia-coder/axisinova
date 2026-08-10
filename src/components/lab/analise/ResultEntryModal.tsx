@@ -213,24 +213,25 @@ export function ResultEntryModal({
       const examsToSave = filteredExams.filter(exam => expandedPatients[exam.protocol]);
 
       examsToSave.forEach(exam => {
+        const keyBase = `${exam.orderId}_${exam.id}`;
         const params = exam.parameters?.length ? exam.parameters : [{id: '1', code: exam.code}];
         const examResultsData = params.map((p: any) => ({
           parameterId: p.id,
           parameterCode: p.code || '',
-          value: results[`${exam.id}_${p.id}`] || '',
+          value: results[`${keyBase}_${p.id}`] || '',
           wasCalculated: false,
-          status: getResultStatus(results[`${exam.id}_${p.id}`], p.references?.[0]?.description || '').label.toLowerCase() || 'normal'
+          status: getResultStatus(results[`${keyBase}_${p.id}`], p.references?.[0]?.description || '').label.toLowerCase() || 'normal'
         }));
 
         const allFilled = examResultsData.every(r => r.value.trim() !== '');
         
-        let finalStatus = examStatuses[exam.id] || 'pending';
+        let finalStatus = examStatuses[keyBase] || 'pending';
         
         // Se estamos salvando como conclusão (isDraft = false) e tudo está preenchido, marca como digitado
         // mas APENAS se não estiver já liberado ou cancelado
         if (!isDraft && allFilled && finalStatus !== 'released' && finalStatus !== 'cancelled') {
           finalStatus = 'digitized';
-          newStatuses[exam.id] = 'digitized';
+          newStatuses[keyBase] = 'digitized';
         }
 
         const dbStatus = finalStatus === 'digitized' ? 'processing' : 
@@ -243,7 +244,7 @@ export function ResultEntryModal({
           examId: exam.id,
           results: examResultsData,
           status: dbStatus,
-          internalObservations: notes[exam.id] || ''
+          internalObservations: notes[keyBase] || ''
         });
       });
 
