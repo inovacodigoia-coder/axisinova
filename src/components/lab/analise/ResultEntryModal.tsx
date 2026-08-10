@@ -598,7 +598,7 @@ export function ResultEntryModal({
                               )} />
                               <div className="flex flex-col">
                                 <div className="flex items-center gap-2">
-                                  <Badge variant="outline" className="bg-white text-primary border-primary/20 text-[10px] font-black h-5 uppercase">
+                                  <Badge variant="outline" className="bg-white text-primary border-primary/20 text-[10px] font-black h-5 uppercase shrink-0">
                                     {exam.code}
                                   </Badge>
                                   <h4 className="text-sm font-black uppercase tracking-tight">{exam.name}</h4>
