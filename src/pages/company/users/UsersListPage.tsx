@@ -58,6 +58,7 @@ export default function UsersListPage() {
       .from('profiles')
       .select('*')
       .eq('company_id', companyId)
+      .order('created_at', { ascending: false })
 
     if (error) {
       console.error('Error fetching profiles:', error)
