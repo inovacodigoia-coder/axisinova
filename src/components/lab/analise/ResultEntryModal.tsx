@@ -220,8 +220,12 @@ export function ResultEntryModal({
     if (actionType === 'cancelar') {
       const exam = filteredExams.find(e => e.id === examId);
       setCancelModal({ isOpen: true, exam });
-    } else {
-      toast.info(`Ação rápida: ${actionType}. Use os campos abaixo para detalhes.`);
+    } else if (actionType === 'reteste') {
+      setExamActions(prev => ({ ...prev, [examId]: { type: 'reteste', reason: '', details: '' } }));
+      toast.info("Informe o motivo do reteste abaixo das observações técnicas.");
+    } else if (actionType === 'recoleta') {
+      setExamActions(prev => ({ ...prev, [examId]: { type: 'recoleta', reason: '', details: '' } }));
+      toast.info("Informe o motivo da recoleta abaixo das observações técnicas.");
     }
   };
 
