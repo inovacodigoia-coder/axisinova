@@ -360,7 +360,7 @@ function ReportLayoutSection({ settings, setSettings }: { settings: any, setSett
               {settings?.report_logo_primary_url ? (
                 <img 
                   key={settings.report_logo_primary_url}
-                  src={settings.report_logo_primary_url} 
+                  src={`${settings.report_logo_primary_url}?t=${new Date().getTime()}`} 
                   alt="Logo Principal" 
                   className="h-full w-full object-contain"
                   onLoad={() => console.log("Primary logo loaded:", settings.report_logo_primary_url)}
@@ -390,7 +390,7 @@ function ReportLayoutSection({ settings, setSettings }: { settings: any, setSett
               {settings?.report_logo_secondary_url ? (
                 <img 
                   key={settings.report_logo_secondary_url}
-                  src={settings.report_logo_secondary_url} 
+                  src={`${settings.report_logo_secondary_url}?t=${new Date().getTime()}`} 
                   alt="Logo Secundário" 
                   className="h-full w-full object-contain"
                   onLoad={() => console.log("Secondary logo loaded:", settings.report_logo_secondary_url)}
