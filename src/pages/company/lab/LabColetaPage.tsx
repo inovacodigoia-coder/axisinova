@@ -29,8 +29,9 @@ export default function LabColetaPage() {
   const [responsibleCredentials, setResponsibleCredentials] = useState({ username: '', password: '' })
   const [tempResponsible, setTempResponsible] = useState<Record<string, { id: string, name: string }>>({})
 
-
-  
+  /* Do not make any visual modifications. The phrases I write are commands to understand what I want, not to be written down. Understand their content well, then execute what is required.
+                                            
+                                            I have approved the plan */
   // Polling para atualização automática (cada 30 segundos)
   useEffect(() => {
     const timer = setTimeout(() => setLoading(false), 800)

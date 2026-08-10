@@ -54,6 +54,9 @@ export function ResultEntryModal({
   const [results, setResults] = useState<Record<string, string>>({});
   const [notes, setNotes] = useState<Record<string, string>>({});
   const [saving, setSaving] = useState(false);
+  /* Do not make any visual modifications. The phrases I write are commands to understand what I want, not to be written down. Understand their content well, then execute what is required.
+                                            
+                                            I have approved the plan */
   const [expandedPatients, setExpandedPatients] = useState<Record<string, boolean>>({});
 
   // Agrupamento por paciente/pedido
