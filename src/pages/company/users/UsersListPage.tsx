@@ -58,6 +58,7 @@ export default function UsersListPage() {
       .from('profiles')
       .select('*')
       .eq('company_id', companyId)
+      .order('created_at', { ascending: false })
 
     if (error) {
       console.error('Error fetching profiles:', error)
@@ -69,9 +70,7 @@ export default function UsersListPage() {
 
   useEffect(() => { fetchProfiles() }, [fetchProfiles])
 
-  const activeProfiles = profiles.filter(p => p.is_active !== false)
-
-  const filtered = activeProfiles.filter(p => {
+  const filtered = profiles.filter(p => {
     if (search && !p.full_name.toLowerCase().includes(search.toLowerCase()) && !(p.cpf ?? '').includes(search)) return false
     return true
   })
