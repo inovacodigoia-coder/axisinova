@@ -97,6 +97,7 @@ export default function LabSettingsPage() {
             {activeTab === 'equipment' && <EquipmentRedirect />}
             {activeTab === 'collection-reasons' && <CollectionReasonsSection />}
             {activeTab === 'origins' && <LabOriginsSettings />}
+            {activeTab === 'report-layout' && <ReportLayoutSection />}
             {activeTab === 'logs' && <LogsSection />}
             
             <div className="mt-8 pt-6 border-t flex justify-end">
