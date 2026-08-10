@@ -857,59 +857,6 @@ export type Database = {
           },
         ]
       }
-      lab_settings: {
-        Row: {
-          company_id: string
-          created_at: string | null
-          id: string
-          report_footer_text: string | null
-          report_header_subtitle: string | null
-          report_header_title: string | null
-          report_institutional_warning: string | null
-          report_logo_primary_url: string | null
-          report_logo_secondary_url: string | null
-          report_watermark_enabled: boolean | null
-          report_watermark_text: string | null
-          updated_at: string | null
-        }
-        Insert: {
-          company_id: string
-          created_at?: string | null
-          id?: string
-          report_footer_text?: string | null
-          report_header_subtitle?: string | null
-          report_header_title?: string | null
-          report_institutional_warning?: string | null
-          report_logo_primary_url?: string | null
-          report_logo_secondary_url?: string | null
-          report_watermark_enabled?: boolean | null
-          report_watermark_text?: string | null
-          updated_at?: string | null
-        }
-        Update: {
-          company_id?: string
-          created_at?: string | null
-          id?: string
-          report_footer_text?: string | null
-          report_header_subtitle?: string | null
-          report_header_title?: string | null
-          report_institutional_warning?: string | null
-          report_logo_primary_url?: string | null
-          report_logo_secondary_url?: string | null
-          report_watermark_enabled?: boolean | null
-          report_watermark_text?: string | null
-          updated_at?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "lab_settings_company_id_fkey"
-            columns: ["company_id"]
-            isOneToOne: true
-            referencedRelation: "companies"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       lab_workbenches: {
         Row: {
           company_id: string
