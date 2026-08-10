@@ -323,15 +323,25 @@ function ReportLayoutSection({ settings, setSettings }: { settings: any, setSett
         <div className="space-y-3">
           <Label>Logo principal (esquerda)</Label>
           <div className="flex items-center gap-4 p-4 border rounded-xl bg-muted/20">
-            {settings?.report_logo_primary_url ? (
-              <img src={settings.report_logo_primary_url} alt="Logo Principal" className="h-12 w-12 object-contain" />
-            ) : (
-              <div className="h-12 w-12 bg-card border rounded flex items-center justify-center text-[8px] text-muted-foreground font-bold">LOGO</div>
-            )}
-            <div className="flex flex-col gap-2">
-              <Input type="file" accept="image/*" className="text-xs w-full h-auto" onChange={(e) => handleUpload(e, 'report_logo_primary_url')} />
+            <div className="h-16 w-16 bg-card border rounded flex items-center justify-center overflow-hidden">
+              {settings?.report_logo_primary_url ? (
+                <img 
+                  key={`primary-${settings.report_logo_primary_url}`}
+                  src={settings.report_logo_primary_url} 
+                  alt="Logo Principal" 
+                  className="h-full w-full object-contain" 
+                  onError={(e) => {
+                    console.error("Error loading primary logo", e);
+                  }}
+                />
+              ) : (
+                <div className="text-[8px] text-muted-foreground font-bold">LOGO</div>
+              )}
+            </div>
+            <div className="flex flex-col gap-2 flex-1">
+              <Input type="file" accept="image/*" className="text-xs w-full h-auto cursor-pointer" onChange={(e) => handleUpload(e, 'report_logo_primary_url')} />
               {settings?.report_logo_primary_url && (
-                <button onClick={() => removeLogo('report_logo_primary_url')} className="text-[10px] text-red-500 font-bold text-left flex items-center gap-1">
+                <button onClick={() => removeLogo('report_logo_primary_url')} className="text-[10px] text-red-500 font-bold text-left flex items-center gap-1 hover:underline">
                   <X className="h-3 w-3" /> Remover
                 </button>
               )}
@@ -342,15 +352,25 @@ function ReportLayoutSection({ settings, setSettings }: { settings: any, setSett
         <div className="space-y-3">
           <Label>Logo secundário (direita, opcional)</Label>
           <div className="flex items-center gap-4 p-4 border rounded-xl bg-muted/20">
-            {settings?.report_logo_secondary_url ? (
-              <img src={settings.report_logo_secondary_url} alt="Logo Secundário" className="h-12 w-12 object-contain" />
-            ) : (
-              <div className="h-12 w-12 bg-card border rounded flex items-center justify-center text-[8px] text-muted-foreground font-bold">LOGO</div>
-            )}
-            <div className="flex flex-col gap-2">
-              <Input type="file" accept="image/*" className="text-xs w-full h-auto" onChange={(e) => handleUpload(e, 'report_logo_secondary_url')} />
+            <div className="h-16 w-16 bg-card border rounded flex items-center justify-center overflow-hidden">
+              {settings?.report_logo_secondary_url ? (
+                <img 
+                  key={`secondary-${settings.report_logo_secondary_url}`}
+                  src={settings.report_logo_secondary_url} 
+                  alt="Logo Secundário" 
+                  className="h-full w-full object-contain"
+                  onError={(e) => {
+                    console.error("Error loading secondary logo", e);
+                  }}
+                />
+              ) : (
+                <div className="text-[8px] text-muted-foreground font-bold">LOGO</div>
+              )}
+            </div>
+            <div className="flex flex-col gap-2 flex-1">
+              <Input type="file" accept="image/*" className="text-xs w-full h-auto cursor-pointer" onChange={(e) => handleUpload(e, 'report_logo_secondary_url')} />
               {settings?.report_logo_secondary_url && (
-                <button onClick={() => removeLogo('report_logo_secondary_url')} className="text-[10px] text-red-500 font-bold text-left flex items-center gap-1">
+                <button onClick={() => removeLogo('report_logo_secondary_url')} className="text-[10px] text-red-500 font-bold text-left flex items-center gap-1 hover:underline">
                   <X className="h-3 w-3" /> Remover
                 </button>
               )}
