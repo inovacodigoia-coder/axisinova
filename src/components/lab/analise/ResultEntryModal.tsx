@@ -163,19 +163,16 @@ export function ResultEntryModal({
         let digitizedCount = 0;
         
         filteredExams.forEach(exam => {
-          const hasResult = (exam.parameters?.length ? exam.parameters : [{id: '1'}]).some((p: any) => 
-            results[`${exam.id}_${p.id}`]?.trim() !== ''
-          );
-          
-          if (hasResult) {
-            if (newStatuses[exam.id] !== 'released') {
+          // Only process exams for expanded patients
+          if (expandedPatients[exam.protocol] && newStatuses[exam.id] !== 'released') {
+            const params = exam.parameters?.length ? exam.parameters : [{id: '1'}];
+            const allFilled = params.every((p: any) => 
+              results[`${exam.id}_${p.id}`]?.trim() !== ''
+            );
+            
+            if (allFilled) {
               newStatuses[exam.id] = 'digitized';
               digitizedCount++;
-            }
-          } else {
-            // Se não tem resultado e não estava liberado, volta para pendente
-            if (newStatuses[exam.id] !== 'released') {
-              newStatuses[exam.id] = 'pending';
             }
           }
         });
