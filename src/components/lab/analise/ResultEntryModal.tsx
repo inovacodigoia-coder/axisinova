@@ -598,11 +598,12 @@ export function ResultEntryModal({
                 {isExpanded && (
                   <div className="p-6 space-y-6 border-t border-slate-100 animate-in slide-in-from-top-2 duration-200">
                     {patient.exams.map((exam: any) => {
+                      const keyBase = `${exam.orderId}_${exam.id}`;
                       const hasResult = (exam.parameters?.length ? exam.parameters : [{id: '1'}]).some((p: any) => 
-                        results[`${exam.id}_${p.id}`]?.trim() !== ''
+                        results[`${keyBase}_${p.id}`]?.trim() !== ''
                       );
-                      const isDigitized = examStatuses[exam.id] === 'digitized' && hasResult;
-                      const isReleased = examStatuses[exam.id] === 'released';
+                      const isDigitized = examStatuses[keyBase] === 'digitized' && hasResult;
+                      const isReleased = examStatuses[keyBase] === 'released';
 
                       return (
                         <div key={exam.id} className={cn(
