@@ -491,11 +491,11 @@ export function ResultEntryModal({
                   </div>
                 )}
               </div>
-              );
-            })
-          )}
-        </div>
-      </ScrollArea>
+            );
+          })
+        )}
+      </div>
+    </ScrollArea>
 
       {/* Rodapé Fixo */}
       <footer className="h-20 border-t bg-card px-8 flex items-center justify-between shrink-0 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)]">
