@@ -94,7 +94,34 @@ export function ResultEntryModal({
   }, [filteredExams, filters.workbenches]);
 
   const totalExams = filteredExams.length;
-  const filledExamsCount = Object.keys(results).filter(key => results[key]?.trim() !== '').length;
+  
+  // Calculate filled exams only for expanded patients
+  const filledExamsCount = useMemo(() => {
+    let count = 0;
+    filteredExams.forEach(exam => {
+      // Only count if patient is expanded
+      if (expandedPatients[exam.protocol]) {
+        const hasResult = (exam.parameters?.length ? exam.parameters : [{id: '1'}]).some((p: any) => 
+          results[`${exam.id}_${p.id}`]?.trim() !== ''
+        );
+        if (hasResult) count++;
+      }
+    });
+    return count;
+  }, [results, filteredExams, expandedPatients]);
+
+  // Calculate total required exams only for expanded patients
+  const totalRequiredExams = useMemo(() => {
+    let count = 0;
+    filteredExams.forEach(exam => {
+      if (expandedPatients[exam.protocol]) {
+        count++;
+      }
+    });
+    return count;
+  }, [filteredExams, expandedPatients]);
+
+  const isConcluirDisabled = saving || totalRequiredExams === 0 || filledExamsCount < totalRequiredExams;
 
   const togglePatient = (protocol: string) => {
     setExpandedPatients(prev => ({
