@@ -96,7 +96,7 @@ export function CreateUserModal({ open, onOpenChange, onCreated }: CreateUserMod
       toast.success('Usuário criado com sucesso!')
       resetForm()
       onOpenChange(false)
-      setTimeout(() => onCreated(), 500)
+      onCreated()
     } catch {
       toast.error('Erro ao criar usuário')
     } finally {

@@ -199,27 +199,37 @@ export default function LabColetaPage() {
     })
   }
 
-  const identifyBadge = async (orderId: string, rawCode: string) => {
-    const cleanCode = rawCode.replace(/[\r\n\t*]/g, '').trim().toUpperCase()
-    if (!cleanCode) return
+  const handleCredentialChange = async (orderId: string, field: 'username' | 'password', value: string) => {
+    setResponsibleCredentials(prev => {
+      const next = { ...prev, [field]: value }
+      
+      // Reconhecimento automático de crachá (bipado)
+      if (next.username && next.username.length >= 4) {
+        // Tentamos buscar o perfil pelo badge_code
+        // O leitor geralmente envia o código limpo, mas adicionamos suporte a * se vier no bip
+        const cleanCode = next.username.replace(/\*/g, '').toUpperCase();
+        
+        (async () => {
+          const { data: profile, error } = await supabase
+            .from('profiles')
+            .select('id, full_name, badge_code')
+            .eq('badge_code', cleanCode)
+            .single()
 
-    const { data: profile, error } = await supabase
-      .from('profiles')
-      .select('id, full_name, badge_code')
-      .eq('company_id', user?.companyId || '')
-      .ilike('badge_code', cleanCode)
-      .maybeSingle()
-
-    if (error || !profile) {
-      toast.error('Crachá não identificado')
-      setResponsibleCredentials({ username: '', password: '' })
-      return
-    }
-
-    setTempResponsible(prev => ({ ...prev, [orderId]: { id: profile.id, name: profile.full_name } }))
-    setIsChangingResponsible(null)
-    setResponsibleCredentials({ username: '', password: '' })
-    toast.success(`Técnico identificado: ${profile.full_name}`)
+          if (profile) {
+            setTempResponsible(prevTemp => ({
+              ...prevTemp,
+              [orderId]: { id: profile.id, name: profile.full_name }
+            }))
+            setIsChangingResponsible(null)
+            setResponsibleCredentials({ username: '', password: '' })
+            toast.success(`Técnico identificado: ${profile.full_name}`)
+          }
+        })()
+      }
+      
+      return next
+    })
   }
 
   return (
@@ -571,13 +581,7 @@ export default function LabColetaPage() {
                                     placeholder="Aguardando bipagem do crachá..."
                                     className="h-10 px-3 bg-background border-2 border-primary/40 rounded-lg text-sm outline-none focus:ring-4 focus:ring-primary/20 w-full font-mono text-center tracking-[0.2em]"
                                     value={responsibleCredentials.username}
-                                    onChange={(e) => setResponsibleCredentials(prev => ({ ...prev, username: e.target.value }))}
-                                    onKeyDown={(e) => {
-                                      if (e.key === 'Enter' || e.key === 'Tab') {
-                                        e.preventDefault()
-                                        void identifyBadge(order.id, e.currentTarget.value)
-                                      }
-                                    }}
+                                    onChange={(e) => handleCredentialChange(order.id, 'username', e.target.value)}
                                   />
                                 </div>
                               </div>

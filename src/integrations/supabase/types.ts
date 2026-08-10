@@ -1868,24 +1868,6 @@ export type Database = {
           },
         ]
       }
-      user_roles: {
-        Row: {
-          id: string
-          role: Database["public"]["Enums"]["app_role"]
-          user_id: string
-        }
-        Insert: {
-          id?: string
-          role: Database["public"]["Enums"]["app_role"]
-          user_id: string
-        }
-        Update: {
-          id?: string
-          role?: Database["public"]["Enums"]["app_role"]
-          user_id?: string
-        }
-        Relationships: []
-      }
     }
     Views: {
       [_ in never]: never
@@ -1901,14 +1883,6 @@ export type Database = {
           _password: string
           _slug: string
           _username: string
-        }
-        Returns: boolean
-      }
-      get_user_company_id: { Args: { _user_id: string }; Returns: string }
-      has_role: {
-        Args: {
-          _role: Database["public"]["Enums"]["app_role"]
-          _user_id: string
         }
         Returns: boolean
       }
@@ -1952,17 +1926,6 @@ export type Database = {
       }
     }
     Enums: {
-      app_role:
-        | "company_admin"
-        | "doctor"
-        | "receptionist"
-        | "billing"
-        | "telephonist"
-        | "nurse"
-        | "pharmacist"
-        | "biochemist"
-        | "analyst"
-        | "other"
       appointment_status: "confirmed" | "waiting" | "cancelled"
       tiss_guide_status: "enviada" | "aprovada" | "pendente" | "glosada"
     }
@@ -2092,18 +2055,6 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
-      app_role: [
-        "company_admin",
-        "doctor",
-        "receptionist",
-        "billing",
-        "telephonist",
-        "nurse",
-        "pharmacist",
-        "biochemist",
-        "analyst",
-        "other",
-      ],
       appointment_status: ["confirmed", "waiting", "cancelled"],
       tiss_guide_status: ["enviada", "aprovada", "pendente", "glosada"],
     },

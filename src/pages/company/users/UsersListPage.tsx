@@ -10,7 +10,6 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import JsBarcode from 'jsbarcode'
 
 interface ProfileRow {
   id: string
@@ -59,7 +58,6 @@ export default function UsersListPage() {
       .from('profiles')
       .select('*')
       .eq('company_id', companyId)
-      .order('created_at', { ascending: false })
 
     if (error) {
       console.error('Error fetching profiles:', error)
@@ -71,7 +69,9 @@ export default function UsersListPage() {
 
   useEffect(() => { fetchProfiles() }, [fetchProfiles])
 
-  const filtered = profiles.filter(p => {
+  const activeProfiles = profiles.filter(p => p.is_active !== false)
+
+  const filtered = activeProfiles.filter(p => {
     if (search && !p.full_name.toLowerCase().includes(search.toLowerCase()) && !(p.cpf ?? '').includes(search)) return false
     return true
   })
@@ -247,57 +247,6 @@ function EditUserModal({ profile, onClose, onSaved }: { profile: ProfileRow | nu
     toast.warning('Funcionalidade de reset manual disponível apenas para Super Admins ou via suporte AxisInova.')
   }
 
-  const printBadge = () => {
-    const cleanBadgeCode = badgeCode.trim().replace(/[\r\n]/g, '')
-    if (!cleanBadgeCode) return
-
-    const barcodeSvg = document.createElementNS('http://www.w3.org/2000/svg', 'svg')
-    JsBarcode(barcodeSvg, cleanBadgeCode, {
-      format: 'CODE128',
-      width: 2,
-      height: 58,
-      margin: 4,
-      displayValue: true,
-      fontSize: 12,
-      textMargin: 2,
-    })
-
-    const left = (window.screen.width - 400) / 2
-    const top = (window.screen.height - 300) / 2
-    const win = window.open('', '_blank', `width=400,height=300,left=${left},top=${top}`)
-    if (!win) return
-
-    win.document.write(`
-      <html>
-        <head>
-          <title>Crachá - ${fullName}</title>
-          <style>
-            @page { size: 50mm 30mm; margin: 0; }
-            html, body { margin: 0; padding: 0; width: 50mm; height: 30mm; overflow: hidden; }
-            body { font-family: Arial, sans-serif; display: flex; align-items: center; justify-content: center; background: white; }
-            .card { border: 1px solid #000; width: 48mm; height: 28mm; box-sizing: border-box; padding: 1mm; display: flex; flex-direction: column; align-items: center; text-align: center; }
-            .name { width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 8pt; font-weight: bold; text-transform: uppercase; }
-            .barcode { width: 45mm; height: 16mm; }
-            .info { margin-top: auto; font-size: 5pt; line-height: 1.15; }
-            .footer { font-size: 6pt; font-weight: bold; }
-            .no-print { position: fixed; right: 5px; bottom: 5px; }
-            @media print { .no-print { display: none !important; } }
-          </style>
-        </head>
-        <body>
-          <div class="card">
-            <div class="name">${fullName}</div>
-            <div class="barcode">${barcodeSvg.outerHTML}</div>
-            <div class="info">Crachá - ${fullName}</div>
-            <div class="footer">Axis Inova - LabSaúde</div>
-          </div>
-          <button class="no-print" onclick="window.print()">Imprimir</button>
-        </body>
-      </html>
-    `)
-    win.document.close()
-  }
-
   return (
     <Dialog open={!!profile} onOpenChange={open => { if (!open) onClose() }}>
       <DialogContent className="sm:max-w-2xl max-h-[90vh] overflow-y-auto">
@@ -339,7 +288,74 @@ function EditUserModal({ profile, onClose, onSaved }: { profile: ProfileRow | nu
                   variant="ghost" 
                   size="sm" 
                   className="h-7 text-[10px] uppercase font-bold text-primary hover:text-primary hover:bg-primary/10"
-                  onClick={printBadge}
+                  onClick={() => {
+                    const win = window.open('', '_blank');
+                    if (win) {
+                      win.document.write(`
+                        <html>
+                          <head>
+                            <title>Crachá - ${fullName}</title>
+                            <link href="https://fonts.googleapis.com/css2?family=Libre+Barcode+39&display=swap" rel="stylesheet">
+                            <style>
+                              body { 
+                                font-family: sans-serif; 
+                                display: flex; 
+                                flex-direction: column; 
+                                items-align: center; 
+                                justify-content: center; 
+                                height: 100vh; 
+                                margin: 0; 
+                                background: #f4f4f4; 
+                              }
+                              .card { 
+                                border: 2px solid #000; 
+                                padding: 25px; 
+                                border-radius: 12px; 
+                                text-align: center; 
+                                width: 320px; 
+                                background: white; 
+                                box-shadow: 0 4px 6px rgba(0,0,0,0.1); 
+                              }
+                              .name { 
+                                font-size: 18px; 
+                                font-weight: bold; 
+                                margin-bottom: 20px; 
+                                color: #333; 
+                                text-transform: uppercase;
+                              }
+                              .barcode { 
+                                font-family: 'Libre Barcode 39', cursive; 
+                                font-size: 70px; 
+                                margin: 20px 0; 
+                                line-height: 1; 
+                                display: block;
+                              }
+                              .footer { 
+                                margin-top: 15px; 
+                                font-size: 12px; 
+                                color: #666; 
+                                font-weight: 500; 
+                              }
+                              @media print { 
+                                .no-print { display: none; } 
+                                body { background: white; }
+                                .card { box-shadow: none; border: 1px solid #000; margin: 0 auto; }
+                              }
+                            </style>
+                          </head>
+                          <body>
+                            <div class="card">
+                              <div class="name">${fullName}</div>
+                              <div class="barcode">*${badgeCode}*</div>
+                              <div class="footer">Axis Inova - LabSaúde</div>
+                            </div>
+                            <button class="no-print" style="margin-top: 25px; padding: 10px 20px; cursor: pointer; background: #00D4FF; border: none; color: white; border-radius: 6px; font-weight: bold;" onclick="window.print()">Imprimir</button>
+                          </body>
+                        </html>
+                      `);
+                      win.document.close();
+                    }
+                  }}
                 >
                   Imprimir Crachá
                 </Button>
