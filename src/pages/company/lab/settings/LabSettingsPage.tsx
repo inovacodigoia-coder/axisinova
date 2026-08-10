@@ -336,8 +336,6 @@ function ReportLayoutSection({ settings, setSettings }: { settings: any, setSett
                   onLoad={() => console.log("Primary logo loaded:", settings.report_logo_primary_url)}
                   onError={(e) => {
                     console.error("Error loading primary logo", settings.report_logo_primary_url);
-                    const target = e.target as HTMLImageElement;
-                    target.style.display = 'none';
                   }}
                 />
               ) : (
@@ -368,8 +366,6 @@ function ReportLayoutSection({ settings, setSettings }: { settings: any, setSett
                   onLoad={() => console.log("Secondary logo loaded:", settings.report_logo_secondary_url)}
                   onError={(e) => {
                     console.error("Error loading secondary logo", settings.report_logo_secondary_url);
-                    const target = e.target as HTMLImageElement;
-                    target.style.display = 'none';
                   }}
                 />
               ) : (
