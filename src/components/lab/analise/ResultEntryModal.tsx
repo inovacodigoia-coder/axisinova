@@ -117,6 +117,51 @@ export function ResultEntryModal({
     return Object.values(groups);
   }, [filteredExams, filters.workbenches]);
 
+  // Catálogo de Exames (parâmetros e faixas de referência reais)
+  const [catalog, setCatalog] = useState<Record<string, any>>({});
+
+  useEffect(() => {
+    if (!isOpen) return;
+    let active = true;
+    (async () => {
+      const { data, error } = await supabase
+        .from('exams')
+        .select('id, name, internal_code, measurement_unit, parameters, reference_values');
+      if (error || !active || !data) return;
+      const map: Record<string, any> = {};
+      data.forEach((e: any) => {
+        map[catalogKey(e.id)] = e;
+        if (e.internal_code) map[catalogKey(e.internal_code)] = e;
+        if (e.name) map[catalogKey(e.name)] = e;
+      });
+      setCatalog(map);
+    })();
+    return () => { active = false; };
+  }, [isOpen]);
+
+  // Mapa examId -> parâmetros resolvidos com referência conforme sexo/idade do paciente
+  const paramsByExam = useMemo(() => {
+    const map: Record<string, any[]> = {};
+    groupedPatients.forEach((patient: any) => {
+      const age = patient.patientBirthDate
+        ? differenceInYears(new Date(), new Date(patient.patientBirthDate))
+        : undefined;
+      patient.exams.forEach((exam: any) => {
+        const catalogExam =
+          catalog[catalogKey(exam.examId)] ||
+          catalog[catalogKey(exam.code)] ||
+          catalog[catalogKey(exam.name)];
+        map[exam.id] = buildExamParams(catalogExam, exam.name || exam.code, {
+          gender: patient.patientGender,
+          age,
+        });
+      });
+    });
+    return map;
+  }, [groupedPatients, catalog]);
+
+  const getParams = (exam: any) => paramsByExam[exam.id] || [{ id: '1', name: exam?.name || '', unit: '', reference: '' }];
+
   const totalExams = filteredExams.length;
   
   // Calculate filled exams only for expanded patients
@@ -126,15 +171,16 @@ export function ResultEntryModal({
       // Only count if patient is expanded AND exam is not released
       if (expandedPatients[exam.protocol] && examStatuses[exam.id] !== 'released') {
         // Must have results for ALL parameters to be considered "filled"
-        const params = exam.parameters?.length ? exam.parameters : [{id: '1'}];
+        const params = paramsByExam[exam.id] || [{ id: '1' }];
         const allFilled = params.every((p: any) => 
-          results[`${exam.id}_${p.id}`]?.trim() !== ''
+          (results[`${exam.id}_${p.id}`] || '').trim() !== ''
         );
         if (allFilled) count++;
       }
     });
     return count;
-  }, [results, filteredExams, expandedPatients, examStatuses]);
+  }, [results, filteredExams, expandedPatients, examStatuses, paramsByExam]);
+
 
   // Calculate total required exams only for expanded patients (excluding already released ones)
   const totalRequiredExams = useMemo(() => {
