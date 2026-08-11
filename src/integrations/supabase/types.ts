@@ -978,9 +978,20 @@ export type Database = {
       }
       lab_settings: {
         Row: {
+          address_city: string | null
+          address_complement: string | null
+          address_district: string | null
+          address_number: string | null
+          address_state: string | null
+          address_street: string | null
+          address_zip: string | null
+          cnpj: string | null
           company_id: string
           created_at: string | null
+          email: string | null
           id: string
+          lab_name: string | null
+          phone: string | null
           report_footer_text: string | null
           report_header_subtitle: string | null
           report_header_title: string | null
@@ -989,6 +1000,8 @@ export type Database = {
           report_logo_secondary_url: string | null
           report_watermark_enabled: boolean | null
           report_watermark_text: string | null
+          responsible_name: string | null
+          responsible_register: string | null
           signature_auto_on_release: boolean
           signature_image_url: string | null
           signature_include_register: boolean
@@ -997,9 +1010,20 @@ export type Database = {
           updated_at: string | null
         }
         Insert: {
+          address_city?: string | null
+          address_complement?: string | null
+          address_district?: string | null
+          address_number?: string | null
+          address_state?: string | null
+          address_street?: string | null
+          address_zip?: string | null
+          cnpj?: string | null
           company_id: string
           created_at?: string | null
+          email?: string | null
           id?: string
+          lab_name?: string | null
+          phone?: string | null
           report_footer_text?: string | null
           report_header_subtitle?: string | null
           report_header_title?: string | null
@@ -1008,6 +1032,8 @@ export type Database = {
           report_logo_secondary_url?: string | null
           report_watermark_enabled?: boolean | null
           report_watermark_text?: string | null
+          responsible_name?: string | null
+          responsible_register?: string | null
           signature_auto_on_release?: boolean
           signature_image_url?: string | null
           signature_include_register?: boolean
@@ -1016,9 +1042,20 @@ export type Database = {
           updated_at?: string | null
         }
         Update: {
+          address_city?: string | null
+          address_complement?: string | null
+          address_district?: string | null
+          address_number?: string | null
+          address_state?: string | null
+          address_street?: string | null
+          address_zip?: string | null
+          cnpj?: string | null
           company_id?: string
           created_at?: string | null
+          email?: string | null
           id?: string
+          lab_name?: string | null
+          phone?: string | null
           report_footer_text?: string | null
           report_header_subtitle?: string | null
           report_header_title?: string | null
@@ -1027,6 +1064,8 @@ export type Database = {
           report_logo_secondary_url?: string | null
           report_watermark_enabled?: boolean | null
           report_watermark_text?: string | null
+          responsible_name?: string | null
+          responsible_register?: string | null
           signature_auto_on_release?: boolean
           signature_image_url?: string | null
           signature_include_register?: boolean
