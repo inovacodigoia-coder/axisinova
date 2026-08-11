@@ -202,14 +202,122 @@ export function ResultEntryModal({
     }));
   };
 
-  const handleSave = (isDraft: boolean) => {
+  // ===== Persistência dos resultados =====
+  const examRefOf = (exam: any) => `${exam.orderId || 'no-order'}:${exam.id}`;
+
+  const persistExams = async (
+    exams: any[],
+    status: 'draft' | 'digitized' | 'released'
+  ) => {
+    const cid = resolveCompanyId(user?.companyId);
+    if (!cid || exams.length === 0) return;
+
+    const nowIso = new Date().toISOString();
+
+    for (const exam of exams) {
+      const params = getParams(exam);
+      const payload: any = {
+        company_id: cid,
+        order_id: exam.orderId || null,
+        protocol: exam.protocol || null,
+        exam_ref: examRefOf(exam),
+        exam_code: exam.code || null,
+        exam_name: exam.name || null,
+        patient_name: exam.patientName || null,
+        status,
+        notes: notes[exam.id] || null,
+      };
+      if (status === 'digitized') {
+        payload.typed_by = user?.id || null;
+        payload.typed_at = nowIso;
+      }
+      if (status === 'released') {
+        payload.released_by = user?.id || null;
+        payload.released_at = nowIso;
+      }
+
+      const { data: saved, error } = await supabase
+        .from('lab_exam_results')
+        .upsert(payload, { onConflict: 'company_id,exam_ref' })
+        .select('id')
+        .single();
+
+      if (error || !saved) {
+        console.error('Erro ao salvar resultado', error);
+        throw error || new Error('Falha ao salvar resultado');
+      }
+
+      const values = params.map((p: any, idx: number) => {
+        const value = results[`${exam.id}_${p.id}`] || '';
+        return {
+          company_id: cid,
+          result_id: saved.id,
+          parameter_key: String(p.id),
+          parameter_name: p.name || null,
+          value,
+          unit: p.unit || null,
+          reference: p.reference || null,
+          status: getResultStatus(value, p.reference || '').label || null,
+          sort_order: idx,
+        };
+      });
+
+      if (values.length > 0) {
+        const { error: vErr } = await supabase
+          .from('lab_result_values')
+          .upsert(values, { onConflict: 'result_id,parameter_key' });
+        if (vErr) {
+          console.error('Erro ao salvar valores', vErr);
+          throw vErr;
+        }
+      }
+    }
+  };
+
+  // Carrega resultados já salvos ao abrir o modal
+  useEffect(() => {
+    if (!isOpen) return;
+    const cid = resolveCompanyId(user?.companyId);
+    if (!cid) return;
+    let active = true;
+    (async () => {
+      const refs = filteredExams.map(examRefOf);
+      if (refs.length === 0) return;
+      const { data } = await supabase
+        .from('lab_exam_results')
+        .select('id, exam_ref, status, notes, lab_result_values(parameter_key, value)')
+        .eq('company_id', cid)
+        .in('exam_ref', refs);
+      if (!active || !data) return;
+
+      const nextResults: Record<string, string> = {};
+      const nextNotes: Record<string, string> = {};
+      const nextStatuses: Record<string, any> = {};
+      data.forEach((row: any) => {
+        const examId = String(row.exam_ref).split(':').slice(1).join(':');
+        if (row.notes) nextNotes[examId] = row.notes;
+        if (row.status === 'digitized' || row.status === 'released') {
+          nextStatuses[examId] = row.status;
+        }
+        (row.lab_result_values || []).forEach((v: any) => {
+          if (v.value) nextResults[`${examId}_${v.parameter_key}`] = v.value;
+        });
+      });
+      setResults(prev => ({ ...nextResults, ...prev }));
+      setNotes(prev => ({ ...nextNotes, ...prev }));
+      setExamStatuses(prev => ({ ...nextStatuses, ...prev }));
+    })();
+    return () => { active = false; };
+  }, [isOpen, filteredExams, user?.companyId]);
+
+  const handleSave = async (isDraft: boolean) => {
     setSaving(true);
-    setTimeout(() => {
+    try {
       if (!isDraft) {
         // Mark only exams that were actually digitized as digitized
         const newStatuses = { ...examStatuses };
-        let digitizedCount = 0;
-        
+        const toPersist: any[] = [];
+
         filteredExams.forEach(exam => {
           // Only process exams for expanded patients
           if (expandedPatients[exam.protocol] && newStatuses[exam.id] !== 'released') {
@@ -220,48 +328,83 @@ export function ResultEntryModal({
             
             if (allFilled) {
               newStatuses[exam.id] = 'digitized';
-              digitizedCount++;
+              toPersist.push(exam);
             }
           }
         });
-        
-        setExamStatuses(newStatuses);
-        if (digitizedCount > 0) {
-          toast.success("Digitação concluída com sucesso!");
+
+        if (toPersist.length > 0) {
+          await persistExams(toPersist, 'digitized');
+          setExamStatuses(newStatuses);
+          toast.success("Digitação concluída e salva com sucesso!");
         } else {
           toast.info("Nenhum resultado preenchido para concluir.");
         }
       } else {
+        const drafts = filteredExams.filter(exam => {
+          if (examStatuses[exam.id] === 'released') return false;
+          const params = paramsByExam[exam.id] || [{ id: '1' }];
+          return params.some((p: any) => (results[`${exam.id}_${p.id}`] || '').trim() !== '');
+        });
+        await persistExams(drafts, 'draft');
         toast.success("Rascunho salvo com sucesso!");
       }
+    } catch (e) {
+      toast.error("Erro ao salvar os resultados no banco de dados.");
+    } finally {
       setSaving(false);
-    }, 1000);
-  };
-
-  const handleConcluirExame = (examId: string) => {
-    setExamStatuses(prev => ({ ...prev, [examId]: 'digitized' }));
-    toast.success("Exame concluído com sucesso!");
-  };
-
-  const handleReleaseExam = (examId: string) => {
-    setExamStatuses(prev => ({ ...prev, [examId]: 'released' }));
-    toast.success("Exame liberado com sucesso!");
-  };
-
-  const handleReleaseAllDigitized = () => {
-    const newStatuses = { ...examStatuses };
-    let count = 0;
-    Object.keys(newStatuses).forEach(id => {
-      if (newStatuses[id] === 'digitized') {
-        newStatuses[id] = 'released';
-        count++;
-      }
-    });
-    setExamStatuses(newStatuses);
-    if (count > 0) {
-      toast.success(`${count} exames liberados com sucesso!`);
     }
   };
+
+  const handleConcluirExame = async (examId: string) => {
+    const exam = filteredExams.find(e => e.id === examId);
+    if (!exam) return;
+    setSaving(true);
+    try {
+      await persistExams([exam], 'digitized');
+      setExamStatuses(prev => ({ ...prev, [examId]: 'digitized' }));
+      toast.success("Exame concluído e resultado salvo!");
+    } catch {
+      toast.error("Erro ao salvar o resultado do exame.");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleReleaseExam = async (examId: string) => {
+    const exam = filteredExams.find(e => e.id === examId);
+    if (!exam) return;
+    setSaving(true);
+    try {
+      await persistExams([exam], 'released');
+      setExamStatuses(prev => ({ ...prev, [examId]: 'released' }));
+      toast.success("Exame liberado com sucesso!");
+    } catch {
+      toast.error("Erro ao liberar o exame.");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleReleaseAllDigitized = async () => {
+    const toRelease = filteredExams.filter(e => examStatuses[e.id] === 'digitized');
+    if (toRelease.length === 0) return;
+    setSaving(true);
+    try {
+      await persistExams(toRelease, 'released');
+      setExamStatuses(prev => {
+        const next = { ...prev };
+        toRelease.forEach(e => { next[e.id] = 'released'; });
+        return next;
+      });
+      toast.success(`${toRelease.length} exames liberados com sucesso!`);
+    } catch {
+      toast.error("Erro ao liberar os exames.");
+    } finally {
+      setSaving(false);
+    }
+  };
+
 
   const handleExamAction = (examId: string, actionType: string) => {
     if (actionType === 'cancelar') {
