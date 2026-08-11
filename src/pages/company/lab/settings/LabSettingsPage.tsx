@@ -473,7 +473,26 @@ function ReportLayoutSection({ settings, setSettings }: { settings: any, setSett
   )
 }
 
-function SignatureSection() {
+function SignatureSection({ settings, setSettings }: { settings: any, setSettings: (updater: any) => void }) {
+  const [uploading, setUploading] = useState(false)
+
+  const handleSignatureUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+    try {
+      setUploading(true)
+      const url = await uploadLabAsset(file, 'lab-signatures')
+      setSettings((prev: any) => ({ ...(prev || {}), signature_image_url: url }))
+      toast.success('Assinatura enviada com sucesso!')
+    } catch (error) {
+      console.error('Error uploading signature:', error)
+      toast.error('Erro ao fazer upload da assinatura')
+    } finally {
+      setUploading(false)
+      e.target.value = ''
+    }
+  }
+
   return (
     <div className="space-y-6">
       <h3 className="text-lg font-bold">Assinatura do Responsável</h3>
@@ -481,39 +500,73 @@ function SignatureSection() {
         <div className="space-y-4">
           <div className="space-y-2">
             <Label>Nome Completo</Label>
-            <Input placeholder="Dr. Alexsandro Silva" />
+            <Input
+              placeholder="Dr. Alexsandro Silva"
+              value={settings?.signature_name || ''}
+              onChange={(e) => setSettings((prev: any) => ({ ...(prev || {}), signature_name: e.target.value }))}
+            />
           </div>
           <div className="space-y-2">
             <Label>Registro Profissional</Label>
-            <Input placeholder="CRBM-RN-1234" />
+            <Input
+              placeholder="CRBM-RN-1234"
+              value={settings?.signature_register || ''}
+              onChange={(e) => setSettings((prev: any) => ({ ...(prev || {}), signature_register: e.target.value }))}
+            />
           </div>
           <div className="pt-4 space-y-4">
             <div className="flex items-center justify-between">
               <Label className="text-sm font-medium">Assinatura automática ao liberar</Label>
-              <Switch />
+              <Switch
+                checked={settings?.signature_auto_on_release ?? false}
+                onCheckedChange={(checked) => setSettings((prev: any) => ({ ...(prev || {}), signature_auto_on_release: checked }))}
+              />
             </div>
             <div className="flex items-center justify-between">
               <Label className="text-sm font-medium">Incluir registro profissional no laudo</Label>
-              <Switch defaultChecked />
+              <Switch
+                checked={settings?.signature_include_register ?? true}
+                onCheckedChange={(checked) => setSettings((prev: any) => ({ ...(prev || {}), signature_include_register: checked }))}
+              />
             </div>
           </div>
         </div>
-        
+
         <div className="space-y-3">
           <Label>Imagem da Assinatura (Fundo Transparente)</Label>
-          <div className="w-full aspect-[2/1] bg-card border-2 border-dashed rounded-xl flex flex-col items-center justify-center gap-2 group hover:border-primary/50 transition-colors">
-            <Signature className="h-8 w-8 text-muted-foreground group-hover:text-primary" />
-            <p className="text-xs text-muted-foreground">Clique para fazer upload (240x120px)</p>
-          </div>
+          <label className="w-full aspect-[2/1] bg-card border-2 border-dashed rounded-xl flex flex-col items-center justify-center gap-2 group hover:border-primary/50 transition-colors cursor-pointer overflow-hidden">
+            {settings?.signature_image_url ? (
+              <img src={settings.signature_image_url} alt="Assinatura" className="h-full w-full object-contain p-2" />
+            ) : (
+              <>
+                {uploading ? <Loader2 className="h-8 w-8 animate-spin text-primary" /> : <Signature className="h-8 w-8 text-muted-foreground group-hover:text-primary" />}
+                <p className="text-xs text-muted-foreground">Clique para fazer upload (240x120px)</p>
+              </>
+            )}
+            <input type="file" accept="image/*" className="hidden" onChange={handleSignatureUpload} />
+          </label>
           <div className="flex gap-2">
-            <Button variant="outline" size="sm" className="flex-1">Trocar Imagem</Button>
-            <Button variant="ghost" size="sm" className="flex-1 text-red-600 hover:text-red-700 hover:bg-red-50">Remover</Button>
+            <Button variant="outline" size="sm" className="flex-1 relative overflow-hidden" asChild>
+              <label className="cursor-pointer">
+                {uploading ? 'Enviando...' : 'Trocar Imagem'}
+                <input type="file" accept="image/*" className="hidden" onChange={handleSignatureUpload} />
+              </label>
+            </Button>
+            <Button
+              variant="ghost"
+              size="sm"
+              className="flex-1 text-red-600 hover:text-red-700 hover:bg-red-50"
+              onClick={() => setSettings((prev: any) => ({ ...(prev || {}), signature_image_url: null }))}
+            >
+              Remover
+            </Button>
           </div>
         </div>
       </div>
     </div>
   )
 }
+
 
 function SecuritySection() {
   return (
