@@ -88,7 +88,7 @@ export default function LabSettingsPage() {
           company_id: user.companyId,
           ...settings,
           updated_at: new Date().toISOString()
-        })
+        }, { onConflict: 'company_id' })
 
       if (error) throw error
       toast.success('Configurações salvas com sucesso!')
