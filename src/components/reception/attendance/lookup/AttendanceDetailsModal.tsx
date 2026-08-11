@@ -667,11 +667,17 @@ export function AttendanceDetailsModal({ open, onClose, order, patient }: Attend
           
           // Determine which vias to print based on selection
           const vias: ('patient' | 'establishment')[] = [];
-          const hasComprovante = result.options.some((o: any) => o.enabled && o.id === 'comprovante');
-          const hasControleInterno = result.options.some((o: any) => o.enabled && o.id === 'controle_interno');
+          
+          // Use a Map or unique values to avoid duplication
+          const selectedViaTypes = new Set<string>();
+          result.options.forEach((o: any) => {
+            if (o.enabled) {
+              if (o.id === 'comprovante') selectedViaTypes.add('patient');
+              if (o.id === 'controle_interno') selectedViaTypes.add('establishment');
+            }
+          });
 
-          if (hasComprovante) vias.push('patient');
-          if (hasControleInterno) vias.push('establishment');
+          vias.push(...Array.from(selectedViaTypes) as ('patient' | 'establishment')[]);
           
           setEnabledVias(vias);
           
