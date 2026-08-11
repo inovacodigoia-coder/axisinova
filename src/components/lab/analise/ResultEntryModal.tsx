@@ -1,6 +1,8 @@
 import { useState, useMemo, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { buildExamParams, catalogKey } from '@/utils/examParameters';
+import { resolveCompanyId } from '@/utils/companyId';
+import { useAuth } from '@/context/AuthContext';
 import { 
   X, 
   Search, 
@@ -77,6 +79,7 @@ export function ResultEntryModal({
   workbenchNames,
   establishmentNames
 }: ResultEntryModalProps) {
+  const { user } = useAuth();
   const [results, setResults] = useState<Record<string, string>>({});
   const [notes, setNotes] = useState<Record<string, string>>({});
   const [saving, setSaving] = useState(false);
