@@ -138,7 +138,7 @@ export default function LabSettingsPage() {
             ) : (
             <>
               <div className={activeTab === 'lab-data' ? 'block' : 'hidden'}>
-                <LabDataSection />
+                <LabDataSection settings={settings} setSettings={setSettings} />
               </div>
               <div className={activeTab === 'tiss' ? 'block' : 'hidden'}>
                 <TISSSection />
@@ -204,7 +204,10 @@ function NavItem({ active, onClick, icon, label }: any) {
   )
 }
 
-function LabDataSection() {
+function LabDataSection({ settings, setSettings }: { settings: any; setSettings: (v: any) => void }) {
+  const set = (field: string, value: string) => setSettings({ ...(settings || {}), [field]: value })
+  const val = (field: string) => settings?.[field] ?? ''
+
   return (
     <div className="space-y-8">
       <div>
@@ -212,19 +215,53 @@ function LabDataSection() {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div className="space-y-2">
             <Label>Nome do Laboratório *</Label>
-            <Input placeholder="Ex: Laboratório Vital" />
+            <Input value={val('lab_name')} onChange={(e) => set('lab_name', e.target.value)} placeholder="Ex: Laboratório Vital" />
           </div>
           <div className="space-y-2">
             <Label>CNPJ</Label>
-            <Input placeholder="00.000.000/0000-00" />
+            <Input value={val('cnpj')} onChange={(e) => set('cnpj', e.target.value)} placeholder="00.000.000/0000-00" />
           </div>
           <div className="space-y-2">
             <Label>Telefone</Label>
-            <Input placeholder="(00) 0000-0000" />
+            <Input value={val('phone')} onChange={(e) => set('phone', e.target.value)} placeholder="(00) 0000-0000" />
           </div>
           <div className="space-y-2">
             <Label>E-mail</Label>
-            <Input type="email" placeholder="contato@lab.com.br" />
+            <Input type="email" value={val('email')} onChange={(e) => set('email', e.target.value)} placeholder="contato@lab.com.br" />
+          </div>
+        </div>
+      </div>
+
+      <div className="border-t pt-6">
+        <h3 className="text-lg font-bold mb-4">Endereço</h3>
+        <div className="grid grid-cols-1 md:grid-cols-6 gap-4">
+          <div className="space-y-2 md:col-span-2">
+            <Label>CEP</Label>
+            <Input value={val('address_zip')} onChange={(e) => set('address_zip', e.target.value)} placeholder="00000-000" />
+          </div>
+          <div className="space-y-2 md:col-span-3">
+            <Label>Logradouro</Label>
+            <Input value={val('address_street')} onChange={(e) => set('address_street', e.target.value)} placeholder="Rua / Avenida" />
+          </div>
+          <div className="space-y-2">
+            <Label>Número</Label>
+            <Input value={val('address_number')} onChange={(e) => set('address_number', e.target.value)} placeholder="123" />
+          </div>
+          <div className="space-y-2 md:col-span-2">
+            <Label>Complemento</Label>
+            <Input value={val('address_complement')} onChange={(e) => set('address_complement', e.target.value)} placeholder="Sala, bloco..." />
+          </div>
+          <div className="space-y-2 md:col-span-2">
+            <Label>Bairro</Label>
+            <Input value={val('address_district')} onChange={(e) => set('address_district', e.target.value)} placeholder="Centro" />
+          </div>
+          <div className="space-y-2">
+            <Label>Cidade</Label>
+            <Input value={val('address_city')} onChange={(e) => set('address_city', e.target.value)} placeholder="Cidade" />
+          </div>
+          <div className="space-y-2">
+            <Label>UF</Label>
+            <Input maxLength={2} value={val('address_state')} onChange={(e) => set('address_state', e.target.value.toUpperCase())} placeholder="RN" />
           </div>
         </div>
       </div>
@@ -234,35 +271,11 @@ function LabDataSection() {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div className="space-y-2">
             <Label>Nome Completo</Label>
-            <Input placeholder="Nome do Responsável" />
+            <Input value={val('responsible_name')} onChange={(e) => set('responsible_name', e.target.value)} placeholder="Nome do Responsável" />
           </div>
           <div className="space-y-2">
             <Label>Registro Profissional</Label>
-            <Input placeholder="Ex: CRBM-RN-08453" />
-          </div>
-        </div>
-      </div>
-
-      <div className="border-t pt-6">
-        <h3 className="text-lg font-bold mb-4">Laudo (Personalização)</h3>
-        <div className="space-y-4">
-          <div className="space-y-2">
-            <Label>Cabeçalho Customizado</Label>
-            <textarea className="w-full min-h-[100px] p-3 rounded-lg border bg-background text-sm resize-none focus:ring-2 focus:ring-primary/20 outline-none" placeholder="Texto para o cabeçalho do laudo..." />
-          </div>
-          <div className="flex items-center justify-between p-4 bg-muted/30 rounded-xl border border-dashed border-border">
-            <div className="flex items-center gap-3">
-              <div className="h-12 w-24 bg-card border rounded flex items-center justify-center text-[10px] text-muted-foreground font-bold">LOGO</div>
-              <div>
-                <p className="text-sm font-bold">Logo do Laboratório</p>
-                <p className="text-xs text-muted-foreground">PNG transparente, max 2MB</p>
-              </div>
-            </div>
-            <Button variant="outline" size="sm" className="gap-2"><Upload className="h-4 w-4" /> Upload</Button>
-          </div>
-          <div className="flex items-center justify-between">
-            <Label>Exibir logo no laudo</Label>
-            <Switch />
+            <Input value={val('responsible_register')} onChange={(e) => set('responsible_register', e.target.value)} placeholder="Ex: CRBM-RN-08453" />
           </div>
         </div>
       </div>
