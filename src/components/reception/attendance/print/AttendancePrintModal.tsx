@@ -28,10 +28,13 @@ export function AttendancePrintModal({ open, onClose, document: doc, autoPrint, 
 
   useEffect(() => {
     if (open && autoPrint) {
-      const t = setTimeout(() => window.print(), 400)
-      return () => clearTimeout(t)
+      const t = setTimeout(() => {
+        window.print();
+        // After printing, we can set autoPrint to false or just rely on onClose
+      }, 500);
+      return () => clearTimeout(t);
     }
-  }, [open, autoPrint])
+  }, [open, autoPrint]);
 
   if (!open) return null
 
