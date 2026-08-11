@@ -1,4 +1,6 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
+import { supabase } from '@/integrations/supabase/client';
+import { buildExamParams, catalogKey } from '@/utils/examParameters';
 import { 
   X, 
   Search, 
@@ -115,6 +117,51 @@ export function ResultEntryModal({
     return Object.values(groups);
   }, [filteredExams, filters.workbenches]);
 
+  // Catálogo de Exames (parâmetros e faixas de referência reais)
+  const [catalog, setCatalog] = useState<Record<string, any>>({});
+
+  useEffect(() => {
+    if (!isOpen) return;
+    let active = true;
+    (async () => {
+      const { data, error } = await supabase
+        .from('exams')
+        .select('id, name, internal_code, measurement_unit, parameters, reference_values');
+      if (error || !active || !data) return;
+      const map: Record<string, any> = {};
+      data.forEach((e: any) => {
+        map[catalogKey(e.id)] = e;
+        if (e.internal_code) map[catalogKey(e.internal_code)] = e;
+        if (e.name) map[catalogKey(e.name)] = e;
+      });
+      setCatalog(map);
+    })();
+    return () => { active = false; };
+  }, [isOpen]);
+
+  // Mapa examId -> parâmetros resolvidos com referência conforme sexo/idade do paciente
+  const paramsByExam = useMemo(() => {
+    const map: Record<string, any[]> = {};
+    groupedPatients.forEach((patient: any) => {
+      const age = patient.patientBirthDate
+        ? differenceInYears(new Date(), new Date(patient.patientBirthDate))
+        : undefined;
+      patient.exams.forEach((exam: any) => {
+        const catalogExam =
+          catalog[catalogKey(exam.examId)] ||
+          catalog[catalogKey(exam.code)] ||
+          catalog[catalogKey(exam.name)];
+        map[exam.id] = buildExamParams(catalogExam, exam.name || exam.code, {
+          gender: patient.patientGender,
+          age,
+        });
+      });
+    });
+    return map;
+  }, [groupedPatients, catalog]);
+
+  const getParams = (exam: any) => paramsByExam[exam.id] || [{ id: '1', name: exam?.name || '', unit: '', reference: '' }];
+
   const totalExams = filteredExams.length;
   
   // Calculate filled exams only for expanded patients
@@ -124,15 +171,16 @@ export function ResultEntryModal({
       // Only count if patient is expanded AND exam is not released
       if (expandedPatients[exam.protocol] && examStatuses[exam.id] !== 'released') {
         // Must have results for ALL parameters to be considered "filled"
-        const params = exam.parameters?.length ? exam.parameters : [{id: '1'}];
+        const params = paramsByExam[exam.id] || [{ id: '1' }];
         const allFilled = params.every((p: any) => 
-          results[`${exam.id}_${p.id}`]?.trim() !== ''
+          (results[`${exam.id}_${p.id}`] || '').trim() !== ''
         );
         if (allFilled) count++;
       }
     });
     return count;
-  }, [results, filteredExams, expandedPatients, examStatuses]);
+  }, [results, filteredExams, expandedPatients, examStatuses, paramsByExam]);
+
 
   // Calculate total required exams only for expanded patients (excluding already released ones)
   const totalRequiredExams = useMemo(() => {
@@ -165,9 +213,9 @@ export function ResultEntryModal({
         filteredExams.forEach(exam => {
           // Only process exams for expanded patients
           if (expandedPatients[exam.protocol] && newStatuses[exam.id] !== 'released') {
-            const params = exam.parameters?.length ? exam.parameters : [{id: '1'}];
+            const params = paramsByExam[exam.id] || [{ id: '1' }];
             const allFilled = params.every((p: any) => 
-              results[`${exam.id}_${p.id}`]?.trim() !== ''
+              (results[`${exam.id}_${p.id}`] || '').trim() !== ''
             );
             
             if (allFilled) {
@@ -404,8 +452,8 @@ export function ResultEntryModal({
                 {isExpanded && (
                   <div className="p-6 space-y-6 border-t border-slate-100 animate-in slide-in-from-top-2 duration-200">
                     {patient.exams.map((exam: any) => {
-                      const hasResult = (exam.parameters?.length ? exam.parameters : [{id: '1'}]).some((p: any) => 
-                        results[`${exam.id}_${p.id}`]?.trim() !== ''
+                      const hasResult = getParams(exam).some((p: any) => 
+                        (results[`${exam.id}_${p.id}`] || '').trim() !== ''
                       );
                       const isDigitized = examStatuses[exam.id] === 'digitized' && hasResult;
                       const isReleased = examStatuses[exam.id] === 'released';
@@ -478,8 +526,8 @@ export function ResultEntryModal({
                                 <Button 
                                   onClick={() => handleConcluirExame(exam.id)}
                                   size="sm" 
-                                  disabled={!(exam.parameters?.length ? exam.parameters : [{id: '1'}]).every((p: any) => 
-                                    results[`${exam.id}_${p.id}`]?.trim() !== ''
+                                  disabled={!getParams(exam).every((p: any) => 
+                                    (results[`${exam.id}_${p.id}`] || '').trim() !== ''
                                   )}
                                   className="h-7 px-3 text-[9px] font-black uppercase gap-1.5 bg-sky-500 hover:bg-sky-600 text-white shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
                                 >
@@ -523,9 +571,9 @@ export function ResultEntryModal({
 
                         {/* Parâmetros do Exame */}
                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-x-8 gap-y-4 pt-2">
-                          {(exam.parameters?.length ? exam.parameters : [{ id: '1', name: exam.code, unit: 'mg/dL', reference: '60 a 100' }]).map((param: any) => {
+                          {getParams(exam).map((param: any) => {
                             const value = results[`${exam.id}_${param.id}`] || '';
-                            const status = getResultStatus(value, param.reference || '60 a 100');
+                            const status = getResultStatus(value, param.reference || '');
                             
                             return (
                               <div key={param.id} className={cn(
@@ -568,7 +616,7 @@ export function ResultEntryModal({
                                   </div>
                                   <div className="w-32 bg-slate-200/50 rounded px-2 py-1 flex flex-col justify-center">
                                     <span className="text-[8px] font-black text-slate-400 uppercase leading-tight">Referência</span>
-                                    <span className="text-[10px] font-bold text-slate-600 truncate">{param.reference || '60 a 100'}</span>
+                                    <span className="text-[10px] font-bold text-slate-600 truncate">{param.reference || '—'}</span>
                                   </div>
                                 </div>
                               </div>
