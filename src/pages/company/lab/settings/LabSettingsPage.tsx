@@ -32,11 +32,9 @@ import {
   Edit2,
   Info,
   Loader2,
-  Globe,
   FileText,
   X
 } from 'lucide-react'
-import { LabOriginsSettings } from '@/components/lab/settings/LabOriginsSettings'
 import { cn } from '@/lib/utils'
 import { toast } from 'sonner'
 import { supabase } from '@/integrations/supabase/client'
@@ -90,7 +88,7 @@ export default function LabSettingsPage() {
           company_id: user.companyId,
           ...settings,
           updated_at: new Date().toISOString()
-        })
+        }, { onConflict: 'company_id' })
 
       if (error) throw error
       toast.success('Configurações salvas com sucesso!')
@@ -116,7 +114,6 @@ export default function LabSettingsPage() {
           <NavItem active={activeTab === 'tiss'} onClick={() => setActiveTab('tiss')} icon={<ShieldCheck className="h-4 w-4" />} label="Configurações TISS" />
           <NavItem active={activeTab === 'signature'} onClick={() => setActiveTab('signature')} icon={<Signature className="h-4 w-4" />} label="Assinatura Digital" />
           <NavItem active={activeTab === 'printer'} onClick={() => setActiveTab('printer')} icon={<Printer className="h-4 w-4" />} label="Impressora / Etiqueta" />
-          <NavItem active={activeTab === 'origins'} onClick={() => setActiveTab('origins')} icon={<Globe className="h-4 w-4" />} label="Origens" />
           <NavItem active={activeTab === 'report-layout'} onClick={() => setActiveTab('report-layout')} icon={<FileText className="h-4 w-4" />} label="Layout do Laudo" />
           
           <p className="px-3 py-2 mt-4 text-[10px] font-bold text-muted-foreground uppercase tracking-wider">Técnico</p>
@@ -147,7 +144,7 @@ export default function LabSettingsPage() {
                 <TISSSection />
               </div>
               <div className={activeTab === 'signature' ? 'block' : 'hidden'}>
-                <SignatureSection />
+                <SignatureSection settings={settings} setSettings={setSettings} />
               </div>
               <div className={activeTab === 'security' ? 'block' : 'hidden'}>
                 <SecuritySection />
@@ -169,9 +166,6 @@ export default function LabSettingsPage() {
               </div>
               <div className={activeTab === 'collection-reasons' ? 'block' : 'hidden'}>
                 <CollectionReasonsSection />
-              </div>
-              <div className={activeTab === 'origins' ? 'block' : 'hidden'}>
-                <LabOriginsSettings />
               </div>
               <div className={activeTab === 'report-layout' ? 'block' : 'hidden'}>
                 <ReportLayoutSection settings={settings} setSettings={setSettings} />
@@ -276,45 +270,94 @@ function LabDataSection() {
   )
 }
 
+async function uploadLabAsset(file: File, folder: string) {
+  const fileExt = file.name.split('.').pop()
+  const filePath = `${folder}/${crypto.randomUUID()}.${fileExt}`
+
+  const { error: uploadError } = await supabase.storage
+    .from('company-assets')
+    .upload(filePath, file, { cacheControl: '3600', upsert: false })
+
+  if (uploadError) throw uploadError
+
+  const { data } = supabase.storage.from('company-assets').getPublicUrl(filePath)
+  return data.publicUrl
+}
+
+function openReportExample(settings: any) {
+  const esc = (s: string) => String(s || '').replace(/[<>&]/g, (c) => ({ '<': '&lt;', '>': '&gt;', '&': '&amp;' }[c] as string))
+  const logoL = settings?.report_logo_primary_url
+  const logoR = settings?.report_logo_secondary_url
+  const html = `<!doctype html><html lang="pt-BR"><head><meta charset="utf-8" />
+<title>Laudo de exemplo</title>
+<style>
+  body{font-family:Georgia,serif;color:#27272a;margin:0;padding:32px;background:#f4f4f5}
+  .page{background:#fff;max-width:794px;margin:0 auto;padding:40px;box-shadow:0 1px 6px rgba(0,0,0,.1);position:relative}
+  .head{display:flex;align-items:center;justify-content:space-between;gap:16px;border-bottom:2px solid #27272a;padding-bottom:12px}
+  .head img{max-height:64px;max-width:140px;object-fit:contain}
+  .head .ttl{text-align:center;flex:1}
+  .head h1{font-size:18px;margin:0;text-transform:uppercase}
+  .head p{font-size:11px;margin:4px 0 0;color:#52525b}
+  .ph{height:64px;width:140px;border:1px dashed #d4d4d8;border-radius:4px;display:flex;align-items:center;justify-content:center;font-size:9px;color:#a1a1aa}
+  .info{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;font-size:11px;margin-top:16px}
+  .warn{margin-top:16px;padding:10px;border:1px solid #e4e4e7;background:#fafafa;font-size:11px;white-space:pre-wrap}
+  table{width:100%;border-collapse:collapse;font-size:11px;margin-top:24px}
+  th{text-align:left;border-bottom:1px solid #27272a;padding:6px 0}
+  td{padding:6px 0;border-bottom:1px solid #f4f4f5}
+  .sign{margin-top:56px;text-align:center;font-size:11px}
+  .sign img{max-height:64px;object-fit:contain;display:block;margin:0 auto 4px}
+  .foot{margin-top:32px;border-top:1px solid #27272a;padding-top:8px;font-size:9px;color:#71717a;white-space:pre-wrap}
+  .wm{position:absolute;top:120px;left:0;right:0;text-align:center;font-size:44px;color:rgba(0,0,0,.07);font-weight:bold;letter-spacing:2px}
+</style></head><body><div class="page">
+${settings?.report_watermark_enabled !== false ? `<div class="wm">${esc(settings?.report_watermark_text || '[ CÓPIA NÃO AUTENTICADA ]')}</div>` : ''}
+<div class="head">
+  ${logoL ? `<img src="${logoL}" alt="Logo principal" />` : '<div class="ph">LOGO ESQUERDA</div>'}
+  <div class="ttl"><h1>${esc(settings?.report_header_title || 'LABORATÓRIO MUNICIPAL CENTRAL')}</h1>
+  ${settings?.report_header_subtitle ? `<p>${esc(settings.report_header_subtitle)}</p>` : ''}</div>
+  ${logoR ? `<img src="${logoR}" alt="Logo secundário" />` : '<div class="ph">LOGO DIREITA</div>'}
+</div>
+<h2 style="font-size:15px;margin:16px 0 0;text-transform:uppercase">MARIA DA SILVA SANTOS</h2>
+<div class="info">
+  <div><b>Protocolo:</b> 20260000-000-00</div><div><b>Atendimento:</b> 22/06/2026 16:08</div><div><b>Sexo:</b> Feminino</div>
+  <div><b>Nascimento:</b> 18/02/1989 (37 anos)</div><div><b>Médico:</b> Dr. José Nóbrega</div><div><b>Local:</b> Matriz</div>
+</div>
+${settings?.report_institutional_warning ? `<div class="warn">${esc(settings.report_institutional_warning)}</div>` : ''}
+<table><thead><tr><th>PARÂMETRO</th><th>RESULTADO</th><th>UNIDADE</th><th style="text-align:right">REFERÊNCIA</th></tr></thead>
+<tbody><tr><td>Glicose (jejum)</td><td><b>92</b></td><td>mg/dL</td><td style="text-align:right">70 - 99</td></tr>
+<tr><td>Hemoglobina</td><td><b>13,4</b></td><td>g/dL</td><td style="text-align:right">12,0 - 16,0</td></tr></tbody></table>
+<div class="sign">
+  ${settings?.signature_image_url ? `<img src="${settings.signature_image_url}" alt="Assinatura" />` : '<div style="height:48px"></div>'}
+  <div style="border-top:1px solid #a1a1aa;width:240px;margin:0 auto 4px"></div>
+  <b>${esc(settings?.signature_name || 'Responsável Técnico')}</b>
+  ${settings?.signature_include_register === false ? '' : `<div>${esc(settings?.signature_register || '')}</div>`}
+</div>
+<div class="foot">${esc(settings?.report_footer_text || 'Rodapé do laudo não configurado.')}</div>
+</div></body></html>`
+  const w = window.open('', '_blank')
+  if (!w) { toast.error('Permita pop-ups para visualizar o laudo.'); return }
+  w.document.write(html)
+  w.document.close()
+}
+
 function ReportLayoutSection({ settings, setSettings }: { settings: any, setSettings: (s: any) => void }) {
   const handleUpload = async (e: React.ChangeEvent<HTMLInputElement>, field: string) => {
     const file = e.target.files?.[0]
     if (!file) return
 
     try {
-      const fileExt = file.name.split('.').pop()
-      const fileName = `${crypto.randomUUID()}.${fileExt}`
-      const filePath = `lab-logos/${fileName}`
-
-      const { error: uploadError } = await supabase.storage
-        .from('attendance-attachments')
-        .upload(filePath, file, {
-          cacheControl: '3600',
-          upsert: false
-        })
-
-      if (uploadError) throw uploadError
-
-      const { data: { publicUrl } } = supabase.storage
-        .from('attendance-attachments')
-        .getPublicUrl(filePath)
-
-      // Use a functional update and force a state refresh
-      setSettings((prev: any) => {
-        const next = { ...prev, [field]: publicUrl };
-        console.log("Updating settings with new logo URL:", field, publicUrl);
-        return next;
-      });
-
+      const publicUrl = await uploadLabAsset(file, 'lab-logos')
+      setSettings((prev: any) => ({ ...(prev || {}), [field]: publicUrl }))
       toast.success('Upload realizado com sucesso!');
     } catch (error) {
       console.error('Error uploading logo:', error)
       toast.error('Erro ao fazer upload da logo')
+    } finally {
+      e.target.value = ''
     }
   }
 
   const removeLogo = (field: string) => {
-    setSettings({ ...settings, [field]: null })
+    setSettings((prev: any) => ({ ...(prev || {}), [field]: null }))
   }
 
   return (
@@ -328,13 +371,7 @@ function ReportLayoutSection({ settings, setSettings }: { settings: any, setSett
           variant="outline" 
           size="sm" 
           className="gap-2"
-          onClick={() => {
-            if (typeof (window as any).openReportExample === 'function') {
-              (window as any).openReportExample(settings);
-            } else {
-              toast.error('Erro ao abrir visualização. Tente novamente.');
-            }
-          }}
+          onClick={() => openReportExample(settings)}
         >
           <FileText className="h-4 w-4" /> Gerar laudo de exemplo
         </Button>
@@ -343,6 +380,7 @@ function ReportLayoutSection({ settings, setSettings }: { settings: any, setSett
       <p className="text-xs text-muted-foreground -mt-4">
         Título, subtítulo, logos e marca d'água aparecem no topo de cada página do PDF. Use o botão acima para visualizar sem salvar.
       </p>
+
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <div className="space-y-2">
@@ -372,7 +410,7 @@ function ReportLayoutSection({ settings, setSettings }: { settings: any, setSett
               {settings?.report_logo_primary_url ? (
                 <img 
                   key={settings.report_logo_primary_url}
-                  src={`${settings.report_logo_primary_url}?t=${new Date().getTime()}`} 
+                  src={settings.report_logo_primary_url} 
                   alt="Logo Principal" 
                   className="h-full w-full object-contain"
                   onLoad={() => console.log("Primary logo loaded:", settings.report_logo_primary_url)}
@@ -402,7 +440,7 @@ function ReportLayoutSection({ settings, setSettings }: { settings: any, setSett
               {settings?.report_logo_secondary_url ? (
                 <img 
                   key={settings.report_logo_secondary_url}
-                  src={`${settings.report_logo_secondary_url}?t=${new Date().getTime()}`} 
+                  src={settings.report_logo_secondary_url} 
                   alt="Logo Secundário" 
                   className="h-full w-full object-contain"
                   onLoad={() => console.log("Secondary logo loaded:", settings.report_logo_secondary_url)}
@@ -473,7 +511,26 @@ function ReportLayoutSection({ settings, setSettings }: { settings: any, setSett
   )
 }
 
-function SignatureSection() {
+function SignatureSection({ settings, setSettings }: { settings: any, setSettings: (updater: any) => void }) {
+  const [uploading, setUploading] = useState(false)
+
+  const handleSignatureUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+    try {
+      setUploading(true)
+      const url = await uploadLabAsset(file, 'lab-signatures')
+      setSettings((prev: any) => ({ ...(prev || {}), signature_image_url: url }))
+      toast.success('Assinatura enviada com sucesso!')
+    } catch (error) {
+      console.error('Error uploading signature:', error)
+      toast.error('Erro ao fazer upload da assinatura')
+    } finally {
+      setUploading(false)
+      e.target.value = ''
+    }
+  }
+
   return (
     <div className="space-y-6">
       <h3 className="text-lg font-bold">Assinatura do Responsável</h3>
@@ -481,39 +538,73 @@ function SignatureSection() {
         <div className="space-y-4">
           <div className="space-y-2">
             <Label>Nome Completo</Label>
-            <Input placeholder="Dr. Alexsandro Silva" />
+            <Input
+              placeholder="Dr. Alexsandro Silva"
+              value={settings?.signature_name || ''}
+              onChange={(e) => setSettings((prev: any) => ({ ...(prev || {}), signature_name: e.target.value }))}
+            />
           </div>
           <div className="space-y-2">
             <Label>Registro Profissional</Label>
-            <Input placeholder="CRBM-RN-1234" />
+            <Input
+              placeholder="CRBM-RN-1234"
+              value={settings?.signature_register || ''}
+              onChange={(e) => setSettings((prev: any) => ({ ...(prev || {}), signature_register: e.target.value }))}
+            />
           </div>
           <div className="pt-4 space-y-4">
             <div className="flex items-center justify-between">
               <Label className="text-sm font-medium">Assinatura automática ao liberar</Label>
-              <Switch />
+              <Switch
+                checked={settings?.signature_auto_on_release ?? false}
+                onCheckedChange={(checked) => setSettings((prev: any) => ({ ...(prev || {}), signature_auto_on_release: checked }))}
+              />
             </div>
             <div className="flex items-center justify-between">
               <Label className="text-sm font-medium">Incluir registro profissional no laudo</Label>
-              <Switch defaultChecked />
+              <Switch
+                checked={settings?.signature_include_register ?? true}
+                onCheckedChange={(checked) => setSettings((prev: any) => ({ ...(prev || {}), signature_include_register: checked }))}
+              />
             </div>
           </div>
         </div>
-        
+
         <div className="space-y-3">
           <Label>Imagem da Assinatura (Fundo Transparente)</Label>
-          <div className="w-full aspect-[2/1] bg-card border-2 border-dashed rounded-xl flex flex-col items-center justify-center gap-2 group hover:border-primary/50 transition-colors">
-            <Signature className="h-8 w-8 text-muted-foreground group-hover:text-primary" />
-            <p className="text-xs text-muted-foreground">Clique para fazer upload (240x120px)</p>
-          </div>
+          <label className="w-full aspect-[2/1] bg-card border-2 border-dashed rounded-xl flex flex-col items-center justify-center gap-2 group hover:border-primary/50 transition-colors cursor-pointer overflow-hidden">
+            {settings?.signature_image_url ? (
+              <img src={settings.signature_image_url} alt="Assinatura" className="h-full w-full object-contain p-2" />
+            ) : (
+              <>
+                {uploading ? <Loader2 className="h-8 w-8 animate-spin text-primary" /> : <Signature className="h-8 w-8 text-muted-foreground group-hover:text-primary" />}
+                <p className="text-xs text-muted-foreground">Clique para fazer upload (240x120px)</p>
+              </>
+            )}
+            <input type="file" accept="image/*" className="hidden" onChange={handleSignatureUpload} />
+          </label>
           <div className="flex gap-2">
-            <Button variant="outline" size="sm" className="flex-1">Trocar Imagem</Button>
-            <Button variant="ghost" size="sm" className="flex-1 text-red-600 hover:text-red-700 hover:bg-red-50">Remover</Button>
+            <Button variant="outline" size="sm" className="flex-1 relative overflow-hidden" asChild>
+              <label className="cursor-pointer">
+                {uploading ? 'Enviando...' : 'Trocar Imagem'}
+                <input type="file" accept="image/*" className="hidden" onChange={handleSignatureUpload} />
+              </label>
+            </Button>
+            <Button
+              variant="ghost"
+              size="sm"
+              className="flex-1 text-red-600 hover:text-red-700 hover:bg-red-50"
+              onClick={() => setSettings((prev: any) => ({ ...(prev || {}), signature_image_url: null }))}
+            >
+              Remover
+            </Button>
           </div>
         </div>
       </div>
     </div>
   )
 }
+
 
 function SecuritySection() {
   return (

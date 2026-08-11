@@ -989,6 +989,11 @@ export type Database = {
           report_logo_secondary_url: string | null
           report_watermark_enabled: boolean | null
           report_watermark_text: string | null
+          signature_auto_on_release: boolean
+          signature_image_url: string | null
+          signature_include_register: boolean
+          signature_name: string | null
+          signature_register: string | null
           updated_at: string | null
         }
         Insert: {
@@ -1003,6 +1008,11 @@ export type Database = {
           report_logo_secondary_url?: string | null
           report_watermark_enabled?: boolean | null
           report_watermark_text?: string | null
+          signature_auto_on_release?: boolean
+          signature_image_url?: string | null
+          signature_include_register?: boolean
+          signature_name?: string | null
+          signature_register?: string | null
           updated_at?: string | null
         }
         Update: {
@@ -1017,6 +1027,11 @@ export type Database = {
           report_logo_secondary_url?: string | null
           report_watermark_enabled?: boolean | null
           report_watermark_text?: string | null
+          signature_auto_on_release?: boolean
+          signature_image_url?: string | null
+          signature_include_register?: boolean
+          signature_name?: string | null
+          signature_register?: string | null
           updated_at?: string | null
         }
         Relationships: [
