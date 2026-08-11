@@ -138,7 +138,7 @@ export default function LabSettingsPage() {
             ) : (
             <>
               <div className={activeTab === 'lab-data' ? 'block' : 'hidden'}>
-                <LabDataSection />
+                <LabDataSection settings={settings} setSettings={setSettings} />>
               </div>
               <div className={activeTab === 'tiss' ? 'block' : 'hidden'}>
                 <TISSSection />
