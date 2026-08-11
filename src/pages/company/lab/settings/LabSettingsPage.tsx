@@ -276,45 +276,94 @@ function LabDataSection() {
   )
 }
 
+async function uploadLabAsset(file: File, folder: string) {
+  const fileExt = file.name.split('.').pop()
+  const filePath = `${folder}/${crypto.randomUUID()}.${fileExt}`
+
+  const { error: uploadError } = await supabase.storage
+    .from('company-assets')
+    .upload(filePath, file, { cacheControl: '3600', upsert: false })
+
+  if (uploadError) throw uploadError
+
+  const { data } = supabase.storage.from('company-assets').getPublicUrl(filePath)
+  return data.publicUrl
+}
+
+function openReportExample(settings: any) {
+  const esc = (s: string) => String(s || '').replace(/[<>&]/g, (c) => ({ '<': '&lt;', '>': '&gt;', '&': '&amp;' }[c] as string))
+  const logoL = settings?.report_logo_primary_url
+  const logoR = settings?.report_logo_secondary_url
+  const html = `<!doctype html><html lang="pt-BR"><head><meta charset="utf-8" />
+<title>Laudo de exemplo</title>
+<style>
+  body{font-family:Georgia,serif;color:#27272a;margin:0;padding:32px;background:#f4f4f5}
+  .page{background:#fff;max-width:794px;margin:0 auto;padding:40px;box-shadow:0 1px 6px rgba(0,0,0,.1);position:relative}
+  .head{display:flex;align-items:center;justify-content:space-between;gap:16px;border-bottom:2px solid #27272a;padding-bottom:12px}
+  .head img{max-height:64px;max-width:140px;object-fit:contain}
+  .head .ttl{text-align:center;flex:1}
+  .head h1{font-size:18px;margin:0;text-transform:uppercase}
+  .head p{font-size:11px;margin:4px 0 0;color:#52525b}
+  .ph{height:64px;width:140px;border:1px dashed #d4d4d8;border-radius:4px;display:flex;align-items:center;justify-content:center;font-size:9px;color:#a1a1aa}
+  .info{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;font-size:11px;margin-top:16px}
+  .warn{margin-top:16px;padding:10px;border:1px solid #e4e4e7;background:#fafafa;font-size:11px;white-space:pre-wrap}
+  table{width:100%;border-collapse:collapse;font-size:11px;margin-top:24px}
+  th{text-align:left;border-bottom:1px solid #27272a;padding:6px 0}
+  td{padding:6px 0;border-bottom:1px solid #f4f4f5}
+  .sign{margin-top:56px;text-align:center;font-size:11px}
+  .sign img{max-height:64px;object-fit:contain;display:block;margin:0 auto 4px}
+  .foot{margin-top:32px;border-top:1px solid #27272a;padding-top:8px;font-size:9px;color:#71717a;white-space:pre-wrap}
+  .wm{position:absolute;top:120px;left:0;right:0;text-align:center;font-size:44px;color:rgba(0,0,0,.07);font-weight:bold;letter-spacing:2px}
+</style></head><body><div class="page">
+${settings?.report_watermark_enabled !== false ? `<div class="wm">${esc(settings?.report_watermark_text || '[ CÓPIA NÃO AUTENTICADA ]')}</div>` : ''}
+<div class="head">
+  ${logoL ? `<img src="${logoL}" alt="Logo principal" />` : '<div class="ph">LOGO ESQUERDA</div>'}
+  <div class="ttl"><h1>${esc(settings?.report_header_title || 'LABORATÓRIO MUNICIPAL CENTRAL')}</h1>
+  ${settings?.report_header_subtitle ? `<p>${esc(settings.report_header_subtitle)}</p>` : ''}</div>
+  ${logoR ? `<img src="${logoR}" alt="Logo secundário" />` : '<div class="ph">LOGO DIREITA</div>'}
+</div>
+<h2 style="font-size:15px;margin:16px 0 0;text-transform:uppercase">MARIA DA SILVA SANTOS</h2>
+<div class="info">
+  <div><b>Protocolo:</b> 20260000-000-00</div><div><b>Atendimento:</b> 22/06/2026 16:08</div><div><b>Sexo:</b> Feminino</div>
+  <div><b>Nascimento:</b> 18/02/1989 (37 anos)</div><div><b>Médico:</b> Dr. José Nóbrega</div><div><b>Local:</b> Matriz</div>
+</div>
+${settings?.report_institutional_warning ? `<div class="warn">${esc(settings.report_institutional_warning)}</div>` : ''}
+<table><thead><tr><th>PARÂMETRO</th><th>RESULTADO</th><th>UNIDADE</th><th style="text-align:right">REFERÊNCIA</th></tr></thead>
+<tbody><tr><td>Glicose (jejum)</td><td><b>92</b></td><td>mg/dL</td><td style="text-align:right">70 - 99</td></tr>
+<tr><td>Hemoglobina</td><td><b>13,4</b></td><td>g/dL</td><td style="text-align:right">12,0 - 16,0</td></tr></tbody></table>
+<div class="sign">
+  ${settings?.signature_image_url ? `<img src="${settings.signature_image_url}" alt="Assinatura" />` : '<div style="height:48px"></div>'}
+  <div style="border-top:1px solid #a1a1aa;width:240px;margin:0 auto 4px"></div>
+  <b>${esc(settings?.signature_name || 'Responsável Técnico')}</b>
+  ${settings?.signature_include_register === false ? '' : `<div>${esc(settings?.signature_register || '')}</div>`}
+</div>
+<div class="foot">${esc(settings?.report_footer_text || 'Rodapé do laudo não configurado.')}</div>
+</div></body></html>`
+  const w = window.open('', '_blank')
+  if (!w) { toast.error('Permita pop-ups para visualizar o laudo.'); return }
+  w.document.write(html)
+  w.document.close()
+}
+
 function ReportLayoutSection({ settings, setSettings }: { settings: any, setSettings: (s: any) => void }) {
   const handleUpload = async (e: React.ChangeEvent<HTMLInputElement>, field: string) => {
     const file = e.target.files?.[0]
     if (!file) return
 
     try {
-      const fileExt = file.name.split('.').pop()
-      const fileName = `${crypto.randomUUID()}.${fileExt}`
-      const filePath = `lab-logos/${fileName}`
-
-      const { error: uploadError } = await supabase.storage
-        .from('attendance-attachments')
-        .upload(filePath, file, {
-          cacheControl: '3600',
-          upsert: false
-        })
-
-      if (uploadError) throw uploadError
-
-      const { data: { publicUrl } } = supabase.storage
-        .from('attendance-attachments')
-        .getPublicUrl(filePath)
-
-      // Use a functional update and force a state refresh
-      setSettings((prev: any) => {
-        const next = { ...prev, [field]: publicUrl };
-        console.log("Updating settings with new logo URL:", field, publicUrl);
-        return next;
-      });
-
+      const publicUrl = await uploadLabAsset(file, 'lab-logos')
+      setSettings((prev: any) => ({ ...(prev || {}), [field]: publicUrl }))
       toast.success('Upload realizado com sucesso!');
     } catch (error) {
       console.error('Error uploading logo:', error)
       toast.error('Erro ao fazer upload da logo')
+    } finally {
+      e.target.value = ''
     }
   }
 
   const removeLogo = (field: string) => {
-    setSettings({ ...settings, [field]: null })
+    setSettings((prev: any) => ({ ...(prev || {}), [field]: null }))
   }
 
   return (
@@ -328,13 +377,7 @@ function ReportLayoutSection({ settings, setSettings }: { settings: any, setSett
           variant="outline" 
           size="sm" 
           className="gap-2"
-          onClick={() => {
-            if (typeof (window as any).openReportExample === 'function') {
-              (window as any).openReportExample(settings);
-            } else {
-              toast.error('Erro ao abrir visualização. Tente novamente.');
-            }
-          }}
+          onClick={() => openReportExample(settings)}
         >
           <FileText className="h-4 w-4" /> Gerar laudo de exemplo
         </Button>
@@ -343,6 +386,7 @@ function ReportLayoutSection({ settings, setSettings }: { settings: any, setSett
       <p className="text-xs text-muted-foreground -mt-4">
         Título, subtítulo, logos e marca d'água aparecem no topo de cada página do PDF. Use o botão acima para visualizar sem salvar.
       </p>
+
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <div className="space-y-2">
