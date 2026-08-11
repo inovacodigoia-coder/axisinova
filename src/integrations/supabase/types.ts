@@ -857,6 +857,125 @@ export type Database = {
           },
         ]
       }
+      lab_exam_results: {
+        Row: {
+          company_id: string
+          created_at: string
+          exam_catalog_id: string | null
+          exam_code: string | null
+          exam_name: string | null
+          exam_ref: string
+          id: string
+          notes: string | null
+          order_id: string | null
+          patient_id: string | null
+          patient_name: string | null
+          protocol: string | null
+          released_at: string | null
+          released_by: string | null
+          status: string
+          typed_at: string | null
+          typed_by: string | null
+          updated_at: string
+          version: number
+        }
+        Insert: {
+          company_id: string
+          created_at?: string
+          exam_catalog_id?: string | null
+          exam_code?: string | null
+          exam_name?: string | null
+          exam_ref: string
+          id?: string
+          notes?: string | null
+          order_id?: string | null
+          patient_id?: string | null
+          patient_name?: string | null
+          protocol?: string | null
+          released_at?: string | null
+          released_by?: string | null
+          status?: string
+          typed_at?: string | null
+          typed_by?: string | null
+          updated_at?: string
+          version?: number
+        }
+        Update: {
+          company_id?: string
+          created_at?: string
+          exam_catalog_id?: string | null
+          exam_code?: string | null
+          exam_name?: string | null
+          exam_ref?: string
+          id?: string
+          notes?: string | null
+          order_id?: string | null
+          patient_id?: string | null
+          patient_name?: string | null
+          protocol?: string | null
+          released_at?: string | null
+          released_by?: string | null
+          status?: string
+          typed_at?: string | null
+          typed_by?: string | null
+          updated_at?: string
+          version?: number
+        }
+        Relationships: []
+      }
+      lab_result_values: {
+        Row: {
+          company_id: string
+          created_at: string
+          id: string
+          parameter_key: string
+          parameter_name: string | null
+          reference: string | null
+          result_id: string
+          sort_order: number | null
+          status: string | null
+          unit: string | null
+          updated_at: string
+          value: string | null
+        }
+        Insert: {
+          company_id: string
+          created_at?: string
+          id?: string
+          parameter_key: string
+          parameter_name?: string | null
+          reference?: string | null
+          result_id: string
+          sort_order?: number | null
+          status?: string | null
+          unit?: string | null
+          updated_at?: string
+          value?: string | null
+        }
+        Update: {
+          company_id?: string
+          created_at?: string
+          id?: string
+          parameter_key?: string
+          parameter_name?: string | null
+          reference?: string | null
+          result_id?: string
+          sort_order?: number | null
+          status?: string | null
+          unit?: string | null
+          updated_at?: string
+          value?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "lab_result_values_result_id_fkey"
+            columns: ["result_id"]
+            isOneToOne: false
+            referencedRelation: "lab_exam_results"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       lab_settings: {
         Row: {
           company_id: string
