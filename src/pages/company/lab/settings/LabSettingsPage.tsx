@@ -32,11 +32,9 @@ import {
   Edit2,
   Info,
   Loader2,
-  Globe,
   FileText,
   X
 } from 'lucide-react'
-import { LabOriginsSettings } from '@/components/lab/settings/LabOriginsSettings'
 import { cn } from '@/lib/utils'
 import { toast } from 'sonner'
 import { supabase } from '@/integrations/supabase/client'
@@ -116,7 +114,6 @@ export default function LabSettingsPage() {
           <NavItem active={activeTab === 'tiss'} onClick={() => setActiveTab('tiss')} icon={<ShieldCheck className="h-4 w-4" />} label="Configurações TISS" />
           <NavItem active={activeTab === 'signature'} onClick={() => setActiveTab('signature')} icon={<Signature className="h-4 w-4" />} label="Assinatura Digital" />
           <NavItem active={activeTab === 'printer'} onClick={() => setActiveTab('printer')} icon={<Printer className="h-4 w-4" />} label="Impressora / Etiqueta" />
-          <NavItem active={activeTab === 'origins'} onClick={() => setActiveTab('origins')} icon={<Globe className="h-4 w-4" />} label="Origens" />
           <NavItem active={activeTab === 'report-layout'} onClick={() => setActiveTab('report-layout')} icon={<FileText className="h-4 w-4" />} label="Layout do Laudo" />
           
           <p className="px-3 py-2 mt-4 text-[10px] font-bold text-muted-foreground uppercase tracking-wider">Técnico</p>
@@ -147,7 +144,7 @@ export default function LabSettingsPage() {
                 <TISSSection />
               </div>
               <div className={activeTab === 'signature' ? 'block' : 'hidden'}>
-                <SignatureSection />
+                <SignatureSection settings={settings} setSettings={setSettings} />
               </div>
               <div className={activeTab === 'security' ? 'block' : 'hidden'}>
                 <SecuritySection />
@@ -169,9 +166,6 @@ export default function LabSettingsPage() {
               </div>
               <div className={activeTab === 'collection-reasons' ? 'block' : 'hidden'}>
                 <CollectionReasonsSection />
-              </div>
-              <div className={activeTab === 'origins' ? 'block' : 'hidden'}>
-                <LabOriginsSettings />
               </div>
               <div className={activeTab === 'report-layout' ? 'block' : 'hidden'}>
                 <ReportLayoutSection settings={settings} setSettings={setSettings} />
@@ -416,7 +410,7 @@ function ReportLayoutSection({ settings, setSettings }: { settings: any, setSett
               {settings?.report_logo_primary_url ? (
                 <img 
                   key={settings.report_logo_primary_url}
-                  src={`${settings.report_logo_primary_url}?t=${new Date().getTime()}`} 
+                  src={settings.report_logo_primary_url} 
                   alt="Logo Principal" 
                   className="h-full w-full object-contain"
                   onLoad={() => console.log("Primary logo loaded:", settings.report_logo_primary_url)}
@@ -446,7 +440,7 @@ function ReportLayoutSection({ settings, setSettings }: { settings: any, setSett
               {settings?.report_logo_secondary_url ? (
                 <img 
                   key={settings.report_logo_secondary_url}
-                  src={`${settings.report_logo_secondary_url}?t=${new Date().getTime()}`} 
+                  src={settings.report_logo_secondary_url} 
                   alt="Logo Secundário" 
                   className="h-full w-full object-contain"
                   onLoad={() => console.log("Secondary logo loaded:", settings.report_logo_secondary_url)}
