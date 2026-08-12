@@ -167,8 +167,9 @@ export default function SystemSettingsPage() {
                     try {
                       await saveDevAccessConfig(next)
                       toast.success(next.enabled ? 'Painel ativado na tela de login' : 'Painel desativado na tela de login')
-                    } catch {
-                      toast.error('Não foi possível salvar. Verifique se você é super admin.')
+                    } catch (err) {
+                      console.error('Erro ao salvar configuração:', err)
+                      toast.error('Não foi possível salvar. Verifique sua conexão e se você é super admin.')
                     }
                   }}
                   className="h-5 w-10 rounded-full accent-[hsl(var(--primary))]"
