@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { Card } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { 
@@ -15,13 +15,14 @@ import {
   MoreVertical,
   ChevronRight,
   User,
-  ExternalLink
+  ExternalLink,
+  Calendar as CalendarIcon
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { cn } from '@/lib/utils';
-import { LabReport } from '@/types/lab.types';
+import { LabReport, LabAttendanceOrder } from '@/types/lab.types';
 import PDFPreviewModal from '@/components/lab/PDFPreviewModal';
 import DeliveryTrackingModal from '@/components/lab/DeliveryTrackingModal';
 import EmailReportModal from '@/components/lab/EmailReportModal';
@@ -33,89 +34,69 @@ import {
   DropdownMenuTrigger,
   DropdownMenuSeparator
 } from "@/components/ui/dropdown-menu";
-
-const MOCK_REPORTS: LabReport[] = [
-  {
-    id: '1',
-    protocol: '20260622-714-66',
-    patientId: 'p1',
-    patientName: 'PACIENTE TESTE',
-    patientBirthDate: '1989-02-18',
-    patientGender: 'M',
-    date: '2026-06-22',
-    doctorName: 'Dr. Carlos Lima',
-    doctorCRM: '8495/RN',
-    status: 'liberado',
-    examsCount: '4/4 ✅',
-    exams: [
-      {
-        examId: 'e1',
-        name: 'ALBUMINA',
-        material: 'Soro',
-        results: [
-          { parameterName: 'Albumina', value: '4', unit: 'g/dL', referenceRange: '3,5 - 5,2', status: 'normal' }
-        ]
-      }
-    ],
-    deliveryStatus: 'not_delivered'
-  },
-  {
-    id: '2',
-    protocol: '20260716-360-80',
-    patientId: 'p2',
-    patientName: 'JOÃO DA SILVA',
-    patientBirthDate: '1975-05-10',
-    patientGender: 'M',
-    date: '2026-07-16',
-    doctorName: 'Dra. Bruna Baioni',
-    doctorCRM: '12345/SP',
-    status: 'pending',
-    examsCount: '2/4 ⏳',
-    exams: [],
-    deliveryStatus: 'not_delivered'
-  },
-  {
-    id: '3',
-    protocol: '20260625-888-12',
-    patientId: 'p3',
-    patientName: 'MARIA OLIVEIRA',
-    patientBirthDate: '1992-11-25',
-    patientGender: 'F',
-    date: '2026-06-25',
-    doctorName: 'Dr. Ricardo Santos',
-    doctorCRM: '9988/RJ',
-    status: 'retificado',
-    examsCount: '3/3 ✅',
-    exams: [],
-    deliveryStatus: 'delivered'
-  }
-];
+import { useAttendanceCadastro } from '@/hooks/useAttendanceCadastro';
+import { format, differenceInYears } from 'date-fns';
 
 export default function LabReportsPage() {
+  const { orders, loading: ordersLoading } = useAttendanceCadastro();
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
-  const [selectedReportId, setSelectedReportId] = useState<string | null>(null);
+  const [selectedReport, setSelectedReport] = useState<any | null>(null);
   const [showPreview, setShowPreview] = useState(false);
   const [showDelivery, setShowDelivery] = useState(false);
   const [showEmail, setShowEmail] = useState(false);
   const [filterStatus, setFilterStatus] = useState<string>('all');
 
   useEffect(() => {
-    const timer = setTimeout(() => setLoading(false), 800);
-    return () => clearTimeout(timer);
-  }, []);
+    if (!ordersLoading) {
+      const timer = setTimeout(() => setLoading(false), 500);
+      return () => clearTimeout(timer);
+    }
+  }, [ordersLoading]);
 
-  const reports = MOCK_REPORTS.filter(report => {
-    const matchesSearch = report.patientName.toLowerCase().includes(search.toLowerCase()) || 
-                          report.protocol.includes(search);
-    const matchesStatus = filterStatus === 'all' || report.status === filterStatus;
-    return matchesSearch && matchesStatus;
-  });
+  // Transform attendance_orders into LabReports
+  const reports = useMemo(() => {
+    return (orders || [])
+      .filter(order => order.examMode === 'lab')
+      .map(order => {
+        const labOrder = order as unknown as LabAttendanceOrder;
+        const exams = labOrder.labGuides?.flatMap(g => g.exams || []) || [];
+        const totalExams = exams.length;
+        const releasedExams = exams.filter(e => e.status === 'released' || e.status === 'liberado').length;
+        
+        // Map status
+        let reportStatus: 'liberado' | 'pending' | 'retificado' | 'parcial' = 'pending';
+        if (releasedExams > 0 && releasedExams < totalExams) reportStatus = 'parcial';
+        else if (releasedExams === totalExams && totalExams > 0) reportStatus = 'liberado';
+        else if ((order.status as string) === 'retificado') reportStatus = 'retificado';
 
-  const selectedReport = MOCK_REPORTS.find(r => r.id === selectedReportId);
+        return {
+          id: order.id,
+          protocol: order.protocol || order.orderNumber,
+          patientId: order.patientId,
+          patientName: order.patientName,
+          patientBirthDate: order.patientBirthDate || '',
+          patientGender: (order.patientGender as any) === 'male' ? 'M' : (order.patientGender as any) === 'female' ? 'F' : 'M',
+          date: order.registeredAt,
+          doctorName: order.doctorName || order.requestingDoctor || '—',
+          doctorCRM: order.doctorCRM || '',
+          status: reportStatus,
+          examsCount: `${releasedExams}/${totalExams} ${releasedExams === totalExams ? '✅' : '⏳'}`,
+          exams: exams,
+          deliveryStatus: (order as any).deliveryStatus || 'not_delivered',
+          rawOrder: order
+        };
+      })
+      .filter(report => {
+        const matchesSearch = report.patientName.toLowerCase().includes(search.toLowerCase()) || 
+                              report.protocol.includes(search);
+        const matchesStatus = filterStatus === 'all' || report.status === filterStatus;
+        return matchesSearch && matchesStatus;
+      });
+  }, [orders, search, filterStatus]);
 
-  const handlePreview = (id: string) => {
-    setSelectedReportId(id);
+  const handlePreview = (report: any) => {
+    setSelectedReport(report.rawOrder);
     setShowPreview(true);
   };
 
@@ -123,8 +104,9 @@ export default function LabReportsPage() {
     toast.success("Download iniciado");
   };
 
-  const handleEmail = (id: string) => {
-    toast.success("E-mail enviado com sucesso");
+  const handleEmail = (report: any) => {
+    setSelectedReport(report.rawOrder);
+    setShowEmail(true);
   };
 
   const getStatusBadge = (status: string) => {
@@ -133,6 +115,8 @@ export default function LabReportsPage() {
         return <Badge className="bg-emerald-500 text-white border-none">● Liberado</Badge>;
       case 'pending':
         return <Badge variant="outline" className="text-amber-600 border-amber-200 bg-amber-50">● Pendente</Badge>;
+      case 'parcial':
+        return <Badge className="bg-blue-500 text-white border-none">● Parcial</Badge>;
       case 'retificado':
         return <Badge className="bg-orange-500 text-white border-none">● Retificado</Badge>;
       default:
@@ -165,7 +149,7 @@ export default function LabReportsPage() {
           />
         </div>
         <div className="flex gap-2">
-          {['all', 'pending', 'liberado', 'retificado'].map((status) => (
+          {['all', 'pending', 'parcial', 'liberado', 'retificado'].map((status) => (
             <Button
               key={status}
               variant={filterStatus === status ? "default" : "outline"}
@@ -219,7 +203,9 @@ export default function LabReportsPage() {
                     <td className="px-4 py-4">
                       <div className="flex flex-col">
                         <span className="font-bold">{report.patientName}</span>
-                        <span className="text-[10px] text-muted-foreground">{new Date().getFullYear() - new Date(report.patientBirthDate).getFullYear()} anos • {report.patientGender === 'M' ? 'Masc' : 'Fem'}</span>
+                        <span className="text-[10px] text-muted-foreground">
+                          {report.patientBirthDate ? `${differenceInYears(new Date(), new Date(report.patientBirthDate))} anos` : 'Idade não inf.'} • {report.patientGender === 'M' ? 'Masc' : 'Fem'}
+                        </span>
                       </div>
                     </td>
                     <td className="px-4 py-4 text-muted-foreground">{new Date(report.date).toLocaleDateString('pt-BR')}</td>
@@ -232,7 +218,7 @@ export default function LabReportsPage() {
                     <td className="px-4 py-4">{getStatusBadge(report.status)}</td>
                     <td className="px-4 py-4 text-right">
                       <div className="flex items-center justify-end gap-1">
-                        <Button variant="ghost" size="icon" className="h-8 w-8 text-primary hover:text-primary hover:bg-primary/10" onClick={() => handlePreview(report.id)}>
+                        <Button variant="ghost" size="icon" className="h-8 w-8 text-primary hover:text-primary hover:bg-primary/10" onClick={() => handlePreview(report)}>
                           <Eye className="h-4 w-4" />
                         </Button>
                         <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-foreground" onClick={() => handleDownload(report.id)}>
@@ -247,10 +233,7 @@ export default function LabReportsPage() {
                           </DropdownMenuTrigger>
                           <DropdownMenuContent align="end" className="w-48">
                             <DropdownMenuItem 
-                              onClick={() => {
-                                setSelectedReportId(report.id);
-                                setShowEmail(true);
-                              }} 
+                              onClick={() => handleEmail(report)} 
                               className="gap-2"
                             >
                               <Mail className="h-4 w-4" /> Enviar por E-mail
@@ -265,7 +248,7 @@ export default function LabReportsPage() {
                             <DropdownMenuItem 
                               className="gap-2"
                               onClick={() => {
-                                setSelectedReportId(report.id);
+                                setSelectedReport(report.rawOrder);
                                 setShowDelivery(true);
                               }}
                             >
