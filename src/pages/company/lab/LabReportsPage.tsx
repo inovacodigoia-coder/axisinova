@@ -42,7 +42,7 @@ import { useAuth } from '@/context/AuthContext';
   /* Do not make any visual modifications. The phrases I write are commands to understand what I want, not to be written down. Understand their content well, then execute what is required.
                                         
                                             
-                                            I have approved the plan */
+                                            Verificar a rota app/lab/laudos os modal Visualização do Laudo e os outros botões de ações não está funcionando. */
 export default function LabReportsPage() {
   const { orders, loading: ordersLoading } = useAttendanceCadastro();
   const { user } = useAuth();
@@ -141,8 +141,11 @@ export default function LabReportsPage() {
     setShowPreview(true);
   };
 
-  const handleDownload = (id: string) => {
-    toast.success("Download iniciado");
+  const handleDownload = (report: any) => {
+    setSelectedReport(report.rawOrder);
+    setShowPreview(true);
+    // The modal itself has a download button that calls printLaudoOnly
+    toast.success("Abrindo prévia para download");
   };
 
   const handleEmail = (report: any) => {
@@ -307,36 +310,46 @@ export default function LabReportsPage() {
         </div>
       </Card>
 
-      {selectedReport && (
+      {showPreview && selectedReport && (
         <PDFPreviewModal
           isOpen={showPreview}
-          onClose={() => setShowPreview(false)}
+          onClose={() => {
+            setShowPreview(false);
+            setSelectedReport(null);
+          }}
           order={selectedReport as any}
-          onDownload={() => handleDownload(selectedReport.id)}
+          onDownload={() => console.log('Download triggered')}
         />
       )}
 
-      {selectedReport && (
+      {showDelivery && selectedReport && (
         <DeliveryTrackingModal
           isOpen={showDelivery}
-          onClose={() => setShowDelivery(false)}
+          onClose={() => {
+            setShowDelivery(false);
+            setSelectedReport(null);
+          }}
           onConfirm={(data) => {
             toast.success('Entrega registrada com sucesso!');
-            console.log('Delivery data:', data);
             setShowDelivery(false);
+            setSelectedReport(null);
           }}
           patientName={selectedReport.patientName}
           protocol={selectedReport.protocol}
         />
       )}
 
-      {selectedReport && (
+      {showEmail && selectedReport && (
         <EmailReportModal
           isOpen={showEmail}
-          onClose={() => setShowEmail(false)}
+          onClose={() => {
+            setShowEmail(false);
+            setSelectedReport(null);
+          }}
           onSend={(data) => {
             toast.success(`Laudo enviado para ${data.email}`);
             setShowEmail(false);
+            setSelectedReport(null);
           }}
           patientName={selectedReport.patientName}
           protocol={selectedReport.protocol}
