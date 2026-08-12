@@ -123,7 +123,11 @@ function StandardTable({ rows }: { rows: any[] }) {
           <tr key={rIdx} className="align-top">
             <td className="py-[3px] text-zinc-800">{res.parameterName || res.parameterCode}</td>
             <td className="py-[3px] font-mono text-zinc-900 whitespace-nowrap">
-              {res.value || '—'} {res.unit && <span className="text-zinc-600">{res.unit}</span>}
+              {res.value && res.value !== '—' ? (
+                <>
+                  <span className="font-bold">{res.value}</span> {res.unit && <span className="text-zinc-600 ml-1">{res.unit}</span>}
+                </>
+              ) : '—'}
             </td>
             <td className="py-[3px] whitespace-nowrap">
               <Flag flag={res.flag} />
@@ -154,12 +158,12 @@ function DifferentialTable({ paired }: { paired: PairedRow[] }) {
         {paired.map((p, idx) => (
           <tr key={idx} className="align-top">
             <td className="py-[3px] text-zinc-800">{p.label}</td>
-            <td className="py-[3px] font-mono text-zinc-900 whitespace-nowrap">{p.pct?.value || '—'}</td>
+            <td className="py-[3px] font-mono text-zinc-900 whitespace-nowrap">{p.pct?.value && p.pct.value !== '—' ? <span className="font-bold">{p.pct.value}</span> : '—'}</td>
             <td className="py-[3px] whitespace-nowrap">
               <Flag flag={p.pct?.flag} />
             </td>
             <td className="py-[3px] text-zinc-600">{p.pct?.referenceRange || '—'}</td>
-            <td className="py-[3px] font-mono text-zinc-900 whitespace-nowrap">{p.abs?.value || '—'}</td>
+            <td className="py-[3px] font-mono text-zinc-900 whitespace-nowrap">{p.abs?.value && p.abs.value !== '—' ? <span className="font-bold">{p.abs.value}</span> : '—'}</td>
             <td className="py-[3px] whitespace-nowrap">
               <Flag flag={p.abs?.flag} />
             </td>

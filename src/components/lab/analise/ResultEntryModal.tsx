@@ -465,7 +465,10 @@ export function ResultEntryModal({
       };
 
       const exams = patient.exams
-        .filter((e: any) => examStatuses[e.id] === 'digitized' || examStatuses[e.id] === 'released')
+        .filter((e: any) => {
+          const status = examStatuses[e.id] || e.status;
+          return status === 'digitized' || status === 'released' || status === 'liberado' || status === 'validated';
+        })
         .map((e: any) => {
           const catalogExam = findCatalogExam(catalogList, { examId: e.examId, code: e.code, name: e.name });
           const workbenchId = catalogExam?.workbench_id || e.workbenchId;
@@ -478,7 +481,7 @@ export function ResultEntryModal({
             methodology: catalogExam?.methodology || '',
             workbench: workbenchName,
             workbenchOrder: orderOfWorkbench(workbenchId, workbenchName || e.workbench),
-            status: examStatuses[e.id] === 'released' ? 'liberado' : 'waiting_approval',
+            status: (examStatuses[e.id] === 'released' || e.status === 'liberado' || e.status === 'validated') ? 'liberado' : 'waiting_approval',
             results: getParams(e).map((p: any) => {
               const value = getParamValue(e, p);
               const st = getResultStatus(value, p.reference || '');
