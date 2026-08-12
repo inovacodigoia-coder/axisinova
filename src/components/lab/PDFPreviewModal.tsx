@@ -113,13 +113,22 @@ export default function PDFPreviewModal({
               >
                 <LaudoDocument 
                   order={order}
+                  companyLogo={labSettings?.report_logo_primary_url || undefined}
+                  secondaryLogo={labSettings?.report_logo_secondary_url || undefined}
+                  laboratoryName={labSettings?.report_header_title || labSettings?.lab_name || undefined}
+                  laboratorySubtitle={labSettings?.report_header_subtitle || undefined}
+                  institutionalWarning={labSettings?.report_institutional_warning || undefined}
+                  footerText={labSettings?.report_footer_text || undefined}
                   technicalResponsible={{
-                    name: "Anderson Veríssimo O. Neto",
-                    register: "CRBM-RN-08453",
-                    role: "Biomédico"
+                    name: labSettings?.signature_name || labSettings?.responsible_name || "",
+                    register: labSettings?.signature_include_register === false
+                      ? ""
+                      : (labSettings?.signature_register || labSettings?.responsible_register || ""),
+                    signatureUrl: labSettings?.signature_image_url || undefined,
                   }}
                   isRetified={order.exams?.some(e => e.isRetificado)}
                 />
+
               </div>
             </div>
           </ScrollArea>
