@@ -191,7 +191,29 @@
   .print-receipt * { 
     visibility: visible !important; 
   }
+
+  /* Laudo: imprimir apenas o documento, sem modal/tela */
+  body.printing-laudo * {
+    visibility: hidden !important;
+  }
+  body.printing-laudo .laudo-print-area,
+  body.printing-laudo .laudo-print-area * {
+    visibility: visible !important;
+  }
+  body.printing-laudo .laudo-print-area {
+    position: absolute !important;
+    inset: 0 auto auto 0;
+    width: 100% !important;
+    transform: none !important;
+    box-shadow: none !important;
+    outline: none !important;
+    background: white !important;
+  }
+  body.printing-laudo .no-print {
+    display: none !important;
+  }
 }
+
 .corte-linha {
   border-top: 1px dashed currentColor;
   text-align: center;
