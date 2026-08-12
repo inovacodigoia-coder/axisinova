@@ -58,8 +58,8 @@ export default function SystemSettingsPage() {
     try {
       await saveDevAccessConfig(devConfig)
       toast.success('Acessos de teste salvos para todos os ambientes')
-    } catch {
-      toast.error('Não foi possível salvar. Verifique se você é super admin.')
+    } catch (err) {
+      toast.error(`Não foi possível salvar: ${err instanceof Error ? err.message : 'Verifique se você é super admin.'}`)
     } finally {
       setSavingDev(false)
     }
@@ -169,7 +169,7 @@ export default function SystemSettingsPage() {
                       toast.success(next.enabled ? 'Painel ativado na tela de login' : 'Painel desativado na tela de login')
                     } catch (err) {
                       console.error('Erro ao salvar configuração:', err)
-                      toast.error('Não foi possível salvar. Verifique sua conexão e se você é super admin.')
+                      toast.error(`Não foi possível salvar: ${err instanceof Error ? err.message : 'Verifique se você é super admin.'}`)
                     }
                   }}
                   className="h-5 w-10 rounded-full accent-[hsl(var(--primary))]"
