@@ -168,7 +168,7 @@ export default function LabAnalisePage() {
 
       return matchesSearch && matchesProtocol && matchesWorkbench && matchesOrigin && matchesPeriod;
     });
-  }, [orders, search, protocolSearch, selectedWorkbenches, selectedEstablishments, period, dateFrom, dateTo]);
+  }, [orders, search, protocolSearch, selectedWorkbenches, selectedEstablishments, selectedStatuses, period, dateFrom, dateTo]);
 
   // Agrupamento por protocolo para a lista lateral
   const groupedExams = useMemo(() => {
