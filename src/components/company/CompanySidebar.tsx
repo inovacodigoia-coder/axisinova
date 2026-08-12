@@ -240,6 +240,7 @@ export function CompanySidebar({ mobileOpen, onMobileClose, collapsed = false, o
             <div className="space-y-0.5">
               {section.items.map((item) => {
                 const hasAccess = !item.module || canAccess(item.module, 'view')
+                if (!hasAccess) return null
                 const active = location.pathname.startsWith(item.path)
                 const Icon = ICON_MAP[item.icon] || Home
 
@@ -251,26 +252,17 @@ export function CompanySidebar({ mobileOpen, onMobileClose, collapsed = false, o
                 const link = (
                   <NavLink
                     key={item.path}
-                    to={hasAccess ? item.path : '#'}
-                    onClick={(e) => {
-                      if (!hasAccess) { e.preventDefault(); return }
+                    to={item.path}
+                    onClick={() => {
                       onMobileClose?.()
                     }}
                     className={cn(
                       'flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-all duration-200',
-                      !hasAccess && 'opacity-40 cursor-not-allowed',
-                      active && hasAccess
-                        ? 'gradient-bg text-white shadow-lg'
-                        : hasAccess
-                          ? 'text-white/60 hover:bg-white/[0.06] hover:text-white'
-                          : 'text-white/40'
+                      active && 'gradient-bg text-white shadow-lg',
+                      !active && 'text-white/60 hover:bg-white/[0.06] hover:text-white'
                     )}
                   >
-                    {hasAccess ? (
-                      <Icon className="h-5 w-5 shrink-0" />
-                    ) : (
-                      <Lock className="h-5 w-5 shrink-0" />
-                    )}
+                    <Icon className="h-5 w-5 shrink-0" />
                     {!collapsed && <span className="flex-1 truncate">{item.label}</span>}
                     {!collapsed && badge && (
                       <span className="bg-white/20 px-1.5 py-0.5 rounded-full text-[10px] font-bold">{badge}</span>
@@ -278,32 +270,6 @@ export function CompanySidebar({ mobileOpen, onMobileClose, collapsed = false, o
                   </NavLink>
                 )
 
-                if (!hasAccess && collapsed) {
-                  return (
-                    <Tooltip key={item.path}>
-                      <TooltipTrigger asChild>{link}</TooltipTrigger>
-                      <TooltipContent side="right">Seu perfil não tem acesso a este módulo</TooltipContent>
-                    </Tooltip>
-                  )
-                }
-
-                if (collapsed) {
-                  return (
-                    <Tooltip key={item.path}>
-                      <TooltipTrigger asChild>{link}</TooltipTrigger>
-                      <TooltipContent side="right">{item.label}</TooltipContent>
-                    </Tooltip>
-                  )
-                }
-
-                if (!hasAccess) {
-                  return (
-                    <Tooltip key={item.path}>
-                      <TooltipTrigger asChild>{link}</TooltipTrigger>
-                      <TooltipContent>Seu perfil não tem acesso a este módulo</TooltipContent>
-                    </Tooltip>
-                  )
-                }
 
                 return link
               })}
