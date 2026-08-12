@@ -348,6 +348,40 @@ export default function LabAnalisePage() {
                           </DropdownMenu>
                         </div>
 
+                        {/* Status */}
+                        <div className="col-span-2 space-y-1.5">
+                          <label className="text-[10px] font-bold uppercase text-muted-foreground ml-1">Status do Pedido</label>
+                          <div className="flex flex-wrap gap-2">
+                            {[
+                              { id: 'collection_done', label: 'Coleta Realizada' },
+                              { id: 'in_analysis', label: 'Em Análise' },
+                              { id: 'released', label: 'Liberado' },
+                              { id: 'concluded', label: 'Concluído' }
+                            ].map((status) => (
+                              <Badge
+                                key={status.id}
+                                variant={selectedStatuses.includes(status.id) ? "default" : "outline"}
+                                className={cn(
+                                  "cursor-pointer text-[10px] font-bold uppercase py-1 px-3 transition-all",
+                                  selectedStatuses.includes(status.id) 
+                                    ? "bg-primary text-white shadow-sm" 
+                                    : "bg-transparent text-muted-foreground hover:bg-muted"
+                                )}
+                                onClick={() => {
+                                  setSelectedStatuses(prev => 
+                                    prev.includes(status.id) 
+                                      ? prev.filter(s => s !== status.id) 
+                                      : [...prev, status.id]
+                                  );
+                                }}
+                              >
+                                {status.label}
+                                {selectedStatuses.includes(status.id) && <Check className="ml-1 h-3 w-3" />}
+                              </Badge>
+                            ))}
+                          </div>
+                        </div>
+
                         {/* Busca por Pedido */}
                         <div className="col-span-2 space-y-1.5">
                           <label className="text-[10px] font-bold uppercase text-muted-foreground ml-1">Protocolo</label>
