@@ -9,7 +9,7 @@ import type { Sector } from '@/types/permissions.types'
  */
 let sectors: Sector[] = [...MOCK_SECTORS]
 /** sectorId -> lista de userIds vinculados (Usuários do Setor) */
-let sectorUsers: Record<string, string[]> = JSON.parse(localStorage.getItem('axis_inova_sector_users') || '{}')
+let sectorUsers: Record<string, string[]> = {}
 const listeners = new Set<() => void>()
 
 function emit() {
@@ -55,7 +55,6 @@ export function getSectorUsers(): Record<string, string[]> {
 
 export function setSectorUsers(sectorId: string, userIds: string[]) {
   sectorUsers = { ...sectorUsers, [sectorId]: userIds }
-  localStorage.setItem('axis_inova_sector_users', JSON.stringify(sectorUsers))
   emit()
 }
 
