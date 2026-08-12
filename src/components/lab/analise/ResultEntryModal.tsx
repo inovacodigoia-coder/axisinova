@@ -329,8 +329,9 @@ export function ResultEntryModal({
   // Helper para resolver o status do pedido baseado nos exames
   const updateParentOrderStatus = async (orderId: string, patientExams: any[], currentStatuses: Record<string, string>) => {
     // Simulamos um objeto de pedido para o cálculo centralizado
-    const tempOrder = {
+    const tempOrder: any = {
       status: 'pending',
+      deliveryStatus: 'not_delivered',
       exams: patientExams.map(e => ({
         ...e,
         status: currentStatuses[e.id] || e.status,
