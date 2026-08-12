@@ -21,16 +21,16 @@ const ICON_MAP: Record<string, any> = {
 }
 
 
-interface NavSection {
+export interface NavSection {
   title: string
   items: { label: string; icon: string; path: string; module: SystemModule | null }[]
 }
 
-const NAV_SECTIONS: NavSection[] = [
+export const NAV_SECTIONS: NavSection[] = [
   {
     title: 'PRINCIPAL',
     items: [
-      { label: 'Dashboard', icon: 'Home', path: '/app/dashboard', module: null },
+      { label: 'Dashboard', icon: 'Home', path: '/app/dashboard', module: 'dashboard' },
     ],
   },
   {
@@ -77,76 +77,76 @@ const NAV_SECTIONS: NavSection[] = [
   {
     title: 'SETOR TÉCNICO',
     items: [
-      { label: 'Coleta', icon: 'FlaskConical', path: '/app/lab/coleta', module: 'reception' },
-      { label: 'Mapa de Trabalho', icon: 'FileText', path: '/app/lab/mapa', module: 'reception' },
-      { label: 'Análise', icon: 'Database', path: '/app/lab/analise', module: 'reception' },
-      { label: 'Validação', icon: 'ShieldCheck', path: '/app/lab/validacao', module: 'reception' },
-      { label: 'Laudos', icon: 'FileText', path: '/app/lab/laudos', module: 'reception' },
+      { label: 'Coleta', icon: 'FlaskConical', path: '/app/lab/coleta', module: 'lab_technical' },
+      { label: 'Mapa de Trabalho', icon: 'FileText', path: '/app/lab/mapa', module: 'lab_technical' },
+      { label: 'Análise', icon: 'Database', path: '/app/lab/analise', module: 'lab_technical' },
+      { label: 'Validação', icon: 'ShieldCheck', path: '/app/lab/validacao', module: 'lab_technical' },
+      { label: 'Laudos', icon: 'FileText', path: '/app/lab/laudos', module: 'lab_technical' },
     ],
   },
   {
     title: 'CADASTROS LABORATÓRIO',
     items: [
-      { label: 'Catálogo de Exames', icon: 'FlaskConical', path: '/app/cadastros/catalogo', module: 'registers' },
-      { label: 'Unidades de Medida', icon: 'Ruler', path: '/app/configuracoes/laboratorio?tab=units', module: 'settings' },
-      { label: 'Metodologias', icon: 'Beaker', path: '/app/configuracoes/laboratorio?tab=methods', module: 'settings' },
-      { label: 'Bancadas', icon: 'Layout', path: '/app/configuracoes/laboratorio?tab=workbenches', module: 'settings' },
-      { label: 'Equipamentos', icon: 'Monitor', path: '/app/cadastros/equipamentos', module: 'registers' },
-      { label: 'Abreviaturas', icon: 'FileText', path: '/app/configuracoes/abreviaturas', module: 'settings' },
+      { label: 'Catálogo de Exames', icon: 'FlaskConical', path: '/app/cadastros/catalogo', module: 'lab_registers' },
+      { label: 'Unidades de Medida', icon: 'Ruler', path: '/app/configuracoes/laboratorio?tab=units', module: 'lab_registers' },
+      { label: 'Metodologias', icon: 'Beaker', path: '/app/configuracoes/laboratorio?tab=methods', module: 'lab_registers' },
+      { label: 'Bancadas', icon: 'Layout', path: '/app/configuracoes/laboratorio?tab=workbenches', module: 'lab_registers' },
+      { label: 'Equipamentos', icon: 'Monitor', path: '/app/cadastros/equipamentos', module: 'lab_registers' },
+      { label: 'Abreviaturas', icon: 'FileText', path: '/app/configuracoes/abreviaturas', module: 'lab_registers' },
     ],
   },
   {
     title: 'FINANCEIRO LABORATÓRIO',
     items: [
-      { label: 'Dashboard Fin.', icon: 'Layout', path: '/app/financeiro', module: 'billing' },
-      { label: 'Contas a Receber', icon: 'DollarSign', path: '/app/financeiro/receber', module: 'billing' },
-      { label: 'Contas a Pagar', icon: 'DollarSign', path: '/app/financeiro/pagar', module: 'billing' },
-      { label: 'Faturamento TISS', icon: 'FileText', path: '/app/financeiro/faturamento', module: 'billing' },
-      { label: 'Tabelas de Preços', icon: 'Database', path: '/app/financeiro/tabelas', module: 'billing' },
-      { label: 'Centros de Custo', icon: 'PieChart', path: '/app/financeiro/centros-custo', module: 'billing' },
-      { label: 'Indicadores', icon: 'TrendingUp', path: '/app/financeiro/indicadores', module: 'billing' },
+      { label: 'Dashboard Fin.', icon: 'Layout', path: '/app/financeiro', module: 'finance' },
+      { label: 'Contas a Receber', icon: 'DollarSign', path: '/app/financeiro/receber', module: 'finance' },
+      { label: 'Contas a Pagar', icon: 'DollarSign', path: '/app/financeiro/pagar', module: 'finance' },
+      { label: 'Faturamento TISS', icon: 'FileText', path: '/app/financeiro/faturamento', module: 'finance' },
+      { label: 'Tabelas de Preços', icon: 'Database', path: '/app/financeiro/tabelas', module: 'finance' },
+      { label: 'Centros de Custo', icon: 'PieChart', path: '/app/financeiro/centros-custo', module: 'finance' },
+      { label: 'Indicadores', icon: 'TrendingUp', path: '/app/financeiro/indicadores', module: 'finance' },
     ],
   },
   {
     title: 'ESTOQUE E ALMOXARIFADO',
     items: [
-      { label: 'Dashboard Estoque', icon: 'Warehouse', path: '/app/estoque', module: 'settings' },
-      { label: 'Itens de Estoque', icon: 'Package', path: '/app/estoque/itens', module: 'settings' },
-      { label: 'Gestão de Lotes', icon: 'Database', path: '/app/estoque/lotes', module: 'settings' },
-      { label: 'Movimentações', icon: 'RefreshCw', path: '/app/estoque/movimentacoes', module: 'settings' },
-      { label: 'Fornecedores', icon: 'Building2', path: '/app/estoque/fornecedores', module: 'settings' },
-      { label: 'Relatórios Estoque', icon: 'BarChart3', path: '/app/estoque/relatorios', module: 'settings' },
+      { label: 'Dashboard Estoque', icon: 'Warehouse', path: '/app/estoque', module: 'inventory' },
+      { label: 'Itens de Estoque', icon: 'Package', path: '/app/estoque/itens', module: 'inventory' },
+      { label: 'Gestão de Lotes', icon: 'Database', path: '/app/estoque/lotes', module: 'inventory' },
+      { label: 'Movimentações', icon: 'RefreshCw', path: '/app/estoque/movimentacoes', module: 'inventory' },
+      { label: 'Fornecedores', icon: 'Building2', path: '/app/estoque/fornecedores', module: 'inventory' },
+      { label: 'Relatórios Estoque', icon: 'BarChart3', path: '/app/estoque/relatorios', module: 'inventory' },
     ],
   },
   {
     title: 'FARMÁCIA HOSPITALAR',
     items: [
-      { label: 'Dashboard Farmácia', icon: 'Layout', path: '/app/farmacia', module: 'settings' },
-      { label: 'Dispensação', icon: 'Pill', path: '/app/farmacia/dispensacao', module: 'settings' },
-      { label: 'Prescrições', icon: 'ClipboardList', path: '/app/farmacia/prescricoes', module: 'settings' },
-      { label: 'Medicamentos', icon: 'Pill', path: '/app/farmacia/medicamentos', module: 'settings' },
-      { label: 'Estoque Farmácia', icon: 'Warehouse', path: '/app/farmacia/estoque', module: 'settings' },
-      { label: 'Relatórios Farmácia', icon: 'BarChart3', path: '/app/farmacia/relatorios', module: 'settings' },
+      { label: 'Dashboard Farmácia', icon: 'Layout', path: '/app/farmacia', module: 'pharmacy' },
+      { label: 'Dispensação', icon: 'Pill', path: '/app/farmacia/dispensacao', module: 'pharmacy' },
+      { label: 'Prescrições', icon: 'ClipboardList', path: '/app/farmacia/prescricoes', module: 'pharmacy' },
+      { label: 'Medicamentos', icon: 'Pill', path: '/app/farmacia/medicamentos', module: 'pharmacy' },
+      { label: 'Estoque Farmácia', icon: 'Warehouse', path: '/app/farmacia/estoque', module: 'pharmacy' },
+      { label: 'Relatórios Farmácia', icon: 'BarChart3', path: '/app/farmacia/relatorios', module: 'pharmacy' },
     ],
   },
   {
     title: 'SOROTECA',
     items: [
-      { label: 'Dashboard Soroteca', icon: 'Layout', path: '/app/soroteca', module: 'settings' },
-      { label: 'Entrada / Armazenar', icon: 'ArrowRight', path: '/app/soroteca/entrada', module: 'settings' },
-      { label: 'Consulta Amostras', icon: 'Search', path: '/app/soroteca/consulta', module: 'settings' },
-      { label: 'Estrutura Física', icon: 'Database', path: '/app/soroteca/estrutura', module: 'settings' },
-      { label: 'Descarte Amostras', icon: 'Package', path: '/app/soroteca/descarte', module: 'settings' },
-      { label: 'Rastreabilidade', icon: 'FileText', path: '/app/soroteca/rastreabilidade', module: 'settings' },
-      { label: 'Config. Soroteca', icon: 'Settings', path: '/app/soroteca/configuracoes', module: 'settings' },
+      { label: 'Dashboard Soroteca', icon: 'Layout', path: '/app/soroteca', module: 'serotheque' },
+      { label: 'Entrada / Armazenar', icon: 'ArrowRight', path: '/app/soroteca/entrada', module: 'serotheque' },
+      { label: 'Consulta Amostras', icon: 'Search', path: '/app/soroteca/consulta', module: 'serotheque' },
+      { label: 'Estrutura Física', icon: 'Database', path: '/app/soroteca/estrutura', module: 'serotheque' },
+      { label: 'Descarte Amostras', icon: 'Package', path: '/app/soroteca/descarte', module: 'serotheque' },
+      { label: 'Rastreabilidade', icon: 'FileText', path: '/app/soroteca/rastreabilidade', module: 'serotheque' },
+      { label: 'Config. Soroteca', icon: 'Settings', path: '/app/soroteca/configuracoes', module: 'serotheque' },
     ],
   },
   {
     title: 'PORTAIS EXTERNOS',
     items: [
-      { label: 'Gestão de Portais', icon: 'Users', path: '/app/portais', module: 'settings' },
-      { label: 'Notificações', icon: 'Bell', path: '/app/configuracoes/notificacoes', module: 'settings' },
-      { label: 'Relatórios Externos', icon: 'BarChart3', path: '/app/portais/relatorios', module: 'bi' },
+      { label: 'Gestão de Portais', icon: 'Users', path: '/app/portais', module: 'portals' },
+      { label: 'Notificações', icon: 'Bell', path: '/app/configuracoes/notificacoes', module: 'portals' },
+      { label: 'Relatórios Externos', icon: 'BarChart3', path: '/app/portais/relatorios', module: 'portals' },
     ],
   },
 
