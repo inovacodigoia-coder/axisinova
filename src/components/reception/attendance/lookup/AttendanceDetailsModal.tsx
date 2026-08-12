@@ -1,6 +1,7 @@
 import { useState, useMemo } from 'react'
 import { Dialog, DialogContent } from '@/components/ui/dialog'
 import { X, Printer, Pencil, Trash2, Plus, ArrowLeft, MoreVertical, CreditCard, Droplets, ShieldCheck, DollarSign, Calendar, Clock, MapPin, User, FileText, ChevronDown, History, BarChart3, Database, RefreshCw, Info, Smartphone, Calculator, Loader2 } from 'lucide-react'
+import { useLabSettings } from '@/hooks/useLabSettings'
 import { Button } from '@/components/ui/button'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import type { AttendanceOrder } from '@/types/attendance-cadastro.types'
@@ -58,6 +59,7 @@ export function AttendanceDetailsModal({ open, onClose, onOrderDeleted, order, p
   const [selectedTubes, setSelectedTubes] = useState<Set<string>>(new Set())
   const [isDeleting, setIsDeleting] = useState(false)
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
+  const { settings, isLoading: settingsLoading } = useLabSettings()
   const { toast } = useToast()
 
   const labOrder = order as LabAttendanceOrder;
@@ -829,11 +831,11 @@ export function AttendanceDetailsModal({ open, onClose, onOrderDeleted, order, p
             patientCPF: (order as any).patientCPF || patient?.cpf,
             serviceType: (order.serviceType as string) === 'lab' ? 'LABORATÓRIO' : 'CLÍNICA',
             unitName: (order as any).unitName || 'MATRIZ',
-            companyName: 'AXIS INOVA',
-            companyLogo: undefined,
-            companyAddress: 'Av. Afonso Pena, 952 - Tirol, Natal - Tel: (84) 4007-2595',
-            companyCNPJ: '00.000.000/0001-00',
-            companyPhone: '(84) 4007-2595',
+            companyName: settings?.lab_name || 'AXIS INOVA',
+            companyLogo: settings?.report_logo_primary_url || undefined,
+            companyAddress: settings?.address_street ? `${settings.address_street}, ${settings.address_number}${settings.address_complement ? ` · ${settings.address_complement}` : ''} · ${settings.address_district} · ${settings.address_city}/${settings.address_state}` : 'Av. Afonso Pena, 952 - Tirol, Natal - Tel: (84) 4007-2595',
+            companyCNPJ: settings?.cnpj || '00.000.000/0001-00',
+            companyPhone: settings?.phone || '(84) 4007-2595',
             registeredByName: order.registeredByName || 'Sistema',
             convenioName: order.convenioName || 'PARTICULAR',
             paymentType: order.paymentType === 'private' ? 'PARTICULAR' : 'CONVÊNIO',
