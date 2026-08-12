@@ -9,6 +9,7 @@ import type { LabAttendanceOrder } from '@/types/lab.types'
 import { TUBE_TYPES } from '@/types/lab.types'
 import { cn } from '@/lib/utils'
 import { AttendancePrintSelectionModal } from '../print/AttendancePrintSelectionModal'
+import PDFPreviewModal from '@/components/lab/PDFPreviewModal'
 import { AttendancePrintModal } from '../print/AttendancePrintModal'
 import {
   DropdownMenu,
@@ -36,6 +37,7 @@ interface AttendanceDetailsModalProps {
 
 export function AttendanceDetailsModal({ open, onClose, order, patient }: AttendanceDetailsModalProps) {
   const [printSelectionOpen, setPrintSelectionOpen] = useState(false)
+  const [reportPreviewOpen, setReportPreviewOpen] = useState(false)
   const [printModalOpen, setPrintModalOpen] = useState(false)
   const [printDoc, setPrintDoc] = useState<AttendanceControlDocument | null>(null)
   const [selectedPrinterOverride, setSelectedPrinterOverride] = useState<PrinterConfig | undefined>(undefined)
@@ -664,6 +666,13 @@ export function AttendanceDetailsModal({ open, onClose, order, patient }: Attend
         onConfirm={(result) => {
           console.log('Printing with result:', result);
           setPrintSelectionOpen(false);
+
+          // Check if "Laudo" was selected to show the specific preview modal
+          const laudoOption = result.options.find((o: any) => o.id === 'laudo' && o.enabled);
+          if (laudoOption) {
+            setReportPreviewOpen(true);
+            return; // Don't proceed to standard attendance receipts if laudo is the primary focus
+          }
           
           // Determine which vias to print based on selection
           const vias: ('patient' | 'establishment')[] = [];
@@ -767,6 +776,15 @@ export function AttendanceDetailsModal({ open, onClose, order, patient }: Attend
           autoPrint={true}
           overrideConfig={selectedPrinterOverride}
           vias={enabledVias}
+        />
+      )}
+
+      {reportPreviewOpen && (
+        <PDFPreviewModal
+          isOpen={reportPreviewOpen}
+          onClose={() => setReportPreviewOpen(false)}
+          order={labOrder}
+          onDownload={() => console.log('Download triggered')}
         />
       )}
 
