@@ -38,8 +38,25 @@ export default function ProfilesManagerPage() {
       </span>
     )},
     { key: 'actions', label: '', render: (p: Profile) => (
-      <button onClick={() => { setEditingProfile(p); setShowForm(true) }} className="rounded p-1 hover:bg-muted"><Eye className="h-4 w-4 text-muted-foreground" /></button>
+      <div className="flex items-center gap-1">
+        <button onClick={() => { setEditingProfile(p); setShowForm(true) }} className="rounded p-1 hover:bg-muted" title="Editar perfil"><Eye className="h-4 w-4 text-muted-foreground" /></button>
+        {canAccess('users', 'delete') && (
+          <button
+            onClick={() => {
+              if (!window.confirm(`Excluir o perfil "${p.name}"? Ele será removido dos setores vinculados.`)) return
+              removeProfile(p.id)
+              detachProfileFromSectors(p.id)
+              toast.success('Perfil excluído')
+            }}
+            className="rounded p-1 hover:bg-destructive/10"
+            title="Excluir perfil"
+          >
+            <Trash2 className="h-4 w-4 text-destructive" />
+          </button>
+        )}
+      </div>
     )},
+
   ]
 
   return (
