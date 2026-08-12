@@ -251,11 +251,11 @@ function SectorForm({ sector, profiles, companyId, onSave, onCancel }: { sector:
   const [deadlineProfiles, setDeadlineProfiles] = useState<Set<string>>(new Set(sector?.allowedDeadlineEditProfiles || []))
   const [moduleOverrides, setModuleOverrides] = useState<Record<string, boolean>>(sector?.moduleOverrides || {})
 
-  const handleToggleOverride = (mod: SystemModule, value: boolean | null) => {
+  const handleToggleOverride = (path: string, value: boolean | null) => {
     setModuleOverrides(prev => {
       const next = { ...prev }
-      if (value === null) delete next[mod]
-      else next[mod] = value
+      if (value === null) delete next[path]
+      else next[path] = value
       return next
     })
   }
