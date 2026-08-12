@@ -26,8 +26,10 @@ export default function PDFPreviewModal({
   onEmail,
   onShare
 }: PDFPreviewModalProps) {
+  const { settings: labSettings } = useLabSettings();
   const [zoom, setZoom] = React.useState(100);
   const [isFullscreen, setIsFullscreen] = React.useState(false);
+
 
   const handleZoomIn = () => setZoom(prev => Math.min(prev + 10, 200));
   const handleZoomOut = () => setZoom(prev => Math.max(prev - 10, 50));
