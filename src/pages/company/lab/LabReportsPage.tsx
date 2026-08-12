@@ -310,36 +310,46 @@ export default function LabReportsPage() {
         </div>
       </Card>
 
-      {selectedReport && (
+      {showPreview && selectedReport && (
         <PDFPreviewModal
           isOpen={showPreview}
-          onClose={() => setShowPreview(false)}
+          onClose={() => {
+            setShowPreview(false);
+            setSelectedReport(null);
+          }}
           order={selectedReport as any}
-          onDownload={() => handleDownload(selectedReport.id)}
+          onDownload={() => console.log('Download triggered')}
         />
       )}
 
-      {selectedReport && (
+      {showDelivery && selectedReport && (
         <DeliveryTrackingModal
           isOpen={showDelivery}
-          onClose={() => setShowDelivery(false)}
+          onClose={() => {
+            setShowDelivery(false);
+            setSelectedReport(null);
+          }}
           onConfirm={(data) => {
             toast.success('Entrega registrada com sucesso!');
-            console.log('Delivery data:', data);
             setShowDelivery(false);
+            setSelectedReport(null);
           }}
           patientName={selectedReport.patientName}
           protocol={selectedReport.protocol}
         />
       )}
 
-      {selectedReport && (
+      {showEmail && selectedReport && (
         <EmailReportModal
           isOpen={showEmail}
-          onClose={() => setShowEmail(false)}
+          onClose={() => {
+            setShowEmail(false);
+            setSelectedReport(null);
+          }}
           onSend={(data) => {
             toast.success(`Laudo enviado para ${data.email}`);
             setShowEmail(false);
+            setSelectedReport(null);
           }}
           patientName={selectedReport.patientName}
           protocol={selectedReport.protocol}
