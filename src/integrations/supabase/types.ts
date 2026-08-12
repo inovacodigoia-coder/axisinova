@@ -81,6 +81,7 @@ export type Database = {
           convenio_name: string | null
           created_at: string
           delivery_date: string | null
+          delivery_status: string | null
           doctor_crm: string | null
           doctor_id: string | null
           doctor_name: string | null
@@ -118,6 +119,7 @@ export type Database = {
           convenio_name?: string | null
           created_at?: string
           delivery_date?: string | null
+          delivery_status?: string | null
           doctor_crm?: string | null
           doctor_id?: string | null
           doctor_name?: string | null
@@ -155,6 +157,7 @@ export type Database = {
           convenio_name?: string | null
           created_at?: string
           delivery_date?: string | null
+          delivery_status?: string | null
           doctor_crm?: string | null
           doctor_id?: string | null
           doctor_name?: string | null
