@@ -19,7 +19,7 @@ interface RealUser {
 }
 
 export default function SectorsPage() {
-  const { canAccess } = useCompanyContext()
+  const { canAccess, activeProfile } = useCompanyContext()
   const { user } = useAuth()
   const sectors = useSectors()
   const allProfiles = useProfiles()
