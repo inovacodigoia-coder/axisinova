@@ -1,6 +1,7 @@
-import { useState, useMemo, useEffect } from 'react';
+import { useState, useMemo, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { buildExamParams, catalogKey } from '@/utils/examParameters';
+import { buildExamParams, catalogKey, findCatalogExam, evaluateFormula } from '@/utils/examParameters';
+
 import { resolveCompanyId } from '@/utils/companyId';
 import { useAuth } from '@/context/AuthContext';
 import { 
@@ -130,7 +131,7 @@ export function ResultEntryModal({
   }, [filteredExams, filters.workbenches]);
 
   // Catálogo de Exames (parâmetros e faixas de referência reais)
-  const [catalog, setCatalog] = useState<Record<string, any>>({});
+  const [catalogList, setCatalogList] = useState<any[]>([]);
 
   useEffect(() => {
     if (!isOpen) return;
@@ -140,13 +141,7 @@ export function ResultEntryModal({
         .from('exams')
         .select('id, name, internal_code, measurement_unit, parameters, reference_values');
       if (error || !active || !data) return;
-      const map: Record<string, any> = {};
-      data.forEach((e: any) => {
-        map[catalogKey(e.id)] = e;
-        if (e.internal_code) map[catalogKey(e.internal_code)] = e;
-        if (e.name) map[catalogKey(e.name)] = e;
-      });
-      setCatalog(map);
+      setCatalogList(data as any[]);
     })();
     return () => { active = false; };
   }, [isOpen]);
@@ -159,10 +154,11 @@ export function ResultEntryModal({
         ? differenceInYears(new Date(), new Date(patient.patientBirthDate))
         : undefined;
       patient.exams.forEach((exam: any) => {
-        const catalogExam =
-          catalog[catalogKey(exam.examId)] ||
-          catalog[catalogKey(exam.code)] ||
-          catalog[catalogKey(exam.name)];
+        const catalogExam = findCatalogExam(catalogList, {
+          examId: exam.examId,
+          code: exam.code,
+          name: exam.name,
+        });
         map[exam.id] = buildExamParams(catalogExam, exam.name || exam.code, {
           gender: patient.patientGender,
           age,
@@ -170,9 +166,34 @@ export function ResultEntryModal({
       });
     });
     return map;
-  }, [groupedPatients, catalog]);
+  }, [groupedPatients, catalogList]);
 
   const getParams = (exam: any) => paramsByExam[exam.id] || [{ id: '1', name: exam?.name || '', unit: '', reference: '' }];
+
+  // Valor exibido: parâmetros calculados usam a fórmula do catálogo
+  const getParamValue = useCallback((exam: any, param: any) => {
+    if (param?.isCalculated) {
+      return evaluateFormula(param.formula, getParams(exam), (pid) => results[`${exam.id}_${pid}`] || '');
+    }
+    return results[`${exam.id}_${param.id}`] || '';
+  }, [results, paramsByExam]);
+
+  // Persiste automaticamente os calculados no estado para salvar/laudo
+  useEffect(() => {
+    const updates: Record<string, string> = {};
+    Object.entries(paramsByExam).forEach(([examId, params]: any) => {
+      (params as any[]).forEach((p: any) => {
+        if (!p.isCalculated) return;
+        const computed = evaluateFormula(p.formula, params, (pid) => results[`${examId}_${pid}`] || '');
+        const key = `${examId}_${p.id}`;
+        if (computed && results[key] !== computed) updates[key] = computed;
+      });
+    });
+    if (Object.keys(updates).length > 0) {
+      setResults(prev => ({ ...prev, ...updates }));
+    }
+  }, [results, paramsByExam]);
+
 
   const totalExams = filteredExams.length;
   
@@ -840,7 +861,7 @@ export function ResultEntryModal({
                         {/* Parâmetros do Exame */}
                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-x-8 gap-y-4 pt-2">
                           {getParams(exam).map((param: any) => {
-                            const value = results[`${exam.id}_${param.id}`] || '';
+                            const value = getParamValue(exam, param);
                             const status = getResultStatus(value, param.reference || '');
                             
                             return (
@@ -849,8 +870,11 @@ export function ResultEntryModal({
                                 status.bgColor
                               )}>
                                 <div className="flex justify-between items-center">
-                                  <label className="text-[10px] font-black uppercase text-slate-600 ml-1">
+                                  <label className="text-[10px] font-black uppercase text-slate-600 ml-1 flex items-center gap-1">
                                     {param.name}
+                                    {param.isCalculated && (
+                                      <span className="px-1 py-[1px] rounded bg-primary/10 text-primary text-[8px] font-black">CALC</span>
+                                    )}
                                   </label>
                                   <span className="text-[9px] font-bold text-slate-400 uppercase italic">
                                     {param.unit}
@@ -864,13 +888,18 @@ export function ResultEntryModal({
                                         status.label === 'Baixo' && "border-amber-400 focus:border-amber-500",
                                         status.label === 'Alto' && "border-rose-400 focus:border-rose-500",
                                         status.label === 'Normal' && "border-emerald-400 focus:border-emerald-500",
-                                        examStatuses[exam.id] === 'released' && "bg-slate-100 border-slate-200 cursor-not-allowed text-slate-500"
+                                        (examStatuses[exam.id] === 'released' || param.isCalculated) && "bg-slate-100 border-slate-200 cursor-not-allowed text-slate-500"
                                       )}
-                                      placeholder="Resultado"
+                                      placeholder={param.isCalculated ? 'Calculado' : 'Resultado'}
                                       value={value}
+                                      readOnly={!!param.isCalculated}
                                       disabled={examStatuses[exam.id] === 'released'}
-                                      onChange={(e) => setResults(prev => ({ ...prev, [`${exam.id}_${param.id}`]: e.target.value }))}
+                                      onChange={(e) => {
+                                        if (param.isCalculated) return;
+                                        setResults(prev => ({ ...prev, [`${exam.id}_${param.id}`]: e.target.value }));
+                                      }}
                                     />
+
                                     {status.label && (
                                       <div className={cn(
                                         "absolute right-2 top-2.5 px-1.5 py-0.5 rounded text-[8px] font-black uppercase tracking-tighter",
