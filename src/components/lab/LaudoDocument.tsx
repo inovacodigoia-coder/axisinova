@@ -7,6 +7,9 @@ interface LaudoDocumentProps {
   companyLogo?: string;
   secondaryLogo?: string;
   laboratoryName?: string;
+  laboratorySubtitle?: string;
+  institutionalWarning?: string;
+  footerText?: string;
   technicalResponsible?: {
     name: string;
     register: string;
@@ -26,10 +29,14 @@ export default function LaudoDocument({
   companyLogo,
   secondaryLogo,
   laboratoryName = "LABORATÓRIO MUNICIPAL CENTRAL",
+  laboratorySubtitle,
+  institutionalWarning,
+  footerText,
   technicalResponsible,
   isRetified,
   retificationDetails
 }: LaudoDocumentProps) {
+
   const patientAge = order.patientBirthDate 
     ? new Date().getFullYear() - new Date(order.patientBirthDate).getFullYear()
     : 0;
@@ -53,16 +60,24 @@ export default function LaudoDocument({
       {/* Header */}
       <div className="laudo-header border-b-2 border-zinc-800 pb-4 mb-6">
         <div className="flex justify-between items-center mb-6">
-          <div className="h-16 w-32 bg-zinc-100 flex items-center justify-center text-[10px] text-zinc-400 font-bold border rounded uppercase">
-            {companyLogo ? <img src={companyLogo} alt="Logo" className="h-full object-contain" /> : 'LOGO ESQUERDA'}
+          <div className="h-16 w-32 flex items-center justify-center">
+            {companyLogo ? (
+              <img src={companyLogo} alt="Logo principal" className="h-full max-w-full object-contain" />
+            ) : null}
           </div>
-          <h1 className="text-xl font-bold text-center uppercase tracking-tight flex-1 px-4">
-            {laboratoryName}
-          </h1>
-          <div className="h-16 w-32 bg-zinc-100 flex items-center justify-center text-[10px] text-zinc-400 font-bold border rounded uppercase">
-            {secondaryLogo ? <img src={secondaryLogo} alt="Logo" className="h-full object-contain" /> : 'LOGO DIREITA'}
+          <div className="flex-1 px-4 text-center">
+            <h1 className="text-xl font-bold uppercase tracking-tight">{laboratoryName}</h1>
+            {laboratorySubtitle && (
+              <p className="text-[11px] text-zinc-700 mt-1">{laboratorySubtitle}</p>
+            )}
+          </div>
+          <div className="h-16 w-32 flex items-center justify-center">
+            {secondaryLogo ? (
+              <img src={secondaryLogo} alt="Logo secundário" className="h-full max-w-full object-contain" />
+            ) : null}
           </div>
         </div>
+
 
         <div className="mb-4">
           <h2 className="text-lg font-bold uppercase">{order.patientName || 'NOME DO PACIENTE'}</h2>
@@ -82,6 +97,13 @@ export default function LaudoDocument({
           <div><strong>Local:</strong> Ipanguaçu</div>
         </div>
       </div>
+
+      {institutionalWarning && (
+        <div className="mb-6 text-[10px] leading-relaxed text-zinc-700 whitespace-pre-line border border-zinc-200 rounded p-2">
+          {institutionalWarning}
+        </div>
+      )}
+
 
       {/* Body - Exams */}
       <div className="laudo-body space-y-8 min-h-[600px]">
@@ -156,29 +178,31 @@ export default function LaudoDocument({
         <div className="flex flex-col items-center justify-center mb-6">
           <div className="h-16 mb-2">
             {technicalResponsible?.signatureUrl ? (
-              <img src={technicalResponsible.signatureUrl} alt="Assinatura" className="h-full object-contain" />
+              <img src={technicalResponsible.signatureUrl} alt="Assinatura do responsável" className="h-full object-contain" />
             ) : (
-              <div className="h-full w-48 border-b border-zinc-400 flex items-end justify-center pb-1 text-[10px] text-zinc-300 italic">
-                [IMAGEM DA ASSINATURA DIGITAL]
-              </div>
+              <div className="h-full w-48 border-b border-zinc-400" />
             )}
           </div>
           <div className="text-center">
-            <p className="font-bold text-[10px]">{technicalResponsible?.name || 'Anderson Veríssimo O. Neto'}</p>
-            <p className="text-[9px]">{technicalResponsible?.role || 'Biomédico'}</p>
-            <p className="text-[9px]">{technicalResponsible?.register || 'CRBM-RN-08465'}</p>
+            {technicalResponsible?.name && (
+              <p className="font-bold text-[10px]">{technicalResponsible.name}</p>
+            )}
+            {technicalResponsible?.role && <p className="text-[9px]">{technicalResponsible.role}</p>}
+            {technicalResponsible?.register && (
+              <p className="text-[9px]">{technicalResponsible.register}</p>
+            )}
           </div>
         </div>
 
-        <div className="border-t border-zinc-800 pt-2 flex justify-between items-end text-[8px] text-zinc-500">
-          <div>
-            <p className="font-bold text-zinc-700 uppercase">Ipanguaçu</p>
-            <p>Resp. Téc.: Almir Souza • CRBM-RN-08465</p>
+        <div className="border-t border-zinc-800 pt-2 flex justify-between items-end text-[8px] text-zinc-500 gap-4">
+          <div className="whitespace-pre-line text-left">
+            {footerText || ''}
           </div>
-          <div>
+          <div className="shrink-0">
             Página 1 de 1
           </div>
         </div>
+
       </div>
       
       <style>{`
