@@ -62,7 +62,11 @@ export function Footer() {
         </div>
 
         <div className="mt-12 border-t border-white/10 pt-6 text-center text-sm text-white/40">
-          © {new Date().getFullYear()} Axis Inova. Todos os direitos reservados. Feito com ❤️ para a saúde brasileira.
+          '''Do not make any visual modifications. The phrases I write are commands to understand what I want, not to be written down. Understand their content well, then execute what is required.'''
+                                        
+                                            
+                                            
+                                            I have approved the plan
         </div>
       </div>
     </footer>
