@@ -48,6 +48,8 @@ export interface Sector {
   allowedQueueTypes?: ('internal' | 'external')[]
   /** Perfis que possuem permissão para alterar datas no modal de Alterar Previsão de Entrega */
   allowedDeadlineEditProfiles?: string[]
+  /** Ajuste manual do menu lateral: módulo -> true (liberado) / false (bloqueado), sobrepõe os perfis */
+  moduleOverrides?: Record<string, boolean>
 }
 
 export interface MenuFunction {
