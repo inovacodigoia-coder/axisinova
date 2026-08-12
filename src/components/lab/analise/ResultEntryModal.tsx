@@ -676,10 +676,23 @@ export function ResultEntryModal({
                       </span>
                     </div>
                   </div>
-                  <div className="flex flex-col items-end">
-                    <span className="text-[10px] font-black text-white/40 uppercase tracking-widest">Protocolo</span>
-                    <span className="text-sm font-mono font-black">{patient.protocol}</span>
+                  <div className="flex items-center gap-4">
+                    {patientHasLaudo(patient) && (
+                      <Button
+                        size="sm"
+                        onClick={(e) => { e.stopPropagation(); openLaudo(patient); }}
+                        className="h-7 px-3 text-[9px] font-black uppercase gap-1.5 bg-white/10 hover:bg-white/20 text-white border border-white/20"
+                      >
+                        <FileText className="h-3 w-3" />
+                        Visualizar Laudo
+                      </Button>
+                    )}
+                    <div className="flex flex-col items-end">
+                      <span className="text-[10px] font-black text-white/40 uppercase tracking-widest">Protocolo</span>
+                      <span className="text-sm font-mono font-black">{patient.protocol}</span>
+                    </div>
                   </div>
+
                 </div>
 
                 {/* Exames do Paciente */}
