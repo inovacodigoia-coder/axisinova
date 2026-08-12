@@ -1157,15 +1157,14 @@ export function ResultEntryModal({
       )}
 
       {/* Visualização do Laudo */}
-      {laudoOrder && (
-        <PDFPreviewModal
-          isOpen={!!laudoOrder}
-          onClose={() => setLaudoOrder(null)}
-          order={laudoOrder}
-          onDownload={() => window.print()}
-          onPrint={() => window.print()}
-        />
-      )}
+      <PDFPreviewModal
+        isOpen={laudoOpen}
+        onClose={() => setLaudoOpen(false)}
+        order={laudoOrder || {}}
+        onDownload={() => window.print()}
+        onPrint={() => window.print()}
+      />
+
     </div>
 
   );
