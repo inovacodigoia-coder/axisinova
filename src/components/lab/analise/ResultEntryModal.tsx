@@ -345,7 +345,7 @@ export function ResultEntryModal({
     
     const { error } = await supabase
       .from('attendance_orders')
-      .update({ status: newStatus })
+      .update({ status: newStatus, delivery_status: 'not_delivered' })
       .eq('id', orderId);
     
     if (error) console.error('Erro ao atualizar status do pedido:', error);
