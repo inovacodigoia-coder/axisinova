@@ -192,22 +192,24 @@
     visibility: visible !important; 
   }
 
-  /* Laudo: imprimir apenas o documento, sem modal/tela */
-  body.printing-laudo * {
-    visibility: hidden !important;
+  /* Laudo: imprimir apenas o documento, em A4 */
+  body.printing-laudo > *:not(#laudo-print-root) {
+    display: none !important;
   }
-  body.printing-laudo .laudo-print-area,
-  body.printing-laudo .laudo-print-area * {
-    visibility: visible !important;
-  }
-  body.printing-laudo .laudo-print-area {
-    position: absolute !important;
-    inset: 0 auto auto 0;
-    width: 100% !important;
-    transform: none !important;
-    box-shadow: none !important;
-    outline: none !important;
+  body.printing-laudo #laudo-print-root {
+    display: block !important;
+    position: static !important;
+    margin: 0 !important;
+    padding: 0 !important;
     background: white !important;
+  }
+  body.printing-laudo #laudo-print-root .laudo-page {
+    width: 210mm !important;
+    min-height: 297mm !important;
+    padding: 12mm !important;
+    margin: 0 auto !important;
+    box-shadow: none !important;
+    box-sizing: border-box !important;
   }
   body.printing-laudo .no-print {
     display: none !important;
