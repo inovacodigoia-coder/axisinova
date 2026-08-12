@@ -74,12 +74,12 @@ export default function LabColetaPage() {
 
   const collectionOrders = useMemo(() => {
     return (orders || [])
-      .filter(o => o?.status === 'waiting_collection')
+      .filter(o => o?.status === 'waiting_collection' || o?.status === 'open')
       .map(o => {
         const allExams = (o.labGuides || []).flatMap(guide => (guide.exams || []).map((e: any) => ({
           ...e,
           examId: e.examId || e.id,
-          material: e.material || e.selectedMaterial || 'Soro'
+          material: e.material || e.selectedMaterial || e.materialName || 'Soro'
         })))
         return {
           ...o,
