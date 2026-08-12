@@ -173,6 +173,23 @@ export function AttendanceDetailsModal({ open, onClose, onOrderDeleted, order, p
 
 
 
+  const filteredOrderForReport = useMemo(() => {
+    if (selectedExams.size === 0) return labOrder;
+    
+    // Create a copy of the order but only with selected exams
+    const filteredExams = orderExams.filter(e => selectedExams.has(e.examId || e.id));
+    
+    return {
+      ...labOrder,
+      exams: filteredExams,
+      // If we have labGuides, filter them too
+      labGuides: labOrder.labGuides?.map(guide => ({
+        ...guide,
+        exams: (guide.exams || []).filter((e: any) => selectedExams.has(e.examId || e.id))
+      })).filter(guide => (guide.exams?.length ?? 0) > 0)
+    };
+  }, [labOrder, orderExams, selectedExams]);
+
   return (
     <Dialog open={open} onOpenChange={(o) => !o && onClose()}>
       <DialogContent className="max-w-[1200px] w-[95vw] max-h-[90vh] p-0 flex flex-col gap-0 bg-[#F8FAFC] border-none shadow-2xl [&>button]:hidden overflow-hidden scrollbar-thin scrollbar-thumb-gray-300">
