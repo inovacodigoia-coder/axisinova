@@ -249,6 +249,16 @@ function SectorForm({ sector, profiles, companyId, onSave, onCancel }: { sector:
     new Set(sector?.allowedQueueTypes && sector.allowedQueueTypes.length ? sector.allowedQueueTypes : ['internal', 'external'])
   )
   const [deadlineProfiles, setDeadlineProfiles] = useState<Set<string>>(new Set(sector?.allowedDeadlineEditProfiles || []))
+  const [moduleOverrides, setModuleOverrides] = useState<Record<string, boolean>>(sector?.moduleOverrides || {})
+
+  const handleToggleOverride = (mod: SystemModule, value: boolean | null) => {
+    setModuleOverrides(prev => {
+      const next = { ...prev }
+      if (value === null) delete next[mod]
+      else next[mod] = value
+      return next
+    })
+  }
 
   const toggle = (id: string) => {
     const next = new Set(allowed)
