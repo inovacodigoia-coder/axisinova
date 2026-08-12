@@ -393,8 +393,8 @@ export function ResultEntryModal({
       data.forEach((row: any) => {
         const examId = String(row.exam_ref).split(':').slice(1).join(':');
         if (row.notes) nextNotes[examId] = row.notes;
-        if (row.status === 'digitized' || row.status === 'released') {
-          nextStatuses[examId] = row.status;
+        if (row.status === 'digitized' || row.status === 'released' || row.status === 'liberado' || row.status === 'validated') {
+          nextStatuses[examId] = row.status === 'validated' ? 'released' : row.status;
         }
         (row.lab_result_values || []).forEach((v: any) => {
           if (v.value) nextResults[`${examId}_${v.parameter_key}`] = v.value;
@@ -448,7 +448,10 @@ export function ResultEntryModal({
   }, [isOpen, groupedPatients, user?.companyId]);
 
   const patientHasLaudo = (patient: any) =>
-    patient.exams.some((e: any) => examStatuses[e.id] === 'digitized' || examStatuses[e.id] === 'released');
+    patient.exams.some((e: any) => {
+      const status = examStatuses[e.id] || e.status;
+      return status === 'digitized' || status === 'released' || status === 'liberado' || status === 'validated';
+    });
 
   const openLaudo = async (patient: any) => {
     if (laudoLoading) return;
@@ -465,7 +468,10 @@ export function ResultEntryModal({
       };
 
       const exams = patient.exams
-        .filter((e: any) => examStatuses[e.id] === 'digitized' || examStatuses[e.id] === 'released')
+        .filter((e: any) => {
+          const status = examStatuses[e.id] || e.status;
+          return status === 'digitized' || status === 'released' || status === 'liberado' || status === 'validated';
+        })
         .map((e: any) => {
           const catalogExam = findCatalogExam(catalogList, { examId: e.examId, code: e.code, name: e.name });
           const workbenchId = catalogExam?.workbench_id || e.workbenchId;
@@ -478,7 +484,7 @@ export function ResultEntryModal({
             methodology: catalogExam?.methodology || '',
             workbench: workbenchName,
             workbenchOrder: orderOfWorkbench(workbenchId, workbenchName || e.workbench),
-            status: examStatuses[e.id] === 'released' ? 'liberado' : 'waiting_approval',
+            status: (examStatuses[e.id] === 'released' || e.status === 'liberado' || e.status === 'validated') ? 'liberado' : 'waiting_approval',
             results: getParams(e).map((p: any) => {
               const value = getParamValue(e, p);
               const st = getResultStatus(value, p.reference || '');
