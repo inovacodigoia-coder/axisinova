@@ -392,11 +392,26 @@ export function AttendanceDetailsModal({ open, onClose, onOrderDeleted, order, p
                       <span className="text-[9px] font-bold text-muted-foreground uppercase group-hover:text-primary">Conferir</span>
                     </div>
 
-                    <div className="flex flex-col items-center gap-1 group cursor-pointer">
-                      <Button size="icon" variant="ghost" className="h-9 w-9 rounded-full bg-white shadow-sm border border-border group-hover:text-primary group-hover:border-primary transition-all">
+                    <div className="flex flex-col items-center gap-1 group">
+                      <Button 
+                        size="icon" 
+                        variant="ghost" 
+                        className="h-9 w-9 rounded-full bg-white shadow-sm border border-border group-hover:text-primary group-hover:border-primary transition-all"
+                        disabled={selectedExams.size === 0}
+                        onClick={() => {
+                          if (selectedExams.size > 0) {
+                            setReportPreviewOpen(true);
+                          }
+                        }}
+                      >
                         <Printer className="h-4 w-4" />
                       </Button>
-                      <span className="text-[9px] font-bold text-muted-foreground uppercase group-hover:text-primary">Imprimir</span>
+                      <span className={cn(
+                        "text-[9px] font-bold uppercase text-center transition-colors",
+                        selectedExams.size > 0 ? "text-muted-foreground group-hover:text-primary" : "text-muted-foreground/40"
+                      )}>
+                        Imprimir
+                      </span>
                     </div>
 
                     <div className="flex flex-col items-center gap-1 group cursor-pointer">
