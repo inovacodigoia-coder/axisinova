@@ -17,9 +17,9 @@ import {
 export function useLabDashboardData() {
   const { user } = useAuth();
   const { orders, loading: ordersLoading } = useAttendanceCadastro();
-  const { appointments, loading: appointmentsLoading } = useScheduling();
+  const { appointments } = useScheduling();
 
-  const loading = ordersLoading || appointmentsLoading;
+  const loading = ordersLoading;
 
   const stats = useMemo(() => {
     if (loading) return null;
