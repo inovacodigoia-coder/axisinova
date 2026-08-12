@@ -98,6 +98,13 @@ export default function LaudoDocument({
         </div>
       </div>
 
+      {institutionalWarning && (
+        <div className="mb-6 text-[10px] leading-relaxed text-zinc-700 whitespace-pre-line border border-zinc-200 rounded p-2">
+          {institutionalWarning}
+        </div>
+      )}
+
+
       {/* Body - Exams */}
       <div className="laudo-body space-y-8 min-h-[600px]">
         {order.exams?.map((exam: any, idx: number) => (
