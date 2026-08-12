@@ -36,6 +36,9 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { useAttendanceCadastro } from '@/hooks/useAttendanceCadastro';
 import { format, differenceInYears } from 'date-fns';
+import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/context/AuthContext';
+
 
 export default function LabReportsPage() {
   const { orders, loading: ordersLoading } = useAttendanceCadastro();
