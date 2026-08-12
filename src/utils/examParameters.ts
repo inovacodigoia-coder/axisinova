@@ -78,18 +78,41 @@ export function buildExamParams(catalogExam: any | undefined, fallbackName: stri
     ]
   }
 
-  return visible.map((p, idx) => ({
-    id: String(p.id ?? idx + 1),
-    name: p.name || `Parâmetro ${idx + 1}`,
-    unit: p.unit || examUnit,
-    reference: pickReference(
-      (p.referenceValues && p.referenceValues.length ? p.referenceValues : examLevelRefs),
-      patient,
-    ),
-    isCalculated: !!(p.isCalculated || p.is_calculated),
-    formula: p.formula,
-  }))
+  return visible.map((p, idx) => {
+    const name = p.name || `Parâmetro ${idx + 1}`
+    const isCalculated = !!(p.isCalculated || p.is_calculated)
+    const formula = (p.formula && String(p.formula).trim()) || (isCalculated ? defaultFormulaFor(name) : '')
+    return {
+      id: String(p.id ?? idx + 1),
+      name,
+      unit: p.unit || examUnit,
+      reference: pickReference(
+        (p.referenceValues && p.referenceValues.length ? p.referenceValues : examLevelRefs),
+        patient,
+      ),
+      isCalculated,
+      formula,
+    }
+  })
 }
+
+/**
+ * Fórmulas hematológicas padrão usadas quando o parâmetro está marcado como
+ * calculado no catálogo mas nenhuma fórmula foi informada.
+ */
+export function defaultFormulaFor(name: string): string {
+  const n = normalizeText(name)
+  if (n.startsWith('vcm') || n.includes('volume corpuscular medio')) return '[Hematócrito] / [Hemácias] * 10'
+  if (n.startsWith('hcm') || n.includes('hemoglobina corpuscular media')) return '[Hemoglobina] / [Hemácias] * 10'
+  if (n.startsWith('chcm') || n.includes('conc de hb corpuscular')) return '[Hemoglobina] / [Hematócrito] * 100'
+  // Contagens absolutas do leucograma: (% do parâmetro) * leucócitos / 100
+  if (n.includes('absoluto')) {
+    const base = name.replace(/\(absoluto\)/i, '').trim()
+    return `[${base} (%)] * [Leucócitos totais] / 100`
+  }
+  return ''
+}
+
 
 /** Chave de busca normalizada (código interno ou nome). */
 export function catalogKey(value?: string) {
