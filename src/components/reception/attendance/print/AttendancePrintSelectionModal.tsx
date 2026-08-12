@@ -100,38 +100,7 @@ export function AttendancePrintSelectionModal({ open, onClose, onConfirm, order,
                       </span>
                     </div>
 
-                    {opt.id === 'laudo' ? (
-                      <div className="flex gap-2">
-                        <div className="flex bg-slate-100 rounded p-0.5 border border-slate-200">
-                          <button 
-                            onClick={() => setWatermark(false)}
-                            className={cn("px-2 py-1 text-[9px] font-bold rounded uppercase transition-all", !watermark ? "bg-white text-[#007AFF] shadow-sm" : "text-slate-400")}
-                          >
-                            Sem Marca d'água
-                          </button>
-                          <button 
-                            onClick={() => setWatermark(true)}
-                            className={cn("px-2 py-1 text-[9px] font-bold rounded uppercase transition-all", watermark ? "bg-white text-[#007AFF] shadow-sm" : "text-slate-400")}
-                          >
-                            Com Marca d'água
-                          </button>
-                        </div>
-                        <div className="flex bg-slate-100 rounded p-0.5 border border-slate-200">
-                          <button 
-                            onClick={() => setEmptyFields(false)}
-                            className={cn("px-2 py-1 text-[9px] font-bold rounded uppercase transition-all", !emptyFields ? "bg-white text-[#007AFF] shadow-sm" : "text-slate-400")}
-                          >
-                            Sem Campos Vazios
-                          </button>
-                          <button 
-                            onClick={() => setEmptyFields(true)}
-                            className={cn("px-2 py-1 text-[9px] font-bold rounded uppercase transition-all", emptyFields ? "bg-white text-[#007AFF] shadow-sm" : "text-slate-400")}
-                          >
-                            Com Campos Vazios
-                          </button>
-                        </div>
-                      </div>
-                    ) : opt.formats.length > 0 && (
+                    {opt.formats.length > 0 && (
                       <div className="flex items-center bg-slate-100 rounded p-0.5 border border-slate-200">
                         {opt.formats.map((fmt) => (
                           <button
