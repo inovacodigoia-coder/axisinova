@@ -166,7 +166,7 @@ export default function PDFPreviewModal({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-[200] flex items-center justify-center bg-foreground/80 p-2 md:p-4" onMouseDown={onClose}>
+    <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-zinc-950/80 p-2 md:p-4" onMouseDown={onClose}>
       <section
         role="dialog"
         aria-modal="true"
