@@ -115,8 +115,22 @@ export default function PDFPreviewModal({
   const toggleFullscreen = () => setIsFullscreen(!isFullscreen);
 
   // Imprime somente o documento do laudo (A4, sem modal/tela)
-  const printLaudoOnly = React.useCallback(() => {
+  const printLaudoOnly = React.useCallback(async () => {
     if (!documentRef.current) return;
+    
+    // Mark as delivered
+    try {
+      if (protocol && user?.companyId) {
+        await supabase
+          .from('attendance_orders')
+          .update({ delivery_status: 'delivered' } as any)
+          .eq('protocol', protocol)
+          .eq('company_id', user.companyId);
+      }
+    } catch (e) {
+      console.error('Error updating delivery status:', e);
+    }
+
     const body = window.document.body;
     const root = window.document.createElement('div');
     root.id = 'laudo-print-root';
@@ -136,7 +150,8 @@ export default function PDFPreviewModal({
       window.print();
       setTimeout(cleanup, 1500);
     }, 80);
-  }, []);
+  }, [protocol, user?.companyId]);
+
 
 
 
