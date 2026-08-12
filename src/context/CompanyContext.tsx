@@ -305,7 +305,7 @@ export function CompanyProvider({ children }: { children: ReactNode }) {
       availableSectors, availableOrigins, availableFunctions, availableUtilities,
       selectProfile, selectSector, selectOrigin, confirmSession, clearSession,
       switchProfile, switchSector, canAccess, isSessionReady, isSessionHydrated,
-      allProfiles: MOCK_COMPANY_PROFILES, allSectors: allSectors, allUsers: MOCK_COMPANY_USERS,
+      allProfiles, allSectors: allSectors, allUsers: MOCK_COMPANY_USERS,
       refreshOrigins,
     }}>
       {children}
