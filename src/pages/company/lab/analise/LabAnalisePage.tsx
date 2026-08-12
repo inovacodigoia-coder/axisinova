@@ -120,8 +120,10 @@ export default function LabAnalisePage() {
         // released -> Liberado
         // concluded -> Concluído
         
+        // Verifica se o status do pedido está entre os selecionados
         const matchesStatus = selectedStatuses.length === 0 || selectedStatuses.includes(order.status);
         
+        // Se o status do pedido estiver permitido e bater com o filtro selecionado
         if (allowedOrderStatuses.includes(order.status) && matchesStatus) {
           allExams.push(exam);
         }
