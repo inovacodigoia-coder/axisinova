@@ -114,13 +114,8 @@ export default function LabAnalisePage() {
       const allowedOrderStatuses = ['collection_done', 'in_analysis', 'validation', 'released', 'concluded', 'open'];
       
       exams.forEach(exam => {
-        // Mapeamos os status internos para os nomes amigáveis solicitados
-        // collection_done -> Coleta Realizada
-        // in_analysis -> Em Análise
-        // released -> Liberado
-        // concluded -> Concluído
-        
         // Verifica se o status do pedido está entre os selecionados
+        // Se o status do pedido for 'concluded', ele deve ser mostrado se 'concluded' estiver nos filtros
         const matchesStatus = selectedStatuses.length === 0 || selectedStatuses.includes(order.status);
         
         // Se o status do pedido estiver permitido e bater com o filtro selecionado
