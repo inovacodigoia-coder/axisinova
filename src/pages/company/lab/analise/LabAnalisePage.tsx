@@ -108,9 +108,14 @@ export default function LabAnalisePage() {
         }))
       );
       
-      // Filtro por Status: Apenas exames com coleta realizada ou em análise
+      // Filtro por Status: Apenas exames com coleta realizada ou em fluxo técnico
+      const allowedOrderStatuses = ['collection_done', 'in_analysis', 'validation', 'released'];
       exams.forEach(exam => {
-        if (exam.status === 'collection_done' || (exam.status as string) === 'processing' || order.status === 'collection_done' || (order.status as string) === 'in_analysis') {
+        if (
+          exam.status === 'collection_done' || 
+          exam.status === 'processing' || 
+          allowedOrderStatuses.includes(order.status)
+        ) {
           allExams.push(exam);
         }
       });

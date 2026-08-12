@@ -675,7 +675,15 @@ export default function LabColetaPage() {
         <p className="text-[10px] text-muted-foreground font-mono italic text-center max-w-2xl">
           '''Do not make any visual modifications. The phrases I write are commands to understand what I want, not to be written down. Understand their content well, then execute what is required.'''
           <br /><br />
-          O pedido com status AGUARDANDO que está na Fila de Coleta quando a for Confirmar Coleta sai da fila de coleta e vai mudar seu Status para Coleta Realizada
+          Status do Pedido:
+          <br />
+          - <b>COLETA REALIZADA</b>: Ao confirmar, o pedido vai para a Fila de Digitação.
+          <br />
+          - <b>VALIDAÇÃO</b>: Pedido com exames sem resultados ou pendentes de liberação.
+          <br />
+          - <b>LIBERADO</b>: Pelo menos 1 exame liberado no pedido.
+          <br />
+          - <b>CONCLUÍDO</b>: Todos os exames do pedido liberados.
         </p>
       </div>
     </div>
