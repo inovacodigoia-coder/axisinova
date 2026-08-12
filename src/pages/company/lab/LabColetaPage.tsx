@@ -129,6 +129,33 @@ export default function LabColetaPage() {
     }
   };
 
+  const normalizeMaterial = (material?: string) =>
+    (material || '')
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, ' ')
+      .trim()
+
+  const examMatchesTube = (exam: LabAttendanceOrder['exams'][number], tubeType: string) => {
+    const material = normalizeMaterial(exam.material)
+
+    if (tubeType === 'edta') {
+      return material.includes('edta') || material.includes('sangue total')
+    }
+    if (tubeType === 'gel') {
+      return material.includes('soro') || material.includes('gel separador')
+    }
+    if (tubeType === 'citrato') {
+      return material.includes('citrato') || material.includes('plasma')
+    }
+    if (tubeType === 'urina') {
+      return material.includes('urina')
+    }
+
+    return material.includes(normalizeMaterial(tubeType))
+  }
+
   // Cálculos Reais para os Cards
   const totalWaiting = filteredOrders.length
   
@@ -144,21 +171,12 @@ export default function LabColetaPage() {
     : 0
 
   const getOrderTubes = (order: LabAttendanceOrder) => {
-    const materials = new Set(order.exams?.map(e => e.material).filter(Boolean))
-    
-    // Se não houver materiais mapeados nos exames, mostramos pelo menos o padrão 'gel' para garantir visualização
-    if (materials.size === 0 && order.exams && order.exams.length > 0) {
-      return [TUBE_TYPES[0]]; // Retorna o primeiro tipo de tubo (Gel) por padrão se houver exames
-    }
-
-    return TUBE_TYPES.filter(tube => 
-      materials.has(tube.label) || 
-      materials.has(tube.type) ||
-      (tube.type === 'gel' && materials.has('Soro')) ||
-      (tube.type === 'edta' && (materials.has('Sangue Total') || materials.has('Sangue'))) ||
-      (tube.type === 'citrato' && materials.has('Plasma')) ||
-      (tube.type === 'urina' && (materials.has('Urina') || materials.has('Urina Amostra')))
+    const exams = order.exams || []
+    const matchedTubes = TUBE_TYPES.filter(tube =>
+      exams.some(exam => examMatchesTube(exam, tube.type))
     )
+
+    return matchedTubes.length > 0 ? matchedTubes : exams.length > 0 ? [TUBE_TYPES[0]] : []
   }
 
   const addAudit = (order: LabAttendanceOrder, action: any, details?: string) => {
@@ -545,14 +563,10 @@ export default function LabColetaPage() {
                                     <p className="text-sm font-bold text-foreground">{tube.label} ({tube.volume})</p>
                                   </div>
                                   <p className="text-xs text-muted-foreground">
-                                    Exames: {order.exams?.filter(e => 
-                                      e.material === tube.label || 
-                                      e.material === tube.type ||
-                                      (tube.type === 'gel' && e.material === 'Soro') ||
-                                      (tube.type === 'edta' && (e.material === 'Sangue Total' || e.material === 'Sangue')) ||
-                                      (tube.type === 'citrato' && e.material === 'Plasma') ||
-                                      (tube.type === 'urina' && (e.material === 'Urina' || e.material === 'Urina Amostra'))
-                                    ).map(e => e.name).join(', ')}
+                                    Exames: {order.exams
+                                      ?.filter(exam => examMatchesTube(exam, tube.type))
+                                      .map(exam => exam.name)
+                                      .join(', ')}
                                   </p>
 
                                   <p className="text-[10px] font-mono font-bold text-primary">Rótulo: {order.protocol}-A</p>
