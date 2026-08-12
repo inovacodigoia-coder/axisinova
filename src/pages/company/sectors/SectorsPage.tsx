@@ -355,9 +355,23 @@ function mergePermissions(profiles: any[], allowedIds: Set<string>): Permissions
   return merged
 }
 
-export function SectorAccessPreview({ profiles, allowedIds }: { profiles: any[]; allowedIds: Set<string> }) {
+export function SectorAccessPreview({ profiles, allowedIds, overrides, onToggleOverride, onResetOverrides }: {
+  profiles: any[]
+  allowedIds: Set<string>
+  overrides?: Record<string, boolean>
+  onToggleOverride?: (module: SystemModule, value: boolean | null) => void
+  onResetOverrides?: () => void
+}) {
   const perms = mergePermissions(profiles, allowedIds)
-  const can = (m: SystemModule | null) => !m ? true : (perms[m]?.includes('view') ?? false)
+  const ov = overrides || {}
+  const baseCan = (m: SystemModule | null) => !m ? true : (perms[m]?.includes('view') ?? false)
+  const can = (m: SystemModule | null) => {
+    if (!m) return true
+    if (m in ov) return ov[m]
+    return baseCan(m)
+  }
+  const editable = !!onToggleOverride
+  const overrideCount = Object.keys(ov).length
 
   return (
     <div className="space-y-4">
@@ -365,7 +379,20 @@ export function SectorAccessPreview({ profiles, allowedIds }: { profiles: any[];
         <div className="flex items-center gap-2 mb-2">
           <LayoutList className="h-4 w-4 text-primary" />
           <label className="text-sm font-medium">Menu lateral liberado para este setor</label>
+          {overrideCount > 0 && (
+            <span className="text-[10px] bg-primary/10 text-primary px-2 py-0.5 rounded-full font-medium">
+              {overrideCount} ajuste(s) manual(is)
+            </span>
+          )}
+          {editable && overrideCount > 0 && (
+            <button type="button" onClick={onResetOverrides} className="ml-auto text-[11px] text-muted-foreground hover:text-foreground underline">
+              Restaurar padrão dos perfis
+            </button>
+          )}
         </div>
+        {editable && (
+          <p className="text-xs text-muted-foreground mb-2">Clique em um item para liberar ou remover manualmente do menu deste setor.</p>
+        )}
         <div className="max-h-[260px] overflow-y-auto rounded-lg border border-border divide-y divide-border">
           {NAV_SECTIONS.map(section => (
             <div key={section.title} className="p-2">
@@ -373,10 +400,22 @@ export function SectorAccessPreview({ profiles, allowedIds }: { profiles: any[];
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-3">
                 {section.items.map(item => {
                   const ok = can(item.module)
+                  const manual = item.module ? item.module in ov : false
+                  const clickable = editable && !!item.module
                   return (
-                    <div key={item.path} className={`flex items-center gap-2 text-xs py-0.5 ${ok ? 'text-foreground' : 'text-muted-foreground/60'}`}>
+                    <div
+                      key={item.path}
+                      onClick={() => {
+                        if (!clickable || !item.module) return
+                        const next = !ok
+                        onToggleOverride!(item.module, next === baseCan(item.module) ? null : next)
+                      }}
+                      title={clickable ? (ok ? 'Clique para remover do menu' : 'Clique para liberar no menu') : undefined}
+                      className={`flex items-center gap-2 text-xs py-0.5 rounded px-1 ${clickable ? 'cursor-pointer hover:bg-muted' : ''} ${ok ? 'text-foreground' : 'text-muted-foreground/60'}`}
+                    >
                       {ok ? <Check className="h-3 w-3 text-primary shrink-0" /> : <Lock className="h-3 w-3 shrink-0" />}
                       <span className="truncate">{item.label}</span>
+                      {manual && <span className="text-[9px] text-primary shrink-0">manual</span>}
                     </div>
                   )
                 })}
@@ -385,6 +424,7 @@ export function SectorAccessPreview({ profiles, allowedIds }: { profiles: any[];
           ))}
         </div>
       </div>
+
 
       <div>
         <label className="text-sm font-medium mb-2 block">Permissões de visualização e ações</label>
