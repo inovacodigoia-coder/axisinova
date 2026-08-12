@@ -347,34 +347,67 @@ export type Database = {
       }
       company_branding: {
         Row: {
+          background_color: string
+          border_color: string
+          button_text_color: string
+          card_color: string
           company_id: string
           created_at: string
+          error_color: string
           id: string
+          input_bg_color: string
           logo_url: string | null
+          muted_text_color: string
           primary_color: string
+          ring_color: string
           secondary_color: string
           sidebar_bg: string
+          success_color: string
+          text_color: string
           updated_at: string
+          warning_color: string
         }
         Insert: {
+          background_color?: string
+          border_color?: string
+          button_text_color?: string
+          card_color?: string
           company_id: string
           created_at?: string
+          error_color?: string
           id?: string
+          input_bg_color?: string
           logo_url?: string | null
+          muted_text_color?: string
           primary_color?: string
+          ring_color?: string
           secondary_color?: string
           sidebar_bg?: string
+          success_color?: string
+          text_color?: string
           updated_at?: string
+          warning_color?: string
         }
         Update: {
+          background_color?: string
+          border_color?: string
+          button_text_color?: string
+          card_color?: string
           company_id?: string
           created_at?: string
+          error_color?: string
           id?: string
+          input_bg_color?: string
           logo_url?: string | null
+          muted_text_color?: string
           primary_color?: string
+          ring_color?: string
           secondary_color?: string
           sidebar_bg?: string
+          success_color?: string
+          text_color?: string
           updated_at?: string
+          warning_color?: string
         }
         Relationships: [
           {
