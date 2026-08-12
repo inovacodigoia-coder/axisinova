@@ -3,8 +3,10 @@ import { useCompanyContext } from '@/context/CompanyContext'
 import { useAuth } from '@/context/AuthContext'
 import { supabase } from '@/integrations/supabase/client'
 import { MOCK_SECTORS } from '@/mocks/company.mock'
-import { Plus, Edit, Users, ShieldCheck, Loader2, UserPlus, X, Search } from 'lucide-react'
-import type { Sector } from '@/types/permissions.types'
+import { Plus, Edit, Users, ShieldCheck, Loader2, UserPlus, X, Search, Check, Lock, LayoutList } from 'lucide-react'
+import type { Sector, SystemModule, PermissionsMap, PermissionAction } from '@/types/permissions.types'
+import { SYSTEM_MODULES, ALL_ACTIONS, ACTION_LABELS } from '@/types/permissions.types'
+import { NAV_SECTIONS } from '@/components/company/CompanySidebar'
 import { toast } from 'sonner'
 
 interface RealUser {
@@ -119,7 +121,7 @@ export default function SectorsPage() {
       {/* Modal - Novo/Editar Setor */}
       {showForm && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4" onClick={() => setShowForm(false)}>
-          <div onClick={e => e.stopPropagation()} className="w-full max-w-md rounded-2xl bg-card border border-border shadow-2xl p-6 space-y-4">
+          <div onClick={e => e.stopPropagation()} className="w-full max-w-3xl rounded-2xl bg-card border border-border shadow-2xl p-6 space-y-4">
             <h2 className="text-lg font-bold text-foreground">{editing ? 'Editar Setor' : 'Novo Setor'}</h2>
             <SectorForm sector={editing} profiles={allProfiles} companyId={user?.companyId || ''} onSave={handleSave} onCancel={() => setShowForm(false)} />
           </div>
@@ -299,6 +301,8 @@ function SectorForm({ sector, profiles, companyId, onSave, onCancel }: { sector:
         </div>
       </div>
 
+      <SectorAccessPreview profiles={profiles} allowedIds={allowed} />
+
       <div>
         <label className="text-sm font-medium mb-2 block">Tipos de fila visíveis na Recepção</label>
         <p className="text-xs text-muted-foreground mb-2">Controla quais abas de filas (Externa/Interna) este setor poderá visualizar.</p>
@@ -331,6 +335,82 @@ function SectorForm({ sector, profiles, companyId, onSave, onCancel }: { sector:
             allowedDeadlineEditProfiles: Array.from(deadlineProfiles),
           })
         }} className="gradient-bg rounded-lg px-4 py-2 text-sm font-semibold text-white shadow-md">Salvar</button>
+      </div>
+    </div>
+  )
+}
+
+
+/* ── Prévia de acessos do setor (menu lateral + permissões) ── */
+function mergePermissions(profiles: any[], allowedIds: Set<string>): PermissionsMap {
+  const merged: PermissionsMap = {}
+  profiles.filter(p => allowedIds.has(p.id)).forEach(p => {
+    Object.entries(p.permissions || {}).forEach(([mod, acts]) => {
+      const key = mod as SystemModule
+      const set = new Set([...(merged[key] || []), ...((acts as PermissionAction[]) || [])])
+      merged[key] = Array.from(set) as PermissionAction[]
+    })
+  })
+  return merged
+}
+
+export function SectorAccessPreview({ profiles, allowedIds }: { profiles: any[]; allowedIds: Set<string> }) {
+  const perms = mergePermissions(profiles, allowedIds)
+  const can = (m: SystemModule | null) => !m ? true : (perms[m]?.includes('view') ?? false)
+
+  return (
+    <div className="space-y-4">
+      <div>
+        <div className="flex items-center gap-2 mb-2">
+          <LayoutList className="h-4 w-4 text-primary" />
+          <label className="text-sm font-medium">Menu lateral liberado para este setor</label>
+        </div>
+        <div className="max-h-[260px] overflow-y-auto rounded-lg border border-border divide-y divide-border">
+          {NAV_SECTIONS.map(section => (
+            <div key={section.title} className="p-2">
+              <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground mb-1">{section.title}</p>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-3">
+                {section.items.map(item => {
+                  const ok = can(item.module)
+                  return (
+                    <div key={item.path} className={`flex items-center gap-2 text-xs py-0.5 ${ok ? 'text-foreground' : 'text-muted-foreground/60'}`}>
+                      {ok ? <Check className="h-3 w-3 text-primary shrink-0" /> : <Lock className="h-3 w-3 shrink-0" />}
+                      <span className="truncate">{item.label}</span>
+                    </div>
+                  )
+                })}
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      <div>
+        <label className="text-sm font-medium mb-2 block">Permissões de visualização e ações</label>
+        <div className="max-h-[240px] overflow-y-auto rounded-lg border border-border">
+          <table className="w-full text-xs">
+            <thead className="bg-muted/50 sticky top-0">
+              <tr>
+                <th className="text-left px-2 py-1.5 font-semibold">Módulo</th>
+                {ALL_ACTIONS.map(a => <th key={a} className="px-1 py-1.5 font-semibold">{ACTION_LABELS[a]}</th>)}
+              </tr>
+            </thead>
+            <tbody>
+              {SYSTEM_MODULES.map(m => (
+                <tr key={m.key} className="border-t border-border">
+                  <td className="px-2 py-1.5">{m.label}</td>
+                  {ALL_ACTIONS.map(a => (
+                    <td key={a} className="text-center px-1 py-1.5">
+                      {perms[m.key]?.includes(a)
+                        ? <Check className="h-3 w-3 text-primary mx-auto" />
+                        : <span className="text-muted-foreground/40">—</span>}
+                    </td>
+                  ))}
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       </div>
     </div>
   )
