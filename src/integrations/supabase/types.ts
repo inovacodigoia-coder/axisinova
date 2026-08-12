@@ -923,6 +923,36 @@ export type Database = {
         }
         Relationships: []
       }
+      lab_report_overrides: {
+        Row: {
+          company_id: string
+          created_at: string
+          html: string
+          id: string
+          protocol: string
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          company_id: string
+          created_at?: string
+          html: string
+          id?: string
+          protocol: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          company_id?: string
+          created_at?: string
+          html?: string
+          id?: string
+          protocol?: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: []
+      }
       lab_result_values: {
         Row: {
           company_id: string
