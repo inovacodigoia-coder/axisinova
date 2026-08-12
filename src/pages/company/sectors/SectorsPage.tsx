@@ -34,13 +34,8 @@ export default function SectorsPage() {
   const [editingProfile, setEditingProfile] = useState<Profile | null>(null)
 
   useEffect(() => {
-    async function fetchData() {
+    async function fetchUsers() {
       if (!user?.companyId) { setLoadingUsers(false); return }
-      
-      // Load mapping from DB
-      const { loadSectorUsers } = await import('@/stores/sectorsStore')
-      await loadSectorUsers(user.companyId)
-
       const { data, error } = await supabase
         .from('profiles')
         .select('id, full_name, role, is_active')
@@ -49,7 +44,7 @@ export default function SectorsPage() {
       if (!error && data) setRealUsers(data)
       setLoadingUsers(false)
     }
-    fetchData()
+    fetchUsers()
   }, [user?.companyId])
 
   const getUserCountForSector = (sectorId: string) => (sectorUsers[sectorId] || []).length
@@ -61,16 +56,10 @@ export default function SectorsPage() {
     setEditing(null)
   }
 
-  const toggleUserInSector = async (sectorId: string, userId: string) => {
-    if (!user?.companyId) return
+  const toggleUserInSector = (sectorId: string, userId: string) => {
     const current = new Set(sectorUsers[sectorId] || [])
     current.has(userId) ? current.delete(userId) : current.add(userId)
-    
-    try {
-      await persistSectorUsers(sectorId, Array.from(current), user.companyId)
-    } catch (err) {
-      toast.error('Erro ao salvar vínculo')
-    }
+    persistSectorUsers(sectorId, Array.from(current))
   }
 
   const saveUserAssignments = () => {

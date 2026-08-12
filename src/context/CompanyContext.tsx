@@ -143,8 +143,7 @@ export function CompanyProvider({ children }: { children: ReactNode }) {
   const companyUserId = user ? getCompanyUserId(user.id) : null
   const companyUser = companyUserId ? MOCK_COMPANY_USERS.find(u => u.id === companyUserId) || null : null
   const allProfiles = useProfiles()
-  const sectorUsers = useSectorUsers()
-  
+  useSectorUsers()
   const profiles = user ? getUserProfiles(companyUserId || '', user.role, user.id) : []
   const allSectors = useSectors()
 
