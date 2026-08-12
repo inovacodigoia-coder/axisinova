@@ -93,6 +93,7 @@ export function ResultEntryModal({
   const [recoletaReasons, setRecoletaReasons] = useState<Record<string, { reason: string; details: string }>>({});
   const [prevResults, setPrevResults] = useState<Record<string, { date: string; value: string; unit: string }[]>>({});
   const [laudoOrder, setLaudoOrder] = useState<any>(null);
+  const [laudoOpen, setLaudoOpen] = useState(false);
 
   /* Do not make any visual modifications. The phrases I write are commands to understand what I want, not to be written down. Understand their content well, then execute what is required.
                                             
