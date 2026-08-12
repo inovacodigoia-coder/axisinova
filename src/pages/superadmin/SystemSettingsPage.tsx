@@ -48,15 +48,23 @@ export default function SystemSettingsPage() {
     }))
   }
 
-  const saveDev = () => {
+  const saveDev = async () => {
     const invalid = devConfig.credentials.find((c) => !c.label.trim() || !c.email.trim() || !c.password)
     if (invalid) {
       toast.error('Preencha rótulo, e-mail e senha em todos os acessos')
       return
     }
-    saveDevAccessConfig(devConfig)
-    toast.success('Acessos de teste salvos')
+    setSavingDev(true)
+    try {
+      await saveDevAccessConfig(devConfig)
+      toast.success('Acessos de teste salvos para todos os ambientes')
+    } catch {
+      toast.error('Não foi possível salvar. Verifique se você é super admin.')
+    } finally {
+      setSavingDev(false)
+    }
   }
+
 
   return (
     <div className="space-y-6">
