@@ -350,6 +350,7 @@ function SectorForm({ sector, profiles, companyId, onSave, onCancel }: { sector:
             allowedProfiles: Array.from(allowed),
             allowedQueueTypes: Array.from(queueTypes),
             allowedDeadlineEditProfiles: Array.from(deadlineProfiles),
+            moduleOverrides,
           })
         }} className="gradient-bg rounded-lg px-4 py-2 text-sm font-semibold text-white shadow-md">Salvar</button>
       </div>
