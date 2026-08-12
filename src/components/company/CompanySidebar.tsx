@@ -77,6 +77,7 @@ export const NAV_SECTIONS: NavSection[] = [
   {
     title: 'SETOR TÉCNICO',
     items: [
+      { label: 'Dashboard', icon: 'Home', path: '/app/lab/dashboard', module: 'lab_technical' },
       { label: 'Coleta', icon: 'FlaskConical', path: '/app/lab/coleta', module: 'lab_technical' },
       { label: 'Mapa de Trabalho', icon: 'FileText', path: '/app/lab/mapa', module: 'lab_technical' },
       { label: 'Análise', icon: 'Database', path: '/app/lab/analise', module: 'lab_technical' },

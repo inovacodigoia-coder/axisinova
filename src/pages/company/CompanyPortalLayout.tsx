@@ -294,6 +294,7 @@ function PortalContent() {
               </Route>
               
               {/* Lab Technical Sector */}
+              <Route path="lab/dashboard" element={<LabDashboard />} />
               <Route path="lab/coleta" element={<LabColetaPage />} />
               <Route path="lab/mapa" element={<LabMapaPage />} />
               <Route path="lab/analise" element={<LabAnalisePage />} />
