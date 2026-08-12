@@ -40,15 +40,24 @@ interface CompanyContextValue {
 
 const CompanyContext = createContext<CompanyContextValue | null>(null)
 
-function getUserProfiles(userId: string, role?: string): Profile[] {
+function getUserProfiles(userId: string, role?: string, authUserId?: string): Profile[] {
+  const all = getProfiles().filter(p => p.isActive)
+
+  // Perfis liberados pelos setores em que o usuário está vinculado (Usuários do Setor)
+  const allowedBySector = authUserId ? getAllowedProfileIdsForUser(authUserId) : null
+  if (allowedBySector) {
+    return all.filter(p => allowedBySector.includes(p.id))
+  }
+
   // Real Supabase users with admin role get all active profiles
   if (role === 'super_admin' || role === 'company_admin') {
-    return MOCK_COMPANY_PROFILES.filter(p => p.isActive)
+    return all
   }
   const user = MOCK_COMPANY_USERS.find(u => u.id === userId)
   if (!user) return []
-  return MOCK_COMPANY_PROFILES.filter(p => user.profiles.includes(p.id) && p.isActive)
+  return all.filter(p => user.profiles.includes(p.id))
 }
+
 
 function getSectorsForProfile(profile: Profile): Sector[] {
   // Setores sem perfis vinculados ficam disponíveis para todos (ex.: setor recém-criado)
