@@ -39,6 +39,7 @@ import { format, differenceInYears } from 'date-fns';
 
 export default function LabReportsPage() {
   const { orders, loading: ordersLoading } = useAttendanceCadastro();
+  const { user } = useAuth();
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [selectedReport, setSelectedReport] = useState<any | null>(null);
@@ -46,6 +47,7 @@ export default function LabReportsPage() {
   const [showDelivery, setShowDelivery] = useState(false);
   const [showEmail, setShowEmail] = useState(false);
   const [filterStatus, setFilterStatus] = useState<string>('all');
+  const [resultsByProtocol, setResultsByProtocol] = useState<Record<string, { released: number; total: number }>>({});
 
   useEffect(() => {
     if (!ordersLoading) {
@@ -54,6 +56,35 @@ export default function LabReportsPage() {
     }
   }, [ordersLoading]);
 
+  // Load persisted exam results (source of truth for released/typed exams)
+  useEffect(() => {
+    const companyId = user?.companyId;
+    if (!companyId) return;
+    let active = true;
+    (async () => {
+      const { data, error } = await supabase
+        .from('lab_exam_results')
+        .select('protocol, exam_ref, status')
+        .eq('company_id', companyId);
+      if (!active) return;
+      if (error) { console.error('Error loading lab results:', error); return; }
+      const map: Record<string, { released: number; total: number }> = {};
+      const seen = new Set<string>();
+      (data || []).forEach((r: any) => {
+        if (!r.protocol) return;
+        const key = `${r.protocol}:${r.exam_ref}`;
+        if (seen.has(key)) return;
+        seen.add(key);
+        const entry = map[r.protocol] || { released: 0, total: 0 };
+        entry.total += 1;
+        if (r.status === 'released' || r.status === 'liberado') entry.released += 1;
+        map[r.protocol] = entry;
+      });
+      setResultsByProtocol(map);
+    })();
+    return () => { active = false; };
+  }, [user?.companyId]);
+
   // Transform attendance_orders into LabReports
   const reports = useMemo(() => {
     return (orders || [])
@@ -61,8 +92,12 @@ export default function LabReportsPage() {
       .map(order => {
         const labOrder = order as unknown as LabAttendanceOrder;
         const exams = labOrder.labGuides?.flatMap(g => g.exams || []) || [];
-        const totalExams = exams.length;
-        const releasedExams = exams.filter(e => e.status === 'released' || e.status === 'liberado').length;
+        const protocolKey = order.protocol || order.orderNumber;
+        const persisted = resultsByProtocol[protocolKey];
+        const totalExams = Math.max(exams.length, persisted?.total || 0);
+        const releasedFromGuides = exams.filter(e => e.status === 'released' || e.status === 'liberado').length;
+        const releasedExams = Math.max(releasedFromGuides, persisted?.released || 0);
+
         
         // Map status
         let reportStatus: 'liberado' | 'pending' | 'retificado' | 'parcial' = 'pending';
