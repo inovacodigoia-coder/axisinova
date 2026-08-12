@@ -3,17 +3,20 @@ import { useCompanyContext } from '@/context/CompanyContext'
 import { DataTable } from '@/components/ui/DataTable'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { PermissionsMatrix } from '@/components/company/users/PermissionsMatrix'
-import { Plus, Search, Eye } from 'lucide-react'
+import { Plus, Search, Eye, Trash2 } from 'lucide-react'
 import type { Profile, PermissionsMap } from '@/types/permissions.types'
+import { useProfiles, upsertProfile, removeProfile } from '@/stores/profilesStore'
+import { detachProfileFromSectors } from '@/stores/sectorsStore'
 import { toast } from 'sonner'
 
 export default function ProfilesManagerPage() {
-  const { allProfiles, canAccess } = useCompanyContext()
-  const [profiles, setProfiles] = useState(allProfiles)
+  const { canAccess } = useCompanyContext()
+  const profiles = useProfiles()
   const [search, setSearch] = useState('')
   const [statusFilter, setStatusFilter] = useState<'all' | 'active' | 'inactive'>('active')
   const [editingProfile, setEditingProfile] = useState<Profile | null>(null)
   const [showForm, setShowForm] = useState(false)
+
 
   const filtered = useMemo(() => {
     return profiles.filter(p => {
