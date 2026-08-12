@@ -144,17 +144,23 @@ export default function LoginPage() {
   const isDisabled = cooldown > 0 || isLoading || (!email && !password)
   const cooldownProgress = cooldown > 0 ? ((60 - cooldown) / 60) * 100 : 0
 
-  const [devConfig, setDevConfig] = useState(() => loadDevAccessConfig())
+  const [devConfig, setDevConfig] = useState<DevAccessConfig>({ enabled: false, credentials: [] })
 
   useEffect(() => {
-    const handler = () => setDevConfig(loadDevAccessConfig())
-    window.addEventListener('dev-access-config-changed', handler)
-    window.addEventListener('storage', handler)
+    let active = true
+    const refresh = () => {
+      fetchDevAccessConfig().then((cfg) => { if (active) setDevConfig(cfg) })
+    }
+    refresh()
+    window.addEventListener('dev-access-config-changed', refresh)
+    window.addEventListener('storage', refresh)
     return () => {
-      window.removeEventListener('dev-access-config-changed', handler)
-      window.removeEventListener('storage', handler)
+      active = false
+      window.removeEventListener('dev-access-config-changed', refresh)
+      window.removeEventListener('storage', refresh)
     }
   }, [])
+
 
   const devCredentials: DevAccessCredential[] = devConfig.credentials
 
