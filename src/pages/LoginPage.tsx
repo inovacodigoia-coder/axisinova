@@ -7,7 +7,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import logoImg from '@/assets/logo-axisinova.jpeg'
 import { toast } from 'sonner'
 import { SYSTEM_VERSION } from '@/utils/version'
-import { loadDevAccessConfig, type DevAccessCredential } from '@/utils/devAccessConfig'
+import { fetchDevAccessConfig, type DevAccessConfig, type DevAccessCredential } from '@/utils/devAccessConfig'
 
 const FEATURES = [
   { icon: Calendar, label: 'Agendamento inteligente' },
