@@ -95,6 +95,7 @@ import LabReportsPage from './lab/LabReportsPage'
 import LabBudgetsPage from './lab/orcamentos/LabBudgetsPage'
 import LabBudgetFormPage from './lab/orcamentos/LabBudgetFormPage'
 import LabBudgetDetailPage from './lab/orcamentos/LabBudgetDetailPage'
+import LabDashboard from './lab/LabDashboard'
 
 import DirectCadastroPage from './reception/DirectCadastroPage'
 
@@ -294,6 +295,7 @@ function PortalContent() {
               </Route>
               
               {/* Lab Technical Sector */}
+              <Route path="lab/dashboard" element={<LabDashboard />} />
               <Route path="lab/coleta" element={<LabColetaPage />} />
               <Route path="lab/mapa" element={<LabMapaPage />} />
               <Route path="lab/analise" element={<LabAnalisePage />} />
