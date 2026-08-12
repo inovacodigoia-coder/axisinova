@@ -79,3 +79,36 @@ export function useSectors(): Sector[] {
 export function useSectorUsers(): Record<string, string[]> {
   return useSyncExternalStore(subscribeSectors, getSectorUsers, getSectorUsers)
 }
+
+/* ── Persistência (Lovable Cloud) ── */
+import { supabase } from '@/integrations/supabase/client'
+
+let hydratedFor: string | null = null
+
+/** Carrega os vínculos usuário↔setor salvos no banco */
+export async function hydrateSectorUsers(companyId: string) {
+  if (!companyId || hydratedFor === companyId) return
+  hydratedFor = companyId
+  const { data, error } = await supabase
+    .from('sector_users')
+    .select('sector_id, user_id')
+    .eq('company_id', companyId)
+  if (error || !data) return
+  const map: Record<string, string[]> = {}
+  data.forEach(r => {
+    map[r.sector_id] = [...(map[r.sector_id] || []), r.user_id]
+  })
+  sectorUsers = map
+  emit()
+}
+
+/** Grava no banco os usuários vinculados a um setor */
+export async function saveSectorUsers(companyId: string, sectorId: string, userIds: string[]) {
+  await supabase.from('sector_users').delete().eq('company_id', companyId).eq('sector_id', sectorId)
+  if (userIds.length > 0) {
+    const { error } = await supabase.from('sector_users').insert(
+      userIds.map(user_id => ({ company_id: companyId, sector_id: sectorId, user_id }))
+    )
+    if (error) throw error
+  }
+}
