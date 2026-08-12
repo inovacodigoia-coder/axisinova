@@ -67,7 +67,6 @@ function fullPerms(): PermissionsMap {
     portals: ['view','create','edit','delete','export','approve'],
   }
 }
-}
 
 // ── Perfis (15) ───────────────────────────────────────────────
 export const MOCK_COMPANY_PROFILES: Profile[] = [
