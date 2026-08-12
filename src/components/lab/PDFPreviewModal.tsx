@@ -113,6 +113,19 @@ export default function PDFPreviewModal({
   const handleZoomOut = () => setZoom(prev => Math.max(prev - 10, 50));
   const toggleFullscreen = () => setIsFullscreen(!isFullscreen);
 
+  // Imprime somente o documento do laudo (sem modal/tela)
+  const printLaudoOnly = React.useCallback(() => {
+    const body = window.document.body;
+    body.classList.add('printing-laudo');
+    const cleanup = () => body.classList.remove('printing-laudo');
+    window.addEventListener('afterprint', cleanup, { once: true });
+    setTimeout(() => {
+      window.print();
+      setTimeout(cleanup, 1000);
+    }, 50);
+  }, []);
+
+
   React.useEffect(() => {
     if (!isOpen) return;
     const handleKeyDown = (event: KeyboardEvent) => {
