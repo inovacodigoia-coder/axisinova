@@ -173,6 +173,23 @@ export function AttendanceDetailsModal({ open, onClose, onOrderDeleted, order, p
 
 
 
+  const filteredOrderForReport = useMemo(() => {
+    if (selectedExams.size === 0) return labOrder;
+    
+    // Create a copy of the order but only with selected exams
+    const filteredExams = orderExams.filter(e => selectedExams.has(e.examId || e.id));
+    
+    return {
+      ...labOrder,
+      exams: filteredExams,
+      // If we have labGuides, filter them too
+      labGuides: labOrder.labGuides?.map(guide => ({
+        ...guide,
+        exams: (guide.exams || []).filter((e: any) => selectedExams.has(e.examId || e.id))
+      })).filter(guide => (guide.exams?.length ?? 0) > 0)
+    };
+  }, [labOrder, orderExams, selectedExams]);
+
   return (
     <Dialog open={open} onOpenChange={(o) => !o && onClose()}>
       <DialogContent className="max-w-[1200px] w-[95vw] max-h-[90vh] p-0 flex flex-col gap-0 bg-[#F8FAFC] border-none shadow-2xl [&>button]:hidden overflow-hidden scrollbar-thin scrollbar-thumb-gray-300">
@@ -392,11 +409,26 @@ export function AttendanceDetailsModal({ open, onClose, onOrderDeleted, order, p
                       <span className="text-[9px] font-bold text-muted-foreground uppercase group-hover:text-primary">Conferir</span>
                     </div>
 
-                    <div className="flex flex-col items-center gap-1 group cursor-pointer">
-                      <Button size="icon" variant="ghost" className="h-9 w-9 rounded-full bg-white shadow-sm border border-border group-hover:text-primary group-hover:border-primary transition-all">
+                    <div className="flex flex-col items-center gap-1 group">
+                      <Button 
+                        size="icon" 
+                        variant="ghost" 
+                        className="h-9 w-9 rounded-full bg-white shadow-sm border border-border group-hover:text-primary group-hover:border-primary transition-all"
+                        disabled={selectedExams.size === 0}
+                        onClick={() => {
+                          if (selectedExams.size > 0) {
+                            setReportPreviewOpen(true);
+                          }
+                        }}
+                      >
                         <Printer className="h-4 w-4" />
                       </Button>
-                      <span className="text-[9px] font-bold text-muted-foreground uppercase group-hover:text-primary">Imprimir</span>
+                      <span className={cn(
+                        "text-[9px] font-bold uppercase text-center transition-colors",
+                        selectedExams.size > 0 ? "text-muted-foreground group-hover:text-primary" : "text-muted-foreground/40"
+                      )}>
+                        Imprimir
+                      </span>
                     </div>
 
                     <div className="flex flex-col items-center gap-1 group cursor-pointer">
@@ -846,7 +878,7 @@ export function AttendanceDetailsModal({ open, onClose, onOrderDeleted, order, p
         <PDFPreviewModal
           isOpen={reportPreviewOpen}
           onClose={() => setReportPreviewOpen(false)}
-          order={labOrder}
+          order={filteredOrderForReport as any}
           onDownload={() => console.log('Download triggered')}
         />
       )}
