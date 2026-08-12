@@ -7,6 +7,9 @@ interface LaudoDocumentProps {
   companyLogo?: string;
   secondaryLogo?: string;
   laboratoryName?: string;
+  laboratorySubtitle?: string;
+  institutionalWarning?: string;
+  footerText?: string;
   technicalResponsible?: {
     name: string;
     register: string;
@@ -26,10 +29,14 @@ export default function LaudoDocument({
   companyLogo,
   secondaryLogo,
   laboratoryName = "LABORATÓRIO MUNICIPAL CENTRAL",
+  laboratorySubtitle,
+  institutionalWarning,
+  footerText,
   technicalResponsible,
   isRetified,
   retificationDetails
 }: LaudoDocumentProps) {
+
   const patientAge = order.patientBirthDate 
     ? new Date().getFullYear() - new Date(order.patientBirthDate).getFullYear()
     : 0;
