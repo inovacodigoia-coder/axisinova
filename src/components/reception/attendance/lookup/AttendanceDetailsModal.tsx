@@ -1,6 +1,6 @@
 import { useState, useMemo } from 'react'
 import { Dialog, DialogContent } from '@/components/ui/dialog'
-import { X, Printer, Pencil, Trash2, Plus, ArrowLeft, MoreVertical, CreditCard, Droplets, ShieldCheck, DollarSign, Calendar, Clock, MapPin, User, FileText, ChevronDown, History, BarChart3, Database, RefreshCw, Info, Smartphone, Calculator } from 'lucide-react'
+import { X, Printer, Pencil, Trash2, Plus, ArrowLeft, MoreVertical, CreditCard, Droplets, ShieldCheck, DollarSign, Calendar, Clock, MapPin, User, FileText, ChevronDown, History, BarChart3, Database, RefreshCw, Info, Smartphone, Calculator, Loader2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import type { AttendanceOrder } from '@/types/attendance-cadastro.types'
@@ -25,17 +25,28 @@ import { ScrollArea } from '@/components/ui/scroll-area'
 import { Checkbox } from '@/components/ui/checkbox'
 import type { AttendanceControlDocument, PrinterConfig } from '@/types/payment-print.types'
 import { format } from 'date-fns'
-
-
+import { supabase } from '@/integrations/supabase/client'
+import { useToast } from '@/hooks/use-toast'
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog"
 
 interface AttendanceDetailsModalProps {
   open: boolean
   onClose: () => void
+  onOrderDeleted?: () => void
   order: AttendanceOrder
   patient?: Patient
 }
 
-export function AttendanceDetailsModal({ open, onClose, order, patient }: AttendanceDetailsModalProps) {
+export function AttendanceDetailsModal({ open, onClose, onOrderDeleted, order, patient }: AttendanceDetailsModalProps) {
   const [printSelectionOpen, setPrintSelectionOpen] = useState(false)
   const [reportPreviewOpen, setReportPreviewOpen] = useState(false)
   const [printModalOpen, setPrintModalOpen] = useState(false)
@@ -45,6 +56,9 @@ export function AttendanceDetailsModal({ open, onClose, order, patient }: Attend
   const [forecastModalOpen, setForecastModalOpen] = useState(false)
   const [selectedExams, setSelectedExams] = useState<Set<string>>(new Set())
   const [selectedTubes, setSelectedTubes] = useState<Set<string>>(new Set())
+  const [isDeleting, setIsDeleting] = useState(false)
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
+  const { toast } = useToast()
 
   const labOrder = order as LabAttendanceOrder;
 
