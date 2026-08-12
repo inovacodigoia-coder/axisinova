@@ -38,7 +38,6 @@ import { useAttendanceCadastro } from '@/hooks/useAttendanceCadastro';
 import { format, differenceInYears } from 'date-fns';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/context/AuthContext';
-import { calculateAttendanceStatus, ATTENDANCE_STATUS_CONFIG } from '@/utils/attendanceStatus';
 
   /* Do not make any visual modifications. The phrases I write are commands to understand what I want, not to be written down. Understand their content well, then execute what is required.
                                         
@@ -106,8 +105,11 @@ export default function LabReportsPage() {
         const releasedExams = Math.max(releasedFromGuides, persisted?.released || 0);
 
         
-        // Map status using common logic
-        const reportStatus = calculateAttendanceStatus(order);
+        // Map status
+        let reportStatus: 'liberado' | 'pending' | 'retificado' | 'parcial' = 'pending';
+        if (releasedExams > 0 && releasedExams < totalExams) reportStatus = 'parcial';
+        else if (releasedExams === totalExams && totalExams > 0) reportStatus = 'liberado';
+        else if ((order.status as string) === 'retificado') reportStatus = 'retificado';
 
         return {
           id: order.id,
@@ -151,19 +153,7 @@ export default function LabReportsPage() {
     setShowEmail(true);
   };
 
-  const getStatusBadge = (status: string, order: any) => {
-    const calculated = calculateAttendanceStatus(order);
-    const config = ATTENDANCE_STATUS_CONFIG[calculated as any];
-    
-    if (config) {
-      return (
-        <Badge className={cn("border-none", config.bgClass, config.textClass)}>
-          ● {config.label}
-        </Badge>
-      );
-    }
-
-    // Fallback for types
+  const getStatusBadge = (status: string) => {
     switch (status) {
       case 'liberado':
         return <Badge className="bg-emerald-500 text-white border-none">● Liberado</Badge>;
@@ -269,7 +259,7 @@ export default function LabReportsPage() {
                         <span className="font-medium">{report.examsCount}</span>
                       </div>
                     </td>
-                    <td className="px-4 py-4">{getStatusBadge(report.status, report.rawOrder)}</td>
+                    <td className="px-4 py-4">{getStatusBadge(report.status)}</td>
                     <td className="px-4 py-4 text-right">
                       <div className="flex items-center justify-end gap-1">
                         <Button variant="ghost" size="icon" className="h-8 w-8 text-primary hover:text-primary hover:bg-primary/10" onClick={() => handlePreview(report)}>

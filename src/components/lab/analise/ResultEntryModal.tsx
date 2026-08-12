@@ -61,7 +61,6 @@ import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import { format, differenceInYears } from 'date-fns';
-import { calculateAttendanceStatus } from '@/utils/attendanceStatus';
 
 interface ResultEntryModalProps {
   isOpen: boolean;
@@ -327,25 +326,36 @@ export function ResultEntryModal({
   };
 
   // Helper para resolver o status do pedido baseado nos exames
+  const resolveOrderStatus = (exams: any[], currentStatuses: Record<string, string>) => {
+    const allExams = exams.filter(e => e.status !== 'cancelled');
+    if (allExams.length === 0) return 'cancelled';
+
+    const statuses = allExams.map(e => currentStatuses[e.id] || e.status || 'pending');
+    
+    // Se todos estiverem liberados -> Concluído
+    if (statuses.every(s => s === 'released')) return 'completed';
+    
+    // Se pelo menos um estiver liberado -> Liberado
+    if (statuses.some(s => s === 'released')) return 'released';
+    
+    // Se algum estiver faltando digitação ou ainda for pendente -> Validação
+    const isMissingResults = allExams.some(exam => {
+      const params = paramsByExam[exam.id] || [{ id: '1' }];
+      return params.some(p => !(results[`${exam.id}_${p.id}`] || '').trim());
+    });
+    
+    if (isMissingResults || statuses.some(s => s === 'pending' || s === 'collection_done')) {
+      return 'validation';
+    }
+
+    return 'in_analysis';
+  };
+
   const updateParentOrderStatus = async (orderId: string, patientExams: any[], currentStatuses: Record<string, string>) => {
-    // Simulamos um objeto de pedido para o cálculo centralizado
-    const tempOrder: any = {
-      status: 'pending',
-      deliveryStatus: 'not_delivered',
-      exams: patientExams.map(e => ({
-        ...e,
-        status: currentStatuses[e.id] || e.status,
-        results: Object.keys(results)
-          .filter(k => k.startsWith(`${e.id}_`))
-          .map(k => ({ value: results[k] }))
-      }))
-    };
-    
-    const newStatus = calculateAttendanceStatus(tempOrder as any);
-    
+    const newStatus = resolveOrderStatus(patientExams, currentStatuses);
     const { error } = await supabase
       .from('attendance_orders')
-      .update({ status: newStatus, delivery_status: 'not_delivered' })
+      .update({ status: newStatus })
       .eq('id', orderId);
     
     if (error) console.error('Erro ao atualizar status do pedido:', error);

@@ -10,7 +10,6 @@ import { useLabSettings } from '@/hooks/useLabSettings';
 import { useAuth } from '@/context/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-import { calculateAttendanceStatus, ATTENDANCE_STATUS_CONFIG } from '@/utils/attendanceStatus';
 
 
 interface PDFPreviewModalProps {
@@ -115,22 +114,8 @@ export default function PDFPreviewModal({
   const toggleFullscreen = () => setIsFullscreen(!isFullscreen);
 
   // Imprime somente o documento do laudo (A4, sem modal/tela)
-  const printLaudoOnly = React.useCallback(async () => {
+  const printLaudoOnly = React.useCallback(() => {
     if (!documentRef.current) return;
-    
-    // Mark as delivered
-    try {
-      if (protocol && user?.companyId) {
-        await supabase
-          .from('attendance_orders')
-          .update({ delivery_status: 'delivered' } as any)
-          .eq('protocol', protocol)
-          .eq('company_id', user.companyId);
-      }
-    } catch (e) {
-      console.error('Error updating delivery status:', e);
-    }
-
     const body = window.document.body;
     const root = window.document.createElement('div');
     root.id = 'laudo-print-root';
@@ -150,8 +135,7 @@ export default function PDFPreviewModal({
       window.print();
       setTimeout(cleanup, 1500);
     }, 80);
-  }, [protocol, user?.companyId]);
-
+  }, []);
 
 
 
@@ -167,18 +151,7 @@ export default function PDFPreviewModal({
 
   // Status mapping
   const getStatusBadge = () => {
-    const calculated = calculateAttendanceStatus(order as any);
-    const config = ATTENDANCE_STATUS_CONFIG[calculated];
-    
-    if (config) {
-      return (
-        <Badge className={cn("border-none", config.bgClass, config.textClass)}>
-          {config.label}
-        </Badge>
-      );
-    }
-
-    const status = order.exams?.[0]?.status; 
+    const status = order.exams?.[0]?.status; // Simplified check
     switch (status) {
       case 'validated':
       case 'liberado':
@@ -334,13 +307,7 @@ export default function PDFPreviewModal({
               <Printer className="h-4 w-4" /> Imprimir
             </Button>
 
-            <Button 
-              className="gradient-bg text-white gap-2" 
-              onClick={() => {
-                printLaudoOnly();
-                toast.success('Iniciando download...');
-              }}
-            >
+            <Button className="gradient-bg text-white gap-2" onClick={printLaudoOnly}>
               <Download className="h-4 w-4" /> Download PDF
             </Button>
           </div>

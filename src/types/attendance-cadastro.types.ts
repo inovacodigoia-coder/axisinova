@@ -80,7 +80,7 @@ export interface AttendanceOrder {
   attachmentRulesSatisfied: boolean
   attachmentOverrideReason?: string
 
-  status: 'waiting' | 'waiting_collection' | 'collection_done' | 'in_analysis' | 'validation' | 'released' | 'cancelled' | 'open' | 'authorized' | 'completed' | 'aberto' | 'aguardando' | 'coleta_realizada' | 'em_analise' | 'liberado' | 'concluido' | string
+  status: 'waiting' | 'waiting_collection' | 'collection_done' | 'in_analysis' | 'validation' | 'released' | 'cancelled' | 'open' | 'authorized' | 'completed'
   scheduledAppointmentId?: string
   registeredBy: string
   registeredByName?: string
