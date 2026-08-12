@@ -79,7 +79,7 @@ export default function LabAnalisePage() {
   const [dateTo, setDateTo] = useState<Date | undefined>(undefined);
   const [selectedWorkbenches, setSelectedWorkbenches] = useState<string[]>([]);
   const [selectedEstablishments, setSelectedEstablishments] = useState<string[]>([]);
-  const [selectedStatuses, setSelectedStatuses] = useState<string[]>(['collection_done', 'concluded']);
+  const [selectedStatuses, setSelectedStatuses] = useState<string[]>(['collection_done', 'in_analysis', 'validation', 'released', 'concluded']);
   const [showFilters, setShowFilters] = useState(false);
 
   useEffect(() => {
@@ -114,13 +114,8 @@ export default function LabAnalisePage() {
       const allowedOrderStatuses = ['collection_done', 'in_analysis', 'validation', 'released', 'concluded', 'open'];
       
       exams.forEach(exam => {
-        // Mapeamos os status internos para os nomes amigáveis solicitados
-        // collection_done -> Coleta Realizada
-        // in_analysis -> Em Análise
-        // released -> Liberado
-        // concluded -> Concluído
-        
         // Verifica se o status do pedido está entre os selecionados
+        // Se o status do pedido for 'concluded', ele deve ser mostrado se 'concluded' estiver nos filtros
         const matchesStatus = selectedStatuses.length === 0 || selectedStatuses.includes(order.status);
         
         // Se o status do pedido estiver permitido e bater com o filtro selecionado
@@ -208,11 +203,11 @@ export default function LabAnalisePage() {
     setDateTo(undefined);
     setSelectedWorkbenches([]);
     setSelectedEstablishments([]);
-    setSelectedStatuses(['collection_done', 'concluded']);
+    setSelectedStatuses(['collection_done', 'in_analysis', 'validation', 'released', 'concluded']);
     setProtocolSearch('');
   };
 
-  const isFiltered = period !== 'hoje' || selectedWorkbenches.length > 0 || selectedEstablishments.length > 0 || selectedStatuses.length !== 2 || !selectedStatuses.includes('collection_done') || !selectedStatuses.includes('concluded') || protocolSearch !== '';
+  const isFiltered = period !== 'hoje' || selectedWorkbenches.length > 0 || selectedEstablishments.length > 0 || selectedStatuses.length !== 5 || protocolSearch !== '';
 
   return (
     <div className="flex flex-col h-full overflow-hidden">
@@ -463,7 +458,7 @@ export default function LabAnalisePage() {
                             </div>
                           ) : (
                             groupedExams.map((group) => {
-                              const isExpanded = !!expandedGroups[group.protocol];
+                              const isExpanded = expandedGroups[group.protocol] !== false; // Default to expanded if not explicitly collapsed
                               return (
                                 <div key={group.protocol} className="space-y-1.5">
                                   <div className="flex items-center justify-between px-1">
