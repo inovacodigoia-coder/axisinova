@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { Plus, Trash2, Save, Eye, EyeOff } from 'lucide-react'
 import { toast } from 'sonner'
 import {
+  fetchDevAccessConfig,
   loadDevAccessConfig,
   saveDevAccessConfig,
   type DevAccessCredential,
@@ -11,10 +12,12 @@ export default function SystemSettingsPage() {
   const [activeTab, setActiveTab] = useState('general')
   const [devConfig, setDevConfig] = useState(() => loadDevAccessConfig())
   const [revealed, setRevealed] = useState<Record<string, boolean>>({})
+  const [savingDev, setSavingDev] = useState(false)
 
   useEffect(() => {
-    setDevConfig(loadDevAccessConfig())
+    fetchDevAccessConfig().then(setDevConfig)
   }, [])
+
 
   const tabs = [
     { id: 'general', label: 'Geral' },
