@@ -401,7 +401,9 @@ export function ResultEntryModal({
       registeredAt: patient.registeredAt,
       exams,
     });
+    setLaudoOpen(true);
   };
+
 
 
 
