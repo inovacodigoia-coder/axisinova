@@ -74,7 +74,15 @@ export default function LabColetaPage() {
 
   const collectionOrders = useMemo(() => {
     return (orders || [])
-      .filter(o => o?.status === 'waiting_collection' || o?.status === 'open')
+      .filter(o => {
+        // Regra: se status 'open', só mostra se houver pelo menos um exame coletado
+        if (o?.status === 'open') {
+          const allExams = (o.labGuides || []).flatMap(guide => (guide.exams || []));
+          const hasAnyCollected = allExams.some((e: any) => e.isColeta || e.status === 'collected');
+          return hasAnyCollected;
+        }
+        return o?.status === 'waiting_collection';
+      })
       .map(o => {
         const allExams = (o.labGuides || []).flatMap(guide => (guide.exams || []).map((e: any) => ({
           ...e,

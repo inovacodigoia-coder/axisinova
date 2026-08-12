@@ -148,6 +148,8 @@ export function AttendanceDetailsModal({ open, onClose, onOrderDeleted, order, p
   const getStatusColor = (status: string) => {
     switch(status?.toLowerCase()) {
       case 'open':
+        // No modal de detalhes, "Aberto" pode ser azul se não tiver nada coletado
+        return 'bg-blue-500';
       case 'waiting':
       case 'waiting_collection':
         return 'bg-blue-500';
