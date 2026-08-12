@@ -15,7 +15,7 @@ import {
   Calendar as CalendarIcon,
   Save,
   ChevronDown,
-  RefreshCcw,
+  RefreshCw,
   MinusCircle,
   PlusCircle,
   MoreVertical,
@@ -83,8 +83,9 @@ export function ResultEntryModal({
   filteredExams, 
   filters,
   workbenchNames,
-  establishmentNames
-}: ResultEntryModalProps) {
+  establishmentNames,
+  refreshData
+}: ResultEntryModalProps & { refreshData?: () => void }) {
   const { user } = useAuth();
   const [results, setResults] = useState<Record<string, string>>({});
   const [notes, setNotes] = useState<Record<string, string>>({});
