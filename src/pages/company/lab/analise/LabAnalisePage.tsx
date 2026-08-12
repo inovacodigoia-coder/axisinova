@@ -210,7 +210,7 @@ export default function LabAnalisePage() {
     setProtocolSearch('');
   };
 
-  const isFiltered = period !== 'hoje' || selectedWorkbenches.length > 0 || selectedEstablishments.length > 0 || protocolSearch !== '';
+  const isFiltered = period !== 'hoje' || selectedWorkbenches.length > 0 || selectedEstablishments.length > 0 || selectedStatuses.length !== 1 || !selectedStatuses.includes('collection_done') || protocolSearch !== '';
 
   return (
     <div className="flex flex-col h-full overflow-hidden">
