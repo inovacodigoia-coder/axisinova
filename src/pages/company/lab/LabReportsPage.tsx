@@ -141,8 +141,11 @@ export default function LabReportsPage() {
     setShowPreview(true);
   };
 
-  const handleDownload = (id: string) => {
-    toast.success("Download iniciado");
+  const handleDownload = (report: any) => {
+    setSelectedReport(report.rawOrder);
+    setShowPreview(true);
+    // The modal itself has a download button that calls printLaudoOnly
+    toast.success("Abrindo prévia para download");
   };
 
   const handleEmail = (report: any) => {
