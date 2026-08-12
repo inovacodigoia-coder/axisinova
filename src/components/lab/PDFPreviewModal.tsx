@@ -254,9 +254,33 @@ export default function PDFPreviewModal({
             <Button variant="outline" onClick={onClose} className="gap-2">
               <X className="h-4 w-4" /> Fechar
             </Button>
+            {isAdmin && (
+              isEditing ? (
+                <>
+                  <Button variant="outline" className="gap-2" onClick={() => setIsEditing(false)} disabled={saving}>
+                    <X className="h-4 w-4" /> Cancelar edição
+                  </Button>
+                  <Button variant="default" className="gap-2" onClick={handleSaveEdits} disabled={saving}>
+                    <Save className="h-4 w-4" /> {saving ? 'Salvando...' : 'Salvar'}
+                  </Button>
+                </>
+              ) : (
+                <>
+                  {savedHtml && (
+                    <Button variant="outline" className="gap-2" onClick={handleRestore} disabled={saving}>
+                      <RotateCcw className="h-4 w-4" /> Restaurar original
+                    </Button>
+                  )}
+                  <Button variant="outline" className="gap-2" onClick={() => setIsEditing(true)}>
+                    <Pencil className="h-4 w-4" /> Editar laudo
+                  </Button>
+                </>
+              )
+            )}
             <Button variant="outline" className="gap-2" onClick={onPrint || (() => window.print())}>
               <Printer className="h-4 w-4" /> Imprimir
             </Button>
+
             <Button className="gradient-bg text-white gap-2" onClick={onDownload}>
               <Download className="h-4 w-4" /> Download PDF
             </Button>
