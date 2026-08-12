@@ -690,6 +690,16 @@ export function AttendanceDetailsModal({ open, onClose, order, patient }: Attend
 
           // Check if "Laudo" was selected to show the specific preview modal
           const laudoOption = result.options.find((o: any) => o.id === 'laudo' && o.enabled);
+          const comprovanteOption = result.options.find((o: any) => o.id === 'comprovante' && o.enabled);
+          
+          if (laudoOption || comprovanteOption) {
+            const { supabase } = await import('@/integrations/supabase/client');
+            await supabase
+              .from('attendance_orders')
+              .update({ delivery_status: 'delivered' } as any)
+              .eq('id', order.id);
+          }
+
           if (laudoOption) {
             setReportPreviewOpen(true);
             return;
