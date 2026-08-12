@@ -393,8 +393,8 @@ export function ResultEntryModal({
       data.forEach((row: any) => {
         const examId = String(row.exam_ref).split(':').slice(1).join(':');
         if (row.notes) nextNotes[examId] = row.notes;
-        if (row.status === 'digitized' || row.status === 'released') {
-          nextStatuses[examId] = row.status;
+        if (row.status === 'digitized' || row.status === 'released' || row.status === 'liberado' || row.status === 'validated') {
+          nextStatuses[examId] = row.status === 'validated' ? 'released' : row.status;
         }
         (row.lab_result_values || []).forEach((v: any) => {
           if (v.value) nextResults[`${examId}_${v.parameter_key}`] = v.value;
@@ -448,7 +448,10 @@ export function ResultEntryModal({
   }, [isOpen, groupedPatients, user?.companyId]);
 
   const patientHasLaudo = (patient: any) =>
-    patient.exams.some((e: any) => examStatuses[e.id] === 'digitized' || examStatuses[e.id] === 'released');
+    patient.exams.some((e: any) => {
+      const status = examStatuses[e.id] || e.status;
+      return status === 'digitized' || status === 'released' || status === 'liberado' || status === 'validated';
+    });
 
   const openLaudo = async (patient: any) => {
     if (laudoLoading) return;
