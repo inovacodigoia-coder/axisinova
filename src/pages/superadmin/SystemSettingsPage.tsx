@@ -161,9 +161,19 @@ export default function SystemSettingsPage() {
                 <input
                   type="checkbox"
                   checked={devConfig.enabled}
-                  onChange={(e) => setDevConfig((prev) => ({ ...prev, enabled: e.target.checked }))}
+                  onChange={async (e) => {
+                    const next = { ...devConfig, enabled: e.target.checked }
+                    setDevConfig(next)
+                    try {
+                      await saveDevAccessConfig(next)
+                      toast.success(next.enabled ? 'Painel ativado na tela de login' : 'Painel desativado na tela de login')
+                    } catch {
+                      toast.error('Não foi possível salvar. Verifique se você é super admin.')
+                    }
+                  }}
                   className="h-5 w-10 rounded-full accent-[hsl(var(--primary))]"
                 />
+
               </label>
             </div>
 
