@@ -2,8 +2,10 @@ import { createContext, useCallback, useContext, useEffect, useState, type React
 import { useAuth } from '@/context/AuthContext'
 import type { Profile, Sector, MenuFunction, SystemModule, PermissionAction } from '@/types/permissions.types'
 import type { CompanyUser, Origin } from '@/types/company-portal.types'
-import { MOCK_COMPANY_PROFILES, MOCK_COMPANY_USERS, getFunctionsForProfile, getUtilitiesForProfile } from '@/mocks/company.mock'
-import { getSectors, useSectors } from '@/stores/sectorsStore'
+import { MOCK_COMPANY_USERS, getFunctionsForProfile, getUtilitiesForProfile } from '@/mocks/company.mock'
+import { getSectors, useSectors, getAllowedProfileIdsForUser, useSectorUsers } from '@/stores/sectorsStore'
+import { getProfiles, useProfiles } from '@/stores/profilesStore'
+
 import { supabase } from '@/integrations/supabase/client'
 import { toast } from 'sonner'
 
