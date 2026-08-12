@@ -2,7 +2,8 @@ import { createContext, useCallback, useContext, useEffect, useState, type React
 import { useAuth } from '@/context/AuthContext'
 import type { Profile, Sector, MenuFunction, SystemModule, PermissionAction } from '@/types/permissions.types'
 import type { CompanyUser, Origin } from '@/types/company-portal.types'
-import { MOCK_COMPANY_PROFILES, MOCK_COMPANY_USERS, MOCK_SECTORS, getFunctionsForProfile, getUtilitiesForProfile } from '@/mocks/company.mock'
+import { MOCK_COMPANY_PROFILES, MOCK_COMPANY_USERS, getFunctionsForProfile, getUtilitiesForProfile } from '@/mocks/company.mock'
+import { getSectors, useSectors } from '@/stores/sectorsStore'
 import { supabase } from '@/integrations/supabase/client'
 import { toast } from 'sonner'
 
@@ -48,7 +49,8 @@ function getUserProfiles(userId: string, role?: string): Profile[] {
 }
 
 function getSectorsForProfile(profile: Profile): Sector[] {
-  return MOCK_SECTORS.filter(s => s.allowedProfiles.includes(profile.id) && s.isActive)
+  // Setores sem perfis vinculados ficam disponíveis para todos (ex.: setor recém-criado)
+  return getSectors().filter(s => s.isActive && (s.allowedProfiles.length === 0 || s.allowedProfiles.includes(profile.id)))
 }
 
 // Map auth user IDs to company user IDs
@@ -130,6 +132,7 @@ export function CompanyProvider({ children }: { children: ReactNode }) {
   const companyUserId = user ? getCompanyUserId(user.id) : null
   const companyUser = companyUserId ? MOCK_COMPANY_USERS.find(u => u.id === companyUserId) || null : null
   const profiles = user ? getUserProfiles(companyUserId || '', user.role) : []
+  const allSectors = useSectors()
   const availableSectors = activeProfile ? getSectorsForProfile(activeProfile) : []
   const availableFunctions = activeProfile ? getFunctionsForProfile(activeProfile) : []
   const availableUtilities = activeProfile ? getUtilitiesForProfile(activeProfile) : []
@@ -263,7 +266,7 @@ export function CompanyProvider({ children }: { children: ReactNode }) {
   }, [profiles])
 
   const switchSector = useCallback((sectorId: string) => {
-    const s = MOCK_SECTORS.find(x => x.id === sectorId)
+    const s = getSectors().find(x => x.id === sectorId)
     if (s && activeProfile) {
       setActiveSector(s)
       sessionStorage.setItem(SESSION_KEY, JSON.stringify({ profileId: activeProfile.id, sectorId: s.id }))
@@ -288,7 +291,7 @@ export function CompanyProvider({ children }: { children: ReactNode }) {
       availableSectors, availableOrigins, availableFunctions, availableUtilities,
       selectProfile, selectSector, selectOrigin, confirmSession, clearSession,
       switchProfile, switchSector, canAccess, isSessionReady, isSessionHydrated,
-      allProfiles: MOCK_COMPANY_PROFILES, allSectors: MOCK_SECTORS, allUsers: MOCK_COMPANY_USERS,
+      allProfiles: MOCK_COMPANY_PROFILES, allSectors: allSectors, allUsers: MOCK_COMPANY_USERS,
       refreshOrigins,
     }}>
       {children}
