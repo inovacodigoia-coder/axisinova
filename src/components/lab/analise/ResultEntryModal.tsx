@@ -332,20 +332,20 @@ export function ResultEntryModal({
 
     const statuses = allExams.map(e => currentStatuses[e.id] || e.status || 'pending');
     
-    // Se todos estiverem liberados -> Concluído
-    if (statuses.every(s => s === 'released')) return 'completed';
+    // Se todos estiverem liberados -> Liberado (será Concluído na impressão/download)
+    if (statuses.every(s => s === 'released')) return 'released';
     
-    // Se pelo menos um estiver liberado -> Liberado
-    if (statuses.some(s => s === 'released')) return 'released';
-    
-    // Se algum estiver faltando digitação ou ainda for pendente -> Validação
-    const isMissingResults = allExams.some(exam => {
+    // Se algum estiver preenchido (mesmo que parcialmente) -> Em Análise
+    const hasAnyResult = allExams.some(exam => {
       const params = paramsByExam[exam.id] || [{ id: '1' }];
-      return params.some(p => !(results[`${exam.id}_${p.id}`] || '').trim());
+      return params.some(p => (results[`${exam.id}_${p.id}`] || '').trim().length > 0);
     });
-    
-    if (isMissingResults || statuses.some(s => s === 'pending' || s === 'collection_done')) {
-      return 'validation';
+
+    if (hasAnyResult) return 'in_analysis';
+
+    // Se não houver resultados e ainda estiver em fluxo técnico
+    if (statuses.some(s => s === 'pending' || s === 'collection_done')) {
+      return 'collection_done';
     }
 
     return 'in_analysis';
