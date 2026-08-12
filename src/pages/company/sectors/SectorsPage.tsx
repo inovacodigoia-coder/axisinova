@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { useCompanyContext } from '@/context/CompanyContext'
 import { useAuth } from '@/context/AuthContext'
 import { supabase } from '@/integrations/supabase/client'
-import { useSectors, useSectorUsers, upsertSector, removeSector, setSectorUsers as persistSectorUsers, detachProfileFromSectors } from '@/stores/sectorsStore'
+import { useSectors, useSectorUsers, upsertSector, removeSector, setSectorUsers as persistSectorUsers, detachProfileFromSectors, hydrateSectorUsers, saveSectorUsers } from '@/stores/sectorsStore'
 import { useProfiles, upsertProfile, removeProfile } from '@/stores/profilesStore'
 import { ProfileFormModal } from '@/pages/company/users/ProfilesManagerPage'
 import { Plus, Edit, Users, ShieldCheck, Loader2, UserPlus, X, Search, Check, Lock, LayoutList, Trash2 } from 'lucide-react'
@@ -45,6 +45,7 @@ export default function SectorsPage() {
       setLoadingUsers(false)
     }
     fetchUsers()
+    if (user?.companyId) hydrateSectorUsers(user.companyId)
   }, [user?.companyId])
 
   const getUserCountForSector = (sectorId: string) => (sectorUsers[sectorId] || []).length
@@ -62,11 +63,21 @@ export default function SectorsPage() {
     persistSectorUsers(sectorId, Array.from(current))
   }
 
-  const saveUserAssignments = () => {
-    if (managingSector) {
-      const count = getUserCountForSector(managingSector.id)
-      toast.success(`${count} usuário(s) vinculado(s) ao setor "${managingSector.name}"`)
+  const [savingUsers, setSavingUsers] = useState(false)
+
+  const saveUserAssignments = async () => {
+    if (!managingSector) return
+    if (!user?.companyId) { toast.error('Empresa não identificada'); return }
+    const ids = sectorUsers[managingSector.id] || []
+    setSavingUsers(true)
+    try {
+      await saveSectorUsers(user.companyId, managingSector.id, ids)
+      toast.success(`${ids.length} usuário(s) vinculado(s) ao setor "${managingSector.name}"`)
       setManagingSector(null)
+    } catch (e: any) {
+      toast.error('Erro ao salvar usuários do setor', { description: e?.message })
+    } finally {
+      setSavingUsers(false)
     }
   }
 
@@ -217,6 +228,7 @@ export default function SectorsPage() {
           loading={loadingUsers}
           assignedUsers={new Set(sectorUsers[managingSector.id] || [])}
           onToggle={(userId) => toggleUserInSector(managingSector.id, userId)}
+          saving={savingUsers}
           onSave={saveUserAssignments}
           onClose={() => setManagingSector(null)}
         />
@@ -228,11 +240,12 @@ export default function SectorsPage() {
 
 /* ── Modal de Gerenciar Usuários ── */
 function ManageUsersModal({
-  sector, users, loading, assignedUsers, onToggle, onSave, onClose
+  sector, users, loading, assignedUsers, onToggle, onSave, onClose, saving
 }: {
   sector: Sector
   users: RealUser[]
   loading: boolean
+  saving?: boolean
   assignedUsers: Set<string>
   onToggle: (userId: string) => void
   onSave: () => void
