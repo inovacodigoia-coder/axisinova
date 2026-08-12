@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { useCompanyContext } from '@/context/CompanyContext'
 import { useAuth } from '@/context/AuthContext'
 import { supabase } from '@/integrations/supabase/client'
-import { MOCK_SECTORS } from '@/mocks/company.mock'
+import { useSectors, upsertSector } from '@/stores/sectorsStore'
 import { Plus, Edit, Users, ShieldCheck, Loader2, UserPlus, X, Search, Check, Lock, LayoutList } from 'lucide-react'
 import type { Sector, SystemModule, PermissionsMap, PermissionAction } from '@/types/permissions.types'
 import { SYSTEM_MODULES, ALL_ACTIONS, ACTION_LABELS } from '@/types/permissions.types'
@@ -19,7 +19,7 @@ interface RealUser {
 export default function SectorsPage() {
   const { canAccess, allProfiles } = useCompanyContext()
   const { user } = useAuth()
-  const [sectors, setSectors] = useState(MOCK_SECTORS)
+  const sectors = useSectors()
   const [showForm, setShowForm] = useState(false)
   const [editing, setEditing] = useState<Sector | null>(null)
   const [managingSector, setManagingSector] = useState<Sector | null>(null)
@@ -47,13 +47,8 @@ export default function SectorsPage() {
   }
 
   const handleSave = (s: Sector) => {
-    if (editing) {
-      setSectors(prev => prev.map(x => x.id === s.id ? s : x))
-      toast.success('Setor atualizado')
-    } else {
-      setSectors(prev => [...prev, s])
-      toast.success('Setor criado')
-    }
+    upsertSector(s)
+    toast.success(editing ? 'Setor atualizado' : 'Setor criado')
     setShowForm(false)
     setEditing(null)
   }
