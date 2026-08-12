@@ -1,21 +1,16 @@
 import { useState, useEffect } from 'react'
-import { Save, RotateCcw } from 'lucide-react'
+import { Save, RotateCcw, Check } from 'lucide-react'
 import { toast } from 'sonner'
 import { supabase } from '@/integrations/supabase/client'
 import { useAuth } from '@/context/AuthContext'
-
-const DEFAULT_PRIMARY = '#00D4FF'
-const DEFAULT_SECONDARY = '#7B2FF7'
-const DEFAULT_SIDEBAR = '#1E293B'
-
-function applyColors(primary: string, secondary: string, sidebar: string) {
-  const root = document.documentElement
-  root.style.setProperty('--color-primary-hex', primary)
-  root.style.setProperty('--color-secondary-hex', secondary)
-  root.style.setProperty('--gradient-main', `linear-gradient(135deg, ${primary} 0%, ${secondary} 100%)`)
-  root.style.setProperty('--company-accent-hex', primary)
-  root.style.setProperty('--sidebar-bg', sidebar)
-}
+import {
+  BrandingTheme,
+  DEFAULT_THEME,
+  THEME_PRESETS,
+  applyBranding,
+  themeFromRow,
+  themeToRow,
+} from '@/lib/branding'
 
 const SIDEBAR_PRESETS = [
   { label: 'Escuro padrão', color: '#1E293B' },
@@ -28,25 +23,72 @@ const SIDEBAR_PRESETS = [
   { label: 'Cinza escuro', color: '#374151' },
 ]
 
+const BACKGROUND_PRESETS = [
+  { label: 'Cinza claro', color: '#F5F7FA' },
+  { label: 'Branco', color: '#FFFFFF' },
+  { label: 'Areia', color: '#FAF8F5' },
+  { label: 'Azul gelo', color: '#F1F5F9' },
+  { label: 'Verde suave', color: '#F3F7F5' },
+  { label: 'Lavanda', color: '#F7F5FC' },
+  { label: 'Grafite claro', color: '#EDEFF2' },
+  { label: 'Escuro', color: '#0F172A' },
+]
+
+function ColorField({
+  label,
+  hint,
+  value,
+  onChange,
+}: {
+  label: string
+  hint?: string
+  value: string
+  onChange: (v: string) => void
+}) {
+  return (
+    <div>
+      <label className="text-sm font-medium text-foreground">{label}</label>
+      {hint && <p className="text-xs text-muted-foreground">{hint}</p>}
+      <div className="flex items-center gap-3 mt-2">
+        <input
+          type="color"
+          value={value}
+          onChange={e => onChange(e.target.value)}
+          className="h-10 w-14 rounded-lg border border-input cursor-pointer bg-transparent"
+        />
+        <input
+          type="text"
+          value={value}
+          onChange={e => onChange(e.target.value)}
+          className="rounded-lg border border-input bg-background px-3 py-2 text-sm font-mono w-28"
+        />
+      </div>
+    </div>
+  )
+}
+
 export default function VisualSettingsPage() {
   const { user } = useAuth()
   const companyId = user?.companyId
 
-  const [primary, setPrimary] = useState(DEFAULT_PRIMARY)
-  const [secondary, setSecondary] = useState(DEFAULT_SECONDARY)
-  const [sidebar, setSidebar] = useState(DEFAULT_SIDEBAR)
+  const [theme, setTheme] = useState<BrandingTheme>(DEFAULT_THEME)
   const [loaded, setLoaded] = useState(false)
 
-  // Load from DB
+  const set = <K extends keyof BrandingTheme>(key: K, value: BrandingTheme[K]) =>
+    setTheme(prev => ({ ...prev, [key]: value }))
+
   useEffect(() => {
     if (!companyId) return
     const load = async () => {
-      const { data } = await supabase.from('company_branding').select('*').eq('company_id', companyId).maybeSingle() as any
+      const { data } = await supabase
+        .from('company_branding')
+        .select('*')
+        .eq('company_id', companyId)
+        .maybeSingle() as any
       if (data) {
-        setPrimary(data.primary_color || DEFAULT_PRIMARY)
-        setSecondary(data.secondary_color || DEFAULT_SECONDARY)
-        setSidebar(data.sidebar_bg || DEFAULT_SIDEBAR)
-        applyColors(data.primary_color || DEFAULT_PRIMARY, data.secondary_color || DEFAULT_SECONDARY, data.sidebar_bg || DEFAULT_SIDEBAR)
+        const t = themeFromRow(data)
+        setTheme(t)
+        applyBranding(t)
       }
       setLoaded(true)
     }
@@ -54,42 +96,39 @@ export default function VisualSettingsPage() {
   }, [companyId])
 
   useEffect(() => {
-    if (loaded) applyColors(primary, secondary, sidebar)
-  }, [primary, secondary, sidebar, loaded])
+    if (loaded) applyBranding(theme)
+  }, [theme, loaded])
 
-  const handleSave = async () => {
-    if (!companyId) return
-    // Upsert branding
-    const { error } = await supabase.from('company_branding').upsert({
-      company_id: companyId,
-      primary_color: primary,
-      secondary_color: secondary,
-      sidebar_bg: sidebar,
-    } as any, { onConflict: 'company_id' })
+  const persist = async (t: BrandingTheme) => {
+    if (!companyId) return true
+    const { error } = await supabase.from('company_branding').upsert(
+      { company_id: companyId, ...themeToRow(t) } as any,
+      { onConflict: 'company_id' }
+    )
     if (error) {
       console.error(error)
-      toast.error('Erro ao salvar personalização')
-      return
+      return false
     }
-    applyColors(primary, secondary, sidebar)
+    return true
+  }
+
+  const handleSave = async () => {
+    const ok = await persist(theme)
+    if (!ok) return toast.error('Erro ao salvar personalização')
+    applyBranding(theme)
     toast.success('Personalização visual salva e aplicada!')
   }
 
   const handleReset = async () => {
-    setPrimary(DEFAULT_PRIMARY)
-    setSecondary(DEFAULT_SECONDARY)
-    setSidebar(DEFAULT_SIDEBAR)
-    applyColors(DEFAULT_PRIMARY, DEFAULT_SECONDARY, DEFAULT_SIDEBAR)
-    if (companyId) {
-      await supabase.from('company_branding').upsert({
-        company_id: companyId,
-        primary_color: DEFAULT_PRIMARY,
-        secondary_color: DEFAULT_SECONDARY,
-        sidebar_bg: DEFAULT_SIDEBAR,
-      } as any, { onConflict: 'company_id' })
-    }
+    setTheme(DEFAULT_THEME)
+    applyBranding(DEFAULT_THEME)
+    await persist(DEFAULT_THEME)
     toast.success('Cores restauradas ao padrão')
   }
+
+  const activePreset = THEME_PRESETS.find(
+    p => JSON.stringify(p.theme) === JSON.stringify(theme)
+  )?.name
 
   return (
     <div className="space-y-6">
@@ -98,60 +137,111 @@ export default function VisualSettingsPage() {
         <p className="text-sm text-muted-foreground">Customize as cores e a identidade visual do sistema</p>
       </div>
 
+      {/* Ready-made themes */}
+      <div className="rounded-2xl border border-border bg-card p-6 space-y-4">
+        <div>
+          <h3 className="text-lg font-semibold text-foreground">Temas Prontos</h3>
+          <p className="text-xs text-muted-foreground">Aplique um conjunto de cores completo com um clique e ajuste depois</p>
+        </div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+          {THEME_PRESETS.map(p => (
+            <button
+              key={p.name}
+              onClick={() => setTheme(p.theme)}
+              className={`text-left rounded-xl border p-3 transition-all hover:shadow-md ${
+                activePreset === p.name ? 'border-primary ring-2 ring-primary/20' : 'border-border'
+              }`}
+            >
+              <div className="flex items-center justify-between">
+                <span className="text-sm font-semibold text-foreground">{p.name}</span>
+                {activePreset === p.name && <Check className="h-4 w-4 text-primary" />}
+              </div>
+              <p className="text-[11px] text-muted-foreground mb-2">{p.description}</p>
+              <div className="flex gap-1">
+                {[p.theme.background, p.theme.sidebar, p.theme.primary, p.theme.secondary, p.theme.border].map((c, i) => (
+                  <span key={i} className="h-6 flex-1 rounded" style={{ background: c }} />
+                ))}
+              </div>
+            </button>
+          ))}
+        </div>
+      </div>
+
       <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
         {/* Controls */}
         <div className="space-y-6">
           <div className="rounded-2xl border border-border bg-card p-6 space-y-5">
             <h3 className="text-lg font-semibold text-foreground">Cores do Sistema</h3>
-
-            <div>
-              <label className="text-sm font-medium text-foreground">Cor Primária</label>
-              <div className="flex items-center gap-3 mt-2">
-                <input type="color" value={primary} onChange={e => setPrimary(e.target.value)}
-                  className="h-12 w-16 rounded-lg border border-input cursor-pointer" />
-                <input type="text" value={primary} onChange={e => setPrimary(e.target.value)}
-                  className="rounded-lg border border-input bg-background px-3 py-2 text-sm font-mono w-28" />
-              </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+              <ColorField label="Cor Primária" value={theme.primary} onChange={v => set('primary', v)} />
+              <ColorField label="Cor Secundária" value={theme.secondary} onChange={v => set('secondary', v)} />
             </div>
-
-            <div>
-              <label className="text-sm font-medium text-foreground">Cor Secundária</label>
-              <div className="flex items-center gap-3 mt-2">
-                <input type="color" value={secondary} onChange={e => setSecondary(e.target.value)}
-                  className="h-12 w-16 rounded-lg border border-input cursor-pointer" />
-                <input type="text" value={secondary} onChange={e => setSecondary(e.target.value)}
-                  className="rounded-lg border border-input bg-background px-3 py-2 text-sm font-mono w-28" />
-              </div>
-            </div>
-
-            {/* Gradient preview */}
             <div>
               <label className="text-sm font-medium text-foreground">Gradiente Resultante</label>
-              <div className="mt-2 h-16 rounded-xl" style={{ background: `linear-gradient(135deg, ${primary} 0%, ${secondary} 100%)` }} />
+              <div
+                className="mt-2 h-16 rounded-xl"
+                style={{ background: `linear-gradient(135deg, ${theme.primary} 0%, ${theme.secondary} 100%)` }}
+              />
+            </div>
+          </div>
+
+          <div className="rounded-2xl border border-border bg-card p-6 space-y-5">
+            <h3 className="text-lg font-semibold text-foreground">Fundo e Superfícies</h3>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+              <ColorField label="Cor de Fundo" hint="Fundo geral das telas" value={theme.background} onChange={v => set('background', v)} />
+              <ColorField label="Cor dos Cartões" hint="Cards, modais e painéis" value={theme.card} onChange={v => set('card', v)} />
+            </div>
+            <div>
+              <label className="text-sm font-medium text-foreground mb-2 block">Presets de fundo</label>
+              <div className="grid grid-cols-4 gap-2">
+                {BACKGROUND_PRESETS.map(p => (
+                  <button key={p.color} onClick={() => set('background', p.color)}
+                    className={`flex flex-col items-center gap-1.5 rounded-xl border p-2 transition-all hover:scale-105 ${theme.background === p.color ? 'border-primary ring-2 ring-primary/20' : 'border-border'}`}>
+                    <div className="h-8 w-full rounded-lg border border-border" style={{ background: p.color }} />
+                    <span className="text-[10px] text-muted-foreground leading-tight text-center">{p.label}</span>
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          <div className="rounded-2xl border border-border bg-card p-6 space-y-5">
+            <h3 className="text-lg font-semibold text-foreground">Textos</h3>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+              <ColorField label="Texto Principal" hint="Títulos e conteúdo" value={theme.text} onChange={v => set('text', v)} />
+              <ColorField label="Texto Secundário" hint="Descrições e legendas" value={theme.mutedText} onChange={v => set('mutedText', v)} />
+            </div>
+          </div>
+
+          <div className="rounded-2xl border border-border bg-card p-6 space-y-5">
+            <h3 className="text-lg font-semibold text-foreground">Bordas, Campos e Foco</h3>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+              <ColorField label="Cor das Bordas" value={theme.border} onChange={v => set('border', v)} />
+              <ColorField label="Fundo dos Campos" value={theme.inputBg} onChange={v => set('inputBg', v)} />
+              <ColorField label="Cor do Foco (Input com foco)" hint="Anel destacado ao focar campos" value={theme.ring} onChange={v => set('ring', v)} />
+            </div>
+          </div>
+
+          <div className="rounded-2xl border border-border bg-card p-6 space-y-5">
+            <h3 className="text-lg font-semibold text-foreground">Botões e Status</h3>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+              <ColorField label="Texto dos Botões" value={theme.buttonText} onChange={v => set('buttonText', v)} />
+              <ColorField label="Sucesso" value={theme.success} onChange={v => set('success', v)} />
+              <ColorField label="Alerta" value={theme.warning} onChange={v => set('warning', v)} />
+              <ColorField label="Erro" value={theme.error} onChange={v => set('error', v)} />
             </div>
           </div>
 
           {/* Sidebar color */}
           <div className="rounded-2xl border border-border bg-card p-6 space-y-5">
             <h3 className="text-lg font-semibold text-foreground">Cor do Menu Lateral</h3>
-            <p className="text-xs text-muted-foreground">Personalize a cor de fundo do menu lateral (sidebar)</p>
-
-            <div>
-              <label className="text-sm font-medium text-foreground">Cor de fundo</label>
-              <div className="flex items-center gap-3 mt-2">
-                <input type="color" value={sidebar} onChange={e => setSidebar(e.target.value)}
-                  className="h-12 w-16 rounded-lg border border-input cursor-pointer" />
-                <input type="text" value={sidebar} onChange={e => setSidebar(e.target.value)}
-                  className="rounded-lg border border-input bg-background px-3 py-2 text-sm font-mono w-28" />
-              </div>
-            </div>
-
+            <ColorField label="Cor de fundo" value={theme.sidebar} onChange={v => set('sidebar', v)} />
             <div>
               <label className="text-sm font-medium text-foreground mb-2 block">Presets</label>
               <div className="grid grid-cols-4 gap-2">
                 {SIDEBAR_PRESETS.map(p => (
-                  <button key={p.color} onClick={() => setSidebar(p.color)}
-                    className={`flex flex-col items-center gap-1.5 rounded-xl border p-2 transition-all hover:scale-105 ${sidebar === p.color ? 'border-primary ring-2 ring-primary/20' : 'border-border'}`}>
+                  <button key={p.color} onClick={() => set('sidebar', p.color)}
+                    className={`flex flex-col items-center gap-1.5 rounded-xl border p-2 transition-all hover:scale-105 ${theme.sidebar === p.color ? 'border-primary ring-2 ring-primary/20' : 'border-border'}`}>
                     <div className="h-8 w-full rounded-lg" style={{ background: p.color }} />
                     <span className="text-[10px] text-muted-foreground leading-tight text-center">{p.label}</span>
                   </button>
@@ -176,37 +266,41 @@ export default function VisualSettingsPage() {
             <h4 className="text-sm font-bold text-foreground">PREVIEW EM TEMPO REAL</h4>
           </div>
           <div className="p-6">
-            <div className="rounded-xl border border-border overflow-hidden">
-              <div className="grid grid-cols-[60px_1fr] h-64">
-                <div className="p-2 space-y-2" style={{ background: sidebar }}>
-                  <div className="h-8 w-8 rounded-lg mx-auto" style={{ background: `linear-gradient(135deg, ${primary}, ${secondary})` }} />
+            <div className="rounded-xl overflow-hidden" style={{ border: `1px solid ${theme.border}` }}>
+              <div className="grid grid-cols-[60px_1fr] min-h-[18rem]">
+                <div className="p-2 space-y-2" style={{ background: theme.sidebar }}>
+                  <div className="h-8 w-8 rounded-lg mx-auto" style={{ background: `linear-gradient(135deg, ${theme.primary}, ${theme.secondary})` }} />
                   <div className="space-y-1">
                     {[1, 2, 3, 4].map(i => (
-                      <div key={i} className={`h-6 w-full rounded ${i === 1 ? 'opacity-100' : 'opacity-30'}`}
-                        style={i === 1 ? { background: `${primary}20` } : { background: '#ffffff15' }} />
+                      <div key={i} className="h-6 w-full rounded"
+                        style={i === 1 ? { background: `${theme.primary}33` } : { background: '#ffffff15' }} />
                     ))}
                   </div>
                 </div>
-                <div className="bg-background p-4 space-y-3">
-                  <div className="h-4 rounded" style={{ background: `linear-gradient(135deg, ${primary}, ${secondary})`, width: '60%' }} />
-                  <div className="flex gap-2">
-                    <button className="rounded-lg px-3 py-1.5 text-xs font-semibold text-white" style={{ background: `linear-gradient(135deg, ${primary}, ${secondary})` }}>
-                      Botão Primário
-                    </button>
-                    <button className="rounded-lg border px-3 py-1.5 text-xs font-semibold" style={{ borderColor: primary, color: primary }}>
-                      Botão Outline
-                    </button>
-                  </div>
-                  <div className="flex gap-2">
-                    <span className="rounded-full px-2 py-0.5 text-[10px] font-bold" style={{ background: `${primary}15`, color: primary }}>
-                      Badge ativo
-                    </span>
-                    <span className="rounded-full px-2 py-0.5 text-[10px] font-bold" style={{ background: `${secondary}15`, color: secondary }}>
-                      Badge secundário
-                    </span>
-                  </div>
-                  <div className="rounded-lg border border-border p-2 focus-within:ring-2" style={{ borderColor: `${primary}50` }}>
-                    <p className="text-xs text-muted-foreground">Input com foco</p>
+                <div className="p-4 space-y-3" style={{ background: theme.background }}>
+                  <div className="rounded-xl p-3 space-y-3" style={{ background: theme.card, border: `1px solid ${theme.border}` }}>
+                    <p className="text-sm font-bold" style={{ color: theme.text }}>Título do cartão</p>
+                    <p className="text-xs" style={{ color: theme.mutedText }}>Texto secundário de apoio</p>
+                    <div className="flex gap-2">
+                      <button className="rounded-lg px-3 py-1.5 text-xs font-semibold"
+                        style={{ background: `linear-gradient(135deg, ${theme.primary}, ${theme.secondary})`, color: theme.buttonText }}>
+                        Botão Primário
+                      </button>
+                      <button className="rounded-lg border px-3 py-1.5 text-xs font-semibold" style={{ borderColor: theme.primary, color: theme.primary }}>
+                        Botão Outline
+                      </button>
+                    </div>
+                    <div className="flex flex-wrap gap-2">
+                      <span className="rounded-full px-2 py-0.5 text-[10px] font-bold" style={{ background: `${theme.success}20`, color: theme.success }}>Sucesso</span>
+                      <span className="rounded-full px-2 py-0.5 text-[10px] font-bold" style={{ background: `${theme.warning}20`, color: theme.warning }}>Alerta</span>
+                      <span className="rounded-full px-2 py-0.5 text-[10px] font-bold" style={{ background: `${theme.error}20`, color: theme.error }}>Erro</span>
+                    </div>
+                    <div className="rounded-lg p-2" style={{ background: theme.inputBg, border: `1px solid ${theme.border}` }}>
+                      <p className="text-xs" style={{ color: theme.mutedText }}>Input normal</p>
+                    </div>
+                    <div className="rounded-lg p-2" style={{ background: theme.inputBg, border: `1px solid ${theme.ring}`, boxShadow: `0 0 0 3px ${theme.ring}40` }}>
+                      <p className="text-xs" style={{ color: theme.text }}>Input com foco</p>
+                    </div>
                   </div>
                 </div>
               </div>
