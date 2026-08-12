@@ -164,7 +164,7 @@ export default function PDFPreviewModal({
           isFullscreen ? "h-screen w-screen rounded-none" : "h-[95vh] w-full max-w-[1000px] rounded-lg"
         )}
       >
-        <header className="p-4 border-b bg-muted/30">
+        <header className="p-4 border-b bg-muted/30 no-print">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
               <div className="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center text-primary">
@@ -183,7 +183,7 @@ export default function PDFPreviewModal({
 
         <div className="flex-1 bg-zinc-700/50 p-4 md:p-8 overflow-hidden flex flex-col items-center relative">
           {/* Zoom Controls Overlay */}
-          <div className="absolute top-4 right-4 flex gap-2 z-10 bg-zinc-900/80 backdrop-blur-md p-1.5 rounded-lg shadow-xl border border-white/10">
+          <div className="absolute top-4 right-4 flex gap-2 z-10 no-print bg-zinc-900/80 backdrop-blur-md p-1.5 rounded-lg shadow-xl border border-white/10">
             <Button variant="ghost" size="sm" className="h-8 w-8 p-0 text-white hover:bg-white/10" onClick={handleZoomOut} disabled={zoom <= 50}>
               <ZoomOut className="h-4 w-4" />
             </Button>
@@ -224,7 +224,7 @@ export default function PDFPreviewModal({
                   ref={documentRef}
                   contentEditable={isEditing}
                   suppressContentEditableWarning
-                  className={cn(isEditing && 'outline outline-2 outline-amber-400 rounded-sm')}
+                  className={cn('laudo-print-area', isEditing && 'outline outline-2 outline-amber-400 rounded-sm')}
                 >
                   {savedHtml ? (
                     <div dangerouslySetInnerHTML={{ __html: savedHtml }} />
@@ -254,7 +254,7 @@ export default function PDFPreviewModal({
 
         </div>
 
-        <footer className="flex flex-col-reverse gap-2 border-t bg-background p-4 sm:flex-row sm:justify-between">
+        <footer className="no-print flex flex-col-reverse gap-2 border-t bg-background p-4 sm:flex-row sm:justify-between">
           <div className="flex gap-2">
             <Button variant="outline" size="sm" onClick={onEmail} className="gap-2">
               <Mail className="h-4 w-4" /> E-mail
@@ -290,11 +290,11 @@ export default function PDFPreviewModal({
                 </>
               )
             )}
-            <Button variant="outline" className="gap-2" onClick={onPrint || (() => window.print())}>
+            <Button variant="outline" className="gap-2" onClick={onPrint ? () => { printLaudoOnly(); } : printLaudoOnly}>
               <Printer className="h-4 w-4" /> Imprimir
             </Button>
 
-            <Button className="gradient-bg text-white gap-2" onClick={onDownload}>
+            <Button className="gradient-bg text-white gap-2" onClick={printLaudoOnly}>
               <Download className="h-4 w-4" /> Download PDF
             </Button>
           </div>
