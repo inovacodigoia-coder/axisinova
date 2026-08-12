@@ -11,6 +11,7 @@ import { cn } from '@/lib/utils'
 import { AttendancePrintSelectionModal } from '../print/AttendancePrintSelectionModal'
 import PDFPreviewModal from '@/components/lab/PDFPreviewModal'
 import { AttendancePrintModal } from '../print/AttendancePrintModal'
+import { calculateAttendanceStatus, ATTENDANCE_STATUS_CONFIG } from '@/utils/attendanceStatus'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -99,20 +100,19 @@ export function AttendanceDetailsModal({ open, onClose, order, patient }: Attend
     );
   }, [orderExams]);
 
-  const getStatusColor = (status: string) => {
-    switch(status?.toLowerCase()) {
-      case 'open':
-      case 'waiting':
-      case 'waiting_collection':
-        return 'bg-blue-500';
-      case 'collection_done':
-      case 'collected':
-      case 'liberado':
-        return 'bg-emerald-500';
-      case 'cancelled':
-        return 'bg-red-500';
+  const getStatusConfig = (order: AttendanceOrder) => {
+    const calculated = calculateAttendanceStatus(order);
+    const config = ATTENDANCE_STATUS_CONFIG[calculated];
+    if (config) return config;
+
+    // Fallback for unexpected or legacy statuses
+    switch(order.status?.toLowerCase()) {
+      case 'validation':
+        return { label: 'Validação', bgClass: 'bg-purple-500', textClass: 'text-white' };
+      case 'authorized':
+        return { label: 'Autorizado', bgClass: 'bg-indigo-500', textClass: 'text-white' };
       default:
-        return 'bg-slate-400';
+        return { label: order.status || 'Pendente', bgClass: 'bg-slate-400', textClass: 'text-white' };
     }
   };
 
@@ -219,7 +219,21 @@ export function AttendanceDetailsModal({ open, onClose, order, patient }: Attend
                 </DropdownMenu>
               </div>
             </div>
-            <div className="text-xl font-bold relative z-10">{order.orderNumber}</div>
+            <div className="flex items-center gap-2 relative z-10">
+              <div className="text-xl font-bold">{order.orderNumber}</div>
+              {(() => {
+                const config = getStatusConfig(order);
+                return (
+                  <span className={cn(
+                    "px-2 py-0.5 rounded-full text-[10px] font-bold uppercase",
+                    config.bgClass,
+                    config.textClass
+                  )}>
+                    {config.label}
+                  </span>
+                );
+              })()}
+            </div>
             <div className="absolute -bottom-2 -right-2 opacity-10">
               <Clock className="h-16 w-16 rotate-12" />
             </div>
@@ -663,16 +677,34 @@ export function AttendanceDetailsModal({ open, onClose, order, patient }: Attend
       <AttendancePrintSelectionModal 
         open={printSelectionOpen}
         onClose={() => setPrintSelectionOpen(false)}
-        onConfirm={(result) => {
+        onConfirm={async (result) => {
           console.log('Printing with result:', result);
           setPrintSelectionOpen(false);
 
+          // Mark as delivered to trigger "Concluído" status
+          const { supabase } = await import('@/integrations/supabase/client');
+          await supabase
+            .from('attendance_orders')
+            .update({ delivery_status: 'delivered' } as any)
+            .eq('id', order.id);
+
           // Check if "Laudo" was selected to show the specific preview modal
           const laudoOption = result.options.find((o: any) => o.id === 'laudo' && o.enabled);
+          const comprovanteOption = result.options.find((o: any) => o.id === 'comprovante' && o.enabled);
+          
+          if (laudoOption || comprovanteOption) {
+            const { supabase } = await import('@/integrations/supabase/client');
+            await supabase
+              .from('attendance_orders')
+              .update({ delivery_status: 'delivered' } as any)
+              .eq('id', order.id);
+          }
+
           if (laudoOption) {
             setReportPreviewOpen(true);
-            return; // Don't proceed to standard attendance receipts if laudo is the primary focus
+            return;
           }
+
           
           // Determine which vias to print based on selection
           const vias: ('patient' | 'establishment')[] = [];

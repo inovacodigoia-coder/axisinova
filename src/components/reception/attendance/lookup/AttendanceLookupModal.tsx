@@ -11,6 +11,7 @@ import { AttendanceDetailsModal } from './AttendanceDetailsModal'
 import type { AttendanceOrder } from '@/types/attendance-cadastro.types'
 import type { Patient } from '@/types/patient.types'
 import type { AttendanceControlDocument } from '@/types/payment-print.types'
+import { calculateAttendanceStatus, ATTENDANCE_STATUS_CONFIG } from '@/utils/attendanceStatus'
 
 interface AttendanceLookupModalProps {
   open: boolean
@@ -67,16 +68,9 @@ function buildDoc(order: AttendanceOrder, patient: Patient | undefined, unitName
   }
 }
 
-const ATTENDANCE_STATUS_LABELS: Record<string, { label: string, color: string }> = {
-  waiting_collection: { label: 'AGUARDANDO', color: 'bg-amber-500' },
-  collection_done: { label: 'COLETA REALIZADA', color: 'bg-emerald-500' },
-  in_analysis: { label: 'Em Análise', color: 'bg-blue-500' },
+const LEGACY_STATUS_LABELS: Record<string, { label: string, color: string }> = {
   validation: { label: 'Validação', color: 'bg-purple-500' },
-  released: { label: 'Liberado', color: 'bg-emerald-600' },
-  cancelled: { label: 'Cancelado', color: 'bg-red-500' },
-  open: { label: 'ABERTO', color: 'bg-blue-400' },
   authorized: { label: 'Autorizado', color: 'bg-indigo-500' },
-  completed: { label: 'Concluído', color: 'bg-emerald-700' },
 }
 
 export function AttendanceLookupModal({ open, onClose, unitName, guicheName, onAddProcedure }: AttendanceLookupModalProps) {
@@ -102,8 +96,15 @@ export function AttendanceLookupModal({ open, onClose, unitName, guicheName, onA
     
     return orders.filter(o => {
       const p = patientById.get(o.patientId)
+      const currentStatus = calculateAttendanceStatus(o)
       
-      if (statusFilter !== 'all' && o.status !== statusFilter) return false
+      if (statusFilter !== 'all') {
+        if (statusFilter === 'validation' || statusFilter === 'authorized') {
+          if (o.status !== statusFilter) return false
+        } else if (currentStatus !== statusFilter) {
+          return false
+        }
+      }
 
       if (term) {
         const haystack = [
@@ -196,14 +197,11 @@ export function AttendanceLookupModal({ open, onClose, unitName, guicheName, onA
                   className="w-full rounded-lg border border-input bg-background pl-3 pr-8 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring appearance-none"
                 >
                   <option value="all">Todos Status</option>
-                  <option value="waiting_collection">AGUARDANDO</option>
-                  <option value="collection_done">COLETA REALIZADA</option>
-                  <option value="open">ABERTO</option>
-                  {Object.entries(ATTENDANCE_STATUS_LABELS).map(([key, val]) => (
-                    key !== 'waiting_collection' && key !== 'open' && key !== 'collection_done' && (
-                      <option key={key} value={key}>{val.label}</option>
-                    )
+                  {Object.entries(ATTENDANCE_STATUS_CONFIG).map(([key, val]) => (
+                    <option key={key} value={key}>{val.label}</option>
                   ))}
+                  <option value="validation">Validação</option>
+                  <option value="authorized">Autorizado</option>
                 </select>
                 <Filter className="absolute right-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground pointer-events-none" />
               </div>
@@ -321,12 +319,32 @@ function OrderRowModern({
         <div className="text-muted-foreground">{patient?.birthDate ? new Date(patient.birthDate).toLocaleDateString('pt-BR') : '-'}</div>
         <div className="truncate uppercase font-medium">{order.convenioName || 'Particular'}</div>
         <div>
-          <span className={cn(
-            "px-2 py-0.5 rounded-full text-[10px] font-bold text-white uppercase whitespace-nowrap",
-            ATTENDANCE_STATUS_LABELS[order.status]?.color || 'bg-slate-400'
-          )}>
-            {ATTENDANCE_STATUS_LABELS[order.status]?.label || order.status}
-          </span>
+          {(() => {
+            const calculated = calculateAttendanceStatus(order);
+            const config = ATTENDANCE_STATUS_CONFIG[calculated];
+            
+            if (config) {
+              return (
+                <span className={cn(
+                  "px-2 py-0.5 rounded-full text-[10px] font-bold uppercase whitespace-nowrap",
+                  config.bgClass,
+                  config.textClass
+                )}>
+                  {config.label}
+                </span>
+              );
+            }
+
+            const legacy = LEGACY_STATUS_LABELS[order.status];
+            return (
+              <span className={cn(
+                "px-2 py-0.5 rounded-full text-[10px] font-bold text-white uppercase whitespace-nowrap",
+                legacy?.color || 'bg-slate-400'
+              )}>
+                {legacy?.label || order.status}
+              </span>
+            );
+          })()}
         </div>
         <div className="text-muted-foreground font-bold">
           {(order.status === 'collection_done' || order.status === 'released' || order.status === 'waiting_collection' || order.status === 'in_analysis') && order.deliveryDate 
@@ -344,7 +362,7 @@ function OrderRowModern({
                 <Detail label="Tipo" value={order.serviceType === 'consultation' ? 'Consulta' : order.serviceType === 'exam' ? 'Exame' : 'Procedimento'} />
                 <Detail label="Procedimento" value={order.procedureName || '-'} />
                 <Detail label="Médico" value={order.doctorName || '-'} />
-                <Detail label="Status" value={ATTENDANCE_STATUS_LABELS[order.status]?.label || order.status} />
+                <Detail label="Status" value={ATTENDANCE_STATUS_CONFIG[calculateAttendanceStatus(order)]?.label || (LEGACY_STATUS_LABELS[order.status]?.label || order.status)} />
               </div>
               <div className="space-y-3">
                 <Detail label="Pagamento" value={order.paymentType === 'convenio' ? `Convênio · ${order.convenioName || ''}` : order.paymentType === 'private' ? `Particular${order.privateValue ? ` · R$ ${order.privateValue.toFixed(2)}` : ''}` : `Cortesia${order.freeReason ? ` · ${order.freeReason}` : ''}`} />
@@ -399,7 +417,10 @@ function EditOrderModal({ order, onClose, onSave }: { order: AttendanceOrder; on
         <div className="p-5 space-y-3">
           <Field label="Status">
             <select value={status} onChange={e => setStatus(e.target.value as AttendanceOrder['status'])} className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm uppercase">
-              {Object.entries(ATTENDANCE_STATUS_LABELS).map(([key, val]) => (
+              {Object.entries(ATTENDANCE_STATUS_CONFIG).map(([key, val]) => (
+                <option key={key} value={key}>{val.label}</option>
+              ))}
+              {Object.entries(LEGACY_STATUS_LABELS).map(([key, val]) => (
                 <option key={key} value={key}>{val.label}</option>
               ))}
             </select>
