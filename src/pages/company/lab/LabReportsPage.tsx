@@ -42,7 +42,7 @@ import { useAuth } from '@/context/AuthContext';
   /* Do not make any visual modifications. The phrases I write are commands to understand what I want, not to be written down. Understand their content well, then execute what is required.
                                         
                                             
-                                            I have approved the plan */
+                                            Verificar a rota app/lab/laudos os modal Visualização do Laudo e os outros botões de ações não está funcionando. */
 export default function LabReportsPage() {
   const { orders, loading: ordersLoading } = useAttendanceCadastro();
   const { user } = useAuth();
