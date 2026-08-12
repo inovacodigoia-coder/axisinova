@@ -130,6 +130,16 @@ export function ResultEntryModal({
   // Catálogo de Exames (parâmetros e faixas de referência reais)
   const [catalog, setCatalog] = useState<Record<string, any>>({});
 
+  // Safety: garante que a página volte a ser clicável ao fechar o laudo
+  useEffect(() => {
+    if (!laudoOpen) {
+      const t = setTimeout(() => {
+        if (document.body.style.pointerEvents === 'none') document.body.style.pointerEvents = '';
+      }, 350);
+      return () => clearTimeout(t);
+    }
+  }, [laudoOpen]);
+
   useEffect(() => {
     if (!isOpen) return;
     let active = true;
