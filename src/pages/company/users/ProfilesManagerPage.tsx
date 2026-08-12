@@ -3,17 +3,20 @@ import { useCompanyContext } from '@/context/CompanyContext'
 import { DataTable } from '@/components/ui/DataTable'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { PermissionsMatrix } from '@/components/company/users/PermissionsMatrix'
-import { Plus, Search, Eye } from 'lucide-react'
+import { Plus, Search, Eye, Trash2 } from 'lucide-react'
 import type { Profile, PermissionsMap } from '@/types/permissions.types'
+import { useProfiles, upsertProfile, removeProfile } from '@/stores/profilesStore'
+import { detachProfileFromSectors } from '@/stores/sectorsStore'
 import { toast } from 'sonner'
 
 export default function ProfilesManagerPage() {
-  const { allProfiles, canAccess } = useCompanyContext()
-  const [profiles, setProfiles] = useState(allProfiles)
+  const { canAccess } = useCompanyContext()
+  const profiles = useProfiles()
   const [search, setSearch] = useState('')
   const [statusFilter, setStatusFilter] = useState<'all' | 'active' | 'inactive'>('active')
   const [editingProfile, setEditingProfile] = useState<Profile | null>(null)
   const [showForm, setShowForm] = useState(false)
+
 
   const filtered = useMemo(() => {
     return profiles.filter(p => {
@@ -35,8 +38,25 @@ export default function ProfilesManagerPage() {
       </span>
     )},
     { key: 'actions', label: '', render: (p: Profile) => (
-      <button onClick={() => { setEditingProfile(p); setShowForm(true) }} className="rounded p-1 hover:bg-muted"><Eye className="h-4 w-4 text-muted-foreground" /></button>
+      <div className="flex items-center gap-1">
+        <button onClick={() => { setEditingProfile(p); setShowForm(true) }} className="rounded p-1 hover:bg-muted" title="Editar perfil"><Eye className="h-4 w-4 text-muted-foreground" /></button>
+        {canAccess('users', 'delete') && (
+          <button
+            onClick={() => {
+              if (!window.confirm(`Excluir o perfil "${p.name}"? Ele será removido dos setores vinculados.`)) return
+              removeProfile(p.id)
+              detachProfileFromSectors(p.id)
+              toast.success('Perfil excluído')
+            }}
+            className="rounded p-1 hover:bg-destructive/10"
+            title="Excluir perfil"
+          >
+            <Trash2 className="h-4 w-4 text-destructive" />
+          </button>
+        )}
+      </div>
     )},
+
   ]
 
   return (
@@ -86,21 +106,18 @@ export default function ProfilesManagerPage() {
           profile={editingProfile}
           onClose={() => setShowForm(false)}
           onSave={(p) => {
-            if (editingProfile) {
-              setProfiles(prev => prev.map(x => x.id === p.id ? p : x))
-            } else {
-              setProfiles(prev => [...prev, p])
-            }
+            upsertProfile(p)
             setShowForm(false)
             toast.success(editingProfile ? 'Perfil atualizado' : 'Perfil criado')
           }}
+
         />
       )}
     </div>
   )
 }
 
-function ProfileFormModal({ profile, onClose, onSave }: { profile: Profile | null; onClose: () => void; onSave: (p: Profile) => void }) {
+export function ProfileFormModal({ profile, onClose, onSave }: { profile: Profile | null; onClose: () => void; onSave: (p: Profile) => void }) {
   const [name, setName] = useState(profile?.name || '')
   const [description, setDescription] = useState(profile?.description || '')
   const [createdBy, setCreatedBy] = useState<'admin' | 'it_team'>(profile?.createdBy || 'admin')

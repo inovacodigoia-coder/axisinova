@@ -2,9 +2,11 @@ import { useState, useEffect } from 'react'
 import { useCompanyContext } from '@/context/CompanyContext'
 import { useAuth } from '@/context/AuthContext'
 import { supabase } from '@/integrations/supabase/client'
-import { useSectors, upsertSector } from '@/stores/sectorsStore'
-import { Plus, Edit, Users, ShieldCheck, Loader2, UserPlus, X, Search, Check, Lock, LayoutList } from 'lucide-react'
-import type { Sector, SystemModule, PermissionsMap, PermissionAction } from '@/types/permissions.types'
+import { useSectors, useSectorUsers, upsertSector, removeSector, setSectorUsers as persistSectorUsers, detachProfileFromSectors } from '@/stores/sectorsStore'
+import { useProfiles, upsertProfile, removeProfile } from '@/stores/profilesStore'
+import { ProfileFormModal } from '@/pages/company/users/ProfilesManagerPage'
+import { Plus, Edit, Users, ShieldCheck, Loader2, UserPlus, X, Search, Check, Lock, LayoutList, Trash2 } from 'lucide-react'
+import type { Sector, SystemModule, PermissionsMap, PermissionAction, Profile } from '@/types/permissions.types'
 import { SYSTEM_MODULES, ALL_ACTIONS, ACTION_LABELS } from '@/types/permissions.types'
 import { NAV_SECTIONS } from '@/components/company/CompanySidebar'
 import { toast } from 'sonner'
@@ -17,16 +19,19 @@ interface RealUser {
 }
 
 export default function SectorsPage() {
-  const { canAccess, allProfiles } = useCompanyContext()
+  const { canAccess } = useCompanyContext()
   const { user } = useAuth()
   const sectors = useSectors()
+  const allProfiles = useProfiles()
+  const sectorUsers = useSectorUsers()
+  const [tab, setTab] = useState<'sectors' | 'profiles'>('sectors')
   const [showForm, setShowForm] = useState(false)
   const [editing, setEditing] = useState<Sector | null>(null)
   const [managingSector, setManagingSector] = useState<Sector | null>(null)
   const [realUsers, setRealUsers] = useState<RealUser[]>([])
   const [loadingUsers, setLoadingUsers] = useState(true)
-  // sectorUsers: map of sectorId -> set of userId
-  const [sectorUsers, setSectorUsers] = useState<Record<string, Set<string>>>({})
+  const [showProfileForm, setShowProfileForm] = useState(false)
+  const [editingProfile, setEditingProfile] = useState<Profile | null>(null)
 
   useEffect(() => {
     async function fetchUsers() {
@@ -42,9 +47,7 @@ export default function SectorsPage() {
     fetchUsers()
   }, [user?.companyId])
 
-  const getUserCountForSector = (sectorId: string) => {
-    return sectorUsers[sectorId]?.size || 0
-  }
+  const getUserCountForSector = (sectorId: string) => (sectorUsers[sectorId] || []).length
 
   const handleSave = (s: Sector) => {
     upsertSector(s)
@@ -54,15 +57,9 @@ export default function SectorsPage() {
   }
 
   const toggleUserInSector = (sectorId: string, userId: string) => {
-    setSectorUsers(prev => {
-      const current = new Set(prev[sectorId] || [])
-      if (current.has(userId)) {
-        current.delete(userId)
-      } else {
-        current.add(userId)
-      }
-      return { ...prev, [sectorId]: current }
-    })
+    const current = new Set(sectorUsers[sectorId] || [])
+    current.has(userId) ? current.delete(userId) : current.add(userId)
+    persistSectorUsers(sectorId, Array.from(current))
   }
 
   const saveUserAssignments = () => {
@@ -78,15 +75,34 @@ export default function SectorsPage() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold text-foreground">Setores da Empresa</h1>
-          <p className="text-sm text-muted-foreground">Gerencie os setores e suas vinculações</p>
+          <p className="text-sm text-muted-foreground">Gerencie os setores, perfis de acesso e suas vinculações</p>
         </div>
         {canAccess('settings', 'create') && (
-          <button onClick={() => { setEditing(null); setShowForm(true) }} className="gradient-bg rounded-xl px-4 py-2.5 text-sm font-semibold text-white shadow-lg hover:opacity-90 flex items-center gap-2">
-            <Plus className="h-4 w-4" /> Novo Setor
-          </button>
+          tab === 'sectors' ? (
+            <button onClick={() => { setEditing(null); setShowForm(true) }} className="gradient-bg rounded-xl px-4 py-2.5 text-sm font-semibold text-white shadow-lg hover:opacity-90 flex items-center gap-2">
+              <Plus className="h-4 w-4" /> Novo Setor
+            </button>
+          ) : (
+            <button onClick={() => { setEditingProfile(null); setShowProfileForm(true) }} className="gradient-bg rounded-xl px-4 py-2.5 text-sm font-semibold text-white shadow-lg hover:opacity-90 flex items-center gap-2">
+              <Plus className="h-4 w-4" /> Novo Perfil
+            </button>
+          )
         )}
       </div>
 
+      <div className="flex gap-1 border-b border-border">
+        {([['sectors', 'Setores'], ['profiles', 'Perfis de Acesso']] as const).map(([key, label]) => (
+          <button
+            key={key}
+            onClick={() => setTab(key)}
+            className={`px-4 py-2.5 text-sm font-medium border-b-2 transition-colors ${tab === key ? 'border-primary text-primary' : 'border-transparent text-muted-foreground hover:text-foreground'}`}
+          >
+            {label}
+          </button>
+        ))}
+      </div>
+
+      {tab === 'sectors' && (
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
         {sectors.filter(s => s.isActive).map(s => (
           <div key={s.id} className="rounded-2xl border border-border bg-card p-5 shadow-[0_4px_24px_rgba(0,0,0,0.06)] hover:shadow-[0_12px_40px_rgba(123,47,247,0.1)] hover:border-primary/30 transition-all group">
@@ -96,8 +112,19 @@ export default function SectorsPage() {
                 <button onClick={() => setManagingSector(s)} className="rounded p-1 hover:bg-muted" title="Gerenciar usuários">
                   <UserPlus className="h-4 w-4 text-primary" />
                 </button>
-                <button onClick={() => { setEditing(s); setShowForm(true) }} className="rounded p-1 hover:bg-muted">
+                <button onClick={() => { setEditing(s); setShowForm(true) }} className="rounded p-1 hover:bg-muted" title="Editar setor">
                   <Edit className="h-4 w-4 text-muted-foreground" />
+                </button>
+                <button
+                  onClick={() => {
+                    if (!window.confirm(`Excluir o setor "${s.name}"?`)) return
+                    removeSector(s.id)
+                    toast.success('Setor excluído')
+                  }}
+                  className="rounded p-1 hover:bg-destructive/10"
+                  title="Excluir setor"
+                >
+                  <Trash2 className="h-4 w-4 text-destructive" />
                 </button>
               </div>
             </div>
@@ -113,6 +140,51 @@ export default function SectorsPage() {
           </div>
         ))}
       </div>
+      )}
+
+      {tab === 'profiles' && (
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          {allProfiles.map(p => {
+            const modules = Object.keys(p.permissions || {}).filter(k => (p.permissions as any)[k]?.includes('view')).length
+            const linkedSectors = sectors.filter(s => s.allowedProfiles.includes(p.id)).length
+            return (
+              <div key={p.id} className="rounded-2xl border border-border bg-card p-5 shadow-[0_4px_24px_rgba(0,0,0,0.06)] hover:border-primary/30 transition-all group">
+                <div className="flex items-start justify-between gap-2">
+                  <div className="min-w-0">
+                    <h3 className="text-base font-semibold text-foreground truncate">{p.name}</h3>
+                    <p className="text-[11px] font-mono text-muted-foreground">Código {p.code}</p>
+                  </div>
+                  <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                    <button onClick={() => { setEditingProfile(p); setShowProfileForm(true) }} className="rounded p-1 hover:bg-muted" title="Editar perfil">
+                      <Edit className="h-4 w-4 text-muted-foreground" />
+                    </button>
+                    <button
+                      onClick={() => {
+                        if (!window.confirm(`Excluir o perfil "${p.name}"? Ele será removido dos setores vinculados.`)) return
+                        removeProfile(p.id)
+                        detachProfileFromSectors(p.id)
+                        toast.success('Perfil excluído')
+                      }}
+                      className="rounded p-1 hover:bg-destructive/10"
+                      title="Excluir perfil"
+                    >
+                      <Trash2 className="h-4 w-4 text-destructive" />
+                    </button>
+                  </div>
+                </div>
+                {p.description && <p className="text-xs text-muted-foreground mt-1 line-clamp-2">{p.description}</p>}
+                <div className="mt-4 flex items-center gap-4 text-xs text-muted-foreground">
+                  <span className="flex items-center gap-1"><LayoutList className="h-3.5 w-3.5" /> {modules} módulos</span>
+                  <span className="flex items-center gap-1"><ShieldCheck className="h-3.5 w-3.5" /> {linkedSectors} setores</span>
+                  <span className={`ml-auto rounded-full px-2 py-0.5 text-[10px] font-bold ${p.isActive ? 'bg-[hsl(var(--success))]/10 text-[hsl(var(--success))]' : 'bg-muted text-muted-foreground'}`}>
+                    {p.isActive ? 'Ativo' : 'Inativo'}
+                  </span>
+                </div>
+              </div>
+            )
+          })}
+        </div>
+      )}
 
       {/* Modal - Novo/Editar Setor */}
       {showForm && (
@@ -124,13 +196,26 @@ export default function SectorsPage() {
         </div>
       )}
 
+      {/* Modal - Novo/Editar Perfil */}
+      {showProfileForm && (
+        <ProfileFormModal
+          profile={editingProfile}
+          onClose={() => setShowProfileForm(false)}
+          onSave={(p) => {
+            upsertProfile(p)
+            setShowProfileForm(false)
+            toast.success(editingProfile ? 'Perfil atualizado' : 'Perfil criado')
+          }}
+        />
+      )}
+
       {/* Modal - Gerenciar Usuários do Setor */}
       {managingSector && (
         <ManageUsersModal
           sector={managingSector}
           users={realUsers}
           loading={loadingUsers}
-          assignedUsers={sectorUsers[managingSector.id] || new Set()}
+          assignedUsers={new Set(sectorUsers[managingSector.id] || [])}
           onToggle={(userId) => toggleUserInSector(managingSector.id, userId)}
           onSave={saveUserAssignments}
           onClose={() => setManagingSector(null)}
@@ -139,6 +224,7 @@ export default function SectorsPage() {
     </div>
   )
 }
+
 
 /* ── Modal de Gerenciar Usuários ── */
 function ManageUsersModal({

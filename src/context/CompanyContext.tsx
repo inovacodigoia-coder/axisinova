@@ -2,8 +2,10 @@ import { createContext, useCallback, useContext, useEffect, useState, type React
 import { useAuth } from '@/context/AuthContext'
 import type { Profile, Sector, MenuFunction, SystemModule, PermissionAction } from '@/types/permissions.types'
 import type { CompanyUser, Origin } from '@/types/company-portal.types'
-import { MOCK_COMPANY_PROFILES, MOCK_COMPANY_USERS, getFunctionsForProfile, getUtilitiesForProfile } from '@/mocks/company.mock'
-import { getSectors, useSectors } from '@/stores/sectorsStore'
+import { MOCK_COMPANY_USERS, getFunctionsForProfile, getUtilitiesForProfile } from '@/mocks/company.mock'
+import { getSectors, useSectors, getAllowedProfileIdsForUser, useSectorUsers } from '@/stores/sectorsStore'
+import { getProfiles, useProfiles } from '@/stores/profilesStore'
+
 import { supabase } from '@/integrations/supabase/client'
 import { toast } from 'sonner'
 
@@ -38,15 +40,24 @@ interface CompanyContextValue {
 
 const CompanyContext = createContext<CompanyContextValue | null>(null)
 
-function getUserProfiles(userId: string, role?: string): Profile[] {
+function getUserProfiles(userId: string, role?: string, authUserId?: string): Profile[] {
+  const all = getProfiles().filter(p => p.isActive)
+
+  // Perfis liberados pelos setores em que o usuário está vinculado (Usuários do Setor)
+  const allowedBySector = authUserId ? getAllowedProfileIdsForUser(authUserId) : null
+  if (allowedBySector) {
+    return all.filter(p => allowedBySector.includes(p.id))
+  }
+
   // Real Supabase users with admin role get all active profiles
   if (role === 'super_admin' || role === 'company_admin') {
-    return MOCK_COMPANY_PROFILES.filter(p => p.isActive)
+    return all
   }
   const user = MOCK_COMPANY_USERS.find(u => u.id === userId)
   if (!user) return []
-  return MOCK_COMPANY_PROFILES.filter(p => user.profiles.includes(p.id) && p.isActive)
+  return all.filter(p => user.profiles.includes(p.id))
 }
+
 
 function getSectorsForProfile(profile: Profile): Sector[] {
   // Setores sem perfis vinculados ficam disponíveis para todos (ex.: setor recém-criado)
@@ -131,8 +142,11 @@ export function CompanyProvider({ children }: { children: ReactNode }) {
 
   const companyUserId = user ? getCompanyUserId(user.id) : null
   const companyUser = companyUserId ? MOCK_COMPANY_USERS.find(u => u.id === companyUserId) || null : null
-  const profiles = user ? getUserProfiles(companyUserId || '', user.role) : []
+  const allProfiles = useProfiles()
+  useSectorUsers()
+  const profiles = user ? getUserProfiles(companyUserId || '', user.role, user.id) : []
   const allSectors = useSectors()
+
   const availableSectors = activeProfile ? getSectorsForProfile(activeProfile) : []
   const availableFunctions = activeProfile ? getFunctionsForProfile(activeProfile) : []
   const availableUtilities = activeProfile ? getUtilitiesForProfile(activeProfile) : []
@@ -151,7 +165,7 @@ export function CompanyProvider({ children }: { children: ReactNode }) {
 
     // company_admin and super_admin bypass
     if (user.role === 'super_admin' || user.role === 'company_admin') {
-      const profs = getUserProfiles(companyUserId || '', user.role)
+      const profs = getUserProfiles(companyUserId || '', user.role, user.id)
       if (profs.length > 0) {
         const saved = sessionStorage.getItem(SESSION_KEY)
         if (saved) {
@@ -291,7 +305,7 @@ export function CompanyProvider({ children }: { children: ReactNode }) {
       availableSectors, availableOrigins, availableFunctions, availableUtilities,
       selectProfile, selectSector, selectOrigin, confirmSession, clearSession,
       switchProfile, switchSector, canAccess, isSessionReady, isSessionHydrated,
-      allProfiles: MOCK_COMPANY_PROFILES, allSectors: allSectors, allUsers: MOCK_COMPANY_USERS,
+      allProfiles, allSectors: allSectors, allUsers: MOCK_COMPANY_USERS,
       refreshOrigins,
     }}>
       {children}
