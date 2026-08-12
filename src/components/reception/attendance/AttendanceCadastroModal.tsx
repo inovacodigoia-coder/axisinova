@@ -402,7 +402,7 @@ export function AttendanceCadastroModal({
         attachmentRulesSatisfied: !state.attachmentOverrideReason,
         attachmentOverrideReason: state.attachmentOverrideReason,
         scheduledAppointmentId: state.scheduledAppointmentId,
-        status: (state.procedureRequiresAuth && state.authorizationCode) ? 'authorized' : 'open',
+        status: isLabFlow ? 'waiting_collection' : ((state.procedureRequiresAuth && state.authorizationCode) ? 'authorized' : 'open'),
         examMode: state.serviceType === 'exam' ? (state.examMode === 'ask' ? undefined : state.examMode) : undefined,
         // Lab specific fields
         originId: state.originId,

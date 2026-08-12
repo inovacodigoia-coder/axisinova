@@ -74,12 +74,12 @@ export default function LabColetaPage() {
 
   const collectionOrders = useMemo(() => {
     return (orders || [])
-      .filter(o => o?.status === 'waiting_collection')
+      .filter(o => o?.status === 'waiting_collection' || o?.status === 'open')
       .map(o => {
         const allExams = (o.labGuides || []).flatMap(guide => (guide.exams || []).map((e: any) => ({
           ...e,
           examId: e.examId || e.id,
-          material: e.material || e.selectedMaterial || 'Soro'
+          material: e.material || e.selectedMaterial || e.materialName || 'Soro'
         })))
         return {
           ...o,
@@ -145,6 +145,12 @@ export default function LabColetaPage() {
 
   const getOrderTubes = (order: LabAttendanceOrder) => {
     const materials = new Set(order.exams?.map(e => e.material).filter(Boolean))
+    
+    // Se não houver materiais mapeados nos exames, mostramos pelo menos o padrão 'gel' para garantir visualização
+    if (materials.size === 0 && order.exams && order.exams.length > 0) {
+      return [TUBE_TYPES[0]]; // Retorna o primeiro tipo de tubo (Gel) por padrão se houver exames
+    }
+
     return TUBE_TYPES.filter(tube => 
       materials.has(tube.label) || 
       materials.has(tube.type) ||
