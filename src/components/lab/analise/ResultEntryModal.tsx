@@ -93,6 +93,7 @@ export function ResultEntryModal({
   const [recoletaReasons, setRecoletaReasons] = useState<Record<string, { reason: string; details: string }>>({});
   const [prevResults, setPrevResults] = useState<Record<string, { date: string; value: string; unit: string }[]>>({});
   const [laudoOrder, setLaudoOrder] = useState<any>(null);
+  const [laudoOpen, setLaudoOpen] = useState(false);
 
   /* Do not make any visual modifications. The phrases I write are commands to understand what I want, not to be written down. Understand their content well, then execute what is required.
                                             
@@ -128,6 +129,16 @@ export function ResultEntryModal({
 
   // Catálogo de Exames (parâmetros e faixas de referência reais)
   const [catalog, setCatalog] = useState<Record<string, any>>({});
+
+  // Safety: garante que a página volte a ser clicável ao fechar o laudo
+  useEffect(() => {
+    if (!laudoOpen) {
+      const t = setTimeout(() => {
+        if (document.body.style.pointerEvents === 'none') document.body.style.pointerEvents = '';
+      }, 350);
+      return () => clearTimeout(t);
+    }
+  }, [laudoOpen]);
 
   useEffect(() => {
     if (!isOpen) return;
@@ -400,7 +411,9 @@ export function ResultEntryModal({
       registeredAt: patient.registeredAt,
       exams,
     });
+    setLaudoOpen(true);
   };
+
 
 
 
@@ -1154,15 +1167,14 @@ export function ResultEntryModal({
       )}
 
       {/* Visualização do Laudo */}
-      {laudoOrder && (
-        <PDFPreviewModal
-          isOpen={!!laudoOrder}
-          onClose={() => setLaudoOrder(null)}
-          order={laudoOrder}
-          onDownload={() => window.print()}
-          onPrint={() => window.print()}
-        />
-      )}
+      <PDFPreviewModal
+        isOpen={laudoOpen}
+        onClose={() => setLaudoOpen(false)}
+        order={laudoOrder || {}}
+        onDownload={() => window.print()}
+        onPrint={() => window.print()}
+      />
+
     </div>
 
   );
