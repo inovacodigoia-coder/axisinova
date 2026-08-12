@@ -89,14 +89,11 @@ export default function ProfilesManagerPage() {
           profile={editingProfile}
           onClose={() => setShowForm(false)}
           onSave={(p) => {
-            if (editingProfile) {
-              setProfiles(prev => prev.map(x => x.id === p.id ? p : x))
-            } else {
-              setProfiles(prev => [...prev, p])
-            }
+            upsertProfile(p)
             setShowForm(false)
             toast.success(editingProfile ? 'Perfil atualizado' : 'Perfil criado')
           }}
+
         />
       )}
     </div>
