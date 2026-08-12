@@ -232,18 +232,14 @@ export function CompanySidebar({ mobileOpen, onMobileClose, collapsed = false, o
 
       {/* Nav */}
       <nav className="flex-1 overflow-y-auto px-3 py-4 space-y-4">
-        {NAV_SECTIONS.map((section) => {
-          const visibleItems = section.items.filter(item => !item.module || canAccess(item.module, 'view'))
-          if (visibleItems.length === 0) return null
-
-          return (
+        {NAV_SECTIONS.map((section) => (
           <div key={section.title}>
             {!collapsed && (
               <p className="px-3 mb-2 text-[10px] font-bold tracking-wider text-white/30 uppercase">{section.title}</p>
             )}
             <div className="space-y-0.5">
-              {visibleItems.map((item) => {
-                const hasAccess = true // Already filtered in visibleItems
+              {section.items.map((item) => {
+                const hasAccess = !item.module || canAccess(item.module, 'view')
                 const active = location.pathname.startsWith(item.path)
                 const Icon = ICON_MAP[item.icon] || Home
 
@@ -255,17 +251,26 @@ export function CompanySidebar({ mobileOpen, onMobileClose, collapsed = false, o
                 const link = (
                   <NavLink
                     key={item.path}
-                    to={item.path}
-                    onClick={() => {
+                    to={hasAccess ? item.path : '#'}
+                    onClick={(e) => {
+                      if (!hasAccess) { e.preventDefault(); return }
                       onMobileClose?.()
                     }}
                     className={cn(
                       'flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-all duration-200',
-                      active && 'gradient-bg text-white shadow-lg',
-                      !active && 'text-white/60 hover:bg-white/[0.06] hover:text-white'
+                      !hasAccess && 'opacity-40 cursor-not-allowed',
+                      active && hasAccess
+                        ? 'gradient-bg text-white shadow-lg'
+                        : hasAccess
+                          ? 'text-white/60 hover:bg-white/[0.06] hover:text-white'
+                          : 'text-white/40'
                     )}
                   >
-                    <Icon className="h-5 w-5 shrink-0" />
+                    {hasAccess ? (
+                      <Icon className="h-5 w-5 shrink-0" />
+                    ) : (
+                      <Lock className="h-5 w-5 shrink-0" />
+                    )}
                     {!collapsed && <span className="flex-1 truncate">{item.label}</span>}
                     {!collapsed && badge && (
                       <span className="bg-white/20 px-1.5 py-0.5 rounded-full text-[10px] font-bold">{badge}</span>
@@ -273,6 +278,14 @@ export function CompanySidebar({ mobileOpen, onMobileClose, collapsed = false, o
                   </NavLink>
                 )
 
+                if (!hasAccess && collapsed) {
+                  return (
+                    <Tooltip key={item.path}>
+                      <TooltipTrigger asChild>{link}</TooltipTrigger>
+                      <TooltipContent side="right">Seu perfil não tem acesso a este módulo</TooltipContent>
+                    </Tooltip>
+                  )
+                }
 
                 if (collapsed) {
                   return (
@@ -283,12 +296,20 @@ export function CompanySidebar({ mobileOpen, onMobileClose, collapsed = false, o
                   )
                 }
 
+                if (!hasAccess) {
+                  return (
+                    <Tooltip key={item.path}>
+                      <TooltipTrigger asChild>{link}</TooltipTrigger>
+                      <TooltipContent>Seu perfil não tem acesso a este módulo</TooltipContent>
+                    </Tooltip>
+                  )
+                }
+
                 return link
               })}
             </div>
           </div>
-          )
-        })}
+        ))}
       </nav>
 
       {/* Footer */}

@@ -19,7 +19,7 @@ interface RealUser {
 }
 
 export default function SectorsPage() {
-  const { canAccess, activeProfile } = useCompanyContext()
+  const { canAccess } = useCompanyContext()
   const { user } = useAuth()
   const sectors = useSectors()
   const allProfiles = useProfiles()
@@ -104,7 +104,7 @@ export default function SectorsPage() {
 
       {tab === 'sectors' && (
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-        {sectors.filter(s => s.isActive && (user?.role === 'super_admin' || user?.role === 'company_admin' || s.allowedProfiles.length === 0 || (activeProfile && s.allowedProfiles.includes(activeProfile.id)))).map(s => (
+        {sectors.filter(s => s.isActive).map(s => (
           <div key={s.id} className="rounded-2xl border border-border bg-card p-5 shadow-[0_4px_24px_rgba(0,0,0,0.06)] hover:shadow-[0_12px_40px_rgba(123,47,247,0.1)] hover:border-primary/30 transition-all group">
             <div className="flex items-start justify-between">
               <h3 className="text-base font-semibold text-foreground">{s.name}</h3>
