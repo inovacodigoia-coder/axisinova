@@ -23,8 +23,11 @@ import {
   Check,
   ShieldCheck,
   Ban,
-  AlertCircle
+  AlertCircle,
+  FileText
 } from 'lucide-react';
+import PDFPreviewModal from '@/components/lab/PDFPreviewModal';
+
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
