@@ -102,6 +102,8 @@ export default function LabAnalisePage() {
           collectionDate: order.updatedAt, // Assumindo updatedAt como data da coleta se status for collection_done
           originId: order.originId,
           originName: order.originName,
+          doctorName: (guide as any)?.doctorName || order.doctorName || order.requestingDoctor,
+          doctorCRM: (guide as any)?.doctorCRM || (guide as any)?.doctorCrm || order.doctorCRM,
           status: e.status || 'pending'
         }))
       );
