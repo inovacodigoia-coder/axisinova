@@ -175,7 +175,7 @@ function ExamBlock({ exam }: { exam: any }) {
   const results: any[] = exam.results || [];
   const sections: { name: string; rows: any[] }[] = [];
   results.forEach((r) => {
-    const name = (r.section || '').trim();
+    const name = ((r.section || '').trim() || inferSection(r.parameterName || r.parameterCode || '')).trim();
     let bucket = sections.find((s) => s.name === name);
     if (!bucket) {
       bucket = { name, rows: [] };
@@ -195,7 +195,8 @@ function ExamBlock({ exam }: { exam: any }) {
       </p>
 
       {sections.map((section, sIdx) => {
-        const { paired, hasPairs } = buildPairedRows(section.rows);
+        const white = isWhiteSeries(section.name);
+        const { paired, hasPairs } = white ? buildPairedRows(section.rows) : { paired: [], hasPairs: false };
         return (
           <div key={sIdx} className="mb-4">
             {section.name && (
@@ -204,10 +205,11 @@ function ExamBlock({ exam }: { exam: any }) {
                 <span className="text-[11px] font-semibold text-zinc-800">{section.name}</span>
               </div>
             )}
-            {hasPairs ? <DifferentialTable paired={paired} /> : <StandardTable rows={section.rows} />}
+            {white && hasPairs ? <DifferentialTable paired={paired} /> : <StandardTable rows={section.rows} />}
           </div>
         );
       })}
+
 
       {exam.internalObservations && (
         <p className="text-[9px] text-zinc-600 mt-1 whitespace-pre-line">Obs.: {exam.internalObservations}</p>
