@@ -39,7 +39,10 @@ import { format, differenceInYears } from 'date-fns';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/context/AuthContext';
 
-
+  /* Do not make any visual modifications. The phrases I write are commands to understand what I want, not to be written down. Understand their content well, then execute what is required.
+                                        
+                                            
+                                            I have approved the plan */
 export default function LabReportsPage() {
   const { orders, loading: ordersLoading } = useAttendanceCadastro();
   const { user } = useAuth();
