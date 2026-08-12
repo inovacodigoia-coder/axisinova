@@ -130,7 +130,7 @@ export function ResultEntryModal({
   }, [filteredExams, filters.workbenches]);
 
   // Catálogo de Exames (parâmetros e faixas de referência reais)
-  const [catalog, setCatalog] = useState<Record<string, any>>({});
+  const [catalogList, setCatalogList] = useState<any[]>([]);
 
   useEffect(() => {
     if (!isOpen) return;
@@ -140,13 +140,7 @@ export function ResultEntryModal({
         .from('exams')
         .select('id, name, internal_code, measurement_unit, parameters, reference_values');
       if (error || !active || !data) return;
-      const map: Record<string, any> = {};
-      data.forEach((e: any) => {
-        map[catalogKey(e.id)] = e;
-        if (e.internal_code) map[catalogKey(e.internal_code)] = e;
-        if (e.name) map[catalogKey(e.name)] = e;
-      });
-      setCatalog(map);
+      setCatalogList(data as any[]);
     })();
     return () => { active = false; };
   }, [isOpen]);
@@ -159,10 +153,11 @@ export function ResultEntryModal({
         ? differenceInYears(new Date(), new Date(patient.patientBirthDate))
         : undefined;
       patient.exams.forEach((exam: any) => {
-        const catalogExam =
-          catalog[catalogKey(exam.examId)] ||
-          catalog[catalogKey(exam.code)] ||
-          catalog[catalogKey(exam.name)];
+        const catalogExam = findCatalogExam(catalogList, {
+          examId: exam.examId,
+          code: exam.code,
+          name: exam.name,
+        });
         map[exam.id] = buildExamParams(catalogExam, exam.name || exam.code, {
           gender: patient.patientGender,
           age,
@@ -170,9 +165,34 @@ export function ResultEntryModal({
       });
     });
     return map;
-  }, [groupedPatients, catalog]);
+  }, [groupedPatients, catalogList]);
 
   const getParams = (exam: any) => paramsByExam[exam.id] || [{ id: '1', name: exam?.name || '', unit: '', reference: '' }];
+
+  // Valor exibido: parâmetros calculados usam a fórmula do catálogo
+  const getParamValue = useCallback((exam: any, param: any) => {
+    if (param?.isCalculated) {
+      return evaluateFormula(param.formula, getParams(exam), (pid) => results[`${exam.id}_${pid}`] || '');
+    }
+    return results[`${exam.id}_${param.id}`] || '';
+  }, [results, paramsByExam]);
+
+  // Persiste automaticamente os calculados no estado para salvar/laudo
+  useEffect(() => {
+    const updates: Record<string, string> = {};
+    Object.entries(paramsByExam).forEach(([examId, params]: any) => {
+      (params as any[]).forEach((p: any) => {
+        if (!p.isCalculated) return;
+        const computed = evaluateFormula(p.formula, params, (pid) => results[`${examId}_${pid}`] || '');
+        const key = `${examId}_${p.id}`;
+        if (computed && results[key] !== computed) updates[key] = computed;
+      });
+    });
+    if (Object.keys(updates).length > 0) {
+      setResults(prev => ({ ...prev, ...updates }));
+    }
+  }, [results, paramsByExam]);
+
 
   const totalExams = filteredExams.length;
   
