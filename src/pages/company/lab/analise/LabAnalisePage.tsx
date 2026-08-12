@@ -578,6 +578,11 @@ export default function LabAnalisePage() {
         }}
         workbenchNames={workbenches.reduce((acc, wb) => ({ ...acc, [wb.id]: wb.name }), {})}
         establishmentNames={establishments.reduce((acc, est) => ({ ...acc, [est.id]: est.name }), {})}
+        refreshData={() => {
+          setLoading(true);
+          refreshOrders().finally(() => setLoading(false));
+          toast.success('Informações atualizadas');
+        }}
       />
     </div>
   );
