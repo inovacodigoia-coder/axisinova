@@ -334,7 +334,13 @@ export default function PDFPreviewModal({
               <Printer className="h-4 w-4" /> Imprimir
             </Button>
 
-            <Button className="gradient-bg text-white gap-2" onClick={printLaudoOnly}>
+            <Button 
+              className="gradient-bg text-white gap-2" 
+              onClick={() => {
+                printLaudoOnly();
+                toast.success('Iniciando download...');
+              }}
+            >
               <Download className="h-4 w-4" /> Download PDF
             </Button>
           </div>
