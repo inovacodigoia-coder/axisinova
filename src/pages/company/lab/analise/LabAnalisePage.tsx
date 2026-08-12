@@ -355,6 +355,7 @@ export default function LabAnalisePage() {
                             {[
                               { id: 'collection_done', label: 'Coleta Realizada' },
                               { id: 'in_analysis', label: 'Em Análise' },
+                              { id: 'validation', label: 'Validação' },
                               { id: 'released', label: 'Liberado' },
                               { id: 'concluded', label: 'Concluído' }
                             ].map((status) => (
