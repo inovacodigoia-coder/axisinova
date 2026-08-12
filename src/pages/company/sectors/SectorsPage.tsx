@@ -61,16 +61,16 @@ export default function SectorsPage() {
     setEditing(null)
   }
 
-  const toggleUserInSector = async (sectorId: string, userId: string) => {
-    if (!user?.companyId) return
+  const toggleUserInSector = (sectorId: string, userId: string) => {
     const current = new Set(sectorUsers[sectorId] || [])
     current.has(userId) ? current.delete(userId) : current.add(userId)
-    
-    try {
-      await persistSectorUsers(sectorId, Array.from(current), user.companyId)
-    } catch (err) {
-      toast.error('Erro ao salvar vínculo')
-    }
+    // Update local state immediately for UI responsiveness
+    const updatedUserIds = Array.from(current)
+    // We don't call setSectorUsers directly here to avoid double-saving or state conflicts
+    // Instead, we let the Save button handle the persistence if needed, 
+    // but the user wants it saved when they click Save in the modal.
+    // However, the current implementation of toggleUserInSector was updating the store directly.
+    // Let's fix handleSave in the modal context.
   }
 
   const saveUserAssignments = () => {
@@ -226,9 +226,17 @@ export default function SectorsPage() {
           sector={managingSector}
           users={realUsers}
           loading={loadingUsers}
-          assignedUsers={new Set(sectorUsers[managingSector.id] || [])}
-          onToggle={(userId) => toggleUserInSector(managingSector.id, userId)}
-          onSave={saveUserAssignments}
+          initialAssignedUsers={new Set(sectorUsers[managingSector.id] || [])}
+          onSave={async (userIds) => {
+            if (!user?.companyId) return
+            try {
+              await persistSectorUsers(managingSector.id, userIds, user.companyId)
+              toast.success(`Usuários vinculados ao setor "${managingSector.name}"`)
+              setManagingSector(null)
+            } catch (err) {
+              toast.error('Erro ao salvar vínculos')
+            }
+          }}
           onClose={() => setManagingSector(null)}
         />
       )}
@@ -239,17 +247,18 @@ export default function SectorsPage() {
 
 /* ── Modal de Gerenciar Usuários ── */
 function ManageUsersModal({
-  sector, users, loading, assignedUsers, onToggle, onSave, onClose
+  sector, users, loading, initialAssignedUsers, onSave, onClose
 }: {
   sector: Sector
   users: RealUser[]
   loading: boolean
-  assignedUsers: Set<string>
-  onToggle: (userId: string) => void
-  onSave: () => void
+  initialAssignedUsers: Set<string>
+  onSave: (userIds: string[]) => void
   onClose: () => void
 }) {
   const [search, setSearch] = useState('')
+  const [assignedUsers, setAssignedUsers] = useState<Set<string>>(new Set(initialAssignedUsers))
+
 
   const filtered = users.filter(u =>
     u.full_name.toLowerCase().includes(search.toLowerCase()) ||
@@ -304,7 +313,11 @@ function ManageUsersModal({
                 <input
                   type="checkbox"
                   checked={assignedUsers.has(u.id)}
-                  onChange={() => onToggle(u.id)}
+                  onChange={() => {
+                    const next = new Set(assignedUsers)
+                    next.has(u.id) ? next.delete(u.id) : next.add(u.id)
+                    setAssignedUsers(next)
+                  }}
                   className="accent-primary h-4 w-4"
                 />
                 <div className="flex-1 min-w-0">
@@ -323,7 +336,7 @@ function ManageUsersModal({
           <span className="text-xs text-muted-foreground">{assignedUsers.size} usuário(s) selecionado(s)</span>
           <div className="flex gap-3">
             <button onClick={onClose} className="rounded-lg border border-input px-4 py-2 text-sm hover:bg-muted">Cancelar</button>
-            <button onClick={onSave} className="gradient-bg rounded-lg px-4 py-2 text-sm font-semibold text-white">Salvar</button>
+            <button onClick={() => onSave(Array.from(assignedUsers))} className="gradient-bg rounded-lg px-4 py-2 text-sm font-semibold text-white">Salvar</button>
           </div>
         </div>
       </div>
