@@ -232,15 +232,18 @@ export function CompanySidebar({ mobileOpen, onMobileClose, collapsed = false, o
 
       {/* Nav */}
       <nav className="flex-1 overflow-y-auto px-3 py-4 space-y-4">
-        {NAV_SECTIONS.map((section) => (
+        {NAV_SECTIONS.map((section) => {
+          const visibleItems = section.items.filter(item => !item.module || canAccess(item.module, 'view'))
+          if (visibleItems.length === 0) return null
+
+          return (
           <div key={section.title}>
             {!collapsed && (
               <p className="px-3 mb-2 text-[10px] font-bold tracking-wider text-white/30 uppercase">{section.title}</p>
             )}
             <div className="space-y-0.5">
-              {section.items.map((item) => {
-                const hasAccess = !item.module || canAccess(item.module, 'view')
-                if (!hasAccess) return null
+              {visibleItems.map((item) => {
+                const hasAccess = true // Already filtered in visibleItems
                 const active = location.pathname.startsWith(item.path)
                 const Icon = ICON_MAP[item.icon] || Home
 
@@ -275,7 +278,8 @@ export function CompanySidebar({ mobileOpen, onMobileClose, collapsed = false, o
               })}
             </div>
           </div>
-        ))}
+          )
+        })}
       </nav>
 
       {/* Footer */}
