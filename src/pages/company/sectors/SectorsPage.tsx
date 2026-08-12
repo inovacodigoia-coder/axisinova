@@ -109,6 +109,7 @@ export default function SectorsPage() {
             {s.description && <p className="text-xs text-muted-foreground mt-1">{s.description}</p>}
             <div className="mt-4 flex items-center gap-4 text-xs text-muted-foreground">
               <span className="flex items-center gap-1"><ShieldCheck className="h-3.5 w-3.5" /> {s.allowedProfiles.length} perfis</span>
+              <span className="flex items-center gap-1"><LayoutList className="h-3.5 w-3.5" /> {Object.keys(mergePermissions(allProfiles, new Set(s.allowedProfiles))).filter(k => (mergePermissions(allProfiles, new Set(s.allowedProfiles)) as any)[k]?.includes('view')).length} módulos</span>
               <span className="flex items-center gap-1">
                 <Users className="h-3.5 w-3.5" />
                 {loadingUsers ? <Loader2 className="h-3 w-3 animate-spin" /> : `${getUserCountForSector(s.id)} usuários`}
