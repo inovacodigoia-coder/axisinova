@@ -274,6 +274,15 @@ export function CompanySidebar({ mobileOpen, onMobileClose, collapsed = false, o
                 )
 
 
+                if (collapsed) {
+                  return (
+                    <Tooltip key={item.path}>
+                      <TooltipTrigger asChild>{link}</TooltipTrigger>
+                      <TooltipContent side="right">{item.label}</TooltipContent>
+                    </Tooltip>
+                  )
+                }
+
                 return link
               })}
             </div>
