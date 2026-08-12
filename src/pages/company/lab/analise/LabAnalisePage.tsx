@@ -110,16 +110,19 @@ export default function LabAnalisePage() {
         }))
       );
       
-      // Filtro por Status: Apenas exames com coleta realizada ou em fluxo técnico
-      const allowedOrderStatuses = ['collection_done', 'in_analysis', 'validation', 'released', 'open'];
+      // Filtro por Status: Baseado na seleção do usuário ou todos se vazio
+      const allowedOrderStatuses = ['collection_done', 'in_analysis', 'validation', 'released', 'concluded', 'open'];
+      
       exams.forEach(exam => {
-        const isExamCollected = exam.isColeta || exam.status === 'collected' || exam.status === 'collection_done';
+        // Mapeamos os status internos para os nomes amigáveis solicitados
+        // collection_done -> Coleta Realizada
+        // in_analysis -> Em Análise
+        // released -> Liberado
+        // concluded -> Concluído
         
-        if (
-          isExamCollected || 
-          exam.status === 'processing' || 
-          (allowedOrderStatuses.includes(order.status) && isExamCollected)
-        ) {
+        const matchesStatus = selectedStatuses.length === 0 || selectedStatuses.includes(order.status);
+        
+        if (allowedOrderStatuses.includes(order.status) && matchesStatus) {
           allExams.push(exam);
         }
       });
