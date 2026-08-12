@@ -10,6 +10,7 @@ import { useLabSettings } from '@/hooks/useLabSettings';
 import { useAuth } from '@/context/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import { calculateAttendanceStatus, ATTENDANCE_STATUS_CONFIG } from '@/utils/attendanceStatus';
 
 
 interface PDFPreviewModalProps {
@@ -151,7 +152,18 @@ export default function PDFPreviewModal({
 
   // Status mapping
   const getStatusBadge = () => {
-    const status = order.exams?.[0]?.status; // Simplified check
+    const calculated = calculateAttendanceStatus(order as any);
+    const config = ATTENDANCE_STATUS_CONFIG[calculated];
+    
+    if (config) {
+      return (
+        <Badge className={cn("border-none", config.bgClass, config.textClass)}>
+          {config.label}
+        </Badge>
+      );
+    }
+
+    const status = order.exams?.[0]?.status; 
     switch (status) {
       case 'validated':
       case 'liberado':
