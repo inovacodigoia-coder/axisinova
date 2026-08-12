@@ -949,10 +949,9 @@ export function AttendanceDetailsModal({ open, onClose, onOrderDeleted, order, p
             </div>
           </div>
         </DialogContent>
-      </Dialog>
 
-      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
-        <AlertDialogContent>
+        <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+          <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Excluir Atendimento</AlertDialogTitle>
             <AlertDialogDescription>
@@ -982,7 +981,7 @@ export function AttendanceDetailsModal({ open, onClose, onOrderDeleted, order, p
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-      </>
+    </Dialog>
   )
 }
 
