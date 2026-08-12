@@ -101,20 +101,16 @@ export function AttendanceDetailsModal({ open, onClose, order, patient }: Attend
 
   const getStatusColor = (status: string) => {
     switch(status?.toLowerCase()) {
-      case 'waiting_collection':
-        return 'bg-amber-500';
-      case 'collection_done':
-        return 'bg-emerald-500';
       case 'open':
-        return 'bg-blue-400';
-      case 'in_analysis':
-        return 'bg-indigo-500';
-      case 'released':
-        return 'bg-emerald-600';
+      case 'waiting':
+      case 'waiting_collection':
+        return 'bg-blue-500';
+      case 'collection_done':
+      case 'collected':
+      case 'liberado':
+        return 'bg-emerald-500';
       case 'cancelled':
         return 'bg-red-500';
-      case 'completed':
-        return 'bg-emerald-700';
       default:
         return 'bg-slate-400';
     }

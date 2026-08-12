@@ -70,13 +70,13 @@ function buildDoc(order: AttendanceOrder, patient: Patient | undefined, unitName
 const ATTENDANCE_STATUS_LABELS: Record<string, { label: string, color: string }> = {
   waiting_collection: { label: 'AGUARDANDO', color: 'bg-amber-500' },
   collection_done: { label: 'COLETA REALIZADA', color: 'bg-emerald-500' },
-  open: { label: 'ABERTO', color: 'bg-blue-400' },
-  in_analysis: { label: 'Em Análise', color: 'bg-indigo-500' },
+  in_analysis: { label: 'Em Análise', color: 'bg-blue-500' },
+  validation: { label: 'Validação', color: 'bg-purple-500' },
   released: { label: 'Liberado', color: 'bg-emerald-600' },
   cancelled: { label: 'Cancelado', color: 'bg-red-500' },
-  completed: { label: 'Concluído', color: 'bg-emerald-700' },
-  validation: { label: 'Validação', color: 'bg-purple-500' },
+  open: { label: 'ABERTO', color: 'bg-blue-400' },
   authorized: { label: 'Autorizado', color: 'bg-indigo-500' },
+  completed: { label: 'Concluído', color: 'bg-emerald-700' },
 }
 
 export function AttendanceLookupModal({ open, onClose, unitName, guicheName, onAddProcedure }: AttendanceLookupModalProps) {
