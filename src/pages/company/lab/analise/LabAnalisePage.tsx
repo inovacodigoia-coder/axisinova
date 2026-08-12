@@ -79,6 +79,7 @@ export default function LabAnalisePage() {
   const [dateTo, setDateTo] = useState<Date | undefined>(undefined);
   const [selectedWorkbenches, setSelectedWorkbenches] = useState<string[]>([]);
   const [selectedEstablishments, setSelectedEstablishments] = useState<string[]>([]);
+  const [selectedStatuses, setSelectedStatuses] = useState<string[]>(['collection_done']);
   const [showFilters, setShowFilters] = useState(false);
 
   useEffect(() => {
