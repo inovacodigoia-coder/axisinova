@@ -71,6 +71,7 @@ interface ResultEntryModalProps {
     workbenches: string[];
     establishments: string[];
     protocol: string;
+    statuses?: string[];
   };
   workbenchNames: Record<string, string>;
   establishmentNames: Record<string, string>;
