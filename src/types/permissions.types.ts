@@ -1,4 +1,5 @@
 export type SystemModule =
+  | 'dashboard'
   | 'scheduling'
   | 'reception'
   | 'totem'
@@ -10,6 +11,13 @@ export type SystemModule =
   | 'users'
   | 'settings'
   | 'registers'
+  | 'lab_technical'
+  | 'lab_registers'
+  | 'finance'
+  | 'inventory'
+  | 'pharmacy'
+  | 'serotheque'
+  | 'portals'
 
 export type PermissionAction = 'view' | 'create' | 'edit' | 'delete' | 'export' | 'approve'
 
