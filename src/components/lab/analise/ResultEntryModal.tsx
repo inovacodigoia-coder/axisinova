@@ -767,19 +767,44 @@ export function ResultEntryModal({
   }, [filters, workbenchNames, establishmentNames]);
 
   const getResultStatus = (value: string, reference: string) => {
-    if (!value || !reference) return { label: '', color: '', bgColor: '' };
+    if (!value || !reference) return { label: '', color: '', bgColor: 'bg-white' };
     
     const numValue = parseFloat(value.replace(',', '.'));
-    if (isNaN(numValue)) return { label: '', color: '', bgColor: '' };
+    if (isNaN(numValue)) return { label: '', color: '', bgColor: 'bg-white' };
 
+    // Suporte a faixas como "20 a 60", "< 20", "> 60"
+    const rangeMatch = reference.match(/([\d.]+[,]?[\d.]*)\s+a\s+([\d.]+[,]?[\d.]*)/i);
+    const lessMatch = reference.match(/<\s*([\d.]+[,]?[\d.]*)/);
+    const greaterMatch = reference.match(/>\s*([\d.]+[,]?[\d.]*)/);
+
+    if (rangeMatch) {
+      const min = parseFloat(rangeMatch[1].replace(',', '.'));
+      const max = parseFloat(rangeMatch[2].replace(',', '.'));
+      if (numValue < min) return { label: 'Baixo', color: 'text-amber-600', bgColor: 'bg-amber-400/20' };
+      if (numValue > max) return { label: 'Alto', color: 'text-rose-600', bgColor: 'bg-rose-500/10' };
+      return { label: 'Normal', color: 'text-emerald-600', bgColor: 'bg-emerald-500/10' };
+    }
+    
+    if (lessMatch) {
+      const max = parseFloat(lessMatch[1].replace(',', '.'));
+      if (numValue >= max) return { label: 'Alto', color: 'text-rose-600', bgColor: 'bg-rose-500/10' };
+      return { label: 'Normal', color: 'text-emerald-600', bgColor: 'bg-emerald-500/10' };
+    }
+
+    if (greaterMatch) {
+      const min = parseFloat(greaterMatch[1].replace(',', '.'));
+      if (numValue <= min) return { label: 'Baixo', color: 'text-amber-600', bgColor: 'bg-amber-400/20' };
+      return { label: 'Normal', color: 'text-emerald-600', bgColor: 'bg-emerald-500/10' };
+    }
+
+    // Fallback para match genérico de dois números
     const parts = reference.match(/([0-9]+[.,]?[0-9]*)/g);
-    if (!parts || parts.length < 2) return { label: 'Normal', color: 'text-emerald-600', bgColor: 'bg-emerald-500/10' };
-
-    const min = parseFloat(parts[0].replace(',', '.'));
-    const max = parseFloat(parts[1].replace(',', '.'));
-
-    if (numValue < min) return { label: 'Baixo', color: 'text-amber-600', bgColor: 'bg-amber-400/20' };
-    if (numValue > max) return { label: 'Alto', color: 'text-rose-600', bgColor: 'bg-rose-500/10' };
+    if (parts && parts.length >= 2) {
+      const min = parseFloat(parts[0].replace(',', '.'));
+      const max = parseFloat(parts[1].replace(',', '.'));
+      if (numValue < min) return { label: 'Baixo', color: 'text-amber-600', bgColor: 'bg-amber-400/20' };
+      if (numValue > max) return { label: 'Alto', color: 'text-rose-600', bgColor: 'bg-rose-500/10' };
+    }
     
     return { label: 'Normal', color: 'text-emerald-600', bgColor: 'bg-emerald-500/10' };
   };
