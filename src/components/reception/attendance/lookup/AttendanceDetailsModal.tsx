@@ -677,16 +677,24 @@ export function AttendanceDetailsModal({ open, onClose, order, patient }: Attend
       <AttendancePrintSelectionModal 
         open={printSelectionOpen}
         onClose={() => setPrintSelectionOpen(false)}
-        onConfirm={(result) => {
+        onConfirm={async (result) => {
           console.log('Printing with result:', result);
           setPrintSelectionOpen(false);
+
+          // Mark as delivered to trigger "Concluído" status
+          const { supabase } = await import('@/integrations/supabase/client');
+          await supabase
+            .from('attendance_orders')
+            .update({ delivery_status: 'delivered' } as any)
+            .eq('id', order.id);
 
           // Check if "Laudo" was selected to show the specific preview modal
           const laudoOption = result.options.find((o: any) => o.id === 'laudo' && o.enabled);
           if (laudoOption) {
             setReportPreviewOpen(true);
-            return; // Don't proceed to standard attendance receipts if laudo is the primary focus
+            return;
           }
+
           
           // Determine which vias to print based on selection
           const vias: ('patient' | 'establishment')[] = [];
