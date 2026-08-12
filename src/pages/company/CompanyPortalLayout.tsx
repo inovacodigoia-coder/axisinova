@@ -95,6 +95,7 @@ import LabReportsPage from './lab/LabReportsPage'
 import LabBudgetsPage from './lab/orcamentos/LabBudgetsPage'
 import LabBudgetFormPage from './lab/orcamentos/LabBudgetFormPage'
 import LabBudgetDetailPage from './lab/orcamentos/LabBudgetDetailPage'
+import LabDashboard from './lab/LabDashboard'
 
 import DirectCadastroPage from './reception/DirectCadastroPage'
 
