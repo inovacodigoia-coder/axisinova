@@ -115,6 +115,8 @@ export default function LabReportsPage() {
         return <Badge className="bg-emerald-500 text-white border-none">● Liberado</Badge>;
       case 'pending':
         return <Badge variant="outline" className="text-amber-600 border-amber-200 bg-amber-50">● Pendente</Badge>;
+      case 'parcial':
+        return <Badge className="bg-blue-500 text-white border-none">● Parcial</Badge>;
       case 'retificado':
         return <Badge className="bg-orange-500 text-white border-none">● Retificado</Badge>;
       default:
@@ -147,7 +149,7 @@ export default function LabReportsPage() {
           />
         </div>
         <div className="flex gap-2">
-          {['all', 'pending', 'liberado', 'retificado'].map((status) => (
+          {['all', 'pending', 'parcial', 'liberado', 'retificado'].map((status) => (
             <Button
               key={status}
               variant={filterStatus === status ? "default" : "outline"}
@@ -201,7 +203,9 @@ export default function LabReportsPage() {
                     <td className="px-4 py-4">
                       <div className="flex flex-col">
                         <span className="font-bold">{report.patientName}</span>
-                        <span className="text-[10px] text-muted-foreground">{new Date().getFullYear() - new Date(report.patientBirthDate).getFullYear()} anos • {report.patientGender === 'M' ? 'Masc' : 'Fem'}</span>
+                        <span className="text-[10px] text-muted-foreground">
+                          {report.patientBirthDate ? `${differenceInYears(new Date(), new Date(report.patientBirthDate))} anos` : 'Idade não inf.'} • {report.patientGender === 'M' ? 'Masc' : 'Fem'}
+                        </span>
                       </div>
                     </td>
                     <td className="px-4 py-4 text-muted-foreground">{new Date(report.date).toLocaleDateString('pt-BR')}</td>
@@ -214,7 +218,7 @@ export default function LabReportsPage() {
                     <td className="px-4 py-4">{getStatusBadge(report.status)}</td>
                     <td className="px-4 py-4 text-right">
                       <div className="flex items-center justify-end gap-1">
-                        <Button variant="ghost" size="icon" className="h-8 w-8 text-primary hover:text-primary hover:bg-primary/10" onClick={() => handlePreview(report.id)}>
+                        <Button variant="ghost" size="icon" className="h-8 w-8 text-primary hover:text-primary hover:bg-primary/10" onClick={() => handlePreview(report)}>
                           <Eye className="h-4 w-4" />
                         </Button>
                         <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-foreground" onClick={() => handleDownload(report.id)}>
@@ -229,10 +233,7 @@ export default function LabReportsPage() {
                           </DropdownMenuTrigger>
                           <DropdownMenuContent align="end" className="w-48">
                             <DropdownMenuItem 
-                              onClick={() => {
-                                setSelectedReportId(report.id);
-                                setShowEmail(true);
-                              }} 
+                              onClick={() => handleEmail(report)} 
                               className="gap-2"
                             >
                               <Mail className="h-4 w-4" /> Enviar por E-mail
@@ -247,7 +248,7 @@ export default function LabReportsPage() {
                             <DropdownMenuItem 
                               className="gap-2"
                               onClick={() => {
-                                setSelectedReportId(report.id);
+                                setSelectedReport(report.rawOrder);
                                 setShowDelivery(true);
                               }}
                             >
