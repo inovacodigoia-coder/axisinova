@@ -1,6 +1,6 @@
 import { useState, useMemo } from 'react'
 import { Dialog, DialogContent } from '@/components/ui/dialog'
-import { X, Printer, Pencil, Trash2, Plus, ArrowLeft, MoreVertical, CreditCard, Droplets, ShieldCheck, DollarSign, Calendar, Clock, MapPin, User, FileText, ChevronDown, History, BarChart3, Database, RefreshCw, Info, Smartphone, Calculator } from 'lucide-react'
+import { X, Printer, Pencil, Trash2, Plus, ArrowLeft, MoreVertical, CreditCard, Droplets, ShieldCheck, DollarSign, Calendar, Clock, MapPin, User, FileText, ChevronDown, History, BarChart3, Database, RefreshCw, Info, Smartphone, Calculator, Loader2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import type { AttendanceOrder } from '@/types/attendance-cadastro.types'
@@ -25,17 +25,28 @@ import { ScrollArea } from '@/components/ui/scroll-area'
 import { Checkbox } from '@/components/ui/checkbox'
 import type { AttendanceControlDocument, PrinterConfig } from '@/types/payment-print.types'
 import { format } from 'date-fns'
-
-
+import { supabase } from '@/integrations/supabase/client'
+import { useToast } from '@/hooks/use-toast'
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog"
 
 interface AttendanceDetailsModalProps {
   open: boolean
   onClose: () => void
+  onOrderDeleted?: () => void
   order: AttendanceOrder
   patient?: Patient
 }
 
-export function AttendanceDetailsModal({ open, onClose, order, patient }: AttendanceDetailsModalProps) {
+export function AttendanceDetailsModal({ open, onClose, onOrderDeleted, order, patient }: AttendanceDetailsModalProps) {
   const [printSelectionOpen, setPrintSelectionOpen] = useState(false)
   const [reportPreviewOpen, setReportPreviewOpen] = useState(false)
   const [printModalOpen, setPrintModalOpen] = useState(false)
@@ -45,6 +56,9 @@ export function AttendanceDetailsModal({ open, onClose, order, patient }: Attend
   const [forecastModalOpen, setForecastModalOpen] = useState(false)
   const [selectedExams, setSelectedExams] = useState<Set<string>>(new Set())
   const [selectedTubes, setSelectedTubes] = useState<Set<string>>(new Set())
+  const [isDeleting, setIsDeleting] = useState(false)
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
+  const { toast } = useToast()
 
   const labOrder = order as LabAttendanceOrder;
 
@@ -98,6 +112,38 @@ export function AttendanceDetailsModal({ open, onClose, order, patient }: Attend
       (tube.type === 'urina' && (materials.has('Urina') || materials.has('Urina Amostra')))
     );
   }, [orderExams]);
+  const handleDeleteOrder = async () => {
+    try {
+      setIsDeleting(true);
+      
+      const { error } = await supabase
+        .from('attendance_orders')
+        .delete()
+        .eq('id', order.id);
+
+      if (error) throw error;
+
+      toast({
+        title: "Sucesso",
+        description: "Atendimento excluído com sucesso.",
+      });
+
+      onClose();
+      if (onOrderDeleted) {
+        onOrderDeleted();
+      }
+    } catch (error: any) {
+      console.error('Error deleting order:', error);
+      toast({
+        variant: "destructive",
+        title: "Erro ao excluir",
+        description: error.message || "Não foi possível excluir o atendimento.",
+      });
+    } finally {
+      setIsDeleting(false);
+      setDeleteDialogOpen(false);
+    }
+  };
 
   const getStatusColor = (status: string) => {
     switch(status?.toLowerCase()) {
@@ -211,7 +257,10 @@ export function AttendanceDetailsModal({ open, onClose, order, patient }: Attend
                       <span>Mais Informações</span>
                     </DropdownMenuItem>
                     <DropdownMenuSeparator />
-                    <DropdownMenuItem className="flex items-center gap-2 text-red-600 focus:text-red-600">
+                    <DropdownMenuItem 
+                      className="flex items-center gap-2 text-red-600 focus:text-red-600"
+                      onClick={() => setDeleteDialogOpen(true)}
+                    >
                       <Trash2 className="h-4 w-4" />
                       <span>Excluir Pedido</span>
                     </DropdownMenuItem>
@@ -388,9 +437,21 @@ export function AttendanceDetailsModal({ open, onClose, order, patient }: Attend
                       <span className="text-[9px] font-bold text-muted-foreground uppercase group-hover:text-slate-600 text-center">Imprimir<br/>Guia</span>
                     </div>
 
-                    <div className="flex flex-col items-center gap-1 group cursor-pointer ml-auto">
-                      <Button size="icon" variant="ghost" className="h-9 w-9 rounded-full bg-white shadow-sm border border-border group-hover:text-red-600 group-hover:border-red-600 transition-all">
-                        <Trash2 className="h-4 w-4" />
+                    <div 
+                      className="flex flex-col items-center gap-1 group cursor-pointer ml-auto"
+                      onClick={() => setDeleteDialogOpen(true)}
+                    >
+                      <Button 
+                        size="icon" 
+                        variant="ghost" 
+                        className="h-9 w-9 rounded-full bg-white shadow-sm border border-border group-hover:text-red-600 group-hover:border-red-600 transition-all"
+                        disabled={isDeleting}
+                      >
+                        {isDeleting ? (
+                          <Loader2 className="h-4 w-4 animate-spin" />
+                        ) : (
+                          <Trash2 className="h-4 w-4" />
+                        )}
                       </Button>
                       <span className="text-[9px] font-bold text-muted-foreground uppercase group-hover:text-red-600">Excluir</span>
                     </div>
@@ -888,6 +949,38 @@ export function AttendanceDetailsModal({ open, onClose, order, patient }: Attend
           </div>
         </DialogContent>
       </Dialog>
+
+      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Excluir Atendimento</AlertDialogTitle>
+            <AlertDialogDescription>
+              Você tem certeza que deseja excluir o atendimento <strong>{order.orderNumber}</strong>? 
+              Esta ação não pode ser desfeita.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={isDeleting}>Cancelar</AlertDialogCancel>
+            <AlertDialogAction 
+              onClick={(e) => {
+                e.preventDefault();
+                handleDeleteOrder();
+              }}
+              className="bg-red-600 hover:bg-red-700 text-white"
+              disabled={isDeleting}
+            >
+              {isDeleting ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Excluindo...
+                </>
+              ) : (
+                'Confirmar Exclusão'
+              )}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </Dialog>
   )
 }
