@@ -179,10 +179,14 @@ export function ResultEntryModal({
           code: exam.code,
           name: exam.name,
         });
-        map[exam.id] = buildExamParams(catalogExam, exam.name || exam.code, {
+        
+        // Log para depuração interna se necessário
+        const resolved = buildExamParams(catalogExam, exam.name || exam.code, {
           gender: patient.patientGender,
           age,
         });
+        
+        map[exam.id] = resolved;
       });
     });
     return map;
