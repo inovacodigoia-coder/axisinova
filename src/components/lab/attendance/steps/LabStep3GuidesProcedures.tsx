@@ -71,7 +71,7 @@ export function LabStep3GuidesProcedures({ state, update }: Props) {
 
   useEffect(() => {
     if (guides.length === 0) {
-      const initialGuide = { id: '1', name: 'Particular', plan: 'PARTICULAR', convenioName: 'Particular', convenioId: null, operator: 'PARTICULAR', number: '', exams: [], isDoctorDisabled: false };
+      const initialGuide = { id: '1', name: 'Particular', plan: '', convenioName: '', convenioId: null, operator: '', number: '', exams: [], isDoctorDisabled: false };
       setGuides([initialGuide]);
       setActiveGuideId('1');
       update({ guides: [initialGuide] });
@@ -98,7 +98,7 @@ export function LabStep3GuidesProcedures({ state, update }: Props) {
 
   const addGuide = () => {
     const newId = (guides.length + 1).toString();
-    const newGuide = { id: newId, name: 'PARTICULAR', plan: 'PARTICULAR', convenioName: 'Particular', convenioId: null, operator: 'PARTICULAR', number: '', exams: [], isDoctorDisabled: false };
+    const newGuide = { id: newId, name: 'NOVA GUIA', plan: '', convenioName: '', convenioId: null, operator: '', number: '', exams: [], isDoctorDisabled: false };
     setGuides([...guides, newGuide]);
     setActiveGuideId(newId);
     update({ guides: [...guides, newGuide] });
@@ -284,7 +284,7 @@ export function LabStep3GuidesProcedures({ state, update }: Props) {
           <Field label="Plano">
              <select 
                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-               value={activeGuide?.plan} 
+               value={activeGuide?.plan || ''} 
                 onChange={(e) => {
                   const selectedPlan = e.target.value;
                   const convenio = activeConvenios.find(c => c.name === selectedPlan);
@@ -300,6 +300,7 @@ export function LabStep3GuidesProcedures({ state, update }: Props) {
                   update({ guides: newGuides });
                 }}
              >
+               <option value="">Selecione um plano</option>
                <option value="PARTICULAR">Particular</option>
                {activeConvenios.map(c => (
                  <option key={c.id} value={c.name}>{c.name}</option>
@@ -307,7 +308,7 @@ export function LabStep3GuidesProcedures({ state, update }: Props) {
              </select>
           </Field>
           <Field label="Operadora">
-             <Input value={activeGuide?.operator} onChange={(e) => {
+             <Input value={activeGuide?.operator || ''} onChange={(e) => {
                const newGuides = guides.map(g => g.id === activeGuideId ? { ...g, operator: e.target.value } : g);
                setGuides(newGuides);
                update({ guides: newGuides });
