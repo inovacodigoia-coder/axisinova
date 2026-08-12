@@ -325,7 +325,10 @@ function ManageUsersModal({
           <span className="text-xs text-muted-foreground">{assignedUsers.size} usuário(s) selecionado(s)</span>
           <div className="flex gap-3">
             <button onClick={onClose} className="rounded-lg border border-input px-4 py-2 text-sm hover:bg-muted">Cancelar</button>
-            <button onClick={onSave} className="gradient-bg rounded-lg px-4 py-2 text-sm font-semibold text-white">Salvar</button>
+            <button onClick={onSave} disabled={saving} className="gradient-bg rounded-lg px-4 py-2 text-sm font-semibold text-white disabled:opacity-60 flex items-center gap-2">
+              {saving && <Loader2 className="h-4 w-4 animate-spin" />}
+              {saving ? 'Salvando...' : 'Salvar'}
+            </button>
           </div>
         </div>
       </div>
