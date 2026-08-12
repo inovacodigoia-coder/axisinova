@@ -1,5 +1,6 @@
-import type { AttendanceOrder } from './attendance-cadastro.types'
-import type { LabAttendanceOrder } from './lab.types'
+import type { AttendanceOrder } from '@/types/attendance-cadastro.types'
+import type { LabAttendanceOrder } from '@/types/lab.types'
+
 
 export type DerivedAttendanceStatus = 
   | 'open' 
