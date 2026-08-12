@@ -197,16 +197,22 @@ export function evaluateFormula(
 
   expr = expr.replace(/\[([^\]]+)\]/g, (_m, rawName: string) => {
     const wanted = normalizeText(rawName)
-    const p = params.find(
-      (x) => normalizeText(x.name) === wanted || normalizeText(x.name).startsWith(wanted) || wanted.startsWith(normalizeText(x.name)),
-    )
+    const p =
+      params.find((x) => normalizeText(x.name) === wanted) ||
+      params.find((x) => {
+        const n = normalizeText(x.name)
+        // evita casar "neutrofilos bastonetes" com "... absoluto"
+        if (n.includes('absoluto') !== wanted.includes('absoluto')) return false
+        return n.startsWith(wanted) || wanted.startsWith(n)
+      })
     const n = p ? toNum(valueOf(p.id)) : null
-    if (n == null) {
+    if (n == null || (p && p.isCalculated && !valueOf(p.id))) {
       missing = true
       return '0'
     }
     return String(n)
   })
+
 
   if (missing) return ''
   if (!/^[0-9+\-*/().\s]+$/.test(expr)) return ''
