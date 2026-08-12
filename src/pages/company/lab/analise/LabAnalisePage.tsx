@@ -61,7 +61,7 @@ const SUB_TABS = [
 
 export default function LabAnalisePage() {
   const [activeTab, setActiveTab] = useState('analise');
-  const { orders } = useAttendanceCadastro();
+  const { orders, refresh: refreshOrders } = useAttendanceCadastro();
   const { workbenches } = useRegisters();
   const { availableOrigins: establishments } = useCompanyContext();
   
@@ -247,6 +247,19 @@ export default function LabAnalisePage() {
                         <div className="flex items-center gap-2">
                           <Filter className="h-4 w-4 text-primary" />
                           <h2 className="text-sm font-bold uppercase tracking-wider">Filtros de Análise</h2>
+                          <Button 
+                            variant="ghost" 
+                            size="icon" 
+                            className="h-6 w-6 rounded-full hover:bg-primary/10 hover:text-primary transition-colors ml-1" 
+                            onClick={() => {
+                              setLoading(true);
+                              refreshOrders().finally(() => setLoading(false));
+                              toast.success('Lista de exames atualizada');
+                            }}
+                            title="Atualizar lista"
+                          >
+                            <RefreshCcw className={cn("h-3 w-3", loading && "animate-spin")} />
+                          </Button>
                         </div>
                         {isFiltered && (
                           <Button variant="ghost" size="sm" onClick={clearFilters} className="h-7 text-[10px] text-destructive font-bold uppercase">
