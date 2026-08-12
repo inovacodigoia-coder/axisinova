@@ -67,17 +67,10 @@ function buildDoc(order: AttendanceOrder, patient: Patient | undefined, unitName
   }
 }
 
-const ATTENDANCE_STATUS_LABELS: Record<string, { label: string, color: string }> = {
-  waiting_collection: { label: 'AGUARDANDO', color: 'bg-amber-500' },
-  collection_done: { label: 'COLETA REALIZADA', color: 'bg-emerald-500' },
-  in_analysis: { label: 'Em Análise', color: 'bg-blue-500' },
-  validation: { label: 'Validação', color: 'bg-purple-500' },
-  released: { label: 'Liberado', color: 'bg-emerald-600' },
-  cancelled: { label: 'Cancelado', color: 'bg-red-500' },
-  open: { label: 'ABERTO', color: 'bg-blue-400' },
-  authorized: { label: 'Autorizado', color: 'bg-indigo-500' },
-  completed: { label: 'Concluído', color: 'bg-emerald-700' },
-}
+import { calculateAttendanceStatus, ATTENDANCE_STATUS_CONFIG, type DerivedAttendanceStatus } from '@/utils/attendanceStatusLogic'
+
+const ATTENDANCE_STATUS_LABELS = ATTENDANCE_STATUS_CONFIG;
+
 
 export function AttendanceLookupModal({ open, onClose, unitName, guicheName, onAddProcedure }: AttendanceLookupModalProps) {
   const { orders, updateOrder, loading } = useAttendanceCadastro()
@@ -102,8 +95,10 @@ export function AttendanceLookupModal({ open, onClose, unitName, guicheName, onA
     
     return orders.filter(o => {
       const p = patientById.get(o.patientId)
+      const currentStatus = calculateAttendanceStatus(o)
       
-      if (statusFilter !== 'all' && o.status !== statusFilter) return false
+      if (statusFilter !== 'all' && currentStatus !== statusFilter) return false
+
 
       if (term) {
         const haystack = [
@@ -196,14 +191,16 @@ export function AttendanceLookupModal({ open, onClose, unitName, guicheName, onA
                   className="w-full rounded-lg border border-input bg-background pl-3 pr-8 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring appearance-none"
                 >
                   <option value="all">Todos Status</option>
-                  <option value="waiting_collection">AGUARDANDO</option>
-                  <option value="collection_done">COLETA REALIZADA</option>
-                  <option value="open">ABERTO</option>
-                  {Object.entries(ATTENDANCE_STATUS_LABELS).map(([key, val]) => (
-                    key !== 'waiting_collection' && key !== 'open' && key !== 'collection_done' && (
-                      <option key={key} value={key}>{val.label}</option>
-                    )
-                  ))}
+                  <option value="open">Aberto</option>
+                  <option value="waiting">Aguardando</option>
+                  <option value="collection_done">Coleta Realizada</option>
+                  <option value="in_analysis">Em Análise</option>
+                  <option value="released">Liberado</option>
+                  <option value="completed">Concluído</option>
+                  <option value="cancelled">Cancelado</option>
+                  <option value="validation">Validação</option>
+                  <option value="authorized">Autorizado</option>
+
                 </select>
                 <Filter className="absolute right-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground pointer-events-none" />
               </div>
@@ -321,13 +318,21 @@ function OrderRowModern({
         <div className="text-muted-foreground">{patient?.birthDate ? new Date(patient.birthDate).toLocaleDateString('pt-BR') : '-'}</div>
         <div className="truncate uppercase font-medium">{order.convenioName || 'Particular'}</div>
         <div>
-          <span className={cn(
-            "px-2 py-0.5 rounded-full text-[10px] font-bold text-white uppercase whitespace-nowrap",
-            ATTENDANCE_STATUS_LABELS[order.status]?.color || 'bg-slate-400'
-          )}>
-            {ATTENDANCE_STATUS_LABELS[order.status]?.label || order.status}
-          </span>
+          {(() => {
+            const currentStatus = calculateAttendanceStatus(order);
+            const config = ATTENDANCE_STATUS_CONFIG[currentStatus] || { label: order.status, color: 'bg-slate-400', textColor: 'text-white' };
+            return (
+              <span className={cn(
+                "px-2 py-0.5 rounded-full text-[10px] font-bold uppercase whitespace-nowrap",
+                config.color,
+                config.textColor
+              )}>
+                {config.label}
+              </span>
+            );
+          })()}
         </div>
+
         <div className="text-muted-foreground font-bold">
           {(order.status === 'collection_done' || order.status === 'released' || order.status === 'waiting_collection' || order.status === 'in_analysis') && order.deliveryDate 
             ? new Date(order.deliveryDate).toLocaleDateString('pt-BR') 
