@@ -122,7 +122,8 @@ export function ResultEntryModal({
           patientGender: exam.patientGender,
           registeredAt: exam.registeredAt,
           originName: exam.originName,
-          exams: []
+          doctorName: exam.doctorName,
+          doctorCRM: exam.doctorCRM,
         };
       }
       groups[key].exams.push(exam);
