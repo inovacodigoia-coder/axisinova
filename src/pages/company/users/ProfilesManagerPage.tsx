@@ -117,7 +117,7 @@ export default function ProfilesManagerPage() {
   )
 }
 
-function ProfileFormModal({ profile, onClose, onSave }: { profile: Profile | null; onClose: () => void; onSave: (p: Profile) => void }) {
+export function ProfileFormModal({ profile, onClose, onSave }: { profile: Profile | null; onClose: () => void; onSave: (p: Profile) => void }) {
   const [name, setName] = useState(profile?.name || '')
   const [description, setDescription] = useState(profile?.description || '')
   const [createdBy, setCreatedBy] = useState<'admin' | 'it_team'>(profile?.createdBy || 'admin')
