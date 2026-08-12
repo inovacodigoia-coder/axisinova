@@ -164,10 +164,12 @@ export function useAttendanceCadastro() {
           authorization_date: ensureIsoDate(data.authorizationDate),
           authorization_expiry: ensureIsoDate(data.authorizationExpiry),
           authorization_password: data.authorizationPassword,
-          private_value: data.privateValue,
+          private_value: data.privateValue, 
           delivery_date: ensureIsoDate(data.deliveryDate) || calculatedDeliveryDate,
           lab_guides: data.guides || data.labGuides || [],
-          status: data.examMode === 'lab' ? 'waiting_collection' : ((data.guides || data.labGuides)?.some((g: any) => g.exams?.some((e: any) => e.collected)) ? 'collection_done' : 'open'),
+          status: data.examMode === 'lab' 
+            ? ((data.guides || data.labGuides)?.some((g: any) => g.exams?.some((e: any) => e.collected)) ? 'waiting_collection' : 'open')
+            : ((data.guides || data.labGuides)?.some((g: any) => g.exams?.some((e: any) => e.collected)) ? 'collection_done' : 'open'),
           registered_by: user.id,
           registered_by_name: user.name,
         })
