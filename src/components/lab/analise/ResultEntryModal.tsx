@@ -316,6 +316,91 @@ export function ResultEntryModal({
     return () => { active = false; };
   }, [isOpen, filteredExams, user?.companyId]);
 
+  // Carrega resultados anteriores REAIS do paciente (outros protocolos)
+  useEffect(() => {
+    if (!isOpen) return;
+    const cid = resolveCompanyId(user?.companyId);
+    if (!cid) return;
+    const names = Array.from(new Set(groupedPatients.map((p: any) => p.patientName).filter(Boolean)));
+    if (names.length === 0) return;
+    const currentProtocols = new Set(groupedPatients.map((p: any) => p.protocol));
+    let active = true;
+    (async () => {
+      const { data } = await supabase
+        .from('lab_exam_results')
+        .select('patient_name, exam_code, exam_name, protocol, status, released_at, typed_at, created_at, lab_result_values(parameter_name, value, unit, sort_order)')
+        .eq('company_id', cid)
+        .in('patient_name', names as string[])
+        .in('status', ['digitized', 'released'])
+        .order('created_at', { ascending: false });
+      if (!active || !data) return;
+      const map: Record<string, { date: string; value: string; unit: string }[]> = {};
+      data.forEach((row: any) => {
+        if (currentProtocols.has(row.protocol)) return;
+        const values = (row.lab_result_values || [])
+          .slice()
+          .sort((a: any, b: any) => (a.sort_order ?? 0) - (b.sort_order ?? 0));
+        const first = values.find((v: any) => (v.value || '').trim() !== '');
+        if (!first) return;
+        const key = `${row.patient_name}|${String(row.exam_code || row.exam_name || '').toUpperCase()}`;
+        if (!map[key]) map[key] = [];
+        if (map[key].length >= 5) return;
+        map[key].push({
+          date: row.released_at || row.typed_at || row.created_at,
+          value: first.value,
+          unit: first.unit || '',
+        });
+      });
+      setPrevResults(map);
+    })();
+    return () => { active = false; };
+  }, [isOpen, groupedPatients, user?.companyId]);
+
+  const patientHasLaudo = (patient: any) =>
+    patient.exams.some((e: any) => examStatuses[e.id] === 'digitized' || examStatuses[e.id] === 'released');
+
+  const openLaudo = (patient: any) => {
+    const exams = patient.exams
+      .filter((e: any) => examStatuses[e.id] === 'digitized' || examStatuses[e.id] === 'released')
+      .map((e: any) => ({
+        examId: e.id,
+        code: e.code,
+        name: e.name,
+        material: e.material || 'Soro',
+        status: examStatuses[e.id] === 'released' ? 'liberado' : 'waiting_approval',
+        results: getParams(e).map((p: any) => {
+          const value = results[`${e.id}_${p.id}`] || '';
+          const st = getResultStatus(value, p.reference || '');
+          return {
+            parameterId: String(p.id),
+            parameterCode: p.name,
+            parameterName: p.name,
+            value,
+            unit: p.unit || '',
+            referenceRange: p.reference || '—',
+            status: st.label === 'Alto' || st.label === 'Baixo' ? 'altered' : 'normal',
+          };
+        }),
+        internalObservations: notes[e.id] || '',
+      }));
+
+    if (exams.length === 0) {
+      toast.info('Nenhum exame digitado ou liberado para este paciente.');
+      return;
+    }
+
+    setLaudoOrder({
+      patientName: patient.patientName,
+      patientBirthDate: patient.patientBirthDate,
+      patientGender: patient.patientGender,
+      protocol: patient.protocol,
+      registeredAt: patient.registeredAt,
+      exams,
+    });
+  };
+
+
+
   const handleSave = async (isDraft: boolean) => {
     setSaving(true);
     try {
