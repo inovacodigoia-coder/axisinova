@@ -35,7 +35,6 @@ export function AttendancePrintSelectionModal({ open, onClose, onConfirm, order,
   const orderNumber = order?.orderNumber;
   const [showPreview, setShowPreview] = useState(false);
   const [options, setOptions] = useState<PrintOption[]>([
-    { id: 'laudo', label: 'Laudo', enabled: true, formats: ['A4', 'A5'], selectedFormat: 'A4' },
     { id: 'comprovante', label: 'Comprovante', enabled: true, formats: ['A4', 'A5', 'TÉRMICA', 'ETIQUETA'], selectedFormat: 'TÉRMICA' },
     { id: 'controle_interno', label: 'Controle Interno', enabled: true, formats: ['A4', 'A5', 'TÉRMICA'], selectedFormat: 'TÉRMICA' },
     { id: 'termo_consentimento', label: 'Termo de Consentimento', enabled: false, formats: ['A4', 'A5'], selectedFormat: 'A4' },
@@ -101,38 +100,7 @@ export function AttendancePrintSelectionModal({ open, onClose, onConfirm, order,
                       </span>
                     </div>
 
-                    {opt.id === 'laudo' ? (
-                      <div className="flex gap-2">
-                        <div className="flex bg-slate-100 rounded p-0.5 border border-slate-200">
-                          <button 
-                            onClick={() => setWatermark(false)}
-                            className={cn("px-2 py-1 text-[9px] font-bold rounded uppercase transition-all", !watermark ? "bg-white text-[#007AFF] shadow-sm" : "text-slate-400")}
-                          >
-                            Sem Marca d'água
-                          </button>
-                          <button 
-                            onClick={() => setWatermark(true)}
-                            className={cn("px-2 py-1 text-[9px] font-bold rounded uppercase transition-all", watermark ? "bg-white text-[#007AFF] shadow-sm" : "text-slate-400")}
-                          >
-                            Com Marca d'água
-                          </button>
-                        </div>
-                        <div className="flex bg-slate-100 rounded p-0.5 border border-slate-200">
-                          <button 
-                            onClick={() => setEmptyFields(false)}
-                            className={cn("px-2 py-1 text-[9px] font-bold rounded uppercase transition-all", !emptyFields ? "bg-white text-[#007AFF] shadow-sm" : "text-slate-400")}
-                          >
-                            Sem Campos Vazios
-                          </button>
-                          <button 
-                            onClick={() => setEmptyFields(true)}
-                            className={cn("px-2 py-1 text-[9px] font-bold rounded uppercase transition-all", emptyFields ? "bg-white text-[#007AFF] shadow-sm" : "text-slate-400")}
-                          >
-                            Com Campos Vazios
-                          </button>
-                        </div>
-                      </div>
-                    ) : opt.formats.length > 0 && (
+                    {opt.formats.length > 0 && (
                       <div className="flex items-center bg-slate-100 rounded p-0.5 border border-slate-200">
                         {opt.formats.map((fmt) => (
                           <button
