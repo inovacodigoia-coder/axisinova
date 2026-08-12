@@ -79,6 +79,7 @@ export default function LabAnalisePage() {
   const [dateTo, setDateTo] = useState<Date | undefined>(undefined);
   const [selectedWorkbenches, setSelectedWorkbenches] = useState<string[]>([]);
   const [selectedEstablishments, setSelectedEstablishments] = useState<string[]>([]);
+  const [selectedStatuses, setSelectedStatuses] = useState<string[]>(['collection_done']);
   const [showFilters, setShowFilters] = useState(false);
 
   useEffect(() => {
@@ -109,16 +110,19 @@ export default function LabAnalisePage() {
         }))
       );
       
-      // Filtro por Status: Apenas exames com coleta realizada ou em fluxo técnico
-      const allowedOrderStatuses = ['collection_done', 'in_analysis', 'validation', 'released', 'open'];
+      // Filtro por Status: Baseado na seleção do usuário ou todos se vazio
+      const allowedOrderStatuses = ['collection_done', 'in_analysis', 'validation', 'released', 'concluded', 'open'];
+      
       exams.forEach(exam => {
-        const isExamCollected = exam.isColeta || exam.status === 'collected' || exam.status === 'collection_done';
+        // Mapeamos os status internos para os nomes amigáveis solicitados
+        // collection_done -> Coleta Realizada
+        // in_analysis -> Em Análise
+        // released -> Liberado
+        // concluded -> Concluído
         
-        if (
-          isExamCollected || 
-          exam.status === 'processing' || 
-          (allowedOrderStatuses.includes(order.status) && isExamCollected)
-        ) {
+        const matchesStatus = selectedStatuses.length === 0 || selectedStatuses.includes(order.status);
+        
+        if (allowedOrderStatuses.includes(order.status) && matchesStatus) {
           allExams.push(exam);
         }
       });
@@ -164,7 +168,7 @@ export default function LabAnalisePage() {
 
       return matchesSearch && matchesProtocol && matchesWorkbench && matchesOrigin && matchesPeriod;
     });
-  }, [orders, search, protocolSearch, selectedWorkbenches, selectedEstablishments, period, dateFrom, dateTo]);
+  }, [orders, search, protocolSearch, selectedWorkbenches, selectedEstablishments, selectedStatuses, period, dateFrom, dateTo]);
 
   // Agrupamento por protocolo para a lista lateral
   const groupedExams = useMemo(() => {
@@ -202,10 +206,11 @@ export default function LabAnalisePage() {
     setDateTo(undefined);
     setSelectedWorkbenches([]);
     setSelectedEstablishments([]);
+    setSelectedStatuses(['collection_done']);
     setProtocolSearch('');
   };
 
-  const isFiltered = period !== 'hoje' || selectedWorkbenches.length > 0 || selectedEstablishments.length > 0 || protocolSearch !== '';
+  const isFiltered = period !== 'hoje' || selectedWorkbenches.length > 0 || selectedEstablishments.length > 0 || selectedStatuses.length !== 1 || !selectedStatuses.includes('collection_done') || protocolSearch !== '';
 
   return (
     <div className="flex flex-col h-full overflow-hidden">
@@ -341,6 +346,40 @@ export default function LabAnalisePage() {
                               ))}
                             </DropdownMenuContent>
                           </DropdownMenu>
+                        </div>
+
+                        {/* Status */}
+                        <div className="col-span-2 space-y-1.5">
+                          <label className="text-[10px] font-bold uppercase text-muted-foreground ml-1">Status do Pedido</label>
+                          <div className="flex flex-wrap gap-2">
+                            {[
+                              { id: 'collection_done', label: 'Coleta Realizada' },
+                              { id: 'in_analysis', label: 'Em Análise' },
+                              { id: 'released', label: 'Liberado' },
+                              { id: 'concluded', label: 'Concluído' }
+                            ].map((status) => (
+                              <Badge
+                                key={status.id}
+                                variant={selectedStatuses.includes(status.id) ? "default" : "outline"}
+                                className={cn(
+                                  "cursor-pointer text-[10px] font-bold uppercase py-1 px-3 transition-all",
+                                  selectedStatuses.includes(status.id) 
+                                    ? "bg-primary text-white shadow-sm" 
+                                    : "bg-transparent text-muted-foreground hover:bg-muted"
+                                )}
+                                onClick={() => {
+                                  setSelectedStatuses(prev => 
+                                    prev.includes(status.id) 
+                                      ? prev.filter(s => s !== status.id) 
+                                      : [...prev, status.id]
+                                  );
+                                }}
+                              >
+                                {status.label}
+                                {selectedStatuses.includes(status.id) && <Check className="ml-1 h-3 w-3" />}
+                              </Badge>
+                            ))}
+                          </div>
                         </div>
 
                         {/* Busca por Pedido */}
@@ -520,7 +559,8 @@ export default function LabAnalisePage() {
           period,
           workbenches: selectedWorkbenches,
           establishments: selectedEstablishments,
-          protocol: protocolSearch
+          protocol: protocolSearch,
+          statuses: selectedStatuses
         }}
         workbenchNames={workbenches.reduce((acc, wb) => ({ ...acc, [wb.id]: wb.name }), {})}
         establishmentNames={establishments.reduce((acc, est) => ({ ...acc, [est.id]: est.name }), {})}
