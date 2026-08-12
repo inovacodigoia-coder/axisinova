@@ -376,15 +376,14 @@ export function SectorAccessPreview({ profiles, allowedIds, overrides, onToggleO
   profiles: any[]
   allowedIds: Set<string>
   overrides?: Record<string, boolean>
-  onToggleOverride?: (module: SystemModule, value: boolean | null) => void
+  onToggleOverride?: (path: string, value: boolean | null) => void
   onResetOverrides?: () => void
 }) {
   const perms = mergePermissions(profiles, allowedIds)
   const ov = overrides || {}
   const baseCan = (m: SystemModule | null) => !m ? true : (perms[m]?.includes('view') ?? false)
-  const can = (m: SystemModule | null) => {
-    if (!m) return true
-    if (m in ov) return ov[m]
+  const can = (path: string, m: SystemModule | null) => {
+    if (path in ov) return ov[path]
     return baseCan(m)
   }
   const editable = !!onToggleOverride
@@ -408,7 +407,7 @@ export function SectorAccessPreview({ profiles, allowedIds, overrides, onToggleO
           )}
         </div>
         {editable && (
-          <p className="text-xs text-muted-foreground mb-2">Clique em um item para liberar ou remover manualmente do menu deste setor.</p>
+          <p className="text-xs text-muted-foreground mb-2">Marque ou desmarque cada item individualmente para liberar ou remover do menu deste setor.</p>
         )}
         <div className="max-h-[260px] overflow-y-auto rounded-lg border border-border divide-y divide-border">
           {NAV_SECTIONS.map(section => (
@@ -416,23 +415,29 @@ export function SectorAccessPreview({ profiles, allowedIds, overrides, onToggleO
               <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground mb-1">{section.title}</p>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-3">
                 {section.items.map(item => {
-                  const ok = can(item.module)
-                  const manual = item.module ? item.module in ov : false
-                  const clickable = editable && !!item.module
+                  const ok = can(item.path, item.module)
+                  const manual = item.path in ov
                   return (
-                    <div
+                    <label
                       key={item.path}
-                      onClick={() => {
-                        if (!clickable || !item.module) return
-                        const next = !ok
-                        onToggleOverride!(item.module, next === baseCan(item.module) ? null : next)
-                      }}
-                      title={clickable ? (ok ? 'Clique para remover do menu' : 'Clique para liberar no menu') : undefined}
-                      className={`flex items-center gap-2 text-xs py-0.5 rounded px-1 ${clickable ? 'cursor-pointer hover:bg-muted' : ''} ${ok ? 'text-foreground' : 'text-muted-foreground/60'}`}
+                      className={`flex items-center gap-2 text-xs py-0.5 rounded px-1 ${editable ? 'cursor-pointer hover:bg-muted' : ''} ${ok ? 'text-foreground' : 'text-muted-foreground/60'}`}
                     >
-                      {ok ? <Check className="h-3 w-3 text-primary shrink-0" /> : <Lock className="h-3 w-3 shrink-0" />}
+                      {editable ? (
+                        <input
+                          type="checkbox"
+                          className="accent-primary h-3.5 w-3.5 shrink-0"
+                          checked={ok}
+                          onChange={() => {
+                            const next = !ok
+                            onToggleOverride!(item.path, next === baseCan(item.module) ? null : next)
+                          }}
+                        />
+                      ) : (
+                        ok ? <Check className="h-3 w-3 text-primary shrink-0" /> : <Lock className="h-3 w-3 shrink-0" />
+                      )}
                       <span className="truncate">{item.label}</span>
                       {manual && <span className="text-[9px] text-primary shrink-0">manual</span>}
+
                     </div>
                   )
                 })}
