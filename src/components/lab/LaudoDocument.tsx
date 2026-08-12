@@ -47,6 +47,24 @@ const sectionRank = (name: string) => {
   return idx === -1 ? 900 : idx;
 };
 
+const SERIE_VERMELHA = 'Série Vermelha';
+const SERIE_BRANCA = 'Série Branca';
+const PLAQUETAS = 'Contagem de Plaquetas';
+
+const stripAccents = (s: string) => (s || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+
+/** Deduz a seção do hemograma pelo nome do parâmetro quando não vier do catálogo. */
+const inferSection = (paramName: string): string => {
+  const n = stripAccents(paramName);
+  if (/(plaqueta|vpm|volume plaquetario|pdw|plaquetocrito)/.test(n)) return PLAQUETAS;
+  if (/(leucocit|neutrofil|bastonete|segmentado|eosinofil|basofil|linfocit|monocit|blasto|mielocit|promielocit|metamielocit|celulas jovens)/.test(n))
+    return SERIE_BRANCA;
+  if (/(hemacia|eritrocit|hemoglobina|hematocrito|vcm|hcm|chcm|rdw|reticulocit)/.test(n)) return SERIE_VERMELHA;
+  return '';
+};
+
+const isWhiteSeries = (name: string) => /serie branca/.test(stripAccents(name));
+
 const normalizeBase = (name: string) =>
   (name || '')
     .toLowerCase()
@@ -157,7 +175,7 @@ function ExamBlock({ exam }: { exam: any }) {
   const results: any[] = exam.results || [];
   const sections: { name: string; rows: any[] }[] = [];
   results.forEach((r) => {
-    const name = (r.section || '').trim();
+    const name = ((r.section || '').trim() || inferSection(r.parameterName || r.parameterCode || '')).trim();
     let bucket = sections.find((s) => s.name === name);
     if (!bucket) {
       bucket = { name, rows: [] };
@@ -177,7 +195,8 @@ function ExamBlock({ exam }: { exam: any }) {
       </p>
 
       {sections.map((section, sIdx) => {
-        const { paired, hasPairs } = buildPairedRows(section.rows);
+        const white = isWhiteSeries(section.name);
+        const { paired, hasPairs } = white ? buildPairedRows(section.rows) : { paired: [], hasPairs: false };
         return (
           <div key={sIdx} className="mb-4">
             {section.name && (
@@ -186,10 +205,11 @@ function ExamBlock({ exam }: { exam: any }) {
                 <span className="text-[11px] font-semibold text-zinc-800">{section.name}</span>
               </div>
             )}
-            {hasPairs ? <DifferentialTable paired={paired} /> : <StandardTable rows={section.rows} />}
+            {white && hasPairs ? <DifferentialTable paired={paired} /> : <StandardTable rows={section.rows} />}
           </div>
         );
       })}
+
 
       {exam.internalObservations && (
         <p className="text-[9px] text-zinc-600 mt-1 whitespace-pre-line">Obs.: {exam.internalObservations}</p>
