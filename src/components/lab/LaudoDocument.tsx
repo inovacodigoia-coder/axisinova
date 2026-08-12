@@ -47,6 +47,24 @@ const sectionRank = (name: string) => {
   return idx === -1 ? 900 : idx;
 };
 
+const SERIE_VERMELHA = 'Série Vermelha';
+const SERIE_BRANCA = 'Série Branca';
+const PLAQUETAS = 'Contagem de Plaquetas';
+
+const stripAccents = (s: string) => (s || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+
+/** Deduz a seção do hemograma pelo nome do parâmetro quando não vier do catálogo. */
+const inferSection = (paramName: string): string => {
+  const n = stripAccents(paramName);
+  if (/(plaqueta|vpm|volume plaquetario|pdw|plaquetocrito)/.test(n)) return PLAQUETAS;
+  if (/(leucocit|neutrofil|bastonete|segmentado|eosinofil|basofil|linfocit|monocit|blasto|mielocit|promielocit|metamielocit|celulas jovens)/.test(n))
+    return SERIE_BRANCA;
+  if (/(hemacia|eritrocit|hemoglobina|hematocrito|vcm|hcm|chcm|rdw|reticulocit)/.test(n)) return SERIE_VERMELHA;
+  return '';
+};
+
+const isWhiteSeries = (name: string) => /serie branca/.test(stripAccents(name));
+
 const normalizeBase = (name: string) =>
   (name || '')
     .toLowerCase()
