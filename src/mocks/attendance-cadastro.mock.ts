@@ -1,6 +1,4 @@
 import type { AttendanceOrder } from '@/types/attendance-cadastro.types'
-import { calculateAttendanceStatus } from '@/utils/attendanceStatusLogic'
-
 
 const DEMO_COMPANY_ID = 'comp_001'
 
@@ -68,12 +66,8 @@ let _orderSequence = 5
 let _mockOrders: AttendanceOrder[] = loadPersistentOrders()
 
 export function getMockOrders(companyId: string): AttendanceOrder[] {
-  return _mockOrders.map(o => ({
-    ...o,
-    status: calculateAttendanceStatus(o) as any
-  })).filter(o => o.companyId === companyId)
+  return _mockOrders.filter(o => o.companyId === companyId)
 }
-
 
 export function addMockOrder(order: AttendanceOrder) {
   _mockOrders = [..._mockOrders, order]

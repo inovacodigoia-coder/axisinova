@@ -4,8 +4,6 @@ import { supabase } from '@/integrations/supabase/client'
 import type { AttendanceOrder } from '@/types/attendance-cadastro.types'
 import { useToast } from '@/hooks/use-toast'
 import { useQuery } from '@tanstack/react-query'
-import { calculateAttendanceStatus } from '@/utils/attendanceStatusLogic'
-
 
 export function useAttendanceCadastro() {
   const { user } = useAuth()
@@ -60,8 +58,6 @@ export function useAttendanceCadastro() {
         privateValue: item.private_value,
         attachments: (item.attachments as any[]) || [],
         status: item.status as any,
-        calculatedStatus: calculateAttendanceStatus({ ...item, status: item.status } as any),
-
         registeredBy: item.registered_by,
         registeredByName: item.registered_by_name,
         registeredAt: item.created_at,

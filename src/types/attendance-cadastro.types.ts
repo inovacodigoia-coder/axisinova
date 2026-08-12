@@ -81,8 +81,6 @@ export interface AttendanceOrder {
   attachmentOverrideReason?: string
 
   status: 'waiting' | 'waiting_collection' | 'collection_done' | 'in_analysis' | 'validation' | 'released' | 'cancelled' | 'open' | 'authorized' | 'completed'
-  calculatedStatus?: string
-
   scheduledAppointmentId?: string
   registeredBy: string
   registeredByName?: string

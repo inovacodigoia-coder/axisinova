@@ -1,6 +1,6 @@
 import { useState, useMemo } from 'react'
 import { Dialog, DialogContent } from '@/components/ui/dialog'
-import { X, Printer, Pencil, Trash2, Plus, ArrowLeft, MoreVertical, CreditCard, Droplets, ShieldCheck, DollarSign, Calendar, Clock, MapPin, User, FileText, ChevronDown, History, BarChart3, Database, RefreshCw, Info, Smartphone, Calculator, Ban } from 'lucide-react'
+import { X, Printer, Pencil, Trash2, Plus, ArrowLeft, MoreVertical, CreditCard, Droplets, ShieldCheck, DollarSign, Calendar, Clock, MapPin, User, FileText, ChevronDown, History, BarChart3, Database, RefreshCw, Info, Smartphone, Calculator } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import type { AttendanceOrder } from '@/types/attendance-cadastro.types'
@@ -8,11 +8,9 @@ import type { Patient } from '@/types/patient.types'
 import type { LabAttendanceOrder } from '@/types/lab.types'
 import { TUBE_TYPES } from '@/types/lab.types'
 import { cn } from '@/lib/utils'
-import { calculateAttendanceStatus, ATTENDANCE_STATUS_CONFIG } from '@/utils/attendanceStatusLogic'
 import { AttendancePrintSelectionModal } from '../print/AttendancePrintSelectionModal'
 import PDFPreviewModal from '@/components/lab/PDFPreviewModal'
 import { AttendancePrintModal } from '../print/AttendancePrintModal'
-
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -101,9 +99,22 @@ export function AttendanceDetailsModal({ open, onClose, order, patient }: Attend
     );
   }, [orderExams]);
 
-  const currentStatus = calculateAttendanceStatus(order);
-  const statusConfig = ATTENDANCE_STATUS_CONFIG[currentStatus] || { label: order.status, color: 'bg-slate-400', textColor: 'text-white' };
-
+  const getStatusColor = (status: string) => {
+    switch(status?.toLowerCase()) {
+      case 'open':
+      case 'waiting':
+      case 'waiting_collection':
+        return 'bg-blue-500';
+      case 'collection_done':
+      case 'collected':
+      case 'liberado':
+        return 'bg-emerald-500';
+      case 'cancelled':
+        return 'bg-red-500';
+      default:
+        return 'bg-slate-400';
+    }
+  };
 
   const isCollected = order.status === 'collection_done' || 
                       order.status === 'waiting_collection' || 
@@ -129,14 +140,6 @@ export function AttendanceDetailsModal({ open, onClose, order, patient }: Attend
             <span>Atendimento</span>
             <span className="text-foreground font-medium">/</span>
             <span className="text-foreground font-medium">{order.orderNumber}</span>
-            <div className={cn(
-              "ml-2 px-2 py-0.5 rounded-full text-[10px] font-bold uppercase",
-              statusConfig.color,
-              statusConfig.textColor
-            )}>
-              {statusConfig.label}
-            </div>
-
           </div>
         </div>
 
@@ -208,35 +211,15 @@ export function AttendanceDetailsModal({ open, onClose, order, patient }: Attend
                       <span>Mais Informações</span>
                     </DropdownMenuItem>
                     <DropdownMenuSeparator />
-                    {currentStatus !== 'completed' && (
-                      <DropdownMenuItem 
-                        className="flex items-center gap-2 text-red-600 focus:text-red-600"
-                        onClick={() => {/* Implementação de cancelamento futuro */}}
-                      >
-                        <Ban className="h-4 w-4" />
-                        <span>Cancelar Atendimento</span>
-                      </DropdownMenuItem>
-                    )}
                     <DropdownMenuItem className="flex items-center gap-2 text-red-600 focus:text-red-600">
                       <Trash2 className="h-4 w-4" />
                       <span>Excluir Pedido</span>
                     </DropdownMenuItem>
-
                   </DropdownMenuContent>
                 </DropdownMenu>
               </div>
             </div>
-            <div className="text-xl font-bold relative z-10 flex items-center gap-2">
-              {order.orderNumber}
-              <div className={cn(
-                "px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-tighter border border-white/20 shadow-sm",
-                statusConfig.color,
-                statusConfig.textColor
-              )}>
-                {statusConfig.label}
-              </div>
-            </div>
-
+            <div className="text-xl font-bold relative z-10">{order.orderNumber}</div>
             <div className="absolute -bottom-2 -right-2 opacity-10">
               <Clock className="h-16 w-16 rotate-12" />
             </div>
