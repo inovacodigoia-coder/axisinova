@@ -124,6 +124,7 @@ export function ResultEntryModal({
           originName: exam.originName,
           doctorName: exam.doctorName,
           doctorCRM: exam.doctorCRM,
+          exams: [],
         };
       }
       groups[key].exams.push(exam);
