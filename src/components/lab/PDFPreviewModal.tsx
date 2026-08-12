@@ -6,6 +6,8 @@ import { cn } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
 import LaudoDocument from './LaudoDocument';
 import { LabAttendanceOrder } from '@/types/lab.types';
+import { useLabSettings } from '@/hooks/useLabSettings';
+
 
 interface PDFPreviewModalProps {
   isOpen: boolean;
