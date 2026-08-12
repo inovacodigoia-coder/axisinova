@@ -982,7 +982,7 @@ export function AttendanceDetailsModal({ open, onClose, onOrderDeleted, order, p
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-    </>
+      </>
   )
 }
 
