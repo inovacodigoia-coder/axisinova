@@ -559,7 +559,8 @@ export default function LabAnalisePage() {
           period,
           workbenches: selectedWorkbenches,
           establishments: selectedEstablishments,
-          protocol: protocolSearch
+          protocol: protocolSearch,
+          statuses: selectedStatuses
         }}
         workbenchNames={workbenches.reduce((acc, wb) => ({ ...acc, [wb.id]: wb.name }), {})}
         establishmentNames={establishments.reduce((acc, est) => ({ ...acc, [est.id]: est.name }), {})}
