@@ -172,6 +172,7 @@ export function AttendanceDetailsModal({ open, onClose, onOrderDeleted, order, p
 
 
   return (
+    <>
     <Dialog open={open} onOpenChange={(o) => !o && onClose()}>
       <DialogContent className="max-w-[1200px] w-[95vw] max-h-[90vh] p-0 flex flex-col gap-0 bg-[#F8FAFC] border-none shadow-2xl [&>button]:hidden overflow-hidden scrollbar-thin scrollbar-thumb-gray-300">
         {/* Header Navigation */}
@@ -981,7 +982,7 @@ export function AttendanceDetailsModal({ open, onClose, onOrderDeleted, order, p
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-    </Dialog>
+    </>
   )
 }
 
