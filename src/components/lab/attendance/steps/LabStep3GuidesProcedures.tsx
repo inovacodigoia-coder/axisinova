@@ -71,7 +71,7 @@ export function LabStep3GuidesProcedures({ state, update }: Props) {
 
   useEffect(() => {
     if (guides.length === 0) {
-      const initialGuide = { id: '1', name: 'Particular', plan: '', convenioName: '', convenioId: null, operator: '', number: '', exams: [], isDoctorDisabled: false };
+      const initialGuide = { id: '1', name: 'NOVA GUIA', plan: '', convenioName: '', convenioId: null, operator: '', number: '', exams: [], isDoctorDisabled: false };
       setGuides([initialGuide]);
       setActiveGuideId('1');
       update({ guides: [initialGuide] });
@@ -301,7 +301,6 @@ export function LabStep3GuidesProcedures({ state, update }: Props) {
                 }}
              >
                <option value="">Selecione um plano</option>
-               <option value="PARTICULAR">Particular</option>
                {activeConvenios.map(c => (
                  <option key={c.id} value={c.name}>{c.name}</option>
                ))}
