@@ -183,7 +183,22 @@ export default function PDFPreviewModal({
               {isFullscreen ? <Minimize2 className="h-4 w-4" /> : <Maximize2 className="h-4 w-4" />}
             </Button>
           </div>
-          
+
+          {isEditing && (
+            <div className="absolute top-4 left-4 flex gap-1 z-10 bg-zinc-900/80 backdrop-blur-md p-1.5 rounded-lg shadow-xl border border-white/10">
+              <Button variant="ghost" size="sm" className="h-8 w-8 p-0 text-white hover:bg-white/10" onMouseDown={(e) => { e.preventDefault(); exec('bold'); }}>
+                <Bold className="h-4 w-4" />
+              </Button>
+              <Button variant="ghost" size="sm" className="h-8 w-8 p-0 text-white hover:bg-white/10" onMouseDown={(e) => { e.preventDefault(); exec('italic'); }}>
+                <Italic className="h-4 w-4" />
+              </Button>
+              <Button variant="ghost" size="sm" className="h-8 w-8 p-0 text-white hover:bg-white/10" onMouseDown={(e) => { e.preventDefault(); exec('underline'); }}>
+                <UnderlineIcon className="h-4 w-4" />
+              </Button>
+              <span className="flex items-center px-2 text-[11px] text-amber-300">Modo edição</span>
+            </div>
+          )}
+
           <ScrollArea className="w-full h-full">
             <div className="flex justify-center p-4 min-w-max">
               <div 
@@ -192,27 +207,38 @@ export default function PDFPreviewModal({
                   transform: `scale(${zoom / 100})`,
                 }}
               >
-                <LaudoDocument 
-                  order={order}
-                  companyLogo={labSettings?.report_logo_primary_url || undefined}
-                  secondaryLogo={labSettings?.report_logo_secondary_url || undefined}
-                  laboratoryName={labSettings?.report_header_title || labSettings?.lab_name || undefined}
-                  laboratorySubtitle={labSettings?.report_header_subtitle || undefined}
-                  institutionalWarning={labSettings?.report_institutional_warning || undefined}
-                  footerText={labSettings?.report_footer_text || undefined}
-                  technicalResponsible={{
-                    name: labSettings?.signature_name || labSettings?.responsible_name || "",
-                    register: labSettings?.signature_include_register === false
-                      ? ""
-                      : (labSettings?.signature_register || labSettings?.responsible_register || ""),
-                    signatureUrl: labSettings?.signature_image_url || undefined,
-                  }}
-                  isRetified={order.exams?.some(e => e.isRetificado)}
-                />
-
+                <div
+                  ref={documentRef}
+                  contentEditable={isEditing}
+                  suppressContentEditableWarning
+                  className={cn(isEditing && 'outline outline-2 outline-amber-400 rounded-sm')}
+                >
+                  {savedHtml ? (
+                    <div dangerouslySetInnerHTML={{ __html: savedHtml }} />
+                  ) : (
+                    <LaudoDocument 
+                      order={order}
+                      companyLogo={labSettings?.report_logo_primary_url || undefined}
+                      secondaryLogo={labSettings?.report_logo_secondary_url || undefined}
+                      laboratoryName={labSettings?.report_header_title || labSettings?.lab_name || undefined}
+                      laboratorySubtitle={labSettings?.report_header_subtitle || undefined}
+                      institutionalWarning={labSettings?.report_institutional_warning || undefined}
+                      footerText={labSettings?.report_footer_text || undefined}
+                      technicalResponsible={{
+                        name: labSettings?.signature_name || labSettings?.responsible_name || "",
+                        register: labSettings?.signature_include_register === false
+                          ? ""
+                          : (labSettings?.signature_register || labSettings?.responsible_register || ""),
+                        signatureUrl: labSettings?.signature_image_url || undefined,
+                      }}
+                      isRetified={order.exams?.some(e => e.isRetificado)}
+                    />
+                  )}
+                </div>
               </div>
             </div>
           </ScrollArea>
+
         </div>
 
         <footer className="flex flex-col-reverse gap-2 border-t bg-background p-4 sm:flex-row sm:justify-between">
