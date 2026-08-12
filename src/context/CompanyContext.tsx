@@ -272,8 +272,10 @@ export function CompanyProvider({ children }: { children: ReactNode }) {
 
   const canAccess = useCallback((module: SystemModule, action?: PermissionAction): boolean => {
     if (!user) return false
-    if (user.role === 'super_admin' || user.role === 'company_admin') return true
-    if (!activeProfile) return false
+    // O perfil ativo sempre define o que está liberado, inclusive para administradores.
+    if (!activeProfile) {
+      return user.role === 'super_admin' || user.role === 'company_admin'
+    }
     const perms = activeProfile.permissions[module]
     if (!perms) return false
     if (!action) return perms.length > 0
