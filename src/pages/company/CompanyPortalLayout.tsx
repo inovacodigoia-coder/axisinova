@@ -149,7 +149,7 @@ function PortalContent() {
 
   if (!isSessionHydrated) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-muted">
+      <div className="min-h-screen flex items-center justify-center bg-background">
         <div className="flex flex-col items-center gap-3">
           <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
           <span className="text-sm text-muted-foreground">Preparando acesso...</span>
@@ -167,7 +167,7 @@ function PortalContent() {
 
 
   return (
-    <div className="min-h-screen flex flex-col bg-muted">
+    <div className="min-h-screen flex flex-col bg-background">
       <CompanySidebar
         mobileOpen={mobileOpen}
         onMobileClose={() => setMobileOpen(false)}
