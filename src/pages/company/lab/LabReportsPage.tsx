@@ -131,7 +131,7 @@ export default function LabReportsPage() {
         const matchesStatus = filterStatus === 'all' || report.status === filterStatus;
         return matchesSearch && matchesStatus;
       });
-  }, [orders, search, filterStatus]);
+  }, [orders, search, filterStatus, resultsByProtocol]);
 
   const handlePreview = (report: any) => {
     setSelectedReport(report.rawOrder);
