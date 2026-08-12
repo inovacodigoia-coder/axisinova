@@ -312,7 +312,13 @@ function SectorForm({ sector, profiles, companyId, onSave, onCancel }: { sector:
         </div>
       </div>
 
-      <SectorAccessPreview profiles={profiles} allowedIds={allowed} />
+      <SectorAccessPreview
+        profiles={profiles}
+        allowedIds={allowed}
+        overrides={moduleOverrides}
+        onToggleOverride={handleToggleOverride}
+        onResetOverrides={() => setModuleOverrides({})}
+      />
 
       <div>
         <label className="text-sm font-medium mb-2 block">Tipos de fila visíveis na Recepção</label>
