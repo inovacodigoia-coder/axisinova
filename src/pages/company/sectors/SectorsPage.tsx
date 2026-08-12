@@ -437,8 +437,7 @@ export function SectorAccessPreview({ profiles, allowedIds, overrides, onToggleO
                       )}
                       <span className="truncate">{item.label}</span>
                       {manual && <span className="text-[9px] text-primary shrink-0">manual</span>}
-
-                    </div>
+                    </label>
                   )
                 })}
               </div>
