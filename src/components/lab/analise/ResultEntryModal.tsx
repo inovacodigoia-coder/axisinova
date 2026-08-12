@@ -945,35 +945,47 @@ export function ResultEntryModal({
                           </div>
                         )}
 
-                        {/* Resultados Anteriores (Mock) */}
-                        <div className="mt-4 pt-4 border-t border-slate-200/60">
-                          <div className="flex items-center gap-2 mb-3">
-                            <History className="h-3.5 w-3.5 text-primary" />
-                            <h5 className="text-[10px] font-black uppercase text-slate-500 tracking-wider">
-                              {exam.code} - Resultados Anteriores:
-                            </h5>
-                          </div>
-                          <ScrollArea className="w-full">
-                            <div className="flex gap-3 pb-2">
-                              {[1, 2, 3].map(i => (
-                                <div key={i} className="shrink-0 bg-white border border-slate-200 rounded-lg p-2 min-w-[140px] shadow-sm">
-                                  <div className="flex justify-between items-start mb-1">
-                                    <span className="text-[9px] font-bold text-slate-400">
-                                      {format(new Date(2026, 7, 10 - i, 10, 30), 'dd/MM/yy HH:mm')}
-                                    </span>
-                                    <Badge className="h-3 text-[7px] font-black bg-slate-100 text-slate-600 border-none uppercase">
-                                      {exam.code}
-                                    </Badge>
+                        {/* Resultados Anteriores (reais) */}
+                        {(() => {
+                          const prevList = prevResults[`${patient.patientName}|${String(exam.code || exam.name || '').toUpperCase()}`] || [];
+                          return (
+                            <div className="mt-4 pt-4 border-t border-slate-200/60">
+                              <div className="flex items-center gap-2 mb-3">
+                                <History className="h-3.5 w-3.5 text-primary" />
+                                <h5 className="text-[10px] font-black uppercase text-slate-500 tracking-wider">
+                                  {exam.code} - Resultados Anteriores:
+                                </h5>
+                              </div>
+                              {prevList.length === 0 ? (
+                                <p className="text-[10px] font-bold uppercase text-slate-400 italic">
+                                  Paciente não tem exames anteriores
+                                </p>
+                              ) : (
+                                <ScrollArea className="w-full">
+                                  <div className="flex gap-3 pb-2">
+                                    {prevList.map((prev, i) => (
+                                      <div key={i} className="shrink-0 bg-white border border-slate-200 rounded-lg p-2 min-w-[140px] shadow-sm">
+                                        <div className="flex justify-between items-start mb-1">
+                                          <span className="text-[9px] font-bold text-slate-400">
+                                            {format(new Date(prev.date), 'dd/MM/yy HH:mm')}
+                                          </span>
+                                          <Badge className="h-3 text-[7px] font-black bg-slate-100 text-slate-600 border-none uppercase">
+                                            {exam.code}
+                                          </Badge>
+                                        </div>
+                                        <div className="flex items-baseline gap-1">
+                                          <span className="text-sm font-black text-slate-700">{prev.value}</span>
+                                          {prev.unit && <span className="text-[9px] font-bold text-slate-400">{prev.unit}</span>}
+                                        </div>
+                                      </div>
+                                    ))}
                                   </div>
-                                  <div className="flex items-baseline gap-1">
-                                    <span className="text-sm font-black text-slate-700">{85 + i * 5}</span>
-                                    <span className="text-[9px] font-bold text-slate-400">mg/dL</span>
-                                  </div>
-                                </div>
-                              ))}
+                                </ScrollArea>
+                              )}
                             </div>
-                          </ScrollArea>
-                        </div>
+                          );
+                        })()}
+
                       </div>
                     );
                   })}
