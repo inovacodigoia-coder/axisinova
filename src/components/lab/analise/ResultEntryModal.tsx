@@ -1,6 +1,7 @@
-import { useState, useMemo, useEffect } from 'react';
+import { useState, useMemo, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { buildExamParams, catalogKey } from '@/utils/examParameters';
+import { buildExamParams, catalogKey, findCatalogExam, evaluateFormula } from '@/utils/examParameters';
+
 import { resolveCompanyId } from '@/utils/companyId';
 import { useAuth } from '@/context/AuthContext';
 import { 
