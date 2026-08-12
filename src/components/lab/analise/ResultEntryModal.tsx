@@ -24,7 +24,8 @@ import {
   ShieldCheck,
   Ban,
   AlertCircle,
-  FileText
+  FileText,
+  Loader2
 } from 'lucide-react';
 import PDFPreviewModal from '@/components/lab/PDFPreviewModal';
 
@@ -94,6 +95,7 @@ export function ResultEntryModal({
   const [prevResults, setPrevResults] = useState<Record<string, { date: string; value: string; unit: string }[]>>({});
   const [laudoOrder, setLaudoOrder] = useState<any>(null);
   const [laudoOpen, setLaudoOpen] = useState(false);
+  const [laudoLoading, setLaudoLoading] = useState(false);
 
   /* Do not make any visual modifications. The phrases I write are commands to understand what I want, not to be written down. Understand their content well, then execute what is required.
                                             
@@ -129,16 +131,6 @@ export function ResultEntryModal({
 
   // Catálogo de Exames (parâmetros e faixas de referência reais)
   const [catalog, setCatalog] = useState<Record<string, any>>({});
-
-  // Safety: garante que a página volte a ser clicável ao fechar o laudo
-  useEffect(() => {
-    if (!laudoOpen) {
-      const t = setTimeout(() => {
-        if (document.body.style.pointerEvents === 'none') document.body.style.pointerEvents = '';
-      }, 350);
-      return () => clearTimeout(t);
-    }
-  }, [laudoOpen]);
 
   useEffect(() => {
     if (!isOpen) return;
@@ -373,45 +365,57 @@ export function ResultEntryModal({
   const patientHasLaudo = (patient: any) =>
     patient.exams.some((e: any) => examStatuses[e.id] === 'digitized' || examStatuses[e.id] === 'released');
 
-  const openLaudo = (patient: any) => {
-    const exams = patient.exams
-      .filter((e: any) => examStatuses[e.id] === 'digitized' || examStatuses[e.id] === 'released')
-      .map((e: any) => ({
-        examId: e.id,
-        code: e.code,
-        name: e.name,
-        material: e.material || 'Soro',
-        status: examStatuses[e.id] === 'released' ? 'liberado' : 'waiting_approval',
-        results: getParams(e).map((p: any) => {
-          const value = results[`${e.id}_${p.id}`] || '';
-          const st = getResultStatus(value, p.reference || '');
-          return {
-            parameterId: String(p.id),
-            parameterCode: p.name,
-            parameterName: p.name,
-            value,
-            unit: p.unit || '',
-            referenceRange: p.reference || '—',
-            status: st.label === 'Alto' || st.label === 'Baixo' ? 'altered' : 'normal',
-          };
-        }),
-        internalObservations: notes[e.id] || '',
-      }));
+  const openLaudo = async (patient: any) => {
+    if (laudoLoading) return;
+    setLaudoLoading(true);
 
-    if (exams.length === 0) {
-      toast.info('Nenhum exame digitado ou liberado para este paciente.');
-      return;
+    try {
+      // Permite que a barra de carregamento seja pintada antes de montar o documento.
+      await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
+      const exams = patient.exams
+        .filter((e: any) => examStatuses[e.id] === 'digitized' || examStatuses[e.id] === 'released')
+        .map((e: any) => ({
+          examId: e.id,
+          code: e.code,
+          name: e.name,
+          material: e.material || 'Soro',
+          status: examStatuses[e.id] === 'released' ? 'liberado' : 'waiting_approval',
+          results: getParams(e).map((p: any) => {
+            const value = results[`${e.id}_${p.id}`] || '';
+            const st = getResultStatus(value, p.reference || '');
+            return {
+              parameterId: String(p.id),
+              parameterCode: p.name,
+              parameterName: p.name,
+              value,
+              unit: p.unit || '',
+              referenceRange: p.reference || '—',
+              status: st.label === 'Alto' || st.label === 'Baixo' ? 'altered' : 'normal',
+            };
+          }),
+          internalObservations: notes[e.id] || '',
+        }));
+
+      if (exams.length === 0) {
+        toast.info('Nenhum exame digitado ou liberado para este paciente.');
+        return;
+      }
+
+      setLaudoOrder({
+        patientName: patient.patientName,
+        patientBirthDate: patient.patientBirthDate,
+        patientGender: patient.patientGender,
+        protocol: patient.protocol,
+        registeredAt: patient.registeredAt,
+        exams,
+      });
+      setLaudoOpen(true);
+    } catch (error) {
+      console.error('Falha ao preparar laudo:', error);
+      toast.error('Não foi possível carregar o laudo. Tente novamente.');
+    } finally {
+      setLaudoLoading(false);
     }
-
-    setLaudoOrder({
-      patientName: patient.patientName,
-      patientBirthDate: patient.patientBirthDate,
-      patientGender: patient.patientGender,
-      protocol: patient.protocol,
-      registeredAt: patient.registeredAt,
-      exams,
-    });
-    setLaudoOpen(true);
   };
 
 
@@ -697,10 +701,11 @@ export function ResultEntryModal({
                       <Button
                         size="sm"
                         onClick={(e) => { e.stopPropagation(); openLaudo(patient); }}
+                        disabled={laudoLoading}
                         className="h-7 px-3 text-[9px] font-black uppercase gap-1.5 bg-white/10 hover:bg-white/20 text-white border border-white/20"
                       >
-                        <FileText className="h-3 w-3" />
-                        Visualizar Laudo
+                        {laudoLoading ? <Loader2 className="h-3 w-3 animate-spin" /> : <FileText className="h-3 w-3" />}
+                        {laudoLoading ? 'Carregando' : 'Visualizar Laudo'}
                       </Button>
                     )}
                     <div className="flex flex-col items-end">
@@ -1167,13 +1172,28 @@ export function ResultEntryModal({
       )}
 
       {/* Visualização do Laudo */}
-      <PDFPreviewModal
-        isOpen={laudoOpen}
-        onClose={() => setLaudoOpen(false)}
-        order={laudoOrder || {}}
-        onDownload={() => window.print()}
-        onPrint={() => window.print()}
-      />
+      {laudoLoading && (
+        <div className="fixed inset-0 z-[190] flex items-center justify-center bg-background/75 backdrop-blur-sm" role="status" aria-live="polite">
+          <div className="w-[min(420px,calc(100vw-2rem))] rounded-lg border bg-card p-5 shadow-xl">
+            <div className="mb-3 flex items-center gap-3">
+              <Loader2 className="h-5 w-5 animate-spin text-primary" />
+              <span className="text-sm font-bold">Carregando laudo...</span>
+            </div>
+            <div className="h-2 overflow-hidden rounded-full bg-muted">
+              <div className="h-full w-2/3 animate-pulse rounded-full gradient-bg" />
+            </div>
+          </div>
+        </div>
+      )}
+      {laudoOrder && (
+        <PDFPreviewModal
+          isOpen={laudoOpen}
+          onClose={() => setLaudoOpen(false)}
+          order={laudoOrder}
+          onDownload={() => window.print()}
+          onPrint={() => window.print()}
+        />
+      )}
 
     </div>
 
