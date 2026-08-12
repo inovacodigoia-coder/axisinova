@@ -365,18 +365,6 @@ export function AttendanceCadastroModal({
 
     setIsFinalizing(true)
     try {
-      // Logic for Lab status: if any exam is NOT collected, initial status is 'open' (Aberto)
-      let initialStatus = isLabFlow ? 'waiting_collection' : ((state.procedureRequiresAuth && state.authorizationCode) ? 'authorized' : 'open')
-      
-      if (isLabFlow && state.guides) {
-        const hasUncollectedExam = state.guides.some((g: any) => 
-          g.exams?.some((e: any) => !e.collected)
-        )
-        if (hasUncollectedExam) {
-          initialStatus = 'open'
-        }
-      }
-
       const orderData: any = {
         patientId: state.patient?.id || state.tempPatient?.id || `temp_${Date.now()}`,
         patientName: state.patient?.fullName || state.tempPatient?.fullName,
@@ -414,7 +402,7 @@ export function AttendanceCadastroModal({
         attachmentRulesSatisfied: !state.attachmentOverrideReason,
         attachmentOverrideReason: state.attachmentOverrideReason,
         scheduledAppointmentId: state.scheduledAppointmentId,
-        status: initialStatus,
+        status: isLabFlow ? 'waiting_collection' : ((state.procedureRequiresAuth && state.authorizationCode) ? 'authorized' : 'open'),
         examMode: state.serviceType === 'exam' ? (state.examMode === 'ask' ? undefined : state.examMode) : undefined,
         // Lab specific fields
         originId: state.originId,
