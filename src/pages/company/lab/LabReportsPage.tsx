@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { Card } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { 
@@ -15,13 +15,14 @@ import {
   MoreVertical,
   ChevronRight,
   User,
-  ExternalLink
+  ExternalLink,
+  Calendar as CalendarIcon
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { cn } from '@/lib/utils';
-import { LabReport } from '@/types/lab.types';
+import { LabReport, LabAttendanceOrder } from '@/types/lab.types';
 import PDFPreviewModal from '@/components/lab/PDFPreviewModal';
 import DeliveryTrackingModal from '@/components/lab/DeliveryTrackingModal';
 import EmailReportModal from '@/components/lab/EmailReportModal';
@@ -33,89 +34,69 @@ import {
   DropdownMenuTrigger,
   DropdownMenuSeparator
 } from "@/components/ui/dropdown-menu";
-
-const MOCK_REPORTS: LabReport[] = [
-  {
-    id: '1',
-    protocol: '20260622-714-66',
-    patientId: 'p1',
-    patientName: 'PACIENTE TESTE',
-    patientBirthDate: '1989-02-18',
-    patientGender: 'M',
-    date: '2026-06-22',
-    doctorName: 'Dr. Carlos Lima',
-    doctorCRM: '8495/RN',
-    status: 'liberado',
-    examsCount: '4/4 ✅',
-    exams: [
-      {
-        examId: 'e1',
-        name: 'ALBUMINA',
-        material: 'Soro',
-        results: [
-          { parameterName: 'Albumina', value: '4', unit: 'g/dL', referenceRange: '3,5 - 5,2', status: 'normal' }
-        ]
-      }
-    ],
-    deliveryStatus: 'not_delivered'
-  },
-  {
-    id: '2',
-    protocol: '20260716-360-80',
-    patientId: 'p2',
-    patientName: 'JOÃO DA SILVA',
-    patientBirthDate: '1975-05-10',
-    patientGender: 'M',
-    date: '2026-07-16',
-    doctorName: 'Dra. Bruna Baioni',
-    doctorCRM: '12345/SP',
-    status: 'pending',
-    examsCount: '2/4 ⏳',
-    exams: [],
-    deliveryStatus: 'not_delivered'
-  },
-  {
-    id: '3',
-    protocol: '20260625-888-12',
-    patientId: 'p3',
-    patientName: 'MARIA OLIVEIRA',
-    patientBirthDate: '1992-11-25',
-    patientGender: 'F',
-    date: '2026-06-25',
-    doctorName: 'Dr. Ricardo Santos',
-    doctorCRM: '9988/RJ',
-    status: 'retificado',
-    examsCount: '3/3 ✅',
-    exams: [],
-    deliveryStatus: 'delivered'
-  }
-];
+import { useAttendanceCadastro } from '@/hooks/useAttendanceCadastro';
+import { format, differenceInYears } from 'date-fns';
 
 export default function LabReportsPage() {
+  const { orders, loading: ordersLoading } = useAttendanceCadastro();
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
-  const [selectedReportId, setSelectedReportId] = useState<string | null>(null);
+  const [selectedReport, setSelectedReport] = useState<any | null>(null);
   const [showPreview, setShowPreview] = useState(false);
   const [showDelivery, setShowDelivery] = useState(false);
   const [showEmail, setShowEmail] = useState(false);
   const [filterStatus, setFilterStatus] = useState<string>('all');
 
   useEffect(() => {
-    const timer = setTimeout(() => setLoading(false), 800);
-    return () => clearTimeout(timer);
-  }, []);
+    if (!ordersLoading) {
+      const timer = setTimeout(() => setLoading(false), 500);
+      return () => clearTimeout(timer);
+    }
+  }, [ordersLoading]);
 
-  const reports = MOCK_REPORTS.filter(report => {
-    const matchesSearch = report.patientName.toLowerCase().includes(search.toLowerCase()) || 
-                          report.protocol.includes(search);
-    const matchesStatus = filterStatus === 'all' || report.status === filterStatus;
-    return matchesSearch && matchesStatus;
-  });
+  // Transform attendance_orders into LabReports
+  const reports = useMemo(() => {
+    return (orders || [])
+      .filter(order => order.examMode === 'lab')
+      .map(order => {
+        const labOrder = order as unknown as LabAttendanceOrder;
+        const exams = labOrder.labGuides?.flatMap(g => g.exams || []) || [];
+        const totalExams = exams.length;
+        const releasedExams = exams.filter(e => e.status === 'released' || e.status === 'liberado').length;
+        
+        // Map status
+        let reportStatus: 'liberado' | 'pending' | 'retificado' | 'parcial' = 'pending';
+        if (releasedExams > 0 && releasedExams < totalExams) reportStatus = 'parcial';
+        else if (releasedExams === totalExams && totalExams > 0) reportStatus = 'liberado';
+        else if (order.status === 'retificado') reportStatus = 'retificado';
 
-  const selectedReport = MOCK_REPORTS.find(r => r.id === selectedReportId);
+        return {
+          id: order.id,
+          protocol: order.protocol || order.orderNumber,
+          patientId: order.patientId,
+          patientName: order.patientName,
+          patientBirthDate: order.patientBirthDate || '',
+          patientGender: (order.patientGender as any) === 'male' ? 'M' : (order.patientGender as any) === 'female' ? 'F' : 'M',
+          date: order.registeredAt,
+          doctorName: order.doctorName || order.requestingDoctor || '—',
+          doctorCRM: order.doctorCRM || '',
+          status: reportStatus,
+          examsCount: `${releasedExams}/${totalExams} ${releasedExams === totalExams ? '✅' : '⏳'}`,
+          exams: exams,
+          deliveryStatus: (order as any).deliveryStatus || 'not_delivered',
+          rawOrder: order
+        };
+      })
+      .filter(report => {
+        const matchesSearch = report.patientName.toLowerCase().includes(search.toLowerCase()) || 
+                              report.protocol.includes(search);
+        const matchesStatus = filterStatus === 'all' || report.status === filterStatus;
+        return matchesSearch && matchesStatus;
+      });
+  }, [orders, search, filterStatus]);
 
-  const handlePreview = (id: string) => {
-    setSelectedReportId(id);
+  const handlePreview = (report: any) => {
+    setSelectedReport(report.rawOrder);
     setShowPreview(true);
   };
 
@@ -123,8 +104,9 @@ export default function LabReportsPage() {
     toast.success("Download iniciado");
   };
 
-  const handleEmail = (id: string) => {
-    toast.success("E-mail enviado com sucesso");
+  const handleEmail = (report: any) => {
+    setSelectedReport(report.rawOrder);
+    setShowEmail(true);
   };
 
   const getStatusBadge = (status: string) => {
