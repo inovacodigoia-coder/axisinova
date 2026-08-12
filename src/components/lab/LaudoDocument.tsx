@@ -60,16 +60,24 @@ export default function LaudoDocument({
       {/* Header */}
       <div className="laudo-header border-b-2 border-zinc-800 pb-4 mb-6">
         <div className="flex justify-between items-center mb-6">
-          <div className="h-16 w-32 bg-zinc-100 flex items-center justify-center text-[10px] text-zinc-400 font-bold border rounded uppercase">
-            {companyLogo ? <img src={companyLogo} alt="Logo" className="h-full object-contain" /> : 'LOGO ESQUERDA'}
+          <div className="h-16 w-32 flex items-center justify-center">
+            {companyLogo ? (
+              <img src={companyLogo} alt="Logo principal" className="h-full max-w-full object-contain" />
+            ) : null}
           </div>
-          <h1 className="text-xl font-bold text-center uppercase tracking-tight flex-1 px-4">
-            {laboratoryName}
-          </h1>
-          <div className="h-16 w-32 bg-zinc-100 flex items-center justify-center text-[10px] text-zinc-400 font-bold border rounded uppercase">
-            {secondaryLogo ? <img src={secondaryLogo} alt="Logo" className="h-full object-contain" /> : 'LOGO DIREITA'}
+          <div className="flex-1 px-4 text-center">
+            <h1 className="text-xl font-bold uppercase tracking-tight">{laboratoryName}</h1>
+            {laboratorySubtitle && (
+              <p className="text-[11px] text-zinc-700 mt-1">{laboratorySubtitle}</p>
+            )}
+          </div>
+          <div className="h-16 w-32 flex items-center justify-center">
+            {secondaryLogo ? (
+              <img src={secondaryLogo} alt="Logo secundário" className="h-full max-w-full object-contain" />
+            ) : null}
           </div>
         </div>
+
 
         <div className="mb-4">
           <h2 className="text-lg font-bold uppercase">{order.patientName || 'NOME DO PACIENTE'}</h2>
