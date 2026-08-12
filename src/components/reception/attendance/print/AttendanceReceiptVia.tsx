@@ -41,7 +41,7 @@ export function AttendanceReceiptVia({ document: doc, config, via }: Props) {
         {doc.companyAddress && <div className="text-[8pt]">{doc.companyAddress}</div>}
         <div className="text-[8pt]">
           {doc.companyPhone ? `Tel: ${doc.companyPhone}` : ''}
-          {doc.companyPhone && doc.companyCNPJ ? ' · ' : ''}
+          {(doc.companyPhone && doc.companyCNPJ) ? ' · ' : ''}
           {doc.companyCNPJ ? `CNPJ: ${doc.companyCNPJ}` : ''}
         </div>
       </div>
