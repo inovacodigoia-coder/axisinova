@@ -878,7 +878,7 @@ export function AttendanceDetailsModal({ open, onClose, onOrderDeleted, order, p
         <PDFPreviewModal
           isOpen={reportPreviewOpen}
           onClose={() => setReportPreviewOpen(false)}
-          order={labOrder}
+          order={filteredOrderForReport as any}
           onDownload={() => console.log('Download triggered')}
         />
       )}
