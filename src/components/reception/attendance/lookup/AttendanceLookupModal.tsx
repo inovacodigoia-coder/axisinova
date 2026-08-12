@@ -6,6 +6,7 @@ import { cn } from '@/lib/utils'
 import { toast } from 'sonner'
 import { useAttendanceCadastro } from '@/hooks/useAttendanceCadastro'
 import { usePatients } from '@/hooks/usePatients'
+import { useLabSettings } from '@/hooks/useLabSettings'
 import { AttendancePrintModal } from '../print/AttendancePrintModal'
 import { AttendanceDetailsModal } from './AttendanceDetailsModal'
 import type { AttendanceOrder } from '@/types/attendance-cadastro.types'
@@ -24,7 +25,7 @@ function normalize(s: string) {
   return (s || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^\w\s]/g, '')
 }
 
-function buildDoc(order: AttendanceOrder, patient: Patient | undefined, unitName?: string, guicheName?: string): AttendanceControlDocument {
+function buildDoc(order: AttendanceOrder, patient: Patient | undefined, unitName?: string, guicheName?: string, settings?: any): AttendanceControlDocument {
   const created = new Date(order.registeredAt)
   return {
     orderNumber: order.orderNumber,
@@ -60,10 +61,11 @@ function buildDoc(order: AttendanceOrder, patient: Patient | undefined, unitName
     authorizationExpiry: order.authorizationExpiry,
     attachments: order.attachments.map(a => ({ name: a.documentType, type: 'document' })),
     registeredByName: order.registeredByName,
-    companyName: 'CLÍNICA AXIS INOVA',
-    companyAddress: 'Rua das Flores, 123 · Natal/RN',
-    companyCNPJ: '00.000.000/0001-00',
-    companyPhone: '(84) 3333-0000',
+    companyName: settings?.lab_name || 'AXIS INOVA',
+    companyAddress: settings?.address_street ? `${settings.address_street}, ${settings.address_number} · ${settings.address_city}/${settings.address_state}` : 'Rua das Flores, 123 · Natal/RN',
+    companyCNPJ: settings?.cnpj || '00.000.000/0001-00',
+    companyPhone: settings?.phone || '(84) 3333-0000',
+    companyLogo: settings?.report_logo_primary_url || undefined,
   }
 }
 
@@ -82,6 +84,7 @@ const ATTENDANCE_STATUS_LABELS: Record<string, { label: string, color: string }>
 export function AttendanceLookupModal({ open, onClose, unitName, guicheName, onAddProcedure }: AttendanceLookupModalProps) {
   const { orders, updateOrder, loading } = useAttendanceCadastro()
   const { patients, loading: patientsLoading } = usePatients()
+  const { settings } = useLabSettings()
   const [search, setSearch] = useState('')
   const [patientSearch, setPatientSearch] = useState('')
   const [statusFilter, setStatusFilter] = useState<string>('all')
@@ -249,7 +252,7 @@ export function AttendanceLookupModal({ open, onClose, unitName, guicheName, onA
                   key={order.id}
                   order={order}
                   patient={patientById.get(order.patientId)}
-                  onPrint={() => setDetailsOrder(order)}
+                  onPrint={() => setPrintDoc(buildDoc(order, patientById.get(order.patientId), unitName, guicheName, settings))}
                   onEdit={() => setEditing(order)}
                   onDetails={() => setDetailsOrder(order)}
                   onAddProcedure={() => {
