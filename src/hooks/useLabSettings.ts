@@ -4,6 +4,16 @@ import { useAuth } from '@/context/AuthContext'
 
 export interface LabSettingsData {
   lab_name?: string | null
+  cnpj?: string | null
+  phone?: string | null
+  email?: string | null
+  address_zip?: string | null
+  address_street?: string | null
+  address_number?: string | null
+  address_complement?: string | null
+  address_district?: string | null
+  address_city?: string | null
+  address_state?: string | null
   report_header_title?: string | null
   report_header_subtitle?: string | null
   report_logo_primary_url?: string | null
