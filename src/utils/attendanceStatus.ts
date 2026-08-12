@@ -58,48 +58,36 @@ export const ATTENDANCE_STATUS_CONFIG: Record<CalculatedStatus, StatusConfig> = 
  * Recalculates the attendance status based on the aggregated state of its exams.
  */
 export function calculateAttendanceStatus(order: AttendanceOrder | LabAttendanceOrder): CalculatedStatus {
-  // If explicitly cancelled, return cancelled (unless concluded, but concluído has precedence)
-  // Actually the prompt says cancelled overrides everything except Concluido.
-  
   const labOrder = order as LabAttendanceOrder;
   const exams = labOrder.exams || [];
 
-  if (order.status === 'cancelled') {
-    // We check if it was concluded before being cancelled? 
-    // The prompt says: "Cancelado sobrepõe qualquer status anterior, exceto Concluído".
-    // So if it was already concluded, we might need a way to know.
-    // But usually if it's 'cancelled' in DB, it means user clicked cancel.
+  // Concluido has highest precedence
+  const isConcluido = labOrder.deliveryStatus === 'delivered'; 
+  if (isConcluido) return 'concluido';
+
+  // Cancelado overrides everything except Concluido
+  if (order.status === 'cancelled' || order.status === 'cancelado') {
     return 'cancelado';
   }
 
   if (exams.length === 0) {
-    // If no exams, fallback to base status or 'aberto'
-    if (order.status === 'cancelled') return 'cancelado';
     return 'aberto';
   }
 
-  // Check for 'Concluído': All exams printed OR downloaded
-  // We need a way to track if exams are printed/downloaded in the exam object.
-  // LabExam in lab.types.ts has 'status'.
-  // We'll assume 'concluido' if all exams are 'liberado' AND somehow marked as printed/downloaded.
-  // Since we don't have a 'printed' field yet in the type, we'll check 'deliveryStatus' on the order.
-  const isConcluido = labOrder.deliveryStatus === 'delivered'; 
-  // OR if we want to be more granular, we'd need exam-level delivery info.
-  // For now, let's follow the logic: "Todos os exames do pedido foram impressos OU tiveram o laudo baixado".
-  if (isConcluido) return 'concluido';
-
-  // Check for 'Liberado': All exams are 'liberado'
-  const allLiberados = exams.every(e => e.status === 'liberado' || e.status === 'validated');
+  // Check for 'Liberado': All exams are 'liberado' or 'validated'
+  const allLiberados = exams.length > 0 && exams.every(e => e.status === 'liberado' || e.status === 'validated');
   if (allLiberados) return 'liberado';
 
-  // Check for 'Em Análise': At least one result typed
-  const anyInAnalysis = exams.some(e => e.results && e.results.length > 0 && e.results.some(r => r.value.trim() !== ''));
-  // Or if we use the exam status 'processing' or 'waiting_approval'
-  const anyProcessing = exams.some(e => e.status === 'processing' || e.status === 'waiting_approval' || (e.results && e.results.length > 0));
-  if (anyInAnalysis || anyProcessing) return 'em_analise';
+  // Check for 'Em Análise': At least one result typed or exam processing
+  const anyProcessing = exams.some(e => 
+    e.status === 'processing' || 
+    e.status === 'waiting_approval' || 
+    (e.results && e.results.length > 0 && e.results.some(r => r.value && r.value.trim() !== ''))
+  );
+  if (anyProcessing) return 'em_analise';
 
   // Check for 'Coleta Realizada': All exams collected
-  const allCollected = exams.every(e => e.isColeta);
+  const allCollected = exams.length > 0 && exams.every(e => e.isColeta);
   if (allCollected) return 'coleta_realizada';
 
   // Check for 'Aguardando': At least one exam collected, but not all
@@ -109,3 +97,4 @@ export function calculateAttendanceStatus(order: AttendanceOrder | LabAttendance
   // Default: 'Aberto'
   return 'aberto';
 }
+
