@@ -139,9 +139,25 @@ export function ResultEntryModal({
     (async () => {
       const { data, error } = await supabase
         .from('exams')
-        .select('id, name, internal_code, measurement_unit, parameters, reference_values');
+        .select('id, name, internal_code, measurement_unit, parameters, reference_values, methodology, workbench_id, default_material');
       if (error || !active || !data) return;
       setCatalogList(data as any[]);
+    })();
+    return () => { active = false; };
+  }, [isOpen]);
+
+  // Bancadas Técnicas (ordem definida em Configurações do Laboratório)
+  const [workbenchList, setWorkbenchList] = useState<any[]>([]);
+  useEffect(() => {
+    if (!isOpen) return;
+    let active = true;
+    (async () => {
+      const { data } = await supabase
+        .from('lab_workbenches')
+        .select('id, name, report_order')
+        .order('report_order', { ascending: true });
+      if (!active || !data) return;
+      setWorkbenchList(data as any[]);
     })();
     return () => { active = false; };
   }, [isOpen]);
@@ -393,34 +409,71 @@ export function ResultEntryModal({
     try {
       // Permite que a barra de carregamento seja pintada antes de montar o documento.
       await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
+      const orderOfWorkbench = (wbId?: string, wbName?: string) => {
+        const wb = workbenchList.find(
+          (w: any) => w.id === wbId || (wbName && String(w.name).toLowerCase() === String(wbName).toLowerCase()),
+        );
+        return wb?.report_order ?? 9999;
+      };
+
       const exams = patient.exams
         .filter((e: any) => examStatuses[e.id] === 'digitized' || examStatuses[e.id] === 'released')
-        .map((e: any) => ({
-          examId: e.id,
-          code: e.code,
-          name: e.name,
-          material: e.material || 'Soro',
-          status: examStatuses[e.id] === 'released' ? 'liberado' : 'waiting_approval',
-          results: getParams(e).map((p: any) => {
-            const value = results[`${e.id}_${p.id}`] || '';
-            const st = getResultStatus(value, p.reference || '');
-            return {
-              parameterId: String(p.id),
-              parameterCode: p.name,
-              parameterName: p.name,
-              value,
-              unit: p.unit || '',
-              referenceRange: p.reference || '—',
-              status: st.label === 'Alto' || st.label === 'Baixo' ? 'altered' : 'normal',
-            };
-          }),
-          internalObservations: notes[e.id] || '',
-        }));
+        .map((e: any) => {
+          const catalogExam = findCatalogExam(catalogList, { examId: e.examId, code: e.code, name: e.name });
+          const workbenchId = catalogExam?.workbench_id || e.workbenchId;
+          const workbenchName = workbenchNames[workbenchId] || e.workbench || '';
+          return {
+            examId: e.id,
+            code: e.code,
+            name: catalogExam?.name || e.name,
+            material: e.material || catalogExam?.default_material || 'Soro',
+            methodology: catalogExam?.methodology || '',
+            workbench: workbenchName,
+            workbenchOrder: orderOfWorkbench(workbenchId, workbenchName || e.workbench),
+            status: examStatuses[e.id] === 'released' ? 'liberado' : 'waiting_approval',
+            results: getParams(e).map((p: any) => {
+              const value = getParamValue(e, p);
+              const st = getResultStatus(value, p.reference || '');
+              return {
+                parameterId: String(p.id),
+                parameterCode: p.name,
+                parameterName: p.name,
+                section: p.section || '',
+                value,
+                unit: p.unit || '',
+                referenceRange: p.reference || '—',
+                flag: st.label === 'Alto' ? 'H' : st.label === 'Baixo' ? 'L' : '',
+                status: st.label === 'Alto' || st.label === 'Baixo' ? 'altered' : 'normal',
+              };
+            }),
+            internalObservations: notes[e.id] || '',
+          };
+        })
+        .sort((a: any, b: any) => (a.workbenchOrder - b.workbenchOrder) || a.name.localeCompare(b.name));
 
       if (exams.length === 0) {
         toast.info('Nenhum exame digitado ou liberado para este paciente.');
         return;
       }
+
+      // Dados do responsável pela aprovação (usuário logado)
+      let approvedBy = user?.name || '';
+      let approvedRegister = '';
+      if (user?.id) {
+        const { data: prof } = await supabase
+          .from('profiles')
+          .select('full_name, council_type, council_uf, council_number')
+          .eq('id', user.id)
+          .maybeSingle();
+        if (prof) {
+          approvedBy = prof.full_name || approvedBy;
+          approvedRegister = [prof.council_type, prof.council_uf].filter(Boolean).join('/') +
+            (prof.council_number ? ` ${prof.council_number}` : '');
+          approvedRegister = approvedRegister.trim();
+        }
+      }
+
+      const releasedAt = new Date().toISOString();
 
       setLaudoOrder({
         patientName: patient.patientName,
@@ -428,6 +481,13 @@ export function ResultEntryModal({
         patientGender: patient.patientGender,
         protocol: patient.protocol,
         registeredAt: patient.registeredAt,
+        originName: patient.originName,
+        doctorName: patient.doctorName,
+        doctorCRM: patient.doctorCRM,
+        collectionTime: patient.collectionTime || patient.registeredAt,
+        approvedBy,
+        approvedRegister,
+        approvedAt: releasedAt,
         exams,
       });
       setLaudoOpen(true);

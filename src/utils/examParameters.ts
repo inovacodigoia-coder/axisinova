@@ -8,6 +8,7 @@ export interface ResolvedParam {
   reference: string
   isCalculated?: boolean
   formula?: string
+  section?: string
 }
 
 interface PatientCtx {
@@ -92,6 +93,7 @@ export function buildExamParams(catalogExam: any | undefined, fallbackName: stri
       ),
       isCalculated,
       formula,
+      section: p.section || p.secao || '',
     }
   })
 }
