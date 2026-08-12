@@ -769,39 +769,48 @@ export function ResultEntryModal({
   const getResultStatus = (value: string, reference: string) => {
     if (!value || !reference) return { label: '', color: '', bgColor: 'bg-white' };
     
-    const numValue = parseFloat(value.replace(',', '.'));
+    // Remove separator de milhares e normaliza decimal para ponto
+    const normalizedValue = value.replace(/\./g, '').replace(',', '.');
+    const numValue = parseFloat(normalizedValue);
     if (isNaN(numValue)) return { label: '', color: '', bgColor: 'bg-white' };
 
-    // Suporte a faixas como "20 a 60", "< 20", "> 60"
-    const rangeMatch = reference.match(/([\d.]+[,]?[\d.]*)\s+a\s+([\d.]+[,]?[\d.]*)/i);
-    const lessMatch = reference.match(/<\s*([\d.]+[,]?[\d.]*)/);
-    const greaterMatch = reference.match(/>\s*([\d.]+[,]?[\d.]*)/);
+    // Limpa a referência para facilitar o parsing (remove espaços extras)
+    const cleanRef = reference.replace(/\s+/g, ' ').trim();
+
+    // Suporte a faixas como "20 a 60", "20.5 a 60.1", "20,5 a 60,1"
+    const rangeMatch = cleanRef.match(/([\d.,]+)\s+(?:a|at[ée])\s+([\d.,]+)/i);
+    // Suporte a menor que: "< 20", "<= 20", "menor que 20"
+    const lessMatch = cleanRef.match(/(?:<|<=|menor\s+que)\s*([\d.,]+)/i);
+    // Suporte a maior que: "> 20", ">= 20", "maior que 20"
+    const greaterMatch = cleanRef.match(/(?:>|>=|maior\s+que)\s*([\d.,]+)/i);
+
+    const parseRefValue = (val: string) => parseFloat(val.replace(',', '.'));
 
     if (rangeMatch) {
-      const min = parseFloat(rangeMatch[1].replace(',', '.'));
-      const max = parseFloat(rangeMatch[2].replace(',', '.'));
+      const min = parseRefValue(rangeMatch[1]);
+      const max = parseRefValue(rangeMatch[2]);
       if (numValue < min) return { label: 'Baixo', color: 'text-amber-600', bgColor: 'bg-amber-400/20' };
       if (numValue > max) return { label: 'Alto', color: 'text-rose-600', bgColor: 'bg-rose-500/10' };
       return { label: 'Normal', color: 'text-emerald-600', bgColor: 'bg-emerald-500/10' };
     }
     
     if (lessMatch) {
-      const max = parseFloat(lessMatch[1].replace(',', '.'));
-      if (numValue >= max) return { label: 'Alto', color: 'text-rose-600', bgColor: 'bg-rose-500/10' };
+      const max = parseRefValue(lessMatch[1]);
+      if (numValue > max) return { label: 'Alto', color: 'text-rose-600', bgColor: 'bg-rose-500/10' };
       return { label: 'Normal', color: 'text-emerald-600', bgColor: 'bg-emerald-500/10' };
     }
 
     if (greaterMatch) {
-      const min = parseFloat(greaterMatch[1].replace(',', '.'));
-      if (numValue <= min) return { label: 'Baixo', color: 'text-amber-600', bgColor: 'bg-amber-400/20' };
+      const min = parseRefValue(greaterMatch[1]);
+      if (numValue < min) return { label: 'Baixo', color: 'text-amber-600', bgColor: 'bg-amber-400/20' };
       return { label: 'Normal', color: 'text-emerald-600', bgColor: 'bg-emerald-500/10' };
     }
 
-    // Fallback para match genérico de dois números
-    const parts = reference.match(/([0-9]+[.,]?[0-9]*)/g);
+    // Fallback para match genérico de dois números em qualquer formato
+    const parts = cleanRef.match(/([0-9]+(?:[.,][0-9]+)?)/g);
     if (parts && parts.length >= 2) {
-      const min = parseFloat(parts[0].replace(',', '.'));
-      const max = parseFloat(parts[1].replace(',', '.'));
+      const min = parseRefValue(parts[0]);
+      const max = parseRefValue(parts[1]);
       if (numValue < min) return { label: 'Baixo', color: 'text-amber-600', bgColor: 'bg-amber-400/20' };
       if (numValue > max) return { label: 'Alto', color: 'text-rose-600', bgColor: 'bg-rose-500/10' };
     }
