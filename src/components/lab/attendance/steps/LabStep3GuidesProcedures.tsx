@@ -195,6 +195,7 @@ export function LabStep3GuidesProcedures({ state, update }: Props) {
       ...selectedExam,
       material: examMaterial,
       collected: examCollected,
+      isColeta: examCollected, // Consistent with other parts of the app
       quantity: 1,
       price: activeGuide?.plan === 'PARTICULAR' || convenio?.type === 'private' ? examPrice : undefined,
       expectedDeliveryDate: examDeadline || (selectedExam.resultDeadlineDays ? calculateDeadline(selectedExam.resultDeadlineDays) : null)
