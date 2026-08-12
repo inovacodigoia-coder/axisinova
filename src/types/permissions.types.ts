@@ -1,4 +1,5 @@
 export type SystemModule =
+  | 'dashboard'
   | 'scheduling'
   | 'reception'
   | 'totem'
@@ -10,6 +11,13 @@ export type SystemModule =
   | 'users'
   | 'settings'
   | 'registers'
+  | 'lab_technical'
+  | 'lab_registers'
+  | 'finance'
+  | 'inventory'
+  | 'pharmacy'
+  | 'serotheque'
+  | 'portals'
 
 export type PermissionAction = 'view' | 'create' | 'edit' | 'delete' | 'export' | 'approve'
 
@@ -52,6 +60,7 @@ export interface MenuFunction {
 }
 
 export const SYSTEM_MODULES: { key: SystemModule; label: string; icon: string }[] = [
+  { key: 'dashboard', label: 'Dashboard', icon: 'Home' },
   { key: 'scheduling', label: 'Agendamento', icon: 'Calendar' },
   { key: 'reception', label: 'Recepção', icon: 'UserCheck' },
   { key: 'totem', label: 'Totem e Chamada', icon: 'Monitor' },
@@ -63,7 +72,15 @@ export const SYSTEM_MODULES: { key: SystemModule; label: string; icon: string }[
   { key: 'users', label: 'Usuários', icon: 'Users' },
   { key: 'settings', label: 'Configurações', icon: 'Settings' },
   { key: 'registers', label: 'Cadastros Base', icon: 'Database' },
+  { key: 'lab_technical', label: 'Setor Técnico (Laboratório)', icon: 'Beaker' },
+  { key: 'lab_registers', label: 'Cadastros do Laboratório', icon: 'FlaskConical' },
+  { key: 'finance', label: 'Financeiro', icon: 'DollarSign' },
+  { key: 'inventory', label: 'Estoque e Almoxarifado', icon: 'Warehouse' },
+  { key: 'pharmacy', label: 'Farmácia Hospitalar', icon: 'Pill' },
+  { key: 'serotheque', label: 'Soroteca', icon: 'Database' },
+  { key: 'portals', label: 'Portais Externos', icon: 'Users' },
 ]
+
 
 export const ALL_ACTIONS: PermissionAction[] = ['view', 'create', 'edit', 'delete', 'export', 'approve']
 
