@@ -321,13 +321,27 @@ function OrderRowModern({
         <div>
           {(() => {
             const calculated = calculateAttendanceStatus(order);
-            const config = ATTENDANCE_STATUS_CONFIG[calculated] || (order.status in LEGACY_STATUS_LABELS ? LEGACY_STATUS_LABELS[order.status] : { label: order.status, color: 'bg-slate-400' });
+            const config = ATTENDANCE_STATUS_CONFIG[calculated];
+            
+            if (config) {
+              return (
+                <span className={cn(
+                  "px-2 py-0.5 rounded-full text-[10px] font-bold uppercase whitespace-nowrap",
+                  config.bgClass,
+                  config.textClass
+                )}>
+                  {config.label}
+                </span>
+              );
+            }
+
+            const legacy = LEGACY_STATUS_LABELS[order.status];
             return (
               <span className={cn(
-                "px-2 py-0.5 rounded-full text-[10px] font-bold uppercase whitespace-nowrap",
-                config.color ? `${config.color} text-white` : `${config.bgClass} ${config.textClass}`
+                "px-2 py-0.5 rounded-full text-[10px] font-bold text-white uppercase whitespace-nowrap",
+                legacy?.color || 'bg-slate-400'
               )}>
-                {config.label}
+                {legacy?.label || order.status}
               </span>
             );
           })()}
@@ -348,7 +362,7 @@ function OrderRowModern({
                 <Detail label="Tipo" value={order.serviceType === 'consultation' ? 'Consulta' : order.serviceType === 'exam' ? 'Exame' : 'Procedimento'} />
                 <Detail label="Procedimento" value={order.procedureName || '-'} />
                 <Detail label="Médico" value={order.doctorName || '-'} />
-                <Detail label="Status" value={ATTENDANCE_STATUS_CONFIG[calculateAttendanceStatus(order)]?.label || order.status} />
+                <Detail label="Status" value={ATTENDANCE_STATUS_CONFIG[calculateAttendanceStatus(order)]?.label || (LEGACY_STATUS_LABELS[order.status]?.label || order.status)} />
               </div>
               <div className="space-y-3">
                 <Detail label="Pagamento" value={order.paymentType === 'convenio' ? `Convênio · ${order.convenioName || ''}` : order.paymentType === 'private' ? `Particular${order.privateValue ? ` · R$ ${order.privateValue.toFixed(2)}` : ''}` : `Cortesia${order.freeReason ? ` · ${order.freeReason}` : ''}`} />
