@@ -861,7 +861,7 @@ export function ResultEntryModal({
                         {/* Parâmetros do Exame */}
                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-x-8 gap-y-4 pt-2">
                           {getParams(exam).map((param: any) => {
-                            const value = results[`${exam.id}_${param.id}`] || '';
+                            const value = getParamValue(exam, param);
                             const status = getResultStatus(value, param.reference || '');
                             
                             return (
@@ -870,8 +870,11 @@ export function ResultEntryModal({
                                 status.bgColor
                               )}>
                                 <div className="flex justify-between items-center">
-                                  <label className="text-[10px] font-black uppercase text-slate-600 ml-1">
+                                  <label className="text-[10px] font-black uppercase text-slate-600 ml-1 flex items-center gap-1">
                                     {param.name}
+                                    {param.isCalculated && (
+                                      <span className="px-1 py-[1px] rounded bg-primary/10 text-primary text-[8px] font-black">CALC</span>
+                                    )}
                                   </label>
                                   <span className="text-[9px] font-bold text-slate-400 uppercase italic">
                                     {param.unit}
@@ -885,13 +888,18 @@ export function ResultEntryModal({
                                         status.label === 'Baixo' && "border-amber-400 focus:border-amber-500",
                                         status.label === 'Alto' && "border-rose-400 focus:border-rose-500",
                                         status.label === 'Normal' && "border-emerald-400 focus:border-emerald-500",
-                                        examStatuses[exam.id] === 'released' && "bg-slate-100 border-slate-200 cursor-not-allowed text-slate-500"
+                                        (examStatuses[exam.id] === 'released' || param.isCalculated) && "bg-slate-100 border-slate-200 cursor-not-allowed text-slate-500"
                                       )}
-                                      placeholder="Resultado"
+                                      placeholder={param.isCalculated ? 'Calculado' : 'Resultado'}
                                       value={value}
+                                      readOnly={!!param.isCalculated}
                                       disabled={examStatuses[exam.id] === 'released'}
-                                      onChange={(e) => setResults(prev => ({ ...prev, [`${exam.id}_${param.id}`]: e.target.value }))}
+                                      onChange={(e) => {
+                                        if (param.isCalculated) return;
+                                        setResults(prev => ({ ...prev, [`${exam.id}_${param.id}`]: e.target.value }));
+                                      }}
                                     />
+
                                     {status.label && (
                                       <div className={cn(
                                         "absolute right-2 top-2.5 px-1.5 py-0.5 rounded text-[8px] font-black uppercase tracking-tighter",
