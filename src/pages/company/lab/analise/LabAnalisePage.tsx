@@ -458,7 +458,7 @@ export default function LabAnalisePage() {
                             </div>
                           ) : (
                             groupedExams.map((group) => {
-                              const isExpanded = !!expandedGroups[group.protocol];
+                              const isExpanded = expandedGroups[group.protocol] !== false; // Default to expanded if not explicitly collapsed
                               return (
                                 <div key={group.protocol} className="space-y-1.5">
                                   <div className="flex items-center justify-between px-1">
