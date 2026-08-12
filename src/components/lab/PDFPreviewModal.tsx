@@ -1,11 +1,4 @@
 import React from 'react';
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogFooter,
-} from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { FileText, Download, X, Printer, ZoomIn, ZoomOut, Maximize2, Minimize2, Share2, Mail } from 'lucide-react';
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -40,6 +33,15 @@ export default function PDFPreviewModal({
   const handleZoomOut = () => setZoom(prev => Math.max(prev - 10, 50));
   const toggleFullscreen = () => setIsFullscreen(!isFullscreen);
 
+  React.useEffect(() => {
+    if (!isOpen) return;
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') onClose();
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isOpen, onClose]);
+
   // Status mapping
   const getStatusBadge = () => {
     const status = order.exams?.[0]?.status; // Simplified check
@@ -54,20 +56,28 @@ export default function PDFPreviewModal({
     }
   };
 
+  if (!isOpen) return null;
+
   return (
-    <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className={cn(
-        "flex flex-col p-0 overflow-hidden transition-all duration-300",
-        isFullscreen ? "max-w-none w-screen h-screen rounded-none" : "sm:max-w-[1000px] h-[95vh]"
-      )}>
-        <DialogHeader className="p-4 border-b bg-muted/30">
+    <div className="fixed inset-0 z-[200] flex items-center justify-center bg-foreground/80 p-2 md:p-4" onMouseDown={onClose}>
+      <section
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="laudo-preview-title"
+        onMouseDown={(event) => event.stopPropagation()}
+        className={cn(
+          "flex flex-col overflow-hidden border bg-background shadow-2xl transition-all duration-300",
+          isFullscreen ? "h-screen w-screen rounded-none" : "h-[95vh] w-full max-w-[1000px] rounded-lg"
+        )}
+      >
+        <header className="p-4 border-b bg-muted/30">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
               <div className="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center text-primary">
                 <FileText className="h-6 w-6" />
               </div>
               <div>
-                <DialogTitle className="text-lg">Visualização do Laudo</DialogTitle>
+                <h2 id="laudo-preview-title" className="text-lg font-semibold">Visualização do Laudo</h2>
                 <p className="text-xs text-muted-foreground">{order.patientName} • {order.protocol}</p>
               </div>
             </div>
@@ -75,7 +85,7 @@ export default function PDFPreviewModal({
               {getStatusBadge()}
             </div>
           </div>
-        </DialogHeader>
+        </header>
 
         <div className="flex-1 bg-zinc-700/50 p-4 md:p-8 overflow-hidden flex flex-col items-center relative">
           {/* Zoom Controls Overlay */}
@@ -115,7 +125,7 @@ export default function PDFPreviewModal({
           </ScrollArea>
         </div>
 
-        <DialogFooter className="p-4 bg-background border-t gap-2 sm:justify-between flex-wrap">
+        <footer className="flex flex-col-reverse gap-2 border-t bg-background p-4 sm:flex-row sm:justify-between">
           <div className="flex gap-2">
             <Button variant="outline" size="sm" onClick={onEmail} className="gap-2">
               <Mail className="h-4 w-4" /> E-mail
@@ -135,8 +145,8 @@ export default function PDFPreviewModal({
               <Download className="h-4 w-4" /> Download PDF
             </Button>
           </div>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+        </footer>
+      </section>
+    </div>
   );
 }

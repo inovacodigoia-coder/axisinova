@@ -35,7 +35,7 @@ export default function LaudoDocument({
     : 0;
 
   return (
-    <div className="laudo-print bg-white p-8 font-serif text-zinc-800 w-[794px] min-h-[1123px] mx-auto shadow-sm print:shadow-none print:m-0 print:w-full">
+    <div className="laudo-print bg-white p-8 font-sans text-zinc-900 w-[794px] min-h-[1123px] mx-auto shadow-sm print:shadow-none print:m-0 print:w-full">
       {/* Retification Alert */}
       {isRetified && retificationDetails && (
         <div className="mb-6 p-4 border-2 border-orange-500 bg-orange-50 text-orange-900 rounded-lg no-print">
@@ -68,7 +68,7 @@ export default function LaudoDocument({
           <h2 className="text-lg font-bold uppercase">{order.patientName || 'NOME DO PACIENTE'}</h2>
         </div>
 
-        <div className="grid grid-cols-3 gap-y-2 text-[10px]">
+        <div className="grid grid-cols-3 gap-y-2 text-[11px] leading-relaxed">
           <div><strong>Protocolo:</strong> {order.protocol || '20260000-000-00'}</div>
           <div><strong>Data do atendimento:</strong> {order.registeredAt ? new Date(order.registeredAt).toLocaleString('pt-BR') : '22/06/2026 16:08'}</div>
           <div><strong>Sexo:</strong> {order.patientGender === 'M' ? 'Masculino' : order.patientGender === 'F' ? 'Feminino' : 'Outro'}</div>
@@ -89,9 +89,9 @@ export default function LaudoDocument({
           <div key={exam.examId || idx} className="exame-section">
             <h3 className="font-bold text-sm uppercase mb-1">{exam.name}</h3>
             <div className="w-full h-px bg-zinc-800 mb-1" />
-            <p className="text-[9px] mb-4">Material: {exam.material || 'Soro'}</p>
+            <p className="text-[10px] text-zinc-700 mb-4">Material: {exam.material || 'Soro'}</p>
 
-            <table className="w-full text-[10px]">
+            <table className="w-full text-[11px] leading-relaxed">
               <thead>
                 <tr className="text-left border-b border-zinc-200">
                   <th className="pb-1 w-1/3">PARÂMETRO</th>
@@ -111,8 +111,8 @@ export default function LaudoDocument({
                       {res.value}
                       {res.status === 'critical' && <span className="ml-1 text-[8px] bg-red-600 text-white px-1 rounded print:border print:border-black print:text-black print:bg-white no-print">CRÍTICO</span>}
                     </td>
-                    <td className="py-2 text-center text-zinc-500">{res.unit || '-'}</td>
-                    <td className="py-2 text-right text-zinc-500">{res.referenceRange || '3,5 - 5,2'}</td>
+                    <td className="py-2 text-center text-zinc-700">{res.unit || '-'}</td>
+                    <td className="py-2 text-right text-zinc-700">{res.referenceRange || '3,5 - 5,2'}</td>
                   </tr>
                 ))}
                 {/* Fallback if no results listed in mock */}
@@ -120,8 +120,8 @@ export default function LaudoDocument({
                   <tr>
                     <td className="py-2">{exam.name}</td>
                     <td className="py-2 text-center font-bold">4</td>
-                    <td className="py-2 text-center text-zinc-500">g/dL</td>
-                    <td className="py-2 text-right text-zinc-500">3,5 - 5,2</td>
+                    <td className="py-2 text-center text-zinc-700">g/dL</td>
+                    <td className="py-2 text-right text-zinc-700">3,5 - 5,2</td>
                   </tr>
                 )}
               </tbody>
