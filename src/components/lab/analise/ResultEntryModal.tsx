@@ -15,7 +15,7 @@ import {
   Calendar as CalendarIcon,
   Save,
   ChevronDown,
-  RefreshCcw,
+  RefreshCw,
   MinusCircle,
   PlusCircle,
   MoreVertical,
@@ -83,8 +83,9 @@ export function ResultEntryModal({
   filteredExams, 
   filters,
   workbenchNames,
-  establishmentNames
-}: ResultEntryModalProps) {
+  establishmentNames,
+  refreshData
+}: ResultEntryModalProps & { refreshData?: () => void }) {
   const { user } = useAuth();
   const [results, setResults] = useState<Record<string, string>>({});
   const [notes, setNotes] = useState<Record<string, string>>({});
@@ -917,7 +918,7 @@ export function ResultEntryModal({
                                         {examStatuses[exam.id] === 'cancelled' ? "Reverter Cancelamento" : "Cancelar exame"}
                                       </DropdownMenuItem>
                                       <DropdownMenuItem onClick={(e) => { e.stopPropagation(); handleExamAction(exam.id, 'reteste'); }} className="text-xs font-bold uppercase text-amber-600 gap-2">
-                                        <RefreshCcw className="h-3.5 w-3.5" />
+                                        <RefreshCw className="h-3.5 w-3.5" />
                                         {examActions[exam.id]?.type === 'reteste' ? "Remover Reteste" : "Solicitar Reteste"}
                                       </DropdownMenuItem>
                                       <DropdownMenuItem onClick={(e) => { e.stopPropagation(); handleExamAction(exam.id, 'recoleta'); }} className="text-xs font-bold uppercase text-orange-600 gap-2">
