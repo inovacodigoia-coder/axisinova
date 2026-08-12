@@ -88,6 +88,9 @@ export function ResultEntryModal({
   const [cancelModal, setCancelModal] = useState<{ isOpen: boolean; exam: any } | null>(null);
   const [retestReasons, setRetestReasons] = useState<Record<string, { reason: string; details: string }>>({});
   const [recoletaReasons, setRecoletaReasons] = useState<Record<string, { reason: string; details: string }>>({});
+  const [prevResults, setPrevResults] = useState<Record<string, { date: string; value: string; unit: string }[]>>({});
+  const [laudoOrder, setLaudoOrder] = useState<any>(null);
+
   /* Do not make any visual modifications. The phrases I write are commands to understand what I want, not to be written down. Understand their content well, then execute what is required.
                                             
                                             I have approved the plan */
