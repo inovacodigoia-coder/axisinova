@@ -417,7 +417,10 @@ function EditOrderModal({ order, onClose, onSave }: { order: AttendanceOrder; on
         <div className="p-5 space-y-3">
           <Field label="Status">
             <select value={status} onChange={e => setStatus(e.target.value as AttendanceOrder['status'])} className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm uppercase">
-              {Object.entries(ATTENDANCE_STATUS_LABELS).map(([key, val]) => (
+              {Object.entries(ATTENDANCE_STATUS_CONFIG).map(([key, val]) => (
+                <option key={key} value={key}>{val.label}</option>
+              ))}
+              {Object.entries(LEGACY_STATUS_LABELS).map(([key, val]) => (
                 <option key={key} value={key}>{val.label}</option>
               ))}
             </select>
