@@ -5,14 +5,9 @@ const COMPANY_ID = 'comp_001'
 
 // ── Setores ─────────────────────────────────────────────────
 export const MOCK_SECTORS: Sector[] = [
-  { id: 'sec_01', name: 'Recepção Operacional', companyId: COMPANY_ID, description: 'Atendimento e acolhimento de pacientes', isActive: true, allowedProfiles: ['prof_01','prof_06','prof_09'] },
-  { id: 'sec_02', name: 'Centro Cirúrgico', companyId: COMPANY_ID, description: 'Procedimentos cirúrgicos', isActive: true, allowedProfiles: ['prof_01','prof_07','prof_08'] },
-  { id: 'sec_03', name: 'Faturamento', companyId: COMPANY_ID, description: 'Faturamento e convênios', isActive: true, allowedProfiles: ['prof_01','prof_05'] },
-  { id: 'sec_04', name: 'Ambulatório', companyId: COMPANY_ID, description: 'Consultas ambulatoriais', isActive: true, allowedProfiles: ['prof_01','prof_02','prof_07','prof_09'] },
-  { id: 'sec_05', name: 'UTI', companyId: COMPANY_ID, description: 'Unidade de terapia intensiva', isActive: true, allowedProfiles: ['prof_01','prof_07','prof_08'] },
-  { id: 'sec_06', name: 'Pronto Atendimento', companyId: COMPANY_ID, description: 'Urgência e emergência', isActive: true, allowedProfiles: ['prof_01','prof_07','prof_09'] },
-  { id: 'sec_07', name: 'Laboratório', companyId: COMPANY_ID, description: 'Análises clínicas', isActive: true, allowedProfiles: ['prof_01','prof_11'] },
-  { id: 'sec_08', name: 'Administrativo', companyId: COMPANY_ID, description: 'Gestão administrativa geral', isActive: true, allowedProfiles: ['prof_01','prof_04','prof_10','prof_12'] },
+  { id: 'sec_08', name: 'TI – Administração', companyId: COMPANY_ID, description: 'Gestão administrativa e TI', isActive: true, allowedProfiles: ['prof_01','prof_12'] },
+  { id: 'sec_01', name: 'Recepção – Padrão', companyId: COMPANY_ID, description: 'Atendimento e acolhimento de pacientes', isActive: true, allowedProfiles: ['prof_01','prof_09'] },
+  { id: 'sec_07', name: 'Digitação – Laudos', companyId: COMPANY_ID, description: 'Análises clínicas e laudos', isActive: true, allowedProfiles: ['prof_01','prof_14'] },
 ]
 
 // ── Funções do sistema ───────────────────────────────────────
