@@ -178,29 +178,31 @@ export default function LaudoDocument({
         <div className="flex flex-col items-center justify-center mb-6">
           <div className="h-16 mb-2">
             {technicalResponsible?.signatureUrl ? (
-              <img src={technicalResponsible.signatureUrl} alt="Assinatura" className="h-full object-contain" />
+              <img src={technicalResponsible.signatureUrl} alt="Assinatura do responsável" className="h-full object-contain" />
             ) : (
-              <div className="h-full w-48 border-b border-zinc-400 flex items-end justify-center pb-1 text-[10px] text-zinc-300 italic">
-                [IMAGEM DA ASSINATURA DIGITAL]
-              </div>
+              <div className="h-full w-48 border-b border-zinc-400" />
             )}
           </div>
           <div className="text-center">
-            <p className="font-bold text-[10px]">{technicalResponsible?.name || 'Anderson Veríssimo O. Neto'}</p>
-            <p className="text-[9px]">{technicalResponsible?.role || 'Biomédico'}</p>
-            <p className="text-[9px]">{technicalResponsible?.register || 'CRBM-RN-08465'}</p>
+            {technicalResponsible?.name && (
+              <p className="font-bold text-[10px]">{technicalResponsible.name}</p>
+            )}
+            {technicalResponsible?.role && <p className="text-[9px]">{technicalResponsible.role}</p>}
+            {technicalResponsible?.register && (
+              <p className="text-[9px]">{technicalResponsible.register}</p>
+            )}
           </div>
         </div>
 
-        <div className="border-t border-zinc-800 pt-2 flex justify-between items-end text-[8px] text-zinc-500">
-          <div>
-            <p className="font-bold text-zinc-700 uppercase">Ipanguaçu</p>
-            <p>Resp. Téc.: Almir Souza • CRBM-RN-08465</p>
+        <div className="border-t border-zinc-800 pt-2 flex justify-between items-end text-[8px] text-zinc-500 gap-4">
+          <div className="whitespace-pre-line text-left">
+            {footerText || ''}
           </div>
-          <div>
+          <div className="shrink-0">
             Página 1 de 1
           </div>
         </div>
+
       </div>
       
       <style>{`
