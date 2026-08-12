@@ -68,7 +68,7 @@ export default function LabReportsPage() {
         let reportStatus: 'liberado' | 'pending' | 'retificado' | 'parcial' = 'pending';
         if (releasedExams > 0 && releasedExams < totalExams) reportStatus = 'parcial';
         else if (releasedExams === totalExams && totalExams > 0) reportStatus = 'liberado';
-        else if (order.status === 'retificado') reportStatus = 'retificado';
+        else if ((order.status as string) === 'retificado') reportStatus = 'retificado';
 
         return {
           id: order.id,
