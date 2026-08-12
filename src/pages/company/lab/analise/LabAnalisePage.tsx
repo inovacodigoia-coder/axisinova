@@ -79,7 +79,7 @@ export default function LabAnalisePage() {
   const [dateTo, setDateTo] = useState<Date | undefined>(undefined);
   const [selectedWorkbenches, setSelectedWorkbenches] = useState<string[]>([]);
   const [selectedEstablishments, setSelectedEstablishments] = useState<string[]>([]);
-  const [selectedStatuses, setSelectedStatuses] = useState<string[]>(['collection_done']);
+  const [selectedStatuses, setSelectedStatuses] = useState<string[]>(['collection_done', 'concluded']);
   const [showFilters, setShowFilters] = useState(false);
 
   useEffect(() => {
@@ -208,11 +208,11 @@ export default function LabAnalisePage() {
     setDateTo(undefined);
     setSelectedWorkbenches([]);
     setSelectedEstablishments([]);
-    setSelectedStatuses(['collection_done']);
+    setSelectedStatuses(['collection_done', 'concluded']);
     setProtocolSearch('');
   };
 
-  const isFiltered = period !== 'hoje' || selectedWorkbenches.length > 0 || selectedEstablishments.length > 0 || selectedStatuses.length !== 1 || !selectedStatuses.includes('collection_done') || protocolSearch !== '';
+  const isFiltered = period !== 'hoje' || selectedWorkbenches.length > 0 || selectedEstablishments.length > 0 || selectedStatuses.length !== 2 || !selectedStatuses.includes('collection_done') || !selectedStatuses.includes('concluded') || protocolSearch !== '';
 
   return (
     <div className="flex flex-col h-full overflow-hidden">
