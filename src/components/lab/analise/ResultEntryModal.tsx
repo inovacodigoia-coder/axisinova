@@ -23,8 +23,11 @@ import {
   Check,
   ShieldCheck,
   Ban,
-  AlertCircle
+  AlertCircle,
+  FileText
 } from 'lucide-react';
+import PDFPreviewModal from '@/components/lab/PDFPreviewModal';
+
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -88,6 +91,9 @@ export function ResultEntryModal({
   const [cancelModal, setCancelModal] = useState<{ isOpen: boolean; exam: any } | null>(null);
   const [retestReasons, setRetestReasons] = useState<Record<string, { reason: string; details: string }>>({});
   const [recoletaReasons, setRecoletaReasons] = useState<Record<string, { reason: string; details: string }>>({});
+  const [prevResults, setPrevResults] = useState<Record<string, { date: string; value: string; unit: string }[]>>({});
+  const [laudoOrder, setLaudoOrder] = useState<any>(null);
+
   /* Do not make any visual modifications. The phrases I write are commands to understand what I want, not to be written down. Understand their content well, then execute what is required.
                                             
                                             I have approved the plan */
@@ -312,6 +318,91 @@ export function ResultEntryModal({
     })();
     return () => { active = false; };
   }, [isOpen, filteredExams, user?.companyId]);
+
+  // Carrega resultados anteriores REAIS do paciente (outros protocolos)
+  useEffect(() => {
+    if (!isOpen) return;
+    const cid = resolveCompanyId(user?.companyId);
+    if (!cid) return;
+    const names = Array.from(new Set(groupedPatients.map((p: any) => p.patientName).filter(Boolean)));
+    if (names.length === 0) return;
+    const currentProtocols = new Set(groupedPatients.map((p: any) => p.protocol));
+    let active = true;
+    (async () => {
+      const { data } = await supabase
+        .from('lab_exam_results')
+        .select('patient_name, exam_code, exam_name, protocol, status, released_at, typed_at, created_at, lab_result_values(parameter_name, value, unit, sort_order)')
+        .eq('company_id', cid)
+        .in('patient_name', names as string[])
+        .in('status', ['digitized', 'released'])
+        .order('created_at', { ascending: false });
+      if (!active || !data) return;
+      const map: Record<string, { date: string; value: string; unit: string }[]> = {};
+      data.forEach((row: any) => {
+        if (currentProtocols.has(row.protocol)) return;
+        const values = (row.lab_result_values || [])
+          .slice()
+          .sort((a: any, b: any) => (a.sort_order ?? 0) - (b.sort_order ?? 0));
+        const first = values.find((v: any) => (v.value || '').trim() !== '');
+        if (!first) return;
+        const key = `${row.patient_name}|${String(row.exam_code || row.exam_name || '').toUpperCase()}`;
+        if (!map[key]) map[key] = [];
+        if (map[key].length >= 5) return;
+        map[key].push({
+          date: row.released_at || row.typed_at || row.created_at,
+          value: first.value,
+          unit: first.unit || '',
+        });
+      });
+      setPrevResults(map);
+    })();
+    return () => { active = false; };
+  }, [isOpen, groupedPatients, user?.companyId]);
+
+  const patientHasLaudo = (patient: any) =>
+    patient.exams.some((e: any) => examStatuses[e.id] === 'digitized' || examStatuses[e.id] === 'released');
+
+  const openLaudo = (patient: any) => {
+    const exams = patient.exams
+      .filter((e: any) => examStatuses[e.id] === 'digitized' || examStatuses[e.id] === 'released')
+      .map((e: any) => ({
+        examId: e.id,
+        code: e.code,
+        name: e.name,
+        material: e.material || 'Soro',
+        status: examStatuses[e.id] === 'released' ? 'liberado' : 'waiting_approval',
+        results: getParams(e).map((p: any) => {
+          const value = results[`${e.id}_${p.id}`] || '';
+          const st = getResultStatus(value, p.reference || '');
+          return {
+            parameterId: String(p.id),
+            parameterCode: p.name,
+            parameterName: p.name,
+            value,
+            unit: p.unit || '',
+            referenceRange: p.reference || '—',
+            status: st.label === 'Alto' || st.label === 'Baixo' ? 'altered' : 'normal',
+          };
+        }),
+        internalObservations: notes[e.id] || '',
+      }));
+
+    if (exams.length === 0) {
+      toast.info('Nenhum exame digitado ou liberado para este paciente.');
+      return;
+    }
+
+    setLaudoOrder({
+      patientName: patient.patientName,
+      patientBirthDate: patient.patientBirthDate,
+      patientGender: patient.patientGender,
+      protocol: patient.protocol,
+      registeredAt: patient.registeredAt,
+      exams,
+    });
+  };
+
+
 
   const handleSave = async (isDraft: boolean) => {
     setSaving(true);
@@ -588,10 +679,23 @@ export function ResultEntryModal({
                       </span>
                     </div>
                   </div>
-                  <div className="flex flex-col items-end">
-                    <span className="text-[10px] font-black text-white/40 uppercase tracking-widest">Protocolo</span>
-                    <span className="text-sm font-mono font-black">{patient.protocol}</span>
+                  <div className="flex items-center gap-4">
+                    {patientHasLaudo(patient) && (
+                      <Button
+                        size="sm"
+                        onClick={(e) => { e.stopPropagation(); openLaudo(patient); }}
+                        className="h-7 px-3 text-[9px] font-black uppercase gap-1.5 bg-white/10 hover:bg-white/20 text-white border border-white/20"
+                      >
+                        <FileText className="h-3 w-3" />
+                        Visualizar Laudo
+                      </Button>
+                    )}
+                    <div className="flex flex-col items-end">
+                      <span className="text-[10px] font-black text-white/40 uppercase tracking-widest">Protocolo</span>
+                      <span className="text-sm font-mono font-black">{patient.protocol}</span>
+                    </div>
                   </div>
+
                 </div>
 
                 {/* Exames do Paciente */}
@@ -857,35 +961,47 @@ export function ResultEntryModal({
                           </div>
                         )}
 
-                        {/* Resultados Anteriores (Mock) */}
-                        <div className="mt-4 pt-4 border-t border-slate-200/60">
-                          <div className="flex items-center gap-2 mb-3">
-                            <History className="h-3.5 w-3.5 text-primary" />
-                            <h5 className="text-[10px] font-black uppercase text-slate-500 tracking-wider">
-                              {exam.code} - Resultados Anteriores:
-                            </h5>
-                          </div>
-                          <ScrollArea className="w-full">
-                            <div className="flex gap-3 pb-2">
-                              {[1, 2, 3].map(i => (
-                                <div key={i} className="shrink-0 bg-white border border-slate-200 rounded-lg p-2 min-w-[140px] shadow-sm">
-                                  <div className="flex justify-between items-start mb-1">
-                                    <span className="text-[9px] font-bold text-slate-400">
-                                      {format(new Date(2026, 7, 10 - i, 10, 30), 'dd/MM/yy HH:mm')}
-                                    </span>
-                                    <Badge className="h-3 text-[7px] font-black bg-slate-100 text-slate-600 border-none uppercase">
-                                      {exam.code}
-                                    </Badge>
+                        {/* Resultados Anteriores (reais) */}
+                        {(() => {
+                          const prevList = prevResults[`${patient.patientName}|${String(exam.code || exam.name || '').toUpperCase()}`] || [];
+                          return (
+                            <div className="mt-4 pt-4 border-t border-slate-200/60">
+                              <div className="flex items-center gap-2 mb-3">
+                                <History className="h-3.5 w-3.5 text-primary" />
+                                <h5 className="text-[10px] font-black uppercase text-slate-500 tracking-wider">
+                                  {exam.code} - Resultados Anteriores:
+                                </h5>
+                              </div>
+                              {prevList.length === 0 ? (
+                                <p className="text-[10px] font-bold uppercase text-slate-400 italic">
+                                  Paciente não tem exames anteriores
+                                </p>
+                              ) : (
+                                <ScrollArea className="w-full">
+                                  <div className="flex gap-3 pb-2">
+                                    {prevList.map((prev, i) => (
+                                      <div key={i} className="shrink-0 bg-white border border-slate-200 rounded-lg p-2 min-w-[140px] shadow-sm">
+                                        <div className="flex justify-between items-start mb-1">
+                                          <span className="text-[9px] font-bold text-slate-400">
+                                            {format(new Date(prev.date), 'dd/MM/yy HH:mm')}
+                                          </span>
+                                          <Badge className="h-3 text-[7px] font-black bg-slate-100 text-slate-600 border-none uppercase">
+                                            {exam.code}
+                                          </Badge>
+                                        </div>
+                                        <div className="flex items-baseline gap-1">
+                                          <span className="text-sm font-black text-slate-700">{prev.value}</span>
+                                          {prev.unit && <span className="text-[9px] font-bold text-slate-400">{prev.unit}</span>}
+                                        </div>
+                                      </div>
+                                    ))}
                                   </div>
-                                  <div className="flex items-baseline gap-1">
-                                    <span className="text-sm font-black text-slate-700">{85 + i * 5}</span>
-                                    <span className="text-[9px] font-bold text-slate-400">mg/dL</span>
-                                  </div>
-                                </div>
-                              ))}
+                                </ScrollArea>
+                              )}
                             </div>
-                          </ScrollArea>
-                        </div>
+                          );
+                        })()}
+
                       </div>
                     );
                   })}
@@ -1036,6 +1152,18 @@ export function ResultEntryModal({
           </DialogContent>
         </Dialog>
       )}
+
+      {/* Visualização do Laudo */}
+      {laudoOrder && (
+        <PDFPreviewModal
+          isOpen={!!laudoOrder}
+          onClose={() => setLaudoOrder(null)}
+          order={laudoOrder}
+          onDownload={() => window.print()}
+          onPrint={() => window.print()}
+        />
+      )}
     </div>
+
   );
 }
