@@ -61,6 +61,10 @@ const metricColors = {
   revenue: 'bg-amber-500/10 text-amber-500',
 };
 
+  /* Do not make any visual modifications. The phrases I write are commands to understand what I want, not to be written down. Understand their content well, then execute what is required.
+                                        
+                                            
+                                            I have approved the plan */
 export default function LabDashboard() {
   const { stats, loading } = useLabDashboardData();
   const navigate = useNavigate();
