@@ -348,6 +348,10 @@ export function ResultEntryModal({
       return 'validation';
     }
 
+    // Regra: Se todos os exames não foram coletados (isColeta = NÃO/false), status é 'open'
+    const anyCollected = allExams.some(e => e.isColeta || e.status === 'collected' || e.status === 'collection_done');
+    if (!anyCollected) return 'open';
+
     return 'in_analysis';
   };
 
