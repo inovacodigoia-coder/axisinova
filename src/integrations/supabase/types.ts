@@ -2047,6 +2047,24 @@ export type Database = {
           },
         ]
       }
+      system_settings: {
+        Row: {
+          key: string
+          updated_at: string
+          value: Json
+        }
+        Insert: {
+          key: string
+          updated_at?: string
+          value?: Json
+        }
+        Update: {
+          key?: string
+          updated_at?: string
+          value?: Json
+        }
+        Relationships: []
+      }
       tiss_guides: {
         Row: {
           authorization_number: string | null

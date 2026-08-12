@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { Plus, Trash2, Save, Eye, EyeOff } from 'lucide-react'
 import { toast } from 'sonner'
 import {
+  fetchDevAccessConfig,
   loadDevAccessConfig,
   saveDevAccessConfig,
   type DevAccessCredential,
@@ -11,10 +12,12 @@ export default function SystemSettingsPage() {
   const [activeTab, setActiveTab] = useState('general')
   const [devConfig, setDevConfig] = useState(() => loadDevAccessConfig())
   const [revealed, setRevealed] = useState<Record<string, boolean>>({})
+  const [savingDev, setSavingDev] = useState(false)
 
   useEffect(() => {
-    setDevConfig(loadDevAccessConfig())
+    fetchDevAccessConfig().then(setDevConfig)
   }, [])
+
 
   const tabs = [
     { id: 'general', label: 'Geral' },
@@ -45,15 +48,23 @@ export default function SystemSettingsPage() {
     }))
   }
 
-  const saveDev = () => {
+  const saveDev = async () => {
     const invalid = devConfig.credentials.find((c) => !c.label.trim() || !c.email.trim() || !c.password)
     if (invalid) {
       toast.error('Preencha rótulo, e-mail e senha em todos os acessos')
       return
     }
-    saveDevAccessConfig(devConfig)
-    toast.success('Acessos de teste salvos')
+    setSavingDev(true)
+    try {
+      await saveDevAccessConfig(devConfig)
+      toast.success('Acessos de teste salvos para todos os ambientes')
+    } catch {
+      toast.error('Não foi possível salvar. Verifique se você é super admin.')
+    } finally {
+      setSavingDev(false)
+    }
   }
+
 
   return (
     <div className="space-y-6">
@@ -150,9 +161,19 @@ export default function SystemSettingsPage() {
                 <input
                   type="checkbox"
                   checked={devConfig.enabled}
-                  onChange={(e) => setDevConfig((prev) => ({ ...prev, enabled: e.target.checked }))}
+                  onChange={async (e) => {
+                    const next = { ...devConfig, enabled: e.target.checked }
+                    setDevConfig(next)
+                    try {
+                      await saveDevAccessConfig(next)
+                      toast.success(next.enabled ? 'Painel ativado na tela de login' : 'Painel desativado na tela de login')
+                    } catch {
+                      toast.error('Não foi possível salvar. Verifique se você é super admin.')
+                    }
+                  }}
                   className="h-5 w-10 rounded-full accent-[hsl(var(--primary))]"
                 />
+
               </label>
             </div>
 
