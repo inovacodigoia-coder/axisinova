@@ -206,6 +206,7 @@ export default function LabAnalisePage() {
     setDateTo(undefined);
     setSelectedWorkbenches([]);
     setSelectedEstablishments([]);
+    setSelectedStatuses(['collection_done']);
     setProtocolSearch('');
   };
 
