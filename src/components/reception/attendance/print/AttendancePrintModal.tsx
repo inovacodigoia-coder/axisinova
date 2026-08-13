@@ -40,6 +40,20 @@ export function AttendancePrintModal({ open, onClose, document: doc, autoPrint, 
 
   const vias = propVias || (['patient', 'establishment'] as ('patient' | 'establishment')[])
 
+  const pageSize = selectedConfig.paperSize === 'a4'
+    ? 'A4 portrait'
+    : selectedConfig.paperSize === 'a5'
+      ? 'A5 portrait'
+      : selectedConfig.paperSize === '58mm'
+        ? '58mm auto'
+        : '80mm auto'
+
+  const pageMargin = selectedConfig.paperSize === 'a4' || selectedConfig.paperSize === 'a5' ? '10mm' : '0'
+
+  // Total number of printed sheets (avoid a trailing blank page)
+  const sheets: { copyIdx: number; via: 'patient' | 'establishment' }[] = []
+  for (let c = 0; c < copies; c++) for (const v of vias) sheets.push({ copyIdx: c, via: v })
+
   return (
     <Dialog open={open} onOpenChange={(o) => !o && onClose()}>
       <DialogContent className="max-w-[940px] w-[95vw] h-[90vh] p-0 flex flex-col gap-0 [&>button[type=button]]:hidden">
@@ -97,13 +111,16 @@ export function AttendancePrintModal({ open, onClose, document: doc, autoPrint, 
 
         {/* Preview */}
         <div className="flex-1 overflow-y-auto bg-muted/20 p-6">
+          <style>{`@media print { @page { size: ${pageSize}; margin: ${pageMargin}; } }`}</style>
           <div className="print-receipt flex flex-col gap-0 items-center">
-            {Array.from({ length: copies }).map((_, copyIdx) => (
-              vias.map((via) => (
-                <div key={`${copyIdx}-${via}`} className="print:break-after-page print:mb-0">
-                  <AttendanceReceiptVia document={doc} config={selectedConfig} via={via} />
-                </div>
-              ))
+            {sheets.map(({ copyIdx, via }, idx) => (
+              <div
+                key={`${copyIdx}-${via}`}
+                className={idx < sheets.length - 1 ? 'print:break-after-page print:mb-0' : 'print:mb-0'}
+                style={idx === sheets.length - 1 ? { breakAfter: 'avoid', pageBreakAfter: 'avoid' } : undefined}
+              >
+                <AttendanceReceiptVia document={doc} config={selectedConfig} via={via} />
+              </div>
             ))}
           </div>
         </div>

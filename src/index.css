@@ -192,6 +192,43 @@
     visibility: visible !important; 
   }
 
+  /* Comprovante/Controle: evitar folha extra em branco */
+  [data-radix-dialog-overlay] { display: none !important; }
+  [role="dialog"] {
+    position: static !important;
+    inset: auto !important;
+    transform: none !important;
+    width: auto !important;
+    max-width: none !important;
+    height: auto !important;
+    max-height: none !important;
+    overflow: visible !important;
+    box-shadow: none !important;
+    border: none !important;
+    padding: 0 !important;
+    background: white !important;
+  }
+  [role="dialog"] div {
+    overflow: visible !important;
+    height: auto !important;
+    max-height: none !important;
+  }
+  .print-receipt {
+    display: block !important;
+    overflow: visible !important;
+    padding: 0 !important;
+    margin: 0 !important;
+  }
+  .print-receipt > div {
+    break-inside: avoid;
+    page-break-inside: avoid;
+    margin: 0 !important;
+  }
+  .print-receipt > div:last-child {
+    break-after: avoid !important;
+    page-break-after: avoid !important;
+  }
+
   /* Laudo: imprimir apenas o documento, em A4 */
   body.printing-laudo > *:not(#laudo-print-root) {
     display: none !important;
