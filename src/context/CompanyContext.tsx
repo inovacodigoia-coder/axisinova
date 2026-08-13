@@ -175,6 +175,9 @@ export function CompanyProvider({ children }: { children: ReactNode }) {
       return
     }
 
+    // aguarda os vínculos de setor antes de resolver os perfis
+    if (!linksLoaded) return
+
     // company_admin and super_admin bypass
     if (user.role === 'super_admin' || user.role === 'company_admin') {
       const profs = getUserProfiles(companyUserId || '', user.role, user.id)
