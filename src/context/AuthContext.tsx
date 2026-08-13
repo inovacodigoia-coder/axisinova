@@ -19,6 +19,7 @@ interface AuthContextValue {
   isLoading: boolean
   login: (email: string, password: string) => Promise<LoginResult>
   logout: () => void
+  refreshUser: () => Promise<void>
   forgotPassword: (email: string) => Promise<void>
   resetPassword: (token: string, newPassword: string) => Promise<void>
   impersonation: { companyId: string; companyName: string } | null
