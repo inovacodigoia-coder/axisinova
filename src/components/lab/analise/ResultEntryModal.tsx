@@ -1205,7 +1205,8 @@ export function ResultEntryModal({
 
                         {/* Resultados Anteriores (reais) */}
                         {(() => {
-                          const prevList = prevResults[`${patient.patientName}|${String(exam.code || exam.name || '').toUpperCase()}`] || [];
+                          const prevList = prevResults[`${patient.patientId}|${String(exam.code || exam.name || '').toUpperCase()}`] || [];
+                          if (prevList.length === 0) return null;
                           return (
                             <div className="mt-4 pt-4 border-t border-slate-200/60">
                               <div className="flex items-center gap-2 mb-3">
@@ -1214,12 +1215,9 @@ export function ResultEntryModal({
                                   {exam.code} - Resultados Anteriores:
                                 </h5>
                               </div>
-                              {prevList.length === 0 ? (
-                                <p className="text-[10px] font-bold uppercase text-slate-400 italic">
-                                  Paciente não tem exames anteriores
-                                </p>
-                              ) : (
+                              {(
                                 <ScrollArea className="w-full">
+
                                   <div className="flex gap-3 pb-2">
                                     {prevList.map((prev, i) => (
                                       <div key={i} className="shrink-0 bg-white border border-slate-200 rounded-lg p-2 min-w-[140px] shadow-sm">
