@@ -3,7 +3,7 @@ import { useAuth } from '@/context/AuthContext'
 import type { UserRole } from '@/types/auth.types'
 
 export function PrivateRoute({ children }: { children: React.ReactNode }) {
-  const { isAuthenticated, isLoading } = useAuth()
+  const { isAuthenticated, isLoading, user } = useAuth()
   const location = useLocation()
 
   if (isLoading) {
