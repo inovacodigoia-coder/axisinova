@@ -281,6 +281,7 @@ export function ResultEntryModal({
         exam_ref: examRefOf(exam),
         exam_code: exam.code || null,
         exam_name: exam.name || null,
+        patient_id: exam.patientId || null,
         patient_name: exam.patientName || null,
         status,
         notes: notes[exam.id] || null,
