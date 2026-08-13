@@ -176,6 +176,9 @@ export function CreateUserModal({ open, onOpenChange, onCreated }: CreateUserMod
           <div className="space-y-2">
             <Label htmlFor="password">Senha *</Label>
             <Input id="password" type="password" value={password} onChange={e => setPassword(e.target.value)} placeholder="Mínimo 6 caracteres" />
+            <p className="text-[11px] text-muted-foreground">
+              Senha provisória: no primeiro acesso o usuário informará esta senha e criará uma nova senha pessoal.
+            </p>
           </div>
           <div className="flex justify-end gap-2 pt-2">
             <Button type="button" variant="outline" onClick={() => onOpenChange(false)} disabled={saving}>
