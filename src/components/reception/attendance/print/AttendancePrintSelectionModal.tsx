@@ -35,7 +35,7 @@ export function AttendancePrintSelectionModal({ open, onClose, onConfirm, order,
   const orderNumber = order?.orderNumber;
   const [showPreview, setShowPreview] = useState(false);
   const [options, setOptions] = useState<PrintOption[]>([
-    { id: 'comprovante', label: 'Comprovante', enabled: true, formats: ['A4', 'A5', 'TÉRMICA', 'ETIQUETA'], selectedFormat: 'TÉRMICA' },
+    { id: 'comprovante', label: 'Comprovante', enabled: true, formats: ['A4', 'A5', 'TÉRMICA'], selectedFormat: 'TÉRMICA' },
     { id: 'controle_interno', label: 'Controle Interno', enabled: true, formats: ['A4', 'A5', 'TÉRMICA'], selectedFormat: 'TÉRMICA' },
     { id: 'termo_consentimento', label: 'Termo de Consentimento', enabled: false, formats: ['A4', 'A5'], selectedFormat: 'A4' },
   ]);
@@ -123,45 +123,6 @@ export function AttendancePrintSelectionModal({ open, onClose, onConfirm, order,
                 </div>
               ))}
 
-              {/* Extras Row */}
-              <div className="flex items-center gap-8 pt-2">
-                <label className="flex items-center gap-2 cursor-pointer group">
-                  <div 
-                    onClick={() => setExtras(e => ({ ...e, amostras: !e.amostras }))}
-                    className={cn("w-4 h-4 rounded border flex items-center justify-center transition-all", extras.amostras ? "bg-[#007AFF] border-[#007AFF]" : "bg-white border-slate-300")}
-                  >
-                    {extras.amostras && <CheckCircle2 className="h-2.5 w-2.5 text-white" />}
-                  </div>
-                  <span className="text-xs font-medium text-slate-600">Amostras</span>
-                </label>
-                <label className="flex items-center gap-2 cursor-pointer group">
-                  <div 
-                    onClick={() => setExtras(e => ({ ...e, guias: !e.guias }))}
-                    className={cn("w-4 h-4 rounded border flex items-center justify-center transition-all", extras.guias ? "bg-[#007AFF] border-[#007AFF]" : "bg-white border-slate-300")}
-                  >
-                    {extras.guias && <CheckCircle2 className="h-2.5 w-2.5 text-white" />}
-                  </div>
-                  <span className="text-xs font-medium text-slate-600">Guias</span>
-                </label>
-                <label className="flex items-center gap-2 cursor-pointer group">
-                  <div 
-                    onClick={() => setExtras(e => ({ ...e, capa_guia: !e.capa_guia }))}
-                    className={cn("w-4 h-4 rounded border flex items-center justify-center transition-all", extras.capa_guia ? "bg-[#007AFF] border-[#007AFF]" : "bg-white border-slate-300")}
-                  >
-                    {extras.capa_guia && <CheckCircle2 className="h-2.5 w-2.5 text-white" />}
-                  </div>
-                  <span className="text-xs font-medium text-slate-600">Capa Guia</span>
-                </label>
-                <label className="flex items-center gap-2 cursor-pointer group">
-                  <div 
-                    onClick={() => setExtras(e => ({ ...e, etiqueta_cliente: !e.etiqueta_cliente }))}
-                    className={cn("w-4 h-4 rounded border flex items-center justify-center transition-all", extras.etiqueta_cliente ? "bg-[#007AFF] border-[#007AFF]" : "bg-white border-slate-300")}
-                  >
-                    {extras.etiqueta_cliente && <CheckCircle2 className="h-2.5 w-2.5 text-white" />}
-                  </div>
-                  <span className="text-xs font-medium text-slate-600">Etiqueta Cliente</span>
-                </label>
-              </div>
             </div>
           </div>
 
