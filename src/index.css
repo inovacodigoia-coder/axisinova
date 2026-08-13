@@ -292,3 +292,5 @@ a[href*="lovable.app"],
   position: absolute !important;
   left: -9999px !important;
 }
+
+#receipt-print-portal { display: none; }
