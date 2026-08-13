@@ -106,7 +106,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setToken(newToken)
       setIsAuthenticated(true)
 
-      const redirectTo = getRedirectByRole(authUser.role)
+      const redirectTo = authUser.mustChangePassword ? '/primeiro-acesso' : getRedirectByRole(authUser.role)
       return { success: true, redirectTo }
     }
 
