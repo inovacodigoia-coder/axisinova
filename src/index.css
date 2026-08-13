@@ -229,7 +229,24 @@
     page-break-after: avoid !important;
   }
 
+  /* Comprovante/Controle: imprimir SOMENTE o documento visível */
+  body.printing-receipt > *:not(#receipt-print-portal) {
+    display: none !important;
+  }
+  body.printing-receipt #receipt-print-portal {
+    display: block !important;
+    position: static !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    background: white !important;
+  }
+  body.printing-receipt #receipt-print-portal .no-print {
+    display: none !important;
+  }
+
+
   /* Laudo: imprimir apenas o documento, em A4 */
+
   body.printing-laudo > *:not(#laudo-print-root) {
     display: none !important;
   }
@@ -275,3 +292,5 @@ a[href*="lovable.app"],
   position: absolute !important;
   left: -9999px !important;
 }
+
+#receipt-print-portal { display: none; }

@@ -36,9 +36,16 @@ export function AttendancePrintSelectionModal({ open, onClose, onConfirm, order,
   const [showPreview, setShowPreview] = useState(false);
   const [options, setOptions] = useState<PrintOption[]>([
     { id: 'comprovante', label: 'Comprovante', enabled: true, formats: ['A4', 'A5', 'TÉRMICA'], selectedFormat: 'TÉRMICA' },
-    { id: 'controle_interno', label: 'Controle Interno', enabled: true, formats: ['A4', 'A5', 'TÉRMICA'], selectedFormat: 'TÉRMICA' },
+    { id: 'controle_interno', label: 'Controle Interno', enabled: false, formats: ['A4', 'A5', 'TÉRMICA'], selectedFormat: 'TÉRMICA' },
     { id: 'termo_consentimento', label: 'Termo de Consentimento', enabled: false, formats: ['A4', 'A5'], selectedFormat: 'A4' },
   ]);
+
+  // Sempre iniciar com apenas o Comprovante selecionado
+  React.useEffect(() => {
+    if (open) {
+      setOptions(prev => prev.map(o => ({ ...o, enabled: o.id === 'comprovante' })));
+    }
+  }, [open]);
 
   const [watermark, setWatermark] = useState(false);
   const [emptyFields, setEmptyFields] = useState(false);
@@ -57,13 +64,15 @@ export function AttendancePrintSelectionModal({ open, onClose, onConfirm, order,
     etiqueta_cliente: false
   });
 
+  // Seleção única: apenas um tipo de impressão por vez
   const toggleOption = (id: string) => {
-    setOptions(prev => prev.map(opt => opt.id === id ? { ...opt, enabled: !opt.enabled } : opt));
+    setOptions(prev => prev.map(opt => ({ ...opt, enabled: opt.id === id })));
   };
 
   const setFormat = (id: string, format: any) => {
     setOptions(prev => prev.map(opt => opt.id === id ? { ...opt, selectedFormat: format } : opt));
   };
+
 
   return (
     <Dialog open={open} onOpenChange={(o) => !o && onClose()}>

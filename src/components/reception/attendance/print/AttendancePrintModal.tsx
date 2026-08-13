@@ -26,15 +26,37 @@ export function AttendancePrintModal({ open, onClose, document: doc, autoPrint, 
     || printers.find(p => p.id === selectedPrinterId)
     || defaultConfig
 
+  const handlePrint = () => {
+    const d = window.document
+    const source = d.getElementById('receipt-print-root')
+    if (!source) { window.print(); return }
+
+    const portal = d.createElement('div')
+    portal.id = 'receipt-print-portal'
+    portal.innerHTML = source.innerHTML
+    d.body.appendChild(portal)
+    d.body.classList.add('printing-receipt')
+
+    const cleanup = () => {
+      d.body.classList.remove('printing-receipt')
+      portal.remove()
+      window.removeEventListener('afterprint', cleanup)
+    }
+    window.addEventListener('afterprint', cleanup)
+    setTimeout(() => {
+      window.print()
+      setTimeout(cleanup, 800)
+    }, 60)
+  }
+
+
   useEffect(() => {
     if (open && autoPrint) {
-      const t = setTimeout(() => {
-        window.print();
-        // After printing, we can set autoPrint to false or just rely on onClose
-      }, 500);
+      const t = setTimeout(() => handlePrint(), 500);
       return () => clearTimeout(t);
     }
   }, [open, autoPrint]);
+
 
   if (!open) return null
 
@@ -98,11 +120,11 @@ export function AttendancePrintModal({ open, onClose, document: doc, autoPrint, 
             </select>
           </label>
           <div className="flex-1" />
-          <Button variant="outline" size="sm" onClick={() => window.print()}>
+          <Button variant="outline" size="sm" onClick={handlePrint}>
             <FileText className="h-4 w-4 mr-1" /> Ver PDF
           </Button>
           <button
-            onClick={() => window.print()}
+            onClick={handlePrint}
             className="inline-flex items-center gap-1 rounded-md gradient-bg px-4 py-1.5 text-xs font-semibold text-white shadow-sm hover:opacity-90"
           >
             <Printer className="h-4 w-4" /> Imprimir
@@ -112,7 +134,8 @@ export function AttendancePrintModal({ open, onClose, document: doc, autoPrint, 
         {/* Preview */}
         <div className="flex-1 overflow-y-auto bg-muted/20 p-6">
           <style>{`@media print { @page { size: ${pageSize}; margin: ${pageMargin}; } }`}</style>
-          <div className="print-receipt flex flex-col gap-0 items-center">
+          <div id="receipt-print-root" className="print-receipt flex flex-col gap-0 items-center">
+
             {sheets.map(({ copyIdx, via }, idx) => (
               <div
                 key={`${copyIdx}-${via}`}
