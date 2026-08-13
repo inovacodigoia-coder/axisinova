@@ -27,10 +27,19 @@ export function AttendancePrintModal({ open, onClose, document: doc, autoPrint, 
     || defaultConfig
 
   const handlePrint = () => {
-    const body = window.document.body
-    body.classList.add('printing-receipt')
+    const d = window.document
+    const source = d.getElementById('receipt-print-root')
+    if (!source) { window.print(); return }
+
+    const portal = d.createElement('div')
+    portal.id = 'receipt-print-portal'
+    portal.innerHTML = source.innerHTML
+    d.body.appendChild(portal)
+    d.body.classList.add('printing-receipt')
+
     const cleanup = () => {
-      body.classList.remove('printing-receipt')
+      d.body.classList.remove('printing-receipt')
+      portal.remove()
       window.removeEventListener('afterprint', cleanup)
     }
     window.addEventListener('afterprint', cleanup)
@@ -39,6 +48,7 @@ export function AttendancePrintModal({ open, onClose, document: doc, autoPrint, 
       setTimeout(cleanup, 800)
     }, 60)
   }
+
 
   useEffect(() => {
     if (open && autoPrint) {
