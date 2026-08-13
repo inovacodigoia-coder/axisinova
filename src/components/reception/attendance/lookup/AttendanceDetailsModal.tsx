@@ -849,21 +849,13 @@ export function AttendanceDetailsModal({ open, onClose, onOrderDeleted, order, p
             return; // Don't proceed to standard attendance receipts if laudo is the primary focus
           }
           
-          // Determine which vias to print based on selection
-          const vias: ('patient' | 'establishment')[] = [];
-          
-          // Use a Map or unique values to avoid duplication
-          const selectedViaTypes = new Set<string>();
-          result.options.forEach((o: any) => {
-            if (o.enabled) {
-              if (o.id === 'comprovante') selectedViaTypes.add('patient');
-              if (o.id === 'controle_interno') selectedViaTypes.add('establishment');
-            }
-          });
+          // Apenas UMA opção pode estar selecionada — imprime somente ela
+          const selected = result.options.find((o: any) => o.enabled);
+          const vias: ('patient' | 'establishment')[] =
+            selected?.id === 'controle_interno' ? ['establishment'] : ['patient'];
 
-          vias.push(...Array.from(selectedViaTypes) as ('patient' | 'establishment')[]);
-          
           setEnabledVias(vias);
+
           
           // Identify the primary selected area (e.g., Comprovante) to pick paper size
           const mainOption = result.options.find((o: any) => o.enabled && o.id === 'comprovante') || 
