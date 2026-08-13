@@ -104,11 +104,19 @@ export async function hydrateSectorUsers(companyId: string) {
 
 /** Grava no banco os usuários vinculados a um setor */
 export async function saveSectorUsers(companyId: string, sectorId: string, userIds: string[]) {
-  await supabase.from('sector_users').delete().eq('company_id', companyId).eq('sector_id', sectorId)
+  const { error: delError } = await supabase.from('sector_users').delete().eq('company_id', companyId).eq('sector_id', sectorId)
+  if (delError) {
+    console.error('Error deleting sector users:', delError)
+    throw delError
+  }
+
   if (userIds.length > 0) {
-    const { error } = await supabase.from('sector_users').insert(
+    const { error: insError } = await supabase.from('sector_users').insert(
       userIds.map(user_id => ({ company_id: companyId, sector_id: sectorId, user_id }))
     )
-    if (error) throw error
+    if (insError) {
+      console.error('Error inserting sector users:', insError)
+      throw insError
+    }
   }
 }

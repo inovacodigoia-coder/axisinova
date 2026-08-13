@@ -289,6 +289,17 @@ export function CompanyProvider({ children }: { children: ReactNode }) {
 
   const canAccess = useCallback((module: SystemModule, action?: PermissionAction): boolean => {
     if (!user) return false
+    
+    // 1. Check module overrides from the active sector first (highest priority for UI/Menu)
+    if (activeSector?.moduleOverrides) {
+      // Find current path in overrides if possible, or use module-based override logic
+      // Note: canAccess is often called with just module. 
+      // Sidebar uses it to check visibility.
+      // If we are checking just "view", and the sector has an override for a path 
+      // that belongs to this module, we should ideally handle it.
+      // For now, let's keep it simple: sector overrides are primarily for Sidebar visibility.
+    }
+
     // O perfil ativo sempre define o que está liberado, inclusive para administradores.
     if (!activeProfile) {
       return user.role === 'super_admin' || user.role === 'company_admin'
@@ -297,7 +308,7 @@ export function CompanyProvider({ children }: { children: ReactNode }) {
     if (!perms) return false
     if (!action) return perms.length > 0
     return perms.includes(action)
-  }, [user, activeProfile])
+  }, [user, activeProfile, activeSector])
 
   return (
     <CompanyContext.Provider value={{
