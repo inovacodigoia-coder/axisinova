@@ -673,9 +673,18 @@ export function AttendanceDetailsModal({ open, onClose, onOrderDeleted, order, p
                                         : '--/--/---- --:--'}
                                     </td>
                                     <td className="px-4 py-3 text-center">
-                                      <div className={cn("w-6 h-6 rounded-full flex items-center justify-center mx-auto bg-[#00A859] text-white text-[10px] font-bold")}>
-                                        L
-                                      </div>
+                                      {(() => {
+                                        const letter = getExamResultLetter(exam);
+                                        if (!letter) return null;
+                                        return (
+                                          <div className={cn(
+                                            "w-6 h-6 rounded-full flex items-center justify-center mx-auto text-white text-[10px] font-bold",
+                                            letter === 'L' ? "bg-[#00A859]" : "bg-amber-500"
+                                          )}>
+                                            {letter}
+                                          </div>
+                                        );
+                                      })()}
                                     </td>
                                     {hasComplement && <td className="px-4 py-3 text-muted-foreground">{exam.complemento || '-'}</td>}
                                     {hasJustification && <td className="px-4 py-3 text-muted-foreground">{exam.justificativa || '-'}</td>}
