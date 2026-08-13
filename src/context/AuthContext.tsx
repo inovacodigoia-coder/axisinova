@@ -95,6 +95,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         companyId: profile?.company_id || null,
         companyName,
         isActive: profile?.is_active ?? true,
+        mustChangePassword: (profile as any)?.must_change_password === true,
         lastLogin: new Date().toISOString(),
       }
 
