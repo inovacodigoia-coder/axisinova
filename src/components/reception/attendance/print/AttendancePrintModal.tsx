@@ -111,13 +111,16 @@ export function AttendancePrintModal({ open, onClose, document: doc, autoPrint, 
 
         {/* Preview */}
         <div className="flex-1 overflow-y-auto bg-muted/20 p-6">
+          <style>{`@media print { @page { size: ${pageSize}; margin: ${pageMargin}; } }`}</style>
           <div className="print-receipt flex flex-col gap-0 items-center">
-            {Array.from({ length: copies }).map((_, copyIdx) => (
-              vias.map((via) => (
-                <div key={`${copyIdx}-${via}`} className="print:break-after-page print:mb-0">
-                  <AttendanceReceiptVia document={doc} config={selectedConfig} via={via} />
-                </div>
-              ))
+            {sheets.map(({ copyIdx, via }, idx) => (
+              <div
+                key={`${copyIdx}-${via}`}
+                className={idx < sheets.length - 1 ? 'print:break-after-page print:mb-0' : 'print:mb-0'}
+                style={idx === sheets.length - 1 ? { breakAfter: 'avoid', pageBreakAfter: 'avoid' } : undefined}
+              >
+                <AttendanceReceiptVia document={doc} config={selectedConfig} via={via} />
+              </div>
             ))}
           </div>
         </div>
