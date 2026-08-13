@@ -119,6 +119,7 @@ export function ResultEntryModal({
       if (!groups[key]) {
         groups[key] = {
           protocol: exam.protocol,
+          patientId: exam.patientId,
           patientName: exam.patientName,
           patientBirthDate: exam.patientBirthDate,
           patientGender: exam.patientGender,
@@ -412,28 +413,48 @@ export function ResultEntryModal({
     if (!isOpen) return;
     const cid = resolveCompanyId(user?.companyId);
     if (!cid) return;
+    const ids = Array.from(new Set(groupedPatients.map((p: any) => p.patientId).filter(Boolean)));
     const names = Array.from(new Set(groupedPatients.map((p: any) => p.patientName).filter(Boolean)));
-    if (names.length === 0) return;
+    if (ids.length === 0 && names.length === 0) return;
+    // Mapa nome -> id (fallback para registros antigos sem patient_id)
+    const idByName: Record<string, string> = {};
+    groupedPatients.forEach((p: any) => {
+      if (p.patientName && p.patientId) idByName[String(p.patientName).toUpperCase()] = p.patientId;
+    });
     const currentProtocols = new Set(groupedPatients.map((p: any) => p.protocol));
     let active = true;
     (async () => {
-      const { data } = await supabase
+      let query = supabase
         .from('lab_exam_results')
-        .select('patient_name, exam_code, exam_name, protocol, status, released_at, typed_at, created_at, lab_result_values(parameter_name, value, unit, sort_order)')
+        .select('patient_id, patient_name, exam_code, exam_name, protocol, status, released_at, typed_at, created_at, lab_result_values(parameter_name, value, unit, sort_order)')
         .eq('company_id', cid)
-        .in('patient_name', names as string[])
         .in('status', ['digitized', 'released'])
         .order('created_at', { ascending: false });
+
+      if (ids.length > 0 && names.length > 0) {
+        query = query.or(
+          `patient_id.in.(${ids.join(',')}),patient_name.in.(${names.map((n: any) => `"${String(n).replace(/"/g, '')}"`).join(',')})`
+        );
+      } else if (ids.length > 0) {
+        query = query.in('patient_id', ids as string[]);
+      } else {
+        query = query.in('patient_name', names as string[]);
+      }
+
+      const { data } = await query;
       if (!active || !data) return;
       const map: Record<string, { date: string; value: string; unit: string }[]> = {};
       data.forEach((row: any) => {
         if (currentProtocols.has(row.protocol)) return;
+        // Identidade do paciente: sempre pelo ID (nome apenas como reserva)
+        const rowPatientId = row.patient_id || idByName[String(row.patient_name || '').toUpperCase()];
+        if (!rowPatientId || !ids.includes(rowPatientId)) return;
         const values = (row.lab_result_values || [])
           .slice()
           .sort((a: any, b: any) => (a.sort_order ?? 0) - (b.sort_order ?? 0));
         const first = values.find((v: any) => (v.value || '').trim() !== '');
         if (!first) return;
-        const key = `${row.patient_name}|${String(row.exam_code || row.exam_name || '').toUpperCase()}`;
+        const key = `${rowPatientId}|${String(row.exam_code || row.exam_name || '').toUpperCase()}`;
         if (!map[key]) map[key] = [];
         if (map[key].length >= 5) return;
         map[key].push({
@@ -1184,7 +1205,8 @@ export function ResultEntryModal({
 
                         {/* Resultados Anteriores (reais) */}
                         {(() => {
-                          const prevList = prevResults[`${patient.patientName}|${String(exam.code || exam.name || '').toUpperCase()}`] || [];
+                          const prevList = prevResults[`${patient.patientId}|${String(exam.code || exam.name || '').toUpperCase()}`] || [];
+                          if (prevList.length === 0) return null;
                           return (
                             <div className="mt-4 pt-4 border-t border-slate-200/60">
                               <div className="flex items-center gap-2 mb-3">
@@ -1193,12 +1215,9 @@ export function ResultEntryModal({
                                   {exam.code} - Resultados Anteriores:
                                 </h5>
                               </div>
-                              {prevList.length === 0 ? (
-                                <p className="text-[10px] font-bold uppercase text-slate-400 italic">
-                                  Paciente não tem exames anteriores
-                                </p>
-                              ) : (
+                              {(
                                 <ScrollArea className="w-full">
+
                                   <div className="flex gap-3 pb-2">
                                     {prevList.map((prev, i) => (
                                       <div key={i} className="shrink-0 bg-white border border-slate-200 rounded-lg p-2 min-w-[140px] shadow-sm">
