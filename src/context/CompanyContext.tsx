@@ -3,7 +3,7 @@ import { useAuth } from '@/context/AuthContext'
 import type { Profile, Sector, MenuFunction, SystemModule, PermissionAction } from '@/types/permissions.types'
 import type { CompanyUser, Origin } from '@/types/company-portal.types'
 import { MOCK_COMPANY_USERS, getFunctionsForProfile, getUtilitiesForProfile } from '@/mocks/company.mock'
-import { getSectors, useSectors, getAllowedProfileIdsForUser, useSectorUsers } from '@/stores/sectorsStore'
+import { getSectors, useSectors, getAllowedProfileIdsForUser, useSectorUsers, hydrateSectorUsers } from '@/stores/sectorsStore'
 import { getProfiles, useProfiles } from '@/stores/profilesStore'
 
 import { supabase } from '@/integrations/supabase/client'
