@@ -179,14 +179,16 @@ export function AttendanceDetailsModal({ open, onClose, onOrderDeleted, order, p
   const [labResults, setLabResults] = useState<Record<string, { status: string; notes?: string; values: any[] }>>({})
 
   useEffect(() => {
-    const protocol = (labOrder as any)?.protocol || (order as any)?.protocol
-    if (!open || !protocol) return
+    const orderId = (labOrder as any)?.id || (order as any)?.id
+    if (!open || !orderId) return
+    setLabResults({})
     let active = true
     ;(async () => {
+      // Sempre pelo ID do pedido (protocolo pode se repetir entre pedidos)
       const { data, error } = await supabase
         .from('lab_exam_results')
         .select('exam_code, exam_name, status, notes, lab_result_values(parameter_key, parameter_name, value, unit, reference, status, sort_order)')
-        .eq('protocol', protocol)
+        .eq('order_id', orderId)
       if (!active || error || !data) return
       const map: Record<string, { status: string; notes?: string; values: any[] }> = {}
       data.forEach((row: any) => {
