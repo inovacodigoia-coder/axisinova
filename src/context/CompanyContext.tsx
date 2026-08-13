@@ -84,6 +84,18 @@ export function CompanyProvider({ children }: { children: ReactNode }) {
   const [availableOrigins, setAvailableOrigins] = useState<Origin[]>([])
   const [isSessionReady, setIsSessionReady] = useState(false)
   const [isSessionHydrated, setIsSessionHydrated] = useState(false)
+  const [linksLoaded, setLinksLoaded] = useState(false)
+
+  // Carrega os vínculos Usuário↔Setor antes de calcular os perfis disponíveis
+  useEffect(() => {
+    let cancelled = false
+    if (!user?.companyId) { setLinksLoaded(false); return }
+    setLinksLoaded(false)
+    hydrateSectorUsers(user.companyId).finally(() => {
+      if (!cancelled) setLinksLoaded(true)
+    })
+    return () => { cancelled = true }
+  }, [user?.companyId])
 
   const refreshOrigins = useCallback(async () => {
     if (!user) return
