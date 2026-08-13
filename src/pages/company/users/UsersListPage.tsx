@@ -248,7 +248,28 @@ function EditUserModal({ profile, onClose, onSaved }: { profile: ProfileRow | nu
   }
 
   const handleManualReset = () => {
-    toast.warning('Funcionalidade de reset manual disponível apenas para Super Admins ou via suporte AxisInova.')
+    setManualPwd('')
+    setManualPwd2('')
+    setManualOpen(true)
+  }
+
+  const submitManualPassword = async () => {
+    if (!profile) return
+    if (manualPwd.length < 6) return toast.error('A senha deve ter no mínimo 6 caracteres')
+    if (manualPwd !== manualPwd2) return toast.error('As senhas não conferem')
+
+    setSettingPwd(true)
+    const { data, error } = await supabase.functions.invoke('set-user-password', {
+      body: { user_id: profile.id, password: manualPwd, company_id: profile.company_id },
+    })
+    setSettingPwd(false)
+
+    if (error || (data as any)?.error) {
+      toast.error((data as any)?.error || 'Erro ao definir a senha')
+      return
+    }
+    toast.success('Senha definida. O usuário deverá criar uma nova senha no primeiro acesso.')
+    setManualOpen(false)
   }
 
   return (
