@@ -20,6 +20,7 @@ const RegisterPage = lazy(() => import("./pages/RegisterPage"));
 const LoginPage = lazy(() => import("./pages/LoginPage"));
 const ForgotPasswordPage = lazy(() => import("./pages/ForgotPasswordPage"));
 const ResetPasswordPage = lazy(() => import("./pages/ResetPasswordPage"));
+const FirstAccessPasswordPage = lazy(() => import("./pages/FirstAccessPasswordPage"));
 const UnauthorizedPage = lazy(() => import("./pages/UnauthorizedPage"));
 const ProfileSelectorPage = lazy(() => import("./pages/ProfileSelectorPage"));
 const SuperAdminLayout = lazy(() => import("./pages/superadmin/SuperAdminLayout"));
