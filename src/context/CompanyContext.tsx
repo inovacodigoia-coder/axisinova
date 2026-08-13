@@ -248,7 +248,7 @@ export function CompanyProvider({ children }: { children: ReactNode }) {
     setActiveSector(null)
     setIsSessionReady(false)
     setIsSessionHydrated(true)
-  }, [user?.id])
+  }, [user?.id, linksLoaded])
 
   const selectProfile = useCallback((profile: Profile) => {
     setActiveProfile(profile)
