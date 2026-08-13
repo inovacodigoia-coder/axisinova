@@ -43,16 +43,17 @@ const CompanyContext = createContext<CompanyContextValue | null>(null)
 function getUserProfiles(userId: string, role?: string, authUserId?: string): Profile[] {
   const all = getProfiles().filter(p => p.isActive)
 
+  // Administradores podem usar todos os perfis configurados para a empresa.
+  if (role === 'super_admin' || role === 'company_admin') {
+    return all
+  }
+
   // Perfis liberados pelos setores em que o usuário está vinculado (Usuários do Setor)
   const allowedBySector = authUserId ? getAllowedProfileIdsForUser(authUserId) : null
   if (allowedBySector) {
     return all.filter(p => allowedBySector.includes(p.id))
   }
 
-  // Real Supabase users with admin role get all active profiles
-  if (role === 'super_admin' || role === 'company_admin') {
-    return all
-  }
   const user = MOCK_COMPANY_USERS.find(u => u.id === userId)
   if (!user) return []
   return all.filter(p => user.profiles.includes(p.id))
