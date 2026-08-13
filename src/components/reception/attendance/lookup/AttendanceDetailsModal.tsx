@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useEffect } from 'react'
 import { Dialog, DialogContent } from '@/components/ui/dialog'
 import { X, Printer, Pencil, Trash2, Plus, ArrowLeft, MoreVertical, CreditCard, Droplets, ShieldCheck, DollarSign, Calendar, Clock, MapPin, User, FileText, ChevronDown, History, BarChart3, Database, RefreshCw, Info, Smartphone, Calculator, Loader2 } from 'lucide-react'
 import { useLabSettings } from '@/hooks/useLabSettings'
