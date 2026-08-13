@@ -3,7 +3,7 @@ import { useAuth } from '@/context/AuthContext'
 import type { Profile, Sector, MenuFunction, SystemModule, PermissionAction } from '@/types/permissions.types'
 import type { CompanyUser, Origin } from '@/types/company-portal.types'
 import { MOCK_COMPANY_USERS, getFunctionsForProfile, getUtilitiesForProfile } from '@/mocks/company.mock'
-import { getSectors, useSectors, getAllowedProfileIdsForUser, useSectorUsers } from '@/stores/sectorsStore'
+import { getSectors, useSectors, getAllowedProfileIdsForUser, useSectorUsers, hydrateSectorUsers } from '@/stores/sectorsStore'
 import { getProfiles, useProfiles } from '@/stores/profilesStore'
 
 import { supabase } from '@/integrations/supabase/client'
@@ -84,6 +84,18 @@ export function CompanyProvider({ children }: { children: ReactNode }) {
   const [availableOrigins, setAvailableOrigins] = useState<Origin[]>([])
   const [isSessionReady, setIsSessionReady] = useState(false)
   const [isSessionHydrated, setIsSessionHydrated] = useState(false)
+  const [linksLoaded, setLinksLoaded] = useState(false)
+
+  // Carrega os vínculos Usuário↔Setor antes de calcular os perfis disponíveis
+  useEffect(() => {
+    let cancelled = false
+    if (!user?.companyId) { setLinksLoaded(false); return }
+    setLinksLoaded(false)
+    hydrateSectorUsers(user.companyId).finally(() => {
+      if (!cancelled) setLinksLoaded(true)
+    })
+    return () => { cancelled = true }
+  }, [user?.companyId])
 
   const refreshOrigins = useCallback(async () => {
     if (!user) return
@@ -163,6 +175,9 @@ export function CompanyProvider({ children }: { children: ReactNode }) {
       return
     }
 
+    // aguarda os vínculos de setor antes de resolver os perfis
+    if (!linksLoaded) return
+
     // company_admin and super_admin bypass
     if (user.role === 'super_admin' || user.role === 'company_admin') {
       const profs = getUserProfiles(companyUserId || '', user.role, user.id)
@@ -233,7 +248,7 @@ export function CompanyProvider({ children }: { children: ReactNode }) {
     setActiveSector(null)
     setIsSessionReady(false)
     setIsSessionHydrated(true)
-  }, [user?.id])
+  }, [user?.id, linksLoaded])
 
   const selectProfile = useCallback((profile: Profile) => {
     setActiveProfile(profile)
