@@ -112,20 +112,16 @@ export default function LabAnalisePage() {
       );
       
       // Filtro por Status: Baseado na seleção do usuário ou todos se vazio
-      const allowedOrderStatuses = ['collection_done', 'in_analysis', 'validation', 'released', 'concluded', 'open'];
+      // Normaliza o legado 'concluded' para 'completed'
+      const orderStatus = order.status === ('concluded' as any) ? 'completed' : order.status;
+      const allowedOrderStatuses = ['collection_done', 'in_analysis', 'validation', 'released', 'completed', 'open'];
       
       exams.forEach(exam => {
-        // Mapeamos os status internos para os nomes amigáveis solicitados
-        // collection_done -> Coleta Realizada
-        // in_analysis -> Em Análise
-        // released -> Liberado
-        // concluded -> Concluído
-        
         // Verifica se o status do pedido está entre os selecionados
-        const matchesStatus = selectedStatuses.length === 0 || selectedStatuses.includes(order.status);
+        const matchesStatus = selectedStatuses.length === 0 || selectedStatuses.includes(orderStatus);
         
         // Se o status do pedido estiver permitido e bater com o filtro selecionado
-        if (allowedOrderStatuses.includes(order.status) && matchesStatus) {
+        if (allowedOrderStatuses.includes(orderStatus) && matchesStatus) {
           allExams.push(exam);
         }
       });
