@@ -97,6 +97,7 @@ export default function LabAnalisePage() {
           ...e,
           orderId: order.id,
           protocol: order.protocol,
+          patientId: (order as any).patientId,
           patientName: order.patientName,
           patientBirthDate: order.patientBirthDate,
           patientGender: order.patientGender,
