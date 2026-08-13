@@ -6,7 +6,7 @@ import { useAttendanceCadastro } from '@/hooks/useAttendanceCadastro'
 import { supabase } from '@/integrations/supabase/client'
 import {
   Home, Calendar, UserCheck, FileText, DollarSign, FlaskConical, BarChart3,
-  TrendingUp, Users, Settings, Database, Monitor, Building2, Lock,
+  TrendingUp, Users, Settings, Database, Monitor, Building2,
   LogOut, ChevronLeft, ChevronRight, X, Stethoscope, TicketCheck, ShieldCheck, Ruler, Layout, Beaker as BeakerIcon,
   PieChart, Warehouse, Package as PackageIcon, UserPlus, FileSearch, Menu
 } from 'lucide-react'
