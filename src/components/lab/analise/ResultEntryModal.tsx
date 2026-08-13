@@ -119,6 +119,7 @@ export function ResultEntryModal({
       if (!groups[key]) {
         groups[key] = {
           protocol: exam.protocol,
+          patientId: exam.patientId,
           patientName: exam.patientName,
           patientBirthDate: exam.patientBirthDate,
           patientGender: exam.patientGender,
