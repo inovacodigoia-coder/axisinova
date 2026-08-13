@@ -79,7 +79,7 @@ export default function LabAnalisePage() {
   const [dateTo, setDateTo] = useState<Date | undefined>(undefined);
   const [selectedWorkbenches, setSelectedWorkbenches] = useState<string[]>([]);
   const [selectedEstablishments, setSelectedEstablishments] = useState<string[]>([]);
-  const [selectedStatuses, setSelectedStatuses] = useState<string[]>(['collection_done', 'concluded']);
+  const [selectedStatuses, setSelectedStatuses] = useState<string[]>(['collection_done', 'completed']);
   const [showFilters, setShowFilters] = useState(false);
 
   useEffect(() => {
@@ -208,11 +208,11 @@ export default function LabAnalisePage() {
     setDateTo(undefined);
     setSelectedWorkbenches([]);
     setSelectedEstablishments([]);
-    setSelectedStatuses(['collection_done', 'concluded']);
+    setSelectedStatuses(['collection_done', 'completed']);
     setProtocolSearch('');
   };
 
-  const isFiltered = period !== 'hoje' || selectedWorkbenches.length > 0 || selectedEstablishments.length > 0 || selectedStatuses.length !== 2 || !selectedStatuses.includes('collection_done') || !selectedStatuses.includes('concluded') || protocolSearch !== '';
+  const isFiltered = period !== 'hoje' || selectedWorkbenches.length > 0 || selectedEstablishments.length > 0 || selectedStatuses.length !== 2 || !selectedStatuses.includes('collection_done') || !selectedStatuses.includes('completed') || protocolSearch !== '';
 
   return (
     <div className="flex flex-col h-full overflow-hidden">
@@ -372,7 +372,7 @@ export default function LabAnalisePage() {
                               { id: 'in_analysis', label: 'Em Análise' },
                               { id: 'validation', label: 'Validação' },
                               { id: 'released', label: 'Liberado' },
-                              { id: 'concluded', label: 'Concluído' }
+                              { id: 'completed', label: 'Concluído' }
                             ].map((status) => (
                               <Badge
                                 key={status.id}
