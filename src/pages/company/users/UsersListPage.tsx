@@ -520,6 +520,35 @@ function EditUserModal({ profile, onClose, onSaved }: { profile: ProfileRow | nu
           </div>
         </div>
       </DialogContent>
+
+      <Dialog open={manualOpen} onOpenChange={setManualOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="text-lg font-bold">Definir Senha Manual</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 py-2">
+            <p className="text-xs text-muted-foreground">
+              Defina uma senha provisória para <span className="font-semibold text-foreground">{fullName}</span>.
+              No primeiro acesso o usuário deverá informar esta senha e criar uma nova senha pessoal.
+            </p>
+            <div className="space-y-1.5">
+              <Label className="text-xs">Nova senha</Label>
+              <Input type="password" value={manualPwd} onChange={e => setManualPwd(e.target.value)} placeholder="Mínimo 6 caracteres" />
+            </div>
+            <div className="space-y-1.5">
+              <Label className="text-xs">Confirmar senha</Label>
+              <Input type="password" value={manualPwd2} onChange={e => setManualPwd2(e.target.value)} placeholder="Repita a senha" />
+            </div>
+            <div className="flex justify-end gap-2 pt-2 border-t">
+              <Button variant="outline" onClick={() => setManualOpen(false)} disabled={settingPwd}>Cancelar</Button>
+              <Button onClick={submitManualPassword} disabled={settingPwd} className="min-w-[100px]">
+                {settingPwd && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+                Definir Senha
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </Dialog>
   )
 }
