@@ -68,6 +68,7 @@ const App = () => (
                       <Route path="/reset-password/:token" element={<ResetPasswordPage />} />
                       <Route path="/reset-password" element={<ResetPasswordPage />} />
                       <Route path="/unauthorized" element={<UnauthorizedPage />} />
+                      <Route path="/primeiro-acesso" element={<FirstAccessPasswordPage />} />
 
                       {/* Public kiosk/panel routes */}
                       <Route path="/totem" element={<SchedulingProvider><TotemPage /></SchedulingProvider>} />
