@@ -128,10 +128,10 @@ export default function LabAnalisePage() {
     });
 
     return allExams.filter(exam => {
-      const matchesSearch = exam.patientName.toLowerCase().includes(search.toLowerCase()) || 
-                            exam.protocol.includes(search);
+      const matchesSearch = String(exam.patientName || '').toLowerCase().includes(search.toLowerCase()) || 
+                            String(exam.protocol || '').includes(search);
       
-      const matchesProtocol = protocolSearch === '' || exam.protocol.includes(protocolSearch);
+      const matchesProtocol = protocolSearch === '' || String(exam.protocol || '').includes(protocolSearch);
       
       // Filtro de Bancada: Deve filtrar exames individuais, mas a lista principal
       // é agrupada por paciente. O filtro de bancada afeta quais exames aparecem
