@@ -44,7 +44,7 @@ export default function ProfileSelectorPage() {
         initial={{ opacity: 0, scale: 0.96 }}
         animate={{ opacity: 1, scale: 1 }}
         transition={{ duration: 0.3 }}
-        className="w-full max-w-[620px] rounded-[24px] bg-white shadow-2xl border border-border/50 overflow-hidden"
+        className="w-full max-w-[680px] rounded-[20px] bg-card shadow-xl border border-border overflow-hidden"
       >
         <div className="p-8">
           {/* Logo */}
@@ -64,7 +64,7 @@ export default function ProfileSelectorPage() {
               <h2 className="text-lg font-semibold text-foreground">
                 Olá, <span className="gradient-text">{user.name}</span>
               </h2>
-              <p className="text-sm text-muted-foreground mt-1">Selecione o perfil de acesso do usuários</p>
+              <p className="text-sm text-muted-foreground mt-1">Selecione o perfil e setor para continuar</p>
             </div>
             {user.companyName && (
               <span className="inline-flex items-center gap-1.5 rounded-full bg-primary/10 px-3 py-1 text-xs font-medium text-primary">
@@ -164,10 +164,10 @@ function ProfileCard({ profile, selected, onClick }: { profile: Profile; selecte
     <button
       onClick={onClick}
       className={cn(
-        'relative w-full flex items-center gap-3 rounded-xl border p-4 text-left transition-all duration-200',
+        'relative w-full flex items-center gap-3 rounded-xl border-2 p-3.5 text-left transition-all duration-200',
         selected
-          ? 'border-primary/50 bg-primary/5 shadow-sm'
-          : 'border-border/60 hover:border-primary/30 hover:bg-accent/30'
+          ? 'border-transparent gradient-bg-subtle shadow-md'
+          : 'border-border hover:border-primary/30 hover:shadow-sm'
       )}
     >
       {selected && (
