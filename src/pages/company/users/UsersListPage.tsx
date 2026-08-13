@@ -189,6 +189,10 @@ function EditUserModal({ profile, onClose, onSaved }: { profile: ProfileRow | nu
   const [badgeCode, setBadgeCode] = useState('')
   const [saving, setSaving] = useState(false)
   const [sendingReset, setSendingReset] = useState(false)
+  const [manualOpen, setManualOpen] = useState(false)
+  const [manualPwd, setManualPwd] = useState('')
+  const [manualPwd2, setManualPwd2] = useState('')
+  const [settingPwd, setSettingPwd] = useState(false)
 
   useEffect(() => {
     if (profile) {
