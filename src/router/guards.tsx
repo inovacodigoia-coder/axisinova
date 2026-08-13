@@ -21,6 +21,10 @@ export function PrivateRoute({ children }: { children: React.ReactNode }) {
     return <Navigate to="/login" state={{ from: location }} replace />
   }
 
+  if (user?.mustChangePassword && location.pathname !== '/primeiro-acesso') {
+    return <Navigate to="/primeiro-acesso" replace />
+  }
+
   return <>{children}</>
 }
 
