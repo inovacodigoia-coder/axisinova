@@ -857,9 +857,8 @@ export function AttendanceDetailsModal({ open, onClose, onOrderDeleted, order, p
           setEnabledVias(vias);
 
           
-          // Identify the primary selected area (e.g., Comprovante) to pick paper size
-          const mainOption = result.options.find((o: any) => o.enabled && o.id === 'comprovante') || 
-                             result.options.find((o: any) => o.enabled);
+          const mainOption = selected;
+
           
           if (mainOption) {
             const formatSelected = mainOption.selectedFormat;
