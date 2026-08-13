@@ -1,5 +1,4 @@
 import { useSyncExternalStore } from 'react'
-import { MOCK_SECTORS } from '@/mocks/company.mock'
 import type { Sector } from '@/types/permissions.types'
 
 /**
@@ -7,7 +6,7 @@ import type { Sector } from '@/types/permissions.types'
  * Mantém a lista viva entre a tela de Setores e o CompanyContext (troca de perfil/setor),
  * de modo que setores criados ou editados apareçam imediatamente no seletor do usuário.
  */
-let sectors: Sector[] = [...MOCK_SECTORS]
+let sectors: Sector[] = []
 /** sectorId -> lista de userIds vinculados (Usuários do Setor) */
 let sectorUsers: Record<string, string[]> = {}
 const listeners = new Set<() => void>()
@@ -31,6 +30,61 @@ export function upsertSector(sector: Sector) {
   if (idx >= 0) sectors[idx] = sector
   else sectors.push(sector)
   emit()
+}
+
+function fromRow(row: any): Sector {
+  return {
+    id: row.id,
+    name: row.name,
+    companyId: row.company_id,
+    description: row.description || undefined,
+    isActive: row.is_active,
+    allowedProfiles: row.allowed_profile_ids || [],
+    allowedQueueTypes: row.allowed_queue_types || [],
+    allowedDeadlineEditProfiles: row.allowed_deadline_profile_ids || [],
+    moduleOverrides: row.module_overrides || {},
+  }
+}
+
+let sectorsHydratedFor: string | null = null
+
+export async function hydrateSectors(companyId: string) {
+  if (!companyId || sectorsHydratedFor === companyId) return
+  const { data, error } = await supabase
+    .from('company_sectors')
+    .select('*')
+    .eq('company_id', companyId)
+    .order('name')
+  if (error) throw error
+  sectors = (data || []).map(fromRow)
+  sectorsHydratedFor = companyId
+  emit()
+}
+
+export async function saveSector(sector: Sector) {
+  const { data, error } = await supabase
+    .from('company_sectors')
+    .upsert({
+      id: sector.id,
+      company_id: sector.companyId,
+      name: sector.name,
+      description: sector.description || null,
+      is_active: sector.isActive,
+      allowed_profile_ids: sector.allowedProfiles,
+      allowed_queue_types: sector.allowedQueueTypes || ['internal', 'external'],
+      allowed_deadline_profile_ids: sector.allowedDeadlineEditProfiles || [],
+      module_overrides: sector.moduleOverrides || {},
+    })
+    .select('*')
+    .single()
+  if (error) throw error
+  upsertSector(fromRow(data))
+}
+
+export async function deleteSector(sectorId: string) {
+  const { error } = await supabase.from('company_sectors').delete().eq('id', sectorId)
+  if (error) throw error
+  removeSector(sectorId)
 }
 
 export function removeSector(sectorId: string) {

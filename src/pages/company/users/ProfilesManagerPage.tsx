@@ -5,12 +5,14 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { PermissionsMatrix } from '@/components/company/users/PermissionsMatrix'
 import { Plus, Search, Eye, Trash2 } from 'lucide-react'
 import type { Profile, PermissionsMap } from '@/types/permissions.types'
-import { useProfiles, upsertProfile, removeProfile } from '@/stores/profilesStore'
+import { useProfiles, saveProfile, deleteProfile } from '@/stores/profilesStore'
+import { useAuth } from '@/context/AuthContext'
 import { detachProfileFromSectors } from '@/stores/sectorsStore'
 import { toast } from 'sonner'
 
 export default function ProfilesManagerPage() {
   const { canAccess } = useCompanyContext()
+  const { user } = useAuth()
   const profiles = useProfiles()
   const [search, setSearch] = useState('')
   const [statusFilter, setStatusFilter] = useState<'all' | 'active' | 'inactive'>('active')
@@ -42,9 +44,9 @@ export default function ProfilesManagerPage() {
         <button onClick={() => { setEditingProfile(p); setShowForm(true) }} className="rounded p-1 hover:bg-muted" title="Editar perfil"><Eye className="h-4 w-4 text-muted-foreground" /></button>
         {canAccess('users', 'delete') && (
           <button
-            onClick={() => {
+            onClick={async () => {
               if (!window.confirm(`Excluir o perfil "${p.name}"? Ele será removido dos setores vinculados.`)) return
-              removeProfile(p.id)
+              await deleteProfile(p.id)
               detachProfileFromSectors(p.id)
               toast.success('Perfil excluído')
             }}
@@ -104,9 +106,10 @@ export default function ProfilesManagerPage() {
       {showForm && (
         <ProfileFormModal
           profile={editingProfile}
+          companyId={user?.companyId || ''}
           onClose={() => setShowForm(false)}
-          onSave={(p) => {
-            upsertProfile(p)
+          onSave={async (p) => {
+            await saveProfile(p)
             setShowForm(false)
             toast.success(editingProfile ? 'Perfil atualizado' : 'Perfil criado')
           }}
@@ -117,7 +120,7 @@ export default function ProfilesManagerPage() {
   )
 }
 
-export function ProfileFormModal({ profile, onClose, onSave }: { profile: Profile | null; onClose: () => void; onSave: (p: Profile) => void }) {
+export function ProfileFormModal({ profile, companyId, onClose, onSave }: { profile: Profile | null; companyId: string; onClose: () => void; onSave: (p: Profile) => void | Promise<void> }) {
   const [name, setName] = useState(profile?.name || '')
   const [description, setDescription] = useState(profile?.description || '')
   const [createdBy, setCreatedBy] = useState<'admin' | 'it_team'>(profile?.createdBy || 'admin')
@@ -125,12 +128,12 @@ export function ProfileFormModal({ profile, onClose, onSave }: { profile: Profil
   const [permissions, setPermissions] = useState<PermissionsMap>(profile?.permissions || {})
   const [activeTab, setActiveTab] = useState('general')
 
-  const handleSave = () => {
+  const handleSave = async () => {
     if (!name.trim()) { toast.error('Nome é obrigatório'); return }
-    onSave({
+    await onSave({
       id: profile?.id || `prof_${Date.now()}`,
       code: profile?.code || Math.floor(1000 + Math.random() * 9000),
-      name, description, companyId: 'comp_001',
+      name, description, companyId,
       permissions, isActive, createdBy,
       createdAt: profile?.createdAt || new Date().toISOString(),
       updatedAt: new Date().toISOString(),
