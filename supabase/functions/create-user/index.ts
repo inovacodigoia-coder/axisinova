@@ -83,6 +83,12 @@ Deno.serve(async (req) => {
       });
     }
 
+    // Força a redefinição de senha no primeiro acesso
+    await adminClient
+      .from("profiles")
+      .update({ must_change_password: true })
+      .eq("id", newUser.user.id);
+
     return new Response(JSON.stringify({ user: { id: newUser.user.id, email: newUser.user.email } }), {
       status: 201,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
