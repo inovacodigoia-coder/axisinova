@@ -67,7 +67,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       // Fetch profile to get company info
       const { data: profile } = await supabase
         .from('profiles')
-        .select('full_name, role, company_id, is_active')
+        .select('full_name, role, company_id, is_active, must_change_password')
         .eq('id', authData.user.id)
         .single()
 
