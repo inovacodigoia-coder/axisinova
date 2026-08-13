@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useEffect } from 'react'
 import { Dialog, DialogContent } from '@/components/ui/dialog'
 import { X, Printer, Pencil, Trash2, Plus, ArrowLeft, MoreVertical, CreditCard, Droplets, ShieldCheck, DollarSign, Calendar, Clock, MapPin, User, FileText, ChevronDown, History, BarChart3, Database, RefreshCw, Info, Smartphone, Calculator, Loader2 } from 'lucide-react'
 import { useLabSettings } from '@/hooks/useLabSettings'
@@ -175,22 +175,89 @@ export function AttendanceDetailsModal({ open, onClose, onOrderDeleted, order, p
 
 
 
+  // Resultados digitados/liberados do pedido (mesma fonte da Digitação de Resultados)
+  const [labResults, setLabResults] = useState<Record<string, { status: string; notes?: string; values: any[] }>>({})
+
+  useEffect(() => {
+    const protocol = (labOrder as any)?.protocol || (order as any)?.protocol
+    if (!open || !protocol) return
+    let active = true
+    ;(async () => {
+      const { data, error } = await supabase
+        .from('lab_exam_results')
+        .select('exam_code, exam_name, status, notes, lab_result_values(parameter_key, parameter_name, value, unit, reference, status, sort_order)')
+        .eq('protocol', protocol)
+      if (!active || error || !data) return
+      const map: Record<string, { status: string; notes?: string; values: any[] }> = {}
+      data.forEach((row: any) => {
+        const entry = {
+          status: row.status,
+          notes: row.notes || '',
+          values: (row.lab_result_values || []).slice().sort((a: any, b: any) => (a.sort_order ?? 0) - (b.sort_order ?? 0)),
+        }
+        if (row.exam_code) map[String(row.exam_code).toUpperCase()] = entry
+        if (row.exam_name) map[String(row.exam_name).toUpperCase()] = entry
+      })
+      setLabResults(map)
+    })()
+    return () => { active = false }
+  }, [open, labOrder, order])
+
+  const getExamResult = (exam: any) =>
+    labResults[String(exam?.code || '').toUpperCase()] ||
+    labResults[String(exam?.name || '').toUpperCase()] ||
+    null
+
+  // L = liberado, D = digitado, vazio = sem digitação
+  const getExamResultLetter = (exam: any): 'L' | 'D' | null => {
+    const res = getExamResult(exam)
+    if (!res) return null
+    if (res.status === 'released') return 'L'
+    const hasValue = (res.values || []).some((v: any) => String(v.value || '').trim() !== '')
+    if (res.status === 'digitized' || hasValue) return 'D'
+    return null
+  }
+
+  const buildReportExam = (e: any) => {
+    const res = getExamResult(e)
+    return {
+      examId: e.examId || e.id,
+      code: e.code,
+      name: e.name,
+      material: e.material || 'Soro',
+      methodology: e.methodology || '',
+      workbench: e.workbench || 'Geral',
+      workbenchOrder: e.workbenchOrder ?? 9999,
+      status: res?.status === 'released' ? 'liberado' : 'waiting_approval',
+      internalObservations: res?.notes || '',
+      results: (res?.values || []).map((v: any) => ({
+        parameterId: String(v.parameter_key),
+        parameterCode: v.parameter_name,
+        parameterName: v.parameter_name,
+        value: v.value || '',
+        unit: v.unit || '',
+        referenceRange: v.reference || '—',
+        flag: v.status === 'Alto' ? 'H' : v.status === 'Baixo' ? 'L' : '',
+        status: v.status === 'Alto' || v.status === 'Baixo' ? 'altered' : 'normal',
+      })),
+    }
+  }
+
   const filteredOrderForReport = useMemo(() => {
-    if (selectedExams.size === 0) return labOrder;
-    
-    // Create a copy of the order but only with selected exams
-    const filteredExams = orderExams.filter(e => selectedExams.has(e.examId || e.id));
-    
+    const base = selectedExams.size === 0
+      ? orderExams
+      : orderExams.filter(e => selectedExams.has(e.examId || e.id));
+
     return {
       ...labOrder,
-      exams: filteredExams,
+      exams: base.map(buildReportExam),
       // If we have labGuides, filter them too
       labGuides: labOrder.labGuides?.map(guide => ({
         ...guide,
-        exams: (guide.exams || []).filter((e: any) => selectedExams.has(e.examId || e.id))
+        exams: (guide.exams || []).filter((e: any) => selectedExams.size === 0 || selectedExams.has(e.examId || e.id))
       })).filter(guide => (guide.exams?.length ?? 0) > 0)
     };
-  }, [labOrder, orderExams, selectedExams]);
+  }, [labOrder, orderExams, selectedExams, labResults]);
 
   return (
     <Dialog open={open} onOpenChange={(o) => !o && onClose()}>
@@ -606,9 +673,18 @@ export function AttendanceDetailsModal({ open, onClose, onOrderDeleted, order, p
                                         : '--/--/---- --:--'}
                                     </td>
                                     <td className="px-4 py-3 text-center">
-                                      <div className={cn("w-6 h-6 rounded-full flex items-center justify-center mx-auto bg-[#00A859] text-white text-[10px] font-bold")}>
-                                        L
-                                      </div>
+                                      {(() => {
+                                        const letter = getExamResultLetter(exam);
+                                        if (!letter) return null;
+                                        return (
+                                          <div className={cn(
+                                            "w-6 h-6 rounded-full flex items-center justify-center mx-auto text-white text-[10px] font-bold",
+                                            letter === 'L' ? "bg-[#00A859]" : "bg-amber-500"
+                                          )}>
+                                            {letter}
+                                          </div>
+                                        );
+                                      })()}
                                     </td>
                                     {hasComplement && <td className="px-4 py-3 text-muted-foreground">{exam.complemento || '-'}</td>}
                                     {hasJustification && <td className="px-4 py-3 text-muted-foreground">{exam.justificativa || '-'}</td>}
