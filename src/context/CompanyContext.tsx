@@ -3,8 +3,8 @@ import { useAuth } from '@/context/AuthContext'
 import type { Profile, Sector, MenuFunction, SystemModule, PermissionAction } from '@/types/permissions.types'
 import type { CompanyUser, Origin } from '@/types/company-portal.types'
 import { MOCK_COMPANY_USERS, getFunctionsForProfile, getUtilitiesForProfile } from '@/mocks/company.mock'
-import { getSectors, useSectors, getAllowedProfileIdsForUser, useSectorUsers, hydrateSectorUsers } from '@/stores/sectorsStore'
-import { getProfiles, useProfiles } from '@/stores/profilesStore'
+import { getSectors, useSectors, getAllowedProfileIdsForUser, getSectorsForUser, useSectorUsers, hydrateSectorUsers, hydrateSectors } from '@/stores/sectorsStore'
+import { getProfiles, useProfiles, hydrateProfiles } from '@/stores/profilesStore'
 
 import { supabase } from '@/integrations/supabase/client'
 import { toast } from 'sonner'
@@ -43,25 +43,29 @@ const CompanyContext = createContext<CompanyContextValue | null>(null)
 function getUserProfiles(userId: string, role?: string, authUserId?: string): Profile[] {
   const all = getProfiles().filter(p => p.isActive)
 
+  // Administradores podem usar todos os perfis configurados para a empresa.
+  if (role === 'super_admin' || role === 'company_admin') {
+    return all
+  }
+
   // Perfis liberados pelos setores em que o usuário está vinculado (Usuários do Setor)
   const allowedBySector = authUserId ? getAllowedProfileIdsForUser(authUserId) : null
   if (allowedBySector) {
     return all.filter(p => allowedBySector.includes(p.id))
   }
 
-  // Real Supabase users with admin role get all active profiles
-  if (role === 'super_admin' || role === 'company_admin') {
-    return all
-  }
   const user = MOCK_COMPANY_USERS.find(u => u.id === userId)
   if (!user) return []
   return all.filter(p => user.profiles.includes(p.id))
 }
 
 
-function getSectorsForProfile(profile: Profile): Sector[] {
+function getSectorsForProfile(profile: Profile, userId?: string, isAdmin = false): Sector[] {
   // Setores sem perfis vinculados ficam disponíveis para todos (ex.: setor recém-criado)
-  return getSectors().filter(s => s.isActive && (s.allowedProfiles.length === 0 || s.allowedProfiles.includes(profile.id)))
+  const compatible = getSectors().filter(s => s.isActive && (s.allowedProfiles.length === 0 || s.allowedProfiles.includes(profile.id)))
+  if (isAdmin || !userId) return compatible
+  const assignedIds = new Set(getSectorsForUser(userId).map(s => s.id))
+  return compatible.filter(s => assignedIds.has(s.id))
 }
 
 // Map auth user IDs to company user IDs
@@ -91,7 +95,11 @@ export function CompanyProvider({ children }: { children: ReactNode }) {
     let cancelled = false
     if (!user?.companyId) { setLinksLoaded(false); return }
     setLinksLoaded(false)
-    hydrateSectorUsers(user.companyId).finally(() => {
+    Promise.all([
+      hydrateProfiles(user.companyId),
+      hydrateSectors(user.companyId),
+      hydrateSectorUsers(user.companyId),
+    ]).finally(() => {
       if (!cancelled) setLinksLoaded(true)
     })
     return () => { cancelled = true }
@@ -159,7 +167,8 @@ export function CompanyProvider({ children }: { children: ReactNode }) {
   const profiles = user ? getUserProfiles(companyUserId || '', user.role, user.id) : []
   const allSectors = useSectors()
 
-  const availableSectors = activeProfile ? getSectorsForProfile(activeProfile) : []
+  const isAdmin = user?.role === 'super_admin' || user?.role === 'company_admin'
+  const availableSectors = activeProfile ? getSectorsForProfile(activeProfile, user?.id, isAdmin) : []
   const availableFunctions = activeProfile ? getFunctionsForProfile(activeProfile) : []
   const availableUtilities = activeProfile ? getUtilitiesForProfile(activeProfile) : []
 
@@ -188,7 +197,7 @@ export function CompanyProvider({ children }: { children: ReactNode }) {
             const { profileId, sectorId } = JSON.parse(saved)
             const p = profs.find(x => x.id === profileId)
             if (p) {
-              const sectors = getSectorsForProfile(p)
+              const sectors = getSectorsForProfile(p, user.id, true)
               const s = sectors.find(x => x.id === sectorId)
               setActiveProfile(p)
               setActiveSector(s || sectors[0] || null)
@@ -200,7 +209,7 @@ export function CompanyProvider({ children }: { children: ReactNode }) {
         }
         // Auto-select for single profile + single sector
         if (profs.length === 1) {
-          const sectors = getSectorsForProfile(profs[0])
+          const sectors = getSectorsForProfile(profs[0], user.id, true)
           if (sectors.length === 1) {
             setActiveProfile(profs[0])
             setActiveSector(sectors[0])
@@ -220,7 +229,7 @@ export function CompanyProvider({ children }: { children: ReactNode }) {
         const { profileId, sectorId } = JSON.parse(saved)
         const p = profiles.find(x => x.id === profileId)
         if (p) {
-          const sectors = getSectorsForProfile(p)
+          const sectors = getSectorsForProfile(p, user.id, false)
           const s = sectors.find(x => x.id === sectorId)
           setActiveProfile(p)
           setActiveSector(s || null)
@@ -233,7 +242,7 @@ export function CompanyProvider({ children }: { children: ReactNode }) {
 
     // Auto-select single profile + sector
     if (profiles.length === 1) {
-      const sectors = getSectorsForProfile(profiles[0])
+      const sectors = getSectorsForProfile(profiles[0], user.id, false)
       if (sectors.length === 1) {
         setActiveProfile(profiles[0])
         setActiveSector(sectors[0])
@@ -252,13 +261,13 @@ export function CompanyProvider({ children }: { children: ReactNode }) {
 
   const selectProfile = useCallback((profile: Profile) => {
     setActiveProfile(profile)
-    const sectors = getSectorsForProfile(profile)
+    const sectors = getSectorsForProfile(profile, user?.id, isAdmin)
     if (sectors.length === 1) {
       setActiveSector(sectors[0])
     } else {
       setActiveSector(null)
     }
-  }, [])
+  }, [user?.id, isAdmin])
 
   const selectSector = useCallback((sector: Sector) => {
     setActiveSector(sector)
@@ -282,7 +291,7 @@ export function CompanyProvider({ children }: { children: ReactNode }) {
     const p = profiles.find(x => x.id === profileId)
     if (p) {
       setActiveProfile(p)
-      const sectors = getSectorsForProfile(p)
+      const sectors = getSectorsForProfile(p, user?.id, isAdmin)
       if (sectors.length === 1) {
         setActiveSector(sectors[0])
         sessionStorage.setItem(SESSION_KEY, JSON.stringify({ profileId: p.id, sectorId: sectors[0].id }))
@@ -292,7 +301,7 @@ export function CompanyProvider({ children }: { children: ReactNode }) {
         setIsSessionReady(false)
       }
     }
-  }, [profiles])
+  }, [profiles, user?.id, isAdmin])
 
   const switchSector = useCallback((sectorId: string) => {
     const s = getSectors().find(x => x.id === sectorId)

@@ -14,6 +14,53 @@ export type Database = {
   }
   public: {
     Tables: {
+      access_profiles: {
+        Row: {
+          code: number
+          company_id: string
+          created_at: string
+          created_by: string
+          description: string | null
+          id: string
+          is_active: boolean
+          name: string
+          permissions: Json
+          updated_at: string
+        }
+        Insert: {
+          code: number
+          company_id: string
+          created_at?: string
+          created_by?: string
+          description?: string | null
+          id: string
+          is_active?: boolean
+          name: string
+          permissions?: Json
+          updated_at?: string
+        }
+        Update: {
+          code?: number
+          company_id?: string
+          created_at?: string
+          created_by?: string
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          name?: string
+          permissions?: Json
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "access_profiles_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       appointments: {
         Row: {
           company_id: string
@@ -417,6 +464,56 @@ export type Database = {
             foreignKeyName: "company_branding_company_id_fkey"
             columns: ["company_id"]
             isOneToOne: true
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      company_sectors: {
+        Row: {
+          allowed_deadline_profile_ids: string[]
+          allowed_profile_ids: string[]
+          allowed_queue_types: string[]
+          company_id: string
+          created_at: string
+          description: string | null
+          id: string
+          is_active: boolean
+          module_overrides: Json
+          name: string
+          updated_at: string
+        }
+        Insert: {
+          allowed_deadline_profile_ids?: string[]
+          allowed_profile_ids?: string[]
+          allowed_queue_types?: string[]
+          company_id: string
+          created_at?: string
+          description?: string | null
+          id: string
+          is_active?: boolean
+          module_overrides?: Json
+          name: string
+          updated_at?: string
+        }
+        Update: {
+          allowed_deadline_profile_ids?: string[]
+          allowed_profile_ids?: string[]
+          allowed_queue_types?: string[]
+          company_id?: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          module_overrides?: Json
+          name?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "company_sectors_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
             referencedRelation: "companies"
             referencedColumns: ["id"]
           },
@@ -2253,6 +2350,10 @@ export type Database = {
           _user_id: string
         }
         Returns: boolean
+      }
+      initialize_company_access_defaults: {
+        Args: { _company_id: string }
+        Returns: undefined
       }
       panel_tickets: {
         Args: { _slug: string }

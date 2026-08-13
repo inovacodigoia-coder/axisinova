@@ -2,8 +2,8 @@ import { useState, useEffect } from 'react'
 import { useCompanyContext } from '@/context/CompanyContext'
 import { useAuth } from '@/context/AuthContext'
 import { supabase } from '@/integrations/supabase/client'
-import { useSectors, useSectorUsers, upsertSector, removeSector, setSectorUsers as persistSectorUsers, detachProfileFromSectors, hydrateSectorUsers, saveSectorUsers } from '@/stores/sectorsStore'
-import { useProfiles, upsertProfile, removeProfile } from '@/stores/profilesStore'
+import { useSectors, useSectorUsers, setSectorUsers as persistSectorUsers, detachProfileFromSectors, hydrateSectorUsers, hydrateSectors, saveSectorUsers, saveSector, deleteSector } from '@/stores/sectorsStore'
+import { useProfiles, hydrateProfiles, saveProfile, deleteProfile } from '@/stores/profilesStore'
 import { ProfileFormModal } from '@/pages/company/users/ProfilesManagerPage'
 import { Plus, Edit, Users, ShieldCheck, Loader2, UserPlus, X, Search, Check, Lock, LayoutList, Trash2 } from 'lucide-react'
 import type { Sector, SystemModule, PermissionsMap, PermissionAction, Profile } from '@/types/permissions.types'
@@ -45,16 +45,20 @@ export default function SectorsPage() {
       setLoadingUsers(false)
     }
     fetchUsers()
-    if (user?.companyId) hydrateSectorUsers(user.companyId)
+    if (user?.companyId) void Promise.all([hydrateProfiles(user.companyId), hydrateSectors(user.companyId), hydrateSectorUsers(user.companyId)])
   }, [user?.companyId])
 
   const getUserCountForSector = (sectorId: string) => (sectorUsers[sectorId] || []).length
 
-  const handleSave = (s: Sector) => {
-    upsertSector(s)
-    toast.success(editing ? 'Setor atualizado' : 'Setor criado')
-    setShowForm(false)
-    setEditing(null)
+  const handleSave = async (s: Sector) => {
+    try {
+      await saveSector(s)
+      toast.success(editing ? 'Setor atualizado' : 'Setor criado')
+      setShowForm(false)
+      setEditing(null)
+    } catch (error: any) {
+      toast.error('Erro ao salvar setor', { description: error?.message })
+    }
   }
 
   const toggleUserInSector = (sectorId: string, userId: string) => {
@@ -127,10 +131,14 @@ export default function SectorsPage() {
                   <Edit className="h-4 w-4 text-muted-foreground" />
                 </button>
                 <button
-                  onClick={() => {
+                  onClick={async () => {
                     if (!window.confirm(`Excluir o setor "${s.name}"?`)) return
-                    removeSector(s.id)
-                    toast.success('Setor excluído')
+                    try {
+                      await deleteSector(s.id)
+                      toast.success('Setor excluído')
+                    } catch (error: any) {
+                      toast.error('Erro ao excluir setor', { description: error?.message })
+                    }
                   }}
                   className="rounded p-1 hover:bg-destructive/10"
                   title="Excluir setor"
@@ -170,11 +178,16 @@ export default function SectorsPage() {
                       <Edit className="h-4 w-4 text-muted-foreground" />
                     </button>
                     <button
-                      onClick={() => {
+                      onClick={async () => {
                         if (!window.confirm(`Excluir o perfil "${p.name}"? Ele será removido dos setores vinculados.`)) return
-                        removeProfile(p.id)
-                        detachProfileFromSectors(p.id)
-                        toast.success('Perfil excluído')
+                        try {
+                          await deleteProfile(p.id)
+                          detachProfileFromSectors(p.id)
+                          await Promise.all(sectors.filter(s => s.allowedProfiles.includes(p.id)).map(s => saveSector({ ...s, allowedProfiles: s.allowedProfiles.filter(id => id !== p.id) })))
+                          toast.success('Perfil excluído')
+                        } catch (error: any) {
+                          toast.error('Erro ao excluir perfil', { description: error?.message })
+                        }
                       }}
                       className="rounded p-1 hover:bg-destructive/10"
                       title="Excluir perfil"
@@ -212,10 +225,15 @@ export default function SectorsPage() {
         <ProfileFormModal
           profile={editingProfile}
           onClose={() => setShowProfileForm(false)}
-          onSave={(p) => {
-            upsertProfile(p)
-            setShowProfileForm(false)
-            toast.success(editingProfile ? 'Perfil atualizado' : 'Perfil criado')
+          companyId={user?.companyId || ''}
+          onSave={async (p) => {
+            try {
+              await saveProfile(p)
+              setShowProfileForm(false)
+              toast.success(editingProfile ? 'Perfil atualizado' : 'Perfil criado')
+            } catch (error: any) {
+              toast.error('Erro ao salvar perfil', { description: error?.message })
+            }
           }}
         />
       )}
