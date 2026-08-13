@@ -6,7 +6,7 @@ import { useAttendanceCadastro } from '@/hooks/useAttendanceCadastro'
 import { supabase } from '@/integrations/supabase/client'
 import {
   Home, Calendar, UserCheck, FileText, DollarSign, FlaskConical, BarChart3,
-  TrendingUp, Users, Settings, Database, Monitor, Building2, Lock,
+  TrendingUp, Users, Settings, Database, Monitor, Building2,
   LogOut, ChevronLeft, ChevronRight, X, Stethoscope, TicketCheck, ShieldCheck, Ruler, Layout, Beaker as BeakerIcon,
   PieChart, Warehouse, Package as PackageIcon, UserPlus, FileSearch, Menu
 } from 'lucide-react'
@@ -167,6 +167,19 @@ export function CompanySidebar({ mobileOpen, onMobileClose, collapsed = false, o
   const location = useLocation()
   const navigate = useNavigate()
   const [sidebarBg, setSidebarBg] = useState<string | undefined>(undefined)
+  const { orders } = useAttendanceCadastro()
+
+  const visibleSections = NAV_SECTIONS.map(section => ({
+    ...section,
+    items: section.items.filter(item => {
+      const profileAllows = !item.module || canAccess(item.module, 'view')
+      const sectorOverride = activeSector?.moduleOverrides?.[item.path]
+      return sectorOverride !== undefined ? sectorOverride : profileAllows
+    }),
+  })).filter(section => section.items.length > 0)
+
+  const waitingCollectionCount = orders.filter(o => o.status === 'waiting_collection' || o.status === 'waiting').length
+  const analiseCount = orders.filter(o => o.status === 'collection_done' || (o.status as string) === 'in_analysis').length
 
   // Load branding from DB
   useEffect(() => {
@@ -232,47 +245,31 @@ export function CompanySidebar({ mobileOpen, onMobileClose, collapsed = false, o
 
       {/* Nav */}
       <nav className="flex-1 overflow-y-auto px-3 py-4 space-y-4">
-        {NAV_SECTIONS.map((section) => (
+        {visibleSections.map((section) => (
           <div key={section.title}>
             {!collapsed && (
               <p className="px-3 mb-2 text-[10px] font-bold tracking-wider text-white/30 uppercase">{section.title}</p>
             )}
             <div className="space-y-0.5">
               {section.items.map((item) => {
-                const baseAccess = !item.module || canAccess(item.module, 'view')
-                const override = activeSector?.moduleOverrides?.[item.path]
-                const hasAccess = override !== undefined ? override : baseAccess
                 const active = location.pathname.startsWith(item.path)
                 const Icon = ICON_MAP[item.icon] || Home
 
-                const { orders } = useAttendanceCadastro()
-                const waitingCollectionCount = orders.filter(o => o.status === 'waiting_collection' || o.status === 'waiting').length
-                const analiseCount = orders.filter(o => o.status === 'collection_done' || (o.status as string) === 'in_analysis').length
                 const badge = item.path === '/app/lab/coleta' ? waitingCollectionCount : item.path === '/app/lab/analise' ? analiseCount : null
 
                 const link = (
                   <NavLink
                     key={item.path}
-                    to={hasAccess ? item.path : '#'}
-                    onClick={(e) => {
-                      if (!hasAccess) { e.preventDefault(); return }
-                      onMobileClose?.()
-                    }}
+                    to={item.path}
+                    onClick={() => onMobileClose?.()}
                     className={cn(
                       'flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-all duration-200',
-                      !hasAccess && 'opacity-40 cursor-not-allowed',
-                      active && hasAccess
+                      active
                         ? 'gradient-bg text-white shadow-lg'
-                        : hasAccess
-                          ? 'text-white/60 hover:bg-white/[0.06] hover:text-white'
-                          : 'text-white/40'
+                        : 'text-white/60 hover:bg-white/[0.06] hover:text-white'
                     )}
                   >
-                    {hasAccess ? (
-                      <Icon className="h-5 w-5 shrink-0" />
-                    ) : (
-                      <Lock className="h-5 w-5 shrink-0" />
-                    )}
+                    <Icon className="h-5 w-5 shrink-0" />
                     {!collapsed && <span className="flex-1 truncate">{item.label}</span>}
                     {!collapsed && badge && (
                       <span className="bg-white/20 px-1.5 py-0.5 rounded-full text-[10px] font-bold">{badge}</span>
@@ -280,29 +277,11 @@ export function CompanySidebar({ mobileOpen, onMobileClose, collapsed = false, o
                   </NavLink>
                 )
 
-                if (!hasAccess && collapsed) {
-                  return (
-                    <Tooltip key={item.path}>
-                      <TooltipTrigger asChild>{link}</TooltipTrigger>
-                      <TooltipContent side="right">Seu perfil não tem acesso a este módulo</TooltipContent>
-                    </Tooltip>
-                  )
-                }
-
                 if (collapsed) {
                   return (
                     <Tooltip key={item.path}>
                       <TooltipTrigger asChild>{link}</TooltipTrigger>
                       <TooltipContent side="right">{item.label}</TooltipContent>
-                    </Tooltip>
-                  )
-                }
-
-                if (!hasAccess) {
-                  return (
-                    <Tooltip key={item.path}>
-                      <TooltipTrigger asChild>{link}</TooltipTrigger>
-                      <TooltipContent>Seu perfil não tem acesso a este módulo</TooltipContent>
                     </Tooltip>
                   )
                 }
