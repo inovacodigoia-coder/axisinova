@@ -239,7 +239,9 @@ export function CompanySidebar({ mobileOpen, onMobileClose, collapsed = false, o
             )}
             <div className="space-y-0.5">
               {section.items.map((item) => {
-                const hasAccess = !item.module || canAccess(item.module, 'view')
+                const baseAccess = !item.module || canAccess(item.module, 'view')
+                const override = activeSector?.moduleOverrides?.[item.path]
+                const hasAccess = override !== undefined ? override : baseAccess
                 const active = location.pathname.startsWith(item.path)
                 const Icon = ICON_MAP[item.icon] || Home
 
