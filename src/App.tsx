@@ -20,6 +20,7 @@ const RegisterPage = lazy(() => import("./pages/RegisterPage"));
 const LoginPage = lazy(() => import("./pages/LoginPage"));
 const ForgotPasswordPage = lazy(() => import("./pages/ForgotPasswordPage"));
 const ResetPasswordPage = lazy(() => import("./pages/ResetPasswordPage"));
+const FirstAccessPasswordPage = lazy(() => import("./pages/FirstAccessPasswordPage"));
 const UnauthorizedPage = lazy(() => import("./pages/UnauthorizedPage"));
 const ProfileSelectorPage = lazy(() => import("./pages/ProfileSelectorPage"));
 const SuperAdminLayout = lazy(() => import("./pages/superadmin/SuperAdminLayout"));
@@ -67,6 +68,7 @@ const App = () => (
                       <Route path="/reset-password/:token" element={<ResetPasswordPage />} />
                       <Route path="/reset-password" element={<ResetPasswordPage />} />
                       <Route path="/unauthorized" element={<UnauthorizedPage />} />
+                      <Route path="/primeiro-acesso" element={<FirstAccessPasswordPage />} />
 
                       {/* Public kiosk/panel routes */}
                       <Route path="/totem" element={<SchedulingProvider><TotemPage /></SchedulingProvider>} />

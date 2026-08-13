@@ -19,6 +19,8 @@ export interface AuthUser {
   avatar?: string
   lastLogin: string
   isActive: boolean
+  /** Quando true, o usuário precisa redefinir a senha no primeiro acesso */
+  mustChangePassword?: boolean
 }
 
 export interface AuthState {

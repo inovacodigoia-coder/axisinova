@@ -19,6 +19,7 @@ interface AuthContextValue {
   isLoading: boolean
   login: (email: string, password: string) => Promise<LoginResult>
   logout: () => void
+  refreshUser: () => Promise<void>
   forgotPassword: (email: string) => Promise<void>
   resetPassword: (token: string, newPassword: string) => Promise<void>
   impersonation: { companyId: string; companyName: string } | null
@@ -66,7 +67,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       // Fetch profile to get company info
       const { data: profile } = await supabase
         .from('profiles')
-        .select('full_name, role, company_id, is_active')
+        .select('full_name, role, company_id, is_active, must_change_password')
         .eq('id', authData.user.id)
         .single()
 
@@ -94,6 +95,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         companyId: profile?.company_id || null,
         companyName,
         isActive: profile?.is_active ?? true,
+        mustChangePassword: (profile as any)?.must_change_password === true,
         lastLogin: new Date().toISOString(),
       }
 
@@ -104,7 +106,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setToken(newToken)
       setIsAuthenticated(true)
 
-      const redirectTo = getRedirectByRole(authUser.role)
+      const redirectTo = authUser.mustChangePassword ? '/primeiro-acesso' : getRedirectByRole(authUser.role)
       return { success: true, redirectTo }
     }
 
@@ -144,6 +146,29 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setImpersonation(null)
   }, [])
 
+  const refreshUser = useCallback(async () => {
+    const { data: { user: authUser } } = await supabase.auth.getUser()
+    if (!authUser) return
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('full_name, role, company_id, is_active, must_change_password')
+      .eq('id', authUser.id)
+      .single()
+    setUser((prev) => {
+      if (!prev) return prev
+      const updated: AuthUser = {
+        ...prev,
+        name: profile?.full_name || prev.name,
+        role: (profile?.role as UserRole) || prev.role,
+        companyId: profile?.company_id ?? prev.companyId,
+        isActive: profile?.is_active ?? prev.isActive,
+        mustChangePassword: (profile as any)?.must_change_password === true,
+      }
+      localStorage.setItem(USER_KEY, JSON.stringify(updated))
+      return updated
+    })
+  }, [])
+
   const forgotPassword = useCallback(async (_email: string) => {
     await new Promise((r) => setTimeout(r, 1500))
   }, [])
@@ -161,6 +186,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         isLoading,
         login,
         logout,
+        refreshUser,
         forgotPassword,
         resetPassword,
         impersonation,

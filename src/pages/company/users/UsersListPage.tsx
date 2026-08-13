@@ -189,6 +189,10 @@ function EditUserModal({ profile, onClose, onSaved }: { profile: ProfileRow | nu
   const [badgeCode, setBadgeCode] = useState('')
   const [saving, setSaving] = useState(false)
   const [sendingReset, setSendingReset] = useState(false)
+  const [manualOpen, setManualOpen] = useState(false)
+  const [manualPwd, setManualPwd] = useState('')
+  const [manualPwd2, setManualPwd2] = useState('')
+  const [settingPwd, setSettingPwd] = useState(false)
 
   useEffect(() => {
     if (profile) {
@@ -244,7 +248,28 @@ function EditUserModal({ profile, onClose, onSaved }: { profile: ProfileRow | nu
   }
 
   const handleManualReset = () => {
-    toast.warning('Funcionalidade de reset manual disponível apenas para Super Admins ou via suporte AxisInova.')
+    setManualPwd('')
+    setManualPwd2('')
+    setManualOpen(true)
+  }
+
+  const submitManualPassword = async () => {
+    if (!profile) return
+    if (manualPwd.length < 6) return toast.error('A senha deve ter no mínimo 6 caracteres')
+    if (manualPwd !== manualPwd2) return toast.error('As senhas não conferem')
+
+    setSettingPwd(true)
+    const { data, error } = await supabase.functions.invoke('set-user-password', {
+      body: { user_id: profile.id, password: manualPwd, company_id: profile.company_id },
+    })
+    setSettingPwd(false)
+
+    if (error || (data as any)?.error) {
+      toast.error((data as any)?.error || 'Erro ao definir a senha')
+      return
+    }
+    toast.success('Senha definida. O usuário deverá criar uma nova senha no primeiro acesso.')
+    setManualOpen(false)
   }
 
   return (
@@ -495,6 +520,35 @@ function EditUserModal({ profile, onClose, onSaved }: { profile: ProfileRow | nu
           </div>
         </div>
       </DialogContent>
+
+      <Dialog open={manualOpen} onOpenChange={setManualOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="text-lg font-bold">Definir Senha Manual</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 py-2">
+            <p className="text-xs text-muted-foreground">
+              Defina uma senha provisória para <span className="font-semibold text-foreground">{fullName}</span>.
+              No primeiro acesso o usuário deverá informar esta senha e criar uma nova senha pessoal.
+            </p>
+            <div className="space-y-1.5">
+              <Label className="text-xs">Nova senha</Label>
+              <Input type="password" value={manualPwd} onChange={e => setManualPwd(e.target.value)} placeholder="Mínimo 6 caracteres" />
+            </div>
+            <div className="space-y-1.5">
+              <Label className="text-xs">Confirmar senha</Label>
+              <Input type="password" value={manualPwd2} onChange={e => setManualPwd2(e.target.value)} placeholder="Repita a senha" />
+            </div>
+            <div className="flex justify-end gap-2 pt-2 border-t">
+              <Button variant="outline" onClick={() => setManualOpen(false)} disabled={settingPwd}>Cancelar</Button>
+              <Button onClick={submitManualPassword} disabled={settingPwd} className="min-w-[100px]">
+                {settingPwd && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+                Definir Senha
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </Dialog>
   )
 }

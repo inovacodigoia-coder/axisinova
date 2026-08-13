@@ -3,7 +3,7 @@ import { useAuth } from '@/context/AuthContext'
 import type { UserRole } from '@/types/auth.types'
 
 export function PrivateRoute({ children }: { children: React.ReactNode }) {
-  const { isAuthenticated, isLoading } = useAuth()
+  const { isAuthenticated, isLoading, user } = useAuth()
   const location = useLocation()
 
   if (isLoading) {
@@ -19,6 +19,10 @@ export function PrivateRoute({ children }: { children: React.ReactNode }) {
 
   if (!isAuthenticated) {
     return <Navigate to="/login" state={{ from: location }} replace />
+  }
+
+  if (user?.mustChangePassword && location.pathname !== '/primeiro-acesso') {
+    return <Navigate to="/primeiro-acesso" replace />
   }
 
   return <>{children}</>
