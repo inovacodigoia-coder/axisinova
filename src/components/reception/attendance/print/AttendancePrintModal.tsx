@@ -40,6 +40,20 @@ export function AttendancePrintModal({ open, onClose, document: doc, autoPrint, 
 
   const vias = propVias || (['patient', 'establishment'] as ('patient' | 'establishment')[])
 
+  const pageSize = selectedConfig.paperSize === 'a4'
+    ? 'A4 portrait'
+    : selectedConfig.paperSize === 'a5'
+      ? 'A5 portrait'
+      : selectedConfig.paperSize === '58mm'
+        ? '58mm auto'
+        : '80mm auto'
+
+  const pageMargin = selectedConfig.paperSize === 'a4' || selectedConfig.paperSize === 'a5' ? '10mm' : '0'
+
+  // Total number of printed sheets (avoid a trailing blank page)
+  const sheets: { copyIdx: number; via: 'patient' | 'establishment' }[] = []
+  for (let c = 0; c < copies; c++) for (const v of vias) sheets.push({ copyIdx: c, via: v })
+
   return (
     <Dialog open={open} onOpenChange={(o) => !o && onClose()}>
       <DialogContent className="max-w-[940px] w-[95vw] h-[90vh] p-0 flex flex-col gap-0 [&>button[type=button]]:hidden">
