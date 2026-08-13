@@ -26,15 +26,27 @@ export function AttendancePrintModal({ open, onClose, document: doc, autoPrint, 
     || printers.find(p => p.id === selectedPrinterId)
     || defaultConfig
 
+  const handlePrint = () => {
+    const body = window.document.body
+    body.classList.add('printing-receipt')
+    const cleanup = () => {
+      body.classList.remove('printing-receipt')
+      window.removeEventListener('afterprint', cleanup)
+    }
+    window.addEventListener('afterprint', cleanup)
+    setTimeout(() => {
+      window.print()
+      setTimeout(cleanup, 800)
+    }, 60)
+  }
+
   useEffect(() => {
     if (open && autoPrint) {
-      const t = setTimeout(() => {
-        window.print();
-        // After printing, we can set autoPrint to false or just rely on onClose
-      }, 500);
+      const t = setTimeout(() => handlePrint(), 500);
       return () => clearTimeout(t);
     }
   }, [open, autoPrint]);
+
 
   if (!open) return null
 
