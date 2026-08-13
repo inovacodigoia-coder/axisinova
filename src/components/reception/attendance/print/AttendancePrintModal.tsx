@@ -110,11 +110,11 @@ export function AttendancePrintModal({ open, onClose, document: doc, autoPrint, 
             </select>
           </label>
           <div className="flex-1" />
-          <Button variant="outline" size="sm" onClick={() => window.print()}>
+          <Button variant="outline" size="sm" onClick={handlePrint}>
             <FileText className="h-4 w-4 mr-1" /> Ver PDF
           </Button>
           <button
-            onClick={() => window.print()}
+            onClick={handlePrint}
             className="inline-flex items-center gap-1 rounded-md gradient-bg px-4 py-1.5 text-xs font-semibold text-white shadow-sm hover:opacity-90"
           >
             <Printer className="h-4 w-4" /> Imprimir
@@ -124,7 +124,8 @@ export function AttendancePrintModal({ open, onClose, document: doc, autoPrint, 
         {/* Preview */}
         <div className="flex-1 overflow-y-auto bg-muted/20 p-6">
           <style>{`@media print { @page { size: ${pageSize}; margin: ${pageMargin}; } }`}</style>
-          <div className="print-receipt flex flex-col gap-0 items-center">
+          <div id="receipt-print-root" className="print-receipt flex flex-col gap-0 items-center">
+
             {sheets.map(({ copyIdx, via }, idx) => (
               <div
                 key={`${copyIdx}-${via}`}
