@@ -939,7 +939,7 @@ export function AttendanceDetailsModal({ open, onClose, onOrderDeleted, order, p
           open={printModalOpen}
           onClose={() => setPrintModalOpen(false)}
           document={printDoc}
-          autoPrint={true}
+          autoPrint={false}
           overrideConfig={selectedPrinterOverride}
           vias={enabledVias}
         />
