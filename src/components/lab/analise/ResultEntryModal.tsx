@@ -281,6 +281,7 @@ export function ResultEntryModal({
         exam_ref: examRefOf(exam),
         exam_code: exam.code || null,
         exam_name: exam.name || null,
+        patient_id: exam.patientId || null,
         patient_name: exam.patientName || null,
         status,
         notes: notes[exam.id] || null,
@@ -411,43 +412,31 @@ export function ResultEntryModal({
   // Carrega resultados anteriores REAIS do paciente (outros protocolos)
   useEffect(() => {
     if (!isOpen) return;
+    setPrevResults({});
     const cid = resolveCompanyId(user?.companyId);
     if (!cid) return;
     const ids = Array.from(new Set(groupedPatients.map((p: any) => p.patientId).filter(Boolean)));
-    const names = Array.from(new Set(groupedPatients.map((p: any) => p.patientName).filter(Boolean)));
-    if (ids.length === 0 && names.length === 0) return;
-    // Mapa nome -> id (fallback para registros antigos sem patient_id)
-    const idByName: Record<string, string> = {};
-    groupedPatients.forEach((p: any) => {
-      if (p.patientName && p.patientId) idByName[String(p.patientName).toUpperCase()] = p.patientId;
-    });
-    const currentProtocols = new Set(groupedPatients.map((p: any) => p.protocol));
+    if (ids.length === 0) return;
+    // Exclui os pedidos atuais (protocolo pode se repetir entre pedidos)
+    const currentOrderIds = new Set(
+      groupedPatients.flatMap((p: any) => (p.exams || []).map((e: any) => e.orderId)).filter(Boolean)
+    );
     let active = true;
     (async () => {
-      let query = supabase
+      const { data } = await supabase
         .from('lab_exam_results')
-        .select('patient_id, patient_name, exam_code, exam_name, protocol, status, released_at, typed_at, created_at, lab_result_values(parameter_name, value, unit, sort_order)')
+        .select('patient_id, patient_name, exam_code, exam_name, order_id, protocol, status, released_at, typed_at, created_at, lab_result_values(parameter_name, value, unit, sort_order)')
         .eq('company_id', cid)
         .in('status', ['digitized', 'released'])
+        .in('patient_id', ids as string[])
         .order('created_at', { ascending: false });
 
-      if (ids.length > 0 && names.length > 0) {
-        query = query.or(
-          `patient_id.in.(${ids.join(',')}),patient_name.in.(${names.map((n: any) => `"${String(n).replace(/"/g, '')}"`).join(',')})`
-        );
-      } else if (ids.length > 0) {
-        query = query.in('patient_id', ids as string[]);
-      } else {
-        query = query.in('patient_name', names as string[]);
-      }
-
-      const { data } = await query;
       if (!active || !data) return;
       const map: Record<string, { date: string; value: string; unit: string }[]> = {};
       data.forEach((row: any) => {
-        if (currentProtocols.has(row.protocol)) return;
-        // Identidade do paciente: sempre pelo ID (nome apenas como reserva)
-        const rowPatientId = row.patient_id || idByName[String(row.patient_name || '').toUpperCase()];
+        if (row.order_id && currentOrderIds.has(row.order_id)) return;
+        // Identidade do paciente: exclusivamente pelo ID
+        const rowPatientId = row.patient_id;
         if (!rowPatientId || !ids.includes(rowPatientId)) return;
         const values = (row.lab_result_values || [])
           .slice()
