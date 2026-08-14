@@ -749,7 +749,7 @@ export function AttendanceDetailsModal({ open, onClose, onOrderDeleted, order, p
                             </thead>
                             <tbody className="text-[11px] divide-y divide-border">
                               {examsInGuide.map((exam: any, examIdx: number) => {
-                                const examIsCollected = exam.isColeta || isCollected;
+                                const examIsCollected = !!exam.collected || exam.isColeta || isCollected;
                                 return (
                                   <tr key={examIdx} className="hover:bg-muted/10 group">
                                     <td className="px-4 py-3">
