@@ -120,7 +120,7 @@ export function SampleLabelsPrintModal({
             {labels.map((l, idx) => (
               <div
                 key={l.sampleId}
-                className={idx < labels.length - 1 ? 'print:break-after-page' : ''}
+                className={`label-sheet ${idx < labels.length - 1 ? 'print:break-after-page' : ''}`}
                 style={idx === labels.length - 1 ? { breakAfter: 'avoid', pageBreakAfter: 'avoid' } : undefined}
               >
                 <SampleLabel
