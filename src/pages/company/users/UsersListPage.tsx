@@ -255,7 +255,7 @@ function EditUserModal({ profile, onClose, onSaved }: { profile: ProfileRow | nu
 
   const submitManualPassword = async () => {
     if (!profile) return
-    if (manualPwd.length < 6) return toast.error('A senha deve ter no mínimo 6 caracteres')
+    if (manualPwd.length < 8) return toast.error('A senha deve ter no mínimo 8 caracteres')
     if (manualPwd !== manualPwd2) return toast.error('As senhas não conferem')
 
     setSettingPwd(true)
