@@ -829,7 +829,7 @@ export function AttendanceDetailsModal({ open, onClose, onOrderDeleted, order, p
                             </span>
                           </td>
                           <td className="px-4 py-3 text-muted-foreground font-bold">{tube.label.toUpperCase()} ({tube.type.toUpperCase()})</td>
-                          <td className="px-4 py-3 text-muted-foreground uppercase">{orderExams.find(e => e.material === tube.label)?.workbench || 'GERAL'}</td>
+                          <td className="px-4 py-3 text-muted-foreground uppercase">{tubeWorkbench(tube)}</td>
                           <td className="px-4 py-3 text-muted-foreground uppercase">SANGUE</td>
                           <td className="px-4 py-3 text-muted-foreground uppercase truncate max-w-[200px]">
                             {orderExams.filter(e => e.material === tube.label || (tube.type === 'gel' && e.material === 'Soro')).map(e => e.name).join(', ') || 'N/A'}
