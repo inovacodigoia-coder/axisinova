@@ -471,7 +471,14 @@ export function LabStep3GuidesProcedures({ state, update }: Props) {
                     />
                     <div className="absolute right-2.5 top-2 flex items-center gap-1">
                       <Search className="h-4 w-4 text-muted-foreground" />
-                      <button className="text-muted-foreground hover:text-primary transition-colors">
+                      <button
+                        type="button"
+                        title="Cadastrar novo médico"
+                        disabled={activeGuide?.isDoctorDisabled}
+                        onMouseDown={(e) => e.preventDefault()}
+                        onClick={() => setShowNewDoctorModal(true)}
+                        className="text-muted-foreground hover:text-primary transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+                      >
                         <Plus className="h-4 w-4" />
                       </button>
                     </div>
