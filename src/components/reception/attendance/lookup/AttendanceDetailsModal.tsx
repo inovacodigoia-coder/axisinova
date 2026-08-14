@@ -61,8 +61,29 @@ export function AttendanceDetailsModal({ open, onClose, onOrderDeleted, order, p
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
   const { settings, isLoading: settingsLoading } = useLabSettings()
   const { toast } = useToast()
+  const { updateOrder } = useAttendanceCadastro()
+
+  const [guideEditor, setGuideEditor] = useState<{ mode: 'create' | 'edit'; index: number } | null>(null)
+  const [switchConvenioOpen, setSwitchConvenioOpen] = useState(false)
+  const [tissGuideOpen, setTissGuideOpen] = useState(false)
+  const [guidesState, setGuidesState] = useState<any[]>((order as any).labGuides || [])
+
+  useEffect(() => {
+    setGuidesState((order as any).labGuides || [])
+  }, [order.id, (order as any).labGuides])
+
+  const persistGuides = async (next: any[]) => {
+    setGuidesState(next)
+    try {
+      await updateOrder(order.id, { labGuides: next } as any)
+      toast({ title: 'Guias atualizadas', description: 'As alterações foram salvas.' })
+    } catch {
+      toast({ title: 'Erro ao salvar', description: 'Não foi possível salvar as guias.', variant: 'destructive' })
+    }
+  }
 
   const labOrder = order as LabAttendanceOrder;
+
 
   // Transform labGuides into flat exams list if available
   const orderExams = useMemo(() => {
