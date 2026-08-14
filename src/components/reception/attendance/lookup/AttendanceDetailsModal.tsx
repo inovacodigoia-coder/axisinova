@@ -336,9 +336,9 @@ export function AttendanceDetailsModal({ open, onClose, onOrderDeleted, order, p
 
   return (
     <Dialog open={open} onOpenChange={(o) => !o && onClose()}>
-      <DialogContent className="max-w-[1200px] w-[95vw] max-h-[90vh] p-0 flex flex-col gap-0 bg-[#F8FAFC] border-none shadow-2xl [&>button]:hidden overflow-hidden scrollbar-thin scrollbar-thumb-gray-300">
+      <DialogContent className="max-w-[1200px] w-[95vw] max-h-[90vh] p-0 flex flex-col gap-0 bg-[#F8FAFC] border-none shadow-2xl [&>button]:hidden overflow-hidden scrollbar-thin scrollbar-thumb-gray-300 data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=open]:zoom-in-95">
         {/* Header Navigation */}
-        <div className="flex items-center justify-between px-4 py-2 bg-white border-b border-border">
+        <div className="flex items-center justify-between px-4 py-2 bg-white border-b border-border flex-shrink-0">
           <div className="flex items-center gap-2">
             <Button variant="ghost" size="icon" onClick={onClose} className="h-8 w-8">
               <ArrowLeft className="h-4 w-4" />
@@ -353,7 +353,7 @@ export function AttendanceDetailsModal({ open, onClose, onOrderDeleted, order, p
         </div>
 
         {/* Info Cards Row */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 p-4">
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 p-4 flex-shrink-0">
           {/* Attendance ID Card */}
           <div className="gradient-bg rounded-lg p-4 text-white flex flex-col justify-between shadow-lg relative overflow-hidden min-h-[100px] hover:shadow-xl transition-shadow">
             <div className="flex justify-between items-start relative z-10">
@@ -508,7 +508,7 @@ export function AttendanceDetailsModal({ open, onClose, onOrderDeleted, order, p
         {/* Main Content Tabs */}
         <div className="flex-1 flex flex-col min-h-0 bg-white rounded-t-2xl shadow-inner">
           <Tabs defaultValue="guias" className="flex-1 flex flex-col">
-            <div className="px-4 border-b border-border flex justify-center">
+            <div className="px-4 border-b border-border flex justify-center flex-shrink-0">
               <TabsList className="bg-transparent h-12 gap-8">
                 <TabsTrigger value="guias" className="data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-secondary rounded-none px-4 flex gap-2">
                   <FileText className="h-4 w-4" />
@@ -529,7 +529,7 @@ export function AttendanceDetailsModal({ open, onClose, onOrderDeleted, order, p
               </TabsList>
             </div>
 
-              <div className="flex-1 p-4 bg-[#F8FAFC] overflow-y-auto">
+              <div className="flex-1 p-4 bg-[#F8FAFC] overflow-y-auto min-h-0">
               <TabsContent value="guias" className="m-0 space-y-4">
                 <div className="flex flex-col gap-4">
                   <div className="flex items-center justify-between">
