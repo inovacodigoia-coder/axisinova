@@ -25,6 +25,7 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import { Switch } from "@/components/ui/switch";
+import { QuickDoctorModal } from "@/components/lab/attendance/QuickDoctorModal";
 
 interface Props {
   state: any;
@@ -82,6 +83,7 @@ export function LabStep3GuidesProcedures({ state, update }: Props) {
   // Doctor search state
   const [doctorSearch, setDoctorSearch] = useState('');
   const [showDoctorDropdown, setShowDoctorDropdown] = useState(false);
+  const [showNewDoctorModal, setShowNewDoctorModal] = useState(false);
 
   // Modal states for adding/editing exam
   const [showExamModal, setShowExamModal] = useState(false);
@@ -471,7 +473,14 @@ export function LabStep3GuidesProcedures({ state, update }: Props) {
                     />
                     <div className="absolute right-2.5 top-2 flex items-center gap-1">
                       <Search className="h-4 w-4 text-muted-foreground" />
-                      <button className="text-muted-foreground hover:text-primary transition-colors">
+                      <button
+                        type="button"
+                        title="Cadastrar novo médico"
+                        disabled={activeGuide?.isDoctorDisabled}
+                        onMouseDown={(e) => e.preventDefault()}
+                        onClick={() => setShowNewDoctorModal(true)}
+                        className="text-muted-foreground hover:text-primary transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+                      >
                         <Plus className="h-4 w-4" />
                       </button>
                     </div>
@@ -789,6 +798,13 @@ export function LabStep3GuidesProcedures({ state, update }: Props) {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <QuickDoctorModal
+        open={showNewDoctorModal}
+        onClose={() => setShowNewDoctorModal(false)}
+        defaultName={doctorSearch}
+        onCreated={(doc) => selectDoctor(doc)}
+      />
     </div>
   );
 }
