@@ -10,6 +10,7 @@ import type { LabAttendanceOrder } from '@/types/lab.types'
 import { TUBE_TYPES } from '@/types/lab.types'
 import { cn } from '@/lib/utils'
 import { AttendancePrintSelectionModal } from '../print/AttendancePrintSelectionModal'
+import { SampleLabelsPrintModal } from '../print/SampleLabelsPrintModal'
 import PDFPreviewModal from '@/components/lab/PDFPreviewModal'
 import { AttendancePrintModal } from '../print/AttendancePrintModal'
 import {
@@ -728,8 +729,10 @@ export function AttendanceDetailsModal({ open, onClose, onOrderDeleted, order, p
                     <Button 
                       size="icon" 
                       variant="ghost" 
-                      className="h-8 w-8 text-muted-foreground ml-1"
-                      onClick={() => setPrintSelectionOpen(true)}
+                      className="h-8 w-8 text-muted-foreground ml-1 disabled:opacity-40"
+                      disabled={selectedTubes.size === 0}
+                      title={selectedTubes.size === 0 ? 'Selecione ao menos uma amostra' : 'Imprimir etiquetas selecionadas'}
+                      onClick={() => setLabelsPrintOpen(true)}
                     >
                       <Printer className="h-4 w-4" />
                     </Button>
@@ -939,6 +942,25 @@ export function AttendanceDetailsModal({ open, onClose, onOrderDeleted, order, p
         order={order}
         selectedExams={Array.from(selectedExams)}
         selectedTubes={Array.from(selectedTubes)}
+      />
+
+      <SampleLabelsPrintModal
+        open={labelsPrintOpen}
+        onClose={() => setLabelsPrintOpen(false)}
+        orderNumber={order.orderNumber}
+        patientName={order.patientName}
+        birthDate={order.patientBirthDate}
+        hash={order.hash}
+        labels={patientTubes
+          .map((tube, idx) => ({ tube, idx }))
+          .filter(({ idx }) => selectedTubes.has(`${order.orderNumber}-${idx + 1}`))
+          .map(({ tube, idx }) => ({
+            sampleId: `${order.orderNumber}-${idx + 1}`,
+            labelIndex: idx + 1,
+            material: tube.label,
+            tube: tube.type,
+            workbench: orderExams.find((e: any) => e.material === tube.label)?.workbench || 'GERAL',
+          }))}
       />
 
       {printDoc && (
