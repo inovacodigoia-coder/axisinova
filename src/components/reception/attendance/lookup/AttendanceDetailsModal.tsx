@@ -28,6 +28,11 @@ import type { AttendanceControlDocument, PrinterConfig } from '@/types/payment-p
 import { format } from 'date-fns'
 import { supabase } from '@/integrations/supabase/client'
 import { useToast } from '@/hooks/use-toast'
+import { useAttendanceCadastro } from '@/hooks/useAttendanceCadastro'
+import { GuideEditorModal } from '../guides/GuideEditorModal'
+import { SwitchConvenioModal } from '../guides/SwitchConvenioModal'
+import { TissGuidePrintModal } from '../print/TissGuidePrintModal'
+
 import {
   AlertDialog,
   AlertDialogAction,
