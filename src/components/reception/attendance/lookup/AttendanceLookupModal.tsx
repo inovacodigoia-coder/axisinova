@@ -332,7 +332,7 @@ function OrderRowModern({
           </span>
         </div>
         <div className="text-muted-foreground font-bold">
-          {['collection_done', 'released', 'waiting_collection', 'in_analysis', 'validation'].includes(order.status) && order.deliveryDate 
+          {['collection_done', 'released', 'waiting_collection', 'in_analysis', 'validation', 'completed'].includes(order.status) && order.deliveryDate 
             ? new Date(order.deliveryDate).toLocaleDateString('pt-BR') 
             : '-'}
         </div>
