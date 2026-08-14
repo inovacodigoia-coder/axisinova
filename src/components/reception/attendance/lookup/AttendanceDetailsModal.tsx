@@ -62,6 +62,7 @@ export function AttendanceDetailsModal({ open, onClose, onOrderDeleted, order, p
   const [forecastModalOpen, setForecastModalOpen] = useState(false)
   const [selectedExams, setSelectedExams] = useState<Set<string>>(new Set())
   const [selectedTubes, setSelectedTubes] = useState<Set<string>>(new Set())
+  const [labelsPrintOpen, setLabelsPrintOpen] = useState(false)
   const [isDeleting, setIsDeleting] = useState(false)
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
   const { settings, isLoading: settingsLoading } = useLabSettings()
