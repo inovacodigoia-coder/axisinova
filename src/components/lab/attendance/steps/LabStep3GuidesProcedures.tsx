@@ -797,6 +797,13 @@ export function LabStep3GuidesProcedures({ state, update }: Props) {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <QuickDoctorModal
+        open={showNewDoctorModal}
+        onClose={() => setShowNewDoctorModal(false)}
+        defaultName={doctorSearch}
+        onCreated={(doc) => selectDoctor(doc)}
+      />
     </div>
   );
 }
