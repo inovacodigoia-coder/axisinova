@@ -375,6 +375,13 @@ export function AttendanceDetailsModal({ open, onClose, onOrderDeleted, order, p
                     </Button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="end" className="w-56">
+                    {!isAdmin && (
+                      <div className="px-3 py-3 text-xs text-muted-foreground">
+                        <p className="font-semibold text-amber-600">Bloqueado temporariamente</p>
+                        <p className="mt-1">Estas ações estão disponíveis apenas para administradores.</p>
+                      </div>
+                    )}
+                    {isAdmin && (<>
                     <DropdownMenuItem className="flex items-center gap-2">
                       <Pencil className="h-4 w-4" />
                       <span>Editar</span>
