@@ -109,8 +109,8 @@ export function AttendanceDetailsModal({ open, onClose, onOrderDeleted, order, p
     }
     
     // Fallback or mapping from labGuides if standard exams not present
-    if (labOrder.labGuides) {
-      return labOrder.labGuides.flatMap(guide => 
+    if (guidesState && guidesState.length > 0) {
+      return guidesState.flatMap((guide: any) => 
         (guide.exams || []).map((exam: any) => ({
           ...exam,
           convenioName: guide.convenioName || order.convenioName,
