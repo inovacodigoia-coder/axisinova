@@ -34,6 +34,8 @@ import { useRegisters } from '@/context/RegistersContext'
 import { GuideEditorModal } from '../guides/GuideEditorModal'
 import { SwitchConvenioModal } from '../guides/SwitchConvenioModal'
 import { TissGuidePrintModal } from '../print/TissGuidePrintModal'
+import { ClientInfoModal, type ClientInfoMode } from './ClientInfoModal'
+import { usePermissions } from '@/hooks/usePermissions'
 
 import {
   AlertDialog,
@@ -56,6 +58,9 @@ interface AttendanceDetailsModalProps {
 
 export function AttendanceDetailsModal({ open, onClose, onOrderDeleted, order, patient }: AttendanceDetailsModalProps) {
   const { exams: catalogExams, workbenches } = useRegisters()
+  const { isSuperAdmin, isCompanyAdmin } = usePermissions()
+  const isAdmin = isSuperAdmin || isCompanyAdmin
+  const [clientModalMode, setClientModalMode] = useState<ClientInfoMode | null>(null)
   const [printSelectionOpen, setPrintSelectionOpen] = useState(false)
   const [reportPreviewOpen, setReportPreviewOpen] = useState(false)
   const [printModalOpen, setPrintModalOpen] = useState(false)
@@ -370,6 +375,13 @@ export function AttendanceDetailsModal({ open, onClose, onOrderDeleted, order, p
                     </Button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="end" className="w-56">
+                    {!isAdmin && (
+                      <div className="px-3 py-3 text-xs text-muted-foreground">
+                        <p className="font-semibold text-amber-600">Bloqueado temporariamente</p>
+                        <p className="mt-1">Estas ações estão disponíveis apenas para administradores.</p>
+                      </div>
+                    )}
+                    {isAdmin && (<>
                     <DropdownMenuItem className="flex items-center gap-2">
                       <Pencil className="h-4 w-4" />
                       <span>Editar</span>
@@ -422,6 +434,7 @@ export function AttendanceDetailsModal({ open, onClose, onOrderDeleted, order, p
                       <Trash2 className="h-4 w-4" />
                       <span>Excluir Pedido</span>
                     </DropdownMenuItem>
+                    </>)}
                   </DropdownMenuContent>
                 </DropdownMenu>
               </div>
@@ -443,15 +456,15 @@ export function AttendanceDetailsModal({ open, onClose, onOrderDeleted, order, p
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end" className="w-56">
-                  <DropdownMenuItem className="flex items-center gap-2">
+                  <DropdownMenuItem className="flex items-center gap-2" onClick={() => setClientModalMode('info')}>
                     <Info className="h-4 w-4" />
                     <span>Mais Informações do Cliente</span>
                   </DropdownMenuItem>
-                  <DropdownMenuItem className="flex items-center gap-2">
+                  <DropdownMenuItem className="flex items-center gap-2" onClick={() => setClientModalMode('edit')}>
                     <User className="h-4 w-4" />
                     <span>Editar Perfil</span>
                   </DropdownMenuItem>
-                  <DropdownMenuItem className="flex items-center gap-2">
+                  <DropdownMenuItem className="flex items-center gap-2" onClick={() => setClientModalMode('history')}>
                     <History className="h-4 w-4" />
                     <span>Histórico de Consultas</span>
                   </DropdownMenuItem>
@@ -589,6 +602,7 @@ export function AttendanceDetailsModal({ open, onClose, onOrderDeleted, order, p
                     </div>
 
 
+                    {isAdmin && (
                     <div 
                       className="flex flex-col items-center gap-1 group cursor-pointer ml-auto"
                       onClick={() => setDeleteDialogOpen(true)}
@@ -607,6 +621,7 @@ export function AttendanceDetailsModal({ open, onClose, onOrderDeleted, order, p
                       </Button>
                       <span className="text-[9px] font-bold text-muted-foreground uppercase group-hover:text-red-600">Excluir</span>
                     </div>
+                    )}
                   </div>
                 </div>
 
@@ -1207,6 +1222,16 @@ export function AttendanceDetailsModal({ open, onClose, onOrderDeleted, order, p
             doctorCRM: order.doctorCRM,
             exams: orderExams,
           }}
+        />
+      )}
+
+      {clientModalMode && (
+        <ClientInfoModal
+          open
+          mode={clientModalMode}
+          onClose={() => setClientModalMode(null)}
+          order={order}
+          patient={patient}
         />
       )}
     </Dialog>
