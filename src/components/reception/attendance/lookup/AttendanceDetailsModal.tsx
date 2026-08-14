@@ -570,8 +570,9 @@ export function AttendanceDetailsModal({ open, onClose, onOrderDeleted, order, p
 
                 {/* Groups exams by guide/convenio */}
                 {(() => {
-                  const guides = labOrder.labGuides && labOrder.labGuides.length > 0 
-                    ? labOrder.labGuides 
+                  const guides = guidesState && guidesState.length > 0 
+                    ? guidesState 
+
                     : [{ 
                         convenioName: order.convenioName || 'Particular',
                         doctorName: order.doctorName,
