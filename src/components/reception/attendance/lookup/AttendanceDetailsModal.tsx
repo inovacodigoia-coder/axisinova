@@ -187,6 +187,63 @@ export function AttendanceDetailsModal({ open, onClose, onOrderDeleted, order, p
     return Array.from(new Set(names)).join(' / ') || 'GERAL';
   };
 
+  // ---- Coleta por amostra ----
+  const matchesTube = (material: any, tube: any) => {
+    const m = String(material || '').toLowerCase();
+    if (!m) return false;
+    if (m === String(tube.label).toLowerCase() || m === String(tube.type).toLowerCase()) return true;
+    if (tube.type === 'gel' && m === 'soro') return true;
+    if (tube.type === 'edta' && (m === 'sangue total' || m === 'sangue')) return true;
+    if (tube.type === 'citrato' && m === 'plasma') return true;
+    if (tube.type === 'urina' && m.startsWith('urina')) return true;
+    return false;
+  };
+
+  const tubeIsCollected = (tube: any) => {
+    const exams = examsForTube(tube);
+    if (exams.length === 0) return false;
+    return exams.every((e: any) => !!e.collected);
+  };
+
+  const tubeCollectedAt = (tube: any) => {
+    const dates = examsForTube(tube).map((e: any) => e.collectedAt).filter(Boolean);
+    return dates.sort()[0] || null;
+  };
+
+  const [isCollecting, setIsCollecting] = useState(false);
+
+  const pendingSelectedTubes = patientTubes.filter((tube, idx) =>
+    selectedTubes.has(`${order.orderNumber}-${idx + 1}`) && !tubeIsCollected(tube)
+  );
+
+  const handleCollectSelected = async () => {
+    if (pendingSelectedTubes.length === 0) return;
+    setIsCollecting(true);
+    try {
+      const now = new Date().toISOString();
+      const nextGuides = (guidesState || []).map((g: any) => ({
+        ...g,
+        exams: (g.exams || []).map((e: any) =>
+          !e.collected && pendingSelectedTubes.some(t => matchesTube(e.material, t))
+            ? { ...e, collected: true, collectedAt: now }
+            : e
+        )
+      }));
+
+      setGuidesState(nextGuides);
+      const patch: any = { labGuides: nextGuides };
+      if (order.status === 'open') patch.status = 'waiting_collection';
+      await updateOrder(order.id, patch);
+      setSelectedTubes(new Set());
+      toast({ title: 'Amostras coletadas', description: `${pendingSelectedTubes.length} amostra(s) marcada(s) como coletada(s).` });
+    } catch {
+      toast({ title: 'Erro', description: 'Não foi possível registrar a coleta.', variant: 'destructive' });
+    } finally {
+      setIsCollecting(false);
+    }
+  };
+
+
   const handleDeleteOrder = async () => {
     try {
       setIsDeleting(true);
