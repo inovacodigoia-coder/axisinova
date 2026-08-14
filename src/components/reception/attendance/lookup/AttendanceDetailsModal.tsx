@@ -434,6 +434,7 @@ export function AttendanceDetailsModal({ open, onClose, onOrderDeleted, order, p
                       <Trash2 className="h-4 w-4" />
                       <span>Excluir Pedido</span>
                     </DropdownMenuItem>
+                    </>)}
                   </DropdownMenuContent>
                 </DropdownMenu>
               </div>
