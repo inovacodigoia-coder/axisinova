@@ -837,7 +837,16 @@ export function AttendanceDetailsModal({ open, onClose, onOrderDeleted, order, p
                   </div>
                   <div className="flex gap-2">
                     <Button variant="outline" size="sm" className="bg-white h-8 text-[10px] font-bold uppercase tracking-wider">RESTRIÇÕES</Button>
-                    <Button variant="outline" size="sm" className="bg-white h-8 text-[10px] font-bold uppercase tracking-wider">COLETA</Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="bg-white h-8 text-[10px] font-bold uppercase tracking-wider disabled:opacity-40"
+                      disabled={pendingSelectedTubes.length === 0 || isCollecting}
+                      title={pendingSelectedTubes.length === 0 ? 'Selecione as amostras pendentes recebidas' : 'Registrar coleta das amostras selecionadas'}
+                      onClick={handleCollectSelected}
+                    >
+                      {isCollecting ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : 'COLETA'}
+                    </Button>
                     <Button 
                       size="icon" 
                       variant="ghost" 
