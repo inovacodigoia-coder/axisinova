@@ -34,6 +34,8 @@ import { useRegisters } from '@/context/RegistersContext'
 import { GuideEditorModal } from '../guides/GuideEditorModal'
 import { SwitchConvenioModal } from '../guides/SwitchConvenioModal'
 import { TissGuidePrintModal } from '../print/TissGuidePrintModal'
+import { ClientInfoModal, type ClientInfoMode } from './ClientInfoModal'
+import { usePermissions } from '@/hooks/usePermissions'
 
 import {
   AlertDialog,
