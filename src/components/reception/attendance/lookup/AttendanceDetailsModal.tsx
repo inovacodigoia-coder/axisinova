@@ -142,6 +142,44 @@ export function AttendanceDetailsModal({ open, onClose, onOrderDeleted, order, p
       (tube.type === 'urina' && (materials.has('Urina') || materials.has('Urina Amostra')))
     );
   }, [orderExams]);
+
+  // Exames pertencentes a cada tubo/amostra
+  const examsForTube = (tube: any) =>
+    orderExams.filter((e: any) => {
+      const m = String(e.material || '').toLowerCase();
+      if (!m) return false;
+      if (m === String(tube.label).toLowerCase() || m === String(tube.type).toLowerCase()) return true;
+      if (tube.type === 'gel' && m === 'soro') return true;
+      if (tube.type === 'edta' && (m === 'sangue total' || m === 'sangue')) return true;
+      if (tube.type === 'citrato' && m === 'plasma') return true;
+      if (tube.type === 'urina' && m.startsWith('urina')) return true;
+      return false;
+    });
+
+  // Bancada real do exame (catálogo -> lab_workbenches)
+  const findCatalog = (e: any) =>
+    catalogExams.find((c: any) =>
+      c.id === (e.examId || e.id) ||
+      (e.code && (c.internalCode === e.code || c.tussCode === e.code)) ||
+      (e.name && String(c.name).toLowerCase() === String(e.name).toLowerCase())
+    );
+
+  const workbenchOfExam = (e: any) => {
+    const c = findCatalog(e);
+    const wb = workbenches.find((w: any) => w.id === (c?.workbenchId || e.workbenchId));
+    return wb?.name || e.workbench || '';
+  };
+
+  const examRefOf = (e: any) => {
+    const c = findCatalog(e);
+    return c?.internalCode || e.code || String(e.name || '').slice(0, 12);
+  };
+
+  const tubeWorkbench = (tube: any) => {
+    const names = examsForTube(tube).map(workbenchOfExam).filter(Boolean);
+    return Array.from(new Set(names)).join(' / ') || 'GERAL';
+  };
+
   const handleDeleteOrder = async () => {
     try {
       setIsDeleting(true);
