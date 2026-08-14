@@ -55,9 +55,9 @@ export function ClientInfoModal({ open, mode, onClose, order, patient }: Props) 
     ;(async () => {
       const { data } = await supabase
         .from('attendance_orders')
-        .select('id, order_number, status, service_type, registered_at, convenio_name, doctor_name')
+        .select('id, order_number, status, service_type, created_at, convenio_name, doctor_name')
         .eq('patient_id', order.patientId)
-        .order('registered_at', { ascending: false })
+        .order('created_at', { ascending: false })
         .limit(50)
       if (active) {
         setHistory(data || [])
@@ -102,7 +102,7 @@ export function ClientInfoModal({ open, mode, onClose, order, patient }: Props) 
                         {h.id === order.id && <span className="ml-2 text-[10px] font-bold uppercase text-primary">atual</span>}
                       </p>
                       <p className="text-xs text-muted-foreground">
-                        {fmt(h.registered_at)} · {h.convenio_name || 'Particular'}
+                        {fmt(h.created_at)} · {h.convenio_name || 'Particular'}
                       </p>
                     </div>
                     <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">{h.status}</span>
