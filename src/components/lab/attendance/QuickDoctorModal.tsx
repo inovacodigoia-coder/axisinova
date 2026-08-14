@@ -105,8 +105,23 @@ export function QuickDoctorModal({ open, onClose, defaultName = '', onCreated }:
               {specialties.filter((s: any) => s.isActive !== false).map((s: any) => (
                 <option key={s.id} value={s.id}>{s.name}</option>
               ))}
+              <option value="__other__">Outros (digitar nova)...</option>
             </select>
+            {specialtyId === '__other__' && (
+              <div className="mt-2 flex gap-2">
+                <Input
+                  value={newSpecialty}
+                  onChange={e => setNewSpecialty(e.target.value)}
+                  placeholder="Nome da nova especialidade"
+                  onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); handleCreateSpecialty(); } }}
+                />
+                <Button type="button" variant="secondary" onClick={handleCreateSpecialty} disabled={creatingSpec}>
+                  {creatingSpec ? 'Salvando...' : 'Adicionar'}
+                </Button>
+              </div>
+            )}
           </div>
+
 
           <div className="grid grid-cols-2 gap-2">
             <div>
