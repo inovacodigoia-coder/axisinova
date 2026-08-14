@@ -109,8 +109,8 @@ export function AttendanceDetailsModal({ open, onClose, onOrderDeleted, order, p
     }
     
     // Fallback or mapping from labGuides if standard exams not present
-    if (labOrder.labGuides) {
-      return labOrder.labGuides.flatMap(guide => 
+    if (guidesState && guidesState.length > 0) {
+      return guidesState.flatMap((guide: any) => 
         (guide.exams || []).map((exam: any) => ({
           ...exam,
           convenioName: guide.convenioName || order.convenioName,
@@ -135,7 +135,7 @@ export function AttendanceDetailsModal({ open, onClose, onOrderDeleted, order, p
       doctorName: order.doctorName,
       doctorCRM: order.doctorCRM
     }];
-  }, [labOrder, order]);
+  }, [labOrder, order, guidesState]);
 
   // Derived tubes list
   const patientTubes = useMemo(() => {
@@ -186,6 +186,63 @@ export function AttendanceDetailsModal({ open, onClose, onOrderDeleted, order, p
     const names = examsForTube(tube).map(workbenchOfExam).filter(Boolean);
     return Array.from(new Set(names)).join(' / ') || 'GERAL';
   };
+
+  // ---- Coleta por amostra ----
+  const matchesTube = (material: any, tube: any) => {
+    const m = String(material || '').toLowerCase();
+    if (!m) return false;
+    if (m === String(tube.label).toLowerCase() || m === String(tube.type).toLowerCase()) return true;
+    if (tube.type === 'gel' && m === 'soro') return true;
+    if (tube.type === 'edta' && (m === 'sangue total' || m === 'sangue')) return true;
+    if (tube.type === 'citrato' && m === 'plasma') return true;
+    if (tube.type === 'urina' && m.startsWith('urina')) return true;
+    return false;
+  };
+
+  const tubeIsCollected = (tube: any) => {
+    const exams = examsForTube(tube);
+    if (exams.length === 0) return false;
+    return exams.every((e: any) => !!e.collected);
+  };
+
+  const tubeCollectedAt = (tube: any) => {
+    const dates = examsForTube(tube).map((e: any) => e.collectedAt).filter(Boolean);
+    return dates.sort()[0] || null;
+  };
+
+  const [isCollecting, setIsCollecting] = useState(false);
+
+  const pendingSelectedTubes = patientTubes.filter((tube, idx) =>
+    selectedTubes.has(`${order.orderNumber}-${idx + 1}`) && !tubeIsCollected(tube)
+  );
+
+  const handleCollectSelected = async () => {
+    if (pendingSelectedTubes.length === 0) return;
+    setIsCollecting(true);
+    try {
+      const now = new Date().toISOString();
+      const nextGuides = (guidesState || []).map((g: any) => ({
+        ...g,
+        exams: (g.exams || []).map((e: any) =>
+          !e.collected && pendingSelectedTubes.some(t => matchesTube(e.material, t))
+            ? { ...e, collected: true, collectedAt: now }
+            : e
+        )
+      }));
+
+      setGuidesState(nextGuides);
+      const patch: any = { labGuides: nextGuides };
+      if (order.status === 'open') patch.status = 'waiting_collection';
+      await updateOrder(order.id, patch);
+      setSelectedTubes(new Set());
+      toast({ title: 'Amostras coletadas', description: `${pendingSelectedTubes.length} amostra(s) marcada(s) como coletada(s).` });
+    } catch {
+      toast({ title: 'Erro', description: 'Não foi possível registrar a coleta.', variant: 'destructive' });
+    } finally {
+      setIsCollecting(false);
+    }
+  };
+
 
   const handleDeleteOrder = async () => {
     try {
@@ -780,7 +837,16 @@ export function AttendanceDetailsModal({ open, onClose, onOrderDeleted, order, p
                   </div>
                   <div className="flex gap-2">
                     <Button variant="outline" size="sm" className="bg-white h-8 text-[10px] font-bold uppercase tracking-wider">RESTRIÇÕES</Button>
-                    <Button variant="outline" size="sm" className="bg-white h-8 text-[10px] font-bold uppercase tracking-wider">COLETA</Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="bg-white h-8 text-[10px] font-bold uppercase tracking-wider disabled:opacity-40"
+                      disabled={pendingSelectedTubes.length === 0 || isCollecting}
+                      title={pendingSelectedTubes.length === 0 ? 'Selecione as amostras pendentes recebidas' : 'Registrar coleta das amostras selecionadas'}
+                      onClick={handleCollectSelected}
+                    >
+                      {isCollecting ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : 'COLETA'}
+                    </Button>
                     <Button 
                       size="icon" 
                       variant="ghost" 
@@ -850,12 +916,17 @@ export function AttendanceDetailsModal({ open, onClose, onOrderDeleted, order, p
                             {orderExams.filter(e => e.material === tube.label || (tube.type === 'gel' && e.material === 'Soro')).map(e => e.name).join(', ') || 'N/A'}
                           </td>
                           <td className="px-4 py-3">
-                            <span className={cn("font-bold uppercase", isCollected ? "text-emerald-600" : "text-amber-500")}>
-                              {isCollected ? 'Coletado' : 'Pendente'}
+                            <span className={cn("font-bold uppercase", tubeIsCollected(tube) ? "text-emerald-600" : "text-amber-500")}>
+                              {tubeIsCollected(tube) ? 'Coletado' : 'Pendente'}
                             </span>
                           </td>
                           <td className="px-4 py-3 text-muted-foreground">
-                            {new Date(order.registeredAt).toLocaleDateString('pt-BR')} {new Date(order.registeredAt).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
+                            {tubeIsCollected(tube)
+                              ? (() => {
+                                  const d = new Date(tubeCollectedAt(tube) || order.updatedAt || order.registeredAt)
+                                  return `${d.toLocaleDateString('pt-BR')} ${d.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}`
+                                })()
+                              : '—'}
                           </td>
                         </tr>
                       )) : (
