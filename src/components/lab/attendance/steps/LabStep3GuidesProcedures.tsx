@@ -82,6 +82,7 @@ export function LabStep3GuidesProcedures({ state, update }: Props) {
   // Doctor search state
   const [doctorSearch, setDoctorSearch] = useState('');
   const [showDoctorDropdown, setShowDoctorDropdown] = useState(false);
+  const [showNewDoctorModal, setShowNewDoctorModal] = useState(false);
 
   // Modal states for adding/editing exam
   const [showExamModal, setShowExamModal] = useState(false);
