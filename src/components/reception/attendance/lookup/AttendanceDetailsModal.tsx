@@ -602,6 +602,7 @@ export function AttendanceDetailsModal({ open, onClose, onOrderDeleted, order, p
                     </div>
 
 
+                    {isAdmin && (
                     <div 
                       className="flex flex-col items-center gap-1 group cursor-pointer ml-auto"
                       onClick={() => setDeleteDialogOpen(true)}
@@ -620,6 +621,7 @@ export function AttendanceDetailsModal({ open, onClose, onOrderDeleted, order, p
                       </Button>
                       <span className="text-[9px] font-bold text-muted-foreground uppercase group-hover:text-red-600">Excluir</span>
                     </div>
+                    )}
                   </div>
                 </div>
 
