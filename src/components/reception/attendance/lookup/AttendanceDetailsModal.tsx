@@ -28,6 +28,11 @@ import type { AttendanceControlDocument, PrinterConfig } from '@/types/payment-p
 import { format } from 'date-fns'
 import { supabase } from '@/integrations/supabase/client'
 import { useToast } from '@/hooks/use-toast'
+import { useAttendanceCadastro } from '@/hooks/useAttendanceCadastro'
+import { GuideEditorModal } from '../guides/GuideEditorModal'
+import { SwitchConvenioModal } from '../guides/SwitchConvenioModal'
+import { TissGuidePrintModal } from '../print/TissGuidePrintModal'
+
 import {
   AlertDialog,
   AlertDialogAction,
@@ -61,8 +66,29 @@ export function AttendanceDetailsModal({ open, onClose, onOrderDeleted, order, p
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
   const { settings, isLoading: settingsLoading } = useLabSettings()
   const { toast } = useToast()
+  const { updateOrder } = useAttendanceCadastro()
+
+  const [guideEditor, setGuideEditor] = useState<{ mode: 'create' | 'edit'; index: number } | null>(null)
+  const [switchConvenioOpen, setSwitchConvenioOpen] = useState(false)
+  const [tissGuideOpen, setTissGuideOpen] = useState(false)
+  const [guidesState, setGuidesState] = useState<any[]>((order as any).labGuides || [])
+
+  useEffect(() => {
+    setGuidesState((order as any).labGuides || [])
+  }, [order.id, (order as any).labGuides])
+
+  const persistGuides = async (next: any[]) => {
+    setGuidesState(next)
+    try {
+      await updateOrder(order.id, { labGuides: next } as any)
+      toast({ title: 'Guias atualizadas', description: 'As alterações foram salvas.' })
+    } catch {
+      toast({ title: 'Erro ao salvar', description: 'Não foi possível salvar as guias.', variant: 'destructive' })
+    }
+  }
 
   const labOrder = order as LabAttendanceOrder;
+
 
   // Transform labGuides into flat exams list if available
   const orderExams = useMemo(() => {
@@ -466,18 +492,11 @@ export function AttendanceDetailsModal({ open, onClose, onOrderDeleted, order, p
 
                   {/* Guide Action Icons */}
                   <div className="flex items-center gap-6 py-2 px-1 border-y border-border/50 bg-white/50 rounded-lg">
-                    <div className="flex flex-col items-center gap-1 group cursor-pointer">
+                    <div className="flex flex-col items-center gap-1 group cursor-pointer" onClick={() => setGuideEditor({ mode: 'create', index: -1 })}>
                       <Button size="icon" variant="ghost" className="h-9 w-9 rounded-full bg-white shadow-sm border border-border group-hover:text-primary group-hover:border-primary transition-all">
                         <Plus className="h-4 w-4" />
                       </Button>
                       <span className="text-[9px] font-bold text-muted-foreground uppercase group-hover:text-primary">Guia</span>
-                    </div>
-                    
-                    <div className="flex flex-col items-center gap-1 group cursor-pointer">
-                      <Button size="icon" variant="ghost" className="h-9 w-9 rounded-full bg-white shadow-sm border border-border group-hover:text-primary group-hover:border-primary transition-all">
-                        <ShieldCheck className="h-4 w-4" />
-                      </Button>
-                      <span className="text-[9px] font-bold text-muted-foreground uppercase group-hover:text-primary">Conferir</span>
                     </div>
 
                     <div className="flex flex-col items-center gap-1 group">
@@ -502,45 +521,31 @@ export function AttendanceDetailsModal({ open, onClose, onOrderDeleted, order, p
                       </span>
                     </div>
 
-                    <div className="flex flex-col items-center gap-1 group cursor-pointer">
-                      <Button size="icon" variant="ghost" className="h-9 w-9 rounded-full bg-white shadow-sm border border-border group-hover:text-primary group-hover:border-primary transition-all">
-                        <History className="h-4 w-4" />
-                      </Button>
-                      <span className="text-[9px] font-bold text-muted-foreground uppercase group-hover:text-primary">Histórico</span>
-                    </div>
-
-                    <div className="flex flex-col items-center gap-1 group cursor-pointer">
-                      <Button size="icon" variant="ghost" className="h-9 w-9 rounded-full bg-white shadow-sm border border-border group-hover:text-primary group-hover:border-primary transition-all">
-                        <RefreshCw className="h-4 w-4" />
-                      </Button>
-                      <span className="text-[9px] font-bold text-muted-foreground uppercase group-hover:text-primary">Atualizar</span>
-                    </div>
-
-                    <div className="flex flex-col items-center gap-1 group cursor-pointer">
+                    <div className="flex flex-col items-center gap-1 group cursor-pointer" onClick={() => setGuideEditor({ mode: 'edit', index: 0 })}>
                       <Button size="icon" variant="ghost" className="h-9 w-9 rounded-full bg-white shadow-sm border border-border group-hover:text-primary group-hover:border-primary transition-all">
                         <Pencil className="h-4 w-4 text-primary" />
                       </Button>
                       <span className="text-[9px] font-bold text-muted-foreground uppercase group-hover:text-primary">Editar Guia</span>
                     </div>
 
-                    <div className="flex flex-col items-center gap-1 group cursor-pointer">
+                    <div className="flex flex-col items-center gap-1 group cursor-pointer" onClick={() => setSwitchConvenioOpen(true)}>
                       <Button size="icon" variant="ghost" className="h-9 w-9 rounded-full bg-white shadow-sm border border-border group-hover:text-emerald-600 group-hover:border-emerald-600 transition-all">
                         <RefreshCw className="h-4 w-4 text-emerald-600" />
                       </Button>
                       <span className="text-[9px] font-bold text-muted-foreground uppercase group-hover:text-emerald-600 text-center">Trocar<br/>Convênio</span>
                     </div>
 
-                    <div className="flex flex-col items-center gap-1 group cursor-pointer">
+                    <div className="flex flex-col items-center gap-1 group cursor-pointer" onClick={() => setTissGuideOpen(true)}>
                       <Button 
                         size="icon" 
                         variant="ghost" 
                         className="h-9 w-9 rounded-full bg-white shadow-sm border border-border group-hover:text-slate-600 group-hover:border-slate-600 transition-all"
-                        onClick={() => setPrintSelectionOpen(true)}
                       >
                         <Printer className="h-4 w-4 text-slate-600" />
                       </Button>
                       <span className="text-[9px] font-bold text-muted-foreground uppercase group-hover:text-slate-600 text-center">Imprimir<br/>Guia</span>
                     </div>
+
 
                     <div 
                       className="flex flex-col items-center gap-1 group cursor-pointer ml-auto"
@@ -565,8 +570,9 @@ export function AttendanceDetailsModal({ open, onClose, onOrderDeleted, order, p
 
                 {/* Groups exams by guide/convenio */}
                 {(() => {
-                  const guides = labOrder.labGuides && labOrder.labGuides.length > 0 
-                    ? labOrder.labGuides 
+                  const guides = guidesState && guidesState.length > 0 
+                    ? guidesState 
+
                     : [{ 
                         convenioName: order.convenioName || 'Particular',
                         doctorName: order.doctorName,
@@ -1086,7 +1092,61 @@ export function AttendanceDetailsModal({ open, onClose, onOrderDeleted, order, p
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {guideEditor && (
+        <GuideEditorModal
+          open
+          mode={guideEditor.mode}
+          guide={guideEditor.mode === 'edit' ? (guidesState[guideEditor.index] || {
+            convenioId: order.convenioId,
+            convenioName: order.convenioName,
+            doctorId: order.doctorId,
+            doctorName: order.doctorName,
+            doctorCRM: order.doctorCRM,
+            exams: orderExams,
+          }) : undefined}
+          onClose={() => setGuideEditor(null)}
+          onSave={(g) => {
+            const next = [...guidesState]
+            if (guideEditor.mode === 'create') next.push(g)
+            else next[guideEditor.index >= 0 ? guideEditor.index : 0] = { ...(next[0] || {}), ...g }
+            persistGuides(next)
+          }}
+        />
+      )}
+
+      {switchConvenioOpen && (
+        <SwitchConvenioModal
+          open
+          onClose={() => setSwitchConvenioOpen(false)}
+          currentConvenioName={guidesState[0]?.convenioName || order.convenioName}
+          onConfirm={(c) => {
+            const next = guidesState.length > 0
+              ? guidesState.map((g, i) => (i === 0 ? { ...g, convenioId: c.id, convenioName: c.name } : g))
+              : [{ convenioId: c.id, convenioName: c.name, doctorName: order.doctorName, doctorCRM: order.doctorCRM, exams: orderExams }]
+            setGuidesState(next)
+            updateOrder(order.id, { labGuides: next, convenioId: c.id, convenioName: c.name } as any)
+            toast({ title: 'Convênio alterado', description: `Agora: ${c.name}` })
+          }}
+        />
+      )}
+
+      {tissGuideOpen && (
+        <TissGuidePrintModal
+          open
+          onClose={() => setTissGuideOpen(false)}
+          order={order}
+          patient={patient}
+          guide={guidesState[0] || {
+            convenioName: order.convenioName,
+            doctorName: order.doctorName,
+            doctorCRM: order.doctorCRM,
+            exams: orderExams,
+          }}
+        />
+      )}
     </Dialog>
+
   )
 }
 
