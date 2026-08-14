@@ -9,18 +9,7 @@ import { supabase } from '@/integrations/supabase/client'
 import { useAuth } from '@/context/AuthContext'
 import { toast } from 'sonner'
 
-const ROLE_OPTIONS = [
-  { value: 'company_admin', label: 'Administrador' },
-  { value: 'doctor', label: 'Médico' },
-  { value: 'receptionist', label: 'Recepcionista' },
-  { value: 'billing', label: 'Faturista' },
-  { value: 'telephonist', label: 'Telefonista' },
-  { value: 'nurse', label: 'Enfermeiro(a)' },
-  { value: 'pharmacist', label: 'Farmacêutico(a)' },
-  { value: 'biochemist', label: 'Bioquímico' },
-  { value: 'analyst', label: 'Analista' },
-  { value: 'other', label: 'Outros' },
-]
+import { ROLE_OPTIONS } from '@/lib/userRoles'
 
 interface CreateUserModalProps {
   open: boolean
@@ -106,7 +95,7 @@ export function CreateUserModal({ open, onOpenChange, onCreated }: CreateUserMod
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-md">
+      <DialogContent className="w-[95vw] max-w-[95vw] sm:max-w-md max-h-[92vh] overflow-y-auto p-4 sm:p-6">
         <DialogHeader>
           <DialogTitle>Novo Usuário</DialogTitle>
         </DialogHeader>

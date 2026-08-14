@@ -28,18 +28,7 @@ interface ProfileRow {
   badge_code: string | null
 }
 
-const roleLabelMap: Record<string, string> = {
-  company_admin: 'Administrador',
-  doctor: 'Médico',
-  receptionist: 'Recepcionista',
-  billing: 'Faturista',
-  telephonist: 'Telefonista',
-  nurse: 'Enfermeiro(a)',
-  pharmacist: 'Farmacêutico(a)',
-  analyst: 'Analista',
-}
-
-const ROLE_OPTIONS = Object.entries(roleLabelMap).map(([value, label]) => ({ value, label }))
+import { ROLE_OPTIONS, getRoleLabel } from '@/lib/userRoles'
 
 export default function UsersListPage() {
   const { user } = useAuth()
@@ -94,7 +83,7 @@ export default function UsersListPage() {
   const columns = [
     { key: 'full_name', label: 'Nome completo', sortable: true, render: (p: ProfileRow) => <span className="font-medium text-foreground">{p.full_name}</span> },
     { key: 'cpf', label: 'CPF', render: (p: ProfileRow) => <span className="text-sm text-muted-foreground">{p.cpf || '—'}</span> },
-    { key: 'role', label: 'Função', render: (p: ProfileRow) => <span className="text-sm">{roleLabelMap[p.role] || p.role}</span> },
+    { key: 'role', label: 'Função', render: (p: ProfileRow) => <span className="text-sm">{getRoleLabel(p.role)}</span> },
     { key: 'is_active', label: 'Status', render: (p: ProfileRow) => (
       <span className={`inline-flex rounded-full px-2 py-0.5 text-[10px] font-bold ${p.is_active !== false ? 'bg-[hsl(var(--success))]/10 text-[hsl(var(--success))]' : 'bg-muted text-muted-foreground'}`}>
         {p.is_active !== false ? 'Ativo' : 'Inativo'}
@@ -274,11 +263,11 @@ function EditUserModal({ profile, onClose, onSaved }: { profile: ProfileRow | nu
 
   return (
     <Dialog open={!!profile} onOpenChange={open => { if (!open) onClose() }}>
-      <DialogContent className="sm:max-w-2xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="w-[95vw] max-w-[95vw] sm:max-w-2xl max-h-[92vh] overflow-y-auto p-4 sm:p-6">
         <DialogHeader>
-          <DialogTitle className="text-xl font-bold flex items-center justify-between">
+          <DialogTitle className="text-lg sm:text-xl font-bold flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 pr-6">
             Editar Usuário
-            <div className="flex gap-2 mr-6">
+            <div className="flex flex-wrap gap-2">
               <Button 
                 variant="outline" 
                 size="sm" 
@@ -442,7 +431,7 @@ function EditUserModal({ profile, onClose, onSaved }: { profile: ProfileRow | nu
                   {ROLE_OPTIONS.map(r => (
                     <SelectItem key={r.value} value={r.value}>{r.label}</SelectItem>
                   ))}
-                  <SelectItem value="biochemist">Bioquímico</SelectItem>
+                  
                 </SelectContent>
               </Select>
             </div>
@@ -522,7 +511,7 @@ function EditUserModal({ profile, onClose, onSaved }: { profile: ProfileRow | nu
       </DialogContent>
 
       <Dialog open={manualOpen} onOpenChange={setManualOpen}>
-        <DialogContent className="sm:max-w-md">
+        <DialogContent className="w-[95vw] max-w-[95vw] sm:max-w-md max-h-[92vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="text-lg font-bold">Definir Senha Manual</DialogTitle>
           </DialogHeader>
