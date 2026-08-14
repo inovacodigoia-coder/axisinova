@@ -916,12 +916,17 @@ export function AttendanceDetailsModal({ open, onClose, onOrderDeleted, order, p
                             {orderExams.filter(e => e.material === tube.label || (tube.type === 'gel' && e.material === 'Soro')).map(e => e.name).join(', ') || 'N/A'}
                           </td>
                           <td className="px-4 py-3">
-                            <span className={cn("font-bold uppercase", isCollected ? "text-emerald-600" : "text-amber-500")}>
-                              {isCollected ? 'Coletado' : 'Pendente'}
+                            <span className={cn("font-bold uppercase", tubeIsCollected(tube) ? "text-emerald-600" : "text-amber-500")}>
+                              {tubeIsCollected(tube) ? 'Coletado' : 'Pendente'}
                             </span>
                           </td>
                           <td className="px-4 py-3 text-muted-foreground">
-                            {new Date(order.registeredAt).toLocaleDateString('pt-BR')} {new Date(order.registeredAt).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
+                            {tubeIsCollected(tube)
+                              ? (() => {
+                                  const d = new Date(tubeCollectedAt(tube) || order.updatedAt || order.registeredAt)
+                                  return `${d.toLocaleDateString('pt-BR')} ${d.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}`
+                                })()
+                              : '—'}
                           </td>
                         </tr>
                       )) : (
