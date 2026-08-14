@@ -456,15 +456,15 @@ export function AttendanceDetailsModal({ open, onClose, onOrderDeleted, order, p
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end" className="w-56">
-                  <DropdownMenuItem className="flex items-center gap-2">
+                  <DropdownMenuItem className="flex items-center gap-2" onClick={() => setClientModalMode('info')}>
                     <Info className="h-4 w-4" />
                     <span>Mais Informações do Cliente</span>
                   </DropdownMenuItem>
-                  <DropdownMenuItem className="flex items-center gap-2">
+                  <DropdownMenuItem className="flex items-center gap-2" onClick={() => setClientModalMode('edit')}>
                     <User className="h-4 w-4" />
                     <span>Editar Perfil</span>
                   </DropdownMenuItem>
-                  <DropdownMenuItem className="flex items-center gap-2">
+                  <DropdownMenuItem className="flex items-center gap-2" onClick={() => setClientModalMode('history')}>
                     <History className="h-4 w-4" />
                     <span>Histórico de Consultas</span>
                   </DropdownMenuItem>
