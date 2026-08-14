@@ -780,16 +780,21 @@ export function AttendanceDetailsModal({ open, onClose, onOrderDeleted, order, p
                                       </div>
                                     </td>
                                     <td className="px-4 py-3 text-center">
-                                      <div className="flex justify-center">
+                                      <div className="flex flex-col items-center gap-0.5">
                                         <div className={cn("w-2.5 h-2.5 rounded-full", examIsCollected ? "bg-emerald-500" : "bg-slate-300")} />
+                                        {examIsCollected && exam.collectedAt && (
+                                          <span className="text-[9px] text-muted-foreground">
+                                            {format(new Date(exam.collectedAt), 'dd/MM HH:mm')}
+                                          </span>
+                                        )}
                                       </div>
                                     </td>
                                     <td className="px-4 py-3 text-muted-foreground uppercase">{exam.material || 'SANGUE'}</td>
                                     <td className="px-4 py-3 text-muted-foreground">
-                                      {examIsCollected && (exam.previsaoEntrega || order.deliveryDate) 
+                                      {examIsCollected && (exam.previsaoEntrega || exam.expectedDeliveryDate || exam.deliveryDate || order.deliveryDate) 
                                         ? (
                                           <div className="font-bold text-slate-600">
-                                            {format(new Date(exam.previsaoEntrega || order.deliveryDate!), 'dd/MM/yyyy - HH:mm')}
+                                            {format(new Date(exam.previsaoEntrega || exam.expectedDeliveryDate || exam.deliveryDate || order.deliveryDate!), 'dd/MM/yyyy - HH:mm')}
                                           </div>
                                         )
                                         : '--/--/---- --:--'}
@@ -797,17 +802,27 @@ export function AttendanceDetailsModal({ open, onClose, onOrderDeleted, order, p
                                     <td className="px-4 py-3 text-center">
                                       {(() => {
                                         const letter = getExamResultLetter(exam);
-                                        if (!letter) return null;
+                                        if (letter) {
+                                          return (
+                                            <div className={cn(
+                                              "w-6 h-6 rounded-full flex items-center justify-center mx-auto text-white text-[10px] font-bold",
+                                              letter === 'L' ? "bg-[#00A859]" : "bg-amber-500"
+                                            )}>
+                                              {letter}
+                                            </div>
+                                          );
+                                        }
                                         return (
-                                          <div className={cn(
-                                            "w-6 h-6 rounded-full flex items-center justify-center mx-auto text-white text-[10px] font-bold",
-                                            letter === 'L' ? "bg-[#00A859]" : "bg-amber-500"
+                                          <span className={cn(
+                                            "inline-block rounded-full px-2 py-0.5 text-[9px] font-bold uppercase tracking-wide",
+                                            examIsCollected ? "bg-blue-100 text-blue-700" : "bg-slate-100 text-slate-500"
                                           )}>
-                                            {letter}
-                                          </div>
+                                            {examIsCollected ? 'Aguardando' : 'Aberto'}
+                                          </span>
                                         );
                                       })()}
                                     </td>
+
                                     {hasComplement && <td className="px-4 py-3 text-muted-foreground">{exam.complemento || '-'}</td>}
                                     {hasJustification && <td className="px-4 py-3 text-muted-foreground">{exam.justificativa || '-'}</td>}
                                     <td className="px-4 py-3 text-right">
