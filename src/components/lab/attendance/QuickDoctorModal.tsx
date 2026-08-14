@@ -68,7 +68,7 @@ export function QuickDoctorModal({ open, onClose, defaultName = '', onCreated }:
       fullName: fullName.trim(),
       crm: crm.trim(),
       crmState,
-      specialtyIds: specialtyId ? [specialtyId] : [],
+      specialtyIds: specialtyId && specialtyId !== '__other__' ? [specialtyId] : [],
       enabledConvenioIds: [],
       phone: phone || undefined,
       email: email || undefined,
