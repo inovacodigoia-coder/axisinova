@@ -1,5 +1,6 @@
 import React, { useMemo } from 'react';
 import Barcode from 'react-barcode';
+import { normalizeHash } from '@/utils/orderHash';
 
 interface LabelProps {
   orderNumber: string;
@@ -64,9 +65,10 @@ export const SampleLabel = ({
         />
       </div>
 
-      {/* Código da amostra + hash */}
-      <div className="text-[9px] font-bold whitespace-nowrap overflow-hidden">
-        {sampleId}{hash ? ` (${hash})` : ''}
+      {/* Código da amostra + hash do pedido (mesmo para todas as etiquetas) */}
+      <div className="flex items-baseline justify-between gap-1 whitespace-nowrap">
+        <span className="text-[9px] font-bold">{sampleId}</span>
+        {hash && <span className="text-[7.5px] font-bold tracking-tight">{normalizeHash(hash)}</span>}
       </div>
 
       {/* Dados do paciente */}
