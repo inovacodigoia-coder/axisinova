@@ -263,7 +263,7 @@ function EditUserModal({ profile, onClose, onSaved }: { profile: ProfileRow | nu
 
   return (
     <Dialog open={!!profile} onOpenChange={open => { if (!open) onClose() }}>
-      <DialogContent className="sm:max-w-2xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="w-[95vw] max-w-[95vw] sm:max-w-2xl max-h-[92vh] overflow-y-auto p-4 sm:p-6">
         <DialogHeader>
           <DialogTitle className="text-xl font-bold flex items-center justify-between">
             Editar Usuário
