@@ -57,15 +57,15 @@ export const SampleLabel = ({
       {/* Barcode / Main ID Area */}
       <div className="flex-1 flex gap-2 items-center overflow-hidden">
         <div className="flex-1 flex flex-col justify-center min-w-0">
-          <div className="text-[11px] font-black leading-none mb-0.5 truncate">
+          <div className="text-[10px] font-black leading-none mb-0.5 whitespace-nowrap">
             {sampleId}
           </div>
-          <div className="h-7 w-full flex items-center justify-center overflow-hidden scale-[0.85] origin-left">
+          <div className="h-7 w-full flex items-center justify-start overflow-hidden">
             {/* Real Barcode Code 128 */}
             <Barcode 
               value={barcodeValue}
               format="CODE128"
-              width={1.2}
+              width={1}
               height={20}
               displayValue={false}
               margin={0}

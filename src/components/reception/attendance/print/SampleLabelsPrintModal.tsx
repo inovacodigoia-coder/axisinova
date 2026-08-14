@@ -95,12 +95,32 @@ export function SampleLabelsPrintModal({
         </div>
 
         <div className="flex-1 overflow-y-auto bg-muted/20 p-6">
-          <style>{`@media print { @page { size: 50mm 30mm; margin: 0; } }`}</style>
+          <style>{`
+            @media print {
+              @page { size: 50mm 30mm; margin: 0; }
+              body.printing-receipt #receipt-print-portal { width: 50mm !important; }
+              body.printing-receipt #receipt-print-portal > div { gap: 0 !important; }
+              body.printing-receipt #receipt-print-portal .label-sheet {
+                width: 50mm !important;
+                height: 30mm !important;
+                overflow: hidden !important;
+                page-break-inside: avoid !important;
+                break-inside: avoid !important;
+              }
+              body.printing-receipt #receipt-print-portal .label-sheet > div {
+                width: 50mm !important;
+                height: 30mm !important;
+                border: none !important;
+                box-shadow: none !important;
+              }
+              body.printing-receipt #receipt-print-portal svg { max-width: 100% !important; }
+            }
+          `}</style>
           <div id="labels-print-root" className="flex flex-col items-center gap-3">
             {labels.map((l, idx) => (
               <div
                 key={l.sampleId}
-                className={idx < labels.length - 1 ? 'print:break-after-page' : ''}
+                className={`label-sheet ${idx < labels.length - 1 ? 'print:break-after-page' : ''}`}
                 style={idx === labels.length - 1 ? { breakAfter: 'avoid', pageBreakAfter: 'avoid' } : undefined}
               >
                 <SampleLabel
