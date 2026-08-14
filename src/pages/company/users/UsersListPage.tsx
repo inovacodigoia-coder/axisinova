@@ -431,7 +431,7 @@ function EditUserModal({ profile, onClose, onSaved }: { profile: ProfileRow | nu
                   {ROLE_OPTIONS.map(r => (
                     <SelectItem key={r.value} value={r.value}>{r.label}</SelectItem>
                   ))}
-                  <SelectItem value="biochemist">Bioquímico</SelectItem>
+                  
                 </SelectContent>
               </Select>
             </div>
