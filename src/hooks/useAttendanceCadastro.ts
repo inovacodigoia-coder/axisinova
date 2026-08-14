@@ -4,6 +4,7 @@ import { supabase } from '@/integrations/supabase/client'
 import type { AttendanceOrder } from '@/types/attendance-cadastro.types'
 import { useToast } from '@/hooks/use-toast'
 import { useQuery } from '@tanstack/react-query'
+import { generateOrderHash } from '@/utils/orderHash'
 
 export function useAttendanceCadastro() {
   const { user } = useAuth()
@@ -116,7 +117,7 @@ export function useAttendanceCadastro() {
       
       const originStr = String(originCode).replace(/\D/g, '').padStart(2, '0')
       const protocol = `${originOrderCount}-${originStr}`
-      const hash = Math.random().toString(36).substring(2, 8).toUpperCase()
+      const hash = generateOrderHash(protocol, Date.now())
 
       // Calculate max delivery date from guides
       const calculatedDeliveryDate = (data.guides || data.labGuides)?.reduce((latest: string | null, guide: any) => {
