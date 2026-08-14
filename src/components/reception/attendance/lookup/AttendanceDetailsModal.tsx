@@ -1092,7 +1092,61 @@ export function AttendanceDetailsModal({ open, onClose, onOrderDeleted, order, p
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {guideEditor && (
+        <GuideEditorModal
+          open
+          mode={guideEditor.mode}
+          guide={guideEditor.mode === 'edit' ? (guidesState[guideEditor.index] || {
+            convenioId: order.convenioId,
+            convenioName: order.convenioName,
+            doctorId: order.doctorId,
+            doctorName: order.doctorName,
+            doctorCRM: order.doctorCRM,
+            exams: orderExams,
+          }) : undefined}
+          onClose={() => setGuideEditor(null)}
+          onSave={(g) => {
+            const next = [...guidesState]
+            if (guideEditor.mode === 'create') next.push(g)
+            else next[guideEditor.index >= 0 ? guideEditor.index : 0] = { ...(next[0] || {}), ...g }
+            persistGuides(next)
+          }}
+        />
+      )}
+
+      {switchConvenioOpen && (
+        <SwitchConvenioModal
+          open
+          onClose={() => setSwitchConvenioOpen(false)}
+          currentConvenioName={guidesState[0]?.convenioName || order.convenioName}
+          onConfirm={(c) => {
+            const next = guidesState.length > 0
+              ? guidesState.map((g, i) => (i === 0 ? { ...g, convenioId: c.id, convenioName: c.name } : g))
+              : [{ convenioId: c.id, convenioName: c.name, doctorName: order.doctorName, doctorCRM: order.doctorCRM, exams: orderExams }]
+            setGuidesState(next)
+            updateOrder(order.id, { labGuides: next, convenioId: c.id, convenioName: c.name } as any)
+            toast({ title: 'Convênio alterado', description: `Agora: ${c.name}` })
+          }}
+        />
+      )}
+
+      {tissGuideOpen && (
+        <TissGuidePrintModal
+          open
+          onClose={() => setTissGuideOpen(false)}
+          order={order}
+          patient={patient}
+          guide={guidesState[0] || {
+            convenioName: order.convenioName,
+            doctorName: order.doctorName,
+            doctorCRM: order.doctorCRM,
+            exams: orderExams,
+          }}
+        />
+      )}
     </Dialog>
+
   )
 }
 
