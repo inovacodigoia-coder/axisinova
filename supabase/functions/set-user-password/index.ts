@@ -59,7 +59,17 @@ Deno.serve(async (req) => {
     }
 
     const { error: updErr } = await admin.auth.admin.updateUserById(user_id, { password });
-    if (updErr) return json({ error: updErr.message }, 400);
+    if (updErr) {
+      const m = (updErr.message || "").toLowerCase();
+      let msg = "Não foi possível definir a senha. Tente novamente.";
+      if (m.includes("weak") || m.includes("pwned") || m.includes("easy to guess"))
+        msg = "Esta senha é muito comum e foi encontrada em vazamentos de dados. Escolha uma senha mais forte (letras maiúsculas, minúsculas, números e símbolos).";
+      else if (m.includes("at least") && m.includes("characters"))
+        msg = "A senha é muito curta. Use no mínimo 8 caracteres.";
+      else if (m.includes("different from the old"))
+        msg = "A nova senha deve ser diferente da senha atual.";
+      return json({ error: msg }, 400);
+    }
 
     await admin.from("profiles").update({ must_change_password: true }).eq("id", user_id);
 
