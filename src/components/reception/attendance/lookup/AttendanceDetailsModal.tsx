@@ -999,7 +999,8 @@ export function AttendanceDetailsModal({ open, onClose, onOrderDeleted, order, p
             labelIndex: idx + 1,
             material: tube.label,
             tube: tube.type,
-            workbench: orderExams.find((e: any) => e.material === tube.label)?.workbench || 'GERAL',
+            workbench: tubeWorkbench(tube),
+            examRefs: examsForTube(tube).map(examRefOf),
           }))}
       />
 
