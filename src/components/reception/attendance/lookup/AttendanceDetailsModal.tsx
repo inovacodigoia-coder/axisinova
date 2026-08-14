@@ -30,6 +30,7 @@ import { format } from 'date-fns'
 import { supabase } from '@/integrations/supabase/client'
 import { useToast } from '@/hooks/use-toast'
 import { useAttendanceCadastro } from '@/hooks/useAttendanceCadastro'
+import { useRegisters } from '@/context/RegistersContext'
 import { GuideEditorModal } from '../guides/GuideEditorModal'
 import { SwitchConvenioModal } from '../guides/SwitchConvenioModal'
 import { TissGuidePrintModal } from '../print/TissGuidePrintModal'
@@ -54,6 +55,7 @@ interface AttendanceDetailsModalProps {
 }
 
 export function AttendanceDetailsModal({ open, onClose, onOrderDeleted, order, patient }: AttendanceDetailsModalProps) {
+  const { exams: catalogExams, workbenches } = useRegisters()
   const [printSelectionOpen, setPrintSelectionOpen] = useState(false)
   const [reportPreviewOpen, setReportPreviewOpen] = useState(false)
   const [printModalOpen, setPrintModalOpen] = useState(false)
@@ -142,6 +144,44 @@ export function AttendanceDetailsModal({ open, onClose, onOrderDeleted, order, p
       (tube.type === 'urina' && (materials.has('Urina') || materials.has('Urina Amostra')))
     );
   }, [orderExams]);
+
+  // Exames pertencentes a cada tubo/amostra
+  const examsForTube = (tube: any) =>
+    orderExams.filter((e: any) => {
+      const m = String(e.material || '').toLowerCase();
+      if (!m) return false;
+      if (m === String(tube.label).toLowerCase() || m === String(tube.type).toLowerCase()) return true;
+      if (tube.type === 'gel' && m === 'soro') return true;
+      if (tube.type === 'edta' && (m === 'sangue total' || m === 'sangue')) return true;
+      if (tube.type === 'citrato' && m === 'plasma') return true;
+      if (tube.type === 'urina' && m.startsWith('urina')) return true;
+      return false;
+    });
+
+  // Bancada real do exame (catálogo -> lab_workbenches)
+  const findCatalog = (e: any) =>
+    catalogExams.find((c: any) =>
+      c.id === (e.examId || e.id) ||
+      (e.code && (c.internalCode === e.code || c.tussCode === e.code)) ||
+      (e.name && String(c.name).toLowerCase() === String(e.name).toLowerCase())
+    );
+
+  const workbenchOfExam = (e: any) => {
+    const c = findCatalog(e);
+    const wb = workbenches.find((w: any) => w.id === (c?.workbenchId || e.workbenchId));
+    return wb?.name || e.workbench || '';
+  };
+
+  const examRefOf = (e: any) => {
+    const c = findCatalog(e);
+    return c?.internalCode || e.code || String(e.name || '').slice(0, 12);
+  };
+
+  const tubeWorkbench = (tube: any) => {
+    const names = examsForTube(tube).map(workbenchOfExam).filter(Boolean);
+    return Array.from(new Set(names)).join(' / ') || 'GERAL';
+  };
+
   const handleDeleteOrder = async () => {
     try {
       setIsDeleting(true);
@@ -789,7 +829,7 @@ export function AttendanceDetailsModal({ open, onClose, onOrderDeleted, order, p
                             </span>
                           </td>
                           <td className="px-4 py-3 text-muted-foreground font-bold">{tube.label.toUpperCase()} ({tube.type.toUpperCase()})</td>
-                          <td className="px-4 py-3 text-muted-foreground uppercase">{orderExams.find(e => e.material === tube.label)?.workbench || 'GERAL'}</td>
+                          <td className="px-4 py-3 text-muted-foreground uppercase">{tubeWorkbench(tube)}</td>
                           <td className="px-4 py-3 text-muted-foreground uppercase">SANGUE</td>
                           <td className="px-4 py-3 text-muted-foreground uppercase truncate max-w-[200px]">
                             {orderExams.filter(e => e.material === tube.label || (tube.type === 'gel' && e.material === 'Soro')).map(e => e.name).join(', ') || 'N/A'}
@@ -959,7 +999,8 @@ export function AttendanceDetailsModal({ open, onClose, onOrderDeleted, order, p
             labelIndex: idx + 1,
             material: tube.label,
             tube: tube.type,
-            workbench: orderExams.find((e: any) => e.material === tube.label)?.workbench || 'GERAL',
+            workbench: tubeWorkbench(tube),
+            examRefs: examsForTube(tube).map(examRefOf),
           }))}
       />
 

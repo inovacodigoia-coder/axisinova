@@ -10,6 +10,7 @@ export interface SampleLabelData {
   material: string
   tube: string
   workbench: string
+  examRefs?: string[]
 }
 
 interface Props {
@@ -135,6 +136,7 @@ export function SampleLabelsPrintModal({
                   isUrgent={isUrgent}
                   labelIndex={l.labelIndex}
                   originSigla={originSigla}
+                  examRefs={l.examRefs}
                 />
               </div>
             ))}
