@@ -253,11 +253,15 @@ export function AttendanceCadastroModal({
       const stepLabel = STEPS_LAB_DYNAMIC[s]
       if (stepLabel === 'Cliente') return !!state.patient
       if (stepLabel === 'Atendimento') return true
-      if (stepLabel === 'Guias e Procedimentos') return (state.guides?.length || 0) > 0
+      if (stepLabel === 'Guias e Procedimentos') {
+        const hasPlanAndExam = state.guides?.some((g: any) =>
+          !!g.plan?.trim() && (g.exams?.length || 0) > 0
+        )
+        return hasPlanAndExam
+      }
       if (stepLabel === 'Pagamento') return true
       if (stepLabel === 'Autorização') return true
       if (stepLabel === 'Resumo') return true
-      return true
       return true
     }
 
