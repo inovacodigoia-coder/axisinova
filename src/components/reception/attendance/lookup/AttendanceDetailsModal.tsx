@@ -54,6 +54,7 @@ interface AttendanceDetailsModalProps {
 }
 
 export function AttendanceDetailsModal({ open, onClose, onOrderDeleted, order, patient }: AttendanceDetailsModalProps) {
+  const { exams: catalogExams, workbenches } = useRegisters()
   const [printSelectionOpen, setPrintSelectionOpen] = useState(false)
   const [reportPreviewOpen, setReportPreviewOpen] = useState(false)
   const [printModalOpen, setPrintModalOpen] = useState(false)
