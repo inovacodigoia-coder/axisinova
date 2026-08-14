@@ -28,18 +28,7 @@ interface ProfileRow {
   badge_code: string | null
 }
 
-const roleLabelMap: Record<string, string> = {
-  company_admin: 'Administrador',
-  doctor: 'Médico',
-  receptionist: 'Recepcionista',
-  billing: 'Faturista',
-  telephonist: 'Telefonista',
-  nurse: 'Enfermeiro(a)',
-  pharmacist: 'Farmacêutico(a)',
-  analyst: 'Analista',
-}
-
-const ROLE_OPTIONS = Object.entries(roleLabelMap).map(([value, label]) => ({ value, label }))
+import { ROLE_OPTIONS, getRoleLabel } from '@/lib/userRoles'
 
 export default function UsersListPage() {
   const { user } = useAuth()
