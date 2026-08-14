@@ -83,7 +83,7 @@ export default function UsersListPage() {
   const columns = [
     { key: 'full_name', label: 'Nome completo', sortable: true, render: (p: ProfileRow) => <span className="font-medium text-foreground">{p.full_name}</span> },
     { key: 'cpf', label: 'CPF', render: (p: ProfileRow) => <span className="text-sm text-muted-foreground">{p.cpf || '—'}</span> },
-    { key: 'role', label: 'Função', render: (p: ProfileRow) => <span className="text-sm">{roleLabelMap[p.role] || p.role}</span> },
+    { key: 'role', label: 'Função', render: (p: ProfileRow) => <span className="text-sm">{getRoleLabel(p.role)}</span> },
     { key: 'is_active', label: 'Status', render: (p: ProfileRow) => (
       <span className={`inline-flex rounded-full px-2 py-0.5 text-[10px] font-bold ${p.is_active !== false ? 'bg-[hsl(var(--success))]/10 text-[hsl(var(--success))]' : 'bg-muted text-muted-foreground'}`}>
         {p.is_active !== false ? 'Ativo' : 'Inativo'}
