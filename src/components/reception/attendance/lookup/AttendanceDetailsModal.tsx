@@ -1224,6 +1224,16 @@ export function AttendanceDetailsModal({ open, onClose, onOrderDeleted, order, p
           }}
         />
       )}
+
+      {clientModalMode && (
+        <ClientInfoModal
+          open
+          mode={clientModalMode}
+          onClose={() => setClientModalMode(null)}
+          order={order}
+          patient={patient}
+        />
+      )}
     </Dialog>
 
   )
