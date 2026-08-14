@@ -241,6 +241,14 @@ export function useAttendanceCadastro() {
       if (patch.cardNumber) updateData.card_number = patch.cardNumber
       if (patch.authorizationCode) updateData.authorization_code = patch.authorizationCode
       if (patch.authorizationExpiry) updateData.authorization_expiry = patch.authorizationExpiry
+      if (patch.labGuides !== undefined) updateData.lab_guides = patch.labGuides
+      if (patch.convenioId !== undefined) updateData.convenio_id = patch.convenioId || null
+      if (patch.convenioName !== undefined) updateData.convenio_name = patch.convenioName
+      if (patch.doctorId !== undefined) updateData.doctor_id = patch.doctorId || null
+      if (patch.doctorName !== undefined) updateData.doctor_name = patch.doctorName
+      if (patch.doctorCRM !== undefined) updateData.doctor_crm = patch.doctorCRM
+      if (patch.deliveryDate !== undefined) updateData.delivery_date = ensureIsoDate(patch.deliveryDate)
+
       
       const { error } = await (supabase
         .from('attendance_orders' as any) as any)
