@@ -17,11 +17,26 @@ export default function FirstAccessPasswordPage() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
+  const translateAuthError = (message: string) => {
+    const m = message.toLowerCase()
+    if (m.includes('weak') || m.includes('pwned') || m.includes('easy to guess'))
+      return 'Esta senha é muito comum e foi encontrada em vazamentos de dados. Escolha uma senha mais forte (use letras maiúsculas, minúsculas, números e símbolos).'
+    if (m.includes('should be different from the old password') || m.includes('different from the old'))
+      return 'A nova senha deve ser diferente da senha atual.'
+    if (m.includes('at least') && m.includes('characters'))
+      return 'A nova senha é muito curta. Use no mínimo 8 caracteres.'
+    if (m.includes('invalid login credentials')) return 'Senha atual incorreta.'
+    if (m.includes('rate limit') || m.includes('too many'))
+      return 'Muitas tentativas. Aguarde alguns instantes e tente novamente.'
+    if (m.includes('session') || m.includes('jwt')) return 'Sessão expirada. Faça login novamente.'
+    return 'Não foi possível alterar a senha. Tente novamente.'
+  }
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setError(null)
 
-    if (next.length < 6) return setError('A nova senha deve ter no mínimo 6 caracteres')
+    if (next.length < 8) return setError('A nova senha deve ter no mínimo 8 caracteres')
     if (next !== confirm) return setError('As senhas não conferem')
     if (next === current) return setError('A nova senha deve ser diferente da senha atual')
     if (!user?.email) return setError('Sessão inválida. Faça login novamente.')
@@ -41,7 +56,7 @@ export default function FirstAccessPasswordPage() {
     const { error: updateError } = await supabase.auth.updateUser({ password: next })
     if (updateError) {
       setLoading(false)
-      return setError(updateError.message)
+      return setError(translateAuthError(updateError.message))
     }
 
     // 3. Remove a obrigatoriedade
