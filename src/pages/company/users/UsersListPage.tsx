@@ -511,7 +511,7 @@ function EditUserModal({ profile, onClose, onSaved }: { profile: ProfileRow | nu
       </DialogContent>
 
       <Dialog open={manualOpen} onOpenChange={setManualOpen}>
-        <DialogContent className="sm:max-w-md">
+        <DialogContent className="w-[95vw] max-w-[95vw] sm:max-w-md max-h-[92vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="text-lg font-bold">Definir Senha Manual</DialogTitle>
           </DialogHeader>
