@@ -82,16 +82,21 @@ export default function LabColetaPage() {
         return o?.status === 'waiting_collection';
       })
       .map(o => {
-        const allExams = (o.labGuides || []).flatMap(guide => (guide.exams || []).map((e: any) => ({
-          ...e,
-          examId: e.examId || e.id,
-          material: e.material || e.selectedMaterial || e.materialName || 'Soro'
-        })))
+        // Apenas exames/amostras efetivamente coletados aparecem na fila
+        const allExams = (o.labGuides || [])
+          .flatMap(guide => (guide.exams || []))
+          .filter((e: any) => !!e.collected)
+          .map((e: any) => ({
+            ...e,
+            examId: e.examId || e.id,
+            material: e.material || e.selectedMaterial || e.materialName || 'Soro'
+          }))
         return {
           ...o,
           exams: allExams
         }
-      }) as LabAttendanceOrder[]
+      })
+      .filter(o => (o.exams || []).length > 0) as LabAttendanceOrder[]
   }, [orders])
 
 
