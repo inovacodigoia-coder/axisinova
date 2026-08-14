@@ -25,6 +25,7 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import { Switch } from "@/components/ui/switch";
+import { QuickDoctorModal } from "@/components/lab/attendance/QuickDoctorModal";
 
 interface Props {
   state: any;
