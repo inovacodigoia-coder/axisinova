@@ -533,7 +533,7 @@ function EditUserModal({ profile, onClose, onSaved }: { profile: ProfileRow | nu
             </p>
             <div className="space-y-1.5">
               <Label className="text-xs">Nova senha</Label>
-              <Input type="password" value={manualPwd} onChange={e => setManualPwd(e.target.value)} placeholder="Mínimo 6 caracteres" />
+              <Input type="password" value={manualPwd} onChange={e => setManualPwd(e.target.value)} placeholder="Mínimo 8 caracteres, evite senhas comuns" />
             </div>
             <div className="space-y-1.5">
               <Label className="text-xs">Confirmar senha</Label>
