@@ -135,7 +135,7 @@ export function AttendanceDetailsModal({ open, onClose, onOrderDeleted, order, p
       doctorName: order.doctorName,
       doctorCRM: order.doctorCRM
     }];
-  }, [labOrder, order]);
+  }, [labOrder, order, guidesState]);
 
   // Derived tubes list
   const patientTubes = useMemo(() => {
