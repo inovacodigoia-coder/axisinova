@@ -17,12 +17,14 @@ interface Props {
 }
 
 export function QuickDoctorModal({ open, onClose, defaultName = '', onCreated }: Props) {
-  const { addDoctor, specialties } = useRegisters();
+  const { addDoctor, specialties, addSpecialty } = useRegisters();
   const [fullName, setFullName] = useState(defaultName);
   const [council, setCouncil] = useState('CRM');
   const [crm, setCrm] = useState('');
   const [crmState, setCrmState] = useState('RN');
   const [specialtyId, setSpecialtyId] = useState('');
+  const [newSpecialty, setNewSpecialty] = useState('');
+  const [creatingSpec, setCreatingSpec] = useState(false);
   const [phone, setPhone] = useState('');
   const [email, setEmail] = useState('');
   const [saving, setSaving] = useState(false);
@@ -30,9 +32,31 @@ export function QuickDoctorModal({ open, onClose, defaultName = '', onCreated }:
   React.useEffect(() => {
     if (open) {
       setFullName(defaultName);
-      setCrm(''); setSpecialtyId(''); setPhone(''); setEmail('');
+      setCrm(''); setSpecialtyId(''); setPhone(''); setEmail(''); setNewSpecialty('');
     }
   }, [open, defaultName]);
+
+  const handleCreateSpecialty = async () => {
+    const name = newSpecialty.trim();
+    if (!name) return toast.error('Informe o nome da especialidade');
+    const existing = specialties.find((s: any) => s.name?.toLowerCase() === name.toLowerCase());
+    if (existing) {
+      setSpecialtyId(existing.id);
+      setNewSpecialty('');
+      return toast.info('Especialidade já cadastrada — selecionada');
+    }
+    setCreatingSpec(true);
+    const id = crypto.randomUUID();
+    try {
+      await addSpecialty({ id, companyId: '', name, isActive: true } as any);
+      setSpecialtyId(id);
+      setNewSpecialty('');
+      toast.success('Especialidade cadastrada');
+    } finally {
+      setCreatingSpec(false);
+    }
+  };
+
 
   const handleSave = async () => {
     if (!fullName.trim()) return toast.error('Informe o nome do médico');
@@ -44,7 +68,7 @@ export function QuickDoctorModal({ open, onClose, defaultName = '', onCreated }:
       fullName: fullName.trim(),
       crm: crm.trim(),
       crmState,
-      specialtyIds: specialtyId ? [specialtyId] : [],
+      specialtyIds: specialtyId && specialtyId !== '__other__' ? [specialtyId] : [],
       enabledConvenioIds: [],
       phone: phone || undefined,
       email: email || undefined,
@@ -105,8 +129,23 @@ export function QuickDoctorModal({ open, onClose, defaultName = '', onCreated }:
               {specialties.filter((s: any) => s.isActive !== false).map((s: any) => (
                 <option key={s.id} value={s.id}>{s.name}</option>
               ))}
+              <option value="__other__">Outros (digitar nova)...</option>
             </select>
+            {specialtyId === '__other__' && (
+              <div className="mt-2 flex gap-2">
+                <Input
+                  value={newSpecialty}
+                  onChange={e => setNewSpecialty(e.target.value)}
+                  placeholder="Nome da nova especialidade"
+                  onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); handleCreateSpecialty(); } }}
+                />
+                <Button type="button" variant="secondary" onClick={handleCreateSpecialty} disabled={creatingSpec}>
+                  {creatingSpec ? 'Salvando...' : 'Adicionar'}
+                </Button>
+              </div>
+            )}
           </div>
+
 
           <div className="grid grid-cols-2 gap-2">
             <div>
