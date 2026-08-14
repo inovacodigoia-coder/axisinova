@@ -508,7 +508,7 @@ export function AttendanceDetailsModal({ open, onClose, onOrderDeleted, order, p
         {/* Main Content Tabs */}
         <div className="flex-1 flex flex-col min-h-0 bg-white rounded-t-2xl shadow-inner">
           <Tabs defaultValue="guias" className="flex-1 flex flex-col">
-            <div className="px-4 border-b border-border flex justify-center">
+            <div className="px-4 border-b border-border flex justify-center flex-shrink-0">
               <TabsList className="bg-transparent h-12 gap-8">
                 <TabsTrigger value="guias" className="data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-secondary rounded-none px-4 flex gap-2">
                   <FileText className="h-4 w-4" />
@@ -529,7 +529,7 @@ export function AttendanceDetailsModal({ open, onClose, onOrderDeleted, order, p
               </TabsList>
             </div>
 
-              <div className="flex-1 p-4 bg-[#F8FAFC] overflow-y-auto">
+              <div className="flex-1 p-4 bg-[#F8FAFC] overflow-y-auto min-h-0">
               <TabsContent value="guias" className="m-0 space-y-4">
                 <div className="flex flex-col gap-4">
                   <div className="flex items-center justify-between">
