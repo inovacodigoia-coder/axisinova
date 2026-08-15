@@ -71,7 +71,7 @@ export default function CompaniesListPage() {
   }, [])
 
   async function fetchCompanies() {
-    const { data, error } = await supabase.from('companies').select('*')
+    const { data, error } = await supabase.from('companies').select('*').order('sequence_id', { ascending: true })
     if (error) {
       console.error('Error fetching companies:', error)
       return
@@ -79,6 +79,8 @@ export default function CompaniesListPage() {
     if (data) {
       const mapped: Company[] = data.map((c: any) => ({
         id: c.id,
+        sequenceId: c.sequence_id ?? undefined,
+      sequenceId: c.sequence_id ?? undefined,
         razaoSocial: c.name || '',
         nomeFantasia: c.nome_fantasia || c.name || '',
         cnpj: c.cnpj || '',
@@ -197,6 +199,16 @@ export default function CompaniesListPage() {
   const hasFilters = search || statusFilter !== 'all' || planFilter !== 'all'
 
   const columns = [
+    {
+      key: 'sequenceId',
+      label: 'ID',
+      sortable: true,
+      render: (c: Company) => (
+        <span className="inline-flex items-center justify-center min-w-[2rem] px-2 py-0.5 rounded-md bg-muted text-xs font-bold text-foreground">
+          {c.sequenceId ?? '—'}
+        </span>
+      ),
+    },
     {
       key: 'nomeFantasia',
       label: 'Empresa',

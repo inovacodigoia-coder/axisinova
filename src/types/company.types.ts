@@ -29,6 +29,8 @@ export interface Company {
   armazenamentoUsadoGB: number
   armazenamentoLimiteGB: number
   valorMensal: number
+  /** ID sequencial por ordem de criação no sistema */
+  sequenceId?: number
   criadoEm: string
   ultimoAcesso?: string
 }
