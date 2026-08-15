@@ -213,7 +213,7 @@ export function AttendanceDetailsModal({ open, onClose, onOrderDeleted, order, p
   const [isCollecting, setIsCollecting] = useState(false);
 
   const pendingSelectedTubes = patientTubes.filter((tube, idx) =>
-    selectedTubes.has(`${order.orderNumber}-${idx + 1}`) && !tubeIsCollected(tube)
+    selectedTubes.has(sampleCodeFor(idx + 1)) && !tubeIsCollected(tube)
   );
 
   const handleCollectSelected = async () => {
@@ -882,11 +882,11 @@ export function AttendanceDetailsModal({ open, onClose, onOrderDeleted, order, p
                         <th className="px-4 py-2 border-b border-border w-10">
                           <Checkbox 
                             className="h-3.5 w-3.5" 
-                            checked={patientTubes.length > 0 && patientTubes.every((_, idx) => selectedTubes.has(`${order.orderNumber}-${idx + 1}`))}
+                            checked={patientTubes.length > 0 && patientTubes.every((_, idx) => selectedTubes.has(sampleCodeFor(idx + 1)))}
                             onCheckedChange={(checked) => {
                               const newSelected = new Set(selectedTubes);
                               patientTubes.forEach((_, idx) => {
-                                const id = `${order.orderNumber}-${idx + 1}`;
+                                const id = sampleCodeFor(idx + 1);
                                 if (checked) newSelected.add(id);
                                 else newSelected.delete(id);
                               });
@@ -909,10 +909,10 @@ export function AttendanceDetailsModal({ open, onClose, onOrderDeleted, order, p
                           <td className="px-4 py-3">
                             <Checkbox 
                               className="h-3.5 w-3.5" 
-                              checked={selectedTubes.has(`${order.orderNumber}-${tubeIdx + 1}`)}
+                              checked={selectedTubes.has(sampleCodeFor(tubeIdx + 1))}
                               onCheckedChange={(checked) => {
                                 const newSelected = new Set(selectedTubes);
-                                const id = `${order.orderNumber}-${tubeIdx + 1}`;
+                                const id = sampleCodeFor(tubeIdx + 1);
                                 if (checked) newSelected.add(id);
                                 else newSelected.delete(id);
                                 setSelectedTubes(newSelected);
@@ -921,7 +921,7 @@ export function AttendanceDetailsModal({ open, onClose, onOrderDeleted, order, p
                           </td>
                           <td className="px-4 py-3">
                             <span className={cn("text-white rounded-full px-2 py-0.5 text-[9px] font-bold", tube.color)}>
-                              {order.orderNumber}-{tubeIdx + 1}
+                              {sampleCodeFor(tubeIdx + 1)}
                             </span>
                           </td>
                           <td className="px-4 py-3 text-muted-foreground font-bold">{tube.label.toUpperCase()} ({tube.type.toUpperCase()})</td>
@@ -1094,9 +1094,9 @@ export function AttendanceDetailsModal({ open, onClose, onOrderDeleted, order, p
         hash={order.hash}
         labels={patientTubes
           .map((tube, idx) => ({ tube, idx }))
-          .filter(({ idx }) => selectedTubes.has(`${order.orderNumber}-${idx + 1}`))
+          .filter(({ idx }) => selectedTubes.has(sampleCodeFor(idx + 1)))
           .map(({ tube, idx }) => ({
-            sampleId: `${order.orderNumber}-${idx + 1}`,
+            sampleId: sampleCodeFor(idx + 1),
             labelIndex: idx + 1,
             material: tube.label,
             tube: tube.type,
