@@ -30,6 +30,7 @@ export default function CompaniesManagementPage() {
     
     const mapped: Company[] = data.map((c: any) => ({
       id: c.id,
+      sequenceId: c.sequence_id ?? undefined,
       razaoSocial: c.name || '',
       nomeFantasia: c.nome_fantasia || c.name || '',
       cnpj: c.cnpj || '',

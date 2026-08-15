@@ -131,7 +131,7 @@ export function SampleLabelsPrintModal({
                   material={l.material}
                   tube={l.tube}
                   workbench={l.workbench}
-                  hash={hash || ''}
+                  sampleCode={l.sampleId}
                   printDate={printDate}
                   isUrgent={isUrgent}
                   labelIndex={l.labelIndex}

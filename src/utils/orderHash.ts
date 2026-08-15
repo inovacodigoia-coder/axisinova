@@ -15,3 +15,38 @@ export function normalizeHash(hash?: string | null): string {
   const clean = String(hash || '').toUpperCase().replace(/[^A-Z0-9]/g, '')
   return clean.slice(0, 9)
 }
+
+/**
+ * Código completo da amostra: <ordem>-<origem>-<tubo>-<idEmpresa>
+ * Ex.: protocolo "16-00", tubo 1, empresa 1 => "16-00-1-1"
+ */
+export function buildSampleCode(
+  protocol: string,
+  tubeIndex: number,
+  companySequenceId?: number | null
+): string {
+  const base = `${String(protocol || '').trim()}-${tubeIndex}`
+  return companySequenceId ? `${base}-${companySequenceId}` : base
+}
+
+/**
+ * Hash alfanumérico determinístico POR TUBO (amostra).
+ * Mesmo código de amostra => sempre o mesmo hash de 9 caracteres.
+ */
+export function generateSampleHash(sampleCode: string): string {
+  const input = String(sampleCode || '').toUpperCase()
+  if (!input) return ''
+  // FNV-1a de 32 bits (duas passadas com sementes distintas para ampliar o espaço)
+  const fnv = (seed: number) => {
+    let h = seed >>> 0
+    for (let i = 0; i < input.length; i++) {
+      h ^= input.charCodeAt(i)
+      h = Math.imul(h, 0x01000193) >>> 0
+    }
+    return h >>> 0
+  }
+  const a = fnv(0x811c9dc5)
+  const b = fnv(0x9e3779b9)
+  const raw = (a.toString(36) + b.toString(36)).toUpperCase().replace(/[^A-Z0-9]/g, '')
+  return (raw + '000000000').slice(0, 9)
+}

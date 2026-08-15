@@ -326,6 +326,7 @@ export type Database = {
           numero: string | null
           plano: string | null
           segmento: string | null
+          sequence_id: number
           session_timeout: number | null
           status: string | null
           telefone: string | null
@@ -355,6 +356,7 @@ export type Database = {
           numero?: string | null
           plano?: string | null
           segmento?: string | null
+          sequence_id?: number
           session_timeout?: number | null
           status?: string | null
           telefone?: string | null
@@ -384,6 +386,7 @@ export type Database = {
           numero?: string | null
           plano?: string | null
           segmento?: string | null
+          sequence_id?: number
           session_timeout?: number | null
           status?: string | null
           telefone?: string | null

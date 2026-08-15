@@ -1,6 +1,6 @@
 import React, { useMemo } from 'react';
 import Barcode from 'react-barcode';
-import { normalizeHash } from '@/utils/orderHash';
+import { buildSampleCode, generateSampleHash } from '@/utils/orderHash';
 
 interface LabelProps {
   orderNumber: string;
@@ -9,11 +9,16 @@ interface LabelProps {
   material: string;
   tube: string;
   workbench: string;
-  hash: string;
+  /** @deprecated hash do pedido — mantido por compatibilidade, não é mais impresso */
+  hash?: string;
   printDate: string;
   isUrgent?: boolean;
   labelIndex: number;
   originSigla?: string;
+  /** Código completo da amostra (ex.: 16-00-1-1). Se ausente, é montado a partir do pedido. */
+  sampleCode?: string;
+  /** ID sequencial da empresa (último bloco do código) */
+  companySequenceId?: number | null;
   /** Referências (códigos/siglas) dos exames contidos nesta amostra */
   examRefs?: string[];
 }
@@ -25,16 +30,20 @@ export const SampleLabel = ({
   material,
   tube,
   workbench,
-  hash,
   printDate,
   isUrgent,
   labelIndex,
+  sampleCode,
+  companySequenceId,
   examRefs = [],
 }: LabelProps) => {
   const sampleId = useMemo(() => {
+    if (sampleCode) return sampleCode;
     if (!orderNumber || typeof labelIndex !== 'number') return 'INVALID-ID';
-    return `${orderNumber}-${labelIndex}`;
-  }, [orderNumber, labelIndex]);
+    return buildSampleCode(orderNumber, labelIndex, companySequenceId);
+  }, [sampleCode, orderNumber, labelIndex, companySequenceId]);
+
+  const sampleHash = useMemo(() => generateSampleHash(sampleId), [sampleId]);
 
   const refsText = useMemo(() => {
     const list = (examRefs || []).map(r => String(r || '').trim().toUpperCase()).filter(Boolean);
@@ -65,10 +74,10 @@ export const SampleLabel = ({
         />
       </div>
 
-      {/* Código da amostra + hash do pedido (mesmo para todas as etiquetas) */}
+      {/* Código da amostra + hash exclusivo do tubo (interfaceamento) */}
       <div className="flex items-baseline justify-between gap-1 whitespace-nowrap">
         <span className="text-[9px] font-bold">{sampleId}</span>
-        {hash && <span className="text-[7.5px] font-bold tracking-tight">{normalizeHash(hash)}</span>}
+        {sampleHash && <span className="text-[7.5px] font-bold tracking-tight">{sampleHash}</span>}
       </div>
 
       {/* Dados do paciente */}
