@@ -2,6 +2,8 @@ import { useState, useMemo, useEffect } from 'react'
 import { Dialog, DialogContent } from '@/components/ui/dialog'
 import { X, Printer, Pencil, Trash2, Plus, ArrowLeft, MoreVertical, CreditCard, Droplets, ShieldCheck, DollarSign, Calendar, Clock, MapPin, User, FileText, ChevronDown, History, BarChart3, Database, RefreshCw, Info, Smartphone, Calculator, Loader2 } from 'lucide-react'
 import { useLabSettings } from '@/hooks/useLabSettings'
+import { useCompanySequenceId } from '@/hooks/useCompanySequenceId'
+import { buildSampleCode } from '@/utils/orderHash'
 import { Button } from '@/components/ui/button'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import type { AttendanceOrder } from '@/types/attendance-cadastro.types'
@@ -74,6 +76,8 @@ export function AttendanceDetailsModal({ open, onClose, onOrderDeleted, order, p
   const [isDeleting, setIsDeleting] = useState(false)
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
   const { settings, isLoading: settingsLoading } = useLabSettings()
+  const companySequenceId = useCompanySequenceId()
+  const sampleCodeFor = (tubeIndex: number) => buildSampleCode(order.orderNumber, tubeIndex, companySequenceId)
   const { toast } = useToast()
   const { updateOrder } = useAttendanceCadastro()
 
