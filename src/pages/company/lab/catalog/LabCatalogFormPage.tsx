@@ -1513,7 +1513,7 @@ function InterfacingSection({ config, params, internalParameters, onChange }: {
               <SelectContent>
                 {equipments && equipments.length > 0 ? (
                   equipments.map(eq => (
-                    <SelectItem key={eq.id} value={eq.id}>{eq.name} ({eq.model || 'S/M'})</SelectItem>
+                    <SelectItem key={eq.id} value={eq.id}>{eq.name} ({eq.brand || 'S/M'})</SelectItem>
                   ))
                 ) : (
                   <SelectItem value="none" disabled>Nenhum equipamento cadastrado</SelectItem>
