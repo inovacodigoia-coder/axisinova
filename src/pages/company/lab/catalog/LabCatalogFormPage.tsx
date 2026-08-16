@@ -119,6 +119,30 @@ export default function LabCatalogFormPage() {
 
   const [parameters, setParameters] = useState<any[]>([])
   const [confirmationQuestions, setConfirmationQuestions] = useState<string[]>([])
+  const [availableEquipments, setAvailableEquipments] = useState<any[]>([])
+
+  useEffect(() => {
+    const fetchEquipments = async () => {
+      const { data: profile } = await supabase.auth.getUser();
+      const { data: profileData } = await supabase
+        .from('profiles')
+        .select('company_id')
+        .eq('id', profile.user?.id)
+        .single();
+
+      if (profileData?.company_id) {
+        const { data } = await supabase
+          .from('lab_equipment' as any)
+          .select('*')
+          .eq('company_id', profileData.company_id)
+          .eq('is_active', true)
+          .order('name');
+        
+        setAvailableEquipments(data || []);
+      }
+    };
+    fetchEquipments();
+  }, []);
 
   useEffect(() => {
     if (isEditing && exams && exams.length > 0) {
@@ -373,6 +397,7 @@ export default function LabCatalogFormPage() {
             config={examData.interfacingConfig} 
             params={examData.interfacingParameters}
             internalParameters={parameters}
+            availableEquipments={availableEquipments}
             onChange={(newData) => setExamData(prev => ({ ...prev, ...newData }))}
           />
         </TabsContent>
@@ -1421,26 +1446,21 @@ function MethodologySection({ methodology, onChange }: { methodology?: string, o
   )
 }
 
-function InterfacingSection({ config, params, internalParameters, onChange }: { 
+function InterfacingSection({ 
+  config, 
+  params, 
+  internalParameters,
+  availableEquipments,
+  onChange 
+}: { 
   config: any, 
   params: any[], 
   internalParameters: any[],
+  availableEquipments: any[],
   onChange: (val: any) => void 
 }) {
-  const [equipments, setEquipments] = useState<any[]>([])
-  
-  useEffect(() => {
-    const fetchEquipments = async () => {
-      try {
-        const { data, error } = await supabase.from('lab_equipments').select('*').eq('is_active', true)
-        if (error) throw error
-        if (data) setEquipments(data)
-      } catch (err) {
-        console.error('Error fetching equipments:', err)
-      }
-    }
-    fetchEquipments()
-  }, [])
+  const equipments = availableEquipments;
+
 
   // Initialize mapping if parameters exist but mapping doesn't
   useEffect(() => {
@@ -1488,7 +1508,7 @@ function InterfacingSection({ config, params, internalParameters, onChange }: {
               <SelectContent>
                 {equipments && equipments.length > 0 ? (
                   equipments.map(eq => (
-                    <SelectItem key={eq.id} value={eq.id}>{eq.name} ({eq.model || 'S/M'})</SelectItem>
+                    <SelectItem key={eq.id} value={eq.id}>{eq.name} ({eq.brand || 'S/M'})</SelectItem>
                   ))
                 ) : (
                   <SelectItem value="none" disabled>Nenhum equipamento cadastrado</SelectItem>
