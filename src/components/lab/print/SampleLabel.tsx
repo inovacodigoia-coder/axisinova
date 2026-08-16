@@ -65,7 +65,7 @@ export const SampleLabel = ({
       {/* Código de barras */}
       <div className="w-full flex justify-center mt-0.5">
         <Barcode
-          value={sampleId || 'ERROR'}
+          value={sampleHash || sampleId || 'ERROR'}
           format="CODE128"
           width={1.1}
           height={26}
