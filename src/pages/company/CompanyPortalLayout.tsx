@@ -273,6 +273,7 @@ function PortalContent() {
               <Route path="cadastros/catalogo/novo" element={<LabCatalogFormPage />} />
               <Route path="cadastros/catalogo/:id/editar" element={<LabCatalogFormPage />} />
               <Route path="cadastros/equipamentos" element={<LabEquipmentPage />} />
+              <Route path="cadastros/equipamentos/integracao" element={<InstrumentApiKeysPage />} />
               <Route path="bi" element={<BIDashboardPage />} />
               <Route path="bi/producao" element={<ProductionReportPage />} />
               <Route path="bi/financeiro" element={<FinancialReportPage />} />
