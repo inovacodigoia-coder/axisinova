@@ -1096,7 +1096,7 @@ export function AttendanceDetailsModal({ open, onClose, onOrderDeleted, order, p
         patientName={order.patientName}
         birthDate={order.patientBirthDate}
         hash={order.hash}
-        isUrgent={order.isUrgent}
+        isUrgent={(order as any).isUrgent}
         labels={patientTubes
           .map((tube, idx) => ({ tube, idx }))
           .filter(({ idx }) => selectedTubes.has(sampleCodeFor(idx + 1)))
