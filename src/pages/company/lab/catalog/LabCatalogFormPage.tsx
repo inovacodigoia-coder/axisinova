@@ -1446,26 +1446,21 @@ function MethodologySection({ methodology, onChange }: { methodology?: string, o
   )
 }
 
-function InterfacingSection({ config, params, internalParameters, onChange }: { 
+function InterfacingSection({ 
+  config, 
+  params, 
+  internalParameters,
+  availableEquipments,
+  onChange 
+}: { 
   config: any, 
   params: any[], 
   internalParameters: any[],
+  availableEquipments: any[],
   onChange: (val: any) => void 
 }) {
-  const [equipments, setEquipments] = useState<any[]>([])
-  
-  useEffect(() => {
-    const fetchEquipments = async () => {
-      try {
-        const { data, error } = await supabase.from('lab_equipments').select('*').eq('is_active', true)
-        if (error) throw error
-        if (data) setEquipments(data)
-      } catch (err) {
-        console.error('Error fetching equipments:', err)
-      }
-    }
-    fetchEquipments()
-  }, [])
+  const equipments = availableEquipments;
+
 
   // Initialize mapping if parameters exist but mapping doesn't
   useEffect(() => {
