@@ -64,9 +64,9 @@ export default function LabEquipmentPage() {
       setEditingItem(item)
       setFormData({
         name: item.name,
-        identifier: item.identifier,
-        type: item.type || 'Bioquímico',
-        brand: item.brand || '',
+        identifier: item.serial_number || '',
+        type: item.connection_type || 'Bioquímico',
+        brand: item.manufacturer || item.model || '',
         is_active: item.is_active ?? true
       })
     } else {
@@ -90,9 +90,18 @@ export default function LabEquipmentPage() {
 
     setSaving(true)
     try {
+      if (!user?.companyId) {
+        toast.error('Não foi possível identificar a empresa do usuário')
+        return
+      }
+
       const payload = {
-        ...formData,
-        company_id: user?.companyId
+        company_id: user.companyId,
+        name: formData.name.trim(),
+        serial_number: formData.identifier.trim(),
+        connection_type: formData.type,
+        manufacturer: formData.brand.trim() || null,
+        is_active: formData.is_active
       }
 
       if (editingItem) {
@@ -116,7 +125,7 @@ export default function LabEquipmentPage() {
       fetchEquipment()
     } catch (error: any) {
       console.error('Erro ao salvar equipamento:', error)
-      toast.error('Erro ao salvar equipamento')
+      toast.error(error?.message || 'Erro ao salvar equipamento')
     } finally {
       setSaving(false)
     }
@@ -143,7 +152,7 @@ export default function LabEquipmentPage() {
 
   const filtered = equipment.filter(e => 
     e.name.toLowerCase().includes(search.toLowerCase()) || 
-    e.identifier.toLowerCase().includes(search.toLowerCase())
+    (e.serial_number || '').toLowerCase().includes(search.toLowerCase())
   )
 
   return (
@@ -214,14 +223,14 @@ export default function LabEquipmentPage() {
                           </div>
                           <div>
                             <p className="font-bold">{item.name}</p>
-                            <p className="text-[10px] text-muted-foreground">{item.type}</p>
+                             <p className="text-[10px] text-muted-foreground">{item.connection_type}</p>
                           </div>
                         </div>
                      </td>
                      <td className="px-6 py-4">
-                        <Badge variant="outline" className="font-mono text-[10px]">{item.identifier}</Badge>
+                         <Badge variant="outline" className="font-mono text-[10px]">{item.serial_number}</Badge>
                      </td>
-                     <td className="px-6 py-4 text-muted-foreground">{item.brand}</td>
+                      <td className="px-6 py-4 text-muted-foreground">{item.manufacturer || item.model}</td>
                      <td className="px-6 py-4">
                         <div className="flex items-center gap-1.5">
                           <div className={cn("h-1.5 w-1.5 rounded-full", item.is_active ? "bg-emerald-500" : "bg-red-500")} />
