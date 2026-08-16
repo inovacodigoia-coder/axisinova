@@ -1096,6 +1096,7 @@ export function AttendanceDetailsModal({ open, onClose, onOrderDeleted, order, p
         patientName={order.patientName}
         birthDate={order.patientBirthDate}
         hash={order.hash}
+        isUrgent={(order as any).isUrgent}
         labels={patientTubes
           .map((tube, idx) => ({ tube, idx }))
           .filter(({ idx }) => selectedTubes.has(sampleCodeFor(idx + 1)))
@@ -1107,6 +1108,7 @@ export function AttendanceDetailsModal({ open, onClose, onOrderDeleted, order, p
             workbench: tubeWorkbench(tube),
             examRefs: examsForTube(tube).map(examRefOf),
           }))}
+        labName={settings?.lab_name || ''}
       />
 
       {printDoc && (
