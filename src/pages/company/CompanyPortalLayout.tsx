@@ -87,6 +87,7 @@ import LabSettingsPage from './lab/settings/LabSettingsPage'
 import LabCatalogPage from './lab/catalog/LabCatalogPage'
 import LabCatalogFormPage from './lab/catalog/LabCatalogFormPage'
 import LabEquipmentPage from './lab/equipment/LabEquipmentPage'
+import InstrumentApiKeysPage from './lab/equipment/InstrumentApiKeysPage'
 import LabAbbreviationsPage from './lab/abbreviations/LabAbbreviationsPage'
 import LabTechnicalWorkPage from './lab/LabTechnicalWorkPage'
 import LabAnalisePage from './lab/analise/LabAnalisePage'
@@ -272,6 +273,7 @@ function PortalContent() {
               <Route path="cadastros/catalogo/novo" element={<LabCatalogFormPage />} />
               <Route path="cadastros/catalogo/:id/editar" element={<LabCatalogFormPage />} />
               <Route path="cadastros/equipamentos" element={<LabEquipmentPage />} />
+              <Route path="cadastros/equipamentos/integracao" element={<InstrumentApiKeysPage />} />
               <Route path="bi" element={<BIDashboardPage />} />
               <Route path="bi/producao" element={<ProductionReportPage />} />
               <Route path="bi/financeiro" element={<FinancialReportPage />} />

@@ -3,7 +3,8 @@ import { Card } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Skeleton } from '@/components/ui/skeleton'
-import { Search, Plus, Edit2, Trash2, Monitor, Loader2 } from 'lucide-react'
+import { Search, Plus, Edit2, Trash2, Monitor, Loader2, KeyRound } from 'lucide-react'
+import { useNavigate } from 'react-router-dom'
 import { Badge } from '@/components/ui/badge'
 import { toast } from 'sonner'
 import { 
@@ -20,6 +21,7 @@ import { useAuth } from '@/context/AuthContext'
 
 export default function LabEquipmentPage() {
   const { user } = useAuth()
+  const navigate = useNavigate()
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [search, setSearch] = useState('')
@@ -162,9 +164,14 @@ export default function LabEquipmentPage() {
           <h1 className="text-2xl font-bold">Equipamentos</h1>
           <p className="text-sm text-muted-foreground">Gerencie os equipamentos conectados e cadastrados no laboratório.</p>
         </div>
-        <Button onClick={() => handleOpenModal()} className="gradient-bg text-white gap-2">
-          <Plus className="h-4 w-4" /> Novo Equipamento
-        </Button>
+        <div className="flex gap-2">
+          <Button variant="outline" className="gap-2" onClick={() => navigate('/app/cadastros/equipamentos/integracao')}>
+            <KeyRound className="h-4 w-4" /> Integração / API Key
+          </Button>
+          <Button onClick={() => handleOpenModal()} className="gradient-bg text-white gap-2">
+            <Plus className="h-4 w-4" /> Novo Equipamento
+          </Button>
+        </div>
       </div>
 
       <div className="flex gap-4 items-center bg-card p-4 rounded-xl border border-border">
