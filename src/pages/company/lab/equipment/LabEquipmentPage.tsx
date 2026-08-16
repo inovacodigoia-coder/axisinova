@@ -21,6 +21,7 @@ import { useAuth } from '@/context/AuthContext'
 
 export default function LabEquipmentPage() {
   const { user } = useAuth()
+  const navigate = useNavigate()
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [search, setSearch] = useState('')
