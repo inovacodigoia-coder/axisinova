@@ -132,7 +132,7 @@ export default function LabCatalogFormPage() {
 
       if (profileData?.company_id) {
         const { data } = await supabase
-          .from('lab_equipment' as any)
+          .from('lab_equipments' as any)
           .select('*')
           .eq('company_id', profileData.company_id)
           .eq('is_active', true)
