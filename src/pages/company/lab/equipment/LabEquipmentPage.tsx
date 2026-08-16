@@ -3,7 +3,7 @@ import { Card } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Skeleton } from '@/components/ui/skeleton'
-import { Search, Plus, Edit2, Trash2, Monitor, AlertCircle, CheckCircle2, MoreVertical } from 'lucide-react'
+import { Search, Plus, Edit2, Trash2, Monitor, Loader2 } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
 import { toast } from 'sonner'
 import { 
@@ -15,23 +15,130 @@ import {
 } from "@/components/ui/dialog"
 import { Label } from '@/components/ui/label'
 import { Switch } from '@/components/ui/switch'
+import { supabase } from '@/integrations/supabase/client'
+import { useAuth } from '@/context/AuthContext'
 
 export default function LabEquipmentPage() {
+  const { user } = useAuth()
   const [loading, setLoading] = useState(true)
+  const [saving, setSaving] = useState(false)
   const [search, setSearch] = useState('')
   const [isModalOpen, setIsModalOpen] = useState(false)
+  const [equipment, setEquipment] = useState<any[]>([])
+  const [editingItem, setEditingItem] = useState<any>(null)
+  
+  const [formData, setFormData] = useState({
+    name: '',
+    identifier: '',
+    type: 'Bioquímico',
+    brand: '',
+    is_active: true
+  })
+
+  const fetchEquipment = async () => {
+    if (!user?.companyId) return
+    setLoading(true)
+    try {
+      const { data, error } = await supabase
+        .from('lab_equipment' as any)
+        .select('*')
+        .eq('company_id', user.companyId)
+        .order('name')
+      
+      if (error) throw error
+      setEquipment(data || [])
+    } catch (error: any) {
+      console.error('Erro ao buscar equipamentos:', error)
+      toast.error('Erro ao carregar equipamentos')
+    } finally {
+      setLoading(false)
+    }
+  }
 
   useEffect(() => {
-    const timer = setTimeout(() => setLoading(false), 800)
-    return () => clearTimeout(timer)
-  }, [])
+    fetchEquipment()
+  }, [user?.companyId])
 
-  const equipment = [
-    { id: '1', name: 'Analisador Bioquímico AU680', identifier: 'BIO-AU680', type: 'Bioquímico', brand: 'Beckman Coulter', status: 'active' },
-    { id: '2', name: 'Analisador Hematológico XN-1000', identifier: 'HEM-XN1000', type: 'Hematológico', brand: 'Sysmex', status: 'active' },
-    { id: '3', name: 'Centrífuga Teste PW', identifier: 'CENT-PW-01', type: 'Centrífuga', brand: 'Fanem', status: 'active' },
-    { id: '4', name: 'Hematológico Icounter 5D', identifier: 'Icounter5D', type: 'Hematológico', brand: 'Icounter', status: 'active' },
-  ]
+  const handleOpenModal = (item?: any) => {
+    if (item) {
+      setEditingItem(item)
+      setFormData({
+        name: item.name,
+        identifier: item.identifier,
+        type: item.type || 'Bioquímico',
+        brand: item.brand || '',
+        is_active: item.is_active ?? true
+      })
+    } else {
+      setEditingItem(null)
+      setFormData({
+        name: '',
+        identifier: '',
+        type: 'Bioquímico',
+        brand: '',
+        is_active: true
+      })
+    }
+    setIsModalOpen(true)
+  }
+
+  const handleSave = async () => {
+    if (!formData.name || !formData.identifier) {
+      toast.error('Nome e Identificador são obrigatórios')
+      return
+    }
+
+    setSaving(true)
+    try {
+      const payload = {
+        ...formData,
+        company_id: user?.companyId
+      }
+
+      if (editingItem) {
+        const { error } = await supabase
+          .from('lab_equipment' as any)
+          .update(payload)
+          .eq('id', editingItem.id)
+        
+        if (error) throw error
+        toast.success('Equipamento atualizado!')
+      } else {
+        const { error } = await supabase
+          .from('lab_equipment' as any)
+          .insert([payload])
+        
+        if (error) throw error
+        toast.success('Equipamento cadastrado!')
+      }
+
+      setIsModalOpen(false)
+      fetchEquipment()
+    } catch (error: any) {
+      console.error('Erro ao salvar equipamento:', error)
+      toast.error('Erro ao salvar equipamento')
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  const handleDelete = async (id: string) => {
+    if (!confirm('Deseja realmente excluir este equipamento?')) return
+
+    try {
+      const { error } = await supabase
+        .from('lab_equipment' as any)
+        .delete()
+        .eq('id', id)
+      
+      if (error) throw error
+      toast.success('Equipamento excluído!')
+      fetchEquipment()
+    } catch (error: any) {
+      console.error('Erro ao excluir equipamento:', error)
+      toast.error('Erro ao excluir equipamento')
+    }
+  }
 
   const filtered = equipment.filter(e => 
     e.name.toLowerCase().includes(search.toLowerCase()) || 
@@ -45,7 +152,7 @@ export default function LabEquipmentPage() {
           <h1 className="text-2xl font-bold">Equipamentos</h1>
           <p className="text-sm text-muted-foreground">Gerencie os equipamentos conectados e cadastrados no laboratório.</p>
         </div>
-        <Button onClick={() => setIsModalOpen(true)} className="gradient-bg text-white gap-2">
+        <Button onClick={() => handleOpenModal()} className="gradient-bg text-white gap-2">
           <Plus className="h-4 w-4" /> Novo Equipamento
         </Button>
       </div>
@@ -116,16 +223,16 @@ export default function LabEquipmentPage() {
                      <td className="px-6 py-4 text-muted-foreground">{item.brand}</td>
                      <td className="px-6 py-4">
                         <div className="flex items-center gap-1.5">
-                          <div className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
-                          <span className="text-xs">Ativo</span>
+                          <div className={cn("h-1.5 w-1.5 rounded-full", item.is_active ? "bg-emerald-500" : "bg-red-500")} />
+                          <span className="text-xs">{item.is_active ? 'Ativo' : 'Inativo'}</span>
                         </div>
                      </td>
                      <td className="px-6 py-4 text-right">
                         <div className="flex justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                          <Button variant="ghost" size="sm" className="h-8 w-8 p-0" onClick={() => toast.info('Editar equipamento')}>
+                          <Button variant="ghost" size="sm" className="h-8 w-8 p-0" onClick={() => handleOpenModal(item)}>
                             <Edit2 className="h-3.5 w-3.5" />
                           </Button>
-                          <Button variant="ghost" size="sm" className="h-8 w-8 p-0 text-red-600">
+                          <Button variant="ghost" size="sm" className="h-8 w-8 p-0 text-red-600" onClick={() => handleDelete(item.id)}>
                             <Trash2 className="h-3.5 w-3.5" />
                           </Button>
                         </div>
@@ -141,21 +248,35 @@ export default function LabEquipmentPage() {
       <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
         <DialogContent className="sm:max-w-[425px]">
           <DialogHeader>
-            <DialogTitle>Novo Equipamento</DialogTitle>
+            <DialogTitle>{editingItem ? 'Editar Equipamento' : 'Novo Equipamento'}</DialogTitle>
           </DialogHeader>
           <div className="grid gap-4 py-4">
             <div className="space-y-2">
               <Label htmlFor="name">Nome do Equipamento *</Label>
-              <Input id="name" placeholder="Ex: Analisador Bioquímico" />
+              <Input 
+                id="name" 
+                placeholder="Ex: Analisador Bioquímico" 
+                value={formData.name}
+                onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
+              />
             </div>
             <div className="space-y-2">
               <Label htmlFor="identifier">Identificador (ID de Interface) *</Label>
-              <Input id="identifier" placeholder="Ex: BIO-01" />
+              <Input 
+                id="identifier" 
+                placeholder="Ex: BIO-01" 
+                value={formData.identifier}
+                onChange={(e) => setFormData(prev => ({ ...prev, identifier: e.target.value }))}
+              />
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label>Tipo</Label>
-                <select className="w-full h-10 px-3 rounded-lg border bg-background text-sm outline-none">
+                <select 
+                  className="w-full h-10 px-3 rounded-lg border bg-background text-sm outline-none"
+                  value={formData.type}
+                  onChange={(e) => setFormData(prev => ({ ...prev, type: e.target.value }))}
+                >
                   <option>Bioquímico</option>
                   <option>Hematológico</option>
                   <option>Centrífuga</option>
@@ -164,23 +285,35 @@ export default function LabEquipmentPage() {
               </div>
               <div className="space-y-2">
                 <Label>Marca / Modelo</Label>
-                <Input placeholder="Ex: Beckman" />
+                <Input 
+                  placeholder="Ex: Beckman" 
+                  value={formData.brand}
+                  onChange={(e) => setFormData(prev => ({ ...prev, brand: e.target.value }))}
+                />
               </div>
             </div>
             <div className="flex items-center justify-between pt-2">
               <Label>Ativo</Label>
-              <Switch defaultChecked />
+              <Switch 
+                checked={formData.is_active}
+                onCheckedChange={(val) => setFormData(prev => ({ ...prev, is_active: val }))}
+              />
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setIsModalOpen(false)}>Cancelar</Button>
-            <Button className="gradient-bg text-white" onClick={() => {
-              toast.success('Equipamento cadastrado!')
-              setIsModalOpen(false)
-            }}>Salvar</Button>
+            <Button variant="outline" onClick={() => setIsModalOpen(false)} disabled={saving}>Cancelar</Button>
+            <Button className="gradient-bg text-white" onClick={handleSave} disabled={saving}>
+              {saving && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
+              {editingItem ? 'Atualizar' : 'Salvar'}
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
     </div>
   )
 }
+
+function cn(...inputs: any[]) {
+  return inputs.filter(Boolean).join(' ')
+}
+

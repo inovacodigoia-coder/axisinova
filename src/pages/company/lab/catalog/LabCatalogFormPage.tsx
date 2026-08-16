@@ -119,6 +119,30 @@ export default function LabCatalogFormPage() {
 
   const [parameters, setParameters] = useState<any[]>([])
   const [confirmationQuestions, setConfirmationQuestions] = useState<string[]>([])
+  const [availableEquipments, setAvailableEquipments] = useState<any[]>([])
+
+  useEffect(() => {
+    const fetchEquipments = async () => {
+      const { data: profile } = await supabase.auth.getUser();
+      const { data: profileData } = await supabase
+        .from('profiles')
+        .select('company_id')
+        .eq('id', profile.user?.id)
+        .single();
+
+      if (profileData?.company_id) {
+        const { data } = await supabase
+          .from('lab_equipment' as any)
+          .select('*')
+          .eq('company_id', profileData.company_id)
+          .eq('is_active', true)
+          .order('name');
+        
+        setAvailableEquipments(data || []);
+      }
+    };
+    fetchEquipments();
+  }, []);
 
   useEffect(() => {
     if (isEditing && exams && exams.length > 0) {
@@ -373,6 +397,7 @@ export default function LabCatalogFormPage() {
             config={examData.interfacingConfig} 
             params={examData.interfacingParameters}
             internalParameters={parameters}
+            availableEquipments={availableEquipments}
             onChange={(newData) => setExamData(prev => ({ ...prev, ...newData }))}
           />
         </TabsContent>
