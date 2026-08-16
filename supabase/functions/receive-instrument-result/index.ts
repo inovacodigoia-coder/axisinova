@@ -229,54 +229,71 @@ Deno.serve(async (req) => {
     return json({ status: 'ignored', message: msg }, 200)
   }
 
-  const { data: saved, error: resultError } = await supabase
-    .from('lab_exam_results')
-    .upsert(
-      {
-        company_id: companyId,
-        order_id: order.id,
-        protocol: order.protocol,
-        exam_ref: examRef,
-        exam_catalog_id: matchedExam.id,
-        exam_code: orderExam.internalCode || matchedExam.internal_code || null,
-        exam_name: matchedExam.name,
-        patient_id: order.patient_id,
-        patient_name: order.patient_name,
-        status: 'digitized',
-        typed_at: nowIso,
-      },
-      { onConflict: 'company_id,exam_ref' },
-    )
-    .select('id')
-    .single()
+  let resultId = existingResult?.id as string | undefined
+  const resultPayload = {
+    company_id: companyId,
+    order_id: order.id,
+    protocol: order.protocol,
+    exam_ref: examRef,
+    exam_catalog_id: matchedExam.id,
+    exam_code: orderExam.internalCode || matchedExam.internal_code || null,
+    exam_name: matchedExam.name,
+    patient_id: order.patient_id,
+    patient_name: order.patient_name,
+    status: 'digitized',
+    typed_at: nowIso,
+  }
 
-  if (resultError || !saved) {
-    const msg = resultError?.message || 'Falha ao gravar resultado'
-    console.error('[receive-instrument-result] erro ao gravar resultado', resultError)
-    await logEvent('error', msg)
-    return json({ error: msg }, 500)
+  if (resultId) {
+    const { error } = await supabase.from('lab_exam_results').update(resultPayload).eq('id', resultId)
+    if (error) {
+      console.error('[receive-instrument-result] erro ao atualizar resultado', error)
+      await logEvent('error', error.message)
+      return json({ error: error.message }, 500)
+    }
+  } else {
+    const { data: inserted, error } = await supabase
+      .from('lab_exam_results')
+      .insert(resultPayload)
+      .select('id')
+      .single()
+    if (error || !inserted) {
+      const msg = error?.message || 'Falha ao gravar resultado'
+      console.error('[receive-instrument-result] erro ao gravar resultado', error)
+      await logEvent('error', msg)
+      return json({ error: msg }, 500)
+    }
+    resultId = inserted.id
   }
 
   const flag = String(payload?.flag || '').trim().toUpperCase()
   const statusLabel = flag === 'N' || flag === '' ? 'Normal' : flag === 'L' ? 'Baixo' : flag === 'H' ? 'Alto' : flag
 
-  const { error: valueError } = await supabase.from('lab_result_values').upsert(
-    {
-      company_id: companyId,
-      result_id: saved.id,
-      parameter_key: matchedParamId,
-      parameter_name: matchedParamName,
-      value: String(payload?.value ?? ''),
-      unit: payload?.unit || matchedParamUnit,
-      reference: payload?.reference_range || null,
-      status: statusLabel || null,
-      source: 'instrument',
-      instrument_code: instrumentCode,
-      flag: flag || null,
-      result_datetime: payload?.result_datetime || nowIso,
-    },
-    { onConflict: 'result_id,parameter_key' },
-  )
+  const valuePayload = {
+    company_id: companyId,
+    result_id: resultId!,
+    parameter_key: matchedParamId,
+    parameter_name: matchedParamName,
+    value: String(payload?.value ?? ''),
+    unit: payload?.unit || matchedParamUnit,
+    reference: payload?.reference_range || null,
+    status: statusLabel || null,
+    source: 'instrument',
+    instrument_code: instrumentCode,
+    flag: flag || null,
+    result_datetime: payload?.result_datetime || nowIso,
+  }
+
+  const { data: existingValue } = await supabase
+    .from('lab_result_values')
+    .select('id')
+    .eq('result_id', resultId!)
+    .eq('parameter_key', matchedParamId)
+    .maybeSingle()
+
+  const { error: valueError } = existingValue
+    ? await supabase.from('lab_result_values').update(valuePayload).eq('id', existingValue.id)
+    : await supabase.from('lab_result_values').insert(valuePayload)
 
   if (valueError) {
     console.error('[receive-instrument-result] erro ao gravar valor', valueError)
@@ -292,7 +309,7 @@ Deno.serve(async (req) => {
 
   return json({
     status: 'processed',
-    result_id: saved.id,
+    result_id: resultId!,
     exam: matchedExam.name,
     parameter: matchedParamName,
     protocol: order.protocol,
