@@ -800,6 +800,100 @@ export type Database = {
           },
         ]
       }
+      instrument_events: {
+        Row: {
+          company_id: string
+          created_at: string
+          entity_id: string | null
+          entity_type: string | null
+          error_message: string | null
+          event_type: string
+          id: string
+          idempotency_key: string
+          payload: Json
+          status: string
+        }
+        Insert: {
+          company_id: string
+          created_at?: string
+          entity_id?: string | null
+          entity_type?: string | null
+          error_message?: string | null
+          event_type: string
+          id?: string
+          idempotency_key: string
+          payload?: Json
+          status?: string
+        }
+        Update: {
+          company_id?: string
+          created_at?: string
+          entity_id?: string | null
+          entity_type?: string | null
+          error_message?: string | null
+          event_type?: string
+          id?: string
+          idempotency_key?: string
+          payload?: Json
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "instrument_events_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      instrument_integration_keys: {
+        Row: {
+          company_id: string
+          created_at: string
+          created_by: string | null
+          id: string
+          is_active: boolean
+          key_hash: string
+          key_prefix: string
+          last_used_at: string | null
+          name: string
+          revoked_at: string | null
+        }
+        Insert: {
+          company_id: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          is_active?: boolean
+          key_hash: string
+          key_prefix: string
+          last_used_at?: string | null
+          name?: string
+          revoked_at?: string | null
+        }
+        Update: {
+          company_id?: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          is_active?: boolean
+          key_hash?: string
+          key_prefix?: string
+          last_used_at?: string | null
+          name?: string
+          revoked_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "instrument_integration_keys_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       lab_equipments: {
         Row: {
           company_id: string
@@ -1093,12 +1187,16 @@ export type Database = {
         Row: {
           company_id: string
           created_at: string
+          flag: string | null
           id: string
+          instrument_code: string | null
           parameter_key: string
           parameter_name: string | null
           reference: string | null
+          result_datetime: string | null
           result_id: string
           sort_order: number | null
+          source: string
           status: string | null
           unit: string | null
           updated_at: string
@@ -1107,12 +1205,16 @@ export type Database = {
         Insert: {
           company_id: string
           created_at?: string
+          flag?: string | null
           id?: string
+          instrument_code?: string | null
           parameter_key: string
           parameter_name?: string | null
           reference?: string | null
+          result_datetime?: string | null
           result_id: string
           sort_order?: number | null
+          source?: string
           status?: string | null
           unit?: string | null
           updated_at?: string
@@ -1121,12 +1223,16 @@ export type Database = {
         Update: {
           company_id?: string
           created_at?: string
+          flag?: string | null
           id?: string
+          instrument_code?: string | null
           parameter_key?: string
           parameter_name?: string | null
           reference?: string | null
+          result_datetime?: string | null
           result_id?: string
           sort_order?: number | null
+          source?: string
           status?: string | null
           unit?: string | null
           updated_at?: string
