@@ -162,9 +162,14 @@ export default function LabEquipmentPage() {
           <h1 className="text-2xl font-bold">Equipamentos</h1>
           <p className="text-sm text-muted-foreground">Gerencie os equipamentos conectados e cadastrados no laboratório.</p>
         </div>
-        <Button onClick={() => handleOpenModal()} className="gradient-bg text-white gap-2">
-          <Plus className="h-4 w-4" /> Novo Equipamento
-        </Button>
+        <div className="flex gap-2">
+          <Button variant="outline" className="gap-2" onClick={() => navigate('/app/cadastros/equipamentos/integracao')}>
+            <KeyRound className="h-4 w-4" /> Integração / API Key
+          </Button>
+          <Button onClick={() => handleOpenModal()} className="gradient-bg text-white gap-2">
+            <Plus className="h-4 w-4" /> Novo Equipamento
+          </Button>
+        </div>
       </div>
 
       <div className="flex gap-4 items-center bg-card p-4 rounded-xl border border-border">
