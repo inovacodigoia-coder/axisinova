@@ -24,6 +24,7 @@ interface Props {
   isUrgent?: boolean
   labels: SampleLabelData[]
   autoPrint?: boolean
+  labName?: string
 }
 
 export function SampleLabelsPrintModal({
@@ -37,6 +38,7 @@ export function SampleLabelsPrintModal({
   isUrgent,
   labels,
   autoPrint,
+  labName,
 }: Props) {
   const handlePrint = () => {
     const d = window.document
@@ -137,6 +139,7 @@ export function SampleLabelsPrintModal({
                   labelIndex={l.labelIndex}
                   originSigla={originSigla}
                   examRefs={l.examRefs}
+                  labName={labName}
                 />
               </div>
             ))}

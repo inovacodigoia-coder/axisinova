@@ -36,7 +36,8 @@ export const SampleLabel = ({
   sampleCode,
   companySequenceId,
   examRefs = [],
-}: LabelProps) => {
+  labName,
+}: LabelProps & { labName?: string }) => {
   const sampleId = useMemo(() => {
     if (sampleCode) return sampleCode;
     if (!orderNumber || typeof labelIndex !== 'number') return 'INVALID-ID';
@@ -53,11 +54,16 @@ export const SampleLabel = ({
   }, [examRefs]);
 
   return (
-    <div className="w-[50mm] h-[30mm] bg-white border border-slate-200 px-1.5 py-1 flex flex-col text-black font-mono overflow-hidden leading-none">
-      {/* Cabeçalho: urgência / bancada / data */}
-      <div className="flex items-center gap-1 text-[7px] font-bold uppercase">
+    <div className="w-[50mm] h-[30mm] bg-white border border-slate-200 px-1.5 py-0.5 flex flex-col text-black font-mono overflow-hidden leading-none relative">
+      {/* Cabeçalho: urgência / bancada / laboratório / data */}
+      <div className="flex items-center gap-1 text-[7px] font-bold uppercase mb-0.5">
         {isUrgent && <span className="bg-black text-white px-1 py-[1px]">URG</span>}
         <span className="flex-1 truncate">{workbench || 'GERAL'}</span>
+        {labName && (
+          <span className="px-1 border-x border-slate-300 max-w-[40%] truncate">
+            {labName}
+          </span>
+        )}
         <span className="whitespace-nowrap">{printDate || '---'}</span>
       </div>
 
@@ -90,8 +96,15 @@ export const SampleLabel = ({
       </div>
 
       {/* Referências dos exames */}
-      <div className="text-[6.5px] font-bold uppercase leading-[1.15] overflow-hidden flex-1">
+      <div className="text-[6.5px] font-bold uppercase leading-[1.15] overflow-hidden flex-1 pb-2">
         {refsText || '—'}
+      </div>
+
+      {/* Nome do software discreto e centralizado */}
+      <div className="absolute bottom-0 left-0 right-0 text-center py-0.5">
+        <span className="text-[5px] text-slate-300 font-medium tracking-widest opacity-60">
+          AXIS INOVA
+        </span>
       </div>
     </div>
   );
