@@ -40,7 +40,7 @@ export default function LabEquipmentPage() {
     setLoading(true)
     try {
       const { data, error } = await supabase
-        .from('lab_equipment' as any)
+        .from('lab_equipments' as any)
         .select('*')
         .eq('company_id', user.companyId)
         .order('name')
@@ -97,7 +97,7 @@ export default function LabEquipmentPage() {
 
       if (editingItem) {
         const { error } = await supabase
-          .from('lab_equipment' as any)
+          .from('lab_equipments' as any)
           .update(payload)
           .eq('id', editingItem.id)
         
@@ -105,7 +105,7 @@ export default function LabEquipmentPage() {
         toast.success('Equipamento atualizado!')
       } else {
         const { error } = await supabase
-          .from('lab_equipment' as any)
+          .from('lab_equipments' as any)
           .insert([payload])
         
         if (error) throw error
@@ -127,7 +127,7 @@ export default function LabEquipmentPage() {
 
     try {
       const { error } = await supabase
-        .from('lab_equipment' as any)
+        .from('lab_equipments' as any)
         .delete()
         .eq('id', id)
       
@@ -139,6 +139,7 @@ export default function LabEquipmentPage() {
       toast.error('Erro ao excluir equipamento')
     }
   }
+
 
   const filtered = equipment.filter(e => 
     e.name.toLowerCase().includes(search.toLowerCase()) || 
