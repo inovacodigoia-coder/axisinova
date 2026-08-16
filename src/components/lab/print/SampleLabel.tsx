@@ -97,7 +97,7 @@ export const SampleLabel = ({
 
       {/* Rodapé: Nome do Laboratório (Esquerda) e Software (Direita) */}
       <div className="absolute bottom-0 left-0 right-0 flex justify-between items-end px-1.5 pb-0.5">
-        <span className="text-[5.5px] text-slate-400 font-bold uppercase truncate max-w-[60%]">
+        <span className="text-[4px] text-slate-400 font-bold uppercase truncate max-w-[70%]">
           {labName}
         </span>
         <span className="text-[4.5px] text-slate-300 font-medium tracking-tighter opacity-60">
