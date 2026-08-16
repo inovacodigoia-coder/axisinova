@@ -700,23 +700,6 @@ export default function LabColetaPage() {
           })
         )}
       </div>
-      
-      {/* Bloco de instruções solicitado */}
-      <div className="mt-8 p-4 bg-muted/50 rounded-xl border border-dashed border-border flex items-center justify-center opacity-50">
-        <p className="text-[10px] text-muted-foreground font-mono italic text-center max-w-2xl">
-          '''Do not make any visual modifications. The phrases I write are commands to understand what I want, not to be written down. Understand their content well, then execute what is required.'''
-          <br /><br />
-          Status do Pedido:
-          <br />
-          - <b>COLETA REALIZADA</b>: Ao confirmar, o pedido vai para a Fila de Digitação.
-          <br />
-          - <b>VALIDAÇÃO</b>: Pedido com exames sem resultados ou pendentes de liberação.
-          <br />
-          - <b>LIBERADO</b>: Pelo menos 1 exame liberado no pedido.
-          <br />
-          - <b>CONCLUÍDO</b>: Todos os exames do pedido liberados.
-        </p>
-      </div>
     </div>
   )
 }
