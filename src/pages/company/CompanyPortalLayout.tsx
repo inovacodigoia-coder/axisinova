@@ -92,6 +92,7 @@ import LabAbbreviationsPage from './lab/abbreviations/LabAbbreviationsPage'
 import LabTechnicalWorkPage from './lab/LabTechnicalWorkPage'
 import LabAnalisePage from './lab/analise/LabAnalisePage'
 import LabMapaPage from './lab/LabMapaPage'
+import LabMapaViewPage from './lab/LabMapaViewPage'
 import LabReportsPage from './lab/LabReportsPage'
 import LabBudgetsPage from './lab/orcamentos/LabBudgetsPage'
 import LabBudgetFormPage from './lab/orcamentos/LabBudgetFormPage'
@@ -300,6 +301,7 @@ function PortalContent() {
               <Route path="lab/dashboard" element={<LabDashboard />} />
               <Route path="lab/coleta" element={<LabColetaPage />} />
               <Route path="lab/mapa" element={<LabMapaPage />} />
+              <Route path="lab/mapa/:codigo" element={<LabMapaViewPage />} />
               <Route path="lab/analise" element={<LabAnalisePage />} />
               <Route path="lab/validacao" element={<LabTechnicalWorkPage view="validation" />} />
               <Route path="lab/laudos" element={<LabReportsPage />} />
