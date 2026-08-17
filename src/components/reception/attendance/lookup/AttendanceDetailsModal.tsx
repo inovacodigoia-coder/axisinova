@@ -895,6 +895,19 @@ export function AttendanceDetailsModal({ open, onClose, onOrderDeleted, order, p
                     >
                       {isCollecting ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : 'COLETA'}
                     </Button>
+                    {hasCollectedTube && (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="bg-white h-8 text-[10px] font-bold uppercase tracking-wider text-destructive border-destructive/40 hover:bg-destructive/10 disabled:opacity-40"
+                        disabled={collectedSelectedTubes.length === 0 || isCancellingSamples}
+                        title={collectedSelectedTubes.length === 0 ? 'Selecione as amostras coletadas' : 'Cancelar recebimento das amostras selecionadas'}
+                        onClick={handleCancelCollectedSelected}
+                      >
+                        {isCancellingSamples ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : 'CANCELAR AMOSTRA'}
+                      </Button>
+                    )}
+
                     <Button 
                       size="icon" 
                       variant="ghost" 
