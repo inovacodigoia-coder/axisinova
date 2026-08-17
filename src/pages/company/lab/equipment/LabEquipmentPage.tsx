@@ -19,10 +19,6 @@ import { Switch } from '@/components/ui/switch'
 import { supabase } from '@/integrations/supabase/client'
 import { useAuth } from '@/context/AuthContext'
 import { InstrumentWebhooksModal } from '@/components/lab/equipment/InstrumentWebhooksModal'
-import { Label } from '@/components/ui/label'
-import { Switch } from '@/components/ui/switch'
-import { supabase } from '@/integrations/supabase/client'
-import { useAuth } from '@/context/AuthContext'
 
 export default function LabEquipmentPage() {
   const { user } = useAuth()
@@ -34,6 +30,12 @@ export default function LabEquipmentPage() {
   const [equipment, setEquipment] = useState<any[]>([])
   const [editingItem, setEditingItem] = useState<any>(null)
   
+  const [webhookModal, setWebhookModal] = useState<{ open: boolean, id: string, name: string }>({
+    open: false,
+    id: '',
+    name: ''
+  })
+
   const [formData, setFormData] = useState({
     name: '',
     identifier: '',
