@@ -10,6 +10,8 @@ import { useAttendanceCadastro } from '@/hooks/useAttendanceCadastro'
 import { getWorkMap, workMapItemKey } from '@/mocks/work-map.mock'
 import { calculateAge, formatDateTime } from '@/utils/formatters'
 import { EmptyState } from '@/components/feedback/EmptyState'
+import { buildExamParams, findCatalogExam, type ResolvedParam } from '@/utils/examParameters'
+import { differenceInYears } from 'date-fns'
 
 type ViewMode = 'completo' | 'exame' | 'compacto' | 'grade'
 
@@ -64,7 +66,7 @@ export default function LabMapaViewPage() {
   const { registeredExams } = useRegisters() as any
 
   const [view, setView] = useState<ViewMode>('completo')
-  const [paramsByExamId, setParamsByExamId] = useState<Record<string, { sigla: string; nome: string }[]>>({})
+  const [paramsByExamId, setParamsByExamId] = useState<Record<string, ResolvedParam[]>>({})
 
   const includedKeys = useMemo(() => new Set(map?.itemKeys || []), [map])
 
@@ -88,9 +90,14 @@ export default function LabMapaViewPage() {
         ;(guide?.exams || []).forEach((exam: any, ei: number) => {
           if (exam?.status === 'cancelled') return
           const key = workMapItemKey(order.id, gi, ei)
-          const cat = catalogIndex[String(exam.name || '').toLowerCase()] || catalogIndex[String(exam.code || '').toLowerCase()]
+          const cat = findCatalogExam(registeredExams || [], {
+            examId: exam.examId,
+            code: exam.code,
+            name: exam.name,
+          })
+          
           exams.push({
-            sigla: (exam.abbreviation || cat?.internalCode || exam.code || String(exam.name || '').slice(0, 3)).toString().toUpperCase(),
+            sigla: (exam.abbreviation || cat?.internal_code || cat?.internalCode || exam.code || String(exam.name || '').slice(0, 3)).toString().toUpperCase(),
             nome: exam.name || cat?.name || '—',
             material: exam.material || (cat?.selectedMaterials || [])[0] || 'Soro',
             examId: cat?.id,
@@ -118,31 +125,39 @@ export default function LabMapaViewPage() {
     })
 
     return list
-  }, [orders, map, includedKeys, catalogIndex])
+  }, [orders, map, includedKeys, registeredExams])
 
-  // Buscar parâmetros dos exames presentes no mapa
+  // Buscar parâmetros dos exames presentes no mapa e resolver referências por paciente
   useEffect(() => {
-    const ids = Array.from(new Set(patients.flatMap(p => p.exams.filter(e => e.inMap).map(e => e.examId)).filter(Boolean))) as string[]
-    if (ids.length === 0) return
-    let cancelled = false
-    ;(async () => {
-      const { data } = await supabase
-        .from('lab_exam_parameters')
-        .select('exam_id, name, internal_code, sort_order')
-        .in('exam_id', ids)
-      if (cancelled || !data) return
-      const grouped: Record<string, { sigla: string; nome: string }[]> = {}
-      data
-        .sort((a: any, b: any) => (a.sort_order || 0) - (b.sort_order || 0))
-        .forEach((p: any) => {
-          if (!p.exam_id) return
-          grouped[p.exam_id] = grouped[p.exam_id] || []
-          grouped[p.exam_id].push({ sigla: (p.internal_code || p.name || '').toString().toUpperCase(), nome: p.name })
+    const examIds = Array.from(new Set(patients.flatMap(p => p.exams.filter(e => e.inMap).map(e => e.examId)).filter(Boolean))) as string[]
+    if (examIds.length === 0 || !registeredExams) return
+
+    const grouped: Record<string, ResolvedParam[]> = {}
+    
+    // Iterar sobre cada paciente para resolver parâmetros específicos para idade/sexo
+    patients.forEach(patient => {
+      const birthDate = (orders || []).find(o => o.id === patient.id)?.patientBirthDate
+      const age = birthDate ? differenceInYears(new Date(), new Date(birthDate)) : undefined
+      
+      patient.exams.filter(e => e.inMap).forEach(exam => {
+        if (!exam.examId) return
+        const cat = (registeredExams as any[]).find(c => c.id === exam.examId)
+        if (!cat) return
+
+        const resolved = buildExamParams(cat, exam.nome, {
+          gender: patient.sexo === 'M' ? 'masculino' : patient.sexo === 'F' ? 'feminino' : undefined,
+          age
         })
-      setParamsByExamId(grouped)
-    })()
-    return () => { cancelled = true }
-  }, [patients])
+        
+        // No mapa de trabalho, armazenamos por examId, mas a resolução de buildExamParams
+        // pode variar por paciente se as referências mudarem. 
+        // Porém, para a lista de parâmetros base do exame:
+        grouped[exam.examId] = resolved
+      })
+    })
+    
+    setParamsByExamId(grouped)
+  }, [patients, registeredExams, orders])
 
   const paramsFor = (exam: MapExam) => (exam.examId && paramsByExamId[exam.examId]) || []
   const isComplexo = (exam: MapExam) => paramsFor(exam).length > 0
@@ -263,11 +278,18 @@ export default function LabMapaViewPage() {
                 <PatientHeader p={p} />
                 {p.exams.filter(e => e.inMap).map((e, i) => (
                   <div key={i} className="mt-2">
-                    <p className="text-[12px] font-bold">{e.nome.toUpperCase()}-{e.material}</p>
+                    <p className="text-[12px] font-bold border-b border-black pb-0.5">{e.nome.toUpperCase()} - {e.material.toUpperCase()}</p>
                     {paramsFor(e).length > 0 && (
-                      <div className="mt-1 grid grid-cols-6 gap-x-3">
+                      <div className="mt-2 grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-2">
                         {paramsFor(e).map((param, pi) => (
-                          <div key={pi} className="border-b border-black/40 pb-4 text-[10px]">{param.nome}</div>
+                          <div key={pi} className="border border-black/20 rounded p-1.5 flex flex-col gap-1">
+                            <span className="text-[9px] font-bold uppercase truncate">{param.name}</span>
+                            <div className="border border-black/40 h-6 bg-gray-50 flex items-center px-1" />
+                            <div className="flex justify-between items-center text-[8px] text-gray-600 mt-auto">
+                              <span className="truncate max-w-[60%]">Ref: {param.reference || '—'}</span>
+                              <span className="font-semibold">{param.unit}</span>
+                            </div>
+                          </div>
                         ))}
                       </div>
                     )}
@@ -301,14 +323,15 @@ export default function LabMapaViewPage() {
                       <div className="mt-1 space-y-2">
                         {paramsFor(group.exam).map((param, pi) => (
                           <div key={pi} className="flex flex-wrap gap-x-10 text-[11px]">
-                            <span>{param.sigla}:_____________________</span>
-                            <span>Observação:_____________________</span>
+                            <span>{param.name || param.id}:_____________________</span>
+                            <span className="text-[9px] text-gray-500">({param.unit}) Ref: {param.reference}</span>
+                            <span>Obs:_____________________</span>
                           </div>
                         ))}
                         {paramsFor(group.exam).length === 0 && (
                           <div className="flex flex-wrap gap-x-10 text-[11px]">
                             <span>{group.exam.sigla}:_____________________</span>
-                            <span>Observação:_____________________</span>
+                            <span>Obs:_____________________</span>
                           </div>
                         )}
                       </div>
@@ -328,7 +351,16 @@ export default function LabMapaViewPage() {
                 <PatientHeader p={p} />
                 <div className="mt-1 space-y-0.5">
                   {p.exams.filter(e => e.inMap).map((e, i) => (
-                    <p key={i} className="text-[12px] font-bold">{e.nome.toUpperCase()} - {e.material}</p>
+                    <div key={i} className="mb-1">
+                      <p className="text-[12px] font-bold">{e.nome.toUpperCase()} - {e.material}</p>
+                      <div className="flex flex-wrap gap-2 mt-0.5">
+                        {paramsFor(e).map((param, pi) => (
+                          <span key={pi} className="text-[9px] text-gray-700">
+                            {param.name}: _____{param.unit}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
                   ))}
                 </div>
                 {p.observacoesClinicas && (
@@ -344,10 +376,10 @@ export default function LabMapaViewPage() {
               const mine = p.exams.filter(e => e.inMap)
               const allParams = mine.flatMap(e => {
                 const ps = paramsFor(e)
-                if (ps.length === 0) return [{ sigla: e.sigla }]
+                if (ps.length === 0) return [{ name: e.sigla }]
                 return ps
               })
-              const chunks: { sigla: string }[][] = []
+              const chunks: { name: string }[][] = []
               for (let i = 0; i < allParams.length; i += 6) chunks.push(allParams.slice(i, i + 6))
 
               return (
@@ -359,7 +391,7 @@ export default function LabMapaViewPage() {
                         <thead>
                           <tr>
                             {chunk.map((item, i) => (
-                              <th key={i} className="border border-black px-2 py-1 text-center font-bold">{item.sigla}</th>
+                              <th key={i} className="border border-black px-2 py-1 text-center font-bold text-[9px] uppercase truncate">{item.name}</th>
                             ))}
                           </tr>
                         </thead>
