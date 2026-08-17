@@ -237,6 +237,45 @@ export function AttendanceDetailsModal({ open, onClose, onOrderDeleted, order, p
     }
   };
 
+  const [isCancellingSamples, setIsCancellingSamples] = useState(false);
+
+  const collectedSelectedTubes = patientTubes.filter((tube, idx) =>
+    selectedTubes.has(sampleCodeFor(idx + 1)) && tubeIsCollected(tube)
+  );
+
+  const hasCollectedTube = patientTubes.some(tubeIsCollected);
+
+  const handleCancelCollectedSelected = async () => {
+    if (collectedSelectedTubes.length === 0) return;
+    setIsCancellingSamples(true);
+    try {
+      const nextGuides = (guidesState || []).map((g: any) => ({
+        ...g,
+        exams: (g.exams || []).map((e: any) =>
+          collectedSelectedTubes.some(t => matchesTube(e.material, t))
+            ? { ...e, collected: false, collectedAt: null, isColeta: false }
+            : e
+        )
+      }));
+
+      const allExams = nextGuides.flatMap((g: any) => g.exams || []);
+      const noneCollected = allExams.length > 0 && allExams.every((e: any) => !e.collected);
+
+      setGuidesState(nextGuides);
+      const patch: any = { labGuides: nextGuides };
+      if (noneCollected) patch.status = 'open';
+      await updateOrder(order.id, patch);
+      setSelectedTubes(new Set());
+      toast({ title: 'Recebimento cancelado', description: `${collectedSelectedTubes.length} amostra(s) voltaram para pendente.` });
+    } catch {
+      toast({ title: 'Erro', description: 'Não foi possível cancelar o recebimento.', variant: 'destructive' });
+    } finally {
+      setIsCancellingSamples(false);
+    }
+  };
+
+
+
 
   const handleDeleteOrder = async () => {
     try {
