@@ -237,6 +237,45 @@ export function AttendanceDetailsModal({ open, onClose, onOrderDeleted, order, p
     }
   };
 
+  const [isCancellingSamples, setIsCancellingSamples] = useState(false);
+
+  const collectedSelectedTubes = patientTubes.filter((tube, idx) =>
+    selectedTubes.has(sampleCodeFor(idx + 1)) && tubeIsCollected(tube)
+  );
+
+  const hasCollectedTube = patientTubes.some(tubeIsCollected);
+
+  const handleCancelCollectedSelected = async () => {
+    if (collectedSelectedTubes.length === 0) return;
+    setIsCancellingSamples(true);
+    try {
+      const nextGuides = (guidesState || []).map((g: any) => ({
+        ...g,
+        exams: (g.exams || []).map((e: any) =>
+          collectedSelectedTubes.some(t => matchesTube(e.material, t))
+            ? { ...e, collected: false, collectedAt: null, isColeta: false }
+            : e
+        )
+      }));
+
+      const allExams = nextGuides.flatMap((g: any) => g.exams || []);
+      const noneCollected = allExams.length > 0 && allExams.every((e: any) => !e.collected);
+
+      setGuidesState(nextGuides);
+      const patch: any = { labGuides: nextGuides };
+      if (noneCollected) patch.status = 'open';
+      await updateOrder(order.id, patch);
+      setSelectedTubes(new Set());
+      toast({ title: 'Recebimento cancelado', description: `${collectedSelectedTubes.length} amostra(s) voltaram para pendente.` });
+    } catch {
+      toast({ title: 'Erro', description: 'Não foi possível cancelar o recebimento.', variant: 'destructive' });
+    } finally {
+      setIsCancellingSamples(false);
+    }
+  };
+
+
+
 
   const handleDeleteOrder = async () => {
     try {
@@ -856,6 +895,19 @@ export function AttendanceDetailsModal({ open, onClose, onOrderDeleted, order, p
                     >
                       {isCollecting ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : 'COLETA'}
                     </Button>
+                    {hasCollectedTube && (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="bg-white h-8 text-[10px] font-bold uppercase tracking-wider text-destructive border-destructive/40 hover:bg-destructive/10 disabled:opacity-40"
+                        disabled={collectedSelectedTubes.length === 0 || isCancellingSamples}
+                        title={collectedSelectedTubes.length === 0 ? 'Selecione as amostras coletadas' : 'Cancelar recebimento das amostras selecionadas'}
+                        onClick={handleCancelCollectedSelected}
+                      >
+                        {isCancellingSamples ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : 'CANCELAR AMOSTRA'}
+                      </Button>
+                    )}
+
                     <Button 
                       size="icon" 
                       variant="ghost" 
