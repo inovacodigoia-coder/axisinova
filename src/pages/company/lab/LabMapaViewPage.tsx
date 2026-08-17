@@ -28,6 +28,7 @@ interface MapExam {
   material: string
   examId?: string
   inMap: boolean
+  params: ResolvedParam[]
 }
 
 interface MapPatient {
