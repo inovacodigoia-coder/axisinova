@@ -60,6 +60,13 @@ export default function LabMapaPage() {
   const [priorityModal, setPriorityModal] = useState(false)
   const [applied, setApplied] = useState(0)
 
+  // Forçar atualização quando a página ganha foco (ex: voltando do mapa gerado)
+  useEffect(() => {
+    const handleFocus = () => setApplied(a => a + 1)
+    window.addEventListener('focus', handleFocus)
+    return () => window.removeEventListener('focus', handleFocus)
+  }, [])
+
   const sectorOptions = useMemo(() => {
     return (workbenches || []).map((w: any) => w.name).filter(Boolean)
   }, [workbenches])
