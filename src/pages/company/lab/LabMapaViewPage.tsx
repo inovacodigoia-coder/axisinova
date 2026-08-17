@@ -74,42 +74,50 @@ export default function LabMapaViewPage() {
   const { registeredExams } = useRegisters() as any
 
   const [view, setView] = useState<ViewMode>('completo')
-  const [paramsByExamId, setParamsByExamId] = useState<Record<string, ResolvedParam[]>>({})
+  const [catalogList, setCatalogList] = useState<any[]>([])
 
   const includedKeys = useMemo(() => new Set(map?.itemKeys || []), [map])
 
-  // Resolve catálogo (sigla, material, id) por nome/código do exame
-  const catalogIndex = useMemo(() => {
-    const idx: Record<string, any> = {}
-    ;(registeredExams || []).forEach((e: any) => {
-      const keys = [e.name, e.internalCode, e.tussCode].filter(Boolean).map((k: string) => String(k).toLowerCase())
-      keys.forEach(k => { idx[k] = e })
-    })
-    return idx
-  }, [registeredExams])
+  // Catálogo de exames direto do banco (mesma fonte da Digitação de Resultados)
+  useEffect(() => {
+    let active = true
+    ;(async () => {
+      const { data } = await supabase
+        .from('exams')
+        .select('id, name, internal_code, measurement_unit, parameters, reference_values, workbench_id, default_material, selected_materials')
+      if (!active || !data) return
+      setCatalogList(data as any[])
+    })()
+    return () => { active = false }
+  }, [])
 
   const patients = useMemo<MapPatient[]>(() => {
     if (!map) return []
     const list: MapPatient[] = []
 
     ;(orders || []).forEach(order => {
+      const age = order.patientBirthDate ? differenceInYears(new Date(), new Date(order.patientBirthDate)) : undefined
       const exams: MapExam[] = []
       ;(order.labGuides || []).forEach((guide: any, gi: number) => {
         ;(guide?.exams || []).forEach((exam: any, ei: number) => {
           if (exam?.status === 'cancelled') return
           const key = workMapItemKey(order.id, gi, ei)
-          const cat = findCatalogExam(registeredExams || [], {
+          const cat = findCatalogExam(catalogList, {
             examId: exam.examId,
             code: exam.code,
             name: exam.name,
           })
-          
+
           exams.push({
-            sigla: (exam.abbreviation || cat?.internal_code || cat?.internalCode || exam.code || String(exam.name || '').slice(0, 3)).toString().toUpperCase(),
+            sigla: (exam.abbreviation || cat?.internal_code || exam.code || String(exam.name || '').slice(0, 3)).toString().toUpperCase(),
             nome: exam.name || cat?.name || '—',
-            material: exam.material || (cat?.selectedMaterials || [])[0] || 'Soro',
+            material: exam.material || (cat?.selected_materials || [])[0] || cat?.default_material || 'Soro',
             examId: cat?.id,
             inMap: includedKeys.has(key),
+            params: buildExamParams(cat, exam.name || exam.code, {
+              gender: order.patientGender,
+              age,
+            }),
           })
         })
       })
@@ -133,42 +141,10 @@ export default function LabMapaViewPage() {
     })
 
     return list
-  }, [orders, map, includedKeys, registeredExams])
+  }, [orders, map, includedKeys, catalogList])
 
-  // Buscar parâmetros dos exames presentes no mapa e resolver referências por paciente
-  useEffect(() => {
-    const examIds = Array.from(new Set(patients.flatMap(p => p.exams.filter(e => e.inMap).map(e => e.examId)).filter(Boolean))) as string[]
-    if (examIds.length === 0 || !registeredExams) return
+  const paramsFor = (exam: MapExam) => exam.params || []
 
-    const grouped: Record<string, ResolvedParam[]> = {}
-    
-    // Iterar sobre cada paciente para resolver parâmetros específicos para idade/sexo
-    patients.forEach(patient => {
-      const birthDate = (orders || []).find(o => o.id === patient.id)?.patientBirthDate
-      const age = birthDate ? differenceInYears(new Date(), new Date(birthDate)) : undefined
-      
-      patient.exams.filter(e => e.inMap).forEach(exam => {
-        if (!exam.examId) return
-        const cat = (registeredExams as any[]).find(c => c.id === exam.examId)
-        if (!cat) return
-
-        const resolved = buildExamParams(cat, exam.nome, {
-          gender: patient.sexo === 'M' ? 'masculino' : patient.sexo === 'F' ? 'feminino' : undefined,
-          age
-        })
-        
-        // No mapa de trabalho, armazenamos por examId, mas a resolução de buildExamParams
-        // pode variar por paciente se as referências mudarem. 
-        // Porém, para a lista de parâmetros base do exame:
-        grouped[exam.examId] = resolved
-      })
-    })
-    
-    setParamsByExamId(grouped)
-  }, [patients, registeredExams, orders])
-
-  const paramsFor = (exam: MapExam) => (exam.examId && paramsByExamId[exam.examId]) || []
-  const isComplexo = (exam: MapExam) => paramsFor(exam).length > 0
 
   const title = view === 'exame' ? 'Mapa de Trabalho por Exames' : 'Mapa de Trabalho'
 
