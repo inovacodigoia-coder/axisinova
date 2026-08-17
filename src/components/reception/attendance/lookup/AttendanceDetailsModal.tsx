@@ -426,9 +426,9 @@ export function AttendanceDetailsModal({ open, onClose, onOrderDeleted, order, p
 
   return (
     <Dialog open={open} onOpenChange={(o) => !o && onClose()}>
-      <DialogContent className="max-w-[1200px] w-[95vw] max-h-[90vh] p-0 flex flex-col gap-0 bg-[#F8FAFC] border-none shadow-2xl [&>button]:hidden overflow-hidden scrollbar-thin scrollbar-thumb-gray-300 data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=open]:zoom-in-95">
+      <DialogContent className="max-w-[1200px] w-[95vw] max-h-[90vh] p-0 flex flex-col gap-0 bg-[#F8FAFC] border-none shadow-2xl [&>button]:hidden overflow-y-auto overflow-x-hidden scrollbar-thin scrollbar-thumb-gray-300 data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=open]:zoom-in-95">
         {/* Header Navigation */}
-        <div className="flex items-center justify-between px-4 py-2 bg-white border-b border-border flex-shrink-0">
+        <div className="sticky top-0 z-30 flex items-center justify-between px-4 py-2 bg-white border-b border-border flex-shrink-0">
           <div className="flex items-center gap-2">
             <Button variant="ghost" size="icon" onClick={onClose} className="h-8 w-8">
               <ArrowLeft className="h-4 w-4" />
@@ -619,7 +619,7 @@ export function AttendanceDetailsModal({ open, onClose, onOrderDeleted, order, p
               </TabsList>
             </div>
 
-              <div className="flex-1 p-4 bg-[#F8FAFC] overflow-y-auto min-h-0">
+              <div className="flex-1 p-4 bg-[#F8FAFC] min-h-0">
               <TabsContent value="guias" className="m-0 space-y-4">
                 <div className="flex flex-col gap-4">
                   <div className="flex items-center justify-between">
@@ -749,7 +749,7 @@ export function AttendanceDetailsModal({ open, onClose, onOrderDeleted, order, p
                           </div>
                         </div>
 
-                        <div className="overflow-auto max-h-[42vh]">
+                        <div className="overflow-x-auto">
                           <table className="w-full text-left border-collapse">
                             <thead className="sticky top-0 z-10 bg-slate-100 text-[10px] font-bold text-muted-foreground uppercase tracking-wider">
                               <tr>
@@ -974,7 +974,7 @@ export function AttendanceDetailsModal({ open, onClose, onOrderDeleted, order, p
                           <td className="px-4 py-3 text-muted-foreground uppercase">{tubeWorkbench(tube)}</td>
                           <td className="px-4 py-3 text-muted-foreground uppercase">SANGUE</td>
                           <td className="px-4 py-3 text-muted-foreground uppercase truncate max-w-[200px]">
-                            {orderExams.filter(e => e.material === tube.label || (tube.type === 'gel' && e.material === 'Soro')).map(e => e.name).join(', ') || 'N/A'}
+                            {examsForTube(tube).map((e: any) => e.name).join(', ') || 'N/A'}
                           </td>
                           <td className="px-4 py-3">
                             <span className={cn("font-bold uppercase", tubeIsCollected(tube) ? "text-emerald-600" : "text-amber-500")}>
