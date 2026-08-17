@@ -324,15 +324,39 @@ export default function LabEquipmentPage() {
               />
             </div>
           </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setIsModalOpen(false)} disabled={saving}>Cancelar</Button>
-            <Button className="gradient-bg text-white" onClick={handleSave} disabled={saving}>
-              {saving && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
-              {editingItem ? 'Atualizar' : 'Salvar'}
-            </Button>
+          <DialogFooter className="flex justify-between items-center sm:justify-between">
+            <div>
+              {editingItem && (
+                <Button 
+                  type="button"
+                  variant="outline" 
+                  className="gap-2 border-primary/30 text-primary hover:bg-primary/5"
+                  onClick={() => {
+                    setIsModalOpen(false)
+                    setWebhookModal({ open: true, id: editingItem.id, name: editingItem.name })
+                  }}
+                >
+                  <Globe className="h-4 w-4" /> Webhooks
+                </Button>
+              )}
+            </div>
+            <div className="flex gap-2">
+              <Button variant="outline" onClick={() => setIsModalOpen(false)} disabled={saving}>Cancelar</Button>
+              <Button className="gradient-bg text-white" onClick={handleSave} disabled={saving}>
+                {saving && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
+                {editingItem ? 'Atualizar' : 'Salvar'}
+              </Button>
+            </div>
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <InstrumentWebhooksModal 
+        isOpen={webhookModal.open}
+        onClose={() => setWebhookModal(prev => ({ ...prev, open: false }))}
+        instrumentId={webhookModal.id}
+        instrumentName={webhookModal.name}
+      />
     </div>
   )
 }
