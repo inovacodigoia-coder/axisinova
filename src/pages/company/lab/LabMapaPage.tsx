@@ -144,6 +144,17 @@ export default function LabMapaPage() {
       sector: sectors.length === 1 ? sectors[0] : 'Múltiplos',
       responsible: user?.name || 'Usuário',
     })
+    
+    // Limpar filtros e resetar estado após geração
+    setExamTerm('')
+    setSector(ALL)
+    setConvenio(ALL)
+    setPlan(ALL)
+    setPriority(ALL)
+    setPost(ALL)
+    setPage(1)
+    setApplied(a => a + 1)
+    
     toast.success(`Mapa ${record.code} gerado com ${record.itemsCount} exame(s).`)
     navigate(`/app/lab/mapa/${record.code}`)
   }
