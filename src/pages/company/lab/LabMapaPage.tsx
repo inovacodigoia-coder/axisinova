@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useMemo, useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -59,6 +59,13 @@ export default function LabMapaPage() {
   const [newPriority, setNewPriority] = useState('')
   const [priorityModal, setPriorityModal] = useState(false)
   const [applied, setApplied] = useState(0)
+
+  // Forçar atualização quando a página ganha foco (ex: voltando do mapa gerado)
+  useEffect(() => {
+    const handleFocus = () => setApplied(a => a + 1)
+    window.addEventListener('focus', handleFocus)
+    return () => window.removeEventListener('focus', handleFocus)
+  }, [])
 
   const sectorOptions = useMemo(() => {
     return (workbenches || []).map((w: any) => w.name).filter(Boolean)
@@ -144,6 +151,17 @@ export default function LabMapaPage() {
       sector: sectors.length === 1 ? sectors[0] : 'Múltiplos',
       responsible: user?.name || 'Usuário',
     })
+    
+    // Limpar filtros e resetar estado após geração
+    setExamTerm('')
+    setSector(ALL)
+    setConvenio(ALL)
+    setPlan(ALL)
+    setPriority(ALL)
+    setPost(ALL)
+    setPage(1)
+    setApplied(a => a + 1)
+    
     toast.success(`Mapa ${record.code} gerado com ${record.itemsCount} exame(s).`)
     navigate(`/app/lab/mapa/${record.code}`)
   }
