@@ -86,4 +86,23 @@ export function createWorkMap(params: { itemKeys: string[]; sector: string; resp
   return record
 }
 
+export function deleteWorkMap(code: string) {
+  const maps = getWorkMaps()
+  const mapToDelete = maps.find(m => m.code === code)
+  if (!mapToDelete) return
+
+  try {
+    // Remover o mapa da lista de mapas
+    const updatedMaps = maps.filter(m => m.code !== code)
+    sessionStorage.setItem(MAPS_KEY, JSON.stringify(updatedMaps))
+
+    // Remover os exames do mapa da lista de incluídos para que voltem à fila
+    const set = readSet()
+    mapToDelete.itemKeys.forEach(k => set.delete(k))
+    sessionStorage.setItem(INCLUDED_KEY, JSON.stringify([...set]))
+  } catch (e) {
+    console.error('[work-map] delete failed', e)
+  }
+}
+
 export const DEFAULT_PRIORITIES = ['Normal', 'Urgente', 'Emergência']
