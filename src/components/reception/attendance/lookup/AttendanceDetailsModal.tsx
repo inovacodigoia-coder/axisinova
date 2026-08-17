@@ -619,7 +619,7 @@ export function AttendanceDetailsModal({ open, onClose, onOrderDeleted, order, p
               </TabsList>
             </div>
 
-              <div className="flex-1 p-4 bg-[#F8FAFC] overflow-y-auto min-h-0">
+              <div className="flex-1 p-4 bg-[#F8FAFC] min-h-0">
               <TabsContent value="guias" className="m-0 space-y-4">
                 <div className="flex flex-col gap-4">
                   <div className="flex items-center justify-between">
