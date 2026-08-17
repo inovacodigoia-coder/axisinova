@@ -131,43 +131,51 @@ export function InstrumentWebhooksModal({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-[500px]">
-        <DialogHeader>
+      <DialogContent className="sm:max-w-[600px] max-h-[85vh] flex flex-col p-0 overflow-hidden">
+        <DialogHeader className="p-6 pb-2">
           <DialogTitle className="flex items-center gap-2">
             <Globe className="h-5 w-5 text-primary" />
             Webhooks: {instrumentName}
           </DialogTitle>
         </DialogHeader>
 
-        <div className="py-4 space-y-4">
+        <div className="flex-1 overflow-y-auto px-6 py-2 space-y-4">
           {loading ? (
-            <div className="flex flex-col items-center justify-center py-8">
+            <div className="flex flex-col items-center justify-center py-12">
               <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
               <p className="text-sm text-muted-foreground mt-2">Buscando webhooks...</p>
             </div>
           ) : (
-            <div className="space-y-4">
-              <div className="space-y-2">
-                <h3 className="text-sm font-semibold">Webhooks Ativos</h3>
+            <div className="space-y-6">
+              <div className="space-y-3">
+                <h3 className="text-sm font-semibold flex items-center justify-between">
+                  Webhooks Ativos
+                  <span className="text-[10px] font-normal text-muted-foreground uppercase bg-muted px-2 py-0.5 rounded">
+                    {webhooks.length} configurados
+                  </span>
+                </h3>
                 {webhooks.length === 0 ? (
-                  <p className="text-xs text-muted-foreground border border-dashed rounded-lg p-4 text-center">
-                    Nenhum webhook configurado para este equipamento.
-                  </p>
+                  <div className="flex flex-col items-center justify-center py-10 border border-dashed rounded-xl bg-muted/5">
+                    <Globe className="h-8 w-8 text-muted-foreground/30 mb-2" />
+                    <p className="text-xs text-muted-foreground">
+                      Nenhum webhook configurado para este equipamento.
+                    </p>
+                  </div>
                 ) : (
-                  <div className="space-y-2">
+                  <div className="grid gap-3">
                     {webhooks.map((w) => (
-                      <div key={w.id} className="flex items-center justify-between p-3 rounded-lg border bg-muted/20">
-                        <div className="min-w-0 flex-1">
-                          <p className="text-sm font-medium truncate">{w.url}</p>
-                          <div className="flex flex-wrap gap-1 mt-1">
+                      <div key={w.id} className="flex items-start justify-between p-4 rounded-xl border bg-card hover:shadow-sm transition-all group">
+                        <div className="min-w-0 flex-1 space-y-2">
+                          <p className="text-sm font-medium break-all leading-tight text-foreground/90">{w.url}</p>
+                          <div className="flex flex-wrap gap-1.5">
                             {w.events.map(ev => (
-                              <span key={ev} className="text-[10px] px-1.5 py-0.5 rounded bg-primary/10 text-primary font-bold">
+                              <span key={ev} className="text-[9px] px-2 py-0.5 rounded-full bg-primary/10 text-primary font-bold tracking-wider">
                                 {ev}
                               </span>
                             ))}
                           </div>
                         </div>
-                        <Button variant="ghost" size="sm" className="text-red-600 h-8 w-8 p-0">
+                        <Button variant="ghost" size="sm" className="text-red-500 hover:text-red-600 hover:bg-red-50 ml-4 h-8 w-8 p-0 shrink-0">
                           <Trash2 className="h-4 w-4" />
                         </Button>
                       </div>
@@ -226,8 +234,8 @@ export function InstrumentWebhooksModal({
           )}
         </div>
 
-        <DialogFooter>
-          <Button variant="outline" onClick={onClose}>Fechar</Button>
+        <DialogFooter className="p-6 pt-2 border-t bg-muted/10">
+          <Button variant="outline" onClick={onClose} className="w-full sm:w-auto">Fechar</Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>
