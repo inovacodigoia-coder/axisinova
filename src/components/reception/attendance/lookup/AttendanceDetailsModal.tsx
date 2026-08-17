@@ -191,16 +191,7 @@ export function AttendanceDetailsModal({ open, onClose, onOrderDeleted, order, p
   };
 
   // ---- Coleta por amostra ----
-  const matchesTube = (material: any, tube: any) => {
-    const m = String(material || '').toLowerCase();
-    if (!m) return false;
-    if (m === String(tube.label).toLowerCase() || m === String(tube.type).toLowerCase()) return true;
-    if (tube.type === 'gel' && m === 'soro') return true;
-    if (tube.type === 'edta' && (m === 'sangue total' || m === 'sangue')) return true;
-    if (tube.type === 'citrato' && m === 'plasma') return true;
-    if (tube.type === 'urina' && m.startsWith('urina')) return true;
-    return false;
-  };
+  const matchesTube = (material: any, tube: any) => tubeTypeForMaterial(material) === tube.type;
 
   const tubeIsCollected = (tube: any) => {
     const exams = examsForTube(tube);
