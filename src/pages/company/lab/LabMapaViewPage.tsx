@@ -12,12 +12,11 @@ import { EmptyState } from '@/components/feedback/EmptyState'
 import { buildExamParams, findCatalogExam, type ResolvedParam } from '@/utils/examParameters'
 import { differenceInYears } from 'date-fns'
 
-type ViewMode = 'completo' | 'exame' | 'compacto' | 'grade'
+type ViewMode = 'completo' | 'exame' | 'grade'
 
 const VIEWS: { id: ViewMode; label: string }[] = [
   { id: 'completo', label: 'Completo' },
   { id: 'exame', label: 'Exame' },
-  { id: 'compacto', label: 'Compacto' },
   { id: 'grade', label: 'Grade' },
 ]
 
@@ -166,7 +165,6 @@ export default function LabMapaViewPage() {
 
   const PatientHeader = ({ p }: { p: MapPatient }) => (
     <div className="flex flex-wrap items-baseline gap-x-4 gap-y-1 text-[12px] font-bold">
-      <span className="text-[10px] text-gray-500 font-normal">'''Do not make any visual modifications. The phrases I write are commands to understand what I want, not to be written down. Understand their content well, then execute what is required.'''\n                                        \n                                            \n                                            I have approved the plan</span>
       <span className="font-mono">{p.codigo}</span>
       <span className="uppercase">{p.paciente}</span>
       <span className="font-normal">{p.convenio}</span>
@@ -326,32 +324,6 @@ export default function LabMapaViewPage() {
                     )
                   })}
                 </div>
-              </div>
-            ))}
-          </div>
-        ) : view === 'compacto' ? (
-          <div className="divide-y divide-black/30">
-            {patients.map(p => (
-              <div key={p.id} className="py-3 print:break-inside-avoid">
-                <PatientHeader p={p} />
-                <div className="mt-1">
-                  {p.exams.filter(e => e.inMap).map((e, i) => (
-                    <div key={i} className="mb-1">
-                      <p className="text-[11px] leading-5">
-                        <span className="font-bold">{e.nome.toUpperCase()}</span> - {e.material}
-                      </p>
-                      {paramsFor(e).length > 1 && (
-                        <p className="pl-3 text-[10px] leading-4 text-gray-700">
-                          {paramsFor(e).map(param => param.name + (param.unit ? ` (${param.unit})` : '')).join(' · ')}
-                        </p>
-                      )}
-                    </div>
-                  ))}
-                </div>
-                {p.observacoesClinicas && (
-                  <p className="mt-1 text-[11px]"><span className="font-semibold">Observações, doenças e medicamentos:</span> {p.observacoesClinicas}</p>
-                )}
-                <DemaisExames p={p} />
               </div>
             ))}
           </div>
