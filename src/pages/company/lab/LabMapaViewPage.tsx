@@ -189,7 +189,14 @@ export default function LabMapaViewPage() {
 
   return (
     <div className="space-y-5 print:space-y-0">
-      <style>{`@media print { @page { margin: 10mm } body { background: #fff } .no-print { display: none !important } }`}</style>
+      <style>{`@media print {
+        @page { margin: 10mm }
+        body { background: #fff !important }
+        body * { visibility: hidden !important }
+        #work-map-print, #work-map-print * { visibility: visible !important }
+        #work-map-print { position: absolute !important; left: 0; top: 0; width: 100% }
+        .no-print { display: none !important }
+      }`}</style>
 
       {/* Navegação */}
       <div className="no-print space-y-3 rounded-xl border border-border bg-card p-4 shadow-sm">
@@ -237,7 +244,7 @@ export default function LabMapaViewPage() {
       </div>
 
       {/* Conteúdo do mapa */}
-      <div className="rounded-xl border border-border bg-white p-5 text-black print:rounded-none print:border-0 print:p-0">
+      <div id="work-map-print" className="rounded-xl border border-border bg-white p-5 text-black print:rounded-none print:border-0 print:p-0">
         <div className="mb-3 flex flex-wrap items-baseline gap-x-6 gap-y-1 border-b border-black pb-2 text-[12px]">
           <span><span className="font-semibold">Setor:</span> {(map.sector || '—').toUpperCase()}</span>
           <span><span className="font-semibold">Data:</span> {formatDateTime(map.generatedAt)}</span>
