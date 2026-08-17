@@ -712,7 +712,7 @@ export function AttendanceDetailsModal({ open, onClose, onOrderDeleted, order, p
 
                         <div className="overflow-auto max-h-[42vh]">
                           <table className="w-full text-left border-collapse">
-                            <thead className="bg-muted/30 text-[10px] font-bold text-muted-foreground uppercase tracking-wider">
+                            <thead className="sticky top-0 z-10 bg-slate-100 text-[10px] font-bold text-muted-foreground uppercase tracking-wider">
                               <tr>
                                 <th className="px-4 py-2 border-b border-border w-10">
                                   <Checkbox 
