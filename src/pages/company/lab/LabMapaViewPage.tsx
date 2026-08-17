@@ -5,7 +5,6 @@ import { Button } from '@/components/ui/button'
 import { ArrowLeft, FilePlus, Printer, ClipboardList } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { supabase } from '@/integrations/supabase/client'
-import { useRegisters } from '@/context/RegistersContext'
 import { useAttendanceCadastro } from '@/hooks/useAttendanceCadastro'
 import { getWorkMap, workMapItemKey } from '@/mocks/work-map.mock'
 import { calculateAge, formatDateTime } from '@/utils/formatters'
@@ -71,7 +70,7 @@ export default function LabMapaViewPage() {
   const navigate = useNavigate()
   const map = codigo ? getWorkMap(codigo) : undefined
   const { orders, loading } = useAttendanceCadastro()
-  const { registeredExams } = useRegisters() as any
+
 
   const [view, setView] = useState<ViewMode>('completo')
   const [catalogList, setCatalogList] = useState<any[]>([])
