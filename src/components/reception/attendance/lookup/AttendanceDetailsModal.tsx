@@ -426,9 +426,9 @@ export function AttendanceDetailsModal({ open, onClose, onOrderDeleted, order, p
 
   return (
     <Dialog open={open} onOpenChange={(o) => !o && onClose()}>
-      <DialogContent className="max-w-[1200px] w-[95vw] max-h-[90vh] p-0 flex flex-col gap-0 bg-[#F8FAFC] border-none shadow-2xl [&>button]:hidden overflow-hidden scrollbar-thin scrollbar-thumb-gray-300 data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=open]:zoom-in-95">
+      <DialogContent className="max-w-[1200px] w-[95vw] max-h-[90vh] p-0 flex flex-col gap-0 bg-[#F8FAFC] border-none shadow-2xl [&>button]:hidden overflow-y-auto overflow-x-hidden scrollbar-thin scrollbar-thumb-gray-300 data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=open]:zoom-in-95">
         {/* Header Navigation */}
-        <div className="flex items-center justify-between px-4 py-2 bg-white border-b border-border flex-shrink-0">
+        <div className="sticky top-0 z-30 flex items-center justify-between px-4 py-2 bg-white border-b border-border flex-shrink-0">
           <div className="flex items-center gap-2">
             <Button variant="ghost" size="icon" onClick={onClose} className="h-8 w-8">
               <ArrowLeft className="h-4 w-4" />
