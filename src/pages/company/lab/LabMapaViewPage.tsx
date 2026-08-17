@@ -342,8 +342,14 @@ export default function LabMapaViewPage() {
           <div className="divide-y divide-black/30">
             {patients.map(p => {
               const mine = p.exams.filter(e => e.inMap)
-              const chunks: MapExam[][] = []
-              for (let i = 0; i < mine.length; i += 6) chunks.push(mine.slice(i, i + 6))
+              const allParams = mine.flatMap(e => {
+                const ps = paramsFor(e)
+                if (ps.length === 0) return [{ sigla: e.sigla }]
+                return ps
+              })
+              const chunks: { sigla: string }[][] = []
+              for (let i = 0; i < allParams.length; i += 6) chunks.push(allParams.slice(i, i + 6))
+
               return (
                 <div key={p.id} className="py-3">
                   <PatientHeader p={p} />
@@ -352,8 +358,8 @@ export default function LabMapaViewPage() {
                       <table key={ci} className="w-full border-collapse text-[11px]">
                         <thead>
                           <tr>
-                            {chunk.map((e, i) => (
-                              <th key={i} className="border border-black px-2 py-1 text-center font-bold">{e.sigla}</th>
+                            {chunk.map((item, i) => (
+                              <th key={i} className="border border-black px-2 py-1 text-center font-bold">{item.sigla}</th>
                             ))}
                           </tr>
                         </thead>
