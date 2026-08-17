@@ -264,7 +264,7 @@ export default function LabMapaViewPage() {
                 {p.exams.filter(e => e.inMap).map((e, i) => (
                   <div key={i} className="mt-2">
                     <p className="text-[12px] font-bold">{e.nome.toUpperCase()}-{e.material}</p>
-                    {isComplexo(e) && (
+                    {paramsFor(e).length > 0 && (
                       <div className="mt-1 grid grid-cols-6 gap-x-3">
                         {paramsFor(e).map((param, pi) => (
                           <div key={pi} className="border-b border-black/40 pb-4 text-[10px]">{param.nome}</div>
