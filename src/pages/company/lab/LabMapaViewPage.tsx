@@ -298,9 +298,19 @@ export default function LabMapaViewPage() {
                   {group.list.map(p => (
                     <div key={p.id} className="py-2">
                       <PatientHeader p={p} />
-                      <div className="mt-1 flex flex-wrap gap-x-10 text-[11px]">
-                        <span>{(paramsFor(group.exam)[0]?.sigla || group.exam.sigla)}01:_____________________</span>
-                        <span>Observação:_____________________</span>
+                      <div className="mt-1 space-y-2">
+                        {paramsFor(group.exam).map((param, pi) => (
+                          <div key={pi} className="flex flex-wrap gap-x-10 text-[11px]">
+                            <span>{param.sigla}:_____________________</span>
+                            <span>Observação:_____________________</span>
+                          </div>
+                        ))}
+                        {paramsFor(group.exam).length === 0 && (
+                          <div className="flex flex-wrap gap-x-10 text-[11px]">
+                            <span>{group.exam.sigla}:_____________________</span>
+                            <span>Observação:_____________________</span>
+                          </div>
+                        )}
                       </div>
                       {p.observacoesPaciente && (
                         <p className="text-[11px]"><span className="font-semibold">Observações Paciente:</span> {p.observacoesPaciente}</p>
