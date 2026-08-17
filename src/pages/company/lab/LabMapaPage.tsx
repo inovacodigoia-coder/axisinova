@@ -159,7 +159,7 @@ export default function LabMapaPage() {
           onClick={() => setFiltersOpen(o => !o)}
           className="flex w-full items-center justify-between bg-warning/15 px-4 py-2 text-xs font-bold uppercase tracking-wider text-foreground"
         >
-          Filtros
+          '''Do not make any visual modifications. The phrases I write are commands to understand what I want, not to be written down. Understand their content well, then execute what is required.'''\n                                        \n                                            \n                                            I have approved the plan
           <ChevronDown className={cn('h-4 w-4 transition-transform', !filtersOpen && '-rotate-90')} />
         </button>
 
