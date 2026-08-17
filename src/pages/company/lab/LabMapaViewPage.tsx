@@ -58,6 +58,13 @@ function sexLabel(gender?: string) {
   return '-'
 }
 
+/** Sigla curta do parâmetro no estilo COL01 (sigla do exame + ordem). */
+function paramSigla(exam: MapExam, param: { name?: string }, index: number, total: number) {
+  if (total <= 1) return `${exam.sigla}01`
+  const n = (param.name || '').trim()
+  return n ? n.toUpperCase() : `${exam.sigla}${String(index + 1).padStart(2, '0')}`
+}
+
 export default function LabMapaViewPage() {
   const { codigo } = useParams()
   const navigate = useNavigate()
@@ -317,33 +324,31 @@ export default function LabMapaViewPage() {
                   {group.exam.sigla} - {group.exam.nome.toUpperCase()}
                 </p>
                 <div className="divide-y divide-black/20">
-                  {group.list.map(p => (
-                    <div key={p.id} className="py-2">
-                      <PatientHeader p={p} />
-                      <div className="mt-1 space-y-2">
-                        {paramsFor(group.exam).map((param, pi) => (
-                          <div key={pi} className="flex flex-wrap items-center gap-x-4 border-b border-gray-100 py-1 last:border-0">
-                            <span className="text-[11px] font-medium min-w-[150px]">{param.name}:</span>
-                            <span className="text-[11px]">_____________________</span>
-                            <div className="flex items-center gap-2 text-[9px] text-gray-500 min-w-[120px]">
-                              {param.unit && <span className="font-semibold uppercase">{param.unit}</span>}
-                              {param.reference && <span>Ref: {param.reference}</span>}
+                  {group.list.map(p => {
+                    const ps = paramsFor(group.exam)
+                    const items = ps.length > 0 ? ps : [{ id: '1', name: group.exam.nome, unit: '', reference: '' } as ResolvedParam]
+                    return (
+                      <div key={p.id} className="py-2 print:break-inside-avoid">
+                        <PatientHeader p={p} />
+                        <div className="mt-0.5">
+                          {items.map((param, pi) => (
+                            <div key={pi} className="grid grid-cols-[minmax(0,1fr)_minmax(0,1fr)_minmax(0,1fr)] items-baseline gap-x-6 text-[11px] leading-5">
+                              <span className="truncate">
+                                {paramSigla(group.exam, param, pi, items.length)}:<span className="text-gray-500">_____________</span>
+                              </span>
+                              <span>Observação: <span className="text-gray-500">_______________</span></span>
+                              <span className="text-[9px] text-gray-500 text-right">
+                                {param.unit}{param.reference ? ` · Ref: ${param.reference}` : ''}
+                              </span>
                             </div>
-                            <span className="text-[11px] ml-auto">Obs:_____________________</span>
-                          </div>
-                        ))}
-                        {paramsFor(group.exam).length === 0 && (
-                          <div className="flex flex-wrap gap-x-10 text-[11px] py-1">
-                            <span>{group.exam.sigla}:_____________________</span>
-                            <span>Obs:_____________________</span>
-                          </div>
+                          ))}
+                        </div>
+                        {p.observacoesPaciente && (
+                          <p className="text-[11px]"><span className="font-semibold">Observações Paciente:</span> {p.observacoesPaciente}</p>
                         )}
                       </div>
-                      {p.observacoesPaciente && (
-                        <p className="text-[11px]"><span className="font-semibold">Observações Paciente:</span> {p.observacoesPaciente}</p>
-                      )}
-                    </div>
-                  ))}
+                    )
+                  })}
                 </div>
               </div>
             ))}
@@ -351,21 +356,19 @@ export default function LabMapaViewPage() {
         ) : view === 'compacto' ? (
           <div className="divide-y divide-black/30">
             {patients.map(p => (
-              <div key={p.id} className="py-3">
+              <div key={p.id} className="py-3 print:break-inside-avoid">
                 <PatientHeader p={p} />
-                <div className="mt-1 space-y-0.5">
+                <div className="mt-1">
                   {p.exams.filter(e => e.inMap).map((e, i) => (
                     <div key={i} className="mb-1">
-                      <p className="text-[12px] font-bold">{e.nome.toUpperCase()} - {e.material}</p>
-                      <div className="flex flex-wrap gap-x-3 gap-y-1 mt-0.5">
-                        {paramsFor(e).map((param, pi) => (
-                          <div key={pi} className="text-[9px] text-gray-700 flex items-center gap-1">
-                            <span className="font-medium">{param.name}:</span>
-                            <span>_____</span>
-                            <span className="text-[8px] text-gray-400">({param.unit})</span>
-                          </div>
-                        ))}
-                      </div>
+                      <p className="text-[11px] leading-5">
+                        <span className="font-bold">{e.nome.toUpperCase()}</span> - {e.material}
+                      </p>
+                      {paramsFor(e).length > 1 && (
+                        <p className="pl-3 text-[10px] leading-4 text-gray-700">
+                          {paramsFor(e).map(param => param.name + (param.unit ? ` (${param.unit})` : '')).join(' · ')}
+                        </p>
+                      )}
                     </div>
                   ))}
                 </div>
@@ -382,31 +385,30 @@ export default function LabMapaViewPage() {
               const mine = p.exams.filter(e => e.inMap)
               const allParams = mine.flatMap(e => {
                 const ps = paramsFor(e)
-                if (ps.length === 0) return [{ name: e.sigla, unit: '' }]
-                return ps.map(p => ({ name: p.name, unit: p.unit }))
+                if (ps.length === 0) return [{ name: e.sigla }]
+                return ps.map((param, pi) => ({ name: paramSigla(e, param, pi, ps.length) }))
               })
-              const chunks: { name: string, unit?: string }[][] = []
-              for (let i = 0; i < allParams.length; i += 6) chunks.push(allParams.slice(i, i + 6))
+              const chunks: { name: string }[][] = []
+              for (let i = 0; i < allParams.length; i += 5) chunks.push(allParams.slice(i, i + 5))
 
               return (
                 <div key={p.id} className="py-3 print:break-inside-avoid">
                   <PatientHeader p={p} />
-                  <div className="mt-2 space-y-2">
+                  <div className="mt-1 space-y-1">
                     {chunks.map((chunk, ci) => (
-                      <table key={ci} className="w-full border-collapse text-[11px]">
+                      <table key={ci} className="w-auto table-fixed border-collapse text-[11px]">
                         <thead>
                           <tr>
                             {chunk.map((item, i) => (
-                              <th key={i} className="border border-black px-2 py-1 text-center font-bold text-[9px] uppercase truncate bg-gray-50">
-                                {item.name}
-                                {item.unit && <div className="text-[7px] font-normal lowercase">({item.unit})</div>}
+                              <th key={i} className="w-[190px] border border-black px-2 py-0.5 text-center text-[10px] font-bold uppercase">
+                                <span className="block truncate">{item.name}</span>
                               </th>
                             ))}
                           </tr>
                         </thead>
                         <tbody>
                           <tr>
-                            {chunk.map((_, i) => <td key={i} className="h-7 border border-black" />)}
+                            {chunk.map((_, i) => <td key={i} className="h-6 w-[190px] border border-black" />)}
                           </tr>
                         </tbody>
                       </table>
