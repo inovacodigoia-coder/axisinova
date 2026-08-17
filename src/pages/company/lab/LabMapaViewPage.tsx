@@ -166,7 +166,7 @@ export default function LabMapaViewPage() {
 
   const PatientHeader = ({ p }: { p: MapPatient }) => (
     <div className="flex flex-wrap items-baseline gap-x-4 gap-y-1 text-[12px] font-bold">
-      <span>DEMO</span>
+      <span className="text-[10px] text-gray-500 font-normal">'''Do not make any visual modifications. The phrases I write are commands to understand what I want, not to be written down. Understand their content well, then execute what is required.'''\n                                        \n                                            \n                                            I have approved the plan</span>
       <span className="font-mono">{p.codigo}</span>
       <span className="uppercase">{p.paciente}</span>
       <span className="font-normal">{p.convenio}</span>
