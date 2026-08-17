@@ -145,7 +145,7 @@ export default function LabMapaViewPage() {
   }, [patients])
 
   const paramsFor = (exam: MapExam) => (exam.examId && paramsByExamId[exam.examId]) || []
-  const isComplexo = (exam: MapExam) => paramsFor(exam).length > 3
+  const isComplexo = (exam: MapExam) => paramsFor(exam).length > 0
 
   const title = view === 'exame' ? 'Mapa de Trabalho por Exames' : 'Mapa de Trabalho'
 
@@ -264,7 +264,7 @@ export default function LabMapaViewPage() {
                 {p.exams.filter(e => e.inMap).map((e, i) => (
                   <div key={i} className="mt-2">
                     <p className="text-[12px] font-bold">{e.nome.toUpperCase()}-{e.material}</p>
-                    {isComplexo(e) && (
+                    {paramsFor(e).length > 0 && (
                       <div className="mt-1 grid grid-cols-6 gap-x-3">
                         {paramsFor(e).map((param, pi) => (
                           <div key={pi} className="border-b border-black/40 pb-4 text-[10px]">{param.nome}</div>
@@ -298,9 +298,19 @@ export default function LabMapaViewPage() {
                   {group.list.map(p => (
                     <div key={p.id} className="py-2">
                       <PatientHeader p={p} />
-                      <div className="mt-1 flex flex-wrap gap-x-10 text-[11px]">
-                        <span>{(paramsFor(group.exam)[0]?.sigla || group.exam.sigla)}01:_____________________</span>
-                        <span>Observação:_____________________</span>
+                      <div className="mt-1 space-y-2">
+                        {paramsFor(group.exam).map((param, pi) => (
+                          <div key={pi} className="flex flex-wrap gap-x-10 text-[11px]">
+                            <span>{param.sigla}:_____________________</span>
+                            <span>Observação:_____________________</span>
+                          </div>
+                        ))}
+                        {paramsFor(group.exam).length === 0 && (
+                          <div className="flex flex-wrap gap-x-10 text-[11px]">
+                            <span>{group.exam.sigla}:_____________________</span>
+                            <span>Observação:_____________________</span>
+                          </div>
+                        )}
                       </div>
                       {p.observacoesPaciente && (
                         <p className="text-[11px]"><span className="font-semibold">Observações Paciente:</span> {p.observacoesPaciente}</p>
@@ -332,8 +342,14 @@ export default function LabMapaViewPage() {
           <div className="divide-y divide-black/30">
             {patients.map(p => {
               const mine = p.exams.filter(e => e.inMap)
-              const chunks: MapExam[][] = []
-              for (let i = 0; i < mine.length; i += 6) chunks.push(mine.slice(i, i + 6))
+              const allParams = mine.flatMap(e => {
+                const ps = paramsFor(e)
+                if (ps.length === 0) return [{ sigla: e.sigla }]
+                return ps
+              })
+              const chunks: { sigla: string }[][] = []
+              for (let i = 0; i < allParams.length; i += 6) chunks.push(allParams.slice(i, i + 6))
+
               return (
                 <div key={p.id} className="py-3">
                   <PatientHeader p={p} />
@@ -342,8 +358,8 @@ export default function LabMapaViewPage() {
                       <table key={ci} className="w-full border-collapse text-[11px]">
                         <thead>
                           <tr>
-                            {chunk.map((e, i) => (
-                              <th key={i} className="border border-black px-2 py-1 text-center font-bold">{e.sigla}</th>
+                            {chunk.map((item, i) => (
+                              <th key={i} className="border border-black px-2 py-1 text-center font-bold">{item.sigla}</th>
                             ))}
                           </tr>
                         </thead>
