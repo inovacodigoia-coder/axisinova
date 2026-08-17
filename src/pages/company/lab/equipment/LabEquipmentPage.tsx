@@ -3,7 +3,7 @@ import { Card } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Skeleton } from '@/components/ui/skeleton'
-import { Search, Plus, Edit2, Trash2, Monitor, Loader2, KeyRound } from 'lucide-react'
+import { Search, Plus, Edit2, Trash2, Monitor, Loader2, KeyRound, Globe } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import { Badge } from '@/components/ui/badge'
 import { toast } from 'sonner'
@@ -14,6 +14,11 @@ import {
   DialogTitle,
   DialogFooter,
 } from "@/components/ui/dialog"
+import { Label } from '@/components/ui/label'
+import { Switch } from '@/components/ui/switch'
+import { supabase } from '@/integrations/supabase/client'
+import { useAuth } from '@/context/AuthContext'
+import { InstrumentWebhooksModal } from '@/components/lab/equipment/InstrumentWebhooksModal'
 import { Label } from '@/components/ui/label'
 import { Switch } from '@/components/ui/switch'
 import { supabase } from '@/integrations/supabase/client'
