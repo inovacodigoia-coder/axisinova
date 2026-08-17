@@ -274,7 +274,7 @@ export default function LabMapaViewPage() {
         ) : view === 'completo' ? (
           <div className="divide-y divide-black/30">
             {patients.map(p => (
-              <div key={p.id} className="py-3">
+              <div key={p.id} className="py-3 print:break-inside-avoid">
                 <PatientHeader p={p} />
                 {p.exams.filter(e => e.inMap).map((e, i) => (
                   <div key={i} className="mt-2">
@@ -282,12 +282,12 @@ export default function LabMapaViewPage() {
                     {paramsFor(e).length > 0 && (
                       <div className="mt-2 grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-2">
                         {paramsFor(e).map((param, pi) => (
-                          <div key={pi} className="border border-black/20 rounded p-1.5 flex flex-col gap-1">
-                            <span className="text-[9px] font-bold uppercase truncate">{param.name}</span>
+                          <div key={pi} className="border border-black/20 rounded p-1.5 flex flex-col gap-0.5 min-h-[56px] print:min-h-[50px]">
+                            <span className="text-[9px] font-bold uppercase truncate leading-tight">{param.name}</span>
                             <div className="border border-black/40 h-6 bg-gray-50 flex items-center px-1" />
-                            <div className="flex justify-between items-center text-[8px] text-gray-600 mt-auto">
-                              <span className="truncate max-w-[60%]">Ref: {param.reference || '—'}</span>
-                              <span className="font-semibold">{param.unit}</span>
+                            <div className="flex flex-col text-[7.5px] text-gray-600 mt-auto leading-[1.1]">
+                              {param.reference && <span className="truncate">Ref: {param.reference}</span>}
+                              {param.unit && <span className="font-semibold uppercase">{param.unit}</span>}
                             </div>
                           </div>
                         ))}
@@ -322,14 +322,18 @@ export default function LabMapaViewPage() {
                       <PatientHeader p={p} />
                       <div className="mt-1 space-y-2">
                         {paramsFor(group.exam).map((param, pi) => (
-                          <div key={pi} className="flex flex-wrap gap-x-10 text-[11px]">
-                            <span>{param.name || param.id}:_____________________</span>
-                            <span className="text-[9px] text-gray-500">({param.unit}) Ref: {param.reference}</span>
-                            <span>Obs:_____________________</span>
+                          <div key={pi} className="flex flex-wrap items-center gap-x-4 border-b border-gray-100 py-1 last:border-0">
+                            <span className="text-[11px] font-medium min-w-[150px]">{param.name}:</span>
+                            <span className="text-[11px]">_____________________</span>
+                            <div className="flex items-center gap-2 text-[9px] text-gray-500 min-w-[120px]">
+                              {param.unit && <span className="font-semibold uppercase">{param.unit}</span>}
+                              {param.reference && <span>Ref: {param.reference}</span>}
+                            </div>
+                            <span className="text-[11px] ml-auto">Obs:_____________________</span>
                           </div>
                         ))}
                         {paramsFor(group.exam).length === 0 && (
-                          <div className="flex flex-wrap gap-x-10 text-[11px]">
+                          <div className="flex flex-wrap gap-x-10 text-[11px] py-1">
                             <span>{group.exam.sigla}:_____________________</span>
                             <span>Obs:_____________________</span>
                           </div>
@@ -353,11 +357,13 @@ export default function LabMapaViewPage() {
                   {p.exams.filter(e => e.inMap).map((e, i) => (
                     <div key={i} className="mb-1">
                       <p className="text-[12px] font-bold">{e.nome.toUpperCase()} - {e.material}</p>
-                      <div className="flex flex-wrap gap-2 mt-0.5">
+                      <div className="flex flex-wrap gap-x-3 gap-y-1 mt-0.5">
                         {paramsFor(e).map((param, pi) => (
-                          <span key={pi} className="text-[9px] text-gray-700">
-                            {param.name}: _____{param.unit}
-                          </span>
+                          <div key={pi} className="text-[9px] text-gray-700 flex items-center gap-1">
+                            <span className="font-medium">{param.name}:</span>
+                            <span>_____</span>
+                            <span className="text-[8px] text-gray-400">({param.unit})</span>
+                          </div>
                         ))}
                       </div>
                     </div>
@@ -376,14 +382,14 @@ export default function LabMapaViewPage() {
               const mine = p.exams.filter(e => e.inMap)
               const allParams = mine.flatMap(e => {
                 const ps = paramsFor(e)
-                if (ps.length === 0) return [{ name: e.sigla }]
-                return ps
+                if (ps.length === 0) return [{ name: e.sigla, unit: '' }]
+                return ps.map(p => ({ name: p.name, unit: p.unit }))
               })
-              const chunks: { name: string }[][] = []
+              const chunks: { name: string, unit?: string }[][] = []
               for (let i = 0; i < allParams.length; i += 6) chunks.push(allParams.slice(i, i + 6))
 
               return (
-                <div key={p.id} className="py-3">
+                <div key={p.id} className="py-3 print:break-inside-avoid">
                   <PatientHeader p={p} />
                   <div className="mt-2 space-y-2">
                     {chunks.map((chunk, ci) => (
@@ -391,7 +397,10 @@ export default function LabMapaViewPage() {
                         <thead>
                           <tr>
                             {chunk.map((item, i) => (
-                              <th key={i} className="border border-black px-2 py-1 text-center font-bold text-[9px] uppercase truncate">{item.name}</th>
+                              <th key={i} className="border border-black px-2 py-1 text-center font-bold text-[9px] uppercase truncate bg-gray-50">
+                                {item.name}
+                                {item.unit && <div className="text-[7px] font-normal lowercase">({item.unit})</div>}
+                              </th>
                             ))}
                           </tr>
                         </thead>
