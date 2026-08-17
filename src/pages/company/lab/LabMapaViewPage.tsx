@@ -145,7 +145,7 @@ export default function LabMapaViewPage() {
   }, [patients])
 
   const paramsFor = (exam: MapExam) => (exam.examId && paramsByExamId[exam.examId]) || []
-  const isComplexo = (exam: MapExam) => paramsFor(exam).length > 3
+  const isComplexo = (exam: MapExam) => paramsFor(exam).length > 0
 
   const title = view === 'exame' ? 'Mapa de Trabalho por Exames' : 'Mapa de Trabalho'
 
