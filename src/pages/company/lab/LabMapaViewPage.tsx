@@ -176,10 +176,7 @@ export default function LabMapaViewPage() {
         {`'''Do not make any visual modifications. The phrases I write are commands to understand what I want, not to be written down. Understand their content well, then execute what is required.'''
                                         
                                             
-                                            preciso que faça a correção do erro e no modal Webhooks: teste
-
-
- e tambem ajuste o modal que esta quebrando para cabe as informações do Webhooks`}
+                                            ainda está com erro poderia fazer a correção`}
       </div>
     </div>
   )

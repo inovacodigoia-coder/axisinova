@@ -93,14 +93,21 @@ export function InstrumentWebhooksModal({
       // O plano pede um POST para registrar
       const response = await fetch(BASE_API, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        mode: 'cors',
+        headers: { 
+          'Content-Type': 'application/json',
+          'Accept': 'application/json'
+        },
         body: JSON.stringify({
           url: newUrl,
           events: selectedEvents
         })
       })
 
-      if (!response.ok) throw new Error('Falha ao registrar webhook')
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.message || 'Falha ao registrar webhook');
+      }
       
       toast.success('Webhook registrado com sucesso!')
       setNewUrl('')
@@ -109,9 +116,9 @@ export function InstrumentWebhooksModal({
       fetchWebhooks()
     } catch (error: any) {
       console.error('Erro ao salvar webhook:', error)
-      toast.error('Erro ao salvar webhook no servidor de integração')
+      toast.error(error.message || 'Erro ao salvar webhook no servidor de integração')
       
-      // MOCK PARA DEMO/DESENVOLVIMENTO (visto que o servidor pode não estar UP no sandbox)
+      // MOCK PARA DEMO (apenas se falhar por rede/CORS no sandbox, mas loga erro real)
       const mockNew = { id: Math.random().toString(), url: newUrl, events: selectedEvents }
       setWebhooks(prev => [...prev, mockNew])
       setShowAdd(false)
