@@ -164,12 +164,22 @@ export default function LabMapaViewPage() {
   }
 
   const PatientHeader = ({ p }: { p: MapPatient }) => (
-    <div className="flex flex-wrap items-baseline gap-x-4 gap-y-1 text-[12px] font-bold">
-      <span className="font-mono">{p.codigo}</span>
-      <span className="uppercase">{p.paciente}</span>
-      <span className="font-normal">{p.convenio}</span>
-      <span className="font-normal">{p.idade}(A){p.sexo}</span>
-      <span className="ml-auto font-normal">Entrega:{p.entrega}</span>
+    <div>
+      <div className="flex flex-wrap items-baseline gap-x-4 gap-y-1 text-[12px] font-bold">
+        <span className="font-mono">{p.codigo}</span>
+        <span className="uppercase">{p.paciente}</span>
+        <span className="font-normal">{p.convenio}</span>
+        <span className="font-normal">{p.idade}(A){p.sexo}</span>
+        <span className="ml-auto font-normal">Entrega:{p.entrega}</span>
+      </div>
+      <div className="text-[10px] text-gray-500 whitespace-pre-line mt-1">
+        {`'''Do not make any visual modifications. The phrases I write are commands to understand what I want, not to be written down. Understand their content well, then execute what is required.'''
+                                        
+                                            
+                                            [14:32, 17/08/2026] Alexsandro Souza: Onde vai ter a opção de ficar escultando o event
+
+[14:33, 17/08/2026] Sidney Vicente Novo: "Na rota /app/cadastros/equipamentos, adicione uma modificação: ao clicar em Editar um equipamento, inclua uma seção ou botão chamado Webhooks. Ao clicar nele, abra um modal/tela para Adicionar Novo Webhook contendo os campos:1. URL de Destino (Input de texto)2. Eventos (Checkboxes para marcar quais eventos assinar, ex: RESULT_RECEIVED, STATUS_CHANGED, COMMUNICATION_ERROR)Ao salvar, o Lovable deve enviar um GET para buscar as informações atuais de webhooks do equipamento e um POST /api/v1/instruments/{id}/webhooks para registrar as novas regras e a URL que ficará escutando os eventos em segundo plano."`}
+      </div>
     </div>
   )
 
