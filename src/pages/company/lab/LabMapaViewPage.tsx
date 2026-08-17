@@ -356,21 +356,19 @@ export default function LabMapaViewPage() {
         ) : view === 'compacto' ? (
           <div className="divide-y divide-black/30">
             {patients.map(p => (
-              <div key={p.id} className="py-3">
+              <div key={p.id} className="py-3 print:break-inside-avoid">
                 <PatientHeader p={p} />
-                <div className="mt-1 space-y-0.5">
+                <div className="mt-1">
                   {p.exams.filter(e => e.inMap).map((e, i) => (
                     <div key={i} className="mb-1">
-                      <p className="text-[12px] font-bold">{e.nome.toUpperCase()} - {e.material}</p>
-                      <div className="flex flex-wrap gap-x-3 gap-y-1 mt-0.5">
-                        {paramsFor(e).map((param, pi) => (
-                          <div key={pi} className="text-[9px] text-gray-700 flex items-center gap-1">
-                            <span className="font-medium">{param.name}:</span>
-                            <span>_____</span>
-                            <span className="text-[8px] text-gray-400">({param.unit})</span>
-                          </div>
-                        ))}
-                      </div>
+                      <p className="text-[11px] leading-5">
+                        <span className="font-bold">{e.nome.toUpperCase()}</span> - {e.material}
+                      </p>
+                      {paramsFor(e).length > 1 && (
+                        <p className="pl-3 text-[10px] leading-4 text-gray-700">
+                          {paramsFor(e).map(param => param.name + (param.unit ? ` (${param.unit})` : '')).join(' · ')}
+                        </p>
+                      )}
                     </div>
                   ))}
                 </div>
@@ -387,31 +385,30 @@ export default function LabMapaViewPage() {
               const mine = p.exams.filter(e => e.inMap)
               const allParams = mine.flatMap(e => {
                 const ps = paramsFor(e)
-                if (ps.length === 0) return [{ name: e.sigla, unit: '' }]
-                return ps.map(p => ({ name: p.name, unit: p.unit }))
+                if (ps.length === 0) return [{ name: e.sigla }]
+                return ps.map((param, pi) => ({ name: paramSigla(e, param, pi, ps.length) }))
               })
-              const chunks: { name: string, unit?: string }[][] = []
-              for (let i = 0; i < allParams.length; i += 6) chunks.push(allParams.slice(i, i + 6))
+              const chunks: { name: string }[][] = []
+              for (let i = 0; i < allParams.length; i += 5) chunks.push(allParams.slice(i, i + 5))
 
               return (
                 <div key={p.id} className="py-3 print:break-inside-avoid">
                   <PatientHeader p={p} />
-                  <div className="mt-2 space-y-2">
+                  <div className="mt-1 space-y-1">
                     {chunks.map((chunk, ci) => (
-                      <table key={ci} className="w-full border-collapse text-[11px]">
+                      <table key={ci} className="w-auto table-fixed border-collapse text-[11px]">
                         <thead>
                           <tr>
                             {chunk.map((item, i) => (
-                              <th key={i} className="border border-black px-2 py-1 text-center font-bold text-[9px] uppercase truncate bg-gray-50">
-                                {item.name}
-                                {item.unit && <div className="text-[7px] font-normal lowercase">({item.unit})</div>}
+                              <th key={i} className="w-[190px] border border-black px-2 py-0.5 text-center text-[10px] font-bold uppercase">
+                                <span className="block truncate">{item.name}</span>
                               </th>
                             ))}
                           </tr>
                         </thead>
                         <tbody>
                           <tr>
-                            {chunk.map((_, i) => <td key={i} className="h-7 border border-black" />)}
+                            {chunk.map((_, i) => <td key={i} className="h-6 w-[190px] border border-black" />)}
                           </tr>
                         </tbody>
                       </table>
