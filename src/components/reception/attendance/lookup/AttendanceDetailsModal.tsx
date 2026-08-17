@@ -141,31 +141,30 @@ export function AttendanceDetailsModal({ open, onClose, onOrderDeleted, order, p
     }];
   }, [labOrder, order, guidesState]);
 
-  // Derived tubes list
-  const patientTubes = useMemo(() => {
-    const materials = new Set(orderExams.map(e => e.material).filter(Boolean));
-    return TUBE_TYPES.filter(tube => 
-      materials.has(tube.label) || 
-      materials.has(tube.type) ||
-      (tube.type === 'gel' && materials.has('Soro')) ||
-      (tube.type === 'edta' && (materials.has('Sangue Total') || materials.has('Sangue'))) ||
-      (tube.type === 'citrato' && materials.has('Plasma')) ||
-      (tube.type === 'urina' && (materials.has('Urina') || materials.has('Urina Amostra')))
-    );
-  }, [orderExams]);
+  // Normaliza o material do exame para o tipo de tubo correspondente
+  const tubeTypeForMaterial = (material: any): string => {
+    const m = String(material || '')
+      .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+      .toLowerCase().trim();
+    if (!m) return 'gel';
+    if (m.includes('urina') || m.includes('frasco')) return 'urina';
+    if (m.includes('edta') || m.includes('sangue total') || m.includes('hemograma')) return 'edta';
+    if (m.includes('citrat') || m.includes('coagulacao')) return 'citrato';
+    if (m.includes('plasma')) return 'citrato';
+    if (m.includes('soro') || m.includes('gel') || m.includes('sangue')) return 'gel';
+    return 'gel';
+  };
 
   // Exames pertencentes a cada tubo/amostra
   const examsForTube = (tube: any) =>
-    orderExams.filter((e: any) => {
-      const m = String(e.material || '').toLowerCase();
-      if (!m) return false;
-      if (m === String(tube.label).toLowerCase() || m === String(tube.type).toLowerCase()) return true;
-      if (tube.type === 'gel' && m === 'soro') return true;
-      if (tube.type === 'edta' && (m === 'sangue total' || m === 'sangue')) return true;
-      if (tube.type === 'citrato' && m === 'plasma') return true;
-      if (tube.type === 'urina' && m.startsWith('urina')) return true;
-      return false;
-    });
+    orderExams.filter((e: any) => tubeTypeForMaterial(e.material) === tube.type);
+
+  // Derived tubes list — considera todas as bancadas/materiais do pedido
+  const patientTubes = useMemo(() => {
+    const types = new Set(orderExams.map((e: any) => tubeTypeForMaterial(e.material)));
+    const list = TUBE_TYPES.filter(tube => types.has(tube.type));
+    return list.length > 0 ? list : TUBE_TYPES.filter(t => t.type === 'gel');
+  }, [orderExams]);
 
   // Bancada real do exame (catálogo -> lab_workbenches)
   const findCatalog = (e: any) =>
