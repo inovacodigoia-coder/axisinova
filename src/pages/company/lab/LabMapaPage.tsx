@@ -8,7 +8,7 @@ import { Skeleton } from '@/components/ui/skeleton'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { EmptyState } from '@/components/feedback/EmptyState'
-import { ChevronDown, Filter, ClipboardList, Plus, FileCheck2 } from 'lucide-react'
+import { ChevronDown, Filter, ClipboardList, Plus, FileCheck2, List } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { toast } from 'sonner'
 import { useAuth } from '@/context/AuthContext'
@@ -22,6 +22,8 @@ import {
   isGuiaRemessaRecebida,
   workMapItemKey,
 } from '@/mocks/work-map.mock'
+
+import { ListWorkMapsModal } from '@/components/lab/mapa/ListWorkMapsModal'
 
 const ELIGIBLE_STATUSES = ['collection_done', 'in_analysis', 'validation', 'released', 'completed']
 const ALL = '__all__'
@@ -59,6 +61,7 @@ export default function LabMapaPage() {
   const [newPriority, setNewPriority] = useState('')
   const [priorityModal, setPriorityModal] = useState(false)
   const [applied, setApplied] = useState(0)
+  const [listMapsModal, setListMapsModal] = useState(false)
 
   // Forçar atualização quando a página ganha foco (ex: voltando do mapa gerado)
   useEffect(() => {
@@ -174,13 +177,22 @@ export default function LabMapaPage() {
           <ClipboardList className="h-5 w-5" />
           <h1 className="text-lg font-bold tracking-tight">Novo Mapa de Trabalho</h1>
         </div>
-        <Button
-          onClick={handleGenerate}
-          disabled={filteredRows.length === 0}
-          className="rounded-full bg-warning px-6 font-bold text-warning-foreground hover:bg-warning/90 disabled:opacity-50"
-        >
-          <FileCheck2 className="mr-2 h-4 w-4" /> Gerar Mapa
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button
+            variant="outline"
+            onClick={() => setListMapsModal(true)}
+            className="rounded-full bg-white/10 border-white/20 text-white hover:bg-white/20"
+          >
+            <List className="mr-2 h-4 w-4" /> Mapas Gerados
+          </Button>
+          <Button
+            onClick={handleGenerate}
+            disabled={filteredRows.length === 0}
+            className="rounded-full bg-warning px-6 font-bold text-warning-foreground hover:bg-warning/90 disabled:opacity-50"
+          >
+            <FileCheck2 className="mr-2 h-4 w-4" /> Gerar Mapa
+          </Button>
+        </div>
       </div>
 
       {/* Filtros */}
@@ -369,6 +381,12 @@ export default function LabMapaPage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <ListWorkMapsModal 
+        open={listMapsModal} 
+        onOpenChange={setListMapsModal}
+        onRefresh={() => setApplied(a => a + 1)}
+      />
     </div>
   )
 }
