@@ -42,7 +42,7 @@ export default function LabMapaPage() {
   const navigate = useNavigate()
   const { user } = useAuth()
   const { orders, loading } = useAttendanceCadastro()
-  const { workbenches, convenios } = useRegisters()
+  const { workbenches, convenios, exams } = useRegisters() as any
   const { availableOrigins } = useCompanyContext()
 
   const [filtersOpen, setFiltersOpen] = useState(true)
@@ -61,10 +61,17 @@ export default function LabMapaPage() {
   const [applied, setApplied] = useState(0)
 
   const sectorOptions = useMemo(() => {
-    const fromRegisters = (workbenches || []).map((w: any) => w.name).filter(Boolean)
-    const base = ['Bioquímica', 'Hematologia', 'Microbiologia', 'Uroanálise', 'Imunologia', 'Apoio']
-    return Array.from(new Set([...fromRegisters, ...base]))
+    return (workbenches || []).map((w: any) => w.name).filter(Boolean)
   }, [workbenches])
+
+  const examCatalogMap = useMemo(() => {
+    const map: Record<string, any> = {}
+    ;(exams || []).forEach(e => {
+      if (e.name) map[e.name.toLowerCase()] = e
+      if (e.internalCode) map[e.internalCode.toString().toLowerCase()] = e
+    })
+    return map
+  }, [exams])
 
   // Todas as linhas elegíveis (pré-requisitos de exibição)
   const allRows = useMemo(() => {
@@ -82,13 +89,19 @@ export default function LabMapaPage() {
           if (!isGuiaRemessaRecebida(key)) return // guia_remessa_recebida = false
           if (included.has(key)) return // incluido_em_mapa = true
 
+          const examKey = (exam.name || '').toLowerCase()
+          const internalKey = (exam.code || '').toLowerCase()
+          const cat = examCatalogMap[examKey] || examCatalogMap[internalKey]
+          const workbenchId = exam.workbench || exam.workbenchId || cat?.workbenchId
+          const workbench = (workbenches || []).find((w: any) => w.id === workbenchId)?.name || workbenchId || exam.workbenchName || exam.sector || '—'
+
           rows.push({
             key,
             code: order.protocol || order.orderNumber || '—',
             patient: order.patientName || '—',
             exam: exam.abbreviation || exam.code || exam.name || '—',
             examCode: `${exam.code || ''} ${exam.name || ''}`.trim(),
-            sector: exam.workbench || exam.workbenchName || exam.sector || '—',
+            sector: workbench,
             convenio: guide?.plan || order.convenioName || 'PARTICULAR',
             priority: exam.isUrgent || guide?.isUrgent || (order as any).isUrgent ? 'Urgente' : 'Normal',
             collectionPost: order.originName || '—',
@@ -159,7 +172,7 @@ export default function LabMapaPage() {
           onClick={() => setFiltersOpen(o => !o)}
           className="flex w-full items-center justify-between bg-warning/15 px-4 py-2 text-xs font-bold uppercase tracking-wider text-foreground"
         >
-          '''Do not make any visual modifications. The phrases I write are commands to understand what I want, not to be written down. Understand their content well, then execute what is required.'''\n                                        \n                                            \n                                            I have approved the plan
+          Filtros
           <ChevronDown className={cn('h-4 w-4 transition-transform', !filtersOpen && '-rotate-90')} />
         </button>
 
@@ -171,7 +184,7 @@ export default function LabMapaPage() {
             </div>
 
             <div className="space-y-1">
-              <Label className="text-[11px] font-semibold uppercase">Setor</Label>
+              <Label className="text-[11px] font-semibold uppercase">Bancada</Label>
               <Select value={sector} onValueChange={setSector}>
                 <SelectTrigger><SelectValue placeholder="Todos" /></SelectTrigger>
                 <SelectContent className="z-[100] bg-popover">
@@ -286,7 +299,7 @@ export default function LabMapaPage() {
                   <th className="px-3 py-2">Código</th>
                   <th className="px-3 py-2">Paciente</th>
                   <th className="px-3 py-2">Exame</th>
-                  <th className="px-3 py-2">Setor</th>
+                  <th className="px-3 py-2">Bancada</th>
                   <th className="px-3 py-2">Convênio</th>
                   <th className="px-3 py-2">Prioridade</th>
                   <th className="px-3 py-2">Posto de Coleta</th>
