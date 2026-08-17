@@ -317,33 +317,31 @@ export default function LabMapaViewPage() {
                   {group.exam.sigla} - {group.exam.nome.toUpperCase()}
                 </p>
                 <div className="divide-y divide-black/20">
-                  {group.list.map(p => (
-                    <div key={p.id} className="py-2">
-                      <PatientHeader p={p} />
-                      <div className="mt-1 space-y-2">
-                        {paramsFor(group.exam).map((param, pi) => (
-                          <div key={pi} className="flex flex-wrap items-center gap-x-4 border-b border-gray-100 py-1 last:border-0">
-                            <span className="text-[11px] font-medium min-w-[150px]">{param.name}:</span>
-                            <span className="text-[11px]">_____________________</span>
-                            <div className="flex items-center gap-2 text-[9px] text-gray-500 min-w-[120px]">
-                              {param.unit && <span className="font-semibold uppercase">{param.unit}</span>}
-                              {param.reference && <span>Ref: {param.reference}</span>}
+                  {group.list.map(p => {
+                    const ps = paramsFor(group.exam)
+                    const items = ps.length > 0 ? ps : [{ id: '1', name: group.exam.nome, unit: '', reference: '' } as ResolvedParam]
+                    return (
+                      <div key={p.id} className="py-2 print:break-inside-avoid">
+                        <PatientHeader p={p} />
+                        <div className="mt-0.5">
+                          {items.map((param, pi) => (
+                            <div key={pi} className="grid grid-cols-[minmax(0,1fr)_minmax(0,1fr)_minmax(0,1fr)] items-baseline gap-x-6 text-[11px] leading-5">
+                              <span className="truncate">
+                                {paramSigla(group.exam, param, pi, items.length)}:<span className="text-gray-500">_____________</span>
+                              </span>
+                              <span>Observação: <span className="text-gray-500">_______________</span></span>
+                              <span className="text-[9px] text-gray-500 text-right">
+                                {param.unit}{param.reference ? ` · Ref: ${param.reference}` : ''}
+                              </span>
                             </div>
-                            <span className="text-[11px] ml-auto">Obs:_____________________</span>
-                          </div>
-                        ))}
-                        {paramsFor(group.exam).length === 0 && (
-                          <div className="flex flex-wrap gap-x-10 text-[11px] py-1">
-                            <span>{group.exam.sigla}:_____________________</span>
-                            <span>Obs:_____________________</span>
-                          </div>
+                          ))}
+                        </div>
+                        {p.observacoesPaciente && (
+                          <p className="text-[11px]"><span className="font-semibold">Observações Paciente:</span> {p.observacoesPaciente}</p>
                         )}
                       </div>
-                      {p.observacoesPaciente && (
-                        <p className="text-[11px]"><span className="font-semibold">Observações Paciente:</span> {p.observacoesPaciente}</p>
-                      )}
-                    </div>
-                  ))}
+                    )
+                  })}
                 </div>
               </div>
             ))}
