@@ -749,7 +749,7 @@ export function AttendanceDetailsModal({ open, onClose, onOrderDeleted, order, p
                           </div>
                         </div>
 
-                        <div className="overflow-auto max-h-[42vh]">
+                        <div className="overflow-x-auto">
                           <table className="w-full text-left border-collapse">
                             <thead className="sticky top-0 z-10 bg-slate-100 text-[10px] font-bold text-muted-foreground uppercase tracking-wider">
                               <tr>
