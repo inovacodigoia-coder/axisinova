@@ -58,6 +58,13 @@ function sexLabel(gender?: string) {
   return '-'
 }
 
+/** Sigla curta do parâmetro no estilo COL01 (sigla do exame + ordem). */
+function paramSigla(exam: MapExam, param: { name?: string }, index: number, total: number) {
+  if (total <= 1) return `${exam.sigla}01`
+  const n = (param.name || '').trim()
+  return n ? n.toUpperCase() : `${exam.sigla}${String(index + 1).padStart(2, '0')}`
+}
+
 export default function LabMapaViewPage() {
   const { codigo } = useParams()
   const navigate = useNavigate()
