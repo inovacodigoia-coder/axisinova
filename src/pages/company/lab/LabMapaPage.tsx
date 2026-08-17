@@ -42,7 +42,7 @@ export default function LabMapaPage() {
   const navigate = useNavigate()
   const { user } = useAuth()
   const { orders, loading } = useAttendanceCadastro()
-  const { workbenches, convenios } = useRegisters()
+  const { workbenches, convenios, exams } = useRegisters() as any
   const { availableOrigins } = useCompanyContext()
 
   const [filtersOpen, setFiltersOpen] = useState(true)
@@ -61,10 +61,17 @@ export default function LabMapaPage() {
   const [applied, setApplied] = useState(0)
 
   const sectorOptions = useMemo(() => {
-    const fromRegisters = (workbenches || []).map((w: any) => w.name).filter(Boolean)
-    const base = ['Bioquímica', 'Hematologia', 'Microbiologia', 'Uroanálise', 'Imunologia', 'Apoio']
-    return Array.from(new Set([...fromRegisters, ...base]))
+    return (workbenches || []).map((w: any) => w.name).filter(Boolean)
   }, [workbenches])
+
+  const examCatalogMap = useMemo(() => {
+    const map: Record<string, any> = {}
+    ;(exams || []).forEach(e => {
+      if (e.name) map[e.name.toLowerCase()] = e
+      if (e.internalCode) map[e.internalCode.toString().toLowerCase()] = e
+    })
+    return map
+  }, [exams])
 
   // Todas as linhas elegíveis (pré-requisitos de exibição)
   const allRows = useMemo(() => {
@@ -82,13 +89,19 @@ export default function LabMapaPage() {
           if (!isGuiaRemessaRecebida(key)) return // guia_remessa_recebida = false
           if (included.has(key)) return // incluido_em_mapa = true
 
+          const examKey = (exam.name || '').toLowerCase()
+          const internalKey = (exam.code || '').toLowerCase()
+          const cat = examCatalogMap[examKey] || examCatalogMap[internalKey]
+          const workbenchId = exam.workbench || exam.workbenchId || cat?.workbenchId
+          const workbench = (workbenches || []).find((w: any) => w.id === workbenchId)?.name || workbenchId || exam.workbenchName || exam.sector || '—'
+
           rows.push({
             key,
             code: order.protocol || order.orderNumber || '—',
             patient: order.patientName || '—',
             exam: exam.abbreviation || exam.code || exam.name || '—',
             examCode: `${exam.code || ''} ${exam.name || ''}`.trim(),
-            sector: exam.workbench || exam.workbenchName || exam.sector || (cat?.workbench) || '—',
+            sector: workbench,
             convenio: guide?.plan || order.convenioName || 'PARTICULAR',
             priority: exam.isUrgent || guide?.isUrgent || (order as any).isUrgent ? 'Urgente' : 'Normal',
             collectionPost: order.originName || '—',
