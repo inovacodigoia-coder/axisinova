@@ -1170,7 +1170,7 @@ export function AttendanceDetailsModal({ open, onClose, onOrderDeleted, order, p
           isOpen={reportPreviewOpen}
           onClose={() => setReportPreviewOpen(false)}
           order={filteredOrderForReport as any}
-          onDownload={() => console.log('Download triggered')}
+          onDownload={() => {}}
         />
       )}
 
