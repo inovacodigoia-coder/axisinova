@@ -58,6 +58,18 @@ export function pickReference(ranges: any[] | undefined, patient: PatientCtx): s
   return formatRange(chosen)
 }
 
+/** Normaliza a lista de opções de um parâmetro do tipo Seleção. */
+export function normalizeOptions(raw: any): string[] {
+  if (!raw) return []
+  const arr = Array.isArray(raw)
+    ? raw
+    : String(raw).split(/[\n;|]/)
+  return arr
+    .map((o: any) => (typeof o === 'string' ? o : o?.label ?? o?.value ?? ''))
+    .map((o: string) => o.trim())
+    .filter(Boolean)
+}
+
 /**
  * Monta a lista de parâmetros de um exame do catálogo.
  * Se o exame não tiver parâmetros cadastrados, gera um parâmetro único
