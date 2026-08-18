@@ -9,6 +9,8 @@ export interface ResolvedParam {
   isCalculated?: boolean
   formula?: string
   section?: string
+  type?: string
+  options?: string[]
 }
 
 interface PatientCtx {
