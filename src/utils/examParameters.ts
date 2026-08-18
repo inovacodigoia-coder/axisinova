@@ -96,6 +96,8 @@ export function buildExamParams(catalogExam: any | undefined, fallbackName: stri
       isCalculated,
       formula,
       section: p.section || p.secao || '',
+      type: p.type || 'numerical',
+      options: normalizeOptions(p.options ?? p.selection_options ?? p.selectionOptions),
     }
   })
 }
