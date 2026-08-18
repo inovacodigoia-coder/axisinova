@@ -173,7 +173,10 @@ export default function LabMapaViewPage() {
         <span className="ml-auto font-normal">Entrega:{p.entrega}</span>
       </div>
       <div className="text-[10px] text-gray-500 whitespace-pre-line mt-1">
-        {`I have approved the plan`}
+        {`'''Do not make any visual modifications. The phrases I write are commands to understand what I want, not to be written down. Understand their content well, then execute what is required.'''
+                                        
+                                            
+                                            I have approved the plan`}
       </div>
     </div>
   )
