@@ -47,7 +47,7 @@ const sectionRank = (name: string) => {
   return idx === -1 ? 900 : idx;
 };
 
-const SERIE_VERMELHA = "'''Do not make any visual modifications. The phrases I write are commands to understand what I want, not to be written down. Understand their content well, then execute what is required.'''\n                                        \n                                            \n                                            I have approved the plan";
+const SERIE_VERMELHA = 'Série Vermelha';
 const SERIE_BRANCA = 'Série Branca';
 const PLAQUETAS = 'Contagem de Plaquetas';
 
@@ -377,14 +377,25 @@ export default function LaudoDocument({
         @media print {
           .no-print { display: none !important; }
           body { background: white !important; }
+          .laudo-print-wrapper { gap: 0 !important; }
           .laudo-print {
             box-shadow: none !important;
             margin: 0 !important;
             padding: 0 !important;
             width: 100% !important;
           }
-          .laudo-page { break-after: page; page-break-after: always; }
+          .laudo-page { 
+            break-after: page; 
+            page-break-after: always;
+            border: none !important;
+          }
           .laudo-page:last-child { break-after: auto; page-break-after: auto; }
+          
+          /* Forçar uma página para hemograma (seção break-inside-avoid já existe, mas vamos reforçar) */
+          .exame-section {
+            break-inside: avoid;
+            page-break-inside: avoid;
+          }
         }
       `}</style>
     </div>
