@@ -1066,6 +1066,25 @@ export function ResultEntryModal({
                                 </div>
                                 <div className="flex items-center gap-3">
                                   <div className="relative flex-1 group">
+                                    {param.type === 'selection' && (param.options?.length ?? 0) > 0 ? (
+                                    <Select
+                                      value={value || undefined}
+                                      disabled={examStatuses[exam.id] === 'released'}
+                                      onValueChange={(val) => setResults(prev => ({ ...prev, [`${exam.id}_${param.id}`]: val }))}
+                                    >
+                                      <SelectTrigger className={cn(
+                                        "h-10 text-sm font-bold bg-white border-slate-200 focus:border-primary",
+                                        examStatuses[exam.id] === 'released' && "bg-slate-100 text-slate-500"
+                                      )}>
+                                        <SelectValue placeholder="Selecione..." />
+                                      </SelectTrigger>
+                                      <SelectContent className="z-[200] bg-white">
+                                        {param.options.map((opt: string) => (
+                                          <SelectItem key={opt} value={opt} className="text-xs font-semibold">{opt}</SelectItem>
+                                        ))}
+                                      </SelectContent>
+                                    </Select>
+                                    ) : (
                                     <Input 
                                       className={cn(
                                         "h-10 text-sm font-bold bg-white border-slate-200 focus:border-primary transition-all pr-12",
