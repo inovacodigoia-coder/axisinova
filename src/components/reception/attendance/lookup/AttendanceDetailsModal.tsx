@@ -1351,7 +1351,6 @@ export function AttendanceDetailsModal({ open, onClose, onOrderDeleted, order, p
           onClose={() => setClientModalMode(null)}
           order={order}
           patient={patient}
-          onUpdate={() => {}}
         />
       )}
       </ScrollArea>
