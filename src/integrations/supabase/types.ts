@@ -894,6 +894,60 @@ export type Database = {
           },
         ]
       }
+      instrument_webhooks: {
+        Row: {
+          company_id: string
+          created_at: string
+          equipment_id: string
+          events: string[]
+          id: string
+          is_active: boolean
+          last_test_at: string | null
+          last_test_response: string | null
+          last_test_status: number | null
+          url: string
+        }
+        Insert: {
+          company_id: string
+          created_at?: string
+          equipment_id: string
+          events?: string[]
+          id?: string
+          is_active?: boolean
+          last_test_at?: string | null
+          last_test_response?: string | null
+          last_test_status?: number | null
+          url: string
+        }
+        Update: {
+          company_id?: string
+          created_at?: string
+          equipment_id?: string
+          events?: string[]
+          id?: string
+          is_active?: boolean
+          last_test_at?: string | null
+          last_test_response?: string | null
+          last_test_status?: number | null
+          url?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "instrument_webhooks_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "instrument_webhooks_equipment_id_fkey"
+            columns: ["equipment_id"]
+            isOneToOne: false
+            referencedRelation: "lab_equipments"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       lab_equipments: {
         Row: {
           company_id: string
