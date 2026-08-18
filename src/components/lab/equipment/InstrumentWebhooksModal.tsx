@@ -179,7 +179,16 @@ export function InstrumentWebhooksModal({
       if (res?.ok) {
         toast.success(`Servidor respondeu ${res.status} em ${res.duration_ms}ms`)
       } else {
-        toast.error(`Falha no teste: ${res?.error || `HTTP ${res?.status}`}`)
+        let detail = res?.error || `HTTP ${res?.status}`
+        try {
+          const parsed = JSON.parse(res?.response || '')
+          if (parsed?.message) detail = `HTTP ${res?.status} — ${parsed.message}`
+        } catch { /* resposta não-JSON */ }
+        toast.error(`Falha no teste: ${detail}`, {
+          description: res?.status === 404
+            ? 'No n8n em modo teste, clique em "Execute workflow" antes de disparar o teste (vale para 1 chamada). Em produção use a URL /webhook/ em vez de /webhook-test/.'
+            : (res?.response || '').slice(0, 200),
+        })
       }
 
       await supabase
