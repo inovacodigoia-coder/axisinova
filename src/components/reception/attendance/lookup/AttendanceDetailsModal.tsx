@@ -1282,7 +1282,7 @@ export function AttendanceDetailsModal({ open, onClose, onOrderDeleted, order, p
           <AlertDialogFooter>
             <AlertDialogCancel disabled={isDeleting}>Cancelar</AlertDialogCancel>
             <AlertDialogAction 
-            <AlertDialogAction 
+
               onClick={(e) => {
                 e.preventDefault();
                 handleDeleteOrder();
