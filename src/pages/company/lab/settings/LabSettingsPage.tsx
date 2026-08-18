@@ -40,6 +40,7 @@ import { toast } from 'sonner'
 import { supabase } from '@/integrations/supabase/client'
 import { useAuth } from '@/context/AuthContext'
 import { useRegisters } from '@/context/RegistersContext'
+import LabMethodsSection from '@/components/lab/settings/LabMethodsSection'
 
 export default function LabSettingsPage() {
   const [searchParams, setSearchParams] = useSearchParams()
@@ -1015,31 +1016,7 @@ function UnitsSection() {
 
 
 function MethodsSection() {
-  const methods = [
-    { name: 'Colorimétrico', desc: 'Método colorimétrico clássico' },
-    { name: 'Glicose-oxidase', desc: 'Método enzimático GOD-PAP' },
-    { name: 'Hexoquinase', desc: 'Método enzimático Hexoquinase' },
-    { name: 'Quimioluminescência', desc: 'Imunoensaio quimioluminescente' },
-  ]
-  return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <h3 className="text-lg font-bold">Metodologias Analíticas</h3>
-        <Button size="sm" className="gradient-bg text-white gap-2"><Plus className="h-4 w-4" /> Nova Metodologia</Button>
-      </div>
-      <div className="space-y-2">
-        {methods.map(m => (
-          <div key={m.name} className="p-4 border rounded-xl bg-card flex items-center justify-between hover:border-primary/30 transition-all">
-            <div>
-              <p className="font-bold text-sm">{m.name}</p>
-              <p className="text-xs text-muted-foreground">{m.desc}</p>
-            </div>
-            <Button variant="ghost" size="sm" className="h-8 w-8 p-0"><Edit2 className="h-3.5 w-3.5" /></Button>
-          </div>
-        ))}
-      </div>
-    </div>
-  )
+  return <LabMethodsSection />
 }
 
 function WorkbenchesSection() {

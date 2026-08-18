@@ -128,7 +128,7 @@ export default function LabMethodologySearchModal({
             ) : (
               <div className="py-8 text-center">
                 <p className="text-sm text-muted-foreground">Nenhuma metodologia encontrada.</p>
-                <p className="text-[10px] text-muted-foreground mt-1">Configure metodologias em Configurações > Laboratório.</p>
+                <p className="text-[10px] text-muted-foreground mt-1">Configure metodologias em Configurações &gt; Laboratório.</p>
               </div>
             )}
           </div>
