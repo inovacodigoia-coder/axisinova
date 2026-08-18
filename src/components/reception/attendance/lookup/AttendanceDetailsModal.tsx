@@ -1369,9 +1369,9 @@ export function AttendanceDetailsModal({ open, onClose, onOrderDeleted, order, p
           patient={patient}
         />
       )}
-    </ScrollArea>
-  </DialogContent>
-</Dialog>
+        </ScrollArea>
+      </DialogContent>
+    </Dialog>
   );
 }
 
