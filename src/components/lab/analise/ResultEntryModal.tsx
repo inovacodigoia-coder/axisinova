@@ -1102,8 +1102,9 @@ export function ResultEntryModal({
                                         setResults(prev => ({ ...prev, [`${exam.id}_${param.id}`]: e.target.value }));
                                       }}
                                     />
+                                    )}
 
-                                    {status.label && (
+                                    {param.type !== 'selection' && status.label && (
                                       <div className={cn(
                                         "absolute right-2 top-2.5 px-1.5 py-0.5 rounded text-[8px] font-black uppercase tracking-tighter",
                                         status.label === 'Baixo' ? "bg-amber-100 text-amber-700" :
