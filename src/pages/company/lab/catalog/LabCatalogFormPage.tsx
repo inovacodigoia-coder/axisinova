@@ -676,21 +676,11 @@ function GeneralInfoSection({
           <Beaker className="h-5 w-5 text-primary" />
           <h3 className="text-lg font-bold">Metodologia Analítica</h3>
         </div>
-        <div className="flex gap-2">
-          <Input 
-            placeholder="Ex: Colorimétrico, Enzimático, etc." 
-            value={data.methodology}
-            onChange={(e) => onChange({ methodology: e.target.value })}
-            className="h-11"
-          />
-          <Button 
-            variant="outline" 
-            className="h-11 gap-2"
-            onClick={onOpenMethodologySearch}
-          >
-            <Search className="h-4 w-4" /> Buscar Metodologia
-          </Button>
-        </div>
+        <MethodologyPicker
+          value={data.methodology}
+          onChange={(val) => onChange({ methodology: val })}
+          onOpenSearch={onOpenMethodologySearch}
+        />
       </div>
 
       {data.referenceValues && data.referenceValues.length > 0 && (
