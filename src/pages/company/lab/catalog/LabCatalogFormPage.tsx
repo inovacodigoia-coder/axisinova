@@ -386,6 +386,7 @@ export default function LabCatalogFormPage() {
             showGlobalRefs={showGlobalRefs}
             setShowGlobalRefs={setShowGlobalRefs}
             onChange={(newData) => setExamData(prev => ({ ...prev, ...newData }))} 
+            onOpenMethodologySearch={() => setIsMethodologySearchOpen(true)}
           />
         </TabsContent>
         <TabsContent value="parameters">
@@ -419,7 +420,23 @@ export default function LabCatalogFormPage() {
   )
 }
 
-function GeneralInfoSection({ isEditing, data, workbenches, onChange, showGlobalRefs, setShowGlobalRefs }: { isEditing: boolean, data: any, workbenches: any[], onChange: (val: any) => void, showGlobalRefs: boolean, setShowGlobalRefs: (val: boolean) => void }) {
+function GeneralInfoSection({ 
+  isEditing, 
+  data, 
+  workbenches, 
+  onChange, 
+  showGlobalRefs, 
+  setShowGlobalRefs,
+  onOpenMethodologySearch 
+}: { 
+  isEditing: boolean, 
+  data: any, 
+  workbenches: any[], 
+  onChange: (val: any) => void, 
+  showGlobalRefs: boolean, 
+  setShowGlobalRefs: (val: boolean) => void,
+  onOpenMethodologySearch: () => void
+}) {
   const navigate = useNavigate()
   const materials = ['Sangue Total', 'Soro', 'Plasma', 'Urina', 'Fezes', 'Secreção', 'Líquor', 'Swab']
   const [selectedMaterials, setSelectedMaterials] = useState<string[]>(data.selectedMaterials || [])
@@ -669,7 +686,7 @@ function GeneralInfoSection({ isEditing, data, workbenches, onChange, showGlobal
           <Button 
             variant="outline" 
             className="h-11 gap-2"
-            onClick={() => setIsMethodologySearchOpen(true)}
+            onClick={onOpenMethodologySearch}
           >
             <Search className="h-4 w-4" /> Buscar Metodologia
           </Button>
