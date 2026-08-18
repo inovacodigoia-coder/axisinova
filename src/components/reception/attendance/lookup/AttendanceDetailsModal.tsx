@@ -428,7 +428,6 @@ export function AttendanceDetailsModal({ open, onClose, onOrderDeleted, order, p
     <Dialog open={open} onOpenChange={(o) => !o && onClose()}>
       <DialogContent className="max-w-[1200px] w-[95vw] max-h-[95vh] p-0 flex flex-col gap-0 bg-[#F8FAFC] border-none shadow-2xl [&>button]:hidden overflow-hidden data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=open]:zoom-in-95">
         <ScrollArea className="flex-1 overflow-y-auto overflow-x-hidden">
-          {/* Header Navigation */}
           <div className="sticky top-0 z-30 flex items-center justify-between px-4 py-2 bg-white border-b border-border flex-shrink-0">
           <div className="flex items-center gap-2">
             <Button variant="ghost" size="icon" onClick={onClose} className="h-8 w-8">
@@ -1031,7 +1030,6 @@ export function AttendanceDetailsModal({ open, onClose, onOrderDeleted, order, p
             </div>
           </Tabs>
         </div>
-      </DialogContent>
 
       <AttendancePrintSelectionModal 
         open={printSelectionOpen}
@@ -1256,7 +1254,6 @@ export function AttendanceDetailsModal({ open, onClose, onOrderDeleted, order, p
                 </div>
               </div>
             </div>
-          </ScrollArea>
 
           <div className="flex items-center justify-between p-6 border-t border-slate-100 bg-slate-50/30">
             <Button variant="ghost" onClick={() => setForecastModalOpen(false)} className="text-xs font-bold uppercase tracking-widest text-slate-600">
@@ -1272,8 +1269,6 @@ export function AttendanceDetailsModal({ open, onClose, onOrderDeleted, order, p
               </Button>
             </div>
           </div>
-        </DialogContent>
-      </Dialog>
 
       <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
         <AlertDialogContent>
@@ -1289,86 +1284,6 @@ export function AttendanceDetailsModal({ open, onClose, onOrderDeleted, order, p
             <AlertDialogAction 
               onClick={(e) => {
                 e.preventDefault();
-                handleDeleteOrder();
-              }}
-              className="bg-red-600 hover:bg-red-700 text-white"
-              disabled={isDeleting}
-            >
-              {isDeleting ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Excluindo...
-                </>
-              ) : (
-                'Confirmar Exclusão'
-              )}
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
-
-      {guideEditor && (
-        <GuideEditorModal
-          open
-          mode={guideEditor.mode}
-          guide={guideEditor.mode === 'edit' ? (guidesState[guideEditor.index] || {
-            convenioId: order.convenioId,
-            convenioName: order.convenioName,
-            doctorId: order.doctorId,
-            doctorName: order.doctorName,
-            doctorCRM: order.doctorCRM,
-            exams: orderExams,
-          }) : undefined}
-          onClose={() => setGuideEditor(null)}
-          onSave={(g) => {
-            const next = [...guidesState]
-            if (guideEditor.mode === 'create') next.push(g)
-            else next[guideEditor.index >= 0 ? guideEditor.index : 0] = { ...(next[0] || {}), ...g }
-            persistGuides(next)
-          }}
-        />
-      )}
-
-      {switchConvenioOpen && (
-        <SwitchConvenioModal
-          open
-          onClose={() => setSwitchConvenioOpen(false)}
-          currentConvenioName={guidesState[0]?.convenioName || order.convenioName}
-          onConfirm={(c) => {
-            const next = guidesState.length > 0
-              ? guidesState.map((g, i) => (i === 0 ? { ...g, convenioId: c.id, convenioName: c.name } : g))
-              : [{ convenioId: c.id, convenioName: c.name, doctorName: order.doctorName, doctorCRM: order.doctorCRM, exams: orderExams }]
-            setGuidesState(next)
-            updateOrder(order.id, { labGuides: next, convenioId: c.id, convenioName: c.name } as any)
-            toast({ title: 'Convênio alterado', description: `Agora: ${c.name}` })
-          }}
-        />
-      )}
-
-      {tissGuideOpen && (
-        <TissGuidePrintModal
-          open
-          onClose={() => setTissGuideOpen(false)}
-          order={order}
-          patient={patient}
-          guide={guidesState[0] || {
-            convenioName: order.convenioName,
-            doctorName: order.doctorName,
-            doctorCRM: order.doctorCRM,
-            exams: orderExams,
-          }}
-        />
-      )}
-
-      {clientModalMode && (
-        <ClientInfoModal
-          open
-          mode={clientModalMode}
-          onClose={() => setClientModalMode(null)}
-          order={order}
-          patient={patient}
-        />
-      )}
         </ScrollArea>
       </DialogContent>
     </Dialog>
