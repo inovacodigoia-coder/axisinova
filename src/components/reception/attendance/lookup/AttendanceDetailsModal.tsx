@@ -1254,6 +1254,7 @@ export function AttendanceDetailsModal({ open, onClose, onOrderDeleted, order, p
                 </div>
               </div>
             </div>
+          </ScrollArea>
 
           <div className="flex items-center justify-between p-6 border-t border-slate-100 bg-slate-50/30">
             <Button variant="ghost" onClick={() => setForecastModalOpen(false)} className="text-xs font-bold uppercase tracking-widest text-slate-600">
@@ -1269,6 +1270,10 @@ export function AttendanceDetailsModal({ open, onClose, onOrderDeleted, order, p
               </Button>
             </div>
           </div>
+        </DialogContent>
+      </Dialog>
+
+
 
       <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
         <AlertDialogContent>
