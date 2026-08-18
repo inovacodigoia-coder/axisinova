@@ -35,9 +35,11 @@ import {
   Clock,
   Timer,
   Check,
-  Minus
+  Minus,
+  SearchIcon
 } from 'lucide-react'
 import { useNavigate, useParams } from 'react-router-dom'
+import LabMethodologySearchModal from '@/components/lab/catalog/LabMethodologySearchModal'
 import { cn } from '@/lib/utils'
 import { toast } from 'sonner'
 import { Badge } from '@/components/ui/badge'
@@ -120,6 +122,7 @@ export default function LabCatalogFormPage() {
   const [parameters, setParameters] = useState<any[]>([])
   const [confirmationQuestions, setConfirmationQuestions] = useState<string[]>([])
   const [availableEquipments, setAvailableEquipments] = useState<any[]>([])
+  const [isMethodologySearchOpen, setIsMethodologySearchOpen] = useState(false)
 
   useEffect(() => {
     const fetchEquipments = async () => {
@@ -383,6 +386,7 @@ export default function LabCatalogFormPage() {
             showGlobalRefs={showGlobalRefs}
             setShowGlobalRefs={setShowGlobalRefs}
             onChange={(newData) => setExamData(prev => ({ ...prev, ...newData }))} 
+            onOpenMethodologySearch={() => setIsMethodologySearchOpen(true)}
           />
         </TabsContent>
         <TabsContent value="parameters">
@@ -405,11 +409,34 @@ export default function LabCatalogFormPage() {
            <RulesSection />
         </TabsContent>
       </Tabs>
+
+      <LabMethodologySearchModal 
+        isOpen={isMethodologySearchOpen}
+        onClose={() => setIsMethodologySearchOpen(false)}
+        onSelect={(method) => setExamData(prev => ({ ...prev, methodology: method.name }))}
+        currentValue={examData.methodology}
+      />
     </div>
   )
 }
 
-function GeneralInfoSection({ isEditing, data, workbenches, onChange, showGlobalRefs, setShowGlobalRefs }: { isEditing: boolean, data: any, workbenches: any[], onChange: (val: any) => void, showGlobalRefs: boolean, setShowGlobalRefs: (val: boolean) => void }) {
+function GeneralInfoSection({ 
+  isEditing, 
+  data, 
+  workbenches, 
+  onChange, 
+  showGlobalRefs, 
+  setShowGlobalRefs,
+  onOpenMethodologySearch 
+}: { 
+  isEditing: boolean, 
+  data: any, 
+  workbenches: any[], 
+  onChange: (val: any) => void, 
+  showGlobalRefs: boolean, 
+  setShowGlobalRefs: (val: boolean) => void,
+  onOpenMethodologySearch: () => void
+}) {
   const navigate = useNavigate()
   const materials = ['Sangue Total', 'Soro', 'Plasma', 'Urina', 'Fezes', 'Secreção', 'Líquor', 'Swab']
   const [selectedMaterials, setSelectedMaterials] = useState<string[]>(data.selectedMaterials || [])
@@ -656,7 +683,11 @@ function GeneralInfoSection({ isEditing, data, workbenches, onChange, showGlobal
             onChange={(e) => onChange({ methodology: e.target.value })}
             className="h-11"
           />
-          <Button variant="outline" className="h-11 gap-2">
+          <Button 
+            variant="outline" 
+            className="h-11 gap-2"
+            onClick={onOpenMethodologySearch}
+          >
             <Search className="h-4 w-4" /> Buscar Metodologia
           </Button>
         </div>
