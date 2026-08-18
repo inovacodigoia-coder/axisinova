@@ -269,12 +269,16 @@ export default function PDFPreviewModal({
 
         <footer className="no-print flex flex-col-reverse gap-2 border-t bg-background p-4 sm:flex-row sm:justify-between">
           <div className="flex gap-2">
-            <Button variant="outline" size="sm" onClick={onEmail} className="gap-2">
-              <Mail className="h-4 w-4" /> E-mail
-            </Button>
-            <Button variant="outline" size="sm" onClick={onShare} className="gap-2">
-              <Share2 className="h-4 w-4" /> Link Público
-            </Button>
+            {!onClose && (
+              <>
+                <Button variant="outline" size="sm" onClick={onEmail} className="gap-2">
+                  <Mail className="h-4 w-4" /> E-mail
+                </Button>
+                <Button variant="outline" size="sm" onClick={onShare} className="gap-2">
+                  <Share2 className="h-4 w-4" /> Link Público
+                </Button>
+              </>
+            )}
           </div>
           <div className="flex gap-2">
             <Button variant="outline" onClick={onClose} className="gap-2">
@@ -297,17 +301,19 @@ export default function PDFPreviewModal({
                       <RotateCcw className="h-4 w-4" /> Restaurar original
                     </Button>
                   )}
-                  <Button variant="outline" className="gap-2" onClick={() => setIsEditing(true)}>
-                    <Pencil className="h-4 w-4" /> Editar laudo
-                  </Button>
+                  {!onClose && (
+                    <Button variant="outline" className="gap-2" onClick={() => setIsEditing(true)}>
+                      <Pencil className="h-4 w-4" /> Editar laudo
+                    </Button>
+                  )}
                 </>
               )
             )}
-            <Button variant="outline" className="gap-2" onClick={onPrint ? () => { printLaudoOnly(); } : printLaudoOnly}>
+            <Button variant="outline" className="gap-2" onClick={onPrint ? onPrint : printLaudoOnly}>
               <Printer className="h-4 w-4" /> Imprimir
             </Button>
 
-            <Button className="gradient-bg text-white gap-2" onClick={printLaudoOnly}>
+            <Button className="gradient-bg text-white gap-2" onClick={onDownload ? onDownload : printLaudoOnly}>
               <Download className="h-4 w-4" /> Download PDF
             </Button>
           </div>

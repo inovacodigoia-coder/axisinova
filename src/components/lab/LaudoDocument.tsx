@@ -377,14 +377,25 @@ export default function LaudoDocument({
         @media print {
           .no-print { display: none !important; }
           body { background: white !important; }
+          .laudo-print-wrapper { gap: 0 !important; }
           .laudo-print {
             box-shadow: none !important;
             margin: 0 !important;
             padding: 0 !important;
             width: 100% !important;
           }
-          .laudo-page { break-after: page; page-break-after: always; }
+          .laudo-page { 
+            break-after: page; 
+            page-break-after: always;
+            border: none !important;
+          }
           .laudo-page:last-child { break-after: auto; page-break-after: auto; }
+          
+          /* Forçar uma página para hemograma (seção break-inside-avoid já existe, mas vamos reforçar) */
+          .exame-section {
+            break-inside: avoid;
+            page-break-inside: avoid;
+          }
         }
       `}</style>
     </div>
