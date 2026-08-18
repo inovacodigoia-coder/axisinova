@@ -1282,8 +1282,73 @@ export function AttendanceDetailsModal({ open, onClose, onOrderDeleted, order, p
           <AlertDialogFooter>
             <AlertDialogCancel disabled={isDeleting}>Cancelar</AlertDialogCancel>
             <AlertDialogAction 
+            <AlertDialogAction 
               onClick={(e) => {
                 e.preventDefault();
+                handleDeleteOrder();
+              }}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              disabled={isDeleting}
+            >
+              {isDeleting ? "Excluindo..." : "Excluir"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {guideEditor && (
+        <GuideEditorModal
+          open
+          mode={guideEditor.mode}
+          onClose={() => setGuideEditor(null)}
+          guide={guidesState[guideEditor.index]}
+          onSave={(updated) => {
+            const next = [...guidesState];
+            if (guideEditor.mode === "create") next.push(updated);
+            else next[guideEditor.index] = updated;
+            persistGuides(next);
+            setGuideEditor(null);
+          }}
+        />
+      )}
+
+      {switchConvenioOpen && (
+        <SwitchConvenioModal
+          open
+          onClose={() => setSwitchConvenioOpen(false)}
+          onConfirm={(convenio) => {
+            const next = guidesState.map(g => ({ ...g, convenioId: convenio.id, convenioName: convenio.name }));
+            persistGuides(next);
+            setSwitchConvenioOpen(false);
+          }}
+        />
+      )}
+
+      {tissGuideOpen && (
+        <TissGuidePrintModal
+          open
+          onClose={() => setTissGuideOpen(false)}
+          order={order}
+          patient={patient}
+          guide={guidesState[0] || {
+            convenioName: order.convenioName,
+            doctorName: order.doctorName,
+            doctorCRM: order.doctorCRM,
+            exams: orderExams,
+          }}
+        />
+      )}
+
+      {clientModalMode && (
+        <ClientInfoModal
+          open
+          mode={clientModalMode}
+          onClose={() => setClientModalMode(null)}
+          order={order}
+          patient={patient}
+          onUpdate={() => {}}
+        />
+      )}
         </ScrollArea>
       </DialogContent>
     </Dialog>
