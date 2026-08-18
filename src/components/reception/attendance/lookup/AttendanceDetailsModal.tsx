@@ -1352,7 +1352,7 @@ export function AttendanceDetailsModal({ open, onClose, onOrderDeleted, order, p
       </ScrollArea>
     </DialogContent>
   </Dialog>
-  );
+  )
 }
 
 function PaymentCard({ icon, label, value, color }: { icon: React.ReactNode; label: string; value: string; color: string }) {
