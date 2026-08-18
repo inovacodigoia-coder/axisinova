@@ -23,18 +23,34 @@ Deno.serve(async (req) => {
       return json({ error: 'URL inválida. Use http:// ou https://' }, 400)
     }
 
+    const instrument = (body.instrument && typeof body.instrument === 'object') ? body.instrument : {
+      id: body.instrument_id ?? null,
+      name: body.instrument_name ?? null,
+    }
+
     const payload = {
       event,
       test: true,
-      instrument_id: body.instrument_id ?? null,
-      instrument_name: body.instrument_name ?? null,
+      instrument_id: instrument.id ?? body.instrument_id ?? null,
+      instrument_name: instrument.name ?? body.instrument_name ?? null,
+      instrument,
       sent_at: new Date().toISOString(),
       message: 'Teste de conectividade do webhook (Axis Inova)',
     }
 
-    const target = method === 'GET'
-      ? `${url}${url.includes('?') ? '&' : '?'}test=true&event=${encodeURIComponent(event)}`
-      : url
+    let target = url
+    if (method === 'GET') {
+      const u = new URL(url)
+      u.searchParams.set('test', 'true')
+      u.searchParams.set('event', event)
+      if (instrument.id) u.searchParams.set('instrument_id', String(instrument.id))
+      if (instrument.name) u.searchParams.set('name', String(instrument.name))
+      if (instrument.identifier) u.searchParams.set('identifier', String(instrument.identifier))
+      if (instrument.type) u.searchParams.set('type', String(instrument.type))
+      if (instrument.brand_model) u.searchParams.set('brand_model', String(instrument.brand_model))
+      u.searchParams.set('payload', JSON.stringify(payload))
+      target = u.toString()
+    }
 
     const started = Date.now()
     const controller = new AbortController()

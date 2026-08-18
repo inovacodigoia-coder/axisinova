@@ -147,13 +147,30 @@ export function InstrumentWebhooksModal({
   const handleTest = async (w: Webhook) => {
     setTestingId(w.id)
     try {
+      const { data: eq } = await supabase
+        .from('lab_equipments')
+        .select('id, name, serial_number, connection_type, model, manufacturer')
+        .eq('id', instrumentId)
+        .maybeSingle()
+
+      const instrument = {
+        id: instrumentId,
+        name: (eq as any)?.name ?? instrumentName,
+        identifier: (eq as any)?.serial_number ?? null,
+        type: (eq as any)?.connection_type ?? null,
+        brand_model: [(eq as any)?.manufacturer, (eq as any)?.model].filter(Boolean).join(' / ') || null,
+        manufacturer: (eq as any)?.manufacturer ?? null,
+        model: (eq as any)?.model ?? null,
+      }
+
       const { data, error } = await supabase.functions.invoke('test-instrument-webhook', {
         body: {
           url: w.url,
           method: testMethod,
           event: w.events[0] || 'TEST_EVENT',
           instrument_id: instrumentId,
-          instrument_name: instrumentName,
+          instrument_name: instrument.name,
+          instrument,
         }
       })
       if (error) throw error
