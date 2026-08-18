@@ -676,21 +676,11 @@ function GeneralInfoSection({
           <Beaker className="h-5 w-5 text-primary" />
           <h3 className="text-lg font-bold">Metodologia Analítica</h3>
         </div>
-        <div className="flex gap-2">
-          <Input 
-            placeholder="Ex: Colorimétrico, Enzimático, etc." 
-            value={data.methodology}
-            onChange={(e) => onChange({ methodology: e.target.value })}
-            className="h-11"
-          />
-          <Button 
-            variant="outline" 
-            className="h-11 gap-2"
-            onClick={onOpenMethodologySearch}
-          >
-            <Search className="h-4 w-4" /> Buscar Metodologia
-          </Button>
-        </div>
+        <MethodologyPicker
+          value={data.methodology}
+          onChange={(val) => onChange({ methodology: val })}
+          onOpenSearch={onOpenMethodologySearch}
+        />
       </div>
 
       {data.referenceValues && data.referenceValues.length > 0 && (
@@ -1420,6 +1410,71 @@ function ReferenceValuesSection({ parameter, referenceValues = [] }: { parameter
 }
 
 
+
+function MethodologyPicker({ value, onChange, onOpenSearch }: { value?: string, onChange: (val: string) => void, onOpenSearch: () => void }) {
+  const [methods, setMethods] = useState<any[]>([])
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    let active = true
+    const load = async () => {
+      const { data } = await supabase.from('lab_methods' as any).select('id, name, description').order('name')
+      if (active) {
+        setMethods((data as any[]) || [])
+        setLoading(false)
+      }
+    }
+    load()
+    return () => { active = false }
+  }, [])
+
+  return (
+    <div className="space-y-3">
+      <div className="flex gap-2">
+        <Input
+          placeholder="Ex: Colorimétrico, Enzimático, etc."
+          value={value || ''}
+          list="lab-methods-list"
+          onChange={(e) => onChange(e.target.value)}
+          className="h-11"
+        />
+        <datalist id="lab-methods-list">
+          {methods.map(m => <option key={m.id} value={m.name} />)}
+        </datalist>
+        <Button variant="outline" className="h-11 gap-2" onClick={onOpenSearch}>
+          <Search className="h-4 w-4" /> Buscar Metodologia
+        </Button>
+      </div>
+
+      {loading ? (
+        <p className="text-[11px] text-muted-foreground">Carregando metodologias...</p>
+      ) : methods.length > 0 ? (
+        <div className="flex flex-wrap gap-2">
+          {methods.map(m => (
+            <button
+              key={m.id}
+              type="button"
+              onClick={() => onChange(m.name)}
+              title={m.description || m.name}
+              className={cn(
+                "px-3 py-1.5 rounded-full text-xs font-medium border transition-all",
+                value === m.name
+                  ? "bg-primary text-primary-foreground border-primary"
+                  : "bg-muted/30 text-muted-foreground border-border hover:border-primary/50"
+              )}
+            >
+              {m.name}
+            </button>
+          ))}
+        </div>
+      ) : (
+        <p className="text-[11px] text-muted-foreground">
+          Nenhuma metodologia cadastrada. Configure em Configurações &gt; Laboratório &gt; Metodologias.
+        </p>
+      )}
+    </div>
+  )
+}
 
 function MethodologySection({ methodology, onChange }: { methodology?: string, onChange: (val: string) => void }) {
   const commonMethodologies = [

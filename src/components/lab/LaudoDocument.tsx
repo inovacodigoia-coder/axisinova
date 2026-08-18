@@ -189,10 +189,13 @@ function ExamBlock({ exam }: { exam: any }) {
     <div className="exame-section break-inside-avoid">
       <h3 className="text-[13px] font-semibold uppercase tracking-wide text-zinc-800">{exam.name}</h3>
       <div className="w-full h-px bg-zinc-300 my-1" />
-      <p className="text-[9px] text-zinc-500 mb-3">
+      <p className="text-[9px] text-zinc-500">
         Material: {exam.material || 'Soro'}
-        {exam.methodology ? `  •  Método: ${exam.methodology}` : ''}
       </p>
+      {exam.methodology && (
+        <p className="text-[9px] text-zinc-500">Método: {exam.methodology}</p>
+      )}
+      <div className="mb-3" />
 
       {sections.map((section, sIdx) => {
         const white = isWhiteSeries(section.name);
