@@ -1049,6 +1049,56 @@ function ParametersSection({ parameters, setParameters }: { parameters: any[], s
                       </td>
                     </tr>
                     
+                    {param.type === 'selection' && (
+                      <tr>
+                        <td colSpan={13} className="px-4 py-3 bg-cyan-50/40 border-t border-b border-cyan-100">
+                          <div className="space-y-2">
+                            <div className="flex items-center gap-2 text-[9px] font-bold uppercase text-cyan-700">
+                              <Settings2 className="h-3 w-3" />
+                              Opções de seleção de "{param.name || 'Parâmetro'}" — exibidas na Digitação de Resultados
+                            </div>
+                            <div className="flex flex-wrap gap-1.5">
+                              {(param.options || []).map((opt: string, oi: number) => (
+                                <div key={oi} className="flex items-center gap-1 bg-white border border-cyan-200 rounded-md pl-2 pr-1 py-0.5 shadow-sm">
+                                  <input
+                                    className="text-[10px] font-bold text-slate-700 outline-none bg-transparent w-28"
+                                    value={opt}
+                                    placeholder="Ex: Reagente"
+                                    onChange={(e) => {
+                                      const next = [...(param.options || [])]
+                                      next[oi] = e.target.value
+                                      updateParameter(param.id, 'options', next)
+                                    }}
+                                  />
+                                  <button
+                                    type="button"
+                                    className="text-muted-foreground hover:text-red-500"
+                                    onClick={() => updateParameter(param.id, 'options', (param.options || []).filter((_: string, i: number) => i !== oi))}
+                                  >
+                                    <Trash2 className="h-3 w-3" />
+                                  </button>
+                                </div>
+                              ))}
+                              <Button
+                                type="button"
+                                size="sm"
+                                variant="outline"
+                                className="h-6 text-[9px] gap-1 border-cyan-300 text-cyan-700"
+                                onClick={() => updateParameter(param.id, 'options', [...(param.options || []), ''])}
+                              >
+                                + Opção
+                              </Button>
+                            </div>
+                            {(!param.options || param.options.length === 0) && (
+                              <p className="text-[9px] italic text-muted-foreground">
+                                Nenhuma opção cadastrada. Adicione as opções (ex.: Reagente / Não Reagente) para que apareçam como lista na digitação.
+                              </p>
+                            )}
+                          </div>
+                        </td>
+                      </tr>
+                    )}
+
                     {param.isCalculated && (
                       <tr>
                         <td colSpan={13} className="px-4 py-3 bg-blue-50/30 border-t border-b border-blue-100">
