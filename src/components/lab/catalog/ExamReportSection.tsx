@@ -25,6 +25,28 @@ const DEFAULT_BODY = `Metodologia: {{exame.metodo}}
 Material: {{exame.material}}
 {{exame.observacoes}}`
 
+/** Converte os valores de referência (texto ou lista de faixas) em uma string. */
+function formatReference(p: any): string {
+  const raw = p?.referenceValues ?? p?.reference
+  if (!raw) return '—'
+  if (typeof raw === 'string') return raw
+  const list = Array.isArray(raw) ? raw : [raw]
+  const parts = list
+    .map((r: any) => {
+      if (!r || typeof r !== 'object') return String(r ?? '')
+      if (r.textRange) return String(r.textRange)
+      if (r.normalText) return String(r.normalText)
+      const min = r.minValue ?? r.min
+      const max = r.maxValue ?? r.max
+      if (min != null && max != null) return `${min} - ${max}`
+      if (min != null) return `> ${min}`
+      if (max != null) return `< ${max}`
+      return String(r.description || '')
+    })
+    .filter(Boolean)
+  return parts.length ? parts.join(' | ') : '—'
+}
+
 export default function ExamReportSection({ data, parameters, onChange }: Props) {
   const { user } = useAuth()
   const { templates, reload } = useExamReportConfig()
