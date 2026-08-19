@@ -413,6 +413,13 @@ export default function LabCatalogFormPage() {
         <TabsContent value="rules">
            <RulesSection />
         </TabsContent>
+        <TabsContent value="report">
+          <ExamReportSection
+            data={examData}
+            parameters={parameters}
+            onChange={(newData) => setExamData(prev => ({ ...prev, ...newData }))}
+          />
+        </TabsContent>
       </Tabs>
 
       <LabMethodologySearchModal 
