@@ -914,37 +914,42 @@ export function AttendanceDetailsModal({ open, onClose, onOrderDeleted, order, p
                       </Button>
                     )}
 
-                    <Button 
-                      size="icon" 
-                      variant="ghost" 
-                      className={cn(
-                        "h-8 w-8 ml-1 disabled:opacity-100",
-                        pendingSelectedTubes.length > 0 || selectedTubes.size === 0
-                          ? "text-red-600 hover:text-red-600 hover:bg-red-50 cursor-not-allowed"
-                          : "text-muted-foreground"
-                      )}
-                      disabled={selectedTubes.size === 0 || pendingSelectedTubes.length > 0}
-                      title={
-                        selectedTubes.size === 0
-                          ? 'Selecione ao menos uma amostra'
-                          : pendingSelectedTubes.length > 0
-                            ? 'Para impressão de etiqueta é necessário receber a amostra (coleta pendente)'
-                            : 'Imprimir etiquetas selecionadas'
-                      }
-                      onClick={() => {
-                        if (pendingSelectedTubes.length > 0) {
-                          toast({
-                            title: 'Coleta pendente',
-                            description: `${pendingSelectedTubes.length} amostra(s) selecionada(s) ainda não foram coletadas. Realize a coleta antes de imprimir as etiquetas.`,
-                            variant: 'destructive',
-                          });
-                          return;
-                        }
-                        setLabelsPrintOpen(true);
-                      }}
-                    >
-                      <Printer className="h-4 w-4" />
-                    </Button>
+                    {(() => {
+                      const hasPendingTube = patientTubes.some(t => !tubeIsCollected(t))
+                      const blocked = selectedTubes.size > 0 ? pendingSelectedTubes.length > 0 : hasPendingTube
+                      return (
+                        <Button
+                          size="icon"
+                          variant="ghost"
+                          className={cn(
+                            "h-8 w-8 ml-1 disabled:opacity-100",
+                            blocked
+                              ? "text-red-600 hover:text-red-600 hover:bg-red-50 cursor-not-allowed"
+                              : "text-muted-foreground hover:text-foreground"
+                          )}
+                          disabled={blocked || patientTubes.length === 0}
+                          title={
+                            blocked
+                              ? 'Para impressão de etiqueta é necessário receber a amostra (coleta pendente)'
+                              : 'Imprimir etiquetas'
+                          }
+                          onClick={() => {
+                            if (blocked) {
+                              toast({
+                                title: 'Coleta pendente',
+                                description: 'Realize a coleta antes de imprimir as etiquetas.',
+                                variant: 'destructive',
+                              });
+                              return;
+                            }
+                            setLabelsPrintOpen(true);
+                          }}
+                        >
+                          <Printer className="h-4 w-4" />
+                        </Button>
+                      )
+                    })()}
+
 
                   </div>
                 </div>
@@ -1178,7 +1183,7 @@ export function AttendanceDetailsModal({ open, onClose, onOrderDeleted, order, p
         isUrgent={(order as any).isUrgent}
         labels={patientTubes
           .map((tube, idx) => ({ tube, idx }))
-          .filter(({ idx }) => selectedTubes.has(sampleCodeFor(idx + 1)))
+          .filter(({ tube, idx }) => selectedTubes.size > 0 ? selectedTubes.has(sampleCodeFor(idx + 1)) : tubeIsCollected(tube))
           .map(({ tube, idx }) => ({
             sampleId: sampleCodeFor(idx + 1),
             labelIndex: idx + 1,
