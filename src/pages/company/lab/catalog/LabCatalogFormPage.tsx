@@ -784,6 +784,16 @@ function GeneralInfoSection({
 function ParametersSection({ parameters, setParameters }: { parameters: any[], setParameters: (p: any[]) => void }) {
   const [measurementUnits, setMeasurementUnits] = useState<any[]>([])
   const [editingReference, setEditingReference] = useState<any>(null)
+  const [dragIndex, setDragIndex] = useState<number | null>(null)
+  const [overIndex, setOverIndex] = useState<number | null>(null)
+
+  const moveParameter = (from: number, to: number) => {
+    if (from === to || from == null || to == null) return
+    const next = [...parameters]
+    const [moved] = next.splice(from, 1)
+    next.splice(to, 0, moved)
+    setParameters(next)
+  }
 
   useEffect(() => {
     const fetchUnits = async () => {
