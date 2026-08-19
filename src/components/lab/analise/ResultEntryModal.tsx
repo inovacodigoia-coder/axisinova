@@ -698,6 +698,32 @@ export function ResultEntryModal({
     }
   };
 
+  const handleReleasePatient = async (patient: any) => {
+    const params = (exam: any) => paramsByExam[exam.id] || [{ id: '1' }];
+    const toRelease = patient.exams.filter((e: any) =>
+      examStatuses[e.id] !== 'released' &&
+      examStatuses[e.id] !== 'cancelled' &&
+      params(e).some((p: any) => (results[`${e.id}_${p.id}`] || '').trim() !== '')
+    );
+    if (toRelease.length === 0) {
+      toast.info("Nenhum exame preenchido para liberar neste paciente.");
+      return;
+    }
+    setSaving(true);
+    try {
+      await persistExams(toRelease, 'released');
+      const newStatuses = { ...examStatuses };
+      toRelease.forEach((e: any) => { newStatuses[e.id] = 'released'; });
+      setExamStatuses(newStatuses);
+      await updateParentOrderStatus(patient.id || toRelease[0].orderId, patient.exams, newStatuses);
+      toast.success(`${toRelease.length} exame(s) liberado(s) para ${patient.patientName}.`);
+    } catch {
+      toast.error("Erro ao liberar os exames do paciente.");
+    } finally {
+      setSaving(false);
+    }
+  };
+
 
   const handleExamAction = (examId: string, actionType: string) => {
     if (actionType === 'cancelar') {
