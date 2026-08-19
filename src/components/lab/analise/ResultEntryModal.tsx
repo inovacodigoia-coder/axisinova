@@ -1099,10 +1099,16 @@ export function ResultEntryModal({
                             
                             return (
                               <div key={param.id} className={cn(
-                                "space-y-1.5 p-3 rounded-lg transition-colors duration-300",
+                                "rounded-lg transition-colors duration-300",
+                                viewMode === 'grid'
+                                  ? "space-y-1.5 p-3"
+                                  : "flex items-center gap-4 px-3 py-1.5",
                                 status.bgColor
                               )}>
-                                <div className="flex justify-between items-center">
+                                <div className={cn(
+                                  "flex justify-between items-center",
+                                  viewMode === 'list' && "w-[240px] shrink-0"
+                                )}>
                                   <label className="text-[10px] font-black uppercase text-slate-600 ml-1 flex items-center gap-1">
                                     {param.name}
                                     {param.isCalculated && (
@@ -1113,7 +1119,8 @@ export function ResultEntryModal({
                                     {param.unit}
                                   </span>
                                 </div>
-                                <div className="flex items-center gap-3">
+                                <div className="flex items-center gap-3 flex-1">
+
                                   <div className="relative flex-1 group">
                                     {param.type === 'selection' && (param.options?.length ?? 0) > 0 ? (
                                     <Select
