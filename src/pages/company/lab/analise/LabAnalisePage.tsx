@@ -95,6 +95,10 @@ export default function LabAnalisePage() {
       const exams = (order.labGuides || []).flatMap(guide => 
         (guide.exams || []).map((e: any) => ({
           ...e,
+          // ID do catálogo (compartilhado entre pedidos) preservado separadamente
+          examId: e.examId || e.id,
+          // ID único por instância (pedido + exame) para evitar colisão de estado entre pacientes
+          id: `${order.id}:${e.examId || e.id}`,
           orderId: order.id,
           protocol: order.protocol,
           patientId: (order as any).patientId,
