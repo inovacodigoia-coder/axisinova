@@ -972,6 +972,15 @@ export function ResultEntryModal({
                     </div>
                   </div>
                   <div className="flex items-center gap-4">
+                    <Button
+                      size="sm"
+                      onClick={(e) => { e.stopPropagation(); handleReleasePatient(patient); }}
+                      disabled={saving}
+                      className="h-7 px-3 text-[9px] font-black uppercase gap-1.5 bg-emerald-500 hover:bg-emerald-600 text-white"
+                    >
+                      <ShieldCheck className="h-3 w-3" />
+                      Liberar Exames
+                    </Button>
                     {patientHasLaudo(patient) && (
                       <Button
                         size="sm"
