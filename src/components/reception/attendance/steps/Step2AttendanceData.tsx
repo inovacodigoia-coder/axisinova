@@ -252,7 +252,7 @@ export function Step2AttendanceData({ state, update }: Props) {
               </div>
             </Field>
             {state.procedureId && (() => {
-              const p = DEMO_CATALOG.find(x => x.id === state.procedureId)!
+              const p = catalog.find(x => x.id === state.procedureId)!
               return (
                 <div className="mt-2 rounded-lg border border-border bg-card p-3 text-xs space-y-1">
                   <div className="font-semibold text-foreground">✅ {p.name}</div>
