@@ -1183,7 +1183,7 @@ export function AttendanceDetailsModal({ open, onClose, onOrderDeleted, order, p
         isUrgent={(order as any).isUrgent}
         labels={patientTubes
           .map((tube, idx) => ({ tube, idx }))
-          .filter(({ idx }) => selectedTubes.has(sampleCodeFor(idx + 1)))
+          .filter(({ tube, idx }) => selectedTubes.size > 0 ? selectedTubes.has(sampleCodeFor(idx + 1)) : tubeIsCollected(tube))
           .map(({ tube, idx }) => ({
             sampleId: sampleCodeFor(idx + 1),
             labelIndex: idx + 1,
