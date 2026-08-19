@@ -884,8 +884,24 @@ function ParametersSection({ parameters, setParameters }: { parameters: any[], s
               <tbody className="divide-y divide-border">
                 {parameters && parameters.length > 0 && parameters.map((param, idx) => (
                   <React.Fragment key={param.id}>
-                    <tr className="hover:bg-muted/10 transition-colors group">
-                      <td className="px-3 py-2 text-[10px] text-muted-foreground font-bold text-center border-r bg-muted/5">{idx + 1}</td>
+                    <tr
+                      className={cn(
+                        "hover:bg-muted/10 transition-colors group",
+                        dragIndex === idx && "opacity-50",
+                        overIndex === idx && dragIndex !== idx && "border-t-2 border-t-primary"
+                      )}
+                      draggable
+                      onDragStart={() => setDragIndex(idx)}
+                      onDragOver={(e) => { e.preventDefault(); setOverIndex(idx) }}
+                      onDrop={(e) => { e.preventDefault(); if (dragIndex !== null) moveParameter(dragIndex, idx); setDragIndex(null); setOverIndex(null) }}
+                      onDragEnd={() => { setDragIndex(null); setOverIndex(null) }}
+                    >
+                      <td className="px-2 py-2 text-[10px] text-muted-foreground font-bold text-center border-r bg-muted/5 cursor-grab active:cursor-grabbing select-none">
+                        <div className="flex items-center justify-center gap-0.5">
+                          <GripVertical className="h-3 w-3 opacity-40 group-hover:opacity-100" />
+                          {idx + 1}
+                        </div>
+                      </td>
                       <td className="px-4 py-2">
                         <div className="flex items-center gap-1.5">
                           <Input 
