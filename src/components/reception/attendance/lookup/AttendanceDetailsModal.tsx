@@ -665,10 +665,10 @@ export function AttendanceDetailsModal({ open, onClose, onOrderDeleted, order, p
                         <Printer className="h-4 w-4" />
                       </Button>
                       <span className={cn(
-                        "text-[9px] font-bold uppercase text-center transition-colors",
+                        "text-[9px] font-bold uppercase text-center transition-colors whitespace-pre-line leading-tight",
                         selectedExams.size > 0 ? "text-muted-foreground group-hover:text-primary" : "text-muted-foreground/40"
                       )}>
-                        Imprimir
+                        IMPRIMIR{"\n"}LAUDO
                       </span>
                     </div>
 
