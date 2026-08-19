@@ -2559,6 +2559,10 @@ export type Database = {
         Args: { _company_id: string }
         Returns: undefined
       }
+      next_attendance_order_number: {
+        Args: { _company_id: string; _origin_code: string; _origin_id: string }
+        Returns: string
+      }
       panel_tickets: {
         Args: { _slug: string }
         Returns: {
