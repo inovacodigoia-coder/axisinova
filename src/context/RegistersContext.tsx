@@ -79,6 +79,8 @@ function mapExamRow(row: any): Exam {
     defaultOrigin: row.default_origin,
     defaultDestination: row.default_destination,
     reportObservations: row.report_observations,
+    reportTemplateId: row.report_template_id || '',
+    reportSinglePage: row.report_single_page ?? false,
     preparationInstructions: row.preparation_instructions,
     estimatedDurationMinutes: row.estimated_duration_minutes, resultDeadlineDays: row.result_deadline_days,
     requiresAuthorization: row.requires_authorization, authorizationInstructions: row.authorization_instructions,
