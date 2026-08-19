@@ -4,6 +4,7 @@ import { buildExamParams, catalogKey, findCatalogExam, evaluateFormula } from '@
 
 import { resolveCompanyId } from '@/utils/companyId';
 import { useAuth } from '@/context/AuthContext';
+import { useResultEntryPermissions } from '@/hooks/useResultEntryPermissions';
 import { 
   X, 
   Search, 
@@ -28,7 +29,8 @@ import {
   FileText,
   Loader2,
   List,
-  LayoutGrid
+  LayoutGrid,
+  Pencil
 } from 'lucide-react';
 import PDFPreviewModal from '@/components/lab/PDFPreviewModal';
 
@@ -89,6 +91,8 @@ export function ResultEntryModal({
   refreshData
 }: ResultEntryModalProps & { refreshData?: () => void }) {
   const { user } = useAuth();
+  const { canType, canRelease, canCorrect } = useResultEntryPermissions();
+  const [correctionUnlocked, setCorrectionUnlocked] = useState<Record<string, boolean>>({});
   const [results, setResults] = useState<Record<string, string>>({});
   const [notes, setNotes] = useState<Record<string, string>>({});
   const [saving, setSaving] = useState(false);
@@ -113,6 +117,16 @@ export function ResultEntryModal({
   };
 
   const [expandedPatients, setExpandedPatients] = useState<Record<string, boolean>>({});
+
+  /** Campos editáveis: digitação normal ou correção liberada pela permissão */
+  const isExamEditable = (examId: string) => {
+    if (canCorrect && correctionUnlocked[examId]) return true;
+    if (!canType) return false;
+    return examStatuses[examId] !== 'released';
+  };
+  const showCorrectionPencil = (examId: string) =>
+    canCorrect && !correctionUnlocked[examId] &&
+    (examStatuses[examId] === 'digitized' || examStatuses[examId] === 'released');
 
 
   // Agrupamento por paciente/pedido
