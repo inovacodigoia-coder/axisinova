@@ -26,7 +26,9 @@ import {
   Ban,
   AlertCircle,
   FileText,
-  Loader2
+  Loader2,
+  List,
+  LayoutGrid
 } from 'lucide-react';
 import PDFPreviewModal from '@/components/lab/PDFPreviewModal';
 
@@ -100,10 +102,18 @@ export function ResultEntryModal({
   const [laudoOpen, setLaudoOpen] = useState(false);
   const [laudoLoading, setLaudoLoading] = useState(false);
 
-  /* Do not make any visual modifications. The phrases I write are commands to understand what I want, not to be written down. Understand their content well, then execute what is required.
-                                            
-                                            I have approved the plan */
+  const [viewMode, setViewMode] = useState<'grid' | 'list'>(() => {
+    if (typeof window === 'undefined') return 'grid';
+    return (sessionStorage.getItem('lab_result_view_mode') as 'grid' | 'list') || 'grid';
+  });
+
+  const changeViewMode = (mode: 'grid' | 'list') => {
+    setViewMode(mode);
+    try { sessionStorage.setItem('lab_result_view_mode', mode); } catch { /* ignore */ }
+  };
+
   const [expandedPatients, setExpandedPatients] = useState<Record<string, boolean>>({});
+
 
   // Agrupamento por paciente/pedido
   const groupedPatients = useMemo(() => {
@@ -688,6 +698,32 @@ export function ResultEntryModal({
     }
   };
 
+  const handleReleasePatient = async (patient: any) => {
+    const params = (exam: any) => paramsByExam[exam.id] || [{ id: '1' }];
+    const toRelease = patient.exams.filter((e: any) =>
+      examStatuses[e.id] !== 'released' &&
+      examStatuses[e.id] !== 'cancelled' &&
+      params(e).some((p: any) => (results[`${e.id}_${p.id}`] || '').trim() !== '')
+    );
+    if (toRelease.length === 0) {
+      toast.info("Nenhum exame preenchido para liberar neste paciente.");
+      return;
+    }
+    setSaving(true);
+    try {
+      await persistExams(toRelease, 'released');
+      const newStatuses = { ...examStatuses };
+      toRelease.forEach((e: any) => { newStatuses[e.id] = 'released'; });
+      setExamStatuses(newStatuses);
+      await updateParentOrderStatus(patient.id || toRelease[0].orderId, patient.exams, newStatuses);
+      toast.success(`${toRelease.length} exame(s) liberado(s) para ${patient.patientName}.`);
+    } catch {
+      toast.error("Erro ao liberar os exames do paciente.");
+    } finally {
+      setSaving(false);
+    }
+  };
+
 
   const handleExamAction = (examId: string, actionType: string) => {
     if (actionType === 'cancelar') {
@@ -846,12 +882,45 @@ export function ResultEntryModal({
         </div>
 
         <div className="flex items-center gap-6">
+          {/* Alternar visualização */}
+          <div className="flex items-center rounded-lg border border-border bg-muted/40 p-0.5">
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => changeViewMode('list')}
+              title="Visualização em lista"
+              aria-label="Visualização em lista"
+              aria-pressed={viewMode === 'list'}
+              className={cn(
+                "h-8 w-9 rounded-md",
+                viewMode === 'list' ? "bg-card text-primary shadow-sm" : "text-muted-foreground hover:text-foreground"
+              )}
+            >
+              <List className="h-4 w-4" />
+            </Button>
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => changeViewMode('grid')}
+              title="Visualização em grade"
+              aria-label="Visualização em grade"
+              aria-pressed={viewMode === 'grid'}
+              className={cn(
+                "h-8 w-9 rounded-md",
+                viewMode === 'grid' ? "bg-card text-primary shadow-sm" : "text-muted-foreground hover:text-foreground"
+              )}
+            >
+              <LayoutGrid className="h-4 w-4" />
+            </Button>
+          </div>
+
           <div className="text-right">
             <p className="text-[10px] font-black text-muted-foreground uppercase tracking-widest">Contador</p>
             <p className="text-sm font-black uppercase">
               {groupedPatients.length} pacientes · {totalExams} exames pendentes
             </p>
           </div>
+
           <Button variant="ghost" size="icon" onClick={onClose} className="rounded-full hover:bg-destructive/10 hover:text-destructive">
             <X className="h-6 w-6" />
           </Button>
@@ -903,6 +972,15 @@ export function ResultEntryModal({
                     </div>
                   </div>
                   <div className="flex items-center gap-4">
+                    <Button
+                      size="sm"
+                      onClick={(e) => { e.stopPropagation(); handleReleasePatient(patient); }}
+                      disabled={saving}
+                      className="h-7 px-3 text-[9px] font-black uppercase gap-1.5 bg-emerald-500 hover:bg-emerald-600 text-white"
+                    >
+                      <ShieldCheck className="h-3 w-3" />
+                      Liberar Exames
+                    </Button>
                     {patientHasLaudo(patient) && (
                       <Button
                         size="sm"
@@ -961,7 +1039,17 @@ export function ResultEntryModal({
                                         <MoreVertical className="h-3.5 w-3.5" />
                                       </Button>
                                     </DropdownMenuTrigger>
-                                    <DropdownMenuContent align="start" className="w-48 z-[110]">
+                                    <DropdownMenuContent align="start" className="w-52 z-[110]">
+                                      {!isReleased && (
+                                        <DropdownMenuItem
+                                          onClick={(e) => { e.stopPropagation(); handleReleaseExam(exam.id); }}
+                                          disabled={!hasResult}
+                                          className="text-xs font-bold uppercase text-emerald-600 gap-2"
+                                        >
+                                          <ShieldCheck className="h-3.5 w-3.5" />
+                                          Liberar exame
+                                        </DropdownMenuItem>
+                                      )}
                                       <DropdownMenuItem onClick={(e) => { e.stopPropagation(); handleExamAction(exam.id, 'cancelar'); }} className="text-xs font-bold uppercase text-rose-600 gap-2">
                                         <XCircle className="h-3.5 w-3.5" /> 
                                         {examStatuses[exam.id] === 'cancelled' ? "Reverter Cancelamento" : "Cancelar exame"}
@@ -1044,17 +1132,28 @@ export function ResultEntryModal({
                         </div>
 
                         {/* Parâmetros do Exame */}
-                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-x-8 gap-y-4 pt-2">
+                        <div className={cn(
+                          "grid gap-x-8 gap-y-4 pt-2",
+                          viewMode === 'grid'
+                            ? "grid-cols-1 md:grid-cols-2 lg:grid-cols-3"
+                            : "grid-cols-1 gap-y-2"
+                        )}>
                           {getParams(exam).map((param: any) => {
                             const value = getParamValue(exam, param);
                             const status = getResultStatus(value, param.reference || '');
                             
                             return (
                               <div key={param.id} className={cn(
-                                "space-y-1.5 p-3 rounded-lg transition-colors duration-300",
+                                "rounded-lg transition-colors duration-300",
+                                viewMode === 'grid'
+                                  ? "space-y-1.5 p-3"
+                                  : "flex items-center gap-4 px-3 py-1.5",
                                 status.bgColor
                               )}>
-                                <div className="flex justify-between items-center">
+                                <div className={cn(
+                                  "flex justify-between items-center",
+                                  viewMode === 'list' && "w-[240px] shrink-0"
+                                )}>
                                   <label className="text-[10px] font-black uppercase text-slate-600 ml-1 flex items-center gap-1">
                                     {param.name}
                                     {param.isCalculated && (
@@ -1065,7 +1164,8 @@ export function ResultEntryModal({
                                     {param.unit}
                                   </span>
                                 </div>
-                                <div className="flex items-center gap-3">
+                                <div className="flex items-center gap-3 flex-1">
+
                                   <div className="relative flex-1 group">
                                     {param.type === 'selection' && (param.options?.length ?? 0) > 0 ? (
                                     <Select
