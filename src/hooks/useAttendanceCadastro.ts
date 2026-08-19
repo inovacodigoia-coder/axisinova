@@ -10,17 +10,18 @@ export function useAttendanceCadastro() {
   const { user } = useAuth()
   const { toast } = useToast()
   const companyId = user?.companyId
+  const isAdmin = user?.isAdmin === true || user?.role === 'company_admin' || user?.role === 'super_admin'
 
   const { data: orders = [], refetch: refresh, isLoading: loading } = useQuery({
-    queryKey: ['attendance_orders', companyId],
+    queryKey: ['attendance_orders', companyId, isAdmin],
     queryFn: async () => {
       if (!companyId) return []
-      const { data, error } = await (supabase
+      let query = (supabase
         .from('attendance_orders' as any) as any)
         .select('*, patients(birth_date, gender)')
         .eq('company_id', companyId)
-        .neq('status', 'deleted')
-        .order('created_at', { ascending: false })
+      if (!isAdmin) query = query.neq('status', 'deleted')
+      const { data, error } = await query.order('created_at', { ascending: false })
 
       
       if (error) throw error

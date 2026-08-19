@@ -67,7 +67,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       // Fetch profile to get company info
       const { data: profile } = await supabase
         .from('profiles')
-        .select('full_name, role, company_id, is_active, must_change_password')
+        .select('full_name, role, company_id, is_active, must_change_password, is_admin')
         .eq('id', authData.user.id)
         .single()
 
@@ -96,6 +96,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         companyName,
         isActive: profile?.is_active ?? true,
         mustChangePassword: (profile as any)?.must_change_password === true,
+        isAdmin: (profile as any)?.is_admin === true,
         lastLogin: new Date().toISOString(),
       }
 
@@ -151,7 +152,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (!authUser) return
     const { data: profile } = await supabase
       .from('profiles')
-      .select('full_name, role, company_id, is_active, must_change_password')
+      .select('full_name, role, company_id, is_active, must_change_password, is_admin')
       .eq('id', authUser.id)
       .single()
     setUser((prev) => {
@@ -163,6 +164,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         companyId: profile?.company_id ?? prev.companyId,
         isActive: profile?.is_active ?? prev.isActive,
         mustChangePassword: (profile as any)?.must_change_password === true,
+        isAdmin: (profile as any)?.is_admin === true,
       }
       localStorage.setItem(USER_KEY, JSON.stringify(updated))
       return updated
