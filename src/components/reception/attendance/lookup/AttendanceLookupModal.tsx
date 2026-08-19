@@ -353,6 +353,16 @@ export function AttendanceLookupModal({ open, onClose, unitName, guicheName, onA
                   }}
                 />
               ))}
+              {hasMore && (
+                <div className="flex items-center justify-center gap-3 py-4">
+                  <Button variant="outline" size="sm" onClick={() => setVisibleCount(v => v + pageSize)}>
+                    Ver mais ({Math.min(pageSize, filtered.length - visibleCount)})
+                  </Button>
+                  <Button variant="ghost" size="sm" onClick={() => setVisibleCount(filtered.length)}>
+                    Ver todos ({filtered.length})
+                  </Button>
+                </div>
+              )}
             </div>
           )}
         </div>
