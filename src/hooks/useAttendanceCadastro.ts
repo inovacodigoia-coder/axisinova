@@ -19,6 +19,7 @@ export function useAttendanceCadastro() {
         .from('attendance_orders' as any) as any)
         .select('*, patients(birth_date, gender)')
         .eq('company_id', companyId)
+        .neq('status', 'deleted')
         .order('created_at', { ascending: false })
 
       
@@ -104,13 +105,19 @@ export function useAttendanceCadastro() {
     try {
       const originId = data.originId || null
       
-      const { count } = await (supabase
+      const { data: latestOrders, error: countError } = await (supabase
         .from('attendance_orders' as any) as any)
-        .select('*', { count: 'exact', head: true })
+        .select('order_number')
         .eq('company_id', companyId)
         .eq('origin_id', originId)
+        .order('created_at', { ascending: false })
+        .limit(1)
 
-      const originOrderCount = (count || 0) + 1
+      let originOrderCount = 1
+      if (latestOrders && latestOrders.length > 0) {
+        const lastNum = latestOrders[0].order_number.split('-')[0]
+        originOrderCount = parseInt(lastNum) + 1
+      }
       
       // Use active origin code or default to MATRIZ '00'
       const originCode = data.originCode !== undefined ? data.originCode : '00'
@@ -255,6 +262,7 @@ export function useAttendanceCadastro() {
         .from('attendance_orders' as any) as any)
         .update(updateData)
         .eq('id', orderId)
+        .neq('status', 'deleted')
 
       if (error) throw error
       await refresh()

@@ -15,7 +15,7 @@ export default function SuperAdminDashboard() {
 
   useEffect(() => {
     async function fetchRecent() {
-      const { data } = await supabase.from('companies').select('*').order('created_at', { ascending: false }).limit(5)
+      const { data } = await supabase.from('companies').select('*').neq('status', 'deleted').order('created_at', { ascending: false }).limit(5)
       if (data) setDbCompanies(data)
     }
     fetchRecent()
