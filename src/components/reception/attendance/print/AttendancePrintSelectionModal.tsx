@@ -129,8 +129,25 @@ export function AttendancePrintSelectionModal({ open, onClose, onConfirm, order,
     });
   };
 
-  const handleConfirm = async () => {
-    if (labelsBlocked) {
+  const persistCollection = async () => {
+    if (!willCollect || !order) return []
+    const now = new Date().toISOString();
+    const collectedTypes = Array.from(selectedMaterials);
+    const nextGuides = guides.map((g: any) => ({
+      ...g,
+      exams: (g.exams || []).map((e: any) =>
+        collectedTypes.includes(tubeTypeForMaterial(e.material))
+          ? { ...e, collected: true, isColeta: true, collectedAt: e.collectedAt || now }
+          : e
+      ),
+    }));
+    await updateOrder(order.id, { labGuides: nextGuides, status: 'collection_done' } as any);
+    return collectedTypes;
+  };
+
+  // Botão "Imprimir" ao lado da opção marcada
+  const handlePrintOption = async (opt: PrintOption) => {
+    if (opt.id === 'etiquetas' && labelsBlocked) {
       toast({
         title: 'Coleta pendente',
         description: 'Para imprimir etiquetas é necessário confirmar a coleta do material.',
@@ -138,24 +155,13 @@ export function AttendancePrintSelectionModal({ open, onClose, onConfirm, order,
       });
       return;
     }
-
     let collectedTypes: string[] = [];
-
     if (willCollect && order) {
       setIsSaving(true);
       try {
-        const now = new Date().toISOString();
-        collectedTypes = Array.from(selectedMaterials);
-        const nextGuides = guides.map((g: any) => ({
-          ...g,
-          exams: (g.exams || []).map((e: any) =>
-            collectedTypes.includes(tubeTypeForMaterial(e.material))
-              ? { ...e, collected: true, isColeta: true, collectedAt: e.collectedAt || now }
-              : e
-          ),
-        }));
-
-        await updateOrder(order.id, { labGuides: nextGuides, status: 'collection_done' } as any);
+        collectedTypes = await persistCollection();
+        setConfirmCollection(false);
+        setSelectedMaterials(new Set());
         toast({ title: 'Coleta confirmada', description: `${collectedTypes.length} material(is) marcado(s) como coletado(s).` });
       } catch {
         toast({ title: 'Erro', description: 'Não foi possível confirmar a coleta.', variant: 'destructive' });
@@ -166,64 +172,91 @@ export function AttendancePrintSelectionModal({ open, onClose, onConfirm, order,
     }
 
     onConfirm({
-      options,
+      action: 'print',
+      optionId: opt.id,
+      options: options.map(o => ({ ...o, enabled: o.id === opt.id })),
       extras,
       printerSettings,
       watermark,
       emptyFields,
       selectedExams,
       selectedTubes,
-      confirmCollection: willCollect,
+      confirmCollection: !!collectedTypes.length,
       collectedMaterials: collectedTypes,
     });
   };
 
+  // Botão do rodapé: apenas confirma a coleta (se marcada) e fecha
+  const handleConfirm = async () => {
+    if (willCollect && order) {
+      setIsSaving(true);
+      try {
+        const collectedTypes = await persistCollection();
+        toast({ title: 'Coleta confirmada', description: `${collectedTypes.length} material(is) marcado(s) como coletado(s).` });
+      } catch {
+        toast({ title: 'Erro', description: 'Não foi possível confirmar a coleta.', variant: 'destructive' });
+        setIsSaving(false);
+        return;
+      }
+      setIsSaving(false);
+    }
+    onConfirm({ action: 'confirm', options, extras, printerSettings });
+  };
+
   return (
     <Dialog open={open} onOpenChange={(o) => !o && onClose()}>
-      <DialogContent className="max-w-[1000px] p-0 overflow-hidden border-none shadow-2xl [&>button]:hidden">
+      <DialogContent className="max-w-[620px] p-0 overflow-hidden border-none shadow-2xl [&>button]:hidden">
         <div className="bg-white">
           {/* Header */}
-          <div className="bg-white p-6 flex items-center justify-between border-b border-slate-100">
-            <h2 className="text-xl font-bold text-[#007AFF]">Escolha o Tipo de Impressão</h2>
-            <div className="flex items-center gap-3">
-              <button onClick={onClose} className="text-slate-400 hover:text-slate-600 transition-colors">
-                <X className="h-6 w-6" />
-              </button>
-            </div>
+          <div className="bg-white px-5 py-3 flex items-center justify-between border-b border-slate-100">
+            <h2 className="text-base font-bold text-[#007AFF]">Escolha o Tipo de Impressão</h2>
+            <button onClick={onClose} className="text-slate-400 hover:text-slate-600 transition-colors">
+              <X className="h-5 w-5" />
+            </button>
           </div>
 
-          <div className="p-8 max-h-[65vh] overflow-y-auto">
+          <div className="px-5 py-4 max-h-[62vh] overflow-y-auto">
             {/* Options */}
-            <div className="space-y-6">
+            <div className="divide-y divide-slate-100">
               {options.map((opt) => (
-                <div key={opt.id} className="flex flex-col gap-2 border-b border-slate-50 pb-4 last:border-0">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                      <div 
+                <div key={opt.id} className="flex flex-col gap-1 py-2">
+                  <div className="flex items-center justify-between gap-3">
+                    <div className="flex items-center gap-2.5 min-w-0">
+                      <div
                         onClick={() => toggleOption(opt.id)}
                         className={cn(
-                          "w-5 h-5 rounded border flex items-center justify-center cursor-pointer transition-all",
+                          "w-4 h-4 rounded border flex items-center justify-center cursor-pointer transition-all shrink-0",
                           opt.enabled ? "bg-[#007AFF] border-[#007AFF]" : "bg-white border-slate-300"
                         )}
                       >
-                        {opt.enabled && <CheckCircle2 className="h-3 w-3 text-white" />}
+                        {opt.enabled && <CheckCircle2 className="h-2.5 w-2.5 text-white" />}
                       </div>
-                      <span className={cn("text-sm font-medium transition-colors", opt.enabled ? "text-slate-900" : "text-slate-400")}>
+                      <span className={cn("text-[13px] font-medium truncate transition-colors", opt.enabled ? "text-slate-900" : "text-slate-400")}>
                         {opt.label}
                       </span>
+                      {opt.enabled && (
+                        <Button
+                          size="sm"
+                          onClick={() => handlePrintOption(opt)}
+                          disabled={isSaving || (opt.id === 'etiquetas' && labelsBlocked)}
+                          className="h-6 px-2.5 bg-[#007AFF] hover:bg-blue-700 text-white text-[10px] font-bold uppercase gap-1 shrink-0"
+                        >
+                          <Printer className="h-3 w-3" /> Imprimir
+                        </Button>
+                      )}
                     </div>
 
                     {opt.formats.length > 0 && (
-                      <div className="flex items-center bg-slate-100 rounded p-0.5 border border-slate-200">
+                      <div className="flex items-center bg-slate-100 rounded p-0.5 border border-slate-200 shrink-0">
                         {opt.formats.map((fmt) => (
                           <button
                             key={fmt}
                             disabled={!opt.enabled}
                             onClick={() => setFormat(opt.id, fmt)}
                             className={cn(
-                              "px-3 py-1 text-[10px] font-bold rounded transition-all uppercase",
-                              opt.selectedFormat === fmt && opt.enabled 
-                                ? "bg-white text-[#007AFF] shadow-sm border border-blue-50" 
+                              "px-2 py-0.5 text-[10px] font-bold rounded transition-all uppercase",
+                              opt.selectedFormat === fmt && opt.enabled
+                                ? "bg-white text-[#007AFF] shadow-sm border border-blue-50"
                                 : "text-slate-400 hover:text-slate-600"
                             )}
                           >
@@ -235,8 +268,8 @@ export function AttendancePrintSelectionModal({ open, onClose, onConfirm, order,
                   </div>
 
                   {opt.id === 'etiquetas' && opt.enabled && labelsBlocked && (
-                    <div className="flex items-center gap-2 ml-8 text-[11px] font-medium text-red-600">
-                      <AlertTriangle className="h-3.5 w-3.5" />
+                    <div className="flex items-center gap-1.5 ml-6 text-[10px] font-medium text-red-600">
+                      <AlertTriangle className="h-3 w-3" />
                       A impressão de etiquetas exige que a amostra esteja coletada.
                     </div>
                   )}
@@ -246,53 +279,53 @@ export function AttendancePrintSelectionModal({ open, onClose, onConfirm, order,
 
             {/* Confirmar coleta */}
             {materials.length > 0 && (
-              <div className="mt-6 border-t border-slate-100 pt-6">
-                <div className="flex items-center gap-3">
+              <div className="mt-3 border-t border-slate-100 pt-3">
+                <div className="flex items-center gap-2.5">
                   <div
                     onClick={() => setConfirmCollection(v => !v)}
                     className={cn(
-                      "w-5 h-5 rounded border flex items-center justify-center cursor-pointer transition-all",
+                      "w-4 h-4 rounded border flex items-center justify-center cursor-pointer transition-all",
                       confirmCollection ? "bg-emerald-500 border-emerald-500" : "bg-white border-slate-300"
                     )}
                   >
-                    {confirmCollection && <CheckCircle2 className="h-3 w-3 text-white" />}
+                    {confirmCollection && <CheckCircle2 className="h-2.5 w-2.5 text-white" />}
                   </div>
-                  <span className={cn("text-sm font-medium", confirmCollection ? "text-slate-900" : "text-slate-400")}>
+                  <span className={cn("text-[13px] font-medium", confirmCollection ? "text-slate-900" : "text-slate-400")}>
                     Confirmar coleta
                   </span>
                 </div>
 
                 {confirmCollection && (
-                  <div className="mt-4 ml-8 rounded-lg border border-slate-200 bg-slate-50 p-4">
-                    <p className="text-[10px] font-bold uppercase tracking-wider text-slate-500 mb-3">
+                  <div className="mt-2 ml-6 rounded-lg border border-slate-200 bg-slate-50 p-3">
+                    <p className="text-[10px] font-bold uppercase tracking-wider text-slate-500 mb-2">
                       Materiais para Coleta
                     </p>
-                    <div className="space-y-2">
+                    <div className="space-y-1.5">
                       {materials.map((m) => (
                         <label
                           key={m.type}
                           className={cn(
-                            "flex items-center justify-between gap-3 rounded-md bg-white border px-3 py-2 cursor-pointer transition-all",
+                            "flex items-center justify-between gap-3 rounded-md bg-white border px-2.5 py-1.5 cursor-pointer transition-all",
                             selectedMaterials.has(m.type) ? "border-emerald-400" : "border-slate-200",
                             m.collected && "opacity-60 cursor-not-allowed"
                           )}
                         >
-                          <div className="flex items-center gap-3">
+                          <div className="flex items-center gap-2.5 min-w-0">
                             <input
                               type="checkbox"
-                              className="h-4 w-4 accent-emerald-500"
+                              className="h-3.5 w-3.5 accent-emerald-500"
                               disabled={m.collected}
                               checked={m.collected || selectedMaterials.has(m.type)}
                               onChange={() => !m.collected && toggleMaterial(m.type)}
                             />
-                            <span className={cn("h-2.5 w-2.5 rounded-full", m.color)} />
-                            <div>
-                              <p className="text-xs font-bold text-slate-700 uppercase">{m.label}</p>
-                              <p className="text-[10px] text-slate-400 truncate max-w-[420px]">{m.exams.join(', ')}</p>
+                            <span className={cn("h-2 w-2 rounded-full shrink-0", m.color)} />
+                            <div className="min-w-0">
+                              <p className="text-[11px] font-bold text-slate-700 uppercase">{m.label}</p>
+                              <p className="text-[10px] text-slate-400 truncate max-w-[300px]">{m.exams.join(', ')}</p>
                             </div>
                           </div>
                           <span className={cn(
-                            "text-[10px] font-bold uppercase",
+                            "text-[10px] font-bold uppercase shrink-0",
                             m.collected ? "text-emerald-600" : "text-amber-500"
                           )}>
                             {m.collected ? 'Coletado' : 'Pendente'}
@@ -300,7 +333,7 @@ export function AttendancePrintSelectionModal({ open, onClose, onConfirm, order,
                         </label>
                       ))}
                     </div>
-                    <p className="mt-3 flex items-center gap-1.5 text-[10px] text-slate-500">
+                    <p className="mt-2 flex items-center gap-1.5 text-[10px] text-slate-500">
                       <Droplets className="h-3 w-3" />
                       Ao confirmar, o pedido passa para <strong>Coleta Realizada</strong> e as amostras para <strong>Coletado</strong>.
                     </p>
@@ -311,20 +344,22 @@ export function AttendancePrintSelectionModal({ open, onClose, onConfirm, order,
           </div>
 
           {/* Footer Actions */}
-          <div className="p-6 bg-slate-50 flex items-center justify-end gap-3 border-t border-slate-200">
-            <Button 
-              variant="outline" 
+          <div className="px-5 py-3 bg-slate-50 flex items-center justify-end gap-2 border-t border-slate-200">
+            <Button
+              variant="outline"
+              size="sm"
               onClick={onClose}
-              className="px-6 font-bold text-slate-600 border-slate-300 uppercase text-xs"
+              className="px-5 font-bold text-slate-600 border-slate-300 uppercase text-xs"
             >
               CANCELAR
             </Button>
-            <Button 
+            <Button
+              size="sm"
               onClick={handleConfirm}
-              disabled={labelsBlocked || isSaving}
-              className="px-8 font-bold bg-[#007AFF] hover:bg-blue-700 text-white shadow-lg uppercase text-xs h-10 disabled:opacity-50"
+              disabled={isSaving}
+              className="px-6 font-bold bg-[#007AFF] hover:bg-blue-700 text-white shadow uppercase text-xs disabled:opacity-50"
             >
-              {isSaving ? <Loader2 className="h-4 w-4 animate-spin" /> : 'IMPRIMIR'}
+              {isSaving ? <Loader2 className="h-4 w-4 animate-spin" /> : 'CONFIRMAR'}
             </Button>
           </div>
         </div>
@@ -332,3 +367,4 @@ export function AttendancePrintSelectionModal({ open, onClose, onConfirm, order,
     </Dialog>
   );
 }
+
