@@ -264,9 +264,53 @@ export function AttendanceLookupModal({ open, onClose, unitName, guicheName, onA
               <Search className="h-4 w-4" />
             </Button>
           </div>
-          <p className="text-xs text-muted-foreground">
-            {filtered.length} atendimento{filtered.length === 1 ? '' : 's'}
-          </p>
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="flex items-center gap-1 text-xs font-medium text-muted-foreground mr-1">
+              <Calendar className="h-3.5 w-3.5" /> Período:
+            </span>
+            {DATE_PRESETS.map(p => (
+              <button
+                key={p.value}
+                onClick={() => setDatePreset(p.value)}
+                className={cn(
+                  'rounded-full px-3 py-1 text-xs font-medium transition-all',
+                  datePreset === p.value ? 'gradient-bg text-white shadow-sm' : 'bg-muted text-muted-foreground hover:bg-accent'
+                )}
+              >
+                {p.label}
+              </button>
+            ))}
+            {datePreset === 'custom' && (
+              <div className="flex items-center gap-2">
+                <input type="date" value={customFrom} onChange={e => setCustomFrom(e.target.value)}
+                  className="rounded-lg border border-input bg-background px-2 py-1 text-xs" />
+                <span className="text-xs text-muted-foreground">até</span>
+                <input type="date" value={customTo} onChange={e => setCustomTo(e.target.value)}
+                  className="rounded-lg border border-input bg-background px-2 py-1 text-xs" />
+              </div>
+            )}
+          </div>
+
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <p className="text-xs text-muted-foreground">
+              Exibindo {Math.min(visibleCount, filtered.length)} de {filtered.length} atendimento{filtered.length === 1 ? '' : 's'}
+            </p>
+            <div className="flex items-center gap-2">
+              <span className="text-xs text-muted-foreground">Exibir:</span>
+              {[30, 50, 100].map(n => (
+                <button
+                  key={n}
+                  onClick={() => setPageSize(n)}
+                  className={cn(
+                    'rounded-md px-2.5 py-1 text-xs font-semibold transition-all',
+                    pageSize === n ? 'gradient-bg text-white' : 'bg-muted text-muted-foreground hover:bg-accent'
+                  )}
+                >
+                  {n}
+                </button>
+              ))}
+            </div>
+          </div>
         </div>
 
         {/* Results Table Header */}
