@@ -1,3 +1,4 @@
+import { useAuth } from '@/context/AuthContext'
 import { useMemo, useState } from 'react'
 import { Dialog, DialogContent } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
@@ -83,6 +84,8 @@ const ATTENDANCE_STATUS_LABELS: Record<string, { label: string, color: string }>
 }
 
 export function AttendanceLookupModal({ open, onClose, unitName, guicheName, onAddProcedure }: AttendanceLookupModalProps) {
+  const { user } = useAuth()
+  const isAdmin = user?.isAdmin === true || user?.role === 'company_admin' || user?.role === 'super_admin'
   const { orders, updateOrder, loading } = useAttendanceCadastro()
   const { patients, loading: patientsLoading } = usePatients()
   const { settings } = useLabSettings()
@@ -105,8 +108,8 @@ export function AttendanceLookupModal({ open, onClose, unitName, guicheName, onA
     const pTerm = normalize(patientSearch.trim())
     
     return orders.filter(o => {
-      // Oculta excluídos para usuários comuns (filtro padrão)
-      if ((o.status as any) === 'deleted' && statusFilter !== 'deleted') return false
+      // Pedidos excluídos ficam ocultos para todos; apenas ADM pode visualizá-los
+      if ((o.status as any) === 'deleted' && (!isAdmin || statusFilter !== 'deleted')) return false
       
       const p = patientById.get(o.patientId)
       
@@ -128,7 +131,7 @@ export function AttendanceLookupModal({ open, onClose, unitName, guicheName, onA
 
       return true
     }).sort((a, b) => b.registeredAt.localeCompare(a.registeredAt))
-  }, [orders, patientById, search, patientSearch, statusFilter])
+  }, [orders, patientById, search, patientSearch, statusFilter, isAdmin])
 
   const togglePatient = (pid: string) => {
     setExpanded(prev => {
@@ -207,10 +210,11 @@ export function AttendanceLookupModal({ open, onClose, unitName, guicheName, onA
                   <option value="collection_done">COLETA REALIZADA</option>
                   <option value="open">ABERTO</option>
                   {Object.entries(ATTENDANCE_STATUS_LABELS).map(([key, val]) => (
-                    key !== 'waiting_collection' && key !== 'open' && key !== 'collection_done' && (
+                    key !== 'waiting_collection' && key !== 'open' && key !== 'collection_done' && (key !== 'deleted' || isAdmin) && (
                       <option key={key} value={key}>{val.label}</option>
                     )
                   ))}
+
                 </select>
                 <Filter className="absolute right-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground pointer-events-none" />
               </div>

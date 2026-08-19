@@ -21,6 +21,7 @@ interface ProfileRow {
   created_at: string | null
   updated_at: string | null
   can_print_labels: boolean | null
+  is_admin?: boolean | null
   professional_title: string | null
   council_type: string | null
   council_uf: string | null
@@ -181,6 +182,7 @@ function EditUserModal({ profile, extraRoles = [], onClose, onSaved }: { profile
   const [newRoleName, setNewRoleName] = useState('')
   const [customRoles, setCustomRoles] = useState<string[]>([])
   const [canPrintLabels, setCanPrintLabels] = useState(false)
+  const [isAdminUser, setIsAdminUser] = useState(false)
   const [professionalTitle, setProfessionalTitle] = useState('')
   const [councilType, setCouncilType] = useState('')
   const [councilUf, setCouncilUf] = useState('')
@@ -199,6 +201,7 @@ function EditUserModal({ profile, extraRoles = [], onClose, onSaved }: { profile
       setCpf(profile.cpf || '')
       setRole(profile.role || '')
       setCanPrintLabels(profile.can_print_labels === true)
+      setIsAdminUser((profile as any).is_admin === true)
       setProfessionalTitle(profile.professional_title || '')
       setCouncilType(profile.council_type || '')
       setCouncilUf(profile.council_uf || '')
@@ -238,6 +241,7 @@ function EditUserModal({ profile, extraRoles = [], onClose, onSaved }: { profile
         cpf: cpf || null, 
         role,
         can_print_labels: canPrintLabels,
+        is_admin: isAdminUser,
         professional_title: professionalTitle || null,
         council_type: councilType || null,
         council_uf: councilUf || null,
@@ -525,12 +529,12 @@ function EditUserModal({ profile, extraRoles = [], onClose, onSaved }: { profile
               <div className="flex items-center space-x-2 bg-muted/30 p-2 rounded-lg w-full">
                 <input 
                   type="checkbox" 
-                  id="labels-toggle" 
-                  checked={canPrintLabels}
-                  onChange={e => setCanPrintLabels(e.target.checked)}
+                  id="adm-toggle" 
+                  checked={isAdminUser}
+                  onChange={e => setIsAdminUser(e.target.checked)}
                   className="w-4 h-4 rounded border-gray-300 text-primary focus:ring-primary"
                 />
-                <Label htmlFor="labels-toggle" className="text-sm cursor-pointer select-none">Pode emitir Etiquetas?</Label>
+                <Label htmlFor="adm-toggle" className="text-sm cursor-pointer select-none">ADM</Label>
               </div>
             </div>
           </div>

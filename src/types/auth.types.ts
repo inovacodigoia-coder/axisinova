@@ -21,6 +21,8 @@ export interface AuthUser {
   isActive: boolean
   /** Quando true, o usuário precisa redefinir a senha no primeiro acesso */
   mustChangePassword?: boolean
+  /** Atribuição de administrador (ADM) concedida pelo administrador da empresa */
+  isAdmin?: boolean
 }
 
 export interface AuthState {
