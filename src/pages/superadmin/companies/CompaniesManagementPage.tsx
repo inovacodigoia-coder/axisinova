@@ -21,7 +21,7 @@ export default function CompaniesManagementPage() {
 
   async function fetchCompanies() {
     setLoading(true)
-    const { data, error } = await supabase.from('companies').select('*').order('created_at', { ascending: false })
+    const { data, error } = await supabase.from('companies').select('*').neq('status', 'deleted').order('created_at', { ascending: false })
     if (error) {
       toast.error('Erro ao carregar empresas')
       setLoading(false)

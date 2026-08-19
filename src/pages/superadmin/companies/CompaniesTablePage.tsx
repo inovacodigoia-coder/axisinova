@@ -71,7 +71,7 @@ export default function CompaniesListPage() {
   }, [])
 
   async function fetchCompanies() {
-    const { data, error } = await supabase.from('companies').select('*').order('sequence_id', { ascending: true })
+    const { data, error } = await supabase.from('companies').select('*').neq('status', 'deleted').order('sequence_id', { ascending: true })
     if (error) {
       console.error('Error fetching companies:', error)
       return
@@ -189,7 +189,8 @@ export default function CompaniesListPage() {
   const filtered = useMemo(() => {
     return allCompanies.filter((c) => {
       const matchSearch = !search || c.nomeFantasia.toLowerCase().includes(search.toLowerCase()) || c.cnpj.includes(search) || c.email.toLowerCase().includes(search.toLowerCase())
-      const matchStatus = statusFilter === 'all' || c.status === statusFilter
+      // Status 'deleted' is already excluded from fetching, but we keep the logic clean
+      const matchStatus = statusFilter === 'all' ? (c.status !== 'deleted') : c.status === statusFilter
       const matchPlan = planFilter === 'all' || c.plano === planFilter
       return matchSearch && matchStatus && matchPlan
     })
@@ -284,6 +285,7 @@ export default function CompaniesListPage() {
           <option value="overdue">Inadimplente</option>
           <option value="suspended">Suspensa</option>
           <option value="cancelled">Cancelada</option>
+          <option value="deleted">Excluída</option>
         </select>
         <select value={planFilter} onChange={(e) => setPlanFilter(e.target.value)} className="h-10 rounded-lg border border-input bg-background px-3 text-sm">
           <option value="all">Todos os planos</option>
