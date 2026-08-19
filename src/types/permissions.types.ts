@@ -18,6 +18,7 @@ export type SystemModule =
   | 'pharmacy'
   | 'serotheque'
   | 'portals'
+  | 'result_entry'
 
 export type PermissionAction = 'view' | 'create' | 'edit' | 'delete' | 'export' | 'approve'
 
