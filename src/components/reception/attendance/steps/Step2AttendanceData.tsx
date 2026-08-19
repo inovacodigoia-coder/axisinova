@@ -1,7 +1,7 @@
 import { useMemo, useEffect, useState } from 'react'
 import { useRegisters } from '@/context/RegistersContext'
 import { useCompanyContext } from '@/context/CompanyContext'
-import { DEMO_CATALOG } from '@/mocks/attendance-cadastro.mock'
+import { DEMO_CATALOG, type CatalogProcedure } from '@/mocks/attendance-cadastro.mock'
 import { Stethoscope, FlaskConical, Activity, CreditCard, Banknote, Gift, Search, Check } from 'lucide-react'
 import { supabase } from '@/integrations/supabase/client'
 import { cn } from '@/lib/utils'
