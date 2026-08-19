@@ -23,8 +23,46 @@ const PAYMENT_BTNS: { value: AttendancePaymentType; icon: any; label: string }[]
 ]
 
 export function Step2AttendanceData({ state, update }: Props) {
-  const { doctors, specialties, convenios } = useRegisters()
+  const { doctors, specialties, convenios, exams, procedures } = useRegisters()
   const { availableOrigins, activeOrigin } = useCompanyContext()
+
+  // Catálogo unificado: exames e procedimentos reais (apenas ativos) + mock de consultas
+  const catalog = useMemo<CatalogProcedure[]>(() => {
+    const fromExams: CatalogProcedure[] = exams
+      .filter(e => e.isActive !== false)
+      .map(e => ({
+        id: e.id,
+        type: 'exam',
+        name: e.name,
+        tussCode: e.tussCode || e.internalCode || '',
+        specialtyId: e.specialtyId,
+        doctorIds: [],
+        durationMinutes: e.estimatedDurationMinutes,
+        prepInstructions: e.preparationInstructions,
+        resultDays: e.resultDeadlineDays,
+        requiresAuthorization: e.requiresAuthorization,
+      }))
+    const fromProcedures: CatalogProcedure[] = procedures
+      .filter(p => p.isActive !== false)
+      .map(p => ({
+        id: p.id,
+        type: 'procedure',
+        name: p.name,
+        tussCode: p.tussCode || p.internalCode || '',
+        price: p.price,
+        specialtyId: p.specialtyId,
+        doctorIds: [],
+        durationMinutes: p.estimatedDurationMinutes,
+        prepInstructions: p.preOperativeInstructions,
+        resultDays: undefined,
+        requiresAuthorization: p.requiresAuthorization ?? false,
+      }))
+    return [
+      ...DEMO_CATALOG.filter(p => p.type === 'consultation'),
+      ...fromExams,
+      ...fromProcedures,
+    ]
+  }, [exams, procedures])
 
   // Sincronizar origem ativa se não houver uma selecionada no estado
   useEffect(() => {
@@ -45,11 +83,17 @@ export function Step2AttendanceData({ state, update }: Props) {
   }, [state.paymentType, state.convenioId, state.patient, update])
 
   const availableProcedures = useMemo(() => {
-    return DEMO_CATALOG.filter(p =>
-      p.type === state.serviceType &&
-      (!state.doctorId || p.doctorIds.length === 0 || p.doctorIds.includes(state.doctorId))
-    )
-  }, [state.serviceType, state.doctorId])
+    return catalog.filter(p => {
+      if (p.type !== state.serviceType) return false
+      if (!state.doctorId) return true
+      if (p.doctorIds.length > 0) return p.doctorIds.includes(state.doctorId)
+      if (p.specialtyId) {
+        const d = doctors.find(doc => doc.id === state.doctorId)
+        return d ? d.specialtyIds.includes(p.specialtyId) : true
+      }
+      return true
+    })
+  }, [catalog, state.serviceType, state.doctorId, doctors])
 
   const doctorSpecialties = useMemo(() => {
     if (!state.doctorId) return specialties
@@ -65,7 +109,7 @@ export function Step2AttendanceData({ state, update }: Props) {
   }
 
   const selectProcedure = (id: string) => {
-    const p = DEMO_CATALOG.find(p => p.id === id)
+    const p = catalog.find(p => p.id === id)
     if (!p) return
     update({
       procedureId: p.id, procedureName: p.name, procedureCode: p.tussCode,
