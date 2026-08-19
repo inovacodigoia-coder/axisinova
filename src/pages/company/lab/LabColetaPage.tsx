@@ -82,10 +82,9 @@ export default function LabColetaPage() {
         return o?.status === 'waiting_collection';
       })
       .map(o => {
-        // Apenas exames/amostras efetivamente coletados aparecem na fila
+        // Mostra exatamente os exames cadastrados no pedido
         const allExams = (o.labGuides || [])
           .flatMap(guide => (guide.exams || []))
-          .filter((e: any) => !!e.collected)
           .map((e: any) => ({
             ...e,
             examId: e.examId || e.id,
