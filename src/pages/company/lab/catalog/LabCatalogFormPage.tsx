@@ -1193,10 +1193,16 @@ function ParametersSection({ parameters, setParameters }: { parameters: any[], s
 function ReferenceValuesModal({ parameter, onClose, onSave }: { parameter: any, onClose: () => void, onSave?: (val: any) => void }) {
   const [faixas, setFaixas] = useState<any[]>([])
 
+  const isTextual = parameter?.type === 'text' || parameter?.type === 'selection'
+
   useEffect(() => {
-    if (parameter && parameter.referenceValues) {
+    if (parameter && parameter.referenceValues?.length) {
       setFaixas(parameter.referenceValues)
-    } else {
+    } else if (parameter && isTextual) {
+      setFaixas([
+        { id: 1, description: 'Padrão', minAge: 0, maxAge: 150, sex: 'Todos', isPregnant: false, textRange: '' },
+      ])
+    } else if (parameter) {
       setFaixas([
         { id: 1, description: 'Adulto Masculino', minAge: 18, maxAge: 150, sex: 'Masculino', isPregnant: false, minValue: '4.5', maxValue: '6.1' },
         { id: 2, description: 'Adulto Feminino', minAge: 18, maxAge: 150, sex: 'Feminino', isPregnant: false, minValue: '4', maxValue: '5.4' },
