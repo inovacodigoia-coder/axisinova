@@ -106,7 +106,7 @@ export function AttendanceLookupModal({ open, onClose, unitName, guicheName, onA
     
     return orders.filter(o => {
       // Oculta excluídos para usuários comuns (filtro padrão)
-      if (o.status === 'deleted' && statusFilter !== 'deleted') return false
+      if (o.status === ('deleted' as any) && statusFilter !== 'deleted') return false
       
       const p = patientById.get(o.patientId)
       

@@ -117,7 +117,7 @@ export default function LabAnalisePage() {
       // Pedidos "Aberto" (sem coleta realizada) e "Excluídos" não entram na fila de digitação
       const allowedOrderStatuses = ['collection_done', 'in_analysis', 'validation', 'released', 'completed'];
       
-      if (order.status === 'deleted') return;
+      if (order.status === ('deleted' as any)) return;
       
       exams.forEach(exam => {
         // Verifica se o status do pedido está entre os selecionados

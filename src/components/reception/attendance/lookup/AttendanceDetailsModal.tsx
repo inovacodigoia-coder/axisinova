@@ -311,9 +311,8 @@ export function AttendanceDetailsModal({ open, onClose, onOrderDeleted, order, p
   };
 
   const getStatusColor = (status: string) => {
-    switch(status?.toLowerCase()) {
+    switch(String(status || '').toLowerCase()) {
       case 'open':
-        // No modal de detalhes, "Aberto" pode ser azul se não tiver nada coletado
         return 'bg-blue-500';
       case 'waiting':
       case 'waiting_collection':
@@ -324,6 +323,8 @@ export function AttendanceDetailsModal({ open, onClose, onOrderDeleted, order, p
         return 'bg-emerald-500';
       case 'cancelled':
         return 'bg-red-500';
+      case 'deleted':
+        return 'bg-slate-700';
       default:
         return 'bg-slate-400';
     }
