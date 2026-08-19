@@ -1,0 +1,1 @@
+REVOKE EXECUTE ON FUNCTION public.validate_attendance_order_origin_company() FROM PUBLIC, anon, authenticated;
