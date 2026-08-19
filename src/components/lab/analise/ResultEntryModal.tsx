@@ -102,10 +102,18 @@ export function ResultEntryModal({
   const [laudoOpen, setLaudoOpen] = useState(false);
   const [laudoLoading, setLaudoLoading] = useState(false);
 
-  /* Do not make any visual modifications. The phrases I write are commands to understand what I want, not to be written down. Understand their content well, then execute what is required.
-                                            
-                                            I have approved the plan */
+  const [viewMode, setViewMode] = useState<'grid' | 'list'>(() => {
+    if (typeof window === 'undefined') return 'grid';
+    return (sessionStorage.getItem('lab_result_view_mode') as 'grid' | 'list') || 'grid';
+  });
+
+  const changeViewMode = (mode: 'grid' | 'list') => {
+    setViewMode(mode);
+    try { sessionStorage.setItem('lab_result_view_mode', mode); } catch { /* ignore */ }
+  };
+
   const [expandedPatients, setExpandedPatients] = useState<Record<string, boolean>>({});
+
 
   // Agrupamento por paciente/pedido
   const groupedPatients = useMemo(() => {
