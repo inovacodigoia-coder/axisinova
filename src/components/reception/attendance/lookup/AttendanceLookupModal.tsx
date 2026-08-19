@@ -335,11 +335,11 @@ export function AttendanceLookupModal({ open, onClose, unitName, guicheName, onA
             </div>
           ) : !filtered.length ? (
             <div className="text-center py-12 text-muted-foreground text-sm">
-              {search || patientSearch ? 'Nenhum cadastro encontrado para sua busca.' : 'Digite para buscar atendimentos.'}
+              {search || patientSearch ? 'Nenhum cadastro encontrado para sua busca.' : 'Nenhum atendimento no período selecionado.'}
             </div>
           ) : (
             <div className="divide-y divide-border">
-              {filtered.map(order => (
+              {visible.map(order => (
                 <OrderRowModern
                   key={order.id}
                   order={order}
