@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo } from 'react'
 import type { PermissionsMap, SystemModule, PermissionAction } from '@/types/permissions.types'
-import { SYSTEM_MODULES, ALL_ACTIONS, ACTION_LABELS } from '@/types/permissions.types'
+import { SYSTEM_MODULES, ALL_ACTIONS, ACTION_LABELS, RESULT_ENTRY_PERMISSIONS } from '@/types/permissions.types'
 import { Progress } from '@/components/ui/progress'
 
 interface PermissionsMatrixProps {
