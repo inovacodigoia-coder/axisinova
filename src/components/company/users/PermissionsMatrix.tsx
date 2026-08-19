@@ -123,6 +123,35 @@ export function PermissionsMatrix({ permissions, onChange }: PermissionsMatrixPr
           </tbody>
         </table>
       </div>
+      <div className="rounded-lg border border-border p-4 space-y-3">
+        <div>
+          <p className="text-xs font-semibold text-foreground uppercase tracking-wide">Digitação de Resultados</p>
+          <p className="text-[11px] text-muted-foreground">Permissões específicas da tela de digitação. Quando desmarcado, o botão não aparece para o usuário.</p>
+        </div>
+        <div className="grid gap-2 sm:grid-cols-3">
+          {RESULT_ENTRY_PERMISSIONS.map(p => (
+            <label key={p.action} className="flex items-start gap-2 rounded-md border border-border bg-muted/20 px-3 py-2 cursor-pointer">
+              <input
+                type="checkbox"
+                className="accent-primary mt-0.5"
+                checked={perms.result_entry?.includes(p.action) || false}
+                onChange={() => setPerms(prev => {
+                  const current = prev.result_entry || []
+                  const next = current.includes(p.action)
+                    ? current.filter(a => a !== p.action)
+                    : [...current, p.action]
+                  return { ...prev, result_entry: next }
+                })}
+              />
+              <span>
+                <span className="block text-xs font-medium text-foreground">{p.label}</span>
+                <span className="block text-[10px] text-muted-foreground">{p.description}</span>
+              </span>
+            </label>
+          ))}
+        </div>
+      </div>
+
       <div className="flex items-center gap-3">
         <Progress value={(activePerms / totalPerms) * 100} className="flex-1 h-2" />
         <span className="text-xs text-muted-foreground whitespace-nowrap">{activePerms} de {totalPerms} permissões</span>
