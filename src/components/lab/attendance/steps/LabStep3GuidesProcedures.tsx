@@ -91,7 +91,7 @@ export function LabStep3GuidesProcedures({ state, update }: Props) {
   const [examSearch, setExamSearch] = useState('');
   const [selectedExam, setSelectedExam] = useState<any>(null);
   const [examMaterial, setExamMaterial] = useState('');
-  const [examCollected, setExamCollected] = useState(false);
+  const [examCollected, setExamCollected] = useState(true);
   const [examDeadline, setExamDeadline] = useState<string | null>(null);
   const [showDeadlineModal, setShowDeadlineModal] = useState(false);
   const [tempDeadline, setTempDeadline] = useState('');
@@ -145,14 +145,14 @@ export function LabStep3GuidesProcedures({ state, update }: Props) {
       const exam = activeGuide.exams[index];
       setSelectedExam(exam);
       setExamMaterial(exam.material || '');
-      setExamCollected(exam.collected || false);
+      setExamCollected(exam.collected ?? true);
       setExamSearch(exam.name);
       setEditingExamIndex(index);
       setExamDeadline(exam.expectedDeliveryDate || null);
     } else {
       setSelectedExam(null);
       setExamMaterial('');
-      setExamCollected(false);
+      setExamCollected(true);
       setExamSearch('');
       setEditingExamIndex(null);
       setExamDeadline(null);

@@ -917,9 +917,20 @@ export function AttendanceDetailsModal({ open, onClose, onOrderDeleted, order, p
                     <Button 
                       size="icon" 
                       variant="ghost" 
-                      className="h-8 w-8 text-muted-foreground ml-1 disabled:opacity-40"
-                      disabled={selectedTubes.size === 0}
-                      title={selectedTubes.size === 0 ? 'Selecione ao menos uma amostra' : 'Imprimir etiquetas selecionadas'}
+                      className={cn(
+                        "h-8 w-8 ml-1 disabled:opacity-100",
+                        pendingSelectedTubes.length > 0 || selectedTubes.size === 0
+                          ? "text-red-600 hover:text-red-600 hover:bg-red-50 cursor-not-allowed"
+                          : "text-muted-foreground"
+                      )}
+                      disabled={selectedTubes.size === 0 || pendingSelectedTubes.length > 0}
+                      title={
+                        selectedTubes.size === 0
+                          ? 'Selecione ao menos uma amostra'
+                          : pendingSelectedTubes.length > 0
+                            ? 'Para impressão de etiqueta é necessário receber a amostra (coleta pendente)'
+                            : 'Imprimir etiquetas selecionadas'
+                      }
                       onClick={() => {
                         if (pendingSelectedTubes.length > 0) {
                           toast({
@@ -934,6 +945,7 @@ export function AttendanceDetailsModal({ open, onClose, onOrderDeleted, order, p
                     >
                       <Printer className="h-4 w-4" />
                     </Button>
+
                   </div>
                 </div>
                 
@@ -1054,12 +1066,22 @@ export function AttendanceDetailsModal({ open, onClose, onOrderDeleted, order, p
           console.log('Printing with result:', result);
           setPrintSelectionOpen(false);
 
+          // Etiquetas de amostra
+          if (result.options.find((o: any) => o.id === 'etiquetas' && o.enabled)) {
+            if (selectedTubes.size === 0) {
+              setSelectedTubes(new Set(patientTubes.map((_, idx) => sampleCodeFor(idx + 1))));
+            }
+            setLabelsPrintOpen(true);
+            return;
+          }
+
           // Check if "Laudo" was selected to show the specific preview modal
           const laudoOption = result.options.find((o: any) => o.id === 'laudo' && o.enabled);
           if (laudoOption) {
             setReportPreviewOpen(true);
             return; // Don't proceed to standard attendance receipts if laudo is the primary focus
           }
+
           
           // Apenas UMA opção pode estar selecionada — imprime somente ela
           const selected = result.options.find((o: any) => o.enabled);
