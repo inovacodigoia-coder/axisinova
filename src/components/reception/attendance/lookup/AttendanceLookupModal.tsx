@@ -166,7 +166,12 @@ export function AttendanceLookupModal({ open, onClose, unitName, guicheName, onA
 
       return true
     }).sort((a, b) => b.registeredAt.localeCompare(a.registeredAt))
-  }, [orders, patientById, search, patientSearch, statusFilter, isAdmin])
+  }, [orders, patientById, search, patientSearch, statusFilter, isAdmin, dateRange])
+
+  useEffect(() => { setVisibleCount(pageSize) }, [pageSize, datePreset, customFrom, customTo, statusFilter, search, patientSearch])
+
+  const visible = useMemo(() => filtered.slice(0, visibleCount), [filtered, visibleCount])
+  const hasMore = filtered.length > visibleCount
 
   const togglePatient = (pid: string) => {
     setExpanded(prev => {
