@@ -223,12 +223,17 @@ export const ImportarPlanilhaModal = ({ isOpen, onClose, existingCodes = [] }: I
         // Find or create workbench
         let wbId = workbenches.find(w => w.name.toLowerCase() === examData.bancada.toLowerCase())?.id;
 
+        // Ordena pelos valores da coluna "Ordem" (quando existir)
+        const orderedParams = [...examData.parameters].sort(
+          (a: any, b: any) => Number(a['Ordem'] ?? a['ORDEM'] ?? 9999) - Number(b['Ordem'] ?? b['ORDEM'] ?? 9999)
+        );
+        examData.parameters = orderedParams;
+
         // Build app-shaped parameters (persisted in the exam JSON, read by the edit screen)
-        const appParameters = examData.parameters
+        const appParameters = orderedParams
           .map((p: any, idx: number) => {
             const paramName = getParamName(p);
             if (!paramName) return null;
-            const rawType = String(p['Tipo'] || p['TIPO'] || '').toLowerCase();
             const refs = examData.referenceValues
               .filter((r: any) => getParamName(r) === paramName)
               .map((r: any, rIdx: number) => ({
@@ -236,6 +241,7 @@ export const ImportarPlanilhaModal = ({ isOpen, onClose, existingCodes = [] }: I
                 description: String(r['Descrição'] || r['DESCRIÇÃO'] || ''),
                 minValue: r['Valor mínimo'] ?? r['Valor Mínimo'] ?? r['Mínimo'] ?? '',
                 maxValue: r['Valor máximo'] ?? r['Valor Máximo'] ?? r['Máximo'] ?? '',
+                textRange: r['Valor texto'] ?? r['Texto'] ?? '',
                 normalText: r['Valor texto'] ?? r['Texto'] ?? '',
                 minAge: Number(r['Idade mínima (anos)'] || r['Idade Mínima'] || 0),
                 maxAge: Number(r['Idade máxima (anos)'] || r['Idade Máxima'] || 150),
@@ -250,7 +256,7 @@ export const ImportarPlanilhaModal = ({ isOpen, onClose, existingCodes = [] }: I
               name: paramName,
               section: String(p['Seção'] || p['SEÇÃO'] || p['Setor'] || p['SETOR'] || ''),
               equipCode: String(p['Código no equipamento'] || p['Cód. Equip.'] || p['Código Equipamento'] || ''),
-              type: rawType.includes('calc') ? 'calculation' : rawType.includes('text') ? 'text' : 'numerical',
+              type: parseParamType(p),
               origin: String(p['Origem'] || p['ORIGEM'] || '').toLowerCase() === 'equipamento' ? 'interface' : 'manual',
               unit: String(p['Unidade de medida'] || p['Unidade'] || p['UNIDADE'] || ''),
               isMandatory: p['Obrigatório'] === 'Sim' || p['Obrigatório'] === true,
@@ -258,6 +264,7 @@ export const ImportarPlanilhaModal = ({ isOpen, onClose, existingCodes = [] }: I
               isCalculated: p['Calculado'] === 'Sim' || p['Calculado'] === true,
               isHidden: p['Oculto'] === 'Sim' || p['Oculto'] === true,
               formula: String(p['Fórmula do parâmetro'] || p['Fórmula'] || ''),
+              options: parseParamOptions(p),
               referenceValues: refs,
             };
           })
