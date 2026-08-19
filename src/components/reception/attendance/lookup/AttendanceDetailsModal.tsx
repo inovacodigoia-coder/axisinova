@@ -1054,12 +1054,22 @@ export function AttendanceDetailsModal({ open, onClose, onOrderDeleted, order, p
           console.log('Printing with result:', result);
           setPrintSelectionOpen(false);
 
+          // Etiquetas de amostra
+          if (result.options.find((o: any) => o.id === 'etiquetas' && o.enabled)) {
+            if (selectedTubes.size === 0) {
+              setSelectedTubes(new Set(patientTubes.map((_, idx) => sampleCodeFor(idx + 1))));
+            }
+            setLabelsPrintOpen(true);
+            return;
+          }
+
           // Check if "Laudo" was selected to show the specific preview modal
           const laudoOption = result.options.find((o: any) => o.id === 'laudo' && o.enabled);
           if (laudoOption) {
             setReportPreviewOpen(true);
             return; // Don't proceed to standard attendance receipts if laudo is the primary focus
           }
+
           
           // Apenas UMA opção pode estar selecionada — imprime somente ela
           const selected = result.options.find((o: any) => o.enabled);
