@@ -174,6 +174,8 @@ export default function LabCatalogFormPage() {
           defaultDestination: existingExam.defaultDestination || "",
           reportObservations: existingExam.reportObservations || "",
           methodology: existingExam.methodology || "",
+          reportTemplateId: (existingExam as any).reportTemplateId || "",
+          reportSinglePage: (existingExam as any).reportSinglePage ?? false,
           interfacingConfig: existingExam.interfacingConfig || {
             equipmentId: '',
             equipmentCode: '',
