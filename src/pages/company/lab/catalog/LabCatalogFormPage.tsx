@@ -41,6 +41,7 @@ import {
 } from 'lucide-react'
 import { useNavigate, useParams } from 'react-router-dom'
 import LabMethodologySearchModal from '@/components/lab/catalog/LabMethodologySearchModal'
+import ExamReportSection from '@/components/lab/catalog/ExamReportSection'
 import { cn } from '@/lib/utils'
 import { toast } from 'sonner'
 import { Badge } from '@/components/ui/badge'
@@ -102,6 +103,9 @@ export default function LabCatalogFormPage() {
     defaultDestination: '',
     reportObservations: '',
     methodology: '',
+    reportTemplateId: '',
+    reportSinglePage: false,
+
     interfacingConfig: {
       equipmentId: '',
       equipmentCode: '',
@@ -170,6 +174,8 @@ export default function LabCatalogFormPage() {
           defaultDestination: existingExam.defaultDestination || "",
           reportObservations: existingExam.reportObservations || "",
           methodology: existingExam.methodology || "",
+          reportTemplateId: (existingExam as any).reportTemplateId || "",
+          reportSinglePage: (existingExam as any).reportSinglePage ?? false,
           interfacingConfig: existingExam.interfacingConfig || {
             equipmentId: '',
             equipmentCode: '',
@@ -378,6 +384,9 @@ export default function LabCatalogFormPage() {
           <TabsTrigger value="rules" className="gap-2 px-4 py-2 data-[state=active]:gradient-bg data-[state=active]:text-white">
             <ShieldCheck className="h-4 w-4" /> Alertas e Regras
           </TabsTrigger>
+          <TabsTrigger value="report" className="gap-2 px-4 py-2 data-[state=active]:gradient-bg data-[state=active]:text-white">
+            <FileText className="h-4 w-4" /> Laudo do Exame
+          </TabsTrigger>
         </TabsList>
 
         <TabsContent value="general">
@@ -409,6 +418,13 @@ export default function LabCatalogFormPage() {
         </TabsContent>
         <TabsContent value="rules">
            <RulesSection />
+        </TabsContent>
+        <TabsContent value="report">
+          <ExamReportSection
+            data={examData}
+            parameters={parameters}
+            onChange={(newData) => setExamData(prev => ({ ...prev, ...newData }))}
+          />
         </TabsContent>
       </Tabs>
 

@@ -7,6 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import LaudoDocument from './LaudoDocument';
 import { LabAttendanceOrder } from '@/types/lab.types';
 import { useLabSettings } from '@/hooks/useLabSettings';
+import { useExamReportConfig } from '@/hooks/useExamReportConfig';
 import { useAuth } from '@/context/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
@@ -33,8 +34,14 @@ export default function PDFPreviewModal({
 }: PDFPreviewModalProps) {
   const { settings: labSettings } = useLabSettings();
   const { user } = useAuth();
+  const { enrichExams } = useExamReportConfig();
   const [zoom, setZoom] = React.useState(100);
   const [isFullscreen, setIsFullscreen] = React.useState(false);
+
+  const enrichedOrder = React.useMemo(
+    () => ({ ...order, exams: enrichExams((order as any)?.exams || []) }),
+    [order, enrichExams],
+  );
 
   const isAdmin = user?.role === 'company_admin' || user?.role === 'super_admin';
   const documentRef = React.useRef<HTMLDivElement>(null);
@@ -243,7 +250,7 @@ export default function PDFPreviewModal({
                     <div dangerouslySetInnerHTML={{ __html: savedHtml }} />
                   ) : (
                     <LaudoDocument 
-                      order={order}
+                      order={enrichedOrder}
                       companyLogo={labSettings?.report_logo_primary_url || undefined}
                       secondaryLogo={labSettings?.report_logo_secondary_url || undefined}
                       laboratoryName={labSettings?.report_header_title || labSettings?.lab_name || undefined}

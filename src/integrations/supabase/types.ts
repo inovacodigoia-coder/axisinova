@@ -716,6 +716,8 @@ export type Database = {
           preparation_instructions: string | null
           reference_values: Json | null
           report_observations: string | null
+          report_single_page: boolean
+          report_template_id: string | null
           requires_authorization: boolean
           result_deadline_days: number | null
           selected_materials: Json | null
@@ -748,6 +750,8 @@ export type Database = {
           preparation_instructions?: string | null
           reference_values?: Json | null
           report_observations?: string | null
+          report_single_page?: boolean
+          report_template_id?: string | null
           requires_authorization?: boolean
           result_deadline_days?: number | null
           selected_materials?: Json | null
@@ -780,6 +784,8 @@ export type Database = {
           preparation_instructions?: string | null
           reference_values?: Json | null
           report_observations?: string | null
+          report_single_page?: boolean
+          report_template_id?: string | null
           requires_authorization?: boolean
           result_deadline_days?: number | null
           selected_materials?: Json | null
@@ -796,6 +802,13 @@ export type Database = {
             columns: ["company_id"]
             isOneToOne: false
             referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "exams_report_template_id_fkey"
+            columns: ["report_template_id"]
+            isOneToOne: false
+            referencedRelation: "lab_report_templates"
             referencedColumns: ["id"]
           },
         ]
@@ -1274,6 +1287,59 @@ export type Database = {
           updated_by?: string | null
         }
         Relationships: []
+      }
+      lab_report_templates: {
+        Row: {
+          body_html: string | null
+          company_id: string
+          created_at: string
+          description: string | null
+          footer_html: string | null
+          header_html: string | null
+          id: string
+          is_active: boolean
+          is_default: boolean
+          name: string
+          single_page: boolean
+          updated_at: string
+        }
+        Insert: {
+          body_html?: string | null
+          company_id: string
+          created_at?: string
+          description?: string | null
+          footer_html?: string | null
+          header_html?: string | null
+          id?: string
+          is_active?: boolean
+          is_default?: boolean
+          name: string
+          single_page?: boolean
+          updated_at?: string
+        }
+        Update: {
+          body_html?: string | null
+          company_id?: string
+          created_at?: string
+          description?: string | null
+          footer_html?: string | null
+          header_html?: string | null
+          id?: string
+          is_active?: boolean
+          is_default?: boolean
+          name?: string
+          single_page?: boolean
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "lab_report_templates_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       lab_result_values: {
         Row: {

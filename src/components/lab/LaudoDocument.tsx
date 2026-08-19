@@ -1,6 +1,8 @@
 import React from 'react';
 import { LabAttendanceOrder } from '@/types/lab.types';
 import { cn } from '@/lib/utils';
+import { buildLaudoTagContext, renderLaudoTemplate } from '@/utils/laudoTags';
+
 
 interface LaudoDocumentProps {
   order: Partial<LabAttendanceOrder> & Record<string, any>;
@@ -171,7 +173,7 @@ function DifferentialTable({ paired }: { paired: PairedRow[] }) {
   );
 }
 
-function ExamBlock({ exam }: { exam: any }) {
+function ExamBlock({ exam, order }: { exam: any; order?: any }) {
   const results: any[] = exam.results || [];
   const sections: { name: string; rows: any[] }[] = [];
   results.forEach((r) => {
@@ -185,6 +187,9 @@ function ExamBlock({ exam }: { exam: any }) {
   });
   sections.sort((a, b) => sectionRank(a.name) - sectionRank(b.name));
 
+  const tpl = exam.reportTemplate || null;
+  const ctx = React.useMemo(() => buildLaudoTagContext(order || {}, exam, {}), [order, exam]);
+
   return (
     <div className="exame-section break-inside-avoid">
       <h3 className="text-[13px] font-semibold uppercase tracking-wide text-zinc-800">{exam.name}</h3>
@@ -194,6 +199,12 @@ function ExamBlock({ exam }: { exam: any }) {
       </p>
       {exam.methodology && (
         <p className="text-[9px] text-zinc-500">Método: {exam.methodology}</p>
+      )}
+      {tpl?.header_html && (
+        <div
+          className="laudo-tpl text-[9.5px] text-zinc-700 whitespace-pre-line mt-2"
+          dangerouslySetInnerHTML={{ __html: renderLaudoTemplate(tpl.header_html, ctx) }}
+        />
       )}
       <div className="mb-3" />
 
@@ -213,13 +224,31 @@ function ExamBlock({ exam }: { exam: any }) {
         );
       })}
 
+      {tpl?.body_html && (
+        <div
+          className="laudo-tpl text-[9.5px] text-zinc-700 whitespace-pre-line mt-2"
+          dangerouslySetInnerHTML={{ __html: renderLaudoTemplate(tpl.body_html, ctx) }}
+        />
+      )}
+
+      {exam.reportObservations && (
+        <p className="text-[9px] text-zinc-600 mt-1 whitespace-pre-line">{exam.reportObservations}</p>
+      )}
 
       {exam.internalObservations && (
         <p className="text-[9px] text-zinc-600 mt-1 whitespace-pre-line">Obs.: {exam.internalObservations}</p>
       )}
+
+      {tpl?.footer_html && (
+        <div
+          className="laudo-tpl text-[9px] text-zinc-600 whitespace-pre-line mt-2"
+          dangerouslySetInnerHTML={{ __html: renderLaudoTemplate(tpl.footer_html, ctx) }}
+        />
+      )}
     </div>
   );
 }
+
 
 export default function LaudoDocument({
   order,
@@ -246,12 +275,22 @@ export default function LaudoDocument({
   const approvedName = order.approvedBy || technicalResponsible?.name || '—';
   const approvedRegister = order.approvedRegister || technicalResponsible?.register || '';
 
-  // Uma folha por Bancada Técnica (nunca misturar bancadas na mesma página)
+  // Uma folha por Bancada Técnica (nunca misturar bancadas na mesma página).
+  // Exames marcados como "laudo em folha exclusiva" saem sozinhos em uma página.
   const pages = React.useMemo(() => {
-    const groups: { workbench: string; order: number; exams: any[] }[] = [];
+    const groups: { workbench: string; order: number; exams: any[]; exclusive?: boolean }[] = [];
     (order.exams || []).forEach((exam: any) => {
+      if (exam.singlePage) {
+        groups.push({
+          workbench: exam.name || exam.workbench || 'Geral',
+          order: exam.workbenchOrder ?? 9999,
+          exams: [exam],
+          exclusive: true,
+        });
+        return;
+      }
       const wb = exam.workbench || 'Geral';
-      let g = groups.find((x) => x.workbench === wb);
+      let g = groups.find((x) => x.workbench === wb && !x.exclusive);
       if (!g) {
         g = { workbench: wb, order: exam.workbenchOrder ?? 9999, exams: [] };
         groups.push(g);
@@ -261,6 +300,7 @@ export default function LaudoDocument({
     groups.sort((a, b) => a.order - b.order || a.workbench.localeCompare(b.workbench));
     return groups;
   }, [order.exams]);
+
 
   const totalPages = Math.max(pages.length, 1);
 
@@ -316,7 +356,7 @@ export default function LaudoDocument({
           {/* Exames da bancada desta folha */}
           <div className="laudo-body mt-6 space-y-7 flex-1">
             {page.exams.map((exam: any, idx: number) => (
-              <ExamBlock key={exam.examId || idx} exam={exam} />
+              <ExamBlock key={exam.examId || idx} exam={exam} order={order} />
             ))}
           </div>
 

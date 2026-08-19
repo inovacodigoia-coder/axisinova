@@ -53,6 +53,8 @@ export interface Exam {
   defaultOrigin?: string
   defaultDestination?: string
   reportObservations?: string
+  reportTemplateId?: string
+  reportSinglePage?: boolean
   preparationInstructions?: string
   estimatedDurationMinutes?: number
   resultDeadlineDays?: number
