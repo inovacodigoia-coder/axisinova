@@ -378,6 +378,9 @@ export default function LabCatalogFormPage() {
           <TabsTrigger value="rules" className="gap-2 px-4 py-2 data-[state=active]:gradient-bg data-[state=active]:text-white">
             <ShieldCheck className="h-4 w-4" /> Alertas e Regras
           </TabsTrigger>
+          <TabsTrigger value="report" className="gap-2 px-4 py-2 data-[state=active]:gradient-bg data-[state=active]:text-white">
+            <FileText className="h-4 w-4" /> Laudo do Exame
+          </TabsTrigger>
         </TabsList>
 
         <TabsContent value="general">
