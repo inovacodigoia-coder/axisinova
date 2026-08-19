@@ -1004,7 +1004,17 @@ export function ResultEntryModal({
                                         <MoreVertical className="h-3.5 w-3.5" />
                                       </Button>
                                     </DropdownMenuTrigger>
-                                    <DropdownMenuContent align="start" className="w-48 z-[110]">
+                                    <DropdownMenuContent align="start" className="w-52 z-[110]">
+                                      {!isReleased && (
+                                        <DropdownMenuItem
+                                          onClick={(e) => { e.stopPropagation(); handleReleaseExam(exam.id); }}
+                                          disabled={!hasResult}
+                                          className="text-xs font-bold uppercase text-emerald-600 gap-2"
+                                        >
+                                          <ShieldCheck className="h-3.5 w-3.5" />
+                                          Liberar exame
+                                        </DropdownMenuItem>
+                                      )}
                                       <DropdownMenuItem onClick={(e) => { e.stopPropagation(); handleExamAction(exam.id, 'cancelar'); }} className="text-xs font-bold uppercase text-rose-600 gap-2">
                                         <XCircle className="h-3.5 w-3.5" /> 
                                         {examStatuses[exam.id] === 'cancelled' ? "Reverter Cancelamento" : "Cancelar exame"}
