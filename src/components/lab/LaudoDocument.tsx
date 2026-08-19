@@ -275,12 +275,22 @@ export default function LaudoDocument({
   const approvedName = order.approvedBy || technicalResponsible?.name || '—';
   const approvedRegister = order.approvedRegister || technicalResponsible?.register || '';
 
-  // Uma folha por Bancada Técnica (nunca misturar bancadas na mesma página)
+  // Uma folha por Bancada Técnica (nunca misturar bancadas na mesma página).
+  // Exames marcados como "laudo em folha exclusiva" saem sozinhos em uma página.
   const pages = React.useMemo(() => {
-    const groups: { workbench: string; order: number; exams: any[] }[] = [];
+    const groups: { workbench: string; order: number; exams: any[]; exclusive?: boolean }[] = [];
     (order.exams || []).forEach((exam: any) => {
+      if (exam.singlePage) {
+        groups.push({
+          workbench: exam.name || exam.workbench || 'Geral',
+          order: exam.workbenchOrder ?? 9999,
+          exams: [exam],
+          exclusive: true,
+        });
+        return;
+      }
       const wb = exam.workbench || 'Geral';
-      let g = groups.find((x) => x.workbench === wb);
+      let g = groups.find((x) => x.workbench === wb && !x.exclusive);
       if (!g) {
         g = { workbench: wb, order: exam.workbenchOrder ?? 9999, exams: [] };
         groups.push(g);
@@ -290,6 +300,7 @@ export default function LaudoDocument({
     groups.sort((a, b) => a.order - b.order || a.workbench.localeCompare(b.workbench));
     return groups;
   }, [order.exams]);
+
 
   const totalPages = Math.max(pages.length, 1);
 
