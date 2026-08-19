@@ -728,11 +728,26 @@ export function AttendanceCadastroModal({
             setShowPrintSelection(false)
             setShowAllocation(true)
           }}
-          onConfirm={(opts) => {
-            console.log('Selected print options:', opts)
+          onConfirm={(opts: any) => {
+            if (opts?.action === 'print') {
+              if (opts.optionId === 'etiquetas') {
+                setShowLabelsSelect(true)
+                return
+              }
+              setShowPrint(true)
+              return
+            }
+            // Confirmar: apenas fecha (a coleta já foi confirmada no modal)
             setShowPrintSelection(false)
             setShowAllocation(true)
           }}
+        />
+      )}
+      {showLabelsSelect && createdOrder && (
+        <SampleLabelsSelectModal
+          open
+          order={createdOrder}
+          onClose={() => setShowLabelsSelect(false)}
         />
       )}
       {/* Aviso de Sincronização Pendente */}
