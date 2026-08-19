@@ -171,7 +171,7 @@ function DifferentialTable({ paired }: { paired: PairedRow[] }) {
   );
 }
 
-function ExamBlock({ exam }: { exam: any }) {
+function ExamBlock({ exam, order }: { exam: any; order?: any }) {
   const results: any[] = exam.results || [];
   const sections: { name: string; rows: any[] }[] = [];
   results.forEach((r) => {
@@ -185,6 +185,9 @@ function ExamBlock({ exam }: { exam: any }) {
   });
   sections.sort((a, b) => sectionRank(a.name) - sectionRank(b.name));
 
+  const tpl = exam.reportTemplate || null;
+  const ctx = React.useMemo(() => buildLaudoTagContext(order || {}, exam, {}), [order, exam]);
+
   return (
     <div className="exame-section break-inside-avoid">
       <h3 className="text-[13px] font-semibold uppercase tracking-wide text-zinc-800">{exam.name}</h3>
@@ -194,6 +197,12 @@ function ExamBlock({ exam }: { exam: any }) {
       </p>
       {exam.methodology && (
         <p className="text-[9px] text-zinc-500">Método: {exam.methodology}</p>
+      )}
+      {tpl?.header_html && (
+        <div
+          className="laudo-tpl text-[9.5px] text-zinc-700 whitespace-pre-line mt-2"
+          dangerouslySetInnerHTML={{ __html: renderLaudoTemplate(tpl.header_html, ctx) }}
+        />
       )}
       <div className="mb-3" />
 
@@ -213,13 +222,31 @@ function ExamBlock({ exam }: { exam: any }) {
         );
       })}
 
+      {tpl?.body_html && (
+        <div
+          className="laudo-tpl text-[9.5px] text-zinc-700 whitespace-pre-line mt-2"
+          dangerouslySetInnerHTML={{ __html: renderLaudoTemplate(tpl.body_html, ctx) }}
+        />
+      )}
+
+      {exam.reportObservations && (
+        <p className="text-[9px] text-zinc-600 mt-1 whitespace-pre-line">{exam.reportObservations}</p>
+      )}
 
       {exam.internalObservations && (
         <p className="text-[9px] text-zinc-600 mt-1 whitespace-pre-line">Obs.: {exam.internalObservations}</p>
       )}
+
+      {tpl?.footer_html && (
+        <div
+          className="laudo-tpl text-[9px] text-zinc-600 whitespace-pre-line mt-2"
+          dangerouslySetInnerHTML={{ __html: renderLaudoTemplate(tpl.footer_html, ctx) }}
+        />
+      )}
     </div>
   );
 }
+
 
 export default function LaudoDocument({
   order,
