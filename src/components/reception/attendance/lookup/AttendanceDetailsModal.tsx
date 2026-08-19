@@ -446,9 +446,14 @@ export function AttendanceDetailsModal({ open, onClose, onOrderDeleted, order, p
         {/* Info Cards Row */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4 p-4 flex-shrink-0">
           {/* Attendance ID Card */}
-          <div className="gradient-bg rounded-lg p-4 text-white flex flex-col justify-between shadow-lg relative overflow-hidden min-h-[100px] hover:shadow-xl transition-shadow">
+          <div className={cn(
+            "rounded-lg p-4 text-white flex flex-col justify-between shadow-lg relative overflow-hidden min-h-[100px] hover:shadow-xl transition-shadow",
+            (order.status as any) === 'deleted' ? "bg-slate-700" : "gradient-bg"
+          )}>
             <div className="flex justify-between items-start relative z-10">
-              <span className="text-[10px] font-bold tracking-widest uppercase opacity-80">ATENDIMENTO</span>
+              <span className="text-[10px] font-bold tracking-widest uppercase opacity-80">
+                {(order.status as any) === 'deleted' ? 'ATENDIMENTO EXCLUÍDO' : 'ATENDIMENTO'}
+              </span>
               <div className="flex gap-1">
                 <Button 
                   size="icon" 
