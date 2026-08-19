@@ -110,10 +110,11 @@ export function LabStep3GuidesProcedures({ state, update }: Props) {
 
   const filteredExams = useMemo(() => {
     if (!examSearch || selectedExam) return [];
-    return clinicExams.filter(e => 
-      e.name.toLowerCase().includes(examSearch.toLowerCase()) || 
+    return clinicExams.filter(e =>
+      e.isActive !== false &&
+      (e.name.toLowerCase().includes(examSearch.toLowerCase()) ||
       e.tussCode?.toLowerCase().includes(examSearch.toLowerCase()) ||
-      (e.internalCode && e.internalCode.toLowerCase().includes(examSearch.toLowerCase()))
+      (e.internalCode && e.internalCode.toLowerCase().includes(examSearch.toLowerCase())))
     );
   }, [examSearch, clinicExams, selectedExam]);
 
