@@ -36,7 +36,8 @@ import {
   Timer,
   Check,
   Minus,
-  SearchIcon
+  SearchIcon,
+  GripVertical
 } from 'lucide-react'
 import { useNavigate, useParams } from 'react-router-dom'
 import LabMethodologySearchModal from '@/components/lab/catalog/LabMethodologySearchModal'
