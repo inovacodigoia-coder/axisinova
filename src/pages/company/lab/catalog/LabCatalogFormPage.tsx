@@ -1257,26 +1257,54 @@ function ReferenceValuesModal({ parameter, onClose, onSave }: { parameter: any, 
                   />
                 </div>
                 
-                <div className="space-y-4 border-t pt-4 md:col-span-2 grid grid-cols-2 gap-4">
-                  <div className="space-y-1.5">
-                    <Label className="text-[10px] font-bold uppercase text-emerald-600">Valor Mínimo</Label>
-                    <Input 
-                      className="h-9 text-xs font-bold" 
-                      value={faixa.minValue} 
-                      placeholder="0.0" 
-                      onChange={(e) => updateFaixa(faixa.id, 'minValue', e.target.value)} 
-                    />
+                {isTextual ? (
+                  <div className="space-y-1.5 border-t pt-4 md:col-span-2">
+                    <Label className="text-[10px] font-bold uppercase text-emerald-600">Valor de Referência (texto)</Label>
+                    {parameter?.type === 'selection' && (parameter?.options || []).length > 0 ? (
+                      <Select
+                        value={faixa.textRange || ''}
+                        onValueChange={(val) => updateFaixa(faixa.id, 'textRange', val)}
+                      >
+                        <SelectTrigger className="h-9 text-xs">
+                          <SelectValue placeholder="Selecione a opção considerada normal" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {(parameter.options || []).filter((o: string) => !!o).map((o: string) => (
+                            <SelectItem key={o} value={o} className="text-xs">{o}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    ) : (
+                      <Input
+                        className="h-9 text-xs font-bold"
+                        value={faixa.textRange || ''}
+                        placeholder="Ex: Não reagente / Ausência de parasitas"
+                        onChange={(e) => updateFaixa(faixa.id, 'textRange', e.target.value)}
+                      />
+                    )}
                   </div>
-                  <div className="space-y-1.5">
-                    <Label className="text-[10px] font-bold uppercase text-emerald-600">Valor Máximo</Label>
-                    <Input 
-                      className="h-9 text-xs font-bold" 
-                      value={faixa.maxValue} 
-                      placeholder="0.0" 
-                      onChange={(e) => updateFaixa(faixa.id, 'maxValue', e.target.value)} 
-                    />
+                ) : (
+                  <div className="space-y-4 border-t pt-4 md:col-span-2 grid grid-cols-2 gap-4">
+                    <div className="space-y-1.5">
+                      <Label className="text-[10px] font-bold uppercase text-emerald-600">Valor Mínimo</Label>
+                      <Input 
+                        className="h-9 text-xs font-bold" 
+                        value={faixa.minValue} 
+                        placeholder="0.0" 
+                        onChange={(e) => updateFaixa(faixa.id, 'minValue', e.target.value)} 
+                      />
+                    </div>
+                    <div className="space-y-1.5">
+                      <Label className="text-[10px] font-bold uppercase text-emerald-600">Valor Máximo</Label>
+                      <Input 
+                        className="h-9 text-xs font-bold" 
+                        value={faixa.maxValue} 
+                        placeholder="0.0" 
+                        onChange={(e) => updateFaixa(faixa.id, 'maxValue', e.target.value)} 
+                      />
+                    </div>
                   </div>
-                </div>
+                )}
 
                 <div className="space-y-1.5">
                   <Label className="text-[10px] font-bold uppercase text-muted-foreground">Idade Mín (anos)</Label>
