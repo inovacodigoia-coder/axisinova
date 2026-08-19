@@ -31,6 +31,63 @@ export default function LabMethodsSection() {
     description: ''
   })
 
+  // Atribuição em massa por bancada
+  const [workbenches, setWorkbenches] = useState<any[]>([])
+  const [selectedBench, setSelectedBench] = useState<string>('')
+  const [benchExams, setBenchExams] = useState<any[]>([])
+  const [selectedExamIds, setSelectedExamIds] = useState<string[]>([])
+  const [loadingExams, setLoadingExams] = useState(false)
+  const [assigning, setAssigning] = useState(false)
+
+  const fetchWorkbenches = async () => {
+    const { data } = await supabase
+      .from('lab_workbenches' as any)
+      .select('id, name')
+      .eq('company_id', user?.companyId)
+      .order('name')
+    setWorkbenches((data as any[]) || [])
+  }
+
+  const fetchBenchExams = async (benchId: string) => {
+    if (!benchId) { setBenchExams([]); setSelectedExamIds([]); return }
+    try {
+      setLoadingExams(true)
+      const { data, error } = await supabase
+        .from('exams' as any)
+        .select('id, name, internal_code, methodology')
+        .eq('company_id', user?.companyId)
+        .eq('workbench_id', benchId)
+        .order('name')
+      if (error) throw error
+      setBenchExams((data as any[]) || [])
+      setSelectedExamIds([])
+    } catch (e) {
+      console.error(e)
+      toast.error('Erro ao carregar exames da bancada')
+    } finally {
+      setLoadingExams(false)
+    }
+  }
+
+  const handleAssignMethodology = async () => {
+    if (!editingMethod || selectedExamIds.length === 0) return
+    try {
+      setAssigning(true)
+      const { error } = await supabase
+        .from('exams' as any)
+        .update({ methodology: editingMethod.name })
+        .in('id', selectedExamIds)
+      if (error) throw error
+      toast.success(`Metodologia atribuída a ${selectedExamIds.length} exame(s)`)
+      fetchBenchExams(selectedBench)
+    } catch (e) {
+      console.error(e)
+      toast.error('Erro ao atribuir metodologia')
+    } finally {
+      setAssigning(false)
+    }
+  }
+
   useEffect(() => {
     if (user?.companyId) {
       fetchMethods()
@@ -81,7 +138,11 @@ export default function LabMethodsSection() {
       name: method ? method.name : '',
       description: method ? method.description || '' : ''
     })
+    setSelectedBench('')
+    setBenchExams([])
+    setSelectedExamIds([])
     setIsDialogOpen(true)
+    if (method) fetchWorkbenches()
   }
 
   const handleSave = async () => {
@@ -210,7 +271,7 @@ export default function LabMethodsSection() {
       )}
 
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-        <DialogContent>
+        <DialogContent className="sm:max-w-[560px] max-h-[85vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>{editingMethod ? 'Editar Metodologia' : 'Nova Metodologia'}</DialogTitle>
             <DialogDescription>
@@ -235,6 +296,82 @@ export default function LabMethodsSection() {
                 placeholder="Descreva detalhes do método..."
               />
             </div>
+
+            {editingMethod && (
+              <div className="space-y-3 border-t pt-4">
+                <div>
+                  <Label className="text-sm font-bold">Atribuir a exames por bancada</Label>
+                  <p className="text-[11px] text-muted-foreground">
+                    Selecione uma bancada e os exames que devem receber a metodologia <strong>{editingMethod.name}</strong>.
+                  </p>
+                </div>
+
+                <select
+                  className="w-full h-10 px-3 rounded-lg border bg-background text-sm outline-none focus:ring-2 focus:ring-primary/20"
+                  value={selectedBench}
+                  onChange={(e) => { setSelectedBench(e.target.value); fetchBenchExams(e.target.value) }}
+                >
+                  <option value="">Selecione a bancada...</option>
+                  {workbenches.map(w => (
+                    <option key={w.id} value={w.id}>{w.name}</option>
+                  ))}
+                </select>
+
+                {loadingExams ? (
+                  <div className="flex justify-center py-6"><Loader2 className="h-5 w-5 animate-spin text-primary" /></div>
+                ) : selectedBench ? (
+                  benchExams.length > 0 ? (
+                    <div className="border rounded-lg">
+                      <div className="flex items-center justify-between px-3 py-2 border-b bg-muted/30">
+                        <label className="flex items-center gap-2 text-xs font-bold cursor-pointer">
+                          <input
+                            type="checkbox"
+                            checked={selectedExamIds.length === benchExams.length}
+                            onChange={(e) => setSelectedExamIds(e.target.checked ? benchExams.map(x => x.id) : [])}
+                          />
+                          Selecionar todos ({benchExams.length})
+                        </label>
+                        <span className="text-[11px] text-muted-foreground">{selectedExamIds.length} selecionado(s)</span>
+                      </div>
+                      <div className="max-h-[200px] overflow-y-auto divide-y">
+                        {benchExams.map(ex => (
+                          <label key={ex.id} className="flex items-center gap-2 px-3 py-2 text-xs cursor-pointer hover:bg-muted/30">
+                            <input
+                              type="checkbox"
+                              checked={selectedExamIds.includes(ex.id)}
+                              onChange={(e) => setSelectedExamIds(prev => e.target.checked ? [...prev, ex.id] : prev.filter(id => id !== ex.id))}
+                            />
+                            <span className="flex-1 truncate font-medium">
+                              {ex.internal_code ? `${ex.internal_code} — ` : ''}{ex.name}
+                            </span>
+                            {ex.methodology && (
+                              <span className={cn(
+                                "text-[10px] px-1.5 py-0.5 rounded",
+                                ex.methodology === editingMethod.name ? "bg-primary/10 text-primary" : "bg-muted text-muted-foreground"
+                              )}>
+                                {ex.methodology}
+                              </span>
+                            )}
+                          </label>
+                        ))}
+                      </div>
+                    </div>
+                  ) : (
+                    <p className="text-xs text-muted-foreground py-3 text-center border rounded-lg">Nenhum exame nesta bancada.</p>
+                  )
+                ) : null}
+
+                <Button
+                  variant="outline"
+                  className="w-full"
+                  disabled={selectedExamIds.length === 0 || assigning}
+                  onClick={handleAssignMethodology}
+                >
+                  {assigning ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Beaker className="h-4 w-4 mr-2" />}
+                  Atribuir metodologia aos exames selecionados
+                </Button>
+              </div>
+            )}
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setIsDialogOpen(false)} disabled={saving}>Cancelar</Button>
