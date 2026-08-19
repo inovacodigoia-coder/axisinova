@@ -7,6 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import LaudoDocument from './LaudoDocument';
 import { LabAttendanceOrder } from '@/types/lab.types';
 import { useLabSettings } from '@/hooks/useLabSettings';
+import { useExamReportConfig } from '@/hooks/useExamReportConfig';
 import { useAuth } from '@/context/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
