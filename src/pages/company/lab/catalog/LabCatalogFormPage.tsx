@@ -41,6 +41,7 @@ import {
 } from 'lucide-react'
 import { useNavigate, useParams } from 'react-router-dom'
 import LabMethodologySearchModal from '@/components/lab/catalog/LabMethodologySearchModal'
+import ExamReportSection from '@/components/lab/catalog/ExamReportSection'
 import { cn } from '@/lib/utils'
 import { toast } from 'sonner'
 import { Badge } from '@/components/ui/badge'
