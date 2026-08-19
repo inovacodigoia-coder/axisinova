@@ -109,6 +109,13 @@ export function AttendancePrintSelectionModal({ open, onClose, onConfirm, order,
   const labelsSelected = options.find(o => o.id === 'etiquetas')?.enabled;
   // Etiquetas só podem ser impressas com amostra coletada (ou coleta confirmada agora)
   const willCollect = confirmCollection && selectedMaterials.size > 0;
+
+  // Ao marcar "Confirmar coleta", pré-seleciona todos os materiais
+  React.useEffect(() => {
+    if (confirmCollection && materials.length > 0) {
+      setSelectedMaterials(prev => (prev.size ? prev : new Set(materials.map(m => m.type))));
+    }
+  }, [confirmCollection, materials]);
   const labelsBlocked = !!labelsSelected && !hasCollectedMaterial && !willCollect;
 
   // Seleção única: apenas um tipo de impressão por vez
