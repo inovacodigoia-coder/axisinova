@@ -1,0 +1,1 @@
+REVOKE EXECUTE ON FUNCTION public.next_attendance_order_number(uuid, uuid, text) FROM PUBLIC, anon;
