@@ -103,6 +103,9 @@ export default function LabCatalogFormPage() {
     defaultDestination: '',
     reportObservations: '',
     methodology: '',
+    reportTemplateId: '',
+    reportSinglePage: false,
+
     interfacingConfig: {
       equipmentId: '',
       equipmentCode: '',
