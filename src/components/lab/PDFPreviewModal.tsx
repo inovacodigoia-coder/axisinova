@@ -243,7 +243,7 @@ export default function PDFPreviewModal({
                     <div dangerouslySetInnerHTML={{ __html: savedHtml }} />
                   ) : (
                     <LaudoDocument 
-                      order={order}
+                      order={enrichedOrder}
                       companyLogo={labSettings?.report_logo_primary_url || undefined}
                       secondaryLogo={labSettings?.report_logo_secondary_url || undefined}
                       laboratoryName={labSettings?.report_header_title || labSettings?.lab_name || undefined}
