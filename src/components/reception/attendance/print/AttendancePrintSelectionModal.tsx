@@ -1,10 +1,11 @@
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { CheckCircle2, Printer, X, Download, Eye } from 'lucide-react';
+import { CheckCircle2, X, Droplets, AlertTriangle, Loader2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { ScrollArea } from '@/components/ui/scroll-area';
-import { SampleLabel } from '@/components/lab/print/SampleLabel';
+import { useToast } from '@/hooks/use-toast';
+import { useAttendanceCadastro } from '@/hooks/useAttendanceCadastro';
+import { TUBE_TYPES } from '@/types/lab.types';
 import type { AttendanceOrder } from '@/types/attendance-cadastro.types';
 
 interface PrintOption {
@@ -31,19 +32,40 @@ interface Props {
   selectedTubes?: string[];
 }
 
+// Normaliza o material do exame para o tipo de tubo correspondente
+export const tubeTypeForMaterial = (material: any): string => {
+  const m = String(material || '')
+    .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase().trim();
+  if (!m) return 'gel';
+  if (m.includes('urina') || m.includes('frasco')) return 'urina';
+  if (m.includes('edta') || m.includes('sangue total') || m.includes('hemograma')) return 'edta';
+  if (m.includes('citrat') || m.includes('coagulacao')) return 'citrato';
+  if (m.includes('plasma')) return 'citrato';
+  if (m.includes('soro') || m.includes('gel') || m.includes('sangue')) return 'gel';
+  return 'gel';
+};
+
 export function AttendancePrintSelectionModal({ open, onClose, onConfirm, order, selectedExams, selectedTubes }: Props) {
-  const orderNumber = order?.orderNumber;
-  const [showPreview, setShowPreview] = useState(false);
+  const { toast } = useToast();
+  const { updateOrder } = useAttendanceCadastro();
   const [options, setOptions] = useState<PrintOption[]>([
     { id: 'comprovante', label: 'Comprovante', enabled: true, formats: ['A4', 'A5', 'TÉRMICA'], selectedFormat: 'TÉRMICA' },
     { id: 'controle_interno', label: 'Controle Interno', enabled: false, formats: ['A4', 'A5', 'TÉRMICA'], selectedFormat: 'TÉRMICA' },
     { id: 'termo_consentimento', label: 'Termo de Consentimento', enabled: false, formats: ['A4', 'A5'], selectedFormat: 'A4' },
+    { id: 'etiquetas', label: 'Etiquetas de Amostra', enabled: false, formats: ['ETIQUETA'], selectedFormat: 'ETIQUETA' },
   ]);
+
+  const [confirmCollection, setConfirmCollection] = useState(false);
+  const [selectedMaterials, setSelectedMaterials] = useState<Set<string>>(new Set());
+  const [isSaving, setIsSaving] = useState(false);
 
   // Sempre iniciar com apenas o Comprovante selecionado
   React.useEffect(() => {
     if (open) {
       setOptions(prev => prev.map(o => ({ ...o, enabled: o.id === 'comprovante' })));
+      setConfirmCollection(false);
+      setSelectedMaterials(new Set());
     }
   }, [open]);
 
@@ -64,15 +86,97 @@ export function AttendancePrintSelectionModal({ open, onClose, onConfirm, order,
     etiqueta_cliente: false
   });
 
+  const guides: any[] = (order as any)?.labGuides || [];
+  const allExams: any[] = useMemo(() => guides.flatMap((g: any) => g.exams || []), [guides]);
+
+  // Materiais (tipos de tubo) presentes no pedido
+  const materials = useMemo(() => {
+    const map = new Map<string, { type: string; label: string; color: string; collected: boolean; exams: string[] }>();
+    allExams.forEach((e: any) => {
+      const type = tubeTypeForMaterial(e.material);
+      const tube = TUBE_TYPES.find(t => t.type === type) || TUBE_TYPES[0];
+      const current = map.get(type) || { type, label: tube.label, color: tube.color, collected: true, exams: [] };
+      current.collected = current.collected && !!e.collected;
+      current.exams.push(e.name);
+      map.set(type, current);
+    });
+    return Array.from(map.values());
+  }, [allExams]);
+
+  const pendingMaterials = materials.filter(m => !m.collected);
+  const hasCollectedMaterial = materials.some(m => m.collected);
+
+  const labelsSelected = options.find(o => o.id === 'etiquetas')?.enabled;
+  // Etiquetas só podem ser impressas com amostra coletada (ou coleta confirmada agora)
+  const willCollect = confirmCollection && selectedMaterials.size > 0;
+  const labelsBlocked = !!labelsSelected && !hasCollectedMaterial && !willCollect;
+
   // Seleção única: apenas um tipo de impressão por vez
   const toggleOption = (id: string) => {
     setOptions(prev => prev.map(opt => ({ ...opt, enabled: opt.id === id })));
+    if (id === 'etiquetas' && pendingMaterials.length > 0) setConfirmCollection(true);
   };
 
   const setFormat = (id: string, format: any) => {
     setOptions(prev => prev.map(opt => opt.id === id ? { ...opt, selectedFormat: format } : opt));
   };
 
+  const toggleMaterial = (type: string) => {
+    setSelectedMaterials(prev => {
+      const next = new Set(prev);
+      if (next.has(type)) next.delete(type); else next.add(type);
+      return next;
+    });
+  };
+
+  const handleConfirm = async () => {
+    if (labelsBlocked) {
+      toast({
+        title: 'Coleta pendente',
+        description: 'Para imprimir etiquetas é necessário confirmar a coleta do material.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    let collectedTypes: string[] = [];
+
+    if (willCollect && order) {
+      setIsSaving(true);
+      try {
+        const now = new Date().toISOString();
+        collectedTypes = Array.from(selectedMaterials);
+        const nextGuides = guides.map((g: any) => ({
+          ...g,
+          exams: (g.exams || []).map((e: any) =>
+            collectedTypes.includes(tubeTypeForMaterial(e.material))
+              ? { ...e, collected: true, isColeta: true, collectedAt: e.collectedAt || now }
+              : e
+          ),
+        }));
+
+        await updateOrder(order.id, { labGuides: nextGuides, status: 'collection_done' } as any);
+        toast({ title: 'Coleta confirmada', description: `${collectedTypes.length} material(is) marcado(s) como coletado(s).` });
+      } catch {
+        toast({ title: 'Erro', description: 'Não foi possível confirmar a coleta.', variant: 'destructive' });
+        setIsSaving(false);
+        return;
+      }
+      setIsSaving(false);
+    }
+
+    onConfirm({
+      options,
+      extras,
+      printerSettings,
+      watermark,
+      emptyFields,
+      selectedExams,
+      selectedTubes,
+      confirmCollection: willCollect,
+      collectedMaterials: collectedTypes,
+    });
+  };
 
   return (
     <Dialog open={open} onOpenChange={(o) => !o && onClose()}>
@@ -88,7 +192,7 @@ export function AttendancePrintSelectionModal({ open, onClose, onConfirm, order,
             </div>
           </div>
 
-          <div className="p-8">
+          <div className="p-8 max-h-[65vh] overflow-y-auto">
             {/* Options */}
             <div className="space-y-6">
               {options.map((opt) => (
@@ -129,10 +233,81 @@ export function AttendancePrintSelectionModal({ open, onClose, onConfirm, order,
                       </div>
                     )}
                   </div>
+
+                  {opt.id === 'etiquetas' && opt.enabled && labelsBlocked && (
+                    <div className="flex items-center gap-2 ml-8 text-[11px] font-medium text-red-600">
+                      <AlertTriangle className="h-3.5 w-3.5" />
+                      A impressão de etiquetas exige que a amostra esteja coletada.
+                    </div>
+                  )}
                 </div>
               ))}
-
             </div>
+
+            {/* Confirmar coleta */}
+            {materials.length > 0 && (
+              <div className="mt-6 border-t border-slate-100 pt-6">
+                <div className="flex items-center gap-3">
+                  <div
+                    onClick={() => setConfirmCollection(v => !v)}
+                    className={cn(
+                      "w-5 h-5 rounded border flex items-center justify-center cursor-pointer transition-all",
+                      confirmCollection ? "bg-emerald-500 border-emerald-500" : "bg-white border-slate-300"
+                    )}
+                  >
+                    {confirmCollection && <CheckCircle2 className="h-3 w-3 text-white" />}
+                  </div>
+                  <span className={cn("text-sm font-medium", confirmCollection ? "text-slate-900" : "text-slate-400")}>
+                    Confirmar coleta
+                  </span>
+                </div>
+
+                {confirmCollection && (
+                  <div className="mt-4 ml-8 rounded-lg border border-slate-200 bg-slate-50 p-4">
+                    <p className="text-[10px] font-bold uppercase tracking-wider text-slate-500 mb-3">
+                      Materiais para Coleta
+                    </p>
+                    <div className="space-y-2">
+                      {materials.map((m) => (
+                        <label
+                          key={m.type}
+                          className={cn(
+                            "flex items-center justify-between gap-3 rounded-md bg-white border px-3 py-2 cursor-pointer transition-all",
+                            selectedMaterials.has(m.type) ? "border-emerald-400" : "border-slate-200",
+                            m.collected && "opacity-60 cursor-not-allowed"
+                          )}
+                        >
+                          <div className="flex items-center gap-3">
+                            <input
+                              type="checkbox"
+                              className="h-4 w-4 accent-emerald-500"
+                              disabled={m.collected}
+                              checked={m.collected || selectedMaterials.has(m.type)}
+                              onChange={() => !m.collected && toggleMaterial(m.type)}
+                            />
+                            <span className={cn("h-2.5 w-2.5 rounded-full", m.color)} />
+                            <div>
+                              <p className="text-xs font-bold text-slate-700 uppercase">{m.label}</p>
+                              <p className="text-[10px] text-slate-400 truncate max-w-[420px]">{m.exams.join(', ')}</p>
+                            </div>
+                          </div>
+                          <span className={cn(
+                            "text-[10px] font-bold uppercase",
+                            m.collected ? "text-emerald-600" : "text-amber-500"
+                          )}>
+                            {m.collected ? 'Coletado' : 'Pendente'}
+                          </span>
+                        </label>
+                      ))}
+                    </div>
+                    <p className="mt-3 flex items-center gap-1.5 text-[10px] text-slate-500">
+                      <Droplets className="h-3 w-3" />
+                      Ao confirmar, o pedido passa para <strong>Coleta Realizada</strong> e as amostras para <strong>Coletado</strong>.
+                    </p>
+                  </div>
+                )}
+              </div>
+            )}
           </div>
 
           {/* Footer Actions */}
@@ -145,10 +320,11 @@ export function AttendancePrintSelectionModal({ open, onClose, onConfirm, order,
               CANCELAR
             </Button>
             <Button 
-              onClick={() => onConfirm({ options, extras, printerSettings, watermark, emptyFields, selectedExams, selectedTubes })}
-              className="px-8 font-bold bg-[#007AFF] hover:bg-blue-700 text-white shadow-lg uppercase text-xs h-10"
+              onClick={handleConfirm}
+              disabled={labelsBlocked || isSaving}
+              className="px-8 font-bold bg-[#007AFF] hover:bg-blue-700 text-white shadow-lg uppercase text-xs h-10 disabled:opacity-50"
             >
-              IMPRIMIR
+              {isSaving ? <Loader2 className="h-4 w-4 animate-spin" /> : 'IMPRIMIR'}
             </Button>
           </div>
         </div>
