@@ -22,6 +22,17 @@ interface AttendanceLookupModalProps {
   onAddProcedure: (patient: Patient) => void
 }
 
+type DatePreset = 'today' | '7' | '15' | '30' | 'custom' | 'all'
+
+const DATE_PRESETS: { value: DatePreset; label: string }[] = [
+  { value: 'today', label: 'Hoje' },
+  { value: '7', label: '7 dias' },
+  { value: '15', label: '15 dias' },
+  { value: '30', label: '30 dias' },
+  { value: 'custom', label: 'Personalizado' },
+  { value: 'all', label: 'Todos' },
+]
+
 function normalize(s: string) {
   return (s || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^\w\s]/g, '')
 }
