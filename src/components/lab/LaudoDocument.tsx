@@ -356,7 +356,7 @@ export default function LaudoDocument({
           {/* Exames da bancada desta folha */}
           <div className="laudo-body mt-6 space-y-7 flex-1">
             {page.exams.map((exam: any, idx: number) => (
-              <ExamBlock key={exam.examId || idx} exam={exam} />
+              <ExamBlock key={exam.examId || idx} exam={exam} order={order} />
             ))}
           </div>
 
