@@ -261,7 +261,7 @@ export function ResultEntryModal({
   };
 
   // ===== Persistência dos resultados =====
-  const examRefOf = (exam: any) => `${exam.orderId || 'no-order'}:${exam.id}`;
+  const examRefOf = (exam: any) => `${exam.orderId || 'no-order'}:${exam.examId || exam.id}`;
 
   const persistExams = async (
     exams: any[],
@@ -393,7 +393,8 @@ export function ResultEntryModal({
       const nextNotes: Record<string, string> = {};
       const nextStatuses: Record<string, any> = {};
       data.forEach((row: any) => {
-        const examId = String(row.exam_ref).split(':').slice(1).join(':');
+        // exam_ref já é a chave única da instância (pedido:exame)
+        const examId = String(row.exam_ref);
         if (row.notes) nextNotes[examId] = row.notes;
         if (row.status === 'digitized' || row.status === 'released') {
           nextStatuses[examId] = row.status;
