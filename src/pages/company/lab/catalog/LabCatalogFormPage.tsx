@@ -239,7 +239,7 @@ export default function LabCatalogFormPage() {
           // For safety in this complex wizard, we'll ensure parameters match the current state
           
           // Upsert parameters
-          for (const param of parameters) {
+          for (const [paramIndex, param] of parameters.entries()) {
             const paramPayload = {
               exam_id: examId,
               company_id: companyId,
@@ -254,6 +254,7 @@ export default function LabCatalogFormPage() {
               is_calculated: param.isCalculated ?? false,
               is_hidden: param.isHidden ?? false,
               formula: param.formula || '',
+              sort_order: paramIndex + 1,
               reference_values: param.referenceValues ? JSON.stringify(param.referenceValues) : null
             };
 
