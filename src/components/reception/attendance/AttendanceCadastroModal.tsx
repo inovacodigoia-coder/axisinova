@@ -165,6 +165,7 @@ export function AttendanceCadastroModal({
   const [showPrint, setShowPrint] = useState(false)
   const [showAllocation, setShowAllocation] = useState(false)
   const [showPrintSelection, setShowPrintSelection] = useState(false)
+  const [showLabelsSelect, setShowLabelsSelect] = useState(false)
   const [savingPatient, setSavingPatient] = useState(false)
   const [isFinalizing, setIsFinalizing] = useState(false)
   const finalizingRef = useRef(false)
