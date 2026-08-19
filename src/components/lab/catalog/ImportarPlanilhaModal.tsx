@@ -219,16 +219,37 @@ export const ImportarPlanilhaModal = ({ isOpen, onClose, existingCodes = [] }: I
       
       const getParamName = (p: any) => String(p['Nome do parâmetro'] || p['Nome'] || p['NOME'] || p['Parâmetro'] || p['PARAMETRO'] || '').trim();
 
+      const parseParamType = (p: any) => {
+        const raw = String(p['Tipo'] || p['TIPO'] || '')
+          .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+          .toLowerCase();
+        if (raw.includes('selec') || raw.includes('lista') || raw.includes('opc')) return 'selection';
+        if (raw.includes('calc')) return 'calculation';
+        if (raw.includes('text')) return 'text';
+        return 'numerical';
+      };
+
+      const parseParamOptions = (p: any): string[] => {
+        const raw = p['Opções de seleção'] ?? p['Opções'] ?? p['OPÇÕES'] ?? p['Opcoes'] ?? '';
+        if (Array.isArray(raw)) return raw.map((o: any) => String(o).trim()).filter(Boolean);
+        return String(raw).split(/[|;\n]/).map(o => o.trim()).filter(Boolean);
+      };
+
       for (const examData of parsedExams) {
         // Find or create workbench
         let wbId = workbenches.find(w => w.name.toLowerCase() === examData.bancada.toLowerCase())?.id;
 
+        // Ordena pelos valores da coluna "Ordem" (quando existir)
+        const orderedParams = [...examData.parameters].sort(
+          (a: any, b: any) => Number(a['Ordem'] ?? a['ORDEM'] ?? 9999) - Number(b['Ordem'] ?? b['ORDEM'] ?? 9999)
+        );
+        examData.parameters = orderedParams;
+
         // Build app-shaped parameters (persisted in the exam JSON, read by the edit screen)
-        const appParameters = examData.parameters
+        const appParameters = orderedParams
           .map((p: any, idx: number) => {
             const paramName = getParamName(p);
             if (!paramName) return null;
-            const rawType = String(p['Tipo'] || p['TIPO'] || '').toLowerCase();
             const refs = examData.referenceValues
               .filter((r: any) => getParamName(r) === paramName)
               .map((r: any, rIdx: number) => ({
@@ -236,6 +257,7 @@ export const ImportarPlanilhaModal = ({ isOpen, onClose, existingCodes = [] }: I
                 description: String(r['Descrição'] || r['DESCRIÇÃO'] || ''),
                 minValue: r['Valor mínimo'] ?? r['Valor Mínimo'] ?? r['Mínimo'] ?? '',
                 maxValue: r['Valor máximo'] ?? r['Valor Máximo'] ?? r['Máximo'] ?? '',
+                textRange: r['Valor texto'] ?? r['Texto'] ?? '',
                 normalText: r['Valor texto'] ?? r['Texto'] ?? '',
                 minAge: Number(r['Idade mínima (anos)'] || r['Idade Mínima'] || 0),
                 maxAge: Number(r['Idade máxima (anos)'] || r['Idade Máxima'] || 150),
@@ -250,7 +272,7 @@ export const ImportarPlanilhaModal = ({ isOpen, onClose, existingCodes = [] }: I
               name: paramName,
               section: String(p['Seção'] || p['SEÇÃO'] || p['Setor'] || p['SETOR'] || ''),
               equipCode: String(p['Código no equipamento'] || p['Cód. Equip.'] || p['Código Equipamento'] || ''),
-              type: rawType.includes('calc') ? 'calculation' : rawType.includes('text') ? 'text' : 'numerical',
+              type: parseParamType(p),
               origin: String(p['Origem'] || p['ORIGEM'] || '').toLowerCase() === 'equipamento' ? 'interface' : 'manual',
               unit: String(p['Unidade de medida'] || p['Unidade'] || p['UNIDADE'] || ''),
               isMandatory: p['Obrigatório'] === 'Sim' || p['Obrigatório'] === true,
@@ -258,6 +280,7 @@ export const ImportarPlanilhaModal = ({ isOpen, onClose, existingCodes = [] }: I
               isCalculated: p['Calculado'] === 'Sim' || p['Calculado'] === true,
               isHidden: p['Oculto'] === 'Sim' || p['Oculto'] === true,
               formula: String(p['Fórmula do parâmetro'] || p['Fórmula'] || ''),
+              options: parseParamOptions(p),
               referenceValues: refs,
             };
           })
@@ -296,7 +319,7 @@ export const ImportarPlanilhaModal = ({ isOpen, onClose, existingCodes = [] }: I
         if (examId) {
           console.log(`[ImportarPlanilhaModal] Processing ${examData.parameters.length} parameters for exam ${examData.codigo}`);
           
-          for (const p of examData.parameters) {
+          for (const [pIdx, p] of examData.parameters.entries()) {
             const paramName = String(p['Nome'] || p['NOME'] || p['Parâmetro'] || p['PARAMETRO'] || p['Nome do parâmetro'] || '').trim();
             if (!paramName) continue;
 
@@ -306,16 +329,15 @@ export const ImportarPlanilhaModal = ({ isOpen, onClose, existingCodes = [] }: I
               name: paramName,
               section: String(p['Seção'] || p['SEÇÃO'] || p['Setor'] || p['SETOR'] || ''),
               equipment_code: String(p['Código no equipamento'] || p['Cód. Equip.'] || p['CÓD. EQUIP.'] || p['Código Equipamento'] || p['COD_EQUIP'] || ''),
-              type: (p['Tipo'] || p['TIPO'] || 'numerical').toLowerCase().includes('numér') || (p['Tipo'] || p['TIPO'] || '').toLowerCase().includes('numer') ? 'numerical' : 
-                    (p['Tipo'] || p['TIPO'] || '').toLowerCase().includes('text') ? 'text' : 
-                    'numerical',
+              type: parseParamType(p),
               origin: (p['Origem'] || p['ORIGEM'] || 'manual').toLowerCase() === 'equipamento' ? 'equipment' : 'manual',
               unit: String(p['Unidade de medida'] || p['Unidade'] || p['UNIDADE'] || ''),
               is_required: p['Obrigatório'] === 'Sim' || p['Obrigatório'] === true || !!(p['Obrig.'] || p['OBRIG.'] || false),
               allow_negative: p['Permite negativo'] === 'Sim' || !!(p['Neg.'] || p['NEG.'] || false),
               is_calculated: p['Calculado'] === 'Sim' || !!(p['Calc.'] || p['CALC.'] || false),
-              is_hidden: !!(p['Oculto'] || p['OCULTO'] || p['Ocultar Laudo'] || false),
+              is_hidden: p['Oculto'] === 'Sim' || p['OCULTO'] === 'Sim' || p['Oculto'] === true,
               formula: String(p['Fórmula do parâmetro'] || p['Fórmula'] || p['FORMULA'] || ''),
+              sort_order: Number(p['Ordem'] ?? p['ORDEM'] ?? pIdx + 1),
               internal_code: examData.codigo,
             };
 

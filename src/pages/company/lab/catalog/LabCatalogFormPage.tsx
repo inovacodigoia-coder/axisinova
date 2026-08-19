@@ -36,7 +36,8 @@ import {
   Timer,
   Check,
   Minus,
-  SearchIcon
+  SearchIcon,
+  GripVertical
 } from 'lucide-react'
 import { useNavigate, useParams } from 'react-router-dom'
 import LabMethodologySearchModal from '@/components/lab/catalog/LabMethodologySearchModal'
@@ -239,7 +240,7 @@ export default function LabCatalogFormPage() {
           // For safety in this complex wizard, we'll ensure parameters match the current state
           
           // Upsert parameters
-          for (const param of parameters) {
+          for (const [paramIndex, param] of parameters.entries()) {
             const paramPayload = {
               exam_id: examId,
               company_id: companyId,
@@ -254,6 +255,7 @@ export default function LabCatalogFormPage() {
               is_calculated: param.isCalculated ?? false,
               is_hidden: param.isHidden ?? false,
               formula: param.formula || '',
+              sort_order: paramIndex + 1,
               reference_values: param.referenceValues ? JSON.stringify(param.referenceValues) : null
             };
 
@@ -782,6 +784,16 @@ function GeneralInfoSection({
 function ParametersSection({ parameters, setParameters }: { parameters: any[], setParameters: (p: any[]) => void }) {
   const [measurementUnits, setMeasurementUnits] = useState<any[]>([])
   const [editingReference, setEditingReference] = useState<any>(null)
+  const [dragIndex, setDragIndex] = useState<number | null>(null)
+  const [overIndex, setOverIndex] = useState<number | null>(null)
+
+  const moveParameter = (from: number, to: number) => {
+    if (from === to || from == null || to == null) return
+    const next = [...parameters]
+    const [moved] = next.splice(from, 1)
+    next.splice(to, 0, moved)
+    setParameters(next)
+  }
 
   useEffect(() => {
     const fetchUnits = async () => {
@@ -854,7 +866,7 @@ function ParametersSection({ parameters, setParameters }: { parameters: any[], s
             <table className="w-full text-left text-sm border-collapse">
               <thead className="bg-muted/50 border-b">
                 <tr>
-                  <th className="px-3 py-3 font-bold text-[10px] uppercase text-muted-foreground w-8 text-center border-r">#</th>
+                  <th className="px-2 py-3 font-bold text-[10px] uppercase text-muted-foreground w-14 text-center border-r">#</th>
                   <th className="px-4 py-3 font-bold text-[10px] uppercase text-muted-foreground min-w-[220px]">Nome do Parâmetro</th>
                   <th className="px-2 py-3 font-bold text-[10px] uppercase text-muted-foreground w-16 text-center">Seção</th>
                   <th className="px-2 py-3 font-bold text-[10px] uppercase text-muted-foreground w-16 text-center">Equip.</th>
@@ -872,8 +884,27 @@ function ParametersSection({ parameters, setParameters }: { parameters: any[], s
               <tbody className="divide-y divide-border">
                 {parameters && parameters.length > 0 && parameters.map((param, idx) => (
                   <React.Fragment key={param.id}>
-                    <tr className="hover:bg-muted/10 transition-colors group">
-                      <td className="px-3 py-2 text-[10px] text-muted-foreground font-bold text-center border-r bg-muted/5">{idx + 1}</td>
+                    <tr
+                      className={cn(
+                        "hover:bg-muted/10 transition-colors group",
+                        dragIndex === idx && "opacity-50",
+                        overIndex === idx && dragIndex !== null && dragIndex !== idx && "border-t-2 border-t-primary"
+                      )}
+                      onDragOver={(e) => { if (dragIndex !== null) { e.preventDefault(); setOverIndex(idx) } }}
+                      onDrop={(e) => { e.preventDefault(); if (dragIndex !== null) moveParameter(dragIndex, idx); setDragIndex(null); setOverIndex(null) }}
+                    >
+                      <td
+                        className="px-2 py-2 text-[10px] text-muted-foreground font-bold text-center border-r bg-muted/5 cursor-grab active:cursor-grabbing select-none"
+                        draggable
+                        onDragStart={(e) => { e.dataTransfer.effectAllowed = 'move'; setDragIndex(idx) }}
+                        onDragEnd={() => { setDragIndex(null); setOverIndex(null) }}
+                        title="Arraste para reordenar"
+                      >
+                        <div className="flex items-center justify-center gap-0.5">
+                          <GripVertical className="h-3 w-3 opacity-40 group-hover:opacity-100" />
+                          {idx + 1}
+                        </div>
+                      </td>
                       <td className="px-4 py-2">
                         <div className="flex items-center gap-1.5">
                           <Input 
@@ -1162,10 +1193,16 @@ function ParametersSection({ parameters, setParameters }: { parameters: any[], s
 function ReferenceValuesModal({ parameter, onClose, onSave }: { parameter: any, onClose: () => void, onSave?: (val: any) => void }) {
   const [faixas, setFaixas] = useState<any[]>([])
 
+  const isTextual = parameter?.type === 'text' || parameter?.type === 'selection'
+
   useEffect(() => {
-    if (parameter && parameter.referenceValues) {
+    if (parameter && parameter.referenceValues?.length) {
       setFaixas(parameter.referenceValues)
-    } else {
+    } else if (parameter && isTextual) {
+      setFaixas([
+        { id: 1, description: 'Padrão', minAge: 0, maxAge: 150, sex: 'Todos', isPregnant: false, textRange: '' },
+      ])
+    } else if (parameter) {
       setFaixas([
         { id: 1, description: 'Adulto Masculino', minAge: 18, maxAge: 150, sex: 'Masculino', isPregnant: false, minValue: '4.5', maxValue: '6.1' },
         { id: 2, description: 'Adulto Feminino', minAge: 18, maxAge: 150, sex: 'Feminino', isPregnant: false, minValue: '4', maxValue: '5.4' },
@@ -1220,26 +1257,54 @@ function ReferenceValuesModal({ parameter, onClose, onSave }: { parameter: any, 
                   />
                 </div>
                 
-                <div className="space-y-4 border-t pt-4 md:col-span-2 grid grid-cols-2 gap-4">
-                  <div className="space-y-1.5">
-                    <Label className="text-[10px] font-bold uppercase text-emerald-600">Valor Mínimo</Label>
-                    <Input 
-                      className="h-9 text-xs font-bold" 
-                      value={faixa.minValue} 
-                      placeholder="0.0" 
-                      onChange={(e) => updateFaixa(faixa.id, 'minValue', e.target.value)} 
-                    />
+                {isTextual ? (
+                  <div className="space-y-1.5 border-t pt-4 md:col-span-2">
+                    <Label className="text-[10px] font-bold uppercase text-emerald-600">Valor de Referência (texto)</Label>
+                    {parameter?.type === 'selection' && (parameter?.options || []).length > 0 ? (
+                      <Select
+                        value={faixa.textRange || ''}
+                        onValueChange={(val) => updateFaixa(faixa.id, 'textRange', val)}
+                      >
+                        <SelectTrigger className="h-9 text-xs">
+                          <SelectValue placeholder="Selecione a opção considerada normal" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {(parameter.options || []).filter((o: string) => !!o).map((o: string) => (
+                            <SelectItem key={o} value={o} className="text-xs">{o}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    ) : (
+                      <Input
+                        className="h-9 text-xs font-bold"
+                        value={faixa.textRange || ''}
+                        placeholder="Ex: Não reagente / Ausência de parasitas"
+                        onChange={(e) => updateFaixa(faixa.id, 'textRange', e.target.value)}
+                      />
+                    )}
                   </div>
-                  <div className="space-y-1.5">
-                    <Label className="text-[10px] font-bold uppercase text-emerald-600">Valor Máximo</Label>
-                    <Input 
-                      className="h-9 text-xs font-bold" 
-                      value={faixa.maxValue} 
-                      placeholder="0.0" 
-                      onChange={(e) => updateFaixa(faixa.id, 'maxValue', e.target.value)} 
-                    />
+                ) : (
+                  <div className="space-y-4 border-t pt-4 md:col-span-2 grid grid-cols-2 gap-4">
+                    <div className="space-y-1.5">
+                      <Label className="text-[10px] font-bold uppercase text-emerald-600">Valor Mínimo</Label>
+                      <Input 
+                        className="h-9 text-xs font-bold" 
+                        value={faixa.minValue} 
+                        placeholder="0.0" 
+                        onChange={(e) => updateFaixa(faixa.id, 'minValue', e.target.value)} 
+                      />
+                    </div>
+                    <div className="space-y-1.5">
+                      <Label className="text-[10px] font-bold uppercase text-emerald-600">Valor Máximo</Label>
+                      <Input 
+                        className="h-9 text-xs font-bold" 
+                        value={faixa.maxValue} 
+                        placeholder="0.0" 
+                        onChange={(e) => updateFaixa(faixa.id, 'maxValue', e.target.value)} 
+                      />
+                    </div>
                   </div>
-                </div>
+                )}
 
                 <div className="space-y-1.5">
                   <Label className="text-[10px] font-bold uppercase text-muted-foreground">Idade Mín (anos)</Label>

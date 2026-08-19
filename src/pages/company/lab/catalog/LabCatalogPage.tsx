@@ -158,43 +158,65 @@ export default function LabCatalogPage() {
 
       // 2. Parâmetros e Máscara
       const paramsData: any[] = []
-      
+
+      const typeLabel = (t?: string) => {
+        const v = String(t || '').toLowerCase()
+        if (v.includes('sele')) return 'Seleção'
+        if (v.includes('text')) return 'Texto'
+        if (v.includes('calc')) return 'Calculado'
+        return 'Numérico'
+      }
+      const yn = (v: any) => (v ? 'Sim' : 'Não')
+
       // Merge database parameters with context parameters (migration period)
       labExams.forEach(e => {
         const examCode = e.internalCode || e.tussCode || '';
-        
+        const jsonParams: any[] = Array.isArray(e.parameters) ? e.parameters : []
+        const optionsOf = (name: string) => {
+          const match = jsonParams.find((jp: any) => String(jp.name || '').trim().toLowerCase() === String(name || '').trim().toLowerCase())
+          return Array.isArray(match?.options) ? match.options.filter(Boolean).join(' | ') : ''
+        }
+
         // Use parameters from the new table if they exist
         const examDbParams = dbParameters?.filter(p => p.exam_id === e.id) || [];
         
         if (examDbParams.length > 0) {
-          examDbParams.sort((a, b) => (a.sort_order || 0) - (b.sort_order || 0)).forEach(p => {
+          examDbParams.sort((a, b) => (a.sort_order || 0) - (b.sort_order || 0)).forEach((p, i) => {
             paramsData.push({
               'Código': examCode,
+              'Ordem': p.sort_order || i + 1,
               'Nome do parâmetro': p.name || '',
-              'Tipo': p.type || 'numeric',
+              'Seção': p.section || '',
+              'Código no equipamento': p.equipment_code || '',
+              'Tipo': typeLabel(p.type),
+              'Origem': p.origin === 'equipment' || p.origin === 'interface' ? 'Equipamento' : 'Manual',
               'Unidade de medida': p.unit || '',
-              'Faixa de referência (texto livre)': p.reference_values || '',
-              'Obrigatório': p.is_required ? 'Sim' : 'Não',
-              'Permite negativo': p.allow_negative ? 'Sim' : 'Não',
-              'Calculado': p.is_calculated ? 'Sim' : 'Não',
-              'Fórmula do parâmetro': p.formula || '',
-              'Código no equipamento': p.equipment_code || ''
+              'Opções de seleção': optionsOf(p.name || ''),
+              'Obrigatório': yn(p.is_required),
+              'Permite negativo': yn(p.allow_negative),
+              'Calculado': yn(p.is_calculated),
+              'Oculto': yn(p.is_hidden),
+              'Fórmula do parâmetro': p.formula || ''
             })
           })
-        } else if (e.parameters && Array.isArray(e.parameters)) {
+        } else if (jsonParams.length > 0) {
           // Fallback to existing jsonb parameters if table is empty
-          e.parameters.forEach((p: any) => {
+          jsonParams.forEach((p: any, i: number) => {
             paramsData.push({
               'Código': examCode,
+              'Ordem': i + 1,
               'Nome do parâmetro': p.name || '',
-              'Tipo': p.type || 'numeric',
+              'Seção': p.section || '',
+              'Código no equipamento': p.equipCode || p.equipmentCode || '',
+              'Tipo': typeLabel(p.type),
+              'Origem': p.origin === 'equipment' || p.origin === 'interface' ? 'Equipamento' : 'Manual',
               'Unidade de medida': p.unit || '',
-              'Faixa de referência (texto livre)': p.referenceValues || '',
-              'Obrigatório': p.isRequired ? 'Sim' : 'Não',
-              'Permite negativo': p.allowNegative ? 'Sim' : 'Não',
-              'Calculado': p.isCalculated ? 'Sim' : 'Não',
-              'Fórmula do parâmetro': p.formula || '',
-              'Código no equipamento': p.equipmentCode || ''
+              'Opções de seleção': Array.isArray(p.options) ? p.options.filter(Boolean).join(' | ') : '',
+              'Obrigatório': yn(p.isMandatory ?? p.isRequired),
+              'Permite negativo': yn(p.allowNegative),
+              'Calculado': yn(p.isCalculated),
+              'Oculto': yn(p.isHidden),
+              'Fórmula do parâmetro': p.formula || ''
             })
           })
         }
