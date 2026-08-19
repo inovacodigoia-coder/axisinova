@@ -1068,8 +1068,12 @@ export function AttendanceDetailsModal({ open, onClose, onOrderDeleted, order, p
         open={printSelectionOpen}
         onClose={() => setPrintSelectionOpen(false)}
         onConfirm={(result) => {
-          console.log('Printing with result:', result);
           setPrintSelectionOpen(false);
+
+          // Rodapé "Confirmar": apenas fecha (coleta já confirmada no modal)
+          if (result?.action === 'confirm') return;
+
+
 
           // Etiquetas de amostra
           if (result.options.find((o: any) => o.id === 'etiquetas' && o.enabled)) {
