@@ -4,6 +4,7 @@ import { buildExamParams, catalogKey, findCatalogExam, evaluateFormula } from '@
 
 import { resolveCompanyId } from '@/utils/companyId';
 import { useAuth } from '@/context/AuthContext';
+import { useResultEntryPermissions } from '@/hooks/useResultEntryPermissions';
 import { 
   X, 
   Search, 
@@ -28,7 +29,8 @@ import {
   FileText,
   Loader2,
   List,
-  LayoutGrid
+  LayoutGrid,
+  Pencil
 } from 'lucide-react';
 import PDFPreviewModal from '@/components/lab/PDFPreviewModal';
 
@@ -89,6 +91,8 @@ export function ResultEntryModal({
   refreshData
 }: ResultEntryModalProps & { refreshData?: () => void }) {
   const { user } = useAuth();
+  const { canType, canRelease, canCorrect } = useResultEntryPermissions();
+  const [correctionUnlocked, setCorrectionUnlocked] = useState<Record<string, boolean>>({});
   const [results, setResults] = useState<Record<string, string>>({});
   const [notes, setNotes] = useState<Record<string, string>>({});
   const [saving, setSaving] = useState(false);
@@ -113,6 +117,16 @@ export function ResultEntryModal({
   };
 
   const [expandedPatients, setExpandedPatients] = useState<Record<string, boolean>>({});
+
+  /** Campos editáveis: digitação normal ou correção liberada pela permissão */
+  const isExamEditable = (examId: string) => {
+    if (canCorrect && correctionUnlocked[examId]) return true;
+    if (!canType) return false;
+    return examStatuses[examId] !== 'released';
+  };
+  const showCorrectionPencil = (examId: string) =>
+    canCorrect && !correctionUnlocked[examId] &&
+    (examStatuses[examId] === 'digitized' || examStatuses[examId] === 'released');
 
 
   // Agrupamento por paciente/pedido
@@ -1006,7 +1020,7 @@ export function ResultEntryModal({
                                       </Button>
                                     </DropdownMenuTrigger>
                                     <DropdownMenuContent align="start" className="w-52 z-[110]">
-                                      {!isReleased && (
+                                      {!isReleased && canRelease && (
                                         <DropdownMenuItem
                                           onClick={(e) => { e.stopPropagation(); handleReleaseExam(exam.id); }}
                                           disabled={!hasResult}
@@ -1050,7 +1064,7 @@ export function ResultEntryModal({
                           </div>
 
                             <div className="flex items-center gap-2">
-                              {!isDigitized && !isReleased && (
+                              {!isDigitized && !isReleased && canType && (
                                 <Button 
                                   onClick={() => handleConcluirExame(exam.id)}
                                   size="sm" 
@@ -1064,7 +1078,7 @@ export function ResultEntryModal({
                                 </Button>
                               )}
 
-                              {isDigitized && (
+                              {isDigitized && canRelease && (
                                 <Button 
                                   onClick={() => handleReleaseExam(exam.id)}
                                   size="sm" 
@@ -1136,12 +1150,12 @@ export function ResultEntryModal({
                                     {param.type === 'selection' && (param.options?.length ?? 0) > 0 ? (
                                     <Select
                                       value={value || undefined}
-                                      disabled={examStatuses[exam.id] === 'released'}
+                                      disabled={!isExamEditable(exam.id)}
                                       onValueChange={(val) => setResults(prev => ({ ...prev, [`${exam.id}_${param.id}`]: val }))}
                                     >
                                       <SelectTrigger className={cn(
                                         "h-10 text-sm font-bold bg-white border-slate-200 focus:border-primary",
-                                        examStatuses[exam.id] === 'released' && "bg-slate-100 text-slate-500"
+                                        !isExamEditable(exam.id) && "bg-slate-100 text-slate-500"
                                       )}>
                                         <SelectValue placeholder="Selecione..." />
                                       </SelectTrigger>
@@ -1158,12 +1172,12 @@ export function ResultEntryModal({
                                         status.label === 'Baixo' && "border-amber-400 focus:border-amber-500",
                                         status.label === 'Alto' && "border-rose-400 focus:border-rose-500",
                                         status.label === 'Normal' && "border-emerald-400 focus:border-emerald-500",
-                                        (examStatuses[exam.id] === 'released' || param.isCalculated) && "bg-slate-100 border-slate-200 cursor-not-allowed text-slate-500"
+                                        (!isExamEditable(exam.id) || param.isCalculated) && "bg-slate-100 border-slate-200 cursor-not-allowed text-slate-500"
                                       )}
                                       placeholder={param.isCalculated ? 'Calculado' : 'Resultado'}
                                       value={value}
                                       readOnly={!!param.isCalculated}
-                                      disabled={examStatuses[exam.id] === 'released'}
+                                      disabled={!isExamEditable(exam.id)}
                                       onChange={(e) => {
                                         if (param.isCalculated) return;
                                         setResults(prev => ({ ...prev, [`${exam.id}_${param.id}`]: e.target.value }));
@@ -1182,6 +1196,17 @@ export function ResultEntryModal({
                                       </div>
                                     )}
                                   </div>
+                                  {showCorrectionPencil(exam.id) && (
+                                    <button
+                                      type="button"
+                                      title="Corrigir resultado"
+                                      aria-label="Corrigir resultado"
+                                      onClick={() => setCorrectionUnlocked(prev => ({ ...prev, [exam.id]: true }))}
+                                      className="h-8 w-8 shrink-0 rounded-md border border-amber-300 bg-amber-50 text-amber-600 flex items-center justify-center hover:bg-amber-100 transition-colors"
+                                    >
+                                      <Pencil className="h-3.5 w-3.5" />
+                                    </button>
+                                  )}
                                   <div className="w-32 bg-slate-200/50 rounded px-2 py-1 flex flex-col justify-center">
                                     <span className="text-[8px] font-black text-slate-400 uppercase leading-tight">Referência</span>
                                     <span className="text-[10px] font-bold text-slate-600 truncate">{param.reference || '—'}</span>
@@ -1198,11 +1223,11 @@ export function ResultEntryModal({
                             <Input 
                               className={cn(
                                 "h-9 text-xs bg-white border-slate-200 focus:border-primary text-slate-700 placeholder:italic",
-                                examStatuses[exam.id] === 'released' && "bg-slate-100 cursor-not-allowed"
+                                !isExamEditable(exam.id) && "bg-slate-100 cursor-not-allowed"
                               )}
                               placeholder="Nota / Observações técnicas..."
                               value={notes[exam.id] || ''}
-                              disabled={examStatuses[exam.id] === 'released'}
+                              disabled={!isExamEditable(exam.id)}
                               onChange={(e) => setNotes(prev => ({ ...prev, [exam.id]: e.target.value }))}
                             />
                           </div>
@@ -1352,6 +1377,7 @@ export function ResultEntryModal({
         </div>
 
         <div className="flex items-center gap-3">
+          {canType && (
           <Button 
             variant="outline" 
             onClick={() => handleSave(true)}
@@ -1361,7 +1387,9 @@ export function ResultEntryModal({
             <Save className="h-4 w-4" />
             Salvar Rascunho
           </Button>
-          
+          )}
+
+          {canRelease && (
           <Button 
             variant="outline" 
             onClick={handleReleaseAllDigitized}
@@ -1371,7 +1399,9 @@ export function ResultEntryModal({
             <ShieldCheck className="h-4 w-4" />
             Liberar Digitados
           </Button>
+          )}
 
+          {(canType || canCorrect) && (
           <Button 
             onClick={() => handleSave(false)}
             disabled={isConcluirDisabled}
@@ -1380,6 +1410,7 @@ export function ResultEntryModal({
             <CheckCircle2 className="h-4 w-4" />
             Concluir Digitação
           </Button>
+          )}
         </div>
       </footer>
 

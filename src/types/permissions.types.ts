@@ -18,6 +18,7 @@ export type SystemModule =
   | 'pharmacy'
   | 'serotheque'
   | 'portals'
+  | 'result_entry'
 
 export type PermissionAction = 'view' | 'create' | 'edit' | 'delete' | 'export' | 'approve'
 
@@ -85,6 +86,13 @@ export const SYSTEM_MODULES: { key: SystemModule; label: string; icon: string }[
 
 
 export const ALL_ACTIONS: PermissionAction[] = ['view', 'create', 'edit', 'delete', 'export', 'approve']
+
+/** Permissões específicas da tela de Digitação de Resultados */
+export const RESULT_ENTRY_PERMISSIONS: { action: PermissionAction; label: string; description: string }[] = [
+  { action: 'create', label: 'Digitar', description: 'Preencher e concluir a digitação dos resultados' },
+  { action: 'approve', label: 'Liberar exame', description: 'Liberar exames digitados' },
+  { action: 'edit', label: 'Correção', description: 'Corrigir resultados já digitados ou liberados' },
+]
 
 export const ACTION_LABELS: Record<PermissionAction, string> = {
   view: 'Ver',
