@@ -210,10 +210,11 @@ export function AttendanceLookupModal({ open, onClose, unitName, guicheName, onA
                   <option value="collection_done">COLETA REALIZADA</option>
                   <option value="open">ABERTO</option>
                   {Object.entries(ATTENDANCE_STATUS_LABELS).map(([key, val]) => (
-                    key !== 'waiting_collection' && key !== 'open' && key !== 'collection_done' && (
+                    key !== 'waiting_collection' && key !== 'open' && key !== 'collection_done' && (key !== 'deleted' || isAdmin) && (
                       <option key={key} value={key}>{val.label}</option>
                     )
                   ))}
+
                 </select>
                 <Filter className="absolute right-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground pointer-events-none" />
               </div>
