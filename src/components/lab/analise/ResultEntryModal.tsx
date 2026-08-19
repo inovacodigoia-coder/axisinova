@@ -261,7 +261,7 @@ export function ResultEntryModal({
   };
 
   // ===== Persistência dos resultados =====
-  const examRefOf = (exam: any) => `${exam.orderId || 'no-order'}:${exam.id}`;
+  const examRefOf = (exam: any) => `${exam.orderId || 'no-order'}:${exam.examId || exam.id}`;
 
   const persistExams = async (
     exams: any[],
