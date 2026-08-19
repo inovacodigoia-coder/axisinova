@@ -33,8 +33,14 @@ export default function PDFPreviewModal({
 }: PDFPreviewModalProps) {
   const { settings: labSettings } = useLabSettings();
   const { user } = useAuth();
+  const { enrichExams } = useExamReportConfig();
   const [zoom, setZoom] = React.useState(100);
   const [isFullscreen, setIsFullscreen] = React.useState(false);
+
+  const enrichedOrder = React.useMemo(
+    () => ({ ...order, exams: enrichExams((order as any)?.exams || []) }),
+    [order, enrichExams],
+  );
 
   const isAdmin = user?.role === 'company_admin' || user?.role === 'super_admin';
   const documentRef = React.useRef<HTMLDivElement>(null);
