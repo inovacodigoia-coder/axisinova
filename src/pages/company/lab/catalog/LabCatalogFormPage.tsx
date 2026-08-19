@@ -888,15 +888,18 @@ function ParametersSection({ parameters, setParameters }: { parameters: any[], s
                       className={cn(
                         "hover:bg-muted/10 transition-colors group",
                         dragIndex === idx && "opacity-50",
-                        overIndex === idx && dragIndex !== idx && "border-t-2 border-t-primary"
+                        overIndex === idx && dragIndex !== null && dragIndex !== idx && "border-t-2 border-t-primary"
                       )}
-                      draggable
-                      onDragStart={() => setDragIndex(idx)}
-                      onDragOver={(e) => { e.preventDefault(); setOverIndex(idx) }}
+                      onDragOver={(e) => { if (dragIndex !== null) { e.preventDefault(); setOverIndex(idx) } }}
                       onDrop={(e) => { e.preventDefault(); if (dragIndex !== null) moveParameter(dragIndex, idx); setDragIndex(null); setOverIndex(null) }}
-                      onDragEnd={() => { setDragIndex(null); setOverIndex(null) }}
                     >
-                      <td className="px-2 py-2 text-[10px] text-muted-foreground font-bold text-center border-r bg-muted/5 cursor-grab active:cursor-grabbing select-none">
+                      <td
+                        className="px-2 py-2 text-[10px] text-muted-foreground font-bold text-center border-r bg-muted/5 cursor-grab active:cursor-grabbing select-none"
+                        draggable
+                        onDragStart={(e) => { e.dataTransfer.effectAllowed = 'move'; setDragIndex(idx) }}
+                        onDragEnd={() => { setDragIndex(null); setOverIndex(null) }}
+                        title="Arraste para reordenar"
+                      >
                         <div className="flex items-center justify-center gap-0.5">
                           <GripVertical className="h-3 w-3 opacity-40 group-hover:opacity-100" />
                           {idx + 1}
