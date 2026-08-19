@@ -1,6 +1,8 @@
 import React from 'react';
 import { LabAttendanceOrder } from '@/types/lab.types';
 import { cn } from '@/lib/utils';
+import { buildLaudoTagContext, renderLaudoTemplate } from '@/utils/laudoTags';
+
 
 interface LaudoDocumentProps {
   order: Partial<LabAttendanceOrder> & Record<string, any>;
