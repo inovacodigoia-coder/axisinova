@@ -271,7 +271,7 @@ export default function LabMethodsSection() {
       )}
 
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-        <DialogContent>
+        <DialogContent className="sm:max-w-[560px] max-h-[85vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>{editingMethod ? 'Editar Metodologia' : 'Nova Metodologia'}</DialogTitle>
             <DialogDescription>
