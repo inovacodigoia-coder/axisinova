@@ -138,7 +138,11 @@ export default function LabMethodsSection() {
       name: method ? method.name : '',
       description: method ? method.description || '' : ''
     })
+    setSelectedBench('')
+    setBenchExams([])
+    setSelectedExamIds([])
     setIsDialogOpen(true)
+    if (method) fetchWorkbenches()
   }
 
   const handleSave = async () => {
