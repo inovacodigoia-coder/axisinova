@@ -181,6 +181,9 @@ export default function LabMethodsSection() {
         
         if (error) throw error
         toast.success('Metodologia atualizada com sucesso')
+        if (selectedExamIds.length > 0) {
+          await applyMethodology(formData.name.trim())
+        }
       } else {
         const { error } = await supabase
           .from('lab_methods' as any)
