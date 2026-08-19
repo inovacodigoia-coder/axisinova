@@ -1087,7 +1087,12 @@ export function ResultEntryModal({
                         </div>
 
                         {/* Parâmetros do Exame */}
-                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-x-8 gap-y-4 pt-2">
+                        <div className={cn(
+                          "grid gap-x-8 gap-y-4 pt-2",
+                          viewMode === 'grid'
+                            ? "grid-cols-1 md:grid-cols-2 lg:grid-cols-3"
+                            : "grid-cols-1 gap-y-2"
+                        )}>
                           {getParams(exam).map((param: any) => {
                             const value = getParamValue(exam, param);
                             const status = getResultStatus(value, param.reference || '');
