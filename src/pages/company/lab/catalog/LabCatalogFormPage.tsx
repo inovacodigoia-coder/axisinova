@@ -866,7 +866,7 @@ function ParametersSection({ parameters, setParameters }: { parameters: any[], s
             <table className="w-full text-left text-sm border-collapse">
               <thead className="bg-muted/50 border-b">
                 <tr>
-                  <th className="px-3 py-3 font-bold text-[10px] uppercase text-muted-foreground w-8 text-center border-r">#</th>
+                  <th className="px-2 py-3 font-bold text-[10px] uppercase text-muted-foreground w-14 text-center border-r">#</th>
                   <th className="px-4 py-3 font-bold text-[10px] uppercase text-muted-foreground min-w-[220px]">Nome do Parâmetro</th>
                   <th className="px-2 py-3 font-bold text-[10px] uppercase text-muted-foreground w-16 text-center">Seção</th>
                   <th className="px-2 py-3 font-bold text-[10px] uppercase text-muted-foreground w-16 text-center">Equip.</th>
