@@ -241,7 +241,7 @@ export default function LoginPage() {
 
           {/* Header */}
           <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }} className="mb-8">
-            <h1 className="text-[28px] font-bold text-foreground">Bem-vindo de volta</h1>
+            <h1 className="text-[28px] font-bold text-foreground">Bem-vindo de volta!</h1>
             <p className="text-sm text-muted-foreground mt-1">Entre com suas credenciais para acessar o sistema</p>
           </motion.div>
 
