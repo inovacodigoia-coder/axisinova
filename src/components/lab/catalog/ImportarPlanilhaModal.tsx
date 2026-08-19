@@ -219,6 +219,22 @@ export const ImportarPlanilhaModal = ({ isOpen, onClose, existingCodes = [] }: I
       
       const getParamName = (p: any) => String(p['Nome do parâmetro'] || p['Nome'] || p['NOME'] || p['Parâmetro'] || p['PARAMETRO'] || '').trim();
 
+      const parseParamType = (p: any) => {
+        const raw = String(p['Tipo'] || p['TIPO'] || '')
+          .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+          .toLowerCase();
+        if (raw.includes('selec') || raw.includes('lista') || raw.includes('opc')) return 'selection';
+        if (raw.includes('calc')) return 'calculation';
+        if (raw.includes('text')) return 'text';
+        return 'numerical';
+      };
+
+      const parseParamOptions = (p: any): string[] => {
+        const raw = p['Opções de seleção'] ?? p['Opções'] ?? p['OPÇÕES'] ?? p['Opcoes'] ?? '';
+        if (Array.isArray(raw)) return raw.map((o: any) => String(o).trim()).filter(Boolean);
+        return String(raw).split(/[|;\n]/).map(o => o.trim()).filter(Boolean);
+      };
+
       for (const examData of parsedExams) {
         // Find or create workbench
         let wbId = workbenches.find(w => w.name.toLowerCase() === examData.bancada.toLowerCase())?.id;
