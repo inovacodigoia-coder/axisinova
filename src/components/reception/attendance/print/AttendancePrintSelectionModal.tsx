@@ -1,7 +1,7 @@
 import React, { useMemo, useState } from 'react';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { CheckCircle2, X, Droplets, AlertTriangle, Loader2 } from 'lucide-react';
+import { CheckCircle2, X, Droplets, AlertTriangle, Loader2, Printer } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
 import { useAttendanceCadastro } from '@/hooks/useAttendanceCadastro';
