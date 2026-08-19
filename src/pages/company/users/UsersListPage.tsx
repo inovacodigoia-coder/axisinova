@@ -159,6 +159,7 @@ export default function UsersListPage() {
 
       <EditUserModal
         profile={editingUser}
+        extraRoles={Array.from(new Set(profiles.map(p => p.role).filter(r => r && !ROLE_OPTIONS.some(o => o.value === r)))) as string[]}
         onClose={() => setEditingUser(null)}
         onSaved={() => { setEditingUser(null); fetchProfiles() }}
       />
@@ -166,10 +167,19 @@ export default function UsersListPage() {
   )
 }
 
-function EditUserModal({ profile, onClose, onSaved }: { profile: ProfileRow | null; onClose: () => void; onSaved: () => void }) {
+const slugifyRole = (name: string) =>
+  name.trim().toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^a-z0-9]+/g, '_').replace(/^_+|_+$/g, '')
+
+function EditUserModal({ profile, extraRoles = [], onClose, onSaved }: { profile: ProfileRow | null; extraRoles?: string[]; onClose: () => void; onSaved: () => void }) {
   const [fullName, setFullName] = useState('')
   const [cpf, setCpf] = useState('')
   const [role, setRole] = useState('')
+  const [email, setEmail] = useState<string | null>(null)
+  const [loadingEmail, setLoadingEmail] = useState(false)
+  const [creatingRole, setCreatingRole] = useState(false)
+  const [newRoleName, setNewRoleName] = useState('')
+  const [customRoles, setCustomRoles] = useState<string[]>([])
   const [canPrintLabels, setCanPrintLabels] = useState(false)
   const [professionalTitle, setProfessionalTitle] = useState('')
   const [councilType, setCouncilType] = useState('')
@@ -194,8 +204,26 @@ function EditUserModal({ profile, onClose, onSaved }: { profile: ProfileRow | nu
       setCouncilUf(profile.council_uf || '')
       setCouncilNumber(profile.council_number || '')
       setBadgeCode(profile.badge_code || '')
+      setCreatingRole(false)
+      setNewRoleName('')
+      setCustomRoles([])
     }
   }, [profile])
+
+  useEffect(() => {
+    let active = true
+    if (!profile) { setEmail(null); return }
+    setLoadingEmail(true)
+    supabase.functions
+      .invoke('get-user-email', { body: { user_id: profile.id, company_id: profile.company_id } })
+      .then(({ data, error }) => {
+        if (!active) return
+        setEmail(error ? null : ((data as any)?.email ?? null))
+      })
+      .finally(() => { if (active) setLoadingEmail(false) })
+    return () => { active = false }
+  }, [profile])
+
 
   const handleSave = async () => {
     if (!profile || !fullName.trim() || !role) {
