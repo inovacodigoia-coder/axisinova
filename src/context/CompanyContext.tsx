@@ -90,6 +90,12 @@ export function CompanyProvider({ children }: { children: ReactNode }) {
   const [isSessionHydrated, setIsSessionHydrated] = useState(false)
   const [linksLoaded, setLinksLoaded] = useState(false)
 
+  // Nunca reutilize uma origem carregada por outra empresa/sessão.
+  useEffect(() => {
+    setActiveOrigin(null)
+    setAvailableOrigins([])
+  }, [user?.companyId])
+
   // Carrega os vínculos Usuário↔Setor antes de calcular os perfis disponíveis
   useEffect(() => {
     let cancelled = false
@@ -136,10 +142,10 @@ export function CompanyProvider({ children }: { children: ReactNode }) {
     
     if (pref && data) {
       const defaultOrigin = data.find((o: any) => o.id === pref.origin_id)
-      if (defaultOrigin && !activeOrigin) {
+      if (defaultOrigin && (!activeOrigin || activeOrigin.company_id !== user.companyId)) {
         setActiveOrigin(defaultOrigin)
       }
-    } else if (data && data.length > 0 && !activeOrigin) {
+    } else if (data && data.length > 0 && (!activeOrigin || activeOrigin.company_id !== user.companyId)) {
       const savedOriginId = localStorage.getItem(ORIGIN_KEY)
       const savedOrigin = data.find((o: any) => o.id === savedOriginId)
       if (savedOrigin) {
@@ -156,9 +162,10 @@ export function CompanyProvider({ children }: { children: ReactNode }) {
   }, [user, refreshOrigins])
 
   const selectOrigin = useCallback((origin: Origin) => {
+    if (!user || origin.company_id !== user.companyId) return
     setActiveOrigin(origin)
     localStorage.setItem(ORIGIN_KEY, origin.id)
-  }, [])
+  }, [user])
 
   const companyUserId = user ? getCompanyUserId(user.id) : null
   const companyUser = companyUserId ? MOCK_COMPANY_USERS.find(u => u.id === companyUserId) || null : null
