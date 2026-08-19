@@ -120,11 +120,29 @@ export function AttendanceLookupModal({ open, onClose, unitName, guicheName, onA
     return m
   }, [patients])
 
+  const dateRange = useMemo(() => {
+    if (datePreset === 'all') return null
+    const to = new Date(); to.setHours(23, 59, 59, 999)
+    const from = new Date(); from.setHours(0, 0, 0, 0)
+    if (datePreset === 'custom') {
+      if (!customFrom && !customTo) return null
+      const f = customFrom ? new Date(`${customFrom}T00:00:00`) : new Date(0)
+      const t = customTo ? new Date(`${customTo}T23:59:59.999`) : to
+      return { from: f, to: t }
+    }
+    if (datePreset !== 'today') from.setDate(from.getDate() - (Number(datePreset) - 1))
+    return { from, to }
+  }, [datePreset, customFrom, customTo])
+
   const filtered = useMemo(() => {
     const term = normalize(search.trim())
     const pTerm = normalize(patientSearch.trim())
     
     return orders.filter(o => {
+      if (dateRange) {
+        const d = new Date(o.registeredAt)
+        if (d < dateRange.from || d > dateRange.to) return false
+      }
       // Pedidos excluídos ficam ocultos para todos; apenas ADM pode visualizá-los
       if ((o.status as any) === 'deleted' && (!isAdmin || statusFilter !== 'deleted')) return false
       
