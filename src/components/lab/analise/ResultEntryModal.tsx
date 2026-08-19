@@ -26,7 +26,9 @@ import {
   Ban,
   AlertCircle,
   FileText,
-  Loader2
+  Loader2,
+  List,
+  LayoutGrid
 } from 'lucide-react';
 import PDFPreviewModal from '@/components/lab/PDFPreviewModal';
 
