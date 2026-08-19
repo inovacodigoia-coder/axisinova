@@ -1,5 +1,5 @@
 import { useAuth } from '@/context/AuthContext'
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { Dialog, DialogContent } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
 import { X, Search, Eye, Printer, Pencil, Plus, ChevronDown, ChevronRight, Calendar, User, Filter } from 'lucide-react'
@@ -21,6 +21,17 @@ interface AttendanceLookupModalProps {
   guicheName?: string
   onAddProcedure: (patient: Patient) => void
 }
+
+type DatePreset = 'today' | '7' | '15' | '30' | 'custom' | 'all'
+
+const DATE_PRESETS: { value: DatePreset; label: string }[] = [
+  { value: 'today', label: 'Hoje' },
+  { value: '7', label: '7 dias' },
+  { value: '15', label: '15 dias' },
+  { value: '30', label: '30 dias' },
+  { value: 'custom', label: 'Personalizado' },
+  { value: 'all', label: 'Todos' },
+]
 
 function normalize(s: string) {
   return (s || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^\w\s]/g, '')
@@ -93,6 +104,11 @@ export function AttendanceLookupModal({ open, onClose, unitName, guicheName, onA
   const [search, setSearch] = useState('')
   const [patientSearch, setPatientSearch] = useState('')
   const [statusFilter, setStatusFilter] = useState<string>('all')
+  const [datePreset, setDatePreset] = useState<DatePreset>('today')
+  const [customFrom, setCustomFrom] = useState('')
+  const [customTo, setCustomTo] = useState('')
+  const [pageSize, setPageSize] = useState(30)
+  const [visibleCount, setVisibleCount] = useState(30)
   const [expanded, setExpanded] = useState<Set<string>>(new Set())
   const [editing, setEditing] = useState<AttendanceOrder | null>(null)
   const [printDoc, setPrintDoc] = useState<AttendanceControlDocument | null>(null)
@@ -104,11 +120,29 @@ export function AttendanceLookupModal({ open, onClose, unitName, guicheName, onA
     return m
   }, [patients])
 
+  const dateRange = useMemo(() => {
+    if (datePreset === 'all') return null
+    const to = new Date(); to.setHours(23, 59, 59, 999)
+    const from = new Date(); from.setHours(0, 0, 0, 0)
+    if (datePreset === 'custom') {
+      if (!customFrom && !customTo) return null
+      const f = customFrom ? new Date(`${customFrom}T00:00:00`) : new Date(0)
+      const t = customTo ? new Date(`${customTo}T23:59:59.999`) : to
+      return { from: f, to: t }
+    }
+    if (datePreset !== 'today') from.setDate(from.getDate() - (Number(datePreset) - 1))
+    return { from, to }
+  }, [datePreset, customFrom, customTo])
+
   const filtered = useMemo(() => {
     const term = normalize(search.trim())
     const pTerm = normalize(patientSearch.trim())
     
     return orders.filter(o => {
+      if (dateRange) {
+        const d = new Date(o.registeredAt)
+        if (d < dateRange.from || d > dateRange.to) return false
+      }
       // Pedidos excluídos ficam ocultos para todos; apenas ADM pode visualizá-los
       if ((o.status as any) === 'deleted' && (!isAdmin || statusFilter !== 'deleted')) return false
       
@@ -132,7 +166,12 @@ export function AttendanceLookupModal({ open, onClose, unitName, guicheName, onA
 
       return true
     }).sort((a, b) => b.registeredAt.localeCompare(a.registeredAt))
-  }, [orders, patientById, search, patientSearch, statusFilter, isAdmin])
+  }, [orders, patientById, search, patientSearch, statusFilter, isAdmin, dateRange])
+
+  useEffect(() => { setVisibleCount(pageSize) }, [pageSize, datePreset, customFrom, customTo, statusFilter, search, patientSearch])
+
+  const visible = useMemo(() => filtered.slice(0, visibleCount), [filtered, visibleCount])
+  const hasMore = filtered.length > visibleCount
 
   const togglePatient = (pid: string) => {
     setExpanded(prev => {
@@ -225,9 +264,53 @@ export function AttendanceLookupModal({ open, onClose, unitName, guicheName, onA
               <Search className="h-4 w-4" />
             </Button>
           </div>
-          <p className="text-xs text-muted-foreground">
-            {filtered.length} atendimento{filtered.length === 1 ? '' : 's'}
-          </p>
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="flex items-center gap-1 text-xs font-medium text-muted-foreground mr-1">
+              <Calendar className="h-3.5 w-3.5" /> Período:
+            </span>
+            {DATE_PRESETS.map(p => (
+              <button
+                key={p.value}
+                onClick={() => setDatePreset(p.value)}
+                className={cn(
+                  'rounded-full px-3 py-1 text-xs font-medium transition-all',
+                  datePreset === p.value ? 'gradient-bg text-white shadow-sm' : 'bg-muted text-muted-foreground hover:bg-accent'
+                )}
+              >
+                {p.label}
+              </button>
+            ))}
+            {datePreset === 'custom' && (
+              <div className="flex items-center gap-2">
+                <input type="date" value={customFrom} onChange={e => setCustomFrom(e.target.value)}
+                  className="rounded-lg border border-input bg-background px-2 py-1 text-xs" />
+                <span className="text-xs text-muted-foreground">até</span>
+                <input type="date" value={customTo} onChange={e => setCustomTo(e.target.value)}
+                  className="rounded-lg border border-input bg-background px-2 py-1 text-xs" />
+              </div>
+            )}
+          </div>
+
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <p className="text-xs text-muted-foreground">
+              Exibindo {Math.min(visibleCount, filtered.length)} de {filtered.length} atendimento{filtered.length === 1 ? '' : 's'}
+            </p>
+            <div className="flex items-center gap-2">
+              <span className="text-xs text-muted-foreground">Exibir:</span>
+              {[30, 50, 100].map(n => (
+                <button
+                  key={n}
+                  onClick={() => setPageSize(n)}
+                  className={cn(
+                    'rounded-md px-2.5 py-1 text-xs font-semibold transition-all',
+                    pageSize === n ? 'gradient-bg text-white' : 'bg-muted text-muted-foreground hover:bg-accent'
+                  )}
+                >
+                  {n}
+                </button>
+              ))}
+            </div>
+          </div>
         </div>
 
         {/* Results Table Header */}
@@ -252,11 +335,11 @@ export function AttendanceLookupModal({ open, onClose, unitName, guicheName, onA
             </div>
           ) : !filtered.length ? (
             <div className="text-center py-12 text-muted-foreground text-sm">
-              {search || patientSearch ? 'Nenhum cadastro encontrado para sua busca.' : 'Digite para buscar atendimentos.'}
+              {search || patientSearch ? 'Nenhum cadastro encontrado para sua busca.' : 'Nenhum atendimento no período selecionado.'}
             </div>
           ) : (
             <div className="divide-y divide-border">
-              {filtered.map(order => (
+              {visible.map(order => (
                 <OrderRowModern
                   key={order.id}
                   order={order}
@@ -270,6 +353,16 @@ export function AttendanceLookupModal({ open, onClose, unitName, guicheName, onA
                   }}
                 />
               ))}
+              {hasMore && (
+                <div className="flex items-center justify-center gap-3 py-4">
+                  <Button variant="outline" size="sm" onClick={() => setVisibleCount(v => v + pageSize)}>
+                    Ver mais ({Math.min(pageSize, filtered.length - visibleCount)})
+                  </Button>
+                  <Button variant="ghost" size="sm" onClick={() => setVisibleCount(filtered.length)}>
+                    Ver todos ({filtered.length})
+                  </Button>
+                </div>
+              )}
             </div>
           )}
         </div>
