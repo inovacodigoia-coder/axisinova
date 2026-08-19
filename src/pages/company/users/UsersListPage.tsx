@@ -448,21 +448,79 @@ function EditUserModal({ profile, extraRoles = [], onClose, onSaved }: { profile
               <Input value={fullName} onChange={e => setFullName(e.target.value)} placeholder="Ex: Alexsandro de Souza" />
             </div>
             <div className="space-y-2">
+              <Label className="text-sm font-semibold">E-mail de acesso</Label>
+              <Input
+                value={loadingEmail ? 'Carregando…' : (email || 'E-mail não disponível')}
+                readOnly
+                disabled
+                className="bg-muted/40 text-muted-foreground"
+              />
+            </div>
+            <div className="space-y-2">
               <Label className="text-sm font-semibold">CPF</Label>
               <Input value={cpf} onChange={e => setCpf(e.target.value)} placeholder="000.000.000-00" />
             </div>
             <div className="space-y-2">
               <Label className="text-sm font-semibold">Função *</Label>
-              <Select value={role} onValueChange={setRole}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
+              <Select
+                value={role}
+                onValueChange={v => {
+                  if (v === '__new__') { setCreatingRole(true); return }
+                  setCreatingRole(false)
+                  setRole(v)
+                }}
+              >
+                <SelectTrigger><SelectValue placeholder="Selecione a função" /></SelectTrigger>
                 <SelectContent>
                   {ROLE_OPTIONS.map(r => (
                     <SelectItem key={r.value} value={r.value}>{r.label}</SelectItem>
                   ))}
-                  
+                  {Array.from(new Set([...extraRoles, ...customRoles]))
+                    .filter(r => r && !ROLE_OPTIONS.some(o => o.value === r))
+                    .map(r => (
+                      <SelectItem key={r} value={r}>{getRoleLabel(r)}</SelectItem>
+                    ))}
+                  <SelectItem value="__new__">+ Criar nova função…</SelectItem>
                 </SelectContent>
               </Select>
+
+              {creatingRole && (
+                <div className="flex gap-2 pt-1">
+                  <Input
+                    autoFocus
+                    value={newRoleName}
+                    onChange={e => setNewRoleName(e.target.value)}
+                    placeholder="Nome da nova função (ex: Auxiliar de Coleta)"
+                    onKeyDown={e => {
+                      if (e.key === 'Enter') {
+                        e.preventDefault()
+                        const slug = slugifyRole(newRoleName)
+                        if (!slug) return toast.error('Informe o nome da função')
+                        setCustomRoles(prev => [...prev, slug])
+                        setRole(slug)
+                        setCreatingRole(false)
+                        setNewRoleName('')
+                      }
+                    }}
+                  />
+                  <Button
+                    type="button"
+                    size="sm"
+                    onClick={() => {
+                      const slug = slugifyRole(newRoleName)
+                      if (!slug) return toast.error('Informe o nome da função')
+                      setCustomRoles(prev => [...prev, slug])
+                      setRole(slug)
+                      setCreatingRole(false)
+                      setNewRoleName('')
+                    }}
+                  >
+                    Criar
+                  </Button>
+                </div>
+              )}
             </div>
+
             <div className="flex items-end pb-2">
               <div className="flex items-center space-x-2 bg-muted/30 p-2 rounded-lg w-full">
                 <input 
