@@ -110,13 +110,19 @@ export function useAttendanceCadastro() {
         .select('order_number')
         .eq('company_id', companyId)
         .eq('origin_id', originId)
-        .order('created_at', { ascending: false })
+        .order('id', { ascending: false })
         .limit(1)
 
       let originOrderCount = 1
       if (latestOrders && latestOrders.length > 0) {
-        const lastNum = latestOrders[0].order_number.split('-')[0]
-        originOrderCount = parseInt(lastNum) + 1
+        const lastOrderNumber = latestOrders[0].order_number
+        if (lastOrderNumber && lastOrderNumber.includes('-')) {
+          const lastNum = lastOrderNumber.split('-')[0]
+          const parsed = parseInt(lastNum)
+          if (!isNaN(parsed)) {
+            originOrderCount = parsed + 1
+          }
+        }
       }
       
       // Use active origin code or default to MATRIZ '00'
