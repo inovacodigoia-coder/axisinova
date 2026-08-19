@@ -69,20 +69,34 @@ export default function LabMethodsSection() {
     }
   }
 
+  const applyMethodology = async (methodName: string, silent = false) => {
+    if (!methodName || selectedExamIds.length === 0) return true
+    const { data, error } = await supabase
+      .from('exams' as any)
+      .update({ methodology: methodName })
+      .eq('company_id', user?.companyId)
+      .in('id', selectedExamIds)
+      .select('id')
+    if (error) {
+      console.error(error)
+      toast.error(`Erro ao atribuir metodologia: ${error.message}`)
+      return false
+    }
+    const count = (data as any[])?.length ?? 0
+    if (count === 0) {
+      toast.error('Nenhum exame foi atualizado (verifique as permissões).')
+      return false
+    }
+    if (!silent) toast.success(`Metodologia atribuída a ${count} exame(s)`)
+    return true
+  }
+
   const handleAssignMethodology = async () => {
-    if (!editingMethod || selectedExamIds.length === 0) return
+    if (!editingMethod) return
     try {
       setAssigning(true)
-      const { error } = await supabase
-        .from('exams' as any)
-        .update({ methodology: editingMethod.name })
-        .in('id', selectedExamIds)
-      if (error) throw error
-      toast.success(`Metodologia atribuída a ${selectedExamIds.length} exame(s)`)
-      fetchBenchExams(selectedBench)
-    } catch (e) {
-      console.error(e)
-      toast.error('Erro ao atribuir metodologia')
+      const ok = await applyMethodology(editingMethod.name)
+      if (ok) await fetchBenchExams(selectedBench)
     } finally {
       setAssigning(false)
     }
@@ -167,6 +181,9 @@ export default function LabMethodsSection() {
         
         if (error) throw error
         toast.success('Metodologia atualizada com sucesso')
+        if (selectedExamIds.length > 0) {
+          await applyMethodology(formData.name.trim())
+        }
       } else {
         const { error } = await supabase
           .from('lab_methods' as any)
