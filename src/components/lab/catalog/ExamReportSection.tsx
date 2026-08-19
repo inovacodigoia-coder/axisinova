@@ -71,7 +71,7 @@ export default function ExamReportSection({ data, parameters, onChange }: Props)
             section: p.section || '',
             value: p.type === 'text' || p.type === 'select' ? 'Resultado' : '0,00',
             unit: p.unit || '',
-            referenceRange: p.referenceValues || p.reference || '—',
+            referenceRange: formatReference(p),
             flag: '',
             status: 'normal',
           })),
