@@ -114,8 +114,10 @@ export default function LabAnalisePage() {
       // Filtro por Status: Baseado na seleção do usuário ou todos se vazio
       // Normaliza o legado 'concluded' para 'completed'
       const orderStatus = order.status === ('concluded' as any) ? 'completed' : order.status;
-      // Pedidos "Aberto" (sem coleta realizada) não entram na fila de digitação
+      // Pedidos "Aberto" (sem coleta realizada) e "Excluídos" não entram na fila de digitação
       const allowedOrderStatuses = ['collection_done', 'in_analysis', 'validation', 'released', 'completed'];
+      
+      if ((order.status as any) === 'deleted') return;
       
       exams.forEach(exam => {
         // Verifica se o status do pedido está entre os selecionados
