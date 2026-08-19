@@ -856,12 +856,45 @@ export function ResultEntryModal({
         </div>
 
         <div className="flex items-center gap-6">
+          {/* Alternar visualização */}
+          <div className="flex items-center rounded-lg border border-border bg-muted/40 p-0.5">
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => changeViewMode('list')}
+              title="Visualização em lista"
+              aria-label="Visualização em lista"
+              aria-pressed={viewMode === 'list'}
+              className={cn(
+                "h-8 w-9 rounded-md",
+                viewMode === 'list' ? "bg-card text-primary shadow-sm" : "text-muted-foreground hover:text-foreground"
+              )}
+            >
+              <List className="h-4 w-4" />
+            </Button>
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => changeViewMode('grid')}
+              title="Visualização em grade"
+              aria-label="Visualização em grade"
+              aria-pressed={viewMode === 'grid'}
+              className={cn(
+                "h-8 w-9 rounded-md",
+                viewMode === 'grid' ? "bg-card text-primary shadow-sm" : "text-muted-foreground hover:text-foreground"
+              )}
+            >
+              <LayoutGrid className="h-4 w-4" />
+            </Button>
+          </div>
+
           <div className="text-right">
             <p className="text-[10px] font-black text-muted-foreground uppercase tracking-widest">Contador</p>
             <p className="text-sm font-black uppercase">
               {groupedPatients.length} pacientes · {totalExams} exames pendentes
             </p>
           </div>
+
           <Button variant="ghost" size="icon" onClick={onClose} className="rounded-full hover:bg-destructive/10 hover:text-destructive">
             <X className="h-6 w-6" />
           </Button>
