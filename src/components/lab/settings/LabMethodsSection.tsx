@@ -31,6 +31,63 @@ export default function LabMethodsSection() {
     description: ''
   })
 
+  // Atribuição em massa por bancada
+  const [workbenches, setWorkbenches] = useState<any[]>([])
+  const [selectedBench, setSelectedBench] = useState<string>('')
+  const [benchExams, setBenchExams] = useState<any[]>([])
+  const [selectedExamIds, setSelectedExamIds] = useState<string[]>([])
+  const [loadingExams, setLoadingExams] = useState(false)
+  const [assigning, setAssigning] = useState(false)
+
+  const fetchWorkbenches = async () => {
+    const { data } = await supabase
+      .from('lab_workbenches' as any)
+      .select('id, name')
+      .eq('company_id', user?.companyId)
+      .order('name')
+    setWorkbenches((data as any[]) || [])
+  }
+
+  const fetchBenchExams = async (benchId: string) => {
+    if (!benchId) { setBenchExams([]); setSelectedExamIds([]); return }
+    try {
+      setLoadingExams(true)
+      const { data, error } = await supabase
+        .from('exams' as any)
+        .select('id, name, internal_code, methodology')
+        .eq('company_id', user?.companyId)
+        .eq('workbench_id', benchId)
+        .order('name')
+      if (error) throw error
+      setBenchExams((data as any[]) || [])
+      setSelectedExamIds([])
+    } catch (e) {
+      console.error(e)
+      toast.error('Erro ao carregar exames da bancada')
+    } finally {
+      setLoadingExams(false)
+    }
+  }
+
+  const handleAssignMethodology = async () => {
+    if (!editingMethod || selectedExamIds.length === 0) return
+    try {
+      setAssigning(true)
+      const { error } = await supabase
+        .from('exams' as any)
+        .update({ methodology: editingMethod.name })
+        .in('id', selectedExamIds)
+      if (error) throw error
+      toast.success(`Metodologia atribuída a ${selectedExamIds.length} exame(s)`)
+      fetchBenchExams(selectedBench)
+    } catch (e) {
+      console.error(e)
+      toast.error('Erro ao atribuir metodologia')
+    } finally {
+      setAssigning(false)
+    }
+  }
+
   useEffect(() => {
     if (user?.companyId) {
       fetchMethods()
