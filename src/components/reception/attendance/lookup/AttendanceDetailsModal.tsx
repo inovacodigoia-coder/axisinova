@@ -920,7 +920,17 @@ export function AttendanceDetailsModal({ open, onClose, onOrderDeleted, order, p
                       className="h-8 w-8 text-muted-foreground ml-1 disabled:opacity-40"
                       disabled={selectedTubes.size === 0}
                       title={selectedTubes.size === 0 ? 'Selecione ao menos uma amostra' : 'Imprimir etiquetas selecionadas'}
-                      onClick={() => setLabelsPrintOpen(true)}
+                      onClick={() => {
+                        if (pendingSelectedTubes.length > 0) {
+                          toast({
+                            title: 'Coleta pendente',
+                            description: `${pendingSelectedTubes.length} amostra(s) selecionada(s) ainda não foram coletadas. Realize a coleta antes de imprimir as etiquetas.`,
+                            variant: 'destructive',
+                          });
+                          return;
+                        }
+                        setLabelsPrintOpen(true);
+                      }}
                     >
                       <Printer className="h-4 w-4" />
                     </Button>
