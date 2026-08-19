@@ -313,17 +313,15 @@ export function AttendancePrintSelectionModal({ open, onClose, onConfirm, order,
                           key={m.type}
                           className={cn(
                             "flex items-center justify-between gap-3 rounded-md bg-white border px-2.5 py-1.5 cursor-pointer transition-all",
-                            selectedMaterials.has(m.type) ? "border-emerald-400" : "border-slate-200",
-                            m.collected && "opacity-60 cursor-not-allowed"
+                            selectedMaterials.has(m.type) ? "border-emerald-400" : "border-slate-200"
                           )}
                         >
                           <div className="flex items-center gap-2.5 min-w-0">
                             <input
                               type="checkbox"
                               className="h-3.5 w-3.5 accent-emerald-500"
-                              disabled={m.collected}
-                              checked={m.collected || selectedMaterials.has(m.type)}
-                              onChange={() => !m.collected && toggleMaterial(m.type)}
+                              checked={selectedMaterials.has(m.type)}
+                              onChange={() => toggleMaterial(m.type)}
                             />
                             <span className={cn("h-2 w-2 rounded-full shrink-0", m.color)} />
                             <div className="min-w-0">
