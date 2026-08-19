@@ -1,4 +1,4 @@
-export type CompanyStatus = 'active' | 'trial' | 'overdue' | 'suspended' | 'cancelled'
+export type CompanyStatus = 'active' | 'trial' | 'overdue' | 'suspended' | 'cancelled' | 'deleted'
 export type PlanType = 'Starter' | 'Pro' | 'Enterprise'
 
 export interface Company {

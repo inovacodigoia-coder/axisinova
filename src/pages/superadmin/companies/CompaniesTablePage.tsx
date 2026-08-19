@@ -189,8 +189,7 @@ export default function CompaniesListPage() {
   const filtered = useMemo(() => {
     return allCompanies.filter((c) => {
       const matchSearch = !search || c.nomeFantasia.toLowerCase().includes(search.toLowerCase()) || c.cnpj.includes(search) || c.email.toLowerCase().includes(search.toLowerCase())
-      // Status 'deleted' is already excluded from fetching, but we keep the logic clean
-      const matchStatus = statusFilter === 'all' ? (c.status !== 'deleted') : c.status === statusFilter
+      const matchStatus = statusFilter === 'all' ? true : c.status === statusFilter
       const matchPlan = planFilter === 'all' || c.plano === planFilter
       return matchSearch && matchStatus && matchPlan
     })
