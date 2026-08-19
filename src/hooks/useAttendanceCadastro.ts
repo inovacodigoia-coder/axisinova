@@ -104,34 +104,21 @@ export function useAttendanceCadastro() {
 
     try {
       const originId = data.originId || null
-      
-      const { data: latestOrders, error: countError } = await (supabase
-        .from('attendance_orders' as any) as any)
-        .select('order_number')
-        .eq('company_id', companyId)
-        .eq('origin_id', originId)
-        .order('created_at', { ascending: false })
-        .limit(50)
 
-      let maxSequence = 0
-      if (latestOrders && latestOrders.length > 0) {
-        latestOrders.forEach((o: any) => {
-          if (o.order_number && o.order_number.includes('-')) {
-            const num = parseInt(o.order_number.split('-')[0])
-            if (!isNaN(num) && num > maxSequence) {
-              maxSequence = num
-            }
-          }
-        })
-      }
-      const originOrderCount = maxSequence + 1
-      
       // Use active origin code or default to MATRIZ '00'
       const originCode = data.originCode !== undefined ? data.originCode : '00'
-      
       const originStr = String(originCode).replace(/\D/g, '').padStart(2, '0')
-      const protocol = `${originOrderCount}-${originStr}`
+
+      // Numeração atômica no banco (nunca gera duplicados, considera pedidos excluídos)
+      const { data: nextNumber, error: seqError } = await (supabase as any).rpc(
+        'next_attendance_order_number',
+        { _company_id: companyId, _origin_id: originId, _origin_code: originStr }
+      )
+      if (seqError) throw seqError
+
+      const protocol = String(nextNumber)
       const hash = generateOrderHash(protocol, Date.now())
+
 
       // Calculate max delivery date from guides
       const calculatedDeliveryDate = (data.guides || data.labGuides)?.reduce((latest: string | null, guide: any) => {
