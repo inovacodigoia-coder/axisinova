@@ -283,7 +283,7 @@ export function AttendanceDetailsModal({ open, onClose, onOrderDeleted, order, p
       
       const { error } = await supabase
         .from('attendance_orders')
-        .delete()
+        .update({ status: 'deleted' })
         .eq('id', order.id);
 
       if (error) throw error;

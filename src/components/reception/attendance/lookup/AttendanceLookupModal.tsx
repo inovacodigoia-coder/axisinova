@@ -79,6 +79,7 @@ const ATTENDANCE_STATUS_LABELS: Record<string, { label: string, color: string }>
   open: { label: 'ABERTO', color: 'bg-blue-400' },
   authorized: { label: 'Autorizado', color: 'bg-indigo-500' },
   completed: { label: 'Concluído', color: 'bg-emerald-700' },
+  deleted: { label: 'EXCLUÍDO', color: 'bg-slate-700' },
 }
 
 export function AttendanceLookupModal({ open, onClose, unitName, guicheName, onAddProcedure }: AttendanceLookupModalProps) {

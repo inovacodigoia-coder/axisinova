@@ -7,6 +7,7 @@ const STATUS_CONFIG: Record<CompanyStatus, { label: string; variant: 'success' |
   overdue: { label: 'Inadimplente', variant: 'warning', icon: '⚠' },
   suspended: { label: 'Suspensa', variant: 'error', icon: '⏸' },
   cancelled: { label: 'Cancelada', variant: 'neutral', icon: '✕' },
+  deleted: { label: 'Excluída', variant: 'neutral', icon: '🗑' },
 }
 
 interface CompanyStatusBadgeProps {

@@ -13,6 +13,7 @@ export function useSuperAdminStats() {
         const { count: totalCompanies, error: companiesError } = await supabase
           .from('companies')
           .select('*', { count: 'exact', head: true })
+          .neq('status', 'deleted')
 
         const { count: totalUsers, error: usersError } = await supabase
           .from('profiles')
