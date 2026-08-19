@@ -41,7 +41,8 @@ export default function SuperAdminUsersPage() {
       // Get all profiles and join with companies
       const { data, error } = await supabase
         .from('profiles')
-        .select('*, companies(name)')
+        .select('*, companies!inner(name, status)')
+        .neq('companies.status', 'deleted')
         .order('created_at', { ascending: false })
 
       if (error) throw error
