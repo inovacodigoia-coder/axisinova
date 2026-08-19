@@ -166,6 +166,7 @@ export function AttendanceCadastroModal({
   const [showPrintSelection, setShowPrintSelection] = useState(false)
   const [savingPatient, setSavingPatient] = useState(false)
   const [isFinalizing, setIsFinalizing] = useState(false)
+  const finalizingRef = useRef(false)
   const [showSyncSuccess, setShowSyncSuccess] = useState(false)
   const [showSyncWarning, setShowSyncWarning] = useState(false)
 
@@ -352,7 +353,7 @@ export function AttendanceCadastroModal({
   }, [state.patient, unitName, guicheName])
 
   const handleFinalize = async () => {
-    if (isFinalizing) return
+    if (finalizingRef.current || createdOrder) return
     const isLabFlow = isLab
     
     // Basic validation for legacy flow (clinic)
@@ -367,6 +368,7 @@ export function AttendanceCadastroModal({
       return
     }
 
+    finalizingRef.current = true
     setIsFinalizing(true)
     try {
       const orderData: any = {
@@ -441,6 +443,7 @@ export function AttendanceCadastroModal({
         }
       }
     } finally {
+      finalizingRef.current = false
       setIsFinalizing(false)
     }
   }
@@ -473,16 +476,16 @@ export function AttendanceCadastroModal({
     [createdOrder, paymentRecord, buildControlDocument],
   )
 
-  // Update state if activeOrigin changes
+  // Sempre sincroniza a origem do atendimento com a origem ativa da empresa.
   useEffect(() => {
-    if (activeOrigin && !state.originId) {
+    if (open && activeOrigin && activeOrigin.company_id === user?.companyId) {
       setState(prev => ({
         ...prev,
         originId: activeOrigin.id,
         originCode: activeOrigin.internal_code ? Number(activeOrigin.internal_code) : 0
       }))
     }
-  }, [activeOrigin])
+  }, [open, activeOrigin, user?.companyId])
 
   return (
     <Dialog open={open} onOpenChange={(o) => !o && handleClose()}>
