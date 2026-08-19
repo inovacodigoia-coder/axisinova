@@ -391,6 +391,8 @@ export function RegistersProvider({ children }: { children: ReactNode }) {
         default_origin: e.defaultOrigin || null,
         default_destination: e.defaultDestination || null,
         report_observations: e.reportObservations || null,
+        report_template_id: e.reportTemplateId || null,
+        report_single_page: e.reportSinglePage ?? false,
         preparation_instructions: e.preparationInstructions || null,
         estimated_duration_minutes: e.estimatedDurationMinutes || null,
         result_deadline_days: e.resultDeadlineDays || null,
