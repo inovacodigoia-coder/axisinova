@@ -42,6 +42,7 @@ const GreenScreenPage = lazy(() => import("./pages/GreenScreenPage"));
 const OriginSelectorPage = lazy(() => import("./pages/company/OriginSelectorPage"));
 const LabColetaPage = lazy(() => import("./pages/company/lab/LabColetaPage"));
 const DesignSystemPage = lazy(() => import("./pages/DesignSystemPage"));
+const DocsPage = lazy(() => import("./pages/DocsPage"));
 
 const queryClient = new QueryClient();
 
