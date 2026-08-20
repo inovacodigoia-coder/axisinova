@@ -42,8 +42,10 @@ export const API_INFO = {
   updatedAt: '2026-08-20',
 }
 
-const FUNCTIONS_BASE = `${import.meta.env.VITE_SUPABASE_URL ?? 'https://<projeto>.supabase.co'}/functions/v1`
-const REST_BASE = `${import.meta.env.VITE_SUPABASE_URL ?? 'https://<projeto>.supabase.co'}/rest/v1`
+const API_ROOT = (import.meta.env.VITE_SUPABASE_URL ?? 'https://axisinova.inovacodigoia.com.br').replace(/\/+$/, '')
+
+const FUNCTIONS_BASE = `${API_ROOT}/functions/v1`
+const REST_BASE = `${API_ROOT}/rest/v1`
 
 export const API_BASES = { functions: FUNCTIONS_BASE, rest: REST_BASE }
 
