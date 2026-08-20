@@ -42,6 +42,7 @@ const GreenScreenPage = lazy(() => import("./pages/GreenScreenPage"));
 const OriginSelectorPage = lazy(() => import("./pages/company/OriginSelectorPage"));
 const LabColetaPage = lazy(() => import("./pages/company/lab/LabColetaPage"));
 const DesignSystemPage = lazy(() => import("./pages/DesignSystemPage"));
+const DocsPage = lazy(() => import("./pages/DocsPage"));
 
 const queryClient = new QueryClient();
 
@@ -85,6 +86,7 @@ const App = () => (
                       {/* Profile Selector */}
                       <Route path="/selecionar-perfil" element={<PrivateRoute><ProfileSelectorPage /></PrivateRoute>} />
                       <Route path="/selecionar-origem" element={<PrivateRoute><OriginSelectorPage /></PrivateRoute>} />
+                      <Route path="/docs" element={<PrivateRoute><DocsPage /></PrivateRoute>} />
                       <Route path="/app/lab/coleta" element={<PrivateRoute><LabColetaPage /></PrivateRoute>} />
 
                       {/* Super Admin */}
