@@ -86,6 +86,7 @@ const App = () => (
                       {/* Profile Selector */}
                       <Route path="/selecionar-perfil" element={<PrivateRoute><ProfileSelectorPage /></PrivateRoute>} />
                       <Route path="/selecionar-origem" element={<PrivateRoute><OriginSelectorPage /></PrivateRoute>} />
+                      <Route path="/docs" element={<PrivateRoute><DocsPage /></PrivateRoute>} />
                       <Route path="/app/lab/coleta" element={<PrivateRoute><LabColetaPage /></PrivateRoute>} />
 
                       {/* Super Admin */}
