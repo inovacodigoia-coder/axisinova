@@ -300,8 +300,9 @@ export default function LabCatalogFormPage() {
                 min_value: ref.minValue?.toString() || null,
                 max_value: ref.maxValue?.toString() || null,
                 text_range: ref.textRange || null,
-                age_min: ref.minAge ?? 0,
-                age_max: ref.maxAge ?? 150,
+                age_min: ref.ageUnit === 'meses' ? Math.round((ref.minAge ?? 0) / 12) : (ref.minAge ?? 0),
+                age_max: ref.ageUnit === 'meses' ? Math.round((ref.maxAge ?? 1800) / 12) : (ref.maxAge ?? 150),
+
                 gender: ref.sex || 'both',
                 parameter_name: param.name
               }));
@@ -1323,7 +1324,9 @@ function ReferenceValuesModal({ parameter, onClose, onSave }: { parameter: any, 
                 )}
 
                 <div className="space-y-1.5">
-                  <Label className="text-[10px] font-bold uppercase text-muted-foreground">Idade Mín (anos)</Label>
+                  <Label className="text-[10px] font-bold uppercase text-muted-foreground">
+                    Idade Mín ({faixa.ageUnit === 'meses' ? 'meses' : 'anos'})
+                  </Label>
                   <Input 
                     type="number" 
                     className="h-9 text-xs" 
@@ -1332,7 +1335,9 @@ function ReferenceValuesModal({ parameter, onClose, onSave }: { parameter: any, 
                   />
                 </div>
                 <div className="space-y-1.5">
-                  <Label className="text-[10px] font-bold uppercase text-muted-foreground">Idade Máx (anos)</Label>
+                  <Label className="text-[10px] font-bold uppercase text-muted-foreground">
+                    Idade Máx ({faixa.ageUnit === 'meses' ? 'meses' : 'anos'})
+                  </Label>
                   <Input 
                     type="number" 
                     className="h-9 text-xs" 
@@ -1340,6 +1345,22 @@ function ReferenceValuesModal({ parameter, onClose, onSave }: { parameter: any, 
                     onChange={(e) => updateFaixa(faixa.id, 'maxAge', Number(e.target.value))} 
                   />
                 </div>
+                <div className="space-y-1.5 md:col-span-2">
+                  <Label className="text-[10px] font-bold uppercase text-muted-foreground">Unidade da idade</Label>
+                  <Select
+                    value={faixa.ageUnit || 'anos'}
+                    onValueChange={(val) => updateFaixa(faixa.id, 'ageUnit', val)}
+                  >
+                    <SelectTrigger className="h-9 text-xs">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="anos" className="text-xs">Anos</SelectItem>
+                      <SelectItem value="meses" className="text-xs">Meses</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
 
                 <div className="flex items-center gap-4 md:col-span-2 bg-white/50 p-2 rounded-lg border border-dashed">
                   <div className="flex-1 space-y-1.5">
@@ -1522,7 +1543,7 @@ function ReferenceValuesSection({ parameter, referenceValues = [] }: { parameter
               <div className="space-y-1.5">
                 <Label className="text-[10px] font-bold uppercase text-muted-foreground">Idade Mín/Máx</Label>
                 <div className="h-9 px-3 flex items-center bg-muted/20 rounded-lg text-xs">
-                  {faixa.minAge ?? 0} a {faixa.maxAge ?? 150} anos
+                  {faixa.minAge ?? 0} a {faixa.maxAge ?? 150} {faixa.ageUnit === 'meses' ? 'meses' : 'anos'}
                 </div>
               </div>
 
