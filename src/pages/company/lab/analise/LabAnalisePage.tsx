@@ -219,7 +219,14 @@ export default function LabAnalisePage() {
     <div className="flex flex-col h-full overflow-hidden">
       {/* Sub-navegação */}
       <div className="border-b bg-card mb-4">
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+        <Tabs value={activeTab} onValueChange={(value) => {
+          const tab = SUB_TABS.find(t => t.id === value);
+          if (tab?.navigateTo) {
+            navigate(tab.navigateTo);
+            return;
+          }
+          setActiveTab(value);
+        }} className="w-full">
           <TabsList className="bg-transparent h-12 w-full justify-start gap-4 px-4">
             {SUB_TABS.map(tab => (
               <TabsTrigger 
