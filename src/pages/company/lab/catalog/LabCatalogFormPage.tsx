@@ -1347,7 +1347,7 @@ function ReferenceValuesModal({ parameter, onClose, onSave }: { parameter: any, 
                 </div>
                 <div className="space-y-1.5">
                   <Label className="text-[10px] font-bold uppercase text-muted-foreground">
-                    Idade Máx ({faixa.ageUnit === 'meses' ? 'meses' : 'anos'})
+                    Idade Máx ({ageUnitLabel(faixa.ageUnit)})
                   </Label>
                   <Input 
                     type="number" 
