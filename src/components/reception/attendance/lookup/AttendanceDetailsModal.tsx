@@ -663,19 +663,25 @@ export function AttendanceDetailsModal({ open, onClose, onOrderDeleted, order, p
                       <Button 
                         size="icon" 
                         variant="ghost" 
-                        className="h-9 w-9 rounded-full bg-white shadow-sm border border-border group-hover:text-primary group-hover:border-primary transition-all"
-                        disabled={selectedExams.size === 0}
+                        className={cn(
+                          "h-9 w-9 rounded-full bg-white shadow-sm border border-border transition-all",
+                          isOrderReleased && selectedExams.size > 0
+                            ? "group-hover:text-primary group-hover:border-primary"
+                            : "opacity-50 cursor-not-allowed"
+                        )}
+                        disabled={!isOrderReleased || selectedExams.size === 0}
                         onClick={() => {
-                          if (selectedExams.size > 0) {
+                          if (isOrderReleased && selectedExams.size > 0) {
                             setReportPreviewOpen(true);
                           }
                         }}
+                        title={!isOrderReleased ? 'Disponível apenas quando o pedido estiver Liberado' : 'Visualizar / imprimir laudo dos exames selecionados'}
                       >
                         <Printer className="h-4 w-4" />
                       </Button>
                       <span className={cn(
                         "text-[9px] font-bold uppercase text-center transition-colors whitespace-pre-line leading-tight",
-                        selectedExams.size > 0 ? "text-muted-foreground group-hover:text-primary" : "text-muted-foreground/40"
+                        isOrderReleased && selectedExams.size > 0 ? "text-muted-foreground group-hover:text-primary" : "text-muted-foreground/40"
                       )}>
                         IMPRIMIR{"\n"}LAUDO
                       </span>
