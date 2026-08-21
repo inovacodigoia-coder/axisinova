@@ -277,11 +277,36 @@ export default function LaudoDocument({
 
   // Uma folha por Bancada Técnica (nunca misturar bancadas na mesma página).
   // Exames marcados como "laudo em folha exclusiva" saem sozinhos em uma página.
+  // Quando não é folha exclusiva, os exames são paginados por altura estimada para
+  // que TODA página impressa tenha cabeçalho e rodapé completos.
   const pages = React.useMemo(() => {
+    /** Altura útil aproximada (px) para os exames em uma folha A4 com cabeçalho + rodapé. */
+    const CONTENT_BUDGET = 470;
+
+    const estimateExamHeight = (exam: any) => {
+      const rows = (exam.results || []).length;
+      const sections = new Set(
+        (exam.results || []).map((r: any) => (r.section || '').trim()),
+      ).size;
+      const tpl = exam.reportTemplate || null;
+      let h = 46; // título + material + divisor
+      if (exam.methodology) h += 12;
+      h += Math.max(sections, 1) * 20; // cabeçalhos de seção + header da tabela
+      h += rows * 15;
+      if (tpl?.header_html) h += 28;
+      if (tpl?.body_html) h += 34;
+      if (tpl?.footer_html) h += 26;
+      if (exam.reportObservations) h += 26;
+      if (exam.internalObservations) h += 22;
+      return h + 24; // espaçamento entre exames
+    };
+
     const groups: { workbench: string; order: number; exams: any[]; exclusive?: boolean }[] = [];
+    const buckets: { workbench: string; order: number; exams: any[]; exclusive?: boolean }[] = [];
+
     (order.exams || []).forEach((exam: any) => {
       if (exam.singlePage) {
-        groups.push({
+        buckets.push({
           workbench: exam.name || exam.workbench || 'Geral',
           order: exam.workbenchOrder ?? 9999,
           exams: [exam],
@@ -290,16 +315,38 @@ export default function LaudoDocument({
         return;
       }
       const wb = exam.workbench || 'Geral';
-      let g = groups.find((x) => x.workbench === wb && !x.exclusive);
+      let g = buckets.find((x) => x.workbench === wb && !x.exclusive);
       if (!g) {
         g = { workbench: wb, order: exam.workbenchOrder ?? 9999, exams: [] };
-        groups.push(g);
+        buckets.push(g);
       }
       g.exams.push(exam);
     });
+
+    buckets.forEach((bucket) => {
+      if (bucket.exclusive) {
+        groups.push(bucket);
+        return;
+      }
+      let current: any[] = [];
+      let used = 0;
+      bucket.exams.forEach((exam: any) => {
+        const h = estimateExamHeight(exam);
+        if (current.length && used + h > CONTENT_BUDGET) {
+          groups.push({ workbench: bucket.workbench, order: bucket.order, exams: current });
+          current = [];
+          used = 0;
+        }
+        current.push(exam);
+        used += h;
+      });
+      if (current.length) groups.push({ workbench: bucket.workbench, order: bucket.order, exams: current });
+    });
+
     groups.sort((a, b) => a.order - b.order || a.workbench.localeCompare(b.workbench));
     return groups;
   }, [order.exams]);
+
 
 
   const totalPages = Math.max(pages.length, 1);
@@ -427,8 +474,11 @@ export default function LaudoDocument({
           .laudo-page { 
             break-after: page; 
             page-break-after: always;
+            break-inside: avoid;
+            page-break-inside: avoid;
             border: none !important;
           }
+
           .laudo-page:last-child { break-after: auto; page-break-after: auto; }
           
           /* Forçar uma página para hemograma (seção break-inside-avoid já existe, mas vamos reforçar) */
