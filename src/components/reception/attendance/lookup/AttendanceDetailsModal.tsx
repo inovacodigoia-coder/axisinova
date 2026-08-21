@@ -412,9 +412,14 @@ export function AttendanceDetailsModal({ open, onClose, onOrderDeleted, order, p
   }
 
   const filteredOrderForReport = useMemo(() => {
-    const base = selectedExams.size === 0
+    let base = selectedExams.size === 0
       ? orderExams
       : orderExams.filter(e => selectedExams.has(e.examId || e.id));
+
+    // Em validação, mostrar apenas os exames já liberados no laudo
+    if (order.status === 'validation') {
+      base = base.filter(e => getExamResultLetter(e) === 'L');
+    }
 
     return {
       ...labOrder,
@@ -422,10 +427,12 @@ export function AttendanceDetailsModal({ open, onClose, onOrderDeleted, order, p
       // If we have labGuides, filter them too
       labGuides: labOrder.labGuides?.map(guide => ({
         ...guide,
-        exams: (guide.exams || []).filter((e: any) => selectedExams.size === 0 || selectedExams.has(e.examId || e.id))
+        exams: (guide.exams || [])
+          .filter((e: any) => selectedExams.size === 0 || selectedExams.has(e.examId || e.id))
+          .filter((e: any) => order.status !== 'validation' || getExamResultLetter(e) === 'L')
       })).filter(guide => (guide.exams?.length ?? 0) > 0)
     };
-  }, [labOrder, orderExams, selectedExams, labResults]);
+  }, [labOrder, orderExams, selectedExams, labResults, order.status]);
 
   return (
     <Dialog open={open} onOpenChange={(o) => !o && onClose()}>
