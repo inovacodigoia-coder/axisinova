@@ -881,6 +881,21 @@ export function AttendanceDetailsModal({ open, onClose, onOrderDeleted, order, p
                                     {hasJustification && <td className="px-4 py-3 text-muted-foreground">{exam.justificativa || '-'}</td>}
                                     <td className="px-4 py-3 text-right">
                                       <div className="flex justify-end gap-1">
+                                        {getExamResultLetter(exam) === 'L' && (
+                                          <Button
+                                            size="icon"
+                                            variant="outline"
+                                            className="h-7 w-7 bg-white text-emerald-600 border-emerald-200 hover:bg-emerald-50"
+                                            title="Visualizar laudo"
+                                            onClick={() => {
+                                              const id = exam.examId || exam.id;
+                                              setSelectedExams(new Set([id]));
+                                              setReportPreviewOpen(true);
+                                            }}
+                                          >
+                                            <Eye className="h-3.5 w-3.5" />
+                                          </Button>
+                                        )}
                                         <Button size="icon" variant="outline" className="h-7 w-7 bg-white"><Pencil className="h-3.5 w-3.5" /></Button>
                                         <Button size="icon" variant="outline" className="h-7 w-7 bg-white"><Calendar className="h-3.5 w-3.5" /></Button>
                                         <Button size="icon" variant="outline" className="h-7 w-7 bg-white"><Info className="h-3.5 w-3.5" /></Button>
