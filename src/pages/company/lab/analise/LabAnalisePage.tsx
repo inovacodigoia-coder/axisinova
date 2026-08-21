@@ -51,16 +51,12 @@ import { ptBR } from 'date-fns/locale';
                                             
                                             I have approved the plan */
 const SUB_TABS = [
-  { id: 'mapa', label: 'Mapa de Trabalho' },
+  { id: 'mapa', label: 'Mapa de Trabalho', navigateTo: '/app/lab/mapa' },
   { id: 'analise', label: 'Digitação de Resultados' },
-  { id: 'urgentes', label: 'Guias Urgentes' },
-  { id: 'bloqueados', label: 'Exames Bloqueados' },
-  { id: 'indicadores', label: 'Guia com Indicadores' },
-  { id: 'assinatura', label: 'Assinatura de Resultado' },
-  { id: 'certificacao', label: 'Certificação Digital de Laudos' },
 ];
 
 export default function LabAnalisePage() {
+  const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState('analise');
   const { orders, refresh: refreshOrders } = useAttendanceCadastro();
   const { workbenches } = useRegisters();
@@ -80,7 +76,7 @@ export default function LabAnalisePage() {
   const [dateTo, setDateTo] = useState<Date | undefined>(undefined);
   const [selectedWorkbenches, setSelectedWorkbenches] = useState<string[]>([]);
   const [selectedEstablishments, setSelectedEstablishments] = useState<string[]>([]);
-  const [selectedStatuses, setSelectedStatuses] = useState<string[]>(['collection_done', 'completed']);
+  const [selectedStatuses, setSelectedStatuses] = useState<string[]>([]);
   const [showFilters, setShowFilters] = useState(false);
 
   useEffect(() => {
