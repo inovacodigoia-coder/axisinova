@@ -245,7 +245,7 @@ export default function LabAnalisePage() {
 
       <div className="flex-1 overflow-hidden px-4 pb-2">
         <Tabs value={activeTab} className="h-full">
-          {SUB_TABS.map(tab => (
+          {SUB_TABS.filter(tab => !tab.navigateTo).map(tab => (
             <TabsContent key={tab.id} value={tab.id} className="h-full m-0">
               {tab.id === 'analise' ? (
                 <div className="flex h-full gap-4">
