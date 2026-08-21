@@ -69,6 +69,17 @@ import {
 } from "@/components/ui/dropdown-menu"
 
 
+const ageUnitLabel = (unit?: string) => {
+  if (unit === 'meses') return 'meses'
+  if (unit === 'semanas') return 'semanas'
+  return 'anos'
+}
+
+const ageToYears = (age: number, unit?: string) => {
+  if (unit === 'meses') return Math.round(age / 12)
+  if (unit === 'semanas') return Math.round(age / 52.1786)
+  return age
+}
 
 export default function LabCatalogFormPage() {
   const navigate = useNavigate()
