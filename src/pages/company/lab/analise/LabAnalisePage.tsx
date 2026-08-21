@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Card } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { 
@@ -50,16 +51,12 @@ import { ptBR } from 'date-fns/locale';
                                             
                                             I have approved the plan */
 const SUB_TABS = [
-  { id: 'mapa', label: 'Mapa de Trabalho' },
+  { id: 'mapa', label: 'Mapa de Trabalho', navigateTo: '/app/lab/mapa' },
   { id: 'analise', label: 'Digitação de Resultados' },
-  { id: 'urgentes', label: 'Guias Urgentes' },
-  { id: 'bloqueados', label: 'Exames Bloqueados' },
-  { id: 'indicadores', label: 'Guia com Indicadores' },
-  { id: 'assinatura', label: 'Assinatura de Resultado' },
-  { id: 'certificacao', label: 'Certificação Digital de Laudos' },
 ];
 
 export default function LabAnalisePage() {
+  const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState('analise');
   const { orders, refresh: refreshOrders } = useAttendanceCadastro();
   const { workbenches } = useRegisters();
@@ -79,7 +76,7 @@ export default function LabAnalisePage() {
   const [dateTo, setDateTo] = useState<Date | undefined>(undefined);
   const [selectedWorkbenches, setSelectedWorkbenches] = useState<string[]>([]);
   const [selectedEstablishments, setSelectedEstablishments] = useState<string[]>([]);
-  const [selectedStatuses, setSelectedStatuses] = useState<string[]>(['collection_done', 'completed']);
+  const [selectedStatuses, setSelectedStatuses] = useState<string[]>([]);
   const [showFilters, setShowFilters] = useState(false);
 
   useEffect(() => {
@@ -212,17 +209,24 @@ export default function LabAnalisePage() {
     setDateTo(undefined);
     setSelectedWorkbenches([]);
     setSelectedEstablishments([]);
-    setSelectedStatuses(['collection_done', 'completed']);
+    setSelectedStatuses([]);
     setProtocolSearch('');
   };
 
-  const isFiltered = period !== 'hoje' || selectedWorkbenches.length > 0 || selectedEstablishments.length > 0 || selectedStatuses.length !== 2 || !selectedStatuses.includes('collection_done') || !selectedStatuses.includes('completed') || protocolSearch !== '';
+  const isFiltered = period !== 'hoje' || selectedWorkbenches.length > 0 || selectedEstablishments.length > 0 || selectedStatuses.length > 0 || protocolSearch !== '';
 
   return (
     <div className="flex flex-col h-full overflow-hidden">
       {/* Sub-navegação */}
       <div className="border-b bg-card mb-4">
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+        <Tabs value={activeTab} onValueChange={(value) => {
+          const tab = SUB_TABS.find(t => t.id === value);
+          if (tab?.navigateTo) {
+            navigate(tab.navigateTo);
+            return;
+          }
+          setActiveTab(value);
+        }} className="w-full">
           <TabsList className="bg-transparent h-12 w-full justify-start gap-4 px-4">
             {SUB_TABS.map(tab => (
               <TabsTrigger 
@@ -241,7 +245,7 @@ export default function LabAnalisePage() {
 
       <div className="flex-1 overflow-hidden px-4 pb-2">
         <Tabs value={activeTab} className="h-full">
-          {SUB_TABS.map(tab => (
+          {SUB_TABS.filter(tab => !tab.navigateTo).map(tab => (
             <TabsContent key={tab.id} value={tab.id} className="h-full m-0">
               {tab.id === 'analise' ? (
                 <div className="flex h-full gap-4">
