@@ -1542,7 +1542,7 @@ function ReferenceValuesSection({ parameter, referenceValues = [] }: { parameter
               <div className="space-y-1.5">
                 <Label className="text-[10px] font-bold uppercase text-muted-foreground">Idade Mín/Máx</Label>
                 <div className="h-9 px-3 flex items-center bg-muted/20 rounded-lg text-xs">
-                  {faixa.minAge ?? 0} a {faixa.maxAge ?? 150} anos
+                  {faixa.minAge ?? 0} a {faixa.maxAge ?? 150} {faixa.ageUnit === 'meses' ? 'meses' : 'anos'}
                 </div>
               </div>
 
