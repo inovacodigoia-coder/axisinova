@@ -337,6 +337,8 @@ export function AttendanceDetailsModal({ open, onClose, onOrderDeleted, order, p
                       order.status === 'released' || 
                       labOrder.collectionStatus === 'collected';
 
+  const isOrderReleased = order.status === 'released';
+
 
 
   // Resultados digitados/liberados do pedido (mesma fonte da Digitação de Resultados)
