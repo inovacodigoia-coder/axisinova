@@ -434,6 +434,29 @@ export function ResultEntryModal({
     return () => { active = false; };
   }, [isOpen, filteredExams, user?.companyId]);
 
+  // Pré-seleciona "Ausente" nos parâmetros de seleção que possuem essa opção (ex.: Sumário de Urina)
+  useEffect(() => {
+    if (!isOpen) return;
+    const defaults: Record<string, string> = {};
+    filteredExams.forEach((exam: any) => {
+      (paramsByExam[exam.id] || []).forEach((p: any) => {
+        if (p?.type !== 'selection') return;
+        const opts: string[] = p.options || [];
+        const ausente = opts.find(o => String(o).trim().toLowerCase() === 'ausente');
+        if (ausente) defaults[`${exam.id}_${p.id}`] = ausente;
+      });
+    });
+    if (Object.keys(defaults).length === 0) return;
+    setResults(prev => {
+      const next = { ...prev };
+      let changed = false;
+      Object.entries(defaults).forEach(([k, v]) => {
+        if (!next[k]) { next[k] = v; changed = true; }
+      });
+      return changed ? next : prev;
+    });
+  }, [isOpen, filteredExams, paramsByExam]);
+
   // Carrega resultados anteriores REAIS do paciente (outros protocolos)
   useEffect(() => {
     if (!isOpen) return;
