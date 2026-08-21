@@ -1323,7 +1323,9 @@ function ReferenceValuesModal({ parameter, onClose, onSave }: { parameter: any, 
                 )}
 
                 <div className="space-y-1.5">
-                  <Label className="text-[10px] font-bold uppercase text-muted-foreground">Idade Mín (anos)</Label>
+                  <Label className="text-[10px] font-bold uppercase text-muted-foreground">
+                    Idade Mín ({faixa.ageUnit === 'meses' ? 'meses' : 'anos'})
+                  </Label>
                   <Input 
                     type="number" 
                     className="h-9 text-xs" 
@@ -1332,7 +1334,9 @@ function ReferenceValuesModal({ parameter, onClose, onSave }: { parameter: any, 
                   />
                 </div>
                 <div className="space-y-1.5">
-                  <Label className="text-[10px] font-bold uppercase text-muted-foreground">Idade Máx (anos)</Label>
+                  <Label className="text-[10px] font-bold uppercase text-muted-foreground">
+                    Idade Máx ({faixa.ageUnit === 'meses' ? 'meses' : 'anos'})
+                  </Label>
                   <Input 
                     type="number" 
                     className="h-9 text-xs" 
@@ -1340,6 +1344,22 @@ function ReferenceValuesModal({ parameter, onClose, onSave }: { parameter: any, 
                     onChange={(e) => updateFaixa(faixa.id, 'maxAge', Number(e.target.value))} 
                   />
                 </div>
+                <div className="space-y-1.5 md:col-span-2">
+                  <Label className="text-[10px] font-bold uppercase text-muted-foreground">Unidade da idade</Label>
+                  <Select
+                    value={faixa.ageUnit || 'anos'}
+                    onValueChange={(val) => updateFaixa(faixa.id, 'ageUnit', val)}
+                  >
+                    <SelectTrigger className="h-9 text-xs">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="anos" className="text-xs">Anos</SelectItem>
+                      <SelectItem value="meses" className="text-xs">Meses</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
 
                 <div className="flex items-center gap-4 md:col-span-2 bg-white/50 p-2 rounded-lg border border-dashed">
                   <div className="flex-1 space-y-1.5">
