@@ -300,8 +300,9 @@ export default function LabCatalogFormPage() {
                 min_value: ref.minValue?.toString() || null,
                 max_value: ref.maxValue?.toString() || null,
                 text_range: ref.textRange || null,
-                age_min: ref.minAge ?? 0,
-                age_max: ref.maxAge ?? 150,
+                age_min: ref.ageUnit === 'meses' ? Math.round((ref.minAge ?? 0) / 12) : (ref.minAge ?? 0),
+                age_max: ref.ageUnit === 'meses' ? Math.round((ref.maxAge ?? 1800) / 12) : (ref.maxAge ?? 150),
+
                 gender: ref.sex || 'both',
                 parameter_name: param.name
               }));
