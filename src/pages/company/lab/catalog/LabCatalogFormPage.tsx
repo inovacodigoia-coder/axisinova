@@ -69,6 +69,17 @@ import {
 } from "@/components/ui/dropdown-menu"
 
 
+const ageUnitLabel = (unit?: string) => {
+  if (unit === 'meses') return 'meses'
+  if (unit === 'semanas') return 'semanas'
+  return 'anos'
+}
+
+const ageToYears = (age: number, unit?: string) => {
+  if (unit === 'meses') return Math.round(age / 12)
+  if (unit === 'semanas') return Math.round(age / 52.1786)
+  return age
+}
 
 export default function LabCatalogFormPage() {
   const navigate = useNavigate()
@@ -300,8 +311,8 @@ export default function LabCatalogFormPage() {
                 min_value: ref.minValue?.toString() || null,
                 max_value: ref.maxValue?.toString() || null,
                 text_range: ref.textRange || null,
-                age_min: ref.ageUnit === 'meses' ? Math.round((ref.minAge ?? 0) / 12) : (ref.minAge ?? 0),
-                age_max: ref.ageUnit === 'meses' ? Math.round((ref.maxAge ?? 1800) / 12) : (ref.maxAge ?? 150),
+                age_min: ageToYears(ref.minAge ?? 0, ref.ageUnit),
+                age_max: ageToYears(ref.maxAge ?? 150, ref.ageUnit),
 
                 gender: ref.sex || 'both',
                 parameter_name: param.name
@@ -1325,7 +1336,7 @@ function ReferenceValuesModal({ parameter, onClose, onSave }: { parameter: any, 
 
                 <div className="space-y-1.5">
                   <Label className="text-[10px] font-bold uppercase text-muted-foreground">
-                    Idade Mín ({faixa.ageUnit === 'meses' ? 'meses' : 'anos'})
+                    Idade Mín ({ageUnitLabel(faixa.ageUnit)})
                   </Label>
                   <Input 
                     type="number" 
@@ -1336,7 +1347,7 @@ function ReferenceValuesModal({ parameter, onClose, onSave }: { parameter: any, 
                 </div>
                 <div className="space-y-1.5">
                   <Label className="text-[10px] font-bold uppercase text-muted-foreground">
-                    Idade Máx ({faixa.ageUnit === 'meses' ? 'meses' : 'anos'})
+                    Idade Máx ({ageUnitLabel(faixa.ageUnit)})
                   </Label>
                   <Input 
                     type="number" 
@@ -1357,6 +1368,7 @@ function ReferenceValuesModal({ parameter, onClose, onSave }: { parameter: any, 
                     <SelectContent>
                       <SelectItem value="anos" className="text-xs">Anos</SelectItem>
                       <SelectItem value="meses" className="text-xs">Meses</SelectItem>
+                      <SelectItem value="semanas" className="text-xs">Semanas</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
@@ -1543,7 +1555,7 @@ function ReferenceValuesSection({ parameter, referenceValues = [] }: { parameter
               <div className="space-y-1.5">
                 <Label className="text-[10px] font-bold uppercase text-muted-foreground">Idade Mín/Máx</Label>
                 <div className="h-9 px-3 flex items-center bg-muted/20 rounded-lg text-xs">
-                  {faixa.minAge ?? 0} a {faixa.maxAge ?? 150} {faixa.ageUnit === 'meses' ? 'meses' : 'anos'}
+                  {faixa.minAge ?? 0} a {faixa.maxAge ?? 150} {ageUnitLabel(faixa.ageUnit)}
                 </div>
               </div>
 
