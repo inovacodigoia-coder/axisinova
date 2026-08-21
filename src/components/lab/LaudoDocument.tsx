@@ -474,8 +474,11 @@ export default function LaudoDocument({
           .laudo-page { 
             break-after: page; 
             page-break-after: always;
+            break-inside: avoid;
+            page-break-inside: avoid;
             border: none !important;
           }
+
           .laudo-page:last-child { break-after: auto; page-break-after: auto; }
           
           /* Forçar uma página para hemograma (seção break-inside-avoid já existe, mas vamos reforçar) */
