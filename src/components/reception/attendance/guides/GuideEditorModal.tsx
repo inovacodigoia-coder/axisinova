@@ -3,7 +3,7 @@ import { Dialog, DialogContent } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
 import { Checkbox } from '@/components/ui/checkbox'
 import { ScrollArea } from '@/components/ui/scroll-area'
-import { X, Search, FileText } from 'lucide-react'
+import { X, Search, FileText, Trash2 } from 'lucide-react'
 import { useRegisters } from '@/context/RegistersContext'
 import { cn } from '@/lib/utils'
 
@@ -117,6 +117,35 @@ export function GuideEditorModal({ open, onClose, mode, guide, onSave }: GuideEd
           </div>
 
           <div className="space-y-2">
+            <div className="rounded-md border border-border bg-white">
+              <div className="px-4 py-2 border-b border-border">
+                <p className="text-[10px] font-bold uppercase text-muted-foreground">Exames da guia ({selected.length})</p>
+              </div>
+              {selected.length === 0 ? (
+                <div className="p-4 text-center text-xs text-muted-foreground">Nenhum exame na guia. Selecione abaixo.</div>
+              ) : (
+                <ScrollArea className="max-h-[160px]">
+                  <div className="divide-y divide-border">
+                    {selected.map((ex, i) => (
+                      <div key={(ex.examId || ex.id || i) + '-' + i} className="flex items-center gap-3 px-4 py-2">
+                        <span className="text-xs font-medium text-foreground uppercase flex-1">{ex.name}</span>
+                        <span className="text-[10px] font-mono text-muted-foreground uppercase">{ex.code || '—'}</span>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-7 w-7 text-destructive hover:bg-destructive/10"
+                          onClick={() => setSelected(prev => prev.filter((_, idx) => idx !== i))}
+                          title="Remover exame da guia"
+                        >
+                          <Trash2 className="h-3.5 w-3.5" />
+                        </Button>
+                      </div>
+                    ))}
+                  </div>
+                </ScrollArea>
+              )}
+            </div>
+
             <div className="relative">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <input
