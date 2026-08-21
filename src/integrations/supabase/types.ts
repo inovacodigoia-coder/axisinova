@@ -2628,6 +2628,7 @@ export type Database = {
         Args: { _company_id: string }
         Returns: undefined
       }
+      is_company_manager: { Args: { _user_id: string }; Returns: boolean }
       next_attendance_order_number: {
         Args: { _company_id: string; _origin_code: string; _origin_id: string }
         Returns: string
