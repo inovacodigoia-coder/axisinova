@@ -209,11 +209,11 @@ export default function LabAnalisePage() {
     setDateTo(undefined);
     setSelectedWorkbenches([]);
     setSelectedEstablishments([]);
-    setSelectedStatuses(['collection_done', 'completed']);
+    setSelectedStatuses([]);
     setProtocolSearch('');
   };
 
-  const isFiltered = period !== 'hoje' || selectedWorkbenches.length > 0 || selectedEstablishments.length > 0 || selectedStatuses.length !== 2 || !selectedStatuses.includes('collection_done') || !selectedStatuses.includes('completed') || protocolSearch !== '';
+  const isFiltered = period !== 'hoje' || selectedWorkbenches.length > 0 || selectedEstablishments.length > 0 || selectedStatuses.length > 0 || protocolSearch !== '';
 
   return (
     <div className="flex flex-col h-full overflow-hidden">
