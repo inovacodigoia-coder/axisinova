@@ -46,11 +46,11 @@ export function pickReference(ranges: any[] | undefined, patient: PatientCtx): s
   const matches = ranges.filter((r) => {
     const rSex = (r.sex ?? r.gender ?? 'Both')?.toString()
     const sexOk = !rSex || rSex === 'Both' || rSex === 'both' || !sex || rSex.toUpperCase().startsWith(sex)
-    const minAge = r.minAge ?? r.age_min
-    const maxAge = r.maxAge ?? r.age_max
+    const minAge = ageToYears(r.minAge ?? r.age_min, r.ageUnit ?? r.age_unit)
+    const maxAge = ageToYears(r.maxAge ?? r.age_max, r.ageUnit ?? r.age_unit)
     const ageOk =
       age == null ||
-      ((minAge == null || age >= Number(minAge)) && (maxAge == null || age <= Number(maxAge)))
+      ((minAge == null || age >= minAge) && (maxAge == null || age <= maxAge))
     return sexOk && ageOk
   })
 
