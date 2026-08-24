@@ -1083,6 +1083,7 @@ export type Database = {
         Row: {
           age_max: number | null
           age_min: number | null
+          age_unit: string
           company_id: string
           created_at: string | null
           description: string | null
@@ -1102,6 +1103,7 @@ export type Database = {
         Insert: {
           age_max?: number | null
           age_min?: number | null
+          age_unit?: string
           company_id: string
           created_at?: string | null
           description?: string | null
@@ -1121,6 +1123,7 @@ export type Database = {
         Update: {
           age_max?: number | null
           age_min?: number | null
+          age_unit?: string
           company_id?: string
           created_at?: string | null
           description?: string | null
