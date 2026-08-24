@@ -37,6 +37,18 @@ function formatRange(r: any): string {
   return r.description || ''
 }
 
+/** Converte um limite de idade (anos/meses/semanas) para anos. */
+export function ageToYears(value: any, unit?: string): number | null {
+  if (value == null || value === '') return null
+  const n = Number(value)
+  if (!isFinite(n)) return null
+  const u = (unit || 'anos').toString().toLowerCase()
+  if (u === 'meses' || u === 'months') return n / 12
+  if (u === 'semanas' || u === 'weeks') return n / 52.1786
+  if (u === 'dias' || u === 'days') return n / 365.25
+  return n
+}
+
 /** Escolhe a faixa de referência que combina com sexo/idade do paciente. */
 export function pickReference(ranges: any[] | undefined, patient: PatientCtx): string {
   if (!ranges || ranges.length === 0) return ''
