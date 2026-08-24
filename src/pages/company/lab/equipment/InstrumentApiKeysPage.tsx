@@ -23,23 +23,6 @@ type KeyRow = {
 
 const ENDPOINT = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/receive-instrument-result`
 
-async function sha256Hex(value: string) {
-  const digest = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(value))
-  return Array.from(new Uint8Array(digest))
-    .map((b) => b.toString(16).padStart(2, '0'))
-    .join('')
-}
-
-function generateKey() {
-  const bytes = crypto.getRandomValues(new Uint8Array(24))
-  const raw = Array.from(bytes)
-    .map((b) => b.toString(36).padStart(2, '0'))
-    .join('')
-    .toUpperCase()
-    .slice(0, 40)
-  return `aisx_${raw}`
-}
-
 export default function InstrumentApiKeysPage() {
   const navigate = useNavigate()
   const { user } = useAuth()
@@ -73,17 +56,12 @@ export default function InstrumentApiKeysPage() {
     }
     setCreating(true)
     try {
-      const key = generateKey()
-      const key_hash = await sha256Hex(key)
-      const { error } = await supabase.from('instrument_integration_keys').insert({
-        company_id: user.companyId,
-        name: name.trim() || 'ServidorAisaxius',
-        key_prefix: key.slice(0, 12),
-        key_hash,
-        created_by: user.id,
+      const { data, error } = await supabase.functions.invoke('create-company-api-key', {
+        body: { name: name.trim() },
       })
       if (error) throw error
-      setNewKey(key)
+      if ((data as any)?.error) throw new Error((data as any).error)
+      setNewKey((data as any).api_key)
       toast.success('Chave gerada! Copie agora — ela não será exibida novamente.')
       fetchKeys()
     } catch (e: any) {
