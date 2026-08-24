@@ -75,10 +75,10 @@ const ageUnitLabel = (unit?: string) => {
   return 'anos'
 }
 
-const ageToYears = (age: number, unit?: string) => {
-  if (unit === 'meses') return Math.round(age / 12)
-  if (unit === 'semanas') return Math.round(age / 52.1786)
-  return age
+const normalizeAgeUnit = (unit?: string) => {
+  if (unit === 'meses' || unit === 'months') return 'meses'
+  if (unit === 'semanas' || unit === 'weeks') return 'semanas'
+  return 'anos'
 }
 
 export default function LabCatalogFormPage() {
