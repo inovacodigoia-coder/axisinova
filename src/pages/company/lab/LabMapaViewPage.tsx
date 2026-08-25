@@ -6,7 +6,7 @@ import { ArrowLeft, FilePlus, Printer, ClipboardList } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { supabase } from '@/integrations/supabase/client'
 import { useAttendanceCadastro } from '@/hooks/useAttendanceCadastro'
-import { getWorkMap, workMapItemKey } from '@/mocks/work-map.mock'
+import { fetchWorkMap, workMapItemKey, type WorkMapRecord } from '@/mocks/work-map.mock'
 import { calculateAge, formatDateTime } from '@/utils/formatters'
 import { EmptyState } from '@/components/feedback/EmptyState'
 import { buildExamParams, findCatalogExam, type ResolvedParam } from '@/utils/examParameters'
@@ -67,7 +67,21 @@ function paramSigla(exam: MapExam, param: { name?: string }, index: number, tota
 export default function LabMapaViewPage() {
   const { codigo } = useParams()
   const navigate = useNavigate()
-  const map = codigo ? getWorkMap(codigo) : undefined
+  const [map, setMap] = useState<WorkMapRecord | undefined>(undefined)
+  const [mapLoading, setMapLoading] = useState(true)
+
+  useEffect(() => {
+    let active = true
+    setMapLoading(true)
+    ;(async () => {
+      const record = codigo ? await fetchWorkMap(codigo) : undefined
+      if (!active) return
+      setMap(record)
+      setMapLoading(false)
+    })()
+    return () => { active = false }
+  }, [codigo])
+
   const { orders, loading } = useAttendanceCadastro()
 
 
@@ -146,7 +160,16 @@ export default function LabMapaViewPage() {
 
   const title = view === 'exame' ? 'Mapa de Trabalho por Exames' : 'Mapa de Trabalho'
 
+  if (mapLoading) {
+    return (
+      <div className="space-y-5">
+        <Card className="p-10 text-center text-sm text-muted-foreground">Carregando mapa...</Card>
+      </div>
+    )
+  }
+
   if (!map) {
+
     return (
       <div className="space-y-5">
         <Button variant="outline" size="sm" className="gap-2" onClick={() => navigate('/app/lab/mapa')}>

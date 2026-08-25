@@ -1516,6 +1516,56 @@ export type Database = {
           },
         ]
       }
+      lab_work_maps: {
+        Row: {
+          code: string
+          company_id: string
+          created_at: string
+          created_by: string | null
+          generated_at: string
+          id: string
+          item_keys: Json
+          items_count: number
+          responsible: string
+          sector: string
+          updated_at: string
+        }
+        Insert: {
+          code: string
+          company_id: string
+          created_at?: string
+          created_by?: string | null
+          generated_at?: string
+          id?: string
+          item_keys?: Json
+          items_count?: number
+          responsible?: string
+          sector?: string
+          updated_at?: string
+        }
+        Update: {
+          code?: string
+          company_id?: string
+          created_at?: string
+          created_by?: string | null
+          generated_at?: string
+          id?: string
+          item_keys?: Json
+          items_count?: number
+          responsible?: string
+          sector?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "lab_work_maps_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       lab_workbenches: {
         Row: {
           company_id: string

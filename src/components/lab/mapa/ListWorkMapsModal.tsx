@@ -5,7 +5,7 @@ import { Card } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { EmptyState } from '@/components/feedback/EmptyState'
 import { Map, Trash2, Calendar, User, Search, Eye } from 'lucide-react'
-import { getWorkMaps, deleteWorkMap, WorkMapRecord } from '@/mocks/work-map.mock'
+import { getWorkMaps, loadWorkMaps, deleteWorkMap, WorkMapRecord } from '@/mocks/work-map.mock'
 import { format } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
 import { Input } from '@/components/ui/input'
@@ -21,22 +21,33 @@ interface ListWorkMapsModalProps {
 export function ListWorkMapsModal({ open, onOpenChange, onRefresh }: ListWorkMapsModalProps) {
   const navigate = useNavigate()
   const [maps, setMaps] = useState<WorkMapRecord[]>([])
+  const [loading, setLoading] = useState(false)
   const [searchTerm, setSearchTerm] = useState('')
 
+  const sortMaps = (list: WorkMapRecord[]) =>
+    [...list].sort((a, b) => new Date(b.generatedAt).getTime() - new Date(a.generatedAt).getTime())
+
   useEffect(() => {
-    if (open) {
-      setMaps(getWorkMaps().sort((a, b) => new Date(b.generatedAt).getTime() - new Date(a.generatedAt).getTime()))
-    }
+    if (!open) return
+    setMaps(sortMaps(getWorkMaps()))
+    setLoading(true)
+    loadWorkMaps()
+      .then(list => setMaps(sortMaps(list)))
+      .finally(() => setLoading(false))
   }, [open])
 
-  const handleDelete = (code: string) => {
-    if (window.confirm(`Deseja realmente excluir o mapa ${code}? Os exames voltarão para a fila de geração.`)) {
-      deleteWorkMap(code)
-      setMaps(getWorkMaps().sort((a, b) => new Date(b.generatedAt).getTime() - new Date(a.generatedAt).getTime()))
+  const handleDelete = async (code: string) => {
+    if (!window.confirm(`Deseja realmente excluir o mapa ${code}? Os exames voltarão para a fila de geração.`)) return
+    try {
+      await deleteWorkMap(code)
+      setMaps(sortMaps(getWorkMaps()))
       toast.success(`Mapa ${code} excluído com sucesso.`)
       onRefresh?.()
+    } catch {
+      toast.error('Não foi possível excluir o mapa.')
     }
   }
+
 
   const filteredMaps = maps.filter(m => 
     m.code.includes(searchTerm) || 
@@ -65,7 +76,10 @@ export function ListWorkMapsModal({ open, onOpenChange, onRefresh }: ListWorkMap
         </div>
 
         <div className="flex-1 overflow-auto mt-2 min-h-[300px]">
-          {filteredMaps.length === 0 ? (
+          {loading && filteredMaps.length === 0 ? (
+            <div className="p-10 text-center text-sm text-muted-foreground">Carregando mapas...</div>
+          ) : filteredMaps.length === 0 ? (
+
             <EmptyState
               icon={<Map className="h-10 w-10 text-muted-foreground" />}
               title="Nenhum mapa encontrado"

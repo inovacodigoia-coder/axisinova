@@ -20,8 +20,11 @@ import {
   createWorkMap,
   getIncludedKeys,
   isGuiaRemessaRecebida,
+  loadWorkMaps,
+  subscribeWorkMaps,
   workMapItemKey,
 } from '@/mocks/work-map.mock'
+
 
 import { ListWorkMapsModal } from '@/components/lab/mapa/ListWorkMapsModal'
 
@@ -63,12 +66,19 @@ export default function LabMapaPage() {
   const [applied, setApplied] = useState(0)
   const [listMapsModal, setListMapsModal] = useState(false)
 
+  // Carregar mapas salvos (persistidos no banco) e reagir a mudanças
+  useEffect(() => {
+    loadWorkMaps().then(() => setApplied(a => a + 1))
+    return subscribeWorkMaps(() => setApplied(a => a + 1))
+  }, [user?.companyId])
+
   // Forçar atualização quando a página ganha foco (ex: voltando do mapa gerado)
   useEffect(() => {
-    const handleFocus = () => setApplied(a => a + 1)
+    const handleFocus = () => { loadWorkMaps() }
     window.addEventListener('focus', handleFocus)
     return () => window.removeEventListener('focus', handleFocus)
   }, [])
+
 
   const sectorOptions = useMemo(() => {
     return (workbenches || []).map((w: any) => w.name).filter(Boolean)
@@ -146,28 +156,39 @@ export default function LabMapaPage() {
     setApplied(a => a + 1)
   }
 
-  const handleGenerate = () => {
+  const handleGenerate = async () => {
     if (filteredRows.length === 0) return
+    if (!user?.companyId) {
+      toast.error('Empresa não identificada.')
+      return
+    }
     const sectors = Array.from(new Set(filteredRows.map(r => r.sector)))
-    const record = createWorkMap({
-      itemKeys: filteredRows.map(r => r.key),
-      sector: sectors.length === 1 ? sectors[0] : 'Múltiplos',
-      responsible: user?.name || 'Usuário',
-    })
-    
-    // Limpar filtros e resetar estado após geração
-    setExamTerm('')
-    setSector(ALL)
-    setConvenio(ALL)
-    setPlan(ALL)
-    setPriority(ALL)
-    setPost(ALL)
-    setPage(1)
-    setApplied(a => a + 1)
-    
-    toast.success(`Mapa ${record.code} gerado com ${record.itemsCount} exame(s).`)
-    navigate(`/app/lab/mapa/${record.code}`)
+    try {
+      const record = await createWorkMap({
+        itemKeys: filteredRows.map(r => r.key),
+        sector: sectors.length === 1 ? sectors[0] : 'Múltiplos',
+        responsible: user?.name || 'Usuário',
+        companyId: user.companyId,
+        userId: user?.id,
+      })
+
+      // Limpar filtros e resetar estado após geração
+      setExamTerm('')
+      setSector(ALL)
+      setConvenio(ALL)
+      setPlan(ALL)
+      setPriority(ALL)
+      setPost(ALL)
+      setPage(1)
+      setApplied(a => a + 1)
+
+      toast.success(`Mapa ${record.code} gerado com ${record.itemsCount} exame(s).`)
+      navigate(`/app/lab/mapa/${record.code}`)
+    } catch {
+      toast.error('Não foi possível gerar o mapa de trabalho.')
+    }
   }
+
 
   return (
     <div className="space-y-5">
