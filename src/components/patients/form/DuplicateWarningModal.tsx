@@ -28,8 +28,9 @@ export function DuplicateWarningModal({ open, candidates, onCancel, onContinue, 
         </DialogHeader>
         <div className="space-y-3">
           <p className="text-sm text-muted-foreground">
-            Encontramos {candidates.length === 1 ? 'um paciente' : `${candidates.length} pacientes`} com dados muito parecidos.
-            Verifique se não é o mesmo paciente antes de salvar.
+            {blocking
+              ? 'Já existe um paciente cadastrado com este CPF. Não é possível cadastrar duas vezes o mesmo CPF — abra o cadastro existente.'
+              : `Encontramos ${candidates.length === 1 ? 'um paciente' : `${candidates.length} pacientes`} com dados muito parecidos. Verifique se não é o mesmo paciente antes de salvar.`}
           </p>
           <div className="space-y-2 max-h-72 overflow-y-auto">
             {candidates.map(({ patient, reason, score }) => (
