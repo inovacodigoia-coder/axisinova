@@ -209,10 +209,33 @@ export default function PatientFormPage() {
     setReviewValues(values)
   }
 
-  const confirmFromReview = () => {
+  const confirmFromReview = async () => {
     if (!reviewValues) return
+    const cleanCPF = (reviewValues.cpf || '').replace(/\D/g, '')
+    if (!isValidCPF(cleanCPF)) {
+      toast.error('CPF inválido')
+      setReviewValues(null)
+      setTab('personal')
+      return
+    }
+    // Bloqueio duro: CPF já cadastrado na empresa
+    if (!isEditing) {
+      const cid = resolveCompanyId(user?.companyId)
+      if (cid) {
+        const { data: existing } = await supabase
+          .from('patients').select('*')
+          .eq('company_id', cid).eq('cpf', cleanCPF).maybeSingle()
+        if (existing) {
+          setBlockedByCpf(true)
+          setDuplicates([{ patient: dbToPatient(existing), reason: 'CPF já cadastrado', score: 1 }])
+          setPendingValues(null)
+          return
+        }
+      }
+    }
     const dups = findDuplicates(reviewValues)
     if (dups.length > 0) {
+      setBlockedByCpf(dups.some(d => d.reason === 'CPF idêntico'))
       setDuplicates(dups)
       setPendingValues(reviewValues)
       return
