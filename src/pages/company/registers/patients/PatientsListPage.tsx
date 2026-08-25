@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Plus, Upload, LayoutGrid, List as ListIcon, Users } from 'lucide-react'
+import { toast } from 'sonner'
 import { GradientButton } from '@/components/ui/GradientButton'
 import { useAuth } from '@/context/AuthContext'
 import { supabase } from '@/integrations/supabase/client'
@@ -179,6 +180,7 @@ export default function PatientsListPage() {
         onView={p => { setQuickPatient(null); goView(p) }}
         onEdit={p => { setQuickPatient(null); goEdit(p) }}
         onSchedule={p => { setQuickPatient(null); goSchedule(p) }}
+        onToggleStatus={toggleStatus}
       />
     </div>
   )
