@@ -386,22 +386,26 @@ export const API_GROUPS: ApiGroup[] = [
         responseExample: `{
   "orders": [
     {
-      "label": "128-00",
+      "order_label": "109-00-1-2",
       "status": "collected",
-      "collected_at": "2026-08-24T13:05:00.000Z",
       "patient_ref": "12345",
-      "patient_name": "Fulano de Tal",
-      "patient_birth_date": "1981-03-15",
-      "patient_sex": "M",
-      "exams": [
-        { "code": "HB", "material": "Sangue total" }
+      "patient_name": "Vera Lucia da Silva Nunes",
+      "patient_birth_date": "1973-09-19",
+      "patient_sex": "F",
+      "samples": [
+        {
+          "sample_barcode": "17RGQ3RM6",
+          "sample_code": "109-00-1-2",
+          "collected_at": "2026-08-24T21:36:00.000Z",
+          "material": "Soro (gel separador)",
+          "exams": [{ "code": "URE" }, { "code": "CREA" }]
+        }
       ]
     },
     {
-      "label": "120-00",
+      "order_label": "120-00",
       "status": "cancelled",
-      "collected_at": null,
-      "exams": []
+      "samples": []
     }
   ]
 }`,
