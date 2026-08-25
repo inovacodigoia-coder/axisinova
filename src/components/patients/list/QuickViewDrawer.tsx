@@ -122,6 +122,21 @@ export function QuickViewDrawer({ patient, onClose, onView, onEdit, onSchedule, 
             >
               <Pencil className="h-4 w-4" /> Editar cadastro
             </button>
+            {onToggleStatus && (
+              <button
+                onClick={() => onToggleStatus(patient)}
+                className={cn(
+                  'w-full inline-flex items-center justify-center gap-2 rounded-lg border px-4 py-2.5 text-sm font-semibold transition-colors',
+                  patient.status === 'active'
+                    ? 'border-destructive/30 text-destructive hover:bg-destructive/10'
+                    : 'border-emerald-500/30 text-emerald-600 hover:bg-emerald-500/10'
+                )}
+              >
+                {patient.status === 'active'
+                  ? <><PowerOff className="h-4 w-4" /> Desativar cadastro</>
+                  : <><Power className="h-4 w-4" /> Reativar cadastro</>}
+              </button>
+            )}
           </div>
         </div>
       </aside>
