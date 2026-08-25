@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { toast } from 'sonner'
 import { UserCheck, AlertTriangle } from 'lucide-react'
 import { useRegisters } from '@/context/RegistersContext'
@@ -70,11 +70,28 @@ export function QuickPatientForm({ onCreate }: Props) {
 
   const lookupCpf = async (clean: string): Promise<Patient | null> => {
     if (!companyId || clean.length !== 11) return null
+    const formatted = maskCpf(clean)
     const { data } = await supabase
       .from('patients').select('*')
-      .eq('company_id', companyId).eq('cpf', clean).maybeSingle()
-    return data ? dbToPatient(data) : null
+      .eq('company_id', companyId)
+      .in('cpf', [clean, formatted])
+      .limit(1)
+    return data && data.length ? dbToPatient(data[0]) : null
   }
+
+  // Alerta imediato ao digitar um CPF válido já cadastrado
+  useEffect(() => {
+    if (cpfDigits.length !== 11 || !cpfValid) return
+    let cancelled = false
+    const t = setTimeout(async () => {
+      try {
+        const existing = await lookupCpf(cpfDigits)
+        if (!cancelled && existing) setDuplicate(existing)
+      } catch (e) { console.warn('Duplicate CPF check error', e) }
+    }, 350)
+    return () => { cancelled = true; clearTimeout(t) }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [cpfDigits, cpfValid, companyId])
 
   const submit = async () => {
     if (!cpfValid) { toast.error('CPF inválido'); return }

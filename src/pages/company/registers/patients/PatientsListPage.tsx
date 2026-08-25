@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Plus, Upload, LayoutGrid, List as ListIcon, Users } from 'lucide-react'
+import { toast } from 'sonner'
 import { GradientButton } from '@/components/ui/GradientButton'
 import { useAuth } from '@/context/AuthContext'
 import { supabase } from '@/integrations/supabase/client'
@@ -18,7 +19,16 @@ type ViewMode = 'list' | 'grid'
 export default function PatientsListPage() {
   const navigate = useNavigate()
   const { user } = useAuth()
-  const { patients, filtered, loading, filters, setFilters, updateFilter, clearFilters } = usePatients()
+  const { patients, filtered, loading, filters, setFilters, updateFilter, clearFilters, refresh } = usePatients()
+
+  const toggleStatus = async (p: Patient) => {
+    const next = p.status === 'active' ? 'inactive' : 'active'
+    const { error } = await supabase.from('patients').update({ status: next }).eq('id', p.id)
+    if (error) { toast.error('Não foi possível alterar o status do cadastro'); return }
+    toast.success(next === 'active' ? 'Cadastro reativado' : 'Cadastro desativado — não aparecerá no cadastro de atendimento')
+    setQuickPatient(null)
+    refresh()
+  }
 
   const [viewMode, setViewMode] = useState<ViewMode>(() =>
     (localStorage.getItem('patients:viewMode') as ViewMode) || 'list'
@@ -170,6 +180,7 @@ export default function PatientsListPage() {
         onView={p => { setQuickPatient(null); goView(p) }}
         onEdit={p => { setQuickPatient(null); goEdit(p) }}
         onSchedule={p => { setQuickPatient(null); goSchedule(p) }}
+        onToggleStatus={toggleStatus}
       />
     </div>
   )

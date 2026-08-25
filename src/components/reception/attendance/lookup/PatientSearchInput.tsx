@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { Search } from 'lucide-react'
 import { usePatients } from '@/hooks/usePatients'
 import { useAttendanceSearch } from '@/hooks/useAttendanceSearch'
@@ -11,7 +11,9 @@ export function PatientSearchInput({ onSelect }: Props) {
   const [query, setQuery] = useState('')
   const [debounced, setDebounced] = useState('')
   const { patients } = usePatients()
-  const results = useAttendanceSearch(debounced, patients)
+  // Cadastros desativados/bloqueados não aparecem no cadastro de atendimento
+  const activePatients = useMemo(() => patients.filter(p => p.status === 'active'), [patients])
+  const results = useAttendanceSearch(debounced, activePatients)
 
   useEffect(() => {
     const id = setTimeout(() => setDebounced(query), 400)
