@@ -36,33 +36,34 @@ export function QuickPatientForm({ onCreate }: Props) {
   })
   const set = <K extends keyof typeof f>(k: K, v: string) => setF(s => ({ ...s, [k]: v }))
 
+  const cpfDigits = f.cpf.replace(/\D/g, '')
+  const cpfValid = isValidCPF(f.cpf)
   const isValid = f.fullName.trim().split(/\s+/).length >= 2 && 
     f.birthDate.length === 10 && 
     f.motherName.trim() && 
-    f.phone1.replace(/\D/g, '').length >= 10 &&
-    f.cpf.replace(/\D/g, '').length === 11
+    cpfValid
+
+  const lookupCpf = async (clean: string): Promise<Patient | null> => {
+    if (!companyId || clean.length !== 11) return null
+    const { data } = await supabase
+      .from('patients').select('*')
+      .eq('company_id', companyId).eq('cpf', clean).maybeSingle()
+    return data ? dbToPatient(data) : null
+  }
 
   const submit = async () => {
+    if (!cpfValid) { toast.error('CPF inválido'); return }
     if (!isValid) { toast.error('Preencha os campos obrigatórios (incluindo CPF)'); return }
     if (!companyId) { toast.error('Empresa não identificada'); return }
 
-    // Check for duplicate CPF
+    // Bloqueio: CPF já cadastrado
     try {
-      const { data: existing, error: checkError } = await supabase
-        .from('patients')
-        .select('id, name')
-        .eq('company_id', companyId)
-        .eq('cpf', f.cpf.replace(/\D/g, ''))
-        .maybeSingle()
-
-      if (checkError) throw checkError
-      if (existing) {
-        toast.error(`CPF já cadastrado para o paciente: ${existing.name}`)
-        return
-      }
+      const existing = await lookupCpf(cpfDigits)
+      if (existing) { setDuplicate(existing); return }
     } catch (e) {
       console.warn('Duplicate CPF check error', e)
     }
+
 
     setSaving(true)
     const [dd, mm, yyyy] = f.birthDate.split('/')
