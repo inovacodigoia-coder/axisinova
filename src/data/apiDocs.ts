@@ -39,7 +39,7 @@ export const API_INFO = {
   version: '1.0.0',
   description:
     'API do sistema de gestão clínica e laboratorial AxisInova. Endpoints de plataforma (Edge Functions), procedures do banco (RPC) e acesso a dados via REST com RLS por empresa.',
-  updatedAt: '2026-08-20',
+  updatedAt: '2026-08-25',
 }
 
 // Domínio público oficial da API (custom domain). Não usar a URL interna do backend.
