@@ -26,6 +26,51 @@ const normalizeSex = (g: unknown): string | null => {
   return null
 }
 
+// ---- Tubos (mesma regra do front: src/types/lab.types.ts + AttendanceDetailsModal) ----
+const TUBE_TYPES = [
+  { type: 'gel', label: 'Soro (gel separador)' },
+  { type: 'edta', label: 'Sangue total EDTA' },
+  { type: 'citrato', label: 'Plasma citratado' },
+  { type: 'urina', label: 'Urina' },
+]
+
+const tubeTypeForMaterial = (material: unknown): string => {
+  const m = String(material ?? '')
+    .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase().trim()
+  if (!m) return 'gel'
+  if (m.includes('urina') || m.includes('frasco')) return 'urina'
+  if (m.includes('edta') || m.includes('sangue total') || m.includes('hemograma')) return 'edta'
+  if (m.includes('citrat') || m.includes('coagulacao')) return 'citrato'
+  if (m.includes('plasma')) return 'citrato'
+  if (m.includes('soro') || m.includes('gel') || m.includes('sangue')) return 'gel'
+  return 'gel'
+}
+
+/** Código da amostra: <pedido>-<tubo>-<idEmpresa> (igual ao front) */
+const buildSampleCode = (protocol: string, tubeIndex: number, companySequenceId?: number | null) => {
+  const base = `${String(protocol || '').trim()}-${tubeIndex}`
+  return companySequenceId ? `${base}-${companySequenceId}` : base
+}
+
+/** Hash determinístico de 9 chars por amostra — é o código de barras impresso na etiqueta */
+const generateSampleHash = (sampleCode: string): string => {
+  const input = String(sampleCode || '').toUpperCase()
+  if (!input) return ''
+  const fnv = (seed: number) => {
+    let h = seed >>> 0
+    for (let i = 0; i < input.length; i++) {
+      h ^= input.charCodeAt(i)
+      h = Math.imul(h, 0x01000193) >>> 0
+    }
+    return h >>> 0
+  }
+  const a = fnv(0x811c9dc5)
+  const b = fnv(0x9e3779b9)
+  const raw = (a.toString(36) + b.toString(36)).toUpperCase().replace(/[^A-Z0-9]/g, '')
+  return (raw + '000000000').slice(0, 9)
+}
+
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders })
   if (req.method !== 'GET') return json({ error: 'Método não permitido' }, 405)
@@ -68,7 +113,15 @@ Deno.serve(async (req) => {
   }
   const limit = Math.min(1000, Math.max(1, parseInt(url.searchParams.get('limit') || '500', 10) || 500))
 
-  // ---- 3. Pedidos alterados depois de `since` ----
+  // ---- 3. Empresa (sequence_id compõe o código da amostra) ----
+  const { data: company } = await supabase
+    .from('companies')
+    .select('sequence_id')
+    .eq('id', companyId)
+    .maybeSingle()
+  const companySeq = (company?.sequence_id ?? null) as number | null
+
+  // ---- 4. Pedidos alterados depois de `since` ----
   const { data: orders, error } = await supabase
     .from('attendance_orders')
     .select('id, order_number, protocol, status, patient_id, patient_name, lab_guides, updated_at, created_at')
@@ -83,7 +136,7 @@ Deno.serve(async (req) => {
     return json({ error: 'Não foi possível ler os pedidos' }, 500)
   }
 
-  // ---- 4. Dados de paciente ----
+  // ---- 5. Dados de paciente ----
   const patientIds = [...new Set((orders || []).map((o: any) => o.patient_id).filter(Boolean))]
   const patientMap = new Map<string, any>()
   if (patientIds.length) {
@@ -97,46 +150,68 @@ Deno.serve(async (req) => {
   const out: any[] = []
 
   for (const o of orders || []) {
+    const orderLabel = String(o.order_number || o.protocol || o.id)
     const cancelled = CANCELLED_STATUSES.includes(String(o.status))
-    const guides: any[] = Array.isArray(o.lab_guides) ? o.lab_guides : []
-
-    const exams: any[] = []
-    let collectedAt: string | null = null
-
-    for (const g of guides) {
-      const list: any[] = Array.isArray(g?.exams) ? g.exams : []
-      for (const e of list) {
-        const isCollected = e?.collected === true || !!e?.collectedAt
-        if (!cancelled && !isCollected) continue
-        const code = String(e?.internalCode || e?.tussCode || e?.code || e?.id || '').trim()
-        if (!code) continue
-        exams.push({
-          code,
-          material: e?.material ?? e?.defaultMaterial ?? null,
-        })
-        const at = e?.collectedAt ? new Date(e.collectedAt) : null
-        if (at && !isNaN(at.getTime())) {
-          const iso = at.toISOString()
-          if (!collectedAt || iso < collectedAt) collectedAt = iso
-        }
-      }
-    }
-
-    // Pedido não cancelado e sem nenhuma amostra coletada → não interessa ainda
-    if (!cancelled && exams.length === 0) continue
-
     const p = o.patient_id ? patientMap.get(String(o.patient_id)) : null
 
-    out.push({
-      label: String(o.order_number || o.protocol || o.id),
-      status: cancelled ? 'cancelled' : 'collected',
-      collected_at: cancelled ? null : collectedAt,
+    const base = {
+      order_label: orderLabel,
       patient_ref: p ? String(p.sequence_id ?? p.id) : null,
       patient_name: o.patient_name ?? p?.name ?? null,
       patient_birth_date: p?.birth_date ?? null,
       patient_sex: normalizeSex(p?.gender),
-      exams: cancelled ? [] : exams,
+    }
+
+    if (cancelled) {
+      out.push({ ...base, status: 'cancelled', samples: [] })
+      continue
+    }
+
+    // Exames coletados agrupados por tipo de tubo
+    const guides: any[] = Array.isArray(o.lab_guides) ? o.lab_guides : []
+    const byTube = new Map<string, { exams: any[]; collectedAt: string | null }>()
+
+    for (const g of guides) {
+      const list: any[] = Array.isArray(g?.exams) ? g.exams : []
+      for (const e of list) {
+        const code = String(e?.internalCode || e?.tussCode || e?.code || e?.id || '').trim()
+        if (!code) continue
+        const material = e?.material ?? e?.defaultMaterial ?? null
+        const type = tubeTypeForMaterial(material)
+        if (!byTube.has(type)) byTube.set(type, { exams: [], collectedAt: null })
+        const bucket = byTube.get(type)!
+        const isCollected = e?.collected === true || !!e?.collectedAt
+        bucket.exams.push({ code, material, collected: isCollected })
+        const at = e?.collectedAt ? new Date(e.collectedAt) : null
+        if (at && !isNaN(at.getTime())) {
+          const iso = at.toISOString()
+          if (!bucket.collectedAt || iso < bucket.collectedAt) bucket.collectedAt = iso
+        }
+      }
+    }
+
+    // Índice do tubo segue a mesma ordem usada na impressão das etiquetas
+    const presentTypes = TUBE_TYPES.filter((t) => byTube.has(t.type))
+    const tubes = presentTypes.length ? presentTypes : []
+
+    const samples: any[] = []
+    tubes.forEach((tube, idx) => {
+      const bucket = byTube.get(tube.type)!
+      // só devolve tubos efetivamente coletados
+      if (!bucket.exams.some((e) => e.collected)) return
+      const sampleCode = buildSampleCode(orderLabel, idx + 1, companySeq)
+      samples.push({
+        sample_barcode: generateSampleHash(sampleCode),
+        sample_code: sampleCode,
+        collected_at: bucket.collectedAt,
+        material: bucket.exams.find((e) => e.material)?.material ?? tube.label,
+        exams: bucket.exams.filter((e) => e.collected).map((e) => ({ code: e.code })),
+      })
     })
+
+    if (samples.length === 0) continue
+
+    out.push({ ...base, status: 'collected', samples })
   }
 
   return json({ orders: out })
