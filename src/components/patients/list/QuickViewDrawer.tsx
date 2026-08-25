@@ -1,4 +1,4 @@
-import { X, Eye, Pencil, Calendar } from 'lucide-react'
+import { X, Eye, Pencil, Calendar, PowerOff, Power } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import type { Patient } from '@/types/patient.types'
 import { STATUS_LABELS, STATUS_COLORS } from '@/types/patient.types'
@@ -11,9 +11,10 @@ interface Props {
   onView: (p: Patient) => void
   onEdit: (p: Patient) => void
   onSchedule: (p: Patient) => void
+  onToggleStatus?: (p: Patient) => void
 }
 
-export function QuickViewDrawer({ patient, onClose, onView, onEdit, onSchedule }: Props) {
+export function QuickViewDrawer({ patient, onClose, onView, onEdit, onSchedule, onToggleStatus }: Props) {
   if (!patient) return null
   const age = calculateAge(patient.birthDate)
   const conv = patient.convenios[0]
