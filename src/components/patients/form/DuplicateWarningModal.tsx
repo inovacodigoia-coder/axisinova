@@ -12,9 +12,11 @@ interface Props {
   onCancel: () => void
   onContinue: () => void
   onOpen: (patient: Patient) => void
+  /** Quando true, impede salvar (ex.: CPF já cadastrado) */
+  blocking?: boolean
 }
 
-export function DuplicateWarningModal({ open, candidates, onCancel, onContinue, onOpen }: Props) {
+export function DuplicateWarningModal({ open, candidates, onCancel, onContinue, onOpen, blocking }: Props) {
   return (
     <Dialog open={open} onOpenChange={v => !v && onCancel()}>
       <DialogContent className="max-w-lg">
