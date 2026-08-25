@@ -76,7 +76,10 @@ export function ListWorkMapsModal({ open, onOpenChange, onRefresh }: ListWorkMap
         </div>
 
         <div className="flex-1 overflow-auto mt-2 min-h-[300px]">
-          {filteredMaps.length === 0 ? (
+          {loading && filteredMaps.length === 0 ? (
+            <div className="p-10 text-center text-sm text-muted-foreground">Carregando mapas...</div>
+          ) : filteredMaps.length === 0 ? (
+
             <EmptyState
               icon={<Map className="h-10 w-10 text-muted-foreground" />}
               title="Nenhum mapa encontrado"
