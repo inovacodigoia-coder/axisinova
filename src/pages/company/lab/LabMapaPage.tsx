@@ -63,12 +63,19 @@ export default function LabMapaPage() {
   const [applied, setApplied] = useState(0)
   const [listMapsModal, setListMapsModal] = useState(false)
 
+  // Carregar mapas salvos (persistidos no banco) e reagir a mudanças
+  useEffect(() => {
+    loadWorkMaps().then(() => setApplied(a => a + 1))
+    return subscribeWorkMaps(() => setApplied(a => a + 1))
+  }, [user?.companyId])
+
   // Forçar atualização quando a página ganha foco (ex: voltando do mapa gerado)
   useEffect(() => {
-    const handleFocus = () => setApplied(a => a + 1)
+    const handleFocus = () => { loadWorkMaps() }
     window.addEventListener('focus', handleFocus)
     return () => window.removeEventListener('focus', handleFocus)
   }, [])
+
 
   const sectorOptions = useMemo(() => {
     return (workbenches || []).map((w: any) => w.name).filter(Boolean)
