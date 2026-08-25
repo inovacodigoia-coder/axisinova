@@ -39,7 +39,7 @@ export const API_INFO = {
   version: '1.0.0',
   description:
     'API do sistema de gestão clínica e laboratorial AxisInova. Endpoints de plataforma (Edge Functions), procedures do banco (RPC) e acesso a dados via REST com RLS por empresa.',
-  updatedAt: '2026-08-20',
+  updatedAt: '2026-08-25',
 }
 
 // Domínio público oficial da API (custom domain). Não usar a URL interna do backend.
@@ -370,6 +370,44 @@ export const API_GROUPS: ApiGroup[] = [
 }`,
       },
       {
+        id: 'fn-list-orders',
+        method: 'GET',
+        path: '/list-orders-for-integration',
+        summary: 'Pedidos coletados/cancelados (pull do middleware)',
+        description:
+          'Lista pedidos cuja amostra foi coletada (ou que foram cancelados) após o horário informado em "since". Pedidos ainda não coletados não aparecem. Recomendado chamar a cada 1-2 minutos.',
+        scope: 'company',
+        auth: 'Header X-API-Key',
+        params: [
+          { name: 'X-API-Key', in: 'header', type: 'string', required: true, description: 'Chave de integração da empresa' },
+          { name: 'since', in: 'query', type: 'string', required: false, description: 'ISO 8601 da última busca bem-sucedida. Vazio = últimas 24h' },
+          { name: 'limit', in: 'query', type: 'number', required: false, description: 'Máximo de pedidos por chamada (padrão 500)' },
+        ],
+        responseExample: `{
+  "orders": [
+    {
+      "label": "128-00",
+      "status": "collected",
+      "collected_at": "2026-08-24T13:05:00.000Z",
+      "patient_ref": "12345",
+      "patient_name": "Fulano de Tal",
+      "patient_birth_date": "1981-03-15",
+      "patient_sex": "M",
+      "exams": [
+        { "code": "HB", "material": "Sangue total" }
+      ]
+    },
+    {
+      "label": "120-00",
+      "status": "cancelled",
+      "collected_at": null,
+      "exams": []
+    }
+  ]
+}`,
+      },
+      {
+
 
         id: 'fn-test-webhook',
         method: 'POST',
