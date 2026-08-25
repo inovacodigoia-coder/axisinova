@@ -342,6 +342,35 @@ export const API_GROUPS: ApiGroup[] = [
         responseExample: `{ "success": true, "matched": 1, "ignored": 0 }`,
       },
       {
+        id: 'fn-list-exams',
+        method: 'GET',
+        path: '/list-exams-for-integration',
+        summary: 'Catálogo de exames (sincronização do middleware)',
+        description:
+          'Lista os exames ativos da empresa da chave, para o middleware local puxar periodicamente (pull). Parâmetros do exame são retornados como itens filhos com parent_code.',
+        scope: 'company',
+        auth: 'Header X-API-Key',
+        params: [
+          { name: 'X-API-Key', in: 'header', type: 'string', required: true, description: 'Chave de integração da empresa' },
+          { name: 'page', in: 'query', type: 'number', required: false, description: 'Página (opcional, padrão 1)' },
+          { name: 'limit', in: 'query', type: 'number', required: false, description: 'Itens por página (opcional, padrão 2000)' },
+        ],
+        responseExample: `{
+  "exams": [
+    {
+      "code": "HB",
+      "name": "Hemoglobina",
+      "material": "Sangue total",
+      "sector": "Hematologia",
+      "is_active": true,
+      "parent_code": null,
+      "parameter_order": null
+    }
+  ]
+}`,
+      },
+      {
+
         id: 'fn-test-webhook',
         method: 'POST',
         path: '/test-instrument-webhook',
