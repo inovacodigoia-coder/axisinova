@@ -1,10 +1,34 @@
 import { useState } from 'react'
 import { toast } from 'sonner'
+import { UserCheck, AlertTriangle } from 'lucide-react'
 import { useRegisters } from '@/context/RegistersContext'
 import { useAuth } from '@/context/AuthContext'
 import { supabase } from '@/integrations/supabase/client'
 import { resolveCompanyId } from '@/utils/companyId'
+import { isValidCPF, formatCPFDisplay } from '@/utils/patient.validators'
+import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import type { Patient } from '@/types/patient.types'
+
+function dbToPatient(data: any): Patient {
+  return {
+    id: data.id,
+    companyId: data.company_id,
+    fullName: data.name,
+    birthDate: data.birth_date,
+    motherName: data.mother_name || undefined,
+    cpf: data.cpf || undefined,
+    gender: data.gender as any,
+    phone1: data.phone || '',
+    phone1Type: 'mobile',
+    email: data.email || undefined,
+    status: (data.status as any) || 'active',
+    createdAt: data.created_at,
+    updatedAt: data.updated_at,
+    convenios: [],
+    clinicalData: { allergies: [], chronicConditions: [], continuousMedications: [] },
+    tags: [],
+  } as Patient
+}
 
 interface Props { onCreate: (patient: Patient) => void }
 
