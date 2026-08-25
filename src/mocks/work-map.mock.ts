@@ -22,8 +22,11 @@ function notify() {
 
 export function subscribeWorkMaps(cb: () => void) {
   listeners.add(cb)
-  return () => listeners.delete(cb)
+  return () => {
+    listeners.delete(cb)
+  }
 }
+
 
 function hashString(s: string): number {
   let h = 0
