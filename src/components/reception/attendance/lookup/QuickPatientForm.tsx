@@ -143,53 +143,24 @@ export function QuickPatientForm({ onCreate }: Props) {
           <input value={f.motherName} onChange={e => set('motherName', e.target.value)}
             className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm" />
         </Field>
-        <Field label="Telefone 1 *">
+        <Field label="Telefone 1">
           <input value={f.phone1} onChange={e => set('phone1', maskPhone(e.target.value))} placeholder="(00) 00000-0000"
             className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm" />
         </Field>
         <Field label="CPF *">
-          <input value={f.cpf} 
-            onChange={async (e) => {
-              const masked = maskCpf(e.target.value)
-              set('cpf', masked)
-              
-              // Auto lookup for quick patient
-              if (masked.length === 14 && companyId) {
-                const clean = masked.replace(/\D/g, '')
-                const { data } = await supabase
-                  .from('patients')
-                  .select('*')
-                  .eq('company_id', companyId)
-                  .eq('cpf', clean)
-                  .maybeSingle()
-                
-                if (data) {
-                  toast.success(`Paciente encontrado: ${data.name}`)
-                  // Convert db record to the UI Patient shape
-                  const p: Patient = {
-                    id: data.id,
-                    companyId: data.company_id,
-                    fullName: data.name,
-                    birthDate: data.birth_date,
-                    motherName: data.mother_name || undefined,
-                    cpf: data.cpf || undefined,
-                    gender: data.gender as any,
-                    phone1: data.phone || '',
-                    phone1Type: 'mobile',
-                    email: data.email || undefined,
-                    status: data.status as any,
-                    createdAt: data.created_at,
-                    updatedAt: data.updated_at,
-                    convenios: [],
-                    clinicalData: { allergies: [], chronicConditions: [], continuousMedications: [] },
-                    tags: []
-                  }
-                  onCreate(p)
-                }
-              }
-            }} 
+          <input value={f.cpf}
+            onChange={e => set('cpf', maskCpf(e.target.value))}
+            onBlur={async () => {
+              if (cpfDigits.length !== 11) return
+              if (!cpfValid) { toast.error('CPF inválido'); return }
+              const existing = await lookupCpf(cpfDigits)
+              if (existing) setDuplicate(existing)
+            }}
             placeholder="000.000.000-00"
-            className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm" />
+            className={`w-full rounded-md border bg-background px-3 py-2 text-sm ${cpfDigits.length === 11 && !cpfValid ? 'border-destructive' : 'border-border'}`} />
+          {cpfDigits.length === 11 && !cpfValid && (
+            <p className="mt-1 text-xs text-destructive">CPF inválido</p>
+          )}
         </Field>
       </div>
 
