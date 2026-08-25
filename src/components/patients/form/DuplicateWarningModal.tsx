@@ -60,10 +60,12 @@ export function DuplicateWarningModal({ open, candidates, onCancel, onContinue, 
             className="rounded-lg border border-input bg-background px-4 py-2 text-sm font-semibold text-foreground hover:bg-muted">
             Revisar dados
           </button>
-          <button type="button" onClick={onContinue}
-            className="rounded-lg bg-warning px-4 py-2 text-sm font-semibold text-warning-foreground hover:opacity-90">
-            Continuar e salvar mesmo assim
-          </button>
+          {!blocking && (
+            <button type="button" onClick={onContinue}
+              className="rounded-lg bg-warning px-4 py-2 text-sm font-semibold text-warning-foreground hover:opacity-90">
+              Continuar e salvar mesmo assim
+            </button>
+          )}
         </DialogFooter>
       </DialogContent>
     </Dialog>
