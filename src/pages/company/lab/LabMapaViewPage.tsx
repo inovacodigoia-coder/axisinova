@@ -67,7 +67,21 @@ function paramSigla(exam: MapExam, param: { name?: string }, index: number, tota
 export default function LabMapaViewPage() {
   const { codigo } = useParams()
   const navigate = useNavigate()
-  const map = codigo ? getWorkMap(codigo) : undefined
+  const [map, setMap] = useState<WorkMapRecord | undefined>(undefined)
+  const [mapLoading, setMapLoading] = useState(true)
+
+  useEffect(() => {
+    let active = true
+    setMapLoading(true)
+    ;(async () => {
+      const record = codigo ? await fetchWorkMap(codigo) : undefined
+      if (!active) return
+      setMap(record)
+      setMapLoading(false)
+    })()
+    return () => { active = false }
+  }, [codigo])
+
   const { orders, loading } = useAttendanceCadastro()
 
 
