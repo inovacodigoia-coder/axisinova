@@ -21,22 +21,33 @@ interface ListWorkMapsModalProps {
 export function ListWorkMapsModal({ open, onOpenChange, onRefresh }: ListWorkMapsModalProps) {
   const navigate = useNavigate()
   const [maps, setMaps] = useState<WorkMapRecord[]>([])
+  const [loading, setLoading] = useState(false)
   const [searchTerm, setSearchTerm] = useState('')
 
+  const sortMaps = (list: WorkMapRecord[]) =>
+    [...list].sort((a, b) => new Date(b.generatedAt).getTime() - new Date(a.generatedAt).getTime())
+
   useEffect(() => {
-    if (open) {
-      setMaps(getWorkMaps().sort((a, b) => new Date(b.generatedAt).getTime() - new Date(a.generatedAt).getTime()))
-    }
+    if (!open) return
+    setMaps(sortMaps(getWorkMaps()))
+    setLoading(true)
+    loadWorkMaps()
+      .then(list => setMaps(sortMaps(list)))
+      .finally(() => setLoading(false))
   }, [open])
 
-  const handleDelete = (code: string) => {
-    if (window.confirm(`Deseja realmente excluir o mapa ${code}? Os exames voltarão para a fila de geração.`)) {
-      deleteWorkMap(code)
-      setMaps(getWorkMaps().sort((a, b) => new Date(b.generatedAt).getTime() - new Date(a.generatedAt).getTime()))
+  const handleDelete = async (code: string) => {
+    if (!window.confirm(`Deseja realmente excluir o mapa ${code}? Os exames voltarão para a fila de geração.`)) return
+    try {
+      await deleteWorkMap(code)
+      setMaps(sortMaps(getWorkMaps()))
       toast.success(`Mapa ${code} excluído com sucesso.`)
       onRefresh?.()
+    } catch {
+      toast.error('Não foi possível excluir o mapa.')
     }
   }
+
 
   const filteredMaps = maps.filter(m => 
     m.code.includes(searchTerm) || 
