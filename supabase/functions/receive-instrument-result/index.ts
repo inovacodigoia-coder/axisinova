@@ -7,9 +7,11 @@ const json = (body: unknown, status = 200) =>
     headers: { ...corsHeaders, 'Content-Type': 'application/json' },
   })
 
+const ok = (extra: Record<string, unknown> = {}) => json({ success: true, ...extra }, 200)
+const fail = (error: string, status = 422) => json({ success: false, error }, status)
+
 async function sha256Hex(value: string) {
-  const bytes = new TextEncoder().encode(value)
-  const digest = await crypto.subtle.digest('SHA-256', bytes)
+  const digest = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(value))
   return Array.from(new Uint8Array(digest))
     .map((b) => b.toString(16).padStart(2, '0'))
     .join('')
@@ -17,18 +19,58 @@ async function sha256Hex(value: string) {
 
 const norm = (v: unknown) => String(v ?? '').trim().toUpperCase()
 
+const COLLECTED_STATUSES = ['collection_done', 'in_analysis', 'validation', 'released', 'completed']
+const CANCELLED_STATUSES = ['deleted', 'cancelled']
+
+const TUBE_TYPES = ['gel', 'edta', 'citrato', 'urina']
+
+const tubeTypeForMaterial = (material: unknown): string => {
+  const m = String(material ?? '')
+    .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase().trim()
+  if (!m) return 'gel'
+  if (m.includes('urina') || m.includes('frasco')) return 'urina'
+  if (m.includes('edta') || m.includes('sangue total') || m.includes('hemograma')) return 'edta'
+  if (m.includes('citrat') || m.includes('coagulacao')) return 'citrato'
+  if (m.includes('plasma')) return 'citrato'
+  if (m.includes('soro') || m.includes('gel') || m.includes('sangue')) return 'gel'
+  return 'gel'
+}
+
+const buildSampleCode = (protocol: string, tubeIndex: number, companySequenceId?: number | null) => {
+  const base = `${String(protocol || '').trim()}-${tubeIndex}`
+  return companySequenceId ? `${base}-${companySequenceId}` : base
+}
+
+const generateSampleHash = (sampleCode: string): string => {
+  const input = String(sampleCode || '').toUpperCase()
+  if (!input) return ''
+  const fnv = (seed: number) => {
+    let h = seed >>> 0
+    for (let i = 0; i < input.length; i++) {
+      h ^= input.charCodeAt(i)
+      h = Math.imul(h, 0x01000193) >>> 0
+    }
+    return h >>> 0
+  }
+  const a = fnv(0x811c9dc5)
+  const b = fnv(0x9e3779b9)
+  const raw = (a.toString(36) + b.toString(36)).toUpperCase().replace(/[^A-Z0-9]/g, '')
+  return (raw + '000000000').slice(0, 9)
+}
+
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders })
-  if (req.method !== 'POST') return json({ error: 'Método não permitido' }, 405)
+  if (req.method !== 'POST') return fail('Método não permitido: use POST', 405)
 
   const supabase = createClient(
     Deno.env.get('SUPABASE_URL')!,
     Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!,
   )
 
-  // ---- 1. Autenticação por API Key (hash) ----
+  // ---- 1. Autenticação por API Key ----
   const apiKey = req.headers.get('X-API-Key') || req.headers.get('x-api-key')
-  if (!apiKey) return json({ error: 'X-API-Key ausente' }, 401)
+  if (!apiKey) return fail('X-API-Key ausente', 401)
 
   const keyHash = await sha256Hex(apiKey.trim())
   const { data: keyRow } = await supabase
@@ -38,7 +80,7 @@ Deno.serve(async (req) => {
     .maybeSingle()
 
   if (!keyRow || !keyRow.is_active || keyRow.revoked_at) {
-    return json({ error: 'Chave de integração inválida ou revogada' }, 401)
+    return fail('Chave de integração inválida ou revogada', 401)
   }
   const companyId = keyRow.company_id as string
 
@@ -47,80 +89,149 @@ Deno.serve(async (req) => {
     .update({ last_used_at: new Date().toISOString() })
     .eq('id', keyRow.id)
 
-  // ---- 2. Body ----
+  // ---- 2. Body (contrato plano; aceita nomes legados) ----
   let body: any
   try {
     body = await req.json()
   } catch {
-    return json({ error: 'JSON inválido' }, 400)
+    return fail('JSON inválido', 400)
   }
 
-  const idempotencyKey = String(body?.idempotency_key || '').trim()
-  const eventType = String(body?.event_type || '').trim()
-  const payload = body?.payload || {}
+  const p = body?.payload && typeof body.payload === 'object' ? { ...body.payload, ...body } : body || {}
 
-  if (!idempotencyKey) return json({ error: 'idempotency_key é obrigatório' }, 400)
+  const idempotencyKey = String(p.idempotency_key ?? '').trim()
+  const sampleBarcode = String(p.sample_barcode ?? p.sample_id ?? p.sample_code ?? '').trim()
+  const equipmentId = String(p.equipment_id ?? p.instrument_code ?? p.equipment ?? '').trim()
+  const testCode = norm(p.test_code ?? p.code)
+  const rawValue = p.value
+
+  if (!idempotencyKey) return fail('idempotency_key é obrigatório', 400)
+  if (!sampleBarcode) return fail('sample_barcode é obrigatório', 400)
+  if (!equipmentId) return fail('equipment_id é obrigatório', 400)
+  if (!testCode) return fail('test_code é obrigatório', 400)
+  if (rawValue === undefined || rawValue === null || String(rawValue).trim() === '') {
+    return fail('value é obrigatório', 400)
+  }
 
   // ---- 3. Idempotência ----
   const { data: existingEvent } = await supabase
     .from('instrument_events')
-    .select('id, status')
+    .select('id, status, error_message')
     .eq('company_id', companyId)
     .eq('idempotency_key', idempotencyKey)
     .maybeSingle()
 
   if (existingEvent) {
-    return json({ status: 'duplicate', message: 'Evento já processado', event_id: existingEvent.id }, 200)
+    if (existingEvent.status === 'processed') {
+      return ok({ duplicate: true, message: 'Evento já processado anteriormente', event_id: existingEvent.id })
+    }
+    return fail(
+      `Evento com este idempotency_key já foi recebido e falhou: ${existingEvent.error_message || 'erro anterior'}. Use uma nova idempotency_key para reenviar.`,
+      409,
+    )
   }
 
   const logEvent = async (status: string, errorMessage?: string) => {
     await supabase.from('instrument_events').insert({
       company_id: companyId,
       idempotency_key: idempotencyKey,
-      event_type: eventType || 'UNKNOWN',
-      entity_type: body?.entity_type || null,
-      entity_id: body?.entity_id ? String(body.entity_id) : null,
+      event_type: 'RESULT_READY',
+      entity_type: 'sample',
+      entity_id: sampleBarcode,
       payload: body ?? {},
       status,
       error_message: errorMessage || null,
     })
   }
 
-  // ---- 4. Eventos não suportados: ignora com segurança ----
-  if (eventType !== 'RESULT_READY') {
-    console.log(`[receive-instrument-result] evento ignorado: ${eventType}`)
-    await logEvent('ignored', `Tipo de evento não suportado: ${eventType}`)
-    return json({ status: 'ignored', message: `Evento ${eventType} ignorado` }, 200)
+  const reject = async (msg: string, status = 422) => {
+    console.error(`[receive-instrument-result] ${msg}`)
+    await logEvent('error', msg)
+    return fail(msg, status)
   }
 
-  const sampleId = String(payload?.sample_id || '').trim()
-  const testCode = norm(payload?.test_code)
-  const instrumentCode = String(payload?.instrument_code || '').trim()
-
-  if (!sampleId || !testCode || !instrumentCode) {
-    await logEvent('error', 'payload incompleto (sample_id, test_code, instrument_code)')
-    return json({ error: 'payload incompleto: sample_id, test_code e instrument_code são obrigatórios' }, 400)
-  }
-
-  // ---- 5. Equipamento (Identificador = serial_number) ----
+  // ---- 4. Equipamento (serial_number = identificador de interface) ----
   const { data: equipments } = await supabase
     .from('lab_equipments')
     .select('id, name, serial_number, is_active')
     .eq('company_id', companyId)
 
-  const equipment = (equipments || []).find((e) => norm(e.serial_number) === norm(instrumentCode))
+  const equipment = (equipments || []).find((e) => norm(e.serial_number) === norm(equipmentId))
   if (!equipment) {
-    const msg = `Equipamento com identificador "${instrumentCode}" não encontrado neste laboratório`
-    console.error(`[receive-instrument-result] ${msg}`)
-    await logEvent('error', msg)
-    return json({ error: msg }, 422)
+    return reject(`Nenhum equipamento cadastrado com equipment_id="${equipmentId}" nesta empresa`)
+  }
+  if (equipment.is_active === false) {
+    return reject(`Equipamento "${equipment.name}" está inativo`)
   }
 
-  // ---- 6. Exame + parâmetro pelo código no equipamento ----
+  // ---- 5. Pedido/amostra pelo sample_barcode ----
+  const { data: company } = await supabase
+    .from('companies')
+    .select('sequence_id')
+    .eq('id', companyId)
+    .maybeSingle()
+  const companySeq = (company?.sequence_id ?? null) as number | null
+
+  const since = new Date(Date.now() - 90 * 24 * 60 * 60 * 1000).toISOString()
+  const { data: orders } = await supabase
+    .from('attendance_orders')
+    .select('id, protocol, order_number, status, patient_id, patient_name, lab_guides, created_at')
+    .eq('company_id', companyId)
+    .gt('created_at', since)
+    .order('created_at', { ascending: false })
+    .limit(3000)
+
+  const barcodeUpper = norm(sampleBarcode)
+
+  let order: any = null
+  let cancelledMatch: any = null
+
+  for (const o of orders || []) {
+    const label = String(o.order_number || o.protocol || o.id)
+    const candidates = new Set<string>([norm(label), norm(o.protocol), norm(o.order_number)])
+    for (let idx = 1; idx <= TUBE_TYPES.length; idx++) {
+      const code = buildSampleCode(label, idx, companySeq)
+      candidates.add(norm(code))
+      candidates.add(norm(generateSampleHash(code)))
+    }
+    if (!candidates.has(barcodeUpper)) continue
+    if (CANCELLED_STATUSES.includes(String(o.status))) {
+      cancelledMatch = o
+      continue
+    }
+    order = o
+    break
+  }
+
+  if (!order && cancelledMatch) {
+    return reject(`Pedido da amostra sample_barcode=${sampleBarcode} está cancelado/excluído — resultado não aceito`)
+  }
+  if (!order) {
+    return reject(`Nenhum pedido encontrado com sample_barcode=${sampleBarcode}`)
+  }
+  if (!COLLECTED_STATUSES.includes(String(order.status))) {
+    return reject(
+      `Amostra sample_barcode=${sampleBarcode} pertence ao pedido ${order.protocol} que ainda não teve coleta confirmada (status "${order.status}")`,
+    )
+  }
+
+  // ---- 6. Exame/parâmetro do pedido pelo test_code ----
   const { data: catalog } = await supabase
     .from('exams')
-    .select('id, name, internal_code, parameters, interfacing_config, interfacing_parameters, measurement_unit')
+    .select('id, name, internal_code, tuss_code, parameters, interfacing_config, interfacing_parameters, measurement_unit')
     .eq('company_id', companyId)
+
+  const guides: any[] = Array.isArray(order.lab_guides) ? order.lab_guides : []
+  const orderExamIds = new Set<string>()
+  const orderExamByCatalogId = new Map<string, any>()
+  for (const g of guides) {
+    for (const e of g?.exams || []) {
+      if (e?.id) {
+        orderExamIds.add(String(e.id))
+        orderExamByCatalogId.set(String(e.id), e)
+      }
+    }
+  }
 
   let matchedExam: any = null
   let matchedParamId: string | null = null
@@ -128,21 +239,22 @@ Deno.serve(async (req) => {
   let matchedParamUnit: string | null = null
 
   for (const exam of catalog || []) {
+    if (!orderExamIds.has(String(exam.id))) continue
     const params: any[] = Array.isArray(exam.parameters) ? exam.parameters : []
     const mapping: any[] = Array.isArray(exam.interfacing_parameters) ? exam.interfacing_parameters : []
 
     const mapped = mapping.find((m: any) => norm(m?.machineCode) === testCode)
     if (mapped) {
-      const p = params.find((pp: any) => norm(pp?.name) === norm(mapped.parameterName))
+      const pp = params.find((x: any) => norm(x?.name) === norm(mapped.parameterName))
       matchedExam = exam
-      matchedParamId = p ? String(p.id) : '1'
-      matchedParamName = p?.name || mapped.parameterName || exam.name
-      matchedParamUnit = p?.unit || exam.measurement_unit || null
+      matchedParamId = pp ? String(pp.id) : '1'
+      matchedParamName = pp?.name || mapped.parameterName || exam.name
+      matchedParamUnit = pp?.unit || exam.measurement_unit || null
       break
     }
 
     const byParam = params.find(
-      (p: any) => norm(p?.equipCode) === testCode || norm(p?.equipment_code) === testCode,
+      (x: any) => norm(x?.equipCode) === testCode || norm(x?.equipment_code) === testCode || norm(x?.internalCode) === testCode,
     )
     if (byParam) {
       matchedExam = exam
@@ -154,9 +266,10 @@ Deno.serve(async (req) => {
 
     if (
       norm((exam.interfacing_config as any)?.equipmentCode) === testCode ||
-      norm(exam.internal_code) === testCode
+      norm(exam.internal_code) === testCode ||
+      norm(exam.tuss_code) === testCode
     ) {
-      const first = params.find((p: any) => !p?.isHidden && !p?.is_hidden)
+      const first = params.find((x: any) => !x?.isHidden && !x?.is_hidden)
       matchedExam = exam
       matchedParamId = first ? String(first.id) : '1'
       matchedParamName = first?.name || exam.name
@@ -166,53 +279,14 @@ Deno.serve(async (req) => {
   }
 
   if (!matchedExam) {
-    const msg = `Nenhum exame/parâmetro mapeado para o código "${testCode}" (verifique Interfaceamento > Mapeamento de Parâmetros)`
-    console.error(`[receive-instrument-result] ${msg}`)
-    await logEvent('error', msg)
-    return json({ error: msg }, 422)
-  }
-
-  // ---- 7. Pedido/amostra ----
-  const sampleParts = sampleId.split('-')
-  const candidates = Array.from(
-    new Set([sampleId, sampleParts.slice(0, 2).join('-'), sampleParts[0]].filter(Boolean)),
-  )
-
-  const { data: orders } = await supabase
-    .from('attendance_orders')
-    .select('id, protocol, order_number, status, patient_id, patient_name, lab_guides')
-    .eq('company_id', companyId)
-    .or(
-      candidates
-        .map((c) => `protocol.eq.${c},order_number.eq.${c}`)
-        .join(','),
+    return reject(
+      `test_code="${testCode}" não corresponde a nenhum exame/parâmetro do pedido ${order.protocol} (verifique Interfaceamento > Mapeamento de Parâmetros)`,
     )
-    .order('created_at', { ascending: false })
-
-  let order: any = null
-  let orderExam: any = null
-
-  for (const o of orders || []) {
-    const guides: any[] = Array.isArray(o.lab_guides) ? o.lab_guides : []
-    for (const g of guides) {
-      const found = (g?.exams || []).find((e: any) => String(e?.id) === String(matchedExam.id))
-      if (found) {
-        order = o
-        orderExam = found
-        break
-      }
-    }
-    if (order) break
   }
 
-  if (!order || !orderExam) {
-    const msg = `Amostra "${sampleId}" não encontrada ou não contém o exame "${matchedExam.name}"`
-    console.error(`[receive-instrument-result] ${msg}`)
-    await logEvent('error', msg)
-    return json({ error: msg }, 422)
-  }
+  const orderExam = orderExamByCatalogId.get(String(matchedExam.id))
 
-  // ---- 8. Grava o resultado (pendente de liberação) ----
+  // ---- 7. Grava o resultado (pendente de liberação) ----
   const examRef = `${order.id}:${matchedExam.id}`
   const nowIso = new Date().toISOString()
 
@@ -224,9 +298,9 @@ Deno.serve(async (req) => {
     .maybeSingle()
 
   if (existingResult?.status === 'released') {
-    const msg = 'Exame já liberado — resultado do equipamento ignorado'
+    const msg = `Exame "${matchedExam.name}" já foi liberado — resultado do equipamento não foi gravado`
     await logEvent('ignored', msg)
-    return json({ status: 'ignored', message: msg }, 200)
+    return fail(msg, 409)
   }
 
   let resultId = existingResult?.id as string | undefined
@@ -236,7 +310,7 @@ Deno.serve(async (req) => {
     protocol: order.protocol,
     exam_ref: examRef,
     exam_catalog_id: matchedExam.id,
-    exam_code: orderExam.internalCode || matchedExam.internal_code || null,
+    exam_code: orderExam?.internalCode || matchedExam.internal_code || null,
     exam_name: matchedExam.name,
     patient_id: order.patient_id,
     patient_name: order.patient_name,
@@ -246,42 +320,33 @@ Deno.serve(async (req) => {
 
   if (resultId) {
     const { error } = await supabase.from('lab_exam_results').update(resultPayload).eq('id', resultId)
-    if (error) {
-      console.error('[receive-instrument-result] erro ao atualizar resultado', error)
-      await logEvent('error', error.message)
-      return json({ error: error.message }, 500)
-    }
+    if (error) return reject(`Falha ao atualizar resultado: ${error.message}`, 500)
   } else {
     const { data: inserted, error } = await supabase
       .from('lab_exam_results')
       .insert(resultPayload)
       .select('id')
       .single()
-    if (error || !inserted) {
-      const msg = error?.message || 'Falha ao gravar resultado'
-      console.error('[receive-instrument-result] erro ao gravar resultado', error)
-      await logEvent('error', msg)
-      return json({ error: msg }, 500)
-    }
+    if (error || !inserted) return reject(`Falha ao gravar resultado: ${error?.message || 'erro desconhecido'}`, 500)
     resultId = inserted.id
   }
 
-  const flag = String(payload?.flag || '').trim().toUpperCase()
-  const statusLabel = flag === 'N' || flag === '' ? 'Normal' : flag === 'L' ? 'Baixo' : flag === 'H' ? 'Alto' : flag
+  const flag = String(p.flag ?? '').trim().toUpperCase()
+  const statusLabel = flag === '' || flag === 'N' ? 'Normal' : flag === 'L' ? 'Baixo' : flag === 'H' ? 'Alto' : flag
 
   const valuePayload = {
     company_id: companyId,
     result_id: resultId!,
     parameter_key: matchedParamId,
     parameter_name: matchedParamName,
-    value: String(payload?.value ?? ''),
-    unit: payload?.unit || matchedParamUnit,
-    reference: payload?.reference_range || null,
+    value: String(rawValue),
+    unit: p.unit || matchedParamUnit,
+    reference: p.reference_range || null,
     status: statusLabel || null,
     source: 'instrument',
-    instrument_code: instrumentCode,
+    instrument_code: equipmentId,
     flag: flag || null,
-    result_datetime: payload?.result_datetime || nowIso,
+    result_datetime: p.result_datetime || nowIso,
   }
 
   const { data: existingValue } = await supabase
@@ -295,23 +360,18 @@ Deno.serve(async (req) => {
     ? await supabase.from('lab_result_values').update(valuePayload).eq('id', existingValue.id)
     : await supabase.from('lab_result_values').insert(valuePayload)
 
-  if (valueError) {
-    console.error('[receive-instrument-result] erro ao gravar valor', valueError)
-    await logEvent('error', valueError.message)
-    return json({ error: valueError.message }, 500)
-  }
+  if (valueError) return reject(`Falha ao gravar valor: ${valueError.message}`, 500)
 
-  if (order.status === 'collection_done' || order.status === 'waiting_collection') {
+  if (order.status === 'collection_done') {
     await supabase.from('attendance_orders').update({ status: 'in_analysis' }).eq('id', order.id)
   }
 
   await logEvent('processed')
 
-  return json({
-    status: 'processed',
+  return ok({
     result_id: resultId!,
+    protocol: order.protocol,
     exam: matchedExam.name,
     parameter: matchedParamName,
-    protocol: order.protocol,
   })
 })
