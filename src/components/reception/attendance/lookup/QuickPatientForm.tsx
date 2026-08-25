@@ -1,10 +1,34 @@
 import { useState } from 'react'
 import { toast } from 'sonner'
+import { UserCheck, AlertTriangle } from 'lucide-react'
 import { useRegisters } from '@/context/RegistersContext'
 import { useAuth } from '@/context/AuthContext'
 import { supabase } from '@/integrations/supabase/client'
 import { resolveCompanyId } from '@/utils/companyId'
+import { isValidCPF, formatCPFDisplay } from '@/utils/patient.validators'
+import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import type { Patient } from '@/types/patient.types'
+
+function dbToPatient(data: any): Patient {
+  return {
+    id: data.id,
+    companyId: data.company_id,
+    fullName: data.name,
+    birthDate: data.birth_date,
+    motherName: data.mother_name || undefined,
+    cpf: data.cpf || undefined,
+    gender: data.gender as any,
+    phone1: data.phone || '',
+    phone1Type: 'mobile',
+    email: data.email || undefined,
+    status: (data.status as any) || 'active',
+    createdAt: data.created_at,
+    updatedAt: data.updated_at,
+    convenios: [],
+    clinicalData: { allergies: [], chronicConditions: [], continuousMedications: [] },
+    tags: [],
+  } as Patient
+}
 
 interface Props { onCreate: (patient: Patient) => void }
 
@@ -29,6 +53,7 @@ export function QuickPatientForm({ onCreate }: Props) {
   const companyId = resolveCompanyId(user?.companyId)
   const [showMore, setShowMore] = useState(false)
   const [saving, setSaving] = useState(false)
+  const [duplicate, setDuplicate] = useState<Patient | null>(null)
   const [f, setF] = useState({
     fullName: '', birthDate: '', motherName: '', phone1: '', cpf: '',
     phone2: '', email: '', gender: 'not_informed', rg: '',
@@ -36,33 +61,34 @@ export function QuickPatientForm({ onCreate }: Props) {
   })
   const set = <K extends keyof typeof f>(k: K, v: string) => setF(s => ({ ...s, [k]: v }))
 
+  const cpfDigits = f.cpf.replace(/\D/g, '')
+  const cpfValid = isValidCPF(f.cpf)
   const isValid = f.fullName.trim().split(/\s+/).length >= 2 && 
     f.birthDate.length === 10 && 
     f.motherName.trim() && 
-    f.phone1.replace(/\D/g, '').length >= 10 &&
-    f.cpf.replace(/\D/g, '').length === 11
+    cpfValid
+
+  const lookupCpf = async (clean: string): Promise<Patient | null> => {
+    if (!companyId || clean.length !== 11) return null
+    const { data } = await supabase
+      .from('patients').select('*')
+      .eq('company_id', companyId).eq('cpf', clean).maybeSingle()
+    return data ? dbToPatient(data) : null
+  }
 
   const submit = async () => {
+    if (!cpfValid) { toast.error('CPF inválido'); return }
     if (!isValid) { toast.error('Preencha os campos obrigatórios (incluindo CPF)'); return }
     if (!companyId) { toast.error('Empresa não identificada'); return }
 
-    // Check for duplicate CPF
+    // Bloqueio: CPF já cadastrado
     try {
-      const { data: existing, error: checkError } = await supabase
-        .from('patients')
-        .select('id, name')
-        .eq('company_id', companyId)
-        .eq('cpf', f.cpf.replace(/\D/g, ''))
-        .maybeSingle()
-
-      if (checkError) throw checkError
-      if (existing) {
-        toast.error(`CPF já cadastrado para o paciente: ${existing.name}`)
-        return
-      }
+      const existing = await lookupCpf(cpfDigits)
+      if (existing) { setDuplicate(existing); return }
     } catch (e) {
       console.warn('Duplicate CPF check error', e)
     }
+
 
     setSaving(true)
     const [dd, mm, yyyy] = f.birthDate.split('/')
@@ -118,53 +144,24 @@ export function QuickPatientForm({ onCreate }: Props) {
           <input value={f.motherName} onChange={e => set('motherName', e.target.value)}
             className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm" />
         </Field>
-        <Field label="Telefone 1 *">
+        <Field label="Telefone 1">
           <input value={f.phone1} onChange={e => set('phone1', maskPhone(e.target.value))} placeholder="(00) 00000-0000"
             className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm" />
         </Field>
         <Field label="CPF *">
-          <input value={f.cpf} 
-            onChange={async (e) => {
-              const masked = maskCpf(e.target.value)
-              set('cpf', masked)
-              
-              // Auto lookup for quick patient
-              if (masked.length === 14 && companyId) {
-                const clean = masked.replace(/\D/g, '')
-                const { data } = await supabase
-                  .from('patients')
-                  .select('*')
-                  .eq('company_id', companyId)
-                  .eq('cpf', clean)
-                  .maybeSingle()
-                
-                if (data) {
-                  toast.success(`Paciente encontrado: ${data.name}`)
-                  // Convert db record to the UI Patient shape
-                  const p: Patient = {
-                    id: data.id,
-                    companyId: data.company_id,
-                    fullName: data.name,
-                    birthDate: data.birth_date,
-                    motherName: data.mother_name || undefined,
-                    cpf: data.cpf || undefined,
-                    gender: data.gender as any,
-                    phone1: data.phone || '',
-                    phone1Type: 'mobile',
-                    email: data.email || undefined,
-                    status: data.status as any,
-                    createdAt: data.created_at,
-                    updatedAt: data.updated_at,
-                    convenios: [],
-                    clinicalData: { allergies: [], chronicConditions: [], continuousMedications: [] },
-                    tags: []
-                  }
-                  onCreate(p)
-                }
-              }
-            }} 
+          <input value={f.cpf}
+            onChange={e => set('cpf', maskCpf(e.target.value))}
+            onBlur={async () => {
+              if (cpfDigits.length !== 11) return
+              if (!cpfValid) { toast.error('CPF inválido'); return }
+              const existing = await lookupCpf(cpfDigits)
+              if (existing) setDuplicate(existing)
+            }}
             placeholder="000.000.000-00"
-            className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm" />
+            className={`w-full rounded-md border bg-background px-3 py-2 text-sm ${cpfDigits.length === 11 && !cpfValid ? 'border-destructive' : 'border-border'}`} />
+          {cpfDigits.length === 11 && !cpfValid && (
+            <p className="mt-1 text-xs text-destructive">CPF inválido</p>
+          )}
         </Field>
       </div>
 
@@ -204,6 +201,42 @@ export function QuickPatientForm({ onCreate }: Props) {
         className="w-full rounded-md gradient-bg py-2.5 text-sm font-semibold text-white disabled:opacity-50">
         {saving ? 'Cadastrando...' : '✓ Cadastrar e Avançar'}
       </button>
+
+      <Dialog open={!!duplicate} onOpenChange={v => !v && setDuplicate(null)}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-warning">
+              <AlertTriangle className="h-5 w-5" /> CPF já cadastrado
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-2">
+            <p className="text-sm text-muted-foreground">
+              Já existe um paciente cadastrado com este CPF. Você pode iniciar o atendimento com ele.
+            </p>
+            {duplicate && (
+              <div className="rounded-lg border border-border bg-muted/30 p-3">
+                <div className="font-semibold text-sm text-foreground">{duplicate.fullName}</div>
+                <div className="text-xs text-muted-foreground space-y-0.5 mt-1">
+                  <div>CPF: {formatCPFDisplay(duplicate.cpf)}</div>
+                  {duplicate.birthDate && <div>Nasc: {new Date(duplicate.birthDate).toLocaleDateString('pt-BR')}</div>}
+                  {duplicate.phone1 && <div>Tel: {duplicate.phone1}</div>}
+                </div>
+              </div>
+            )}
+          </div>
+          <DialogFooter className="gap-2">
+            <button type="button" onClick={() => setDuplicate(null)}
+              className="rounded-lg border border-input bg-background px-4 py-2 text-sm font-semibold text-foreground hover:bg-muted">
+              Corrigir CPF
+            </button>
+            <button type="button"
+              onClick={() => { const p = duplicate!; setDuplicate(null); onCreate(p) }}
+              className="inline-flex items-center gap-2 rounded-lg gradient-bg px-4 py-2 text-sm font-semibold text-white">
+              <UserCheck className="h-4 w-4" /> Iniciar com este paciente
+            </button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }

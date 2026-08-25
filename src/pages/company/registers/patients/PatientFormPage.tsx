@@ -17,7 +17,7 @@ import { maskCPF } from '@/utils/patient.validators'
 import { patientFormSchema, emptyPatientForm, type PatientFormValues } from '@/utils/patient.schema'
 import { dbToPatient, patientToDb } from '@/utils/patient.adapter'
 import { resolveCompanyId } from '@/utils/companyId'
-import { stringSimilarity } from '@/utils/patient.validators'
+import { stringSimilarity, isValidCPF } from '@/utils/patient.validators'
 import type { Patient } from '@/types/patient.types'
 
 import { PersonalSection } from '@/components/patients/form/PersonalSection'
@@ -57,6 +57,7 @@ export default function PatientFormPage() {
   const [loading, setLoading] = useState(isEditing)
   const [saving, setSaving] = useState(false)
   const [duplicates, setDuplicates] = useState<Array<{ patient: Patient; reason: string; score?: number }>>([])
+  const [blockedByCpf, setBlockedByCpf] = useState(false)
   const [pendingValues, setPendingValues] = useState<PatientFormValues | null>(null)
   const [reviewValues, setReviewValues] = useState<PatientFormValues | null>(null)
   const allPatientsRef = useRef<Patient[]>([])
@@ -209,10 +210,33 @@ export default function PatientFormPage() {
     setReviewValues(values)
   }
 
-  const confirmFromReview = () => {
+  const confirmFromReview = async () => {
     if (!reviewValues) return
+    const cleanCPF = (reviewValues.cpf || '').replace(/\D/g, '')
+    if (!isValidCPF(cleanCPF)) {
+      toast.error('CPF inválido')
+      setReviewValues(null)
+      setTab('personal')
+      return
+    }
+    // Bloqueio duro: CPF já cadastrado na empresa
+    if (!isEditing) {
+      const cid = resolveCompanyId(user?.companyId)
+      if (cid) {
+        const { data: existing } = await supabase
+          .from('patients').select('*')
+          .eq('company_id', cid).eq('cpf', cleanCPF).maybeSingle()
+        if (existing) {
+          setBlockedByCpf(true)
+          setDuplicates([{ patient: dbToPatient(existing), reason: 'CPF já cadastrado', score: 1 }])
+          setPendingValues(null)
+          return
+        }
+      }
+    }
     const dups = findDuplicates(reviewValues)
     if (dups.length > 0) {
+      setBlockedByCpf(dups.some(d => d.reason === 'CPF idêntico'))
       setDuplicates(dups)
       setPendingValues(reviewValues)
       return
@@ -323,7 +347,8 @@ export default function PatientFormPage() {
       <DuplicateWarningModal
         open={duplicates.length > 0}
         candidates={duplicates}
-        onCancel={() => { setDuplicates([]); setPendingValues(null) }}
+        blocking={blockedByCpf}
+        onCancel={() => { setDuplicates([]); setPendingValues(null); setBlockedByCpf(false) }}
         onContinue={() => { if (pendingValues) persist(pendingValues) }}
         onOpen={p => navigate(`/app/cadastros/pacientes/${p.id}`)}
       />

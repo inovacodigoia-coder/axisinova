@@ -12,9 +12,11 @@ interface Props {
   onCancel: () => void
   onContinue: () => void
   onOpen: (patient: Patient) => void
+  /** Quando true, impede salvar (ex.: CPF já cadastrado) */
+  blocking?: boolean
 }
 
-export function DuplicateWarningModal({ open, candidates, onCancel, onContinue, onOpen }: Props) {
+export function DuplicateWarningModal({ open, candidates, onCancel, onContinue, onOpen, blocking }: Props) {
   return (
     <Dialog open={open} onOpenChange={v => !v && onCancel()}>
       <DialogContent className="max-w-lg">
@@ -26,8 +28,9 @@ export function DuplicateWarningModal({ open, candidates, onCancel, onContinue, 
         </DialogHeader>
         <div className="space-y-3">
           <p className="text-sm text-muted-foreground">
-            Encontramos {candidates.length === 1 ? 'um paciente' : `${candidates.length} pacientes`} com dados muito parecidos.
-            Verifique se não é o mesmo paciente antes de salvar.
+            {blocking
+              ? 'Já existe um paciente cadastrado com este CPF. Não é possível cadastrar duas vezes o mesmo CPF — abra o cadastro existente.'
+              : `Encontramos ${candidates.length === 1 ? 'um paciente' : `${candidates.length} pacientes`} com dados muito parecidos. Verifique se não é o mesmo paciente antes de salvar.`}
           </p>
           <div className="space-y-2 max-h-72 overflow-y-auto">
             {candidates.map(({ patient, reason, score }) => (
@@ -57,10 +60,12 @@ export function DuplicateWarningModal({ open, candidates, onCancel, onContinue, 
             className="rounded-lg border border-input bg-background px-4 py-2 text-sm font-semibold text-foreground hover:bg-muted">
             Revisar dados
           </button>
-          <button type="button" onClick={onContinue}
-            className="rounded-lg bg-warning px-4 py-2 text-sm font-semibold text-warning-foreground hover:opacity-90">
-            Continuar e salvar mesmo assim
-          </button>
+          {!blocking && (
+            <button type="button" onClick={onContinue}
+              className="rounded-lg bg-warning px-4 py-2 text-sm font-semibold text-warning-foreground hover:opacity-90">
+              Continuar e salvar mesmo assim
+            </button>
+          )}
         </DialogFooter>
       </DialogContent>
     </Dialog>
