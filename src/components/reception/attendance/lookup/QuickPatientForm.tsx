@@ -201,6 +201,42 @@ export function QuickPatientForm({ onCreate }: Props) {
         className="w-full rounded-md gradient-bg py-2.5 text-sm font-semibold text-white disabled:opacity-50">
         {saving ? 'Cadastrando...' : '✓ Cadastrar e Avançar'}
       </button>
+
+      <Dialog open={!!duplicate} onOpenChange={v => !v && setDuplicate(null)}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-warning">
+              <AlertTriangle className="h-5 w-5" /> CPF já cadastrado
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-2">
+            <p className="text-sm text-muted-foreground">
+              Já existe um paciente cadastrado com este CPF. Você pode iniciar o atendimento com ele.
+            </p>
+            {duplicate && (
+              <div className="rounded-lg border border-border bg-muted/30 p-3">
+                <div className="font-semibold text-sm text-foreground">{duplicate.fullName}</div>
+                <div className="text-xs text-muted-foreground space-y-0.5 mt-1">
+                  <div>CPF: {formatCPFDisplay(duplicate.cpf)}</div>
+                  {duplicate.birthDate && <div>Nasc: {new Date(duplicate.birthDate).toLocaleDateString('pt-BR')}</div>}
+                  {duplicate.phone1 && <div>Tel: {duplicate.phone1}</div>}
+                </div>
+              </div>
+            )}
+          </div>
+          <DialogFooter className="gap-2">
+            <button type="button" onClick={() => setDuplicate(null)}
+              className="rounded-lg border border-input bg-background px-4 py-2 text-sm font-semibold text-foreground hover:bg-muted">
+              Corrigir CPF
+            </button>
+            <button type="button"
+              onClick={() => { const p = duplicate!; setDuplicate(null); onCreate(p) }}
+              className="inline-flex items-center gap-2 rounded-lg gradient-bg px-4 py-2 text-sm font-semibold text-white">
+              <UserCheck className="h-4 w-4" /> Iniciar com este paciente
+            </button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }
