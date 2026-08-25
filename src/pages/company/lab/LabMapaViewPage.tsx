@@ -160,7 +160,16 @@ export default function LabMapaViewPage() {
 
   const title = view === 'exame' ? 'Mapa de Trabalho por Exames' : 'Mapa de Trabalho'
 
+  if (mapLoading) {
+    return (
+      <div className="space-y-5">
+        <Card className="p-10 text-center text-sm text-muted-foreground">Carregando mapa...</Card>
+      </div>
+    )
+  }
+
   if (!map) {
+
     return (
       <div className="space-y-5">
         <Button variant="outline" size="sm" className="gap-2" onClick={() => navigate('/app/lab/mapa')}>
