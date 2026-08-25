@@ -53,6 +53,7 @@ export function QuickPatientForm({ onCreate }: Props) {
   const companyId = resolveCompanyId(user?.companyId)
   const [showMore, setShowMore] = useState(false)
   const [saving, setSaving] = useState(false)
+  const [duplicate, setDuplicate] = useState<Patient | null>(null)
   const [f, setF] = useState({
     fullName: '', birthDate: '', motherName: '', phone1: '', cpf: '',
     phone2: '', email: '', gender: 'not_informed', rg: '',
