@@ -326,21 +326,43 @@ export const API_GROUPS: ApiGroup[] = [
         method: 'POST',
         path: '/receive-instrument-result',
         summary: 'Receber resultado de equipamento',
-        description: 'Endpoint público autenticado por X-API-Key. Vincula o resultado ao pedido pela amostra/protocolo.',
+        description:
+          'Endpoint autenticado por X-API-Key. Um resultado por chamada. A amostra é identificada pelo mesmo "sample_barcode" devolvido em /list-orders-for-integration. Toda rejeição vem com { success: false, error } e status 4xx — nunca 200 silencioso.',
         scope: 'company',
         auth: 'Header X-API-Key',
         params: [
           { name: 'X-API-Key', in: 'header', type: 'string', required: true, description: 'Chave de integração da empresa' },
+          { name: 'idempotency_key', in: 'body', type: 'string', required: true, description: 'String única por evento. Reenvio da mesma chave devolve success: true com duplicate: true' },
+          { name: 'sample_barcode', in: 'body', type: 'string', required: true, description: 'Código de barras da amostra (samples[].sample_barcode). Também aceita o sample_code ou o número do pedido' },
+          { name: 'equipment_id', in: 'body', type: 'string', required: true, description: 'Identificador de interface do equipamento (serial cadastrado)' },
+          { name: 'test_code', in: 'body', type: 'string', required: true, description: 'Código do exame/parâmetro no equipamento' },
+          { name: 'value', in: 'body', type: 'string', required: true, description: 'Valor do resultado' },
+          { name: 'unit', in: 'body', type: 'string', required: false, description: 'Unidade de medida' },
+          { name: 'flag', in: 'body', type: 'string', required: false, description: 'N (normal), L (baixo) ou H (alto)' },
+          { name: 'reference_range', in: 'body', type: 'string', required: false, description: 'Faixa de referência do equipamento' },
+          { name: 'result_datetime', in: 'body', type: 'string', required: false, description: 'ISO 8601 do horário do resultado' },
         ],
         requestExample: `{
+  "idempotency_key": "cobas-2026-08-25-000123",
+  "sample_barcode": "17RGQ3RM6",
   "equipment_id": "COBAS-01",
-  "sample_code": "129-00",
-  "results": [
-    { "test_code": "HB", "value": "13.4", "unit": "g/dL" }
-  ]
+  "test_code": "HB",
+  "value": "13.4",
+  "unit": "g/dL",
+  "flag": null,
+  "reference_range": null,
+  "result_datetime": "2026-08-25T00:16:29-03:00"
 }`,
-        responseExample: `{ "success": true, "matched": 1, "ignored": 0 }`,
+        responseExample: `// 200 sucesso
+{ "success": true, "result_id": "...", "protocol": "129-00", "exam": "Hemograma", "parameter": "Hemoglobina" }
+
+// 200 evento repetido (não duplica o resultado)
+{ "success": true, "duplicate": true, "message": "Evento já processado anteriormente" }
+
+// 422 rejeição com motivo explícito
+{ "success": false, "error": "Nenhum pedido encontrado com sample_barcode=17RGQ3RM6" }`,
       },
+
       {
         id: 'fn-list-exams',
         method: 'GET',
