@@ -147,10 +147,15 @@ export default function InstrumentApiKeysPage() {
             <code className="rounded-lg bg-muted px-3 py-2 text-xs">X-API-Key: sua-chave</code>
           </div>
           <p className="text-xs text-muted-foreground">
-            Envie POST com <code>event_type: "RESULT_READY"</code>, <code>idempotency_key</code> único e o
-            <code> payload</code> com sample_id, test_code, instrument_code, value, unit, flag, reference_range e
-            result_datetime.
+            Envie <code>POST</code> com um resultado por chamada:{' '}
+            <code>
+              {`{ "idempotency_key", "sample_barcode", "equipment_id", "test_code", "value", "unit", "flag", "reference_range", "result_datetime" }`}
+            </code>
+            . O <code>sample_barcode</code> é o mesmo devolvido em <code>samples[].sample_barcode</code> de{' '}
+            <code>/list-orders-for-integration</code>. Sucesso: <code>{`{ "success": true }`}</code>. Qualquer rejeição
+            vem como <code>{`{ "success": false, "error": "motivo" }`}</code> com status 4xx.
           </p>
+
         </div>
       </Card>
 
