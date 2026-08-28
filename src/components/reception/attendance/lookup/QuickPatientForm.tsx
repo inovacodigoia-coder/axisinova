@@ -137,7 +137,7 @@ export function QuickPatientForm({ onCreate }: Props) {
     try {
       await supabase.from('patients').insert({
         id: newId, company_id: companyId, name: f.fullName.trim(),
-        birth_date: birthIso, cpf: f.cpf || null, mother_name: f.motherName || null,
+        birth_date: birthIso, cpf: cpfDigits || null, mother_name: f.motherName || null,
         phone: f.phone1, email: f.email || null, gender: f.gender, status: 'active',
       } as any)
     } catch (e) { console.warn('quick patient insert', e) }

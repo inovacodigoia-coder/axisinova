@@ -104,7 +104,8 @@ export default function PatientFormPage() {
         .from('patients')
         .select('*')
         .eq('company_id', cid)
-        .eq('cpf', cleanCpf)
+        .in('cpf', [cleanCpf, cleanCpf.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, '$1.$2.$3-$4')])
+        .limit(1)
         .maybeSingle()
 
       if (error) {
@@ -148,7 +149,7 @@ export default function PatientFormPage() {
     const cleanCPF = (values.cpf || '').replace(/\D/g, '')
     for (const p of list) {
       // CPF idêntico — bloqueio forte
-      if (cleanCPF && p.cpf && p.cpf === cleanCPF) {
+      if (cleanCPF && p.cpf && p.cpf.replace(/\D/g, '') === cleanCPF) {
         out.push({ patient: p, reason: 'CPF idêntico', score: 1 })
         continue
       }
@@ -225,7 +226,9 @@ export default function PatientFormPage() {
       if (cid) {
         const { data: existing } = await supabase
           .from('patients').select('*')
-          .eq('company_id', cid).eq('cpf', cleanCPF).maybeSingle()
+          .eq('company_id', cid)
+          .in('cpf', [cleanCPF, cleanCPF.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, '$1.$2.$3-$4')])
+          .limit(1).maybeSingle()
         if (existing) {
           setBlockedByCpf(true)
           setDuplicates([{ patient: dbToPatient(existing), reason: 'CPF já cadastrado', score: 1 }])
