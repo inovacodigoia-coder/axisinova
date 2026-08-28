@@ -176,7 +176,8 @@ function mapDbTV(row: any): TV {
     isActive: row.is_active,
     slug: row.slug || undefined,
     accessUsername: row.access_username || undefined,
-    accessPassword: row.access_password || undefined,
+    // A senha é armazenada com hash no banco: nunca é devolvida em texto para a interface.
+    accessPassword: undefined,
   }
 }
 
