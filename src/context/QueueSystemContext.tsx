@@ -418,16 +418,18 @@ export function QueueSystemProvider({ children }: { children: ReactNode }) {
   }, [])
 
   const updateTVDB = useCallback(async (data: TV & { companyId?: string }): Promise<boolean> => {
-    const { error } = await supabase.from('queue_tvs').update({
+    const payload: any = {
       name: data.name, voice_type: data.voiceType, screen_size: data.screenSize,
       device_count: data.deviceCount, media_mode: data.mediaMode,
       media_attachments: data.mediaAttachments as any,
       slug: data.slug || null,
       access_username: data.accessUsername || null,
-      access_password: data.accessPassword || null,
-    } as any).eq('id', data.id)
+    }
+    // Só grava a senha quando uma nova for digitada (mantém a senha atual caso contrário).
+    if (data.accessPassword) payload.access_password = data.accessPassword
+    const { error } = await supabase.from('queue_tvs').update(payload).eq('id', data.id)
     if (error) { toast.error('Erro ao atualizar TV'); return false }
-    dispatch({ type: 'UPDATE_TV', payload: data })
+    dispatch({ type: 'UPDATE_TV', payload: { ...data, accessPassword: undefined } })
     return true
   }, [])
 
