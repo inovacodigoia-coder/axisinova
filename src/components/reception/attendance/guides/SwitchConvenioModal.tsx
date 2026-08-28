@@ -2,7 +2,7 @@ import { useMemo, useState } from 'react'
 import { Dialog, DialogContent } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
 import { ScrollArea } from '@/components/ui/scroll-area'
-import { X, RefreshCw, Check } from 'lucide-react'
+import { X, RefreshCw, Check, AlertTriangle } from 'lucide-react'
 import { useRegisters } from '@/context/RegistersContext'
 import { cn } from '@/lib/utils'
 
