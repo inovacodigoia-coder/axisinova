@@ -364,6 +364,45 @@ export const API_GROUPS: ApiGroup[] = [
       },
 
       {
+        id: 'fn-receive-graphic',
+        method: 'POST',
+        path: '/receive-instrument-graphic',
+        summary: 'Receber gráfico do equipamento (histograma/scattergram)',
+        description:
+          'Endpoint autenticado por X-API-Key para envio de imagens geradas pelo analisador (histogramas WBC/RBC/PLT, scattergramas). Um gráfico por chamada. A amostra é identificada pelo mesmo "sample_barcode" devolvido em /list-orders-for-integration. Toda rejeição vem com { success: false, error } e status 4xx — nunca 200 silencioso.',
+        scope: 'company',
+        auth: 'Header X-API-Key',
+        params: [
+          { name: 'X-API-Key', in: 'header', type: 'string', required: true, description: 'Chave de integração da empresa' },
+          { name: 'idempotency_key', in: 'body', type: 'string', required: true, description: 'String única por evento. Reenvio da mesma chave devolve success: true com duplicate: true' },
+          { name: 'sample_barcode', in: 'body', type: 'string', required: true, description: 'Código de barras da amostra (samples[].sample_barcode)' },
+          { name: 'equipment_id', in: 'body', type: 'string', required: true, description: 'Identificador de interface do equipamento (serial cadastrado)' },
+          { name: 'item_code', in: 'body', type: 'string', required: true, description: 'Código do gráfico no equipamento (ex.: "12003"). Não precisa existir no Catálogo de Exames' },
+          { name: 'label', in: 'body', type: 'string', required: false, description: 'Nome legível do gráfico (ex.: "Histograma WBC")' },
+          { name: 'image_format', in: 'body', type: 'string', required: true, description: 'Formato da imagem: BMP, PNG, JPEG, GIF ou WEBP' },
+          { name: 'image_base64', in: 'body', type: 'string', required: true, description: 'Conteúdo binário da imagem em base64 (máx. 2MB decodificados)' },
+        ],
+        requestExample: `{
+  "idempotency_key": "cellagon-2026-08-28-000456",
+  "sample_barcode": "17RGQ3RM6",
+  "equipment_id": "CELLAGON-01",
+  "item_code": "12003",
+  "label": "Histograma WBC",
+  "image_format": "BMP",
+  "image_base64": "Qk0..."
+}`,
+        responseExample: `// 200 sucesso
+{ "success": true, "graphic_id": "...", "protocol": "129-00", "item_code": "12003" }
+
+// 200 evento repetido (não duplica o gráfico)
+{ "success": true, "duplicate": true, "message": "Evento já processado anteriormente" }
+
+// 422 rejeição com motivo explícito
+{ "success": false, "error": "Nenhum pedido encontrado com sample_barcode=17RGQ3RM6" }
+{ "success": false, "error": "image_base64 inválido, vazio ou maior que 2MB decodificados" }`,
+      },
+
+      {
         id: 'fn-list-exams',
         method: 'GET',
         path: '/list-exams-for-integration',
