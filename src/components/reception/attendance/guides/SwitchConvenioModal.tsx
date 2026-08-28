@@ -45,6 +45,14 @@ export function SwitchConvenioModal({ open, onClose, currentConvenioName, onConf
           <p className="text-xs text-muted-foreground">
             Convênio atual: <span className="font-bold text-foreground uppercase">{currentConvenioName || 'Particular'}</span>
           </p>
+          <div className="flex items-start gap-2 rounded-md border border-amber-300 bg-amber-50 px-3 py-2">
+            <AlertTriangle className="h-4 w-4 shrink-0 text-amber-600 mt-0.5" />
+            <p className="text-[11px] leading-relaxed text-amber-800">
+              A troca de convênio pode alterar os <strong>valores dos procedimentos</strong> — inclusive de
+              <strong> Particular para Particular</strong>, pois cada tabela possui preços próprios.
+              O convênio será atualizado no atendimento, nas guias e na busca de atendimentos.
+            </p>
+          </div>
           <ScrollArea className="h-[300px] rounded-md border border-border bg-white">
             <div className="divide-y divide-border">
               <button
