@@ -440,6 +440,7 @@ export default function TVConfigPage() {
                 <div className="flex gap-2">
                   <div className="relative flex-1">
                     <input type={showTvPwd ? 'text' : 'password'} value={tvPassword} onChange={e => setTvPassword(e.target.value)}
+                      placeholder="Deixe em branco para manter a senha atual"
                       className="w-full rounded-lg border border-input bg-background px-3 py-2 pr-9 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-ring" />
                     <button type="button" onClick={() => setShowTvPwd(s => !s)}
                       className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground" aria-label="Mostrar senha">
