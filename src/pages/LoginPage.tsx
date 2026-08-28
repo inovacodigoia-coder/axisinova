@@ -101,6 +101,7 @@ export default function LoginPage() {
         // Lockout is decided server-side; the UI only reflects the remaining time.
         if (result.lockedFor && result.lockedFor > 0) {
           setCooldown(result.lockedFor)
+          setCooldownTotal(result.lockedFor)
           setFailCount(0)
         }
         setIsLoading(false)
