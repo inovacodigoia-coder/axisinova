@@ -370,7 +370,8 @@ export default function LoginPage() {
                       Acesso temporariamente bloqueado
                     </span>
                     <span className="font-mono font-bold">
-                      00:{cooldown.toString().padStart(2, '0')}
+                      {Math.floor(cooldown / 60).toString().padStart(2, '0')}:
+                      {(cooldown % 60).toString().padStart(2, '0')}
                     </span>
                   </div>
                   <div className="h-1.5 rounded-full bg-orange-200 overflow-hidden">
