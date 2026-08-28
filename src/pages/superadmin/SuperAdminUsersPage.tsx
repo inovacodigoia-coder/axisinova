@@ -46,34 +46,79 @@ export default function SuperAdminUsersPage() {
   async function fetchUsers() {
     try {
       setLoading(true)
-      // Get all profiles and join with companies
-      const { data, error } = await supabase
-        .from('profiles')
-        .select('*, companies!inner(name, status)')
-        .neq('companies.status', 'deleted')
-        .order('created_at', { ascending: false })
+      // Get all profiles, companies and active login lockouts
+      const [profilesRes, locksRes] = await Promise.all([
+        supabase
+          .from('profiles')
+          .select('*, companies!inner(name, status)')
+          .neq('companies.status', 'deleted')
+          .order('created_at', { ascending: false }),
+        supabase
+          .from('auth_lockouts')
+          .select('id, lock_key, expires_at')
+          .eq('lock_type', 'identifier')
+          .is('released_at', null)
+          .gt('expires_at', new Date().toISOString()),
+      ])
 
-      if (error) throw error
+      if (profilesRes.error) throw profilesRes.error
 
-      if (data) {
-        // Since email is often only in auth.users, and profiles is linked by id,
-        // if public.profiles doesn't have an email column, we use CPF or ID as fallback
-        const mapped: SystemUser[] = data.map((p: any) => ({
-          id: p.id,
-          name: p.full_name || 'Sem nome',
-          email: p.email || (p.cpf ? `CPF: ${p.cpf}` : 'Sem e-mail vinculado'),
-          role: p.role || 'user',
-          isActive: p.is_active !== false,
-          lastAccess: p.updated_at ? new Date(p.updated_at).toLocaleString('pt-BR') : 'Nunca',
-          companyId: p.company_id,
-          companyName: p.companies?.name || 'Sistema (AxisInova)',
-        }))
+      const locks = (locksRes.data as ActiveLock[]) ?? []
+
+      if (profilesRes.data) {
+        // Resolve e-mails (auth.users) in parallel — needed to match lockouts,
+        // since lock_key is the identifier typed at login (usually the e-mail)
+        const mapped: SystemUser[] = await Promise.all(
+          profilesRes.data.map(async (p: any) => {
+            let email: string | null = p.email ?? null
+            if (!email) {
+              try {
+                const { data: mail } = await supabase.functions.invoke('get-user-email', {
+                  body: { user_id: p.id },
+                })
+                email = mail?.email ?? null
+              } catch {
+                email = null
+              }
+            }
+
+            const identifiers = [email, p.cpf]
+              .filter(Boolean)
+              .map((v: string) => v.toLowerCase())
+            const lock = locks.find((l) => identifiers.includes(l.lock_key.toLowerCase()))
+
+            return {
+              id: p.id,
+              name: p.full_name || 'Sem nome',
+              email: email || (p.cpf ? `CPF: ${p.cpf}` : 'Sem e-mail vinculado'),
+              role: p.role || 'user',
+              isActive: p.is_active !== false,
+              lastAccess: p.updated_at ? new Date(p.updated_at).toLocaleString('pt-BR') : 'Nunca',
+              companyId: p.company_id,
+              companyName: p.companies?.name || 'Sistema (AxisInova)',
+              lockId: lock?.id,
+              lockExpiresAt: lock?.expires_at,
+            }
+          })
+        )
         setUsers(mapped)
       }
     } catch (err: any) {
       toast.error('Erro ao carregar usuários: ' + err.message)
     } finally {
       setLoading(false)
+    }
+  }
+
+  async function unlockUser(user: SystemUser) {
+    if (!user.lockId) return
+    try {
+      const { error } = await supabase.rpc('auth_release_lockout', { _lockout_id: user.lockId })
+      if (error) throw error
+      toast.success(`Acesso de ${user.name} desbloqueado`)
+      fetchUsers()
+    } catch (err: any) {
+      toast.error('Erro ao desbloquear: ' + err.message)
     }
   }
 
