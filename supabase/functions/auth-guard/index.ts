@@ -52,12 +52,29 @@ Deno.serve(async (req) => {
 
     if (action === "record") {
       const success = body?.success === true;
+
+      // Company is only resolved from a verified session token, never from the body.
+      let companyId: string | null = null;
+      const authHeader = req.headers.get("Authorization");
+      if (success && authHeader?.startsWith("Bearer ")) {
+        const token = authHeader.slice(7);
+        const { data: userData } = await admin.auth.getUser(token);
+        if (userData?.user) {
+          const { data: profile } = await admin
+            .from("profiles")
+            .select("company_id")
+            .eq("id", userData.user.id)
+            .maybeSingle();
+          companyId = profile?.company_id ?? null;
+        }
+      }
+
       const { data, error } = await admin.rpc("auth_record_attempt", {
         _identifier: identifier,
         _ip: ip,
         _user_agent: userAgent,
         _success: success,
-        _company_id: null,
+        _company_id: companyId,
       });
       if (error) {
         console.error("auth_record_attempt failed");
