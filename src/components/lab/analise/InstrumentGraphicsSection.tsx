@@ -22,8 +22,8 @@ const mimeFor = (format: string) => {
 };
 
 export const InstrumentGraphicsSection = ({ protocol }: { protocol?: string | null }) => {
-  const { state } = useAppState();
-  const companyId = state.company?.id;
+  const { user } = useAuth();
+  const companyId = resolveCompanyId(user?.companyId);
   const [graphics, setGraphics] = useState<Graphic[]>([]);
   const [loading, setLoading] = useState(false);
   const [preview, setPreview] = useState<Graphic | null>(null);
