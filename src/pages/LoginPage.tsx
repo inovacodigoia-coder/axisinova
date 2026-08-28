@@ -142,7 +142,7 @@ export default function LoginPage() {
   }, [clearTypingAnimation])
 
   const isDisabled = cooldown > 0 || isLoading || (!email && !password)
-  const cooldownProgress = cooldown > 0 ? ((60 - cooldown) / 60) * 100 : 0
+  const cooldownProgress = cooldown > 0 ? ((cooldownTotal - cooldown) / Math.max(1, cooldownTotal)) * 100 : 0
 
   const [devConfig, setDevConfig] = useState<DevAccessConfig>({ enabled: false, credentials: [] })
 
