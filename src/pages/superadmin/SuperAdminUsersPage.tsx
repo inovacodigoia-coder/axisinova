@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { StatusBadge } from '@/components/ui/StatusBadge'
 import { supabase } from '@/integrations/supabase/client'
-import { Eye, Building2 } from 'lucide-react'
+import { Eye, Building2, Lock, Unlock } from 'lucide-react'
 import { toast } from 'sonner'
 import { useNavigate } from 'react-router-dom'
 
@@ -14,6 +14,14 @@ interface SystemUser {
   lastAccess: string
   companyId?: string
   companyName?: string
+  lockId?: string
+  lockExpiresAt?: string
+}
+
+interface ActiveLock {
+  id: string
+  lock_key: string
+  expires_at: string
 }
 
 const roleLabels: Record<string, string> = {
