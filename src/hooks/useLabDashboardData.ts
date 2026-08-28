@@ -60,7 +60,9 @@ export function useLabDashboardData() {
       const date = parseISO(o.registeredAt);
       return o.examMode === 'lab' && date.getMonth() === today.getMonth() && date.getFullYear() === today.getFullYear();
     });
-    const monthlyRevenue = currentMonthOrders.reduce((acc, o) => acc + (o.privateValue || 0), 0);
+    const monthlyRevenue = currentMonthOrders
+      .filter(o => o.status !== 'cancelled')
+      .reduce((acc, o) => acc + (o.privateValue || 0), 0);
 
     // Chart Data: Atendimentos da Semana
     const days = eachDayOfInterval({ start: startOfW, end: endOfW });
@@ -84,7 +86,7 @@ export function useLabDashboardData() {
       });
       return {
         month: format(date, 'MMM'),
-        valor: monthOrders.reduce((acc, o) => acc + (o.privateValue || 0), 0)
+        valor: monthOrders.filter(o => o.status !== 'cancelled').reduce((acc, o) => acc + (o.privateValue || 0), 0)
       };
     });
 
@@ -102,10 +104,10 @@ export function useLabDashboardData() {
 
     return {
       metrics: [
-        { label: 'Atendimentos Hoje', value: todayOrders.length.toString(), change: `${todayChange.toFixed(0)}%`, type: 'today' },
-        { label: 'Pacientes Ativos', value: activePatients.toLocaleString('pt-BR'), change: '+5%', type: 'patients' },
-        { label: 'Agenda da Semana', value: weekAppointments.length.toString(), change: '+8%', type: 'agenda' },
-        { label: 'Faturamento Mensal', value: `R$ ${monthlyRevenue.toLocaleString('pt-BR')}`, change: '+15%', type: 'revenue' },
+        { label: 'Atendimentos Hoje', value: todayOrders.length.toString(), change: yesterdayOrders.length > 0 ? `${todayChange > 0 ? '+' : ''}${todayChange.toFixed(0)}%` : '', type: 'today' },
+        { label: 'Pacientes Ativos', value: activePatients.toLocaleString('pt-BR'), change: '', type: 'patients' },
+        { label: 'Agenda da Semana', value: weekAppointments.length.toString(), change: '', type: 'agenda' },
+        { label: 'Faturamento Mensal', value: `R$ ${monthlyRevenue.toLocaleString('pt-BR')}`, change: '', type: 'revenue' },
       ],
       weeklyChartData,
       monthlyRevenueData,
