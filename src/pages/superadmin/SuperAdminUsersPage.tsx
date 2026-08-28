@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { StatusBadge } from '@/components/ui/StatusBadge'
 import { supabase } from '@/integrations/supabase/client'
-import { Eye, Building2 } from 'lucide-react'
+import { Eye, Building2, Lock, Unlock } from 'lucide-react'
 import { toast } from 'sonner'
 import { useNavigate } from 'react-router-dom'
 
@@ -14,6 +14,14 @@ interface SystemUser {
   lastAccess: string
   companyId?: string
   companyName?: string
+  lockId?: string
+  lockExpiresAt?: string
+}
+
+interface ActiveLock {
+  id: string
+  lock_key: string
+  expires_at: string
 }
 
 const roleLabels: Record<string, string> = {
@@ -38,34 +46,79 @@ export default function SuperAdminUsersPage() {
   async function fetchUsers() {
     try {
       setLoading(true)
-      // Get all profiles and join with companies
-      const { data, error } = await supabase
-        .from('profiles')
-        .select('*, companies!inner(name, status)')
-        .neq('companies.status', 'deleted')
-        .order('created_at', { ascending: false })
+      // Get all profiles, companies and active login lockouts
+      const [profilesRes, locksRes] = await Promise.all([
+        supabase
+          .from('profiles')
+          .select('*, companies!inner(name, status)')
+          .neq('companies.status', 'deleted')
+          .order('created_at', { ascending: false }),
+        supabase
+          .from('auth_lockouts')
+          .select('id, lock_key, expires_at')
+          .eq('lock_type', 'identifier')
+          .is('released_at', null)
+          .gt('expires_at', new Date().toISOString()),
+      ])
 
-      if (error) throw error
+      if (profilesRes.error) throw profilesRes.error
 
-      if (data) {
-        // Since email is often only in auth.users, and profiles is linked by id,
-        // if public.profiles doesn't have an email column, we use CPF or ID as fallback
-        const mapped: SystemUser[] = data.map((p: any) => ({
-          id: p.id,
-          name: p.full_name || 'Sem nome',
-          email: p.email || (p.cpf ? `CPF: ${p.cpf}` : 'Sem e-mail vinculado'),
-          role: p.role || 'user',
-          isActive: p.is_active !== false,
-          lastAccess: p.updated_at ? new Date(p.updated_at).toLocaleString('pt-BR') : 'Nunca',
-          companyId: p.company_id,
-          companyName: p.companies?.name || 'Sistema (AxisInova)',
-        }))
+      const locks = (locksRes.data as ActiveLock[]) ?? []
+
+      if (profilesRes.data) {
+        // Resolve e-mails (auth.users) in parallel — needed to match lockouts,
+        // since lock_key is the identifier typed at login (usually the e-mail)
+        const mapped: SystemUser[] = await Promise.all(
+          profilesRes.data.map(async (p: any) => {
+            let email: string | null = p.email ?? null
+            if (!email) {
+              try {
+                const { data: mail } = await supabase.functions.invoke('get-user-email', {
+                  body: { user_id: p.id },
+                })
+                email = mail?.email ?? null
+              } catch {
+                email = null
+              }
+            }
+
+            const identifiers = [email, p.cpf]
+              .filter(Boolean)
+              .map((v: string) => v.toLowerCase())
+            const lock = locks.find((l) => identifiers.includes(l.lock_key.toLowerCase()))
+
+            return {
+              id: p.id,
+              name: p.full_name || 'Sem nome',
+              email: email || (p.cpf ? `CPF: ${p.cpf}` : 'Sem e-mail vinculado'),
+              role: p.role || 'user',
+              isActive: p.is_active !== false,
+              lastAccess: p.updated_at ? new Date(p.updated_at).toLocaleString('pt-BR') : 'Nunca',
+              companyId: p.company_id,
+              companyName: p.companies?.name || 'Sistema (AxisInova)',
+              lockId: lock?.id,
+              lockExpiresAt: lock?.expires_at,
+            }
+          })
+        )
         setUsers(mapped)
       }
     } catch (err: any) {
       toast.error('Erro ao carregar usuários: ' + err.message)
     } finally {
       setLoading(false)
+    }
+  }
+
+  async function unlockUser(user: SystemUser) {
+    if (!user.lockId) return
+    try {
+      const { error } = await supabase.rpc('auth_release_lockout', { _lockout_id: user.lockId })
+      if (error) throw error
+      toast.success(`Acesso de ${user.name} desbloqueado`)
+      fetchUsers()
+    } catch (err: any) {
+      toast.error('Erro ao desbloquear: ' + err.message)
     }
   }
 
@@ -141,9 +194,17 @@ export default function SuperAdminUsersPage() {
                     </td>
                     <td className="px-4 py-4 text-muted-foreground whitespace-nowrap">{m.lastAccess}</td>
                     <td className="px-4 py-4">
-                      <StatusBadge variant={m.isActive ? 'success' : 'error'}>
-                        {m.isActive ? 'Ativo' : 'Inativo'}
-                      </StatusBadge>
+                      <div className="flex flex-col gap-1 items-start">
+                        <StatusBadge variant={m.isActive ? 'success' : 'error'}>
+                          {m.isActive ? 'Ativo' : 'Inativo'}
+                        </StatusBadge>
+                        {m.lockId && (
+                          <StatusBadge variant="warning">
+                            <Lock className="h-3 w-3 mr-1 inline" />
+                            Bloqueado
+                          </StatusBadge>
+                        )}
+                      </div>
                     </td>
                     <td className="px-4 py-4 text-center">
                       <div className="flex items-center justify-center gap-2">
@@ -155,6 +216,16 @@ export default function SuperAdminUsersPage() {
                           <Eye className="h-4 w-4" />
                           <span className="text-xs font-medium">Ver</span>
                         </button>
+                        {m.lockId && (
+                          <button
+                            onClick={() => unlockUser(m)}
+                            className="px-3 py-1 rounded-md text-xs font-medium transition-all bg-amber-50 text-amber-700 hover:bg-amber-100 inline-flex items-center gap-1"
+                            title={`Bloqueado até ${m.lockExpiresAt ? new Date(m.lockExpiresAt).toLocaleString('pt-BR') : '—'}`}
+                          >
+                            <Unlock className="h-3.5 w-3.5" />
+                            Desbloquear
+                          </button>
+                        )}
                         <button 
                           onClick={() => toggleUserStatus(m.id, m.isActive)}
                           className={`px-3 py-1 rounded-md text-xs font-medium transition-all ${
