@@ -26,17 +26,14 @@ interface RegistrationData {
 }
 
 export async function checkCnpjExists(cnpj: string): Promise<boolean> {
-  const { data, error } = await supabase
-    .from('companies')
-    .select('id')
-    .eq('cnpj', cnpj)
-    .maybeSingle()
+  // Uses a narrow RPC: company rows are not publicly readable.
+  const { data, error } = await supabase.rpc('company_cnpj_exists', { _cnpj: cnpj })
 
   if (error) {
     console.error('CNPJ check error:', error)
     return false
   }
-  return !!data
+  return data === true
 }
 
 export async function registerCompany(data: RegistrationData) {

@@ -285,8 +285,19 @@ function LabDataSection({ settings, setSettings }: { settings: any; setSettings:
 }
 
 async function uploadLabAsset(file: File, folder: string) {
+  // Files must live under the owning company's folder (enforced by storage policies).
+  const { data: { user: authUser } } = await supabase.auth.getUser()
+  if (!authUser) throw new Error('Sessão expirada. Faça login novamente.')
+  const { data: prof } = await supabase
+    .from('profiles')
+    .select('company_id')
+    .eq('id', authUser.id)
+    .maybeSingle()
+  const companyId = prof?.company_id
+  if (!companyId) throw new Error('Empresa não identificada para o upload.')
+
   const fileExt = file.name.split('.').pop()
-  const filePath = `${folder}/${crypto.randomUUID()}.${fileExt}`
+  const filePath = `${companyId}/${folder}/${crypto.randomUUID()}.${fileExt}`
 
   const { error: uploadError } = await supabase.storage
     .from('company-assets')
