@@ -53,9 +53,12 @@ Deno.serve(async (req) => {
   // ---- 3. Catálogo da empresa da chave ----
   const { data: exams, error } = await supabase
     .from('exams')
-    .select('id, name, internal_code, tuss_code, is_active, default_material, selected_materials, measurement_unit, parameters, interfacing_parameters, workbench_id')
+    .select('id, name, internal_code, tuss_code, is_active, type, default_material, selected_materials, measurement_unit, parameters, interfacing_parameters, workbench_id')
     .eq('company_id', companyId)
     .eq('is_active', true)
+    // Apenas exames de Laboratório entram na integração com equipamentos;
+    // exames do tipo "clinical" (ex.: Raio X) nunca são devolvidos.
+    .neq('type', 'clinical')
     .order('name', { ascending: true })
     .range(from, from + limit - 1)
 
