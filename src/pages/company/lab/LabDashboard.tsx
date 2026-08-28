@@ -23,6 +23,11 @@ import {
   Cell
 } from 'recharts';
 import { useLabDashboardData } from '@/hooks/useLabDashboardData';
+import { useLabDashboardMetrics, LAB_PERIOD_OPTIONS } from '@/hooks/useLabDashboardMetrics';
+import { StatusCardsRow } from '@/components/lab/dashboard/StatusCardsRow';
+import { SamplesBreakdownPanel } from '@/components/lab/dashboard/SamplesBreakdownPanel';
+import { AttendanceHeatmap } from '@/components/lab/dashboard/AttendanceHeatmap';
+import { TopExamsList } from '@/components/lab/dashboard/TopExamsList';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -67,6 +72,7 @@ const metricColors = {
                                             I have approved the plan */
 export default function LabDashboard() {
   const { stats, loading } = useLabDashboardData();
+  const metrics = useLabDashboardMetrics();
   const navigate = useNavigate();
 
   if (loading || !stats) {
@@ -105,6 +111,57 @@ export default function LabDashboard() {
         </div>
       </div>
 
+      {/* Filtro de período */}
+      <div className="flex flex-wrap items-center gap-2 rounded-2xl border border-border bg-card p-3 shadow-sm">
+        <span className="text-xs font-medium text-muted-foreground mr-1">Período:</span>
+        {LAB_PERIOD_OPTIONS.map(p => (
+          <button
+            key={p.value}
+            onClick={() => metrics.setPeriod(p.value)}
+            className={cn(
+              'rounded-full px-3 py-1.5 text-xs font-medium transition-all',
+              metrics.period === p.value ? 'gradient-bg text-white shadow-sm' : 'bg-muted text-muted-foreground hover:bg-accent'
+            )}
+          >
+            {p.label}
+          </button>
+        ))}
+        <span className="ml-auto text-xs text-muted-foreground">
+          {metrics.totalOrders} pedido(s) · {metrics.totalSamples} exame(s)
+        </span>
+      </div>
+
+      <StatusCardsRow counts={metrics.statusCounts} />
+
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <SamplesBreakdownPanel
+          title="Amostras por Material"
+          subtitle="Exames agrupados pelo material de coleta"
+          rows={metrics.byMaterial}
+        />
+        <SamplesBreakdownPanel
+          title="Amostras por Setor"
+          subtitle="Exames agrupados pela bancada técnica"
+          rows={metrics.bySector}
+          accent="secondary"
+        />
+      </div>
+
+      <AttendanceHeatmap
+        columns={metrics.heatmap.columns}
+        rows={metrics.heatmap.rows}
+        max={metrics.heatmap.max}
+        peak={metrics.heatmap.peak}
+        zoom={metrics.heatmapZoom}
+        onZoomChange={metrics.setHeatmapZoom}
+      />
+
+      <TopExamsList
+        rows={metrics.topExams.rows}
+        limit={metrics.topLimit}
+        onLimitChange={metrics.setTopLimit}
+      />
+
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         {stats.metrics.map((m) => {
           const Icon = metricIcons[m.type as keyof typeof metricIcons];
@@ -116,9 +173,11 @@ export default function LabDashboard() {
                 <div className={cn("flex h-10 w-10 items-center justify-center rounded-xl", colorClass)}>
                   <Icon className="h-5 w-5" />
                 </div>
-                <span className="flex items-center gap-1 text-xs font-medium text-emerald-500">
-                  <TrendingUp className="h-3 w-3" /> {m.change}
-                </span>
+                {m.change ? (
+                  <span className="flex items-center gap-1 text-xs font-medium text-emerald-500">
+                    <TrendingUp className="h-3 w-3" /> {m.change}
+                  </span>
+                ) : null}
               </div>
               <p className="mt-3 text-2xl font-bold text-foreground">{m.value}</p>
               <p className="text-xs text-muted-foreground">{m.label}</p>
