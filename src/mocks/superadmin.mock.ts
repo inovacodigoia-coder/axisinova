@@ -1,13 +1,7 @@
 import { Company, CompanyUser, Invoice } from '@/types/company.types'
 import { AuditEntry, DashboardMetrics, MonthlySignup, PlanConfig, PlanDistribution, SystemAlert } from '@/types/superadmin.types'
 
-export const MOCK_USERS_AUTH = [
-  { email: 'inovacodigoiaadm@inovacodigoia.com.br', password: 'Inov@codigoia2026', role: 'super_admin' as const, id: 'super_admin_001', name: 'Super Administrador' },
-  { email: 'admin@clinicademo.com.br', password: 'Admin@2025', role: 'company_admin' as const, id: 'company_admin_001', name: 'Administrador Demo', companyId: 'comp_001', companyName: 'Clínica Demo Ltda' },
-  { email: 'medico@clinicademo.com.br', password: 'Medico@2025', role: 'doctor' as const, id: 'doctor_001', name: 'Dr. Carlos Lima', companyId: 'comp_001', companyName: 'Clínica Demo Ltda' },
-  { email: 'recepcao@clinicademo.com.br', password: 'Recepcao@2025', role: 'receptionist' as const, id: 'receptionist_001', name: 'Carla Souza', companyId: 'comp_001', companyName: 'Clínica Demo Ltda' },
-  { email: 'faturamento@clinicademo.com.br', password: 'Fatura@2025', role: 'billing' as const, id: 'billing_001', name: 'Ana Lima', companyId: 'comp_001', companyName: 'Clínica Demo Ltda' },
-]
+// Hardcoded demo credentials removed for security — login uses backend auth only.
 
 export const MOCK_COMPANIES: Company[] = [
   {
