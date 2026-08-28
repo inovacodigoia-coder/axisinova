@@ -369,7 +369,7 @@ export const API_GROUPS: ApiGroup[] = [
         path: '/list-exams-for-integration',
         summary: 'Catálogo de exames (sincronização do middleware)',
         description:
-          'Lista os exames ativos da empresa da chave, para o middleware local puxar periodicamente (pull). Parâmetros do exame são retornados como itens filhos com parent_code.',
+          'Lista os exames ativos da empresa da chave, para o middleware local puxar periodicamente (pull). Parâmetros do exame são retornados como itens filhos com parent_code. Apenas exames do Tipo "Laboratório" são devolvidos — exames do tipo "Clínica" nunca aparecem na resposta.',
         scope: 'company',
         auth: 'Header X-API-Key',
         params: [
