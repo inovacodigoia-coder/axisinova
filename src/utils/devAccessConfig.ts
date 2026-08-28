@@ -20,22 +20,18 @@ export interface DevAccessConfig {
 const STORAGE_KEY = 'axisinova:dev-access-config'
 const SETTINGS_KEY = 'dev_access_panel'
 
-export const DEFAULT_DEV_CREDENTIALS: DevAccessCredential[] = [
-  { id: 'super', label: 'Super Admin', email: 'inovacodigoiaadm@inovacodigoia.com.br', password: 'Inov@codigoia2026' },
-  { id: 'admin', label: 'Admin da Clínica Demo', email: 'admin@clinicademo.com.br', password: 'Admin@2025' },
-  { id: 'medico', label: 'Médico Demo', email: 'medico@clinicademo.com.br', password: 'Medico@2025' },
-  { id: 'recepcao', label: 'Recepção Demo', email: 'recepcao@clinicademo.com.br', password: 'Recepcao@2025' },
-  { id: 'faturamento', label: 'Faturamento Demo', email: 'faturamento@clinicademo.com.br', password: 'Fatura@2025' },
-]
+// No credentials are shipped in the bundle. The panel stays empty/disabled
+// unless a super admin configures it in the backend.
+export const DEFAULT_DEV_CREDENTIALS: DevAccessCredential[] = []
 
 export const DEFAULT_DEV_ACCESS_CONFIG: DevAccessConfig = {
-  enabled: true,
+  enabled: false,
   credentials: DEFAULT_DEV_CREDENTIALS,
 }
 
 function normalize(parsed: Partial<DevAccessConfig> | null | undefined): DevAccessConfig {
   return {
-    enabled: typeof parsed?.enabled === 'boolean' ? parsed.enabled : true,
+    enabled: typeof parsed?.enabled === 'boolean' ? parsed.enabled : false,
     credentials: Array.isArray(parsed?.credentials) ? parsed!.credentials! : DEFAULT_DEV_CREDENTIALS,
   }
 }

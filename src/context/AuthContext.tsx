@@ -1,6 +1,6 @@
 import { createContext, useCallback, useContext, useEffect, useState, type ReactNode } from 'react'
 import type { AuthUser, UserRole } from '@/types/auth.types'
-import { authenticateUser, getRedirectByRole } from '@/mocks/users.mock'
+import { getRedirectByRole } from '@/mocks/users.mock'
 import { supabase } from '@/integrations/supabase/client'
 
 const TOKEN_KEY = 'axis_inova_token'
@@ -111,27 +111,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       return { success: true, redirectTo }
     }
 
-    // 2. Fallback to mock credentials for local demo users only
-    const credential = authenticateUser(email, password)
-
-    if (!credential) {
-      return { success: false, error: authError?.message === 'Email not confirmed' ? 'E-mail ainda não confirmado.' : 'Credenciais inválidas' }
+    // No client-side fallback: only backend-verified sessions are accepted.
+    return {
+      success: false,
+      error: authError?.message === 'Email not confirmed'
+        ? 'E-mail ainda não confirmado.'
+        : 'Credenciais inválidas',
     }
-
-    if (!credential.user.isActive) {
-      return { success: false, error: 'Usuário inativo. Contate o administrador.' }
-    }
-
-    await supabase.auth.signOut()
-
-    const newToken = `mock_token_${credential.user.id}_${Date.now()}`
-    localStorage.setItem(TOKEN_KEY, newToken)
-    localStorage.setItem(USER_KEY, JSON.stringify(credential.user))
-    setUser(credential.user)
-    setToken(newToken)
-    setIsAuthenticated(true)
-    const redirectTo = getRedirectByRole(credential.user.role)
-    return { success: true, redirectTo }
   }, [])
 
   const logout = useCallback(() => {

@@ -26,17 +26,14 @@ interface RegistrationData {
 }
 
 export async function checkCnpjExists(cnpj: string): Promise<boolean> {
-  const { data, error } = await supabase
-    .from('companies')
-    .select('id')
-    .eq('cnpj', cnpj)
-    .maybeSingle()
+  // Uses a narrow RPC: company rows are not publicly readable.
+  const { data, error } = await supabase.rpc('company_cnpj_exists', { _cnpj: cnpj })
 
   if (error) {
     console.error('CNPJ check error:', error)
     return false
   }
-  return !!data
+  return data === true
 }
 
 export async function registerCompany(data: RegistrationData) {
@@ -49,8 +46,9 @@ export async function registerCompany(data: RegistrationData) {
     throw new Error('Este CNPJ já está cadastrado no sistema. Caso precise de ajuda, entre em contato com o suporte.')
   }
 
-  // 2. Create the company first
-  const { data: companyInsert, error: companyError } = await supabase
+  // 2. Create the company first (company rows are not readable by anonymous visitors,
+  // so the id is resolved afterwards through a narrow RPC)
+  const { error: companyError } = await supabase
     .from('companies')
     .insert({
       name: data.razaoSocial,
@@ -71,10 +69,6 @@ export async function registerCompany(data: RegistrationData) {
       estado: data.estado,
       valor_mensal: data.plano === 'Starter' ? 490 : data.plano === 'Enterprise' ? 2490 : 990,
     })
-    .select('id')
-    .maybeSingle()
-
-  let companyId = companyInsert?.id
 
   if (companyError) {
     console.error('Company creation error:', companyError)
@@ -85,18 +79,11 @@ export async function registerCompany(data: RegistrationData) {
     throw new Error('Erro ao criar empresa: ' + companyError.message)
   }
 
-  // If insert succeeded but select returned nothing (can happen if RLS permits INSERT but not yet SELECT for this specific record)
+  const { data: newCompanyId } = await supabase.rpc('company_id_by_cnpj', { _cnpj: data.cnpj })
+  const companyId = newCompanyId as string | null
+
   if (!companyId) {
-    const { data: existingCompany } = await supabase
-      .from('companies')
-      .select('id')
-      .eq('cnpj', data.cnpj)
-      .maybeSingle()
-    
-    if (!existingCompany) {
-      throw new Error('Erro ao processar criação da empresa. Por favor, tente novamente.')
-    }
-    companyId = existingCompany.id
+    throw new Error('Erro ao processar criação da empresa. Por favor, tente novamente.')
   }
 
   // 3. Sign up the admin user with metadata

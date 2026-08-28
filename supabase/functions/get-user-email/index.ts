@@ -18,35 +18,40 @@ Deno.serve(async (req) => {
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const admin = createClient(supabaseUrl, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!);
 
-    const { user_id, company_id } = (await req.json().catch(() => ({}))) ?? {};
+    const { user_id } = (await req.json().catch(() => ({}))) ?? {};
     if (!user_id) return json({ error: "Informe o usuário" }, 400);
 
-    let callerRole: string | null = null;
-    let callerCompanyId: string | null = null;
+    // Authentication is mandatory — company_id from the body is never trusted.
     const authHeader = req.headers.get("Authorization");
-    if (authHeader?.startsWith("Bearer ")) {
-      const anonClient = createClient(supabaseUrl, Deno.env.get("SUPABASE_ANON_KEY")!, {
-        global: { headers: { Authorization: authHeader } },
-      });
-      const { data: { user: caller } } = await anonClient.auth.getUser();
-      if (caller) {
-        const { data: p } = await admin.from("profiles").select("role, company_id").eq("id", caller.id).single();
-        callerRole = p?.role ?? null;
-        callerCompanyId = p?.company_id ?? null;
-      }
+    if (!authHeader?.startsWith("Bearer ")) return json({ error: "Não autenticado" }, 401);
+
+    const anonClient = createClient(supabaseUrl, Deno.env.get("SUPABASE_ANON_KEY")!, {
+      global: { headers: { Authorization: authHeader } },
+    });
+    const { data: { user: caller } } = await anonClient.auth.getUser();
+    if (!caller) return json({ error: "Sessão inválida ou expirada" }, 401);
+
+    const { data: callerProfile } = await admin
+      .from("profiles")
+      .select("role, company_id, is_active")
+      .eq("id", caller.id)
+      .maybeSingle();
+
+    if (!callerProfile || callerProfile.is_active === false) {
+      return json({ error: "Sem permissão" }, 403);
     }
 
     const { data: target } = await admin
       .from("profiles")
       .select("id, company_id")
       .eq("id", user_id)
-      .single();
+      .maybeSingle();
 
     if (!target) return json({ error: "Usuário não encontrado" }, 404);
 
-    const effectiveCompanyId = callerCompanyId || company_id;
-    const isSuperAdmin = callerRole === "super_admin";
-    const isSameCompany = effectiveCompanyId === target.company_id;
+    const isSuperAdmin = callerProfile.role === "super_admin";
+    const isSameCompany =
+      !!callerProfile.company_id && callerProfile.company_id === target.company_id;
 
     if (!isSuperAdmin && !isSameCompany) {
       return json({ error: "Sem permissão para visualizar este usuário" }, 403);
