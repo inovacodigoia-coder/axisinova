@@ -151,7 +151,8 @@ function mapDbUnit(row: any): Unit {
   return { id: row.id, name: row.name, companyId: row.company_id, isActive: row.is_active, createdAt: row.created_at }
 }
 function mapDbTotem(row: any): Totem {
-  return { id: row.id, unitId: row.unit_id, name: row.name, isActive: row.is_active, slug: row.slug || undefined, accessUsername: row.access_username || undefined, accessPassword: row.access_password || undefined }
+  // A senha é armazenada com hash no banco: nunca é devolvida em texto para a interface.
+  return { id: row.id, unitId: row.unit_id, name: row.name, isActive: row.is_active, slug: row.slug || undefined, accessUsername: row.access_username || undefined, accessPassword: undefined }
 }
 function mapDbQueueLine(row: any): QueueLine {
   return {
