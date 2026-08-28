@@ -2,6 +2,7 @@ import { createContext, useCallback, useContext, useEffect, useState, type React
 import type { AuthUser, UserRole } from '@/types/auth.types'
 import { getRedirectByRole } from '@/mocks/users.mock'
 import { supabase } from '@/integrations/supabase/client'
+import { checkLockout, recordLoginAttempt, lockoutMessage, GENERIC_LOGIN_ERROR } from '@/services/authGuard'
 
 const TOKEN_KEY = 'axis_inova_token'
 const USER_KEY = 'axis_inova_user'
@@ -10,6 +11,8 @@ interface LoginResult {
   success: boolean
   error?: string
   redirectTo?: string
+  /** Segundos restantes de bloqueio, quando aplicável */
+  lockedFor?: number
 }
 
 interface AuthContextValue {
