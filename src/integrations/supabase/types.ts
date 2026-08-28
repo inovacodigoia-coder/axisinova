@@ -2656,6 +2656,8 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      company_cnpj_exists: { Args: { _cnpj: string }; Returns: boolean }
+      company_id_by_cnpj: { Args: { _cnpj: string }; Returns: string }
       device_public_info: {
         Args: { _kind: string; _slug: string }
         Returns: Json
