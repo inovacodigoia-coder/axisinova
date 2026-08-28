@@ -326,12 +326,13 @@ export function QueueSystemProvider({ children }: { children: ReactNode }) {
     if (extra) {
       payload.slug = extra.slug || null
       payload.access_username = extra.accessUsername || null
-      payload.access_password = extra.accessPassword || null
+      // Só grava a senha quando uma nova for digitada (mantém a senha atual caso contrário).
+      if (extra.accessPassword) payload.access_password = extra.accessPassword
     }
     const { error } = await supabase.from('queue_totems').update(payload).eq('id', id)
     if (error) { toast.error('Erro ao atualizar totem'); return false }
     const existing = state.totems.find(t => t.id === id)
-    if (existing) dispatch({ type: 'UPDATE_TOTEM', payload: { ...existing, name, ...(extra ? { slug: extra.slug, accessUsername: extra.accessUsername, accessPassword: extra.accessPassword } : {}) } })
+    if (existing) dispatch({ type: 'UPDATE_TOTEM', payload: { ...existing, name, ...(extra ? { slug: extra.slug, accessUsername: extra.accessUsername, accessPassword: undefined } : {}) } })
     return true
   }, [state.totems])
 
