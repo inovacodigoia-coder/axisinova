@@ -97,6 +97,7 @@ const App = () => (
                         <Route path="usuarios" element={<SuperAdminUsersPage />} />
                         <Route path="planos" element={<PlansManagerPage />} />
                         <Route path="auditoria" element={<AuditLogPage />} />
+                        <Route path="auditoria-login" element={<LoginAuditPage />} />
                         <Route path="configuracoes" element={<SystemSettingsPage />} />
                         <Route path="alertas" element={<SuperAdminDashboard />} />
                       </Route>
