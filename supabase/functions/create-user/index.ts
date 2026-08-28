@@ -5,6 +5,12 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
+const json = (body: unknown, status = 200) =>
+  new Response(JSON.stringify(body), {
+    status,
+    headers: { ...corsHeaders, "Content-Type": "application/json" },
+  });
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response("ok", { headers: corsHeaders });
@@ -15,51 +21,57 @@ Deno.serve(async (req) => {
     const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const adminClient = createClient(supabaseUrl, serviceRoleKey);
 
-    // Try JWT auth first
+    // Authentication is mandatory — no client-supplied identity is trusted.
     const authHeader = req.headers.get("Authorization");
-    let callerCompanyId: string | null = null;
-    let callerRole: string | null = null;
-
-    if (authHeader && authHeader.startsWith("Bearer ")) {
-      const anonKey = Deno.env.get("SUPABASE_ANON_KEY")!;
-      const anonClient = createClient(supabaseUrl, anonKey, {
-        global: { headers: { Authorization: authHeader } },
-      });
-      const { data: { user: caller } } = await anonClient.auth.getUser();
-      if (caller) {
-        const { data: profile } = await adminClient
-          .from("profiles")
-          .select("role, company_id")
-          .eq("id", caller.id)
-          .single();
-        if (profile) {
-          callerRole = profile.role;
-          callerCompanyId = profile.company_id;
-        }
-      }
+    if (!authHeader?.startsWith("Bearer ")) {
+      return json({ error: "Não autenticado" }, 401);
     }
 
-    const body = await req.json();
-    const { email, password, full_name, cpf, role, company_id, badge_code } = body;
+    const anonClient = createClient(supabaseUrl, Deno.env.get("SUPABASE_ANON_KEY")!, {
+      global: { headers: { Authorization: authHeader } },
+    });
+    const { data: { user: caller } } = await anonClient.auth.getUser();
+    if (!caller) return json({ error: "Sessão inválida ou expirada" }, 401);
 
-    // If no JWT auth succeeded, use the company_id from the body (for mock-auth users)
-    const effectiveCompanyId = callerCompanyId || company_id;
+    const { data: callerProfile } = await adminClient
+      .from("profiles")
+      .select("role, company_id, is_active, is_admin")
+      .eq("id", caller.id)
+      .maybeSingle();
+
+    if (!callerProfile || callerProfile.is_active === false) {
+      return json({ error: "Usuário sem permissão" }, 403);
+    }
+
+    const callerRole = callerProfile.role as string | null;
+    const isSuperAdmin = callerRole === "super_admin";
+    const isCompanyAdmin = callerRole === "company_admin" || callerProfile.is_admin === true;
+
+    if (!isSuperAdmin && !isCompanyAdmin) {
+      return json({ error: "Sem permissão para criar usuários" }, 403);
+    }
+
+    const body = await req.json().catch(() => ({}));
+    const { email, password, full_name, cpf, role, company_id, badge_code } = body ?? {};
+
+    // Company is derived from the verified caller; super admins may target another company.
+    const effectiveCompanyId = isSuperAdmin
+      ? (company_id || callerProfile.company_id)
+      : callerProfile.company_id;
 
     if (!effectiveCompanyId) {
-      return new Response(JSON.stringify({ error: "Empresa não identificada" }), {
-        status: 400,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
+      return json({ error: "Empresa não identificada" }, 400);
     }
 
     if (!email || !password || !full_name || !role) {
-      return new Response(JSON.stringify({ error: "Campos obrigatórios: email, senha, nome completo e função" }), {
-        status: 400,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
+      return json({ error: "Campos obrigatórios: email, senha, nome completo e função" }, 400);
     }
 
-    // Create user with admin client
+    // Only super admins can mint other super admins.
+    if (role === "super_admin" && !isSuperAdmin) {
+      return json({ error: "Sem permissão para atribuir esta função" }, 403);
+    }
+
     const { data: newUser, error: createError } = await adminClient.auth.admin.createUser({
       email,
       password,
@@ -76,28 +88,18 @@ Deno.serve(async (req) => {
     if (createError) {
       const msg = createError.message.includes("already been registered")
         ? "Este e-mail já está cadastrado"
-        : createError.message;
-      return new Response(JSON.stringify({ error: msg }), {
-        status: 400,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
+        : "Não foi possível criar o usuário";
+      return json({ error: msg }, 400);
     }
 
-    // Força a redefinição de senha no primeiro acesso
     await adminClient
       .from("profiles")
       .update({ must_change_password: true })
       .eq("id", newUser.user.id);
 
-    return new Response(JSON.stringify({ user: { id: newUser.user.id, email: newUser.user.email } }), {
-      status: 201,
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
-    });
+    return json({ user: { id: newUser.user.id, email: newUser.user.email } }, 201);
   } catch (err) {
     console.error("create-user error:", err);
-    return new Response(JSON.stringify({ error: "Erro interno do servidor" }), {
-      status: 500,
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
-    });
+    return json({ error: "Erro interno do servidor" }, 500);
   }
 });

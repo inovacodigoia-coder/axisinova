@@ -19,40 +19,45 @@ Deno.serve(async (req) => {
     const admin = createClient(supabaseUrl, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!);
 
     const body = await req.json().catch(() => ({}));
-    const { user_id, password, company_id } = body ?? {};
+    const { user_id, password } = body ?? {};
 
     if (!user_id || typeof password !== "string" || password.length < 6) {
       return json({ error: "Informe o usuário e uma senha com no mínimo 6 caracteres" }, 400);
     }
 
-    // Identify caller (JWT preferred, fallback to company_id for mock-auth admins)
-    let callerRole: string | null = null;
-    let callerCompanyId: string | null = null;
+    // Authentication is mandatory — company_id from the body is never trusted.
     const authHeader = req.headers.get("Authorization");
-    if (authHeader?.startsWith("Bearer ")) {
-      const anonClient = createClient(supabaseUrl, Deno.env.get("SUPABASE_ANON_KEY")!, {
-        global: { headers: { Authorization: authHeader } },
-      });
-      const { data: { user: caller } } = await anonClient.auth.getUser();
-      if (caller) {
-        const { data: p } = await admin.from("profiles").select("role, company_id").eq("id", caller.id).single();
-        callerRole = p?.role ?? null;
-        callerCompanyId = p?.company_id ?? null;
-      }
+    if (!authHeader?.startsWith("Bearer ")) return json({ error: "Não autenticado" }, 401);
+
+    const anonClient = createClient(supabaseUrl, Deno.env.get("SUPABASE_ANON_KEY")!, {
+      global: { headers: { Authorization: authHeader } },
+    });
+    const { data: { user: caller } } = await anonClient.auth.getUser();
+    if (!caller) return json({ error: "Sessão inválida ou expirada" }, 401);
+
+    const { data: callerProfile } = await admin
+      .from("profiles")
+      .select("role, company_id, is_active, is_admin")
+      .eq("id", caller.id)
+      .maybeSingle();
+
+    if (!callerProfile || callerProfile.is_active === false) {
+      return json({ error: "Sem permissão" }, 403);
     }
 
     const { data: target } = await admin
       .from("profiles")
       .select("id, company_id")
       .eq("id", user_id)
-      .single();
+      .maybeSingle();
 
     if (!target) return json({ error: "Usuário não encontrado" }, 404);
 
-    const effectiveCompanyId = callerCompanyId || company_id;
-    const isSuperAdmin = callerRole === "super_admin";
+    const isSuperAdmin = callerProfile.role === "super_admin";
     const isCompanyAdmin =
-      (callerRole === "company_admin" || !callerRole) && effectiveCompanyId === target.company_id;
+      (callerProfile.role === "company_admin" || callerProfile.is_admin === true) &&
+      !!callerProfile.company_id &&
+      callerProfile.company_id === target.company_id;
 
     if (!isSuperAdmin && !isCompanyAdmin) {
       return json({ error: "Sem permissão para alterar a senha deste usuário" }, 403);
