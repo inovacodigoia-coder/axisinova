@@ -36,10 +36,10 @@ export const LAB_STATUS_ORDER = [
 function getRange(period: LabPeriod) {
   const now = new Date()
   switch (period) {
-    case 'today': return { from: startOfDay(now), to: endOfDay(now) }
-    case 'last_7_days': return { from: startOfDay(subDays(now, 6)), to: endOfDay(now) }
-    case 'last_30_days': return { from: startOfDay(subDays(now, 29)), to: endOfDay(now) }
-    case 'this_month': return { from: startOfMonth(now), to: endOfMonth(now) }
+    case 'today': return { start: startOfDay(now), end: endOfDay(now) }
+    case 'last_7_days': return { start: startOfDay(subDays(now, 6)), end: endOfDay(now) }
+    case 'last_30_days': return { start: startOfDay(subDays(now, 29)), end: endOfDay(now) }
+    case 'this_month': return { start: startOfMonth(now), end: endOfMonth(now) }
   }
 }
 
