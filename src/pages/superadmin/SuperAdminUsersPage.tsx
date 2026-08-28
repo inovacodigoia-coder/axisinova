@@ -216,6 +216,16 @@ export default function SuperAdminUsersPage() {
                           <Eye className="h-4 w-4" />
                           <span className="text-xs font-medium">Ver</span>
                         </button>
+                        {m.lockId && (
+                          <button
+                            onClick={() => unlockUser(m)}
+                            className="px-3 py-1 rounded-md text-xs font-medium transition-all bg-amber-50 text-amber-700 hover:bg-amber-100 inline-flex items-center gap-1"
+                            title={`Bloqueado até ${m.lockExpiresAt ? new Date(m.lockExpiresAt).toLocaleString('pt-BR') : '—'}`}
+                          >
+                            <Unlock className="h-3.5 w-3.5" />
+                            Desbloquear
+                          </button>
+                        )}
                         <button 
                           onClick={() => toggleUserStatus(m.id, m.isActive)}
                           className={`px-3 py-1 rounded-md text-xs font-medium transition-all ${
