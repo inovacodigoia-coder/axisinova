@@ -194,9 +194,17 @@ export default function SuperAdminUsersPage() {
                     </td>
                     <td className="px-4 py-4 text-muted-foreground whitespace-nowrap">{m.lastAccess}</td>
                     <td className="px-4 py-4">
-                      <StatusBadge variant={m.isActive ? 'success' : 'error'}>
-                        {m.isActive ? 'Ativo' : 'Inativo'}
-                      </StatusBadge>
+                      <div className="flex flex-col gap-1 items-start">
+                        <StatusBadge variant={m.isActive ? 'success' : 'error'}>
+                          {m.isActive ? 'Ativo' : 'Inativo'}
+                        </StatusBadge>
+                        {m.lockId && (
+                          <StatusBadge variant="warning">
+                            <Lock className="h-3 w-3 mr-1 inline" />
+                            Bloqueado
+                          </StatusBadge>
+                        )}
+                      </div>
                     </td>
                     <td className="px-4 py-4 text-center">
                       <div className="flex items-center justify-center gap-2">
