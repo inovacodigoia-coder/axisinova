@@ -33,6 +33,7 @@ import {
   Pencil
 } from 'lucide-react';
 import PDFPreviewModal from '@/components/lab/PDFPreviewModal';
+import { InstrumentGraphicsSection } from '@/components/lab/analise/InstrumentGraphicsSection';
 
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -1006,6 +1007,7 @@ export function ResultEntryModal({
                 {/* Exames do Paciente */}
                 {isExpanded && (
                   <div className="p-6 space-y-6 border-t border-slate-100 animate-in slide-in-from-top-2 duration-200">
+                    <InstrumentGraphicsSection protocol={patient.protocol} />
                     {patient.exams.map((exam: any) => {
                       const hasResult = getParams(exam).some((p: any) => 
                         (results[`${exam.id}_${p.id}`] || '').trim() !== ''
