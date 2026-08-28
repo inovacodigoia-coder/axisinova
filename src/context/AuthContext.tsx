@@ -83,9 +83,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         .single()
 
       if (profile && !profile.is_active) {
+        await recordLoginAttempt(identifier, false)
         await supabase.auth.signOut()
-        return { success: false, error: 'Usuário inativo. Contate o administrador.' }
+        return { success: false, error: GENERIC_LOGIN_ERROR }
       }
+
+      // Successful login clears the failure counter server-side
+      await recordLoginAttempt(identifier, true)
 
       // Get company name if linked
       let companyName: string | null = null
@@ -122,13 +126,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       return { success: true, redirectTo }
     }
 
-    // No client-side fallback: only backend-verified sessions are accepted.
-    return {
-      success: false,
-      error: authError?.message === 'Email not confirmed'
-        ? 'E-mail ainda não confirmado.'
-        : 'Credenciais inválidas',
+    // Failed attempt: record server-side and apply lockout rules.
+    const postState = await recordLoginAttempt(identifier, false)
+    if (postState?.locked) {
+      return { success: false, error: lockoutMessage(postState.retry_after_seconds), lockedFor: postState.retry_after_seconds }
     }
+
+    // Generic message for both unknown user and wrong password (prevents enumeration).
+    return { success: false, error: GENERIC_LOGIN_ERROR }
   }, [])
 
   const logout = useCallback(() => {
