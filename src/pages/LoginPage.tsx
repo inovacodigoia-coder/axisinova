@@ -28,6 +28,7 @@ export default function LoginPage() {
   const [error, setError] = useState<string | null>(null)
   const [failCount, setFailCount] = useState(0)
   const [cooldown, setCooldown] = useState(0)
+  const [cooldownTotal, setCooldownTotal] = useState(1)
   const [shake, setShake] = useState(false)
   const [emailError, setEmailError] = useState<string | null>(null)
 
