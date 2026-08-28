@@ -57,8 +57,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [])
 
   const login = useCallback(async (email: string, password: string): Promise<LoginResult> => {
-    // 1. Try backend auth first so privileged users get a real session
-    const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
+    const identifier = email.trim().toLowerCase()
+
+    // 1. Server-side lockout check (never trusts client-side counters)
+    const lockState = await checkLockout(identifier)
+    if (lockState?.locked) {
+      return { success: false, error: lockoutMessage(lockState.retry_after_seconds), lockedFor: lockState.retry_after_seconds }
+    }
+
+    // 2. Backend auth
+    const { data: authData } = await supabase.auth.signInWithPassword({
       email,
       password,
     })
