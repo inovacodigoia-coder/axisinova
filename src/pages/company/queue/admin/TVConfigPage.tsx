@@ -123,7 +123,8 @@ export default function TVConfigPage() {
     if (tv) {
       setTvSlug(tv.slug || `tv-${tv.id.slice(0, 8)}`)
       setTvUsername(tv.accessUsername || `tv_${randomToken(4).toLowerCase()}`)
-      setTvPassword(tv.accessPassword || randomToken(8))
+      // Senha fica em branco na edição: só é alterada se uma nova for digitada.
+      setTvPassword('')
     } else {
       setTvSlug(`tv-${randomToken(6).toLowerCase()}`)
       setTvUsername(`tv_${randomToken(4).toLowerCase()}`)
