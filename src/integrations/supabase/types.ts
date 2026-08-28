@@ -1435,6 +1435,63 @@ export type Database = {
           },
         ]
       }
+      lab_result_graphics: {
+        Row: {
+          company_id: string
+          created_at: string
+          equipment_id: string | null
+          id: string
+          image_base64: string
+          image_format: string
+          item_code: string
+          label: string | null
+          order_id: string | null
+          protocol: string | null
+          sample_barcode: string
+        }
+        Insert: {
+          company_id: string
+          created_at?: string
+          equipment_id?: string | null
+          id?: string
+          image_base64: string
+          image_format?: string
+          item_code: string
+          label?: string | null
+          order_id?: string | null
+          protocol?: string | null
+          sample_barcode: string
+        }
+        Update: {
+          company_id?: string
+          created_at?: string
+          equipment_id?: string | null
+          id?: string
+          image_base64?: string
+          image_format?: string
+          item_code?: string
+          label?: string | null
+          order_id?: string | null
+          protocol?: string | null
+          sample_barcode?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "lab_result_graphics_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "lab_result_graphics_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "attendance_orders"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       lab_result_values: {
         Row: {
           company_id: string
