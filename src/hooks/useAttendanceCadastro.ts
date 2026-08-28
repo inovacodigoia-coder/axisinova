@@ -247,6 +247,7 @@ export function useAttendanceCadastro() {
       if (patch.labGuides !== undefined) updateData.lab_guides = patch.labGuides
       if (patch.convenioId !== undefined) updateData.convenio_id = patch.convenioId || null
       if (patch.convenioName !== undefined) updateData.convenio_name = patch.convenioName
+      if (patch.paymentType !== undefined) updateData.payment_type = patch.paymentType
       if (patch.doctorId !== undefined) updateData.doctor_id = patch.doctorId || null
       if (patch.doctorName !== undefined) updateData.doctor_name = patch.doctorName
       if (patch.doctorCRM !== undefined) updateData.doctor_crm = patch.doctorCRM

@@ -1397,11 +1397,23 @@ export function AttendanceDetailsModal({ open, onClose, onOrderDeleted, order, p
       {switchConvenioOpen && (
         <SwitchConvenioModal
           open
+          currentConvenioName={order.convenioName}
           onClose={() => setSwitchConvenioOpen(false)}
-          onConfirm={(convenio) => {
+          onConfirm={async (convenio) => {
             const next = guidesState.map(g => ({ ...g, convenioId: convenio.id, convenioName: convenio.name }));
-            persistGuides(next);
+            setGuidesState(next);
             setSwitchConvenioOpen(false);
+            try {
+              await updateOrder(order.id, {
+                labGuides: next,
+                convenioId: convenio.id,
+                convenioName: convenio.name,
+                paymentType: convenio.id ? 'convenio' : 'private',
+              } as any);
+              toast({ title: 'Convênio alterado', description: `Atendimento atualizado para ${convenio.name}. Os valores podem sofrer alterações.` });
+            } catch {
+              toast({ title: 'Erro ao trocar convênio', description: 'Não foi possível salvar a alteração.', variant: 'destructive' });
+            }
           }}
         />
       )}
