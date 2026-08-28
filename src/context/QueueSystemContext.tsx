@@ -151,7 +151,8 @@ function mapDbUnit(row: any): Unit {
   return { id: row.id, name: row.name, companyId: row.company_id, isActive: row.is_active, createdAt: row.created_at }
 }
 function mapDbTotem(row: any): Totem {
-  return { id: row.id, unitId: row.unit_id, name: row.name, isActive: row.is_active, slug: row.slug || undefined, accessUsername: row.access_username || undefined, accessPassword: row.access_password || undefined }
+  // A senha é armazenada com hash no banco: nunca é devolvida em texto para a interface.
+  return { id: row.id, unitId: row.unit_id, name: row.name, isActive: row.is_active, slug: row.slug || undefined, accessUsername: row.access_username || undefined, accessPassword: undefined }
 }
 function mapDbQueueLine(row: any): QueueLine {
   return {
@@ -175,7 +176,8 @@ function mapDbTV(row: any): TV {
     isActive: row.is_active,
     slug: row.slug || undefined,
     accessUsername: row.access_username || undefined,
-    accessPassword: row.access_password || undefined,
+    // A senha é armazenada com hash no banco: nunca é devolvida em texto para a interface.
+    accessPassword: undefined,
   }
 }
 
@@ -324,12 +326,13 @@ export function QueueSystemProvider({ children }: { children: ReactNode }) {
     if (extra) {
       payload.slug = extra.slug || null
       payload.access_username = extra.accessUsername || null
-      payload.access_password = extra.accessPassword || null
+      // Só grava a senha quando uma nova for digitada (mantém a senha atual caso contrário).
+      if (extra.accessPassword) payload.access_password = extra.accessPassword
     }
     const { error } = await supabase.from('queue_totems').update(payload).eq('id', id)
     if (error) { toast.error('Erro ao atualizar totem'); return false }
     const existing = state.totems.find(t => t.id === id)
-    if (existing) dispatch({ type: 'UPDATE_TOTEM', payload: { ...existing, name, ...(extra ? { slug: extra.slug, accessUsername: extra.accessUsername, accessPassword: extra.accessPassword } : {}) } })
+    if (existing) dispatch({ type: 'UPDATE_TOTEM', payload: { ...existing, name, ...(extra ? { slug: extra.slug, accessUsername: extra.accessUsername, accessPassword: undefined } : {}) } })
     return true
   }, [state.totems])
 
@@ -415,16 +418,18 @@ export function QueueSystemProvider({ children }: { children: ReactNode }) {
   }, [])
 
   const updateTVDB = useCallback(async (data: TV & { companyId?: string }): Promise<boolean> => {
-    const { error } = await supabase.from('queue_tvs').update({
+    const payload: any = {
       name: data.name, voice_type: data.voiceType, screen_size: data.screenSize,
       device_count: data.deviceCount, media_mode: data.mediaMode,
       media_attachments: data.mediaAttachments as any,
       slug: data.slug || null,
       access_username: data.accessUsername || null,
-      access_password: data.accessPassword || null,
-    } as any).eq('id', data.id)
+    }
+    // Só grava a senha quando uma nova for digitada (mantém a senha atual caso contrário).
+    if (data.accessPassword) payload.access_password = data.accessPassword
+    const { error } = await supabase.from('queue_tvs').update(payload).eq('id', data.id)
     if (error) { toast.error('Erro ao atualizar TV'); return false }
-    dispatch({ type: 'UPDATE_TV', payload: data })
+    dispatch({ type: 'UPDATE_TV', payload: { ...data, accessPassword: undefined } })
     return true
   }, [])
 

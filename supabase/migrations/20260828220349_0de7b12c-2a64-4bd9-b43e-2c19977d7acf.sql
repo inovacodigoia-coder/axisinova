@@ -1,0 +1,1 @@
+REVOKE EXECUTE ON FUNCTION public.hash_device_access_password() FROM PUBLIC, anon, authenticated;

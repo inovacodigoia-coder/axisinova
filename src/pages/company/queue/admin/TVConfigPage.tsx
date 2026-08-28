@@ -123,7 +123,8 @@ export default function TVConfigPage() {
     if (tv) {
       setTvSlug(tv.slug || `tv-${tv.id.slice(0, 8)}`)
       setTvUsername(tv.accessUsername || `tv_${randomToken(4).toLowerCase()}`)
-      setTvPassword(tv.accessPassword || randomToken(8))
+      // Senha fica em branco na edição: só é alterada se uma nova for digitada.
+      setTvPassword('')
     } else {
       setTvSlug(`tv-${randomToken(6).toLowerCase()}`)
       setTvUsername(`tv_${randomToken(4).toLowerCase()}`)
@@ -439,6 +440,7 @@ export default function TVConfigPage() {
                 <div className="flex gap-2">
                   <div className="relative flex-1">
                     <input type={showTvPwd ? 'text' : 'password'} value={tvPassword} onChange={e => setTvPassword(e.target.value)}
+                      placeholder="Deixe em branco para manter a senha atual"
                       className="w-full rounded-lg border border-input bg-background px-3 py-2 pr-9 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-ring" />
                     <button type="button" onClick={() => setShowTvPwd(s => !s)}
                       className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground" aria-label="Mostrar senha">

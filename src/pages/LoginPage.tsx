@@ -28,6 +28,7 @@ export default function LoginPage() {
   const [error, setError] = useState<string | null>(null)
   const [failCount, setFailCount] = useState(0)
   const [cooldown, setCooldown] = useState(0)
+  const [cooldownTotal, setCooldownTotal] = useState(1)
   const [shake, setShake] = useState(false)
   const [emailError, setEmailError] = useState<string | null>(null)
 
@@ -92,14 +93,15 @@ export default function LoginPage() {
       const result = await login(email, password)
 
       if (!result.success) {
-        const newCount = failCount + 1
-        setFailCount(newCount)
-        setError(result.error || 'Credenciais inválidas')
+        setFailCount((c) => c + 1)
+        setError(result.error || 'Usuário ou senha inválidos')
         setShake(true)
         setTimeout(() => setShake(false), 400)
 
-        if (newCount >= 5) {
-          setCooldown(60)
+        // Lockout is decided server-side; the UI only reflects the remaining time.
+        if (result.lockedFor && result.lockedFor > 0) {
+          setCooldown(result.lockedFor)
+          setCooldownTotal(result.lockedFor)
           setFailCount(0)
         }
         setIsLoading(false)
@@ -142,7 +144,7 @@ export default function LoginPage() {
   }, [clearTypingAnimation])
 
   const isDisabled = cooldown > 0 || isLoading || (!email && !password)
-  const cooldownProgress = cooldown > 0 ? ((60 - cooldown) / 60) * 100 : 0
+  const cooldownProgress = cooldown > 0 ? ((cooldownTotal - cooldown) / Math.max(1, cooldownTotal)) * 100 : 0
 
   const [devConfig, setDevConfig] = useState<DevAccessConfig>({ enabled: false, credentials: [] })
 
@@ -370,7 +372,8 @@ export default function LoginPage() {
                       Acesso temporariamente bloqueado
                     </span>
                     <span className="font-mono font-bold">
-                      00:{cooldown.toString().padStart(2, '0')}
+                      {Math.floor(cooldown / 60).toString().padStart(2, '0')}:
+                      {(cooldown % 60).toString().padStart(2, '0')}
                     </span>
                   </div>
                   <div className="h-1.5 rounded-full bg-orange-200 overflow-hidden">

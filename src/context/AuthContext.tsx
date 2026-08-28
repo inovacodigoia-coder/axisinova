@@ -2,6 +2,7 @@ import { createContext, useCallback, useContext, useEffect, useState, type React
 import type { AuthUser, UserRole } from '@/types/auth.types'
 import { getRedirectByRole } from '@/mocks/users.mock'
 import { supabase } from '@/integrations/supabase/client'
+import { checkLockout, recordLoginAttempt, lockoutMessage, GENERIC_LOGIN_ERROR } from '@/services/authGuard'
 
 const TOKEN_KEY = 'axis_inova_token'
 const USER_KEY = 'axis_inova_user'
@@ -10,6 +11,8 @@ interface LoginResult {
   success: boolean
   error?: string
   redirectTo?: string
+  /** Segundos restantes de bloqueio, quando aplicável */
+  lockedFor?: number
 }
 
 interface AuthContextValue {
@@ -57,8 +60,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [])
 
   const login = useCallback(async (email: string, password: string): Promise<LoginResult> => {
-    // 1. Try backend auth first so privileged users get a real session
-    const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
+    const identifier = email.trim().toLowerCase()
+
+    // 1. Server-side lockout check (never trusts client-side counters)
+    const lockState = await checkLockout(identifier)
+    if (lockState?.locked) {
+      return { success: false, error: lockoutMessage(lockState.retry_after_seconds), lockedFor: lockState.retry_after_seconds }
+    }
+
+    // 2. Backend auth
+    const { data: authData } = await supabase.auth.signInWithPassword({
       email,
       password,
     })
@@ -72,9 +83,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         .single()
 
       if (profile && !profile.is_active) {
+        await recordLoginAttempt(identifier, false)
         await supabase.auth.signOut()
-        return { success: false, error: 'Usuário inativo. Contate o administrador.' }
+        return { success: false, error: GENERIC_LOGIN_ERROR }
       }
+
+      // Successful login clears the failure counter server-side
+      await recordLoginAttempt(identifier, true)
 
       // Get company name if linked
       let companyName: string | null = null
@@ -111,13 +126,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       return { success: true, redirectTo }
     }
 
-    // No client-side fallback: only backend-verified sessions are accepted.
-    return {
-      success: false,
-      error: authError?.message === 'Email not confirmed'
-        ? 'E-mail ainda não confirmado.'
-        : 'Credenciais inválidas',
+    // Failed attempt: record server-side and apply lockout rules.
+    const postState = await recordLoginAttempt(identifier, false)
+    if (postState?.locked) {
+      return { success: false, error: lockoutMessage(postState.retry_after_seconds), lockedFor: postState.retry_after_seconds }
     }
+
+    // Generic message for both unknown user and wrong password (prevents enumeration).
+    return { success: false, error: GENERIC_LOGIN_ERROR }
   }, [])
 
   const logout = useCallback(() => {

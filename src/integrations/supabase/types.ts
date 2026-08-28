@@ -305,6 +305,59 @@ export type Database = {
           },
         ]
       }
+      auth_lockouts: {
+        Row: {
+          company_id: string | null
+          created_at: string
+          expires_at: string
+          failed_count: number
+          id: string
+          lock_key: string
+          lock_type: string
+          locked_at: string
+          reason: string
+          released_at: string | null
+          released_by: string | null
+          updated_at: string
+        }
+        Insert: {
+          company_id?: string | null
+          created_at?: string
+          expires_at: string
+          failed_count?: number
+          id?: string
+          lock_key: string
+          lock_type: string
+          locked_at?: string
+          reason?: string
+          released_at?: string | null
+          released_by?: string | null
+          updated_at?: string
+        }
+        Update: {
+          company_id?: string | null
+          created_at?: string
+          expires_at?: string
+          failed_count?: number
+          id?: string
+          lock_key?: string
+          lock_type?: string
+          locked_at?: string
+          reason?: string
+          released_at?: string | null
+          released_by?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "auth_lockouts_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       companies: {
         Row: {
           armazenamento_limite_gb: number | null
@@ -961,6 +1014,44 @@ export type Database = {
           },
         ]
       }
+      ip_allowlist: {
+        Row: {
+          company_id: string | null
+          created_at: string
+          created_by: string | null
+          id: string
+          ip_address: string
+          label: string | null
+          updated_at: string
+        }
+        Insert: {
+          company_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          ip_address: string
+          label?: string | null
+          updated_at?: string
+        }
+        Update: {
+          company_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          ip_address?: string
+          label?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ip_allowlist_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       lab_equipments: {
         Row: {
           company_id: string
@@ -1601,6 +1692,47 @@ export type Database = {
           updated_at?: string | null
         }
         Relationships: []
+      }
+      login_attempts: {
+        Row: {
+          attempted_at: string
+          company_id: string | null
+          created_at: string
+          id: string
+          ip_address: string | null
+          success: boolean
+          user_agent: string | null
+          user_identifier: string
+        }
+        Insert: {
+          attempted_at?: string
+          company_id?: string | null
+          created_at?: string
+          id?: string
+          ip_address?: string | null
+          success?: boolean
+          user_agent?: string | null
+          user_identifier: string
+        }
+        Update: {
+          attempted_at?: string
+          company_id?: string | null
+          created_at?: string
+          id?: string
+          ip_address?: string | null
+          success?: boolean
+          user_agent?: string | null
+          user_identifier?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "login_attempts_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       measurement_units: {
         Row: {
@@ -2656,6 +2788,21 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      auth_check_lockout: {
+        Args: { _identifier: string; _ip: string }
+        Returns: Json
+      }
+      auth_record_attempt: {
+        Args: {
+          _company_id?: string
+          _identifier: string
+          _ip: string
+          _success: boolean
+          _user_agent: string
+        }
+        Returns: Json
+      }
+      auth_release_lockout: { Args: { _lockout_id: string }; Returns: boolean }
       company_cnpj_exists: { Args: { _cnpj: string }; Returns: boolean }
       company_id_by_cnpj: { Args: { _cnpj: string }; Returns: string }
       device_public_info: {

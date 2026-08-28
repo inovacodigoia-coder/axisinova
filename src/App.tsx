@@ -30,6 +30,7 @@ const CompanyDetailPage = lazy(() => import("./pages/superadmin/CompanyDetailPag
 const SuperAdminUsersPage = lazy(() => import("./pages/superadmin/SuperAdminUsersPage"));
 const PlansManagerPage = lazy(() => import("./pages/superadmin/PlansManagerPage"));
 const AuditLogPage = lazy(() => import("./pages/superadmin/AuditLogPage"));
+const LoginAuditPage = lazy(() => import("./pages/superadmin/LoginAuditPage"));
 const SystemSettingsPage = lazy(() => import("./pages/superadmin/SystemSettingsPage"));
 const CompanyPortalLayout = lazy(() => import("./pages/company/CompanyPortalLayout"));
 const TotemPage = lazy(() => import("./pages/public/TotemPage"));
@@ -97,6 +98,7 @@ const App = () => (
                         <Route path="usuarios" element={<SuperAdminUsersPage />} />
                         <Route path="planos" element={<PlansManagerPage />} />
                         <Route path="auditoria" element={<AuditLogPage />} />
+                        <Route path="auditoria-login" element={<LoginAuditPage />} />
                         <Route path="configuracoes" element={<SystemSettingsPage />} />
                         <Route path="alertas" element={<SuperAdminDashboard />} />
                       </Route>
