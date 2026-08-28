@@ -92,14 +92,14 @@ export default function LoginPage() {
       const result = await login(email, password)
 
       if (!result.success) {
-        const newCount = failCount + 1
-        setFailCount(newCount)
-        setError(result.error || 'Credenciais inválidas')
+        setFailCount((c) => c + 1)
+        setError(result.error || 'Usuário ou senha inválidos')
         setShake(true)
         setTimeout(() => setShake(false), 400)
 
-        if (newCount >= 5) {
-          setCooldown(60)
+        // Lockout is decided server-side; the UI only reflects the remaining time.
+        if (result.lockedFor && result.lockedFor > 0) {
+          setCooldown(result.lockedFor)
           setFailCount(0)
         }
         setIsLoading(false)
