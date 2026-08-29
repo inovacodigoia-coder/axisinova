@@ -167,6 +167,9 @@ export function CompanySidebar({ mobileOpen, onMobileClose, collapsed = false, o
   const location = useLocation()
   const navigate = useNavigate()
   const [sidebarBg, setSidebarBg] = useState<string | undefined>(undefined)
+  const [brandName, setBrandName] = useState<string | null>(null)
+  const [logoUrl, setLogoUrl] = useState<string | null>(null)
+
   const { orders } = useAttendanceCadastro()
 
   const visibleSections = NAV_SECTIONS.map(section => ({
