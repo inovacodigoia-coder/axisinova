@@ -327,7 +327,7 @@ export const API_GROUPS: ApiGroup[] = [
         path: '/receive-instrument-result',
         summary: 'Receber resultado de equipamento',
         description:
-          'Endpoint autenticado por X-API-Key. Um resultado por chamada. A amostra é identificada pelo mesmo "sample_barcode" devolvido em /list-orders-for-integration. Toda rejeição vem com { success: false, error } e status 4xx — nunca 200 silencioso.',
+          'Endpoint autenticado por X-API-Key. Um parâmetro por chamada. O result_id identifica o exame no pedido e é compartilhado pelos parâmetros do mesmo painel; parameter_result_id identifica a gravação individual do parâmetro. A amostra é identificada pelo mesmo "sample_barcode" devolvido em /list-orders-for-integration. Toda rejeição vem com { success: false, error } e status 4xx — nunca 200 silencioso.',
         scope: 'company',
         auth: 'Header X-API-Key',
         params: [
@@ -354,7 +354,7 @@ export const API_GROUPS: ApiGroup[] = [
   "result_datetime": "2026-08-25T00:16:29-03:00"
 }`,
         responseExample: `// 200 sucesso
-{ "success": true, "result_id": "...", "protocol": "129-00", "exam": "Hemograma", "parameter": "Hemoglobina" }
+{ "success": true, "result_id": "...", "parameter_result_id": "...", "parameter_key": "2", "protocol": "129-00", "exam": "Hemograma", "parameter": "Hemoglobina" }
 
 // 200 evento repetido (não duplica o resultado)
 { "success": true, "duplicate": true, "message": "Evento já processado anteriormente" }
