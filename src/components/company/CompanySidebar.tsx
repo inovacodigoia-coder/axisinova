@@ -189,11 +189,13 @@ export function CompanySidebar({ mobileOpen, onMobileClose, collapsed = false, o
     const companyId = user?.companyId
     if (!companyId) return
     const load = async () => {
-      const { data } = await supabase.from('company_branding').select('sidebar_bg, primary_color, secondary_color').eq('company_id', companyId).maybeSingle() as any
+      const { data } = await supabase.from('company_branding').select('sidebar_bg, primary_color, secondary_color, brand_name, logo_url').eq('company_id', companyId).maybeSingle() as any
       if (data?.sidebar_bg) {
         setSidebarBg(data.sidebar_bg)
         document.documentElement.style.setProperty('--sidebar-bg', data.sidebar_bg)
       }
+      setBrandName(data?.brand_name || null)
+      setLogoUrl(data?.logo_url || null)
       if (data?.primary_color) {
         document.documentElement.style.setProperty('--color-primary-hex', data.primary_color)
         document.documentElement.style.setProperty('--company-accent-hex', data.primary_color)
@@ -203,7 +205,15 @@ export function CompanySidebar({ mobileOpen, onMobileClose, collapsed = false, o
       }
     }
     load()
+    const onUpdate = (e: Event) => {
+      const detail = (e as CustomEvent).detail || {}
+      setBrandName(detail.brandName || null)
+      setLogoUrl(detail.logoUrl || null)
+    }
+    window.addEventListener('company-branding-updated', onUpdate)
+    return () => window.removeEventListener('company-branding-updated', onUpdate)
   }, [user?.companyId])
+
 
   const sidebarContent = (
     <aside
