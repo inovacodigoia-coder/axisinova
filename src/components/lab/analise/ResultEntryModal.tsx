@@ -95,6 +95,7 @@ export function ResultEntryModal({
   const { canType, canRelease, canCorrect } = useResultEntryPermissions();
   const [correctionUnlocked, setCorrectionUnlocked] = useState<Record<string, boolean>>({});
   const [results, setResults] = useState<Record<string, string>>({});
+  const [instrumentKeys, setInstrumentKeys] = useState<Set<string>>(new Set());
   const [notes, setNotes] = useState<Record<string, string>>({});
   const [saving, setSaving] = useState(false);
   const [examStatuses, setExamStatuses] = useState<Record<string, string>>({});
@@ -220,13 +221,15 @@ export function ResultEntryModal({
 
   const getParams = (exam: any) => paramsByExam[exam.id] || [{ id: '1', name: exam?.name || '', unit: '', reference: '' }];
 
-  // Valor exibido: parâmetros calculados usam a fórmula do catálogo
+  // Valor exibido: parâmetros calculados usam a fórmula do catálogo,
+  // EXCETO quando o valor veio do equipamento (source 'instrument') — nesse caso o valor do equipamento prevalece
   const getParamValue = useCallback((exam: any, param: any) => {
-    if (param?.isCalculated) {
+    const key = `${exam.id}_${param.id}`;
+    if (param?.isCalculated && !instrumentKeys.has(key)) {
       return evaluateFormula(param.formula, getParams(exam), (pid) => results[`${exam.id}_${pid}`] || '');
     }
-    return results[`${exam.id}_${param.id}`] || '';
-  }, [results, paramsByExam]);
+    return results[key] || '';
+  }, [results, paramsByExam, instrumentKeys]);
 
   // Persiste automaticamente os calculados no estado para salvar/laudo
   useEffect(() => {
@@ -234,15 +237,16 @@ export function ResultEntryModal({
     Object.entries(paramsByExam).forEach(([examId, params]: any) => {
       (params as any[]).forEach((p: any) => {
         if (!p.isCalculated) return;
-        const computed = evaluateFormula(p.formula, params, (pid) => results[`${examId}_${pid}`] || '');
         const key = `${examId}_${p.id}`;
+        if (instrumentKeys.has(key)) return; // valor veio do equipamento — não recalcular
+        const computed = evaluateFormula(p.formula, params, (pid) => results[`${examId}_${pid}`] || '');
         if (computed && results[key] !== computed) updates[key] = computed;
       });
     });
     if (Object.keys(updates).length > 0) {
       setResults(prev => ({ ...prev, ...updates }));
     }
-  }, [results, paramsByExam]);
+  }, [results, paramsByExam, instrumentKeys]);
 
 
   const totalExams = filteredExams.length;
@@ -343,6 +347,8 @@ export function ResultEntryModal({
           reference: p.reference || null,
           status: getResultStatus(value, p.reference || '').label || null,
           sort_order: idx,
+          // Preserva a origem quando o valor veio do equipamento
+          source: instrumentKeys.has(`${exam.id}_${p.id}`) ? 'instrument' : 'manual',
         };
       });
 
@@ -409,7 +415,7 @@ export function ResultEntryModal({
       if (refs.length === 0) return;
       const { data } = await supabase
         .from('lab_exam_results')
-        .select('id, exam_ref, status, notes, lab_result_values(parameter_key, value)')
+        .select('id, exam_ref, status, notes, lab_result_values(parameter_key, value, source)')
         .eq('company_id', cid)
         .in('exam_ref', refs);
       if (!active || !data) return;
@@ -417,6 +423,7 @@ export function ResultEntryModal({
       const nextResults: Record<string, string> = {};
       const nextNotes: Record<string, string> = {};
       const nextStatuses: Record<string, any> = {};
+      const nextInstrumentKeys = new Set<string>();
       data.forEach((row: any) => {
         // exam_ref já é a chave única da instância (pedido:exame)
         const examId = String(row.exam_ref);
@@ -426,8 +433,10 @@ export function ResultEntryModal({
         }
         (row.lab_result_values || []).forEach((v: any) => {
           if (v.value) nextResults[`${examId}_${v.parameter_key}`] = v.value;
+          if (v.source === 'instrument') nextInstrumentKeys.add(`${examId}_${v.parameter_key}`);
         });
       });
+      setInstrumentKeys(nextInstrumentKeys);
       setResults(prev => ({ ...nextResults, ...prev }));
       setNotes(prev => ({ ...nextNotes, ...prev }));
       setExamStatuses(prev => ({ ...nextStatuses, ...prev }));
