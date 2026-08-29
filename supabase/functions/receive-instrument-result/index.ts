@@ -17,7 +17,11 @@ async function sha256Hex(value: string) {
     .join('')
 }
 
-const norm = (v: unknown) => String(v ?? '').trim().toUpperCase()
+const norm = (v: unknown) => String(v ?? '')
+  .normalize('NFD')
+  .replace(/[\u0300-\u036f]/g, '')
+  .trim()
+  .toUpperCase()
 
 const COLLECTED_STATUSES = ['collection_done', 'in_analysis', 'validation', 'released', 'completed']
 const CANCELLED_STATUSES = ['deleted', 'cancelled']
@@ -269,7 +273,12 @@ Deno.serve(async (req) => {
       norm(exam.internal_code) === testCode ||
       norm(exam.tuss_code) === testCode
     ) {
-      const first = params.find((x: any) => !x?.isHidden && !x?.is_hidden)
+      const visibleParams = params.filter((x: any) => !x?.isHidden && !x?.is_hidden)
+      // Um código no nível do exame só identifica o valor quando há um único
+      // parâmetro. Em painéis, escolher o primeiro faria analitos distintos se
+      // sobrescreverem sob a mesma parameter_key.
+      if (visibleParams.length > 1) continue
+      const first = visibleParams[0]
       matchedExam = exam
       matchedParamId = first ? String(first.id) : '1'
       matchedParamName = first?.name || exam.name
