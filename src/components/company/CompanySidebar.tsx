@@ -167,6 +167,9 @@ export function CompanySidebar({ mobileOpen, onMobileClose, collapsed = false, o
   const location = useLocation()
   const navigate = useNavigate()
   const [sidebarBg, setSidebarBg] = useState<string | undefined>(undefined)
+  const [brandName, setBrandName] = useState<string | null>(null)
+  const [logoUrl, setLogoUrl] = useState<string | null>(null)
+
   const { orders } = useAttendanceCadastro()
 
   const visibleSections = NAV_SECTIONS.map(section => ({
@@ -186,11 +189,13 @@ export function CompanySidebar({ mobileOpen, onMobileClose, collapsed = false, o
     const companyId = user?.companyId
     if (!companyId) return
     const load = async () => {
-      const { data } = await supabase.from('company_branding').select('sidebar_bg, primary_color, secondary_color').eq('company_id', companyId).maybeSingle() as any
+      const { data } = await supabase.from('company_branding').select('sidebar_bg, primary_color, secondary_color, brand_name, logo_url').eq('company_id', companyId).maybeSingle() as any
       if (data?.sidebar_bg) {
         setSidebarBg(data.sidebar_bg)
         document.documentElement.style.setProperty('--sidebar-bg', data.sidebar_bg)
       }
+      setBrandName(data?.brand_name || null)
+      setLogoUrl(data?.logo_url || null)
       if (data?.primary_color) {
         document.documentElement.style.setProperty('--color-primary-hex', data.primary_color)
         document.documentElement.style.setProperty('--company-accent-hex', data.primary_color)
@@ -200,7 +205,15 @@ export function CompanySidebar({ mobileOpen, onMobileClose, collapsed = false, o
       }
     }
     load()
+    const onUpdate = (e: Event) => {
+      const detail = (e as CustomEvent).detail || {}
+      setBrandName(detail.brandName || null)
+      setLogoUrl(detail.logoUrl || null)
+    }
+    window.addEventListener('company-branding-updated', onUpdate)
+    return () => window.removeEventListener('company-branding-updated', onUpdate)
   }, [user?.companyId])
+
 
   const sidebarContent = (
     <aside
@@ -215,9 +228,15 @@ export function CompanySidebar({ mobileOpen, onMobileClose, collapsed = false, o
         {!collapsed ? (
           <div className="flex-1 min-w-0">
             <div className="flex items-center justify-between gap-2">
-              <div className="flex items-center gap-2">
-                <span className="text-lg font-bold">Axis<span className="text-white/70">Inova</span></span>
+              <div className="flex items-center gap-2 min-w-0">
+                {logoUrl && <img src={logoUrl} alt={brandName || 'Logo da empresa'} className="h-8 w-8 shrink-0 rounded-lg object-contain" />}
+                {brandName ? (
+                  <span className="text-lg font-bold truncate">{brandName}</span>
+                ) : (
+                  <span className="text-lg font-bold">Axis<span className="text-white/70">Inova</span></span>
+                )}
               </div>
+
               <button 
                 onClick={() => navigate('/app/dashboard')} 
                 className="rounded-lg p-1.5 hover:bg-white/10 text-white/40 hover:text-white transition-colors"
@@ -231,10 +250,13 @@ export function CompanySidebar({ mobileOpen, onMobileClose, collapsed = false, o
               <p className="mt-0.5 truncate text-[10px] text-white/30">{activeProfile.name}</p>
             )}
           </div>
+        ) : logoUrl ? (
+          <img src={logoUrl} alt={brandName || 'Logo'} className="mx-auto h-8 w-8 rounded-lg object-contain" />
         ) : (
           <div className="mx-auto flex h-8 w-8 items-center justify-center rounded-full gradient-bg text-xs font-bold">
             {user?.name?.charAt(0) || 'U'}
           </div>
+
         )}
         {mobileOpen && (
           <button onClick={onMobileClose} className="ml-2 rounded-lg p-1 hover:bg-white/10 lg:hidden">

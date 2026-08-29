@@ -455,6 +455,7 @@ export type Database = {
         Row: {
           background_color: string
           border_color: string
+          brand_name: string | null
           button_text_color: string
           card_color: string
           company_id: string
@@ -476,6 +477,7 @@ export type Database = {
         Insert: {
           background_color?: string
           border_color?: string
+          brand_name?: string | null
           button_text_color?: string
           card_color?: string
           company_id: string
@@ -497,6 +499,7 @@ export type Database = {
         Update: {
           background_color?: string
           border_color?: string
+          brand_name?: string | null
           button_text_color?: string
           card_color?: string
           company_id?: string
