@@ -169,6 +169,8 @@ Deno.serve(async (req) => {
   const out: any[] = []
 
   for (const o of orders || []) {
+    // Filtro fino: só devolve se o EVENTO (coleta/cancelamento) ocorreu depois de `since`
+    if (orderEventTime(o) <= since.getTime()) continue
     const orderLabel = String(o.order_number || o.protocol || o.id)
     const cancelled = CANCELLED_STATUSES.includes(String(o.status))
     const p = o.patient_id ? patientMap.get(String(o.patient_id)) : null
