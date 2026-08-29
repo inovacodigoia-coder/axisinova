@@ -250,10 +250,13 @@ export function CompanySidebar({ mobileOpen, onMobileClose, collapsed = false, o
               <p className="mt-0.5 truncate text-[10px] text-white/30">{activeProfile.name}</p>
             )}
           </div>
+        ) : logoUrl ? (
+          <img src={logoUrl} alt={brandName || 'Logo'} className="mx-auto h-8 w-8 rounded-lg object-contain" />
         ) : (
           <div className="mx-auto flex h-8 w-8 items-center justify-center rounded-full gradient-bg text-xs font-bold">
             {user?.name?.charAt(0) || 'U'}
           </div>
+
         )}
         {mobileOpen && (
           <button onClick={onMobileClose} className="ml-2 rounded-lg p-1 hover:bg-white/10 lg:hidden">
