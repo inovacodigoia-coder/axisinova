@@ -89,6 +89,8 @@ export default function VisualSettingsPage() {
         const t = themeFromRow(data)
         setTheme(t)
         applyBranding(t)
+        setBrandName(data.brand_name || '')
+        setLogoUrl(data.logo_url || '')
       }
       setLoaded(true)
     }
@@ -99,10 +101,14 @@ export default function VisualSettingsPage() {
     if (loaded) applyBranding(theme)
   }, [theme, loaded])
 
-  const persist = async (t: BrandingTheme) => {
+  const persist = async (t: BrandingTheme, identity?: { brand_name: string | null; logo_url: string | null }) => {
     if (!companyId) return true
     const { error } = await supabase.from('company_branding').upsert(
-      { company_id: companyId, ...themeToRow(t) } as any,
+      {
+        company_id: companyId,
+        ...themeToRow(t),
+        ...(identity ?? { brand_name: brandName.trim() || null, logo_url: logoUrl || null }),
+      } as any,
       { onConflict: 'company_id' }
     )
     if (error) {
@@ -112,10 +118,34 @@ export default function VisualSettingsPage() {
     return true
   }
 
+  const handleLogoUpload = async (file: File) => {
+    if (!companyId) return
+    if (!file.type.startsWith('image/')) return toast.error('Selecione um arquivo de imagem')
+    if (file.size > 2 * 1024 * 1024) return toast.error('A imagem deve ter no máximo 2MB')
+    setUploading(true)
+    try {
+      const ext = file.name.split('.').pop() || 'png'
+      const path = `${companyId}/branding/logo-${Date.now()}.${ext}`
+      const { error } = await supabase.storage.from('company-assets').upload(path, file, { upsert: true, contentType: file.type })
+      if (error) throw error
+      const { data } = supabase.storage.from('company-assets').getPublicUrl(path)
+      setLogoUrl(data.publicUrl)
+      toast.success('Logo enviada! Clique em salvar para aplicar.')
+    } catch (e: any) {
+      console.error(e)
+      toast.error('Erro ao enviar a logo')
+    } finally {
+      setUploading(false)
+    }
+  }
+
   const handleSave = async () => {
     const ok = await persist(theme)
     if (!ok) return toast.error('Erro ao salvar personalização')
     applyBranding(theme)
+    window.dispatchEvent(new CustomEvent('company-branding-updated', {
+      detail: { brandName: brandName.trim() || null, logoUrl: logoUrl || null },
+    }))
     toast.success('Personalização visual salva e aplicada!')
   }
 
@@ -130,12 +160,87 @@ export default function VisualSettingsPage() {
     p => JSON.stringify(p.theme) === JSON.stringify(theme)
   )?.name
 
+  const displayName = brandName.trim() || 'AxisInova'
+
   return (
     <div className="space-y-6">
       <div>
         <h1 className="text-2xl font-bold text-foreground">Personalização Visual</h1>
         <p className="text-sm text-muted-foreground">Customize as cores e a identidade visual do sistema</p>
       </div>
+
+      {/* Identity: logo + name */}
+      <div className="rounded-2xl border border-border bg-card p-6 space-y-5">
+        <div>
+          <h3 className="text-lg font-semibold text-foreground">Identidade da Empresa</h3>
+          <p className="text-xs text-muted-foreground">Logo e nome exibidos acima do menu lateral</p>
+        </div>
+
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <div className="space-y-3">
+            <label className="text-sm font-medium text-foreground">Logo</label>
+            <div className="flex items-center gap-4">
+              <div
+                className="flex h-16 w-16 shrink-0 items-center justify-center rounded-xl overflow-hidden border border-border"
+                style={{ background: theme.sidebar }}
+              >
+                {logoUrl ? (
+                  <img src={logoUrl} alt="Logo da empresa" className="h-full w-full object-contain" />
+                ) : (
+                  <ImageIcon className="h-6 w-6 text-white/40" />
+                )}
+              </div>
+              <div className="flex flex-wrap gap-2">
+                <button
+                  onClick={() => fileRef.current?.click()}
+                  disabled={uploading}
+                  className="rounded-lg border border-input px-4 py-2 text-sm font-medium hover:bg-muted flex items-center gap-2 disabled:opacity-60"
+                >
+                  <Upload className="h-4 w-4" /> {uploading ? 'Enviando...' : 'Enviar logo'}
+                </button>
+                {logoUrl && (
+                  <button
+                    onClick={() => setLogoUrl('')}
+                    className="rounded-lg border border-input px-3 py-2 text-sm text-destructive hover:bg-destructive/10 flex items-center gap-2"
+                  >
+                    <Trash2 className="h-4 w-4" /> Remover
+                  </button>
+                )}
+              </div>
+              <input
+                ref={fileRef}
+                type="file"
+                accept="image/*"
+                className="hidden"
+                onChange={e => {
+                  const f = e.target.files?.[0]
+                  if (f) handleLogoUpload(f)
+                  e.target.value = ''
+                }}
+              />
+            </div>
+            <p className="text-[11px] text-muted-foreground">PNG ou SVG com fundo transparente, até 2MB.</p>
+          </div>
+
+          <div className="space-y-3">
+            <label className="text-sm font-medium text-foreground">Nome exibido</label>
+            <input
+              type="text"
+              value={brandName}
+              maxLength={40}
+              placeholder="AxisInova"
+              onChange={e => setBrandName(e.target.value)}
+              className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm"
+            />
+            <div className="rounded-xl p-3 flex items-center gap-2" style={{ background: theme.sidebar }}>
+              {logoUrl && <img src={logoUrl} alt="" className="h-7 w-7 rounded object-contain" />}
+              <span className="text-lg font-bold text-white truncate">{displayName}</span>
+            </div>
+            <p className="text-[11px] text-muted-foreground">Deixe em branco para usar “AxisInova”.</p>
+          </div>
+        </div>
+      </div>
+
 
       {/* Ready-made themes */}
       <div className="rounded-2xl border border-border bg-card p-6 space-y-4">
