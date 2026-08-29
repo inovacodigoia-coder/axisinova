@@ -356,11 +356,28 @@ Deno.serve(async (req) => {
     .eq('parameter_key', matchedParamId)
     .maybeSingle()
 
-  const { error: valueError } = existingValue
-    ? await supabase.from('lab_result_values').update(valuePayload).eq('id', existingValue.id)
-    : await supabase.from('lab_result_values').insert(valuePayload)
+  let parameterResultId = existingValue?.id as string | undefined
+  let valueError: { message: string } | null = null
 
-  if (valueError) return reject(`Falha ao gravar valor: ${valueError.message}`, 500)
+  if (parameterResultId) {
+    const { error } = await supabase
+      .from('lab_result_values')
+      .update(valuePayload)
+      .eq('id', parameterResultId)
+    valueError = error
+  } else {
+    const { data: insertedValue, error } = await supabase
+      .from('lab_result_values')
+      .insert(valuePayload)
+      .select('id')
+      .single()
+    valueError = error
+    parameterResultId = insertedValue?.id
+  }
+
+  if (valueError || !parameterResultId) {
+    return reject(`Falha ao gravar valor: ${valueError?.message || 'registro do parâmetro não retornado'}`, 500)
+  }
 
   if (order.status === 'collection_done') {
     await supabase.from('attendance_orders').update({ status: 'in_analysis' }).eq('id', order.id)
@@ -370,6 +387,8 @@ Deno.serve(async (req) => {
 
   return ok({
     result_id: resultId!,
+    parameter_result_id: parameterResultId,
+    parameter_key: matchedParamId,
     protocol: order.protocol,
     exam: matchedExam.name,
     parameter: matchedParamName,
