@@ -1,5 +1,6 @@
-import { useState, useEffect } from 'react'
-import { Save, RotateCcw, Check } from 'lucide-react'
+import { useState, useEffect, useRef } from 'react'
+import { Save, RotateCcw, Check, Upload, Trash2, Image as ImageIcon } from 'lucide-react'
+
 import { toast } from 'sonner'
 import { supabase } from '@/integrations/supabase/client'
 import { useAuth } from '@/context/AuthContext'
