@@ -220,13 +220,15 @@ export function ResultEntryModal({
 
   const getParams = (exam: any) => paramsByExam[exam.id] || [{ id: '1', name: exam?.name || '', unit: '', reference: '' }];
 
-  // Valor exibido: parâmetros calculados usam a fórmula do catálogo
+  // Valor exibido: parâmetros calculados usam a fórmula do catálogo,
+  // EXCETO quando o valor veio do equipamento (source 'instrument') — nesse caso o valor do equipamento prevalece
   const getParamValue = useCallback((exam: any, param: any) => {
-    if (param?.isCalculated) {
+    const key = `${exam.id}_${param.id}`;
+    if (param?.isCalculated && !instrumentKeys.has(key)) {
       return evaluateFormula(param.formula, getParams(exam), (pid) => results[`${exam.id}_${pid}`] || '');
     }
-    return results[`${exam.id}_${param.id}`] || '';
-  }, [results, paramsByExam]);
+    return results[key] || '';
+  }, [results, paramsByExam, instrumentKeys]);
 
   // Persiste automaticamente os calculados no estado para salvar/laudo
   useEffect(() => {
@@ -234,15 +236,16 @@ export function ResultEntryModal({
     Object.entries(paramsByExam).forEach(([examId, params]: any) => {
       (params as any[]).forEach((p: any) => {
         if (!p.isCalculated) return;
-        const computed = evaluateFormula(p.formula, params, (pid) => results[`${examId}_${pid}`] || '');
         const key = `${examId}_${p.id}`;
+        if (instrumentKeys.has(key)) return; // valor veio do equipamento — não recalcular
+        const computed = evaluateFormula(p.formula, params, (pid) => results[`${examId}_${pid}`] || '');
         if (computed && results[key] !== computed) updates[key] = computed;
       });
     });
     if (Object.keys(updates).length > 0) {
       setResults(prev => ({ ...prev, ...updates }));
     }
-  }, [results, paramsByExam]);
+  }, [results, paramsByExam, instrumentKeys]);
 
 
   const totalExams = filteredExams.length;
