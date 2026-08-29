@@ -74,6 +74,11 @@ export default function VisualSettingsPage() {
 
   const [theme, setTheme] = useState<BrandingTheme>(DEFAULT_THEME)
   const [loaded, setLoaded] = useState(false)
+  const [brandName, setBrandName] = useState('')
+  const [logoUrl, setLogoUrl] = useState('')
+  const [uploading, setUploading] = useState(false)
+  const fileRef = useRef<HTMLInputElement>(null)
+
 
   const set = <K extends keyof BrandingTheme>(key: K, value: BrandingTheme[K]) =>
     setTheme(prev => ({ ...prev, [key]: value }))
