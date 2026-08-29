@@ -95,6 +95,7 @@ export function ResultEntryModal({
   const { canType, canRelease, canCorrect } = useResultEntryPermissions();
   const [correctionUnlocked, setCorrectionUnlocked] = useState<Record<string, boolean>>({});
   const [results, setResults] = useState<Record<string, string>>({});
+  const [instrumentKeys, setInstrumentKeys] = useState<Set<string>>(new Set());
   const [notes, setNotes] = useState<Record<string, string>>({});
   const [saving, setSaving] = useState(false);
   const [examStatuses, setExamStatuses] = useState<Record<string, string>>({});
@@ -412,7 +413,7 @@ export function ResultEntryModal({
       if (refs.length === 0) return;
       const { data } = await supabase
         .from('lab_exam_results')
-        .select('id, exam_ref, status, notes, lab_result_values(parameter_key, value)')
+        .select('id, exam_ref, status, notes, lab_result_values(parameter_key, value, source)')
         .eq('company_id', cid)
         .in('exam_ref', refs);
       if (!active || !data) return;
@@ -420,6 +421,7 @@ export function ResultEntryModal({
       const nextResults: Record<string, string> = {};
       const nextNotes: Record<string, string> = {};
       const nextStatuses: Record<string, any> = {};
+      const nextInstrumentKeys = new Set<string>();
       data.forEach((row: any) => {
         // exam_ref já é a chave única da instância (pedido:exame)
         const examId = String(row.exam_ref);
@@ -429,8 +431,10 @@ export function ResultEntryModal({
         }
         (row.lab_result_values || []).forEach((v: any) => {
           if (v.value) nextResults[`${examId}_${v.parameter_key}`] = v.value;
+          if (v.source === 'instrument') nextInstrumentKeys.add(`${examId}_${v.parameter_key}`);
         });
       });
+      setInstrumentKeys(nextInstrumentKeys);
       setResults(prev => ({ ...nextResults, ...prev }));
       setNotes(prev => ({ ...nextNotes, ...prev }));
       setExamStatuses(prev => ({ ...nextStatuses, ...prev }));
