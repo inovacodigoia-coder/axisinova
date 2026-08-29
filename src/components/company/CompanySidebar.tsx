@@ -228,9 +228,15 @@ export function CompanySidebar({ mobileOpen, onMobileClose, collapsed = false, o
         {!collapsed ? (
           <div className="flex-1 min-w-0">
             <div className="flex items-center justify-between gap-2">
-              <div className="flex items-center gap-2">
-                <span className="text-lg font-bold">Axis<span className="text-white/70">Inova</span></span>
+              <div className="flex items-center gap-2 min-w-0">
+                {logoUrl && <img src={logoUrl} alt={brandName || 'Logo da empresa'} className="h-8 w-8 shrink-0 rounded-lg object-contain" />}
+                {brandName ? (
+                  <span className="text-lg font-bold truncate">{brandName}</span>
+                ) : (
+                  <span className="text-lg font-bold">Axis<span className="text-white/70">Inova</span></span>
+                )}
               </div>
+
               <button 
                 onClick={() => navigate('/app/dashboard')} 
                 className="rounded-lg p-1.5 hover:bg-white/10 text-white/40 hover:text-white transition-colors"
