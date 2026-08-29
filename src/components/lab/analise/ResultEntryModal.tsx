@@ -347,6 +347,8 @@ export function ResultEntryModal({
           reference: p.reference || null,
           status: getResultStatus(value, p.reference || '').label || null,
           sort_order: idx,
+          // Preserva a origem quando o valor veio do equipamento
+          source: instrumentKeys.has(`${exam.id}_${p.id}`) ? 'instrument' : 'manual',
         };
       });
 
