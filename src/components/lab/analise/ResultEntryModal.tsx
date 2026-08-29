@@ -411,20 +411,32 @@ export function ResultEntryModal({
     if (!cid) return;
     let active = true;
     (async () => {
-      const refs = filteredExams.map(examRefOf);
+      const refs = Array.from(new Set(filteredExams.map(examRefOf)));
       if (refs.length === 0) return;
-      const { data } = await supabase
-        .from('lab_exam_results')
-        .select('id, exam_ref, status, notes, lab_result_values(parameter_key, value, source)')
-        .eq('company_id', cid)
-        .in('exam_ref', refs);
-      if (!active || !data) return;
+
+      // Consulta em lotes: `in` com muitos refs estoura o tamanho da URL (414) e
+      // fazia a tela ficar vazia mesmo com resultados gravados pelo equipamento.
+      const CHUNK = 40;
+      const rows: any[] = [];
+      for (let i = 0; i < refs.length; i += CHUNK) {
+        const { data, error } = await supabase
+          .from('lab_exam_results')
+          .select('id, exam_ref, status, notes, lab_result_values(parameter_key, value, source)')
+          .eq('company_id', cid)
+          .in('exam_ref', refs.slice(i, i + CHUNK));
+        if (error) {
+          console.error('Erro ao carregar resultados salvos:', error);
+          continue;
+        }
+        if (data) rows.push(...data);
+      }
+      if (!active || rows.length === 0) return;
 
       const nextResults: Record<string, string> = {};
       const nextNotes: Record<string, string> = {};
       const nextStatuses: Record<string, any> = {};
       const nextInstrumentKeys = new Set<string>();
-      data.forEach((row: any) => {
+      rows.forEach((row: any) => {
         // exam_ref já é a chave única da instância (pedido:exame)
         const examId = String(row.exam_ref);
         if (row.notes) nextNotes[examId] = row.notes;
@@ -432,17 +444,28 @@ export function ResultEntryModal({
           nextStatuses[examId] = row.status;
         }
         (row.lab_result_values || []).forEach((v: any) => {
-          if (v.value) nextResults[`${examId}_${v.parameter_key}`] = v.value;
-          if (v.source === 'instrument') nextInstrumentKeys.add(`${examId}_${v.parameter_key}`);
+          const key = `${examId}_${String(v.parameter_key)}`;
+          if (v.value !== null && v.value !== undefined && String(v.value) !== '') {
+            nextResults[key] = String(v.value);
+          }
+          if (v.source === 'instrument') nextInstrumentKeys.add(key);
         });
       });
       setInstrumentKeys(nextInstrumentKeys);
-      setResults(prev => ({ ...nextResults, ...prev }));
+      setResults(prev => {
+        const next = { ...prev };
+        Object.entries(nextResults).forEach(([k, v]) => {
+          // valores do equipamento sempre prevalecem; os demais só preenchem campos vazios
+          if (nextInstrumentKeys.has(k) || !(next[k] || '').trim()) next[k] = v;
+        });
+        return next;
+      });
       setNotes(prev => ({ ...nextNotes, ...prev }));
       setExamStatuses(prev => ({ ...nextStatuses, ...prev }));
     })();
     return () => { active = false; };
   }, [isOpen, filteredExams, user?.companyId]);
+
 
   // Pré-seleciona "Ausente" nos parâmetros de seleção que possuem essa opção (ex.: Sumário de Urina)
   useEffect(() => {
