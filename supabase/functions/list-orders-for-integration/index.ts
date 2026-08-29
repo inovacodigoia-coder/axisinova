@@ -122,6 +122,10 @@ Deno.serve(async (req) => {
   const companySeq = (company?.sequence_id ?? null) as number | null
 
   // ---- 4. Pedidos alterados depois de `since` ----
+  // O filtro `since` deve considerar o horário do EVENTO (coleta ou cancelamento),
+  // não a criação do pedido. O trigger update_attendance_orders_updated_at garante
+  // que updated_at acompanha qualquer alteração (inclusive coleta), e o filtro
+  // fino abaixo (eventTime > since) usa o collected_at real das amostras.
   const { data: orders, error } = await supabase
     .from('attendance_orders')
     .select('id, order_number, protocol, status, patient_id, patient_name, lab_guides, updated_at, created_at')
@@ -130,6 +134,21 @@ Deno.serve(async (req) => {
     .gt('updated_at', since.toISOString())
     .order('updated_at', { ascending: true })
     .limit(limit)
+
+  /** Momento do evento relevante: última coleta registrada (ou updated_at p/ cancelados) */
+  const orderEventTime = (o: any): number => {
+    const updated = new Date(o.updated_at || o.created_at || 0).getTime()
+    if (CANCELLED_STATUSES.includes(String(o.status))) return updated
+    let latest = 0
+    const guides: any[] = Array.isArray(o.lab_guides) ? o.lab_guides : []
+    for (const g of guides) {
+      for (const e of Array.isArray(g?.exams) ? g.exams : []) {
+        const t = e?.collectedAt ? new Date(e.collectedAt).getTime() : 0
+        if (!isNaN(t) && t > latest) latest = t
+      }
+    }
+    return latest || updated
+  }
 
   if (error) {
     console.error('[list-orders-for-integration] erro ao ler pedidos:', error.message)
