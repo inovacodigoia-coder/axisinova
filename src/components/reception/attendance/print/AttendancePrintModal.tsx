@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button'
 import { Printer, X, FileText } from 'lucide-react'
 import { AttendanceReceiptVia } from './AttendanceReceiptVia'
 import { usePrinterConfig } from '@/hooks/usePrinterConfig'
+import { ServidorImpressaoStatus } from '@/components/print/ServidorImpressaoStatus'
 import type { AttendanceControlDocument, PrinterConfig } from '@/types/payment-print.types'
 
 interface Props {
@@ -120,6 +121,7 @@ export function AttendancePrintModal({ open, onClose, document: doc, autoPrint, 
             </select>
           </label>
           <div className="flex-1" />
+          <ServidorImpressaoStatus />
           <Button variant="outline" size="sm" onClick={handlePrint}>
             <FileText className="h-4 w-4 mr-1" /> Ver PDF
           </Button>

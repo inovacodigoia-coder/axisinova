@@ -3,6 +3,7 @@ import { Dialog, DialogContent } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
 import { Printer, X } from 'lucide-react'
 import { SampleLabel } from '@/components/lab/print/SampleLabel'
+import { ServidorImpressaoStatus } from '@/components/print/ServidorImpressaoStatus'
 
 export interface SampleLabelData {
   sampleId: string
@@ -88,6 +89,7 @@ export function SampleLabelsPrintModal({
             </p>
           </div>
           <div className="flex items-center gap-2">
+            <ServidorImpressaoStatus />
             <Button size="sm" onClick={handlePrint} disabled={!labels.length}>
               <Printer className="h-4 w-4 mr-1" /> Imprimir
             </Button>
