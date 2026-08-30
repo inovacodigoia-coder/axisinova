@@ -7,6 +7,7 @@ import { cn } from '@/lib/utils'
 import { usePrinterConfig } from '@/hooks/usePrinterConfig'
 import { AttendancePrintModal } from '@/components/reception/attendance/print/AttendancePrintModal'
 import type { PrinterConfig, AttendanceControlDocument } from '@/types/payment-print.types'
+import { ServidorImpressaoStatus } from '@/components/print/ServidorImpressaoStatus'
 
 function buildTestDocument(): AttendanceControlDocument {
   const now = new Date()
@@ -52,6 +53,7 @@ export default function PrinterSettingsPage() {
         <div>
           <h1 className="text-2xl font-bold text-foreground">Configuração de Impressora</h1>
           <p className="text-sm text-muted-foreground">Configure as impressoras para emissão do controle de atendimento</p>
+          <ServidorImpressaoStatus className="mt-2" />
         </div>
         <button onClick={handleNew} className="inline-flex items-center gap-1.5 rounded-lg gradient-bg px-4 py-2 text-sm font-semibold text-white shadow-sm hover:opacity-90">
           <Plus className="h-4 w-4" /> Nova Impressora
