@@ -11,6 +11,7 @@ import { BillingProvider } from '@/context/BillingContext'
 import { CompanySidebar } from '@/components/company/CompanySidebar'
 import { UserMenuDropdown } from '@/components/company/UserMenuDropdown'
 import { OriginSelector } from '@/components/company/OriginSelector'
+import { getLandingRoute } from '@/utils/landingRoute'
 import { NotificationCenter } from '@/components/notifications/NotificationCenter'
 import { NotificationBadge } from '@/components/notifications/NotificationBadge'
 import { CommandPalette } from '@/components/global/CommandPalette'
@@ -137,7 +138,7 @@ function PortalContent() {
   const [notifOpen, setNotifOpen] = useState(false)
   const { user, logout } = useAuth()
   const { unreadCount } = useNotificationContext()
-  const { activeSector, activeProfile, isSessionReady, isSessionHydrated } = useCompanyContext()
+  const { activeSector, activeProfile, isSessionReady, isSessionHydrated, canAccess } = useCompanyContext()
   const { open: openSearch } = useGlobalSearch()
   const location = useLocation()
   const { showWarning, countdown, extendSession } = useSessionTimeout()
@@ -165,6 +166,13 @@ function PortalContent() {
   const needsSessionSelection = user && !isSessionReady && (!activeProfile || !activeSector)
   if (needsSessionSelection) {
     return <Navigate to="/selecionar-perfil" replace state={{ from: location }} />
+  }
+
+  // Guard: se o perfil/setor não tem acesso ao Dashboard, redireciona para a
+  // primeira rota liberada no menu (ex.: Iniciar Cadastro).
+  const landing = getLandingRoute(canAccess, activeSector)
+  if (location.pathname === '/app/dashboard' && landing !== '/app/dashboard') {
+    return <Navigate to={landing} replace />
   }
 
 
