@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { servidorImpressaoAtivo } from '@/lib/impressaoLocal'
-import { PrinterCheck, PrinterX } from 'lucide-react'
+import { PrinterCheck, PrinterOff } from 'lucide-react'
 
 /**
  * Indicador discreto do status do Servidor de Impressão AisAxius (localhost:8089).
