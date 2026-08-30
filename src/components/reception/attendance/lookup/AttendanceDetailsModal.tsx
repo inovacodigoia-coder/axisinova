@@ -38,6 +38,8 @@ import { SwitchConvenioModal } from '../guides/SwitchConvenioModal'
 import { TissGuidePrintModal } from '../print/TissGuidePrintModal'
 import { ClientInfoModal, type ClientInfoMode } from './ClientInfoModal'
 import { usePermissions } from '@/hooks/usePermissions'
+import { useAuth } from '@/context/AuthContext'
+import { ensurePatientPortalAccess, buildPortalUrl } from '@/hooks/useExternalAccesses'
 
 import {
   AlertDialog,
@@ -1162,7 +1164,7 @@ export function AttendanceDetailsModal({ open, onClose, onOrderDeleted, order, p
 
           // Acesso do paciente ao portal externo (reaproveita ou cria)
           const portalAccess = await ensurePatientPortalAccess({
-            companyId: (order as any).companyId || companyId || '',
+            companyId: (order as any).companyId || authUser?.companyId || '',
             patientId: order.patientId,
             patientName: order.patientName,
             email: patient?.email,
