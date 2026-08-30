@@ -1100,7 +1100,7 @@ export function AttendanceDetailsModal({ open, onClose, onOrderDeleted, order, p
       <AttendancePrintSelectionModal 
         open={printSelectionOpen}
         onClose={() => setPrintSelectionOpen(false)}
-        onConfirm={(result) => {
+        onConfirm={async (result) => {
           setPrintSelectionOpen(false);
 
           // Rodapé "Confirmar": apenas fecha (coleta já confirmada no modal)
