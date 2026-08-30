@@ -66,41 +66,42 @@ export default function SuperAdminUsersPage() {
       const locks = (locksRes.data as ActiveLock[]) ?? []
 
       if (profilesRes.data) {
-        // Resolve e-mails (auth.users) in parallel — needed to match lockouts,
-        // since lock_key is the identifier typed at login (usually the e-mail)
-        const mapped: SystemUser[] = await Promise.all(
-          profilesRes.data.map(async (p: any) => {
-            let email: string | null = p.email ?? null
-            if (!email) {
-              try {
-                const { data: mail } = await supabase.functions.invoke('get-user-email', {
-                  body: { user_id: p.id },
-                })
-                email = mail?.email ?? null
-              } catch {
-                email = null
-              }
-            }
+        // Resolve all e-mails (auth.users) in a single batch call — needed to match
+        // lockouts, since lock_key is the identifier typed at login (usually the e-mail)
+        let emails: Record<string, string | null> = {}
+        const ids = profilesRes.data.map((p: any) => p.id as string)
+        if (ids.length > 0) {
+          try {
+            const { data: mail } = await supabase.functions.invoke('get-user-email', {
+              body: { user_ids: ids },
+            })
+            emails = mail?.emails ?? {}
+          } catch {
+            emails = {}
+          }
+        }
 
-            const identifiers = [email, p.cpf]
-              .filter(Boolean)
-              .map((v: string) => v.toLowerCase())
-            const lock = locks.find((l) => identifiers.includes(l.lock_key.toLowerCase()))
+        const mapped: SystemUser[] = profilesRes.data.map((p: any) => {
+          const email: string | null = emails[p.id] ?? null
 
-            return {
-              id: p.id,
-              name: p.full_name || 'Sem nome',
-              email: email || (p.cpf ? `CPF: ${p.cpf}` : 'Sem e-mail vinculado'),
-              role: p.role || 'user',
-              isActive: p.is_active !== false,
-              lastAccess: p.updated_at ? new Date(p.updated_at).toLocaleString('pt-BR') : 'Nunca',
-              companyId: p.company_id,
-              companyName: p.companies?.name || 'Sistema (AxisInova)',
-              lockId: lock?.id,
-              lockExpiresAt: lock?.expires_at,
-            }
-          })
-        )
+          const identifiers = [email, p.cpf]
+            .filter(Boolean)
+            .map((v: string) => v.toLowerCase())
+          const lock = locks.find((l) => identifiers.includes(l.lock_key.toLowerCase()))
+
+          return {
+            id: p.id,
+            name: p.full_name || 'Sem nome',
+            email: email || (p.cpf ? `CPF: ${p.cpf}` : 'Sem e-mail vinculado'),
+            role: p.role || 'user',
+            isActive: p.is_active !== false,
+            lastAccess: p.updated_at ? new Date(p.updated_at).toLocaleString('pt-BR') : 'Nunca',
+            companyId: p.company_id,
+            companyName: p.companies?.name || 'Sistema (AxisInova)',
+            lockId: lock?.id,
+            lockExpiresAt: lock?.expires_at,
+          }
+        })
         setUsers(mapped)
       }
     } catch (err: any) {
