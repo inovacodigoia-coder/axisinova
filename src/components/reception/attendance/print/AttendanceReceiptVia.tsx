@@ -24,6 +24,9 @@ export function AttendanceReceiptVia({ document: doc, config, via }: Props) {
     }
   }
   
+  const portalUrl = doc.portalUrl
+    || (doc.locatorCode ? `${window.location.origin}/portal/${doc.locatorCode}` : 'https://axisinova.lovable.app/resultado')
+
   // Calculate general delivery forecast (max date)
   const generalForecast = doc.exams.reduce((max, exam) => {
     if (!exam.forecastDate) return max
