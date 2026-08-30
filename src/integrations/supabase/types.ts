@@ -869,6 +869,167 @@ export type Database = {
           },
         ]
       }
+      external_access_logs: {
+        Row: {
+          access_code: string
+          access_id: string | null
+          access_type: string | null
+          action: string
+          company_id: string | null
+          created_at: string
+          details: string | null
+          id: string
+          ip_address: string | null
+          success: boolean
+        }
+        Insert: {
+          access_code: string
+          access_id?: string | null
+          access_type?: string | null
+          action: string
+          company_id?: string | null
+          created_at?: string
+          details?: string | null
+          id?: string
+          ip_address?: string | null
+          success?: boolean
+        }
+        Update: {
+          access_code?: string
+          access_id?: string | null
+          access_type?: string | null
+          action?: string
+          company_id?: string | null
+          created_at?: string
+          details?: string | null
+          id?: string
+          ip_address?: string | null
+          success?: boolean
+        }
+        Relationships: [
+          {
+            foreignKeyName: "external_access_logs_access_id_fkey"
+            columns: ["access_id"]
+            isOneToOne: false
+            referencedRelation: "external_accesses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "external_access_logs_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      external_accesses: {
+        Row: {
+          access_code: string
+          access_password: string
+          cnpj: string | null
+          company_id: string
+          created_at: string
+          created_by: string | null
+          crm: string | null
+          doctor_id: string | null
+          email: string | null
+          id: string
+          last_access_at: string | null
+          name: string
+          origin_id: string | null
+          partner_origin_ids: string[]
+          partner_type: string | null
+          patient_id: string | null
+          permissions: Json
+          phone: string | null
+          responsible_name: string | null
+          specialty: string | null
+          status: string
+          type: string
+          updated_at: string
+        }
+        Insert: {
+          access_code: string
+          access_password: string
+          cnpj?: string | null
+          company_id: string
+          created_at?: string
+          created_by?: string | null
+          crm?: string | null
+          doctor_id?: string | null
+          email?: string | null
+          id?: string
+          last_access_at?: string | null
+          name: string
+          origin_id?: string | null
+          partner_origin_ids?: string[]
+          partner_type?: string | null
+          patient_id?: string | null
+          permissions?: Json
+          phone?: string | null
+          responsible_name?: string | null
+          specialty?: string | null
+          status?: string
+          type: string
+          updated_at?: string
+        }
+        Update: {
+          access_code?: string
+          access_password?: string
+          cnpj?: string | null
+          company_id?: string
+          created_at?: string
+          created_by?: string | null
+          crm?: string | null
+          doctor_id?: string | null
+          email?: string | null
+          id?: string
+          last_access_at?: string | null
+          name?: string
+          origin_id?: string | null
+          partner_origin_ids?: string[]
+          partner_type?: string | null
+          patient_id?: string | null
+          permissions?: Json
+          phone?: string | null
+          responsible_name?: string | null
+          specialty?: string | null
+          status?: string
+          type?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "external_accesses_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "external_accesses_doctor_id_fkey"
+            columns: ["doctor_id"]
+            isOneToOne: false
+            referencedRelation: "doctors"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "external_accesses_origin_id_fkey"
+            columns: ["origin_id"]
+            isOneToOne: false
+            referencedRelation: "origins"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "external_accesses_patient_id_fkey"
+            columns: ["patient_id"]
+            isOneToOne: false
+            referencedRelation: "patients"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       instrument_events: {
         Row: {
           company_id: string
@@ -2878,6 +3039,7 @@ export type Database = {
         }
         Returns: boolean
       }
+      generate_external_access_code: { Args: never; Returns: string }
       get_user_company_id: { Args: { _user_id: string }; Returns: string }
       has_role: {
         Args: {

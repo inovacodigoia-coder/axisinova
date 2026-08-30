@@ -1,0 +1,261 @@
+import { useEffect, useMemo, useState } from 'react'
+import { Search, Check, Loader2 } from 'lucide-react'
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
+import { Badge } from '@/components/ui/badge'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { cn } from '@/lib/utils'
+import { toast } from 'sonner'
+import { supabase } from '@/integrations/supabase/client'
+import type { ExternalAccessInput, ExternalAccessType, ExternalAccessRecord } from '@/hooks/useExternalAccesses'
+
+interface Props {
+  open: boolean
+  onOpenChange: (open: boolean) => void
+  defaultType: ExternalAccessType
+  companyId: string | null
+  onCreate: (input: ExternalAccessInput) => Promise<ExternalAccessRecord>
+  onCreated: (record: ExternalAccessRecord) => void
+}
+
+interface OptionRow {
+  id: string
+  label: string
+  sub?: string
+}
+
+function maskCpf(cpf?: string | null) {
+  const digits = (cpf || '').replace(/\D/g, '')
+  if (digits.length !== 11) return cpf || '—'
+  return `${digits.slice(0, 3)}.***.***-${digits.slice(9)}`
+}
+
+const TYPE_LABEL: Record<ExternalAccessType, string> = {
+  parceiro: 'Parceiro',
+  local: 'Local',
+  medico: 'Médico',
+  paciente: 'Paciente',
+}
+
+export function NewAccessModal({ open, onOpenChange, defaultType, companyId, onCreate, onCreated }: Props) {
+  const [type, setType] = useState<ExternalAccessType>(defaultType)
+  const [name, setName] = useState('')
+  const [email, setEmail] = useState('')
+  const [responsibleName, setResponsibleName] = useState('')
+  const [cnpj, setCnpj] = useState('')
+  const [partnerType, setPartnerType] = useState('laboratorio')
+  const [search, setSearch] = useState('')
+  const [options, setOptions] = useState<OptionRow[]>([])
+  const [loadingOptions, setLoadingOptions] = useState(false)
+  const [selectedId, setSelectedId] = useState<string | null>(null)
+  const [selectedPartnerOrigins, setSelectedPartnerOrigins] = useState<string[]>([])
+  const [saving, setSaving] = useState(false)
+
+  useEffect(() => {
+    if (open) {
+      setType(defaultType)
+      setName(''); setEmail(''); setResponsibleName(''); setCnpj('')
+      setSearch(''); setSelectedId(null); setSelectedPartnerOrigins([])
+    }
+  }, [open, defaultType])
+
+  useEffect(() => {
+    if (!open || !companyId) return
+    let cancelled = false
+    const load = async () => {
+      setLoadingOptions(true)
+      let rows: OptionRow[] = []
+      if (type === 'medico') {
+        const { data } = await supabase
+          .from('doctors').select('id, full_name, crm, crm_state')
+          .eq('company_id', companyId).eq('is_active', true).order('full_name')
+        rows = (data || []).map((d) => ({ id: d.id, label: d.full_name, sub: `CRM ${d.crm}/${d.crm_state}` }))
+      } else if (type === 'paciente') {
+        const term = search.trim()
+        let q = supabase.from('patients').select('id, name, cpf, birth_date').eq('company_id', companyId).order('name').limit(30)
+        if (term) q = q.or(`name.ilike.%${term}%,cpf.ilike.%${term.replace(/\D/g, '')}%`)
+        const { data } = await q
+        rows = (data || []).map((p) => ({
+          id: p.id,
+          label: p.name,
+          sub: `${maskCpf(p.cpf)} · ${p.birth_date ? new Date(p.birth_date + 'T00:00:00').toLocaleDateString('pt-BR') : '—'}`,
+        }))
+      } else {
+        const { data } = await supabase
+          .from('origins').select('id, name, internal_code').eq('company_id', companyId).order('name')
+        rows = (data || []).map((o) => ({ id: o.id, label: o.name, sub: o.internal_code || undefined }))
+      }
+      if (!cancelled) { setOptions(rows); setLoadingOptions(false) }
+    }
+    const t = setTimeout(load, type === 'paciente' ? 300 : 0)
+    return () => { cancelled = true; clearTimeout(t) }
+  }, [open, companyId, type, search])
+
+  const visibleOptions = useMemo(() => {
+    if (type === 'paciente') return options
+    const term = search.trim().toLowerCase()
+    if (!term) return options
+    return options.filter((o) => `${o.label} ${o.sub || ''}`.toLowerCase().includes(term))
+  }, [options, search, type])
+
+  const linkValid = type === 'parceiro' ? selectedPartnerOrigins.length > 0 : !!selectedId
+  const canSave = name.trim().length > 1 && linkValid
+
+  const selectOption = (id: string) => {
+    if (type === 'parceiro') {
+      setSelectedPartnerOrigins((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]))
+      return
+    }
+    setSelectedId(id)
+    const opt = options.find((o) => o.id === id)
+    if (opt && !name.trim()) setName(opt.label)
+  }
+
+  const handleSave = async () => {
+    if (!canSave) return
+    setSaving(true)
+    try {
+      const doctor = type === 'medico' ? options.find((o) => o.id === selectedId) : null
+      const record = await onCreate({
+        type,
+        name: name.trim(),
+        email: email.trim() || null,
+        status: 'active',
+        patient_id: type === 'paciente' ? selectedId : null,
+        doctor_id: type === 'medico' ? selectedId : null,
+        origin_id: type === 'local' ? selectedId : null,
+        partner_origin_ids: type === 'parceiro' ? selectedPartnerOrigins : [],
+        partner_type: type === 'parceiro' ? partnerType : null,
+        cnpj: type === 'parceiro' ? cnpj.trim() || null : null,
+        responsible_name: responsibleName.trim() || null,
+        phone: null,
+        crm: doctor?.sub?.replace('CRM ', '') || null,
+        specialty: null,
+      })
+      onOpenChange(false)
+      onCreated(record)
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : 'Falha ao criar acesso')
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  const searchPlaceholder =
+    type === 'medico' ? 'Buscar por nome ou CRM...'
+      : type === 'paciente' ? 'Buscar por nome ou CPF...'
+        : 'Buscar origem/unidade...'
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="max-w-lg">
+        <DialogHeader>
+          <DialogTitle>Novo Acesso</DialogTitle>
+          <DialogDescription>
+            O código de acesso e a senha são gerados automaticamente ao salvar.
+          </DialogDescription>
+        </DialogHeader>
+
+        <div className="space-y-4 max-h-[65vh] overflow-y-auto pr-1">
+          <div className="space-y-2">
+            <Label>Tipo de acesso</Label>
+            <Select value={type} onValueChange={(v) => { setType(v as ExternalAccessType); setSelectedId(null); setSelectedPartnerOrigins([]) }}>
+              <SelectTrigger><SelectValue /></SelectTrigger>
+              <SelectContent>
+                {(Object.keys(TYPE_LABEL) as ExternalAccessType[]).map((t) => (
+                  <SelectItem key={t} value={t}>{TYPE_LABEL[t]}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="space-y-2">
+            <Label>
+              {type === 'parceiro' ? 'Origens do parceiro *' : type === 'local' ? 'Origem / Unidade *' : `${TYPE_LABEL[type]} vinculado *`}
+            </Label>
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+              <Input className="pl-9" placeholder={searchPlaceholder} value={search} onChange={(e) => setSearch(e.target.value)} />
+            </div>
+            <div className="max-h-52 overflow-y-auto rounded-md border divide-y">
+              {loadingOptions ? (
+                <div className="flex items-center justify-center gap-2 p-4 text-sm text-muted-foreground">
+                  <Loader2 className="h-4 w-4 animate-spin" /> Carregando...
+                </div>
+              ) : visibleOptions.length === 0 ? (
+                <p className="p-4 text-center text-sm text-muted-foreground">Nenhum registro encontrado.</p>
+              ) : (
+                visibleOptions.map((o) => {
+                  const active = type === 'parceiro' ? selectedPartnerOrigins.includes(o.id) : selectedId === o.id
+                  return (
+                    <button
+                      type="button"
+                      key={o.id}
+                      onClick={() => selectOption(o.id)}
+                      className={cn('flex w-full items-center justify-between gap-2 px-3 py-2 text-left text-sm hover:bg-muted', active && 'bg-primary/10')}
+                    >
+                      <span className="min-w-0">
+                        <span className="block truncate font-medium">{o.label}</span>
+                        {o.sub && <span className="block truncate text-xs text-muted-foreground">{o.sub}</span>}
+                      </span>
+                      {active && <Check className="h-4 w-4 shrink-0 text-primary" />}
+                    </button>
+                  )
+                })
+              )}
+            </div>
+            {type === 'parceiro' && selectedPartnerOrigins.length > 0 && (
+              <Badge variant="secondary">{selectedPartnerOrigins.length} origem(ns) selecionada(s)</Badge>
+            )}
+            {!linkValid && <p className="text-xs text-muted-foreground">O vínculo é obrigatório para gerar o acesso.</p>}
+          </div>
+
+          <div className="grid gap-4 sm:grid-cols-2">
+            <div className="space-y-2 sm:col-span-2">
+              <Label>Nome exibido *</Label>
+              <Input value={name} onChange={(e) => setName(e.target.value)} placeholder="Nome do acesso" />
+            </div>
+            <div className="space-y-2">
+              <Label>E-mail</Label>
+              <Input type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="contato@exemplo.com" />
+            </div>
+            <div className="space-y-2">
+              <Label>Responsável</Label>
+              <Input value={responsibleName} onChange={(e) => setResponsibleName(e.target.value)} />
+            </div>
+            {type === 'parceiro' && (
+              <>
+                <div className="space-y-2">
+                  <Label>Tipo de parceiro</Label>
+                  <Select value={partnerType} onValueChange={setPartnerType}>
+                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="laboratorio">Laboratório</SelectItem>
+                      <SelectItem value="posto_coleta">Posto de Coleta</SelectItem>
+                      <SelectItem value="hospital">Hospital</SelectItem>
+                      <SelectItem value="clinica">Clínica</SelectItem>
+                      <SelectItem value="outros">Outros</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-2">
+                  <Label>CNPJ</Label>
+                  <Input value={cnpj} onChange={(e) => setCnpj(e.target.value)} placeholder="00.000.000/0001-00" />
+                </div>
+              </>
+            )}
+          </div>
+        </div>
+
+        <DialogFooter>
+          <Button variant="outline" onClick={() => onOpenChange(false)}>Cancelar</Button>
+          <Button disabled={!canSave || saving} onClick={handleSave}>
+            {saving ? 'Salvando...' : 'Salvar e gerar acesso'}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  )
+}
