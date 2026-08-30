@@ -7,10 +7,11 @@ import { useAuth } from '@/context/AuthContext';
 import { useCompanyContext } from '@/context/CompanyContext';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import { getLandingRoute } from '@/utils/landingRoute';
 
 export default function OriginSelectorPage() {
   const { user } = useAuth();
-  const { availableOrigins, selectOrigin, refreshOrigins } = useCompanyContext();
+  const { availableOrigins, selectOrigin, refreshOrigins, canAccess, activeSector } = useCompanyContext();
   const navigate = useNavigate();
   const [search, setSearch] = useState('');
   const [favorites, setFavorites] = useState<string[]>([]);
@@ -40,7 +41,7 @@ export default function OriginSelectorPage() {
 
   const handleConfirm = (origin: any) => {
     selectOrigin(origin);
-    navigate('/app/dashboard');
+    navigate(getLandingRoute(canAccess, activeSector));
   };
 
   const filteredOrigins = availableOrigins.filter(o => 

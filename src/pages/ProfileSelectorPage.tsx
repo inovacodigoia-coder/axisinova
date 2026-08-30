@@ -7,18 +7,19 @@ import { useCompanyContext } from '@/context/CompanyContext'
 import type { Profile, Sector } from '@/types/permissions.types'
 import { cn } from '@/lib/utils'
 import { SYSTEM_VERSION } from '@/utils/version'
+import { getLandingRoute } from '@/utils/landingRoute'
 
 export default function ProfileSelectorPage() {
   const { user, logout } = useAuth()
-  const { profiles, selectProfile, selectSector, confirmSession, isSessionReady, activeProfile, activeSector, availableSectors } = useCompanyContext()
+  const { profiles, selectProfile, selectSector, confirmSession, isSessionReady, activeProfile, activeSector, availableSectors, canAccess } = useCompanyContext()
   const navigate = useNavigate()
   const [loading, setLoading] = useState(false)
 
   useEffect(() => {
     if (isSessionReady) {
-      navigate('/app/dashboard', { replace: true })
+      navigate(getLandingRoute(canAccess, activeSector), { replace: true })
     }
-  }, [isSessionReady, navigate])
+  }, [isSessionReady, navigate, canAccess, activeSector])
 
   // Auto-select sector if profile has only 1
   useEffect(() => {
