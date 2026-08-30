@@ -24,6 +24,9 @@ export function AttendanceReceiptVia({ document: doc, config, via }: Props) {
     }
   }
   
+  const portalUrl = doc.portalUrl
+    || (doc.locatorCode ? `${window.location.origin}/portal/${doc.locatorCode}` : 'https://axisinova.lovable.app/resultado')
+
   // Calculate general delivery forecast (max date)
   const generalForecast = doc.exams.reduce((max, exam) => {
     if (!exam.forecastDate) return max
@@ -94,7 +97,8 @@ export function AttendanceReceiptVia({ document: doc, config, via }: Props) {
       <div className="border-b border-black pb-2 mb-2 flex items-start gap-4">
         <div className="flex-1 text-[8pt]">
           <div className="font-bold mb-1">Resultados:</div>
-          <div>Leia o QR Code ao lado ou acesse o portal do paciente.</div>
+          <div>Leia o QR Code ao lado ou acesse o link abaixo.</div>
+          <div className="mt-1 break-all font-mono text-[7.5pt]">{portalUrl}</div>
           {doc.locatorCode && (
             <div className="mt-2">
               <div><strong>Acesso:</strong> {doc.locatorCode}</div>
@@ -103,7 +107,7 @@ export function AttendanceReceiptVia({ document: doc, config, via }: Props) {
           )}
         </div>
         <div className="flex flex-col items-center">
-          <QRCodeSVG value={`https://axisinova.lovable.app/resultado?l=${doc.locatorCode}`} size={70} />
+          <QRCodeSVG value={portalUrl} size={70} />
           <div className="text-[7pt] mt-1 font-mono">{doc.locatorCode}</div>
         </div>
       </div>

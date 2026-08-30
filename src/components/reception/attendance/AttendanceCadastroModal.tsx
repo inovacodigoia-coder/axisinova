@@ -31,6 +31,7 @@ import { LabStep6Summary } from '@/components/lab/attendance/steps/LabStep6Summa
 import { useAttendanceCadastro, useDraftAutosave, loadDraft, clearDraft } from '@/hooks/useAttendanceCadastro'
 import { usePrinterConfig } from '@/hooks/usePrinterConfig'
 import { useAuth } from '@/context/AuthContext'
+import { ensurePatientPortalAccess, buildPortalUrl, type ExternalAccessRecord } from '@/hooks/useExternalAccesses'
 import { useCompanyContext } from '@/context/CompanyContext'
 import type { AttendanceOrder, AttendanceServiceType, AttendancePaymentType, AttendanceAttachment } from '@/types/attendance-cadastro.types'
 import type { Patient } from '@/types/patient.types'
@@ -160,6 +161,7 @@ export function AttendanceCadastroModal({
 
   // Post-finalize flow
   const [createdOrder, setCreatedOrder] = useState<AttendanceOrder | null>(null)
+  const [portalAccess, setPortalAccess] = useState<ExternalAccessRecord | null>(null)
   const [paymentRecord, setPaymentRecord] = useState<PaymentRecord | null>(null)
   const [showPayment, setShowPayment] = useState(false)
   const [showPrint, setShowPrint] = useState(false)
@@ -353,8 +355,11 @@ export function AttendanceCadastroModal({
       companyAddress: 'Rua das Flores, 123 · Natal/RN',
       companyCNPJ: '00.000.000/0001-00',
       companyPhone: '(84) 3333-0000',
+      locatorCode: portalAccess?.access_code,
+      password: portalAccess?.access_password,
+      portalUrl: portalAccess ? buildPortalUrl(portalAccess.access_code) : undefined,
     }
-  }, [state.patient, unitName, guicheName])
+  }, [state.patient, unitName, guicheName, portalAccess])
 
   const handleFinalize = async () => {
     if (finalizingRef.current || createdOrder) return
@@ -439,6 +444,17 @@ export function AttendanceCadastroModal({
         setCreatedOrder(order)
         onOrderCreated?.(order)
 
+        // Gera (ou reaproveita) o acesso do paciente ao portal externo
+        if (user?.companyId && order.patientId && !order.patientId.startsWith('temp_')) {
+          const access = await ensurePatientPortalAccess({
+            companyId: user.companyId,
+            patientId: order.patientId,
+            patientName: order.patientName,
+            email: state.patient?.email,
+          })
+          if (access) setPortalAccess(access)
+        }
+
         // Flow: if private and needs payment -> show payment first; else -> print selection
         if (state.paymentType === 'private' || hasParticularGuideWithPrice) {
           setShowPayment(true)
@@ -471,7 +487,7 @@ export function AttendanceCadastroModal({
 
   const closeAllAndExit = () => {
     setShowPayment(false); setShowPrint(false); setShowAllocation(false)
-    setCreatedOrder(null); setPaymentRecord(null)
+    setCreatedOrder(null); setPaymentRecord(null); setPortalAccess(null)
     onClose()
   }
 

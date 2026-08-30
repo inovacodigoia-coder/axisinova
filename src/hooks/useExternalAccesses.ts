@@ -167,3 +167,59 @@ export function useExternalAccesses() {
     toggleStatus,
   }
 }
+
+/**
+ * Garante que o paciente possua um acesso ao portal externo.
+ * Reaproveita o acesso existente (ativo) ou cria um novo com código + senha.
+ */
+export async function ensurePatientPortalAccess(params: {
+  companyId: string
+  patientId: string
+  patientName: string
+  email?: string | null
+}): Promise<ExternalAccessRecord | null> {
+  const { companyId, patientId, patientName, email } = params
+  if (!companyId || !patientId) return null
+  try {
+    const { data: existing } = await supabase
+      .from('external_accesses')
+      .select('*')
+      .eq('company_id', companyId)
+      .eq('type', 'paciente')
+      .eq('patient_id', patientId)
+      .order('created_at', { ascending: false })
+      .limit(1)
+
+    if (existing && existing.length > 0) {
+      return existing[0] as unknown as ExternalAccessRecord
+    }
+
+    const { data: code, error: codeErr } = await supabase.rpc('generate_external_access_code')
+    if (codeErr || !code) return null
+
+    const { data, error } = await supabase
+      .from('external_accesses')
+      .insert({
+        company_id: companyId,
+        type: 'paciente',
+        name: patientName,
+        email: email || null,
+        status: 'active',
+        patient_id: patientId,
+        partner_origin_ids: [],
+        permissions: {},
+        access_code: code as string,
+        access_password: generatePassword(),
+      } as never)
+      .select('*')
+      .single()
+    if (error) {
+      console.error('[ensurePatientPortalAccess] insert error:', error)
+      return null
+    }
+    return data as unknown as ExternalAccessRecord
+  } catch (e) {
+    console.error('[ensurePatientPortalAccess] error:', e)
+    return null
+  }
+}

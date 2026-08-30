@@ -38,6 +38,8 @@ import { SwitchConvenioModal } from '../guides/SwitchConvenioModal'
 import { TissGuidePrintModal } from '../print/TissGuidePrintModal'
 import { ClientInfoModal, type ClientInfoMode } from './ClientInfoModal'
 import { usePermissions } from '@/hooks/usePermissions'
+import { useAuth } from '@/context/AuthContext'
+import { ensurePatientPortalAccess, buildPortalUrl } from '@/hooks/useExternalAccesses'
 
 import {
   AlertDialog,
@@ -61,6 +63,7 @@ interface AttendanceDetailsModalProps {
 export function AttendanceDetailsModal({ open, onClose, onOrderDeleted, order, patient }: AttendanceDetailsModalProps) {
   const { exams: catalogExams, workbenches } = useRegisters()
   const { isSuperAdmin, isCompanyAdmin } = usePermissions()
+  const { user: authUser } = useAuth()
   const isAdmin = isSuperAdmin || isCompanyAdmin
   const [clientModalMode, setClientModalMode] = useState<ClientInfoMode | null>(null)
   const [printSelectionOpen, setPrintSelectionOpen] = useState(false)
@@ -1097,7 +1100,7 @@ export function AttendanceDetailsModal({ open, onClose, onOrderDeleted, order, p
       <AttendancePrintSelectionModal 
         open={printSelectionOpen}
         onClose={() => setPrintSelectionOpen(false)}
-        onConfirm={(result) => {
+        onConfirm={async (result) => {
           setPrintSelectionOpen(false);
 
           // Rodapé "Confirmar": apenas fecha (coleta já confirmada no modal)
@@ -1160,6 +1163,14 @@ export function AttendanceDetailsModal({ open, onClose, onOrderDeleted, order, p
             setSelectedPrinterOverride(configOverride);
           }
 
+          // Acesso do paciente ao portal externo (reaproveita ou cria)
+          const portalAccess = await ensurePatientPortalAccess({
+            companyId: (order as any).companyId || authUser?.companyId || '',
+            patientId: order.patientId,
+            patientName: order.patientName,
+            email: patient?.email,
+          })
+
           // Transform order to print document
           const doc: AttendanceControlDocument = {
             orderNumber: order.orderNumber,
@@ -1181,8 +1192,9 @@ export function AttendanceDetailsModal({ open, onClose, onOrderDeleted, order, p
             registeredByName: order.registeredByName || 'Sistema',
             convenioName: order.convenioName || 'PARTICULAR',
             paymentType: order.paymentType === 'private' ? 'PARTICULAR' : 'CONVÊNIO',
-            locatorCode: order.orderNumber.replace('-', ''),
-            password: Math.floor(1000 + Math.random() * 9000).toString(),
+            locatorCode: portalAccess?.access_code || order.orderNumber.replace('-', ''),
+            password: portalAccess?.access_password || '',
+            portalUrl: portalAccess ? buildPortalUrl(portalAccess.access_code) : undefined,
             attachments: [],
             exams: orderExams
               .filter(exam => selectedExams.size === 0 || selectedExams.has(exam.examId || exam.id))
