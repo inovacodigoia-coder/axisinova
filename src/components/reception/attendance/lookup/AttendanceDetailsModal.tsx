@@ -1160,6 +1160,14 @@ export function AttendanceDetailsModal({ open, onClose, onOrderDeleted, order, p
             setSelectedPrinterOverride(configOverride);
           }
 
+          // Acesso do paciente ao portal externo (reaproveita ou cria)
+          const portalAccess = await ensurePatientPortalAccess({
+            companyId: (order as any).companyId || companyId || '',
+            patientId: order.patientId,
+            patientName: order.patientName,
+            email: patient?.email,
+          })
+
           // Transform order to print document
           const doc: AttendanceControlDocument = {
             orderNumber: order.orderNumber,
@@ -1181,8 +1189,9 @@ export function AttendanceDetailsModal({ open, onClose, onOrderDeleted, order, p
             registeredByName: order.registeredByName || 'Sistema',
             convenioName: order.convenioName || 'PARTICULAR',
             paymentType: order.paymentType === 'private' ? 'PARTICULAR' : 'CONVÊNIO',
-            locatorCode: order.orderNumber.replace('-', ''),
-            password: Math.floor(1000 + Math.random() * 9000).toString(),
+            locatorCode: portalAccess?.access_code || order.orderNumber.replace('-', ''),
+            password: portalAccess?.access_password || '',
+            portalUrl: portalAccess ? buildPortalUrl(portalAccess.access_code) : undefined,
             attachments: [],
             exams: orderExams
               .filter(exam => selectedExams.size === 0 || selectedExams.has(exam.examId || exam.id))
