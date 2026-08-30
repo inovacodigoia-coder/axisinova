@@ -227,27 +227,35 @@ export function CompanySidebar({ mobileOpen, onMobileClose, collapsed = false, o
       <div className="flex items-center justify-between border-b border-white/10 px-4 py-5">
         {!collapsed ? (
           <div className="flex-1 min-w-0">
-            <div className="flex items-center justify-between gap-2">
-              <div className="flex items-center gap-2 min-w-0">
-                {logoUrl && <img src={logoUrl} alt={brandName || 'Logo da empresa'} className="h-8 w-8 shrink-0 rounded-lg object-contain" />}
+            <div className="flex items-start justify-between gap-2">
+              <div className="flex items-start gap-2 min-w-0 flex-1">
+                {logoUrl && <img src={logoUrl} alt={brandName || 'Logo da empresa'} className="h-8 w-8 shrink-0 rounded-lg object-contain mt-0.5" />}
                 {brandName ? (
-                  <span className="text-lg font-bold truncate">{brandName}</span>
+                  <span
+                    className={cn(
+                      'font-bold leading-tight line-clamp-2 break-words',
+                      brandName.length > 28 ? 'text-[11px]' : brandName.length > 18 ? 'text-xs' : 'text-sm'
+                    )}
+                    title={brandName}
+                  >
+                    {brandName}
+                  </span>
                 ) : (
                   <span className="text-lg font-bold">Axis<span className="text-white/70">Inova</span></span>
                 )}
               </div>
 
-              <button 
-                onClick={() => navigate('/app/dashboard')} 
-                className="rounded-lg p-1.5 hover:bg-white/10 text-white/40 hover:text-white transition-colors"
+              <button
+                onClick={() => navigate('/app/dashboard')}
+                className="rounded-lg p-1.5 hover:bg-white/10 text-white/40 hover:text-white transition-colors shrink-0"
                 title="Menu do Sistema"
               >
                 <Menu className="h-5 w-5" />
               </button>
             </div>
-            <p className="mt-1 truncate text-xs text-white/40">{user?.companyName || 'Portal da Empresa'}</p>
+            <p className="mt-1 line-clamp-1 text-xs text-white/40">{user?.companyName || 'Portal da Empresa'}</p>
             {activeProfile && (
-              <p className="mt-0.5 truncate text-[10px] text-white/30">{activeProfile.name}</p>
+              <p className="mt-0.5 line-clamp-1 text-[10px] text-white/30">{activeProfile.name}</p>
             )}
           </div>
         ) : logoUrl ? (
