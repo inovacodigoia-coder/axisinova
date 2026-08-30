@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { servidorImpressaoAtivo } from '@/lib/impressaoLocal'
-import { PrinterCheck, PrinterOff } from 'lucide-react'
+import { Printer, PrinterCheck } from 'lucide-react'
 
 /**
  * Indicador discreto do status do Servidor de Impressão AisAxius (localhost:8089).
@@ -33,7 +33,7 @@ export function ServidorImpressaoStatus({ className = '' }: { className?: string
         ? 'Servidor de Impressão AisAxius detectado em localhost:8089'
         : 'Abra o Servidor de Impressão AisAxius na bandeja do Windows'}
     >
-      {ativo ? <PrinterCheck className="h-3 w-3" /> : <PrinterX className="h-3 w-3" />}
+      {ativo ? <PrinterCheck className="h-3 w-3" /> : <Printer className="h-3 w-3" />}
       {ativo ? 'Impressão local ativa' : 'Servidor de impressão local não detectado'}
     </span>
   )
