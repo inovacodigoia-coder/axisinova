@@ -221,6 +221,28 @@ function PortalLaudoModal({ laudo, onClose }: { laudo: PortalLaudo; onClose: () 
   )
 }
 
+function PortalBrandHeader({ branding, fallback }: { branding: PortalBranding | null; fallback: string | null }) {
+  const name = branding?.brand_name?.trim() || fallback || 'Portal de Acompanhamento'
+  return (
+    <div className="w-full flex flex-col items-center gap-2 pt-4 pb-2">
+      {branding?.logo_url && (
+        <img src={branding.logo_url} alt={name} className="h-14 w-auto max-w-[220px] object-contain" />
+      )}
+      <span className="text-base font-bold text-foreground text-center leading-tight">{name}</span>
+    </div>
+  )
+}
+
+function PortalSoftwareFooter() {
+  return (
+    <div className="w-full flex justify-center pb-3 pt-6">
+      <span className="text-[11px] text-muted-foreground/70">
+        Powered by <span className="font-medium">Axis Inova</span>
+      </span>
+    </div>
+  )
+}
+
 function fmt(dateStr?: string | null, withTime = true) {
   if (!dateStr) return '—'
   try {
