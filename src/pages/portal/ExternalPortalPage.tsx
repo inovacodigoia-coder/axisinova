@@ -380,6 +380,8 @@ export default function ExternalPortalPage() {
             </form>
           </CardContent>
         </Card>
+        </div>
+        <PortalSoftwareFooter />
       </div>
     )
   }
