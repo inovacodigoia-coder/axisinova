@@ -335,12 +335,16 @@ export default function ExternalPortalPage() {
 
   if (!data) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-muted/30 p-4">
+      <div className="min-h-screen flex flex-col bg-muted/30 p-4">
+        <PortalBrandHeader branding={branding} fallback={null} />
+        <div className="flex-1 flex items-center justify-center">
         <Card className="w-full max-w-sm">
           <CardHeader className="text-center space-y-1">
-            <div className="mx-auto h-11 w-11 rounded-full bg-primary/10 flex items-center justify-center">
-              <Lock className="h-5 w-5 text-primary" />
-            </div>
+            {!branding?.logo_url && (
+              <div className="mx-auto h-11 w-11 rounded-full bg-primary/10 flex items-center justify-center">
+                <Lock className="h-5 w-5 text-primary" />
+              </div>
+            )}
             <CardTitle className="text-lg">Portal de Acompanhamento</CardTitle>
             <p className="text-sm text-muted-foreground">
               Acesso <span className="font-mono font-semibold">{codigo}</span>
