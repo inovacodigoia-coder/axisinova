@@ -44,6 +44,7 @@ const OriginSelectorPage = lazy(() => import("./pages/company/OriginSelectorPage
 const LabColetaPage = lazy(() => import("./pages/company/lab/LabColetaPage"));
 const DesignSystemPage = lazy(() => import("./pages/DesignSystemPage"));
 const DocsPage = lazy(() => import("./pages/DocsPage"));
+const ExternalPortalPage = lazy(() => import("./pages/portal/ExternalPortalPage"));
 
 const queryClient = new QueryClient();
 
@@ -83,6 +84,9 @@ const App = () => (
                       {/* Patient Portal */}
                       <Route path="/resultado" element={<PatientPortalLayout />} />
                       <Route path="/resultado/*" element={<PatientPortalLayout />} />
+
+                      {/* Portais Externos (link + senha) */}
+                      <Route path="/portal/:codigo" element={<ExternalPortalPage />} />
 
                       {/* Profile Selector */}
                       <Route path="/selecionar-perfil" element={<PrivateRoute><ProfileSelectorPage /></PrivateRoute>} />

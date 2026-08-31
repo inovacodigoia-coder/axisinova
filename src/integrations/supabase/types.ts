@@ -3073,6 +3073,14 @@ export type Database = {
           unit_id: string
         }[]
       }
+      portal_fetch: {
+        Args: { p_code: string; p_password: string }
+        Returns: Json
+      }
+      portal_log_attempt: {
+        Args: { p_action?: string; p_code: string; p_success: boolean }
+        Returns: undefined
+      }
       totem_create_ticket: {
         Args: { _preferential?: boolean; _queue_line_id: string; _slug: string }
         Returns: Json
