@@ -211,8 +211,12 @@ Deno.serve(async (req) => {
     return reject(`Pedido da amostra sample_barcode=${sampleBarcode} está cancelado/excluído — resultado não aceito`)
   }
   if (!order) {
-    return reject(`Nenhum pedido encontrado com sample_barcode=${sampleBarcode}`)
+    return reject(
+      `Nenhum pedido encontrado com sample_barcode=${sampleBarcode} na empresa vinculada a esta X-API-Key ` +
+        `(pedidos dos últimos 90 dias). Verifique se a chave usada pertence à mesma empresa do pedido.`,
+    )
   }
+
   if (!COLLECTED_STATUSES.includes(String(order.status))) {
     return reject(
       `Amostra sample_barcode=${sampleBarcode} pertence ao pedido ${order.protocol} que ainda não teve coleta confirmada (status "${order.status}")`,
@@ -287,11 +291,44 @@ Deno.serve(async (req) => {
     }
   }
 
+  // Fallback: mapeamento salvo na tabela lab_exam_parameters
+  if (!matchedExam && orderExamIds.size > 0) {
+    const { data: dbParams } = await supabase
+      .from('lab_exam_parameters')
+      .select('id, exam_id, name, equipment_code, internal_code, unit')
+      .eq('company_id', companyId)
+      .in('exam_id', Array.from(orderExamIds))
+
+    const hit = (dbParams || []).find(
+      (x: any) => norm(x.equipment_code) === testCode || norm(x.internal_code) === testCode,
+    )
+    if (hit) {
+      matchedExam = (catalog || []).find((e: any) => String(e.id) === String(hit.exam_id)) || null
+      if (matchedExam) {
+        const params: any[] = Array.isArray(matchedExam.parameters) ? matchedExam.parameters : []
+        const pp = params.find((x: any) => norm(x?.name) === norm(hit.name))
+        matchedParamId = pp ? String(pp.id) : String(hit.id)
+        matchedParamName = pp?.name || hit.name
+        matchedParamUnit = pp?.unit || hit.unit || matchedExam.measurement_unit || null
+      }
+    }
+  }
+
   if (!matchedExam) {
+    const examNames = (catalog || [])
+      .filter((e: any) => orderExamIds.has(String(e.id)))
+      .map((e: any) => {
+        const params: any[] = Array.isArray(e.parameters) ? e.parameters : []
+        const mapped = params.filter((x: any) => String(x?.equipCode ?? '').trim() !== '').length
+        return `${e.name} (${mapped}/${params.length} parâmetros com código de equipamento)`
+      })
     return reject(
-      `test_code="${testCode}" não corresponde a nenhum exame/parâmetro do pedido ${order.protocol} (verifique Interfaceamento > Mapeamento de Parâmetros)`,
+      `test_code="${testCode}" não corresponde a nenhum exame/parâmetro do pedido ${order.protocol}. ` +
+        `Exames do pedido: ${examNames.join('; ') || 'nenhum exame de catálogo vinculado'}. ` +
+        `Cadastre o código do equipamento no parâmetro correspondente (Catálogo de Exames > Parâmetros > "Cód. Equip." ou Interfaceamento > Mapeamento de Parâmetros).`,
     )
   }
+
 
   const orderExam = orderExamByCatalogId.get(String(matchedExam.id))
 
