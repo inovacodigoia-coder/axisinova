@@ -224,15 +224,15 @@ function PortalLaudoModal({ laudo, onClose }: { laudo: PortalLaudo; onClose: () 
 function PortalBrandHeader({ branding, fallback }: { branding: PortalBranding | null; fallback: string | null }) {
   const name = branding?.brand_name?.trim() || fallback || 'Portal de Acompanhamento'
   return (
-    <div className="w-full flex flex-col items-center justify-center gap-3 py-6">
+    <div className="w-full flex flex-col items-center justify-center gap-2 py-4">
       {branding?.logo_url && (
         <img
           src={branding.logo_url}
           alt={name}
-          className="h-20 w-auto max-w-[260px] object-contain"
+          className="h-24 w-auto max-w-[280px] object-contain"
         />
       )}
-      <span className="text-lg sm:text-xl font-bold text-foreground text-center leading-tight max-w-[90%]">
+      <span className="text-xl sm:text-2xl font-bold text-foreground text-center leading-tight max-w-[92%]">
         {name}
       </span>
     </div>
@@ -241,7 +241,7 @@ function PortalBrandHeader({ branding, fallback }: { branding: PortalBranding | 
 
 function PortalSoftwareFooter() {
   return (
-    <div className="w-full flex justify-center pb-4 pt-4">
+    <div className="w-full flex justify-center pb-3 pt-2">
       <a
         href="https://www.inovacodigoia.com.br/"
         target="_blank"
@@ -368,11 +368,11 @@ export default function ExternalPortalPage() {
 
   if (!data) {
     return (
-      <div className="min-h-screen flex flex-col bg-muted/30 p-4">
+      <div className="min-h-screen flex flex-col bg-muted/30 px-4">
         <PortalBrandHeader branding={branding} fallback={null} />
-        <div className="flex-1 flex items-center justify-center">
+        <div className="flex items-start justify-center pt-2 pb-8">
         <Card className="w-full max-w-sm">
-          <CardHeader className="text-center space-y-1">
+          <CardHeader className="text-center space-y-1 pt-4 pb-2">
             {!branding?.logo_url && (
               <div className="mx-auto h-11 w-11 rounded-full bg-primary/10 flex items-center justify-center">
                 <Lock className="h-5 w-5 text-primary" />
@@ -397,7 +397,7 @@ export default function ExternalPortalPage() {
                   value={password}
                   onChange={(e) => setPassword(e.target.value.replace(/\D/g, ''))}
                   placeholder="0000"
-                  className="text-center text-2xl tracking-[0.5em] font-mono h-14"
+                  className="text-center text-2xl tracking-[0.5em] font-mono h-12"
                 />
               </div>
               {error && (
