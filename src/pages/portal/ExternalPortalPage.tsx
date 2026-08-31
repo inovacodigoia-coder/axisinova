@@ -370,7 +370,7 @@ export default function ExternalPortalPage() {
     return (
       <div className="min-h-screen flex flex-col bg-muted/30 px-4">
         <PortalBrandHeader branding={branding} fallback={null} />
-        <div className="flex-1 flex items-start justify-center pt-2">
+        <div className="flex items-start justify-center pt-2 pb-8">
         <Card className="w-full max-w-sm">
           <CardHeader className="text-center space-y-1 pt-4 pb-2">
             {!branding?.logo_url && (
