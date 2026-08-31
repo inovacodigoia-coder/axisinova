@@ -1,12 +1,13 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useParams } from 'react-router-dom'
 import { supabase } from '@/integrations/supabase/client'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
-import { Loader2, Lock, FileText, AlertCircle } from 'lucide-react'
+import { Loader2, Lock, FileText, AlertCircle, Download, X, Printer } from 'lucide-react'
 import { format, parseISO, isValid } from 'date-fns'
+import LaudoDocument from '@/components/lab/LaudoDocument'
 
 interface PortalExam {
   id: string
@@ -64,6 +65,154 @@ const ERROR_MESSAGES: Record<string, string> = {
   inactive: 'Este acesso está inativo. Entre em contato com o laboratório.',
   locked: 'Muitas tentativas incorretas. Aguarde 5 minutos e tente novamente.',
   invalid_password: 'Senha incorreta. Confira a senha impressa no comprovante.',
+  not_released: 'Este laudo ainda não foi liberado.',
+  forbidden: 'Este exame não pertence a este acesso.',
+}
+
+interface PortalLaudo {
+  protocol: string
+  patientName: string
+  patientBirthDate: string | null
+  patientGender: string | null
+  registeredAt: string
+  collectionTime: string | null
+  approvedAt: string | null
+  approvedBy: string | null
+  originName: string | null
+  doctorName: string | null
+  doctorCRM: string | null
+  exam: {
+    id: string
+    name: string
+    code: string | null
+    material: string | null
+    methodology: string | null
+    reportObservations: string | null
+    internalObservations: string | null
+    singlePage: boolean
+    template: { header_html: string | null; body_html: string | null; footer_html: string | null } | null
+    results: {
+      parameterKey: string
+      parameterName: string
+      value: string | null
+      unit: string | null
+      referenceRange: string | null
+      flag: string | null
+      section: string | null
+      sortOrder: number
+    }[]
+  }
+  settings: {
+    labName: string | null
+    headerTitle: string | null
+    headerSubtitle: string | null
+    logoPrimaryUrl: string | null
+    logoSecondaryUrl: string | null
+    institutionalWarning: string | null
+    footerText: string | null
+    signatureName: string | null
+    signatureRegister: string | null
+    signatureImageUrl: string | null
+    signatureAutoOnRelease: boolean | null
+    signatureIncludeRegister: boolean | null
+  } | null
+}
+
+function PortalLaudoModal({ laudo, onClose }: { laudo: PortalLaudo; onClose: () => void }) {
+  const docRef = useRef<HTMLDivElement>(null)
+  const s = laudo.settings || ({} as NonNullable<PortalLaudo['settings']>)
+
+  const order = {
+    protocol: laudo.protocol,
+    patientName: laudo.patientName,
+    patientBirthDate: laudo.patientBirthDate,
+    patientGender: laudo.patientGender,
+    registeredAt: laudo.registeredAt,
+    collectionTime: laudo.collectionTime,
+    approvedAt: laudo.approvedAt,
+    approvedBy: laudo.approvedBy,
+    originName: laudo.originName,
+    doctorName: laudo.doctorName,
+    doctorCRM: laudo.doctorCRM,
+    exams: [
+      {
+        examId: laudo.exam.id,
+        name: laudo.exam.name,
+        material: laudo.exam.material,
+        methodology: laudo.exam.methodology,
+        reportObservations: laudo.exam.reportObservations,
+        internalObservations: laudo.exam.internalObservations,
+        singlePage: laudo.exam.singlePage,
+        reportTemplate: laudo.exam.template,
+        results: laudo.exam.results,
+      },
+    ],
+  }
+
+  const printLaudo = () => {
+    if (!docRef.current) return
+    const body = window.document.body
+    const root = window.document.createElement('div')
+    root.id = 'laudo-print-root'
+    root.innerHTML = docRef.current.innerHTML
+    body.appendChild(root)
+    body.classList.add('printing-laudo')
+    let done = false
+    const cleanup = () => {
+      if (done) return
+      done = true
+      body.classList.remove('printing-laudo')
+      root.remove()
+    }
+    window.addEventListener('afterprint', cleanup, { once: true })
+    window.print()
+    setTimeout(cleanup, 1500)
+  }
+
+  return (
+    <div className="fixed inset-0 z-50 bg-black/60 flex flex-col">
+      <div className="flex items-center justify-between gap-2 px-4 py-3 bg-background border-b">
+        <div className="min-w-0">
+          <p className="text-sm font-semibold truncate">Laudo — {laudo.exam.name}</p>
+          <p className="text-xs text-muted-foreground truncate">{laudo.patientName} · Pedido {laudo.protocol}</p>
+        </div>
+        <div className="flex items-center gap-2 shrink-0">
+          <Button size="sm" variant="outline" onClick={printLaudo}>
+            <Printer className="h-4 w-4 mr-1.5" /> Imprimir
+          </Button>
+          <Button size="sm" onClick={printLaudo}>
+            <Download className="h-4 w-4 mr-1.5" /> Baixar PDF
+          </Button>
+          <Button size="sm" variant="ghost" onClick={onClose} aria-label="Fechar">
+            <X className="h-4 w-4" />
+          </Button>
+        </div>
+      </div>
+      <div className="flex-1 overflow-auto bg-muted/40 py-6 px-2">
+        <div ref={docRef}>
+          <LaudoDocument
+            order={order as never}
+            companyLogo={s.logoPrimaryUrl || undefined}
+            secondaryLogo={s.logoSecondaryUrl || undefined}
+            laboratoryName={s.labName || s.headerTitle || 'Laboratório'}
+            laboratorySubtitle={s.headerSubtitle || undefined}
+            institutionalWarning={s.institutionalWarning || undefined}
+            footerText={s.footerText || undefined}
+            technicalResponsible={
+              s.signatureName
+                ? {
+                    name: s.signatureName,
+                    register: s.signatureIncludeRegister ? s.signatureRegister || '' : '',
+                    signatureUrl: s.signatureImageUrl || undefined,
+                    role: 'Responsável Técnico',
+                  }
+                : undefined
+            }
+          />
+        </div>
+      </div>
+    </div>
+  )
 }
 
 function fmt(dateStr?: string | null, withTime = true) {
@@ -92,6 +241,36 @@ export default function ExternalPortalPage() {
   const [checking, setChecking] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [data, setData] = useState<PortalPayload | null>(null)
+  const [laudo, setLaudo] = useState<PortalLaudo | null>(null)
+  const [laudoLoading, setLaudoLoading] = useState<string | null>(null)
+  const [laudoError, setLaudoError] = useState<string | null>(null)
+
+  const openLaudo = async (examId: string) => {
+    setLaudoLoading(examId)
+    setLaudoError(null)
+    const { data: res, error: err } = await supabase.rpc('portal_fetch_laudo', {
+      p_code: codigo,
+      p_password: password,
+      p_exam_id: examId,
+    } as never)
+    if (err || !res) {
+      setLaudoError('Falha de conexão ao carregar o laudo. Tente novamente.')
+      setLaudoLoading(null)
+      return
+    }
+    const payload = res as unknown as { ok: boolean; error?: string; laudo?: PortalLaudo }
+    await supabase.rpc('portal_log_attempt', {
+      p_code: codigo,
+      p_success: !!payload?.ok,
+      p_action: 'view_laudo',
+    } as never)
+    if (!payload?.ok || !payload.laudo) {
+      setLaudoError(ERROR_MESSAGES[payload?.error || ''] || 'Não foi possível carregar o laudo.')
+    } else {
+      setLaudo(payload.laudo)
+    }
+    setLaudoLoading(null)
+  }
 
   // Verifica se o código existe (sem senha) para mostrar mensagem clara
   useEffect(() => {
@@ -243,9 +422,28 @@ export default function ExternalPortalPage() {
                   {order.exams.map((exam) => (
                     <div key={exam.id} className="flex items-center justify-between gap-3 px-3 py-2">
                       <span className="text-sm">{exam.name || exam.code}</span>
-                      <Badge variant="outline" className={`text-[11px] ${statusTone(exam.status)}`}>
-                        {EXAM_STATUS_LABELS[exam.status] || exam.status}
-                      </Badge>
+                      <div className="flex items-center gap-2 shrink-0">
+                        <Badge variant="outline" className={`text-[11px] ${statusTone(exam.status)}`}>
+                          {EXAM_STATUS_LABELS[exam.status] || exam.status}
+                        </Badge>
+                        {exam.status === 'released' && (
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            className="h-7 px-2 text-[11px]"
+                            disabled={laudoLoading === exam.id}
+                            onClick={() => openLaudo(exam.id)}
+                          >
+                            {laudoLoading === exam.id ? (
+                              <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                            ) : (
+                              <>
+                                <Download className="h-3.5 w-3.5 mr-1" /> Baixar Laudo
+                              </>
+                            )}
+                          </Button>
+                        )}
+                      </div>
                     </div>
                   ))}
                 </div>
@@ -253,7 +451,16 @@ export default function ExternalPortalPage() {
             </CardContent>
           </Card>
         ))}
+
+        {laudoError && (
+          <div className="flex items-start gap-2 text-sm text-destructive bg-destructive/10 rounded-md p-3">
+            <AlertCircle className="h-4 w-4 mt-0.5 shrink-0" />
+            <span>{laudoError}</span>
+          </div>
+        )}
       </main>
+
+      {laudo && <PortalLaudoModal laudo={laudo} onClose={() => setLaudo(null)} />}
     </div>
   )
 }

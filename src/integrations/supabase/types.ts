@@ -3077,6 +3077,10 @@ export type Database = {
         Args: { p_code: string; p_password: string }
         Returns: Json
       }
+      portal_fetch_laudo: {
+        Args: { p_code: string; p_exam_id: string; p_password: string }
+        Returns: Json
+      }
       portal_log_attempt: {
         Args: { p_action?: string; p_code: string; p_success: boolean }
         Returns: undefined
