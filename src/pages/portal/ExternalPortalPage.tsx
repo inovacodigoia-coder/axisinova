@@ -247,6 +247,7 @@ export default function ExternalPortalPage() {
   const [checking, setChecking] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [data, setData] = useState<PortalPayload | null>(null)
+  const [branding, setBranding] = useState<PortalBranding | null>(null)
   const [laudo, setLaudo] = useState<PortalLaudo | null>(null)
   const [laudoLoading, setLaudoLoading] = useState<string | null>(null)
   const [laudoError, setLaudoError] = useState<string | null>(null)
@@ -285,6 +286,7 @@ export default function ExternalPortalPage() {
       const { data: res } = await supabase.rpc('portal_fetch', { p_code: codigo, p_password: '' } as never)
       if (!alive) return
       const payload = res as unknown as PortalPayload | null
+      if (payload?.branding) setBranding(payload.branding)
       if (payload && !payload.ok && payload.error && payload.error !== 'invalid_password') {
         setError(ERROR_MESSAGES[payload.error] || 'Não foi possível validar este acesso.')
       }
@@ -309,6 +311,7 @@ export default function ExternalPortalPage() {
       return
     }
     const payload = res as unknown as PortalPayload
+    if (payload?.branding) setBranding(payload.branding)
     await supabase.rpc('portal_log_attempt', {
       p_code: codigo,
       p_success: !!payload?.ok,
