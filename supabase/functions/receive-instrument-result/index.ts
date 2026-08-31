@@ -211,8 +211,12 @@ Deno.serve(async (req) => {
     return reject(`Pedido da amostra sample_barcode=${sampleBarcode} está cancelado/excluído — resultado não aceito`)
   }
   if (!order) {
-    return reject(`Nenhum pedido encontrado com sample_barcode=${sampleBarcode}`)
+    return reject(
+      `Nenhum pedido encontrado com sample_barcode=${sampleBarcode} na empresa vinculada a esta X-API-Key ` +
+        `(pedidos dos últimos 90 dias). Verifique se a chave usada pertence à mesma empresa do pedido.`,
+    )
   }
+
   if (!COLLECTED_STATUSES.includes(String(order.status))) {
     return reject(
       `Amostra sample_barcode=${sampleBarcode} pertence ao pedido ${order.protocol} que ainda não teve coleta confirmada (status "${order.status}")`,
