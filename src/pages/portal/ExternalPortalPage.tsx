@@ -224,21 +224,32 @@ function PortalLaudoModal({ laudo, onClose }: { laudo: PortalLaudo; onClose: () 
 function PortalBrandHeader({ branding, fallback }: { branding: PortalBranding | null; fallback: string | null }) {
   const name = branding?.brand_name?.trim() || fallback || 'Portal de Acompanhamento'
   return (
-    <div className="w-full flex flex-col items-center gap-2 pt-4 pb-2">
+    <div className="w-full flex flex-col items-center justify-center gap-3 py-6">
       {branding?.logo_url && (
-        <img src={branding.logo_url} alt={name} className="h-14 w-auto max-w-[220px] object-contain" />
+        <img
+          src={branding.logo_url}
+          alt={name}
+          className="h-20 w-auto max-w-[260px] object-contain"
+        />
       )}
-      <span className="text-base font-bold text-foreground text-center leading-tight">{name}</span>
+      <span className="text-lg sm:text-xl font-bold text-foreground text-center leading-tight max-w-[90%]">
+        {name}
+      </span>
     </div>
   )
 }
 
 function PortalSoftwareFooter() {
   return (
-    <div className="w-full flex justify-center pb-3 pt-6">
-      <span className="text-[11px] text-muted-foreground/70">
-        Powered by <span className="font-medium">Axis Inova</span>
-      </span>
+    <div className="w-full flex justify-center pb-4 pt-4">
+      <a
+        href="https://www.inovacodigoia.com.br/"
+        target="_blank"
+        rel="noopener noreferrer"
+        className="text-xs text-muted-foreground/80 hover:text-primary transition-colors"
+      >
+        Axis Inova
+      </a>
     </div>
   )
 }
