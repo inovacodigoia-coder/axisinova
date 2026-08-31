@@ -31,11 +31,17 @@ interface PortalOrder {
   exams: PortalExam[]
 }
 
+interface PortalBranding {
+  brand_name: string | null
+  logo_url: string | null
+}
+
 interface PortalPayload {
   ok: boolean
   error?: string
   access?: { name: string; type: string; access_code: string }
   company?: { name: string } | null
+  branding?: PortalBranding | null
   orders?: PortalOrder[]
 }
 
