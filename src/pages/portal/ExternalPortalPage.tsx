@@ -1,12 +1,13 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useParams } from 'react-router-dom'
 import { supabase } from '@/integrations/supabase/client'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
-import { Loader2, Lock, FileText, AlertCircle } from 'lucide-react'
+import { Loader2, Lock, FileText, AlertCircle, Download, X, Printer } from 'lucide-react'
 import { format, parseISO, isValid } from 'date-fns'
+import LaudoDocument from '@/components/lab/LaudoDocument'
 
 interface PortalExam {
   id: string
