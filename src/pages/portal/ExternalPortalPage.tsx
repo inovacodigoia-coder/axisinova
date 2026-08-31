@@ -241,6 +241,36 @@ export default function ExternalPortalPage() {
   const [checking, setChecking] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [data, setData] = useState<PortalPayload | null>(null)
+  const [laudo, setLaudo] = useState<PortalLaudo | null>(null)
+  const [laudoLoading, setLaudoLoading] = useState<string | null>(null)
+  const [laudoError, setLaudoError] = useState<string | null>(null)
+
+  const openLaudo = async (examId: string) => {
+    setLaudoLoading(examId)
+    setLaudoError(null)
+    const { data: res, error: err } = await supabase.rpc('portal_fetch_laudo', {
+      p_code: codigo,
+      p_password: password,
+      p_exam_id: examId,
+    } as never)
+    if (err || !res) {
+      setLaudoError('Falha de conexão ao carregar o laudo. Tente novamente.')
+      setLaudoLoading(null)
+      return
+    }
+    const payload = res as unknown as { ok: boolean; error?: string; laudo?: PortalLaudo }
+    await supabase.rpc('portal_log_attempt', {
+      p_code: codigo,
+      p_success: !!payload?.ok,
+      p_action: 'view_laudo',
+    } as never)
+    if (!payload?.ok || !payload.laudo) {
+      setLaudoError(ERROR_MESSAGES[payload?.error || ''] || 'Não foi possível carregar o laudo.')
+    } else {
+      setLaudo(payload.laudo)
+    }
+    setLaudoLoading(null)
+  }
 
   // Verifica se o código existe (sem senha) para mostrar mensagem clara
   useEffect(() => {
