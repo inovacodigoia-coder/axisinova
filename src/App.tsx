@@ -85,6 +85,9 @@ const App = () => (
                       <Route path="/resultado" element={<PatientPortalLayout />} />
                       <Route path="/resultado/*" element={<PatientPortalLayout />} />
 
+                      {/* Portais Externos (link + senha) */}
+                      <Route path="/portal/:codigo" element={<ExternalPortalPage />} />
+
                       {/* Profile Selector */}
                       <Route path="/selecionar-perfil" element={<PrivateRoute><ProfileSelectorPage /></PrivateRoute>} />
                       <Route path="/selecionar-origem" element={<PrivateRoute><OriginSelectorPage /></PrivateRoute>} />
