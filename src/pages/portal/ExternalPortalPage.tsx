@@ -411,11 +411,11 @@ export default function ExternalPortalPage() {
   const orders = data.orders || []
 
   return (
-    <div className="min-h-screen bg-muted/30">
+    <div className="min-h-screen flex flex-col bg-muted/30">
       <header className="bg-background border-b">
-        <div className="max-w-3xl mx-auto px-4 py-4">
-          <h1 className="text-lg font-semibold">{data.company?.name || 'Portal de Acompanhamento'}</h1>
-          <p className="text-sm text-muted-foreground">{data.access?.name}</p>
+        <div className="max-w-3xl mx-auto px-4 py-3">
+          <PortalBrandHeader branding={data.branding ?? branding} fallback={data.company?.name ?? null} />
+          <p className="text-sm text-muted-foreground text-center">{data.access?.name}</p>
         </div>
       </header>
 
@@ -496,6 +496,8 @@ export default function ExternalPortalPage() {
           </div>
         )}
       </main>
+
+      <PortalSoftwareFooter />
 
       {laudo && <PortalLaudoModal laudo={laudo} onClose={() => setLaudo(null)} />}
     </div>
