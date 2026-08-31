@@ -397,7 +397,7 @@ export default function ExternalPortalPage() {
                   value={password}
                   onChange={(e) => setPassword(e.target.value.replace(/\D/g, ''))}
                   placeholder="0000"
-                  className="text-center text-2xl tracking-[0.5em] font-mono h-14"
+                  className="text-center text-2xl tracking-[0.5em] font-mono h-12"
                 />
               </div>
               {error && (
