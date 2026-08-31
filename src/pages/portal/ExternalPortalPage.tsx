@@ -224,15 +224,15 @@ function PortalLaudoModal({ laudo, onClose }: { laudo: PortalLaudo; onClose: () 
 function PortalBrandHeader({ branding, fallback }: { branding: PortalBranding | null; fallback: string | null }) {
   const name = branding?.brand_name?.trim() || fallback || 'Portal de Acompanhamento'
   return (
-    <div className="w-full flex flex-col items-center justify-center gap-2 py-3">
+    <div className="w-full flex flex-col items-center justify-center gap-2 py-4">
       {branding?.logo_url && (
         <img
           src={branding.logo_url}
           alt={name}
-          className="h-16 w-auto max-w-[240px] object-contain"
+          className="h-24 w-auto max-w-[280px] object-contain"
         />
       )}
-      <span className="text-lg sm:text-xl font-bold text-foreground text-center leading-tight max-w-[90%]">
+      <span className="text-xl sm:text-2xl font-bold text-foreground text-center leading-tight max-w-[92%]">
         {name}
       </span>
     </div>
