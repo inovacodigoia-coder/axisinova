@@ -372,7 +372,7 @@ export default function ExternalPortalPage() {
         <PortalBrandHeader branding={branding} fallback={null} />
         <div className="flex-1 flex items-start justify-center pt-2">
         <Card className="w-full max-w-sm">
-          <CardHeader className="text-center space-y-1">
+          <CardHeader className="text-center space-y-1 pt-4 pb-2">
             {!branding?.logo_url && (
               <div className="mx-auto h-11 w-11 rounded-full bg-primary/10 flex items-center justify-center">
                 <Lock className="h-5 w-5 text-primary" />
