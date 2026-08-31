@@ -422,9 +422,28 @@ export default function ExternalPortalPage() {
                   {order.exams.map((exam) => (
                     <div key={exam.id} className="flex items-center justify-between gap-3 px-3 py-2">
                       <span className="text-sm">{exam.name || exam.code}</span>
-                      <Badge variant="outline" className={`text-[11px] ${statusTone(exam.status)}`}>
-                        {EXAM_STATUS_LABELS[exam.status] || exam.status}
-                      </Badge>
+                      <div className="flex items-center gap-2 shrink-0">
+                        <Badge variant="outline" className={`text-[11px] ${statusTone(exam.status)}`}>
+                          {EXAM_STATUS_LABELS[exam.status] || exam.status}
+                        </Badge>
+                        {exam.status === 'released' && (
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            className="h-7 px-2 text-[11px]"
+                            disabled={laudoLoading === exam.id}
+                            onClick={() => openLaudo(exam.id)}
+                          >
+                            {laudoLoading === exam.id ? (
+                              <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                            ) : (
+                              <>
+                                <Download className="h-3.5 w-3.5 mr-1" /> Baixar Laudo
+                              </>
+                            )}
+                          </Button>
+                        )}
+                      </div>
                     </div>
                   ))}
                 </div>
