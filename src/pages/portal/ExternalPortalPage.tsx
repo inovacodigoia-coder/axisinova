@@ -451,7 +451,16 @@ export default function ExternalPortalPage() {
             </CardContent>
           </Card>
         ))}
+
+        {laudoError && (
+          <div className="flex items-start gap-2 text-sm text-destructive bg-destructive/10 rounded-md p-3">
+            <AlertCircle className="h-4 w-4 mt-0.5 shrink-0" />
+            <span>{laudoError}</span>
+          </div>
+        )}
       </main>
+
+      {laudo && <PortalLaudoModal laudo={laudo} onClose={() => setLaudo(null)} />}
     </div>
   )
 }
