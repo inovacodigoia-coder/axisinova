@@ -56,7 +56,7 @@ export const SampleLabel = ({
   return (
     <div className="w-[50mm] h-[30mm] bg-white border border-slate-200 px-1.5 py-0.5 flex flex-col text-black font-mono overflow-hidden leading-none relative">
       {/* Cabeçalho: urgência / bancada / data */}
-      <div className="flex items-center gap-1 text-[8px] font-bold uppercase mb-0.5">
+      <div className="flex items-center gap-1 text-[10px] font-bold uppercase mb-0.5">
         {isUrgent && <span className="bg-black text-white px-1 py-[1px]">URG</span>}
         <span className="flex-1 truncate">{workbench || 'GERAL'}</span>
         <span className="whitespace-nowrap">{printDate || '---'}</span>
@@ -68,7 +68,7 @@ export const SampleLabel = ({
           value={sampleHash || sampleId || 'ERROR'}
           format="CODE128"
           width={1.1}
-          height={22}
+          height={27}
           displayValue={false}
           margin={0}
           background="transparent"
@@ -77,21 +77,21 @@ export const SampleLabel = ({
 
       {/* Código da amostra + hash exclusivo do tubo (interfaceamento) */}
       <div className="flex items-baseline justify-between gap-1 whitespace-nowrap">
-        <span className="text-[11px] font-bold">{sampleId}</span>
-        {sampleHash && <span className="text-[9px] font-bold tracking-tight">{sampleHash}</span>}
+        <span className="text-[12px] font-bold">{sampleId}</span>
+        {sampleHash && <span className="text-[10px] font-bold tracking-tight">{sampleHash}</span>}
       </div>
 
       {/* Dados do paciente */}
-      <div className="text-[8.5px] font-bold uppercase truncate">{patientName || 'PACIENTE NÃO INFORMADO'}</div>
-      <div className="text-[8px] whitespace-nowrap">
+      <div className="text-[10px] font-bold uppercase truncate">{patientName || 'PACIENTE NÃO INFORMADO'}</div>
+      <div className="text-[10px] whitespace-nowrap">
         NASC: {birthDate || '--/--/----'}
       </div>
-      <div className="text-[8px] font-bold uppercase truncate">
+      <div className="text-[10px] font-bold uppercase truncate">
         {material || '---'}{tube ? ` (${String(tube).toUpperCase()})` : ''}
       </div>
 
       {/* Referências dos exames */}
-      <div className="text-[7.5px] font-bold uppercase leading-[1.15] overflow-hidden flex-1 pb-2">
+      <div className="text-[9.5px] font-bold uppercase leading-[1.15] overflow-hidden flex-1 pb-2">
         {refsText || '—'}
       </div>
 
