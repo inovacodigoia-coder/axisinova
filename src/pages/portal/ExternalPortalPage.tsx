@@ -224,12 +224,12 @@ function PortalLaudoModal({ laudo, onClose }: { laudo: PortalLaudo; onClose: () 
 function PortalBrandHeader({ branding, fallback }: { branding: PortalBranding | null; fallback: string | null }) {
   const name = branding?.brand_name?.trim() || fallback || 'Portal de Acompanhamento'
   return (
-    <div className="w-full flex flex-col items-center justify-center gap-3 py-6">
+    <div className="w-full flex flex-col items-center justify-center gap-2 py-3">
       {branding?.logo_url && (
         <img
           src={branding.logo_url}
           alt={name}
-          className="h-20 w-auto max-w-[260px] object-contain"
+          className="h-16 w-auto max-w-[240px] object-contain"
         />
       )}
       <span className="text-lg sm:text-xl font-bold text-foreground text-center leading-tight max-w-[90%]">
@@ -241,7 +241,7 @@ function PortalBrandHeader({ branding, fallback }: { branding: PortalBranding | 
 
 function PortalSoftwareFooter() {
   return (
-    <div className="w-full flex justify-center pb-4 pt-4">
+    <div className="w-full flex justify-center pb-3 pt-2">
       <a
         href="https://www.inovacodigoia.com.br/"
         target="_blank"
