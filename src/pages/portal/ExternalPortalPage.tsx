@@ -31,11 +31,17 @@ interface PortalOrder {
   exams: PortalExam[]
 }
 
+interface PortalBranding {
+  brand_name: string | null
+  logo_url: string | null
+}
+
 interface PortalPayload {
   ok: boolean
   error?: string
   access?: { name: string; type: string; access_code: string }
   company?: { name: string } | null
+  branding?: PortalBranding | null
   orders?: PortalOrder[]
 }
 
@@ -215,6 +221,28 @@ function PortalLaudoModal({ laudo, onClose }: { laudo: PortalLaudo; onClose: () 
   )
 }
 
+function PortalBrandHeader({ branding, fallback }: { branding: PortalBranding | null; fallback: string | null }) {
+  const name = branding?.brand_name?.trim() || fallback || 'Portal de Acompanhamento'
+  return (
+    <div className="w-full flex flex-col items-center gap-2 pt-4 pb-2">
+      {branding?.logo_url && (
+        <img src={branding.logo_url} alt={name} className="h-14 w-auto max-w-[220px] object-contain" />
+      )}
+      <span className="text-base font-bold text-foreground text-center leading-tight">{name}</span>
+    </div>
+  )
+}
+
+function PortalSoftwareFooter() {
+  return (
+    <div className="w-full flex justify-center pb-3 pt-6">
+      <span className="text-[11px] text-muted-foreground/70">
+        Powered by <span className="font-medium">Axis Inova</span>
+      </span>
+    </div>
+  )
+}
+
 function fmt(dateStr?: string | null, withTime = true) {
   if (!dateStr) return '—'
   try {
@@ -241,6 +269,7 @@ export default function ExternalPortalPage() {
   const [checking, setChecking] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [data, setData] = useState<PortalPayload | null>(null)
+  const [branding, setBranding] = useState<PortalBranding | null>(null)
   const [laudo, setLaudo] = useState<PortalLaudo | null>(null)
   const [laudoLoading, setLaudoLoading] = useState<string | null>(null)
   const [laudoError, setLaudoError] = useState<string | null>(null)
@@ -279,6 +308,7 @@ export default function ExternalPortalPage() {
       const { data: res } = await supabase.rpc('portal_fetch', { p_code: codigo, p_password: '' } as never)
       if (!alive) return
       const payload = res as unknown as PortalPayload | null
+      if (payload?.branding) setBranding(payload.branding)
       if (payload && !payload.ok && payload.error && payload.error !== 'invalid_password') {
         setError(ERROR_MESSAGES[payload.error] || 'Não foi possível validar este acesso.')
       }
@@ -303,6 +333,7 @@ export default function ExternalPortalPage() {
       return
     }
     const payload = res as unknown as PortalPayload
+    if (payload?.branding) setBranding(payload.branding)
     await supabase.rpc('portal_log_attempt', {
       p_code: codigo,
       p_success: !!payload?.ok,
@@ -326,12 +357,16 @@ export default function ExternalPortalPage() {
 
   if (!data) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-muted/30 p-4">
+      <div className="min-h-screen flex flex-col bg-muted/30 p-4">
+        <PortalBrandHeader branding={branding} fallback={null} />
+        <div className="flex-1 flex items-center justify-center">
         <Card className="w-full max-w-sm">
           <CardHeader className="text-center space-y-1">
-            <div className="mx-auto h-11 w-11 rounded-full bg-primary/10 flex items-center justify-center">
-              <Lock className="h-5 w-5 text-primary" />
-            </div>
+            {!branding?.logo_url && (
+              <div className="mx-auto h-11 w-11 rounded-full bg-primary/10 flex items-center justify-center">
+                <Lock className="h-5 w-5 text-primary" />
+              </div>
+            )}
             <CardTitle className="text-lg">Portal de Acompanhamento</CardTitle>
             <p className="text-sm text-muted-foreground">
               Acesso <span className="font-mono font-semibold">{codigo}</span>
@@ -367,6 +402,8 @@ export default function ExternalPortalPage() {
             </form>
           </CardContent>
         </Card>
+        </div>
+        <PortalSoftwareFooter />
       </div>
     )
   }
@@ -374,15 +411,15 @@ export default function ExternalPortalPage() {
   const orders = data.orders || []
 
   return (
-    <div className="min-h-screen bg-muted/30">
+    <div className="min-h-screen flex flex-col bg-muted/30">
       <header className="bg-background border-b">
-        <div className="max-w-3xl mx-auto px-4 py-4">
-          <h1 className="text-lg font-semibold">{data.company?.name || 'Portal de Acompanhamento'}</h1>
-          <p className="text-sm text-muted-foreground">{data.access?.name}</p>
+        <div className="max-w-3xl mx-auto px-4 py-3">
+          <PortalBrandHeader branding={data.branding ?? branding} fallback={data.company?.name ?? null} />
+          <p className="text-sm text-muted-foreground text-center">{data.access?.name}</p>
         </div>
       </header>
 
-      <main className="max-w-3xl mx-auto px-4 py-6 space-y-4">
+      <main className="flex-1 w-full max-w-3xl mx-auto px-4 py-6 space-y-4">
         {orders.length === 0 && (
           <Card>
             <CardContent className="py-10 text-center text-muted-foreground text-sm">
@@ -459,6 +496,8 @@ export default function ExternalPortalPage() {
           </div>
         )}
       </main>
+
+      <PortalSoftwareFooter />
 
       {laudo && <PortalLaudoModal laudo={laudo} onClose={() => setLaudo(null)} />}
     </div>
