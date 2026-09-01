@@ -328,9 +328,9 @@ export default function LabDashboard() {
           </table>
         </div>
       </div>
-    </div>
 
       <LabReportModal open={reportOpen} onOpenChange={setReportOpen} />
     </div>
+
   );
 }
