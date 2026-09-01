@@ -1475,6 +1475,7 @@ export type Database = {
           order_id: string | null
           patient_id: string | null
           patient_name: string | null
+          portal_blocked_types: string[]
           protocol: string | null
           released_at: string | null
           released_by: string | null
@@ -1496,6 +1497,7 @@ export type Database = {
           order_id?: string | null
           patient_id?: string | null
           patient_name?: string | null
+          portal_blocked_types?: string[]
           protocol?: string | null
           released_at?: string | null
           released_by?: string | null
@@ -1517,6 +1519,7 @@ export type Database = {
           order_id?: string | null
           patient_id?: string | null
           patient_name?: string | null
+          portal_blocked_types?: string[]
           protocol?: string | null
           released_at?: string | null
           released_by?: string | null
