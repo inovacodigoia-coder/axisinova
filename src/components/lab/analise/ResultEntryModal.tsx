@@ -46,6 +46,9 @@ import {
   DropdownMenu, 
   DropdownMenuContent, 
   DropdownMenuItem, 
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuCheckboxItem,
   DropdownMenuTrigger 
 } from '@/components/ui/dropdown-menu';
 import {
@@ -99,6 +102,7 @@ export function ResultEntryModal({
   const [notes, setNotes] = useState<Record<string, string>>({});
   const [saving, setSaving] = useState(false);
   const [examStatuses, setExamStatuses] = useState<Record<string, string>>({});
+  const [portalBlocks, setPortalBlocks] = useState<Record<string, string[]>>({});
   const [examActions, setExamActions] = useState<Record<string, { type: string; reason?: string; details?: string }>>({});
   const [cancelModal, setCancelModal] = useState<{ isOpen: boolean; exam: any } | null>(null);
   const [retestReasons, setRetestReasons] = useState<Record<string, { reason: string; details: string }>>({});
@@ -421,7 +425,7 @@ export function ResultEntryModal({
       for (let i = 0; i < refs.length; i += CHUNK) {
         const { data, error } = await supabase
           .from('lab_exam_results')
-          .select('id, exam_ref, status, notes, lab_result_values(parameter_key, value, source)')
+          .select('id, exam_ref, status, notes, portal_blocked_types, lab_result_values(parameter_key, value, source)')
           .eq('company_id', cid)
           .in('exam_ref', refs.slice(i, i + CHUNK));
         if (error) {
@@ -435,10 +439,14 @@ export function ResultEntryModal({
       const nextResults: Record<string, string> = {};
       const nextNotes: Record<string, string> = {};
       const nextStatuses: Record<string, any> = {};
+      const nextBlocks: Record<string, string[]> = {};
       const nextInstrumentKeys = new Set<string>();
       rows.forEach((row: any) => {
         // exam_ref já é a chave única da instância (pedido:exame)
         const examId = String(row.exam_ref);
+        if (Array.isArray(row.portal_blocked_types) && row.portal_blocked_types.length > 0) {
+          nextBlocks[examId] = row.portal_blocked_types as string[];
+        }
         if (row.notes) nextNotes[examId] = row.notes;
         if (row.status === 'digitized' || row.status === 'released') {
           nextStatuses[examId] = row.status;
@@ -462,9 +470,66 @@ export function ResultEntryModal({
       });
       setNotes(prev => ({ ...nextNotes, ...prev }));
       setExamStatuses(prev => ({ ...nextStatuses, ...prev }));
+      setPortalBlocks(prev => ({ ...nextBlocks, ...prev }));
     })();
     return () => { active = false; };
   }, [isOpen, filteredExams, user?.companyId]);
+
+  // Bloqueio de visualização do laudo nos Portais Externos (por tipo de portal)
+  const PORTAL_BLOCK_OPTIONS = [
+    { value: 'parceiro', label: 'Parceiros' },
+    { value: 'local', label: 'Locais' },
+    { value: 'medico', label: 'Médicos' },
+    { value: 'paciente', label: 'Pacientes' },
+  ];
+
+  const togglePortalBlock = async (exam: any, type: string) => {
+    const examId = exam.id;
+    const current = portalBlocks[examId] || [];
+    const next = current.includes(type) ? current.filter(t => t !== type) : [...current, type];
+    setPortalBlocks(prev => ({ ...prev, [examId]: next }));
+
+    const cid = resolveCompanyId(user?.companyId);
+    if (!cid) return;
+    try {
+      const ref = examRefOf(exam);
+      const { data: existing } = await supabase
+        .from('lab_exam_results')
+        .select('id')
+        .eq('company_id', cid)
+        .eq('exam_ref', ref)
+        .maybeSingle();
+
+      if (existing?.id) {
+        const { error } = await supabase
+          .from('lab_exam_results')
+          .update({ portal_blocked_types: next })
+          .eq('id', existing.id);
+        if (error) throw error;
+      } else {
+        const { error } = await supabase
+          .from('lab_exam_results')
+          .insert({
+            company_id: cid,
+            order_id: exam.orderId || null,
+            protocol: exam.protocol || null,
+            exam_ref: ref,
+            exam_code: exam.code || null,
+            exam_name: exam.name || null,
+            patient_id: exam.patientId || null,
+            patient_name: exam.patientName || null,
+            status: examStatuses[examId] || 'pending',
+            portal_blocked_types: next,
+          });
+        if (error) throw error;
+      }
+      toast.success(next.length === 0 ? 'Exame liberado para todos os portais.' : 'Bloqueio de visualização atualizado.');
+    } catch (e) {
+      console.error('Erro ao salvar bloqueio de portal', e);
+      setPortalBlocks(prev => ({ ...prev, [examId]: current }));
+      toast.error('Não foi possível salvar o bloqueio.');
+    }
+  };
 
 
   // Pré-seleciona "Ausente" nos parâmetros de seleção que possuem essa opção (ex.: Sumário de Urina)
@@ -1155,14 +1220,43 @@ export function ResultEntryModal({
 
                             <DropdownMenu>
                               <DropdownMenuTrigger asChild>
-                                <Button variant="outline" size="sm" className="h-7 px-2 text-[9px] font-black uppercase gap-1 bg-white border-slate-200">
-                                  Versão: 1
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  className={cn(
+                                    "h-7 px-2 text-[9px] font-black uppercase gap-1 bg-white border-slate-200",
+                                    (portalBlocks[exam.id]?.length || 0) > 0 && "border-rose-300 bg-rose-50 text-rose-700"
+                                  )}
+                                >
+                                  Bloqueio de visualização de laudo
+                                  {(portalBlocks[exam.id]?.length || 0) > 0 && (
+                                    <span className="ml-1 rounded-full bg-rose-600 px-1.5 text-[8px] text-white">
+                                      {portalBlocks[exam.id].length}
+                                    </span>
+                                  )}
                                   <ChevronDown className="h-3 w-3 opacity-50" />
                                 </Button>
                               </DropdownMenuTrigger>
-                              <DropdownMenuContent align="end">
-                                <DropdownMenuItem className="text-xs font-bold uppercase">Versão 1 (Padrão)</DropdownMenuItem>
-                                <DropdownMenuItem className="text-xs font-bold uppercase">Versão 2 (Metodologia B)</DropdownMenuItem>
+                              <DropdownMenuContent align="end" className="w-64">
+                                <DropdownMenuLabel className="text-[10px] font-black uppercase">
+                                  Bloquear nos Portais Externos
+                                </DropdownMenuLabel>
+                                <DropdownMenuSeparator />
+                                {PORTAL_BLOCK_OPTIONS.map(opt => (
+                                  <DropdownMenuCheckboxItem
+                                    key={opt.value}
+                                    checked={(portalBlocks[exam.id] || []).includes(opt.value)}
+                                    onSelect={(e) => e.preventDefault()}
+                                    onCheckedChange={() => togglePortalBlock(exam, opt.value)}
+                                    className="text-xs font-bold uppercase"
+                                  >
+                                    {opt.label}
+                                  </DropdownMenuCheckboxItem>
+                                ))}
+                                <DropdownMenuSeparator />
+                                <p className="px-2 py-1.5 text-[10px] leading-snug text-muted-foreground">
+                                  Os portais marcados verão apenas o aviso de exame indisponível.
+                                </p>
                               </DropdownMenuContent>
                             </DropdownMenu>
                           </div>
