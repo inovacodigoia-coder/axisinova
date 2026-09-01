@@ -50,14 +50,12 @@ export function CommandPalette() {
     return actions
   }, [canAccess])
 
-  const results = useMemo(() => {
-    if (!query.trim()) return []
-    const q = query.toLowerCase()
-    return MOCK_SEARCH_DATA
-      .filter(r => r.label.toLowerCase().includes(q) || (r.sublabel?.toLowerCase().includes(q)))
-      .slice(0, 9)
-      .map(r => ({ ...r, icon: CATEGORY_ICON[r.category] || <FileText className="h-4 w-4" /> }))
-  }, [query])
+  const { results: rawResults, loading } = useGlobalSearchResults(query)
+
+  const results = useMemo<SearchResult[]>(
+    () => rawResults.map(r => ({ ...r, icon: CATEGORY_ICON[r.category] || <FileText className="h-4 w-4" /> })),
+    [rawResults]
+  )
 
   const groupedResults = useMemo(() => {
     const groups: Record<string, SearchResult[]> = {}
