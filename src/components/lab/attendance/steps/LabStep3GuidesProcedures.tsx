@@ -70,14 +70,33 @@ export function LabStep3GuidesProcedures({ state, update }: Props) {
   const [guides, setGuides] = useState<AttendanceGuide[]>(state.guides || []);
   const [activeGuideId, setActiveGuideId] = useState(guides[0]?.id || '');
 
+  // Plano Principal selecionado no passo "Atendimento" (convênio principal do paciente)
+  const mainConvenio = useMemo(() => {
+    const pc = state.patient?.convenios?.[0];
+    if (!pc?.convenioId) return null;
+    return activeConvenios.find(c => c.id === pc.convenioId) || null;
+  }, [state.patient?.convenios, activeConvenios]);
+
+  const buildGuide = (id: string): AttendanceGuide => ({
+    id,
+    name: mainConvenio ? mainConvenio.name : 'NOVA GUIA',
+    plan: mainConvenio ? mainConvenio.name : '',
+    convenioName: mainConvenio ? mainConvenio.name : '',
+    convenioId: mainConvenio ? mainConvenio.id : null,
+    operator: mainConvenio ? ((mainConvenio as any).operator || mainConvenio.name) : '',
+    number: state.patient?.convenios?.[0]?.cardNumber || '',
+    exams: [],
+    isDoctorDisabled: false,
+  });
+
   useEffect(() => {
     if (guides.length === 0) {
-      const initialGuide = { id: '1', name: 'NOVA GUIA', plan: '', convenioName: '', convenioId: null, operator: '', number: '', exams: [], isDoctorDisabled: false };
+      const initialGuide = buildGuide('1');
       setGuides([initialGuide]);
       setActiveGuideId('1');
       update({ guides: [initialGuide] });
     }
-  }, []);
+  }, [mainConvenio]);
   const [showDoctorPopover, setShowDoctorPopover] = useState(false);
   
   // Doctor search state
