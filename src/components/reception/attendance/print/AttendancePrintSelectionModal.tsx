@@ -104,7 +104,7 @@ export function AttendancePrintSelectionModal({ open, onClose, onConfirm, order,
   }, [allExams]);
 
   const pendingMaterials = materials.filter(m => !m.collected);
-  const hasCollectedMaterial = materials.some(m => m.collected);
+  const allCollected = materials.length > 0 && materials.every(m => m.collected);
 
   const labelsSelected = options.find(o => o.id === 'etiquetas')?.enabled;
   // Etiquetas só podem ser impressas com amostra coletada (ou coleta confirmada agora)
@@ -116,7 +116,7 @@ export function AttendancePrintSelectionModal({ open, onClose, onConfirm, order,
       setSelectedMaterials(prev => (prev.size ? prev : new Set(materials.map(m => m.type))));
     }
   }, [confirmCollection, materials]);
-  const labelsBlocked = !!labelsSelected && !hasCollectedMaterial && !willCollect;
+  const labelsBlocked = !!labelsSelected && !allCollected && !willCollect;
 
   // Seleção única: apenas um tipo de impressão por vez
   const toggleOption = (id: string) => {
