@@ -45,7 +45,9 @@ export function SampleLabelsPrintModal({
   autoPrint,
   labName,
 }: Props) {
-  const handlePrint = () => {
+  const [enviando, setEnviando] = useState(false)
+
+  const printNavegador = () => {
     const d = window.document
     const source = d.getElementById('labels-print-root')
     if (!source) { window.print(); return }
@@ -68,12 +70,38 @@ export function SampleLabelsPrintModal({
     }, 60)
   }
 
+  const handlePrint = async () => {
+    if (enviando) return
+    setEnviando(true)
+    try {
+      const ativo = await servidorImpressaoAtivo()
+      if (ativo) {
+        const nodes = Array.from(
+          window.document.querySelectorAll<HTMLElement>('#labels-print-root .label-sheet > div'),
+        )
+        if (nodes.length) {
+          const pdf = await gerarPdfEtiquetas(nodes)
+          const r = await imprimirDireto(TIPOS_DOCUMENTO.etiquetaCliente, pdf)
+          toast.success(r.mensagem || 'Etiquetas enviadas para a impressora.')
+          return
+        }
+      }
+      printNavegador()
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Falha ao imprimir pelo servidor local. Usando impressão do navegador.')
+      printNavegador()
+    } finally {
+      setEnviando(false)
+    }
+  }
+
   useEffect(() => {
     if (open && autoPrint && labels.length) {
-      const t = setTimeout(() => handlePrint(), 400)
+      const t = setTimeout(() => { void handlePrint() }, 400)
       return () => clearTimeout(t)
     }
   }, [open, autoPrint, labels.length])
+
 
   if (!open) return null
 
