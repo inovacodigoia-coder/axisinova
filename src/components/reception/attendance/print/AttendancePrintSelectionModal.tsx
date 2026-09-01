@@ -226,19 +226,30 @@ export function AttendancePrintSelectionModal({ open, onClose, onConfirm, order,
             {/* Options */}
             <div className="divide-y divide-slate-100">
               {options.map((opt) => (
-                <div key={opt.id} className="flex flex-col gap-1 py-2">
+                <div
+                  key={opt.id}
+                  className={cn(
+                    "flex flex-col gap-1 py-2",
+                    opt.id === 'etiquetas' && labelsBlocked && "rounded-md border border-red-300 bg-red-50 px-2"
+                  )}
+                >
                   <div className="flex items-center justify-between gap-3">
                     <div className="flex items-center gap-2.5 min-w-0">
                       <div
                         onClick={() => toggleOption(opt.id)}
                         className={cn(
                           "w-4 h-4 rounded border flex items-center justify-center cursor-pointer transition-all shrink-0",
-                          opt.enabled ? "bg-[#007AFF] border-[#007AFF]" : "bg-white border-slate-300"
+                          opt.id === 'etiquetas' && labelsBlocked
+                            ? (opt.enabled ? "bg-red-500 border-red-500" : "bg-white border-red-300")
+                            : opt.enabled ? "bg-[#007AFF] border-[#007AFF]" : "bg-white border-slate-300"
                         )}
                       >
                         {opt.enabled && <CheckCircle2 className="h-2.5 w-2.5 text-white" />}
                       </div>
-                      <span className={cn("text-[13px] font-medium truncate transition-colors", opt.enabled ? "text-slate-900" : "text-slate-400")}>
+                      <span className={cn(
+                        "text-[13px] font-medium truncate transition-colors",
+                        opt.id === 'etiquetas' && labelsBlocked ? "text-red-600" : opt.enabled ? "text-slate-900" : "text-slate-400"
+                      )}>
                         {opt.label}
                       </span>
                       {opt.enabled && (
@@ -246,7 +257,12 @@ export function AttendancePrintSelectionModal({ open, onClose, onConfirm, order,
                           size="sm"
                           onClick={() => handlePrintOption(opt)}
                           disabled={isSaving || (opt.id === 'etiquetas' && labelsBlocked)}
-                          className="h-6 px-2.5 bg-[#007AFF] hover:bg-blue-700 text-white text-[10px] font-bold uppercase gap-1 shrink-0"
+                          className={cn(
+                            "h-6 px-2.5 text-white text-[10px] font-bold uppercase gap-1 shrink-0",
+                            opt.id === 'etiquetas' && labelsBlocked
+                              ? "bg-red-400 hover:bg-red-400 cursor-not-allowed"
+                              : "bg-[#007AFF] hover:bg-blue-700"
+                          )}
                         >
                           <Printer className="h-3 w-3" /> Imprimir
                         </Button>
