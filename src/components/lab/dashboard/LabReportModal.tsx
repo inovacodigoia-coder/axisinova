@@ -83,7 +83,8 @@ export function LabReportModal({ open, onOpenChange }: Props) {
 
   const fromDate = useMemo(() => (from ? startOfDay(new Date(`${from}T00:00:00`)) : null), [from])
   const toDate = useMemo(() => (to ? startOfDay(new Date(`${to}T00:00:00`)) : null), [to])
-  const { data, loading } = useLabReportData(fromDate, toDate)
+  const [origin, setOrigin] = useState<string>('all')
+  const { data, loading, originOptions } = useLabReportData(fromDate, toDate, origin)
 
   const sections: ReportSectionConfig[] = useMemo(
     () =>

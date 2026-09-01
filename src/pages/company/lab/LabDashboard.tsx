@@ -133,6 +133,18 @@ export default function LabDashboard() {
             {p.label}
           </button>
         ))}
+        <span className="mx-2 h-4 w-px bg-border" />
+        <span className="text-xs font-medium text-muted-foreground">Origem:</span>
+        <select
+          value={metrics.originFilter}
+          onChange={(e) => metrics.setOriginFilter(e.target.value)}
+          className="rounded-full border border-border bg-background px-3 py-1.5 text-xs font-medium text-foreground"
+        >
+          <option value="all">Todas as origens</option>
+          {metrics.originOptions.map((o) => (
+            <option key={o.label} value={o.label}>{o.label} ({o.count})</option>
+          ))}
+        </select>
         <span className="ml-auto text-xs text-muted-foreground">
           {metrics.totalOrders} pedido(s) · {metrics.totalSamples} exame(s)
         </span>
@@ -153,6 +165,12 @@ export default function LabDashboard() {
           accent="secondary"
         />
       </div>
+
+      <SamplesBreakdownPanel
+        title="Pedidos por Origem"
+        subtitle="Distribuição de pedidos entre todas as origens/unidades do período"
+        rows={metrics.byOrigin}
+      />
 
       <AttendanceHeatmap
         columns={metrics.heatmap.columns}
