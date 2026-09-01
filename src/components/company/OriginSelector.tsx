@@ -88,7 +88,16 @@ export function OriginSelector() {
     toast.success('Origem definida como padrão para login')
   }
 
-  const filteredOrigins = availableOrigins.filter(o => {
+  // Dedupe safeguard: one entry per establishment (keeps first occurrence)
+  const seenEstablishments = new Set<string>()
+  const uniqueOrigins = availableOrigins.filter(o => {
+    const key = (o as any).establishment_id || o.id
+    if (seenEstablishments.has(key)) return false
+    seenEstablishments.add(key)
+    return true
+  })
+
+  const filteredOrigins = uniqueOrigins.filter(o => {
     const searchLower = search.toLowerCase()
     const matchesSearch = o.name.toLowerCase().includes(searchLower) || 
                          (o.internal_code && o.internal_code.toLowerCase().includes(searchLower))
