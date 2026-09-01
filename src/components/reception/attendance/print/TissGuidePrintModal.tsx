@@ -1,8 +1,13 @@
+import { useState } from 'react'
 import { Dialog, DialogContent } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
-import { Printer, X } from 'lucide-react'
+import { Printer, X, Loader2 } from 'lucide-react'
+import { toast } from 'sonner'
 import { format } from 'date-fns'
 import { useLabSettings } from '@/hooks/useLabSettings'
+import { ServidorImpressaoStatus } from '@/components/print/ServidorImpressaoStatus'
+import { servidorImpressaoAtivo, imprimirDireto, TIPOS_DOCUMENTO } from '@/lib/impressaoLocal'
+import { gerarPdfElementos } from '@/lib/labelPdf'
 import type { AttendanceOrder } from '@/types/attendance-cadastro.types'
 
 interface TissGuidePrintModalProps {

@@ -25,12 +25,13 @@ export function AttendancePrintModal({ open, onClose, document: doc, autoPrint, 
   const defaultConfig = useMemo(() => overrideConfig || getDefault(), [overrideConfig, getDefault])
   const [selectedPrinterId, setSelectedPrinterId] = useState<string>(defaultConfig.id)
   const [copies, setCopies] = useState<number>(1)
+  const [enviando, setEnviando] = useState(false)
 
   const selectedConfig = overrideConfig
     || printers.find(p => p.id === selectedPrinterId)
     || defaultConfig
 
-  const handlePrint = () => {
+  const printNavegador = () => {
     const d = window.document
     const source = d.getElementById('receipt-print-root')
     if (!source) { window.print(); return }
@@ -51,6 +52,40 @@ export function AttendancePrintModal({ open, onClose, document: doc, autoPrint, 
       window.print()
       setTimeout(cleanup, 800)
     }, 60)
+  }
+
+  const handlePrint = async () => {
+    if (enviando) return
+    setEnviando(true)
+    try {
+      const ativo = await servidorImpressaoAtivo()
+      if (ativo) {
+        const nodes = Array.from(
+          window.document.querySelectorAll<HTMLElement>('#receipt-print-root > div'),
+        )
+        if (nodes.length) {
+          const isTermica = selectedConfig.paperSize === '58mm' || selectedConfig.paperSize === '80mm'
+          const widthMm = selectedConfig.paperSize === 'a4'
+            ? 190
+            : selectedConfig.paperSize === 'a5'
+              ? 128
+              : selectedConfig.paperSize === '58mm'
+                ? 58
+                : 80
+          const tipo = isTermica ? TIPOS_DOCUMENTO.comprovanteCliente : TIPOS_DOCUMENTO.controleInterno
+          const pdf = await gerarPdfElementos(nodes, widthMm)
+          const r = await imprimirDireto(tipo, pdf)
+          toast.success(r.mensagem || 'Enviado para a impressora.')
+          return
+        }
+      }
+      printNavegador()
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Falha ao imprimir pelo servidor local. Usando impressão do navegador.')
+      printNavegador()
+    } finally {
+      setEnviando(false)
+    }
   }
 
 
