@@ -8,7 +8,8 @@ import {
   Clock, 
   Activity,
   ArrowRight,
-  Plus
+  Plus,
+  FileBarChart
 } from 'lucide-react';
 import { 
   BarChart, 
@@ -28,6 +29,7 @@ import { StatusCardsRow } from '@/components/lab/dashboard/StatusCardsRow';
 import { SamplesBreakdownPanel } from '@/components/lab/dashboard/SamplesBreakdownPanel';
 import { AttendanceHeatmap } from '@/components/lab/dashboard/AttendanceHeatmap';
 import { TopExamsList } from '@/components/lab/dashboard/TopExamsList';
+import { LabReportModal } from '@/components/lab/dashboard/LabReportModal';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -74,6 +76,7 @@ export default function LabDashboard() {
   const { stats, loading } = useLabDashboardData();
   const metrics = useLabDashboardMetrics();
   const navigate = useNavigate();
+  const [reportOpen, setReportOpen] = useState(false);
 
   if (loading || !stats) {
     return (
@@ -104,6 +107,10 @@ export default function LabDashboard() {
           <p className="text-sm text-muted-foreground">Visão geral da operação técnica e financeira</p>
         </div>
         <div className="flex items-center gap-2">
+          <Button variant="outline" onClick={() => setReportOpen(true)}>
+            <FileBarChart className="h-4 w-4 mr-2" />
+            Relatórios
+          </Button>
           <Button onClick={() => navigate('/app/recepcao/cadastro-direto')} className="gradient-bg border-none">
             <Plus className="h-4 w-4 mr-2" />
             Novo Atendimento
@@ -321,6 +328,9 @@ export default function LabDashboard() {
           </table>
         </div>
       </div>
+
+      <LabReportModal open={reportOpen} onOpenChange={setReportOpen} />
     </div>
+
   );
 }

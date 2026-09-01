@@ -268,7 +268,27 @@
   body.printing-laudo .no-print {
     display: none !important;
   }
+
+  /* Relatório laboratorial personalizado */
+  body.printing-lab-report > *:not(#lab-report-print-root) {
+    display: none !important;
+  }
+  body.printing-lab-report #lab-report-print-root {
+    display: block !important;
+    position: static !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    background: white !important;
+  }
+  body.printing-lab-report #lab-report-print-root .lab-report-page {
+    width: 210mm !important;
+    padding: 12mm !important;
+    margin: 0 auto !important;
+    box-shadow: none !important;
+    box-sizing: border-box !important;
+  }
 }
+
 
 .corte-linha {
   border-top: 1px dashed currentColor;
@@ -294,3 +314,5 @@ a[href*="lovable.app"],
 }
 
 #receipt-print-portal { display: none; }
+
+#lab-report-print-root { display: none; }
