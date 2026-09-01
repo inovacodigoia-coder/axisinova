@@ -1,10 +1,13 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Dialog, DialogContent } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
-import { Printer, X, FileText } from 'lucide-react'
+import { Printer, X, FileText, Loader2 } from 'lucide-react'
+import { toast } from 'sonner'
 import { AttendanceReceiptVia } from './AttendanceReceiptVia'
 import { usePrinterConfig } from '@/hooks/usePrinterConfig'
 import { ServidorImpressaoStatus } from '@/components/print/ServidorImpressaoStatus'
+import { servidorImpressaoAtivo, imprimirDireto, TIPOS_DOCUMENTO } from '@/lib/impressaoLocal'
+import { gerarPdfElementos } from '@/lib/labelPdf'
 import type { AttendanceControlDocument, PrinterConfig } from '@/types/payment-print.types'
 
 interface Props {
@@ -22,12 +25,13 @@ export function AttendancePrintModal({ open, onClose, document: doc, autoPrint, 
   const defaultConfig = useMemo(() => overrideConfig || getDefault(), [overrideConfig, getDefault])
   const [selectedPrinterId, setSelectedPrinterId] = useState<string>(defaultConfig.id)
   const [copies, setCopies] = useState<number>(1)
+  const [enviando, setEnviando] = useState(false)
 
   const selectedConfig = overrideConfig
     || printers.find(p => p.id === selectedPrinterId)
     || defaultConfig
 
-  const handlePrint = () => {
+  const printNavegador = () => {
     const d = window.document
     const source = d.getElementById('receipt-print-root')
     if (!source) { window.print(); return }
@@ -48,6 +52,40 @@ export function AttendancePrintModal({ open, onClose, document: doc, autoPrint, 
       window.print()
       setTimeout(cleanup, 800)
     }, 60)
+  }
+
+  const handlePrint = async () => {
+    if (enviando) return
+    setEnviando(true)
+    try {
+      const ativo = await servidorImpressaoAtivo()
+      if (ativo) {
+        const nodes = Array.from(
+          window.document.querySelectorAll<HTMLElement>('#receipt-print-root > div'),
+        )
+        if (nodes.length) {
+          const isTermica = selectedConfig.paperSize === '58mm' || selectedConfig.paperSize === '80mm'
+          const widthMm = selectedConfig.paperSize === 'a4'
+            ? 190
+            : selectedConfig.paperSize === 'a5'
+              ? 128
+              : selectedConfig.paperSize === '58mm'
+                ? 58
+                : 80
+          const tipo = isTermica ? TIPOS_DOCUMENTO.comprovanteCliente : TIPOS_DOCUMENTO.controleInterno
+          const pdf = await gerarPdfElementos(nodes, widthMm)
+          const r = await imprimirDireto(tipo, pdf)
+          toast.success(r.mensagem || 'Enviado para a impressora.')
+          return
+        }
+      }
+      printNavegador()
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Falha ao imprimir pelo servidor local. Usando impressão do navegador.')
+      printNavegador()
+    } finally {
+      setEnviando(false)
+    }
   }
 
 
@@ -122,14 +160,16 @@ export function AttendancePrintModal({ open, onClose, document: doc, autoPrint, 
           </label>
           <div className="flex-1" />
           <ServidorImpressaoStatus />
-          <Button variant="outline" size="sm" onClick={handlePrint}>
+          <Button variant="outline" size="sm" onClick={printNavegador} disabled={enviando}>
             <FileText className="h-4 w-4 mr-1" /> Ver PDF
           </Button>
           <button
             onClick={handlePrint}
-            className="inline-flex items-center gap-1 rounded-md gradient-bg px-4 py-1.5 text-xs font-semibold text-white shadow-sm hover:opacity-90"
+            disabled={enviando}
+            className="inline-flex items-center gap-1 rounded-md gradient-bg px-4 py-1.5 text-xs font-semibold text-white shadow-sm hover:opacity-90 disabled:opacity-60"
           >
-            <Printer className="h-4 w-4" /> Imprimir
+            {enviando ? <Loader2 className="h-4 w-4 animate-spin" /> : <Printer className="h-4 w-4" />}
+            {enviando ? 'Enviando...' : 'Imprimir'}
           </button>
         </div>
 

@@ -1,8 +1,13 @@
+import { useState } from 'react'
 import { Dialog, DialogContent } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
-import { Printer, X } from 'lucide-react'
+import { Printer, X, Loader2 } from 'lucide-react'
+import { toast } from 'sonner'
 import { format } from 'date-fns'
 import { useLabSettings } from '@/hooks/useLabSettings'
+import { ServidorImpressaoStatus } from '@/components/print/ServidorImpressaoStatus'
+import { servidorImpressaoAtivo, imprimirDireto, TIPOS_DOCUMENTO } from '@/lib/impressaoLocal'
+import { gerarPdfElementos } from '@/lib/labelPdf'
 import type { AttendanceOrder } from '@/types/attendance-cadastro.types'
 
 interface TissGuidePrintModalProps {
@@ -28,8 +33,9 @@ export function TissGuidePrintModal({ open, onClose, order, guide, patient }: Ti
   const today = format(new Date(order.registeredAt), 'dd/MM/yyyy')
   const hour = format(new Date(order.registeredAt), 'HH:mm')
   const total = exams.reduce((s, e) => s + (Number(e.price) || 0), 0)
+  const [enviando, setEnviando] = useState(false)
 
-  const handlePrint = () => {
+  const printNavegador = () => {
     const d = window.document
     const source = d.getElementById('tiss-guide-root')
     if (!source) { window.print(); return }
@@ -47,6 +53,31 @@ export function TissGuidePrintModal({ open, onClose, order, guide, patient }: Ti
     setTimeout(() => { window.print(); setTimeout(cleanup, 800) }, 60)
   }
 
+  const handlePrint = async () => {
+    if (enviando) return
+    setEnviando(true)
+    try {
+      const ativo = await servidorImpressaoAtivo()
+      if (ativo) {
+        const nodes = Array.from(
+          window.document.querySelectorAll<HTMLElement>('#tiss-guide-root > div'),
+        )
+        if (nodes.length) {
+          const pdf = await gerarPdfElementos(nodes, 190)
+          const r = await imprimirDireto(TIPOS_DOCUMENTO.guiaSaSpdt, pdf)
+          toast.success(r.mensagem || 'Guia enviada para a impressora.')
+          return
+        }
+      }
+      printNavegador()
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Falha ao imprimir pelo servidor local. Usando impressão do navegador.')
+      printNavegador()
+    } finally {
+      setEnviando(false)
+    }
+  }
+
   if (!open) return null
 
   return (
@@ -59,7 +90,11 @@ export function TissGuidePrintModal({ open, onClose, order, guide, patient }: Ti
             <p className="text-xs text-muted-foreground">Guia de Serviço Profissional / Serviço Auxiliar de Diagnóstico e Terapia</p>
           </div>
           <div className="flex items-center gap-2">
-            <Button size="sm" onClick={handlePrint}><Printer className="h-4 w-4 mr-1" /> Imprimir</Button>
+            <ServidorImpressaoStatus />
+            <Button size="sm" onClick={handlePrint} disabled={enviando}>
+              {enviando ? <Loader2 className="h-4 w-4 mr-1 animate-spin" /> : <Printer className="h-4 w-4 mr-1" />}
+              {enviando ? 'Enviando...' : 'Imprimir'}
+            </Button>
             <Button size="icon" variant="ghost" className="h-8 w-8" onClick={onClose}><X className="h-4 w-4" /></Button>
           </div>
         </div>
