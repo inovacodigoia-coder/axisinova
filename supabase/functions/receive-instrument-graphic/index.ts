@@ -1,5 +1,6 @@
 import { createClient } from 'npm:@supabase/supabase-js@2'
 import { corsHeaders } from 'npm:@supabase/supabase-js@2/cors'
+import { authenticateIntegration } from '../_shared/integrationAuth.ts'
 
 const json = (body: unknown, status = 200) =>
   new Response(JSON.stringify(body), {
@@ -9,13 +10,6 @@ const json = (body: unknown, status = 200) =>
 
 const ok = (extra: Record<string, unknown> = {}) => json({ success: true, ...extra }, 200)
 const fail = (error: string, status = 422) => json({ success: false, error }, status)
-
-async function sha256Hex(value: string) {
-  const digest = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(value))
-  return Array.from(new Uint8Array(digest))
-    .map((b) => b.toString(16).padStart(2, '0'))
-    .join('')
-}
 
 const norm = (v: unknown) => String(v ?? '').trim().toUpperCase()
 
@@ -70,25 +64,9 @@ Deno.serve(async (req) => {
   )
 
   // ---- 1. Autenticação por API Key ----
-  const apiKey = req.headers.get('X-API-Key') || req.headers.get('x-api-key')
-  if (!apiKey) return fail('X-API-Key ausente', 401)
-
-  const keyHash = await sha256Hex(apiKey.trim())
-  const { data: keyRow } = await supabase
-    .from('instrument_integration_keys')
-    .select('id, company_id, is_active, revoked_at')
-    .eq('key_hash', keyHash)
-    .maybeSingle()
-
-  if (!keyRow || !keyRow.is_active || keyRow.revoked_at) {
-    return fail('Chave de integração inválida ou revogada', 401)
-  }
-  const companyId = keyRow.company_id as string
-
-  await supabase
-    .from('instrument_integration_keys')
-    .update({ last_used_at: new Date().toISOString() })
-    .eq('id', keyRow.id)
+  const auth = await authenticateIntegration(req, supabase, 'results:write')
+  if (!auth.ok) return fail(auth.error, auth.status)
+  const companyId = auth.companyId
 
   // ---- 2. Body ----
   let body: any
