@@ -193,6 +193,23 @@ export function LabReportModal({ open, onOpenChange }: Props) {
                   </div>
 
                   <div className="space-y-2">
+                    <Label className="text-xs font-semibold uppercase text-muted-foreground">Origem / Unidade</Label>
+                    <Select value={origin} onValueChange={setOrigin}>
+                      <SelectTrigger className="h-9 text-xs">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent className="z-[100]">
+                        <SelectItem value="all">Todas as origens</SelectItem>
+                        {originOptions.map(o => (
+                          <SelectItem key={o.label} value={o.label}>{o.label} ({o.count})</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+
+
+                  <div className="space-y-2">
                     <Label className="text-xs font-semibold uppercase text-muted-foreground">
                       Dados do relatório
                     </Label>
