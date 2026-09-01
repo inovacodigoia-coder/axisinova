@@ -1,10 +1,13 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Dialog, DialogContent } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
-import { Printer, X, FileText } from 'lucide-react'
+import { Printer, X, FileText, Loader2 } from 'lucide-react'
+import { toast } from 'sonner'
 import { AttendanceReceiptVia } from './AttendanceReceiptVia'
 import { usePrinterConfig } from '@/hooks/usePrinterConfig'
 import { ServidorImpressaoStatus } from '@/components/print/ServidorImpressaoStatus'
+import { servidorImpressaoAtivo, imprimirDireto, TIPOS_DOCUMENTO } from '@/lib/impressaoLocal'
+import { gerarPdfElementos } from '@/lib/labelPdf'
 import type { AttendanceControlDocument, PrinterConfig } from '@/types/payment-print.types'
 
 interface Props {
