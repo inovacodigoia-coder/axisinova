@@ -109,6 +109,9 @@ export function AttendancePrintSelectionModal({ open, onClose, onConfirm, order,
   const labelsSelected = options.find(o => o.id === 'etiquetas')?.enabled;
   // Etiquetas só podem ser impressas com amostra coletada (ou coleta confirmada agora)
   const willCollect = confirmCollection && selectedMaterials.size > 0;
+  // O status do pedido é a fonte de verdade: pedidos novos/em espera ainda não
+  // tiveram a coleta confirmada, mesmo que algum exame venha marcado por padrão.
+  const isAwaitingCollection = order?.status === 'waiting_collection' || order?.status === 'waiting';
 
   // Ao marcar "Confirmar coleta", pré-seleciona todos os materiais
   React.useEffect(() => {
@@ -116,8 +119,8 @@ export function AttendancePrintSelectionModal({ open, onClose, onConfirm, order,
       setSelectedMaterials(prev => (prev.size ? prev : new Set(materials.map(m => m.type))));
     }
   }, [confirmCollection, materials]);
-  // Bloqueio independe da seleção: se a coleta está pendente, etiquetas ficam bloqueadas
-  const labelsBlocked = !allCollected && !willCollect;
+  // Bloqueio independe da seleção e também considera o status AGUARDANDO.
+  const labelsBlocked = (isAwaitingCollection || !allCollected) && !willCollect;
 
   // Seleção única: apenas um tipo de impressão por vez
   const toggleOption = (id: string) => {
