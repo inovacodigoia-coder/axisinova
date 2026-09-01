@@ -64,14 +64,18 @@ function tally(values: string[]): ReportRow[] {
     .sort((a, b) => b.count - a.count)
 }
 
-export function useLabReportData(from: Date | null, to: Date | null): { data: LabReportSections; loading: boolean } {
+export function useLabReportData(
+  from: Date | null,
+  to: Date | null,
+  origin: string = 'all'
+): { data: LabReportSections; loading: boolean; originOptions: { label: string; count: number }[] } {
   const { orders, loading } = useAttendanceCadastro()
   const { exams: catalog, workbenches } = useRegisters()
 
   const data = useMemo<LabReportSections>(() => {
     const range = from && to ? { start: startOfDay(from), end: endOfDay(to) } : null
 
-    const labOrders = (orders || []).filter((o: any) => {
+    const allLabOrders = (orders || []).filter((o: any) => {
       if (o.status === 'deleted') return false
       if (o.examMode && o.examMode !== 'lab') return false
       if (!o.registeredAt) return false
@@ -82,6 +86,11 @@ export function useLabReportData(from: Date | null, to: Date | null): { data: La
         return false
       }
     })
+
+    const labOrders =
+      origin === 'all'
+        ? allLabOrders
+        : allLabOrders.filter((o: any) => (o.originName || 'MATRIZ') === origin)
 
     const catalogById = new Map<string, any>()
     const catalogByName = new Map<string, any>()
@@ -148,7 +157,20 @@ export function useLabReportData(from: Date | null, to: Date | null): { data: La
         value: Number(o.privateValue) || 0,
       })),
     }
-  }, [orders, catalog, workbenches, from, to])
+  }, [orders, catalog, workbenches, from, to, origin])
 
-  return { data, loading }
+  const originOptions = useMemo(() => {
+    const map = new Map<string, number>()
+    ;(orders || []).forEach((o: any) => {
+      if (o.status === 'deleted') return
+      if (o.examMode && o.examMode !== 'lab') return
+      const key = o.originName || 'MATRIZ'
+      map.set(key, (map.get(key) || 0) + 1)
+    })
+    return Array.from(map.entries())
+      .map(([label, count]) => ({ label, count }))
+      .sort((a, b) => b.count - a.count)
+  }, [orders])
+
+  return { data, loading, originOptions }
 }
