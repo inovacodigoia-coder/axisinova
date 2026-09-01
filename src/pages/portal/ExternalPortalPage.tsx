@@ -468,28 +468,43 @@ export default function ExternalPortalPage() {
               {order.exams.length > 0 && (
                 <div className="border rounded-md divide-y">
                   {order.exams.map((exam) => (
-                    <div key={exam.id} className="flex items-center justify-between gap-3 px-3 py-2">
-                      <span className="text-sm">{exam.name || exam.code}</span>
+                    <div key={exam.id} className="flex items-start justify-between gap-3 px-3 py-2">
+                      <div className="min-w-0">
+                        <span className="text-sm">{exam.name || exam.code}</span>
+                        {exam.blocked && (
+                          <p className="text-[11px] text-muted-foreground mt-0.5">
+                            Exame não disponível para visualização. Em caso de dúvidas, entre em contato com o laboratório responsável pela realização do exame.
+                          </p>
+                        )}
+                      </div>
                       <div className="flex items-center gap-2 shrink-0">
-                        <Badge variant="outline" className={`text-[11px] ${statusTone(exam.status)}`}>
-                          {EXAM_STATUS_LABELS[exam.status] || exam.status}
-                        </Badge>
-                        {exam.status === 'released' && (
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            className="h-7 px-2 text-[11px]"
-                            disabled={laudoLoading === exam.id}
-                            onClick={() => openLaudo(exam.id)}
-                          >
-                            {laudoLoading === exam.id ? (
-                              <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                            ) : (
-                              <>
-                                <Download className="h-3.5 w-3.5 mr-1" /> Baixar Laudo
-                              </>
+                        {exam.blocked ? (
+                          <Badge variant="outline" className="text-[11px] bg-muted text-muted-foreground">
+                            Indisponível
+                          </Badge>
+                        ) : (
+                          <>
+                            <Badge variant="outline" className={`text-[11px] ${statusTone(exam.status)}`}>
+                              {EXAM_STATUS_LABELS[exam.status] || exam.status}
+                            </Badge>
+                            {exam.status === 'released' && (
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                className="h-7 px-2 text-[11px]"
+                                disabled={laudoLoading === exam.id}
+                                onClick={() => openLaudo(exam.id)}
+                              >
+                                {laudoLoading === exam.id ? (
+                                  <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                                ) : (
+                                  <>
+                                    <Download className="h-3.5 w-3.5 mr-1" /> Baixar Laudo
+                                  </>
+                                )}
+                              </Button>
                             )}
-                          </Button>
+                          </>
                         )}
                       </div>
                     </div>
