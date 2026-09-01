@@ -126,35 +126,34 @@ interface PortalLaudo {
   } | null
 }
 
-function PortalLaudoModal({ laudo, onClose }: { laudo: PortalLaudo; onClose: () => void }) {
+function PortalLaudoModal({ laudos, onClose }: { laudos: PortalLaudo[]; onClose: () => void }) {
   const docRef = useRef<HTMLDivElement>(null)
-  const s = laudo.settings || ({} as NonNullable<PortalLaudo['settings']>)
+  const first = laudos[0]
+  const s = first.settings || ({} as NonNullable<PortalLaudo['settings']>)
 
   const order = {
-    protocol: laudo.protocol,
-    patientName: laudo.patientName,
-    patientBirthDate: laudo.patientBirthDate,
-    patientGender: laudo.patientGender,
-    registeredAt: laudo.registeredAt,
-    collectionTime: laudo.collectionTime,
-    approvedAt: laudo.approvedAt,
-    approvedBy: laudo.approvedBy,
-    originName: laudo.originName,
-    doctorName: laudo.doctorName,
-    doctorCRM: laudo.doctorCRM,
-    exams: [
-      {
-        examId: laudo.exam.id,
-        name: laudo.exam.name,
-        material: laudo.exam.material,
-        methodology: laudo.exam.methodology,
-        reportObservations: laudo.exam.reportObservations,
-        internalObservations: laudo.exam.internalObservations,
-        singlePage: laudo.exam.singlePage,
-        reportTemplate: laudo.exam.template,
-        results: laudo.exam.results,
-      },
-    ],
+    protocol: first.protocol,
+    patientName: first.patientName,
+    patientBirthDate: first.patientBirthDate,
+    patientGender: first.patientGender,
+    registeredAt: first.registeredAt,
+    collectionTime: first.collectionTime,
+    approvedAt: first.approvedAt,
+    approvedBy: first.approvedBy,
+    originName: first.originName,
+    doctorName: first.doctorName,
+    doctorCRM: first.doctorCRM,
+    exams: laudos.map((l) => ({
+      examId: l.exam.id,
+      name: l.exam.name,
+      material: l.exam.material,
+      methodology: l.exam.methodology,
+      reportObservations: l.exam.reportObservations,
+      internalObservations: l.exam.internalObservations,
+      singlePage: l.exam.singlePage,
+      reportTemplate: l.exam.template,
+      results: l.exam.results,
+    })),
   }
 
   const printLaudo = () => {
@@ -181,8 +180,10 @@ function PortalLaudoModal({ laudo, onClose }: { laudo: PortalLaudo; onClose: () 
     <div className="fixed inset-0 z-50 bg-black/60 flex flex-col">
       <div className="flex items-center justify-between gap-2 px-4 py-3 bg-background border-b">
         <div className="min-w-0">
-          <p className="text-sm font-semibold truncate">Laudo — {laudo.exam.name}</p>
-          <p className="text-xs text-muted-foreground truncate">{laudo.patientName} · Pedido {laudo.protocol}</p>
+          <p className="text-sm font-semibold truncate">
+            {laudos.length > 1 ? `Laudos — ${laudos.length} exames` : `Laudo — ${first.exam.name}`}
+          </p>
+          <p className="text-xs text-muted-foreground truncate">{first.patientName} · Pedido {first.protocol}</p>
         </div>
         <div className="flex items-center gap-2 shrink-0">
           <Button size="sm" variant="outline" onClick={printLaudo}>
@@ -196,6 +197,7 @@ function PortalLaudoModal({ laudo, onClose }: { laudo: PortalLaudo; onClose: () 
           </Button>
         </div>
       </div>
+
       <div className="flex-1 overflow-auto bg-muted/40 py-6 px-2">
         <div ref={docRef}>
           <LaudoDocument
@@ -283,23 +285,17 @@ export default function ExternalPortalPage() {
   const [error, setError] = useState<string | null>(null)
   const [data, setData] = useState<PortalPayload | null>(null)
   const [branding, setBranding] = useState<PortalBranding | null>(null)
-  const [laudo, setLaudo] = useState<PortalLaudo | null>(null)
+  const [laudos, setLaudos] = useState<PortalLaudo[] | null>(null)
   const [laudoLoading, setLaudoLoading] = useState<string | null>(null)
   const [laudoError, setLaudoError] = useState<string | null>(null)
 
-  const openLaudo = async (examId: string) => {
-    setLaudoLoading(examId)
-    setLaudoError(null)
+  const fetchLaudo = async (examId: string): Promise<PortalLaudo | null> => {
     const { data: res, error: err } = await supabase.rpc('portal_fetch_laudo', {
       p_code: codigo,
       p_password: password,
       p_exam_id: examId,
     } as never)
-    if (err || !res) {
-      setLaudoError('Falha de conexão ao carregar o laudo. Tente novamente.')
-      setLaudoLoading(null)
-      return
-    }
+    if (err || !res) return null
     const payload = res as unknown as { ok: boolean; error?: string; laudo?: PortalLaudo }
     await supabase.rpc('portal_log_attempt', {
       p_code: codigo,
@@ -308,9 +304,30 @@ export default function ExternalPortalPage() {
     } as never)
     if (!payload?.ok || !payload.laudo) {
       setLaudoError(ERROR_MESSAGES[payload?.error || ''] || 'Não foi possível carregar o laudo.')
-    } else {
-      setLaudo(payload.laudo)
+      return null
     }
+    return payload.laudo
+  }
+
+  const openAllLaudos = async (order: PortalOrder) => {
+    const released = order.exams.filter((e) => e.status === 'released' && !e.blocked)
+    if (released.length === 0) return
+    setLaudoLoading(`order-${order.id}`)
+    setLaudoError(null)
+    const results: PortalLaudo[] = []
+    for (const exam of released) {
+      const l = await fetchLaudo(exam.id)
+      if (l) results.push(l)
+    }
+    if (results.length > 0) setLaudos(results)
+    setLaudoLoading(null)
+  }
+
+  const openLaudo = async (examId: string) => {
+    setLaudoLoading(examId)
+    setLaudoError(null)
+    const l = await fetchLaudo(examId)
+    if (l) setLaudos([l])
     setLaudoLoading(null)
   }
 
@@ -449,6 +466,23 @@ export default function ExternalPortalPage() {
                   <CardTitle className="text-base flex items-center gap-2">
                     <FileText className="h-4 w-4 text-primary" />
                     Pedido {order.protocol || order.order_number}
+                    {order.exams.some((e) => e.status === 'released' && !e.blocked) && (
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="h-7 px-2 text-[11px] ml-1"
+                        disabled={laudoLoading === `order-${order.id}`}
+                        onClick={() => openAllLaudos(order)}
+                      >
+                        {laudoLoading === `order-${order.id}` ? (
+                          <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                        ) : (
+                          <>
+                            <Printer className="h-3.5 w-3.5 mr-1" /> Imprimir Liberados
+                          </>
+                        )}
+                      </Button>
+                    )}
                   </CardTitle>
                   <p className="text-xs text-muted-foreground mt-1">
                     {order.patient_name} · {fmt(order.created_at)}
@@ -527,7 +561,7 @@ export default function ExternalPortalPage() {
 
       <PortalSoftwareFooter />
 
-      {laudo && <PortalLaudoModal laudo={laudo} onClose={() => setLaudo(null)} />}
+      {laudos && laudos.length > 0 && <PortalLaudoModal laudos={laudos} onClose={() => setLaudos(null)} />}
     </div>
   )
 }
