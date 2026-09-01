@@ -425,7 +425,7 @@ export function ResultEntryModal({
       for (let i = 0; i < refs.length; i += CHUNK) {
         const { data, error } = await supabase
           .from('lab_exam_results')
-          .select('id, exam_ref, status, notes, lab_result_values(parameter_key, value, source)')
+          .select('id, exam_ref, status, notes, portal_blocked_types, lab_result_values(parameter_key, value, source)')
           .eq('company_id', cid)
           .in('exam_ref', refs.slice(i, i + CHUNK));
         if (error) {
