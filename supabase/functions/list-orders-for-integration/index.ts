@@ -74,7 +74,7 @@ Deno.serve(async (req) => {
     Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!,
   )
 
-  // ---- 1. Autenticação por API Key ----
+  // ---- 1. Autenticação: OAuth2 (Bearer) ou API Key legada ----
   const auth = await authenticateIntegration(req, supabase, 'orders:read')
   if (!auth.ok) return json({ error: auth.error }, auth.status)
   const companyId = auth.companyId
