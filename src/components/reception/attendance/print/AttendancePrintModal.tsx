@@ -160,14 +160,16 @@ export function AttendancePrintModal({ open, onClose, document: doc, autoPrint, 
           </label>
           <div className="flex-1" />
           <ServidorImpressaoStatus />
-          <Button variant="outline" size="sm" onClick={handlePrint}>
+          <Button variant="outline" size="sm" onClick={printNavegador} disabled={enviando}>
             <FileText className="h-4 w-4 mr-1" /> Ver PDF
           </Button>
           <button
             onClick={handlePrint}
-            className="inline-flex items-center gap-1 rounded-md gradient-bg px-4 py-1.5 text-xs font-semibold text-white shadow-sm hover:opacity-90"
+            disabled={enviando}
+            className="inline-flex items-center gap-1 rounded-md gradient-bg px-4 py-1.5 text-xs font-semibold text-white shadow-sm hover:opacity-90 disabled:opacity-60"
           >
-            <Printer className="h-4 w-4" /> Imprimir
+            {enviando ? <Loader2 className="h-4 w-4 animate-spin" /> : <Printer className="h-4 w-4" />}
+            {enviando ? 'Enviando...' : 'Imprimir'}
           </button>
         </div>
 
