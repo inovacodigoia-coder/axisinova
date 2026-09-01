@@ -40,6 +40,8 @@ interface AttendanceGuide {
   operator: string;
   number: string;
   exams: any[];
+  convenioName?: string;
+  convenioId?: string | null;
   isDoctorDisabled?: boolean;
   doctorName?: string;
   doctorCrm?: string;
