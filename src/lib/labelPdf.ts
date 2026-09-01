@@ -26,3 +26,36 @@ export async function gerarPdfEtiquetas(
 
   return pdf.output('blob')
 }
+
+/**
+ * Converte elementos DOM genéricos (recibos, guias, comprovantes) em um PDF,
+ * com uma página por elemento e altura proporcional ao conteúdo.
+ * Usado para envio direto ao Servidor de Impressão AisAxius.
+ */
+export async function gerarPdfElementos(
+  elements: HTMLElement[],
+  widthMm: number,
+): Promise<Blob> {
+  let pdf: jsPDF | null = null
+
+  for (let i = 0; i < elements.length; i++) {
+    const canvas = await html2canvas(elements[i], {
+      scale: 2,
+      backgroundColor: '#ffffff',
+      logging: false,
+      useCORS: true,
+    })
+    const heightMm = (canvas.height / canvas.width) * widthMm
+    const orientation = heightMm > widthMm ? 'portrait' : 'landscape'
+    if (!pdf) {
+      pdf = new jsPDF({ orientation, unit: 'mm', format: [widthMm, heightMm] })
+    } else {
+      pdf.addPage([widthMm, heightMm], orientation)
+    }
+    const img = canvas.toDataURL('image/jpeg', 0.92)
+    pdf.addImage(img, 'JPEG', 0, 0, widthMm, heightMm)
+  }
+
+  if (!pdf) throw new Error('Nenhum conteúdo para imprimir.')
+  return pdf.output('blob')
+}
