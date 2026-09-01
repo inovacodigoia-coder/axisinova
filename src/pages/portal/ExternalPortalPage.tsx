@@ -74,6 +74,7 @@ const ERROR_MESSAGES: Record<string, string> = {
   invalid_password: 'Senha incorreta. Confira a senha impressa no comprovante.',
   not_released: 'Este laudo ainda não foi liberado.',
   forbidden: 'Este exame não pertence a este acesso.',
+  blocked: 'Exame não disponível para visualização. Em caso de dúvidas, entre em contato com o laboratório responsável pela realização do exame.',
 }
 
 interface PortalLaudo {
