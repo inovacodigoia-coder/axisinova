@@ -78,7 +78,6 @@ Deno.serve(async (req) => {
   const auth = await authenticateIntegration(req, supabase, 'orders:read')
   if (!auth.ok) return json({ error: auth.error }, auth.status)
   const companyId = auth.companyId
-    .then(() => {})
 
   // ---- 2. Janela de tempo ----
   const url = new URL(req.url)
