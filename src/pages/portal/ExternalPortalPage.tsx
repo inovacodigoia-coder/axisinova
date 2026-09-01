@@ -126,35 +126,34 @@ interface PortalLaudo {
   } | null
 }
 
-function PortalLaudoModal({ laudo, onClose }: { laudo: PortalLaudo; onClose: () => void }) {
+function PortalLaudoModal({ laudos, onClose }: { laudos: PortalLaudo[]; onClose: () => void }) {
   const docRef = useRef<HTMLDivElement>(null)
-  const s = laudo.settings || ({} as NonNullable<PortalLaudo['settings']>)
+  const first = laudos[0]
+  const s = first.settings || ({} as NonNullable<PortalLaudo['settings']>)
 
   const order = {
-    protocol: laudo.protocol,
-    patientName: laudo.patientName,
-    patientBirthDate: laudo.patientBirthDate,
-    patientGender: laudo.patientGender,
-    registeredAt: laudo.registeredAt,
-    collectionTime: laudo.collectionTime,
-    approvedAt: laudo.approvedAt,
-    approvedBy: laudo.approvedBy,
-    originName: laudo.originName,
-    doctorName: laudo.doctorName,
-    doctorCRM: laudo.doctorCRM,
-    exams: [
-      {
-        examId: laudo.exam.id,
-        name: laudo.exam.name,
-        material: laudo.exam.material,
-        methodology: laudo.exam.methodology,
-        reportObservations: laudo.exam.reportObservations,
-        internalObservations: laudo.exam.internalObservations,
-        singlePage: laudo.exam.singlePage,
-        reportTemplate: laudo.exam.template,
-        results: laudo.exam.results,
-      },
-    ],
+    protocol: first.protocol,
+    patientName: first.patientName,
+    patientBirthDate: first.patientBirthDate,
+    patientGender: first.patientGender,
+    registeredAt: first.registeredAt,
+    collectionTime: first.collectionTime,
+    approvedAt: first.approvedAt,
+    approvedBy: first.approvedBy,
+    originName: first.originName,
+    doctorName: first.doctorName,
+    doctorCRM: first.doctorCRM,
+    exams: laudos.map((l) => ({
+      examId: l.exam.id,
+      name: l.exam.name,
+      material: l.exam.material,
+      methodology: l.exam.methodology,
+      reportObservations: l.exam.reportObservations,
+      internalObservations: l.exam.internalObservations,
+      singlePage: l.exam.singlePage,
+      reportTemplate: l.exam.template,
+      results: l.exam.results,
+    })),
   }
 
   const printLaudo = () => {
@@ -181,8 +180,10 @@ function PortalLaudoModal({ laudo, onClose }: { laudo: PortalLaudo; onClose: () 
     <div className="fixed inset-0 z-50 bg-black/60 flex flex-col">
       <div className="flex items-center justify-between gap-2 px-4 py-3 bg-background border-b">
         <div className="min-w-0">
-          <p className="text-sm font-semibold truncate">Laudo — {laudo.exam.name}</p>
-          <p className="text-xs text-muted-foreground truncate">{laudo.patientName} · Pedido {laudo.protocol}</p>
+          <p className="text-sm font-semibold truncate">
+            {laudos.length > 1 ? `Laudos — ${laudos.length} exames` : `Laudo — ${first.exam.name}`}
+          </p>
+          <p className="text-xs text-muted-foreground truncate">{first.patientName} · Pedido {first.protocol}</p>
         </div>
         <div className="flex items-center gap-2 shrink-0">
           <Button size="sm" variant="outline" onClick={printLaudo}>
@@ -196,6 +197,7 @@ function PortalLaudoModal({ laudo, onClose }: { laudo: PortalLaudo; onClose: () 
           </Button>
         </div>
       </div>
+
       <div className="flex-1 overflow-auto bg-muted/40 py-6 px-2">
         <div ref={docRef}>
           <LaudoDocument
