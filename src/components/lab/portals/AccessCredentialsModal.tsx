@@ -89,7 +89,7 @@ export function AccessCredentialsModal({ open, onOpenChange, access, isNew, onRe
                 <QRCodeSVG value={url} size={132} />
               </div>
               <CopyField label="Link de acesso" value={url} />
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                 <CopyField label="Código" value={access.access_code} />
                 <CopyField label="Senha" value={access.access_password} />
               </div>
