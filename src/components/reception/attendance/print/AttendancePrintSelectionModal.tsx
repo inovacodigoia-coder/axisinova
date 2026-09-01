@@ -116,12 +116,21 @@ export function AttendancePrintSelectionModal({ open, onClose, onConfirm, order,
       setSelectedMaterials(prev => (prev.size ? prev : new Set(materials.map(m => m.type))));
     }
   }, [confirmCollection, materials]);
-  const labelsBlocked = !!labelsSelected && !allCollected && !willCollect;
+  // Bloqueio independe da seleção: se a coleta está pendente, etiquetas ficam bloqueadas
+  const labelsBlocked = !allCollected && !willCollect;
 
   // Seleção única: apenas um tipo de impressão por vez
   const toggleOption = (id: string) => {
+    if (id === 'etiquetas' && labelsBlocked) {
+      setConfirmCollection(true);
+      toast({
+        title: 'Coleta pendente',
+        description: 'Confirme a coleta do material para liberar a impressão de etiquetas.',
+        variant: 'destructive',
+      });
+      return;
+    }
     setOptions(prev => prev.map(opt => ({ ...opt, enabled: opt.id === id })));
-    if (id === 'etiquetas' && pendingMaterials.length > 0) setConfirmCollection(true);
   };
 
   const setFormat = (id: string, format: any) => {
@@ -290,7 +299,7 @@ export function AttendancePrintSelectionModal({ open, onClose, onConfirm, order,
                     )}
                   </div>
 
-                  {opt.id === 'etiquetas' && opt.enabled && labelsBlocked && (
+                  {opt.id === 'etiquetas' && labelsBlocked && (
                     <div className="flex items-center gap-1.5 ml-6 text-[10px] font-medium text-red-600">
                       <AlertTriangle className="h-3 w-3" />
                       A impressão de etiquetas exige que a amostra esteja coletada.
