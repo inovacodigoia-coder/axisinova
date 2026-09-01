@@ -1218,11 +1218,12 @@ export function ResultEntryModal({
                                 </Badge>
                               )}
 
-                            <DropdownMenu>
+                            <DropdownMenu modal={false}>
                               <DropdownMenuTrigger asChild>
                                 <Button
                                   variant="outline"
                                   size="sm"
+                                  type="button"
                                   className={cn(
                                     "h-7 px-2 text-[9px] font-black uppercase gap-1 bg-white border-slate-200",
                                     (portalBlocks[exam.id]?.length || 0) > 0 && "border-rose-300 bg-rose-50 text-rose-700"
@@ -1237,7 +1238,8 @@ export function ResultEntryModal({
                                   <ChevronDown className="h-3 w-3 opacity-50" />
                                 </Button>
                               </DropdownMenuTrigger>
-                              <DropdownMenuContent align="end" className="w-64">
+                              <DropdownMenuContent align="end" sideOffset={4} className="w-64 z-[9999] bg-popover">
+
                                 <DropdownMenuLabel className="text-[10px] font-black uppercase">
                                   Bloquear nos Portais Externos
                                 </DropdownMenuLabel>
