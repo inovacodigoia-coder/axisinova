@@ -470,9 +470,66 @@ export function ResultEntryModal({
       });
       setNotes(prev => ({ ...nextNotes, ...prev }));
       setExamStatuses(prev => ({ ...nextStatuses, ...prev }));
+      setPortalBlocks(prev => ({ ...nextBlocks, ...prev }));
     })();
     return () => { active = false; };
   }, [isOpen, filteredExams, user?.companyId]);
+
+  // Bloqueio de visualização do laudo nos Portais Externos (por tipo de portal)
+  const PORTAL_BLOCK_OPTIONS = [
+    { value: 'parceiro', label: 'Parceiros' },
+    { value: 'local', label: 'Locais' },
+    { value: 'medico', label: 'Médicos' },
+    { value: 'paciente', label: 'Pacientes' },
+  ];
+
+  const togglePortalBlock = async (exam: any, type: string) => {
+    const examId = exam.id;
+    const current = portalBlocks[examId] || [];
+    const next = current.includes(type) ? current.filter(t => t !== type) : [...current, type];
+    setPortalBlocks(prev => ({ ...prev, [examId]: next }));
+
+    const cid = resolveCompanyId(user?.companyId);
+    if (!cid) return;
+    try {
+      const ref = examRefOf(exam);
+      const { data: existing } = await supabase
+        .from('lab_exam_results')
+        .select('id')
+        .eq('company_id', cid)
+        .eq('exam_ref', ref)
+        .maybeSingle();
+
+      if (existing?.id) {
+        const { error } = await supabase
+          .from('lab_exam_results')
+          .update({ portal_blocked_types: next })
+          .eq('id', existing.id);
+        if (error) throw error;
+      } else {
+        const { error } = await supabase
+          .from('lab_exam_results')
+          .insert({
+            company_id: cid,
+            order_id: exam.orderId || null,
+            protocol: exam.protocol || null,
+            exam_ref: ref,
+            exam_code: exam.code || null,
+            exam_name: exam.name || null,
+            patient_id: exam.patientId || null,
+            patient_name: exam.patientName || null,
+            status: examStatuses[examId] || 'pending',
+            portal_blocked_types: next,
+          });
+        if (error) throw error;
+      }
+      toast.success(next.length === 0 ? 'Exame liberado para todos os portais.' : 'Bloqueio de visualização atualizado.');
+    } catch (e) {
+      console.error('Erro ao salvar bloqueio de portal', e);
+      setPortalBlocks(prev => ({ ...prev, [examId]: current }));
+      toast.error('Não foi possível salvar o bloqueio.');
+    }
+  };
 
 
   // Pré-seleciona "Ausente" nos parâmetros de seleção que possuem essa opção (ex.: Sumário de Urina)
