@@ -122,9 +122,11 @@ export function SampleLabelsPrintModal({
           </div>
           <div className="flex items-center gap-2">
             <ServidorImpressaoStatus />
-            <Button size="sm" onClick={handlePrint} disabled={!labels.length}>
-              <Printer className="h-4 w-4 mr-1" /> Imprimir
+            <Button size="sm" onClick={handlePrint} disabled={!labels.length || enviando}>
+              {enviando ? <Loader2 className="h-4 w-4 mr-1 animate-spin" /> : <Printer className="h-4 w-4 mr-1" />}
+              {enviando ? 'Enviando...' : 'Imprimir'}
             </Button>
+
             <button onClick={onClose} className="rounded-md p-1.5 hover:bg-muted text-muted-foreground">
               <X className="h-5 w-5" />
             </button>
