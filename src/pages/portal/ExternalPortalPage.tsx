@@ -15,6 +15,7 @@ interface PortalExam {
   code: string | null
   status: string
   released_at: string | null
+  blocked?: boolean
 }
 
 interface PortalOrder {
