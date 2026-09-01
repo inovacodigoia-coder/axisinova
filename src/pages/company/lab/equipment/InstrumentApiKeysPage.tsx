@@ -10,6 +10,8 @@ import { toast } from 'sonner'
 import { ArrowLeft, KeyRound, Plus, Copy, ShieldOff, Loader2 } from 'lucide-react'
 import { supabase } from '@/integrations/supabase/client'
 import { useAuth } from '@/context/AuthContext'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import OAuthClientsSection from '@/components/lab/integration/OAuthClientsSection'
 
 type KeyRow = {
   id: string
@@ -94,13 +96,24 @@ export default function InstrumentApiKeysPage() {
           <ArrowLeft className="h-4 w-4" />
         </Button>
         <div>
-          <h1 className="text-2xl font-bold">Integração de Equipamentos (API Key)</h1>
+          <h1 className="text-2xl font-bold">Integração de Equipamentos</h1>
           <p className="text-sm text-muted-foreground">
-            Gere a chave usada pelo ServidorAisaxius para enviar resultados dos analisadores.
+            Credenciais usadas pelo ServidorAisaxius para ler o catálogo/pedidos e enviar resultados.
           </p>
         </div>
       </div>
 
+      <Tabs defaultValue="oauth" className="space-y-6">
+        <TabsList>
+          <TabsTrigger value="oauth">OAuth2 (recomendado)</TabsTrigger>
+          <TabsTrigger value="apikey">API Key (legado)</TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="oauth">
+          <OAuthClientsSection />
+        </TabsContent>
+
+        <TabsContent value="apikey" className="space-y-6">
       <Card className="p-6 space-y-4">
         <div className="flex items-center gap-2">
           <KeyRound className="h-4 w-4 text-primary" />
@@ -208,6 +221,8 @@ export default function InstrumentApiKeysPage() {
           </table>
         )}
       </Card>
+        </TabsContent>
+      </Tabs>
     </div>
   )
 }

@@ -39,7 +39,7 @@ export const API_INFO = {
   version: '1.0.0',
   description:
     'API do sistema de gestão clínica e laboratorial AxisInova. Endpoints de plataforma (Edge Functions), procedures do banco (RPC) e acesso a dados via REST com RLS por empresa.',
-  updatedAt: '2026-08-25',
+  updatedAt: '2026-09-01',
 }
 
 // Domínio público oficial da API (custom domain). Não usar a URL interna do backend.
@@ -319,8 +319,35 @@ export const API_GROUPS: ApiGroup[] = [
   },
   {
     tag: 'interfaceamento',
-    description: 'Integração com analisadores laboratoriais (middleware local). Autenticação por API Key da empresa.',
+    description:
+      'Integração com analisadores laboratoriais (middleware local). Autenticação recomendada: OAuth2 client credentials (Authorization: Bearer). A API Key fixa (X-API-Key) segue aceita como legado em todos os endpoints deste grupo.',
     endpoints: [
+      {
+        id: 'fn-oauth-token',
+        method: 'POST',
+        path: '/oauth-token',
+        summary: 'Obter token de acesso (OAuth2 client credentials)',
+        description:
+          'Fluxo client_credentials (RFC 6749 §4.4). Troca client_id + client_secret por um access_token JWT de curta duração (3600s). Aceita corpo application/x-www-form-urlencoded ou JSON, e também client_secret_basic (Authorization: Basic base64(client_id:client_secret)). Escopos disponíveis: exams:read, orders:read, results:write. Não há refresh token — solicite outro token quando expirar.',
+        scope: 'company',
+        auth: 'Público (credenciais no corpo ou Basic)',
+        params: [
+          { name: 'grant_type', in: 'body', type: 'string', required: true, description: 'Deve ser "client_credentials"' },
+          { name: 'client_id', in: 'body', type: 'string', required: true, description: 'Client ID gerado no painel de Integração de Equipamentos' },
+          { name: 'client_secret', in: 'body', type: 'string', required: true, description: 'Client Secret exibido apenas na criação' },
+          { name: 'scope', in: 'body', type: 'string', required: false, description: 'Escopos separados por espaço. Omitido = todos os escopos do client' },
+        ],
+        requestExample: `grant_type=client_credentials&client_id=axis_cid_...&client_secret=axis_sec_...&scope=exams:read orders:read results:write`,
+        responseExample: `{
+  "access_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+  "token_type": "Bearer",
+  "expires_in": 3600,
+  "scope": "exams:read orders:read results:write"
+}
+
+// erro
+{ "error": "invalid_client", "error_description": "Credenciais inválidas ou revogadas" }`,
+      },
       {
         id: 'fn-receive-result',
         method: 'POST',
@@ -329,9 +356,10 @@ export const API_GROUPS: ApiGroup[] = [
         description:
           'Endpoint autenticado por X-API-Key. Um parâmetro por chamada. O result_id identifica o exame no pedido e é compartilhado pelos parâmetros do mesmo painel; parameter_result_id identifica a gravação individual do parâmetro. A amostra é identificada pelo mesmo "sample_barcode" devolvido em /list-orders-for-integration. Toda rejeição vem com { success: false, error } e status 4xx — nunca 200 silencioso.',
         scope: 'company',
-        auth: 'Header X-API-Key',
+        auth: 'Authorization: Bearer <access_token> (OAuth2) ou X-API-Key (legado)',
         params: [
-          { name: 'X-API-Key', in: 'header', type: 'string', required: true, description: 'Chave de integração da empresa' },
+          { name: 'Authorization', in: 'header', type: 'string', required: false, description: 'Bearer <access_token> obtido em /oauth-token (recomendado)' },
+          { name: 'X-API-Key', in: 'header', type: 'string', required: false, description: 'Chave de integração fixa da empresa (legado, alternativa ao Bearer)' },
           { name: 'idempotency_key', in: 'body', type: 'string', required: true, description: 'String única por evento. Reenvio da mesma chave devolve success: true com duplicate: true' },
           { name: 'sample_barcode', in: 'body', type: 'string', required: true, description: 'Código de barras da amostra (samples[].sample_barcode). Também aceita o sample_code ou o número do pedido' },
           { name: 'equipment_id', in: 'body', type: 'string', required: true, description: 'Identificador de interface do equipamento (serial cadastrado)' },
@@ -371,9 +399,10 @@ export const API_GROUPS: ApiGroup[] = [
         description:
           'Endpoint autenticado por X-API-Key para envio de imagens geradas pelo analisador (histogramas WBC/RBC/PLT, scattergramas). Um gráfico por chamada. A amostra é identificada pelo mesmo "sample_barcode" devolvido em /list-orders-for-integration. Toda rejeição vem com { success: false, error } e status 4xx — nunca 200 silencioso.',
         scope: 'company',
-        auth: 'Header X-API-Key',
+        auth: 'Authorization: Bearer <access_token> (OAuth2) ou X-API-Key (legado)',
         params: [
-          { name: 'X-API-Key', in: 'header', type: 'string', required: true, description: 'Chave de integração da empresa' },
+          { name: 'Authorization', in: 'header', type: 'string', required: false, description: 'Bearer <access_token> obtido em /oauth-token (recomendado)' },
+          { name: 'X-API-Key', in: 'header', type: 'string', required: false, description: 'Chave de integração fixa da empresa (legado, alternativa ao Bearer)' },
           { name: 'idempotency_key', in: 'body', type: 'string', required: true, description: 'String única por evento. Reenvio da mesma chave devolve success: true com duplicate: true' },
           { name: 'sample_barcode', in: 'body', type: 'string', required: true, description: 'Código de barras da amostra (samples[].sample_barcode)' },
           { name: 'equipment_id', in: 'body', type: 'string', required: true, description: 'Identificador de interface do equipamento (serial cadastrado)' },
@@ -410,9 +439,10 @@ export const API_GROUPS: ApiGroup[] = [
         description:
           'Lista os exames ativos da empresa da chave, para o middleware local puxar periodicamente (pull). Parâmetros do exame são retornados como itens filhos com parent_code. Apenas exames do Tipo "Laboratório" são devolvidos — exames do tipo "Clínica" nunca aparecem na resposta.',
         scope: 'company',
-        auth: 'Header X-API-Key',
+        auth: 'Authorization: Bearer <access_token> (OAuth2) ou X-API-Key (legado)',
         params: [
-          { name: 'X-API-Key', in: 'header', type: 'string', required: true, description: 'Chave de integração da empresa' },
+          { name: 'Authorization', in: 'header', type: 'string', required: false, description: 'Bearer <access_token> obtido em /oauth-token (recomendado)' },
+          { name: 'X-API-Key', in: 'header', type: 'string', required: false, description: 'Chave de integração fixa da empresa (legado, alternativa ao Bearer)' },
           { name: 'page', in: 'query', type: 'number', required: false, description: 'Página (opcional, padrão 1)' },
           { name: 'limit', in: 'query', type: 'number', required: false, description: 'Itens por página (opcional, padrão 2000)' },
         ],
@@ -438,9 +468,10 @@ export const API_GROUPS: ApiGroup[] = [
         description:
           'Lista pedidos cuja amostra foi coletada (ou que foram cancelados) após o horário informado em "since". Pedidos ainda não coletados não aparecem. Recomendado chamar a cada 1-2 minutos.',
         scope: 'company',
-        auth: 'Header X-API-Key',
+        auth: 'Authorization: Bearer <access_token> (OAuth2) ou X-API-Key (legado)',
         params: [
-          { name: 'X-API-Key', in: 'header', type: 'string', required: true, description: 'Chave de integração da empresa' },
+          { name: 'Authorization', in: 'header', type: 'string', required: false, description: 'Bearer <access_token> obtido em /oauth-token (recomendado)' },
+          { name: 'X-API-Key', in: 'header', type: 'string', required: false, description: 'Chave de integração fixa da empresa (legado, alternativa ao Bearer)' },
           { name: 'since', in: 'query', type: 'string', required: false, description: 'ISO 8601 da última busca bem-sucedida. Vazio = últimas 24h' },
           { name: 'limit', in: 'query', type: 'number', required: false, description: 'Máximo de pedidos por chamada (padrão 500)' },
         ],
