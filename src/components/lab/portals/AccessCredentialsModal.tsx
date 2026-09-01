@@ -27,14 +27,14 @@ function CopyField({ label, value }: { label: string; value: string }) {
     setTimeout(() => setCopied(false), 1500)
   }
   return (
-    <div className="flex items-center justify-between gap-2 rounded-md border bg-muted/40 px-3 py-2">
-      <div className="min-w-0">
-        <p className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">{label}</p>
-        <p className="truncate font-mono text-sm">{value}</p>
+    <div className="rounded-md border bg-muted/40 px-3 py-2">
+      <p className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">{label}</p>
+      <div className="flex items-start gap-2">
+        <p className="min-w-0 flex-1 break-all font-mono text-sm leading-snug">{value}</p>
+        <Button variant="ghost" size="icon" className="shrink-0 -mr-1 h-7 w-7" onClick={copy} aria-label={`Copiar ${label}`}>
+          {copied ? <Check className="h-4 w-4 text-green-600" /> : <Copy className="h-4 w-4" />}
+        </Button>
       </div>
-      <Button variant="ghost" size="icon" className="shrink-0" onClick={copy} aria-label={`Copiar ${label}`}>
-        {copied ? <Check className="h-4 w-4 text-green-600" /> : <Copy className="h-4 w-4" />}
-      </Button>
     </div>
   )
 }
