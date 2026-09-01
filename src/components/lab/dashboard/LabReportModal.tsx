@@ -83,7 +83,8 @@ export function LabReportModal({ open, onOpenChange }: Props) {
 
   const fromDate = useMemo(() => (from ? startOfDay(new Date(`${from}T00:00:00`)) : null), [from])
   const toDate = useMemo(() => (to ? startOfDay(new Date(`${to}T00:00:00`)) : null), [to])
-  const { data, loading } = useLabReportData(fromDate, toDate)
+  const [origin, setOrigin] = useState<string>('all')
+  const { data, loading, originOptions } = useLabReportData(fromDate, toDate, origin)
 
   const sections: ReportSectionConfig[] = useMemo(
     () =>
@@ -190,6 +191,23 @@ export function LabReportModal({ open, onOpenChange }: Props) {
                       </div>
                     </div>
                   </div>
+
+                  <div className="space-y-2">
+                    <Label className="text-xs font-semibold uppercase text-muted-foreground">Origem / Unidade</Label>
+                    <Select value={origin} onValueChange={setOrigin}>
+                      <SelectTrigger className="h-9 text-xs">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent className="z-[100]">
+                        <SelectItem value="all">Todas as origens</SelectItem>
+                        {originOptions.map(o => (
+                          <SelectItem key={o.label} value={o.label}>{o.label} ({o.count})</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+
 
                   <div className="space-y-2">
                     <Label className="text-xs font-semibold uppercase text-muted-foreground">

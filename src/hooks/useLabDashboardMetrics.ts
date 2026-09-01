@@ -63,13 +63,14 @@ export function useLabDashboardMetrics() {
   const [period, setPeriod] = useState<LabPeriod>('last_30_days')
   const [heatmapZoom, setHeatmapZoom] = useState<HeatmapZoom>('week')
   const [topLimit, setTopLimit] = useState<number>(10)
+  const [originFilter, setOriginFilter] = useState<string>('all')
 
   const { orders, loading } = useAttendanceCadastro()
   const { exams: catalog, workbenches } = useRegisters()
 
   const range = useMemo(() => getRange(period), [period])
 
-  const labOrders = useMemo(() => {
+  const allLabOrders = useMemo(() => {
     return (orders || []).filter((o: any) => {
       if (o.status === 'deleted') return false
       if (o.examMode && o.examMode !== 'lab') return false
@@ -79,6 +80,31 @@ export function useLabDashboardMetrics() {
       } catch { return false }
     })
   }, [orders, range])
+
+  const originOptions = useMemo(() => {
+    const map = new Map<string, number>()
+    allLabOrders.forEach((o: any) => {
+      const key = o.originName || 'MATRIZ'
+      map.set(key, (map.get(key) || 0) + 1)
+    })
+    return Array.from(map.entries())
+      .map(([label, count]) => ({ label, count }))
+      .sort((a, b) => b.count - a.count)
+  }, [allLabOrders])
+
+  const labOrders = useMemo(() => {
+    if (originFilter === 'all') return allLabOrders
+    return allLabOrders.filter((o: any) => (o.originName || 'MATRIZ') === originFilter)
+  }, [allLabOrders, originFilter])
+
+  const byOrigin = useMemo(() => {
+    const total = allLabOrders.length || 1
+    return originOptions.map(o => ({
+      label: o.label,
+      count: o.count,
+      percentage: Math.round((o.count / total) * 100),
+    }))
+  }, [originOptions, allLabOrders])
 
   const statusCounts = useMemo(() => {
     const counts: Record<string, number> = {}
@@ -197,6 +223,9 @@ export function useLabDashboardMetrics() {
     period, setPeriod,
     heatmapZoom, setHeatmapZoom,
     topLimit, setTopLimit,
+    originFilter, setOriginFilter,
+    originOptions,
+    byOrigin,
     totalOrders: labOrders.length,
     totalSamples: examRows.length,
     statusCounts,
