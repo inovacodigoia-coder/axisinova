@@ -285,23 +285,17 @@ export default function ExternalPortalPage() {
   const [error, setError] = useState<string | null>(null)
   const [data, setData] = useState<PortalPayload | null>(null)
   const [branding, setBranding] = useState<PortalBranding | null>(null)
-  const [laudo, setLaudo] = useState<PortalLaudo | null>(null)
+  const [laudos, setLaudos] = useState<PortalLaudo[] | null>(null)
   const [laudoLoading, setLaudoLoading] = useState<string | null>(null)
   const [laudoError, setLaudoError] = useState<string | null>(null)
 
-  const openLaudo = async (examId: string) => {
-    setLaudoLoading(examId)
-    setLaudoError(null)
+  const fetchLaudo = async (examId: string): Promise<PortalLaudo | null> => {
     const { data: res, error: err } = await supabase.rpc('portal_fetch_laudo', {
       p_code: codigo,
       p_password: password,
       p_exam_id: examId,
     } as never)
-    if (err || !res) {
-      setLaudoError('Falha de conexão ao carregar o laudo. Tente novamente.')
-      setLaudoLoading(null)
-      return
-    }
+    if (err || !res) return null
     const payload = res as unknown as { ok: boolean; error?: string; laudo?: PortalLaudo }
     await supabase.rpc('portal_log_attempt', {
       p_code: codigo,
@@ -310,9 +304,30 @@ export default function ExternalPortalPage() {
     } as never)
     if (!payload?.ok || !payload.laudo) {
       setLaudoError(ERROR_MESSAGES[payload?.error || ''] || 'Não foi possível carregar o laudo.')
-    } else {
-      setLaudo(payload.laudo)
+      return null
     }
+    return payload.laudo
+  }
+
+  const openAllLaudos = async (order: PortalOrder) => {
+    const released = order.exams.filter((e) => e.status === 'released' && !e.blocked)
+    if (released.length === 0) return
+    setLaudoLoading(`order-${order.id}`)
+    setLaudoError(null)
+    const results: PortalLaudo[] = []
+    for (const exam of released) {
+      const l = await fetchLaudo(exam.id)
+      if (l) results.push(l)
+    }
+    if (results.length > 0) setLaudos(results)
+    setLaudoLoading(null)
+  }
+
+  const openLaudo = async (examId: string) => {
+    setLaudoLoading(examId)
+    setLaudoError(null)
+    const l = await fetchLaudo(examId)
+    if (l) setLaudos([l])
     setLaudoLoading(null)
   }
 
@@ -451,6 +466,23 @@ export default function ExternalPortalPage() {
                   <CardTitle className="text-base flex items-center gap-2">
                     <FileText className="h-4 w-4 text-primary" />
                     Pedido {order.protocol || order.order_number}
+                    {order.exams.some((e) => e.status === 'released' && !e.blocked) && (
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="h-7 px-2 text-[11px] ml-1"
+                        disabled={laudoLoading === `order-${order.id}`}
+                        onClick={() => openAllLaudos(order)}
+                      >
+                        {laudoLoading === `order-${order.id}` ? (
+                          <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                        ) : (
+                          <>
+                            <Printer className="h-3.5 w-3.5 mr-1" /> Imprimir Liberados
+                          </>
+                        )}
+                      </Button>
+                    )}
                   </CardTitle>
                   <p className="text-xs text-muted-foreground mt-1">
                     {order.patient_name} · {fmt(order.created_at)}
@@ -529,7 +561,7 @@ export default function ExternalPortalPage() {
 
       <PortalSoftwareFooter />
 
-      {laudo && <PortalLaudoModal laudo={laudo} onClose={() => setLaudo(null)} />}
+      {laudos && laudos.length > 0 && <PortalLaudoModal laudos={laudos} onClose={() => setLaudos(null)} />}
     </div>
   )
 }
