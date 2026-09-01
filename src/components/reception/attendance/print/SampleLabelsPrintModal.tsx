@@ -1,9 +1,13 @@
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { Dialog, DialogContent } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
-import { Printer, X } from 'lucide-react'
+import { Printer, X, Loader2 } from 'lucide-react'
+import { toast } from 'sonner'
 import { SampleLabel } from '@/components/lab/print/SampleLabel'
 import { ServidorImpressaoStatus } from '@/components/print/ServidorImpressaoStatus'
+import { servidorImpressaoAtivo, imprimirDireto, TIPOS_DOCUMENTO } from '@/lib/impressaoLocal'
+import { gerarPdfEtiquetas } from '@/lib/labelPdf'
+
 
 export interface SampleLabelData {
   sampleId: string
