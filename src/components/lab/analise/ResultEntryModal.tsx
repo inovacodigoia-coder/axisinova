@@ -1220,14 +1220,43 @@ export function ResultEntryModal({
 
                             <DropdownMenu>
                               <DropdownMenuTrigger asChild>
-                                <Button variant="outline" size="sm" className="h-7 px-2 text-[9px] font-black uppercase gap-1 bg-white border-slate-200">
-                                  Versão: 1
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  className={cn(
+                                    "h-7 px-2 text-[9px] font-black uppercase gap-1 bg-white border-slate-200",
+                                    (portalBlocks[exam.id]?.length || 0) > 0 && "border-rose-300 bg-rose-50 text-rose-700"
+                                  )}
+                                >
+                                  Bloqueio de visualização de laudo
+                                  {(portalBlocks[exam.id]?.length || 0) > 0 && (
+                                    <span className="ml-1 rounded-full bg-rose-600 px-1.5 text-[8px] text-white">
+                                      {portalBlocks[exam.id].length}
+                                    </span>
+                                  )}
                                   <ChevronDown className="h-3 w-3 opacity-50" />
                                 </Button>
                               </DropdownMenuTrigger>
-                              <DropdownMenuContent align="end">
-                                <DropdownMenuItem className="text-xs font-bold uppercase">Versão 1 (Padrão)</DropdownMenuItem>
-                                <DropdownMenuItem className="text-xs font-bold uppercase">Versão 2 (Metodologia B)</DropdownMenuItem>
+                              <DropdownMenuContent align="end" className="w-64">
+                                <DropdownMenuLabel className="text-[10px] font-black uppercase">
+                                  Bloquear nos Portais Externos
+                                </DropdownMenuLabel>
+                                <DropdownMenuSeparator />
+                                {PORTAL_BLOCK_OPTIONS.map(opt => (
+                                  <DropdownMenuCheckboxItem
+                                    key={opt.value}
+                                    checked={(portalBlocks[exam.id] || []).includes(opt.value)}
+                                    onSelect={(e) => e.preventDefault()}
+                                    onCheckedChange={() => togglePortalBlock(exam, opt.value)}
+                                    className="text-xs font-bold uppercase"
+                                  >
+                                    {opt.label}
+                                  </DropdownMenuCheckboxItem>
+                                ))}
+                                <DropdownMenuSeparator />
+                                <p className="px-2 py-1.5 text-[10px] leading-snug text-muted-foreground">
+                                  Os portais marcados verão apenas o aviso de exame indisponível.
+                                </p>
                               </DropdownMenuContent>
                             </DropdownMenu>
                           </div>
