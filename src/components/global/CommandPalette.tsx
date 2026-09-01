@@ -24,25 +24,10 @@ interface QuickAction {
   route: string
 }
 
-const MOCK_SEARCH_DATA: Omit<SearchResult, 'icon'>[] = [
-  { id: 's1', category: 'PACIENTES', label: 'João da Silva', sublabel: '42 anos · Unimed', route: '/app/prontuario/p_001' },
-  { id: 's2', category: 'PACIENTES', label: 'Maria Santos', sublabel: '35 anos · Hapvida', route: '/app/prontuario/p_002' },
-  { id: 's3', category: 'PACIENTES', label: 'Ana Costa', sublabel: '28 anos · Bradesco', route: '/app/prontuario/p_003' },
-  { id: 's4', category: 'PACIENTES', label: 'Pedro Oliveira', sublabel: '55 anos · SUS', route: '/app/prontuario/p_004' },
-  { id: 's5', category: 'PACIENTES', label: 'Carlos Souza', sublabel: '67 anos · Particular', route: '/app/prontuario/p_005' },
-  { id: 's6', category: 'MÉDICOS', label: 'Dr. Carlos Lima', sublabel: 'Cardiologia · CRM 12345', route: '/app/cadastros/medicos' },
-  { id: 's7', category: 'MÉDICOS', label: 'Dra. Paula Mendes', sublabel: 'Clínica Geral · CRM 23456', route: '/app/cadastros/medicos' },
-  { id: 's8', category: 'MÉDICOS', label: 'Dr. Roberto Melo', sublabel: 'Ortopedia · CRM 34567', route: '/app/cadastros/medicos' },
-  { id: 's9', category: 'GUIAS', label: 'TISS-2025-00089', sublabel: 'João Silva · Unimed · R$ 450', route: '/app/faturamento/guias/g_001' },
-  { id: 's10', category: 'GUIAS', label: 'TISS-2025-00090', sublabel: 'Maria Santos · Hapvida · R$ 280', route: '/app/faturamento/guias/g_002' },
-  { id: 's11', category: 'AGENDAMENTOS', label: 'Consulta 09:00', sublabel: 'João Silva · Dr. Lima · Hoje', route: '/app/agendamento' },
-  { id: 's12', category: 'AGENDAMENTOS', label: 'Exame 10:30', sublabel: 'Ana Costa · Hemograma · Hoje', route: '/app/agendamento' },
-]
-
 const CATEGORY_ICON: Record<string, React.ReactNode> = {
   'PACIENTES': <Users className="h-4 w-4 text-primary" />,
   'MÉDICOS': <Stethoscope className="h-4 w-4 text-[hsl(var(--secondary))]" />,
-  'GUIAS': <DollarSign className="h-4 w-4 text-[hsl(var(--success))]" />,
+  'ATENDIMENTOS': <FileText className="h-4 w-4 text-[hsl(var(--success))]" />,
   'AGENDAMENTOS': <Calendar className="h-4 w-4 text-[hsl(var(--warning))]" />,
 }
 
