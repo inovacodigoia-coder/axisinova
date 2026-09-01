@@ -75,7 +75,7 @@ export function InsuranceSection() {
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-              <Field name={`convenios.${i}.cardNumber`} label="Número do cartão" required>
+              <Field name={`convenios.${i}.cardNumber`} label="Número do cartão">
                 <Controller name={`convenios.${i}.cardNumber`} control={control}
                   render={({ field }) => <Input {...field} placeholder="0000 0000 0000 0000" inputMode="numeric" />} />
               </Field>
