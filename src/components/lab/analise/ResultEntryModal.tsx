@@ -439,10 +439,14 @@ export function ResultEntryModal({
       const nextResults: Record<string, string> = {};
       const nextNotes: Record<string, string> = {};
       const nextStatuses: Record<string, any> = {};
+      const nextBlocks: Record<string, string[]> = {};
       const nextInstrumentKeys = new Set<string>();
       rows.forEach((row: any) => {
         // exam_ref já é a chave única da instância (pedido:exame)
         const examId = String(row.exam_ref);
+        if (Array.isArray(row.portal_blocked_types) && row.portal_blocked_types.length > 0) {
+          nextBlocks[examId] = row.portal_blocked_types as string[];
+        }
         if (row.notes) nextNotes[examId] = row.notes;
         if (row.status === 'digitized' || row.status === 'released') {
           nextStatuses[examId] = row.status;
