@@ -164,11 +164,13 @@ export function CommandPalette() {
                     </button>
                   ))}
                 </>
+              ) : loading ? (
+                <div className="p-6 text-center text-sm text-muted-foreground">Buscando...</div>
               ) : results.length === 0 ? (
                 <div className="p-6 text-center">
                   <Search className="h-8 w-8 text-muted-foreground mx-auto mb-2" />
                   <p className="text-sm text-muted-foreground">Nenhum resultado para "{query}"</p>
-                  <p className="text-xs text-muted-foreground mt-1">Tente buscar por nome, CPF ou código</p>
+                  <p className="text-xs text-muted-foreground mt-1">Tente buscar por nome, CPF, protocolo ou CRM</p>
                 </div>
               ) : (
                 Object.entries(groupedResults).map(([category, items]) => (
