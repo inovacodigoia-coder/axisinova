@@ -20,7 +20,7 @@ export const addressSchema = z.object({
 export const convenioSchema = z.object({
   convenioId: z.string().min(1, 'Convênio obrigatório'),
   convenioName: z.string().min(1),
-  cardNumber: z.string().min(3, 'Número do cartão obrigatório').max(60),
+  cardNumber: z.string().max(60).optional().or(z.literal('')),
   cardExpiry: z.string().regex(/^(0[1-9]|1[0-2])\/\d{4}$/, 'MM/AAAA').optional().or(z.literal('')),
   planName: z.string().max(120).optional().or(z.literal('')),
   holderName: z.string().max(200).optional().or(z.literal('')),
