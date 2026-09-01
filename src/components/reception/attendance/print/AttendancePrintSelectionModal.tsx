@@ -299,7 +299,7 @@ export function AttendancePrintSelectionModal({ open, onClose, onConfirm, order,
                     )}
                   </div>
 
-                  {opt.id === 'etiquetas' && opt.enabled && labelsBlocked && (
+                  {opt.id === 'etiquetas' && labelsBlocked && (
                     <div className="flex items-center gap-1.5 ml-6 text-[10px] font-medium text-red-600">
                       <AlertTriangle className="h-3 w-3" />
                       A impressão de etiquetas exige que a amostra esteja coletada.
