@@ -46,6 +46,9 @@ import {
   DropdownMenu, 
   DropdownMenuContent, 
   DropdownMenuItem, 
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuCheckboxItem,
   DropdownMenuTrigger 
 } from '@/components/ui/dropdown-menu';
 import {
