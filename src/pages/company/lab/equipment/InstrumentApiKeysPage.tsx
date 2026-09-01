@@ -10,6 +10,8 @@ import { toast } from 'sonner'
 import { ArrowLeft, KeyRound, Plus, Copy, ShieldOff, Loader2 } from 'lucide-react'
 import { supabase } from '@/integrations/supabase/client'
 import { useAuth } from '@/context/AuthContext'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import OAuthClientsSection from '@/components/lab/integration/OAuthClientsSection'
 
 type KeyRow = {
   id: string
@@ -219,6 +221,8 @@ export default function InstrumentApiKeysPage() {
           </table>
         )}
       </Card>
+        </TabsContent>
+      </Tabs>
     </div>
   )
 }
