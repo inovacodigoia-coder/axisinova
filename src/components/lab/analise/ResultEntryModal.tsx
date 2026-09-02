@@ -1663,6 +1663,71 @@ export function ResultEntryModal({
     </div>
   </ScrollArea>
 
+      {/* Barra de navegação — modo 1 paciente por vez */}
+      {entryMode === 'unico' && groupedPatients.length > 0 && (
+        <div className="border-t bg-muted/30 px-8 py-3 flex flex-wrap items-center justify-between gap-3 shrink-0">
+          <div className="flex items-center gap-3">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => goToPatient(safeIndex - 1)}
+              disabled={safeIndex === 0}
+              className="h-9 gap-1 font-black uppercase text-[10px]"
+            >
+              <ChevronLeft className="h-4 w-4" /> Anterior
+            </Button>
+            <span className="text-[11px] font-black uppercase tracking-widest text-muted-foreground">
+              Paciente {safeIndex + 1} de {groupedPatients.length}
+            </span>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => goToPatient(safeIndex + 1)}
+              disabled={safeIndex >= groupedPatients.length - 1}
+              className="h-9 gap-1 font-black uppercase text-[10px]"
+            >
+              Próximo <ChevronRight className="h-4 w-4" />
+            </Button>
+          </div>
+
+          <div className="flex items-center gap-2">
+            <Select value={actionMode} onValueChange={(v) => setActionMode(v as any)}>
+              <SelectTrigger className="h-9 w-[170px] text-[11px] font-bold uppercase">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent className="z-[160]">
+                <SelectItem value="ambos">Digitar e Liberar</SelectItem>
+                <SelectItem value="digitar">Apenas Digitar</SelectItem>
+                <SelectItem value="liberar">Apenas Liberar</SelectItem>
+              </SelectContent>
+            </Select>
+
+            {(actionMode === 'ambos' || actionMode === 'digitar') && canType && (
+              <Button
+                onClick={() => handleConcluirPaciente(groupedPatients[safeIndex])}
+                disabled={saving}
+                className="h-9 px-4 font-black uppercase text-[10px] tracking-widest gap-2 bg-primary text-white hover:bg-primary/90"
+              >
+                <CheckCircle2 className="h-4 w-4" /> Digitar e Próximo
+              </Button>
+            )}
+
+            {(actionMode === 'ambos' || actionMode === 'liberar') && canRelease && (
+              <Button
+                variant="outline"
+                onClick={() => handleLiberarPaciente(groupedPatients[safeIndex])}
+                disabled={saving}
+                className="h-9 px-4 font-black uppercase text-[10px] tracking-widest gap-2 border-emerald-500/30 text-emerald-600 hover:bg-emerald-50"
+              >
+                <ShieldCheck className="h-4 w-4" /> Liberar e Próximo
+              </Button>
+            )}
+          </div>
+        </div>
+      )}
+
+
+
       {/* Rodapé Fixo */}
       <footer className="h-20 border-t bg-card px-8 flex items-center justify-between shrink-0 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)]">
         <div className="flex items-center gap-6">
