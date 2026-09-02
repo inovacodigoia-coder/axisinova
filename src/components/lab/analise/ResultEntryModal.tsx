@@ -30,7 +30,10 @@ import {
   Loader2,
   List,
   LayoutGrid,
-  Pencil
+  Pencil,
+  Settings,
+  ChevronLeft,
+  ChevronRight
 } from 'lucide-react';
 import PDFPreviewModal from '@/components/lab/PDFPreviewModal';
 import { InstrumentGraphicsSection } from '@/components/lab/analise/InstrumentGraphicsSection';
