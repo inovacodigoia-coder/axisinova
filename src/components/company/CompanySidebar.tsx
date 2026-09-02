@@ -182,7 +182,18 @@ export function CompanySidebar({ mobileOpen, onMobileClose, collapsed = false, o
   })).filter(section => section.items.length > 0)
 
   const waitingCollectionCount = orders.filter(o => o.status === 'waiting_collection' || o.status === 'waiting').length
-  const analiseCount = orders.filter(o => o.status === 'collection_done' || (o.status as string) === 'in_analysis').length
+  // Conta pacientes distintos com pedidos pendentes de digitação
+  // (apenas Coleta Realizada / Em Análise — Validação, Liberado e Concluído ficam de fora)
+  const analiseCount = new Set(
+    orders
+      .filter(o => {
+        const st = String(o.status)
+        if (st === 'deleted') return false
+        return st === 'collection_done' || st === 'in_analysis'
+      })
+      .map(o => (o as any).patientId || o.patientName)
+  ).size
+
 
   // Load branding from DB
   useEffect(() => {
