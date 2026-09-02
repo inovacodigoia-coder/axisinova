@@ -46,6 +46,21 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { Calendar } from '@/components/ui/calendar';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
+
+/** Converte string de data para Date no fuso local (evita deslocamento de 1 dia em datas "YYYY-MM-DD"). */
+function parseLocalDate(value?: string | Date | null): Date | null {
+  if (!value) return null;
+  if (value instanceof Date) return isNaN(value.getTime()) ? null : value;
+  const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(value.trim());
+  if (m) return new Date(Number(m[1]), Number(m[2]) - 1, Number(m[3]));
+  const d = new Date(value);
+  return isNaN(d.getTime()) ? null : d;
+}
+
+function startOfDay(d: Date): Date {
+  return new Date(d.getFullYear(), d.getMonth(), d.getDate());
+}
+
   /* Do not make any visual modifications. The phrases I write are commands to understand what I want, not to be written down. Understand their content well, then execute what is required.
                                         
                                             
@@ -149,25 +164,34 @@ export default function LabAnalisePage() {
 
       // Filtro de Período baseado na data de coleta (ou registro como fallback)
       const dateToCompare = exam.collectionDate || exam.registeredAt;
-      const examDate = new Date(dateToCompare);
-      const today = new Date();
-      
+      const examDate = parseLocalDate(dateToCompare);
+
       let matchesPeriod = true;
-      if (period === 'hoje') {
-        matchesPeriod = format(examDate, 'yyyy-MM-dd') === format(today, 'yyyy-MM-dd');
-      } else if (period === '7d') {
-        const sevenDaysAgo = new Date();
-        sevenDaysAgo.setDate(today.getDate() - 7);
-        matchesPeriod = examDate >= sevenDaysAgo;
-      } else if (period === '30d') {
-        const thirtyDaysAgo = new Date();
-        thirtyDaysAgo.setDate(today.getDate() - 30);
-        matchesPeriod = examDate >= thirtyDaysAgo;
-      } else if (period === 'este-mes') {
-        matchesPeriod = examDate.getMonth() === today.getMonth() && examDate.getFullYear() === today.getFullYear();
-      } else if (period === 'custom' && dateFrom && dateTo) {
-        matchesPeriod = examDate >= dateFrom && examDate <= dateTo;
+      if (!examDate) {
+        matchesPeriod = period === 'todos';
+      } else {
+        const examDay = startOfDay(examDate);
+        const today = startOfDay(new Date());
+
+        if (period === 'hoje') {
+          matchesPeriod = examDay.getTime() === today.getTime();
+        } else if (period === '7d') {
+          const from = new Date(today);
+          from.setDate(from.getDate() - 6);
+          matchesPeriod = examDay >= from && examDay <= today;
+        } else if (period === '30d') {
+          const from = new Date(today);
+          from.setDate(from.getDate() - 29);
+          matchesPeriod = examDay >= from && examDay <= today;
+        } else if (period === 'este-mes') {
+          matchesPeriod = examDay.getMonth() === today.getMonth() && examDay.getFullYear() === today.getFullYear();
+        } else if (period === 'custom' && (dateFrom || dateTo)) {
+          const from = dateFrom ? startOfDay(dateFrom) : null;
+          const to = dateTo ? startOfDay(dateTo) : null;
+          matchesPeriod = (!from || examDay >= from) && (!to || examDay <= to);
+        }
       }
+
 
       return matchesSearch && matchesProtocol && matchesWorkbench && matchesOrigin && matchesPeriod;
     });
