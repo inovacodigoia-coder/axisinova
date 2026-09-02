@@ -503,9 +503,12 @@ export default function LabAnalisePage() {
                           <div className="flex flex-wrap gap-2">
                             {[
                               { id: 'collection_done', label: 'Coleta Realizada' },
-                              { id: 'in_analysis', label: 'Em Análise' }
-
+                              { id: 'in_analysis', label: 'Em Análise' },
+                              { id: 'validation', label: 'Validação' },
+                              { id: 'released', label: 'Liberado' },
+                              { id: 'completed', label: 'Concluído' }
                             ].map((status) => (
+
                               <Badge
                                 key={status.id}
                                 variant={selectedStatuses.includes(status.id) ? "default" : "outline"}
