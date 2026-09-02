@@ -76,6 +76,14 @@ function formatBrazilianDate(d?: Date | null): string {
   return d.toLocaleDateString('pt-BR');
 }
 
+/** Aplica máscara de data brasileira enquanto digita (DD/MM/AAAA). */
+function maskBrazilianDate(value: string): string {
+  const digits = value.replace(/\D/g, '').slice(0, 8);
+  if (digits.length <= 2) return digits;
+  if (digits.length <= 4) return `${digits.slice(0, 2)}/${digits.slice(2)}`;
+  return `${digits.slice(0, 2)}/${digits.slice(2, 4)}/${digits.slice(4)}`;
+}
+
 function startOfDay(d: Date): Date {
   return new Date(d.getFullYear(), d.getMonth(), d.getDate());
 }
@@ -399,8 +407,9 @@ export default function LabAnalisePage() {
                                     className="w-full h-9 rounded-lg border border-input bg-background pl-3 pr-9 text-xs font-medium outline-none focus:ring-2 focus:ring-primary/20"
                                     value={dateFromInput}
                                     onChange={(e) => {
-                                      setDateFromInput(e.target.value);
-                                      const parsed = parseBrazilianDate(e.target.value);
+                                      const masked = maskBrazilianDate(e.target.value);
+                                      setDateFromInput(masked);
+                                      const parsed = parseBrazilianDate(masked);
                                       setDateFrom(parsed || undefined);
                                     }}
                                   />
@@ -426,8 +435,9 @@ export default function LabAnalisePage() {
                                     className="w-full h-9 rounded-lg border border-input bg-background pl-3 pr-9 text-xs font-medium outline-none focus:ring-2 focus:ring-primary/20"
                                     value={dateToInput}
                                     onChange={(e) => {
-                                      setDateToInput(e.target.value);
-                                      const parsed = parseBrazilianDate(e.target.value);
+                                      const masked = maskBrazilianDate(e.target.value);
+                                      setDateToInput(masked);
+                                      const parsed = parseBrazilianDate(masked);
                                       setDateTo(parsed || undefined);
                                     }}
                                   />
@@ -770,8 +780,9 @@ export default function LabAnalisePage() {
                     className="h-9 rounded-lg border border-input bg-background px-3 text-xs font-medium outline-none focus:ring-2 focus:ring-primary/20"
                     value={dateFromInput}
                     onChange={(e) => {
-                      setDateFromInput(e.target.value);
-                      setDateFrom(parseBrazilianDate(e.target.value) || undefined);
+                      const masked = maskBrazilianDate(e.target.value);
+                      setDateFromInput(masked);
+                      setDateFrom(parseBrazilianDate(masked) || undefined);
                     }}
                   />
                   <input
@@ -781,8 +792,9 @@ export default function LabAnalisePage() {
                     className="h-9 rounded-lg border border-input bg-background px-3 text-xs font-medium outline-none focus:ring-2 focus:ring-primary/20"
                     value={dateToInput}
                     onChange={(e) => {
-                      setDateToInput(e.target.value);
-                      setDateTo(parseBrazilianDate(e.target.value) || undefined);
+                      const masked = maskBrazilianDate(e.target.value);
+                      setDateToInput(masked);
+                      setDateTo(parseBrazilianDate(masked) || undefined);
                     }}
                   />
                 </div>
