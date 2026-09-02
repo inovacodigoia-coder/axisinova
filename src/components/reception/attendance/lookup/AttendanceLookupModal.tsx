@@ -265,7 +265,7 @@ export function AttendanceLookupModal({ open, onClose, unitName, guicheName, onA
                   autoFocus
                   value={search}
                   onChange={e => setSearch(e.target.value)}
-                  placeholder="Buscar por protocolo, CPF ou nome da mãe..."
+                  placeholder="Pedido, amostra, CPF (com ou sem pontos) ou nome da mãe..."
                   className="w-full rounded-lg border border-input bg-background pl-3 pr-10 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
                 />
                 <Search className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
