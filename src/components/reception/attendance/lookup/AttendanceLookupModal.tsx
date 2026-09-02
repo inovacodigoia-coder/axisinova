@@ -8,6 +8,9 @@ import { toast } from 'sonner'
 import { useAttendanceCadastro } from '@/hooks/useAttendanceCadastro'
 import { usePatients } from '@/hooks/usePatients'
 import { useLabSettings } from '@/hooks/useLabSettings'
+import { useCompanySequenceId } from '@/hooks/useCompanySequenceId'
+import { TUBE_TYPES } from '@/types/lab.types'
+import { buildSampleCode, generateSampleHash } from '@/utils/orderHash'
 import { AttendancePrintModal } from '../print/AttendancePrintModal'
 import { AttendanceDetailsModal } from './AttendanceDetailsModal'
 import type { AttendanceOrder } from '@/types/attendance-cadastro.types'
@@ -32,6 +35,41 @@ const DATE_PRESETS: { value: DatePreset; label: string }[] = [
   { value: 'custom', label: 'Personalizado' },
   { value: 'all', label: 'Todos' },
 ]
+
+/** Mesma regra do modal de detalhes: material do exame -> tipo de tubo/amostra */
+function tubeTypeForMaterial(material: any): string {
+  const m = String(material || '')
+    .normalize('NFD').replace(/[̀-ͯ]/g, '')
+    .toLowerCase().trim()
+  if (!m) return 'gel'
+  if (m.includes('fezes') || m.includes('fecal')) return 'fezes'
+  if (m.includes('escarro') || m.includes('secrec') || m.includes('swab') || m.includes('saliva')) return 'escarro'
+  if (m.includes('urina')) return 'urina'
+  if (m.includes('edta') || m.includes('sangue total') || m.includes('hemograma')) return 'edta'
+  if (m.includes('citrat') || m.includes('coagulacao')) return 'citrato'
+  if (m.includes('plasma')) return 'citrato'
+  if (m.includes('soro') || m.includes('gel') || m.includes('sangue')) return 'gel'
+  if (m.includes('frasco')) return 'urina'
+  return 'gel'
+}
+
+/** Códigos e hashes alfanuméricos das amostras (etiquetas) de um pedido */
+function sampleCodesAndHashesForOrder(order: AttendanceOrder, companySequenceId: number | null): string[] {
+  const exams = (order.labGuides || []).flatMap((g: any) => g?.exams || [])
+  const types = new Set(exams.map((e: any) => tubeTypeForMaterial(e?.material)))
+  const tubes = TUBE_TYPES.filter((t: any) => types.has(t.type))
+  const list = tubes.length > 0 ? tubes : (exams.length > 0 ? TUBE_TYPES.filter((t: any) => t.type === 'gel') : [])
+  const out: string[] = []
+  list.forEach((_: any, idx: number) => {
+    const code = buildSampleCode(order.orderNumber, idx + 1, companySequenceId)
+    if (code) {
+      out.push(code)
+      const hash = generateSampleHash(code)
+      if (hash) out.push(hash)
+    }
+  })
+  return out
+}
 
 function normalize(s: string) {
   return (s || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^\w\s]/g, '')
@@ -101,6 +139,7 @@ export function AttendanceLookupModal({ open, onClose, unitName, guicheName, onA
   const { orders, updateOrder, loading } = useAttendanceCadastro()
   const { patients, loading: patientsLoading } = usePatients()
   const { settings } = useLabSettings()
+  const companySequenceId = useCompanySequenceId()
   const [search, setSearch] = useState('')
   const [patientSearch, setPatientSearch] = useState('')
   const [statusFilter, setStatusFilter] = useState<string>('all')
@@ -153,8 +192,11 @@ export function AttendanceLookupModal({ open, onClose, unitName, guicheName, onA
       if (term) {
         const haystack = [
           o.orderNumber,
+          o.hash,
           p?.cpf,
           p?.motherName,
+          // Códigos e hashes alfanuméricos das etiquetas de amostra (ex.: N2RQ87134)
+          ...sampleCodesAndHashesForOrder(o, companySequenceId),
         ].filter(Boolean).map(v => normalize(String(v))).join(' ')
         if (!haystack.includes(term)) return false
       }
@@ -166,7 +208,7 @@ export function AttendanceLookupModal({ open, onClose, unitName, guicheName, onA
 
       return true
     }).sort((a, b) => b.registeredAt.localeCompare(a.registeredAt))
-  }, [orders, patientById, search, patientSearch, statusFilter, isAdmin, dateRange])
+  }, [orders, patientById, search, patientSearch, statusFilter, isAdmin, dateRange, companySequenceId])
 
   useEffect(() => { setVisibleCount(pageSize) }, [pageSize, datePreset, customFrom, customTo, statusFilter, search, patientSearch])
 
