@@ -156,7 +156,7 @@ export default function LabAnalisePage() {
       // Normaliza o legado 'concluded' para 'completed'
       const orderStatus = order.status === ('concluded' as any) ? 'completed' : order.status;
       // Pedidos "Aberto" (sem coleta realizada) e "Excluídos" não entram na fila de digitação
-      const allowedOrderStatuses = ['collection_done', 'in_analysis'];
+      const allowedOrderStatuses = ['collection_done', 'in_analysis', 'validation', 'released', 'completed'];
       
       if ((order.status as any) === 'deleted') return;
       
