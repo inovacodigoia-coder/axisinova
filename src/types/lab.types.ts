@@ -167,6 +167,8 @@ export const TUBE_TYPES = [
   { type: 'edta', color: 'bg-purple-600', label: 'EDTA', volume: '4mL', hex: '#9333EA' },
   { type: 'citrato', color: 'bg-gray-400', label: 'Plasma Citratado', volume: '3mL', hex: '#9CA3AF' },
   { type: 'urina', color: 'bg-orange-500', label: 'Frasco de Urina', volume: '50mL', hex: '#F97316' },
+  { type: 'fezes', color: 'bg-amber-700', label: 'Frasco de Fezes', volume: '—', hex: '#B45309' },
+  { type: 'escarro', color: 'bg-emerald-600', label: 'Escarro / Secreção', volume: '—', hex: '#059669' },
 ];
 
 export interface LabBudget {

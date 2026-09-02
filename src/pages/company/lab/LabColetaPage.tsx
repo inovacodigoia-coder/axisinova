@@ -162,6 +162,13 @@ export default function LabColetaPage() {
     if (tubeType === 'urina') {
       return material.includes('urina')
     }
+    if (tubeType === 'fezes') {
+      return material.includes('fezes') || material.includes('fecal')
+    }
+    if (tubeType === 'escarro') {
+      return material.includes('escarro') || material.includes('secrec') ||
+        material.includes('swab') || material.includes('saliva')
+    }
 
     return material.includes(normalizeMaterial(tubeType))
   }

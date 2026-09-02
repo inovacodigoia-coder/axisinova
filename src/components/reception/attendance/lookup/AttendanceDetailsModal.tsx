@@ -150,11 +150,14 @@ export function AttendanceDetailsModal({ open, onClose, onOrderDeleted, order, p
       .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
       .toLowerCase().trim();
     if (!m) return 'gel';
-    if (m.includes('urina') || m.includes('frasco')) return 'urina';
+    if (m.includes('fezes') || m.includes('fecal')) return 'fezes';
+    if (m.includes('escarro') || m.includes('secrec') || m.includes('swab') || m.includes('saliva')) return 'escarro';
+    if (m.includes('urina')) return 'urina';
     if (m.includes('edta') || m.includes('sangue total') || m.includes('hemograma')) return 'edta';
     if (m.includes('citrat') || m.includes('coagulacao')) return 'citrato';
     if (m.includes('plasma')) return 'citrato';
     if (m.includes('soro') || m.includes('gel') || m.includes('sangue')) return 'gel';
+    if (m.includes('frasco')) return 'urina';
     return 'gel';
   };
 
@@ -1038,7 +1041,12 @@ export function AttendanceDetailsModal({ open, onClose, onOrderDeleted, order, p
                           </td>
                           <td className="px-4 py-3 text-muted-foreground font-bold">{tube.label.toUpperCase()} ({tube.type.toUpperCase()})</td>
                           <td className="px-4 py-3 text-muted-foreground uppercase">{tubeWorkbench(tube)}</td>
-                          <td className="px-4 py-3 text-muted-foreground uppercase">SANGUE</td>
+                          <td className="px-4 py-3 text-muted-foreground uppercase">
+                            {tube.type === 'urina' ? 'URINA'
+                              : tube.type === 'fezes' ? 'FEZES'
+                              : tube.type === 'escarro' ? 'SECREÇÃO'
+                              : 'SANGUE'}
+                          </td>
                           <td className="px-4 py-3 text-muted-foreground uppercase truncate max-w-[200px]">
                             {examsForTube(tube).map((e: any) => e.name).join(', ') || 'N/A'}
                           </td>
