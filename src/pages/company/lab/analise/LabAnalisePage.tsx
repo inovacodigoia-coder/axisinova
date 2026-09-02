@@ -98,6 +98,7 @@ export default function LabAnalisePage() {
   const [selectedExamId, setSelectedExamId] = useState<string | null>(null);
   const [isResultModalOpen, setIsResultModalOpen] = useState(false);
   const [expandedGroups, setExpandedGroups] = useState<Record<string, boolean>>({});
+  const [selectedProtocols, setSelectedProtocols] = useState<string[]>([]);
   
   // Filtros
   const [period, setPeriod] = useState('hoje');
@@ -262,6 +263,18 @@ export default function LabAnalisePage() {
     setSelectedOrderId(orderId);
     setSelectedExamId(examId);
   };
+
+  const toggleProtocolSelection = (protocol: string) => {
+    setSelectedProtocols(prev =>
+      prev.includes(protocol) ? prev.filter(p => p !== protocol) : [...prev, protocol]
+    );
+  };
+
+  // Exames enviados para a digitação: apenas os pedidos marcados; se nenhum, todos os listados
+  const examsForEntry = useMemo(() => {
+    if (selectedProtocols.length === 0) return filteredExams;
+    return filteredExams.filter(e => selectedProtocols.includes(e.protocol));
+  }, [filteredExams, selectedProtocols]);
 
   const toggleGroup = (protocol: string) => {
     setExpandedGroups(prev => ({
@@ -521,7 +534,7 @@ export default function LabAnalisePage() {
 
                         {/* Busca por Pedido */}
                         <div className="col-span-2 space-y-1.5">
-                          <label className="text-[10px] font-bold uppercase text-muted-foreground ml-1">Protocolo</label>
+                          <label className="text-[10px] font-bold uppercase text-muted-foreground ml-1">Pedido</label>
                           <div className="relative">
                             <Search className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
                             <input 
@@ -544,6 +557,19 @@ export default function LabAnalisePage() {
                   {/* Painel Principal (Direita) — Lista de Exames */}
                   <div className="flex-1 flex flex-col gap-4 overflow-hidden">
                     <Card className="flex-1 flex flex-col overflow-hidden shadow-sm border-border rounded-2xl">
+                      <div className="px-3 pt-3 flex flex-wrap items-center gap-2">
+                        <Badge variant="secondary" className="text-[10px] font-black uppercase bg-primary/10 text-primary border-none">
+                          {new Set(filteredExams.map((e: any) => e.patientId || e.patientName)).size} Pacientes
+                        </Badge>
+                        <Badge variant="secondary" className="text-[10px] font-black uppercase bg-slate-100 text-slate-700 border-none">
+                          {filteredExams.length} Exames
+                        </Badge>
+                        {selectedProtocols.length > 0 && (
+                          <Badge variant="outline" className="text-[10px] font-black uppercase border-primary/30 text-primary">
+                            {selectedProtocols.length} Pedidos marcados
+                          </Badge>
+                        )}
+                      </div>
                       <div className="p-3 border-b flex items-center justify-between gap-2">
                         <div className="relative flex-1">
                           <Search className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
@@ -604,8 +630,13 @@ export default function LabAnalisePage() {
                                           <Layout className="h-3.5 w-3.5" />
                                         )}
                                       </Button>
-                                      <input type="checkbox" className="rounded border-gray-300 h-3 w-3" />
-                                      <span className="text-[10px] font-black font-mono text-muted-foreground">Protocolo {group.protocol}</span>
+                                      <input
+                                        type="checkbox"
+                                        className="rounded border-gray-300 h-3 w-3"
+                                        checked={selectedProtocols.includes(group.protocol)}
+                                        onChange={() => toggleProtocolSelection(group.protocol)}
+                                      />
+                                      <span className="text-[10px] font-black font-mono text-muted-foreground">Pedido {group.protocol}</span>
                                     </div>
                                     <span className="flex items-center gap-1 text-[10px] text-muted-foreground font-bold">
                                       <Clock className="h-3 w-3" /> 10m
@@ -676,7 +707,7 @@ export default function LabAnalisePage() {
       <ResultEntryModal 
         isOpen={isResultModalOpen}
         onClose={() => setIsResultModalOpen(false)}
-        filteredExams={filteredExams}
+        filteredExams={examsForEntry}
         filters={{
           period,
           workbenches: selectedWorkbenches,
