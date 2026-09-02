@@ -809,7 +809,12 @@ export function AttendanceDetailsModal({ open, onClose, onOrderDeleted, order, p
                             </thead>
                             <tbody className="text-[11px] divide-y divide-border">
                               {examsInGuide.map((exam: any, examIdx: number) => {
-                                const examIsCollected = !!exam.collected || exam.isColeta || isCollected;
+                                // Prioriza o estado por exame/amostra; só usa o status do pedido quando o exame não tem marcação própria
+                                const hasOwnCollectionFlag =
+                                  exam.collected !== undefined || exam.isColeta !== undefined || !!exam.collectedAt;
+                                const examIsCollected = hasOwnCollectionFlag
+                                  ? (!!exam.collected || !!exam.isColeta)
+                                  : isCollected;
                                 return (
                                   <tr key={examIdx} className="hover:bg-muted/10 group">
                                     <td className="px-4 py-3">
