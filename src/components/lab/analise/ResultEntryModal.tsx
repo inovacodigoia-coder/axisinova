@@ -1207,10 +1207,11 @@ export function ResultEntryModal({
               </Button>
             </div>
           ) : (
-            groupedPatients.map((patient, pIdx) => {
+            visiblePatients.map((patient, vIdx) => {
+              const pIdx = entryMode === 'unico' ? safeIndex : vIdx;
               const isExpanded = !!expandedPatients[patient.protocol];
               return (
-                <div key={patient.protocol} className="bg-card rounded-2xl border border-border shadow-sm overflow-hidden animate-in slide-in-from-bottom-4 duration-300" style={{ animationDelay: `${pIdx * 50}ms` }}>
+                <div key={patient.protocol} className="bg-card rounded-2xl border border-border shadow-sm overflow-hidden animate-in slide-in-from-bottom-4 duration-300" style={{ animationDelay: `${vIdx * 50}ms` }}>
                   {/* Cabeçalho do Paciente */}
                   <div 
                     className="bg-slate-800 text-white px-6 py-3 flex items-center justify-between cursor-pointer hover:bg-slate-700 transition-colors"
@@ -1227,6 +1228,7 @@ export function ResultEntryModal({
                           {pIdx + 1}
                         </span>
                       </div>
+
                     <div className="flex items-baseline gap-2">
                       <span className="text-base font-black uppercase tracking-tight">{patient.patientName}</span>
                       <span className="text-[10px] font-bold text-white/60 uppercase">
