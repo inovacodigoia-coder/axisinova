@@ -780,8 +780,9 @@ export default function LabAnalisePage() {
                     className="h-9 rounded-lg border border-input bg-background px-3 text-xs font-medium outline-none focus:ring-2 focus:ring-primary/20"
                     value={dateFromInput}
                     onChange={(e) => {
-                      setDateFromInput(e.target.value);
-                      setDateFrom(parseBrazilianDate(e.target.value) || undefined);
+                      const masked = maskBrazilianDate(e.target.value);
+                      setDateFromInput(masked);
+                      setDateFrom(parseBrazilianDate(masked) || undefined);
                     }}
                   />
                   <input
@@ -791,8 +792,9 @@ export default function LabAnalisePage() {
                     className="h-9 rounded-lg border border-input bg-background px-3 text-xs font-medium outline-none focus:ring-2 focus:ring-primary/20"
                     value={dateToInput}
                     onChange={(e) => {
-                      setDateToInput(e.target.value);
-                      setDateTo(parseBrazilianDate(e.target.value) || undefined);
+                      const masked = maskBrazilianDate(e.target.value);
+                      setDateToInput(masked);
+                      setDateTo(parseBrazilianDate(masked) || undefined);
                     }}
                   />
                 </div>
