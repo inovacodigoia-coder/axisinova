@@ -156,7 +156,7 @@ export default function LabAnalisePage() {
       // Normaliza o legado 'concluded' para 'completed'
       const orderStatus = order.status === ('concluded' as any) ? 'completed' : order.status;
       // Pedidos "Aberto" (sem coleta realizada) e "Excluídos" não entram na fila de digitação
-      const allowedOrderStatuses = ['collection_done', 'in_analysis'];
+      const allowedOrderStatuses = ['collection_done', 'in_analysis', 'validation', 'released', 'completed'];
       
       if ((order.status as any) === 'deleted') return;
       
@@ -503,9 +503,12 @@ export default function LabAnalisePage() {
                           <div className="flex flex-wrap gap-2">
                             {[
                               { id: 'collection_done', label: 'Coleta Realizada' },
-                              { id: 'in_analysis', label: 'Em Análise' }
-
+                              { id: 'in_analysis', label: 'Em Análise' },
+                              { id: 'validation', label: 'Validação' },
+                              { id: 'released', label: 'Liberado' },
+                              { id: 'completed', label: 'Concluído' }
                             ].map((status) => (
+
                               <Badge
                                 key={status.id}
                                 variant={selectedStatuses.includes(status.id) ? "default" : "outline"}
@@ -557,11 +560,9 @@ export default function LabAnalisePage() {
                     <Card className="flex-1 flex flex-col overflow-hidden shadow-sm border-border rounded-2xl">
                       <div className="px-3 pt-3 flex flex-wrap items-center gap-2">
                         <Badge variant="secondary" className="text-[10px] font-black uppercase bg-primary/10 text-primary border-none">
-                          {new Set(filteredExams.map((e: any) => e.orderId)).size} Pedidos
-                        </Badge>
-                        <Badge variant="secondary" className="text-[10px] font-black uppercase bg-primary/10 text-primary border-none">
                           {new Set(filteredExams.map((e: any) => e.patientId || e.patientName)).size} Pacientes
                         </Badge>
+
                         <Badge variant="secondary" className="text-[10px] font-black uppercase bg-slate-100 text-slate-700 border-none">
                           {filteredExams.length} Exames
                         </Badge>
