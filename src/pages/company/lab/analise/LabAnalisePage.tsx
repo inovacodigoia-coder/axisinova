@@ -162,12 +162,27 @@ export default function LabAnalisePage() {
       exams.forEach(exam => {
         // Verifica se o status do pedido está entre os selecionados
         const matchesStatus = selectedStatuses.length === 0 || selectedStatuses.includes(orderStatus);
-        
+
+        // Amostra cancelada (volta para Pendente) sai da fila de digitação.
+        // Só reaparece quando a coleta for confirmada novamente.
+        const hasOwnCollectionFlag =
+          exam.collected !== undefined || exam.isColeta !== undefined || !!exam.collectedAt;
+        const examIsCollected = hasOwnCollectionFlag
+          ? (!!exam.collected || !!exam.isColeta || !!exam.collectedAt)
+          : true;
+        // Exames já digitados/liberados permanecem visíveis
+        const alreadyWorked = ['digitized', 'released', 'liberado', 'validated', 'retificado'].includes(
+          String(exam.status || '').toLowerCase()
+        );
+
+        if (!examIsCollected && !alreadyWorked) return;
+
         // Se o status do pedido estiver permitido e bater com o filtro selecionado
         if (allowedOrderStatuses.includes(orderStatus) && matchesStatus) {
           allExams.push(exam);
         }
       });
+
     });
 
     return allExams.filter(exam => {
