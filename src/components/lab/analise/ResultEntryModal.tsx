@@ -983,7 +983,97 @@ export function ResultEntryModal({
     return { label: 'Normal', color: 'text-emerald-600', bgColor: 'bg-emerald-500/10' };
   };
 
+  /* ---------- Navegação paciente a paciente ---------- */
+  const safeIndex = Math.min(currentIndex, Math.max(groupedPatients.length - 1, 0));
+  const visiblePatients = entryMode === 'unico'
+    ? groupedPatients.slice(safeIndex, safeIndex + 1)
+    : groupedPatients;
+
+  useEffect(() => {
+    if (currentIndex > groupedPatients.length - 1) setCurrentIndex(0);
+  }, [groupedPatients.length, currentIndex]);
+
+  useEffect(() => {
+    if (entryMode !== 'unico') return;
+    const patient = groupedPatients[safeIndex];
+    if (patient) setExpandedPatients(prev => ({ ...prev, [patient.protocol]: true }));
+  }, [entryMode, safeIndex, groupedPatients]);
+
+  const goToPatient = (index: number) => {
+    if (index < 0 || index > groupedPatients.length - 1) return;
+    setCurrentIndex(index);
+    try { document.getElementById('result-entry-scroll')?.scrollTo({ top: 0, behavior: 'smooth' }); } catch { /* ignore */ }
+  };
+
+  const handleRefreshData = async () => {
+    if (!refreshData) return;
+    setRefreshing(true);
+    try {
+      await Promise.resolve(refreshData());
+    } finally {
+      setTimeout(() => setRefreshing(false), 600);
+    }
+  };
+
+  /** Conclui a digitação de todos os exames preenchidos do paciente atual */
+  const handleConcluirPaciente = async (patient: any, advance = true) => {
+    if (!patient) return;
+    setSaving(true);
+    try {
+      const newStatuses = { ...examStatuses };
+      const toPersist: any[] = [];
+      (patient.exams || []).forEach((exam: any) => {
+        if (newStatuses[exam.id] === 'released' || newStatuses[exam.id] === 'cancelled') return;
+        const params = paramsByExam[exam.id] || [{ id: '1' }];
+        const allFilled = params.every((p: any) => (results[`${exam.id}_${p.id}`] || '').trim() !== '');
+        if (allFilled) {
+          newStatuses[exam.id] = 'digitized';
+          toPersist.push(exam);
+        }
+      });
+
+      if (toPersist.length === 0) {
+        toast.info('Nenhum resultado preenchido para concluir neste paciente.');
+      } else {
+        await persistExams(toPersist, 'digitized');
+        setExamStatuses(newStatuses);
+        await updateParentOrderStatus(patient.exams?.[0]?.orderId, patient.exams, newStatuses);
+        toast.success(`${toPersist.length} exame(s) digitado(s) para ${patient.patientName}.`);
+      }
+    } catch {
+      toast.error('Erro ao concluir a digitação do paciente.');
+    } finally {
+      setSaving(false);
+      if (advance) goToPatient(safeIndex + 1);
+    }
+  };
+
+  /** Libera todos os exames já digitados do paciente atual */
+  const handleLiberarPaciente = async (patient: any, advance = true) => {
+    if (!patient) return;
+    setSaving(true);
+    try {
+      const toRelease = (patient.exams || []).filter((e: any) => examStatuses[e.id] === 'digitized');
+      if (toRelease.length === 0) {
+        toast.info('Nenhum exame digitado para liberar neste paciente.');
+      } else {
+        await persistExams(toRelease, 'released');
+        const newStatuses = { ...examStatuses };
+        toRelease.forEach((e: any) => { newStatuses[e.id] = 'released'; });
+        setExamStatuses(newStatuses);
+        await updateParentOrderStatus(patient.exams?.[0]?.orderId, patient.exams, newStatuses);
+        toast.success(`${toRelease.length} exame(s) liberado(s) para ${patient.patientName}.`);
+      }
+    } catch {
+      toast.error('Erro ao liberar os exames do paciente.');
+    } finally {
+      setSaving(false);
+      if (advance) goToPatient(safeIndex + 1);
+    }
+  };
+
   if (!isOpen) return null;
+
 
   return (
     <div className="fixed inset-0 z-[100] bg-background flex flex-col overflow-hidden animate-in fade-in zoom-in duration-200">
