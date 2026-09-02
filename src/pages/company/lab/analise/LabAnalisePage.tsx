@@ -119,6 +119,14 @@ export default function LabAnalisePage() {
     return () => clearTimeout(timer);
   }, []);
 
+  useEffect(() => {
+    setDateFromInput(formatBrazilianDate(dateFrom));
+  }, [dateFrom]);
+
+  useEffect(() => {
+    setDateToInput(formatBrazilianDate(dateTo));
+  }, [dateTo]);
+
   // Filtragem de exames (Coleta Realizada)
   const filteredExams = useMemo(() => {
     const allExams: any[] = [];
