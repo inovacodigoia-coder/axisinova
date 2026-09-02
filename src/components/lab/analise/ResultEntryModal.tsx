@@ -30,7 +30,10 @@ import {
   Loader2,
   List,
   LayoutGrid,
-  Pencil
+  Pencil,
+  Settings,
+  ChevronLeft,
+  ChevronRight
 } from 'lucide-react';
 import PDFPreviewModal from '@/components/lab/PDFPreviewModal';
 import { InstrumentGraphicsSection } from '@/components/lab/analise/InstrumentGraphicsSection';
@@ -92,8 +95,9 @@ export function ResultEntryModal({
   filters,
   workbenchNames,
   establishmentNames,
-  refreshData
-}: ResultEntryModalProps & { refreshData?: () => void }) {
+  refreshData,
+  onOpenFilters
+}: ResultEntryModalProps & { refreshData?: () => void; onOpenFilters?: () => void }) {
   const { user } = useAuth();
   const { canType, canRelease, canCorrect } = useResultEntryPermissions();
   const [correctionUnlocked, setCorrectionUnlocked] = useState<Record<string, boolean>>({});
@@ -113,8 +117,8 @@ export function ResultEntryModal({
   const [laudoLoading, setLaudoLoading] = useState(false);
 
   const [viewMode, setViewMode] = useState<'grid' | 'list'>(() => {
-    if (typeof window === 'undefined') return 'grid';
-    return (sessionStorage.getItem('lab_result_view_mode') as 'grid' | 'list') || 'grid';
+    if (typeof window === 'undefined') return 'list';
+    return (sessionStorage.getItem('lab_result_view_mode') as 'grid' | 'list') || 'list';
   });
 
   const changeViewMode = (mode: 'grid' | 'list') => {
@@ -122,7 +126,14 @@ export function ResultEntryModal({
     try { sessionStorage.setItem('lab_result_view_mode', mode); } catch { /* ignore */ }
   };
 
+  // Modo de digitação: todos os pacientes ou um paciente por vez
+  const [entryMode, setEntryMode] = useState<'todos' | 'unico'>('todos');
+  const [currentIndex, setCurrentIndex] = useState(0);
+  const [actionMode, setActionMode] = useState<'ambos' | 'digitar' | 'liberar'>('ambos');
+  const [refreshing, setRefreshing] = useState(false);
+
   const [expandedPatients, setExpandedPatients] = useState<Record<string, boolean>>({});
+
 
   /** Campos editáveis: digitação normal ou correção liberada pela permissão */
   const isExamEditable = (examId: string) => {
@@ -975,7 +986,97 @@ export function ResultEntryModal({
     return { label: 'Normal', color: 'text-emerald-600', bgColor: 'bg-emerald-500/10' };
   };
 
+  /* ---------- Navegação paciente a paciente ---------- */
+  const safeIndex = Math.min(currentIndex, Math.max(groupedPatients.length - 1, 0));
+  const visiblePatients = entryMode === 'unico'
+    ? groupedPatients.slice(safeIndex, safeIndex + 1)
+    : groupedPatients;
+
+  useEffect(() => {
+    if (currentIndex > groupedPatients.length - 1) setCurrentIndex(0);
+  }, [groupedPatients.length, currentIndex]);
+
+  useEffect(() => {
+    if (entryMode !== 'unico') return;
+    const patient = groupedPatients[safeIndex];
+    if (patient) setExpandedPatients(prev => ({ ...prev, [patient.protocol]: true }));
+  }, [entryMode, safeIndex, groupedPatients]);
+
+  const goToPatient = (index: number) => {
+    if (index < 0 || index > groupedPatients.length - 1) return;
+    setCurrentIndex(index);
+    try { document.getElementById('result-entry-scroll')?.scrollTo({ top: 0, behavior: 'smooth' }); } catch { /* ignore */ }
+  };
+
+  const handleRefreshData = async () => {
+    if (!refreshData) return;
+    setRefreshing(true);
+    try {
+      await Promise.resolve(refreshData());
+    } finally {
+      setTimeout(() => setRefreshing(false), 600);
+    }
+  };
+
+  /** Conclui a digitação de todos os exames preenchidos do paciente atual */
+  const handleConcluirPaciente = async (patient: any, advance = true) => {
+    if (!patient) return;
+    setSaving(true);
+    try {
+      const newStatuses = { ...examStatuses };
+      const toPersist: any[] = [];
+      (patient.exams || []).forEach((exam: any) => {
+        if (newStatuses[exam.id] === 'released' || newStatuses[exam.id] === 'cancelled') return;
+        const params = paramsByExam[exam.id] || [{ id: '1' }];
+        const allFilled = params.every((p: any) => (results[`${exam.id}_${p.id}`] || '').trim() !== '');
+        if (allFilled) {
+          newStatuses[exam.id] = 'digitized';
+          toPersist.push(exam);
+        }
+      });
+
+      if (toPersist.length === 0) {
+        toast.info('Nenhum resultado preenchido para concluir neste paciente.');
+      } else {
+        await persistExams(toPersist, 'digitized');
+        setExamStatuses(newStatuses);
+        await updateParentOrderStatus(patient.exams?.[0]?.orderId, patient.exams, newStatuses);
+        toast.success(`${toPersist.length} exame(s) digitado(s) para ${patient.patientName}.`);
+      }
+    } catch {
+      toast.error('Erro ao concluir a digitação do paciente.');
+    } finally {
+      setSaving(false);
+      if (advance) goToPatient(safeIndex + 1);
+    }
+  };
+
+  /** Libera todos os exames já digitados do paciente atual */
+  const handleLiberarPaciente = async (patient: any, advance = true) => {
+    if (!patient) return;
+    setSaving(true);
+    try {
+      const toRelease = (patient.exams || []).filter((e: any) => examStatuses[e.id] === 'digitized');
+      if (toRelease.length === 0) {
+        toast.info('Nenhum exame digitado para liberar neste paciente.');
+      } else {
+        await persistExams(toRelease, 'released');
+        const newStatuses = { ...examStatuses };
+        toRelease.forEach((e: any) => { newStatuses[e.id] = 'released'; });
+        setExamStatuses(newStatuses);
+        await updateParentOrderStatus(patient.exams?.[0]?.orderId, patient.exams, newStatuses);
+        toast.success(`${toRelease.length} exame(s) liberado(s) para ${patient.patientName}.`);
+      }
+    } catch {
+      toast.error('Erro ao liberar os exames do paciente.');
+    } finally {
+      setSaving(false);
+      if (advance) goToPatient(safeIndex + 1);
+    }
+  };
+
   if (!isOpen) return null;
+
 
   return (
     <div className="fixed inset-0 z-[100] bg-background flex flex-col overflow-hidden animate-in fade-in zoom-in duration-200">
@@ -991,7 +1092,33 @@ export function ResultEntryModal({
           </p>
         </div>
 
-        <div className="flex items-center gap-6">
+        <div className="flex items-center gap-4">
+          {/* Modo de digitação */}
+          <div className="flex items-center rounded-lg border border-border bg-muted/40 p-0.5">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setEntryMode('todos')}
+              className={cn(
+                "h-8 px-3 rounded-md text-[10px] font-black uppercase tracking-wider",
+                entryMode === 'todos' ? "bg-card text-primary shadow-sm" : "text-muted-foreground hover:text-foreground"
+              )}
+            >
+              Todos
+            </Button>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => { setEntryMode('unico'); setCurrentIndex(0); }}
+              className={cn(
+                "h-8 px-3 rounded-md text-[10px] font-black uppercase tracking-wider",
+                entryMode === 'unico' ? "bg-card text-primary shadow-sm" : "text-muted-foreground hover:text-foreground"
+              )}
+            >
+              1 por vez
+            </Button>
+          </div>
+
           {/* Alternar visualização */}
           <div className="flex items-center rounded-lg border border-border bg-muted/40 p-0.5">
             <Button
@@ -1024,6 +1151,31 @@ export function ResultEntryModal({
             </Button>
           </div>
 
+          {/* Atualizar / Filtros */}
+          <div className="flex items-center gap-1">
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={handleRefreshData}
+              disabled={!refreshData || refreshing}
+              title="Atualizar informações dos pedidos"
+              aria-label="Atualizar informações dos pedidos"
+              className="h-9 w-9 rounded-lg hover:bg-primary/10 hover:text-primary"
+            >
+              <RefreshCw className={cn("h-4 w-4", refreshing && "animate-spin")} />
+            </Button>
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => onOpenFilters?.()}
+              title="Alterar filtros"
+              aria-label="Alterar filtros"
+              className="h-9 w-9 rounded-lg hover:bg-primary/10 hover:text-primary"
+            >
+              <Settings className="h-4 w-4" />
+            </Button>
+          </div>
+
           <div className="text-right">
             <p className="text-[10px] font-black text-muted-foreground uppercase tracking-widest">Contador</p>
             <p className="text-sm font-black uppercase">
@@ -1035,6 +1187,7 @@ export function ResultEntryModal({
             <X className="h-6 w-6" />
           </Button>
         </div>
+
       </header>
 
       {/* Conteúdo */}
@@ -1054,10 +1207,11 @@ export function ResultEntryModal({
               </Button>
             </div>
           ) : (
-            groupedPatients.map((patient, pIdx) => {
+            visiblePatients.map((patient, vIdx) => {
+              const pIdx = entryMode === 'unico' ? safeIndex : vIdx;
               const isExpanded = !!expandedPatients[patient.protocol];
               return (
-                <div key={patient.protocol} className="bg-card rounded-2xl border border-border shadow-sm overflow-hidden animate-in slide-in-from-bottom-4 duration-300" style={{ animationDelay: `${pIdx * 50}ms` }}>
+                <div key={patient.protocol} className="bg-card rounded-2xl border border-border shadow-sm overflow-hidden animate-in slide-in-from-bottom-4 duration-300" style={{ animationDelay: `${vIdx * 50}ms` }}>
                   {/* Cabeçalho do Paciente */}
                   <div 
                     className="bg-slate-800 text-white px-6 py-3 flex items-center justify-between cursor-pointer hover:bg-slate-700 transition-colors"
@@ -1074,6 +1228,7 @@ export function ResultEntryModal({
                           {pIdx + 1}
                         </span>
                       </div>
+
                     <div className="flex items-baseline gap-2">
                       <span className="text-base font-black uppercase tracking-tight">{patient.patientName}</span>
                       <span className="text-[10px] font-bold text-white/60 uppercase">
@@ -1507,6 +1662,71 @@ export function ResultEntryModal({
       )}
     </div>
   </ScrollArea>
+
+      {/* Barra de navegação — modo 1 paciente por vez */}
+      {entryMode === 'unico' && groupedPatients.length > 0 && (
+        <div className="border-t bg-muted/30 px-8 py-3 flex flex-wrap items-center justify-between gap-3 shrink-0">
+          <div className="flex items-center gap-3">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => goToPatient(safeIndex - 1)}
+              disabled={safeIndex === 0}
+              className="h-9 gap-1 font-black uppercase text-[10px]"
+            >
+              <ChevronLeft className="h-4 w-4" /> Anterior
+            </Button>
+            <span className="text-[11px] font-black uppercase tracking-widest text-muted-foreground">
+              Paciente {safeIndex + 1} de {groupedPatients.length}
+            </span>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => goToPatient(safeIndex + 1)}
+              disabled={safeIndex >= groupedPatients.length - 1}
+              className="h-9 gap-1 font-black uppercase text-[10px]"
+            >
+              Próximo <ChevronRight className="h-4 w-4" />
+            </Button>
+          </div>
+
+          <div className="flex items-center gap-2">
+            <Select value={actionMode} onValueChange={(v) => setActionMode(v as any)}>
+              <SelectTrigger className="h-9 w-[170px] text-[11px] font-bold uppercase">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent className="z-[160]">
+                <SelectItem value="ambos">Digitar e Liberar</SelectItem>
+                <SelectItem value="digitar">Apenas Digitar</SelectItem>
+                <SelectItem value="liberar">Apenas Liberar</SelectItem>
+              </SelectContent>
+            </Select>
+
+            {(actionMode === 'ambos' || actionMode === 'digitar') && canType && (
+              <Button
+                onClick={() => handleConcluirPaciente(groupedPatients[safeIndex])}
+                disabled={saving}
+                className="h-9 px-4 font-black uppercase text-[10px] tracking-widest gap-2 bg-primary text-white hover:bg-primary/90"
+              >
+                <CheckCircle2 className="h-4 w-4" /> Digitar e Próximo
+              </Button>
+            )}
+
+            {(actionMode === 'ambos' || actionMode === 'liberar') && canRelease && (
+              <Button
+                variant="outline"
+                onClick={() => handleLiberarPaciente(groupedPatients[safeIndex])}
+                disabled={saving}
+                className="h-9 px-4 font-black uppercase text-[10px] tracking-widest gap-2 border-emerald-500/30 text-emerald-600 hover:bg-emerald-50"
+              >
+                <ShieldCheck className="h-4 w-4" /> Liberar e Próximo
+              </Button>
+            )}
+          </div>
+        </div>
+      )}
+
+
 
       {/* Rodapé Fixo */}
       <footer className="h-20 border-t bg-card px-8 flex items-center justify-between shrink-0 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)]">
