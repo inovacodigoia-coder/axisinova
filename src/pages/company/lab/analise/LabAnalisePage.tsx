@@ -57,6 +57,24 @@ function parseLocalDate(value?: string | Date | null): Date | null {
   return isNaN(d.getTime()) ? null : d;
 }
 
+/** Converte data no formato brasileiro DD/MM/AAAA para Date no fuso local. */
+function parseBrazilianDate(value?: string | null): Date | null {
+  if (!value) return null;
+  const m = /^(\d{2})\/(\d{2})\/(\d{4})$/.exec(value.trim());
+  if (!m) return null;
+  const day = Number(m[1]);
+  const month = Number(m[2]);
+  const year = Number(m[3]);
+  if (month < 1 || month > 12 || day < 1 || day > 31) return null;
+  const d = new Date(year, month - 1, day);
+  return d.getMonth() === month - 1 && d.getDate() === day ? d : null;
+}
+
+function formatBrazilianDate(d?: Date | null): string {
+  if (!d || isNaN(d.getTime())) return '';
+  return d.toLocaleDateString('pt-BR');
+}
+
 function startOfDay(d: Date): Date {
   return new Date(d.getFullYear(), d.getMonth(), d.getDate());
 }
