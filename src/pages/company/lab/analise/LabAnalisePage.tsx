@@ -180,9 +180,8 @@ export default function LabAnalisePage() {
       const matchesOrigin = selectedEstablishments.length === 0 || 
                              selectedEstablishments.includes(exam.originId || '');
 
-      // Filtro de Período baseado na data de coleta (ou registro como fallback)
-      const dateToCompare = exam.collectionDate || exam.registeredAt;
-      const examDate = parseLocalDate(dateToCompare);
+      // Filtro de Período baseado na data de atendimento (registeredAt)
+      const examDate = parseLocalDate(exam.registeredAt);
 
       let matchesPeriod = true;
       if (!examDate) {
@@ -203,6 +202,11 @@ export default function LabAnalisePage() {
           matchesPeriod = examDay >= from && examDay <= today;
         } else if (period === 'este-mes') {
           matchesPeriod = examDay.getMonth() === today.getMonth() && examDay.getFullYear() === today.getFullYear();
+        } else if (period === 'mes-passado') {
+          const firstDayThisMonth = new Date(today.getFullYear(), today.getMonth(), 1);
+          const lastDayPrevMonth = new Date(firstDayThisMonth.getTime() - 1);
+          const firstDayPrevMonth = new Date(lastDayPrevMonth.getFullYear(), lastDayPrevMonth.getMonth(), 1);
+          matchesPeriod = examDay >= firstDayPrevMonth && examDay <= lastDayPrevMonth;
         } else if (period === 'custom' && (dateFrom || dateTo)) {
           const from = dateFrom ? startOfDay(dateFrom) : null;
           const to = dateTo ? startOfDay(dateTo) : null;
