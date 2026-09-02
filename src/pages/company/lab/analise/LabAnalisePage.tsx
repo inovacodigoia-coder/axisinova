@@ -521,7 +521,7 @@ export default function LabAnalisePage() {
 
                         {/* Busca por Pedido */}
                         <div className="col-span-2 space-y-1.5">
-                          <label className="text-[10px] font-bold uppercase text-muted-foreground ml-1">Protocolo</label>
+                          <label className="text-[10px] font-bold uppercase text-muted-foreground ml-1">Pedido</label>
                           <div className="relative">
                             <Search className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
                             <input 
