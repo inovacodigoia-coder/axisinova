@@ -208,7 +208,7 @@ export function AttendanceLookupModal({ open, onClose, unitName, guicheName, onA
 
       return true
     }).sort((a, b) => b.registeredAt.localeCompare(a.registeredAt))
-  }, [orders, patientById, search, patientSearch, statusFilter, isAdmin, dateRange])
+  }, [orders, patientById, search, patientSearch, statusFilter, isAdmin, dateRange, companySequenceId])
 
   useEffect(() => { setVisibleCount(pageSize) }, [pageSize, datePreset, customFrom, customTo, statusFilter, search, patientSearch])
 
