@@ -107,6 +107,8 @@ export default function LabAnalisePage() {
   const [period, setPeriod] = useState('hoje');
   const [dateFrom, setDateFrom] = useState<Date | undefined>(undefined);
   const [dateTo, setDateTo] = useState<Date | undefined>(undefined);
+  const [dateFromInput, setDateFromInput] = useState('');
+  const [dateToInput, setDateToInput] = useState('');
   const [selectedWorkbenches, setSelectedWorkbenches] = useState<string[]>([]);
   const [selectedEstablishments, setSelectedEstablishments] = useState<string[]>([]);
   const [selectedStatuses, setSelectedStatuses] = useState<string[]>([]);
