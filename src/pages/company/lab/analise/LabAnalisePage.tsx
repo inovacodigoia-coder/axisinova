@@ -149,25 +149,34 @@ export default function LabAnalisePage() {
 
       // Filtro de Período baseado na data de coleta (ou registro como fallback)
       const dateToCompare = exam.collectionDate || exam.registeredAt;
-      const examDate = new Date(dateToCompare);
-      const today = new Date();
-      
+      const examDate = parseLocalDate(dateToCompare);
+
       let matchesPeriod = true;
-      if (period === 'hoje') {
-        matchesPeriod = format(examDate, 'yyyy-MM-dd') === format(today, 'yyyy-MM-dd');
-      } else if (period === '7d') {
-        const sevenDaysAgo = new Date();
-        sevenDaysAgo.setDate(today.getDate() - 7);
-        matchesPeriod = examDate >= sevenDaysAgo;
-      } else if (period === '30d') {
-        const thirtyDaysAgo = new Date();
-        thirtyDaysAgo.setDate(today.getDate() - 30);
-        matchesPeriod = examDate >= thirtyDaysAgo;
-      } else if (period === 'este-mes') {
-        matchesPeriod = examDate.getMonth() === today.getMonth() && examDate.getFullYear() === today.getFullYear();
-      } else if (period === 'custom' && dateFrom && dateTo) {
-        matchesPeriod = examDate >= dateFrom && examDate <= dateTo;
+      if (!examDate) {
+        matchesPeriod = period === 'todos';
+      } else {
+        const examDay = startOfDay(examDate);
+        const today = startOfDay(new Date());
+
+        if (period === 'hoje') {
+          matchesPeriod = examDay.getTime() === today.getTime();
+        } else if (period === '7d') {
+          const from = new Date(today);
+          from.setDate(from.getDate() - 6);
+          matchesPeriod = examDay >= from && examDay <= today;
+        } else if (period === '30d') {
+          const from = new Date(today);
+          from.setDate(from.getDate() - 29);
+          matchesPeriod = examDay >= from && examDay <= today;
+        } else if (period === 'este-mes') {
+          matchesPeriod = examDay.getMonth() === today.getMonth() && examDay.getFullYear() === today.getFullYear();
+        } else if (period === 'custom' && (dateFrom || dateTo)) {
+          const from = dateFrom ? startOfDay(dateFrom) : null;
+          const to = dateTo ? startOfDay(dateTo) : null;
+          matchesPeriod = (!from || examDay >= from) && (!to || examDay <= to);
+        }
       }
+
 
       return matchesSearch && matchesProtocol && matchesWorkbench && matchesOrigin && matchesPeriod;
     });
