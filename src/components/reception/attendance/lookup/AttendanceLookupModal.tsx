@@ -192,8 +192,11 @@ export function AttendanceLookupModal({ open, onClose, unitName, guicheName, onA
       if (term) {
         const haystack = [
           o.orderNumber,
+          o.hash,
           p?.cpf,
           p?.motherName,
+          // Códigos e hashes alfanuméricos das etiquetas de amostra (ex.: N2RQ87134)
+          ...sampleCodesAndHashesForOrder(o, companySequenceId),
         ].filter(Boolean).map(v => normalize(String(v))).join(' ')
         if (!haystack.includes(term)) return false
       }
