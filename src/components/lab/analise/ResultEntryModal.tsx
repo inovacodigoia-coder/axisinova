@@ -1089,7 +1089,33 @@ export function ResultEntryModal({
           </p>
         </div>
 
-        <div className="flex items-center gap-6">
+        <div className="flex items-center gap-4">
+          {/* Modo de digitação */}
+          <div className="flex items-center rounded-lg border border-border bg-muted/40 p-0.5">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setEntryMode('todos')}
+              className={cn(
+                "h-8 px-3 rounded-md text-[10px] font-black uppercase tracking-wider",
+                entryMode === 'todos' ? "bg-card text-primary shadow-sm" : "text-muted-foreground hover:text-foreground"
+              )}
+            >
+              Todos
+            </Button>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => { setEntryMode('unico'); setCurrentIndex(0); }}
+              className={cn(
+                "h-8 px-3 rounded-md text-[10px] font-black uppercase tracking-wider",
+                entryMode === 'unico' ? "bg-card text-primary shadow-sm" : "text-muted-foreground hover:text-foreground"
+              )}
+            >
+              1 por vez
+            </Button>
+          </div>
+
           {/* Alternar visualização */}
           <div className="flex items-center rounded-lg border border-border bg-muted/40 p-0.5">
             <Button
@@ -1122,6 +1148,31 @@ export function ResultEntryModal({
             </Button>
           </div>
 
+          {/* Atualizar / Filtros */}
+          <div className="flex items-center gap-1">
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={handleRefreshData}
+              disabled={!refreshData || refreshing}
+              title="Atualizar informações dos pedidos"
+              aria-label="Atualizar informações dos pedidos"
+              className="h-9 w-9 rounded-lg hover:bg-primary/10 hover:text-primary"
+            >
+              <RefreshCw className={cn("h-4 w-4", refreshing && "animate-spin")} />
+            </Button>
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => setFiltersOpen(true)}
+              title="Alterar filtros"
+              aria-label="Alterar filtros"
+              className="h-9 w-9 rounded-lg hover:bg-primary/10 hover:text-primary"
+            >
+              <Settings className="h-4 w-4" />
+            </Button>
+          </div>
+
           <div className="text-right">
             <p className="text-[10px] font-black text-muted-foreground uppercase tracking-widest">Contador</p>
             <p className="text-sm font-black uppercase">
@@ -1133,6 +1184,7 @@ export function ResultEntryModal({
             <X className="h-6 w-6" />
           </Button>
         </div>
+
       </header>
 
       {/* Conteúdo */}
