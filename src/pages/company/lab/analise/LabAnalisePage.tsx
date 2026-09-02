@@ -557,11 +557,15 @@ export default function LabAnalisePage() {
                     <Card className="flex-1 flex flex-col overflow-hidden shadow-sm border-border rounded-2xl">
                       <div className="px-3 pt-3 flex flex-wrap items-center gap-2">
                         <Badge variant="secondary" className="text-[10px] font-black uppercase bg-primary/10 text-primary border-none">
+                          {new Set(filteredExams.map((e: any) => e.orderId)).size} Pedidos
+                        </Badge>
+                        <Badge variant="secondary" className="text-[10px] font-black uppercase bg-primary/10 text-primary border-none">
                           {new Set(filteredExams.map((e: any) => e.patientId || e.patientName)).size} Pacientes
                         </Badge>
                         <Badge variant="secondary" className="text-[10px] font-black uppercase bg-slate-100 text-slate-700 border-none">
                           {filteredExams.length} Exames
                         </Badge>
+
                         {selectedProtocols.length > 0 && (
                           <Badge variant="outline" className="text-[10px] font-black uppercase border-primary/30 text-primary">
                             {selectedProtocols.length} Pedidos marcados
