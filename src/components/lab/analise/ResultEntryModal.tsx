@@ -113,8 +113,8 @@ export function ResultEntryModal({
   const [laudoLoading, setLaudoLoading] = useState(false);
 
   const [viewMode, setViewMode] = useState<'grid' | 'list'>(() => {
-    if (typeof window === 'undefined') return 'grid';
-    return (sessionStorage.getItem('lab_result_view_mode') as 'grid' | 'list') || 'grid';
+    if (typeof window === 'undefined') return 'list';
+    return (sessionStorage.getItem('lab_result_view_mode') as 'grid' | 'list') || 'list';
   });
 
   const changeViewMode = (mode: 'grid' | 'list') => {
@@ -122,7 +122,15 @@ export function ResultEntryModal({
     try { sessionStorage.setItem('lab_result_view_mode', mode); } catch { /* ignore */ }
   };
 
+  // Modo de digitação: todos os pacientes ou um paciente por vez
+  const [entryMode, setEntryMode] = useState<'todos' | 'unico'>('todos');
+  const [currentIndex, setCurrentIndex] = useState(0);
+  const [actionMode, setActionMode] = useState<'ambos' | 'digitar' | 'liberar'>('ambos');
+  const [refreshing, setRefreshing] = useState(false);
+  const [filtersOpen, setFiltersOpen] = useState(false);
+
   const [expandedPatients, setExpandedPatients] = useState<Record<string, boolean>>({});
+
 
   /** Campos editáveis: digitação normal ou correção liberada pela permissão */
   const isExamEditable = (examId: string) => {
