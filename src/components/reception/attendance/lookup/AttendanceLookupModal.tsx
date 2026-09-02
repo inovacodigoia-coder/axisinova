@@ -175,10 +175,12 @@ export function AttendanceLookupModal({ open, onClose, unitName, guicheName, onA
 
   const filtered = useMemo(() => {
     const term = normalize(search.trim())
+    const termDigits = search.replace(/\D/g, '')
     const pTerm = normalize(patientSearch.trim())
-    
+
     return orders.filter(o => {
-      if (dateRange) {
+      // Quando há busca por atendimento/amostra/integração/CPF, o período é ignorado
+      if (dateRange && !term) {
         const d = new Date(o.registeredAt)
         if (d < dateRange.from || d > dateRange.to) return false
       }
@@ -190,15 +192,18 @@ export function AttendanceLookupModal({ open, onClose, unitName, guicheName, onA
       if (statusFilter !== 'all' && o.status !== statusFilter) return false
 
       if (term) {
-        const haystack = [
+        const values = [
           o.orderNumber,
           o.hash,
           p?.cpf,
           p?.motherName,
           // Códigos e hashes alfanuméricos das etiquetas de amostra (ex.: N2RQ87134)
           ...sampleCodesAndHashesForOrder(o, companySequenceId),
-        ].filter(Boolean).map(v => normalize(String(v))).join(' ')
-        if (!haystack.includes(term)) return false
+        ].filter(Boolean).map(v => String(v))
+        const haystack = values.map(v => normalize(v)).join(' ')
+        const digitsHay = values.map(v => v.replace(/\D/g, '')).filter(Boolean).join(' ')
+        const matches = haystack.includes(term) || (termDigits.length >= 3 && digitsHay.includes(termDigits))
+        if (!matches) return false
       }
 
       if (pTerm) {
@@ -209,6 +214,7 @@ export function AttendanceLookupModal({ open, onClose, unitName, guicheName, onA
       return true
     }).sort((a, b) => b.registeredAt.localeCompare(a.registeredAt))
   }, [orders, patientById, search, patientSearch, statusFilter, isAdmin, dateRange, companySequenceId])
+
 
   useEffect(() => { setVisibleCount(pageSize) }, [pageSize, datePreset, customFrom, customTo, statusFilter, search, patientSearch])
 
@@ -259,7 +265,7 @@ export function AttendanceLookupModal({ open, onClose, unitName, guicheName, onA
                   autoFocus
                   value={search}
                   onChange={e => setSearch(e.target.value)}
-                  placeholder="Buscar por protocolo, CPF ou nome da mãe..."
+                  placeholder="Pedido, amostra, CPF (com ou sem pontos) ou nome da mãe..."
                   className="w-full rounded-lg border border-input bg-background pl-3 pr-10 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
                 />
                 <Search className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
