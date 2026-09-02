@@ -707,7 +707,7 @@ export default function LabAnalisePage() {
       <ResultEntryModal 
         isOpen={isResultModalOpen}
         onClose={() => setIsResultModalOpen(false)}
-        filteredExams={filteredExams}
+        filteredExams={examsForEntry}
         filters={{
           period,
           workbenches: selectedWorkbenches,
