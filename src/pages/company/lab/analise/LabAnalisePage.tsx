@@ -43,6 +43,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Calendar } from '@/components/ui/calendar';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -110,6 +111,7 @@ export default function LabAnalisePage() {
   const [selectedEstablishments, setSelectedEstablishments] = useState<string[]>([]);
   const [selectedStatuses, setSelectedStatuses] = useState<string[]>([]);
   const [showFilters, setShowFilters] = useState(false);
+  const [quickFiltersOpen, setQuickFiltersOpen] = useState(false);
 
   useEffect(() => {
     const timer = setTimeout(() => setLoading(false), 800);

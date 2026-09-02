@@ -95,8 +95,9 @@ export function ResultEntryModal({
   filters,
   workbenchNames,
   establishmentNames,
-  refreshData
-}: ResultEntryModalProps & { refreshData?: () => void }) {
+  refreshData,
+  onOpenFilters
+}: ResultEntryModalProps & { refreshData?: () => void; onOpenFilters?: () => void }) {
   const { user } = useAuth();
   const { canType, canRelease, canCorrect } = useResultEntryPermissions();
   const [correctionUnlocked, setCorrectionUnlocked] = useState<Record<string, boolean>>({});
@@ -130,7 +131,6 @@ export function ResultEntryModal({
   const [currentIndex, setCurrentIndex] = useState(0);
   const [actionMode, setActionMode] = useState<'ambos' | 'digitar' | 'liberar'>('ambos');
   const [refreshing, setRefreshing] = useState(false);
-  const [filtersOpen, setFiltersOpen] = useState(false);
 
   const [expandedPatients, setExpandedPatients] = useState<Record<string, boolean>>({});
 
@@ -1167,7 +1167,7 @@ export function ResultEntryModal({
             <Button
               variant="ghost"
               size="icon"
-              onClick={() => setFiltersOpen(true)}
+              onClick={() => onOpenFilters?.()}
               title="Alterar filtros"
               aria-label="Alterar filtros"
               className="h-9 w-9 rounded-lg hover:bg-primary/10 hover:text-primary"
