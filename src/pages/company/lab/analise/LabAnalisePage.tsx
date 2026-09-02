@@ -264,6 +264,18 @@ export default function LabAnalisePage() {
     setSelectedExamId(examId);
   };
 
+  const toggleProtocolSelection = (protocol: string) => {
+    setSelectedProtocols(prev =>
+      prev.includes(protocol) ? prev.filter(p => p !== protocol) : [...prev, protocol]
+    );
+  };
+
+  // Exames enviados para a digitação: apenas os pedidos marcados; se nenhum, todos os listados
+  const examsForEntry = useMemo(() => {
+    if (selectedProtocols.length === 0) return filteredExams;
+    return filteredExams.filter(e => selectedProtocols.includes(e.protocol));
+  }, [filteredExams, selectedProtocols]);
+
   const toggleGroup = (protocol: string) => {
     setExpandedGroups(prev => ({
       ...prev,
