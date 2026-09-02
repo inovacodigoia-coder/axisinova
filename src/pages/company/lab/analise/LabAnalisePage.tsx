@@ -557,6 +557,19 @@ export default function LabAnalisePage() {
                   {/* Painel Principal (Direita) — Lista de Exames */}
                   <div className="flex-1 flex flex-col gap-4 overflow-hidden">
                     <Card className="flex-1 flex flex-col overflow-hidden shadow-sm border-border rounded-2xl">
+                      <div className="px-3 pt-3 flex flex-wrap items-center gap-2">
+                        <Badge variant="secondary" className="text-[10px] font-black uppercase bg-primary/10 text-primary border-none">
+                          {new Set(filteredExams.map((e: any) => e.patientId || e.patientName)).size} Pacientes
+                        </Badge>
+                        <Badge variant="secondary" className="text-[10px] font-black uppercase bg-slate-100 text-slate-700 border-none">
+                          {filteredExams.length} Exames
+                        </Badge>
+                        {selectedProtocols.length > 0 && (
+                          <Badge variant="outline" className="text-[10px] font-black uppercase border-primary/30 text-primary">
+                            {selectedProtocols.length} Pedidos marcados
+                          </Badge>
+                        )}
+                      </div>
                       <div className="p-3 border-b flex items-center justify-between gap-2">
                         <div className="relative flex-1">
                           <Search className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
