@@ -57,6 +57,24 @@ function parseLocalDate(value?: string | Date | null): Date | null {
   return isNaN(d.getTime()) ? null : d;
 }
 
+/** Converte data no formato brasileiro DD/MM/AAAA para Date no fuso local. */
+function parseBrazilianDate(value?: string | null): Date | null {
+  if (!value) return null;
+  const m = /^(\d{2})\/(\d{2})\/(\d{4})$/.exec(value.trim());
+  if (!m) return null;
+  const day = Number(m[1]);
+  const month = Number(m[2]);
+  const year = Number(m[3]);
+  if (month < 1 || month > 12 || day < 1 || day > 31) return null;
+  const d = new Date(year, month - 1, day);
+  return d.getMonth() === month - 1 && d.getDate() === day ? d : null;
+}
+
+function formatBrazilianDate(d?: Date | null): string {
+  if (!d || isNaN(d.getTime())) return '';
+  return d.toLocaleDateString('pt-BR');
+}
+
 function startOfDay(d: Date): Date {
   return new Date(d.getFullYear(), d.getMonth(), d.getDate());
 }
@@ -89,6 +107,8 @@ export default function LabAnalisePage() {
   const [period, setPeriod] = useState('hoje');
   const [dateFrom, setDateFrom] = useState<Date | undefined>(undefined);
   const [dateTo, setDateTo] = useState<Date | undefined>(undefined);
+  const [dateFromInput, setDateFromInput] = useState('');
+  const [dateToInput, setDateToInput] = useState('');
   const [selectedWorkbenches, setSelectedWorkbenches] = useState<string[]>([]);
   const [selectedEstablishments, setSelectedEstablishments] = useState<string[]>([]);
   const [selectedStatuses, setSelectedStatuses] = useState<string[]>([]);
@@ -98,6 +118,14 @@ export default function LabAnalisePage() {
     const timer = setTimeout(() => setLoading(false), 800);
     return () => clearTimeout(timer);
   }, []);
+
+  useEffect(() => {
+    setDateFromInput(formatBrazilianDate(dateFrom));
+  }, [dateFrom]);
+
+  useEffect(() => {
+    setDateToInput(formatBrazilianDate(dateTo));
+  }, [dateTo]);
 
   // Filtragem de exames (Coleta Realizada)
   const filteredExams = useMemo(() => {
@@ -162,9 +190,8 @@ export default function LabAnalisePage() {
       const matchesOrigin = selectedEstablishments.length === 0 || 
                              selectedEstablishments.includes(exam.originId || '');
 
-      // Filtro de Período baseado na data de coleta (ou registro como fallback)
-      const dateToCompare = exam.collectionDate || exam.registeredAt;
-      const examDate = parseLocalDate(dateToCompare);
+      // Filtro de Período baseado na data de atendimento (registeredAt)
+      const examDate = parseLocalDate(exam.registeredAt);
 
       let matchesPeriod = true;
       if (!examDate) {
@@ -185,6 +212,11 @@ export default function LabAnalisePage() {
           matchesPeriod = examDay >= from && examDay <= today;
         } else if (period === 'este-mes') {
           matchesPeriod = examDay.getMonth() === today.getMonth() && examDay.getFullYear() === today.getFullYear();
+        } else if (period === 'mes-passado') {
+          const firstDayThisMonth = new Date(today.getFullYear(), today.getMonth(), 1);
+          const lastDayPrevMonth = new Date(firstDayThisMonth.getTime() - 1);
+          const firstDayPrevMonth = new Date(lastDayPrevMonth.getFullYear(), lastDayPrevMonth.getMonth(), 1);
+          matchesPeriod = examDay >= firstDayPrevMonth && examDay <= lastDayPrevMonth;
         } else if (period === 'custom' && (dateFrom || dateTo)) {
           const from = dateFrom ? startOfDay(dateFrom) : null;
           const to = dateTo ? startOfDay(dateTo) : null;
@@ -231,6 +263,8 @@ export default function LabAnalisePage() {
     setPeriod('hoje');
     setDateFrom(undefined);
     setDateTo(undefined);
+    setDateFromInput('');
+    setDateToInput('');
     setSelectedWorkbenches([]);
     setSelectedEstablishments([]);
     setSelectedStatuses([]);
@@ -306,41 +340,85 @@ export default function LabAnalisePage() {
                         {/* Período */}
                         <div className="col-span-2 space-y-1.5">
                           <label className="text-[10px] font-bold uppercase text-muted-foreground ml-1">Período</label>
-                          <div className="flex gap-2">
-                            <select 
-                              className="flex-1 h-9 rounded-lg border border-input bg-background px-3 text-xs font-medium outline-none focus:ring-2 focus:ring-primary/20"
-                              value={period}
-                              onChange={(e) => setPeriod(e.target.value)}
-                            >
-                              <option value="hoje">Hoje</option>
-                              <option value="7d">Últimos 7 dias</option>
-                              <option value="30d">Últimos 30 dias</option>
-                              <option value="este-mes">Este mês</option>
-                              <option value="mes-passado">Mês passado</option>
-                              <option value="custom">Período</option>
-                            </select>
-                            {period === 'custom' && (
-                              <div className="flex gap-1 items-center">
-                                <Popover>
-                                  <PopoverTrigger asChild>
-                                    <Button variant="outline" size="sm" className="h-9 w-9 p-0"><CalendarIcon className="h-4 w-4" /></Button>
-                                  </PopoverTrigger>
-                                  <PopoverContent className="w-auto p-0" align="end">
-                                    <Calendar mode="single" selected={dateFrom} onSelect={setDateFrom} initialFocus />
-                                  </PopoverContent>
-                                </Popover>
-                                <span className="text-muted-foreground">/</span>
-                                <Popover>
-                                  <PopoverTrigger asChild>
-                                    <Button variant="outline" size="sm" className="h-9 w-9 p-0"><CalendarIcon className="h-4 w-4" /></Button>
-                                  </PopoverTrigger>
-                                  <PopoverContent className="w-auto p-0" align="end">
-                                    <Calendar mode="single" selected={dateTo} onSelect={setDateTo} initialFocus />
-                                  </PopoverContent>
-                                </Popover>
+                          <select 
+                            className="w-full h-9 rounded-lg border border-input bg-background px-3 text-xs font-medium outline-none focus:ring-2 focus:ring-primary/20"
+                            value={period}
+                            onChange={(e) => {
+                              const value = e.target.value;
+                              setPeriod(value);
+                              if (value !== 'custom') {
+                                setDateFrom(undefined);
+                                setDateTo(undefined);
+                                setDateFromInput('');
+                                setDateToInput('');
+                              }
+                            }}
+                          >
+                            <option value="hoje">Hoje</option>
+                            <option value="7d">Últimos 7 dias</option>
+                            <option value="30d">Últimos 30 dias</option>
+                            <option value="este-mes">Este mês</option>
+                            <option value="mes-passado">Mês passado</option>
+                            <option value="custom">Período</option>
+                          </select>
+                          {period === 'custom' && (
+                            <div className="grid grid-cols-2 gap-2 pt-1">
+                              <div className="space-y-1">
+                                <label className="text-[9px] font-bold uppercase text-muted-foreground ml-1">Data início</label>
+                                <div className="relative">
+                                  <input
+                                    type="text"
+                                    inputMode="numeric"
+                                    placeholder="DD/MM/AAAA"
+                                    className="w-full h-9 rounded-lg border border-input bg-background pl-3 pr-9 text-xs font-medium outline-none focus:ring-2 focus:ring-primary/20"
+                                    value={dateFromInput}
+                                    onChange={(e) => {
+                                      setDateFromInput(e.target.value);
+                                      const parsed = parseBrazilianDate(e.target.value);
+                                      setDateFrom(parsed || undefined);
+                                    }}
+                                  />
+                                  <Popover>
+                                    <PopoverTrigger asChild>
+                                      <Button variant="ghost" size="icon" className="absolute right-0 top-0 h-9 w-9 rounded-l-none">
+                                        <CalendarIcon className="h-3.5 w-3.5 text-muted-foreground" />
+                                      </Button>
+                                    </PopoverTrigger>
+                                    <PopoverContent className="w-auto p-0" align="end">
+                                      <Calendar mode="single" selected={dateFrom} onSelect={setDateFrom} initialFocus />
+                                    </PopoverContent>
+                                  </Popover>
+                                </div>
                               </div>
-                            )}
-                          </div>
+                              <div className="space-y-1">
+                                <label className="text-[9px] font-bold uppercase text-muted-foreground ml-1">Data final</label>
+                                <div className="relative">
+                                  <input
+                                    type="text"
+                                    inputMode="numeric"
+                                    placeholder="DD/MM/AAAA"
+                                    className="w-full h-9 rounded-lg border border-input bg-background pl-3 pr-9 text-xs font-medium outline-none focus:ring-2 focus:ring-primary/20"
+                                    value={dateToInput}
+                                    onChange={(e) => {
+                                      setDateToInput(e.target.value);
+                                      const parsed = parseBrazilianDate(e.target.value);
+                                      setDateTo(parsed || undefined);
+                                    }}
+                                  />
+                                  <Popover>
+                                    <PopoverTrigger asChild>
+                                      <Button variant="ghost" size="icon" className="absolute right-0 top-0 h-9 w-9 rounded-l-none">
+                                        <CalendarIcon className="h-3.5 w-3.5 text-muted-foreground" />
+                                      </Button>
+                                    </PopoverTrigger>
+                                    <PopoverContent className="w-auto p-0" align="end">
+                                      <Calendar mode="single" selected={dateTo} onSelect={setDateTo} initialFocus />
+                                    </PopoverContent>
+                                  </Popover>
+                                </div>
+                              </div>
+                            </div>
+                          )}
                         </div>
 
                         {/* Bancada */}
