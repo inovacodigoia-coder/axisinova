@@ -1006,7 +1006,11 @@ export function ResultEntryModal({
     if (index < 0 || index > groupedPatients.length - 1) return;
     setCurrentIndex(index);
     try { document.getElementById('result-entry-scroll')?.scrollTo({ top: 0, behavior: 'smooth' }); } catch { /* ignore */ }
+    // No modo "1 por vez", sincroniza com o banco ao trocar de paciente
+    // para refletir digitações/liberações feitas por outro bioquímico.
+    if (entryMode === 'unico') { void handleRefreshData(); }
   };
+
 
   const handleRefreshData = async () => {
     if (!refreshData) return;
