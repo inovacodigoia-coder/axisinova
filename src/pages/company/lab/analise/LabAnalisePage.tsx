@@ -435,8 +435,9 @@ export default function LabAnalisePage() {
                                     className="w-full h-9 rounded-lg border border-input bg-background pl-3 pr-9 text-xs font-medium outline-none focus:ring-2 focus:ring-primary/20"
                                     value={dateToInput}
                                     onChange={(e) => {
-                                      setDateToInput(e.target.value);
-                                      const parsed = parseBrazilianDate(e.target.value);
+                                      const masked = maskBrazilianDate(e.target.value);
+                                      setDateToInput(masked);
+                                      const parsed = parseBrazilianDate(masked);
                                       setDateTo(parsed || undefined);
                                     }}
                                   />
