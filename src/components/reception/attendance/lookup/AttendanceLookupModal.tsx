@@ -139,6 +139,7 @@ export function AttendanceLookupModal({ open, onClose, unitName, guicheName, onA
   const { orders, updateOrder, loading } = useAttendanceCadastro()
   const { patients, loading: patientsLoading } = usePatients()
   const { settings } = useLabSettings()
+  const companySequenceId = useCompanySequenceId()
   const [search, setSearch] = useState('')
   const [patientSearch, setPatientSearch] = useState('')
   const [statusFilter, setStatusFilter] = useState<string>('all')
