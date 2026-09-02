@@ -98,6 +98,7 @@ export default function LabAnalisePage() {
   const [selectedExamId, setSelectedExamId] = useState<string | null>(null);
   const [isResultModalOpen, setIsResultModalOpen] = useState(false);
   const [expandedGroups, setExpandedGroups] = useState<Record<string, boolean>>({});
+  const [selectedProtocols, setSelectedProtocols] = useState<string[]>([]);
   
   // Filtros
   const [period, setPeriod] = useState('hoje');
