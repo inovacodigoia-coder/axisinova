@@ -150,11 +150,14 @@ export function AttendanceDetailsModal({ open, onClose, onOrderDeleted, order, p
       .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
       .toLowerCase().trim();
     if (!m) return 'gel';
-    if (m.includes('urina') || m.includes('frasco')) return 'urina';
+    if (m.includes('fezes') || m.includes('fecal')) return 'fezes';
+    if (m.includes('escarro') || m.includes('secrec') || m.includes('swab') || m.includes('saliva')) return 'escarro';
+    if (m.includes('urina')) return 'urina';
     if (m.includes('edta') || m.includes('sangue total') || m.includes('hemograma')) return 'edta';
     if (m.includes('citrat') || m.includes('coagulacao')) return 'citrato';
     if (m.includes('plasma')) return 'citrato';
     if (m.includes('soro') || m.includes('gel') || m.includes('sangue')) return 'gel';
+    if (m.includes('frasco')) return 'urina';
     return 'gel';
   };
 
