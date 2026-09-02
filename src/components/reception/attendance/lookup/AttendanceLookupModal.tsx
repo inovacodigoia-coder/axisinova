@@ -175,10 +175,12 @@ export function AttendanceLookupModal({ open, onClose, unitName, guicheName, onA
 
   const filtered = useMemo(() => {
     const term = normalize(search.trim())
+    const termDigits = search.replace(/\D/g, '')
     const pTerm = normalize(patientSearch.trim())
-    
+
     return orders.filter(o => {
-      if (dateRange) {
+      // Quando há busca por atendimento/amostra/integração/CPF, o período é ignorado
+      if (dateRange && !term) {
         const d = new Date(o.registeredAt)
         if (d < dateRange.from || d > dateRange.to) return false
       }
@@ -190,15 +192,18 @@ export function AttendanceLookupModal({ open, onClose, unitName, guicheName, onA
       if (statusFilter !== 'all' && o.status !== statusFilter) return false
 
       if (term) {
-        const haystack = [
+        const values = [
           o.orderNumber,
           o.hash,
           p?.cpf,
           p?.motherName,
           // Códigos e hashes alfanuméricos das etiquetas de amostra (ex.: N2RQ87134)
           ...sampleCodesAndHashesForOrder(o, companySequenceId),
-        ].filter(Boolean).map(v => normalize(String(v))).join(' ')
-        if (!haystack.includes(term)) return false
+        ].filter(Boolean).map(v => String(v))
+        const haystack = values.map(v => normalize(v)).join(' ')
+        const digitsHay = values.map(v => v.replace(/\D/g, '')).filter(Boolean).join(' ')
+        const matches = haystack.includes(term) || (termDigits.length >= 3 && digitsHay.includes(termDigits))
+        if (!matches) return false
       }
 
       if (pTerm) {
@@ -209,6 +214,7 @@ export function AttendanceLookupModal({ open, onClose, unitName, guicheName, onA
       return true
     }).sort((a, b) => b.registeredAt.localeCompare(a.registeredAt))
   }, [orders, patientById, search, patientSearch, statusFilter, isAdmin, dateRange, companySequenceId])
+
 
   useEffect(() => { setVisibleCount(pageSize) }, [pageSize, datePreset, customFrom, customTo, statusFilter, search, patientSearch])
 
