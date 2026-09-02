@@ -263,6 +263,8 @@ export default function LabAnalisePage() {
     setPeriod('hoje');
     setDateFrom(undefined);
     setDateTo(undefined);
+    setDateFromInput('');
+    setDateToInput('');
     setSelectedWorkbenches([]);
     setSelectedEstablishments([]);
     setSelectedStatuses([]);
