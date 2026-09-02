@@ -340,41 +340,85 @@ export default function LabAnalisePage() {
                         {/* Período */}
                         <div className="col-span-2 space-y-1.5">
                           <label className="text-[10px] font-bold uppercase text-muted-foreground ml-1">Período</label>
-                          <div className="flex gap-2">
-                            <select 
-                              className="flex-1 h-9 rounded-lg border border-input bg-background px-3 text-xs font-medium outline-none focus:ring-2 focus:ring-primary/20"
-                              value={period}
-                              onChange={(e) => setPeriod(e.target.value)}
-                            >
-                              <option value="hoje">Hoje</option>
-                              <option value="7d">Últimos 7 dias</option>
-                              <option value="30d">Últimos 30 dias</option>
-                              <option value="este-mes">Este mês</option>
-                              <option value="mes-passado">Mês passado</option>
-                              <option value="custom">Período</option>
-                            </select>
-                            {period === 'custom' && (
-                              <div className="flex gap-1 items-center">
-                                <Popover>
-                                  <PopoverTrigger asChild>
-                                    <Button variant="outline" size="sm" className="h-9 w-9 p-0"><CalendarIcon className="h-4 w-4" /></Button>
-                                  </PopoverTrigger>
-                                  <PopoverContent className="w-auto p-0" align="end">
-                                    <Calendar mode="single" selected={dateFrom} onSelect={setDateFrom} initialFocus />
-                                  </PopoverContent>
-                                </Popover>
-                                <span className="text-muted-foreground">/</span>
-                                <Popover>
-                                  <PopoverTrigger asChild>
-                                    <Button variant="outline" size="sm" className="h-9 w-9 p-0"><CalendarIcon className="h-4 w-4" /></Button>
-                                  </PopoverTrigger>
-                                  <PopoverContent className="w-auto p-0" align="end">
-                                    <Calendar mode="single" selected={dateTo} onSelect={setDateTo} initialFocus />
-                                  </PopoverContent>
-                                </Popover>
+                          <select 
+                            className="w-full h-9 rounded-lg border border-input bg-background px-3 text-xs font-medium outline-none focus:ring-2 focus:ring-primary/20"
+                            value={period}
+                            onChange={(e) => {
+                              const value = e.target.value;
+                              setPeriod(value);
+                              if (value !== 'custom') {
+                                setDateFrom(undefined);
+                                setDateTo(undefined);
+                                setDateFromInput('');
+                                setDateToInput('');
+                              }
+                            }}
+                          >
+                            <option value="hoje">Hoje</option>
+                            <option value="7d">Últimos 7 dias</option>
+                            <option value="30d">Últimos 30 dias</option>
+                            <option value="este-mes">Este mês</option>
+                            <option value="mes-passado">Mês passado</option>
+                            <option value="custom">Período</option>
+                          </select>
+                          {period === 'custom' && (
+                            <div className="grid grid-cols-2 gap-2 pt-1">
+                              <div className="space-y-1">
+                                <label className="text-[9px] font-bold uppercase text-muted-foreground ml-1">Data início</label>
+                                <div className="relative">
+                                  <input
+                                    type="text"
+                                    inputMode="numeric"
+                                    placeholder="DD/MM/AAAA"
+                                    className="w-full h-9 rounded-lg border border-input bg-background pl-3 pr-9 text-xs font-medium outline-none focus:ring-2 focus:ring-primary/20"
+                                    value={dateFromInput}
+                                    onChange={(e) => {
+                                      setDateFromInput(e.target.value);
+                                      const parsed = parseBrazilianDate(e.target.value);
+                                      setDateFrom(parsed || undefined);
+                                    }}
+                                  />
+                                  <Popover>
+                                    <PopoverTrigger asChild>
+                                      <Button variant="ghost" size="icon" className="absolute right-0 top-0 h-9 w-9 rounded-l-none">
+                                        <CalendarIcon className="h-3.5 w-3.5 text-muted-foreground" />
+                                      </Button>
+                                    </PopoverTrigger>
+                                    <PopoverContent className="w-auto p-0" align="end">
+                                      <Calendar mode="single" selected={dateFrom} onSelect={setDateFrom} initialFocus />
+                                    </PopoverContent>
+                                  </Popover>
+                                </div>
                               </div>
-                            )}
-                          </div>
+                              <div className="space-y-1">
+                                <label className="text-[9px] font-bold uppercase text-muted-foreground ml-1">Data final</label>
+                                <div className="relative">
+                                  <input
+                                    type="text"
+                                    inputMode="numeric"
+                                    placeholder="DD/MM/AAAA"
+                                    className="w-full h-9 rounded-lg border border-input bg-background pl-3 pr-9 text-xs font-medium outline-none focus:ring-2 focus:ring-primary/20"
+                                    value={dateToInput}
+                                    onChange={(e) => {
+                                      setDateToInput(e.target.value);
+                                      const parsed = parseBrazilianDate(e.target.value);
+                                      setDateTo(parsed || undefined);
+                                    }}
+                                  />
+                                  <Popover>
+                                    <PopoverTrigger asChild>
+                                      <Button variant="ghost" size="icon" className="absolute right-0 top-0 h-9 w-9 rounded-l-none">
+                                        <CalendarIcon className="h-3.5 w-3.5 text-muted-foreground" />
+                                      </Button>
+                                    </PopoverTrigger>
+                                    <PopoverContent className="w-auto p-0" align="end">
+                                      <Calendar mode="single" selected={dateTo} onSelect={setDateTo} initialFocus />
+                                    </PopoverContent>
+                                  </Popover>
+                                </div>
+                              </div>
+                            </div>
+                          )}
                         </div>
 
                         {/* Bancada */}
