@@ -539,8 +539,11 @@ export default function LabAnalisePage() {
                       </div>
                     </Card>
 
-                    {/* Lista Lateral */}
-                    <Card className="flex-1 flex flex-col overflow-hidden shadow-sm border-border">
+                  </div>
+
+                  {/* Painel Principal (Direita) — Lista de Exames */}
+                  <div className="flex-1 flex flex-col gap-4 overflow-hidden">
+                    <Card className="flex-1 flex flex-col overflow-hidden shadow-sm border-border rounded-2xl">
                       <div className="p-3 border-b flex items-center justify-between gap-2">
                         <div className="relative flex-1">
                           <Search className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
@@ -574,7 +577,7 @@ export default function LabAnalisePage() {
                               </div>
                             ))
                           ) : groupedExams.length === 0 ? (
-                            <div className="flex flex-col items-center justify-center py-10 text-center">
+                            <div className="flex flex-col items-center justify-center h-full min-h-[300px] text-center">
                               <Beaker className="h-12 w-12 text-muted-foreground/30 mb-4" />
                               <h3 className="text-sm font-bold">Nenhum exame pendente</h3>
                               <p className="text-xs text-muted-foreground mt-1">Verifique os filtros ou aguarde novas coletas.</p>
@@ -648,24 +651,6 @@ export default function LabAnalisePage() {
                           )}
                         </div>
                       </ScrollArea>
-                    </Card>
-                  </div>
-
-                  {/* Painel de Detalhes (Direita) */}
-                  <div className="flex-1 flex flex-col gap-4 overflow-hidden">
-                    <Card className="flex-1 flex flex-col items-center justify-center bg-muted/20 rounded-2xl border-2 border-dashed border-border p-12 text-center opacity-60">
-                      <div className="h-20 w-20 rounded-full bg-background/50 flex items-center justify-center mb-6 shadow-inner">
-                        <Beaker className="h-10 w-10 text-muted-foreground/40" />
-                      </div>
-                      <h3 className="text-xl font-black uppercase tracking-tight">Selecione um exame</h3>
-                      <p className="text-sm text-muted-foreground max-w-sm mt-2">Escolha um registro na fila lateral para iniciar o trabalho técnico de digitação e conferência de resultados.</p>
-                      
-                      <div className="mt-8 flex gap-3">
-                        <div className="flex flex-col items-center gap-1">
-                          <div className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
-                          <span className="text-[10px] font-black text-muted-foreground uppercase tracking-widest">Painel Conectado</span>
-                        </div>
-                      </div>
                     </Card>
                   </div>
                 </div>
