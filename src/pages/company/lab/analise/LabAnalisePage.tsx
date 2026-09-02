@@ -604,8 +604,13 @@ export default function LabAnalisePage() {
                                           <Layout className="h-3.5 w-3.5" />
                                         )}
                                       </Button>
-                                      <input type="checkbox" className="rounded border-gray-300 h-3 w-3" />
-                                      <span className="text-[10px] font-black font-mono text-muted-foreground">Protocolo {group.protocol}</span>
+                                      <input
+                                        type="checkbox"
+                                        className="rounded border-gray-300 h-3 w-3"
+                                        checked={selectedProtocols.includes(group.protocol)}
+                                        onChange={() => toggleProtocolSelection(group.protocol)}
+                                      />
+                                      <span className="text-[10px] font-black font-mono text-muted-foreground">Pedido {group.protocol}</span>
                                     </div>
                                     <span className="flex items-center gap-1 text-[10px] text-muted-foreground font-bold">
                                       <Clock className="h-3 w-3" /> 10m
