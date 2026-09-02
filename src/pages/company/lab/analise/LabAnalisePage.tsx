@@ -720,12 +720,125 @@ export default function LabAnalisePage() {
         }}
         workbenchNames={workbenches.reduce((acc, wb) => ({ ...acc, [wb.id]: wb.name }), {})}
         establishmentNames={establishments.reduce((acc, est) => ({ ...acc, [est.id]: est.name }), {})}
+        onOpenFilters={() => setQuickFiltersOpen(true)}
         refreshData={() => {
           setLoading(true);
           refreshOrders().finally(() => setLoading(false));
           toast.success('Informações atualizadas');
         }}
       />
+
+      {/* Filtros rápidos (acessível de dentro da digitação) */}
+      <Dialog open={quickFiltersOpen} onOpenChange={setQuickFiltersOpen}>
+        <DialogContent className="sm:max-w-[460px] z-[160]">
+          <DialogHeader>
+            <DialogTitle className="text-base font-black uppercase tracking-tight">Filtros</DialogTitle>
+          </DialogHeader>
+
+          <div className="space-y-4">
+            <div className="space-y-1.5">
+              <label className="text-[10px] font-bold uppercase text-muted-foreground ml-1">Período</label>
+              <select
+                className="w-full h-9 rounded-lg border border-input bg-background px-3 text-xs font-medium outline-none focus:ring-2 focus:ring-primary/20"
+                value={period}
+                onChange={(e) => {
+                  const value = e.target.value;
+                  setPeriod(value);
+                  if (value !== 'custom') {
+                    setDateFrom(undefined);
+                    setDateTo(undefined);
+                    setDateFromInput('');
+                    setDateToInput('');
+                  }
+                }}
+              >
+                <option value="hoje">Hoje</option>
+                <option value="7d">Últimos 7 dias</option>
+                <option value="30d">Últimos 30 dias</option>
+                <option value="este-mes">Este mês</option>
+                <option value="mes-passado">Mês passado</option>
+                <option value="custom">Período</option>
+              </select>
+              {period === 'custom' && (
+                <div className="grid grid-cols-2 gap-2 pt-1">
+                  <input
+                    type="text"
+                    inputMode="numeric"
+                    placeholder="DD/MM/AAAA"
+                    className="h-9 rounded-lg border border-input bg-background px-3 text-xs font-medium outline-none focus:ring-2 focus:ring-primary/20"
+                    value={dateFromInput}
+                    onChange={(e) => {
+                      setDateFromInput(e.target.value);
+                      setDateFrom(parseBrazilianDate(e.target.value) || undefined);
+                    }}
+                  />
+                  <input
+                    type="text"
+                    inputMode="numeric"
+                    placeholder="DD/MM/AAAA"
+                    className="h-9 rounded-lg border border-input bg-background px-3 text-xs font-medium outline-none focus:ring-2 focus:ring-primary/20"
+                    value={dateToInput}
+                    onChange={(e) => {
+                      setDateToInput(e.target.value);
+                      setDateTo(parseBrazilianDate(e.target.value) || undefined);
+                    }}
+                  />
+                </div>
+              )}
+            </div>
+
+            <div className="space-y-1.5">
+              <label className="text-[10px] font-bold uppercase text-muted-foreground ml-1">Status do Pedido</label>
+              <div className="flex flex-wrap gap-2">
+                {[
+                  { id: 'collection_done', label: 'Coleta Realizada' },
+                  { id: 'in_analysis', label: 'Em Análise' },
+                  { id: 'validation', label: 'Validação' },
+                  { id: 'released', label: 'Liberado' },
+                  { id: 'completed', label: 'Concluído' }
+                ].map((status) => (
+                  <Badge
+                    key={status.id}
+                    variant={selectedStatuses.includes(status.id) ? "default" : "outline"}
+                    className={cn(
+                      "cursor-pointer text-[10px] font-bold uppercase py-1 px-3 transition-all",
+                      selectedStatuses.includes(status.id)
+                        ? "bg-primary text-white shadow-sm"
+                        : "bg-transparent text-muted-foreground hover:bg-muted"
+                    )}
+                    onClick={() => setSelectedStatuses(prev =>
+                      prev.includes(status.id) ? prev.filter(s => s !== status.id) : [...prev, status.id]
+                    )}
+                  >
+                    {status.label}
+                    {selectedStatuses.includes(status.id) && <Check className="ml-1 h-3 w-3" />}
+                  </Badge>
+                ))}
+              </div>
+            </div>
+
+            <div className="space-y-1.5">
+              <label className="text-[10px] font-bold uppercase text-muted-foreground ml-1">Pedido</label>
+              <input
+                className="w-full h-9 rounded-lg border border-input bg-background px-3 text-xs outline-none focus:ring-2 focus:ring-primary/20"
+                placeholder="Buscar por pedido"
+                value={protocolSearch}
+                onChange={(e) => setProtocolSearch(e.target.value)}
+              />
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button variant="outline" className="font-bold uppercase text-[10px]" onClick={clearFilters}>
+              Limpar
+            </Button>
+            <Button className="font-bold uppercase text-[10px]" onClick={() => setQuickFiltersOpen(false)}>
+              Aplicar
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
     </div>
   );
 }
