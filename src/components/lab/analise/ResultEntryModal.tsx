@@ -1856,7 +1856,7 @@ export function ResultEntryModal({
             <DialogFooter className="p-6 bg-slate-50 flex items-center justify-end gap-3 sm:justify-end">
               <Button 
                 variant="outline" 
-                onClick={() => setCancelModal(null)}
+                onClick={() => { setCancelModal(null); setCancelReason(""); setCancelConfirmed(false); }}
                 className="font-black uppercase text-[10px] tracking-widest px-6"
               >
                 Voltar
@@ -1864,17 +1864,18 @@ export function ResultEntryModal({
               <Button 
                 variant="destructive"
                 onClick={() => {
-                  const reason = (document.getElementById('cancel-reason') as HTMLTextAreaElement)?.value;
-                  const confirmed = (document.getElementById('confirm-cancel') as HTMLInputElement)?.checked;
-                  if (!reason || reason.length < 10) {
+                  const reason = cancelReason.trim();
+                  if (reason.length < 10) {
                     toast.error("Por favor, informe um motivo válido (mín. 10 caracteres).");
                     return;
                   }
-                  if (!confirmed) {
+                  if (!cancelConfirmed) {
                     toast.error("Por favor, confirme a operação.");
                     return;
                   }
                   handleCancelConfirm(cancelModal.exam?.id, reason);
+                  setCancelReason("");
+                  setCancelConfirmed(false);
                 }}
                 className="font-black uppercase text-[10px] tracking-widest px-6 bg-rose-500 hover:bg-rose-600 shadow-lg shadow-rose-200"
               >
