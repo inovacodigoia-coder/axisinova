@@ -156,7 +156,7 @@ export function ResultEntryModal({
       filteredExams.forEach((exam: any) => {
         const rec = exam.recollection;
         if (rec && next[exam.id]?.type !== 'recoleta' && next[exam.id]?.type !== 'cancelado') {
-          next[exam.id] = { type: 'recoleta', reason: rec.reason || '', details: rec.details || '' };
+          next[exam.id] = { type: 'recoleta', reason: rec.reason || '', details: rec.details || '', applied: true };
         }
       });
       return next;
