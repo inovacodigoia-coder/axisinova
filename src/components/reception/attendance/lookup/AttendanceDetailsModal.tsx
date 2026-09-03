@@ -105,6 +105,27 @@ export function AttendanceDetailsModal({ open, onClose, onOrderDeleted, order, p
 
   const labOrder = order as LabAttendanceOrder;
 
+  // Alertas de recoleta solicitada (registrados na digitação de resultados)
+  const recollectionAlerts = useMemo(() => {
+    const alerts: { examName: string; reason: string; details?: string; requestedBy?: string; requestedAt?: string }[] = [];
+    (guidesState || []).forEach((guide: any) => {
+      (guide.exams || []).forEach((exam: any) => {
+        if (exam.recollection) {
+          alerts.push({
+            examName: exam.name || exam.examName || 'Exame',
+            reason: exam.recollection.reason || '',
+            details: exam.recollection.details || '',
+            requestedBy: exam.recollection.requestedBy || '',
+            requestedAt: exam.recollection.requestedAt || '',
+          });
+        }
+      });
+    });
+    return alerts;
+  }, [guidesState]);
+
+
+
 
   // Transform labGuides into flat exams list if available
   const orderExams = useMemo(() => {
