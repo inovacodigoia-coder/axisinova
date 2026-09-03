@@ -919,33 +919,30 @@ export function ResultEntryModal({
       const exam = filteredExams.find(e => e.id === examId);
       // Toggle recoleta: se já for recoleta, remove
       if (examActions[examId]?.type === 'recoleta') {
+        const wasApplied = !!examActions[examId]?.applied;
         setExamActions(prev => {
           const next = { ...prev };
           delete next[examId];
           return next;
         });
-        toast.info("Ação de recoleta removida — amostra voltou para Coletado.");
-        void (async () => {
-          try {
-            await persistExamRecollection(exam, false);
-            void handleRefreshData();
-          } catch (err) {
-            console.error('Erro ao remover recoleta', err);
-            toast.error("Não foi possível atualizar a amostra no pedido.");
-          }
-        })();
+        if (wasApplied) {
+          toast.info("Ação de recoleta removida — amostra voltou para Coletado.");
+          void (async () => {
+            try {
+              await persistExamRecollection(exam, false);
+              void handleRefreshData();
+            } catch (err) {
+              console.error('Erro ao remover recoleta', err);
+              toast.error("Não foi possível atualizar a amostra no pedido.");
+            }
+          })();
+        } else {
+          toast.info("Ação de recoleta cancelada.");
+        }
       } else {
-        setExamActions(prev => ({ ...prev, [examId]: { type: 'recoleta', reason: '', details: '' } }));
-        toast.info("Informe o motivo da recoleta abaixo das observações técnicas.");
-        void (async () => {
-          try {
-            await persistExamRecollection(exam, true, { reason: '', details: '' });
-            void handleRefreshData();
-          } catch (err) {
-            console.error('Erro ao solicitar recoleta', err);
-            toast.error("Não foi possível atualizar a amostra no pedido.");
-          }
-        })();
+        // Apenas abre o formulário de motivo/detalhes — aplica somente ao clicar em "Aplicar Recoleta"
+        setExamActions(prev => ({ ...prev, [examId]: { type: 'recoleta', reason: '', details: '', applied: false } }));
+        toast.info("Selecione o motivo e clique em Aplicar Recoleta.");
       }
     }
   };
