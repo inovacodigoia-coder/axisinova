@@ -1655,6 +1655,9 @@ export function ResultEntryModal({
                           );
                         })()}
 
+                        {/* Divisor sutil de fim de exame */}
+                        <div className="mt-4 h-[3px] w-full rounded-full bg-gradient-to-r from-primary/30 via-secondary/30 to-primary/5" aria-hidden="true" />
+
                       </div>
                     );
                   })}
