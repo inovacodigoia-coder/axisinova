@@ -1058,7 +1058,17 @@ export function ResultEntryModal({
   const handleRecoletaUpdate = (examId: string, reason: string, details: string) => {
     setRecoletaReasons(prev => ({ ...prev, [examId]: { reason, details } }));
     setExamActions(prev => ({ ...prev, [examId]: { type: 'recoleta', reason, details } }));
-    toast.info("Solicitação de recoleta salva como rascunho.");
+    toast.success("Recoleta solicitada — amostra voltou para Pendente.");
+    const exam = filteredExams.find(e => e.id === examId);
+    void (async () => {
+      try {
+        await persistExamRecollection(exam, true, { reason, details });
+        void handleRefreshData();
+      } catch (err) {
+        console.error('Erro ao salvar recoleta', err);
+        toast.error("Não foi possível salvar o motivo da recoleta no pedido.");
+      }
+    })();
   };
 
   const getAge = (birthDate: string) => {
