@@ -54,7 +54,7 @@ export function PricingSection() {
               Para saber mais, entre em contato com o nosso comercial e veja a melhor solução para o seu negócio.
             </p>
             <button
-              onClick={() => document.getElementById('contato')?.scrollIntoView({ behavior: 'smooth' })}
+              onClick={() => document.getElementById('contact')?.scrollIntoView({ behavior: 'smooth' })}
               className="mt-6 rounded-xl gradient-bg px-8 py-3 text-sm font-bold text-white shadow-lg transition-transform hover:scale-[1.02]"
             >
               Falar com o comercial
