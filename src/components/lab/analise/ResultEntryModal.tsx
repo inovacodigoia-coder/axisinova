@@ -862,7 +862,17 @@ export function ResultEntryModal({
           delete next[examId];
           return next;
         });
-        toast.success("Cancelamento revertido.");
+        const exam = filteredExams.find(e => e.id === examId);
+        void (async () => {
+          try {
+            await persistExamCancellation(exam, false);
+            toast.success("Cancelamento revertido — amostra voltou para Coletado.");
+            void handleRefreshData();
+          } catch (err) {
+            console.error('Erro ao reverter cancelamento', err);
+            toast.error("Não foi possível atualizar a amostra no pedido.");
+          }
+        })();
       } else {
         const exam = filteredExams.find(e => e.id === examId);
         setCancelModal({ isOpen: true, exam });
