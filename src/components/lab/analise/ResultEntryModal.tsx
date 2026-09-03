@@ -1835,12 +1835,15 @@ export function ResultEntryModal({
                   placeholder="Ex.: solicitação equivocada, paciente desistiu, material insuficiente..."
                   className="min-h-[100px] text-xs resize-none bg-slate-50 border-slate-200 focus:border-rose-500 transition-colors"
                   id="cancel-reason"
+                  maxLength={500}
+                  value={cancelReason}
+                  onChange={(e) => setCancelReason(e.target.value)}
                 />
-                <p className="text-[9px] text-slate-400 font-bold uppercase text-right">Mínimo 10 caracteres · 0/500</p>
+                <p className="text-[9px] text-slate-400 font-bold uppercase text-right">Mínimo 10 caracteres · {cancelReason.length}/500</p>
               </div>
 
               <div className="flex items-center space-x-2 pt-2">
-                <Checkbox id="confirm-cancel" className="border-slate-300 data-[state=checked]:bg-rose-500 data-[state=checked]:border-rose-500" />
+                <Checkbox id="confirm-cancel" checked={cancelConfirmed} onCheckedChange={(v) => setCancelConfirmed(v === true)} className="border-slate-300 data-[state=checked]:bg-rose-500 data-[state=checked]:border-rose-500" />
                 <label
                   htmlFor="confirm-cancel"
                   className="text-[10px] font-bold text-slate-600 uppercase cursor-pointer leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
