@@ -461,7 +461,7 @@ export function ResultEntryModal({
           nextBlocks[examId] = row.portal_blocked_types as string[];
         }
         if (row.notes) nextNotes[examId] = row.notes;
-        if (row.status === 'digitized' || row.status === 'released') {
+        if (row.status === 'digitized' || row.status === 'released' || row.status === 'cancelled') {
           nextStatuses[examId] = row.status;
         }
         (row.lab_result_values || []).forEach((v: any) => {
