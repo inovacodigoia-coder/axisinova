@@ -104,6 +104,14 @@ export default function PlansManagerPage() {
         <div>
           <h1 className="text-2xl font-bold text-foreground">Planos e Preços</h1>
           <p className="text-sm text-muted-foreground">Edite preços, recursos e limites. As alterações aparecem imediatamente na landing page <code className="text-xs">/</code></p>
+          <div className="mt-3 flex items-center gap-3 rounded-xl border border-border bg-muted/40 px-4 py-2.5 w-fit">
+            {pricesHidden ? <EyeOff className="h-4 w-4 text-muted-foreground" /> : <Eye className="h-4 w-4 text-muted-foreground" />}
+            <div>
+              <p className="text-sm font-medium text-foreground">Ocultar valores na página inicial</p>
+              <p className="text-xs text-muted-foreground">Quando ativo, a landing page mostra apenas o convite para falar com o comercial</p>
+            </div>
+            <Switch checked={pricesHidden} onCheckedChange={togglePricesHidden} disabled={togglingVisibility} className="ml-2" />
+          </div>
         </div>
       </div>
 
