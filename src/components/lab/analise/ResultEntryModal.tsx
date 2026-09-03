@@ -1078,17 +1078,28 @@ export function ResultEntryModal({
   };
 
   const handleRecoletaUpdate = (examId: string, reason: string, details: string) => {
+    // Atualiza apenas o estado local — persistência ocorre ao clicar em "Aplicar Recoleta"
     setRecoletaReasons(prev => ({ ...prev, [examId]: { reason, details } }));
-    setExamActions(prev => ({ ...prev, [examId]: { type: 'recoleta', reason, details } }));
-    toast.success("Recoleta solicitada — amostra voltou para Pendente.");
+    setExamActions(prev => ({ ...prev, [examId]: { ...prev[examId], type: 'recoleta', reason, details } }));
+  };
+
+  const handleApplyRecoleta = (examId: string) => {
+    const action = examActions[examId];
+    if (!action || action.type !== 'recoleta') return;
+    if (!action.reason || !action.reason.trim()) {
+      toast.error("Selecione o motivo da recoleta antes de aplicar.");
+      return;
+    }
     const exam = filteredExams.find(e => e.id === examId);
     void (async () => {
       try {
-        await persistExamRecollection(exam, true, { reason, details });
+        await persistExamRecollection(exam, true, { reason: action.reason || '', details: action.details || '' });
+        setExamActions(prev => ({ ...prev, [examId]: { ...prev[examId], applied: true } }));
+        toast.success("Recoleta aplicada — amostra voltou para Pendente.");
         void handleRefreshData();
       } catch (err) {
-        console.error('Erro ao salvar recoleta', err);
-        toast.error("Não foi possível salvar o motivo da recoleta no pedido.");
+        console.error('Erro ao aplicar recoleta', err);
+        toast.error("Não foi possível aplicar a recoleta no pedido.");
       }
     })();
   };
