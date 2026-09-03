@@ -388,17 +388,14 @@ export default function LabCatalogFormPage() {
           <TabsTrigger value="general" className="gap-2 px-4 py-2 data-[state=active]:gradient-bg data-[state=active]:text-white">
             <Info className="h-4 w-4" /> Informações Gerais
           </TabsTrigger>
+          <TabsTrigger value="report" className="gap-2 px-4 py-2 data-[state=active]:gradient-bg data-[state=active]:text-white">
+            <FileText className="h-4 w-4" /> Laudo do Exame
+          </TabsTrigger>
           <TabsTrigger value="parameters" className="gap-2 px-4 py-2 data-[state=active]:gradient-bg data-[state=active]:text-white">
             <Settings2 className="h-4 w-4" /> Parâmetros e Máscara
           </TabsTrigger>
-          <TabsTrigger value="interfacing" className="gap-2 px-4 py-2 data-[state=active]:gradient-bg data-[state=active]:text-white">
-            <ArrowLeftRight className="h-4 w-4" /> Interfaceamento
-          </TabsTrigger>
           <TabsTrigger value="rules" className="gap-2 px-4 py-2 data-[state=active]:gradient-bg data-[state=active]:text-white">
             <ShieldCheck className="h-4 w-4" /> Alertas e Regras
-          </TabsTrigger>
-          <TabsTrigger value="report" className="gap-2 px-4 py-2 data-[state=active]:gradient-bg data-[state=active]:text-white">
-            <FileText className="h-4 w-4" /> Laudo do Exame
           </TabsTrigger>
         </TabsList>
 
@@ -413,31 +410,21 @@ export default function LabCatalogFormPage() {
             onOpenMethodologySearch={() => setIsMethodologySearchOpen(true)}
           />
         </TabsContent>
-        <TabsContent value="parameters">
-          <ParametersSection 
-            parameters={parameters} 
-            setParameters={setParameters} 
-          />
-        </TabsContent>
-
-        <TabsContent value="interfacing">
-          <InterfacingSection 
-            config={examData.interfacingConfig} 
-            params={examData.interfacingParameters}
-            internalParameters={parameters}
-            availableEquipments={availableEquipments}
-            onChange={(newData) => setExamData(prev => ({ ...prev, ...newData }))}
-          />
-        </TabsContent>
-        <TabsContent value="rules">
-           <RulesSection />
-        </TabsContent>
         <TabsContent value="report">
           <ExamReportSection
             data={examData}
             parameters={parameters}
             onChange={(newData) => setExamData(prev => ({ ...prev, ...newData }))}
           />
+        </TabsContent>
+        <TabsContent value="parameters">
+          <ParametersSection 
+            parameters={parameters} 
+            setParameters={setParameters} 
+          />
+        </TabsContent>
+        <TabsContent value="rules">
+           <RulesSection />
         </TabsContent>
       </Tabs>
 
