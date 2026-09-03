@@ -148,6 +148,31 @@ export function ResultEntryModal({
     (examStatuses[examId] === 'digitized' || examStatuses[examId] === 'released');
 
 
+  // Hidrata ações de recoleta já registradas no pedido (lab_guides.recollection)
+  useEffect(() => {
+    if (!isOpen) return;
+    setExamActions(prev => {
+      const next = { ...prev };
+      filteredExams.forEach((exam: any) => {
+        const rec = exam.recollection;
+        if (rec && next[exam.id]?.type !== 'recoleta' && next[exam.id]?.type !== 'cancelado') {
+          next[exam.id] = { type: 'recoleta', reason: rec.reason || '', details: rec.details || '' };
+        }
+      });
+      return next;
+    });
+    setRecoletaReasons(prev => {
+      const next = { ...prev };
+      filteredExams.forEach((exam: any) => {
+        const rec = exam.recollection;
+        if (rec && !next[exam.id]) {
+          next[exam.id] = { reason: rec.reason || '', details: rec.details || '' };
+        }
+      });
+      return next;
+    });
+  }, [isOpen, filteredExams]);
+
   // Agrupamento por paciente/pedido
   const groupedPatients = useMemo(() => {
     const groups: Record<string, any> = {};
