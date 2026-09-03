@@ -107,7 +107,7 @@ export function ResultEntryModal({
   const [saving, setSaving] = useState(false);
   const [examStatuses, setExamStatuses] = useState<Record<string, string>>({});
   const [portalBlocks, setPortalBlocks] = useState<Record<string, string[]>>({});
-  const [examActions, setExamActions] = useState<Record<string, { type: string; reason?: string; details?: string }>>({});
+  const [examActions, setExamActions] = useState<Record<string, { type: string; reason?: string; details?: string; applied?: boolean }>>({});
   const [cancelModal, setCancelModal] = useState<{ isOpen: boolean; exam: any } | null>(null);
   const [cancelReason, setCancelReason] = useState("");
   const [cancelConfirmed, setCancelConfirmed] = useState(false);
