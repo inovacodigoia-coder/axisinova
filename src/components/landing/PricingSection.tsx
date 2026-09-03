@@ -3,11 +3,22 @@ import { PlanCard } from '@/components/ui/PlanCard';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { usePricingPlans } from '@/hooks/usePricingPlans';
+import { useEffect } from 'react';
+import { MessageCircle } from 'lucide-react';
+import { fetchPricingVisibility, loadPricingVisibility } from '@/utils/pricingVisibilityConfig';
 
 export function PricingSection() {
   const [isAnnual, setIsAnnual] = useState(false);
+  const [pricesHidden, setPricesHidden] = useState(() => loadPricingVisibility().hidden);
   const navigate = useNavigate();
   const { plans, loading } = usePricingPlans({ onlyVisible: true });
+
+  useEffect(() => {
+    fetchPricingVisibility().then(cfg => setPricesHidden(cfg.hidden));
+    const onChange = () => setPricesHidden(loadPricingVisibility().hidden);
+    window.addEventListener('pricing-visibility-changed', onChange);
+    return () => window.removeEventListener('pricing-visibility-changed', onChange);
+  }, []);
 
   return (
     <section id="pricing" className="bg-white py-20 md:py-24">
