@@ -739,6 +739,32 @@ export function AttendanceDetailsModal({ open, onClose, onOrderDeleted, order, p
                       <span className="text-[9px] font-bold text-muted-foreground uppercase group-hover:text-slate-600 text-center">Imprimir<br/>Guia</span>
                     </div>
 
+                    {recollectionAlerts.length > 0 && (
+                      <div className="flex-1 mx-2 self-stretch flex flex-col justify-center gap-1.5 bg-amber-50 border border-amber-300 rounded-lg px-3 py-2 max-h-[92px] overflow-y-auto">
+                        {recollectionAlerts.map((alert, i) => (
+                          <div key={i} className="flex items-start gap-2">
+                            <AlertTriangle className="h-3.5 w-3.5 text-amber-600 shrink-0 mt-0.5" />
+                            <div className="min-w-0">
+                              <p className="text-[10px] font-black text-amber-700 uppercase leading-tight">
+                                Recoleta solicitada — {alert.examName}
+                              </p>
+                              <p className="text-[10px] text-amber-800 leading-tight">
+                                {alert.reason && <span className="font-bold">Motivo: {alert.reason}</span>}
+                                {alert.details && <span> · {alert.details}</span>}
+                              </p>
+                              <p className="text-[9px] text-amber-600 leading-tight">
+                                {alert.requestedBy && <span>Por {alert.requestedBy}</span>}
+                                {alert.requestedAt && (
+                                  <span>{alert.requestedBy ? ' em ' : ''}{format(new Date(alert.requestedAt), "dd/MM/yyyy 'às' HH:mm")}</span>
+                                )}
+                              </p>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+
+
 
                     {isAdmin && (
                     <div 
