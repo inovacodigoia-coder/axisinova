@@ -107,7 +107,7 @@ export function ResultEntryModal({
   const [saving, setSaving] = useState(false);
   const [examStatuses, setExamStatuses] = useState<Record<string, string>>({});
   const [portalBlocks, setPortalBlocks] = useState<Record<string, string[]>>({});
-  const [examActions, setExamActions] = useState<Record<string, { type: string; reason?: string; details?: string }>>({});
+  const [examActions, setExamActions] = useState<Record<string, { type: string; reason?: string; details?: string; applied?: boolean }>>({});
   const [cancelModal, setCancelModal] = useState<{ isOpen: boolean; exam: any } | null>(null);
   const [cancelReason, setCancelReason] = useState("");
   const [cancelConfirmed, setCancelConfirmed] = useState(false);
@@ -156,7 +156,7 @@ export function ResultEntryModal({
       filteredExams.forEach((exam: any) => {
         const rec = exam.recollection;
         if (rec && next[exam.id]?.type !== 'recoleta' && next[exam.id]?.type !== 'cancelado') {
-          next[exam.id] = { type: 'recoleta', reason: rec.reason || '', details: rec.details || '' };
+          next[exam.id] = { type: 'recoleta', reason: rec.reason || '', details: rec.details || '', applied: true };
         }
       });
       return next;
@@ -919,33 +919,30 @@ export function ResultEntryModal({
       const exam = filteredExams.find(e => e.id === examId);
       // Toggle recoleta: se já for recoleta, remove
       if (examActions[examId]?.type === 'recoleta') {
+        const wasApplied = !!examActions[examId]?.applied;
         setExamActions(prev => {
           const next = { ...prev };
           delete next[examId];
           return next;
         });
-        toast.info("Ação de recoleta removida — amostra voltou para Coletado.");
-        void (async () => {
-          try {
-            await persistExamRecollection(exam, false);
-            void handleRefreshData();
-          } catch (err) {
-            console.error('Erro ao remover recoleta', err);
-            toast.error("Não foi possível atualizar a amostra no pedido.");
-          }
-        })();
+        if (wasApplied) {
+          toast.info("Ação de recoleta removida — amostra voltou para Coletado.");
+          void (async () => {
+            try {
+              await persistExamRecollection(exam, false);
+              void handleRefreshData();
+            } catch (err) {
+              console.error('Erro ao remover recoleta', err);
+              toast.error("Não foi possível atualizar a amostra no pedido.");
+            }
+          })();
+        } else {
+          toast.info("Ação de recoleta cancelada.");
+        }
       } else {
-        setExamActions(prev => ({ ...prev, [examId]: { type: 'recoleta', reason: '', details: '' } }));
-        toast.info("Informe o motivo da recoleta abaixo das observações técnicas.");
-        void (async () => {
-          try {
-            await persistExamRecollection(exam, true, { reason: '', details: '' });
-            void handleRefreshData();
-          } catch (err) {
-            console.error('Erro ao solicitar recoleta', err);
-            toast.error("Não foi possível atualizar a amostra no pedido.");
-          }
-        })();
+        // Apenas abre o formulário de motivo/detalhes — aplica somente ao clicar em "Aplicar Recoleta"
+        setExamActions(prev => ({ ...prev, [examId]: { type: 'recoleta', reason: '', details: '', applied: false } }));
+        toast.info("Selecione o motivo e clique em Aplicar Recoleta.");
       }
     }
   };
@@ -1081,17 +1078,28 @@ export function ResultEntryModal({
   };
 
   const handleRecoletaUpdate = (examId: string, reason: string, details: string) => {
+    // Atualiza apenas o estado local — persistência ocorre ao clicar em "Aplicar Recoleta"
     setRecoletaReasons(prev => ({ ...prev, [examId]: { reason, details } }));
-    setExamActions(prev => ({ ...prev, [examId]: { type: 'recoleta', reason, details } }));
-    toast.success("Recoleta solicitada — amostra voltou para Pendente.");
+    setExamActions(prev => ({ ...prev, [examId]: { ...prev[examId], type: 'recoleta', reason, details } }));
+  };
+
+  const handleApplyRecoleta = (examId: string) => {
+    const action = examActions[examId];
+    if (!action || action.type !== 'recoleta') return;
+    if (!action.reason || !action.reason.trim()) {
+      toast.error("Selecione o motivo da recoleta antes de aplicar.");
+      return;
+    }
     const exam = filteredExams.find(e => e.id === examId);
     void (async () => {
       try {
-        await persistExamRecollection(exam, true, { reason, details });
+        await persistExamRecollection(exam, true, { reason: action.reason || '', details: action.details || '' });
+        setExamActions(prev => ({ ...prev, [examId]: { ...prev[examId], applied: true } }));
+        toast.success("Recoleta aplicada — amostra voltou para Pendente.");
         void handleRefreshData();
       } catch (err) {
-        console.error('Erro ao salvar recoleta', err);
-        toast.error("Não foi possível salvar o motivo da recoleta no pedido.");
+        console.error('Erro ao aplicar recoleta', err);
+        toast.error("Não foi possível aplicar a recoleta no pedido.");
       }
     })();
   };
@@ -1796,6 +1804,26 @@ export function ResultEntryModal({
                                 }}
                               />
                             </div>
+
+                            {/* Botão aplicar recoleta — só persistido após confirmação */}
+                            {examActions[exam.id].type === 'recoleta' && (
+                              <div className="flex justify-end mt-3">
+                                {examActions[exam.id].applied ? (
+                                  <Badge className="bg-orange-100 text-orange-700 border border-orange-300 text-[10px] font-black uppercase px-3 py-1.5 gap-1.5">
+                                    <Check className="h-3 w-3" /> Recoleta aplicada — amostra Pendente
+                                  </Badge>
+                                ) : (
+                                  <Button
+                                    size="sm"
+                                    className="h-8 px-4 text-[10px] font-black uppercase tracking-wider bg-orange-600 hover:bg-orange-700 text-white gap-1.5"
+                                    disabled={!examActions[exam.id].reason}
+                                    onClick={() => handleApplyRecoleta(exam.id)}
+                                  >
+                                    <RefreshCw className="h-3.5 w-3.5" /> Aplicar Recoleta
+                                  </Button>
+                                )}
+                              </div>
+                            )}
                           </div>
                         )}
 
