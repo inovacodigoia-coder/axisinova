@@ -410,31 +410,21 @@ export default function LabCatalogFormPage() {
             onOpenMethodologySearch={() => setIsMethodologySearchOpen(true)}
           />
         </TabsContent>
-        <TabsContent value="parameters">
-          <ParametersSection 
-            parameters={parameters} 
-            setParameters={setParameters} 
-          />
-        </TabsContent>
-
-        <TabsContent value="interfacing">
-          <InterfacingSection 
-            config={examData.interfacingConfig} 
-            params={examData.interfacingParameters}
-            internalParameters={parameters}
-            availableEquipments={availableEquipments}
-            onChange={(newData) => setExamData(prev => ({ ...prev, ...newData }))}
-          />
-        </TabsContent>
-        <TabsContent value="rules">
-           <RulesSection />
-        </TabsContent>
         <TabsContent value="report">
           <ExamReportSection
             data={examData}
             parameters={parameters}
             onChange={(newData) => setExamData(prev => ({ ...prev, ...newData }))}
           />
+        </TabsContent>
+        <TabsContent value="parameters">
+          <ParametersSection 
+            parameters={parameters} 
+            setParameters={setParameters} 
+          />
+        </TabsContent>
+        <TabsContent value="rules">
+           <RulesSection />
         </TabsContent>
       </Tabs>
 
