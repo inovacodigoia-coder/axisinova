@@ -1765,7 +1765,7 @@ export function ResultEntryModal({
             className="h-11 px-8 font-black uppercase text-[10px] tracking-widest gap-2 border-primary/20 text-primary hover:bg-primary/5"
           >
             <Save className="h-4 w-4" />
-            Salvar Rascunho
+            SALVAR PARCIAL
           </Button>
           )}
 
