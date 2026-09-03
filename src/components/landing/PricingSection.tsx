@@ -112,6 +112,8 @@ export function PricingSection() {
             ))}
           </div>
         )}
+        </>
+        )}
       </div>
     </section>
   );
