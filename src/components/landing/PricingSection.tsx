@@ -3,11 +3,22 @@ import { PlanCard } from '@/components/ui/PlanCard';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { usePricingPlans } from '@/hooks/usePricingPlans';
+import { useEffect } from 'react';
+import { MessageCircle } from 'lucide-react';
+import { fetchPricingVisibility, loadPricingVisibility } from '@/utils/pricingVisibilityConfig';
 
 export function PricingSection() {
   const [isAnnual, setIsAnnual] = useState(false);
+  const [pricesHidden, setPricesHidden] = useState(() => loadPricingVisibility().hidden);
   const navigate = useNavigate();
   const { plans, loading } = usePricingPlans({ onlyVisible: true });
+
+  useEffect(() => {
+    fetchPricingVisibility().then(cfg => setPricesHidden(cfg.hidden));
+    const onChange = () => setPricesHidden(loadPricingVisibility().hidden);
+    window.addEventListener('pricing-visibility-changed', onChange);
+    return () => window.removeEventListener('pricing-visibility-changed', onChange);
+  }, []);
 
   return (
     <section id="pricing" className="bg-white py-20 md:py-24">
@@ -27,6 +38,30 @@ export function PricingSection() {
           </p>
         </motion.div>
 
+        {pricesHidden ? (
+          <motion.div
+            className="mx-auto max-w-xl rounded-2xl border border-border bg-muted/30 p-10 text-center shadow-[0_4px_24px_rgba(0,0,0,0.06)]"
+            initial={{ opacity: 0, y: 24 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true, amount: 0.2 }}
+            transition={{ duration: 0.5 }}
+          >
+            <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full gradient-bg">
+              <MessageCircle className="h-7 w-7 text-white" />
+            </div>
+            <h3 className="text-xl font-bold text-foreground">Fale com nosso comercial</h3>
+            <p className="mt-2 text-sm text-muted-foreground">
+              Para saber mais, entre em contato com o nosso comercial e veja a melhor solução para o seu negócio.
+            </p>
+            <button
+              onClick={() => document.getElementById('contact')?.scrollIntoView({ behavior: 'smooth' })}
+              className="mt-6 rounded-xl gradient-bg px-8 py-3 text-sm font-bold text-white shadow-lg transition-transform hover:scale-[1.02]"
+            >
+              Falar com o comercial
+            </button>
+          </motion.div>
+        ) : (
+        <>
         {/* Toggle */}
         <div className="mb-10 flex items-center justify-center gap-3">
           <span className={`text-sm font-medium ${!isAnnual ? 'text-foreground' : 'text-muted-foreground'}`}>Mensal</span>
@@ -76,6 +111,8 @@ export function PricingSection() {
               </motion.div>
             ))}
           </div>
+        )}
+        </>
         )}
       </div>
     </section>
