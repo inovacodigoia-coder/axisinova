@@ -1804,6 +1804,26 @@ export function ResultEntryModal({
                                 }}
                               />
                             </div>
+
+                            {/* Botão aplicar recoleta — só persistido após confirmação */}
+                            {examActions[exam.id].type === 'recoleta' && (
+                              <div className="flex justify-end mt-3">
+                                {examActions[exam.id].applied ? (
+                                  <Badge className="bg-orange-100 text-orange-700 border border-orange-300 text-[10px] font-black uppercase px-3 py-1.5 gap-1.5">
+                                    <Check className="h-3 w-3" /> Recoleta aplicada — amostra Pendente
+                                  </Badge>
+                                ) : (
+                                  <Button
+                                    size="sm"
+                                    className="h-8 px-4 text-[10px] font-black uppercase tracking-wider bg-orange-600 hover:bg-orange-700 text-white gap-1.5"
+                                    disabled={!examActions[exam.id].reason}
+                                    onClick={() => handleApplyRecoleta(exam.id)}
+                                  >
+                                    <RefreshCw className="h-3.5 w-3.5" /> Aplicar Recoleta
+                                  </Button>
+                                )}
+                              </div>
+                            )}
                           </div>
                         )}
 
