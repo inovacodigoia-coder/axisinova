@@ -1798,7 +1798,7 @@ export function ResultEntryModal({
 
       {/* Modal de Cancelamento */}
       {cancelModal && (
-        <Dialog open={cancelModal.isOpen} onOpenChange={(open) => !open && setCancelModal(null)}>
+        <Dialog open={cancelModal.isOpen} onOpenChange={(open) => { if (!open) { setCancelModal(null); setCancelReason(""); setCancelConfirmed(false); } }}>
           <DialogContent className="sm:max-w-[450px] p-0 overflow-hidden border-none shadow-2xl z-[150]">
             <DialogHeader className="p-6 bg-white flex flex-row items-center gap-3 border-b">
               <div className="h-10 w-10 rounded-full bg-rose-50 flex items-center justify-center">
