@@ -109,6 +109,8 @@ export function ResultEntryModal({
   const [portalBlocks, setPortalBlocks] = useState<Record<string, string[]>>({});
   const [examActions, setExamActions] = useState<Record<string, { type: string; reason?: string; details?: string }>>({});
   const [cancelModal, setCancelModal] = useState<{ isOpen: boolean; exam: any } | null>(null);
+  const [cancelReason, setCancelReason] = useState("");
+  const [cancelConfirmed, setCancelConfirmed] = useState(false);
   const [retestReasons, setRetestReasons] = useState<Record<string, { reason: string; details: string }>>({});
   const [recoletaReasons, setRecoletaReasons] = useState<Record<string, { reason: string; details: string }>>({});
   const [prevResults, setPrevResults] = useState<Record<string, { date: string; value: string; unit: string }[]>>({});
@@ -1796,7 +1798,7 @@ export function ResultEntryModal({
 
       {/* Modal de Cancelamento */}
       {cancelModal && (
-        <Dialog open={cancelModal.isOpen} onOpenChange={(open) => !open && setCancelModal(null)}>
+        <Dialog open={cancelModal.isOpen} onOpenChange={(open) => { if (!open) { setCancelModal(null); setCancelReason(""); setCancelConfirmed(false); } }}>
           <DialogContent className="sm:max-w-[450px] p-0 overflow-hidden border-none shadow-2xl z-[150]">
             <DialogHeader className="p-6 bg-white flex flex-row items-center gap-3 border-b">
               <div className="h-10 w-10 rounded-full bg-rose-50 flex items-center justify-center">
@@ -1833,12 +1835,15 @@ export function ResultEntryModal({
                   placeholder="Ex.: solicitação equivocada, paciente desistiu, material insuficiente..."
                   className="min-h-[100px] text-xs resize-none bg-slate-50 border-slate-200 focus:border-rose-500 transition-colors"
                   id="cancel-reason"
+                  maxLength={500}
+                  value={cancelReason}
+                  onChange={(e) => setCancelReason(e.target.value)}
                 />
-                <p className="text-[9px] text-slate-400 font-bold uppercase text-right">Mínimo 10 caracteres · 0/500</p>
+                <p className="text-[9px] text-slate-400 font-bold uppercase text-right">Mínimo 10 caracteres · {cancelReason.length}/500</p>
               </div>
 
               <div className="flex items-center space-x-2 pt-2">
-                <Checkbox id="confirm-cancel" className="border-slate-300 data-[state=checked]:bg-rose-500 data-[state=checked]:border-rose-500" />
+                <Checkbox id="confirm-cancel" checked={cancelConfirmed} onCheckedChange={(v) => setCancelConfirmed(v === true)} className="border-slate-300 data-[state=checked]:bg-rose-500 data-[state=checked]:border-rose-500" />
                 <label
                   htmlFor="confirm-cancel"
                   className="text-[10px] font-bold text-slate-600 uppercase cursor-pointer leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
@@ -1851,7 +1856,7 @@ export function ResultEntryModal({
             <DialogFooter className="p-6 bg-slate-50 flex items-center justify-end gap-3 sm:justify-end">
               <Button 
                 variant="outline" 
-                onClick={() => setCancelModal(null)}
+                onClick={() => { setCancelModal(null); setCancelReason(""); setCancelConfirmed(false); }}
                 className="font-black uppercase text-[10px] tracking-widest px-6"
               >
                 Voltar
@@ -1859,17 +1864,18 @@ export function ResultEntryModal({
               <Button 
                 variant="destructive"
                 onClick={() => {
-                  const reason = (document.getElementById('cancel-reason') as HTMLTextAreaElement)?.value;
-                  const confirmed = (document.getElementById('confirm-cancel') as HTMLInputElement)?.checked;
-                  if (!reason || reason.length < 10) {
+                  const reason = cancelReason.trim();
+                  if (reason.length < 10) {
                     toast.error("Por favor, informe um motivo válido (mín. 10 caracteres).");
                     return;
                   }
-                  if (!confirmed) {
+                  if (!cancelConfirmed) {
                     toast.error("Por favor, confirme a operação.");
                     return;
                   }
                   handleCancelConfirm(cancelModal.exam?.id, reason);
+                  setCancelReason("");
+                  setCancelConfirmed(false);
                 }}
                 className="font-black uppercase text-[10px] tracking-widest px-6 bg-rose-500 hover:bg-rose-600 shadow-lg shadow-rose-200"
               >
