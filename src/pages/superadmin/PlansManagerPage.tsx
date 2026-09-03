@@ -4,6 +4,8 @@ import { usePricingPlans, type PricingPlanRow } from '@/hooks/usePricingPlans'
 import { StatusBadge } from '@/components/ui/StatusBadge'
 import { CurrencyInput } from '@/components/ui/CurrencyInput'
 import { toast } from 'sonner'
+import { fetchPricingVisibility, savePricingVisibility } from '@/utils/pricingVisibilityConfig'
+import { Switch } from '@/components/ui/switch'
 
 const fmt = (v: number) => v.toLocaleString('pt-BR', { minimumFractionDigits: 0, maximumFractionDigits: 2 })
 
@@ -25,6 +27,27 @@ export default function PlansManagerPage() {
   const [editingId, setEditingId] = useState<string | null>(null)
   const [form, setForm] = useState<EditState | null>(null)
   const [saving, setSaving] = useState(false)
+  const [pricesHidden, setPricesHidden] = useState(false)
+  const [togglingVisibility, setTogglingVisibility] = useState(false)
+
+  useEffect(() => {
+    fetchPricingVisibility().then(cfg => setPricesHidden(cfg.hidden))
+  }, [])
+
+  const togglePricesHidden = async (hidden: boolean) => {
+    setTogglingVisibility(true)
+    try {
+      await savePricingVisibility({ hidden })
+      setPricesHidden(hidden)
+      toast.success(hidden
+        ? 'Valores ocultados na página inicial'
+        : 'Valores visíveis novamente na página inicial')
+    } catch {
+      toast.error('Erro ao salvar visibilidade dos preços')
+    } finally {
+      setTogglingVisibility(false)
+    }
+  }
 
   const startEdit = (p: PricingPlanRow) => {
     setEditingId(p.id)
