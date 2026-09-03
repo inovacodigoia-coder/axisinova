@@ -461,7 +461,7 @@ export function ResultEntryModal({
           nextBlocks[examId] = row.portal_blocked_types as string[];
         }
         if (row.notes) nextNotes[examId] = row.notes;
-        if (row.status === 'digitized' || row.status === 'released') {
+        if (row.status === 'digitized' || row.status === 'released' || row.status === 'cancelled') {
           nextStatuses[examId] = row.status;
         }
         (row.lab_result_values || []).forEach((v: any) => {
@@ -862,7 +862,17 @@ export function ResultEntryModal({
           delete next[examId];
           return next;
         });
-        toast.success("Cancelamento revertido.");
+        const exam = filteredExams.find(e => e.id === examId);
+        void (async () => {
+          try {
+            await persistExamCancellation(exam, false);
+            toast.success("Cancelamento revertido — amostra voltou para Coletado.");
+            void handleRefreshData();
+          } catch (err) {
+            console.error('Erro ao reverter cancelamento', err);
+            toast.error("Não foi possível atualizar a amostra no pedido.");
+          }
+        })();
       } else {
         const exam = filteredExams.find(e => e.id === examId);
         setCancelModal({ isOpen: true, exam });
@@ -896,11 +906,75 @@ export function ResultEntryModal({
     }
   };
 
-  const handleCancelConfirm = (examId: string, reason: string) => {
+  // Persiste o cancelamento/reversão do exame e sincroniza a amostra no pedido:
+  // cancelado -> amostra volta para "Pendente" (sai da fila de digitação);
+  // revertido -> amostra volta para "Coletado".
+  const persistExamCancellation = async (exam: any, cancelled: boolean) => {
+    const cid = resolveCompanyId(user?.companyId);
+    if (!cid || !exam?.orderId) return;
+    const nowIso = new Date().toISOString();
+
+    // 1) Status do exame em lab_exam_results
+    const { error: rErr } = await supabase
+      .from('lab_exam_results')
+      .upsert({
+        company_id: cid,
+        order_id: exam.orderId || null,
+        protocol: exam.protocol || null,
+        exam_ref: examRefOf(exam),
+        exam_code: exam.code || null,
+        exam_name: exam.name || null,
+        patient_id: exam.patientId || null,
+        patient_name: exam.patientName || null,
+        status: cancelled ? 'cancelled' : 'pending',
+      }, { onConflict: 'company_id,exam_ref' });
+    if (rErr) throw rErr;
+
+    // 2) Amostra (lab_guides) volta para Pendente / retorna a Coletado
+    const { data: orderRow, error: oErr } = await supabase
+      .from('attendance_orders')
+      .select('lab_guides')
+      .eq('id', exam.orderId)
+      .single();
+    if (oErr) throw oErr;
+
+    const guides = Array.isArray((orderRow as any)?.lab_guides) ? (orderRow as any).lab_guides : [];
+    const targetId = String(exam.examId || exam.id?.split(':').pop() || '');
+    const nextGuides = guides.map((g: any) => ({
+      ...g,
+      exams: (g.exams || []).map((e: any) =>
+        String(e.examId || e.id) === targetId
+          ? cancelled
+            ? { ...e, collected: false, collectedAt: null, isColeta: false, status: 'pending' }
+            : { ...e, collected: true, collectedAt: nowIso, isColeta: true }
+          : e
+      ),
+    }));
+
+    const { error: uErr } = await supabase
+      .from('attendance_orders')
+      .update({ lab_guides: nextGuides })
+      .eq('id', exam.orderId);
+    if (uErr) throw uErr;
+  };
+
+  const handleCancelConfirm = async (examId: string, reason: string) => {
+    const exam = filteredExams.find(e => e.id === examId);
     setExamStatuses(prev => ({ ...prev, [examId]: 'cancelled' }));
     setExamActions(prev => ({ ...prev, [examId]: { type: 'cancelado', reason } }));
     setCancelModal(null);
-    toast.error("Exame cancelado com sucesso!");
+    try {
+      await persistExamCancellation(exam, true);
+      const patient = groupedPatients.find(p => p.exams.some((e: any) => e.id === examId));
+      if (patient) {
+        await updateParentOrderStatus(exam?.orderId || patient.id, patient.exams, { ...examStatuses, [examId]: 'cancelled' });
+      }
+      toast.error("Exame cancelado — amostra voltou para Pendente.");
+      void handleRefreshData();
+    } catch (e) {
+      console.error('Erro ao persistir cancelamento', e);
+      toast.error("Exame cancelado na tela, mas não foi possível atualizar a amostra.");
+    }
   };
 
   const handleRetestUpdate = (examId: string, reason: string, details: string) => {
