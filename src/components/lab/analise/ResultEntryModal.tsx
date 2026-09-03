@@ -148,6 +148,31 @@ export function ResultEntryModal({
     (examStatuses[examId] === 'digitized' || examStatuses[examId] === 'released');
 
 
+  // Hidrata ações de recoleta já registradas no pedido (lab_guides.recollection)
+  useEffect(() => {
+    if (!isOpen) return;
+    setExamActions(prev => {
+      const next = { ...prev };
+      filteredExams.forEach((exam: any) => {
+        const rec = exam.recollection;
+        if (rec && next[exam.id]?.type !== 'recoleta' && next[exam.id]?.type !== 'cancelado') {
+          next[exam.id] = { type: 'recoleta', reason: rec.reason || '', details: rec.details || '' };
+        }
+      });
+      return next;
+    });
+    setRecoletaReasons(prev => {
+      const next = { ...prev };
+      filteredExams.forEach((exam: any) => {
+        const rec = exam.recollection;
+        if (rec && !next[exam.id]) {
+          next[exam.id] = { reason: rec.reason || '', details: rec.details || '' };
+        }
+      });
+      return next;
+    });
+  }, [isOpen, filteredExams]);
+
   // Agrupamento por paciente/pedido
   const groupedPatients = useMemo(() => {
     const groups: Record<string, any> = {};
@@ -891,6 +916,7 @@ export function ResultEntryModal({
         toast.info("Informe o motivo do reteste abaixo das observações técnicas.");
       }
     } else if (actionType === 'recoleta') {
+      const exam = filteredExams.find(e => e.id === examId);
       // Toggle recoleta: se já for recoleta, remove
       if (examActions[examId]?.type === 'recoleta') {
         setExamActions(prev => {
@@ -898,12 +924,83 @@ export function ResultEntryModal({
           delete next[examId];
           return next;
         });
-        toast.info("Ação de recoleta removida.");
+        toast.info("Ação de recoleta removida — amostra voltou para Coletado.");
+        void (async () => {
+          try {
+            await persistExamRecollection(exam, false);
+            void handleRefreshData();
+          } catch (err) {
+            console.error('Erro ao remover recoleta', err);
+            toast.error("Não foi possível atualizar a amostra no pedido.");
+          }
+        })();
       } else {
         setExamActions(prev => ({ ...prev, [examId]: { type: 'recoleta', reason: '', details: '' } }));
         toast.info("Informe o motivo da recoleta abaixo das observações técnicas.");
+        void (async () => {
+          try {
+            await persistExamRecollection(exam, true, { reason: '', details: '' });
+            void handleRefreshData();
+          } catch (err) {
+            console.error('Erro ao solicitar recoleta', err);
+            toast.error("Não foi possível atualizar a amostra no pedido.");
+          }
+        })();
       }
     }
+  };
+
+  // Persiste a solicitação/remoção de recoleta e sincroniza a amostra no pedido:
+  // recoleta solicitada -> amostra volta para "Pendente" e registra motivo/usuário/data;
+  // recoleta removida -> amostra volta para "Coletado" e limpa o registro.
+  const persistExamRecollection = async (exam: any, active: boolean, info?: { reason: string; details: string }) => {
+    const cid = resolveCompanyId(user?.companyId);
+    if (!cid || !exam?.orderId) return;
+    const nowIso = new Date().toISOString();
+    const requestedBy = (user as any)?.fullName || (user as any)?.name || 'Usuário';
+
+    const { data: orderRow, error: oErr } = await supabase
+      .from('attendance_orders')
+      .select('lab_guides')
+      .eq('id', exam.orderId)
+      .single();
+    if (oErr) throw oErr;
+
+    const guides = Array.isArray((orderRow as any)?.lab_guides) ? (orderRow as any).lab_guides : [];
+    const targetId = String(exam.examId || exam.id?.split(':').pop() || '');
+    let changed = false;
+    const nextGuides = guides.map((g: any) => ({
+      ...g,
+      exams: (g.exams || []).map((e: any) => {
+        if (String(e.examId || e.id) !== targetId) return e;
+        changed = true;
+        if (active) {
+          const prev = e.recollection || {};
+          return {
+            ...e,
+            collected: false,
+            collectedAt: null,
+            isColeta: false,
+            status: 'pending',
+            recollection: {
+              reason: info?.reason ?? prev.reason ?? '',
+              details: info?.details ?? prev.details ?? '',
+              requestedBy: prev.requestedBy || requestedBy,
+              requestedAt: prev.requestedAt || nowIso,
+            },
+          };
+        }
+        const { recollection, ...rest } = e;
+        return { ...rest, collected: true, collectedAt: nowIso, isColeta: true };
+      }),
+    }));
+    if (!changed) return;
+
+    const { error: uErr } = await supabase
+      .from('attendance_orders')
+      .update({ lab_guides: nextGuides })
+      .eq('id', exam.orderId);
+    if (uErr) throw uErr;
   };
 
   // Persiste o cancelamento/reversão do exame e sincroniza a amostra no pedido:
@@ -986,7 +1083,17 @@ export function ResultEntryModal({
   const handleRecoletaUpdate = (examId: string, reason: string, details: string) => {
     setRecoletaReasons(prev => ({ ...prev, [examId]: { reason, details } }));
     setExamActions(prev => ({ ...prev, [examId]: { type: 'recoleta', reason, details } }));
-    toast.info("Solicitação de recoleta salva como rascunho.");
+    toast.success("Recoleta solicitada — amostra voltou para Pendente.");
+    const exam = filteredExams.find(e => e.id === examId);
+    void (async () => {
+      try {
+        await persistExamRecollection(exam, true, { reason, details });
+        void handleRefreshData();
+      } catch (err) {
+        console.error('Erro ao salvar recoleta', err);
+        toast.error("Não foi possível salvar o motivo da recoleta no pedido.");
+      }
+    })();
   };
 
   const getAge = (birthDate: string) => {
