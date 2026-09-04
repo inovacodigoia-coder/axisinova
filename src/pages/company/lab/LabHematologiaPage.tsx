@@ -690,6 +690,17 @@ export default function LabHematologiaPage() {
           </div>
         </header>
 
+        <div className="flex flex-wrap items-center gap-x-3 gap-y-1 border-b border-border bg-rose-50 px-3 py-1.5">
+          <span className="text-[11px] font-black uppercase tracking-wide text-rose-600">
+            Glóbulos Brancos (Total: {diffTotal.toFixed(2).replace('.', ',')} %)
+          </span>
+          {diffOver && (
+            <span className="flex items-center gap-1 text-[10px] font-bold uppercase text-rose-600">
+              <AlertTriangle className="h-3 w-3 shrink-0" /> A soma do diferencial ultrapassou 100% — verifique os valores
+            </span>
+          )}
+        </div>
+
         <div className="grid grid-cols-1 divide-y divide-border bg-border xl:grid-cols-12 xl:divide-x xl:divide-y-0">
           <div className="space-y-4 bg-card p-3 xl:col-span-3">
             <section className="space-y-2">
