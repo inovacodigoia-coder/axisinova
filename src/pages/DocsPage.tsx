@@ -90,10 +90,7 @@ function EndpointRow({ ep }: { ep: ApiEndpoint }) {
 
           <div className="flex flex-wrap gap-2 text-xs">
             <Badge variant="secondary">Auth: {ep.auth}</Badge>
-            <Badge variant="outline" className="gap-1">
-              {ep.scope === 'company' ? <Building2 className="h-3 w-3" /> : <Globe className="h-3 w-3" />}
-              {ep.scope === 'company' ? 'Escopo por empresa (RLS company_id)' : 'Escopo global do sistema'}
-            </Badge>
+            <ScopeBadge scope={ep.scope} withDescription />
           </div>
 
           {ep.params?.length ? (
