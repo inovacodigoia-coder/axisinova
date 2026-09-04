@@ -26,8 +26,8 @@ export async function gerarPdfEtiquetas(
       windowHeight: Math.round(rect.height),
       scrollX: 0,
       scrollY: 0,
-besides: undefined as never,
-    } as never)
+    })
+
     const img = canvas.toDataURL('image/png')
     if (i > 0) pdf.addPage([widthMm, heightMm], 'landscape')
     pdf.addImage(img, 'PNG', 0, 0, widthMm, heightMm)
