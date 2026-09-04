@@ -8,7 +8,7 @@ import {
   Home, Calendar, UserCheck, FileText, DollarSign, FlaskConical, BarChart3,
   TrendingUp, Users, Settings, Database, Monitor, Building2,
   LogOut, ChevronLeft, ChevronRight, X, Stethoscope, TicketCheck, ShieldCheck, Ruler, Layout, Beaker as BeakerIcon,
-  PieChart, Warehouse, Package as PackageIcon, UserPlus, FileSearch, Menu, Handshake
+  PieChart, Warehouse, Package as PackageIcon, UserPlus, FileSearch, Menu, Handshake, Droplet
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
@@ -17,7 +17,7 @@ import type { SystemModule } from '@/types/permissions.types'
 const ICON_MAP: Record<string, any> = {
   Calendar, UserCheck, FileText, DollarSign, FlaskConical, BarChart3,
   TrendingUp, Users, Settings, Database, Monitor, Building2, Stethoscope, Home, TicketCheck, Ruler, Layout, Beaker: BeakerIcon,
-  PieChart, Warehouse, Package: PackageIcon, UserPlus, FileSearch, Handshake
+  PieChart, Warehouse, Package: PackageIcon, UserPlus, FileSearch, Handshake, Droplet
 }
 
 
@@ -81,7 +81,7 @@ export const NAV_SECTIONS: NavSection[] = [
       { label: 'Coleta', icon: 'FlaskConical', path: '/app/lab/coleta', module: 'lab_technical' },
       { label: 'Mapa de Trabalho', icon: 'FileText', path: '/app/lab/mapa', module: 'lab_technical' },
       { label: 'Análise', icon: 'Database', path: '/app/lab/analise', module: 'lab_technical' },
-      { label: 'Validação', icon: 'ShieldCheck', path: '/app/lab/validacao', module: 'lab_technical' },
+      { label: 'Hematologia', icon: 'Droplet', path: '/app/lab/validacao', module: 'lab_technical' },
       { label: 'Laudos', icon: 'FileText', path: '/app/lab/laudos', module: 'lab_technical' },
     ],
   },
