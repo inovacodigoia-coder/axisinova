@@ -54,21 +54,21 @@ export const SampleLabel = ({
   }, [examRefs]);
 
   return (
-    <div className="w-[50mm] h-[30mm] bg-white border border-slate-200 px-1.5 py-0.5 flex flex-col text-black font-mono overflow-hidden leading-none relative">
+    <div className="w-[50mm] h-[30mm] bg-white border border-slate-200 px-1.5 py-[1px] flex flex-col text-black font-mono overflow-hidden relative">
       {/* Cabeçalho: urgência / bancada / data */}
-      <div className="flex items-center gap-1 text-[10px] font-bold uppercase mb-0.5">
-        {isUrgent && <span className="bg-black text-white px-1 py-[1px]">URG</span>}
+      <div className="flex items-center gap-1 text-[10px] leading-[12px] h-[12px] font-bold uppercase">
+        {isUrgent && <span className="bg-black text-white px-1">URG</span>}
         <span className="flex-1 truncate">{workbench || 'GERAL'}</span>
         <span className="whitespace-nowrap">{printDate || '---'}</span>
       </div>
 
       {/* Código de barras */}
-      <div className="w-full flex justify-center mt-0.5">
+      <div className="w-full flex justify-center h-[24px] overflow-hidden">
         <Barcode
           value={sampleHash || sampleId || 'ERROR'}
           format="CODE128"
           width={1.1}
-          height={27}
+          height={24}
           displayValue={false}
           margin={0}
           background="transparent"
@@ -76,34 +76,35 @@ export const SampleLabel = ({
       </div>
 
       {/* Código da amostra + hash exclusivo do tubo (interfaceamento) */}
-      <div className="flex items-baseline justify-between gap-1 whitespace-nowrap">
-        <span className="text-[12px] font-bold">{sampleId}</span>
-        {sampleHash && <span className="text-[10px] font-bold tracking-tight">{sampleHash}</span>}
+      <div className="flex items-center justify-between gap-1 whitespace-nowrap h-[14px]">
+        <span className="text-[12px] leading-[14px] font-bold">{sampleId}</span>
+        {sampleHash && <span className="text-[10px] leading-[14px] font-bold tracking-tight">{sampleHash}</span>}
       </div>
 
       {/* Dados do paciente */}
-      <div className="text-[10px] font-bold uppercase truncate">{patientName || 'PACIENTE NÃO INFORMADO'}</div>
-      <div className="text-[10px] whitespace-nowrap">
+      <div className="text-[10px] leading-[12px] h-[12px] font-bold uppercase truncate">{patientName || 'PACIENTE NÃO INFORMADO'}</div>
+      <div className="text-[9.5px] leading-[11px] h-[11px] whitespace-nowrap">
         NASC: {birthDate || '--/--/----'}
       </div>
-      <div className="text-[10px] font-bold uppercase truncate">
+      <div className="text-[10px] leading-[12px] h-[12px] font-bold uppercase truncate">
         {material || '---'}{tube ? ` (${String(tube).toUpperCase()})` : ''}
       </div>
 
       {/* Referências dos exames */}
-      <div className="text-[9.5px] font-bold uppercase leading-[1.15] overflow-hidden flex-1 pb-2">
+      <div className="text-[9px] leading-[11px] font-bold uppercase overflow-hidden flex-1">
         {refsText || '—'}
       </div>
 
       {/* Rodapé: Nome do Laboratório (Esquerda) e Software (Direita) */}
-      <div className="absolute bottom-0 left-0 right-0 flex justify-between items-end px-1.5 pb-0.5">
-        <span className="text-[9px] text-slate-600 font-bold uppercase truncate max-w-[70%]">
+      <div className="flex justify-between items-end gap-1 h-[10px]">
+        <span className="text-[8px] leading-[10px] text-slate-600 font-bold uppercase truncate max-w-[70%]">
           {labName}
         </span>
-        <span className="text-[9px] text-slate-500 font-medium tracking-tighter opacity-80">
+        <span className="text-[8px] leading-[10px] text-slate-500 font-medium tracking-tighter opacity-80 whitespace-nowrap">
           AXIS INOVA
         </span>
       </div>
     </div>
   );
 };
+
