@@ -17,6 +17,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '
 import { Checkbox } from '@/components/ui/checkbox'
 import { toast } from 'sonner'
 import { cn } from '@/lib/utils'
+import { PartnerOrdersTable } from '@/components/lab/portals/partners/PartnerOrdersTable'
 import { CredentialRevealCard } from '@/components/lab/portals/partners/CredentialRevealCard'
 import {
   useApiPartners, updatePartner, removePartner, regenerateCredential, maskDocument, maskPhone,
@@ -98,9 +99,7 @@ export default function PartnerDetailPage() {
         <TabsList className="flex-wrap">
           <TabsTrigger value="dados">Dados Gerais</TabsTrigger>
           <TabsTrigger value="auth">Autenticação</TabsTrigger>
-          <TabsTrigger value="orders" disabled className="gap-2">
-            Pedidos Recebidos <Badge variant="secondary" className="text-[10px]">Em breve</Badge>
-          </TabsTrigger>
+          <TabsTrigger value="orders">Pedidos Recebidos</TabsTrigger>
         </TabsList>
 
         <TabsContent value="dados" className="mt-4 space-y-4 rounded-xl border bg-card p-5">
@@ -206,6 +205,10 @@ export default function PartnerDetailPage() {
               A liberação definitiva do uso da API também depende da autorização do Super Admin para esta empresa.
             </p>
           </div>
+        </TabsContent>
+
+        <TabsContent value="orders" className="mt-4">
+          <PartnerOrdersTable partnerId={partner.id} />
         </TabsContent>
       </Tabs>
 

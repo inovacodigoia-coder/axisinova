@@ -1,0 +1,170 @@
+import type { PartnerOrder } from '@/types/api-partner-orders.types'
+
+const DEMO_COMPANY_ID = 'comp_001'
+
+function hoursAgo(h: number) {
+  return new Date(Date.now() - h * 3600000).toISOString()
+}
+
+function payloadOf(o: Omit<PartnerOrder, 'rawPayload'>): Record<string, unknown> {
+  return {
+    partner_protocol: o.partnerProtocol ?? null,
+    received_at: o.receivedAt,
+    patient: {
+      name: o.patient.name,
+      cpf: o.patient.cpf,
+      birth_date: o.patient.birthDate,
+      sex: o.patient.sex,
+      phone: o.patient.phone ?? null,
+    },
+    exams: o.exams.map(e => ({ code: e.code, description: e.name })),
+    requesting_doctor: o.requestingDoctor ?? null,
+    insurance: o.insurance ? { name: o.insurance, guide_number: o.insuranceGuide ?? null } : null,
+  }
+}
+
+const BASE: Omit<PartnerOrder, 'rawPayload'>[] = [
+  {
+    id: 'porder_01',
+    companyId: DEMO_COMPANY_ID,
+    partnerId: 'apart_01',
+    partnerProtocol: 'VDA-2026-11821',
+    receivedAt: hoursAgo(2),
+    status: 'processed',
+    patient: { name: 'Maria Clara Fontes', cpf: '123.456.789-45', birthDate: '1988-04-12', sex: 'F', phone: '(84) 99811-2233' },
+    patientExisted: true,
+    exams: [
+      { code: 'HEM001', name: 'Hemograma Completo', recognized: true },
+      { code: 'GLI001', name: 'Glicose', recognized: true },
+    ],
+    requestingDoctor: 'Dr. Paulo Andrade (CRM 12345-RN)',
+    insurance: 'Unimed',
+    insuranceGuide: '9988771',
+    attendanceProtocol: '186-00',
+    attendanceId: 'att_186',
+  },
+  {
+    id: 'porder_02',
+    companyId: DEMO_COMPANY_ID,
+    partnerId: 'apart_01',
+    partnerProtocol: 'VDA-2026-11822',
+    receivedAt: hoursAgo(3),
+    status: 'error',
+    patient: { name: 'João Vitor Nascimento', cpf: '987.654.321-00', birthDate: '1975-09-30', sex: 'M', phone: '(84) 99700-4455' },
+    patientExisted: false,
+    exams: [
+      { code: 'HEM001', name: 'Hemograma Completo', recognized: true },
+      { code: 'XPTO99', name: 'Código não encontrado no Catálogo', recognized: false },
+      { code: 'TSH001', name: 'TSH', recognized: true },
+      { code: 'ZZZ123', name: 'Código não encontrado no Catálogo', recognized: false },
+      { code: 'URE001', name: 'Ureia', recognized: true },
+    ],
+    requestingDoctor: 'Dra. Helena Braga (CRM 55210-RN)',
+    errorMessage: '2 de 5 exames com código inválido — nenhum atendimento foi criado.',
+  },
+  {
+    id: 'porder_03',
+    companyId: DEMO_COMPANY_ID,
+    partnerId: 'apart_02',
+    partnerProtocol: 'SL-4471',
+    receivedAt: hoursAgo(5),
+    status: 'received',
+    patient: { name: 'Ana Beatriz Lopes', cpf: '456.789.123-22', birthDate: '1996-01-22', sex: 'F', phone: '(84) 98822-1100' },
+    patientExisted: false,
+    exams: [
+      { code: 'COL001', name: 'Colesterol Total', recognized: true },
+      { code: 'TRI001', name: 'Triglicerídeos', recognized: true },
+    ],
+    insurance: 'Hapvida',
+    insuranceGuide: '441120',
+  },
+  {
+    id: 'porder_04',
+    companyId: DEMO_COMPANY_ID,
+    partnerId: 'apart_02',
+    partnerProtocol: 'SL-4472',
+    receivedAt: hoursAgo(9),
+    status: 'processed',
+    patient: { name: 'Rafael Menezes', cpf: '321.654.987-11', birthDate: '1982-07-05', sex: 'M' },
+    patientExisted: true,
+    exams: [{ code: 'PSA001', name: 'PSA Total', recognized: true }],
+    requestingDoctor: 'Dr. Sérgio Lima (CRM 33110-RN)',
+    attendanceProtocol: '185-00',
+    attendanceId: 'att_185',
+  },
+  {
+    id: 'porder_05',
+    companyId: DEMO_COMPANY_ID,
+    partnerId: 'apart_03',
+    receivedAt: hoursAgo(26),
+    status: 'error',
+    patient: { name: 'Carla Souza Diniz', cpf: '1234567', birthDate: '1991-11-14', sex: 'F', phone: '(84) 99666-3322' },
+    patientExisted: false,
+    exams: [{ code: 'HEM001', name: 'Hemograma Completo', recognized: true }],
+    errorMessage: 'CPF em formato inválido — o pedido não pôde ser processado.',
+  },
+  {
+    id: 'porder_06',
+    companyId: DEMO_COMPANY_ID,
+    partnerId: 'apart_03',
+    partnerProtocol: 'CNV-77812',
+    receivedAt: hoursAgo(30),
+    status: 'processed',
+    patient: { name: 'Eduardo Tavares', cpf: '741.852.963-33', birthDate: '1969-03-18', sex: 'M', phone: '(84) 99555-7788' },
+    patientExisted: false,
+    exams: [
+      { code: 'CRE001', name: 'Creatinina', recognized: true },
+      { code: 'URE001', name: 'Ureia', recognized: true },
+      { code: 'POT001', name: 'Potássio', recognized: true },
+    ],
+    insurance: 'Bradesco Saúde',
+    insuranceGuide: '778120',
+    attendanceProtocol: '182-00',
+    attendanceId: 'att_182',
+  },
+  {
+    id: 'porder_07',
+    companyId: DEMO_COMPANY_ID,
+    partnerId: 'apart_04',
+    partnerProtocol: 'MED-0091',
+    receivedAt: hoursAgo(52),
+    status: 'received',
+    patient: { name: 'Luciana Prado', cpf: '852.963.741-08', birthDate: '2001-06-09', sex: 'F' },
+    patientExisted: true,
+    exams: [{ code: 'VITD01', name: 'Vitamina D (25-OH)', recognized: true }],
+    requestingDoctor: 'Dr. Felipe Rocha (CRM 88012-RN)',
+  },
+  {
+    id: 'porder_08',
+    companyId: DEMO_COMPANY_ID,
+    partnerId: 'apart_04',
+    partnerProtocol: 'MED-0092',
+    receivedAt: hoursAgo(74),
+    status: 'processed',
+    patient: { name: 'Gabriel Furtado', cpf: '159.357.486-77', birthDate: '1958-12-01', sex: 'M', phone: '(84) 99444-1212' },
+    patientExisted: true,
+    exams: [
+      { code: 'HB1AC1', name: 'Hemoglobina Glicada', recognized: true },
+      { code: 'GLI001', name: 'Glicose', recognized: true },
+    ],
+    attendanceProtocol: '178-00',
+    attendanceId: 'att_178',
+  },
+  {
+    id: 'porder_09',
+    companyId: DEMO_COMPANY_ID,
+    partnerId: 'apart_01',
+    partnerProtocol: 'VDA-2026-11790',
+    receivedAt: hoursAgo(120),
+    status: 'error',
+    patient: { name: 'Patrícia Nunes', cpf: '369.258.147-55', birthDate: '1993-02-27', sex: 'F' },
+    patientExisted: false,
+    exams: [
+      { code: 'ABC000', name: 'Código não encontrado no Catálogo', recognized: false },
+      { code: 'GLI001', name: 'Glicose', recognized: true },
+    ],
+    errorMessage: '1 de 2 exames com código inválido — nenhum atendimento foi criado.',
+  },
+]
+
+export const DEMO_PARTNER_ORDERS: PartnerOrder[] = BASE.map(o => ({ ...o, rawPayload: payloadOf(o) }))
