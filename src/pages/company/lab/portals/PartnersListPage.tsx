@@ -188,7 +188,7 @@ export default function PartnersListPage() {
               ? 'Cadastre parceiros para receber pedidos de atendimento automaticamente via API.'
               : 'Ajuste os filtros para localizar o parceiro desejado.'}
             action={partners.length === 0 ? (
-              <Button onClick={() => setWizardOpen(true)} className="min-h-[44px] bg-gradient-to-r from-[#00D4FF] to-[#7B2FF7] text-white hover:opacity-90">
+              <Button onClick={() => setWizardOpen(true)} disabled={!canCreate} className="min-h-[44px] bg-gradient-to-r from-[#00D4FF] to-[#7B2FF7] text-white hover:opacity-90">
                 Cadastrar Primeiro Parceiro
               </Button>
             ) : undefined}
@@ -197,7 +197,7 @@ export default function PartnersListPage() {
       ) : (
         <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
           {filtered.map(p => (
-            <PartnerCard key={p.id} partner={p} onClick={() => navigate(`/app/portais/parceiros/${p.id}`)} />
+            <PartnerCard key={p.id} partner={p} moduleBlocked={moduleBlocked} onClick={() => navigate(`/app/portais/parceiros/${p.id}`)} />
           ))}
         </div>
       )}
