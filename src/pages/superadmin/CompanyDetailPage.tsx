@@ -431,10 +431,11 @@ export default function CompanyDetailPage() {
 }
 
 // ─── Resources Tab ─────────────────────────────────────────
-function ResourcesTab({ company, plan }: { company: any; plan: any }) {
+function ResourcesTab({ company, plan, companyId }: { company: any; plan: any; companyId: string }) {
   const [addDoctors, setAddDoctors] = useState(0)
   const [addPatientPacks, setAddPatientPacks] = useState(0)
   const [addStoragePacks, setAddStoragePacks] = useState(0)
+  const partnerApi = usePartnerApiEntitlement(companyId)
 
   const doctorLimit = plan?.maxDoctors ?? company.medicosLimite ?? 15
   const isUnlimitedDoctors = doctorLimit === null || doctorLimit >= 999
