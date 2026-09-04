@@ -62,7 +62,9 @@ const generateSampleHash = (sampleCode: string): string => {
   const a = fnv(0x811c9dc5)
   const b = fnv(0x9e3779b9)
   const raw = (a.toString(36) + b.toString(36)).toUpperCase().replace(/[^A-Z0-9]/g, '')
-  return (raw + '000000000').slice(0, 9)
+  const hash = (raw + '000000000').slice(0, 9)
+  const firstDigit = String(parseInt(hash.charAt(0), 36) % 10)
+  return firstDigit + hash.slice(1)
 }
 
 Deno.serve(async (req) => {
