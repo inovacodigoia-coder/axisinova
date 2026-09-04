@@ -821,14 +821,45 @@ export default function LabHematologiaPage() {
           />
         </section>
 
-        <footer className="flex flex-col justify-end gap-2 border-t border-border bg-muted/50 px-4 py-3 sm:flex-row">
-          <Button variant="outline" className="gap-2" onClick={() => toast.success('Resultado salvo parcialmente')}>
-            <Save className="h-4 w-4" /> SALVAR PARCIAL
-          </Button>
-          <Button className="gradient-bg gap-2 text-primary-foreground" onClick={handleValidate}>
-            <CheckCircle2 className="h-4 w-4" /> Validar Resultado
-          </Button>
+        <footer className="flex flex-col items-stretch justify-between gap-2 border-t border-border bg-muted/50 px-4 py-3 sm:flex-row sm:items-center">
+          <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
+            {resolvedParams.filter((param) => (values[formKeyOfParam(param)] || '').trim() !== '').length} de {resolvedParams.length} campos preenchidos
+            {examStatus === 'digitized' && ' · digitado'}
+            {examStatus === 'released' && ' · liberado'}
+          </p>
+          <div className="flex flex-col gap-2 sm:flex-row">
+            {canType && (
+              <Button
+                variant="outline"
+                className="gap-2"
+                disabled={saving || !selected}
+                onClick={() => runAction('draft', 'Resultado salvo parcialmente.')}
+              >
+                <Save className="h-4 w-4" /> SALVAR PARCIAL
+              </Button>
+            )}
+            {canRelease && (
+              <Button
+                variant="outline"
+                className="gap-2 border-emerald-500/30 text-emerald-600 hover:bg-emerald-50"
+                disabled={saving || examStatus !== 'digitized'}
+                onClick={() => runAction('released', 'Exame liberado com sucesso!')}
+              >
+                <ShieldCheck className="h-4 w-4" /> Liberar Digitados
+              </Button>
+            )}
+            {canType && (
+              <Button
+                className="gradient-bg gap-2 text-primary-foreground"
+                disabled={saving || !allFilled || examStatus === 'released'}
+                onClick={() => runAction('digitized', 'Digitação concluída e salva com sucesso!')}
+              >
+                <CheckCircle2 className="h-4 w-4" /> Concluir Digitação
+              </Button>
+            )}
+          </div>
         </footer>
+
       </section>
       )}
     </div>
