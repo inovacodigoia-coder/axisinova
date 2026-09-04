@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
-import { AlertTriangle, BarChart3, CheckCircle2, Droplet, RefreshCcw, Save } from 'lucide-react'
+import { AlertTriangle, BarChart3, CheckCircle2, Droplet, RefreshCcw, Save, ShieldCheck } from 'lucide-react'
 import { toast } from 'sonner'
 
 import { Badge } from '@/components/ui/badge'
@@ -9,7 +9,12 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Textarea } from '@/components/ui/textarea'
 import { useAttendanceCadastro } from '@/hooks/useAttendanceCadastro'
+import { useAuth } from '@/context/AuthContext'
+import { useResultEntryPermissions } from '@/hooks/useResultEntryPermissions'
+import { resolveCompanyId } from '@/utils/companyId'
+import { buildExamParams, evaluateFormula, findCatalogExam, type ResolvedParam } from '@/utils/examParameters'
 import { supabase } from '@/integrations/supabase/client'
+
 
 type OrderStatus = string
 
