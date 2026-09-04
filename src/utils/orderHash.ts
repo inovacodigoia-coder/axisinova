@@ -49,6 +49,7 @@ export function generateSampleHash(sampleCode: string): string {
   const b = fnv(0x9e3779b9)
   const raw = (a.toString(36) + b.toString(36)).toUpperCase().replace(/[^A-Z0-9]/g, '')
   const hash = (raw + '000000000').slice(0, 9)
-  const firstDigit = String(parseInt(hash.charAt(0), 36) % 10)
-  return firstDigit + hash.slice(1)
+  // Primeiro caractere sempre uma letra (nunca número)
+  const firstLetter = String.fromCharCode(65 + (parseInt(hash.charAt(0), 36) % 26))
+  return firstLetter + hash.slice(1)
 }
