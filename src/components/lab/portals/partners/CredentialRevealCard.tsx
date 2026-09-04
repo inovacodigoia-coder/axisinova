@@ -34,14 +34,8 @@ export function CredentialRevealCard({ credential }: { credential: GeneratedCred
           Guarde estas credenciais agora — elas <strong className="text-foreground">não serão exibidas novamente</strong>.
         </p>
       </div>
-      {credential.method === 'api_key' ? (
-        <Field label="API Key" value={credential.apiKey!} />
-      ) : (
-        <>
-          <Field label="Client ID" value={credential.clientId!} />
-          <Field label="Client Secret" value={credential.clientSecret!} />
-        </>
-      )}
+      <Field label="Client ID" value={credential.clientId} />
+      <Field label="Client Secret" value={credential.clientSecret} />
     </div>
   )
 }
