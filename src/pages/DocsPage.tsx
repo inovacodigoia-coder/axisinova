@@ -72,10 +72,9 @@ function EndpointRow({ ep }: { ep: ApiEndpoint }) {
         </span>
         <code className="truncate font-mono text-xs sm:text-sm">{ep.path}</code>
         <span className="hidden flex-1 truncate text-xs text-muted-foreground sm:block">{ep.summary}</span>
-        <Badge variant="outline" className="hidden shrink-0 gap-1 text-[10px] sm:flex">
-          {ep.scope === 'company' ? <Building2 className="h-3 w-3" /> : <Globe className="h-3 w-3" />}
-          {ep.scope === 'company' ? 'Empresa' : 'Sistema'}
-        </Badge>
+        <div className="hidden shrink-0 sm:flex">
+          <ScopeBadge scope={ep.scope} />
+        </div>
         <ChevronDown className={cn('h-4 w-4 shrink-0 text-muted-foreground transition-transform', open && 'rotate-180')} />
       </button>
 
