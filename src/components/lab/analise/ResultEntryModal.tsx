@@ -1574,6 +1574,22 @@ export function ResultEntryModal({
                                 <CalendarIcon className="h-3 w-3" />
                                 Coleta: {format(new Date(exam.registeredAt), 'dd/MM/yyyy HH:mm')}
                               </div>
+                              {(() => {
+                                const info = diffInfoFor(getParams(exam), (pid) => results[`${exam.id}_${pid}`] || '');
+                                if (!info) return null;
+                                return (
+                                  <div className="mt-1">
+                                    <span className="text-[10px] font-black uppercase tracking-wide text-rose-600">
+                                      Glóbulos Brancos (Total: {info.total.toFixed(2).replace('.', ',')} %)
+                                    </span>
+                                    {info.over && (
+                                      <p className="mt-0.5 flex items-center gap-1 text-[9px] font-bold uppercase text-rose-600">
+                                        <AlertTriangle className="h-3 w-3 shrink-0" /> A soma do diferencial ultrapassou 100% — verifique os valores
+                                      </p>
+                                    )}
+                                  </div>
+                                );
+                              })()}
                             </div>
                           </div>
 
