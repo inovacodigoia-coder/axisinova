@@ -83,6 +83,45 @@ const maskDecimal = (raw: string) => raw.replace(/\./g, ',').replace(/[^\d,]/g, 
 const normalize = (text: string) =>
   text.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/[^a-z0-9]/g, '')
 
+/** Converte string de data para Date no fuso local (evita deslocamento de 1 dia em datas "YYYY-MM-DD"). */
+function parseLocalDate(value?: string | Date | null): Date | null {
+  if (!value) return null
+  if (value instanceof Date) return isNaN(value.getTime()) ? null : value
+  const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(value.trim())
+  if (m) return new Date(Number(m[1]), Number(m[2]) - 1, Number(m[3]))
+  const d = new Date(value)
+  return isNaN(d.getTime()) ? null : d
+}
+
+/** Converte data no formato brasileiro DD/MM/AAAA para Date no fuso local. */
+function parseBrazilianDate(value?: string | null): Date | null {
+  if (!value) return null
+  const m = /^(\d{2})\/(\d{2})\/(\d{4})$/.exec(value.trim())
+  if (!m) return null
+  const day = Number(m[1])
+  const month = Number(m[2])
+  const year = Number(m[3])
+  if (month < 1 || month > 12 || day < 1 || day > 31) return null
+  const d = new Date(year, month - 1, day)
+  return d.getMonth() === month - 1 && d.getDate() === day ? d : null
+}
+
+/** Aplica máscara de data brasileira enquanto digita (DD/MM/AAAA). */
+function maskBrazilianDate(value: string): string {
+  const digits = value.replace(/\D/g, '').slice(0, 8)
+  if (digits.length <= 2) return digits
+  if (digits.length <= 4) return `${digits.slice(0, 2)}/${digits.slice(2)}`
+  return `${digits.slice(0, 2)}/${digits.slice(2, 4)}/${digits.slice(4)}`
+}
+
+function startOfDay(d: Date): Date {
+  return new Date(d.getFullYear(), d.getMonth(), d.getDate())
+}
+
+function endOfDay(d: Date): Date {
+  return new Date(d.getFullYear(), d.getMonth(), d.getDate(), 23, 59, 59, 999)
+}
+
 /** Mapa nome do parâmetro (normalizado) -> chave do formulário */
 const PARAM_KEY_MAP: Record<string, string> = (() => {
   const map: Record<string, string> = {
@@ -131,6 +170,11 @@ export default function LabHematologiaPage() {
   const { orders, refresh, loading } = useAttendanceCadastro()
 
   const [statusFilter, setStatusFilter] = useState<string>('all')
+  const [dateFromInput, setDateFromInput] = useState('')
+  const [dateToInput, setDateToInput] = useState('')
+  const [dateFrom, setDateFrom] = useState<Date | null>(null)
+  const [dateTo, setDateTo] = useState<Date | null>(null)
+  const [orderFilter, setOrderFilter] = useState('')
   const [selectedId, setSelectedId] = useState<string | null>(null)
   const [values, setValues] = useState<Record<string, string>>({})
   const [laudo, setLaudo] = useState('')
@@ -169,10 +213,31 @@ export default function LabHematologiaPage() {
     return list
   }, [orders])
 
-  const filteredExams = useMemo(
-    () => exams.filter((exam) => statusFilter === 'all' || exam.status === statusFilter),
-    [exams, statusFilter],
-  )
+  const filteredExams = useMemo(() => {
+    const orderTerm = orderFilter.trim()
+    if (orderTerm) {
+      const term = normalize(orderTerm)
+      return exams.filter((exam) => {
+        const protocol = normalize(String(exam.protocol || ''))
+        const orderNumber = normalize(String(exam.orderNumber || ''))
+        const patient = normalize(exam.patientName || '')
+        const examName = normalize(exam.examName || '')
+        return protocol.includes(term) || orderNumber.includes(term) || patient.includes(term) || examName.includes(term)
+      })
+    }
+
+    return exams.filter((exam) => {
+      if (statusFilter !== 'all' && exam.status !== statusFilter) return false
+      const examDate = parseLocalDate(exam.date)
+      if (dateFrom && examDate) {
+        if (examDate < startOfDay(dateFrom)) return false
+      }
+      if (dateTo && examDate) {
+        if (examDate > endOfDay(dateTo)) return false
+      }
+      return true
+    })
+  }, [exams, statusFilter, dateFrom, dateTo, orderFilter])
 
   useEffect(() => {
     if (!filteredExams.length) {
@@ -238,9 +303,41 @@ export default function LabHematologiaPage() {
       <div className="flex flex-wrap items-center gap-2">
         <Droplet className="h-5 w-5 text-primary" />
         <h1 className="text-xl font-bold">Equipamento da Hematologia</h1>
-        <div className="ml-auto flex items-center gap-2">
+        <div className="ml-auto flex flex-wrap items-center gap-2">
+          <Input
+            type="text"
+            inputMode="numeric"
+            placeholder="Pedido / protocolo..."
+            value={orderFilter}
+            onChange={(event) => setOrderFilter(event.target.value)}
+            className="h-8 w-[160px] text-xs"
+          />
+          <Input
+            type="text"
+            inputMode="numeric"
+            placeholder="Data início"
+            value={dateFromInput}
+            onChange={(event) => {
+              const masked = maskBrazilianDate(event.target.value)
+              setDateFromInput(masked)
+              setDateFrom(parseBrazilianDate(masked))
+            }}
+            className="h-8 w-[120px] text-xs"
+          />
+          <Input
+            type="text"
+            inputMode="numeric"
+            placeholder="Data final"
+            value={dateToInput}
+            onChange={(event) => {
+              const masked = maskBrazilianDate(event.target.value)
+              setDateToInput(masked)
+              setDateTo(parseBrazilianDate(masked))
+            }}
+            className="h-8 w-[120px] text-xs"
+          />
           <Select value={statusFilter} onValueChange={setStatusFilter}>
-            <SelectTrigger aria-label="Filtrar por status do pedido" className="h-8 w-[200px] text-xs">
+            <SelectTrigger aria-label="Filtrar por status do pedido" className="h-8 w-[180px] text-xs">
               <SelectValue placeholder="Status do pedido" />
             </SelectTrigger>
             <SelectContent>
