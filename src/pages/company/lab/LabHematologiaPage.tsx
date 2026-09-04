@@ -729,7 +729,7 @@ export default function LabHematologiaPage() {
                 <TabsContent value="hemacias" className="mt-2">
                   <div className="overflow-hidden rounded border border-border">
                     {RED_FIELDS.map((field) => (
-                      <div key={field.key} className="grid grid-cols-[minmax(104px,1fr)_84px_58px] items-center gap-1 border-b border-border px-2 py-1 last:border-b-0">
+                      <div key={field.key} className="grid grid-cols-[minmax(96px,1fr)_80px_96px] items-center gap-1 border-b border-border px-2 py-1 last:border-b-0">
                         <span className="truncate text-[11px]">{field.label}</span>
                         <CompactInput label={field.label} value={getValue(field.key)} onChange={(value) => setValue(field.key, value)} />
                         <span className="truncate text-right text-[9px] text-muted-foreground" title={referenceOf(field.key)}>{field.unit}{referenceOf(field.key) ? ` · ${referenceOf(field.key)}` : ''}</span>
@@ -740,7 +740,7 @@ export default function LabHematologiaPage() {
                 <TabsContent value="reticulocitos" className="mt-2">
                   <div className="overflow-hidden rounded border border-border">
                     {RETIC_FIELDS.map((field) => (
-                      <div key={field.key} className="grid grid-cols-[minmax(104px,1fr)_84px_58px] items-center gap-1 border-b border-border px-2 py-1 last:border-b-0">
+                      <div key={field.key} className="grid grid-cols-[minmax(96px,1fr)_80px_96px] items-center gap-1 border-b border-border px-2 py-1 last:border-b-0">
                         <span className="truncate text-[11px]">{field.label}</span>
                         <CompactInput label={field.label} value={getValue(field.key)} onChange={(value) => setValue(field.key, value)} />
                         <span className="truncate text-right text-[9px] text-muted-foreground" title={referenceOf(field.key)}>{field.unit}{referenceOf(field.key) ? ` · ${referenceOf(field.key)}` : ''}</span>
@@ -755,7 +755,7 @@ export default function LabHematologiaPage() {
               <SectionTitle>Plaquetas</SectionTitle>
               <div className="overflow-hidden rounded border border-border">
                 {PLATELET_FIELDS.map((field) => (
-                  <div key={field.key} className="grid grid-cols-[minmax(104px,1fr)_84px_58px] items-center gap-1 border-b border-border px-2 py-1 last:border-b-0">
+                  <div key={field.key} className="grid grid-cols-[minmax(96px,1fr)_80px_96px] items-center gap-1 border-b border-border px-2 py-1 last:border-b-0">
                     <span className="truncate text-[11px]">{field.label}</span>
                     <CompactInput label={field.label} value={getValue(field.key)} onChange={(value) => setValue(field.key, value)} />
                     <span className="truncate text-right text-[9px] text-muted-foreground" title={referenceOf(field.key)}>{field.unit}{referenceOf(field.key) ? ` · ${referenceOf(field.key)}` : ''}</span>
