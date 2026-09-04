@@ -227,6 +227,8 @@ const CompactInput = ({ value, onChange, label }: { value: string; onChange: (va
 
 export default function LabHematologiaPage() {
   const { orders, refresh, loading } = useAttendanceCadastro()
+  const { user } = useAuth()
+  const { canType, canRelease } = useResultEntryPermissions()
 
   const [statusFilter, setStatusFilter] = useState<string>('all')
   const [dateFromInput, setDateFromInput] = useState('')
@@ -239,6 +241,23 @@ export default function LabHematologiaPage() {
   const [laudo, setLaudo] = useState('')
   const [observacao, setObservacao] = useState('')
   const [flags, setFlags] = useState<string[]>([])
+  const [catalogList, setCatalogList] = useState<any[]>([])
+  const [examStatus, setExamStatus] = useState<string | null>(null)
+  const [instrumentKeys, setInstrumentKeys] = useState<Set<string>>(new Set())
+  const [saving, setSaving] = useState(false)
+
+  // Catálogo de Exames (mesma fonte usada na Digitação de Resultados)
+  useEffect(() => {
+    let active = true
+    ;(async () => {
+      const { data } = await supabase
+        .from('exams')
+        .select('id, name, internal_code, measurement_unit, parameters, reference_values')
+      if (active && data) setCatalogList(data as any[])
+    })()
+    return () => { active = false }
+  }, [])
+
 
   // Exames de hematologia reais da empresa do usuário logado
   const exams = useMemo<HemItem[]>(() => {
