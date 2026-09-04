@@ -5,7 +5,7 @@
  */
 
 export type HttpMethod = 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE'
-export type Scope = 'company' | 'system'
+export type Scope = 'company' | 'system' | 'partner'
 
 export interface ApiParam {
   name: string
