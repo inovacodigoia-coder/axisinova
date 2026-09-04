@@ -23,6 +23,7 @@ export default function CompanyDetailPage() {
   const [company, setCompany] = useState<Company | null>(null)
   const [companyUsers, setCompanyUsers] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
+  const partnerApi = usePartnerApiEntitlement(companyId)
 
   useEffect(() => {
     async function fetchCompany() {
