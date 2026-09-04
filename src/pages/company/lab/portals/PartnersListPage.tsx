@@ -34,9 +34,9 @@ function lastSyncLabel(iso: string | null) {
   return `Última sincronização há ${Math.floor(h / 24)}d`
 }
 
-export function PartnerCard({ partner, onClick }: { partner: ApiPartner; onClick: () => void }) {
+export function PartnerCard({ partner, onClick, moduleBlocked = false }: { partner: ApiPartner; onClick: () => void; moduleBlocked?: boolean }) {
   const Icon = TYPE_ICON[partner.type]
-  const auth = partnerAuthorizationState(partner)
+  const auth = moduleBlocked ? 'blocked' : partnerAuthorizationState(partner)
   return (
     <button
       type="button"
