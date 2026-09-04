@@ -575,7 +575,38 @@ function ResourcesTab({ company, plan, companyId }: { company: any; plan: any; c
             <p className="text-xs text-primary mt-2">Novo limite: {newStorageLimit} GB (+R$ {addStoragePacks * ADDON_PRICE_STORAGE}/mês)</p>
           )}
         </div>
+
+        {/* Parceiros API */}
+        <div className={`rounded-2xl border border-border bg-card p-6 shadow-[0_4px_24px_rgba(0,0,0,0.06)] ${partnerApi.enabled ? '' : 'opacity-60'}`}>
+          <div className="flex items-center gap-3 mb-4">
+            <div className="rounded-lg bg-primary/10 p-2"><Handshake className="h-5 w-5 text-primary" /></div>
+            <div>
+              <h3 className="text-sm font-semibold text-foreground">Parceiros API</h3>
+              <p className="text-xs text-muted-foreground">
+                {partnerApi.enabled ? `${partnerApi.maxPartners} máx (parceiros ativos)` : 'Módulo não liberado'}
+              </p>
+            </div>
+          </div>
+          {partnerApi.enabled ? (
+            <div className="flex items-center justify-between rounded-lg bg-muted/50 p-3">
+              <div>
+                <p className="text-xs font-medium text-foreground">Limite de parceiros ativos</p>
+                <p className="text-[10px] text-muted-foreground">Definido manualmente pelo Super Admin</p>
+              </div>
+              <input
+                type="number"
+                min={0}
+                value={partnerApi.maxPartners}
+                onChange={e => setPartnerApiEntitlement(companyId, { maxPartners: Math.max(0, Number(e.target.value) || 0) })}
+                className="h-9 w-20 rounded-lg border border-input bg-background px-2 text-sm text-center"
+              />
+            </div>
+          ) : (
+            <p className="text-sm text-muted-foreground">Ative o módulo Parceiros em Configurações para definir o limite</p>
+          )}
+        </div>
       </div>
+
 
       {/* Summary & Save */}
       {monthlyCost > 0 && (
