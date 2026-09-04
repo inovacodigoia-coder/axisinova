@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
-import { ArrowLeft, Trash2, RefreshCw, KeyRound, Lock, Info } from 'lucide-react'
+import { ArrowLeft, Trash2, RefreshCw, KeyRound, Lock, Info, FileDown } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -15,6 +15,9 @@ import {
 } from '@/components/ui/alert-dialog'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog'
 import { Checkbox } from '@/components/ui/checkbox'
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
+import { generatePartnerIntegrationGuide, canGeneratePartnerGuide } from '@/lib/partnerIntegrationGuide'
+import { usePartnerApiEntitlement } from '@/stores/partnerApiEntitlementStore'
 import { toast } from 'sonner'
 import { cn } from '@/lib/utils'
 import { PartnerOrdersTable } from '@/components/lab/portals/partners/PartnerOrdersTable'
@@ -30,6 +33,7 @@ export default function PartnerDetailPage() {
   const { id = '' } = useParams()
   const navigate = useNavigate()
   const partners = useApiPartners()
+  const entitlement = usePartnerApiEntitlement()
   const partner = partners.find(p => p.id === id)
 
   const [form, setForm] = useState(() => partner)
@@ -53,6 +57,7 @@ export default function PartnerDetailPage() {
   }
 
   const auth = partnerAuthorizationState(partner)
+  const guideEnabled = entitlement.enabled && canGeneratePartnerGuide(partner)
   const activeCredential = partner.credentials.find(c => !c.revokedAt)
 
   const save = () => {
