@@ -212,18 +212,63 @@ export default function DocsPage() {
 
         {groups.map((group) => (
           <div key={group.tag} className="space-y-6">
-          <section className="rounded-xl border bg-background p-4 sm:p-5">
-            <div className="mb-1 flex items-center justify-between">
-              <h2 className="text-lg font-semibold capitalize">{group.tag}</h2>
-              <span className="text-xs text-muted-foreground">{group.endpoints.length} endpoints</span>
-            </div>
-            <p className="mb-4 text-sm text-muted-foreground">{group.description}</p>
-            <div className="space-y-2">
-              {group.endpoints.map((ep) => (
-                <EndpointRow key={ep.id} ep={ep} />
-              ))}
-            </div>
-          </section>
+            <section className="rounded-xl border bg-background p-4 sm:p-5">
+              <div className="mb-1 flex items-center justify-between">
+                <h2 className="text-lg font-semibold capitalize">{group.tag}</h2>
+                <span className="text-xs text-muted-foreground">{group.endpoints.length} endpoints</span>
+              </div>
+              <p className="mb-4 text-sm text-muted-foreground">{group.description}</p>
+              <div className="space-y-2">
+                {group.endpoints.map((ep) => (
+                  <EndpointRow key={ep.id} ep={ep} />
+                ))}
+              </div>
+            </section>
+
+            {group.tag === 'laboratorio' && scope === 'all' && !query.trim() && (
+              <section className="rounded-xl border border-[#7B2FF7]/30 bg-gradient-to-br from-[#7B2FF7]/5 via-background to-[#00D4FF]/5 p-4 sm:p-5">
+                <div className="mb-1 flex items-center gap-2">
+                  <FlaskConical className="h-5 w-5 text-[#7B2FF7]" />
+                  <h2 className="text-lg font-semibold">Exames Laboratoriais — Como funciona o Código de Exame</h2>
+                </div>
+                <p className="mb-4 text-sm text-muted-foreground">
+                  Todo exame no Axis Inova possui um <strong>Código</strong> único no Catálogo de Exames. Esse código é o
+                  identificador que deve ser usado em qualquer integração — pedidos de parceiros, interfaceamento de
+                  equipamentos e importação de planilha.
+                </p>
+                <div className="overflow-x-auto rounded-md border bg-background">
+                  <table className="w-full text-xs">
+                    <thead className="bg-muted/50 text-muted-foreground">
+                      <tr>
+                        <th className="p-2 text-left font-medium">Código</th>
+                        <th className="p-2 text-left font-medium">Nome do Exame</th>
+                        <th className="p-2 text-left font-medium">Setor Técnico</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {DEMO_EXAMS.slice(0, 8).map((exam) => (
+                        <tr key={exam.id} className="border-t">
+                          <td className="p-2 font-mono">{exam.tussCode ?? exam.internalCode ?? '—'}</td>
+                          <td className="p-2">{exam.name}</td>
+                          <td className="p-2 text-muted-foreground">
+                            {DEMO_SPECIALTIES.find((s) => s.id === exam.specialtyId)?.name ?? '—'}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+                <p className="mt-4 text-sm text-muted-foreground">
+                  Endpoints relacionados: <code className="font-mono text-xs">GET /exams</code> (grupo Laboratorio) e{' '}
+                  <code className="font-mono text-xs">GET /list-exams-for-integration</code> (grupos Parceiros/Interfaceamento).
+                </p>
+                <p className="mt-2 text-sm text-muted-foreground">
+                  Empresas que utilizam o módulo Parceiros podem gerar um guia de integração específico, já com os
+                  códigos e credenciais do parceiro, diretamente na tela de detalhe do parceiro dentro do sistema.
+                </p>
+              </section>
+            )}
+          </div>
         ))}
 
         {groups.length === 0 && (
