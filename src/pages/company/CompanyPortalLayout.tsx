@@ -123,6 +123,8 @@ import LabPharmacyReportsPage from './farmacia/LabPharmacyReportsPage'
 import LabSorotecaDashboardPage from './lab/soroteca/LabSorotecaDashboardPage'
 import LabSorotecaStructurePage from './lab/soroteca/LabSorotecaStructurePage'
 import ExternalPortalsPage from './lab/portals/ExternalPortalsPage'
+import PartnersListPage from './lab/portals/PartnersListPage'
+import PartnerDetailPage from './lab/portals/PartnerDetailPage'
 import PartnerPortalPage from './lab/portals/PartnerPortalPage'
 import PatientPortalPage from './lab/portals/PatientPortalPage'
 import DoctorPortalPage from './lab/portals/DoctorPortalPage'
@@ -333,6 +335,8 @@ function PortalContent() {
               <Route path="estoque/lotes" element={<LabStockLotsPage />} />
               <Route path="estoque/movimentacoes" element={<LabStockMovementsPage />} />
               <Route path="portais" element={<ExternalPortalsPage />} />
+              <Route path="portais/parceiros" element={<PartnersListPage />} />
+              <Route path="portais/parceiros/:id" element={<PartnerDetailPage />} />
               <Route path="portal/parceiro" element={<PartnerPortalPage />} />
               <Route path="portal/paciente" element={<PatientPortalPage />} />
               <Route path="portal/medico" element={<DoctorPortalPage />} />
