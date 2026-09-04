@@ -91,6 +91,7 @@ import LabEquipmentPage from './lab/equipment/LabEquipmentPage'
 import InstrumentApiKeysPage from './lab/equipment/InstrumentApiKeysPage'
 import LabAbbreviationsPage from './lab/abbreviations/LabAbbreviationsPage'
 import LabTechnicalWorkPage from './lab/LabTechnicalWorkPage'
+import LabHematologiaPage from './lab/LabHematologiaPage'
 import LabAnalisePage from './lab/analise/LabAnalisePage'
 import LabMapaPage from './lab/LabMapaPage'
 import LabMapaViewPage from './lab/LabMapaViewPage'
@@ -313,7 +314,7 @@ function PortalContent() {
               <Route path="lab/mapa" element={<LabMapaPage />} />
               <Route path="lab/mapa/:codigo" element={<LabMapaViewPage />} />
               <Route path="lab/analise" element={<LabAnalisePage />} />
-              <Route path="lab/validacao" element={<LabTechnicalWorkPage view="validation" />} />
+              <Route path="lab/validacao" element={<LabHematologiaPage />} />
               <Route path="lab/laudos" element={<LabReportsPage />} />
               <Route path="orcamentos" element={<LabBudgetsPage />} />
               <Route path="orcamentos/novo" element={<LabBudgetFormPage />} />

@@ -21,7 +21,7 @@ export const LAB_STATUS_META: Record<string, { label: string; dot: string; text:
   collection_done: { label: 'COLETA REALIZADA', dot: 'bg-emerald-500', text: 'text-emerald-600', bg: 'bg-emerald-500/10', route: '/app/lab/analise' },
   open: { label: 'ABERTO', dot: 'bg-blue-400', text: 'text-blue-500', bg: 'bg-blue-400/10' },
   in_analysis: { label: 'Em Análise', dot: 'bg-blue-500', text: 'text-blue-600', bg: 'bg-blue-500/10', route: '/app/lab/analise' },
-  validation: { label: 'Validação', dot: 'bg-purple-500', text: 'text-purple-600', bg: 'bg-purple-500/10', route: '/app/lab/validacao' },
+  validation: { label: 'Hematologia', dot: 'bg-purple-500', text: 'text-purple-600', bg: 'bg-purple-500/10', route: '/app/lab/validacao' },
   released: { label: 'Liberado', dot: 'bg-emerald-600', text: 'text-emerald-700', bg: 'bg-emerald-600/10', route: '/app/lab/laudos' },
   cancelled: { label: 'Cancelado', dot: 'bg-red-500', text: 'text-red-600', bg: 'bg-red-500/10' },
   authorized: { label: 'Autorizado', dot: 'bg-indigo-500', text: 'text-indigo-600', bg: 'bg-indigo-500/10' },
