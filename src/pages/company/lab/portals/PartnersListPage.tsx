@@ -1,15 +1,17 @@
 import { useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Building2, FlaskConical, ShieldCheck, Stethoscope, Search, Plus, Handshake } from 'lucide-react'
+import { Building2, FlaskConical, ShieldCheck, Stethoscope, Search, Plus, Handshake, AlertTriangle } from 'lucide-react'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
 import { EmptyState } from '@/components/feedback/EmptyState'
 import { cn } from '@/lib/utils'
 import { useAuth } from '@/context/AuthContext'
 import { resolveCompanyId } from '@/utils/companyId'
 import { useApiPartners } from '@/stores/apiPartnersStore'
+import { usePartnerApiEntitlement } from '@/stores/partnerApiEntitlementStore'
 import { NewPartnerWizard } from '@/components/lab/portals/partners/NewPartnerWizard'
 import type { ApiPartner, ApiPartnerType } from '@/types/api-partners.types'
 import { PARTNER_TYPE_LABEL, partnerAuthorizationState } from '@/types/api-partners.types'
@@ -32,9 +34,9 @@ function lastSyncLabel(iso: string | null) {
   return `Última sincronização há ${Math.floor(h / 24)}d`
 }
 
-export function PartnerCard({ partner, onClick }: { partner: ApiPartner; onClick: () => void }) {
+export function PartnerCard({ partner, onClick, moduleBlocked = false }: { partner: ApiPartner; onClick: () => void; moduleBlocked?: boolean }) {
   const Icon = TYPE_ICON[partner.type]
-  const auth = partnerAuthorizationState(partner)
+  const auth = moduleBlocked ? 'blocked' : partnerAuthorizationState(partner)
   return (
     <button
       type="button"
@@ -95,18 +97,53 @@ export default function PartnersListPage() {
   }, [partners, search, type, status, auth])
 
   const activeCount = partners.filter(p => p.status === 'active').length
+  const entitlement = usePartnerApiEntitlement(companyId)
+  const moduleBlocked = !entitlement.enabled
+  const limitReached = !moduleBlocked && activeCount >= entitlement.maxPartners
+  const canCreate = !moduleBlocked && !limitReached
+  const createTooltip = moduleBlocked
+    ? 'Módulo de Parceiros não liberado pelo Super Admin'
+    : limitReached
+      ? `Limite de ${entitlement.maxPartners} parceiros atingido para o plano atual`
+      : null
 
   return (
     <div className="space-y-6">
+      {moduleBlocked && (
+        <div className="flex items-start gap-3 rounded-xl border-2 border-[hsl(38,92%,50%)]/40 bg-[hsl(38,92%,50%)]/10 p-4">
+          <AlertTriangle className="mt-0.5 h-5 w-5 shrink-0 text-[hsl(38,92%,40%)]" />
+          <p className="text-sm text-[hsl(38,92%,28%)]">
+            O módulo de Parceiros via API ainda não foi liberado pelo Super Admin para esta empresa. Entre em contato com o suporte Axis Inova.
+          </p>
+        </div>
+      )}
+
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="text-2xl font-bold text-foreground">Parceiros</h1>
-          <p className="text-sm text-muted-foreground">{activeCount} parceiro(s) ativo(s) integrados via API</p>
+          <p className="text-sm text-muted-foreground">
+            {activeCount} parceiro(s) ativo(s) integrados via API
+            {!moduleBlocked && ` · limite de ${entitlement.maxPartners}`}
+          </p>
         </div>
-        <Button onClick={() => setWizardOpen(true)} className="min-h-[44px] bg-gradient-to-r from-[#00D4FF] to-[#7B2FF7] text-white hover:opacity-90">
-          <Plus className="mr-2 h-4 w-4" /> Novo Parceiro
-        </Button>
+        <TooltipProvider>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <span className="inline-flex">
+                <Button
+                  onClick={() => setWizardOpen(true)}
+                  disabled={!canCreate}
+                  className="min-h-[44px] w-full bg-gradient-to-r from-[#00D4FF] to-[#7B2FF7] text-white hover:opacity-90 sm:w-auto"
+                >
+                  <Plus className="mr-2 h-4 w-4" /> Novo Parceiro
+                </Button>
+              </span>
+            </TooltipTrigger>
+            {createTooltip && <TooltipContent>{createTooltip}</TooltipContent>}
+          </Tooltip>
+        </TooltipProvider>
       </div>
+
 
       <div className="grid gap-3 rounded-xl border bg-card p-4 sm:grid-cols-2 lg:grid-cols-4">
         <div className="relative">
@@ -151,7 +188,7 @@ export default function PartnersListPage() {
               ? 'Cadastre parceiros para receber pedidos de atendimento automaticamente via API.'
               : 'Ajuste os filtros para localizar o parceiro desejado.'}
             action={partners.length === 0 ? (
-              <Button onClick={() => setWizardOpen(true)} className="min-h-[44px] bg-gradient-to-r from-[#00D4FF] to-[#7B2FF7] text-white hover:opacity-90">
+              <Button onClick={() => setWizardOpen(true)} disabled={!canCreate} className="min-h-[44px] bg-gradient-to-r from-[#00D4FF] to-[#7B2FF7] text-white hover:opacity-90">
                 Cadastrar Primeiro Parceiro
               </Button>
             ) : undefined}
@@ -160,7 +197,7 @@ export default function PartnersListPage() {
       ) : (
         <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
           {filtered.map(p => (
-            <PartnerCard key={p.id} partner={p} onClick={() => navigate(`/app/portais/parceiros/${p.id}`)} />
+            <PartnerCard key={p.id} partner={p} moduleBlocked={moduleBlocked} onClick={() => navigate(`/app/portais/parceiros/${p.id}`)} />
           ))}
         </div>
       )}

@@ -3,11 +3,12 @@ import { useState, useEffect } from 'react'
 import { MOCK_COMPANY_USERS, MOCK_INVOICES, MOCK_PLANS } from '@/mocks/superadmin.mock'
 import { CompanyStatusBadge } from '@/components/superadmin/CompanyStatusBadge'
 import { StatusBadge } from '@/components/ui/StatusBadge'
-import { ArrowLeft, Users, Building2, ClipboardList, HardDrive, ExternalLink, Stethoscope, Plus, Minus, UserPlus, Database } from 'lucide-react'
+import { ArrowLeft, Users, Building2, ClipboardList, HardDrive, ExternalLink, Stethoscope, Plus, Minus, UserPlus, Database, Handshake } from 'lucide-react'
 import { useAuth } from '@/context/AuthContext'
 import { OutlineButton } from '@/components/ui/OutlineButton'
 import { toast } from 'sonner'
 import { supabase } from '@/integrations/supabase/client'
+import { usePartnerApiEntitlement, setPartnerApiEntitlement } from '@/stores/partnerApiEntitlementStore'
 import type { Company, PlanType, CompanyStatus } from '@/types/company.types'
 
 const ADDON_PRICE_DOCTOR = 79
@@ -22,6 +23,7 @@ export default function CompanyDetailPage() {
   const [company, setCompany] = useState<Company | null>(null)
   const [companyUsers, setCompanyUsers] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
+  const partnerApi = usePartnerApiEntitlement(companyId)
 
   useEffect(() => {
     async function fetchCompany() {
@@ -221,8 +223,9 @@ export default function CompanyDetailPage() {
       )}
 
       {activeTab === 'resources' && (
-        <ResourcesTab company={company} plan={plan || null} />
+        <ResourcesTab company={company} plan={plan || null} companyId={companyId || ''} />
       )}
+
 
       {activeTab === 'users' && (
         <div className="rounded-2xl border border-border bg-card overflow-hidden">
@@ -336,6 +339,66 @@ export default function CompanyDetailPage() {
           </div>
 
           <div className="rounded-2xl border border-border bg-card p-6 shadow-[0_4px_24px_rgba(0,0,0,0.06)] space-y-6">
+            <h3 className="text-sm font-semibold text-foreground uppercase tracking-wider">Integrações</h3>
+            <div className="space-y-4">
+              <div className="flex items-start justify-between gap-4">
+                <div className="min-w-0">
+                  <p className="font-medium flex items-center gap-2 text-foreground">
+                    <Handshake className="h-4 w-4 text-primary" /> Parceiros — Integração via API
+                  </p>
+                  <p className="text-xs text-muted-foreground">
+                    Permite que a empresa cadastre parceiros (laboratórios, clínicas, convênios, médicos solicitantes) e receba pedidos de atendimento automaticamente via API.
+                  </p>
+                </div>
+                <input
+                  type="checkbox"
+                  checked={partnerApi.enabled}
+                  onChange={e => {
+                    const enabled = e.target.checked
+                    setPartnerApiEntitlement(companyId || '', enabled
+                      ? {
+                        enabled,
+                        releasedAt: partnerApi.releasedAt || new Date().toISOString(),
+                        releasedBy: partnerApi.releasedBy || 'Hostinger Inova Super Admin',
+                      }
+                      : { enabled })
+                    toast.success(enabled ? 'Módulo Parceiros liberado para a empresa.' : 'Módulo Parceiros bloqueado para a empresa.')
+                  }}
+                  className="mt-1 h-5 w-10 shrink-0 rounded-full accent-primary cursor-pointer"
+                />
+              </div>
+
+              {partnerApi.enabled && (
+                <div className="rounded-xl border border-border bg-muted/40 p-4 space-y-3">
+                  <div className="grid gap-3 sm:grid-cols-2">
+                    <div>
+                      <p className="text-xs text-muted-foreground">Data de liberação</p>
+                      <p className="text-sm font-medium">
+                        {partnerApi.releasedAt ? new Date(partnerApi.releasedAt).toLocaleString('pt-BR') : '—'}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-xs text-muted-foreground">Liberado por</p>
+                      <p className="text-sm font-medium">{partnerApi.releasedBy || 'Hostinger Inova Super Admin'}</p>
+                    </div>
+                  </div>
+                  <div>
+                    <label className="text-xs font-medium text-muted-foreground">Observação / Justificativa (opcional)</label>
+                    <textarea
+                      rows={2}
+                      value={partnerApi.note}
+                      onChange={e => setPartnerApiEntitlement(companyId || '', { note: e.target.value })}
+                      placeholder="Ex: Liberado a pedido do cliente via ticket #123"
+                      className="mt-1 flex w-full rounded-lg border border-input bg-background px-3 py-2 text-sm"
+                    />
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+
+
+          <div className="rounded-2xl border border-border bg-card p-6 shadow-[0_4px_24px_rgba(0,0,0,0.06)] space-y-6">
             <h3 className="text-sm font-semibold text-foreground">Configurações da Empresa</h3>
           {[
             { label: 'Ativar acesso ao sistema', defaultChecked: company.status === 'active' },
@@ -368,10 +431,11 @@ export default function CompanyDetailPage() {
 }
 
 // ─── Resources Tab ─────────────────────────────────────────
-function ResourcesTab({ company, plan }: { company: any; plan: any }) {
+function ResourcesTab({ company, plan, companyId }: { company: any; plan: any; companyId: string }) {
   const [addDoctors, setAddDoctors] = useState(0)
   const [addPatientPacks, setAddPatientPacks] = useState(0)
   const [addStoragePacks, setAddStoragePacks] = useState(0)
+  const partnerApi = usePartnerApiEntitlement(companyId)
 
   const doctorLimit = plan?.maxDoctors ?? company.medicosLimite ?? 15
   const isUnlimitedDoctors = doctorLimit === null || doctorLimit >= 999
@@ -511,7 +575,38 @@ function ResourcesTab({ company, plan }: { company: any; plan: any }) {
             <p className="text-xs text-primary mt-2">Novo limite: {newStorageLimit} GB (+R$ {addStoragePacks * ADDON_PRICE_STORAGE}/mês)</p>
           )}
         </div>
+
+        {/* Parceiros API */}
+        <div className={`rounded-2xl border border-border bg-card p-6 shadow-[0_4px_24px_rgba(0,0,0,0.06)] ${partnerApi.enabled ? '' : 'opacity-60'}`}>
+          <div className="flex items-center gap-3 mb-4">
+            <div className="rounded-lg bg-primary/10 p-2"><Handshake className="h-5 w-5 text-primary" /></div>
+            <div>
+              <h3 className="text-sm font-semibold text-foreground">Parceiros API</h3>
+              <p className="text-xs text-muted-foreground">
+                {partnerApi.enabled ? `${partnerApi.maxPartners} máx (parceiros ativos)` : 'Módulo não liberado'}
+              </p>
+            </div>
+          </div>
+          {partnerApi.enabled ? (
+            <div className="flex items-center justify-between rounded-lg bg-muted/50 p-3">
+              <div>
+                <p className="text-xs font-medium text-foreground">Limite de parceiros ativos</p>
+                <p className="text-[10px] text-muted-foreground">Definido manualmente pelo Super Admin</p>
+              </div>
+              <input
+                type="number"
+                min={0}
+                value={partnerApi.maxPartners}
+                onChange={e => setPartnerApiEntitlement(companyId, { maxPartners: Math.max(0, Number(e.target.value) || 0) })}
+                className="h-9 w-20 rounded-lg border border-input bg-background px-2 text-sm text-center"
+              />
+            </div>
+          ) : (
+            <p className="text-sm text-muted-foreground">Ative o módulo Parceiros em Configurações para definir o limite</p>
+          )}
+        </div>
       </div>
+
 
       {/* Summary & Save */}
       {monthlyCost > 0 && (
