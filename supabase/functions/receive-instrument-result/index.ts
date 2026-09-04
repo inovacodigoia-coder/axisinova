@@ -55,7 +55,6 @@ const generateSampleHash = (sampleCode: string): string => {
   const b = fnv(0x9e3779b9)
   const raw = (a.toString(36) + b.toString(36)).toUpperCase().replace(/[^A-Z0-9]/g, '')
   const hash = (raw + '000000000').slice(0, 9)
-  // Primeiro caractere sempre uma letra (nunca número)
   // Primeiro caractere sempre uma letra e último sempre um número
   const firstLetter = String.fromCharCode(65 + (parseInt(hash.charAt(0), 36) % 26))
   const lastDigit = String(parseInt(hash.charAt(hash.length - 1), 36) % 10)
