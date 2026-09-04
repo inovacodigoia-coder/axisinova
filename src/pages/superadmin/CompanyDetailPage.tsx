@@ -223,8 +223,9 @@ export default function CompanyDetailPage() {
       )}
 
       {activeTab === 'resources' && (
-        <ResourcesTab company={company} plan={plan || null} />
+        <ResourcesTab company={company} plan={plan || null} companyId={companyId || ''} />
       )}
+
 
       {activeTab === 'users' && (
         <div className="rounded-2xl border border-border bg-card overflow-hidden">
