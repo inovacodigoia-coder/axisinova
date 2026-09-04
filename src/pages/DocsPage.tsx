@@ -196,6 +196,7 @@ export default function DocsPage() {
               ['all', 'Todos'],
               ['company', 'Empresa'],
               ['system', 'Sistema'],
+              ['partner', 'Parceiro'],
             ] as const).map(([value, label]) => (
               <Button
                 key={value}
