@@ -170,6 +170,11 @@ export default function LabHematologiaPage() {
   const { orders, refresh, loading } = useAttendanceCadastro()
 
   const [statusFilter, setStatusFilter] = useState<string>('all')
+  const [dateFromInput, setDateFromInput] = useState('')
+  const [dateToInput, setDateToInput] = useState('')
+  const [dateFrom, setDateFrom] = useState<Date | null>(null)
+  const [dateTo, setDateTo] = useState<Date | null>(null)
+  const [orderFilter, setOrderFilter] = useState('')
   const [selectedId, setSelectedId] = useState<string | null>(null)
   const [values, setValues] = useState<Record<string, string>>({})
   const [laudo, setLaudo] = useState('')
