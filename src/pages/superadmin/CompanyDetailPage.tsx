@@ -338,6 +338,66 @@ export default function CompanyDetailPage() {
           </div>
 
           <div className="rounded-2xl border border-border bg-card p-6 shadow-[0_4px_24px_rgba(0,0,0,0.06)] space-y-6">
+            <h3 className="text-sm font-semibold text-foreground uppercase tracking-wider">Integrações</h3>
+            <div className="space-y-4">
+              <div className="flex items-start justify-between gap-4">
+                <div className="min-w-0">
+                  <p className="font-medium flex items-center gap-2 text-foreground">
+                    <Handshake className="h-4 w-4 text-primary" /> Parceiros — Integração via API
+                  </p>
+                  <p className="text-xs text-muted-foreground">
+                    Permite que a empresa cadastre parceiros (laboratórios, clínicas, convênios, médicos solicitantes) e receba pedidos de atendimento automaticamente via API.
+                  </p>
+                </div>
+                <input
+                  type="checkbox"
+                  checked={partnerApi.enabled}
+                  onChange={e => {
+                    const enabled = e.target.checked
+                    setPartnerApiEntitlement(companyId || '', enabled
+                      ? {
+                        enabled,
+                        releasedAt: partnerApi.releasedAt || new Date().toISOString(),
+                        releasedBy: partnerApi.releasedBy || 'Hostinger Inova Super Admin',
+                      }
+                      : { enabled })
+                    toast.success(enabled ? 'Módulo Parceiros liberado para a empresa.' : 'Módulo Parceiros bloqueado para a empresa.')
+                  }}
+                  className="mt-1 h-5 w-10 shrink-0 rounded-full accent-primary cursor-pointer"
+                />
+              </div>
+
+              {partnerApi.enabled && (
+                <div className="rounded-xl border border-border bg-muted/40 p-4 space-y-3">
+                  <div className="grid gap-3 sm:grid-cols-2">
+                    <div>
+                      <p className="text-xs text-muted-foreground">Data de liberação</p>
+                      <p className="text-sm font-medium">
+                        {partnerApi.releasedAt ? new Date(partnerApi.releasedAt).toLocaleString('pt-BR') : '—'}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-xs text-muted-foreground">Liberado por</p>
+                      <p className="text-sm font-medium">{partnerApi.releasedBy || 'Hostinger Inova Super Admin'}</p>
+                    </div>
+                  </div>
+                  <div>
+                    <label className="text-xs font-medium text-muted-foreground">Observação / Justificativa (opcional)</label>
+                    <textarea
+                      rows={2}
+                      value={partnerApi.note}
+                      onChange={e => setPartnerApiEntitlement(companyId || '', { note: e.target.value })}
+                      placeholder="Ex: Liberado a pedido do cliente via ticket #123"
+                      className="mt-1 flex w-full rounded-lg border border-input bg-background px-3 py-2 text-sm"
+                    />
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+
+
+          <div className="rounded-2xl border border-border bg-card p-6 shadow-[0_4px_24px_rgba(0,0,0,0.06)] space-y-6">
             <h3 className="text-sm font-semibold text-foreground">Configurações da Empresa</h3>
           {[
             { label: 'Ativar acesso ao sistema', defaultChecked: company.status === 'active' },
