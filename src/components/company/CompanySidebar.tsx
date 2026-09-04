@@ -8,7 +8,7 @@ import {
   Home, Calendar, UserCheck, FileText, DollarSign, FlaskConical, BarChart3,
   TrendingUp, Users, Settings, Database, Monitor, Building2,
   LogOut, ChevronLeft, ChevronRight, X, Stethoscope, TicketCheck, ShieldCheck, Ruler, Layout, Beaker as BeakerIcon,
-  PieChart, Warehouse, Package as PackageIcon, UserPlus, FileSearch, Menu
+  PieChart, Warehouse, Package as PackageIcon, UserPlus, FileSearch, Menu, Handshake
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
@@ -17,7 +17,7 @@ import type { SystemModule } from '@/types/permissions.types'
 const ICON_MAP: Record<string, any> = {
   Calendar, UserCheck, FileText, DollarSign, FlaskConical, BarChart3,
   TrendingUp, Users, Settings, Database, Monitor, Building2, Stethoscope, Home, TicketCheck, Ruler, Layout, Beaker: BeakerIcon,
-  PieChart, Warehouse, Package: PackageIcon, UserPlus, FileSearch
+  PieChart, Warehouse, Package: PackageIcon, UserPlus, FileSearch, Handshake
 }
 
 
@@ -146,6 +146,7 @@ export const NAV_SECTIONS: NavSection[] = [
     title: 'PORTAIS EXTERNOS',
     items: [
       { label: 'Gestão de Portais', icon: 'Users', path: '/app/portais', module: 'portals' },
+      { label: 'Parceiros', icon: 'Handshake', path: '/app/portais/parceiros', module: 'portals' },
       { label: 'Notificações', icon: 'Bell', path: '/app/configuracoes/notificacoes', module: 'portals' },
       { label: 'Relatórios Externos', icon: 'BarChart3', path: '/app/portais/relatorios', module: 'portals' },
     ],
