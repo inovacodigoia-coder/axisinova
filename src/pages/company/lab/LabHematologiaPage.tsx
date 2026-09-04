@@ -786,10 +786,31 @@ export default function LabHematologiaPage() {
               ))}
             </Tabs>
 
+            {extraParams.length > 0 && (
+              <section className="space-y-2 pt-1">
+                <SectionTitle>Outros Parâmetros do Exame</SectionTitle>
+                <div className="overflow-hidden rounded border border-border">
+                  {extraParams.map((param) => {
+                    const key = `p_${param.id}`
+                    return (
+                      <div key={key} className="grid grid-cols-[minmax(104px,1fr)_84px_84px] items-center gap-1 border-b border-border px-2 py-1 last:border-b-0">
+                        <span className="truncate text-[11px]" title={param.name}>{param.name}</span>
+                        <CompactInput label={param.name} value={getValue(key)} onChange={(value) => setValue(key, value)} />
+                        <span className="truncate text-right text-[9px] text-muted-foreground" title={param.reference}>
+                          {param.unit} {param.reference ? `· ${param.reference}` : ''}
+                        </span>
+                      </div>
+                    )
+                  })}
+                </div>
+              </section>
+            )}
+
             <section className="space-y-2 pt-1">
               <SectionTitle>Observação</SectionTitle>
               <Textarea rows={4} value={observacao} onChange={(event) => setObservacao(event.target.value)} placeholder="Observações técnicas da análise..." className="resize-none text-xs" />
             </section>
+
           </div>
 
           <aside className="space-y-3 bg-muted/30 p-3 xl:col-span-2">
