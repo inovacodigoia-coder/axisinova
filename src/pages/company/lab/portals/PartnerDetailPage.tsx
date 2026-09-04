@@ -98,9 +98,6 @@ export default function PartnerDetailPage() {
         <TabsList className="flex-wrap">
           <TabsTrigger value="dados">Dados Gerais</TabsTrigger>
           <TabsTrigger value="auth">Autenticação</TabsTrigger>
-          <TabsTrigger value="map" disabled className="gap-2">
-            Mapeamento de Exames <Badge variant="secondary" className="text-[10px]">Em breve</Badge>
-          </TabsTrigger>
           <TabsTrigger value="orders" disabled className="gap-2">
             Pedidos Recebidos <Badge variant="secondary" className="text-[10px]">Em breve</Badge>
           </TabsTrigger>
@@ -153,16 +150,12 @@ export default function PartnerDetailPage() {
         </TabsContent>
 
         <TabsContent value="auth" className="mt-4 space-y-4 rounded-xl border bg-card p-5">
-          <div className="space-y-1.5">
-            <Label>Método de Autenticação</Label>
-            <Select value={partner.authMethod} onValueChange={v => { setRegenMethod(v as ApiPartnerAuthMethod); setRegenOpen(true) }}>
-              <SelectTrigger className="sm:max-w-sm"><SelectValue /></SelectTrigger>
-              <SelectContent>
-                <SelectItem value="oauth2">OAuth2 Client Credentials (recomendado)</SelectItem>
-                <SelectItem value="api_key">API Key (legado)</SelectItem>
-              </SelectContent>
-            </Select>
-            <p className="text-xs text-muted-foreground">Trocar o método revoga a credencial atual e gera uma nova.</p>
+          <div className="flex items-center gap-3 rounded-xl border-2 border-primary/40 bg-primary/5 p-4">
+            <Lock className="h-5 w-5 shrink-0 text-primary" />
+            <div>
+              <p className="text-sm font-semibold">OAuth2 Client Credentials</p>
+              <p className="text-xs text-muted-foreground">Único método de autenticação suportado nesta fase.</p>
+            </div>
           </div>
 
           <div className="space-y-2">
@@ -170,8 +163,12 @@ export default function PartnerDetailPage() {
             {partner.credentials.map((c, i) => (
               <div key={i} className="flex flex-wrap items-center justify-between gap-3 rounded-lg border px-4 py-3">
                 <div className="flex items-center gap-2">
-                  {c.method === 'api_key' ? <KeyRound className="h-4 w-4 text-muted-foreground" /> : <Lock className="h-4 w-4 text-primary" />}
-                  <code className="font-mono text-xs">{c.masked}</code>
+                  <Lock className="h-4 w-4 text-primary" />
+                  <div className="space-y-0.5">
+                    <p className="text-xs text-muted-foreground">Client ID</p>
+                    <code className="font-mono text-xs">{c.masked}</code>
+                    <p className="text-xs text-muted-foreground">Client Secret: <code className="font-mono">••••••••••••</code> (nunca exibido novamente)</p>
+                  </div>
                 </div>
                 <Badge className={cn('border-transparent', c.revokedAt ? 'bg-destructive/15 text-destructive' : 'bg-[hsl(145,63%,42%)]/15 text-[hsl(145,63%,32%)]')}>
                   {c.revokedAt ? 'Revogada' : 'Ativa'}
@@ -187,12 +184,12 @@ export default function PartnerDetailPage() {
             <RefreshCw className="mr-2 h-4 w-4" /> Regenerar Credenciais
           </Button>
 
-          <div className="flex items-start justify-between gap-4 rounded-xl border p-4">
-            <div>
-              <p className="text-sm font-medium">Permitir envio de exames com código próprio do parceiro</p>
-              <p className="text-xs text-muted-foreground">Indicador de configuração para o mapeamento (Etapa 2).</p>
-            </div>
-            <Switch checked={partner.allowPartnerExamCodes} onCheckedChange={v => updatePartner(partner.id, { allowPartnerExamCodes: v })} />
+          <div className="flex items-start gap-2 rounded-xl border border-primary/30 bg-primary/5 p-4 text-sm">
+            <Info className="mt-0.5 h-4 w-4 shrink-0 text-primary" />
+            <p className="text-muted-foreground">
+              Os exames enviados pelo parceiro devem usar o Código do Catálogo de Exames do Axis Inova.
+              Suporte a código próprio do parceiro poderá ser avaliado em uma fase futura.
+            </p>
           </div>
 
           <div className="flex items-start justify-between gap-4 rounded-xl border p-4">
