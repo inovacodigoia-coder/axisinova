@@ -3,11 +3,12 @@ import { useState, useEffect } from 'react'
 import { MOCK_COMPANY_USERS, MOCK_INVOICES, MOCK_PLANS } from '@/mocks/superadmin.mock'
 import { CompanyStatusBadge } from '@/components/superadmin/CompanyStatusBadge'
 import { StatusBadge } from '@/components/ui/StatusBadge'
-import { ArrowLeft, Users, Building2, ClipboardList, HardDrive, ExternalLink, Stethoscope, Plus, Minus, UserPlus, Database } from 'lucide-react'
+import { ArrowLeft, Users, Building2, ClipboardList, HardDrive, ExternalLink, Stethoscope, Plus, Minus, UserPlus, Database, Handshake } from 'lucide-react'
 import { useAuth } from '@/context/AuthContext'
 import { OutlineButton } from '@/components/ui/OutlineButton'
 import { toast } from 'sonner'
 import { supabase } from '@/integrations/supabase/client'
+import { usePartnerApiEntitlement, setPartnerApiEntitlement } from '@/stores/partnerApiEntitlementStore'
 import type { Company, PlanType, CompanyStatus } from '@/types/company.types'
 
 const ADDON_PRICE_DOCTOR = 79
