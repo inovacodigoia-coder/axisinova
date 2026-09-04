@@ -213,10 +213,31 @@ export default function LabHematologiaPage() {
     return list
   }, [orders])
 
-  const filteredExams = useMemo(
-    () => exams.filter((exam) => statusFilter === 'all' || exam.status === statusFilter),
-    [exams, statusFilter],
-  )
+  const filteredExams = useMemo(() => {
+    const orderTerm = orderFilter.trim()
+    if (orderTerm) {
+      const term = normalize(orderTerm)
+      return exams.filter((exam) => {
+        const protocol = normalize(String(exam.protocol || ''))
+        const orderNumber = normalize(String(exam.orderNumber || ''))
+        const patient = normalize(exam.patientName || '')
+        const examName = normalize(exam.examName || '')
+        return protocol.includes(term) || orderNumber.includes(term) || patient.includes(term) || examName.includes(term)
+      })
+    }
+
+    return exams.filter((exam) => {
+      if (statusFilter !== 'all' && exam.status !== statusFilter) return false
+      const examDate = parseLocalDate(exam.date)
+      if (dateFrom && examDate) {
+        if (examDate < startOfDay(dateFrom)) return false
+      }
+      if (dateTo && examDate) {
+        if (examDate > endOfDay(dateTo)) return false
+      }
+      return true
+    })
+  }, [exams, statusFilter, dateFrom, dateTo, orderFilter])
 
   useEffect(() => {
     if (!filteredExams.length) {
