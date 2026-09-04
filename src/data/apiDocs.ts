@@ -5,7 +5,7 @@
  */
 
 export type HttpMethod = 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE'
-export type Scope = 'company' | 'system'
+export type Scope = 'company' | 'system' | 'partner'
 
 export interface ApiParam {
   name: string
@@ -531,6 +531,166 @@ export const API_GROUPS: ApiGroup[] = [
         summary: 'Histórico de eventos dos equipamentos',
         scope: 'company',
         auth: 'Bearer JWT',
+      },
+    ],
+  },
+  {
+    tag: 'parceiros',
+    description:
+      'Integração para parceiros externos (laboratórios, clínicas, convênios, médicos solicitantes) enviarem pedidos de atendimento com paciente e exames. Autenticação recomendada: OAuth2 client credentials.',
+    endpoints: [
+      {
+        id: 'fn-oauth-token-partner',
+        method: 'POST',
+        path: '/oauth-token',
+        summary: 'Obter token de acesso (OAuth2 client credentials)',
+        description:
+          'Fluxo client_credentials (RFC 6749 §4.4). Troca client_id + client_secret por um access_token JWT de curta duração (3600s). Mesmo endpoint usado por equipamentos de laboratório; o escopo do token varia conforme o tipo de credencial (parceiro vs. instrumento). Não há refresh token — solicite outro token quando expirar.',
+        scope: 'company',
+        auth: 'Público (credenciais no corpo ou Basic)',
+        params: [
+          { name: 'grant_type', in: 'body', type: 'string', required: true, description: 'Deve ser "client_credentials"' },
+          { name: 'client_id', in: 'body', type: 'string', required: true, description: 'Client ID gerado no cadastro do parceiro' },
+          { name: 'client_secret', in: 'body', type: 'string', required: true, description: 'Client Secret exibido apenas na criação' },
+        ],
+        requestExample: `{
+  "grant_type": "client_credentials",
+  "client_id": "axis_cid_...",
+  "client_secret": "••••••••••••••••"
+}`,
+        responseExample: `{
+  "access_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+  "token_type": "Bearer",
+  "expires_in": 3600
+}
+
+// erro
+{ "error": "invalid_client", "error_description": "Credenciais inválidas ou revogadas" }`,
+      },
+      {
+        id: 'fn-partner-orders-create',
+        method: 'POST',
+        path: '/partner/orders',
+        summary: 'Criar pedido de atendimento (paciente + exames)',
+        description:
+          'Endpoint principal da integração de parceiros. Valida CPF e códigos de exame, cria o paciente quando não existe e gera automaticamente o atendimento com protocolo interno. Se qualquer código de exame não for reconhecido, o pedido inteiro é rejeitado. O parceiro precisa estar com "Autorizado a criar pedidos via API" ativo e o módulo liberado para a empresa.',
+        scope: 'partner',
+        auth: 'Authorization: Bearer <access_token> (OAuth2)',
+        params: [
+          { name: 'Authorization', in: 'header', type: 'string', required: true, description: 'Bearer <access_token> obtido em /oauth-token' },
+          { name: 'protocolo_parceiro', in: 'body', type: 'string', required: false, description: 'Identificador do pedido no sistema do parceiro (deve ser único)' },
+          { name: 'paciente', in: 'body', type: 'object', required: true, description: 'nome, cpf, data_nascimento, sexo, telefone' },
+          { name: 'exames', in: 'body', type: 'array', required: true, description: 'Lista de { codigo } usando o Código do Catálogo de Exames' },
+          { name: 'medico_solicitante', in: 'body', type: 'object', required: false, description: 'nome, conselho, numero, uf' },
+          { name: 'convenio', in: 'body', type: 'object', required: false, description: 'nome, numero_carteira, numero_guia' },
+        ],
+        requestExample: `{
+  "protocolo_parceiro": "PED-2026-00871",
+  "paciente": {
+    "nome": "Maria Aparecida Souza",
+    "cpf": "123.456.789-09",
+    "data_nascimento": "1985-04-17",
+    "sexo": "F",
+    "telefone": "(84) 99999-1234"
+  },
+  "exames": [
+    { "codigo": "40301010" },
+    { "codigo": "40302040" }
+  ],
+  "medico_solicitante": {
+    "nome": "Dr. Rafael Andrade",
+    "conselho": "CRM",
+    "numero": "12345",
+    "uf": "RN"
+  },
+  "convenio": {
+    "nome": "Unimed",
+    "numero_carteira": "0123456789",
+    "numero_guia": "987654"
+  }
+}`,
+        responseExample: `// 201 sucesso
+{
+  "success": true,
+  "protocolo": "192-00",
+  "status": "AGUARDANDO",
+  "paciente_id": "pat_8f21c4",
+  "exames": [
+    { "codigo": "40301010", "nome": "Hemograma Completo", "status": "AGUARDANDO" },
+    { "codigo": "40302040", "nome": "Glicemia de Jejum", "status": "AGUARDANDO" }
+  ]
+}
+
+// 422 erro
+{
+  "success": false,
+  "error": "EXAM_CODE_NOT_FOUND",
+  "message": "Código de exame não reconhecido: 99999999",
+  "protocolo_parceiro": "PED-2026-00871"
+}
+
+// demais erros: UNAUTHORIZED, PARTNER_NOT_AUTHORIZED, INVALID_CPF, MISSING_FIELD, DUPLICATE_ORDER, RATE_LIMITED`,
+      },
+      {
+        id: 'fn-partner-orders-status',
+        method: 'GET',
+        path: '/partner/orders/{protocolo}',
+        summary: 'Consultar status de um pedido enviado',
+        description:
+          'Retorna a situação atual de um pedido criado via POST /partner/orders, usando o protocolo interno retornado na criação (ou o protocolo_parceiro enviado). Útil para o sistema do parceiro acompanhar o andamento (aguardando, coletado, em análise, liberado).',
+        scope: 'partner',
+        auth: 'Authorization: Bearer <access_token> (OAuth2)',
+        params: [
+          { name: 'Authorization', in: 'header', type: 'string', required: true, description: 'Bearer <access_token> obtido em /oauth-token' },
+          { name: 'protocolo', in: 'path', type: 'string', required: true, description: 'Protocolo interno (ex.: "192-00") ou o protocolo_parceiro enviado na criação' },
+        ],
+        responseExample: `// 200 sucesso
+{
+  "success": true,
+  "protocolo": "192-00",
+  "protocolo_parceiro": "PED-2026-00871",
+  "status": "LIBERADO",
+  "paciente": { "nome": "Maria Aparecida Souza" },
+  "exames": [
+    { "codigo": "40301010", "nome": "Hemograma Completo", "status": "LIBERADO" },
+    { "codigo": "40302040", "nome": "Glicemia de Jejum", "status": "LIBERADO" }
+  ]
+}
+
+// 404 erro
+{
+  "success": false,
+  "error": "ORDER_NOT_FOUND",
+  "message": "Nenhum pedido encontrado com o protocolo informado"
+}`,
+      },
+      {
+        id: 'fn-list-exams-partner',
+        method: 'GET',
+        path: '/list-exams-for-integration',
+        summary: 'Catálogo de exames para montagem de pedidos',
+        description:
+          'Lista os exames ativos da empresa com seus códigos. Mesmo endpoint já usado por equipamentos (grupo Interfaceamento), reaproveitável para parceiros sincronizarem o catálogo antes de montar cada pedido. Apenas exames do Tipo "Laboratório" são devolvidos.',
+        scope: 'company',
+        auth: 'Authorization: Bearer <access_token> (OAuth2)',
+        params: [
+          { name: 'Authorization', in: 'header', type: 'string', required: true, description: 'Bearer <access_token> obtido em /oauth-token' },
+          { name: 'page', in: 'query', type: 'number', required: false, description: 'Página (opcional, padrão 1)' },
+          { name: 'limit', in: 'query', type: 'number', required: false, description: 'Itens por página (opcional, padrão 2000)' },
+        ],
+        responseExample: `{
+  "exams": [
+    {
+      "code": "HB",
+      "name": "Hemoglobina",
+      "material": "Sangue total",
+      "sector": "Hematologia",
+      "is_active": true,
+      "parent_code": null,
+      "parameter_order": null
+    }
+  ]
+}`,
       },
     ],
   },

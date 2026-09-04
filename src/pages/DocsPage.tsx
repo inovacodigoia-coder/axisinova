@@ -1,11 +1,29 @@
 import { useMemo, useState } from 'react'
-import { ChevronDown, Copy, Check, Search, Building2, Globe, ArrowLeft } from 'lucide-react'
+import { ChevronDown, Copy, Check, Search, Building2, Globe, ArrowLeft, Handshake, FlaskConical } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
-import { API_BASES, API_GROUPS, API_INFO, type ApiEndpoint, type HttpMethod } from '@/data/apiDocs'
+import { API_BASES, API_GROUPS, API_INFO, type ApiEndpoint, type HttpMethod, type Scope } from '@/data/apiDocs'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { cn } from '@/lib/utils'
+import { DEMO_EXAMS, DEMO_SPECIALTIES } from '@/mocks/registers.mock'
+
+const SCOPE_META: Record<Scope, { label: string; description: string; icon: typeof Building2; className?: string }> = {
+  company: { label: 'Empresa', description: 'Escopo por empresa (RLS company_id)', icon: Building2 },
+  system: { label: 'Sistema', description: 'Escopo global do sistema', icon: Globe },
+  partner: { label: 'Parceiro', description: 'Chamado por sistemas externos parceiros (OAuth2)', icon: Handshake, className: 'border-[#7B2FF7]/40 text-[#7B2FF7]' },
+}
+
+function ScopeBadge({ scope, withDescription }: { scope: Scope; withDescription?: boolean }) {
+  const meta = SCOPE_META[scope]
+  const Icon = meta.icon
+  return (
+    <Badge variant="outline" className={cn('shrink-0 gap-1 text-[10px]', meta.className)}>
+      <Icon className="h-3 w-3" />
+      {withDescription ? meta.description : meta.label}
+    </Badge>
+  )
+}
 
 const METHOD_STYLES: Record<HttpMethod, string> = {
   GET: 'bg-sky-500/15 text-sky-600 border-sky-500/30',
@@ -54,10 +72,9 @@ function EndpointRow({ ep }: { ep: ApiEndpoint }) {
         </span>
         <code className="truncate font-mono text-xs sm:text-sm">{ep.path}</code>
         <span className="hidden flex-1 truncate text-xs text-muted-foreground sm:block">{ep.summary}</span>
-        <Badge variant="outline" className="hidden shrink-0 gap-1 text-[10px] sm:flex">
-          {ep.scope === 'company' ? <Building2 className="h-3 w-3" /> : <Globe className="h-3 w-3" />}
-          {ep.scope === 'company' ? 'Empresa' : 'Sistema'}
-        </Badge>
+        <div className="hidden shrink-0 sm:flex">
+          <ScopeBadge scope={ep.scope} />
+        </div>
         <ChevronDown className={cn('h-4 w-4 shrink-0 text-muted-foreground transition-transform', open && 'rotate-180')} />
       </button>
 
@@ -73,10 +90,7 @@ function EndpointRow({ ep }: { ep: ApiEndpoint }) {
 
           <div className="flex flex-wrap gap-2 text-xs">
             <Badge variant="secondary">Auth: {ep.auth}</Badge>
-            <Badge variant="outline" className="gap-1">
-              {ep.scope === 'company' ? <Building2 className="h-3 w-3" /> : <Globe className="h-3 w-3" />}
-              {ep.scope === 'company' ? 'Escopo por empresa (RLS company_id)' : 'Escopo global do sistema'}
-            </Badge>
+            <ScopeBadge scope={ep.scope} withDescription />
           </div>
 
           {ep.params?.length ? (
@@ -131,7 +145,7 @@ function EndpointRow({ ep }: { ep: ApiEndpoint }) {
 export default function DocsPage() {
   const navigate = useNavigate()
   const [query, setQuery] = useState('')
-  const [scope, setScope] = useState<'all' | 'company' | 'system'>('all')
+  const [scope, setScope] = useState<'all' | Scope>('all')
 
   const groups = useMemo(() => {
     const q = query.trim().toLowerCase()
@@ -182,6 +196,7 @@ export default function DocsPage() {
               ['all', 'Todos'],
               ['company', 'Empresa'],
               ['system', 'Sistema'],
+              ['partner', 'Parceiro'],
             ] as const).map(([value, label]) => (
               <Button
                 key={value}
@@ -196,18 +211,64 @@ export default function DocsPage() {
         </div>
 
         {groups.map((group) => (
-          <section key={group.tag} className="rounded-xl border bg-background p-4 sm:p-5">
-            <div className="mb-1 flex items-center justify-between">
-              <h2 className="text-lg font-semibold capitalize">{group.tag}</h2>
-              <span className="text-xs text-muted-foreground">{group.endpoints.length} endpoints</span>
-            </div>
-            <p className="mb-4 text-sm text-muted-foreground">{group.description}</p>
-            <div className="space-y-2">
-              {group.endpoints.map((ep) => (
-                <EndpointRow key={ep.id} ep={ep} />
-              ))}
-            </div>
-          </section>
+          <div key={group.tag} className="space-y-6">
+            <section className="rounded-xl border bg-background p-4 sm:p-5">
+              <div className="mb-1 flex items-center justify-between">
+                <h2 className="text-lg font-semibold capitalize">{group.tag}</h2>
+                <span className="text-xs text-muted-foreground">{group.endpoints.length} endpoints</span>
+              </div>
+              <p className="mb-4 text-sm text-muted-foreground">{group.description}</p>
+              <div className="space-y-2">
+                {group.endpoints.map((ep) => (
+                  <EndpointRow key={ep.id} ep={ep} />
+                ))}
+              </div>
+            </section>
+
+            {group.tag === 'laboratorio' && scope === 'all' && !query.trim() && (
+              <section className="rounded-xl border border-[#7B2FF7]/30 bg-gradient-to-br from-[#7B2FF7]/5 via-background to-[#00D4FF]/5 p-4 sm:p-5">
+                <div className="mb-1 flex items-center gap-2">
+                  <FlaskConical className="h-5 w-5 text-[#7B2FF7]" />
+                  <h2 className="text-lg font-semibold">Exames Laboratoriais — Como funciona o Código de Exame</h2>
+                </div>
+                <p className="mb-4 text-sm text-muted-foreground">
+                  Todo exame no Axis Inova possui um <strong>Código</strong> único no Catálogo de Exames. Esse código é o
+                  identificador que deve ser usado em qualquer integração — pedidos de parceiros, interfaceamento de
+                  equipamentos e importação de planilha.
+                </p>
+                <div className="overflow-x-auto rounded-md border bg-background">
+                  <table className="w-full text-xs">
+                    <thead className="bg-muted/50 text-muted-foreground">
+                      <tr>
+                        <th className="p-2 text-left font-medium">Código</th>
+                        <th className="p-2 text-left font-medium">Nome do Exame</th>
+                        <th className="p-2 text-left font-medium">Setor Técnico</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {DEMO_EXAMS.slice(0, 8).map((exam) => (
+                        <tr key={exam.id} className="border-t">
+                          <td className="p-2 font-mono">{exam.tussCode ?? exam.internalCode ?? '—'}</td>
+                          <td className="p-2">{exam.name}</td>
+                          <td className="p-2 text-muted-foreground">
+                            {DEMO_SPECIALTIES.find((s) => s.id === exam.specialtyId)?.name ?? '—'}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+                <p className="mt-4 text-sm text-muted-foreground">
+                  Endpoints relacionados: <code className="font-mono text-xs">GET /exams</code> (grupo Laboratorio) e{' '}
+                  <code className="font-mono text-xs">GET /list-exams-for-integration</code> (grupos Parceiros/Interfaceamento).
+                </p>
+                <p className="mt-2 text-sm text-muted-foreground">
+                  Empresas que utilizam o módulo Parceiros podem gerar um guia de integração específico, já com os
+                  códigos e credenciais do parceiro, diretamente na tela de detalhe do parceiro dentro do sistema.
+                </p>
+              </section>
+            )}
+          </div>
         ))}
 
         {groups.length === 0 && (
