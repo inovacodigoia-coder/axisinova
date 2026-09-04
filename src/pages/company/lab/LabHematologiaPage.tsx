@@ -83,6 +83,45 @@ const maskDecimal = (raw: string) => raw.replace(/\./g, ',').replace(/[^\d,]/g, 
 const normalize = (text: string) =>
   text.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/[^a-z0-9]/g, '')
 
+/** Converte string de data para Date no fuso local (evita deslocamento de 1 dia em datas "YYYY-MM-DD"). */
+function parseLocalDate(value?: string | Date | null): Date | null {
+  if (!value) return null
+  if (value instanceof Date) return isNaN(value.getTime()) ? null : value
+  const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(value.trim())
+  if (m) return new Date(Number(m[1]), Number(m[2]) - 1, Number(m[3]))
+  const d = new Date(value)
+  return isNaN(d.getTime()) ? null : d
+}
+
+/** Converte data no formato brasileiro DD/MM/AAAA para Date no fuso local. */
+function parseBrazilianDate(value?: string | null): Date | null {
+  if (!value) return null
+  const m = /^(\d{2})\/(\d{2})\/(\d{4})$/.exec(value.trim())
+  if (!m) return null
+  const day = Number(m[1])
+  const month = Number(m[2])
+  const year = Number(m[3])
+  if (month < 1 || month > 12 || day < 1 || day > 31) return null
+  const d = new Date(year, month - 1, day)
+  return d.getMonth() === month - 1 && d.getDate() === day ? d : null
+}
+
+/** Aplica máscara de data brasileira enquanto digita (DD/MM/AAAA). */
+function maskBrazilianDate(value: string): string {
+  const digits = value.replace(/\D/g, '').slice(0, 8)
+  if (digits.length <= 2) return digits
+  if (digits.length <= 4) return `${digits.slice(0, 2)}/${digits.slice(2)}`
+  return `${digits.slice(0, 2)}/${digits.slice(2, 4)}/${digits.slice(4)}`
+}
+
+function startOfDay(d: Date): Date {
+  return new Date(d.getFullYear(), d.getMonth(), d.getDate())
+}
+
+function endOfDay(d: Date): Date {
+  return new Date(d.getFullYear(), d.getMonth(), d.getDate(), 23, 59, 59, 999)
+}
+
 /** Mapa nome do parâmetro (normalizado) -> chave do formulário */
 const PARAM_KEY_MAP: Record<string, string> = (() => {
   const map: Record<string, string> = {
