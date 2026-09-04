@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
-import { ArrowLeft, Trash2, RefreshCw, KeyRound, Lock, Info } from 'lucide-react'
+import { ArrowLeft, Trash2, RefreshCw, KeyRound, Lock, Info, FileDown } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -15,6 +15,9 @@ import {
 } from '@/components/ui/alert-dialog'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog'
 import { Checkbox } from '@/components/ui/checkbox'
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
+import { generatePartnerIntegrationGuide, canGeneratePartnerGuide } from '@/lib/partnerIntegrationGuide'
+import { usePartnerApiEntitlement } from '@/stores/partnerApiEntitlementStore'
 import { toast } from 'sonner'
 import { cn } from '@/lib/utils'
 import { PartnerOrdersTable } from '@/components/lab/portals/partners/PartnerOrdersTable'
@@ -30,6 +33,7 @@ export default function PartnerDetailPage() {
   const { id = '' } = useParams()
   const navigate = useNavigate()
   const partners = useApiPartners()
+  const entitlement = usePartnerApiEntitlement()
   const partner = partners.find(p => p.id === id)
 
   const [form, setForm] = useState(() => partner)
@@ -53,6 +57,7 @@ export default function PartnerDetailPage() {
   }
 
   const auth = partnerAuthorizationState(partner)
+  const guideEnabled = entitlement.enabled && canGeneratePartnerGuide(partner)
   const activeCredential = partner.credentials.find(c => !c.revokedAt)
 
   const save = () => {
@@ -90,9 +95,37 @@ export default function PartnerDetailPage() {
             </Badge>
           </div>
         </div>
-        <Button variant="destructive" className="min-h-[44px]" onClick={() => { setDeleteConfirmed(false); setDeleteOpen(true) }}>
-          <Trash2 className="mr-2 h-4 w-4" /> Excluir Parceiro
-        </Button>
+        <div className="flex flex-wrap gap-2">
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <span className="inline-flex">
+                  <Button
+                    variant="outline"
+                    className="min-h-[44px]"
+                    disabled={!guideEnabled}
+                    onClick={() => {
+                      generatePartnerIntegrationGuide(partner)
+                      toast.success('Guia de integração gerado')
+                    }}
+                  >
+                    <FileDown className="mr-2 h-4 w-4" /> Gerar Guia de Integração
+                  </Button>
+                </span>
+              </TooltipTrigger>
+              {!guideEnabled && (
+                <TooltipContent>
+                  {!entitlement.enabled
+                    ? 'Módulo de Parceiros não liberado pelo Super Admin para esta empresa'
+                    : 'Gere as credenciais de autenticação antes de exportar o guia'}
+                </TooltipContent>
+              )}
+            </Tooltip>
+          </TooltipProvider>
+          <Button variant="destructive" className="min-h-[44px]" onClick={() => { setDeleteConfirmed(false); setDeleteOpen(true) }}>
+            <Trash2 className="mr-2 h-4 w-4" /> Excluir Parceiro
+          </Button>
+        </div>
       </div>
 
       <Tabs defaultValue="dados">
