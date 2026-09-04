@@ -97,18 +97,53 @@ export default function PartnersListPage() {
   }, [partners, search, type, status, auth])
 
   const activeCount = partners.filter(p => p.status === 'active').length
+  const entitlement = usePartnerApiEntitlement(companyId)
+  const moduleBlocked = !entitlement.enabled
+  const limitReached = !moduleBlocked && activeCount >= entitlement.maxPartners
+  const canCreate = !moduleBlocked && !limitReached
+  const createTooltip = moduleBlocked
+    ? 'Módulo de Parceiros não liberado pelo Super Admin'
+    : limitReached
+      ? `Limite de ${entitlement.maxPartners} parceiros atingido para o plano atual`
+      : null
 
   return (
     <div className="space-y-6">
+      {moduleBlocked && (
+        <div className="flex items-start gap-3 rounded-xl border-2 border-[hsl(38,92%,50%)]/40 bg-[hsl(38,92%,50%)]/10 p-4">
+          <AlertTriangle className="mt-0.5 h-5 w-5 shrink-0 text-[hsl(38,92%,40%)]" />
+          <p className="text-sm text-[hsl(38,92%,28%)]">
+            O módulo de Parceiros via API ainda não foi liberado pelo Super Admin para esta empresa. Entre em contato com o suporte Axis Inova.
+          </p>
+        </div>
+      )}
+
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="text-2xl font-bold text-foreground">Parceiros</h1>
-          <p className="text-sm text-muted-foreground">{activeCount} parceiro(s) ativo(s) integrados via API</p>
+          <p className="text-sm text-muted-foreground">
+            {activeCount} parceiro(s) ativo(s) integrados via API
+            {!moduleBlocked && ` · limite de ${entitlement.maxPartners}`}
+          </p>
         </div>
-        <Button onClick={() => setWizardOpen(true)} className="min-h-[44px] bg-gradient-to-r from-[#00D4FF] to-[#7B2FF7] text-white hover:opacity-90">
-          <Plus className="mr-2 h-4 w-4" /> Novo Parceiro
-        </Button>
+        <TooltipProvider>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <span className="inline-flex">
+                <Button
+                  onClick={() => setWizardOpen(true)}
+                  disabled={!canCreate}
+                  className="min-h-[44px] w-full bg-gradient-to-r from-[#00D4FF] to-[#7B2FF7] text-white hover:opacity-90 sm:w-auto"
+                >
+                  <Plus className="mr-2 h-4 w-4" /> Novo Parceiro
+                </Button>
+              </span>
+            </TooltipTrigger>
+            {createTooltip && <TooltipContent>{createTooltip}</TooltipContent>}
+          </Tooltip>
+        </TooltipProvider>
       </div>
+
 
       <div className="grid gap-3 rounded-xl border bg-card p-4 sm:grid-cols-2 lg:grid-cols-4">
         <div className="relative">
