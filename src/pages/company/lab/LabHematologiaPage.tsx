@@ -440,6 +440,26 @@ export default function LabHematologiaPage() {
   const setValue = (key: string, value: string) => setValues((current) => ({ ...current, [key]: value }))
   const referenceOf = (key: string) => paramByFormKey[key]?.reference || ''
 
+  // ===== Diferencial de Glóbulos Brancos =====
+  // Neutrófilos bastonetes (%) = 100 - (segmentados + linfócitos + monócitos + eosinófilos)
+  const numBR = (v?: string) => {
+    const n = parseFloat(String(v ?? '').replace(/\s/g, '').replace(',', '.'))
+    return isNaN(n) ? null : n
+  }
+  const DIFF_PCT_KEYS = ['segmentados_pct', 'linf_citos_t_a_pct', 'mon_citos_pct', 'eosin_filos_pct']
+  const diffSum = DIFF_PCT_KEYS.reduce((acc, k) => acc + (numBR(values[k]) ?? 0), 0)
+  const diffAnyFilled = DIFF_PCT_KEYS.some((k) => numBR(values[k]) != null)
+  const diffTotal = diffSum + (numBR(values['bast_es_pct']) ?? 0)
+  const diffOver = diffSum > 100
+
+  useEffect(() => {
+    if (!diffAnyFilled) return
+    const auto = String(Math.round((100 - diffSum) * 100) / 100).replace('.', ',')
+    if ((values['bast_es_pct'] ?? '') !== auto) {
+      setValues((current) => ({ ...current, bast_es_pct: auto }))
+    }
+  }, [diffSum, diffAnyFilled, values])
+
   /** Salva o exame selecionado no mesmo formato da Digitação de Resultados. */
   const persistExam = async (status: 'draft' | 'digitized' | 'released') => {
     if (!selected) return
@@ -669,6 +689,17 @@ export default function LabHematologiaPage() {
             </label>
           </div>
         </header>
+
+        <div className="flex flex-wrap items-center gap-x-3 gap-y-1 border-b border-border bg-rose-50 px-3 py-1.5">
+          <span className="text-[11px] font-black uppercase tracking-wide text-rose-600">
+            Glóbulos Brancos (Total: {diffTotal.toFixed(2).replace('.', ',')} %)
+          </span>
+          {diffOver && (
+            <span className="flex items-center gap-1 text-[10px] font-bold uppercase text-rose-600">
+              <AlertTriangle className="h-3 w-3 shrink-0" /> A soma do diferencial ultrapassou 100% — verifique os valores
+            </span>
+          )}
+        </div>
 
         <div className="grid grid-cols-1 divide-y divide-border bg-border xl:grid-cols-12 xl:divide-x xl:divide-y-0">
           <div className="space-y-4 bg-card p-3 xl:col-span-3">

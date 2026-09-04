@@ -1,6 +1,6 @@
 import { useState, useMemo, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { buildExamParams, catalogKey, findCatalogExam, evaluateFormula } from '@/utils/examParameters';
+import { buildExamParams, catalogKey, findCatalogExam, evaluateFormula, normalizeText } from '@/utils/examParameters';
 
 import { resolveCompanyId } from '@/utils/companyId';
 import { useAuth } from '@/context/AuthContext';
@@ -262,6 +262,48 @@ export function ResultEntryModal({
   }, [groupedPatients, catalogList]);
 
   const getParams = (exam: any) => paramsByExam[exam.id] || [{ id: '1', name: exam?.name || '', unit: '', reference: '' }];
+
+  // ===== Diferencial de Glóbulos Brancos (Hemograma) =====
+  // Neutrófilos bastonetes (%) = 100 - (segmentados + linfócitos + monócitos + eosinófilos)
+  const diffInfoFor = useCallback((params: any[], valueOf: (id: string) => string) => {
+    const findP = (fn: (n: string) => boolean) => params.find((p: any) => fn(normalizeText(p?.name || '')));
+    const segmentados = findP((n) => n.includes('segmentad') && !n.includes('absoluto'));
+    const linfocitos = findP((n) => n.startsWith('linfocito') && !n.includes('absoluto'));
+    const monocitos = findP((n) => n.startsWith('monocito') && !n.includes('absoluto'));
+    const eosinofilos = findP((n) => n.startsWith('eosinofilo') && !n.includes('absoluto'));
+    const bastonetes = findP((n) => (n.includes('bastonete') || n.startsWith('basto')) && !n.includes('absoluto'));
+    if (!bastonetes && !segmentados) return null;
+    const num = (p: any) => {
+      if (!p) return null;
+      const n = parseFloat(String(valueOf(p.id) || '').replace(/\s/g, '').replace(',', '.'));
+      return isNaN(n) ? null : n;
+    };
+    const vals = [segmentados, linfocitos, monocitos, eosinofilos].map(num);
+    const anyFilled = vals.some((v) => v != null);
+    const sum4 = vals.reduce<number>((a, v) => a + (v ?? 0), 0);
+    const bastVal = bastonetes ? num(bastonetes) : null;
+    const total = sum4 + (bastVal ?? 0);
+    return { bastonetes, anyFilled, sum4, total, over: sum4 > 100 };
+  }, []);
+
+  const fmtDiffNum = (n: number) => String(Math.round(n * 100) / 100).replace('.', ',');
+
+  // Preenche automaticamente Neutrófilos bastonetes (%) com o que falta para 100%
+  useEffect(() => {
+    const updates: Record<string, string> = {};
+    filteredExams.forEach((exam: any) => {
+      const params = paramsByExam[exam.id] || [];
+      const info = diffInfoFor(params, (pid) => results[`${exam.id}_${pid}`] || '');
+      if (!info?.bastonetes || !info.anyFilled) return;
+      const key = `${exam.id}_${info.bastonetes.id}`;
+      if (instrumentKeys.has(key)) return; // valor veio do equipamento — prevalece
+      const auto = fmtDiffNum(100 - info.sum4);
+      if ((results[key] ?? '') !== auto) updates[key] = auto;
+    });
+    if (Object.keys(updates).length > 0) {
+      setResults(prev => ({ ...prev, ...updates }));
+    }
+  }, [results, filteredExams, paramsByExam, instrumentKeys, diffInfoFor]);
 
   // Valor exibido: parâmetros calculados usam a fórmula do catálogo,
   // EXCETO quando o valor veio do equipamento (source 'instrument') — nesse caso o valor do equipamento prevalece
@@ -1532,6 +1574,22 @@ export function ResultEntryModal({
                                 <CalendarIcon className="h-3 w-3" />
                                 Coleta: {format(new Date(exam.registeredAt), 'dd/MM/yyyy HH:mm')}
                               </div>
+                              {(() => {
+                                const info = diffInfoFor(getParams(exam), (pid) => results[`${exam.id}_${pid}`] || '');
+                                if (!info) return null;
+                                return (
+                                  <div className="mt-1">
+                                    <span className="text-[10px] font-black uppercase tracking-wide text-rose-600">
+                                      Glóbulos Brancos (Total: {info.total.toFixed(2).replace('.', ',')} %)
+                                    </span>
+                                    {info.over && (
+                                      <p className="mt-0.5 flex items-center gap-1 text-[9px] font-bold uppercase text-rose-600">
+                                        <AlertTriangle className="h-3 w-3 shrink-0" /> A soma do diferencial ultrapassou 100% — verifique os valores
+                                      </p>
+                                    )}
+                                  </div>
+                                );
+                              })()}
                             </div>
                           </div>
 
