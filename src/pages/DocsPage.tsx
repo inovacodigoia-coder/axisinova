@@ -211,7 +211,8 @@ export default function DocsPage() {
         </div>
 
         {groups.map((group) => (
-          <section key={group.tag} className="rounded-xl border bg-background p-4 sm:p-5">
+          <div key={group.tag} className="space-y-6">
+          <section className="rounded-xl border bg-background p-4 sm:p-5">
             <div className="mb-1 flex items-center justify-between">
               <h2 className="text-lg font-semibold capitalize">{group.tag}</h2>
               <span className="text-xs text-muted-foreground">{group.endpoints.length} endpoints</span>
