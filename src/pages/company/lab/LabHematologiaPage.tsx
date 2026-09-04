@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
-import { AlertTriangle, BarChart3, CheckCircle2, Droplet, RefreshCcw, Save } from 'lucide-react'
+import { AlertTriangle, BarChart3, CheckCircle2, Droplet, RefreshCcw, Save, ShieldCheck } from 'lucide-react'
 import { toast } from 'sonner'
 
 import { Badge } from '@/components/ui/badge'
@@ -9,7 +9,12 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Textarea } from '@/components/ui/textarea'
 import { useAttendanceCadastro } from '@/hooks/useAttendanceCadastro'
+import { useAuth } from '@/context/AuthContext'
+import { useResultEntryPermissions } from '@/hooks/useResultEntryPermissions'
+import { resolveCompanyId } from '@/utils/companyId'
+import { buildExamParams, evaluateFormula, findCatalogExam, type ResolvedParam } from '@/utils/examParameters'
 import { supabase } from '@/integrations/supabase/client'
+
 
 type OrderStatus = string
 
@@ -122,22 +127,76 @@ function endOfDay(d: Date): Date {
   return new Date(d.getFullYear(), d.getMonth(), d.getDate(), 23, 59, 59, 999)
 }
 
-/** Mapa nome do parâmetro (normalizado) -> chave do formulário */
-const PARAM_KEY_MAP: Record<string, string> = (() => {
-  const map: Record<string, string> = {
-    leucocitos: 'leuco',
-    tnc: 'tnc',
-  }
+const rowKey = (row: string) => row.toLowerCase().replace(/\W+/g, '_')
+
+/** Apelidos de nomenclatura entre o catálogo de exames e os campos da tela. */
+const ROW_ALIASES: Record<string, string> = (() => {
+  const map: Record<string, string> = {}
   WHITE_ROWS.concat(OTHER_ROWS).forEach((row) => {
-    const key = row.toLowerCase().replace(/\W+/g, '_')
-    map[normalize(row)] = `${key}_pct`
+    map[normalize(row)] = rowKey(row)
   })
-  RED_FIELDS.concat(RETIC_FIELDS, PLATELET_FIELDS).forEach((field) => {
-    const n = normalize(field.label)
-    if (!map[n]) map[n] = field.key
-  })
+  map.neutrofilos = rowKey('Neutrófilos')
+  map.neutrofilosbastonetes = rowKey('Bastões')
+  map.bastonetes = rowKey('Bastões')
+  map.bastoes = rowKey('Bastões')
+  map.neutrofilossegmentados = rowKey('Segmentados')
+  map.segmentados = rowKey('Segmentados')
+  map.linfocitos = rowKey('Linfócitos (T/A)')
+  map.granulocitosimaturos = rowKey('Gran. Imaturos')
+  map.granimaturos = rowKey('Gran. Imaturos')
   return map
 })()
+
+const DIRECT_ALIASES: Record<string, string> = {
+  leucocitos: 'leuco',
+  leucocitostotais: 'leuco',
+  tnc: 'tnc',
+  hemacias: 'hemacias',
+  hemoglobina: 'hb',
+  hematocrito: 'ht',
+  vcm: 'vcm',
+  vcmvolumecorpuscularmedio: 'vcm',
+  volumecorpuscularmedio: 'vcm',
+  hcm: 'hcm',
+  hcmhemoglobinacorpuscularmedia: 'hcm',
+  hemoglobinacorpuscularmedia: 'hcm',
+  chcm: 'chcm',
+  chcmconcdehbcorpuscularmedia: 'chcm',
+  concdehbcorpuscularmedia: 'chcm',
+  rdw: 'rdwcv',
+  rdwcv: 'rdwcv',
+  rdwsd: 'rdwsd',
+  plaquetas: 'plaquetas',
+  vpm: 'mpv',
+  mpv: 'mpv',
+  vpmvolumeplaquetariomedio: 'mpv',
+  volumeplaquetariomedio: 'mpv',
+  pct: 'pct',
+  pdw: 'pdw',
+  pdwamplitudededistribuicaoplaquetaria: 'pdw',
+  amplitudededistribuicaoplaquetaria: 'pdw',
+  reticulocitos: 'ret_pct',
+  irf: 'ret_irf',
+}
+
+/** Converte o nome de um parâmetro do catálogo na chave do campo da tela. */
+function mapParamToFormKey(name: string): string | null {
+  const raw = normalize(name)
+  const isAbs = raw.includes('absoluto')
+  const base = raw.replace('absoluto', '').replace('percentual', '')
+
+  if (base === 'eritroblastos') return isAbs ? 'eritroblastos_abs' : 'eritroblastos_pct'
+
+  const direct = DIRECT_ALIASES[base]
+  if (direct) return direct
+
+  const row = ROW_ALIASES[base]
+  if (row) return `${row}${isAbs ? '_abs' : '_pct'}`
+
+  const field = RED_FIELDS.concat(RETIC_FIELDS, PLATELET_FIELDS).find((f) => normalize(f.label) === base)
+  return field ? field.key : null
+}
+
 
 const ageFromBirthDate = (birthDate?: string) => {
   if (!birthDate) return '—'
@@ -168,6 +227,8 @@ const CompactInput = ({ value, onChange, label }: { value: string; onChange: (va
 
 export default function LabHematologiaPage() {
   const { orders, refresh, loading } = useAttendanceCadastro()
+  const { user } = useAuth()
+  const { canType, canRelease } = useResultEntryPermissions()
 
   const [statusFilter, setStatusFilter] = useState<string>('all')
   const [dateFromInput, setDateFromInput] = useState('')
@@ -180,6 +241,23 @@ export default function LabHematologiaPage() {
   const [laudo, setLaudo] = useState('')
   const [observacao, setObservacao] = useState('')
   const [flags, setFlags] = useState<string[]>([])
+  const [catalogList, setCatalogList] = useState<any[]>([])
+  const [examStatus, setExamStatus] = useState<string | null>(null)
+  const [instrumentKeys, setInstrumentKeys] = useState<Set<string>>(new Set())
+  const [saving, setSaving] = useState(false)
+
+  // Catálogo de Exames (mesma fonte usada na Digitação de Resultados)
+  useEffect(() => {
+    let active = true
+    ;(async () => {
+      const { data } = await supabase
+        .from('exams')
+        .select('id, name, internal_code, measurement_unit, parameters, reference_values')
+      if (active && data) setCatalogList(data as any[])
+    })()
+    return () => { active = false }
+  }, [])
+
 
   // Exames de hematologia reais da empresa do usuário logado
   const exams = useMemo<HemItem[]>(() => {
@@ -254,6 +332,45 @@ export default function LabHematologiaPage() {
     [filteredExams, selectedId],
   )
 
+  // Parâmetros e faixas de referência do catálogo (idênticos à Digitação de Resultados)
+  const resolvedParams = useMemo<ResolvedParam[]>(() => {
+    if (!selected) return []
+    const age = selected.patientBirthDate
+      ? (() => {
+          const birth = new Date(`${selected.patientBirthDate}T12:00:00`)
+          if (isNaN(birth.getTime())) return undefined
+          const today = new Date()
+          let years = today.getFullYear() - birth.getFullYear()
+          const before = today.getMonth() < birth.getMonth() || (today.getMonth() === birth.getMonth() && today.getDate() < birth.getDate())
+          if (before) years -= 1
+          return years
+        })()
+      : undefined
+    const catalogExam = findCatalogExam(catalogList, {
+      examId: selected.id.split(':')[1],
+      code: selected.examCode,
+      name: selected.examName,
+    })
+    return buildExamParams(catalogExam, selected.examName, { gender: selected.gender, age })
+  }, [selected, catalogList])
+
+  const formKeyOfParam = (param: ResolvedParam) => mapParamToFormKey(param.name) || `p_${param.id}`
+
+  const paramByFormKey = useMemo(() => {
+    const map: Record<string, ResolvedParam> = {}
+    resolvedParams.forEach((param) => {
+      const key = formKeyOfParam(param)
+      if (!map[key]) map[key] = param
+    })
+    return map
+  }, [resolvedParams])
+
+  // Parâmetros do catálogo que não têm campo fixo na tela do equipamento
+  const extraParams = useMemo(
+    () => resolvedParams.filter((param) => !mapParamToFormKey(param.name)),
+    [resolvedParams],
+  )
+
   // Carrega valores já digitados/recebidos do equipamento para o exame selecionado
   useEffect(() => {
     let cancelled = false
@@ -261,42 +378,162 @@ export default function LabHematologiaPage() {
     setLaudo('')
     setObservacao('')
     setFlags([])
+    setExamStatus(null)
+    setInstrumentKeys(new Set())
     if (!selected) return
+    const cid = resolveCompanyId(user?.companyId)
+    if (!cid) return
 
     ;(async () => {
-      const { data: results } = await (supabase.from('lab_exam_results' as any) as any)
-        .select('id, notes, exam_name')
-        .eq('order_id', selected.orderId)
-      const match = (results || []).find((r: any) => normalize(String(r.exam_name || '')) === normalize(selected.examName)) || (results || [])[0]
+      const { data: results } = await supabase
+        .from('lab_exam_results')
+        .select('id, status, notes, lab_result_values(parameter_key, parameter_name, value, flag, source)')
+        .eq('company_id', cid)
+        .eq('exam_ref', selected.id)
+      const match = (results || [])[0] as any
       if (!match || cancelled) return
 
-      const { data: rows } = await (supabase.from('lab_result_values' as any) as any)
-        .select('parameter_name, parameter_key, value, flag')
-        .eq('result_id', match.id)
-      if (cancelled) return
+      const byId: Record<string, ResolvedParam> = {}
+      resolvedParams.forEach((param) => { byId[String(param.id)] = param })
 
       const next: Record<string, string> = {}
       const nextFlags: string[] = []
-      ;(rows || []).forEach((row: any) => {
-        const key = PARAM_KEY_MAP[normalize(String(row.parameter_name || ''))]
-        if (key && row.value != null) next[key] = String(row.value).replace('.', ',')
+      const nextInstrument = new Set<string>()
+      ;(match.lab_result_values || []).forEach((row: any) => {
+        const param = byId[String(row.parameter_key)]
+        const key = param ? formKeyOfParam(param) : mapParamToFormKey(String(row.parameter_name || ''))
+        if (key && row.value != null && String(row.value) !== '') {
+          next[key] = String(row.value)
+          if (row.source === 'instrument') nextInstrument.add(key)
+        }
         if (row.flag && !nextFlags.includes(row.flag)) nextFlags.push(String(row.flag))
       })
       setValues(next)
       setFlags(nextFlags)
+      setInstrumentKeys(nextInstrument)
       setObservacao(match.notes || '')
+      setExamStatus(match.status || null)
     })()
 
     return () => { cancelled = true }
-  }, [selected])
+  }, [selected, resolvedParams, user?.companyId])
+
+  // Calcula automaticamente os parâmetros com fórmula do catálogo
+  useEffect(() => {
+    if (resolvedParams.length === 0) return
+    const valueOf = (paramId: string) => {
+      const param = resolvedParams.find((p) => String(p.id) === String(paramId))
+      return param ? (values[formKeyOfParam(param)] || '') : ''
+    }
+    const updates: Record<string, string> = {}
+    resolvedParams.forEach((param) => {
+      if (!param.isCalculated) return
+      const key = formKeyOfParam(param)
+      if (instrumentKeys.has(key)) return
+      const computed = evaluateFormula(param.formula, resolvedParams, valueOf)
+      if (computed && values[key] !== computed) updates[key] = computed
+    })
+    if (Object.keys(updates).length > 0) setValues((current) => ({ ...current, ...updates }))
+  }, [values, resolvedParams, instrumentKeys])
 
   const getValue = (key: string) => values[key] ?? ''
   const setValue = (key: string, value: string) => setValues((current) => ({ ...current, [key]: value }))
+  const referenceOf = (key: string) => paramByFormKey[key]?.reference || ''
 
-  const handleValidate = () => {
+  /** Salva o exame selecionado no mesmo formato da Digitação de Resultados. */
+  const persistExam = async (status: 'draft' | 'digitized' | 'released') => {
     if (!selected) return
-    toast.success(`Resultado validado — ${selected.patientName}`)
+    const cid = resolveCompanyId(user?.companyId)
+    if (!cid) throw new Error('Empresa não identificada')
+
+    const nowIso = new Date().toISOString()
+    const payload: any = {
+      company_id: cid,
+      order_id: selected.orderId,
+      protocol: selected.protocol || null,
+      exam_ref: selected.id,
+      exam_code: selected.examCode || null,
+      exam_name: selected.examName || null,
+      patient_name: selected.patientName || null,
+      status,
+      notes: observacao || null,
+    }
+    if (status === 'digitized') { payload.typed_by = user?.id || null; payload.typed_at = nowIso }
+    if (status === 'released') { payload.released_by = user?.id || null; payload.released_at = nowIso }
+
+    const { data: saved, error } = await supabase
+      .from('lab_exam_results')
+      .upsert(payload, { onConflict: 'company_id,exam_ref' })
+      .select('id')
+      .single()
+    if (error || !saved) throw error || new Error('Falha ao salvar resultado')
+
+    const rows = resolvedParams.map((param, idx) => {
+      const key = formKeyOfParam(param)
+      return {
+        company_id: cid,
+        result_id: saved.id,
+        parameter_key: String(param.id),
+        parameter_name: param.name || null,
+        value: values[key] || '',
+        unit: param.unit || null,
+        reference: param.reference || null,
+        sort_order: idx,
+        source: instrumentKeys.has(key) ? 'instrument' : 'manual',
+      }
+    })
+    if (rows.length > 0) {
+      const { error: vErr } = await supabase
+        .from('lab_result_values')
+        .upsert(rows, { onConflict: 'result_id,parameter_key' })
+      if (vErr) throw vErr
+    }
+
+    await updateOrderStatus()
   }
+
+  /** Recalcula o status do pedido conforme os exames digitados/liberados. */
+  const updateOrderStatus = async () => {
+    if (!selected) return
+    const cid = resolveCompanyId(user?.companyId)
+    if (!cid) return
+    const order: any = (orders || []).find((o: any) => o.id === selected.orderId)
+    const total = (order?.labGuides || []).reduce(
+      (acc: number, guide: any) =>
+        acc + (guide?.exams || []).filter((e: any) => String(e.status || '').toLowerCase() !== 'cancelled').length,
+      0,
+    )
+    const { data } = await supabase
+      .from('lab_exam_results')
+      .select('status')
+      .eq('company_id', cid)
+      .eq('order_id', selected.orderId)
+    const statuses = (data || []).map((r: any) => r.status)
+    const released = statuses.filter((s) => s === 'released').length
+
+    let next = 'validation'
+    if (total > 0 && released >= total) next = 'completed'
+    else if (released > 0) next = 'released'
+
+    await supabase.from('attendance_orders').update({ status: next }).eq('id', selected.orderId)
+  }
+
+  const allFilled = resolvedParams.length > 0 && resolvedParams.every((param) => (values[formKeyOfParam(param)] || '').trim() !== '')
+
+  const runAction = async (status: 'draft' | 'digitized' | 'released', message: string) => {
+    setSaving(true)
+    try {
+      await persistExam(status)
+      setExamStatus(status)
+      toast.success(message)
+      await Promise.resolve(refresh())
+    } catch {
+      toast.error('Erro ao salvar o resultado no banco de dados.')
+    } finally {
+      setSaving(false)
+    }
+  }
+
 
   return (
     <div className="space-y-3">
@@ -492,10 +729,10 @@ export default function LabHematologiaPage() {
                 <TabsContent value="hemacias" className="mt-2">
                   <div className="overflow-hidden rounded border border-border">
                     {RED_FIELDS.map((field) => (
-                      <div key={field.key} className="grid grid-cols-[minmax(104px,1fr)_84px_58px] items-center gap-1 border-b border-border px-2 py-1 last:border-b-0">
+                      <div key={field.key} className="grid grid-cols-[minmax(96px,1fr)_80px_96px] items-center gap-1 border-b border-border px-2 py-1 last:border-b-0">
                         <span className="truncate text-[11px]">{field.label}</span>
                         <CompactInput label={field.label} value={getValue(field.key)} onChange={(value) => setValue(field.key, value)} />
-                        <span className="text-right text-[9px] text-muted-foreground">{field.unit}</span>
+                        <span className="truncate text-right text-[9px] text-muted-foreground" title={referenceOf(field.key)}>{field.unit}{referenceOf(field.key) ? ` · ${referenceOf(field.key)}` : ''}</span>
                       </div>
                     ))}
                   </div>
@@ -503,10 +740,10 @@ export default function LabHematologiaPage() {
                 <TabsContent value="reticulocitos" className="mt-2">
                   <div className="overflow-hidden rounded border border-border">
                     {RETIC_FIELDS.map((field) => (
-                      <div key={field.key} className="grid grid-cols-[minmax(104px,1fr)_84px_58px] items-center gap-1 border-b border-border px-2 py-1 last:border-b-0">
+                      <div key={field.key} className="grid grid-cols-[minmax(96px,1fr)_80px_96px] items-center gap-1 border-b border-border px-2 py-1 last:border-b-0">
                         <span className="truncate text-[11px]">{field.label}</span>
                         <CompactInput label={field.label} value={getValue(field.key)} onChange={(value) => setValue(field.key, value)} />
-                        <span className="text-right text-[9px] text-muted-foreground">{field.unit}</span>
+                        <span className="truncate text-right text-[9px] text-muted-foreground" title={referenceOf(field.key)}>{field.unit}{referenceOf(field.key) ? ` · ${referenceOf(field.key)}` : ''}</span>
                       </div>
                     ))}
                   </div>
@@ -518,10 +755,10 @@ export default function LabHematologiaPage() {
               <SectionTitle>Plaquetas</SectionTitle>
               <div className="overflow-hidden rounded border border-border">
                 {PLATELET_FIELDS.map((field) => (
-                  <div key={field.key} className="grid grid-cols-[minmax(104px,1fr)_84px_58px] items-center gap-1 border-b border-border px-2 py-1 last:border-b-0">
+                  <div key={field.key} className="grid grid-cols-[minmax(96px,1fr)_80px_96px] items-center gap-1 border-b border-border px-2 py-1 last:border-b-0">
                     <span className="truncate text-[11px]">{field.label}</span>
                     <CompactInput label={field.label} value={getValue(field.key)} onChange={(value) => setValue(field.key, value)} />
-                    <span className="text-right text-[9px] text-muted-foreground">{field.unit}</span>
+                    <span className="truncate text-right text-[9px] text-muted-foreground" title={referenceOf(field.key)}>{field.unit}{referenceOf(field.key) ? ` · ${referenceOf(field.key)}` : ''}</span>
                   </div>
                 ))}
               </div>
@@ -549,10 +786,31 @@ export default function LabHematologiaPage() {
               ))}
             </Tabs>
 
+            {extraParams.length > 0 && (
+              <section className="space-y-2 pt-1">
+                <SectionTitle>Outros Parâmetros do Exame</SectionTitle>
+                <div className="overflow-hidden rounded border border-border">
+                  {extraParams.map((param) => {
+                    const key = `p_${param.id}`
+                    return (
+                      <div key={key} className="grid grid-cols-[minmax(104px,1fr)_84px_84px] items-center gap-1 border-b border-border px-2 py-1 last:border-b-0">
+                        <span className="truncate text-[11px]" title={param.name}>{param.name}</span>
+                        <CompactInput label={param.name} value={getValue(key)} onChange={(value) => setValue(key, value)} />
+                        <span className="truncate text-right text-[9px] text-muted-foreground" title={param.reference}>
+                          {param.unit} {param.reference ? `· ${param.reference}` : ''}
+                        </span>
+                      </div>
+                    )
+                  })}
+                </div>
+              </section>
+            )}
+
             <section className="space-y-2 pt-1">
               <SectionTitle>Observação</SectionTitle>
               <Textarea rows={4} value={observacao} onChange={(event) => setObservacao(event.target.value)} placeholder="Observações técnicas da análise..." className="resize-none text-xs" />
             </section>
+
           </div>
 
           <aside className="space-y-3 bg-muted/30 p-3 xl:col-span-2">
@@ -584,14 +842,45 @@ export default function LabHematologiaPage() {
           />
         </section>
 
-        <footer className="flex flex-col justify-end gap-2 border-t border-border bg-muted/50 px-4 py-3 sm:flex-row">
-          <Button variant="outline" className="gap-2" onClick={() => toast.success('Resultado salvo parcialmente')}>
-            <Save className="h-4 w-4" /> SALVAR PARCIAL
-          </Button>
-          <Button className="gradient-bg gap-2 text-primary-foreground" onClick={handleValidate}>
-            <CheckCircle2 className="h-4 w-4" /> Validar Resultado
-          </Button>
+        <footer className="flex flex-col items-stretch justify-between gap-2 border-t border-border bg-muted/50 px-4 py-3 sm:flex-row sm:items-center">
+          <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
+            {resolvedParams.filter((param) => (values[formKeyOfParam(param)] || '').trim() !== '').length} de {resolvedParams.length} campos preenchidos
+            {examStatus === 'digitized' && ' · digitado'}
+            {examStatus === 'released' && ' · liberado'}
+          </p>
+          <div className="flex flex-col gap-2 sm:flex-row">
+            {canType && (
+              <Button
+                variant="outline"
+                className="gap-2"
+                disabled={saving || !selected}
+                onClick={() => runAction('draft', 'Resultado salvo parcialmente.')}
+              >
+                <Save className="h-4 w-4" /> SALVAR PARCIAL
+              </Button>
+            )}
+            {canRelease && (
+              <Button
+                variant="outline"
+                className="gap-2 border-emerald-500/30 text-emerald-600 hover:bg-emerald-50"
+                disabled={saving || examStatus !== 'digitized'}
+                onClick={() => runAction('released', 'Exame liberado com sucesso!')}
+              >
+                <ShieldCheck className="h-4 w-4" /> Liberar Digitados
+              </Button>
+            )}
+            {canType && (
+              <Button
+                className="gradient-bg gap-2 text-primary-foreground"
+                disabled={saving || !allFilled || examStatus === 'released'}
+                onClick={() => runAction('digitized', 'Digitação concluída e salva com sucesso!')}
+              >
+                <CheckCircle2 className="h-4 w-4" /> Concluir Digitação
+              </Button>
+            )}
+          </div>
         </footer>
+
       </section>
       )}
     </div>
