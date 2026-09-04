@@ -1,11 +1,29 @@
 import { useMemo, useState } from 'react'
-import { ChevronDown, Copy, Check, Search, Building2, Globe, ArrowLeft } from 'lucide-react'
+import { ChevronDown, Copy, Check, Search, Building2, Globe, ArrowLeft, Handshake, FlaskConical } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
-import { API_BASES, API_GROUPS, API_INFO, type ApiEndpoint, type HttpMethod } from '@/data/apiDocs'
+import { API_BASES, API_GROUPS, API_INFO, type ApiEndpoint, type HttpMethod, type Scope } from '@/data/apiDocs'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { cn } from '@/lib/utils'
+import { DEMO_EXAMS, DEMO_SPECIALTIES } from '@/mocks/registers.mock'
+
+const SCOPE_META: Record<Scope, { label: string; description: string; icon: typeof Building2; className?: string }> = {
+  company: { label: 'Empresa', description: 'Escopo por empresa (RLS company_id)', icon: Building2 },
+  system: { label: 'Sistema', description: 'Escopo global do sistema', icon: Globe },
+  partner: { label: 'Parceiro', description: 'Chamado por sistemas externos parceiros (OAuth2)', icon: Handshake, className: 'border-[#7B2FF7]/40 text-[#7B2FF7]' },
+}
+
+function ScopeBadge({ scope, withDescription }: { scope: Scope; withDescription?: boolean }) {
+  const meta = SCOPE_META[scope]
+  const Icon = meta.icon
+  return (
+    <Badge variant="outline" className={cn('shrink-0 gap-1 text-[10px]', meta.className)}>
+      <Icon className="h-3 w-3" />
+      {withDescription ? meta.description : meta.label}
+    </Badge>
+  )
+}
 
 const METHOD_STYLES: Record<HttpMethod, string> = {
   GET: 'bg-sky-500/15 text-sky-600 border-sky-500/30',
