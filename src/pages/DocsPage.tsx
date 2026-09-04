@@ -145,7 +145,7 @@ function EndpointRow({ ep }: { ep: ApiEndpoint }) {
 export default function DocsPage() {
   const navigate = useNavigate()
   const [query, setQuery] = useState('')
-  const [scope, setScope] = useState<'all' | 'company' | 'system'>('all')
+  const [scope, setScope] = useState<'all' | Scope>('all')
 
   const groups = useMemo(() => {
     const q = query.trim().toLowerCase()
