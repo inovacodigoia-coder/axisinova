@@ -303,9 +303,41 @@ export default function LabHematologiaPage() {
       <div className="flex flex-wrap items-center gap-2">
         <Droplet className="h-5 w-5 text-primary" />
         <h1 className="text-xl font-bold">Equipamento da Hematologia</h1>
-        <div className="ml-auto flex items-center gap-2">
+        <div className="ml-auto flex flex-wrap items-center gap-2">
+          <Input
+            type="text"
+            inputMode="numeric"
+            placeholder="Pedido / protocolo..."
+            value={orderFilter}
+            onChange={(event) => setOrderFilter(event.target.value)}
+            className="h-8 w-[160px] text-xs"
+          />
+          <Input
+            type="text"
+            inputMode="numeric"
+            placeholder="Data início"
+            value={dateFromInput}
+            onChange={(event) => {
+              const masked = maskBrazilianDate(event.target.value)
+              setDateFromInput(masked)
+              setDateFrom(parseBrazilianDate(masked))
+            }}
+            className="h-8 w-[120px] text-xs"
+          />
+          <Input
+            type="text"
+            inputMode="numeric"
+            placeholder="Data final"
+            value={dateToInput}
+            onChange={(event) => {
+              const masked = maskBrazilianDate(event.target.value)
+              setDateToInput(masked)
+              setDateTo(parseBrazilianDate(masked))
+            }}
+            className="h-8 w-[120px] text-xs"
+          />
           <Select value={statusFilter} onValueChange={setStatusFilter}>
-            <SelectTrigger aria-label="Filtrar por status do pedido" className="h-8 w-[200px] text-xs">
+            <SelectTrigger aria-label="Filtrar por status do pedido" className="h-8 w-[180px] text-xs">
               <SelectValue placeholder="Status do pedido" />
             </SelectTrigger>
             <SelectContent>
