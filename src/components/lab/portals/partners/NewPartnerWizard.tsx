@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
-import { Building2, FlaskConical, ShieldCheck, Stethoscope, KeyRound, Lock, Info, Check } from 'lucide-react'
+import { Building2, FlaskConical, ShieldCheck, Stethoscope, Lock, Info, Check } from 'lucide-react'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -8,7 +8,7 @@ import { Textarea } from '@/components/ui/textarea'
 import { Switch } from '@/components/ui/switch'
 import { cn } from '@/lib/utils'
 import { toast } from 'sonner'
-import type { ApiPartner, ApiPartnerAuthMethod, ApiPartnerType } from '@/types/api-partners.types'
+import type { ApiPartner, ApiPartnerType } from '@/types/api-partners.types'
 import { PARTNER_TYPE_LABEL } from '@/types/api-partners.types'
 import {
   addPartner, documentExists, generateCredential, isValidDocument, maskDocument, maskPhone,
@@ -39,16 +39,14 @@ export function NewPartnerWizard({ open, onOpenChange, companyId, onCreated }: P
   const [contactEmail, setContactEmail] = useState('')
   const [contactPhone, setContactPhone] = useState('')
   const [notes, setNotes] = useState('')
-  const [authMethod, setAuthMethod] = useState<ApiPartnerAuthMethod>('oauth2')
-  const [allowPartnerExamCodes, setAllowPartnerExamCodes] = useState(false)
   const [apiAuthorized, setApiAuthorized] = useState(false)
   const [credential, setCredential] = useState<GeneratedCredential | null>(null)
 
   useEffect(() => {
     if (open) {
       setStep(1); setType('laboratorio'); setName(''); setDocument(''); setContactName('')
-      setContactEmail(''); setContactPhone(''); setNotes(''); setAuthMethod('oauth2')
-      setAllowPartnerExamCodes(false); setApiAuthorized(false); setCredential(null)
+      setContactEmail(''); setContactPhone(''); setNotes('')
+      setApiAuthorized(false); setCredential(null)
     }
   }, [open])
 
@@ -56,9 +54,8 @@ export function NewPartnerWizard({ open, onOpenChange, companyId, onCreated }: P
   const emailValid = /\S+@\S+\.\S+/.test(contactEmail)
   const stepAValid = !!name.trim() && isValidDocument(document) && !duplicated && emailValid
 
-  const generate = (method: ApiPartnerAuthMethod) => {
-    setAuthMethod(method)
-    setCredential(generateCredential(method))
+  const generate = () => {
+    setCredential(generateCredential())
   }
 
   const handleConfirm = () => {
@@ -72,8 +69,7 @@ export function NewPartnerWizard({ open, onOpenChange, companyId, onCreated }: P
       contactEmail: contactEmail.trim(),
       contactPhone: contactPhone.trim() || undefined,
       notes: notes.trim() || undefined,
-      authMethod,
-      allowPartnerExamCodes,
+      authMethod: 'oauth2',
       apiAuthorized,
       status: 'active',
     }, credential)
@@ -164,34 +160,30 @@ export function NewPartnerWizard({ open, onOpenChange, companyId, onCreated }: P
           {step === 2 && (
             <>
               <div className="space-y-2">
-                <Label>Método de Autenticação *</Label>
-                <div className="grid gap-3 sm:grid-cols-2">
-                  <button type="button" onClick={() => generate('oauth2')}
-                    className={cn('flex min-h-[88px] flex-col items-start gap-1 rounded-xl border-2 p-4 text-left transition-all',
-                      authMethod === 'oauth2' && credential ? 'border-primary bg-primary/5' : 'border-border hover:border-primary/40')}>
-                    <Lock className="h-5 w-5 text-primary" />
-                    <span className="text-sm font-semibold">OAuth2 Client Credentials</span>
-                    <span className="text-xs text-muted-foreground">Recomendado</span>
-                  </button>
-                  <button type="button" onClick={() => generate('api_key')}
-                    className={cn('flex min-h-[88px] flex-col items-start gap-1 rounded-xl border-2 p-4 text-left transition-all',
-                      authMethod === 'api_key' && credential ? 'border-primary bg-primary/5' : 'border-border hover:border-primary/40')}>
-                    <KeyRound className="h-5 w-5 text-muted-foreground" />
-                    <span className="text-sm font-semibold">API Key</span>
-                    <span className="text-xs text-muted-foreground">Legado</span>
-                  </button>
+                <Label>Método de Autenticação</Label>
+                <div className={cn('flex min-h-[88px] items-center gap-3 rounded-xl border-2 p-4 transition-all',
+                  credential ? 'border-primary bg-primary/5' : 'border-border')}>
+                  <Lock className="h-5 w-5 shrink-0 text-primary" />
+                  <div className="flex-1">
+                    <p className="text-sm font-semibold">OAuth2 Client Credentials</p>
+                    <p className="text-xs text-muted-foreground">Único método suportado nesta fase.</p>
+                  </div>
+                  {!credential && (
+                    <Button type="button" variant="outline" className="min-h-[44px]" onClick={generate}>
+                      Gerar Credenciais
+                    </Button>
+                  )}
                 </div>
-                {!credential && <p className="text-xs text-muted-foreground">Selecione um método para gerar as credenciais.</p>}
               </div>
 
               {credential && <CredentialRevealCard credential={credential} />}
 
-              <div className="flex items-start justify-between gap-4 rounded-xl border p-4">
-                <div>
-                  <p className="text-sm font-medium">Permitir envio de exames com código próprio do parceiro</p>
-                  <p className="text-xs text-muted-foreground">Se ativo, o mapeamento de exames será necessário antes de liberar em produção.</p>
-                </div>
-                <Switch checked={allowPartnerExamCodes} onCheckedChange={setAllowPartnerExamCodes} />
+              <div className="flex items-start gap-2 rounded-xl border border-primary/30 bg-primary/5 p-4 text-sm">
+                <Info className="mt-0.5 h-4 w-4 shrink-0 text-primary" />
+                <p className="text-muted-foreground">
+                  Os exames enviados pelo parceiro devem usar o Código do Catálogo de Exames do Axis Inova.
+                  Suporte a código próprio do parceiro poderá ser avaliado em uma fase futura.
+                </p>
               </div>
             </>
           )}
@@ -223,8 +215,7 @@ export function NewPartnerWizard({ open, onOpenChange, companyId, onCreated }: P
                     ['Contato', contactName || '—'],
                     ['E-mail', contactEmail || '—'],
                     ['Telefone', contactPhone || '—'],
-                    ['Autenticação', authMethod === 'oauth2' ? 'OAuth2 Client Credentials' : 'API Key (legado)'],
-                    ['Código próprio do parceiro', allowPartnerExamCodes ? 'Sim' : 'Não'],
+                    ['Autenticação', 'OAuth2 Client Credentials'],
                     ['Autorizado via API', apiAuthorized ? 'Sim' : 'Não (pendente)'],
                   ].map(([k, v]) => (
                     <div key={k as string} className="flex justify-between gap-3 border-b border-dashed border-border/60 pb-1 last:border-0">

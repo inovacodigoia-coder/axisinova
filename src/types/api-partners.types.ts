@@ -1,7 +1,7 @@
 export type ApiPartnerType = 'laboratorio' | 'clinica' | 'convenio' | 'medico'
 export type ApiPartnerStatus = 'active' | 'inactive'
 export type ApiPartnerAuthorization = 'authorized' | 'pending' | 'blocked'
-export type ApiPartnerAuthMethod = 'api_key' | 'oauth2'
+export type ApiPartnerAuthMethod = 'oauth2'
 
 export interface ApiPartnerCredential {
   method: ApiPartnerAuthMethod
@@ -23,7 +23,6 @@ export interface ApiPartner {
   contactPhone?: string
   notes?: string
   authMethod: ApiPartnerAuthMethod
-  allowPartnerExamCodes: boolean
   apiAuthorized: boolean
   status: ApiPartnerStatus
   credentials: ApiPartnerCredential[]

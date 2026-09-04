@@ -41,21 +41,16 @@ export function randomToken(len = 24) {
 
 export interface GeneratedCredential {
   method: ApiPartnerAuthMethod
-  apiKey?: string
-  clientId?: string
-  clientSecret?: string
+  clientId: string
+  clientSecret: string
 }
 
-export function generateCredential(method: ApiPartnerAuthMethod): GeneratedCredential {
-  if (method === 'api_key') {
-    return { method, apiKey: `pk_live_${randomToken(28)}` }
-  }
-  return { method, clientId: `cli_live_${randomToken(12)}`, clientSecret: `cs_live_${randomToken(32)}` }
+export function generateCredential(): GeneratedCredential {
+  return { method: 'oauth2', clientId: `cli_live_${randomToken(12)}`, clientSecret: `cs_live_${randomToken(32)}` }
 }
 
 export function maskCredential(cred: GeneratedCredential): string {
-  const raw = cred.method === 'api_key' ? cred.apiKey! : cred.clientId!
-  return `${raw.slice(0, 8)}••••••${raw.slice(-4)}`
+  return `${cred.clientId.slice(0, 8)}••••••${cred.clientId.slice(-4)}`
 }
 
 export function addPartner(input: Omit<ApiPartner, 'id' | 'createdAt' | 'credentials' | 'lastSyncAt'>, cred: GeneratedCredential): ApiPartner {
@@ -88,8 +83,8 @@ export function removePartner(id: string) {
 }
 
 /** Regenera credenciais revogando a anterior. Retorna a credencial em texto puro (exibição única). */
-export function regenerateCredential(id: string, method: ApiPartnerAuthMethod): GeneratedCredential {
-  const cred = generateCredential(method)
+export function regenerateCredential(id: string, method: ApiPartnerAuthMethod = 'oauth2'): GeneratedCredential {
+  const cred = generateCredential()
   const now = new Date().toISOString()
   partners = partners.map(p => {
     if (p.id !== id) return p
