@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
-import { Building2, FlaskConical, ShieldCheck, Stethoscope, KeyRound, Lock, Info, Check } from 'lucide-react'
+import { Building2, FlaskConical, ShieldCheck, Stethoscope, Lock, Info, Check } from 'lucide-react'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -8,7 +8,7 @@ import { Textarea } from '@/components/ui/textarea'
 import { Switch } from '@/components/ui/switch'
 import { cn } from '@/lib/utils'
 import { toast } from 'sonner'
-import type { ApiPartner, ApiPartnerAuthMethod, ApiPartnerType } from '@/types/api-partners.types'
+import type { ApiPartner, ApiPartnerType } from '@/types/api-partners.types'
 import { PARTNER_TYPE_LABEL } from '@/types/api-partners.types'
 import {
   addPartner, documentExists, generateCredential, isValidDocument, maskDocument, maskPhone,
@@ -39,16 +39,14 @@ export function NewPartnerWizard({ open, onOpenChange, companyId, onCreated }: P
   const [contactEmail, setContactEmail] = useState('')
   const [contactPhone, setContactPhone] = useState('')
   const [notes, setNotes] = useState('')
-  const [authMethod, setAuthMethod] = useState<ApiPartnerAuthMethod>('oauth2')
-  const [allowPartnerExamCodes, setAllowPartnerExamCodes] = useState(false)
   const [apiAuthorized, setApiAuthorized] = useState(false)
   const [credential, setCredential] = useState<GeneratedCredential | null>(null)
 
   useEffect(() => {
     if (open) {
       setStep(1); setType('laboratorio'); setName(''); setDocument(''); setContactName('')
-      setContactEmail(''); setContactPhone(''); setNotes(''); setAuthMethod('oauth2')
-      setAllowPartnerExamCodes(false); setApiAuthorized(false); setCredential(null)
+      setContactEmail(''); setContactPhone(''); setNotes('')
+      setApiAuthorized(false); setCredential(null)
     }
   }, [open])
 
@@ -56,9 +54,8 @@ export function NewPartnerWizard({ open, onOpenChange, companyId, onCreated }: P
   const emailValid = /\S+@\S+\.\S+/.test(contactEmail)
   const stepAValid = !!name.trim() && isValidDocument(document) && !duplicated && emailValid
 
-  const generate = (method: ApiPartnerAuthMethod) => {
-    setAuthMethod(method)
-    setCredential(generateCredential(method))
+  const generate = () => {
+    setCredential(generateCredential())
   }
 
   const handleConfirm = () => {
@@ -72,8 +69,7 @@ export function NewPartnerWizard({ open, onOpenChange, companyId, onCreated }: P
       contactEmail: contactEmail.trim(),
       contactPhone: contactPhone.trim() || undefined,
       notes: notes.trim() || undefined,
-      authMethod,
-      allowPartnerExamCodes,
+      authMethod: 'oauth2',
       apiAuthorized,
       status: 'active',
     }, credential)
