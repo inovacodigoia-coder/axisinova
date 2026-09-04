@@ -90,9 +90,37 @@ export default function PartnerDetailPage() {
             </Badge>
           </div>
         </div>
-        <Button variant="destructive" className="min-h-[44px]" onClick={() => { setDeleteConfirmed(false); setDeleteOpen(true) }}>
-          <Trash2 className="mr-2 h-4 w-4" /> Excluir Parceiro
-        </Button>
+        <div className="flex flex-wrap gap-2">
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <span className="inline-flex">
+                  <Button
+                    variant="outline"
+                    className="min-h-[44px]"
+                    disabled={!guideEnabled}
+                    onClick={() => {
+                      generatePartnerIntegrationGuide(partner)
+                      toast.success('Guia de integração gerado')
+                    }}
+                  >
+                    <FileDown className="mr-2 h-4 w-4" /> Gerar Guia de Integração
+                  </Button>
+                </span>
+              </TooltipTrigger>
+              {!guideEnabled && (
+                <TooltipContent>
+                  {!entitlement.enabled
+                    ? 'Módulo de Parceiros não liberado pelo Super Admin para esta empresa'
+                    : 'Gere as credenciais de autenticação antes de exportar o guia'}
+                </TooltipContent>
+              )}
+            </Tooltip>
+          </TooltipProvider>
+          <Button variant="destructive" className="min-h-[44px]" onClick={() => { setDeleteConfirmed(false); setDeleteOpen(true) }}>
+            <Trash2 className="mr-2 h-4 w-4" /> Excluir Parceiro
+          </Button>
+        </div>
       </div>
 
       <Tabs defaultValue="dados">
