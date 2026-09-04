@@ -127,22 +127,76 @@ function endOfDay(d: Date): Date {
   return new Date(d.getFullYear(), d.getMonth(), d.getDate(), 23, 59, 59, 999)
 }
 
-/** Mapa nome do parâmetro (normalizado) -> chave do formulário */
-const PARAM_KEY_MAP: Record<string, string> = (() => {
-  const map: Record<string, string> = {
-    leucocitos: 'leuco',
-    tnc: 'tnc',
-  }
+const rowKey = (row: string) => row.toLowerCase().replace(/\W+/g, '_')
+
+/** Apelidos de nomenclatura entre o catálogo de exames e os campos da tela. */
+const ROW_ALIASES: Record<string, string> = (() => {
+  const map: Record<string, string> = {}
   WHITE_ROWS.concat(OTHER_ROWS).forEach((row) => {
-    const key = row.toLowerCase().replace(/\W+/g, '_')
-    map[normalize(row)] = `${key}_pct`
+    map[normalize(row)] = rowKey(row)
   })
-  RED_FIELDS.concat(RETIC_FIELDS, PLATELET_FIELDS).forEach((field) => {
-    const n = normalize(field.label)
-    if (!map[n]) map[n] = field.key
-  })
+  map.neutrofilos = rowKey('Neutrófilos')
+  map.neutrofilosbastonetes = rowKey('Bastões')
+  map.bastonetes = rowKey('Bastões')
+  map.bastoes = rowKey('Bastões')
+  map.neutrofilossegmentados = rowKey('Segmentados')
+  map.segmentados = rowKey('Segmentados')
+  map.linfocitos = rowKey('Linfócitos (T/A)')
+  map.granulocitosimaturos = rowKey('Gran. Imaturos')
+  map.granimaturos = rowKey('Gran. Imaturos')
   return map
 })()
+
+const DIRECT_ALIASES: Record<string, string> = {
+  leucocitos: 'leuco',
+  leucocitostotais: 'leuco',
+  tnc: 'tnc',
+  hemacias: 'hemacias',
+  hemoglobina: 'hb',
+  hematocrito: 'ht',
+  vcm: 'vcm',
+  vcmvolumecorpuscularmedio: 'vcm',
+  volumecorpuscularmedio: 'vcm',
+  hcm: 'hcm',
+  hcmhemoglobinacorpuscularmedia: 'hcm',
+  hemoglobinacorpuscularmedia: 'hcm',
+  chcm: 'chcm',
+  chcmconcdehbcorpuscularmedia: 'chcm',
+  concdehbcorpuscularmedia: 'chcm',
+  rdw: 'rdwcv',
+  rdwcv: 'rdwcv',
+  rdwsd: 'rdwsd',
+  plaquetas: 'plaquetas',
+  vpm: 'mpv',
+  mpv: 'mpv',
+  vpmvolumeplaquetariomedio: 'mpv',
+  volumeplaquetariomedio: 'mpv',
+  pct: 'pct',
+  pdw: 'pdw',
+  pdwamplitudededistribuicaoplaquetaria: 'pdw',
+  amplitudededistribuicaoplaquetaria: 'pdw',
+  reticulocitos: 'ret_pct',
+  irf: 'ret_irf',
+}
+
+/** Converte o nome de um parâmetro do catálogo na chave do campo da tela. */
+function mapParamToFormKey(name: string): string | null {
+  const raw = normalize(name)
+  const isAbs = raw.includes('absoluto')
+  const base = raw.replace('absoluto', '').replace('percentual', '')
+
+  if (base === 'eritroblastos') return isAbs ? 'eritroblastos_abs' : 'eritroblastos_pct'
+
+  const direct = DIRECT_ALIASES[base]
+  if (direct) return direct
+
+  const row = ROW_ALIASES[base]
+  if (row) return `${row}${isAbs ? '_abs' : '_pct'}`
+
+  const field = RED_FIELDS.concat(RETIC_FIELDS, PLATELET_FIELDS).find((f) => normalize(f.label) === base)
+  return field ? field.key : null
+}
+
 
 const ageFromBirthDate = (birthDate?: string) => {
   if (!birthDate) return '—'
