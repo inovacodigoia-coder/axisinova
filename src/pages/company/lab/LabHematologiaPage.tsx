@@ -332,6 +332,45 @@ export default function LabHematologiaPage() {
     [filteredExams, selectedId],
   )
 
+  // Parâmetros e faixas de referência do catálogo (idênticos à Digitação de Resultados)
+  const resolvedParams = useMemo<ResolvedParam[]>(() => {
+    if (!selected) return []
+    const age = selected.patientBirthDate
+      ? (() => {
+          const birth = new Date(`${selected.patientBirthDate}T12:00:00`)
+          if (isNaN(birth.getTime())) return undefined
+          const today = new Date()
+          let years = today.getFullYear() - birth.getFullYear()
+          const before = today.getMonth() < birth.getMonth() || (today.getMonth() === birth.getMonth() && today.getDate() < birth.getDate())
+          if (before) years -= 1
+          return years
+        })()
+      : undefined
+    const catalogExam = findCatalogExam(catalogList, {
+      examId: selected.id.split(':')[1],
+      code: selected.examCode,
+      name: selected.examName,
+    })
+    return buildExamParams(catalogExam, selected.examName, { gender: selected.gender, age })
+  }, [selected, catalogList])
+
+  const formKeyOfParam = (param: ResolvedParam) => mapParamToFormKey(param.name) || `p_${param.id}`
+
+  const paramByFormKey = useMemo(() => {
+    const map: Record<string, ResolvedParam> = {}
+    resolvedParams.forEach((param) => {
+      const key = formKeyOfParam(param)
+      if (!map[key]) map[key] = param
+    })
+    return map
+  }, [resolvedParams])
+
+  // Parâmetros do catálogo que não têm campo fixo na tela do equipamento
+  const extraParams = useMemo(
+    () => resolvedParams.filter((param) => !mapParamToFormKey(param.name)),
+    [resolvedParams],
+  )
+
   // Carrega valores já digitados/recebidos do equipamento para o exame selecionado
   useEffect(() => {
     let cancelled = false
@@ -339,42 +378,162 @@ export default function LabHematologiaPage() {
     setLaudo('')
     setObservacao('')
     setFlags([])
+    setExamStatus(null)
+    setInstrumentKeys(new Set())
     if (!selected) return
+    const cid = resolveCompanyId(user?.companyId)
+    if (!cid) return
 
     ;(async () => {
-      const { data: results } = await (supabase.from('lab_exam_results' as any) as any)
-        .select('id, notes, exam_name')
-        .eq('order_id', selected.orderId)
-      const match = (results || []).find((r: any) => normalize(String(r.exam_name || '')) === normalize(selected.examName)) || (results || [])[0]
+      const { data: results } = await supabase
+        .from('lab_exam_results')
+        .select('id, status, notes, lab_result_values(parameter_key, parameter_name, value, flag, source)')
+        .eq('company_id', cid)
+        .eq('exam_ref', selected.id)
+      const match = (results || [])[0] as any
       if (!match || cancelled) return
 
-      const { data: rows } = await (supabase.from('lab_result_values' as any) as any)
-        .select('parameter_name, parameter_key, value, flag')
-        .eq('result_id', match.id)
-      if (cancelled) return
+      const byId: Record<string, ResolvedParam> = {}
+      resolvedParams.forEach((param) => { byId[String(param.id)] = param })
 
       const next: Record<string, string> = {}
       const nextFlags: string[] = []
-      ;(rows || []).forEach((row: any) => {
-        const key = PARAM_KEY_MAP[normalize(String(row.parameter_name || ''))]
-        if (key && row.value != null) next[key] = String(row.value).replace('.', ',')
+      const nextInstrument = new Set<string>()
+      ;(match.lab_result_values || []).forEach((row: any) => {
+        const param = byId[String(row.parameter_key)]
+        const key = param ? formKeyOfParam(param) : mapParamToFormKey(String(row.parameter_name || ''))
+        if (key && row.value != null && String(row.value) !== '') {
+          next[key] = String(row.value)
+          if (row.source === 'instrument') nextInstrument.add(key)
+        }
         if (row.flag && !nextFlags.includes(row.flag)) nextFlags.push(String(row.flag))
       })
       setValues(next)
       setFlags(nextFlags)
+      setInstrumentKeys(nextInstrument)
       setObservacao(match.notes || '')
+      setExamStatus(match.status || null)
     })()
 
     return () => { cancelled = true }
-  }, [selected])
+  }, [selected, resolvedParams, user?.companyId])
+
+  // Calcula automaticamente os parâmetros com fórmula do catálogo
+  useEffect(() => {
+    if (resolvedParams.length === 0) return
+    const valueOf = (paramId: string) => {
+      const param = resolvedParams.find((p) => String(p.id) === String(paramId))
+      return param ? (values[formKeyOfParam(param)] || '') : ''
+    }
+    const updates: Record<string, string> = {}
+    resolvedParams.forEach((param) => {
+      if (!param.isCalculated) return
+      const key = formKeyOfParam(param)
+      if (instrumentKeys.has(key)) return
+      const computed = evaluateFormula(param.formula, resolvedParams, valueOf)
+      if (computed && values[key] !== computed) updates[key] = computed
+    })
+    if (Object.keys(updates).length > 0) setValues((current) => ({ ...current, ...updates }))
+  }, [values, resolvedParams, instrumentKeys])
 
   const getValue = (key: string) => values[key] ?? ''
   const setValue = (key: string, value: string) => setValues((current) => ({ ...current, [key]: value }))
+  const referenceOf = (key: string) => paramByFormKey[key]?.reference || ''
 
-  const handleValidate = () => {
+  /** Salva o exame selecionado no mesmo formato da Digitação de Resultados. */
+  const persistExam = async (status: 'draft' | 'digitized' | 'released') => {
     if (!selected) return
-    toast.success(`Resultado validado — ${selected.patientName}`)
+    const cid = resolveCompanyId(user?.companyId)
+    if (!cid) throw new Error('Empresa não identificada')
+
+    const nowIso = new Date().toISOString()
+    const payload: any = {
+      company_id: cid,
+      order_id: selected.orderId,
+      protocol: selected.protocol || null,
+      exam_ref: selected.id,
+      exam_code: selected.examCode || null,
+      exam_name: selected.examName || null,
+      patient_name: selected.patientName || null,
+      status,
+      notes: observacao || null,
+    }
+    if (status === 'digitized') { payload.typed_by = user?.id || null; payload.typed_at = nowIso }
+    if (status === 'released') { payload.released_by = user?.id || null; payload.released_at = nowIso }
+
+    const { data: saved, error } = await supabase
+      .from('lab_exam_results')
+      .upsert(payload, { onConflict: 'company_id,exam_ref' })
+      .select('id')
+      .single()
+    if (error || !saved) throw error || new Error('Falha ao salvar resultado')
+
+    const rows = resolvedParams.map((param, idx) => {
+      const key = formKeyOfParam(param)
+      return {
+        company_id: cid,
+        result_id: saved.id,
+        parameter_key: String(param.id),
+        parameter_name: param.name || null,
+        value: values[key] || '',
+        unit: param.unit || null,
+        reference: param.reference || null,
+        sort_order: idx,
+        source: instrumentKeys.has(key) ? 'instrument' : 'manual',
+      }
+    })
+    if (rows.length > 0) {
+      const { error: vErr } = await supabase
+        .from('lab_result_values')
+        .upsert(rows, { onConflict: 'result_id,parameter_key' })
+      if (vErr) throw vErr
+    }
+
+    await updateOrderStatus()
   }
+
+  /** Recalcula o status do pedido conforme os exames digitados/liberados. */
+  const updateOrderStatus = async () => {
+    if (!selected) return
+    const cid = resolveCompanyId(user?.companyId)
+    if (!cid) return
+    const order: any = (orders || []).find((o: any) => o.id === selected.orderId)
+    const total = (order?.labGuides || []).reduce(
+      (acc: number, guide: any) =>
+        acc + (guide?.exams || []).filter((e: any) => String(e.status || '').toLowerCase() !== 'cancelled').length,
+      0,
+    )
+    const { data } = await supabase
+      .from('lab_exam_results')
+      .select('status')
+      .eq('company_id', cid)
+      .eq('order_id', selected.orderId)
+    const statuses = (data || []).map((r: any) => r.status)
+    const released = statuses.filter((s) => s === 'released').length
+
+    let next = 'validation'
+    if (total > 0 && released >= total) next = 'completed'
+    else if (released > 0) next = 'released'
+
+    await supabase.from('attendance_orders').update({ status: next }).eq('id', selected.orderId)
+  }
+
+  const allFilled = resolvedParams.length > 0 && resolvedParams.every((param) => (values[formKeyOfParam(param)] || '').trim() !== '')
+
+  const runAction = async (status: 'draft' | 'digitized' | 'released', message: string) => {
+    setSaving(true)
+    try {
+      await persistExam(status)
+      setExamStatus(status)
+      toast.success(message)
+      await Promise.resolve(refresh())
+    } catch {
+      toast.error('Erro ao salvar o resultado no banco de dados.')
+    } finally {
+      setSaving(false)
+    }
+  }
+
 
   return (
     <div className="space-y-3">
