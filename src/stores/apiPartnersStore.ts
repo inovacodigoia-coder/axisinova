@@ -129,8 +129,23 @@ export interface GeneratedCredential {
   clientSecret: string
 }
 
-export function generateCredential(): GeneratedCredential {
-  return { method: 'oauth2', clientId: `cli_live_${randomToken(12)}`, clientSecret: `cs_live_${randomToken(32)}` }
+export async function generateCredential(name = 'Parceiro de Integração'): Promise<GeneratedCredential> {
+  const { data, error } = await supabase.functions.invoke('create-oauth-client', {
+    body: { name },
+  })
+  if (error) throw new Error('Não foi possível registrar as credenciais OAuth2')
+
+  const payload = data as { client_id?: unknown; client_secret?: unknown; error?: unknown } | null
+  if (typeof payload?.error === 'string') throw new Error(payload.error)
+  if (typeof payload?.client_id !== 'string' || typeof payload.client_secret !== 'string') {
+    throw new Error('O serviço de autenticação não retornou credenciais válidas')
+  }
+
+  return {
+    method: 'oauth2',
+    clientId: payload.client_id,
+    clientSecret: payload.client_secret,
+  }
 }
 
 export function maskCredential(cred: GeneratedCredential): string {
@@ -175,9 +190,11 @@ export async function removePartner(id: string) {
 
 /** Regenera credenciais revogando a anterior. Retorna a credencial em texto puro (exibição única). */
 export async function regenerateCredential(id: string, method: ApiPartnerAuthMethod = 'oauth2'): Promise<GeneratedCredential> {
-  const cred = generateCredential()
-  const now = new Date().toISOString()
   const current = partners.find(p => p.id === id)
+  if (!current) throw new Error('Parceiro não encontrado')
+
+  const cred = await generateCredential(`${current.name} — Parceiro API`)
+  const now = new Date().toISOString()
   const credentials: ApiPartnerCredential[] = [
     { method, masked: maskCredential(cred), clientId: cred.clientId, createdAt: now, revokedAt: null },
     ...(current?.credentials || []).map(c => ({ ...c, revokedAt: c.revokedAt ?? now })),

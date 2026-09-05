@@ -74,10 +74,14 @@ export default function PartnerDetailPage() {
   }
 
   const confirmRegenerate = async () => {
-    const cred = await regenerateCredential(partner.id, regenMethod)
-    setNewCredential(cred)
-    setRegenOpen(false)
-    toast.success('Credenciais regeneradas — a anterior foi revogada')
+    try {
+      const cred = await regenerateCredential(partner.id, regenMethod)
+      setNewCredential(cred)
+      setRegenOpen(false)
+      toast.success('Credenciais OAuth2 registradas e prontas para uso')
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Não foi possível regenerar as credenciais')
+    }
   }
 
   return (
