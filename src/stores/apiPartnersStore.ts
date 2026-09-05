@@ -129,13 +129,20 @@ export interface GeneratedCredential {
   clientSecret: string
 }
 
-export async function generateCredential(name = 'Parceiro de Integração'): Promise<GeneratedCredential> {
-  const { data: sessionData } = await supabase.auth.getSession()
-  const accessToken = sessionData.session?.access_token
-    ?? localStorage.getItem('axis_inova_token')
+const isJwt = (token: string | null | undefined): token is string =>
+  typeof token === 'string' && token.split('.').length === 3
 
-  if (!accessToken || accessToken.startsWith('supabase_token_')) {
-    throw new Error('Sua sessão expirou. Entre novamente para gerar as credenciais OAuth2.')
+export async function generateCredential(name = 'Parceiro de Integração'): Promise<GeneratedCredential> {
+  // Só um JWT real do Supabase é aceito pela função. Tokens locais/legados
+  // fazem o serviço responder 401 ("Sessão inválida ou expirada").
+  let accessToken = (await supabase.auth.getSession()).data.session?.access_token ?? null
+
+  if (!isJwt(accessToken)) {
+    accessToken = (await supabase.auth.refreshSession()).data.session?.access_token ?? null
+  }
+
+  if (!isJwt(accessToken)) {
+    throw new Error('Sua sessão expirou. Saia e entre novamente para gerar as credenciais OAuth2.')
   }
 
   const { data, error } = await supabase.functions.invoke('create-oauth-client', {
@@ -143,6 +150,7 @@ export async function generateCredential(name = 'Parceiro de Integração'): Pro
     headers: { Authorization: `Bearer ${accessToken}` },
   })
   if (error) throw new Error('Não foi possível registrar as credenciais OAuth2')
+
 
   const payload = data as { client_id?: unknown; client_secret?: unknown; error?: unknown } | null
   if (typeof payload?.error === 'string') throw new Error(payload.error)
