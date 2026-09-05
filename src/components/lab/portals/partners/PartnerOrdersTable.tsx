@@ -242,7 +242,12 @@ export function PartnerOrdersTable({ partnerId, showCounters = true }: Props) {
             <Input type="date" value={to} onChange={e => setTo(e.target.value)} />
           </>
         )}
+
+        <Button variant="outline" onClick={openFilteredReport} className="gap-2">
+          <FileBarChart className="h-4 w-4" /> Gerar Relatório
+        </Button>
       </div>
+
 
       {filtered.length === 0 ? (
         <div className="rounded-xl border bg-card">
