@@ -42,8 +42,10 @@ export const API_INFO = {
   updatedAt: '2026-09-01',
 }
 
-// Domínio público oficial da API (custom domain). Não usar a URL interna do backend.
-const API_ROOT = 'https://axisinova.inovacodigoia.com.br'
+// Host oficial da API. O domínio do site serve apenas o app web e não roteia
+// as Edge Functions, por isso a base de API vem da configuração do ambiente.
+const API_ROOT = (import.meta.env.VITE_SUPABASE_URL as string | undefined)?.replace(/\/+$/, '') ?? ''
+
 
 const FUNCTIONS_BASE = `${API_ROOT}/functions/v1`
 const REST_BASE = `${API_ROOT}/rest/v1`
