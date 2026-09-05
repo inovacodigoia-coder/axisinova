@@ -580,7 +580,7 @@ export const API_GROUPS: ApiGroup[] = [
           { name: 'Authorization', in: 'header', type: 'string', required: true, description: 'Bearer <access_token> obtido em /oauth-token' },
           { name: 'protocolo_parceiro', in: 'body', type: 'string', required: false, description: 'Identificador do pedido no sistema do parceiro (deve ser único)' },
           { name: 'paciente', in: 'body', type: 'object', required: true, description: 'nome, cpf, data_nascimento, sexo, telefone' },
-          { name: 'exames', in: 'body', type: 'array', required: true, description: 'Lista de { codigo } usando o Código do Catálogo de Exames' },
+          { name: 'exames', in: 'body', type: 'array', required: true, description: 'Lista de { codigo } usando o Código interno do Catálogo de Exames (ex.: "VDRL") — nunca o código TUSS/ANS' },
           { name: 'medico_solicitante', in: 'body', type: 'object', required: false, description: 'nome, conselho, numero, uf' },
           { name: 'convenio', in: 'body', type: 'object', required: false, description: 'nome, numero_carteira, numero_guia' },
         ],
@@ -594,8 +594,8 @@ export const API_GROUPS: ApiGroup[] = [
     "telefone": "(84) 99999-1234"
   },
   "exames": [
-    { "codigo": "40301010" },
-    { "codigo": "40302040" }
+    { "codigo": "VDRL" },
+    { "codigo": "FR" }
   ],
   "medico_solicitante": {
     "nome": "Dr. Rafael Andrade",
@@ -616,8 +616,8 @@ export const API_GROUPS: ApiGroup[] = [
   "status": "AGUARDANDO",
   "paciente_id": "pat_8f21c4",
   "exames": [
-    { "codigo": "40301010", "nome": "Hemograma Completo", "status": "AGUARDANDO" },
-    { "codigo": "40302040", "nome": "Glicemia de Jejum", "status": "AGUARDANDO" }
+    { "codigo": "VDRL", "nome": "Pesquisa de Sífilis (VDRL)", "status": "AGUARDANDO" },
+    { "codigo": "FR", "nome": "Fator Reumatoide (FR)", "status": "AGUARDANDO" }
   ]
 }
 
@@ -625,7 +625,7 @@ export const API_GROUPS: ApiGroup[] = [
 {
   "success": false,
   "error": "EXAM_CODE_NOT_FOUND",
-  "message": "Código de exame não reconhecido: 99999999",
+  "message": "Código de exame não reconhecido: XPTO99",
   "protocolo_parceiro": "PED-2026-00871"
 }
 
@@ -652,8 +652,8 @@ export const API_GROUPS: ApiGroup[] = [
   "status": "LIBERADO",
   "paciente": { "nome": "Maria Aparecida Souza" },
   "exames": [
-    { "codigo": "40301010", "nome": "Hemograma Completo", "status": "LIBERADO" },
-    { "codigo": "40302040", "nome": "Glicemia de Jejum", "status": "LIBERADO" }
+    { "codigo": "VDRL", "nome": "Pesquisa de Sífilis (VDRL)", "status": "LIBERADO" },
+    { "codigo": "FR", "nome": "Fator Reumatoide (FR)", "status": "LIBERADO" }
   ]
 }
 

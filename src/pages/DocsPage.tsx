@@ -6,7 +6,8 @@ import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { cn } from '@/lib/utils'
-import { DEMO_EXAMS, DEMO_SPECIALTIES } from '@/mocks/registers.mock'
+import { buildPartnerExamCatalog, PARTNER_CODE_WARNING } from '@/lib/partnerExamCatalog'
+import { useRegisters } from '@/context/RegistersContext'
 
 const SCOPE_META: Record<Scope, { label: string; description: string; icon: typeof Building2; className?: string }> = {
   company: { label: 'Empresa', description: 'Escopo por empresa (RLS company_id)', icon: Building2 },
@@ -143,6 +144,8 @@ function EndpointRow({ ep }: { ep: ApiEndpoint }) {
 }
 
 export default function DocsPage() {
+  const { exams: registeredExams, workbenches } = useRegisters()
+  const examCatalog = buildPartnerExamCatalog(registeredExams, workbenches)
   const navigate = useNavigate()
   const [query, setQuery] = useState('')
   const [scope, setScope] = useState<'all' | Scope>('all')
@@ -240,24 +243,28 @@ export default function DocsPage() {
                   <table className="w-full text-xs">
                     <thead className="bg-muted/50 text-muted-foreground">
                       <tr>
-                        <th className="p-2 text-left font-medium">Código</th>
                         <th className="p-2 text-left font-medium">Nome do Exame</th>
-                        <th className="p-2 text-left font-medium">Setor Técnico</th>
+                        <th className="p-2 text-left font-medium">Código</th>
+                        <th className="p-2 text-left font-medium">Bancada</th>
                       </tr>
                     </thead>
                     <tbody>
-                      {DEMO_EXAMS.slice(0, 8).map((exam) => (
-                        <tr key={exam.id} className="border-t">
-                          <td className="p-2 font-mono">{exam.tussCode ?? exam.internalCode ?? '—'}</td>
+                      {examCatalog.slice(0, 12).map((exam) => (
+                        <tr key={exam.code + exam.name} className="border-t">
                           <td className="p-2">{exam.name}</td>
-                          <td className="p-2 text-muted-foreground">
-                            {DEMO_SPECIALTIES.find((s) => s.id === exam.specialtyId)?.name ?? '—'}
-                          </td>
+                          <td className="p-2 font-mono">{exam.code}</td>
+                          <td className="p-2 text-muted-foreground">{exam.workbench}</td>
                         </tr>
                       ))}
+                      {examCatalog.length === 0 && (
+                        <tr><td colSpan={3} className="p-3 text-center text-muted-foreground">Nenhum exame ativo cadastrado no Catálogo de Exames.</td></tr>
+                      )}
                     </tbody>
                   </table>
                 </div>
+                <p className="mt-3 rounded-md border border-amber-300 bg-amber-50 p-3 text-xs text-amber-900 dark:bg-amber-950/30 dark:text-amber-200">
+                  ⚠️ {PARTNER_CODE_WARNING}
+                </p>
                 <p className="mt-4 text-sm text-muted-foreground">
                   Endpoints relacionados: <code className="font-mono text-xs">GET /exams</code> (grupo Laboratorio) e{' '}
                   <code className="font-mono text-xs">GET /list-exams-for-integration</code> (grupos Parceiros/Interfaceamento).
