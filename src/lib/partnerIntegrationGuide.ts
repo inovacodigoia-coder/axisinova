@@ -1,8 +1,7 @@
 import { jsPDF } from 'jspdf'
 import type { ApiPartner } from '@/types/api-partners.types'
 import { PARTNER_TYPE_LABEL } from '@/types/api-partners.types'
-import { DEMO_EXAMS } from '@/mocks/registers.mock'
-import { DEMO_SPECIALTIES } from '@/mocks/registers.mock'
+import { PARTNER_CODE_WARNING, exampleExamCodes, type PartnerCatalogExam } from '@/lib/partnerExamCatalog'
 
 const PURPLE: [number, number, number] = [123, 47, 247]
 const CYAN: [number, number, number] = [0, 212, 255]
@@ -24,7 +23,8 @@ function slug(value: string) {
     .replace(/^-+|-+$/g, '')
 }
 
-export function generatePartnerIntegrationGuide(partner: ApiPartner) {
+export function generatePartnerIntegrationGuide(partner: ApiPartner, catalog: PartnerCatalogExam[] = []) {
+  const [ex1, ex2] = exampleExamCodes(catalog)
   const doc = new jsPDF({ unit: 'pt', format: 'a4' })
   const W = doc.internal.pageSize.getWidth()
   const H = doc.internal.pageSize.getHeight()
@@ -270,8 +270,8 @@ Content-Type: application/json
     "telefone": "(84) 99999-1234"
   },
   "exames": [
-    { "codigo": "40301010" },
-    { "codigo": "40302040" }
+    { "codigo": "${ex1.code}" },
+    { "codigo": "${ex2.code}" }
   ],
   "medico_solicitante": {
     "nome": "Dr. Rafael Andrade",
@@ -292,15 +292,15 @@ Content-Type: application/json
   "status": "AGUARDANDO",
   "paciente_id": "pat_8f21c4",
   "exames": [
-    { "codigo": "40301010", "nome": "Hemograma Completo", "status": "AGUARDANDO" },
-    { "codigo": "40302040", "nome": "Glicemia de Jejum", "status": "AGUARDANDO" }
+    { "codigo": "${ex1.code}", "nome": "${ex1.name}", "status": "AGUARDANDO" },
+    { "codigo": "${ex2.code}", "nome": "${ex2.name}", "status": "AGUARDANDO" }
   ]
 }`)
   h2('Resposta de erro (422)')
   code(`{
   "success": false,
   "error": "EXAM_CODE_NOT_FOUND",
-  "message": "Código de exame não reconhecido: 99999999",
+  "message": "Código de exame não reconhecido: XPTO99",
   "protocolo_parceiro": "PED-2026-00871"
 }`)
 
@@ -321,14 +321,18 @@ Content-Type: application/json
   )
 
   /* ---------- 5. Catálogo ---------- */
-  h1('5. Catálogo de Exames — Principais Códigos')
-  const specName = (id?: string) => DEMO_SPECIALTIES.find(s => s.id === id)?.name ?? '—'
-  table(
-    ['Código', 'Nome do Exame', 'Setor Técnico'],
-    DEMO_EXAMS.slice(0, 30).map(e => [e.tussCode ?? e.internalCode ?? '—', e.name, specName(e.specialtyId)]),
-    [22, 48, 30],
-  )
-  p('Esta é uma lista dos exames mais utilizados. Para a lista completa e atualizada, seu sistema pode consultar o endpoint GET /list-exams-for-integration (mesmo padrão já usado por equipamentos, reaproveitável para parceiros) antes de montar cada pedido.')
+  h1('5. Catálogo de Exames — Códigos para a API')
+  if (catalog.length) {
+    table(
+      ['Nome do Exame', 'Código', 'Bancada'],
+      catalog.map(e => [e.name, e.code, e.workbench]),
+      [48, 22, 30],
+    )
+  } else {
+    p('Nenhum exame ativo cadastrado no Catálogo de Exames desta empresa no momento da geração deste documento.')
+  }
+  p(`ATENCAO: ${PARTNER_CODE_WARNING}`)
+  p('Esta lista reflete os exames ativos do Catálogo de Exames desta empresa. Para a lista sempre atualizada, seu sistema pode consultar o endpoint GET /list-exams-for-integration antes de montar cada pedido.')
 
   /* ---------- 6. Regras ---------- */
   h1('6. Regras Importantes')
