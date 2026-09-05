@@ -338,28 +338,33 @@ export function PartnerOrdersTable({ partnerId, showCounters = true }: Props) {
               const p = partnerById[o.partnerId]
               const Icon = p ? TYPE_ICON[p.type] : Building2
               return (
-                <button
-                  key={o.id}
-                  type="button"
-                  onClick={() => openDetail(o)}
-                  className="w-full rounded-xl border bg-card p-4 text-left transition-colors hover:border-primary/50"
-                >
-                  <div className="flex items-start justify-between gap-2">
-                    <div className="min-w-0">
-                      <p className="truncate font-semibold text-foreground">{o.patient.name}</p>
-                      <p className="text-xs text-muted-foreground">{maskCpf(o.patient.cpf)}</p>
+                <div key={o.id} className="flex items-start gap-3 rounded-xl border bg-card p-4">
+                  {o.status === 'received' && (
+                    <Checkbox
+                      className="mt-1"
+                      checked={validSelected.includes(o.id)}
+                      aria-label={`Selecionar pedido de ${o.patient.name}`}
+                      onCheckedChange={v => toggleOne(o.id, !!v)}
+                    />
+                  )}
+                  <button type="button" onClick={() => openDetail(o)} className="min-w-0 flex-1 text-left">
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="min-w-0">
+                        <p className="truncate font-semibold text-foreground">{o.patient.name}</p>
+                        <p className="text-xs text-muted-foreground">{maskCpf(o.patient.cpf)}</p>
+                      </div>
+                      <Badge className={cn('border-transparent', STATUS_CLASS[o.status])}>
+                        {PARTNER_ORDER_STATUS_LABEL[o.status]}
+                      </Badge>
                     </div>
-                    <Badge className={cn('border-transparent', STATUS_CLASS[o.status])}>
-                      {PARTNER_ORDER_STATUS_LABEL[o.status]}
-                    </Badge>
-                  </div>
-                  <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted-foreground">
-                    <span className="flex items-center gap-1"><Icon className="h-3.5 w-3.5 text-primary" />{p?.name ?? '—'}</span>
-                    <span>{o.exams.length} exame(s)</span>
-                    <span>{new Date(o.receivedAt).toLocaleString('pt-BR')}</span>
-                    {o.attendanceProtocol && <span className="font-medium text-primary">{o.attendanceProtocol}</span>}
-                  </div>
-                </button>
+                    <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted-foreground">
+                      <span className="flex items-center gap-1"><Icon className="h-3.5 w-3.5 text-primary" />{p?.name ?? '—'}</span>
+                      <span>{o.exams.length} exame(s)</span>
+                      <span>{new Date(o.receivedAt).toLocaleString('pt-BR')}</span>
+                      {o.attendanceProtocol && <span className="font-medium text-primary">{o.attendanceProtocol}</span>}
+                    </div>
+                  </button>
+                </div>
               )
             })}
           </div>
@@ -382,6 +387,17 @@ export function PartnerOrdersTable({ partnerId, showCounters = true }: Props) {
         open={!!selected}
         onOpenChange={v => { if (!v) setSelected(null) }}
       />
+
+      <PartnerOrdersReportModal
+        open={!!report}
+        onOpenChange={v => { if (!v) setReport(null) }}
+        title={report?.title ?? ''}
+        subtitle={report?.subtitle}
+        companyName={companyName}
+        periodLabel={periodLabel}
+        rows={report?.rows ?? []}
+      />
+
     </div>
   )
 }
