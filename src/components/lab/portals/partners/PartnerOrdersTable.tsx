@@ -264,6 +264,14 @@ export function PartnerOrdersTable({ partnerId, showCounters = true }: Props) {
             <table className="w-full text-sm">
               <thead className="border-b bg-muted/40 text-xs uppercase text-muted-foreground">
                 <tr>
+                  <th className="px-4 py-3 text-left font-medium">
+                    <Checkbox
+                      checked={allSelected}
+                      disabled={eligibleIds.length === 0}
+                      aria-label="Selecionar tudo"
+                      onCheckedChange={v => setSelectedIds(v ? eligibleIds : [])}
+                    />
+                  </th>
                   <th className="px-4 py-3 text-left font-medium">Recebido em</th>
                   <th className="px-4 py-3 text-left font-medium">Parceiro</th>
                   <th className="px-4 py-3 text-left font-medium">Paciente</th>
@@ -277,8 +285,18 @@ export function PartnerOrdersTable({ partnerId, showCounters = true }: Props) {
                 {pageItems.map(o => {
                   const p = partnerById[o.partnerId]
                   const Icon = p ? TYPE_ICON[p.type] : Building2
+                  const selectable = o.status === 'received'
                   return (
                     <tr key={o.id} className="hover:bg-muted/30">
+                      <td className="px-4 py-3">
+                        {selectable ? (
+                          <Checkbox
+                            checked={validSelected.includes(o.id)}
+                            aria-label={`Selecionar pedido de ${o.patient.name}`}
+                            onCheckedChange={v => toggleOne(o.id, !!v)}
+                          />
+                        ) : null}
+                      </td>
                       <td className="px-4 py-3 whitespace-nowrap">{new Date(o.receivedAt).toLocaleString('pt-BR')}</td>
                       <td className="px-4 py-3">
                         <span className="flex items-center gap-2">
@@ -296,6 +314,7 @@ export function PartnerOrdersTable({ partnerId, showCounters = true }: Props) {
                           {PARTNER_ORDER_STATUS_LABEL[o.status]}
                         </Badge>
                       </td>
+
                       <td className="px-4 py-3">
                         {o.attendanceProtocol
                           ? <button type="button" onClick={() => openDetail(o)} className="font-medium text-primary hover:underline">{o.attendanceProtocol}</button>
