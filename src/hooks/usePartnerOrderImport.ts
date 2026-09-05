@@ -151,15 +151,18 @@ export function usePartnerOrderImport() {
         }
 
         if (!patientId) {
+          const birthDate = toIsoDate(o.patient.birthDate)
+          if (!digits) throw new Error('Paciente sem CPF válido no pedido — cadastro obrigatório.')
+          if (!birthDate) throw new Error('Paciente sem data de nascimento válida no pedido — cadastro obrigatório.')
           const { data: created, error: pErr } = await supabase
             .from('patients')
             .insert({
               company_id: companyId,
               name: o.patient.name,
-              cpf: digits || null,
-              birth_date: toIsoDate(o.patient.birthDate),
+              cpf: digits,
+              birth_date: birthDate,
               gender: genderFromSex(o.patient.sex),
-              phone: o.patient.phone || null,
+              phone: o.patient.phone || 'Não informado',
               status: 'active',
             } as never)
             .select('id')
