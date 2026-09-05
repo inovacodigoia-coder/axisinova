@@ -228,7 +228,7 @@ export function usePartnerOrderImport() {
         if (oErr) throw oErr
 
         const createdOrderId = (createdOrder as { id: string } | null)?.id ?? null
-        const { error: upErr } = await supabase
+        const { data: updated, error: upErr } = await supabase
           .from('partner_orders')
           .update({
             status: 'processed',
@@ -236,7 +236,8 @@ export function usePartnerOrderImport() {
             attendance_order_id: createdOrderId,
           } as never)
           .eq('id', o.id)
-        if (upErr) {
+          .select('id')
+        if (upErr || !updated || updated.length === 0) {
           // O atendimento já existe: reporta como criado, sinalizando a falha de vínculo.
           results.push({
             ...base,
