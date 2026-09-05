@@ -639,7 +639,7 @@ export const API_GROUPS: ApiGroup[] = [
         path: '/partner-orders/{protocolo}',
         summary: 'Consultar status de um pedido enviado',
         description:
-          'Retorna a situação atual de um pedido criado via POST /partner/orders, usando o protocolo interno retornado na criação (ou o protocolo_parceiro enviado). Útil para o sistema do parceiro acompanhar o andamento (aguardando, coletado, em análise, liberado).',
+          'Retorna a situação atual de um pedido criado via POST /partner-orders, usando o protocolo interno retornado na criação (ou o protocolo_parceiro enviado). Útil para o sistema do parceiro acompanhar o andamento (aguardando, coletado, em análise, liberado).',
         scope: 'partner',
         auth: 'Authorization: Bearer <access_token> (OAuth2)',
         params: [
