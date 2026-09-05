@@ -320,13 +320,15 @@ async function getOrderStatus(req: Request, supabase: any, companyId: string, _p
   orderId = byProtocol?.id ?? null
 
   let protocoloParceiro: string | null = null
+  let queued: any = null
   if (!orderId) {
     const { data: po } = await supabase
       .from('partner_orders')
-      .select('attendance_order_id, protocolo_parceiro')
+      .select('attendance_order_id, protocolo_parceiro, status, error, payload')
       .eq('company_id', companyId)
       .eq('protocolo_parceiro', ref)
       .maybeSingle()
+    queued = po ?? null
     orderId = po?.attendance_order_id ?? null
     protocoloParceiro = po?.protocolo_parceiro ?? null
   } else {
@@ -336,6 +338,26 @@ async function getOrderStatus(req: Request, supabase: any, companyId: string, _p
       .eq('attendance_order_id', orderId)
       .maybeSingle()
     protocoloParceiro = po?.protocolo_parceiro ?? null
+  }
+
+  // pedido ainda na fila de autorização (atendimento não criado)
+  if (!orderId && queued) {
+    const resolved = (queued.payload as any)?._resolved ?? {}
+    return json({
+      success: true,
+      protocolo: null,
+      protocolo_parceiro: protocoloParceiro,
+      status: queued.status === 'error' ? 'ERRO' : 'AGUARDANDO_AUTORIZACAO',
+      message: queued.status === 'error'
+        ? (queued.error ?? 'Pedido não pôde ser processado')
+        : 'Pedido recebido e aguardando autorização da equipe do laboratório.',
+      paciente: { nome: (queued.payload as any)?.paciente?.nome ?? null },
+      exames: (Array.isArray(resolved.exams) ? resolved.exams : []).map((e: any) => ({
+        codigo: e.code,
+        nome: e.name,
+        status: 'RECEBIDO',
+      })),
+    })
   }
 
   if (!orderId) {
