@@ -53,12 +53,14 @@ export function PricingSection() {
             <p className="mt-2 text-sm text-muted-foreground">
               Para saber mais, entre em contato com o nosso comercial e veja a melhor solução para o seu negócio.
             </p>
-            <button
-              onClick={() => document.getElementById('contact')?.scrollIntoView({ behavior: 'smooth' })}
-              className="mt-6 rounded-xl gradient-bg px-8 py-3 text-sm font-bold text-white shadow-lg transition-transform hover:scale-[1.02]"
+            <a
+              href="https://api.whatsapp.com/send/?phone=5584994505536&text=Ol%C3%A1%21+Gostaria+de+saber+mais+sobre+as+solu%C3%A7%C3%B5es+da+InovaC%C3%B3digo+IA.&type=phone_number&app_absent=0"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="mt-6 inline-block rounded-xl gradient-bg px-8 py-3 text-sm font-bold text-white shadow-lg transition-transform hover:scale-[1.02]"
             >
               Falar com o comercial
-            </button>
+            </a>
           </motion.div>
         ) : (
         <>
