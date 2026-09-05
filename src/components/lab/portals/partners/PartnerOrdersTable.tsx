@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
-import { Building2, Eye, FileBarChart, FlaskConical, Inbox, RotateCcw, Search, ShieldCheck, Stethoscope } from 'lucide-react'
+import { Building2, Eye, FileBarChart, FlaskConical, Inbox, RefreshCw, RotateCcw, Search, ShieldCheck, Stethoscope } from 'lucide-react'
 import { toast } from 'sonner'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
@@ -48,7 +48,22 @@ export function PartnerOrdersTable({ partnerId, showCounters = true }: Props) {
   const companyName = (user as { companyName?: string } | null)?.companyName || 'Laboratório'
   const companyId = (user as { companyId?: string } | null)?.companyId
 
-  useEffect(() => { if (companyId) void loadPartnerOrders(companyId) }, [companyId])
+  // Mantém a lista sempre atualizada: carga inicial, polling e recarga ao voltar para a aba
+  useEffect(() => {
+    if (!companyId) return
+    void loadPartnerOrders(companyId)
+    const interval = window.setInterval(() => {
+      if (document.visibilityState === 'visible') void loadPartnerOrders(companyId)
+    }, 15000)
+    const onVisible = () => { if (document.visibilityState === 'visible') void loadPartnerOrders(companyId) }
+    document.addEventListener('visibilitychange', onVisible)
+    window.addEventListener('focus', onVisible)
+    return () => {
+      window.clearInterval(interval)
+      document.removeEventListener('visibilitychange', onVisible)
+      window.removeEventListener('focus', onVisible)
+    }
+  }, [companyId])
 
   const [search, setSearch] = useState('')
   const [partnerFilter, setPartnerFilter] = useState<string>(partnerId ?? 'all')
@@ -260,9 +275,19 @@ export function PartnerOrdersTable({ partnerId, showCounters = true }: Props) {
           </>
         )}
 
-        <Button variant="outline" onClick={openFilteredReport} className="gap-2">
-          <FileBarChart className="h-4 w-4" /> Gerar Relatório
-        </Button>
+        <div className="flex gap-2">
+          <Button variant="outline" onClick={openFilteredReport} className="gap-2 flex-1">
+            <FileBarChart className="h-4 w-4" /> Gerar Relatório
+          </Button>
+          <Button
+            variant="outline"
+            size="icon"
+            aria-label="Atualizar lista"
+            onClick={() => { if (companyId) void loadPartnerOrders(companyId) }}
+          >
+            <RefreshCw className="h-4 w-4" />
+          </Button>
+        </div>
       </div>
 
 
