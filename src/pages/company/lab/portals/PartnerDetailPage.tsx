@@ -331,7 +331,7 @@ export default function PartnerDetailPage() {
             <Button
               variant="destructive"
               disabled={!deleteConfirmed}
-              onClick={() => { removePartner(partner.id); toast.success('Parceiro excluído'); navigate('/app/portais/parceiros') }}
+              onClick={() => { void removePartner(partner.id); toast.success('Parceiro excluído'); navigate('/app/portais/parceiros') }}
             >
               Excluir definitivamente
             </Button>

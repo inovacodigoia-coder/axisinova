@@ -75,7 +75,7 @@ export function PartnerCard({ partner, onClick, moduleBlocked = false }: { partn
 export default function PartnersListPage() {
   const navigate = useNavigate()
   const { user } = useAuth()
-  const companyId = resolveCompanyId(user?.companyId) || 'comp_001'
+  const companyId = resolveCompanyId(user?.companyId) || ''
   const partners = useApiPartners()
 
   const [search, setSearch] = useState('')

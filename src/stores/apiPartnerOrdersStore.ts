@@ -1,12 +1,11 @@
 import { useSyncExternalStore } from 'react'
 import type { PartnerOrder } from '@/types/api-partner-orders.types'
-import { DEMO_PARTNER_ORDERS } from '@/mocks/api-partner-orders.mock'
 
 /**
- * Store local (mock) dos Pedidos Recebidos via API dos Parceiros.
- * Etapa 2: sem persistência real — dados em memória durante a sessão.
+ * Pedidos Recebidos via API dos Parceiros.
+ * Sem dados de demonstração: a fila começa vazia e é preenchida pelos pedidos reais recebidos.
  */
-let orders: PartnerOrder[] = [...DEMO_PARTNER_ORDERS]
+let orders: PartnerOrder[] = []
 const listeners = new Set<() => void>()
 
 function emit() {
