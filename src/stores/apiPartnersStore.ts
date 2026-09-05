@@ -130,8 +130,17 @@ export interface GeneratedCredential {
 }
 
 export async function generateCredential(name = 'Parceiro de Integração'): Promise<GeneratedCredential> {
+  const { data: sessionData } = await supabase.auth.getSession()
+  const accessToken = sessionData.session?.access_token
+    ?? localStorage.getItem('axis_inova_token')
+
+  if (!accessToken || accessToken.startsWith('supabase_token_')) {
+    throw new Error('Sua sessão expirou. Entre novamente para gerar as credenciais OAuth2.')
+  }
+
   const { data, error } = await supabase.functions.invoke('create-oauth-client', {
     body: { name },
+    headers: { Authorization: `Bearer ${accessToken}` },
   })
   if (error) throw new Error('Não foi possível registrar as credenciais OAuth2')
 
