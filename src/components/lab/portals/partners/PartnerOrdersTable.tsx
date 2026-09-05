@@ -97,8 +97,9 @@ export function PartnerOrdersTable({ partnerId, showCounters = true }: Props) {
     const todayStart = startOfDay(new Date())
     return {
       today: filtered.filter(o => new Date(o.receivedAt) >= todayStart).length,
+      waiting: filtered.filter(o => o.status === 'received').length,
       processed: filtered.filter(o => o.status === 'processed').length,
-      pending: filtered.filter(o => o.status === 'error' || o.status === 'received').length,
+      errors: filtered.filter(o => o.status === 'error').length,
     }
   }, [filtered])
 
@@ -108,14 +109,69 @@ export function PartnerOrdersTable({ partnerId, showCounters = true }: Props) {
   const openDetail = (o: PartnerOrder) => setSelected(o)
   const selectedLive = selected ? orders.find(o => o.id === selected.id) ?? selected : null
 
+  const eligibleIds = useMemo(() => filtered.filter(o => o.status === 'received').map(o => o.id), [filtered])
+  const validSelected = useMemo(() => selectedIds.filter(id => eligibleIds.includes(id)), [selectedIds, eligibleIds])
+  const allSelected = eligibleIds.length > 0 && validSelected.length === eligibleIds.length
+
+  const toggleOne = (id: string, on: boolean) =>
+    setSelectedIds(prev => (on ? [...new Set([...prev, id])] : prev.filter(x => x !== id)))
+  const clearSelection = () => setSelectedIds([])
+
+  const toReportRow = (o: PartnerOrder): ReportRow => ({
+    patientName: o.patient.name,
+    cpf: o.patient.cpf,
+    partnerName: partnerById[o.partnerId]?.name ?? '—',
+    examsCount: o.exams.length,
+    status: o.status,
+    attendanceProtocol: o.attendanceProtocol,
+    errorMessage: o.errorMessage,
+    partnerProtocol: o.partnerProtocol,
+  })
+
+  const handleBatchCreate = () => {
+    if (!validSelected.length) return
+    const results: BatchProcessResult[] = processPartnerOrders(validSelected)
+    const okCount = results.filter(r => r.ok).length
+    setSelectedIds([])
+    setReport({
+      title: 'Resultado da Importação',
+      subtitle: `${results.length} pedidos processados — ${okCount} criados com sucesso, ${results.length - okCount} com erro`,
+      rows: results.map(r => ({
+        patientName: r.patientName,
+        cpf: r.cpf,
+        partnerName: partnerById[r.partnerId]?.name ?? '—',
+        examsCount: r.examsCount,
+        status: r.ok ? 'processed' : 'error',
+        attendanceProtocol: r.attendanceProtocol,
+        errorMessage: r.errorMessage,
+        partnerProtocol: r.partnerProtocol,
+      })),
+    })
+    toast.success(`${okCount} atendimento(s) criado(s).`)
+  }
+
+  const openFilteredReport = () => setReport({
+    title: 'Relatório de Pedidos Recebidos',
+    subtitle: `${filtered.length} pedido(s) no filtro atual`,
+    rows: filtered.map(toReportRow),
+  })
+
+  const periodLabel = preset === 'custom' && (from || to)
+    ? `${from ? new Date(`${from}T00:00:00`).toLocaleDateString('pt-BR') : '...'} a ${to ? new Date(`${to}T00:00:00`).toLocaleDateString('pt-BR') : '...'}`
+    : preset === 'today' ? 'Hoje'
+    : preset === '7' ? 'Últimos 7 dias'
+    : preset === '30' ? 'Últimos 30 dias'
+    : 'Todo o período'
+
   return (
     <div className="space-y-4">
       {showCounters && (
-        <div className="grid gap-3 sm:grid-cols-3">
+        <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
           {[
             { label: 'Recebidos hoje', value: counters.today, cls: 'from-[#00D4FF]/15 to-[#7B2FF7]/10' },
+            { label: 'Aguardando autorização', value: counters.waiting, cls: 'from-[hsl(38,92%,50%)]/15 to-[hsl(38,92%,50%)]/5' },
             { label: 'Processados com sucesso', value: counters.processed, cls: 'from-[hsl(145,63%,42%)]/15 to-[hsl(145,63%,42%)]/5' },
-            { label: 'Com erro / pendente de ação', value: counters.pending, cls: 'from-destructive/15 to-destructive/5' },
+            { label: 'Com erro', value: counters.errors, cls: 'from-destructive/15 to-destructive/5' },
           ].map(c => (
             <div key={c.label} className={cn('rounded-xl border bg-gradient-to-br p-4', c.cls)}>
               <p className="text-xs text-muted-foreground">{c.label}</p>
@@ -124,6 +180,24 @@ export function PartnerOrdersTable({ partnerId, showCounters = true }: Props) {
           ))}
         </div>
       )}
+
+      {validSelected.length > 0 && (
+        <div className="sticky top-2 z-20 flex flex-col gap-3 rounded-xl border bg-card/95 p-3 shadow-lg backdrop-blur sm:flex-row sm:items-center sm:justify-between">
+          <p className="text-sm font-medium text-foreground">{validSelected.length} pedido(s) selecionado(s)</p>
+          <div className="flex flex-col gap-2 sm:flex-row">
+            <Button
+              onClick={handleBatchCreate}
+              className="bg-gradient-to-r from-[#00D4FF] to-[#7B2FF7] text-white hover:opacity-90"
+            >
+              Criar Pedidos no Sistema
+            </Button>
+            <Button variant="outline" onClick={clearSelection} className="gap-2">
+              <RotateCcw className="h-4 w-4" /> Limpar Seleção
+            </Button>
+          </div>
+        </div>
+      )}
+
 
       <div className="grid gap-3 rounded-xl border bg-card p-4 sm:grid-cols-2 lg:grid-cols-4">
         <div className="relative">
