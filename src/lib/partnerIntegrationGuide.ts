@@ -354,7 +354,7 @@ Content-Type: application/json
   bullets([
     'E-mail: suporte@axisinova.com.br',
     'Telefone: (84) 3000-0000',
-    `Portal: ${BASE_URL}`,
+    'Portal: https://axisinova.inovacodigoia.com.br',
   ])
 
   footer()
