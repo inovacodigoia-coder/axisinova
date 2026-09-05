@@ -337,6 +337,9 @@ async function createOrder(req: Request, supabase: any, companyId: string, partn
             doctorName: doctorName || null,
             convenioName: convenioNome || null,
             cardNumber,
+            convenio: resolvedConvenio,
+            medico: resolvedMedico,
+            pacienteExtras: resolvedPacienteExtras,
             exams: matched.map((e) => ({
               code: String(e.internal_code ?? '').toUpperCase(),
               name: e.name,
