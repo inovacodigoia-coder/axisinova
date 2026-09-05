@@ -10,7 +10,7 @@ const json = (body: unknown, status = 200) =>
     headers: { ...corsHeaders, 'Content-Type': 'application/json' },
   })
 
-const VALID_SCOPES = ['exams:read', 'orders:read', 'results:write']
+const VALID_SCOPES = ['exams:read', 'orders:read', 'orders:write', 'results:write']
 
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders })

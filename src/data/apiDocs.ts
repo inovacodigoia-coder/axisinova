@@ -572,7 +572,7 @@ export const API_GROUPS: ApiGroup[] = [
       {
         id: 'fn-partner-orders-create',
         method: 'POST',
-        path: '/partner/orders',
+        path: '/partner-orders',
         summary: 'Criar pedido de atendimento (paciente + exames)',
         description:
           'Endpoint principal da integração de parceiros. Valida CPF e códigos de exame, cria o paciente quando não existe e gera automaticamente o atendimento com protocolo interno. Se qualquer código de exame não for reconhecido, o pedido inteiro é rejeitado. O parceiro precisa estar com "Autorizado a criar pedidos via API" ativo e o módulo liberado para a empresa.',
@@ -636,7 +636,7 @@ export const API_GROUPS: ApiGroup[] = [
       {
         id: 'fn-partner-orders-status',
         method: 'GET',
-        path: '/partner/orders/{protocolo}',
+        path: '/partner-orders/{protocolo}',
         summary: 'Consultar status de um pedido enviado',
         description:
           'Retorna a situação atual de um pedido criado via POST /partner/orders, usando o protocolo interno retornado na criação (ou o protocolo_parceiro enviado). Útil para o sistema do parceiro acompanhar o andamento (aguardando, coletado, em análise, liberado).',
