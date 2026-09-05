@@ -45,52 +45,22 @@ export interface BatchProcessResult {
   errorMessage?: string
 }
 
-function nextProtocolNumber(): number {
-  const nums = orders
-    .map(o => Number((o.attendanceProtocol ?? '').split('-')[0]))
-    .filter(n => Number.isFinite(n) && n > 0)
-  return (nums.length ? Math.max(...nums) : 100) + 1
-}
-
-/**
- * Mock: cria os Atendimentos para os pedidos selecionados.
- * Regra: todos os exames precisam ter código reconhecido no catálogo (tudo ou nada por pedido).
- */
-export function processPartnerOrders(ids: string[]): BatchProcessResult[] {
-  let seq = nextProtocolNumber()
-  const results: BatchProcessResult[] = []
-
+/** Aplica no store o resultado da criação REAL dos atendimentos. */
+export function applyImportResults(results: BatchProcessResult[]) {
+  const byId = new Map(results.map(r => [r.orderId, r]))
   orders = orders.map(o => {
-    if (!ids.includes(o.id) || o.status !== 'received') return o
-
-    const invalid = o.exams.filter(e => !e.recognized)
-    const base = {
-      orderId: o.id,
-      patientName: o.patient.name,
-      cpf: o.patient.cpf,
-      partnerId: o.partnerId,
-      partnerProtocol: o.partnerProtocol,
-      examsCount: o.exams.length,
-    }
-
-    if (invalid.length) {
-      const errorMessage = `${invalid.length} de ${o.exams.length} exames com código inválido (${invalid.map(e => e.code).join(', ')}) — nenhum atendimento foi criado.`
-      results.push({ ...base, ok: false, errorMessage })
-      return { ...o, status: 'error' as const, errorMessage }
-    }
-
-    const attendanceProtocol = `${seq++}-00`
-    results.push({ ...base, ok: true, attendanceProtocol })
+    const r = byId.get(o.id)
+    if (!r) return o
+    if (!r.ok) return { ...o, status: 'error' as const, errorMessage: r.errorMessage }
     return {
       ...o,
       status: 'processed' as const,
       errorMessage: undefined,
-      attendanceProtocol,
-      attendanceId: `att_${attendanceProtocol.split('-')[0]}`,
+      attendanceProtocol: r.attendanceProtocol,
+      attendanceId: r.attendanceProtocol ? `att_${r.attendanceProtocol}` : o.attendanceId,
     }
   })
-
   emit()
-  return results
 }
+
 
