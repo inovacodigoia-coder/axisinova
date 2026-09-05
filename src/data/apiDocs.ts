@@ -581,10 +581,10 @@ export const API_GROUPS: ApiGroup[] = [
         params: [
           { name: 'Authorization', in: 'header', type: 'string', required: true, description: 'Bearer <access_token> obtido em /oauth-token' },
           { name: 'protocolo_parceiro', in: 'body', type: 'string', required: false, description: 'Identificador do pedido no sistema do parceiro (deve ser único)' },
-          { name: 'paciente', in: 'body', type: 'object', required: true, description: 'nome, cpf, data_nascimento, sexo, telefone' },
+          { name: 'paciente', in: 'body', type: 'object', required: true, description: 'Obrigatórios: nome, cpf. Opcionais: data_nascimento, sexo, telefone, nome_social, rg, etnia, estado_civil, email, gestante (true/"sim"), peso_kg, altura_m, endereco { cep, logradouro, numero }, alergias [], medicacoes_continuas [], observacoes_gerais. Campos não enviados são registrados como null.' },
           { name: 'exames', in: 'body', type: 'array', required: true, description: 'Lista de { codigo } usando o Código interno do Catálogo de Exames (ex.: "VDRL") — nunca o código TUSS/ANS' },
-          { name: 'medico_solicitante', in: 'body', type: 'object', required: false, description: 'nome, conselho, numero, uf' },
-          { name: 'convenio', in: 'body', type: 'object', required: false, description: 'nome, numero_carteira, numero_guia' },
+          { name: 'medico_solicitante', in: 'body', type: 'object', required: false, description: 'nome, conselho, uf, numero_inscricao, especialidade, telefone, email' },
+          { name: 'convenio', in: 'body', type: 'object', required: false, description: 'nome, numero_carteira (Nº do cartão), validade (AAAA-MM-DD ou DD/MM/AAAA), numero_guia' },
         ],
         requestExample: `{
   "protocolo_parceiro": "PED-2026-00871",
@@ -593,7 +593,23 @@ export const API_GROUPS: ApiGroup[] = [
     "cpf": "123.456.789-09",
     "data_nascimento": "1985-04-17",
     "sexo": "F",
-    "telefone": "(84) 99999-1234"
+    "telefone": "(84) 99999-1234",
+    "nome_social": null,
+    "rg": "1234567",
+    "etnia": null,
+    "estado_civil": "Casada",
+    "email": "maria@email.com",
+    "gestante": false,
+    "peso_kg": 68.5,
+    "altura_m": 1.62,
+    "endereco": {
+      "cep": "59000-000",
+      "logradouro": "Rua das Flores",
+      "numero": "120"
+    },
+    "alergias": ["Dipirona"],
+    "medicacoes_continuas": ["Losartana 50mg"],
+    "observacoes_gerais": "Paciente com jejum confirmado."
   },
   "exames": [
     { "codigo": "VDRL" },
@@ -602,15 +618,23 @@ export const API_GROUPS: ApiGroup[] = [
   "medico_solicitante": {
     "nome": "Dr. Rafael Andrade",
     "conselho": "CRM",
-    "numero": "12345",
-    "uf": "RN"
+    "uf": "RN",
+    "numero_inscricao": "12345",
+    "especialidade": "Clínica Geral",
+    "telefone": "(84) 3222-0000",
+    "email": "rafael@clinica.com"
   },
   "convenio": {
     "nome": "Unimed",
     "numero_carteira": "0123456789",
+    "validade": "2027-12-31",
     "numero_guia": "987654"
   }
-}`,
+}
+
+// Todos os campos opcionais podem ser omitidos ou enviados como null.
+// O que não for enviado fica registrado como null e pode ser
+// completado pela equipe no momento da criação do atendimento.`,
         responseExample: `// 202 recebido (aguardando autorização)
 {
   "success": true,

@@ -273,7 +273,23 @@ Content-Type: application/json
     "cpf": "123.456.789-09",
     "data_nascimento": "1985-04-17",
     "sexo": "F",
-    "telefone": "(84) 99999-1234"
+    "telefone": "(84) 99999-1234",
+    "nome_social": null,
+    "rg": "1234567",
+    "etnia": null,
+    "estado_civil": "Casada",
+    "email": "maria@email.com",
+    "gestante": false,
+    "peso_kg": 68.5,
+    "altura_m": 1.62,
+    "endereco": {
+      "cep": "59000-000",
+      "logradouro": "Rua das Flores",
+      "numero": "120"
+    },
+    "alergias": ["Dipirona"],
+    "medicacoes_continuas": ["Losartana 50mg"],
+    "observacoes_gerais": "Paciente com jejum confirmado."
   },
   "exames": [
     { "codigo": "${ex1.code}" },
@@ -282,15 +298,26 @@ Content-Type: application/json
   "medico_solicitante": {
     "nome": "Dr. Rafael Andrade",
     "conselho": "CRM",
-    "numero": "12345",
-    "uf": "RN"
+    "uf": "RN",
+    "numero_inscricao": "12345",
+    "especialidade": "Clínica Geral",
+    "telefone": "(84) 3222-0000",
+    "email": "rafael@clinica.com"
   },
   "convenio": {
     "nome": "Unimed",
     "numero_carteira": "0123456789",
+    "validade": "2027-12-31",
     "numero_guia": "987654"
   }
 }`)
+  p('Campos obrigatórios do paciente: nome e cpf. Todos os demais são opcionais — o que não for enviado (ou vier como null) é registrado como nulo e pode ser completado pela equipe no momento da criação do atendimento.')
+  bullets([
+    'gestante: aceita true/false ou "sim"/"nao".',
+    'peso_kg e altura_m: aceitam número ou texto com vírgula (ex.: "68,5").',
+    'alergias e medicacoes_continuas: lista de textos ou texto separado por vírgula.',
+    'convenio.validade: AAAA-MM-DD ou DD/MM/AAAA.',
+  ])
   h2('Resposta de sucesso (202 — pedido recebido)')
   code(`{
   "success": true,
