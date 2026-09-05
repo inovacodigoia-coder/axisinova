@@ -34,6 +34,8 @@ export function CredentialRevealCard({ credential }: { credential: GeneratedCred
           Guarde estas credenciais agora — elas <strong className="text-foreground">não serão exibidas novamente</strong>.
         </p>
       </div>
+      <Field label="Authorization URL (Token)" value={PARTNER_TOKEN_URL} />
+      <Field label="URL de Envio de Pedidos" value={PARTNER_ORDERS_URL} />
       <Field label="Client ID" value={credential.clientId} />
       <Field label="Client Secret" value={credential.clientSecret} />
     </div>
