@@ -89,7 +89,7 @@ export function usePartnerOrderImport() {
       }
 
       try {
-        const matched = o.exams.map(e => ({ e, exam: catalog.get(String(e.code).toUpperCase().trim()) }))
+        const matched = o.exams.map(e => ({ e, exam: resolveExam(e.code, e.name) }))
         const invalid = matched.filter(m => !m.exam)
         if (invalid.length) {
           const errorMessage = `${invalid.length} de ${o.exams.length} exames com código inválido (${invalid.map(m => m.e.code).join(', ')}) — nenhum atendimento foi criado.`
