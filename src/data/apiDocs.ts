@@ -573,9 +573,9 @@ export const API_GROUPS: ApiGroup[] = [
         id: 'fn-partner-orders-create',
         method: 'POST',
         path: '/partner-orders',
-        summary: 'Criar pedido de atendimento (paciente + exames)',
+        summary: 'Enviar pedido de atendimento (paciente + exames)',
         description:
-          'Endpoint principal da integração de parceiros. Valida CPF e códigos de exame, cria o paciente quando não existe e gera automaticamente o atendimento com protocolo interno. Se qualquer código de exame não for reconhecido, o pedido inteiro é rejeitado. O parceiro precisa estar com "Autorizado a criar pedidos via API" ativo e o módulo liberado para a empresa.',
+          'Endpoint principal da integração de parceiros. Valida CPF e códigos de exame e registra o pedido na fila "Pedidos Recebidos" do parceiro. O paciente NÃO é cadastrado e o atendimento NÃO é criado automaticamente: isso ocorre apenas quando a equipe do laboratório seleciona o pedido e confirma a criação, respeitando a origem selecionada e a numeração sequencial de pedidos. Se qualquer código de exame não for reconhecido, o pedido inteiro é rejeitado. O parceiro precisa estar com "Autorizado a criar pedidos via API" ativo.',
         scope: 'partner',
         auth: 'Authorization: Bearer <access_token> (OAuth2)',
         params: [
@@ -611,15 +611,17 @@ export const API_GROUPS: ApiGroup[] = [
     "numero_guia": "987654"
   }
 }`,
-        responseExample: `// 201 sucesso
+        responseExample: `// 202 recebido (aguardando autorização)
 {
   "success": true,
-  "protocolo": "192-00",
-  "status": "AGUARDANDO",
-  "paciente_id": "pat_8f21c4",
+  "pedido_id": "b0f1...",
+  "protocolo_parceiro": "PED-2026-00871",
+  "status": "RECEBIDO",
+  "message": "Pedido recebido e aguardando autorização. O atendimento só é criado após liberação pela equipe do laboratório.",
+  "paciente": { "nome": "Maria Aparecida Souza", "cpf": "123.456.789-09", "cadastrado": false },
   "exames": [
-    { "codigo": "VDRL", "nome": "Pesquisa de Sífilis (VDRL)", "status": "AGUARDANDO" },
-    { "codigo": "FR", "nome": "Fator Reumatoide (FR)", "status": "AGUARDANDO" }
+    { "codigo": "VDRL", "nome": "Pesquisa de Sífilis (VDRL)", "status": "RECEBIDO" },
+    { "codigo": "FR", "nome": "Fator Reumatoide (FR)", "status": "RECEBIDO" }
   ]
 }
 
@@ -639,7 +641,7 @@ export const API_GROUPS: ApiGroup[] = [
         path: '/partner-orders/{protocolo}',
         summary: 'Consultar status de um pedido enviado',
         description:
-          'Retorna a situação atual de um pedido criado via POST /partner-orders, usando o protocolo interno retornado na criação (ou o protocolo_parceiro enviado). Útil para o sistema do parceiro acompanhar o andamento (aguardando, coletado, em análise, liberado).',
+          'Retorna a situação atual de um pedido enviado via POST /partner-orders, usando o protocolo_parceiro enviado (ou o protocolo interno, depois que o atendimento for criado). Enquanto o pedido não for autorizado pela equipe, o status é AGUARDANDO_AUTORIZACAO; depois passa a refletir o andamento do atendimento (aguardando, coletado, em análise, liberado).',
         scope: 'partner',
         auth: 'Authorization: Bearer <access_token> (OAuth2)',
         params: [
