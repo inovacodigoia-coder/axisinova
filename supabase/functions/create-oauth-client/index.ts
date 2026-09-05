@@ -21,13 +21,21 @@ Deno.serve(async (req) => {
     const admin = createClient(supabaseUrl, Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!)
 
     const authHeader = req.headers.get('Authorization')
-    if (!authHeader?.startsWith('Bearer ')) return json({ error: 'Não autenticado' }, 401)
+    if (!authHeader?.toLowerCase().startsWith('bearer ')) {
+      return json({ error: 'Não autenticado' }, 401)
+    }
 
-    const anonClient = createClient(supabaseUrl, Deno.env.get('SUPABASE_ANON_KEY')!, {
-      global: { headers: { Authorization: authHeader } },
-    })
-    const { data: { user } } = await anonClient.auth.getUser()
-    if (!user) return json({ error: 'Não autenticado' }, 401)
+    const accessToken = authHeader.slice(7).trim()
+    if (!accessToken) return json({ error: 'Não autenticado' }, 401)
+
+    // Edge Functions não mantêm uma sessão do navegador. O JWT recebido deve
+    // ser passado explicitamente ao Auth; depender do estado interno do client
+    // faz getUser() retornar null mesmo com o header Authorization presente.
+    const { data: { user }, error: authError } = await admin.auth.getUser(accessToken)
+    if (authError || !user) {
+      console.error('[create-oauth-client] token inválido:', authError?.message ?? 'usuário ausente')
+      return json({ error: 'Sessão inválida ou expirada' }, 401)
+    }
 
     const { data: profile } = await admin
       .from('profiles')
