@@ -281,6 +281,45 @@ async function createOrder(req: Request, supabase: any, companyId: string, partn
     const doctorName = typeof medico === 'string' ? medico : String(medico?.nome ?? '').trim()
     const cardNumber = String(convenio?.numero_carteira ?? convenio?.numero_guia ?? '').trim() || null
 
+    // ---- campos opcionais do paciente / convênio / médico (ausentes = null) ----
+    const endereco = paciente?.endereco ?? {}
+    const resolvedConvenio = convenioNome
+      ? {
+          nome: convenioNome,
+          numero_carteira: cardNumber,
+          validade: toIsoDate(convenio?.validade),
+        }
+      : null
+    const resolvedMedico = doctorName
+      ? {
+          nome: doctorName,
+          conselho: strOrNull(medico?.conselho),
+          uf: strOrNull(medico?.uf),
+          numero_inscricao: strOrNull(medico?.numero_inscricao ?? medico?.numero),
+          especialidade: strOrNull(medico?.especialidade),
+          telefone: strOrNull(medico?.telefone),
+          email: strOrNull(medico?.email),
+        }
+      : null
+    const resolvedPacienteExtras = {
+      nome_social: strOrNull(paciente?.nome_social),
+      rg: strOrNull(paciente?.rg),
+      etnia: strOrNull(paciente?.etnia),
+      estado_civil: strOrNull(paciente?.estado_civil),
+      email: strOrNull(paciente?.email),
+      gestante: boolOrNull(paciente?.gestante),
+      peso_kg: numOrNull(paciente?.peso_kg ?? paciente?.peso),
+      altura_m: numOrNull(paciente?.altura_m ?? paciente?.altura),
+      endereco: {
+        cep: strOrNull(paciente?.cep ?? endereco?.cep),
+        logradouro: strOrNull(paciente?.logradouro ?? endereco?.logradouro),
+        numero: strOrNull(paciente?.numero ?? endereco?.numero),
+      },
+      alergias: listOrNull(paciente?.alergias),
+      medicacoes_continuas: listOrNull(paciente?.medicacoes_continuas),
+      observacoes_gerais: strOrNull(paciente?.observacoes_gerais),
+    }
+
     // ---- fila de Pedidos Recebidos: nada é criado no sistema ainda ----
     const { data: queued, error: qErr } = await supabase
       .from('partner_orders')
