@@ -149,7 +149,18 @@ export async function generateCredential(name = 'Parceiro de Integração'): Pro
     body: { name },
     headers: { Authorization: `Bearer ${accessToken}` },
   })
-  if (error) throw new Error('Não foi possível registrar as credenciais OAuth2')
+  if (error) {
+    let detail = ''
+    const res = (error as { context?: Response }).context
+    if (res && typeof res.text === 'function') {
+      try {
+        const body = await res.text()
+        detail = (JSON.parse(body) as { error?: string })?.error ?? body
+      } catch { /* corpo não legível */ }
+    }
+    throw new Error(detail || 'Não foi possível registrar as credenciais OAuth2')
+  }
+
 
 
   const payload = data as { client_id?: unknown; client_secret?: unknown; error?: unknown } | null
