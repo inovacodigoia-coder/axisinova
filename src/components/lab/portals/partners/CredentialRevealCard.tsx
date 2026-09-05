@@ -35,7 +35,10 @@ export function CredentialRevealCard({ credential }: { credential: GeneratedCred
           Guarde estas credenciais agora — elas <strong className="text-foreground">não serão exibidas novamente</strong>.
         </p>
       </div>
-      <Field label="Authorization URL (Token)" value={PARTNER_TOKEN_URL} />
+      <Field label="Token URL — usar requisição POST" value={PARTNER_TOKEN_URL} />
+      <p className="text-xs text-muted-foreground">
+        Não abra esta URL no navegador. Configure o fluxo como <strong className="text-foreground">Client Credentials</strong> e envie <code>grant_type=client_credentials</code> no corpo da requisição.
+      </p>
       <Field label="URL de Envio de Pedidos" value={PARTNER_ORDERS_URL} />
       <Field label="Client ID" value={credential.clientId} />
       <Field label="Client Secret" value={credential.clientSecret} />
