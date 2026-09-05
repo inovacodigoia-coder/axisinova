@@ -215,7 +215,7 @@ export function usePartnerOrderImport() {
           .insert({
             company_id: companyId,
             patient_id: patientId,
-            patient_name: o.patient.name,
+            patient_name: orderPatientName,
             origin_id: originId,
             origin_code: originCode,
             origin_name: originName,
@@ -259,7 +259,7 @@ export function usePartnerOrderImport() {
           continue
         }
 
-        results.push({ ...base, ok: true, attendanceProtocol: protocol })
+        results.push({ ...base, ok: true, attendanceProtocol: protocol, warningMessage: nameWarning })
       } catch (err) {
         const message = describeError(err)
         await supabase
