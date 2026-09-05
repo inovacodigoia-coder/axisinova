@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
-import { Building2, Eye, FileBarChart, FlaskConical, Inbox, RotateCcw, Search, ShieldCheck, Stethoscope } from 'lucide-react'
+import { Building2, Eye, FileBarChart, FlaskConical, Inbox, RefreshCw, RotateCcw, Search, ShieldCheck, Stethoscope } from 'lucide-react'
 import { toast } from 'sonner'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
@@ -275,9 +275,19 @@ export function PartnerOrdersTable({ partnerId, showCounters = true }: Props) {
           </>
         )}
 
-        <Button variant="outline" onClick={openFilteredReport} className="gap-2">
-          <FileBarChart className="h-4 w-4" /> Gerar Relatório
-        </Button>
+        <div className="flex gap-2">
+          <Button variant="outline" onClick={openFilteredReport} className="gap-2 flex-1">
+            <FileBarChart className="h-4 w-4" /> Gerar Relatório
+          </Button>
+          <Button
+            variant="outline"
+            size="icon"
+            aria-label="Atualizar lista"
+            onClick={() => { if (companyId) void loadPartnerOrders(companyId) }}
+          >
+            <RefreshCw className="h-4 w-4" />
+          </Button>
+        </div>
       </div>
 
 
