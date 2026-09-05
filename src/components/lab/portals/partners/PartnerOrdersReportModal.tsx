@@ -13,6 +13,7 @@ export interface ReportRow {
   status: 'received' | 'processed' | 'error'
   attendanceProtocol?: string
   errorMessage?: string
+  warningMessage?: string
   partnerProtocol?: string
 }
 
