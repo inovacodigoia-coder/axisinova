@@ -228,8 +228,8 @@ async function createOrder(req: Request, supabase: any, companyId: string, partn
   }
 
   try {
-    // ---- paciente (busca por CPF, cria se não existir) ----
-    let patientId: string | null = null
+    // ---- paciente: apenas verificamos se já existe (NÃO cadastramos aqui) ----
+    let patientExisted = false
     if (cpfDigits) {
       const { data: found } = await supabase
         .from('patients')
@@ -238,109 +238,40 @@ async function createOrder(req: Request, supabase: any, companyId: string, partn
         .in('cpf', [cpfDigits, formatCpf(cpfDigits)])
         .limit(1)
         .maybeSingle()
-      patientId = found?.id ?? null
-    }
-    if (!patientId) {
-      const { data: created, error: pErr } = await supabase
-        .from('patients')
-        .insert({
-          company_id: companyId,
-          name: nome,
-          cpf: cpfDigits || null,
-          birth_date: toIsoDate(paciente?.data_nascimento ?? paciente?.birthDate),
-          gender: genderFromSex(paciente?.sexo ?? paciente?.sex),
-          phone: String(paciente?.telefone ?? paciente?.phone ?? '').trim(),
-          status: 'active',
-        })
-        .select('id')
-        .single()
-      if (pErr) throw pErr
-      patientId = created.id
+      patientExisted = !!found?.id
     }
 
-    // ---- numeração atômica ----
-    const { data: nextNumber, error: seqError } = await supabase.rpc('next_attendance_order_number', {
-      _company_id: companyId,
-      _origin_id: null,
-      _origin_code: '00',
-    })
-    if (seqError) throw seqError
-    const protocol = String(nextNumber)
-
-    // ---- convênio (opcional, por nome) ----
-    let convenioId: string | null = null
-    let convenioName = 'Particular'
     const convenioNome = String(convenio?.nome ?? (typeof convenio === 'string' ? convenio : '') ?? '').trim()
-    if (convenioNome) {
-      const { data: convs } = await supabase
-        .from('convenios')
-        .select('id, name')
-        .eq('company_id', companyId)
-      const found = (convs || []).find((c: any) => norm(c.name) === norm(convenioNome))
-      convenioId = found?.id ?? null
-      convenioName = found?.name ?? convenioNome
-    }
-
     const doctorName = typeof medico === 'string' ? medico : String(medico?.nome ?? '').trim()
     const cardNumber = String(convenio?.numero_carteira ?? convenio?.numero_guia ?? '').trim() || null
 
-    const guides = [{
-      id: '1',
-      name: convenioName,
-      plan: convenioName,
-      number: cardNumber || undefined,
-      convenioId: convenioId || undefined,
-      convenioName,
-      exams: matched.map((e) => ({
-        id: e.id,
-        name: e.name,
-        internalCode: e.internal_code,
-        tussCode: e.tuss_code,
-        defaultMaterial: materialOf(e),
-        material: materialOf(e),
-        type: e.type,
-        quantity: 1,
-        collected: false,
-      })),
-    }]
-
-    const { data: order, error: oErr } = await supabase
-      .from('attendance_orders')
+    // ---- fila de Pedidos Recebidos: nada é criado no sistema ainda ----
+    const { data: queued, error: qErr } = await supabase
+      .from('partner_orders')
       .insert({
         company_id: companyId,
-        patient_id: patientId,
-        patient_name: nome,
-        origin_id: null,
-        origin_code: '00',
-        origin_name: 'MATRIZ',
-        order_number: protocol,
-        protocol,
-        hash: generateOrderHash(protocol),
-        service_type: 'exam',
-        payment_type: convenioNome ? 'convenio' : 'private',
-        exam_mode: 'lab',
-        requesting_doctor: doctorName || null,
-        convenio_id: convenioId,
-        convenio_name: convenioName,
-        card_number: cardNumber,
-        lab_guides: guides,
-        status: 'open',
-        registered_by_name: `API — ${partner.name}`,
+        partner_id: partner.id,
+        client_id: clientId || String(partner.id),
+        protocolo_parceiro: protocoloParceiro,
+        attendance_order_id: null,
+        status: 'received',
+        payload: {
+          ...body,
+          _resolved: {
+            patientExisted,
+            doctorName: doctorName || null,
+            convenioName: convenioNome || null,
+            cardNumber,
+            exams: matched.map((e) => ({
+              code: String(e.internal_code ?? '').toUpperCase(),
+              name: e.name,
+            })),
+          },
+        },
       })
       .select('id')
       .single()
-    if (oErr) throw oErr
-
-    // ---- registro do pedido do parceiro ----
-    await supabase.from('partner_orders').insert({
-      company_id: companyId,
-      partner_id: partner.id,
-      client_id: String(partner.id),
-      protocolo_parceiro: protocoloParceiro,
-      attendance_order_id: order.id,
-      status: 'processed',
-      payload: body,
-    })
+    if (qErr) throw qErr
 
     await supabase
       .from('api_partners')
@@ -349,19 +280,20 @@ async function createOrder(req: Request, supabase: any, companyId: string, partn
 
     return json({
       success: true,
-      protocolo: protocol,
+      pedido_id: queued.id,
       protocolo_parceiro: protocoloParceiro,
-      status: statusLabel('open'),
-      paciente_id: patientId,
+      status: 'RECEBIDO',
+      message: 'Pedido recebido e aguardando autorização. O atendimento só é criado após liberação pela equipe do laboratório.',
+      paciente: { nome, cpf: formatCpf(cpfDigits), cadastrado: patientExisted },
       exames: matched.map((e) => ({
         codigo: String(e.internal_code ?? '').toUpperCase(),
         nome: e.name,
-        status: 'AGUARDANDO',
+        status: 'RECEBIDO',
       })),
-    }, 201)
+    }, 202)
   } catch (e) {
-    console.error('[partner-orders] erro ao criar pedido:', (e as Error).message)
-    return err('INTERNAL_ERROR', 'Não foi possível criar o pedido', 500, { protocolo_parceiro: protocoloParceiro })
+    console.error('[partner-orders] erro ao registrar pedido:', (e as Error).message)
+    return err('INTERNAL_ERROR', 'Não foi possível registrar o pedido', 500, { protocolo_parceiro: protocoloParceiro })
   }
 }
 
