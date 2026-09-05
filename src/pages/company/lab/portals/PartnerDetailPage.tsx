@@ -66,15 +66,15 @@ export default function PartnerDetailPage() {
   const activeCredential = partner.credentials.find(c => !c.revokedAt)
 
   const save = () => {
-    updatePartner(partner.id, {
+    void updatePartner(partner.id, {
       type: form.type, name: form.name, document: form.document, contactName: form.contactName,
       contactEmail: form.contactEmail, contactPhone: form.contactPhone, notes: form.notes,
     })
     toast.success('Dados do parceiro atualizados')
   }
 
-  const confirmRegenerate = () => {
-    const cred = regenerateCredential(partner.id, regenMethod)
+  const confirmRegenerate = async () => {
+    const cred = await regenerateCredential(partner.id, regenMethod)
     setNewCredential(cred)
     setRegenOpen(false)
     toast.success('Credenciais regeneradas — a anterior foi revogada')
