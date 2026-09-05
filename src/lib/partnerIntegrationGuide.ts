@@ -232,9 +232,9 @@ export function generatePartnerIntegrationGuide(partner: ApiPartner, catalog: Pa
 
   /* ---------- 2. Autenticação ---------- */
   h1('2. Autenticação (OAuth2 Client Credentials)')
-  h2('Authorization URL (endpoint de token)')
+  h2('Token URL — usar requisição POST')
   code(PARTNER_TOKEN_URL)
-  p('O parceiro deve trocar seu client_id e client_secret por um token de acesso. O token retornado deve ser enviado no cabeçalho Authorization de todas as demais requisições, no formato Bearer.')
+  p('Este endereço não deve ser aberto diretamente no navegador. O parceiro deve enviar uma requisição POST para trocar seu client_id e client_secret por um token de acesso. O token retornado deve ser enviado no cabeçalho Authorization de todas as demais requisições, no formato Bearer.')
   h2('Seu client_id')
   code(clientId)
   p('O client_secret não é exibido neste documento por segurança. Ele foi fornecido apenas no momento do cadastro — caso tenha sido perdido, solicite a regeneração das credenciais à empresa responsável por esta integração.')
