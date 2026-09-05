@@ -243,7 +243,7 @@ export function usePartnerOrderImport() {
             ...base,
             ok: true,
             attendanceProtocol: protocol,
-            errorMessage: `Atendimento criado, mas houve falha ao marcar o pedido como processado: ${describeError(upErr)}`,
+            errorMessage: `Atendimento criado, mas houve falha ao marcar o pedido como processado: ${upErr ? describeError(upErr) : 'nenhum registro atualizado (permissão negada)'}`,
           })
           continue
         }
