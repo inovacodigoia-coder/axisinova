@@ -10,7 +10,8 @@ import { EmptyState } from '@/components/feedback/EmptyState'
 import { cn } from '@/lib/utils'
 import { useAuth } from '@/context/AuthContext'
 import { useApiPartners } from '@/stores/apiPartnersStore'
-import { usePartnerOrders, processPartnerOrders, type BatchProcessResult } from '@/stores/apiPartnerOrdersStore'
+import { usePartnerOrders, type BatchProcessResult } from '@/stores/apiPartnerOrdersStore'
+import { usePartnerOrderImport } from '@/hooks/usePartnerOrderImport'
 import { PartnerOrderDetailDrawer, STATUS_CLASS } from './PartnerOrderDetailDrawer'
 import { PartnerOrdersReportModal, type ReportRow } from './PartnerOrdersReportModal'
 import {
@@ -43,6 +44,7 @@ export function PartnerOrdersTable({ partnerId, showCounters = true }: Props) {
   const partners = useApiPartners()
   const orders = usePartnerOrders()
   const { user } = useAuth()
+  const { importOrders } = usePartnerOrderImport()
   const companyName = (user as { companyName?: string } | null)?.companyName || 'Laboratório'
 
   const [search, setSearch] = useState('')
@@ -128,9 +130,18 @@ export function PartnerOrdersTable({ partnerId, showCounters = true }: Props) {
     partnerProtocol: o.partnerProtocol,
   })
 
-  const handleBatchCreate = () => {
-    if (!validSelected.length) return
-    const results: BatchProcessResult[] = processPartnerOrders(validSelected)
+  const [creating, setCreating] = useState(false)
+
+  const handleBatchCreate = async () => {
+    if (!validSelected.length || creating) return
+    setCreating(true)
+    const toCreate = filtered.filter(o => validSelected.includes(o.id) && o.status === 'received')
+    let results: BatchProcessResult[] = []
+    try {
+      results = await importOrders(toCreate)
+    } finally {
+      setCreating(false)
+    }
     const okCount = results.filter(r => r.ok).length
     setSelectedIds([])
     setReport({
@@ -147,7 +158,8 @@ export function PartnerOrdersTable({ partnerId, showCounters = true }: Props) {
         partnerProtocol: r.partnerProtocol,
       })),
     })
-    toast.success(`${okCount} atendimento(s) criado(s).`)
+    if (okCount) toast.success(`${okCount} atendimento(s) criado(s).`)
+    if (results.length - okCount > 0) toast.error(`${results.length - okCount} pedido(s) com erro.`)
   }
 
   const openFilteredReport = () => setReport({
@@ -187,9 +199,10 @@ export function PartnerOrdersTable({ partnerId, showCounters = true }: Props) {
           <div className="flex flex-col gap-2 sm:flex-row">
             <Button
               onClick={handleBatchCreate}
+              disabled={creating}
               className="bg-gradient-to-r from-[#00D4FF] to-[#7B2FF7] text-white hover:opacity-90"
             >
-              Criar Pedidos no Sistema
+              {creating ? 'Criando...' : 'Criar Pedidos no Sistema'}
             </Button>
             <Button variant="outline" onClick={clearSelection} className="gap-2">
               <RotateCcw className="h-4 w-4" /> Limpar Seleção
