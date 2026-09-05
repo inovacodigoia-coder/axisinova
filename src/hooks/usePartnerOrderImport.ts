@@ -52,11 +52,31 @@ export function usePartnerOrderImport() {
       }))
     }
 
-    const catalog = new Map(
-      exams
-        .filter(e => e.isActive !== false)
-        .map(e => [String((e as { internalCode?: string }).internalCode || '').toUpperCase().trim(), e]),
+    const norm = (v: string) =>
+      (v || '')
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '')
+        .replace(/[^a-zA-Z0-9]/g, '')
+        .toUpperCase()
+
+    const activeExams = exams.filter(e => e.isActive !== false)
+    const byCode = new Map(
+      activeExams.map(e => [norm(String((e as { internalCode?: string }).internalCode || '')), e]),
     )
+    const byName = new Map(activeExams.map(e => [norm(e.name), e]))
+
+    /** Resolve o exame pelo código interno; se não achar, tenta pelo nome enviado pelo parceiro. */
+    const resolveExam = (code: string, name?: string) => {
+      const c = norm(code)
+      if (c && byCode.has(c)) return byCode.get(c)
+      const n = norm(name || '')
+      if (!n) return undefined
+      if (byName.has(n)) return byName.get(n)
+      return activeExams.find(e => {
+        const en = norm(e.name)
+        return en.includes(n) || n.includes(en)
+      })
+    }
 
     for (const o of orders) {
       const base = {
