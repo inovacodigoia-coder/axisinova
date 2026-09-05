@@ -9,7 +9,9 @@ const SLATE: [number, number, number] = [30, 41, 59]
 const TEXT: [number, number, number] = [40, 46, 58]
 const MUTED: [number, number, number] = [110, 118, 133]
 
-const BASE_URL = 'https://axisinova.inovacodigoia.com.br'
+import { PARTNER_API_ROOT, PARTNER_TOKEN_URL, PARTNER_ORDERS_URL } from '@/lib/partnerApiEndpoints'
+
+const BASE_URL = PARTNER_API_ROOT
 
 export function canGeneratePartnerGuide(partner: ApiPartner): boolean {
   return partner.credentials.some(c => !c.revokedAt && !!c.clientId)
@@ -230,13 +232,14 @@ export function generatePartnerIntegrationGuide(partner: ApiPartner, catalog: Pa
 
   /* ---------- 2. Autenticação ---------- */
   h1('2. Autenticação (OAuth2 Client Credentials)')
-  p(`Endpoint: POST ${BASE_URL}/auth/oauth-token`)
+  h2('Authorization URL (endpoint de token)')
+  code(PARTNER_TOKEN_URL)
   p('O parceiro deve trocar seu client_id e client_secret por um token de acesso. O token retornado deve ser enviado no cabeçalho Authorization de todas as demais requisições, no formato Bearer.')
   h2('Seu client_id')
   code(clientId)
   p('O client_secret não é exibido neste documento por segurança. Ele foi fornecido apenas no momento do cadastro — caso tenha sido perdido, solicite a regeneração das credenciais à empresa responsável por esta integração.')
   h2('Exemplo de requisição')
-  code(`POST ${BASE_URL}/auth/oauth-token
+  code(`POST ${PARTNER_TOKEN_URL}
 Content-Type: application/json
 
 {
@@ -253,7 +256,8 @@ Content-Type: application/json
 
   /* ---------- 3. Criação de pedido ---------- */
   h1('3. Endpoint de Criação de Pedido')
-  p(`Endpoint: POST ${BASE_URL}/partner/orders`)
+  h2('URL de envio de pedidos')
+  code(PARTNER_ORDERS_URL)
   h2('Cabeçalhos obrigatórios')
   bullets([
     'Authorization: Bearer {token}',

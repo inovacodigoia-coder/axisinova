@@ -3,6 +3,7 @@ import { Copy, Check, ShieldAlert } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { toast } from 'sonner'
 import type { GeneratedCredential } from '@/stores/apiPartnersStore'
+import { PARTNER_TOKEN_URL, PARTNER_ORDERS_URL } from '@/lib/partnerApiEndpoints'
 
 function Field({ label, value }: { label: string; value: string }) {
   const [copied, setCopied] = useState(false)
@@ -34,6 +35,8 @@ export function CredentialRevealCard({ credential }: { credential: GeneratedCred
           Guarde estas credenciais agora — elas <strong className="text-foreground">não serão exibidas novamente</strong>.
         </p>
       </div>
+      <Field label="Authorization URL (Token)" value={PARTNER_TOKEN_URL} />
+      <Field label="URL de Envio de Pedidos" value={PARTNER_ORDERS_URL} />
       <Field label="Client ID" value={credential.clientId} />
       <Field label="Client Secret" value={credential.clientSecret} />
     </div>
