@@ -17,6 +17,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '
 import { Checkbox } from '@/components/ui/checkbox'
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
 import { generatePartnerIntegrationGuide, canGeneratePartnerGuide } from '@/lib/partnerIntegrationGuide'
+import { buildPartnerExamCatalog, PARTNER_CODE_WARNING } from '@/lib/partnerExamCatalog'
+import { useRegisters } from '@/context/RegistersContext'
 import { usePartnerApiEntitlement } from '@/stores/partnerApiEntitlementStore'
 import { toast } from 'sonner'
 import { cn } from '@/lib/utils'
@@ -42,6 +44,9 @@ export default function PartnerDetailPage() {
   const [newCredential, setNewCredential] = useState<GeneratedCredential | null>(null)
   const [deleteOpen, setDeleteOpen] = useState(false)
   const [deleteConfirmed, setDeleteConfirmed] = useState(false)
+  const [guidePreviewOpen, setGuidePreviewOpen] = useState(false)
+  const { exams: registeredExams, workbenches } = useRegisters()
+  const guideCatalog = buildPartnerExamCatalog(registeredExams, workbenches)
 
   useEffect(() => { setForm(partner); setRegenMethod(partner?.authMethod ?? 'oauth2') }, [partner?.id])
 
@@ -105,8 +110,7 @@ export default function PartnerDetailPage() {
                     className="min-h-[44px]"
                     disabled={!guideEnabled}
                     onClick={() => {
-                      generatePartnerIntegrationGuide(partner)
-                      toast.success('Guia de integração gerado')
+                      setGuidePreviewOpen(true)
                     }}
                   >
                     <FileDown className="mr-2 h-4 w-4" /> Gerar Guia de Integração
@@ -262,6 +266,54 @@ export default function PartnerDetailPage() {
       </AlertDialog>
 
       {/* Excluir parceiro (confirmação dupla) */}
+      <Dialog open={guidePreviewOpen} onOpenChange={setGuidePreviewOpen}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>
+              {guideCatalog.length} {guideCatalog.length === 1 ? 'exame ativo será incluído' : 'exames ativos serão incluídos'} no guia deste parceiro
+            </DialogTitle>
+          </DialogHeader>
+          <div className="rounded-md border border-amber-300 bg-amber-50 p-3 text-xs text-amber-900 dark:bg-amber-950/30 dark:text-amber-200">
+            ⚠️ {PARTNER_CODE_WARNING}
+          </div>
+          <div className="max-h-[50vh] overflow-y-auto rounded-md border">
+            <table className="w-full text-xs">
+              <thead className="sticky top-0 bg-muted/70 text-muted-foreground">
+                <tr>
+                  <th className="p-2 text-left font-medium">Nome do Exame</th>
+                  <th className="p-2 text-left font-medium">Código</th>
+                  <th className="p-2 text-left font-medium">Bancada</th>
+                </tr>
+              </thead>
+              <tbody>
+                {guideCatalog.map(e => (
+                  <tr key={e.code + e.name} className="border-t">
+                    <td className="p-2">{e.name}</td>
+                    <td className="p-2 font-mono">{e.code}</td>
+                    <td className="p-2 text-muted-foreground">{e.workbench}</td>
+                  </tr>
+                ))}
+                {guideCatalog.length === 0 && (
+                  <tr><td colSpan={3} className="p-4 text-center text-muted-foreground">Nenhum exame ativo no Catálogo de Exames.</td></tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setGuidePreviewOpen(false)}>Cancelar</Button>
+            <Button
+              onClick={() => {
+                generatePartnerIntegrationGuide(partner, guideCatalog)
+                setGuidePreviewOpen(false)
+                toast.success('Guia de integração gerado')
+              }}
+            >
+              Confirmar e Gerar PDF
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
       <Dialog open={deleteOpen} onOpenChange={setDeleteOpen}>
         <DialogContent className="max-w-md">
           <DialogHeader>
