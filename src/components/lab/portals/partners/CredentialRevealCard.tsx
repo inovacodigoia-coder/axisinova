@@ -3,6 +3,7 @@ import { Copy, Check, ShieldAlert } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { toast } from 'sonner'
 import type { GeneratedCredential } from '@/stores/apiPartnersStore'
+import { PARTNER_TOKEN_URL, PARTNER_ORDERS_URL } from '@/lib/partnerApiEndpoints'
 
 function Field({ label, value }: { label: string; value: string }) {
   const [copied, setCopied] = useState(false)
