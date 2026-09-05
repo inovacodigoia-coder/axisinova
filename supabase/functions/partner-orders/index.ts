@@ -1,5 +1,5 @@
 // API de Parceiros — Pedidos de Exames
-// POST /functions/v1/partner-orders          -> cria pedido (paciente + exames)
+// POST /functions/v1/partner-orders          -> registra pedido na fila (aguarda autorização)
 // GET  /functions/v1/partner-orders/{proto}  -> consulta status (ou ?protocolo=)
 // Auth: Authorization: Bearer <access_token> (OAuth2 client credentials de /oauth-token)
 import { createClient } from 'npm:@supabase/supabase-js@2'
@@ -134,13 +134,13 @@ Deno.serve(async (req) => {
   }
 
   // ---- 2. Roteamento ----
-  if (req.method === 'POST') return await createOrder(req, supabase, companyId, partner)
+  if (req.method === 'POST') return await createOrder(req, supabase, companyId, partner, clientId)
   if (req.method === 'GET') return await getOrderStatus(req, supabase, companyId, partner)
   return err('METHOD_NOT_ALLOWED', 'Use POST (criar) ou GET (consultar status)', 405)
 })
 
 // ---------- POST: criar pedido ----------
-async function createOrder(req: Request, supabase: any, companyId: string, partner: any) {
+async function createOrder(req: Request, supabase: any, companyId: string, partner: any, clientId: string) {
   let body: any
   try {
     body = await req.json()
