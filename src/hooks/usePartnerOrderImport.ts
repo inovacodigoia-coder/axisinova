@@ -95,6 +95,27 @@ export function usePartnerOrderImport() {
       }
 
       try {
+        // Proteção contra criação duplicada: confere o estado atual do pedido no banco
+        const { data: current } = await supabase
+          .from('partner_orders')
+          .select('status, attendance_order_id, attendance_orders(order_number, protocol)')
+          .eq('id', o.id)
+          .maybeSingle()
+        const cur = current as {
+          status?: string
+          attendance_order_id?: string | null
+          attendance_orders?: { order_number: string | null; protocol: string | null } | null
+        } | null
+        if (cur?.status === 'processed' && cur.attendance_order_id) {
+          results.push({
+            ...base,
+            ok: true,
+            attendanceProtocol:
+              cur.attendance_orders?.order_number ?? cur.attendance_orders?.protocol ?? undefined,
+          })
+          continue
+        }
+
         const matched = o.exams.map(e => ({ e, exam: resolveExam(e.code, e.name) }))
         const invalid = matched.filter(m => !m.exam)
         if (invalid.length) {
@@ -102,6 +123,7 @@ export function usePartnerOrderImport() {
           results.push({ ...base, ok: false, errorMessage })
           continue
         }
+
 
         // --- Paciente (busca por CPF, cria se não existir) ---
         const digits = onlyDigits(o.patient.cpf)
