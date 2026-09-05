@@ -61,6 +61,71 @@ export type Database = {
           },
         ]
       }
+      api_partners: {
+        Row: {
+          api_authorized: boolean
+          auth_method: string
+          company_id: string
+          contact_email: string | null
+          contact_name: string | null
+          contact_phone: string | null
+          created_at: string
+          credentials: Json
+          document: string
+          id: string
+          last_sync_at: string | null
+          name: string
+          notes: string | null
+          status: string
+          type: string
+          updated_at: string
+        }
+        Insert: {
+          api_authorized?: boolean
+          auth_method?: string
+          company_id: string
+          contact_email?: string | null
+          contact_name?: string | null
+          contact_phone?: string | null
+          created_at?: string
+          credentials?: Json
+          document: string
+          id?: string
+          last_sync_at?: string | null
+          name: string
+          notes?: string | null
+          status?: string
+          type: string
+          updated_at?: string
+        }
+        Update: {
+          api_authorized?: boolean
+          auth_method?: string
+          company_id?: string
+          contact_email?: string | null
+          contact_name?: string | null
+          contact_phone?: string | null
+          created_at?: string
+          credentials?: Json
+          document?: string
+          id?: string
+          last_sync_at?: string | null
+          name?: string
+          notes?: string | null
+          status?: string
+          type?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "api_partners_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       appointments: {
         Row: {
           company_id: string

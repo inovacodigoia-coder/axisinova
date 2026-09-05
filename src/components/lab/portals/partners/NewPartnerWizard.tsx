@@ -58,24 +58,28 @@ export function NewPartnerWizard({ open, onOpenChange, companyId, onCreated }: P
     setCredential(generateCredential())
   }
 
-  const handleConfirm = () => {
+  const handleConfirm = async () => {
     if (!credential) return
-    const partner = addPartner({
-      companyId,
-      type,
-      name: name.trim(),
-      document,
-      contactName: contactName.trim() || undefined,
-      contactEmail: contactEmail.trim(),
-      contactPhone: contactPhone.trim() || undefined,
-      notes: notes.trim() || undefined,
-      authMethod: 'oauth2',
-      apiAuthorized,
-      status: 'active',
-    }, credential)
-    toast.success('Parceiro cadastrado com sucesso')
-    onCreated?.(partner)
-    onOpenChange(false)
+    try {
+      const partner = await addPartner({
+        companyId,
+        type,
+        name: name.trim(),
+        document,
+        contactName: contactName.trim() || undefined,
+        contactEmail: contactEmail.trim(),
+        contactPhone: contactPhone.trim() || undefined,
+        notes: notes.trim() || undefined,
+        authMethod: 'oauth2',
+        apiAuthorized,
+        status: 'active',
+      }, credential)
+      toast.success('Parceiro cadastrado com sucesso')
+      onCreated?.(partner)
+      onOpenChange(false)
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Não foi possível cadastrar o parceiro')
+    }
   }
 
   return (
