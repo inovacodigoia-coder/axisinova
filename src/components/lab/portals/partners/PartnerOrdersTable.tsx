@@ -174,9 +174,11 @@ export function PartnerOrdersTable({ partnerId, showCounters = true }: Props) {
         status: r.ok ? 'processed' : 'error',
         attendanceProtocol: r.attendanceProtocol,
         errorMessage: r.errorMessage,
+        warningMessage: r.warningMessage,
         partnerProtocol: r.partnerProtocol,
       })),
     })
+    results.filter(r => r.warningMessage).forEach(r => toast.warning(r.warningMessage as string))
     if (okCount) toast.success(`${okCount} atendimento(s) criado(s).`)
     if (results.length - okCount > 0) toast.error(`${results.length - okCount} pedido(s) com erro.`)
   }

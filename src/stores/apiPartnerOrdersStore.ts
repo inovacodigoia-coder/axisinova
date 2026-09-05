@@ -116,6 +116,7 @@ export interface BatchProcessResult {
   ok: boolean
   attendanceProtocol?: string
   errorMessage?: string
+  warningMessage?: string
 }
 
 /** Aplica no store o resultado da criação REAL dos atendimentos. */

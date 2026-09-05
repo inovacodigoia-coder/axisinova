@@ -13,6 +13,7 @@ export interface ReportRow {
   status: 'received' | 'processed' | 'error'
   attendanceProtocol?: string
   errorMessage?: string
+  warningMessage?: string
   partnerProtocol?: string
 }
 
@@ -175,9 +176,14 @@ export function PartnerOrdersReportModal({
                 </h3>
                 <ul className="divide-y rounded-lg border">
                   {ok.map((r, i) => (
-                    <li key={i} className="flex items-center justify-between gap-3 p-3 text-sm">
-                      <span className="min-w-0 truncate">{r.patientName}</span>
-                      <span className="font-medium text-primary">{r.attendanceProtocol ?? '—'}</span>
+                    <li key={i} className="p-3 text-sm">
+                      <div className="flex items-center justify-between gap-3">
+                        <span className="min-w-0 truncate">{r.patientName}</span>
+                        <span className="font-medium text-primary">{r.attendanceProtocol ?? '—'}</span>
+                      </div>
+                      {r.warningMessage && (
+                        <p className="mt-1 text-xs text-amber-600">{r.warningMessage}</p>
+                      )}
                     </li>
                   ))}
                 </ul>

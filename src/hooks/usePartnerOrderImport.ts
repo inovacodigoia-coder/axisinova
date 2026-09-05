@@ -139,16 +139,27 @@ export function usePartnerOrderImport() {
         // --- Paciente (busca por CPF, cria se não existir) ---
         const digits = onlyDigits(o.patient.cpf)
         let patientId: string | null = null
+        let registeredName: string | null = null
         if (digits.length === 11) {
           const { data: found } = await supabase
             .from('patients')
-            .select('id')
+            .select('id, name')
             .eq('company_id', companyId)
             .in('cpf', [digits, formatCpf(digits)])
             .limit(1)
             .maybeSingle()
-          patientId = (found as { id?: string } | null)?.id ?? null
+          patientId = (found as { id?: string; name?: string } | null)?.id ?? null
+          registeredName = (found as { id?: string; name?: string } | null)?.name ?? null
         }
+
+        // CPF encontrado: o nome oficial é o do cadastro. Se o parceiro enviou outro nome
+        // para o mesmo CPF, registra aviso e usa o nome cadastrado no atendimento.
+        let nameWarning: string | undefined
+        const sentName = String(o.patient.name || '').trim()
+        if (patientId && registeredName && norm(registeredName) !== norm(sentName)) {
+          nameWarning = `CPF já cadastrado como "${registeredName}" — o pedido veio com o nome "${sentName}". Foi usado o nome do cadastro.`
+        }
+        const orderPatientName = (patientId && registeredName) ? registeredName : sentName
 
         if (!patientId) {
           const birthDate = toIsoDate(o.patient.birthDate)
@@ -204,7 +215,7 @@ export function usePartnerOrderImport() {
           .insert({
             company_id: companyId,
             patient_id: patientId,
-            patient_name: o.patient.name,
+            patient_name: orderPatientName,
             origin_id: originId,
             origin_code: originCode,
             origin_name: originName,
@@ -248,7 +259,7 @@ export function usePartnerOrderImport() {
           continue
         }
 
-        results.push({ ...base, ok: true, attendanceProtocol: protocol })
+        results.push({ ...base, ok: true, attendanceProtocol: protocol, warningMessage: nameWarning })
       } catch (err) {
         const message = describeError(err)
         await supabase

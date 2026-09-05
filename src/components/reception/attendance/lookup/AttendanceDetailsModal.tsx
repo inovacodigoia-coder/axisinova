@@ -603,7 +603,7 @@ export function AttendanceDetailsModal({ open, onClose, onOrderDeleted, order, p
                 </DropdownMenuContent>
               </DropdownMenu>
             </div>
-            <div className="text-sm font-bold text-foreground truncate uppercase">{order.patientName}</div>
+            <div className="text-sm font-bold text-foreground truncate uppercase">{patient?.fullName || order.patientName}</div>
           </div>
 
           {/* Forecast Card */}
