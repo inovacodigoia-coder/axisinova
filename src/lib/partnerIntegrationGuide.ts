@@ -221,13 +221,15 @@ export function generatePartnerIntegrationGuide(partner: ApiPartner, catalog: Pa
 
   /* ---------- 1. Visão Geral ---------- */
   h1('1. Visão Geral')
-  p('Esta integração permite que o parceiro envie pedidos de atendimento (dados do paciente e exames solicitados) diretamente ao Axis Inova. O parceiro se autentica via OAuth2 (client credentials), envia o pedido em JSON e o sistema valida os dados, cria o paciente quando necessário e gera automaticamente o atendimento com protocolo interno.')
+  p('Esta integração permite que o parceiro envie pedidos de atendimento (dados do paciente e exames solicitados) diretamente ao Axis Inova. O parceiro se autentica via OAuth2 (client credentials) e envia o pedido em JSON. O sistema valida os dados e coloca o pedido na fila "Pedidos Recebidos". O paciente não é cadastrado e o atendimento não é criado automaticamente: a equipe do laboratório revisa o pedido e confirma a criação, quando então o atendimento recebe o protocolo interno seguindo a numeração da origem selecionada.')
   h2('Fluxo resumido')
   bullets([
     'Autenticar — trocar client_id e client_secret por um token de acesso (Bearer).',
     'Enviar Pedido — POST com paciente + exames usando o token no cabeçalho.',
     'Sistema Valida — CPF, códigos de exame e autorizações do parceiro.',
-    'Atendimento Criado — retorno com o protocolo interno gerado, ou Erro retornado com o código correspondente.',
+    'Pedido Recebido — o pedido entra na fila "Pedidos Recebidos" com status RECEBIDO (HTTP 202).',
+    'Autorização Interna — a equipe do laboratório seleciona o pedido e cria o atendimento; só então o protocolo interno é gerado.',
+    'Consulta de Status — o parceiro acompanha pelo protocolo_parceiro até o laudo ser liberado.',
   ])
 
   /* ---------- 2. Autenticação ---------- */
@@ -289,17 +291,23 @@ Content-Type: application/json
     "numero_guia": "987654"
   }
 }`)
-  h2('Resposta de sucesso (201)')
+  h2('Resposta de sucesso (202 — pedido recebido)')
   code(`{
   "success": true,
-  "protocolo": "192-00",
-  "status": "AGUARDANDO",
-  "paciente_id": "pat_8f21c4",
+  "pedido_id": "b0f1c8e2-...",
+  "protocolo_parceiro": "PED-2026-00871",
+  "status": "RECEBIDO",
+  "message": "Pedido recebido e aguardando autorizacao.",
+  "paciente": { "nome": "Maria Aparecida Souza", "cadastrado": false },
   "exames": [
-    { "codigo": "${ex1.code}", "nome": "${ex1.name}", "status": "AGUARDANDO" },
-    { "codigo": "${ex2.code}", "nome": "${ex2.name}", "status": "AGUARDANDO" }
+    { "codigo": "${ex1.code}", "nome": "${ex1.name}", "status": "RECEBIDO" },
+    { "codigo": "${ex2.code}", "nome": "${ex2.name}", "status": "RECEBIDO" }
   ]
 }`)
+  h2('Consulta de status')
+  code(`GET ${PARTNER_ORDERS_URL}/PED-2026-00871
+Authorization: Bearer {token}`)
+  p('Enquanto o pedido nao for autorizado, o status retornado e AGUARDANDO_AUTORIZACAO e o protocolo interno vem nulo. Apos a criacao do atendimento, o protocolo interno passa a ser retornado.')
   h2('Resposta de erro (422)')
   code(`{
   "success": false,
@@ -342,8 +350,9 @@ Content-Type: application/json
   h1('6. Regras Importantes')
   bullets([
     'Todos os exames do pedido precisam ter código reconhecido; caso contrário, o pedido inteiro é rejeitado.',
-    'Se o paciente (CPF) não existir na base, ele é criado automaticamente com os dados enviados.',
-    'O protocolo interno do Axis Inova é sempre gerado pelo sistema, independentemente do protocolo enviado pelo parceiro.',
+    'O pedido enviado fica aguardando autorização; nada é criado no sistema até a equipe do laboratório confirmar.',
+    'O paciente só é cadastrado no momento em que o atendimento é criado internamente.',
+    'O protocolo interno do Axis Inova é sempre gerado pelo sistema, seguindo a numeração sequencial da origem selecionada.',
     'O parceiro precisa estar com a permissão "Autorizado a criar pedidos via API" ativa e o módulo liberado para a empresa.',
     'O client_secret é exibido uma única vez, no cadastro. Em caso de perda, é necessário regenerar as credenciais.',
   ])

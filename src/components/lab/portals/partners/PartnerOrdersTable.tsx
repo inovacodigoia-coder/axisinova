@@ -10,7 +10,7 @@ import { EmptyState } from '@/components/feedback/EmptyState'
 import { cn } from '@/lib/utils'
 import { useAuth } from '@/context/AuthContext'
 import { useApiPartners } from '@/stores/apiPartnersStore'
-import { usePartnerOrders, type BatchProcessResult } from '@/stores/apiPartnerOrdersStore'
+import { usePartnerOrders, loadPartnerOrders, type BatchProcessResult } from '@/stores/apiPartnerOrdersStore'
 import { usePartnerOrderImport } from '@/hooks/usePartnerOrderImport'
 import { PartnerOrderDetailDrawer, STATUS_CLASS } from './PartnerOrderDetailDrawer'
 import { PartnerOrdersReportModal, type ReportRow } from './PartnerOrdersReportModal'
@@ -46,6 +46,9 @@ export function PartnerOrdersTable({ partnerId, showCounters = true }: Props) {
   const { user } = useAuth()
   const { importOrders } = usePartnerOrderImport()
   const companyName = (user as { companyName?: string } | null)?.companyName || 'Laboratório'
+  const companyId = (user as { companyId?: string } | null)?.companyId
+
+  useEffect(() => { if (companyId) void loadPartnerOrders(companyId) }, [companyId])
 
   const [search, setSearch] = useState('')
   const [partnerFilter, setPartnerFilter] = useState<string>(partnerId ?? 'all')
@@ -140,6 +143,7 @@ export function PartnerOrdersTable({ partnerId, showCounters = true }: Props) {
     try {
       results = await importOrders(toCreate)
     } finally {
+      if (companyId) await loadPartnerOrders(companyId)
       setCreating(false)
     }
     const okCount = results.filter(r => r.ok).length

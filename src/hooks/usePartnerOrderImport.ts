@@ -2,6 +2,7 @@ import { useCallback } from 'react'
 import { supabase } from '@/integrations/supabase/client'
 import { useAuth } from '@/context/AuthContext'
 import { useRegisters } from '@/context/RegistersContext'
+import { useCompanyContext } from '@/context/CompanyContext'
 import { generateOrderHash } from '@/utils/orderHash'
 import { applyImportResults, type BatchProcessResult } from '@/stores/apiPartnerOrdersStore'
 import type { PartnerOrder } from '@/types/api-partner-orders.types'
@@ -35,6 +36,7 @@ function genderFromSex(sex?: string) {
 export function usePartnerOrderImport() {
   const { user } = useAuth()
   const { exams, convenios } = useRegisters()
+  const { activeOrigin } = useCompanyContext()
   const companyId = (user as { companyId?: string } | null)?.companyId
 
   const importOrders = useCallback(async (orders: PartnerOrder[]): Promise<BatchProcessResult[]> => {
@@ -77,6 +79,10 @@ export function usePartnerOrderImport() {
         return en.includes(n) || n.includes(en)
       })
     }
+
+    const originId = activeOrigin?.id ?? null
+    const originCode = String(activeOrigin?.internal_code ?? '00').padStart(2, '0')
+    const originName = activeOrigin?.name ?? 'MATRIZ'
 
     for (const o of orders) {
       const base = {
@@ -134,8 +140,8 @@ export function usePartnerOrderImport() {
           rpc: (fn: string, args: Record<string, unknown>) => Promise<{ data: unknown; error: unknown }>
         }).rpc('next_attendance_order_number', {
           _company_id: companyId,
-          _origin_id: null,
-          _origin_code: '00',
+          _origin_id: originId,
+          _origin_code: originCode,
         })
         if (seqError) throw seqError
 
@@ -157,15 +163,15 @@ export function usePartnerOrderImport() {
           exams: matched.map(m => ({ ...(m.exam as object), quantity: 1, collected: false })),
         }]
 
-        const { error: oErr } = await supabase
+        const { data: createdOrder, error: oErr } = await supabase
           .from('attendance_orders')
           .insert({
             company_id: companyId,
             patient_id: patientId,
             patient_name: o.patient.name,
-            origin_id: null,
-            origin_code: '00',
-            origin_name: 'MATRIZ',
+            origin_id: originId,
+            origin_code: originCode,
+            origin_name: originName,
             order_number: protocol,
             protocol,
             hash,
@@ -181,18 +187,33 @@ export function usePartnerOrderImport() {
             registered_by: user.id,
             registered_by_name: user.name,
           } as never)
+          .select('id')
+          .single()
         if (oErr) throw oErr
+
+        await supabase
+          .from('partner_orders')
+          .update({
+            status: 'processed',
+            error: null,
+            attendance_order_id: (createdOrder as { id: string } | null)?.id ?? null,
+          } as never)
+          .eq('id', o.id)
 
         results.push({ ...base, ok: true, attendanceProtocol: protocol })
       } catch (err) {
         const message = err instanceof Error ? err.message : 'Falha ao criar o atendimento.'
+        await supabase
+          .from('partner_orders')
+          .update({ status: 'error', error: message } as never)
+          .eq('id', o.id)
         results.push({ ...base, ok: false, errorMessage: message })
       }
     }
 
     applyImportResults(results)
     return results
-  }, [companyId, user, exams, convenios])
+  }, [companyId, user, exams, convenios, activeOrigin])
 
   return { importOrders }
 }
