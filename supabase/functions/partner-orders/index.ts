@@ -159,7 +159,10 @@ async function createOrder(req: Request, supabase: any, companyId: string, partn
   if (!nome) return err('MISSING_FIELD', 'Campo obrigatório ausente: paciente.nome', 400, { protocolo_parceiro: protocoloParceiro })
 
   const cpfDigits = onlyDigits(paciente?.cpf)
-  if (cpfDigits && !isValidCpf(cpfDigits)) {
+  if (!cpfDigits) {
+    return err('MISSING_FIELD', 'Campo obrigatório ausente: paciente.cpf', 400, { protocolo_parceiro: protocoloParceiro })
+  }
+  if (!isValidCpf(cpfDigits)) {
     return err('INVALID_CPF', 'CPF inválido', 422, { protocolo_parceiro: protocoloParceiro })
   }
 
@@ -246,7 +249,7 @@ async function createOrder(req: Request, supabase: any, companyId: string, partn
           cpf: cpfDigits || null,
           birth_date: toIsoDate(paciente?.data_nascimento ?? paciente?.birthDate),
           gender: genderFromSex(paciente?.sexo ?? paciente?.sex),
-          phone: paciente?.telefone ?? paciente?.phone ?? null,
+          phone: String(paciente?.telefone ?? paciente?.phone ?? '').trim(),
           status: 'active',
         })
         .select('id')
