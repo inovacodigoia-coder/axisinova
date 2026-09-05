@@ -28,13 +28,24 @@ Deno.serve(async (req) => {
     const accessToken = authHeader.slice(7).trim()
     if (!accessToken) return json({ error: 'Não autenticado' }, 401)
 
-    // Edge Functions não mantêm uma sessão do navegador. O JWT recebido deve
-    // ser passado explicitamente ao Auth; depender do estado interno do client
-    // faz getUser() retornar null mesmo com o header Authorization presente.
-    const { data: { user }, error: authError } = await admin.auth.getUser(accessToken)
-    if (authError || !user) {
-      console.error('[create-oauth-client] token inválido:', authError?.message ?? 'usuário ausente')
-      return json({ error: 'Sessão inválida ou expirada' }, 401)
+    // Valida o JWT do usuário. Primeiro com um client anônimo que repassa o
+    // header Authorization (caminho mais confiável), depois com o admin.
+    const anon = createClient(supabaseUrl, Deno.env.get('SUPABASE_ANON_KEY')!, {
+      global: { headers: { Authorization: `Bearer ${accessToken}` } },
+      auth: { persistSession: false, autoRefreshToken: false },
+    })
+
+    let user = (await anon.auth.getUser()).data.user
+    if (!user) {
+      const viaAdmin = await admin.auth.getUser(accessToken)
+      user = viaAdmin.data.user
+      if (!user) {
+        console.error(
+          '[create-oauth-client] token inválido (len=' + accessToken.length + '):',
+          viaAdmin.error?.message ?? 'usuário ausente',
+        )
+        return json({ error: 'Sessão inválida ou expirada' }, 401)
+      }
     }
 
     const { data: profile } = await admin
