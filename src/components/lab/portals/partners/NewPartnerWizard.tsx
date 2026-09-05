@@ -54,8 +54,12 @@ export function NewPartnerWizard({ open, onOpenChange, companyId, onCreated }: P
   const emailValid = /\S+@\S+\.\S+/.test(contactEmail)
   const stepAValid = !!name.trim() && isValidDocument(document) && !duplicated && emailValid
 
-  const generate = () => {
-    setCredential(generateCredential())
+  const generate = async () => {
+    try {
+      setCredential(await generateCredential(`${name.trim()} — Parceiro API`))
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Não foi possível gerar as credenciais')
+    }
   }
 
   const handleConfirm = async () => {
@@ -173,7 +177,7 @@ export function NewPartnerWizard({ open, onOpenChange, companyId, onCreated }: P
                     <p className="text-xs text-muted-foreground">Único método suportado nesta fase.</p>
                   </div>
                   {!credential && (
-                    <Button type="button" variant="outline" className="min-h-[44px]" onClick={generate}>
+                    <Button type="button" variant="outline" className="min-h-[44px]" onClick={() => void generate()}>
                       Gerar Credenciais
                     </Button>
                   )}
