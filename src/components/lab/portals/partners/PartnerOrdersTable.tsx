@@ -48,7 +48,22 @@ export function PartnerOrdersTable({ partnerId, showCounters = true }: Props) {
   const companyName = (user as { companyName?: string } | null)?.companyName || 'Laboratório'
   const companyId = (user as { companyId?: string } | null)?.companyId
 
-  useEffect(() => { if (companyId) void loadPartnerOrders(companyId) }, [companyId])
+  // Mantém a lista sempre atualizada: carga inicial, polling e recarga ao voltar para a aba
+  useEffect(() => {
+    if (!companyId) return
+    void loadPartnerOrders(companyId)
+    const interval = window.setInterval(() => {
+      if (document.visibilityState === 'visible') void loadPartnerOrders(companyId)
+    }, 15000)
+    const onVisible = () => { if (document.visibilityState === 'visible') void loadPartnerOrders(companyId) }
+    document.addEventListener('visibilitychange', onVisible)
+    window.addEventListener('focus', onVisible)
+    return () => {
+      window.clearInterval(interval)
+      document.removeEventListener('visibilitychange', onVisible)
+      window.removeEventListener('focus', onVisible)
+    }
+  }, [companyId])
 
   const [search, setSearch] = useState('')
   const [partnerFilter, setPartnerFilter] = useState<string>(partnerId ?? 'all')
