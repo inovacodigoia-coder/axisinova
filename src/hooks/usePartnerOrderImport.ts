@@ -151,15 +151,18 @@ export function usePartnerOrderImport() {
         }
 
         if (!patientId) {
+          const birthDate = toIsoDate(o.patient.birthDate)
+          if (!digits) throw new Error('Paciente sem CPF válido no pedido — cadastro obrigatório.')
+          if (!birthDate) throw new Error('Paciente sem data de nascimento válida no pedido — cadastro obrigatório.')
           const { data: created, error: pErr } = await supabase
             .from('patients')
             .insert({
               company_id: companyId,
               name: o.patient.name,
-              cpf: digits || null,
-              birth_date: toIsoDate(o.patient.birthDate),
+              cpf: digits,
+              birth_date: birthDate,
               gender: genderFromSex(o.patient.sex),
-              phone: o.patient.phone || null,
+              phone: o.patient.phone || 'Não informado',
               status: 'active',
             } as never)
             .select('id')
@@ -225,7 +228,7 @@ export function usePartnerOrderImport() {
         if (oErr) throw oErr
 
         const createdOrderId = (createdOrder as { id: string } | null)?.id ?? null
-        const { error: upErr } = await supabase
+        const { data: updated, error: upErr } = await supabase
           .from('partner_orders')
           .update({
             status: 'processed',
@@ -233,13 +236,14 @@ export function usePartnerOrderImport() {
             attendance_order_id: createdOrderId,
           } as never)
           .eq('id', o.id)
-        if (upErr) {
+          .select('id')
+        if (upErr || !updated || updated.length === 0) {
           // O atendimento já existe: reporta como criado, sinalizando a falha de vínculo.
           results.push({
             ...base,
             ok: true,
             attendanceProtocol: protocol,
-            errorMessage: `Atendimento criado, mas houve falha ao marcar o pedido como processado: ${describeError(upErr)}`,
+            errorMessage: `Atendimento criado, mas houve falha ao marcar o pedido como processado: ${upErr ? describeError(upErr) : 'nenhum registro atualizado (permissão negada)'}`,
           })
           continue
         }
