@@ -2210,6 +2210,67 @@ export type Database = {
           },
         ]
       }
+      partner_orders: {
+        Row: {
+          attendance_order_id: string | null
+          client_id: string
+          company_id: string
+          created_at: string
+          error: string | null
+          id: string
+          partner_id: string | null
+          payload: Json
+          protocolo_parceiro: string | null
+          status: string
+        }
+        Insert: {
+          attendance_order_id?: string | null
+          client_id: string
+          company_id: string
+          created_at?: string
+          error?: string | null
+          id?: string
+          partner_id?: string | null
+          payload?: Json
+          protocolo_parceiro?: string | null
+          status?: string
+        }
+        Update: {
+          attendance_order_id?: string | null
+          client_id?: string
+          company_id?: string
+          created_at?: string
+          error?: string | null
+          id?: string
+          partner_id?: string | null
+          payload?: Json
+          protocolo_parceiro?: string | null
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "partner_orders_attendance_order_id_fkey"
+            columns: ["attendance_order_id"]
+            isOneToOne: false
+            referencedRelation: "attendance_orders"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "partner_orders_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "partner_orders_partner_id_fkey"
+            columns: ["partner_id"]
+            isOneToOne: false
+            referencedRelation: "api_partners"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       patients: {
         Row: {
           address: string | null
