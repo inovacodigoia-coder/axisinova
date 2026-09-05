@@ -388,8 +388,8 @@ Authorization: Bearer {token}`)
   h1('7. Suporte')
   p('Em caso de dúvidas técnicas sobre esta integração, entre em contato com o suporte:')
   bullets([
-    'E-mail: suporte@axisinova.com.br',
-    'Telefone: (84) 3000-0000',
+    'E-mail: comercial@inovacodigoia.com.br',
+    'Telefone: (84) 9450-5536',
     'Portal: https://axisinova.inovacodigoia.com.br',
   ])
 
