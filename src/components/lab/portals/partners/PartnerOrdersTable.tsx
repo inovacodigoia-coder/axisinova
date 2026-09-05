@@ -1,14 +1,18 @@
 import { useEffect, useMemo, useState } from 'react'
-import { Building2, Eye, FlaskConical, Inbox, Search, ShieldCheck, Stethoscope } from 'lucide-react'
+import { Building2, Eye, FileBarChart, FlaskConical, Inbox, RotateCcw, Search, ShieldCheck, Stethoscope } from 'lucide-react'
+import { toast } from 'sonner'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
+import { Checkbox } from '@/components/ui/checkbox'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { EmptyState } from '@/components/feedback/EmptyState'
 import { cn } from '@/lib/utils'
+import { useAuth } from '@/context/AuthContext'
 import { useApiPartners } from '@/stores/apiPartnersStore'
-import { usePartnerOrders } from '@/stores/apiPartnerOrdersStore'
+import { usePartnerOrders, processPartnerOrders, type BatchProcessResult } from '@/stores/apiPartnerOrdersStore'
 import { PartnerOrderDetailDrawer, STATUS_CLASS } from './PartnerOrderDetailDrawer'
+import { PartnerOrdersReportModal, type ReportRow } from './PartnerOrdersReportModal'
 import {
   PARTNER_ORDER_STATUS_LABEL, maskCpf, type PartnerOrder, type PartnerOrderStatus,
 } from '@/types/api-partner-orders.types'
@@ -38,6 +42,8 @@ interface Props {
 export function PartnerOrdersTable({ partnerId, showCounters = true }: Props) {
   const partners = useApiPartners()
   const orders = usePartnerOrders()
+  const { user } = useAuth()
+  const companyName = (user as { companyName?: string } | null)?.companyName || 'Laboratório'
 
   const [search, setSearch] = useState('')
   const [partnerFilter, setPartnerFilter] = useState<string>(partnerId ?? 'all')
@@ -47,11 +53,14 @@ export function PartnerOrdersTable({ partnerId, showCounters = true }: Props) {
   const [to, setTo] = useState('')
   const [page, setPage] = useState(1)
   const [selected, setSelected] = useState<PartnerOrder | null>(null)
+  const [selectedIds, setSelectedIds] = useState<string[]>([])
+  const [report, setReport] = useState<{ title: string; subtitle?: string; rows: ReportRow[] } | null>(null)
 
   useEffect(() => { if (partnerId) setPartnerFilter(partnerId) }, [partnerId])
-  useEffect(() => { setPage(1) }, [search, partnerFilter, status, preset, from, to])
+  useEffect(() => { setPage(1); setSelectedIds([]) }, [search, partnerFilter, status, preset, from, to])
 
   const partnerById = useMemo(() => Object.fromEntries(partners.map(p => [p.id, p])), [partners])
+
 
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase()
