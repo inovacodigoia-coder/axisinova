@@ -7,6 +7,17 @@ import { generateOrderHash } from '@/utils/orderHash'
 import { applyImportResults, type BatchProcessResult } from '@/stores/apiPartnerOrdersStore'
 import type { PartnerOrder } from '@/types/api-partner-orders.types'
 
+/** Extrai a mensagem real do erro (Supabase/PostgREST ou Error) para exibir ao usuário. */
+function describeError(err: unknown): string {
+  if (!err) return 'Falha ao criar o atendimento.'
+  if (typeof err === 'string') return err
+  const e = err as { message?: string; details?: string; hint?: string; code?: string }
+  const parts = [e.message, e.details, e.hint].filter(Boolean) as string[]
+  const text = [...new Set(parts)].join(' — ')
+  if (text) return e.code ? `${text} (código ${e.code})` : text
+  try { return JSON.stringify(err) } catch { return 'Falha ao criar o atendimento.' }
+}
+
 const onlyDigits = (v: string) => (v || '').replace(/\D/g, '')
 
 function formatCpf(digits: string) {
@@ -213,18 +224,29 @@ export function usePartnerOrderImport() {
           .single()
         if (oErr) throw oErr
 
-        await supabase
+        const createdOrderId = (createdOrder as { id: string } | null)?.id ?? null
+        const { error: upErr } = await supabase
           .from('partner_orders')
           .update({
             status: 'processed',
             error: null,
-            attendance_order_id: (createdOrder as { id: string } | null)?.id ?? null,
+            attendance_order_id: createdOrderId,
           } as never)
           .eq('id', o.id)
+        if (upErr) {
+          // O atendimento já existe: reporta como criado, sinalizando a falha de vínculo.
+          results.push({
+            ...base,
+            ok: true,
+            attendanceProtocol: protocol,
+            errorMessage: `Atendimento criado, mas houve falha ao marcar o pedido como processado: ${describeError(upErr)}`,
+          })
+          continue
+        }
 
         results.push({ ...base, ok: true, attendanceProtocol: protocol })
       } catch (err) {
-        const message = err instanceof Error ? err.message : 'Falha ao criar o atendimento.'
+        const message = describeError(err)
         await supabase
           .from('partner_orders')
           .update({ status: 'error', error: message } as never)
