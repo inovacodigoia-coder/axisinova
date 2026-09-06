@@ -3,7 +3,7 @@ import { Card } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Skeleton } from '@/components/ui/skeleton'
-import { Search, Plus, Edit2, Trash2, Monitor, Loader2, KeyRound, Globe } from 'lucide-react'
+import { Search, Plus, Edit2, Trash2, Monitor, Loader2, KeyRound } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import { Badge } from '@/components/ui/badge'
 import { toast } from 'sonner'
@@ -15,10 +15,8 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog"
 import { Label } from '@/components/ui/label'
-import { Switch } from '@/components/ui/switch'
 import { supabase } from '@/integrations/supabase/client'
 import { useAuth } from '@/context/AuthContext'
-import { InstrumentWebhooksModal } from '@/components/lab/equipment/InstrumentWebhooksModal'
 
 export default function LabEquipmentPage() {
   const { user } = useAuth()
@@ -30,18 +28,11 @@ export default function LabEquipmentPage() {
   const [equipment, setEquipment] = useState<any[]>([])
   const [editingItem, setEditingItem] = useState<any>(null)
   
-  const [webhookModal, setWebhookModal] = useState<{ open: boolean, id: string, name: string }>({
-    open: false,
-    id: '',
-    name: ''
-  })
-
   const [formData, setFormData] = useState({
     name: '',
     identifier: '',
     type: 'Bioquímico',
     brand: '',
-    is_active: true
   })
 
   const fetchEquipment = async () => {
@@ -76,7 +67,6 @@ export default function LabEquipmentPage() {
         identifier: item.serial_number || '',
         type: item.connection_type || 'Bioquímico',
         brand: item.manufacturer || item.model || '',
-        is_active: item.is_active ?? true
       })
     } else {
       setEditingItem(null)
@@ -85,7 +75,6 @@ export default function LabEquipmentPage() {
         identifier: '',
         type: 'Bioquímico',
         brand: '',
-        is_active: true
       })
     }
     setIsModalOpen(true)
@@ -110,7 +99,6 @@ export default function LabEquipmentPage() {
         serial_number: formData.identifier.trim(),
         connection_type: formData.type,
         manufacturer: formData.brand.trim() || null,
-        is_active: formData.is_active
       }
 
       if (editingItem) {
@@ -325,30 +313,12 @@ export default function LabEquipmentPage() {
                 />
               </div>
             </div>
-            <div className="flex items-center justify-between pt-2">
-              <Label>Ativo</Label>
-              <Switch 
-                checked={formData.is_active}
-                onCheckedChange={(val) => setFormData(prev => ({ ...prev, is_active: val }))}
-              />
-            </div>
+            <p className="text-[11px] text-muted-foreground pt-2">
+              A ativação do equipamento é liberada pela administração do sistema.
+            </p>
           </div>
           <DialogFooter className="flex justify-between items-center sm:justify-between">
-            <div>
-              {editingItem && (
-                <Button 
-                  type="button"
-                  variant="outline" 
-                  className="gap-2 border-primary/30 text-primary hover:bg-primary/5"
-                  onClick={() => {
-                    setIsModalOpen(false)
-                    setWebhookModal({ open: true, id: editingItem.id, name: editingItem.name })
-                  }}
-                >
-                  <Globe className="h-4 w-4" /> Webhooks
-                </Button>
-              )}
-            </div>
+            <div />
             <div className="flex gap-2">
               <Button variant="outline" onClick={() => setIsModalOpen(false)} disabled={saving}>Cancelar</Button>
               <Button className="gradient-bg text-white" onClick={handleSave} disabled={saving}>
@@ -360,12 +330,6 @@ export default function LabEquipmentPage() {
         </DialogContent>
       </Dialog>
 
-      <InstrumentWebhooksModal 
-        isOpen={webhookModal.open}
-        onClose={() => setWebhookModal(prev => ({ ...prev, open: false }))}
-        instrumentId={webhookModal.id}
-        instrumentName={webhookModal.name}
-      />
     </div>
   )
 }
