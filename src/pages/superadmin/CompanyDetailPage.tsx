@@ -9,6 +9,7 @@ import { OutlineButton } from '@/components/ui/OutlineButton'
 import { toast } from 'sonner'
 import { supabase } from '@/integrations/supabase/client'
 import { usePartnerApiEntitlement, setPartnerApiEntitlement } from '@/stores/partnerApiEntitlementStore'
+import { CompanyEquipmentsTab } from '@/components/superadmin/CompanyEquipmentsTab'
 import type { Company, PlanType, CompanyStatus } from '@/types/company.types'
 
 const ADDON_PRICE_DOCTOR = 79
@@ -122,6 +123,7 @@ export default function CompanyDetailPage() {
 
   const tabs = [
     { id: 'overview', label: 'Visão Geral' },
+    { id: 'equipments', label: 'Equipamentos' },
     { id: 'resources', label: 'Recursos e Limites' },
     { id: 'users', label: 'Usuários' },
     { id: 'billing', label: 'Plano e Faturamento' },
@@ -220,6 +222,10 @@ export default function CompanyDetailPage() {
             </div>
           </div>
         </div>
+      )}
+
+      {activeTab === 'equipments' && (
+        <CompanyEquipmentsTab companyId={companyId || ''} />
       )}
 
       {activeTab === 'resources' && (
