@@ -672,6 +672,8 @@ export default function LabHematologiaPage() {
         <div className="rounded-lg border border-dashed border-border bg-card p-10 text-center text-sm text-muted-foreground">
           {loading ? 'Carregando pedidos...' : 'Nenhum exame de hematologia encontrado para o filtro selecionado.'}
         </div>
+      ) : (
+
 
       <section className="overflow-hidden rounded-lg border border-border bg-card shadow-sm">
         <header className="bg-sidebar px-4 py-3 text-sidebar-foreground">
