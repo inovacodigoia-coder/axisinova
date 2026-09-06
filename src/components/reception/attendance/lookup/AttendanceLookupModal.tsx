@@ -2,9 +2,10 @@ import { useAuth } from '@/context/AuthContext'
 import { useEffect, useMemo, useState } from 'react'
 import { Dialog, DialogContent } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
-import { X, Search, Eye, Printer, Pencil, Plus, ChevronDown, ChevronRight, Calendar, User, Filter } from 'lucide-react'
+import { X, Search, Eye, Printer, Pencil, Plus, ChevronDown, ChevronRight, Calendar, User, Filter, FlaskConical } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { toast } from 'sonner'
+import { supabase } from '@/integrations/supabase/client'
 import { useAttendanceCadastro } from '@/hooks/useAttendanceCadastro'
 import { usePatients } from '@/hooks/usePatients'
 import { useLabSettings } from '@/hooks/useLabSettings'
@@ -143,6 +144,7 @@ export function AttendanceLookupModal({ open, onClose, unitName, guicheName, onA
   const [search, setSearch] = useState('')
   const [patientSearch, setPatientSearch] = useState('')
   const [statusFilter, setStatusFilter] = useState<string>('all')
+  const [partnerFilter, setPartnerFilter] = useState<string>('all')
   const [datePreset, setDatePreset] = useState<DatePreset>('today')
   const [customFrom, setCustomFrom] = useState('')
   const [customTo, setCustomTo] = useState('')
@@ -152,6 +154,34 @@ export function AttendanceLookupModal({ open, onClose, unitName, guicheName, onA
   const [editing, setEditing] = useState<AttendanceOrder | null>(null)
   const [printDoc, setPrintDoc] = useState<AttendanceControlDocument | null>(null)
   const [detailsOrder, setDetailsOrder] = useState<AttendanceOrder | null>(null)
+
+  // Mapeia pedido -> parceiro (atendimentos criados via integração de parceiros)
+  const [partnerByOrderId, setPartnerByOrderId] = useState<Map<string, { id: string; name: string }>>(new Map())
+  const companyId = user?.companyId
+
+  useEffect(() => {
+    if (!open || !companyId) return
+    ;(supabase as any)
+      .from('partner_orders')
+      .select('attendance_order_id, partner_id, api_partners(id, name)')
+      .eq('company_id', companyId)
+      .not('attendance_order_id', 'is', null)
+      .then(({ data }: any) => {
+        const m = new Map<string, { id: string; name: string }>()
+        ;(data || []).forEach((row: any) => {
+          if (row.attendance_order_id && row.api_partners) {
+            m.set(row.attendance_order_id, { id: row.api_partners.id, name: row.api_partners.name })
+          }
+        })
+        setPartnerByOrderId(m)
+      })
+  }, [open, companyId])
+
+  const partnerOptions = useMemo(() => {
+    const seen = new Map<string, string>()
+    partnerByOrderId.forEach(v => seen.set(v.id, v.name))
+    return Array.from(seen.entries()).map(([id, name]) => ({ id, name }))
+  }, [partnerByOrderId])
 
   const patientById = useMemo(() => {
     const m = new Map<string, Patient>()
@@ -191,6 +221,10 @@ export function AttendanceLookupModal({ open, onClose, unitName, guicheName, onA
       
       if (statusFilter !== 'all' && o.status !== statusFilter) return false
 
+      if (partnerFilter === 'partners' && !partnerByOrderId.has(o.id)) return false
+      if (partnerFilter !== 'all' && partnerFilter !== 'partners' && partnerByOrderId.get(o.id)?.id !== partnerFilter) return false
+
+
       if (term) {
         const values = [
           o.orderNumber,
@@ -213,10 +247,10 @@ export function AttendanceLookupModal({ open, onClose, unitName, guicheName, onA
 
       return true
     }).sort((a, b) => b.registeredAt.localeCompare(a.registeredAt))
-  }, [orders, patientById, search, patientSearch, statusFilter, isAdmin, dateRange, companySequenceId])
+  }, [orders, patientById, search, patientSearch, statusFilter, partnerFilter, partnerByOrderId, isAdmin, dateRange, companySequenceId])
 
 
-  useEffect(() => { setVisibleCount(pageSize) }, [pageSize, datePreset, customFrom, customTo, statusFilter, search, patientSearch])
+  useEffect(() => { setVisibleCount(pageSize) }, [pageSize, datePreset, customFrom, customTo, statusFilter, partnerFilter, search, patientSearch])
 
   const visible = useMemo(() => filtered.slice(0, visibleCount), [filtered, visibleCount])
   const hasMore = filtered.length > visibleCount
@@ -308,7 +342,28 @@ export function AttendanceLookupModal({ open, onClose, unitName, guicheName, onA
               </div>
             </div>
 
+            {partnerOptions.length > 0 && (
+              <div className="flex-1 space-y-1.5 md:max-w-[200px]">
+                <label className="text-xs font-medium text-muted-foreground ml-1">Parceiro</label>
+                <div className="relative">
+                  <select
+                    value={partnerFilter}
+                    onChange={e => setPartnerFilter(e.target.value)}
+                    className="w-full rounded-lg border border-input bg-background pl-3 pr-8 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring appearance-none"
+                  >
+                    <option value="all">Todos</option>
+                    <option value="partners">Somente Parceiros</option>
+                    {partnerOptions.map(p => (
+                      <option key={p.id} value={p.id}>{p.name}</option>
+                    ))}
+                  </select>
+                  <FlaskConical className="absolute right-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground pointer-events-none" />
+                </div>
+              </div>
+            )}
+
             <Button variant="ghost" size="icon" className="h-9 w-9 shrink-0">
+
               <Search className="h-4 w-4" />
             </Button>
           </div>
@@ -392,6 +447,8 @@ export function AttendanceLookupModal({ open, onClose, unitName, guicheName, onA
                   key={order.id}
                   order={order}
                   patient={patientById.get(order.patientId)}
+                  partnerName={partnerByOrderId.get(order.id)?.name}
+
                   onPrint={() => setPrintDoc(buildDoc(order, patientById.get(order.patientId), unitName, guicheName, settings))}
                   onEdit={() => setEditing(order)}
                   onDetails={() => setDetailsOrder(order)}
@@ -442,14 +499,16 @@ export function AttendanceLookupModal({ open, onClose, unitName, guicheName, onA
 
 function OrderRowModern({ 
   order, 
-  patient, 
+  patient,
+  partnerName,
   onPrint, 
   onEdit, 
   onDetails,
   onAddProcedure 
 }: { 
   order: AttendanceOrder; 
-  patient?: Patient; 
+  patient?: Patient;
+  partnerName?: string;
   onPrint: () => void; 
   onEdit: () => void; 
   onDetails: () => void;
@@ -466,7 +525,17 @@ function OrderRowModern({
       onDoubleClick={onDetails}
     >
       <div className="grid grid-cols-[120px_100px_1fr_100px_120px_120px_100px_140px] gap-4 px-6 py-3 items-center text-xs">
-        <div className="font-mono text-primary font-bold hover:underline" onClick={(e) => { e.stopPropagation(); onDetails(); }}>{order.orderNumber}</div>
+        <div className="font-mono text-primary font-bold hover:underline flex items-center gap-1.5" onClick={(e) => { e.stopPropagation(); onDetails(); }}>
+          {order.orderNumber}
+          {partnerName && (
+            <span
+              title={`Recebido via parceiro: ${partnerName}`}
+              className="inline-flex items-center justify-center rounded-md bg-cyan-500/10 text-cyan-600 p-1"
+            >
+              <FlaskConical className="h-3.5 w-3.5" />
+            </span>
+          )}
+        </div>
         <div className="text-muted-foreground">
           {date.toLocaleDateString('pt-BR')}
         </div>
