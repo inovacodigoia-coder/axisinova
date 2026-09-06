@@ -104,7 +104,7 @@ export default function PartnersListPage() {
   const createTooltip = moduleBlocked
     ? 'Módulo de Parceiros não liberado pelo Super Admin'
     : limitReached
-      ? `Limite de ${entitlement.maxPartners} parceiros atingido para o plano atual`
+      ? `Limite de ${entitlement.maxPartners} parceiro(s) atingido. Fale com o responsável pelo sistema para solicitar mais acessos.`
       : null
 
   return (
@@ -115,6 +115,22 @@ export default function PartnersListPage() {
           <p className="text-sm text-[hsl(38,92%,28%)]">
             O módulo de Parceiros via API ainda não foi liberado pelo Super Admin para esta empresa. Entre em contato com o suporte Axis Inova.
           </p>
+        </div>
+      )}
+
+      {limitReached && (
+        <div className="flex items-start gap-3 rounded-xl border-2 border-[hsl(38,92%,50%)]/40 bg-[hsl(38,92%,50%)]/10 p-4">
+          <AlertTriangle className="mt-0.5 h-5 w-5 shrink-0 text-[hsl(38,92%,40%)]" />
+          <div className="text-sm text-[hsl(38,92%,28%)]">
+            <p className="font-medium">
+              Limite de {entitlement.maxPartners} parceiro(s) atingido
+            </p>
+            <p>
+              Para cadastrar novos parceiros, fale com o responsável pelo sistema (Axis Inova) e solicite a liberação de mais acessos:
+              {' '}<a className="underline" href="https://api.whatsapp.com/send/?phone=5584994505536" target="_blank" rel="noopener noreferrer">(84) 9450-5536</a>
+              {' '}·{' '}<a className="underline" href="mailto:comercial@inovacodigoia.com.br">comercial@inovacodigoia.com.br</a>
+            </p>
+          </div>
         </div>
       )}
 
