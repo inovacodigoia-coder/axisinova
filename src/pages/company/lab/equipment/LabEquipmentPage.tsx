@@ -236,7 +236,12 @@ export default function LabEquipmentPage() {
                             <Monitor className="h-4 w-4" />
                           </div>
                           <div>
-                            <p className="font-bold">{item.name}</p>
+                            <div className="flex items-center gap-2">
+                              <p className="font-bold">{item.name}</p>
+                              {item.source_equipment_id && (
+                                <Badge variant="secondary" className="text-[9px] uppercase">Padrão</Badge>
+                              )}
+                            </div>
                              <p className="text-[10px] text-muted-foreground">{item.connection_type}</p>
                           </div>
                         </div>
@@ -252,14 +257,18 @@ export default function LabEquipmentPage() {
                         </div>
                      </td>
                      <td className="px-6 py-4 text-right">
-                        <div className="flex justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                          <Button variant="ghost" size="sm" className="h-8 w-8 p-0" onClick={() => handleOpenModal(item)}>
-                            <Edit2 className="h-3.5 w-3.5" />
-                          </Button>
-                          <Button variant="ghost" size="sm" className="h-8 w-8 p-0 text-red-600" onClick={() => handleDelete(item.id)}>
-                            <Trash2 className="h-3.5 w-3.5" />
-                          </Button>
-                        </div>
+                        {item.source_equipment_id ? (
+                          <span className="text-[10px] text-muted-foreground">Gerenciado pela matriz</span>
+                        ) : (
+                          <div className="flex justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                            <Button variant="ghost" size="sm" className="h-8 w-8 p-0" onClick={() => handleOpenModal(item)}>
+                              <Edit2 className="h-3.5 w-3.5" />
+                            </Button>
+                            <Button variant="ghost" size="sm" className="h-8 w-8 p-0 text-red-600" onClick={() => handleDelete(item.id)}>
+                              <Trash2 className="h-3.5 w-3.5" />
+                            </Button>
+                          </div>
+                        )}
                      </td>
                    </tr>
                  ))}

@@ -1342,6 +1342,8 @@ export type Database = {
           model: string | null
           name: string
           serial_number: string | null
+          source_equipment_id: string | null
+          updated_at: string
         }
         Insert: {
           company_id: string
@@ -1353,6 +1355,8 @@ export type Database = {
           model?: string | null
           name: string
           serial_number?: string | null
+          source_equipment_id?: string | null
+          updated_at?: string
         }
         Update: {
           company_id?: string
@@ -1364,6 +1368,8 @@ export type Database = {
           model?: string | null
           name?: string
           serial_number?: string | null
+          source_equipment_id?: string | null
+          updated_at?: string
         }
         Relationships: [
           {
@@ -3232,6 +3238,7 @@ export type Database = {
         Returns: undefined
       }
       is_company_manager: { Args: { _user_id: string }; Returns: boolean }
+      lab_equipments_master_company: { Args: never; Returns: string }
       next_attendance_order_number: {
         Args: { _company_id: string; _origin_code: string; _origin_id: string }
         Returns: string
