@@ -61,7 +61,7 @@ export function CompanyPartnersPanel({ companyId }: { companyId: string }) {
       .select('id, name, document, type, status, api_authorized, contact_name, contact_email, contact_phone, credentials')
       .eq('company_id', companyId)
       .order('created_at', { ascending: false })
-    if (!error) setRows((data || []) as PartnerRow[])
+    if (!error) setRows((data || []) as unknown as PartnerRow[])
     setLoading(false)
   }, [companyId])
 
