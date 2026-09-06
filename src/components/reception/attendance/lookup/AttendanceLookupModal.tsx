@@ -144,6 +144,7 @@ export function AttendanceLookupModal({ open, onClose, unitName, guicheName, onA
   const [search, setSearch] = useState('')
   const [patientSearch, setPatientSearch] = useState('')
   const [statusFilter, setStatusFilter] = useState<string>('all')
+  const [partnerFilter, setPartnerFilter] = useState<string>('all')
   const [datePreset, setDatePreset] = useState<DatePreset>('today')
   const [customFrom, setCustomFrom] = useState('')
   const [customTo, setCustomTo] = useState('')
@@ -153,6 +154,34 @@ export function AttendanceLookupModal({ open, onClose, unitName, guicheName, onA
   const [editing, setEditing] = useState<AttendanceOrder | null>(null)
   const [printDoc, setPrintDoc] = useState<AttendanceControlDocument | null>(null)
   const [detailsOrder, setDetailsOrder] = useState<AttendanceOrder | null>(null)
+
+  // Mapeia pedido -> parceiro (atendimentos criados via integração de parceiros)
+  const [partnerByOrderId, setPartnerByOrderId] = useState<Map<string, { id: string; name: string }>>(new Map())
+  const companyId = user?.companyId
+
+  useEffect(() => {
+    if (!open || !companyId) return
+    ;(supabase as any)
+      .from('partner_orders')
+      .select('attendance_order_id, partner_id, api_partners(id, name)')
+      .eq('company_id', companyId)
+      .not('attendance_order_id', 'is', null)
+      .then(({ data }: any) => {
+        const m = new Map<string, { id: string; name: string }>()
+        ;(data || []).forEach((row: any) => {
+          if (row.attendance_order_id && row.api_partners) {
+            m.set(row.attendance_order_id, { id: row.api_partners.id, name: row.api_partners.name })
+          }
+        })
+        setPartnerByOrderId(m)
+      })
+  }, [open, companyId])
+
+  const partnerOptions = useMemo(() => {
+    const seen = new Map<string, string>()
+    partnerByOrderId.forEach(v => seen.set(v.id, v.name))
+    return Array.from(seen.entries()).map(([id, name]) => ({ id, name }))
+  }, [partnerByOrderId])
 
   const patientById = useMemo(() => {
     const m = new Map<string, Patient>()
