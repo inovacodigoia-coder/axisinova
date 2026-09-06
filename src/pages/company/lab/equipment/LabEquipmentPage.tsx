@@ -258,7 +258,7 @@ export default function LabEquipmentPage() {
                      </td>
                      <td className="px-6 py-4 text-right">
                         {item.source_equipment_id ? (
-                          <span className="text-[10px] text-muted-foreground">Gerenciado pela matriz</span>
+                          <span className="text-[10px] text-muted-foreground">Cadastrado por outra empresa</span>
                         ) : (
                           <div className="flex justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                             <Button variant="ghost" size="sm" className="h-8 w-8 p-0" onClick={() => handleOpenModal(item)}>
