@@ -342,7 +342,28 @@ export function AttendanceLookupModal({ open, onClose, unitName, guicheName, onA
               </div>
             </div>
 
+            {partnerOptions.length > 0 && (
+              <div className="flex-1 space-y-1.5 md:max-w-[200px]">
+                <label className="text-xs font-medium text-muted-foreground ml-1">Parceiro</label>
+                <div className="relative">
+                  <select
+                    value={partnerFilter}
+                    onChange={e => setPartnerFilter(e.target.value)}
+                    className="w-full rounded-lg border border-input bg-background pl-3 pr-8 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring appearance-none"
+                  >
+                    <option value="all">Todos</option>
+                    <option value="partners">Somente Parceiros</option>
+                    {partnerOptions.map(p => (
+                      <option key={p.id} value={p.id}>{p.name}</option>
+                    ))}
+                  </select>
+                  <FlaskConical className="absolute right-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground pointer-events-none" />
+                </div>
+              </div>
+            )}
+
             <Button variant="ghost" size="icon" className="h-9 w-9 shrink-0">
+
               <Search className="h-4 w-4" />
             </Button>
           </div>
