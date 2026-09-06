@@ -10,6 +10,7 @@ import { toast } from 'sonner'
 import { supabase } from '@/integrations/supabase/client'
 import { usePartnerApiEntitlement, setPartnerApiEntitlement } from '@/stores/partnerApiEntitlementStore'
 import { CompanyEquipmentsTab } from '@/components/superadmin/CompanyEquipmentsTab'
+import { CompanyPartnersPanel } from '@/components/superadmin/CompanyPartnersPanel'
 import type { Company, PlanType, CompanyStatus } from '@/types/company.types'
 
 const ADDON_PRICE_DOCTOR = 79
@@ -392,14 +393,17 @@ export default function CompanyDetailPage() {
                     <label className="text-xs font-medium text-muted-foreground">Observação / Justificativa (opcional)</label>
                     <textarea
                       rows={2}
-                      value={partnerApi.note}
-                      onChange={e => setPartnerApiEntitlement(companyId || '', { note: e.target.value })}
+                      defaultValue={partnerApi.note}
+                      key={partnerApi.releasedAt || 'note'}
+                      onBlur={e => { void setPartnerApiEntitlement(companyId || '', { note: e.target.value }) }}
                       placeholder="Ex: Liberado a pedido do cliente via ticket #123"
                       className="mt-1 flex w-full rounded-lg border border-input bg-background px-3 py-2 text-sm"
                     />
                   </div>
+                  {companyId && <CompanyPartnersPanel companyId={companyId} />}
                 </div>
               )}
+
             </div>
           </div>
 

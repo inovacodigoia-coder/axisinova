@@ -442,6 +442,11 @@ export type Database = {
           name: string
           nome_fantasia: string | null
           numero: string | null
+          partner_api_enabled: boolean
+          partner_api_max_partners: number
+          partner_api_note: string | null
+          partner_api_released_at: string | null
+          partner_api_released_by: string | null
           plano: string | null
           segmento: string | null
           sequence_id: number
@@ -472,6 +477,11 @@ export type Database = {
           name: string
           nome_fantasia?: string | null
           numero?: string | null
+          partner_api_enabled?: boolean
+          partner_api_max_partners?: number
+          partner_api_note?: string | null
+          partner_api_released_at?: string | null
+          partner_api_released_by?: string | null
           plano?: string | null
           segmento?: string | null
           sequence_id?: number
@@ -502,6 +512,11 @@ export type Database = {
           name?: string
           nome_fantasia?: string | null
           numero?: string | null
+          partner_api_enabled?: boolean
+          partner_api_max_partners?: number
+          partner_api_note?: string | null
+          partner_api_released_at?: string | null
+          partner_api_released_by?: string | null
           plano?: string | null
           segmento?: string | null
           sequence_id?: number
