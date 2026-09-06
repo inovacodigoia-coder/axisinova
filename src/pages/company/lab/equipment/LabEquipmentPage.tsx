@@ -236,7 +236,12 @@ export default function LabEquipmentPage() {
                             <Monitor className="h-4 w-4" />
                           </div>
                           <div>
-                            <p className="font-bold">{item.name}</p>
+                            <div className="flex items-center gap-2">
+                              <p className="font-bold">{item.name}</p>
+                              {item.source_equipment_id && (
+                                <Badge variant="secondary" className="text-[9px] uppercase">Padrão</Badge>
+                              )}
+                            </div>
                              <p className="text-[10px] text-muted-foreground">{item.connection_type}</p>
                           </div>
                         </div>
