@@ -122,6 +122,7 @@ export default function CompanyDetailPage() {
 
   const tabs = [
     { id: 'overview', label: 'Visão Geral' },
+    { id: 'equipments', label: 'Equipamentos' },
     { id: 'resources', label: 'Recursos e Limites' },
     { id: 'users', label: 'Usuários' },
     { id: 'billing', label: 'Plano e Faturamento' },
