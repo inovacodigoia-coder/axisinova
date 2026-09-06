@@ -99,7 +99,7 @@ export async function setPartnerApiEntitlement(companyId: string, patch: Partial
   if (patch.note !== undefined) row.partner_api_note = patch.note
   if (Object.keys(row).length === 0) return
 
-  const { error } = await supabase.from('companies').update(row).eq('id', companyId)
+  const { error } = await supabase.from('companies').update(row as never).eq('id', companyId)
   if (error) {
     await loadPartnerApiEntitlement(companyId)
     throw new Error(error.message)
