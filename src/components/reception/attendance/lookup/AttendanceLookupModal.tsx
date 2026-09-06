@@ -499,14 +499,16 @@ export function AttendanceLookupModal({ open, onClose, unitName, guicheName, onA
 
 function OrderRowModern({ 
   order, 
-  patient, 
+  patient,
+  partnerName,
   onPrint, 
   onEdit, 
   onDetails,
   onAddProcedure 
 }: { 
   order: AttendanceOrder; 
-  patient?: Patient; 
+  patient?: Patient;
+  partnerName?: string;
   onPrint: () => void; 
   onEdit: () => void; 
   onDetails: () => void;
