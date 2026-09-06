@@ -221,6 +221,10 @@ export function AttendanceLookupModal({ open, onClose, unitName, guicheName, onA
       
       if (statusFilter !== 'all' && o.status !== statusFilter) return false
 
+      if (partnerFilter === 'partners' && !partnerByOrderId.has(o.id)) return false
+      if (partnerFilter !== 'all' && partnerFilter !== 'partners' && partnerByOrderId.get(o.id)?.id !== partnerFilter) return false
+
+
       if (term) {
         const values = [
           o.orderNumber,
@@ -243,10 +247,10 @@ export function AttendanceLookupModal({ open, onClose, unitName, guicheName, onA
 
       return true
     }).sort((a, b) => b.registeredAt.localeCompare(a.registeredAt))
-  }, [orders, patientById, search, patientSearch, statusFilter, isAdmin, dateRange, companySequenceId])
+  }, [orders, patientById, search, patientSearch, statusFilter, partnerFilter, partnerByOrderId, isAdmin, dateRange, companySequenceId])
 
 
-  useEffect(() => { setVisibleCount(pageSize) }, [pageSize, datePreset, customFrom, customTo, statusFilter, search, patientSearch])
+  useEffect(() => { setVisibleCount(pageSize) }, [pageSize, datePreset, customFrom, customTo, statusFilter, partnerFilter, search, patientSearch])
 
   const visible = useMemo(() => filtered.slice(0, visibleCount), [filtered, visibleCount])
   const hasMore = filtered.length > visibleCount
