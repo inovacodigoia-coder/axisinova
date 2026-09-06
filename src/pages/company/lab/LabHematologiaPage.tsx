@@ -245,6 +245,39 @@ export default function LabHematologiaPage() {
   const [examStatus, setExamStatus] = useState<string | null>(null)
   const [instrumentKeys, setInstrumentKeys] = useState<Set<string>>(new Set())
   const [saving, setSaving] = useState(false)
+  const [equipments, setEquipments] = useState<any[]>([])
+  const [equipmentId, setEquipmentId] = useState<string>('')
+
+  // Equipamentos do tipo Hematológico cadastrados/compartilhados para a empresa
+  useEffect(() => {
+    let active = true
+    ;(async () => {
+      const cid = resolveCompanyId(user?.companyId)
+      if (!cid) return
+      const { data } = await supabase
+        .from('lab_equipments' as any)
+        .select('id, name, serial_number, connection_type, manufacturer')
+        .eq('company_id', cid)
+        .order('name')
+      if (!active || !data) return
+      const hema = (data as any[]).filter((e) => /hematol/i.test(String(e.connection_type || '')))
+      setEquipments(hema)
+      setEquipmentId((current) => {
+        if (current && hema.some((e) => e.id === current)) return current
+        const p8000 = hema.find((e) => String(e.serial_number || '').toLowerCase() === 'p8000')
+        return p8000?.id || hema[0]?.id || ''
+      })
+    })()
+    return () => { active = false }
+  }, [user?.companyId])
+
+  const selectedEquipment = useMemo(
+    () => equipments.find((e) => e.id === equipmentId) || null,
+    [equipments, equipmentId],
+  )
+  /** Somente o layout do p8000 (Yumizen P8000) está implementado hoje. */
+  const hasEquipmentLayout =
+    equipments.length === 0 || String(selectedEquipment?.serial_number || '').toLowerCase() === 'p8000'
 
   // Catálogo de Exames (mesma fonte usada na Digitação de Resultados)
   useEffect(() => {
@@ -257,6 +290,7 @@ export default function LabHematologiaPage() {
     })()
     return () => { active = false }
   }, [])
+
 
 
   // Exames de hematologia reais da empresa do usuário logado
