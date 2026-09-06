@@ -5,7 +5,6 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
-import { Switch } from '@/components/ui/switch'
 import { cn } from '@/lib/utils'
 import { toast } from 'sonner'
 import type { ApiPartner, ApiPartnerType } from '@/types/api-partners.types'
@@ -39,14 +38,13 @@ export function NewPartnerWizard({ open, onOpenChange, companyId, onCreated }: P
   const [contactEmail, setContactEmail] = useState('')
   const [contactPhone, setContactPhone] = useState('')
   const [notes, setNotes] = useState('')
-  const [apiAuthorized, setApiAuthorized] = useState(false)
   const [credential, setCredential] = useState<GeneratedCredential | null>(null)
 
   useEffect(() => {
     if (open) {
       setStep(1); setType('laboratorio'); setName(''); setDocument(''); setContactName('')
       setContactEmail(''); setContactPhone(''); setNotes('')
-      setApiAuthorized(false); setCredential(null)
+      setCredential(null)
     }
   }, [open])
 
@@ -75,7 +73,7 @@ export function NewPartnerWizard({ open, onOpenChange, companyId, onCreated }: P
         contactPhone: contactPhone.trim() || undefined,
         notes: notes.trim() || undefined,
         authMethod: 'oauth2',
-        apiAuthorized,
+        apiAuthorized: false,
         status: 'active',
       }, credential)
       toast.success('Parceiro cadastrado com sucesso')
@@ -198,19 +196,14 @@ export function NewPartnerWizard({ open, onOpenChange, companyId, onCreated }: P
 
           {step === 3 && (
             <>
-              <div className="flex items-start justify-between gap-4 rounded-xl border p-4">
-                <div>
-                  <p className="text-sm font-medium">Autorizado a criar pedidos via API</p>
-                  <p className="text-xs text-muted-foreground">Desligado por padrão — precisa ser ativado explicitamente.</p>
+              <div className="flex items-start gap-3 rounded-xl border-2 border-[hsl(38,92%,50%)]/40 bg-[hsl(38,92%,50%)]/10 p-4">
+                <Info className="mt-0.5 h-4 w-4 shrink-0 text-[hsl(38,92%,40%)]" />
+                <div className="text-sm text-[hsl(38,92%,28%)]">
+                  <p className="font-medium">O parceiro será criado como Pendente</p>
+                  <p className="text-xs">
+                    O envio de pedidos via API só é liberado após o desbloqueio pelo responsável do sistema (Super Admin).
+                  </p>
                 </div>
-                <Switch checked={apiAuthorized} onCheckedChange={setApiAuthorized} />
-              </div>
-
-              <div className="flex items-start gap-2 rounded-xl border border-primary/30 bg-primary/5 p-4 text-sm">
-                <Info className="mt-0.5 h-4 w-4 shrink-0 text-primary" />
-                <p className="text-muted-foreground">
-                  A liberação definitiva do uso da API também depende da autorização do Super Admin para esta empresa.
-                </p>
               </div>
 
               <div className="rounded-xl border">
@@ -224,7 +217,7 @@ export function NewPartnerWizard({ open, onOpenChange, companyId, onCreated }: P
                     ['E-mail', contactEmail || '—'],
                     ['Telefone', contactPhone || '—'],
                     ['Autenticação', 'OAuth2 Client Credentials'],
-                    ['Autorizado via API', apiAuthorized ? 'Sim' : 'Não (pendente)'],
+                    ['Autorizado via API', 'Pendente (aguarda liberação do Super Admin)'],
                   ].map(([k, v]) => (
                     <div key={k as string} className="flex justify-between gap-3 border-b border-dashed border-border/60 pb-1 last:border-0">
                       <dt className="text-muted-foreground">{k}</dt>

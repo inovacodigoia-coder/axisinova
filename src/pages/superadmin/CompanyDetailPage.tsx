@@ -10,6 +10,7 @@ import { toast } from 'sonner'
 import { supabase } from '@/integrations/supabase/client'
 import { usePartnerApiEntitlement, setPartnerApiEntitlement } from '@/stores/partnerApiEntitlementStore'
 import { CompanyEquipmentsTab } from '@/components/superadmin/CompanyEquipmentsTab'
+import { CompanyPartnersPanel } from '@/components/superadmin/CompanyPartnersPanel'
 import type { Company, PlanType, CompanyStatus } from '@/types/company.types'
 
 const ADDON_PRICE_DOCTOR = 79
