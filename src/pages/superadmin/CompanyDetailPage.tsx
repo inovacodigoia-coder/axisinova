@@ -223,6 +223,10 @@ export default function CompanyDetailPage() {
         </div>
       )}
 
+      {activeTab === 'equipments' && (
+        <CompanyEquipmentsTab companyId={companyId || ''} />
+      )}
+
       {activeTab === 'resources' && (
         <ResourcesTab company={company} plan={plan || null} companyId={companyId || ''} />
       )}
