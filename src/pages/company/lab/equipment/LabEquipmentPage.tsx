@@ -239,7 +239,7 @@ export default function LabEquipmentPage() {
                             <div className="flex items-center gap-2">
                               <p className="font-bold">{item.name}</p>
                               {item.source_equipment_id && (
-                                <Badge variant="secondary" className="text-[9px] uppercase">Padrão</Badge>
+                                <Badge variant="secondary" className="text-[9px] uppercase">Compartilhado</Badge>
                               )}
                             </div>
                              <p className="text-[10px] text-muted-foreground">{item.connection_type}</p>
@@ -258,7 +258,7 @@ export default function LabEquipmentPage() {
                      </td>
                      <td className="px-6 py-4 text-right">
                         {item.source_equipment_id ? (
-                          <span className="text-[10px] text-muted-foreground">Gerenciado pela matriz</span>
+                          <span className="text-[10px] text-muted-foreground">Cadastrado por outra empresa</span>
                         ) : (
                           <div className="flex justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                             <Button variant="ghost" size="sm" className="h-8 w-8 p-0" onClick={() => handleOpenModal(item)}>
