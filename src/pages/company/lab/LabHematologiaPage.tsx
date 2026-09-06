@@ -638,17 +638,41 @@ export default function LabHematologiaPage() {
               ))}
             </SelectContent>
           </Select>
+          {equipments.length > 0 && (
+            <Select value={equipmentId} onValueChange={setEquipmentId}>
+              <SelectTrigger aria-label="Selecionar equipamento de hematologia" className="h-8 w-[220px] text-xs">
+                <SelectValue placeholder="Equipamento" />
+              </SelectTrigger>
+              <SelectContent>
+                {equipments.map((equipment) => (
+                  <SelectItem key={equipment.id} value={equipment.id}>
+                    {equipment.name}{equipment.serial_number ? ` · ${equipment.serial_number}` : ''}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          )}
           <Button variant="outline" size="sm" className="h-8 gap-2" onClick={() => refresh()}>
             <RefreshCcw className="h-3.5 w-3.5" /> Atualizar
           </Button>
         </div>
       </div>
 
-      {!selected ? (
+      {!hasEquipmentLayout ? (
+        <div className="rounded-lg border border-dashed border-amber-400/60 bg-amber-50 p-10 text-center dark:bg-amber-950/20">
+          <AlertTriangle className="mx-auto mb-3 h-8 w-8 text-amber-500" />
+          <h2 className="text-sm font-bold">Layout em desenvolvimento</h2>
+          <p className="mx-auto mt-1 max-w-md text-sm text-muted-foreground">
+            O layout e a visualização de resultados para o equipamento
+            {selectedEquipment?.name ? ` "${selectedEquipment.name}"` : ''} ainda estão em desenvolvimento.
+            Selecione outro equipamento para continuar a digitação.
+          </p>
+        </div>
+      ) : !selected ? (
         <div className="rounded-lg border border-dashed border-border bg-card p-10 text-center text-sm text-muted-foreground">
           {loading ? 'Carregando pedidos...' : 'Nenhum exame de hematologia encontrado para o filtro selecionado.'}
         </div>
-      ) : (
+
       <section className="overflow-hidden rounded-lg border border-border bg-card shadow-sm">
         <header className="bg-sidebar px-4 py-3 text-sidebar-foreground">
           <div className="flex flex-col gap-3 xl:flex-row xl:items-center xl:justify-between">
