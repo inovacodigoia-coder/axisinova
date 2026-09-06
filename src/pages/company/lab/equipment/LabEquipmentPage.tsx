@@ -239,7 +239,7 @@ export default function LabEquipmentPage() {
                             <div className="flex items-center gap-2">
                               <p className="font-bold">{item.name}</p>
                               {item.source_equipment_id && (
-                                <Badge variant="secondary" className="text-[9px] uppercase">Padrão</Badge>
+                                <Badge variant="secondary" className="text-[9px] uppercase">Compartilhado</Badge>
                               )}
                             </div>
                              <p className="text-[10px] text-muted-foreground">{item.connection_type}</p>
