@@ -11,6 +11,16 @@ import {
   DialogFooter,
   DialogDescription,
 } from "@/components/ui/dialog"
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog"
 import { Beaker, Plus, Edit2, Trash2, Loader2, Search, X, Download, Upload } from 'lucide-react'
 import * as XLSX from 'xlsx'
 import { toast } from 'sonner'
@@ -26,6 +36,9 @@ export default function LabMethodsSection() {
   const [saving, setSaving] = useState(false)
   const [searchTerm, setSearchTerm] = useState('')
   const [importing, setImporting] = useState(false)
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false)
+  const [methodToDelete, setMethodToDelete] = useState<any>(null)
+  const [deleting, setDeleting] = useState(false)
   const fileInputRef = React.useRef<HTMLInputElement>(null)
   const { user } = useAuth()
 
@@ -206,21 +219,30 @@ export default function LabMethodsSection() {
     }
   }
 
-  const handleDelete = async (id: string) => {
-    if (!confirm('Tem certeza que deseja excluir esta metodologia?')) return
+  const openDeleteDialog = (method: any) => {
+    setMethodToDelete(method)
+    setIsDeleteDialogOpen(true)
+  }
 
+  const handleConfirmDelete = async () => {
+    if (!methodToDelete) return
     try {
+      setDeleting(true)
       const { error } = await supabase
         .from('lab_methods' as any)
         .delete()
-        .eq('id', id)
+        .eq('id', methodToDelete.id)
       
       if (error) throw error
       toast.success('Metodologia excluída com sucesso')
-      fetchMethods()
+      setIsDeleteDialogOpen(false)
+      setMethodToDelete(null)
+      await fetchMethods()
     } catch (error) {
       console.error('Error deleting method:', error)
       toast.error('Erro ao excluir metodologia')
+    } finally {
+      setDeleting(false)
     }
   }
 
@@ -384,7 +406,7 @@ export default function LabMethodsSection() {
                 <Button variant="ghost" size="sm" onClick={() => handleOpenDialog(m)} className="h-8 w-8 p-0">
                   <Edit2 className="h-3.5 w-3.5" />
                 </Button>
-                <Button variant="ghost" size="sm" onClick={() => handleDelete(m.id)} className="h-8 w-8 p-0 text-red-500 hover:text-red-600 hover:bg-red-50">
+                <Button variant="ghost" size="sm" onClick={() => openDeleteDialog(m)} className="h-8 w-8 p-0 text-red-500 hover:text-red-600 hover:bg-red-50">
                   <Trash2 className="h-3.5 w-3.5" />
                 </Button>
               </div>
@@ -511,6 +533,29 @@ export default function LabMethodsSection() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Excluir metodologia?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Tem certeza que deseja excluir a metodologia <strong>{methodToDelete?.name}</strong>?
+              Esta ação não poderá ser desfeita.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={deleting}>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleConfirmDelete}
+              disabled={deleting}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {deleting ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
+              Excluir
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   )
 }
