@@ -25,6 +25,8 @@ export default function LabMethodsSection() {
   const [editingMethod, setEditingMethod] = useState<any>(null)
   const [saving, setSaving] = useState(false)
   const [searchTerm, setSearchTerm] = useState('')
+  const [importing, setImporting] = useState(false)
+  const fileInputRef = React.useRef<HTMLInputElement>(null)
   const { user } = useAuth()
 
   const [formData, setFormData] = useState({
