@@ -135,25 +135,7 @@ export default function LabMethodsSection() {
       
       if (error) throw error
 
-      if (!data || data.length === 0) {
-        // Insert defaults if empty
-        const defaults = [
-          { name: 'Colorimétrico', description: 'Método colorimétrico clássico', company_id: user?.companyId },
-          { name: 'Glicose-oxidase', description: 'Método enzimático GOD-PAP', company_id: user?.companyId },
-          { name: 'Hexoquinase', description: 'Método enzimático Hexoquinase', company_id: user?.companyId },
-          { name: 'Quimioluminescência', description: 'Imunoensaio quimioluminescente', company_id: user?.companyId }
-        ]
-        
-        const { data: inserted, error: insertError } = await supabase
-          .from('lab_methods' as any)
-          .insert(defaults)
-          .select()
-        
-        if (insertError) throw insertError
-        setMethods(inserted || [])
-      } else {
-        setMethods(data)
-      }
+      setMethods(data || [])
     } catch (error) {
       console.error('Error fetching methods:', error)
       toast.error('Erro ao carregar metodologias')
