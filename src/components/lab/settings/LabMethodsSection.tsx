@@ -11,7 +11,8 @@ import {
   DialogFooter,
   DialogDescription,
 } from "@/components/ui/dialog"
-import { Beaker, Plus, Edit2, Trash2, Loader2, Search, X } from 'lucide-react'
+import { Beaker, Plus, Edit2, Trash2, Loader2, Search, X, Download, Upload } from 'lucide-react'
+import * as XLSX from 'xlsx'
 import { toast } from 'sonner'
 import { supabase } from '@/integrations/supabase/client'
 import { useAuth } from '@/context/AuthContext'
