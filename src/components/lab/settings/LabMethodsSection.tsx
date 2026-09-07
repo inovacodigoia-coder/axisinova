@@ -299,7 +299,9 @@ export default function LabMethodsSection() {
       }
 
       if (toInsert.length > 0) {
-        const { error } = await supabase.from('lab_methods' as any).insert(toInsert)
+        const { error } = await supabase
+          .from('lab_methods' as any)
+          .upsert(toInsert, { onConflict: 'company_id,name', ignoreDuplicates: true })
         if (error) throw error
       }
 
