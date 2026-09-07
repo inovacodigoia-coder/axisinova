@@ -406,7 +406,7 @@ export default function LabMethodsSection() {
                 <Button variant="ghost" size="sm" onClick={() => handleOpenDialog(m)} className="h-8 w-8 p-0">
                   <Edit2 className="h-3.5 w-3.5" />
                 </Button>
-                <Button variant="ghost" size="sm" onClick={() => handleDelete(m.id)} className="h-8 w-8 p-0 text-red-500 hover:text-red-600 hover:bg-red-50">
+                <Button variant="ghost" size="sm" onClick={() => openDeleteDialog(m)} className="h-8 w-8 p-0 text-red-500 hover:text-red-600 hover:bg-red-50">
                   <Trash2 className="h-3.5 w-3.5" />
                 </Button>
               </div>
