@@ -303,9 +303,10 @@ export default function LabMethodsSection() {
       }
 
       if (toInsert.length > 0) {
+        // Inserção simples: duplicados por (empresa, nome) já foram filtrados acima
         const { error } = await supabase
           .from('lab_methods' as any)
-          .upsert(toInsert, { onConflict: 'company_id,name', ignoreDuplicates: true })
+          .insert(toInsert)
         if (error) throw error
       }
 
