@@ -219,21 +219,30 @@ export default function LabMethodsSection() {
     }
   }
 
-  const handleDelete = async (id: string) => {
-    if (!confirm('Tem certeza que deseja excluir esta metodologia?')) return
+  const openDeleteDialog = (method: any) => {
+    setMethodToDelete(method)
+    setIsDeleteDialogOpen(true)
+  }
 
+  const handleConfirmDelete = async () => {
+    if (!methodToDelete) return
     try {
+      setDeleting(true)
       const { error } = await supabase
         .from('lab_methods' as any)
         .delete()
-        .eq('id', id)
+        .eq('id', methodToDelete.id)
       
       if (error) throw error
       toast.success('Metodologia excluída com sucesso')
-      fetchMethods()
+      setIsDeleteDialogOpen(false)
+      setMethodToDelete(null)
+      await fetchMethods()
     } catch (error) {
       console.error('Error deleting method:', error)
       toast.error('Erro ao excluir metodologia')
+    } finally {
+      setDeleting(false)
     }
   }
 
