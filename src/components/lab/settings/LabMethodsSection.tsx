@@ -316,9 +316,27 @@ export default function LabMethodsSection() {
           <h3 className="text-lg font-bold">Metodologias Analíticas</h3>
           <p className="text-xs text-muted-foreground">Gerencie as metodologias utilizadas nos exames laboratoriais.</p>
         </div>
-        <Button size="sm" onClick={() => handleOpenDialog()} className="gradient-bg text-white gap-2">
-          <Plus className="h-4 w-4" /> Nova Metodologia
-        </Button>
+        <div className="flex flex-wrap items-center gap-2">
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept=".xlsx,.xls,.csv"
+            className="hidden"
+            onChange={handleImportFile}
+          />
+          <Button size="sm" variant="ghost" onClick={handleDownloadTemplate} className="gap-2 text-xs">
+            Modelo
+          </Button>
+          <Button size="sm" variant="outline" onClick={handleExport} className="gap-2">
+            <Download className="h-4 w-4" /> Exportar
+          </Button>
+          <Button size="sm" variant="outline" onClick={() => fileInputRef.current?.click()} disabled={importing} className="gap-2">
+            {importing ? <Loader2 className="h-4 w-4 animate-spin" /> : <Upload className="h-4 w-4" />} Importar Planilha
+          </Button>
+          <Button size="sm" onClick={() => handleOpenDialog()} className="gradient-bg text-white gap-2">
+            <Plus className="h-4 w-4" /> Nova Metodologia
+          </Button>
+        </div>
       </div>
 
       <div className="relative">
