@@ -36,6 +36,9 @@ export default function LabMethodsSection() {
   const [saving, setSaving] = useState(false)
   const [searchTerm, setSearchTerm] = useState('')
   const [importing, setImporting] = useState(false)
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false)
+  const [methodToDelete, setMethodToDelete] = useState<any>(null)
+  const [deleting, setDeleting] = useState(false)
   const fileInputRef = React.useRef<HTMLInputElement>(null)
   const { user } = useAuth()
 
