@@ -11,7 +11,8 @@ import {
   DialogFooter,
   DialogDescription,
 } from "@/components/ui/dialog"
-import { Beaker, Plus, Edit2, Trash2, Loader2, Search, X } from 'lucide-react'
+import { Beaker, Plus, Edit2, Trash2, Loader2, Search, X, Download, Upload } from 'lucide-react'
+import * as XLSX from 'xlsx'
 import { toast } from 'sonner'
 import { supabase } from '@/integrations/supabase/client'
 import { useAuth } from '@/context/AuthContext'
@@ -24,6 +25,8 @@ export default function LabMethodsSection() {
   const [editingMethod, setEditingMethod] = useState<any>(null)
   const [saving, setSaving] = useState(false)
   const [searchTerm, setSearchTerm] = useState('')
+  const [importing, setImporting] = useState(false)
+  const fileInputRef = React.useRef<HTMLInputElement>(null)
   const { user } = useAuth()
 
   const [formData, setFormData] = useState({
@@ -221,6 +224,86 @@ export default function LabMethodsSection() {
     }
   }
 
+  const handleExport = () => {
+    if (methods.length === 0) {
+      toast.error('Nenhuma metodologia para exportar')
+      return
+    }
+    const rows = methods.map(m => ({ Nome: m.name, 'Descrição': m.description || '' }))
+    const ws = XLSX.utils.json_to_sheet(rows)
+    ws['!cols'] = [{ wch: 32 }, { wch: 50 }]
+    const wb = XLSX.utils.book_new()
+    XLSX.utils.book_append_sheet(wb, ws, 'Metodologias')
+    XLSX.writeFile(wb, `metodologias_${new Date().toISOString().slice(0, 10)}.xlsx`)
+    toast.success(`${methods.length} metodologia(s) exportada(s)`)
+  }
+
+  const handleDownloadTemplate = () => {
+    const ws = XLSX.utils.json_to_sheet([{ Nome: 'Colorimétrico', 'Descrição': 'Método colorimétrico clássico' }])
+    ws['!cols'] = [{ wch: 32 }, { wch: 50 }]
+    const wb = XLSX.utils.book_new()
+    XLSX.utils.book_append_sheet(wb, ws, 'Metodologias')
+    XLSX.writeFile(wb, 'modelo_metodologias.xlsx')
+  }
+
+  const handleImportFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    e.target.value = ''
+    if (!file) return
+    try {
+      setImporting(true)
+      const buf = await file.arrayBuffer()
+      const wb = XLSX.read(buf, { type: 'array' })
+      const sheet = wb.Sheets[wb.SheetNames[0]]
+      const rows: any[] = XLSX.utils.sheet_to_json(sheet, { defval: '' })
+
+      const parsed = rows
+        .map(r => {
+          const name = String(r.Nome ?? r.nome ?? r.NOME ?? r.Metodologia ?? '').trim()
+          const description = String(r['Descrição'] ?? r.Descricao ?? r.descricao ?? r['descrição'] ?? '').trim()
+          return { name, description }
+        })
+        .filter(r => r.name)
+
+      if (parsed.length === 0) {
+        toast.error('Planilha sem metodologias válidas (coluna "Nome" obrigatória)')
+        return
+      }
+
+      const existing = new Map(methods.map(m => [m.name.toLowerCase(), m]))
+      const toInsert: any[] = []
+      let updated = 0
+
+      for (const row of parsed) {
+        const found = existing.get(row.name.toLowerCase())
+        if (found) {
+          if (row.description && row.description !== (found.description || '')) {
+            const { error } = await supabase
+              .from('lab_methods' as any)
+              .update({ description: row.description, updated_at: new Date().toISOString() })
+              .eq('id', found.id)
+            if (!error) updated++
+          }
+        } else {
+          toInsert.push({ name: row.name, description: row.description, company_id: user?.companyId })
+        }
+      }
+
+      if (toInsert.length > 0) {
+        const { error } = await supabase.from('lab_methods' as any).insert(toInsert)
+        if (error) throw error
+      }
+
+      toast.success(`Importação concluída: ${toInsert.length} nova(s), ${updated} atualizada(s)`)
+      fetchMethods()
+    } catch (err: any) {
+      console.error('Erro ao importar metodologias:', err)
+      toast.error(`Erro ao importar planilha: ${err.message || 'formato inválido'}`)
+    } finally {
+      setImporting(false)
+    }
+  }
+
   const filteredMethods = methods.filter(m => 
     m.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
     (m.description && m.description.toLowerCase().includes(searchTerm.toLowerCase()))
@@ -233,9 +316,27 @@ export default function LabMethodsSection() {
           <h3 className="text-lg font-bold">Metodologias Analíticas</h3>
           <p className="text-xs text-muted-foreground">Gerencie as metodologias utilizadas nos exames laboratoriais.</p>
         </div>
-        <Button size="sm" onClick={() => handleOpenDialog()} className="gradient-bg text-white gap-2">
-          <Plus className="h-4 w-4" /> Nova Metodologia
-        </Button>
+        <div className="flex flex-wrap items-center gap-2">
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept=".xlsx,.xls,.csv"
+            className="hidden"
+            onChange={handleImportFile}
+          />
+          <Button size="sm" variant="ghost" onClick={handleDownloadTemplate} className="gap-2 text-xs">
+            Modelo
+          </Button>
+          <Button size="sm" variant="outline" onClick={handleExport} className="gap-2">
+            <Download className="h-4 w-4" /> Exportar
+          </Button>
+          <Button size="sm" variant="outline" onClick={() => fileInputRef.current?.click()} disabled={importing} className="gap-2">
+            {importing ? <Loader2 className="h-4 w-4 animate-spin" /> : <Upload className="h-4 w-4" />} Importar Planilha
+          </Button>
+          <Button size="sm" onClick={() => handleOpenDialog()} className="gradient-bg text-white gap-2">
+            <Plus className="h-4 w-4" /> Nova Metodologia
+          </Button>
+        </div>
       </div>
 
       <div className="relative">
