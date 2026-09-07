@@ -257,20 +257,29 @@ export default function LabMethodsSection() {
       const sheet = wb.Sheets[wb.SheetNames[0]]
       const rows: any[] = XLSX.utils.sheet_to_json(sheet, { defval: '' })
 
-      const parsed = rows
-        .map(r => {
-          const name = String(r.Nome ?? r.nome ?? r.NOME ?? r.Metodologia ?? '').trim()
-          const description = String(r['Descrição'] ?? r.Descricao ?? r.descricao ?? r['descrição'] ?? '').trim()
-          return { name, description }
-        })
-        .filter(r => r.name)
+      // Dedup por nome (ignora maiúsculas/minúsculas e acentos em branco)
+      const seen = new Map<string, { name: string; description: string }>()
+      for (const r of rows) {
+        const name = String(r.Nome ?? r.nome ?? r.NOME ?? r.Metodologia ?? '').trim()
+        const description = String(r['Descrição'] ?? r.Descricao ?? r.descricao ?? r['descrição'] ?? '').trim()
+        if (name && !seen.has(name.toLowerCase())) {
+          seen.set(name.toLowerCase(), { name, description })
+        }
+      }
+      const parsed = [...seen.values()]
 
       if (parsed.length === 0) {
         toast.error('Planilha sem metodologias válidas (coluna "Nome" obrigatória)')
         return
       }
 
-      const existing = new Map(methods.map(m => [m.name.toLowerCase(), m]))
+      // Recarrega do banco para garantir que nomes já existentes não sejam reinseridos
+      const { data: current } = await supabase
+        .from('lab_methods' as any)
+        .select('id, name, description')
+        .eq('company_id', user?.companyId)
+      const existing = new Map(((current as any[]) || []).map(m => [String(m.name).trim().toLowerCase(), m]))
+
       const toInsert: any[] = []
       let updated = 0
 
@@ -290,7 +299,9 @@ export default function LabMethodsSection() {
       }
 
       if (toInsert.length > 0) {
-        const { error } = await supabase.from('lab_methods' as any).insert(toInsert)
+        const { error } = await supabase
+          .from('lab_methods' as any)
+          .upsert(toInsert, { onConflict: 'company_id,name', ignoreDuplicates: true })
         if (error) throw error
       }
 
