@@ -893,8 +893,9 @@ function PrinterLabelSection() {
               style={{
                 transform: `rotate(${config.rotation}deg)`,
                 transition: 'all 0.2s ease',
-                width: `${config.widthMm}mm`,
-                height: `${config.heightMm}mm`,
+                width: `${renderConfig.widthMm}mm`,
+                height: `${renderConfig.heightMm}mm`,
+
                 display: 'flex',
               }}
             >
