@@ -768,7 +768,7 @@ function PrinterLabelSection() {
         toast.success(r.mensagem || 'Etiqueta de teste enviada para a impressora.')
         return
       }
-      await printImagemNoNavegador(el, copies)
+      printNoNavegador(copies)
     } catch (e: any) {
       toast.error(e?.message || 'Falha ao gerar a etiqueta de teste.')
     } finally {
