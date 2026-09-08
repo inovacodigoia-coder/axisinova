@@ -8,7 +8,6 @@ import { toast } from 'sonner'
 import { SampleLabel } from '@/components/lab/print/SampleLabel'
 import { ServidorImpressaoStatus } from '@/components/print/ServidorImpressaoStatus'
 import { servidorImpressaoAtivo, imprimirDireto, TIPOS_DOCUMENTO } from '@/lib/impressaoLocal'
-import html2canvas from 'html2canvas'
 import { gerarPdfEtiquetas } from '@/lib/labelPdf'
 import { useLabelConfig } from '@/hooks/useLabelConfig'
 import { useLabSettings } from '@/hooks/useLabSettings'
@@ -39,59 +38,49 @@ const TEST_LABEL = {
 }
 
 async function printViaBrowser(node: HTMLElement, widthMm: number, heightMm: number) {
-  // Rasteriza a etiqueta e imprime dentro de um iframe com a página no tamanho exato
-  // da etiqueta (sem blob/nova aba, que podem ser bloqueados por extensões do navegador).
-  const rect = node.getBoundingClientRect()
-  const canvas = await html2canvas(node, {
-    scale: 4,
-    backgroundColor: '#ffffff',
-    logging: false,
-    useCORS: true,
-    width: rect.width,
-    height: rect.height,
-    windowWidth: Math.ceil(rect.width),
-    windowHeight: Math.ceil(rect.height),
-    scrollX: 0,
-    scrollY: 0,
-  })
-  const dataUrl = canvas.toDataURL('image/png')
+  // Usa o MESMO PDF gerado para o servidor de impressão (tamanho exato da etiqueta)
+  // e o envia para a caixa de impressão do navegador dentro de um iframe oculto.
+  const blob = await gerarPdfEtiquetas([node], widthMm, heightMm)
+  const url = URL.createObjectURL(blob)
 
   const iframe = document.createElement('iframe')
   iframe.style.position = 'fixed'
   iframe.style.right = '0'
   iframe.style.bottom = '0'
-  iframe.style.width = '0'
-  iframe.style.height = '0'
+  iframe.style.width = '1px'
+  iframe.style.height = '1px'
+  iframe.style.opacity = '0'
   iframe.style.border = '0'
+  iframe.src = url
   document.body.appendChild(iframe)
 
-  const doc = iframe.contentDocument
-  if (!doc) {
-    document.body.removeChild(iframe)
-    throw new Error('Não foi possível abrir a impressão do navegador.')
+  let printed = false
+  const cleanup = () => setTimeout(() => {
+    if (iframe.parentNode) document.body.removeChild(iframe)
+    URL.revokeObjectURL(url)
+  }, 60000)
+
+  iframe.onload = () => {
+    try {
+      iframe.contentWindow?.focus()
+      iframe.contentWindow?.print()
+      printed = true
+      cleanup()
+    } catch {
+      /* tratado abaixo */
+    }
   }
 
-  doc.open()
-  doc.write(`<!doctype html><html><head><meta charset="utf-8" /><title>Etiqueta</title>
-    <style>
-      @page { size: ${widthMm}mm ${heightMm}mm; margin: 0; }
-      html, body { margin: 0; padding: 0; background: #fff; }
-      img { display: block; width: ${widthMm}mm; height: ${heightMm}mm; object-fit: contain; }
-    </style></head>
-    <body><img src="${dataUrl}" /></body></html>`)
-  doc.close()
-
-  const run = () => {
-    iframe.contentWindow?.focus()
-    iframe.contentWindow?.print()
-    setTimeout(() => {
-      if (iframe.parentNode) document.body.removeChild(iframe)
-    }, 60000)
-  }
-
-  const img = doc.querySelector('img')
-  if (img && !img.complete) img.onload = () => setTimeout(run, 150)
-  else setTimeout(run, 300)
+  // Se o navegador bloquear a visualização do PDF no iframe, baixa o arquivo pronto para impressão.
+  setTimeout(() => {
+    if (printed) return
+    const a = document.createElement('a')
+    a.href = url
+    a.download = `etiqueta-teste-${widthMm}x${heightMm}mm.pdf`
+    a.click()
+    toast.info('Etiqueta gerada em PDF no tamanho exato — abra o arquivo baixado para imprimir.')
+    cleanup()
+  }, 2500)
 }
 
 export function LabPrinterLabelSection() {
