@@ -1,0 +1,1 @@
+ALTER TABLE public.lab_settings ADD COLUMN IF NOT EXISTS label_config jsonb;
