@@ -145,19 +145,17 @@ export function SampleLabelsPrintModal({
         <div className="flex-1 overflow-y-auto bg-muted/20 p-6">
           <style>{`
             @media print {
-              @page { size: 50mm 30mm; margin: 0; }
-              body.printing-receipt #receipt-print-portal { width: 50mm !important; }
+              @page { size: ${pageW}mm ${pageH}mm; margin: 0; }
+              body.printing-receipt #receipt-print-portal { width: ${pageW}mm !important; }
               body.printing-receipt #receipt-print-portal > div { gap: 0 !important; }
               body.printing-receipt #receipt-print-portal .label-sheet {
-                width: 50mm !important;
-                height: 30mm !important;
+                width: ${pageW}mm !important;
+                height: ${pageH}mm !important;
                 overflow: hidden !important;
                 page-break-inside: avoid !important;
                 break-inside: avoid !important;
               }
               body.printing-receipt #receipt-print-portal .label-sheet > div {
-                width: 50mm !important;
-                height: 30mm !important;
                 border: none !important;
                 box-shadow: none !important;
               }
@@ -165,27 +163,36 @@ export function SampleLabelsPrintModal({
             }
           `}</style>
           <div id="labels-print-root" className="flex flex-col items-center gap-3">
-            {labels.map((l, idx) => (
+            {printJobs.map((job, idx) => (
               <div
-                key={l.sampleId}
-                className={`label-sheet ${idx < labels.length - 1 ? 'print:break-after-page' : ''}`}
-                style={idx === labels.length - 1 ? { breakAfter: 'avoid', pageBreakAfter: 'avoid' } : undefined}
+                key={`${job.sampleId}-${job.copy}`}
+                className={`label-sheet flex items-center justify-center bg-white ${idx < printJobs.length - 1 ? 'print:break-after-page' : ''}`}
+                style={{
+                  width: `${pageW}mm`,
+                  height: `${pageH}mm`,
+                  overflow: 'hidden',
+                  ...(idx === printJobs.length - 1 ? { breakAfter: 'avoid', pageBreakAfter: 'avoid' } : {}),
+                }}
               >
-                <SampleLabel
-                  orderNumber={orderNumber}
-                  patientName={patientName}
-                  birthDate={birthDate ? new Date(birthDate).toLocaleDateString('pt-BR') : ''}
-                  material={l.material}
-                  tube={l.tube}
-                  workbench={l.workbench}
-                  sampleCode={l.sampleId}
-                  printDate={printDate}
-                  isUrgent={isUrgent}
-                  labelIndex={l.labelIndex}
-                  originSigla={originSigla}
-                  examRefs={l.examRefs}
-                  labName={labName}
-                />
+                <div style={{ transform: `rotate(${layout.rotation}deg)`, transformOrigin: 'center center' }}>
+                  <SampleLabel
+                    orderNumber={orderNumber}
+                    patientName={patientName}
+                    birthDate={birthDate ? new Date(birthDate).toLocaleDateString('pt-BR') : ''}
+                    material={job.material}
+                    tube={job.tube}
+                    workbench={job.workbench}
+                    sampleCode={job.sampleId}
+                    printDate={printDate}
+                    isUrgent={isUrgent}
+                    labelIndex={job.labelIndex}
+                    originSigla={originSigla}
+                    examRefs={job.examRefs}
+                    labName={labName}
+                    widthMm={layout.widthMm}
+                    heightMm={layout.heightMm}
+                  />
+                </div>
               </div>
             ))}
             {!labels.length && (
