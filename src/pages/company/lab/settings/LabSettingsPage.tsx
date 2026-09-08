@@ -717,7 +717,7 @@ function PrinterLabelSection() {
       if (!node) throw new Error('Pré-visualização indisponível.')
       const ativo = await servidorImpressaoAtivo()
       if (ativo) {
-        const pdf = await gerarPdfEtiquetas([node], pageW, pageH)
+        const pdf = await gerarPdfEtiquetas([node], draft.widthMm, draft.heightMm)
         const r = await imprimirDireto(TIPOS_DOCUMENTO.etiquetaCliente, pdf)
         toast.success(r.mensagem || 'Etiqueta teste enviada para a impressora.')
         return
