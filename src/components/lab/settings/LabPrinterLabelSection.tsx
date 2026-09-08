@@ -8,6 +8,7 @@ import { toast } from 'sonner'
 import { SampleLabel } from '@/components/lab/print/SampleLabel'
 import { ServidorImpressaoStatus } from '@/components/print/ServidorImpressaoStatus'
 import { servidorImpressaoAtivo, imprimirDireto, TIPOS_DOCUMENTO } from '@/lib/impressaoLocal'
+import html2canvas from 'html2canvas'
 import { gerarPdfEtiquetas } from '@/lib/labelPdf'
 import { useLabelConfig } from '@/hooks/useLabelConfig'
 import { useLabSettings } from '@/hooks/useLabSettings'
@@ -38,10 +39,15 @@ const TEST_LABEL = {
 }
 
 async function printViaBrowser(node: HTMLElement, widthMm: number, heightMm: number) {
-  // Gera o PDF no tamanho exato da etiqueta e envia para a impressão do navegador,
-  // evitando que o conteúdo seja reduzido dentro de uma folha padrão (A4).
-  const blob = await gerarPdfEtiquetas([node], widthMm, heightMm)
-  const url = URL.createObjectURL(blob)
+  // Rasteriza a etiqueta e imprime dentro de um iframe com a página no tamanho exato
+  // da etiqueta (sem blob/nova aba, que podem ser bloqueados por extensões do navegador).
+  const canvas = await html2canvas(node, {
+    scale: 4,
+    backgroundColor: '#ffffff',
+    logging: false,
+    useCORS: true,
+  })
+  const dataUrl = canvas.toDataURL('image/png')
 
   const iframe = document.createElement('iframe')
   iframe.style.position = 'fixed'
@@ -50,26 +56,35 @@ async function printViaBrowser(node: HTMLElement, widthMm: number, heightMm: num
   iframe.style.width = '0'
   iframe.style.height = '0'
   iframe.style.border = '0'
-  iframe.src = url
   document.body.appendChild(iframe)
 
-  const cleanup = () => {
+  const doc = iframe.contentDocument
+  if (!doc) {
+    document.body.removeChild(iframe)
+    throw new Error('Não foi possível abrir a impressão do navegador.')
+  }
+
+  doc.open()
+  doc.write(`<!doctype html><html><head><meta charset="utf-8" /><title>Etiqueta</title>
+    <style>
+      @page { size: ${widthMm}mm ${heightMm}mm; margin: 0; }
+      html, body { margin: 0; padding: 0; background: #fff; }
+      img { display: block; width: ${widthMm}mm; height: ${heightMm}mm; }
+    </style></head>
+    <body><img src="${dataUrl}" /></body></html>`)
+  doc.close()
+
+  const run = () => {
+    iframe.contentWindow?.focus()
+    iframe.contentWindow?.print()
     setTimeout(() => {
       if (iframe.parentNode) document.body.removeChild(iframe)
-      URL.revokeObjectURL(url)
     }, 60000)
   }
 
-  iframe.onload = () => {
-    try {
-      iframe.contentWindow?.focus()
-      iframe.contentWindow?.print()
-      cleanup()
-    } catch {
-      window.open(url, '_blank', 'noopener,noreferrer')
-      cleanup()
-    }
-  }
+  const img = doc.querySelector('img')
+  if (img && !img.complete) img.onload = () => setTimeout(run, 150)
+  else setTimeout(run, 300)
 }
 
 export function LabPrinterLabelSection() {
