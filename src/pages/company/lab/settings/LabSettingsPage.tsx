@@ -770,11 +770,21 @@ function PrinterLabelSection() {
             </select>
           </div>
 
+          <div className="space-y-2">
+            <Label>Cópias por etiqueta</Label>
+            <Input type="number" min={1} max={5} value={copies} onChange={(e) => setCopies(Math.max(1, Number(e.target.value) || 1))} />
+          </div>
+
           <div className="pt-4 flex gap-2">
             <Button variant="outline" size="sm" className="flex-1 gap-2">
                <Plus className="h-3.5 w-3.5" /> Duplicar Slot
             </Button>
-            <Button variant="outline" size="sm" className="flex-1 gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              className="flex-1 gap-2"
+              onClick={() => { setWidth(50); setHeight(30); setRotation('0'); setCopies(1); setPreset(null) }}
+            >
                <History className="h-3.5 w-3.5" /> Resetar
             </Button>
           </div>
