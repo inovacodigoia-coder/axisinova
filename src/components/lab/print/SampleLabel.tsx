@@ -92,31 +92,46 @@ export const SampleLabel = ({
   const barH = Math.max(8, Math.round(barcodeHeightPx));
   const barWidth = Math.max(0.6, Math.min(2, ((widthMm - marginMm * 2) / 47) * 1.1));
 
-  // Ajuste automático: mede o conteúdo real e escala para preencher a etiqueta
+  // Ajuste automático: mede o conteúdo real e escala para preencher toda a etiqueta
   const boxRef = useRef<HTMLDivElement>(null);
   const contentRef = useRef<HTMLDivElement>(null);
   const [fit, setFit] = useState(1);
 
   useLayoutEffect(() => {
-    if (!autoFit) { setFit(1); return; }
     const box = boxRef.current;
     const content = contentRef.current;
     if (!box || !content) return;
+    if (!autoFit) { setFit(f => (f === 1 ? f : 1)); return; }
+
     const availW = box.clientWidth;
     const availH = box.clientHeight;
-    // mede a altura natural do conteúdo (sem escala) para evitar medição circular
-    const prev = content.getAttribute('style') || '';
-    content.style.transform = 'none';
-    content.style.width = `${availW}px`;
-    content.style.height = 'auto';
-    const ch = content.scrollHeight;
-    content.setAttribute('style', prev);
-    if (!availW || !availH || !ch) return;
-    const next = availH / ch;
-    const clamped = Math.max(0.4, Math.min(3, next));
-    if (Math.abs(clamped - fit) > 0.01) setFit(clamped);
+    if (!availW || !availH) return;
+
+    const prevStyle = content.getAttribute('style') || '';
+    const measureAt = (widthPx: number) => {
+      content.style.transform = 'none';
+      content.style.width = `${widthPx}px`;
+      content.style.height = 'auto';
+      return content.scrollHeight;
+    };
+
+    // itera: com largura availW/scale, a altura natural h deve satisfazer h*scale = availH
+    let scale = 1;
+    for (let i = 0; i < 6; i++) {
+      const h = measureAt(availW / scale);
+      if (!h) break;
+      const next = Math.max(0.35, Math.min(4, availH / h));
+      if (Math.abs(next - scale) < 0.005) { scale = next; break; }
+      scale = next;
+    }
+    // garante que não estoura a altura disponível
+    const finalH = measureAt(availW / scale);
+    if (finalH && finalH * scale > availH) scale = availH / finalH;
+
+    content.setAttribute('style', prevStyle);
+    if (Math.abs(scale - fit) > 0.005) setFit(scale);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [autoFit, widthMm, heightMm, marginMm, barcodeHeightPx, sampleId, patientName, refsText, material, tube, workbench, f.header, f.code, f.patient, f.small, f.footer, fit]);
+  }, [autoFit, widthMm, heightMm, marginMm, barcodeHeightPx, sampleId, patientName, refsText, material, tube, workbench, birthDate, labName, f.header, f.code, f.patient, f.small, f.footer]);
 
   return (
     <div
@@ -126,18 +141,19 @@ export const SampleLabel = ({
         height: `${heightMm}mm`,
         padding: `${marginMm}mm`,
       }}
-      className="box-border bg-white border border-slate-200 text-black font-mono overflow-hidden"
+      className="box-border bg-white text-black font-mono overflow-hidden"
     >
     <div
       ref={contentRef}
       style={{
-        width: fit === 1 ? '100%' : `${100 / fit}%`,
-        height: fit === 1 ? '100%' : `${100 / fit}%`,
+        width: `${100 / fit}%`,
+        height: `${100 / fit}%`,
         transform: fit === 1 ? undefined : `scale(${fit})`,
         transformOrigin: 'top left',
       }}
       className="flex flex-col justify-between gap-[1px]"
     >
+
       {/* Cabeçalho: urgência / bancada / data */}
       <div
         className="flex shrink-0 items-center gap-1 overflow-hidden font-bold uppercase"
