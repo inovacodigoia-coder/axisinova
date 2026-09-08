@@ -102,9 +102,11 @@ export function LabPrinterLabelSection() {
       if (!node) throw new Error('Preview indisponível.')
       const ativo = await servidorImpressaoAtivo()
       if (!ativo) {
-        toast.error('Servidor de impressão local não detectado. Abra o programa e tente novamente.')
+        printViaBrowser(node, sheetW, sheetH)
+        toast.info('Servidor de impressão local não detectado — abrindo a impressão do navegador.')
         return
       }
+
       const pdf = await gerarPdfEtiquetas([node], sheetW, sheetH)
       const r = await imprimirDireto(TIPOS_DOCUMENTO.etiquetaCliente, pdf)
       toast.success(r.mensagem || 'Etiqueta de teste enviada para a impressora.')
