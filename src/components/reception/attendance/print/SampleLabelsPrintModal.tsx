@@ -52,6 +52,10 @@ export function SampleLabelsPrintModal({
   // Garante que cada nova impressão use a configuração mais recente
   useEffect(() => { if (open) void reloadLayout() }, [open, reloadLayout])
 
+  const printJobs = labels.flatMap((l) =>
+    Array.from({ length: Math.max(1, layout.copies) }, (_, copy) => ({ ...l, copy })),
+  )
+
   const rotated = Math.abs(layout.rotation % 180) === 90
   const pageW = rotated ? layout.heightMm : layout.widthMm
   const pageH = rotated ? layout.widthMm : layout.heightMm
