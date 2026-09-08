@@ -3,6 +3,7 @@ import { useLabelConfig, DEFAULT_LABEL_CONFIG, type LabelConfig } from '@/hooks/
 import { useLabSettings } from '@/hooks/useLabSettings'
 import { SampleLabel } from '@/components/lab/print/SampleLabel'
 import { gerarPdfEtiquetas } from '@/lib/labelPdf'
+import html2canvas from 'html2canvas'
 import { servidorImpressaoAtivo, imprimirDireto, TIPOS_DOCUMENTO } from '@/lib/impressaoLocal'
 import { useSearchParams } from 'react-router-dom'
 import { Card } from '@/components/ui/card'
