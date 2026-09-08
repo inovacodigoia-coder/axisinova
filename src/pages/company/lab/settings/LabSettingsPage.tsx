@@ -681,6 +681,15 @@ function PrinterLabelSection() {
 
   const set = (patch: Partial<LabelConfig>) => setConfig({ ...config, ...patch })
 
+  // Com rotação de 90°/270° a etiqueta é desenhada com as medidas invertidas,
+  // para que ao girar ocupe exatamente a etiqueta física configurada.
+  const rotNorm = ((Number(config.rotation) % 360) + 360) % 360
+  const isQuarter = rotNorm === 90 || rotNorm === 270
+  const renderConfig: LabelConfig = isQuarter
+    ? { ...config, widthMm: config.heightMm, heightMm: config.widthMm }
+    : config
+
+
   const applyPreset = (p: typeof presets[number]) => {
     setConfig({ ...config, widthMm: p.w, heightMm: p.h, rotation: p.r, preset: p.name })
     toast.info(`Preset ${p.name} aplicado. Clique em Salvar para gravar.`)
@@ -711,10 +720,12 @@ function PrinterLabelSection() {
     const sheet = previewRef.current?.querySelector('.label-test-sheet') as HTMLElement | null
     if (!sheet) throw new Error('Pré-visualização indisponível para o teste.')
 
-    const rot = ((Number(config.rotation) % 360) + 360) % 360
-    const quarter = rot === 90 || rot === 270
-    const pageW = quarter ? config.heightMm : config.widthMm
-    const pageH = quarter ? config.widthMm : config.heightMm
+    // A etiqueta física mantém sempre a largura/altura configuradas.
+    // Quando há rotação de 90°, o conteúdo já é renderizado com as dimensões
+    // invertidas, então após girar ele preenche exatamente a etiqueta.
+    const pageW = config.widthMm
+    const pageH = config.heightMm
+
 
     const d = window.document
     const portal = d.createElement('div')
@@ -888,7 +899,14 @@ function PrinterLabelSection() {
           >
             <div
               className="label-test-sheet"
-              style={{ transform: `rotate(${config.rotation}deg)`, transition: 'all 0.2s ease' }}
+              style={{
+                transform: `rotate(${config.rotation}deg)`,
+                transition: 'all 0.2s ease',
+                width: `${renderConfig.widthMm}mm`,
+                height: `${renderConfig.heightMm}mm`,
+
+                display: 'flex',
+              }}
             >
               <SampleLabel
                 orderNumber="190-00"
@@ -902,7 +920,7 @@ function PrinterLabelSection() {
                 labelIndex={1}
                 examRefs={['H', 'GLI']}
                 labName={settings?.lab_name || 'LABORATÓRIO'}
-                config={config}
+                config={renderConfig}
               />
             </div>
           </div>
@@ -911,16 +929,14 @@ function PrinterLabelSection() {
           </p>
           <style>{`
             @media print {
-              @page {
-                size: ${((Number(config.rotation) % 360) + 360) % 360 === 90 || ((Number(config.rotation) % 360) + 360) % 360 === 270 ? `${config.heightMm}mm ${config.widthMm}mm` : `${config.widthMm}mm ${config.heightMm}mm`};
-                margin: 0;
-              }
+              @page { size: ${config.widthMm}mm ${config.heightMm}mm; margin: 0; }
               body.printing-receipt #receipt-print-portal .label-test-sheet > div {
                 border: none !important;
                 box-shadow: none !important;
               }
             }
           `}</style>
+
 
         </div>
       </div>
