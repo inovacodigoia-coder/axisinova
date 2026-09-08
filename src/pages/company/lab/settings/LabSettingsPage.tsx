@@ -711,10 +711,12 @@ function PrinterLabelSection() {
     const sheet = previewRef.current?.querySelector('.label-test-sheet') as HTMLElement | null
     if (!sheet) throw new Error('Pré-visualização indisponível para o teste.')
 
-    const rot = ((Number(config.rotation) % 360) + 360) % 360
-    const quarter = rot === 90 || rot === 270
-    const pageW = quarter ? config.heightMm : config.widthMm
-    const pageH = quarter ? config.widthMm : config.heightMm
+    // A etiqueta física mantém sempre a largura/altura configuradas.
+    // Quando há rotação de 90°, o conteúdo já é renderizado com as dimensões
+    // invertidas, então após girar ele preenche exatamente a etiqueta.
+    const pageW = config.widthMm
+    const pageH = config.heightMm
+
 
     const d = window.document
     const portal = d.createElement('div')
