@@ -37,10 +37,12 @@ const TEST_LABEL = {
   examRefs: ['H'],
 }
 
-function printViaBrowser(node: HTMLElement, widthMm: number, heightMm: number) {
-  const styles = Array.from(document.querySelectorAll('style, link[rel="stylesheet"]'))
-    .map(el => el.outerHTML)
-    .join('\n')
+async function printViaBrowser(node: HTMLElement, widthMm: number, heightMm: number) {
+  // Gera o PDF no tamanho exato da etiqueta e envia para a impressão do navegador,
+  // evitando que o conteúdo seja reduzido dentro de uma folha padrão (A4).
+  const blob = await gerarPdfEtiquetas([node], widthMm, heightMm)
+  const url = URL.createObjectURL(blob)
+
   const iframe = document.createElement('iframe')
   iframe.style.position = 'fixed'
   iframe.style.right = '0'
@@ -48,25 +50,26 @@ function printViaBrowser(node: HTMLElement, widthMm: number, heightMm: number) {
   iframe.style.width = '0'
   iframe.style.height = '0'
   iframe.style.border = '0'
+  iframe.src = url
   document.body.appendChild(iframe)
-  const doc = iframe.contentDocument
-  if (!doc) { document.body.removeChild(iframe); return }
-  doc.open()
-  doc.write(`<!doctype html><html><head><meta charset="utf-8" />${styles}
-    <style>
-      @page { size: ${widthMm}mm ${heightMm}mm; margin: 0; }
-      html, body { margin: 0; padding: 0; background: #fff; }
-      .label-sheet { width: ${widthMm}mm; height: ${heightMm}mm; display: flex; align-items: center; justify-content: center; overflow: hidden; }
-    </style>
-  </head><body><div class="label-sheet">${node.innerHTML}</div></body></html>`)
-  doc.close()
-  const run = () => {
-    iframe.contentWindow?.focus()
-    iframe.contentWindow?.print()
-    setTimeout(() => { iframe.parentNode && document.body.removeChild(iframe) }, 1000)
+
+  const cleanup = () => {
+    setTimeout(() => {
+      if (iframe.parentNode) document.body.removeChild(iframe)
+      URL.revokeObjectURL(url)
+    }, 60000)
   }
-  if (doc.readyState === 'complete') setTimeout(run, 300)
-  else iframe.onload = () => setTimeout(run, 300)
+
+  iframe.onload = () => {
+    try {
+      iframe.contentWindow?.focus()
+      iframe.contentWindow?.print()
+      cleanup()
+    } catch {
+      window.open(url, '_blank', 'noopener,noreferrer')
+      cleanup()
+    }
+  }
 }
 
 export function LabPrinterLabelSection() {
@@ -134,7 +137,7 @@ export function LabPrinterLabelSection() {
       if (!node) throw new Error('Preview indisponível.')
       const ativo = await servidorImpressaoAtivo()
       if (!ativo) {
-        printViaBrowser(node, sheetW, sheetH)
+        await printViaBrowser(node, sheetW, sheetH)
         toast.info('Servidor de impressão local não detectado — abrindo a impressão do navegador.')
         return
       }
