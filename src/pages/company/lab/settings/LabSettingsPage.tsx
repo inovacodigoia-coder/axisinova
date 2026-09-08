@@ -699,44 +699,62 @@ function PrinterLabelSection() {
     toast.info('Valores padrão restaurados. Clique em Salvar para gravar.')
   }
 
-  const printPreviewNoNavegador = () => {
-    const el = previewRef.current?.querySelector('.label-test-sheet') as HTMLElement | null
-    if (!el) { window.print(); return }
-    const d = window.document
-    const portal = d.createElement('div')
-    portal.id = 'receipt-print-portal'
-    portal.innerHTML = el.outerHTML
-    d.body.appendChild(portal)
-    d.body.classList.add('printing-receipt')
-    const cleanup = () => {
-      d.body.classList.remove('printing-receipt')
-      portal.remove()
-      window.removeEventListener('afterprint', cleanup)
+  /** Elemento real da etiqueta (sem a rotação do container de preview) */
+  const getLabelElement = (): HTMLElement | null => {
+    const sheet = previewRef.current?.querySelector('.label-test-sheet') as HTMLElement | null
+    return (sheet?.firstElementChild as HTMLElement | null) ?? sheet
+  }
+
+  /** Abre o mesmo PDF gerado para o servidor local na janela de impressão do navegador */
+  const printPdfNoNavegador = async (pdf: Blob) => {
+    const url = URL.createObjectURL(pdf)
+    const frame = window.document.createElement('iframe')
+    frame.style.position = 'fixed'
+    frame.style.right = '0'
+    frame.style.bottom = '0'
+    frame.style.width = '1px'
+    frame.style.height = '1px'
+    frame.style.opacity = '0'
+    frame.src = url
+    window.document.body.appendChild(frame)
+    frame.onload = () => {
+      setTimeout(() => {
+        try {
+          frame.contentWindow?.focus()
+          frame.contentWindow?.print()
+        } catch {
+          window.open(url, '_blank')
+        }
+      }, 200)
+      setTimeout(() => {
+        frame.remove()
+        URL.revokeObjectURL(url)
+      }, 60000)
     }
-    window.addEventListener('afterprint', cleanup)
-    setTimeout(() => {
-      window.print()
-      setTimeout(cleanup, 800)
-    }, 60)
   }
 
   const handleTestPrint = async () => {
     if (testando) return
     setTestando(true)
     try {
-      const el = previewRef.current?.querySelector('.label-test-sheet') as HTMLElement | null
+      const el = getLabelElement()
+      if (!el) {
+        toast.error('Pré-visualização indisponível para o teste.')
+        return
+      }
+      const copies = Math.max(1, Number(config.copies) || 1)
+      const pdf = await gerarPdfEtiquetas(Array(copies).fill(el), config.widthMm, config.heightMm)
+
       const ativo = await servidorImpressaoAtivo()
-      if (ativo && el) {
-        const copies = Math.max(1, Number(config.copies) || 1)
-        const pdf = await gerarPdfEtiquetas(Array(copies).fill(el), config.widthMm, config.heightMm)
+      if (ativo) {
         const r = await imprimirDireto(TIPOS_DOCUMENTO.etiquetaCliente, pdf)
         toast.success(r.mensagem || 'Etiqueta de teste enviada para a impressora.')
         return
       }
-      printPreviewNoNavegador()
+      await printPdfNoNavegador(pdf)
+      toast.info('Abrindo a impressão do navegador com a etiqueta gerada.')
     } catch (e: any) {
-      toast.error(e?.message || 'Falha na impressão pelo servidor local. Usando o navegador.')
-      printPreviewNoNavegador()
+      toast.error(e?.message || 'Falha ao gerar a etiqueta de teste.')
     } finally {
       setTestando(false)
     }
