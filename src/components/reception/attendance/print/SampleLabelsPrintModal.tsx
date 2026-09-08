@@ -72,21 +72,42 @@ export function SampleLabelsPrintModal({
     }, 60)
   }
 
+  const printPdfNoNavegador = async (pdf: Blob) => {
+    const url = URL.createObjectURL(pdf)
+    const frame = window.document.createElement('iframe')
+    frame.style.cssText = 'position:fixed;right:0;bottom:0;width:1px;height:1px;opacity:0'
+    frame.src = url
+    window.document.body.appendChild(frame)
+    frame.onload = () => {
+      setTimeout(() => {
+        try {
+          frame.contentWindow?.focus()
+          frame.contentWindow?.print()
+        } catch {
+          window.open(url, '_blank')
+        }
+      }, 200)
+      setTimeout(() => { frame.remove(); URL.revokeObjectURL(url) }, 60000)
+    }
+  }
+
   const handlePrint = async () => {
     if (enviando) return
     setEnviando(true)
     try {
-      const ativo = await servidorImpressaoAtivo()
-      if (ativo) {
-        const nodes = Array.from(
-          window.document.querySelectorAll<HTMLElement>('#labels-print-root .label-sheet > div'),
-        )
-        if (nodes.length) {
-          const pdf = await gerarPdfEtiquetas(nodes, config.widthMm, config.heightMm)
+      const nodes = Array.from(
+        window.document.querySelectorAll<HTMLElement>('#labels-print-root .label-sheet > div'),
+      )
+      if (nodes.length) {
+        const pdf = await gerarPdfEtiquetas(nodes, config.widthMm, config.heightMm)
+        const ativo = await servidorImpressaoAtivo()
+        if (ativo) {
           const r = await imprimirDireto(TIPOS_DOCUMENTO.etiquetaCliente, pdf)
           toast.success(r.mensagem || 'Etiquetas enviadas para a impressora.')
           return
         }
+        await printPdfNoNavegador(pdf)
+        return
       }
       printNavegador()
     } catch (err) {
