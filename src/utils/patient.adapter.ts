@@ -131,7 +131,9 @@ export function patientToDb(p: Partial<Patient>): Record<string, any> {
   if (p.responsible !== undefined) out.responsible = p.responsible || null
   if (p.clinicalData !== undefined) {
     out.clinical_data = p.clinicalData
-    if (p.clinicalData.bloodType) out.blood_type = p.clinicalData.bloodType
+    out.blood_type = p.clinicalData.bloodType && p.clinicalData.bloodType !== 'unknown'
+      ? p.clinicalData.bloodType
+      : null
     out.allergies = p.clinicalData.allergies?.map(a => a.substance) || []
   }
   if (p.referralSource !== undefined) out.referral_source = p.referralSource || null

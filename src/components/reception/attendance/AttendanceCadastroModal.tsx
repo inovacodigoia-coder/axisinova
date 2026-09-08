@@ -184,7 +184,7 @@ export function AttendanceCadastroModal({
       const { patientToDb } = await import('@/utils/patient.adapter')
       const { supabase } = await import('@/integrations/supabase/client')
       
-      const payload = patientToDb(state.tempPatient)
+      const payload = patientToDb({ ...state.patient, ...state.tempPatient })
       const { data, error } = await supabase
         .from('patients')
         .update(payload as any)

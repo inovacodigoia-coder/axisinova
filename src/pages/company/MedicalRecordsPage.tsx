@@ -50,7 +50,7 @@ export default function MedicalRecordsPage() {
     const mapped: Patient[] = patientsData.map(p => ({
       id: p.id, name: p.name, cpf: p.cpf,
       birthDate: new Date(p.birth_date).toLocaleDateString('pt-BR'),
-      phone: p.phone, bloodType: p.blood_type || 'O+',
+      phone: p.phone, bloodType: p.blood_type || '',
       allergies: p.allergies || [],
       totalVisits: countMap[p.id]?.count || 0,
       lastVisit: countMap[p.id] ? new Date(countMap[p.id].lastDate).toLocaleDateString('pt-BR') : '-',
@@ -143,7 +143,7 @@ export default function MedicalRecordsPage() {
             <div className="space-y-3 text-sm">
               <div className="flex justify-between"><span className="text-muted-foreground">Nascimento</span><span className="text-foreground">{selectedPatient.birthDate}</span></div>
               <div className="flex justify-between"><span className="text-muted-foreground">Telefone</span><span className="text-foreground">{selectedPatient.phone}</span></div>
-              <div className="flex justify-between"><span className="text-muted-foreground">Tipo Sanguíneo</span><span className="font-bold text-destructive">{selectedPatient.bloodType}</span></div>
+              <div className="flex justify-between"><span className="text-muted-foreground">Tipo Sanguíneo</span><span className="font-bold text-destructive">{selectedPatient.bloodType || '—'}</span></div>
               <div className="flex justify-between"><span className="text-muted-foreground">Total de Visitas</span><span className="text-foreground">{selectedPatient.totalVisits}</span></div>
               {selectedPatient.allergies.length > 0 && (
                 <div>
