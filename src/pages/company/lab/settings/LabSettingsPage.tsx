@@ -3,7 +3,6 @@ import { useLabelConfig, DEFAULT_LABEL_CONFIG, type LabelConfig } from '@/hooks/
 import { useLabSettings } from '@/hooks/useLabSettings'
 import { SampleLabel } from '@/components/lab/print/SampleLabel'
 import { gerarPdfEtiquetas } from '@/lib/labelPdf'
-import html2canvas from 'html2canvas'
 import { servidorImpressaoAtivo, imprimirDireto, TIPOS_DOCUMENTO } from '@/lib/impressaoLocal'
 import { useSearchParams } from 'react-router-dom'
 import { Card } from '@/components/ui/card'
@@ -716,83 +715,79 @@ function PrinterLabelSection() {
   }
 
   /**
-   * Fotografa o mesmo elemento usado pela preview e o imprime sem reconstruir
-   * o layout. Assim fontes, código de barras, margens e espaçamentos ficam
-   * visualmente idênticos aos exibidos no editor.
+   * Clona o mesmo elemento exibido na preview (com os estilos da página) dentro
+   * de um iframe isolado e imprime. Sem canvas/blob: o resultado é exatamente o
+   * que aparece na Preview em Tempo Real.
    */
   const printNoNavegador = async (copies: number) => {
     const label = getLabelElement()
     if (!label) throw new Error('Pré-visualização indisponível para o teste.')
 
-    const rect = label.getBoundingClientRect()
-    const canvas = await html2canvas(label, {
-      scale: 4,
-      backgroundColor: '#ffffff',
-      logging: false,
-      useCORS: true,
-      width: rect.width,
-      height: rect.height,
-      windowWidth: Math.ceil(rect.width),
-      windowHeight: Math.ceil(rect.height),
-      scrollX: 0,
-      scrollY: 0,
-    })
-    const image = canvas.toDataURL('image/png')
     const frame = document.createElement('iframe')
     frame.setAttribute('aria-hidden', 'true')
-    frame.style.cssText = 'position:fixed;width:0;height:0;border:0;right:0;bottom:0;visibility:hidden;'
+    frame.style.cssText = 'position:fixed;right:0;bottom:0;width:1px;height:1px;border:0;opacity:0;'
     document.body.appendChild(frame)
 
-    const printDocument = frame.contentDocument
-    const printWindow = frame.contentWindow
-    if (!printDocument || !printWindow) {
+    const doc = frame.contentDocument
+    const win = frame.contentWindow
+    if (!doc || !win) {
       frame.remove()
       throw new Error('Não foi possível preparar a impressão.')
     }
 
-    const pages = Array.from({ length: copies }, () => (
-      `<div class="page"><img src="${image}" alt="Etiqueta de teste" /></div>`
-    )).join('')
+    // Estilos da aplicação (Tailwind + tokens) para manter a aparência
+    const headStyles = Array.from(
+      document.querySelectorAll('link[rel="stylesheet"], style')
+    )
+      .map((n) => n.outerHTML)
+      .join('\n')
 
-    printDocument.open()
-    printDocument.write(`<!doctype html><html><head><meta charset="utf-8"><title>Etiqueta de teste</title><style>
-      @page { size: ${config.widthMm}mm ${config.heightMm}mm; margin: 0; }
-      * { box-sizing: border-box; }
-      html, body { margin: 0; padding: 0; background: #fff; }
-      .page {
-        width: ${config.widthMm}mm;
-        height: ${config.heightMm}mm;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        overflow: hidden;
-        break-after: page;
-        page-break-after: always;
-      }
-      .page:last-child { break-after: auto; page-break-after: auto; }
-      img {
-        display: block;
-        width: ${renderConfig.widthMm}mm;
-        height: ${renderConfig.heightMm}mm;
-        max-width: none;
-        transform: rotate(${config.rotation}deg);
-        transform-origin: center;
-      }
-    </style></head><body>${pages}</body></html>`)
-    printDocument.close()
+    doc.open()
+    doc.write(`<!doctype html><html><head><meta charset="utf-8"><title>Etiqueta de teste</title>${headStyles}
+      <style>
+        @page { size: ${config.widthMm}mm ${config.heightMm}mm; margin: 0; }
+        html, body { margin:0; padding:0; background:#fff; }
+        .page {
+          width: ${config.widthMm}mm;
+          height: ${config.heightMm}mm;
+          display: flex; align-items: center; justify-content: center;
+          overflow: hidden;
+          page-break-after: always; break-after: page;
+        }
+        .page:last-child { page-break-after: auto; break-after: auto; }
+        .rot {
+          width: ${renderConfig.widthMm}mm;
+          height: ${renderConfig.heightMm}mm;
+          transform: rotate(${config.rotation}deg);
+          transform-origin: center;
+          display: flex;
+        }
+      </style></head><body></body></html>`)
+    doc.close()
 
-    const firstImage = printDocument.querySelector('img')
-    if (firstImage instanceof HTMLImageElement && !firstImage.complete) {
-      await new Promise<void>((resolve) => {
-        firstImage.onload = () => resolve()
-        firstImage.onerror = () => resolve()
-      })
+    for (let i = 0; i < copies; i++) {
+      const page = doc.createElement('div')
+      page.className = 'page'
+      const rot = doc.createElement('div')
+      rot.className = 'rot'
+      rot.appendChild(doc.importNode(label, true))
+      page.appendChild(rot)
+      doc.body.appendChild(page)
     }
 
-    printWindow.focus()
-    printWindow.print()
-    window.setTimeout(() => frame.remove(), 1500)
+    // Aguarda estilos/fontes carregarem antes de imprimir
+    await new Promise<void>((resolve) => window.setTimeout(resolve, 350))
+    try {
+      await (doc as any).fonts?.ready
+    } catch {
+      /* noop */
+    }
+
+    win.focus()
+    win.print()
+    window.setTimeout(() => frame.remove(), 2000)
   }
+
 
 
   const handleTestPrint = async () => {
