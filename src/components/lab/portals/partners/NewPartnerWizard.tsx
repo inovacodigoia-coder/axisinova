@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
-import { Building2, FlaskConical, ShieldCheck, Stethoscope, Lock, Info, Check } from 'lucide-react'
+import { Building2, FlaskConical, ShieldCheck, Stethoscope, Hospital, Lock, Info, Check } from 'lucide-react'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -20,6 +20,7 @@ const TYPE_OPTIONS: { value: ApiPartnerType; icon: typeof Building2 }[] = [
   { value: 'clinica', icon: Building2 },
   { value: 'convenio', icon: ShieldCheck },
   { value: 'medico', icon: Stethoscope },
+  { value: 'hospital', icon: Hospital },
 ]
 
 interface Props {
@@ -116,7 +117,7 @@ export function NewPartnerWizard({ open, onOpenChange, companyId, onCreated }: P
             <>
               <div className="space-y-2">
                 <Label>Tipo de Parceiro *</Label>
-                <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+                <div className="grid grid-cols-2 gap-3 sm:grid-cols-5">
                   {TYPE_OPTIONS.map(({ value, icon: Icon }) => (
                     <button
                       key={value}

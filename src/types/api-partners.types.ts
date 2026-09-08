@@ -1,4 +1,4 @@
-export type ApiPartnerType = 'laboratorio' | 'clinica' | 'convenio' | 'medico'
+export type ApiPartnerType = 'laboratorio' | 'clinica' | 'convenio' | 'medico' | 'hospital'
 export type ApiPartnerStatus = 'active' | 'inactive'
 export type ApiPartnerAuthorization = 'authorized' | 'pending' | 'blocked'
 export type ApiPartnerAuthMethod = 'oauth2'
@@ -35,6 +35,7 @@ export const PARTNER_TYPE_LABEL: Record<ApiPartnerType, string> = {
   clinica: 'Clínica',
   convenio: 'Convênio',
   medico: 'Médico Solicitante',
+  hospital: 'Hospital',
 }
 
 export const PARTNER_TYPE_ICON: Record<ApiPartnerType, string> = {
@@ -42,6 +43,7 @@ export const PARTNER_TYPE_ICON: Record<ApiPartnerType, string> = {
   clinica: 'Building2',
   convenio: 'ShieldCheck',
   medico: 'Stethoscope',
+  hospital: 'Hospital',
 }
 
 export function partnerAuthorizationState(p: ApiPartner): ApiPartnerAuthorization {

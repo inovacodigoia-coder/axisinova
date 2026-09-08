@@ -154,6 +154,7 @@ export default function PartnerDetailPage() {
                   <SelectItem value="clinica">Clínica</SelectItem>
                   <SelectItem value="convenio">Convênio</SelectItem>
                   <SelectItem value="medico">Médico Solicitante</SelectItem>
+                  <SelectItem value="hospital">Hospital</SelectItem>
                 </SelectContent>
               </Select>
             </div>

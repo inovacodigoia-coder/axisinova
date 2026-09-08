@@ -46,6 +46,7 @@ const TYPE_LABEL: Record<string, string> = {
   clinica: 'Clínica',
   convenio: 'Convênio',
   medico: 'Médico Solicitante',
+  hospital: 'Hospital',
 }
 
 export function CompanyPartnersPanel({ companyId }: { companyId: string }) {
