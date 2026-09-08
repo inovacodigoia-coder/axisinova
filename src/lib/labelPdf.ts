@@ -15,19 +15,16 @@ export async function gerarPdfEtiquetas(
 
   for (let i = 0; i < elements.length; i++) {
     const el = elements[i]
-    const rect = el.getBoundingClientRect()
     const canvas = await html2canvas(el, {
       scale: 4,
       backgroundColor: '#ffffff',
       logging: false,
       useCORS: true,
-      width: rect.width,
-      height: rect.height,
-      windowWidth: Math.ceil(rect.width),
-      windowHeight: Math.ceil(rect.height),
-      scrollX: 0,
-      scrollY: 0,
     })
+
+    if (!canvas.width || !canvas.height) {
+      throw new Error('Não foi possível capturar o conteúdo da etiqueta.')
+    }
 
     const img = canvas.toDataURL('image/png')
     if (i > 0) pdf.addPage([widthMm, heightMm], orientation)
