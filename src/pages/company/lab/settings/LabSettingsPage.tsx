@@ -893,21 +893,25 @@ function PrinterLabelSection() {
 
         <div className="space-y-4">
           <Label className="text-xs font-bold text-muted-foreground uppercase">Prévia real da etiqueta</Label>
-          <div className="bg-muted/50 rounded-xl p-6 flex items-center justify-center border-2 border-dashed border-border min-h-[300px] overflow-auto">
-            <div
-              id="label-test-sheet"
-              className="label-sheet flex items-center justify-center bg-white shadow-sm"
-              style={{ width: `${pageW}mm`, height: `${pageH}mm`, overflow: 'hidden' }}
-            >
-              <div style={{ transform: `rotate(${draft.rotation}deg)`, transformOrigin: 'center center' }}>
+          <div className="bg-muted/40 rounded-xl p-6 flex items-center justify-center border-2 border-dashed border-border min-h-[300px] overflow-auto">
+            <div className="flex flex-col items-center gap-2">
+              <div
+                id="label-test-sheet"
+                className="label-sheet bg-white shadow-sm ring-1 ring-primary/40"
+                style={{ width: `${draft.widthMm}mm`, height: `${draft.heightMm}mm`, overflow: 'hidden' }}
+              >
                 {previewLabel}
               </div>
+              <span className="text-[9px] text-muted-foreground">
+                Área de impressão: {draft.widthMm}mm × {draft.heightMm}mm · margem {draft.marginMm}mm
+              </span>
             </div>
           </div>
           <p className="text-[10px] text-center text-muted-foreground italic">
-            Prévia em tamanho real ({pageW}mm × {pageH}mm) com o conteúdo verdadeiro da etiqueta.
+            Prévia sem rotação, em tamanho real. A rotação de {draft.rotation}° é aplicada apenas no envio para a impressora.
           </p>
         </div>
+
       </div>
     </div>
   )
