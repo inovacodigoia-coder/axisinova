@@ -82,7 +82,7 @@ export function SampleLabelsPrintModal({
           window.document.querySelectorAll<HTMLElement>('#labels-print-root .label-sheet > div'),
         )
         if (nodes.length) {
-          const pdf = await gerarPdfEtiquetas(nodes)
+          const pdf = await gerarPdfEtiquetas(nodes, config.widthMm, config.heightMm)
           const r = await imprimirDireto(TIPOS_DOCUMENTO.etiquetaCliente, pdf)
           toast.success(r.mensagem || 'Etiquetas enviadas para a impressora.')
           return
@@ -138,19 +138,19 @@ export function SampleLabelsPrintModal({
         <div className="flex-1 overflow-y-auto bg-muted/20 p-6">
           <style>{`
             @media print {
-              @page { size: 50mm 30mm; margin: 0; }
-              body.printing-receipt #receipt-print-portal { width: 50mm !important; }
+              @page { size: ${config.widthMm}mm ${config.heightMm}mm; margin: 0; }
+              body.printing-receipt #receipt-print-portal { width: ${config.widthMm}mm !important; }
               body.printing-receipt #receipt-print-portal > div { gap: 0 !important; }
               body.printing-receipt #receipt-print-portal .label-sheet {
-                width: 50mm !important;
-                height: 30mm !important;
+                width: ${config.widthMm}mm !important;
+                height: ${config.heightMm}mm !important;
                 overflow: hidden !important;
                 page-break-inside: avoid !important;
                 break-inside: avoid !important;
               }
               body.printing-receipt #receipt-print-portal .label-sheet > div {
-                width: 50mm !important;
-                height: 30mm !important;
+                width: ${config.widthMm}mm !important;
+                height: ${config.heightMm}mm !important;
                 border: none !important;
                 box-shadow: none !important;
               }
@@ -177,6 +177,7 @@ export function SampleLabelsPrintModal({
                   labelIndex={l.labelIndex}
                   originSigla={originSigla}
                   examRefs={l.examRefs}
+                  config={config}
                   labName={labName}
                 />
               </div>
