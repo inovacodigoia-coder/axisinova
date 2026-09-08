@@ -1877,6 +1877,7 @@ export type Database = {
           lab_name: string | null
           label_auto_fit: boolean
           label_barcode_height_px: number
+          label_config: Json | null
           label_copies: number
           label_font_code: number
           label_font_footer: number
@@ -1922,6 +1923,7 @@ export type Database = {
           lab_name?: string | null
           label_auto_fit?: boolean
           label_barcode_height_px?: number
+          label_config?: Json | null
           label_copies?: number
           label_font_code?: number
           label_font_footer?: number
@@ -1967,6 +1969,7 @@ export type Database = {
           lab_name?: string | null
           label_auto_fit?: boolean
           label_barcode_height_px?: number
+          label_config?: Json | null
           label_copies?: number
           label_font_code?: number
           label_font_footer?: number
