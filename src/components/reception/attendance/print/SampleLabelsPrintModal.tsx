@@ -7,6 +7,7 @@ import { SampleLabel } from '@/components/lab/print/SampleLabel'
 import { ServidorImpressaoStatus } from '@/components/print/ServidorImpressaoStatus'
 import { servidorImpressaoAtivo, imprimirDireto, TIPOS_DOCUMENTO } from '@/lib/impressaoLocal'
 import { gerarPdfEtiquetas } from '@/lib/labelPdf'
+import { useLabelConfig } from '@/hooks/useLabelConfig'
 
 
 export interface SampleLabelData {
@@ -46,6 +47,10 @@ export function SampleLabelsPrintModal({
   labName,
 }: Props) {
   const [enviando, setEnviando] = useState(false)
+  const { config } = useLabelConfig()
+  const rotated = Math.abs(config.rotation) === 90
+  const sheetW = rotated ? config.heightMm : config.widthMm
+  const sheetH = rotated ? config.widthMm : config.heightMm
 
   const printNavegador = () => {
     const d = window.document
@@ -80,7 +85,7 @@ export function SampleLabelsPrintModal({
           window.document.querySelectorAll<HTMLElement>('#labels-print-root .label-sheet > div'),
         )
         if (nodes.length) {
-          const pdf = await gerarPdfEtiquetas(nodes)
+          const pdf = await gerarPdfEtiquetas(nodes, sheetW, sheetH)
           const r = await imprimirDireto(TIPOS_DOCUMENTO.etiquetaCliente, pdf)
           toast.success(r.mensagem || 'Etiquetas enviadas para a impressora.')
           return
@@ -136,19 +141,17 @@ export function SampleLabelsPrintModal({
         <div className="flex-1 overflow-y-auto bg-muted/20 p-6">
           <style>{`
             @media print {
-              @page { size: 50mm 30mm; margin: 0; }
-              body.printing-receipt #receipt-print-portal { width: 50mm !important; }
+              @page { size: ${sheetW}mm ${sheetH}mm; margin: 0; }
+              body.printing-receipt #receipt-print-portal { width: ${sheetW}mm !important; }
               body.printing-receipt #receipt-print-portal > div { gap: 0 !important; }
               body.printing-receipt #receipt-print-portal .label-sheet {
-                width: 50mm !important;
-                height: 30mm !important;
+                width: ${sheetW}mm !important;
+                height: ${sheetH}mm !important;
                 overflow: hidden !important;
                 page-break-inside: avoid !important;
                 break-inside: avoid !important;
               }
               body.printing-receipt #receipt-print-portal .label-sheet > div {
-                width: 50mm !important;
-                height: 30mm !important;
                 border: none !important;
                 box-shadow: none !important;
               }
@@ -159,9 +162,14 @@ export function SampleLabelsPrintModal({
             {labels.map((l, idx) => (
               <div
                 key={l.sampleId}
-                className={`label-sheet ${idx < labels.length - 1 ? 'print:break-after-page' : ''}`}
-                style={idx === labels.length - 1 ? { breakAfter: 'avoid', pageBreakAfter: 'avoid' } : undefined}
+                className={`label-sheet flex items-center justify-center overflow-hidden ${idx < labels.length - 1 ? 'print:break-after-page' : ''}`}
+                style={{
+                  width: `${sheetW}mm`,
+                  height: `${sheetH}mm`,
+                  ...(idx === labels.length - 1 ? { breakAfter: 'avoid' as const, pageBreakAfter: 'avoid' as const } : {}),
+                }}
               >
+                <div style={config.rotation ? { transform: `rotate(${config.rotation}deg)` } : undefined}>
                 <SampleLabel
                   orderNumber={orderNumber}
                   patientName={patientName}
@@ -176,7 +184,9 @@ export function SampleLabelsPrintModal({
                   originSigla={originSigla}
                   examRefs={l.examRefs}
                   labName={labName}
+                  config={config}
                 />
+                </div>
               </div>
             ))}
             {!labels.length && (
