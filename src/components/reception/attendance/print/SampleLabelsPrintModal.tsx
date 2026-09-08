@@ -7,8 +7,6 @@ import { SampleLabel } from '@/components/lab/print/SampleLabel'
 import { ServidorImpressaoStatus } from '@/components/print/ServidorImpressaoStatus'
 import { servidorImpressaoAtivo, imprimirDireto, TIPOS_DOCUMENTO } from '@/lib/impressaoLocal'
 import { gerarPdfEtiquetas } from '@/lib/labelPdf'
-import html2canvas from 'html2canvas'
-import { useLabelConfig } from '@/hooks/useLabelConfig'
 
 
 export interface SampleLabelData {
@@ -48,7 +46,6 @@ export function SampleLabelsPrintModal({
   labName,
 }: Props) {
   const [enviando, setEnviando] = useState(false)
-  const { config } = useLabelConfig()
 
   const printNavegador = () => {
     const d = window.document
@@ -73,65 +70,21 @@ export function SampleLabelsPrintModal({
     }, 60)
   }
 
-  /** Imprime pelo navegador imagens fiéis das etiquetas, no tamanho exato em mm */
-  const printImagensNoNavegador = async (nodes: HTMLElement[]) => {
-    const imgs: string[] = []
-    for (const el of nodes) {
-      const rect = el.getBoundingClientRect()
-      const canvas = await html2canvas(el, {
-        scale: 4,
-        backgroundColor: '#ffffff',
-        logging: false,
-        useCORS: true,
-        width: rect.width,
-        height: rect.height,
-      })
-      imgs.push(canvas.toDataURL('image/png'))
-    }
-
-    const d = window.document
-    const portal = d.createElement('div')
-    portal.id = 'receipt-print-portal'
-    portal.innerHTML = imgs
-      .map(
-        (src) =>
-          `<div style="width:${config.widthMm}mm;height:${config.heightMm}mm;overflow:hidden;page-break-after:always;break-after:page;">
-             <img src="${src}" style="width:${config.widthMm}mm;height:${config.heightMm}mm;display:block;" />
-           </div>`,
-      )
-      .join('')
-    d.body.appendChild(portal)
-    d.body.classList.add('printing-receipt')
-
-    const cleanup = () => {
-      d.body.classList.remove('printing-receipt')
-      portal.remove()
-      window.removeEventListener('afterprint', cleanup)
-    }
-    window.addEventListener('afterprint', cleanup)
-    setTimeout(() => {
-      window.print()
-      setTimeout(cleanup, 1000)
-    }, 80)
-  }
-
   const handlePrint = async () => {
     if (enviando) return
     setEnviando(true)
     try {
-      const nodes = Array.from(
-        window.document.querySelectorAll<HTMLElement>('#labels-print-root .label-sheet > div'),
-      )
-      if (nodes.length) {
-        const ativo = await servidorImpressaoAtivo()
-        if (ativo) {
-          const pdf = await gerarPdfEtiquetas(nodes, config.widthMm, config.heightMm)
+      const ativo = await servidorImpressaoAtivo()
+      if (ativo) {
+        const nodes = Array.from(
+          window.document.querySelectorAll<HTMLElement>('#labels-print-root .label-sheet > div'),
+        )
+        if (nodes.length) {
+          const pdf = await gerarPdfEtiquetas(nodes)
           const r = await imprimirDireto(TIPOS_DOCUMENTO.etiquetaCliente, pdf)
           toast.success(r.mensagem || 'Etiquetas enviadas para a impressora.')
           return
         }
-        await printImagensNoNavegador(nodes)
-        return
       }
       printNavegador()
     } catch (err) {
@@ -183,19 +136,19 @@ export function SampleLabelsPrintModal({
         <div className="flex-1 overflow-y-auto bg-muted/20 p-6">
           <style>{`
             @media print {
-              @page { size: ${config.widthMm}mm ${config.heightMm}mm; margin: 0; }
-              body.printing-receipt #receipt-print-portal { width: ${config.widthMm}mm !important; }
+              @page { size: 50mm 30mm; margin: 0; }
+              body.printing-receipt #receipt-print-portal { width: 50mm !important; }
               body.printing-receipt #receipt-print-portal > div { gap: 0 !important; }
               body.printing-receipt #receipt-print-portal .label-sheet {
-                width: ${config.widthMm}mm !important;
-                height: ${config.heightMm}mm !important;
+                width: 50mm !important;
+                height: 30mm !important;
                 overflow: hidden !important;
                 page-break-inside: avoid !important;
                 break-inside: avoid !important;
               }
               body.printing-receipt #receipt-print-portal .label-sheet > div {
-                width: ${config.widthMm}mm !important;
-                height: ${config.heightMm}mm !important;
+                width: 50mm !important;
+                height: 30mm !important;
                 border: none !important;
                 box-shadow: none !important;
               }
@@ -222,7 +175,6 @@ export function SampleLabelsPrintModal({
                   labelIndex={l.labelIndex}
                   originSigla={originSigla}
                   examRefs={l.examRefs}
-                  config={config}
                   labName={labName}
                 />
               </div>
