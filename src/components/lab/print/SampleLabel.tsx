@@ -68,9 +68,9 @@ export const SampleLabel = ({
     const px = style.size * PT_TO_PX;
     return {
       fontSize: `${px.toFixed(2)}px`,
-      // Etiquetas têm pouca altura útil. A entrelinha de 1:1 evita que as
-      // linhas se sobreponham ao código de barras ou sejam cortadas no PDF.
-      lineHeight: `${px.toFixed(2)}px`,
+      // Mantém espaço para ascendentes e descendentes; uma entrelinha igual
+      // à fonte faz o html2canvas recortar os caracteres ao gerar o PDF.
+      lineHeight: `${(px * 1.15).toFixed(2)}px`,
       fontWeight: style.bold ? 700 : 400,
     };
   };
