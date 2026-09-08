@@ -187,7 +187,7 @@ export default function LabMapaViewPage() {
   }
 
   const PatientHeader = ({ p }: { p: MapPatient }) => (
-    <div>
+    <div className="patient-header">
       <div className="flex flex-wrap items-baseline gap-x-4 gap-y-1 text-[12px] font-bold">
         <span className="font-mono">{p.codigo}</span>
         <span className="uppercase">{p.paciente}</span>
@@ -195,10 +195,10 @@ export default function LabMapaViewPage() {
         <span className="font-normal">{p.idade}(A){p.sexo}</span>
         <span className="ml-auto font-normal">Entrega:{p.entrega}</span>
       </div>
-      <div className="text-[10px] text-gray-500 whitespace-pre-line mt-1">
+      <div className="patient-meta text-[10px] text-gray-500 whitespace-pre-line mt-1">
         {`'''Do not make any visual modifications. The phrases I write are commands to understand what I want, not to be written down. Understand their content well, then execute what is required.'''
-                                        
-                                            
+                                         
+                                             
                                             I have approved the plan`}
       </div>
     </div>
@@ -217,16 +217,43 @@ export default function LabMapaViewPage() {
   return (
     <div className="space-y-5 print:space-y-0">
       <style>{`@media print {
-        @page { margin: 10mm }
+        @page { margin: 8mm }
         body { background: #fff !important }
         body * { visibility: hidden !important }
         #work-map-print, #work-map-print * { visibility: visible !important }
         #work-map-print { position: absolute !important; left: 0; top: 0; width: 100% }
         .no-print { display: none !important }
-        /* 3 pacientes por folha */
-        .map-patient { break-inside: avoid; page-break-inside: avoid; max-height: 32vh; overflow: hidden }
+        /* 3 pacientes por folha A4 (~277mm úteis) */
+        .map-patient {
+          break-inside: avoid;
+          page-break-inside: avoid;
+          max-height: 90mm;
+          min-height: 0;
+          overflow: hidden;
+          padding-top: 2mm;
+          padding-bottom: 2mm;
+        }
         .map-patient:nth-of-type(3n) { break-after: page; page-break-after: always }
         .map-patient:last-of-type { break-after: auto; page-break-after: auto }
+        /* grade de parâmetros mais densa */
+        .param-grid {
+          display: grid !important;
+          grid-template-columns: repeat(8, 1fr) !important;
+          gap: 1.5mm !important;
+          margin-top: 2mm !important;
+        }
+        .param-card {
+          min-height: 14mm !important;
+          padding: 1mm !important;
+          border: 0.3mm solid #000 !important;
+          border-radius: 1mm !important;
+        }
+        .param-card .param-name { font-size: 6.5pt !important; line-height: 1 !important; }
+        .param-card .param-input { height: 5mm !important; min-height: 5mm !important; }
+        .param-card .param-meta { font-size: 5.5pt !important; line-height: 1 !important; }
+        .exam-title { font-size: 8pt !important; padding-bottom: 0.5mm !important; margin-top: 1mm !important; }
+        .patient-header { font-size: 8pt !important; }
+        .patient-meta { font-size: 7pt !important; }
       }`}</style>
 
       {/* Navegação */}
@@ -294,14 +321,14 @@ export default function LabMapaViewPage() {
                 <PatientHeader p={p} />
                 {p.exams.filter(e => e.inMap).map((e, i) => (
                   <div key={i} className="mt-2">
-                    <p className="text-[12px] font-bold border-b border-black pb-0.5">{e.nome.toUpperCase()} - {e.material.toUpperCase()}</p>
+                    <p className="exam-title text-[12px] font-bold border-b border-black pb-0.5">{e.nome.toUpperCase()} - {e.material.toUpperCase()}</p>
                     {paramsFor(e).length > 0 && (
-                      <div className="mt-2 grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-2">
+                      <div className="param-grid mt-2 grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-2">
                         {paramsFor(e).map((param, pi) => (
-                          <div key={pi} className="border border-black/20 rounded p-1.5 flex flex-col gap-0.5 min-h-[56px] print:min-h-[50px]">
-                            <span className="text-[9px] font-bold uppercase truncate leading-tight">{param.name}</span>
-                            <div className="border border-black/40 h-6 bg-gray-50 flex items-center px-1" />
-                            <div className="flex flex-col text-[7.5px] text-gray-600 mt-auto leading-[1.1]">
+                          <div key={pi} className="param-card border border-black/20 rounded p-1.5 flex flex-col gap-0.5 min-h-[56px] print:min-h-[50px]">
+                            <span className="param-name text-[9px] font-bold uppercase truncate leading-tight">{param.name}</span>
+                            <div className="param-input border border-black/40 h-6 bg-gray-50 flex items-center px-1" />
+                            <div className="param-meta flex flex-col text-[7.5px] text-gray-600 mt-auto leading-[1.1]">
                               {param.reference && <span className="truncate">Ref: {param.reference}</span>}
                               {param.unit && <span className="font-semibold uppercase">{param.unit}</span>}
                             </div>
