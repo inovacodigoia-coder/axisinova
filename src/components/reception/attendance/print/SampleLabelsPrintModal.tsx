@@ -7,6 +7,7 @@ import { SampleLabel } from '@/components/lab/print/SampleLabel'
 import { ServidorImpressaoStatus } from '@/components/print/ServidorImpressaoStatus'
 import { servidorImpressaoAtivo, imprimirDireto, TIPOS_DOCUMENTO } from '@/lib/impressaoLocal'
 import { gerarPdfEtiquetas } from '@/lib/labelPdf'
+import { useLabelLayout } from '@/hooks/useLabelLayout'
 
 
 export interface SampleLabelData {
