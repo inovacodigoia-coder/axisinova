@@ -223,6 +223,10 @@ export default function LabMapaViewPage() {
         #work-map-print, #work-map-print * { visibility: visible !important }
         #work-map-print { position: absolute !important; left: 0; top: 0; width: 100% }
         .no-print { display: none !important }
+        /* 3 pacientes por folha */
+        .map-patient { break-inside: avoid; page-break-inside: avoid; max-height: 32vh; overflow: hidden }
+        .map-patient:nth-of-type(3n) { break-after: page; page-break-after: always }
+        .map-patient:last-of-type { break-after: auto; page-break-after: auto }
       }`}</style>
 
       {/* Navegação */}
@@ -286,7 +290,7 @@ export default function LabMapaViewPage() {
         ) : view === 'completo' ? (
           <div className="divide-y divide-black/30">
             {patients.map(p => (
-              <div key={p.id} className="py-3 print:break-inside-avoid">
+              <div key={p.id} className="map-patient py-3 print:break-inside-avoid">
                 <PatientHeader p={p} />
                 {p.exams.filter(e => e.inMap).map((e, i) => (
                   <div key={i} className="mt-2">
