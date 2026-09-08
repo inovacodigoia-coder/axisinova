@@ -41,11 +41,18 @@ const TEST_LABEL = {
 async function printViaBrowser(node: HTMLElement, widthMm: number, heightMm: number) {
   // Rasteriza a etiqueta e imprime dentro de um iframe com a página no tamanho exato
   // da etiqueta (sem blob/nova aba, que podem ser bloqueados por extensões do navegador).
+  const rect = node.getBoundingClientRect()
   const canvas = await html2canvas(node, {
     scale: 4,
     backgroundColor: '#ffffff',
     logging: false,
     useCORS: true,
+    width: rect.width,
+    height: rect.height,
+    windowWidth: Math.ceil(rect.width),
+    windowHeight: Math.ceil(rect.height),
+    scrollX: 0,
+    scrollY: 0,
   })
   const dataUrl = canvas.toDataURL('image/png')
 
@@ -69,7 +76,7 @@ async function printViaBrowser(node: HTMLElement, widthMm: number, heightMm: num
     <style>
       @page { size: ${widthMm}mm ${heightMm}mm; margin: 0; }
       html, body { margin: 0; padding: 0; background: #fff; }
-      img { display: block; width: ${widthMm}mm; height: ${heightMm}mm; }
+      img { display: block; width: ${widthMm}mm; height: ${heightMm}mm; object-fit: contain; }
     </style></head>
     <body><img src="${dataUrl}" /></body></html>`)
   doc.close()
