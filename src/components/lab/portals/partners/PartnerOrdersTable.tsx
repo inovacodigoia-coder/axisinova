@@ -24,6 +24,7 @@ const TYPE_ICON: Record<ApiPartnerType, typeof Building2> = {
   clinica: Building2,
   convenio: ShieldCheck,
   medico: Stethoscope,
+  hospital: Hospital,
 }
 
 const PAGE_SIZE = 10

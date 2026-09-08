@@ -21,6 +21,7 @@ const TYPE_ICON: Record<ApiPartnerType, typeof Building2> = {
   clinica: Building2,
   convenio: ShieldCheck,
   medico: Stethoscope,
+  hospital: Hospital,
 }
 
 const AUTH_LABEL = { authorized: 'Autorizado', pending: 'Pendente', blocked: 'Bloqueado' } as const
