@@ -706,30 +706,34 @@ function PrinterLabelSection() {
     return (sheet?.firstElementChild as HTMLElement | null) ?? sheet
   }
 
-  /** Imprime pelo navegador uma imagem fiel da etiqueta, no tamanho exato em mm */
-  const printImagemNoNavegador = async (el: HTMLElement, copies: number) => {
-    const rect = el.getBoundingClientRect()
-    const canvas = await html2canvas(el, {
-      scale: 4,
-      backgroundColor: '#ffffff',
-      logging: false,
-      useCORS: true,
-      width: rect.width,
-      height: rect.height,
-    })
-    const dataUrl = canvas.toDataURL('image/png')
+  /** Imprime clonando o DOM real da preview (fiel ao que é exibido) */
+  const printNoNavegador = (copies: number) => {
+    const sheet = previewRef.current?.querySelector('.label-test-sheet') as HTMLElement | null
+    if (!sheet) throw new Error('Pré-visualização indisponível para o teste.')
+
+    const rot = ((Number(config.rotation) % 360) + 360) % 360
+    const quarter = rot === 90 || rot === 270
+    const pageW = quarter ? config.heightMm : config.widthMm
+    const pageH = quarter ? config.widthMm : config.heightMm
 
     const d = window.document
     const portal = d.createElement('div')
     portal.id = 'receipt-print-portal'
-    portal.innerHTML = Array.from({ length: copies })
-      .map(
-        () =>
-          `<div class="label-print-page" style="width:${config.widthMm}mm;height:${config.heightMm}mm;overflow:hidden;page-break-after:always;break-after:page;">
-             <img src="${dataUrl}" style="width:${config.widthMm}mm;height:${config.heightMm}mm;display:block;" />
-           </div>`,
+
+    for (let i = 0; i < copies; i++) {
+      const page = d.createElement('div')
+      page.className = 'label-print-page'
+      page.setAttribute(
+        'style',
+        `width:${pageW}mm;height:${pageH}mm;display:flex;align-items:center;justify-content:center;overflow:hidden;page-break-after:always;break-after:page;background:#fff;`,
       )
-      .join('')
+      const clone = sheet.cloneNode(true) as HTMLElement
+      clone.style.transform = `rotate(${config.rotation}deg)`
+      clone.style.transition = 'none'
+      page.appendChild(clone)
+      portal.appendChild(page)
+    }
+
     d.body.appendChild(portal)
     d.body.classList.add('printing-receipt')
 
@@ -742,8 +746,9 @@ function PrinterLabelSection() {
     setTimeout(() => {
       window.print()
       setTimeout(cleanup, 1000)
-    }, 80)
+    }, 120)
   }
+
 
   const handleTestPrint = async () => {
     if (testando) return
@@ -763,7 +768,7 @@ function PrinterLabelSection() {
         toast.success(r.mensagem || 'Etiqueta de teste enviada para a impressora.')
         return
       }
-      await printImagemNoNavegador(el, copies)
+      printNoNavegador(copies)
     } catch (e: any) {
       toast.error(e?.message || 'Falha ao gerar a etiqueta de teste.')
     } finally {
@@ -906,13 +911,17 @@ function PrinterLabelSection() {
           </p>
           <style>{`
             @media print {
-              @page { size: ${config.widthMm}mm ${config.heightMm}mm; margin: 0; }
+              @page {
+                size: ${((Number(config.rotation) % 360) + 360) % 360 === 90 || ((Number(config.rotation) % 360) + 360) % 360 === 270 ? `${config.heightMm}mm ${config.widthMm}mm` : `${config.widthMm}mm ${config.heightMm}mm`};
+                margin: 0;
+              }
               body.printing-receipt #receipt-print-portal .label-test-sheet > div {
                 border: none !important;
                 box-shadow: none !important;
               }
             }
           `}</style>
+
         </div>
       </div>
     </div>
