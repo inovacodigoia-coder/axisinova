@@ -7,7 +7,6 @@ import { SampleLabel } from '@/components/lab/print/SampleLabel'
 import { ServidorImpressaoStatus } from '@/components/print/ServidorImpressaoStatus'
 import { servidorImpressaoAtivo, imprimirDireto, TIPOS_DOCUMENTO } from '@/lib/impressaoLocal'
 import { gerarPdfEtiquetas } from '@/lib/labelPdf'
-import { useLabelLayout } from '@/hooks/useLabelLayout'
 
 
 export interface SampleLabelData {
@@ -47,18 +46,6 @@ export function SampleLabelsPrintModal({
   labName,
 }: Props) {
   const [enviando, setEnviando] = useState(false)
-  const { layout, reload: reloadLayout } = useLabelLayout()
-
-  // Garante que cada nova impressão use a configuração mais recente
-  useEffect(() => { if (open) void reloadLayout() }, [open, reloadLayout])
-
-  const printJobs = labels.flatMap((l) =>
-    Array.from({ length: Math.max(1, layout.copies) }, (_, copy) => ({ ...l, copy })),
-  )
-
-  const rotated = Math.abs(layout.rotation % 180) === 90
-  const pageW = rotated ? layout.heightMm : layout.widthMm
-  const pageH = rotated ? layout.widthMm : layout.heightMm
 
   const printNavegador = () => {
     const d = window.document
@@ -90,10 +77,10 @@ export function SampleLabelsPrintModal({
       const ativo = await servidorImpressaoAtivo()
       if (ativo) {
         const nodes = Array.from(
-          window.document.querySelectorAll<HTMLElement>('#labels-print-root .label-sheet'),
+          window.document.querySelectorAll<HTMLElement>('#labels-print-root .label-sheet > div'),
         )
         if (nodes.length) {
-          const pdf = await gerarPdfEtiquetas(nodes, pageW, pageH)
+          const pdf = await gerarPdfEtiquetas(nodes)
           const r = await imprimirDireto(TIPOS_DOCUMENTO.etiquetaCliente, pdf)
           toast.success(r.mensagem || 'Etiquetas enviadas para a impressora.')
           return
@@ -149,17 +136,19 @@ export function SampleLabelsPrintModal({
         <div className="flex-1 overflow-y-auto bg-muted/20 p-6">
           <style>{`
             @media print {
-              @page { size: ${pageW}mm ${pageH}mm; margin: 0; }
-              body.printing-receipt #receipt-print-portal { width: ${pageW}mm !important; }
+              @page { size: 50mm 30mm; margin: 0; }
+              body.printing-receipt #receipt-print-portal { width: 50mm !important; }
               body.printing-receipt #receipt-print-portal > div { gap: 0 !important; }
               body.printing-receipt #receipt-print-portal .label-sheet {
-                width: ${pageW}mm !important;
-                height: ${pageH}mm !important;
+                width: 50mm !important;
+                height: 30mm !important;
                 overflow: hidden !important;
                 page-break-inside: avoid !important;
                 break-inside: avoid !important;
               }
               body.printing-receipt #receipt-print-portal .label-sheet > div {
+                width: 50mm !important;
+                height: 30mm !important;
                 border: none !important;
                 box-shadow: none !important;
               }
@@ -167,54 +156,27 @@ export function SampleLabelsPrintModal({
             }
           `}</style>
           <div id="labels-print-root" className="flex flex-col items-center gap-3">
-            {printJobs.map((job, idx) => (
+            {labels.map((l, idx) => (
               <div
-                key={`${job.sampleId}-${job.copy}`}
-                className={`label-sheet flex items-center justify-center bg-white ${idx < printJobs.length - 1 ? 'print:break-after-page' : ''}`}
-                style={{
-                  width: `${pageW}mm`,
-                  height: `${pageH}mm`,
-                  overflow: 'hidden',
-                  ...(idx === printJobs.length - 1 ? { breakAfter: 'avoid', pageBreakAfter: 'avoid' } : {}),
-                }}
+                key={l.sampleId}
+                className={`label-sheet ${idx < labels.length - 1 ? 'print:break-after-page' : ''}`}
+                style={idx === labels.length - 1 ? { breakAfter: 'avoid', pageBreakAfter: 'avoid' } : undefined}
               >
-                <div
-                  style={{
-                    width: `${layout.widthMm}mm`,
-                    height: `${layout.heightMm}mm`,
-                    transform: `rotate(${layout.rotation}deg)`,
-                    transformOrigin: 'center center',
-                    flex: '0 0 auto',
-                  }}
-                >
-                  <SampleLabel
-                    orderNumber={orderNumber}
-                    patientName={patientName}
-                    birthDate={birthDate ? new Date(birthDate).toLocaleDateString('pt-BR') : ''}
-                    material={job.material}
-                    tube={job.tube}
-                    workbench={job.workbench}
-                    sampleCode={job.sampleId}
-                    printDate={printDate}
-                    isUrgent={isUrgent}
-                    labelIndex={job.labelIndex}
-                    originSigla={originSigla}
-                    examRefs={job.examRefs}
-                    labName={labName}
-                    widthMm={layout.widthMm}
-                    heightMm={layout.heightMm}
-                    marginMm={layout.marginMm}
-                    barcodeHeightPx={layout.barcodeHeightPx}
-                    autoFit={layout.autoFit}
-                    fontSizes={{
-                      header: layout.fontHeader,
-                      code: layout.fontCode,
-                      patient: layout.fontPatient,
-                      small: layout.fontSmall,
-                      footer: layout.fontFooter,
-                    }}
-                  />
-                </div>
+                <SampleLabel
+                  orderNumber={orderNumber}
+                  patientName={patientName}
+                  birthDate={birthDate ? new Date(birthDate).toLocaleDateString('pt-BR') : ''}
+                  material={l.material}
+                  tube={l.tube}
+                  workbench={l.workbench}
+                  sampleCode={l.sampleId}
+                  printDate={printDate}
+                  isUrgent={isUrgent}
+                  labelIndex={l.labelIndex}
+                  originSigla={originSigla}
+                  examRefs={l.examRefs}
+                  labName={labName}
+                />
               </div>
             ))}
             {!labels.length && (
