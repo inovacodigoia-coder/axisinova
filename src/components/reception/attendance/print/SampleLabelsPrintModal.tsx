@@ -7,6 +7,7 @@ import { SampleLabel } from '@/components/lab/print/SampleLabel'
 import { ServidorImpressaoStatus } from '@/components/print/ServidorImpressaoStatus'
 import { servidorImpressaoAtivo, imprimirDireto, TIPOS_DOCUMENTO } from '@/lib/impressaoLocal'
 import { gerarPdfEtiquetas } from '@/lib/labelPdf'
+import html2canvas from 'html2canvas'
 import { useLabelConfig } from '@/hooks/useLabelConfig'
 
 
@@ -72,23 +73,46 @@ export function SampleLabelsPrintModal({
     }, 60)
   }
 
-  const printPdfNoNavegador = async (pdf: Blob) => {
-    const url = URL.createObjectURL(pdf)
-    const frame = window.document.createElement('iframe')
-    frame.style.cssText = 'position:fixed;right:0;bottom:0;width:1px;height:1px;opacity:0'
-    frame.src = url
-    window.document.body.appendChild(frame)
-    frame.onload = () => {
-      setTimeout(() => {
-        try {
-          frame.contentWindow?.focus()
-          frame.contentWindow?.print()
-        } catch {
-          window.open(url, '_blank')
-        }
-      }, 200)
-      setTimeout(() => { frame.remove(); URL.revokeObjectURL(url) }, 60000)
+  /** Imprime pelo navegador imagens fiéis das etiquetas, no tamanho exato em mm */
+  const printImagensNoNavegador = async (nodes: HTMLElement[]) => {
+    const imgs: string[] = []
+    for (const el of nodes) {
+      const rect = el.getBoundingClientRect()
+      const canvas = await html2canvas(el, {
+        scale: 4,
+        backgroundColor: '#ffffff',
+        logging: false,
+        useCORS: true,
+        width: rect.width,
+        height: rect.height,
+      })
+      imgs.push(canvas.toDataURL('image/png'))
     }
+
+    const d = window.document
+    const portal = d.createElement('div')
+    portal.id = 'receipt-print-portal'
+    portal.innerHTML = imgs
+      .map(
+        (src) =>
+          `<div style="width:${config.widthMm}mm;height:${config.heightMm}mm;overflow:hidden;page-break-after:always;break-after:page;">
+             <img src="${src}" style="width:${config.widthMm}mm;height:${config.heightMm}mm;display:block;" />
+           </div>`,
+      )
+      .join('')
+    d.body.appendChild(portal)
+    d.body.classList.add('printing-receipt')
+
+    const cleanup = () => {
+      d.body.classList.remove('printing-receipt')
+      portal.remove()
+      window.removeEventListener('afterprint', cleanup)
+    }
+    window.addEventListener('afterprint', cleanup)
+    setTimeout(() => {
+      window.print()
+      setTimeout(cleanup, 1000)
+    }, 80)
   }
 
   const handlePrint = async () => {
@@ -99,14 +123,14 @@ export function SampleLabelsPrintModal({
         window.document.querySelectorAll<HTMLElement>('#labels-print-root .label-sheet > div'),
       )
       if (nodes.length) {
-        const pdf = await gerarPdfEtiquetas(nodes, config.widthMm, config.heightMm)
         const ativo = await servidorImpressaoAtivo()
         if (ativo) {
+          const pdf = await gerarPdfEtiquetas(nodes, config.widthMm, config.heightMm)
           const r = await imprimirDireto(TIPOS_DOCUMENTO.etiquetaCliente, pdf)
           toast.success(r.mensagem || 'Etiquetas enviadas para a impressora.')
           return
         }
-        await printPdfNoNavegador(pdf)
+        await printImagensNoNavegador(nodes)
         return
       }
       printNavegador()
