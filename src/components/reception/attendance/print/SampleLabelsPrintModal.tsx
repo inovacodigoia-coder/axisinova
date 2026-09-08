@@ -82,7 +82,7 @@ export function SampleLabelsPrintModal({
       const ativo = await servidorImpressaoAtivo()
       if (ativo) {
         const nodes = Array.from(
-          window.document.querySelectorAll<HTMLElement>('#labels-print-root .label-sheet > div'),
+          window.document.querySelectorAll<HTMLElement>('#labels-print-root .label-sheet'),
         )
         if (nodes.length) {
           const pdf = await gerarPdfEtiquetas(nodes, sheetW, sheetH)
