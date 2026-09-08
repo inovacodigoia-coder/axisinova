@@ -37,6 +37,38 @@ const TEST_LABEL = {
   examRefs: ['H'],
 }
 
+function printViaBrowser(node: HTMLElement, widthMm: number, heightMm: number) {
+  const styles = Array.from(document.querySelectorAll('style, link[rel="stylesheet"]'))
+    .map(el => el.outerHTML)
+    .join('\n')
+  const iframe = document.createElement('iframe')
+  iframe.style.position = 'fixed'
+  iframe.style.right = '0'
+  iframe.style.bottom = '0'
+  iframe.style.width = '0'
+  iframe.style.height = '0'
+  iframe.style.border = '0'
+  document.body.appendChild(iframe)
+  const doc = iframe.contentDocument
+  if (!doc) { document.body.removeChild(iframe); return }
+  doc.open()
+  doc.write(`<!doctype html><html><head><meta charset="utf-8" />${styles}
+    <style>
+      @page { size: ${widthMm}mm ${heightMm}mm; margin: 0; }
+      html, body { margin: 0; padding: 0; background: #fff; }
+      .label-sheet { width: ${widthMm}mm; height: ${heightMm}mm; display: flex; align-items: center; justify-content: center; overflow: hidden; }
+    </style>
+  </head><body><div class="label-sheet">${node.innerHTML}</div></body></html>`)
+  doc.close()
+  const run = () => {
+    iframe.contentWindow?.focus()
+    iframe.contentWindow?.print()
+    setTimeout(() => { iframe.parentNode && document.body.removeChild(iframe) }, 1000)
+  }
+  if (doc.readyState === 'complete') setTimeout(run, 300)
+  else iframe.onload = () => setTimeout(run, 300)
+}
+
 export function LabPrinterLabelSection() {
   const { config, setConfig, save, reload } = useLabelConfig()
   const { settings } = useLabSettings()
@@ -102,9 +134,11 @@ export function LabPrinterLabelSection() {
       if (!node) throw new Error('Preview indisponível.')
       const ativo = await servidorImpressaoAtivo()
       if (!ativo) {
-        toast.error('Servidor de impressão local não detectado. Abra o programa e tente novamente.')
+        printViaBrowser(node, sheetW, sheetH)
+        toast.info('Servidor de impressão local não detectado — abrindo a impressão do navegador.')
         return
       }
+
       const pdf = await gerarPdfEtiquetas([node], sheetW, sheetH)
       const r = await imprimirDireto(TIPOS_DOCUMENTO.etiquetaCliente, pdf)
       toast.success(r.mensagem || 'Etiqueta de teste enviada para a impressora.')
