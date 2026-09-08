@@ -319,8 +319,8 @@ a[href*="lovable.app"],
 
 /* ====== Scrollbar grossa e visível na digitação de resultados ====== */
 .result-entry-scroll [data-radix-scroll-area-scrollbar] {
-  width: 20px;
-  padding: 2px;
+  width: 25px;
+  padding: 3px;
   background: hsl(var(--muted) / 0.5);
   border-radius: 9999px;
 }
@@ -330,21 +330,26 @@ a[href*="lovable.app"],
 }
 
 .result-entry-scroll [data-radix-scroll-area-thumb] {
-  background: hsl(191 100% 35%);
+  background: linear-gradient(180deg, #00D4FF 0%, #7B2FF7 100%);
   border-radius: 9999px;
   opacity: 0.95;
 }
 
 .result-entry-scroll [data-radix-scroll-area-thumb]:hover {
   opacity: 1;
-  background: hsl(191 100% 28%);
+  background: linear-gradient(180deg, #00B2D9 0%, #6620D6 100%);
 }
 
 .result-entry-scroll [data-radix-scroll-area-scrollbar][data-orientation="horizontal"] {
   width: auto;
-  height: 20px;
+  height: 25px;
 }
 
 .result-entry-scroll [data-radix-scroll-area-scrollbar][data-orientation="horizontal"] [data-radix-scroll-area-thumb] {
   height: 100%;
+  background: linear-gradient(90deg, #00D4FF 0%, #7B2FF7 100%);
+}
+
+.result-entry-scroll [data-radix-scroll-area-scrollbar][data-orientation="horizontal"] [data-radix-scroll-area-thumb]:hover {
+  background: linear-gradient(90deg, #00B2D9 0%, #6620D6 100%);
 }
