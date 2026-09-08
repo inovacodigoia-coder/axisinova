@@ -705,32 +705,43 @@ function PrinterLabelSection() {
     return (sheet?.firstElementChild as HTMLElement | null) ?? sheet
   }
 
-  /** Abre o mesmo PDF gerado para o servidor local na janela de impressão do navegador */
-  const printPdfNoNavegador = async (pdf: Blob) => {
-    const url = URL.createObjectURL(pdf)
-    const frame = window.document.createElement('iframe')
-    frame.style.position = 'fixed'
-    frame.style.right = '0'
-    frame.style.bottom = '0'
-    frame.style.width = '1px'
-    frame.style.height = '1px'
-    frame.style.opacity = '0'
-    frame.src = url
-    window.document.body.appendChild(frame)
-    frame.onload = () => {
-      setTimeout(() => {
-        try {
-          frame.contentWindow?.focus()
-          frame.contentWindow?.print()
-        } catch {
-          window.open(url, '_blank')
-        }
-      }, 200)
-      setTimeout(() => {
-        frame.remove()
-        URL.revokeObjectURL(url)
-      }, 60000)
+  /** Imprime pelo navegador uma imagem fiel da etiqueta, no tamanho exato em mm */
+  const printImagemNoNavegador = async (el: HTMLElement, copies: number) => {
+    const rect = el.getBoundingClientRect()
+    const canvas = await html2canvas(el, {
+      scale: 4,
+      backgroundColor: '#ffffff',
+      logging: false,
+      useCORS: true,
+      width: rect.width,
+      height: rect.height,
+    })
+    const dataUrl = canvas.toDataURL('image/png')
+
+    const d = window.document
+    const portal = d.createElement('div')
+    portal.id = 'receipt-print-portal'
+    portal.innerHTML = Array.from({ length: copies })
+      .map(
+        () =>
+          `<div class="label-print-page" style="width:${config.widthMm}mm;height:${config.heightMm}mm;overflow:hidden;page-break-after:always;break-after:page;">
+             <img src="${dataUrl}" style="width:${config.widthMm}mm;height:${config.heightMm}mm;display:block;" />
+           </div>`,
+      )
+      .join('')
+    d.body.appendChild(portal)
+    d.body.classList.add('printing-receipt')
+
+    const cleanup = () => {
+      d.body.classList.remove('printing-receipt')
+      portal.remove()
+      window.removeEventListener('afterprint', cleanup)
     }
+    window.addEventListener('afterprint', cleanup)
+    setTimeout(() => {
+      window.print()
+      setTimeout(cleanup, 1000)
+    }, 80)
   }
 
   const handleTestPrint = async () => {
@@ -743,16 +754,15 @@ function PrinterLabelSection() {
         return
       }
       const copies = Math.max(1, Number(config.copies) || 1)
-      const pdf = await gerarPdfEtiquetas(Array(copies).fill(el), config.widthMm, config.heightMm)
 
       const ativo = await servidorImpressaoAtivo()
       if (ativo) {
+        const pdf = await gerarPdfEtiquetas(Array(copies).fill(el), config.widthMm, config.heightMm)
         const r = await imprimirDireto(TIPOS_DOCUMENTO.etiquetaCliente, pdf)
         toast.success(r.mensagem || 'Etiqueta de teste enviada para a impressora.')
         return
       }
-      await printPdfNoNavegador(pdf)
-      toast.info('Abrindo a impressão do navegador com a etiqueta gerada.')
+      await printImagemNoNavegador(el, copies)
     } catch (e: any) {
       toast.error(e?.message || 'Falha ao gerar a etiqueta de teste.')
     } finally {
