@@ -195,12 +195,12 @@ export default function LabMapaViewPage() {
         <span className="font-normal">{p.idade}(A){p.sexo}</span>
         <span className="ml-auto font-normal">Entrega:{p.entrega}</span>
       </div>
-      <div className="patient-meta text-[10px] text-gray-500 whitespace-pre-line mt-1">
-        {`'''Do not make any visual modifications. The phrases I write are commands to understand what I want, not to be written down. Understand their content well, then execute what is required.'''
-                                         
-                                             
-                                            I have approved the plan`}
-      </div>
+      {(p.observacoesPaciente || p.observacoesClinicas) && (
+        <div className="patient-meta text-[10px] text-gray-500 mt-1">
+          {p.observacoesPaciente && <span className="block truncate">Obs: {p.observacoesPaciente}</span>}
+          {p.observacoesClinicas && <span className="block truncate">Obs. clínicas: {p.observacoesClinicas}</span>}
+        </div>
+      )}
     </div>
   )
 
@@ -217,21 +217,26 @@ export default function LabMapaViewPage() {
   return (
     <div className="space-y-5 print:space-y-0">
       <style>{`@media print {
-        @page { margin: 8mm }
+        @page { margin: 5mm }
         body { background: #fff !important }
         body * { visibility: hidden !important }
         #work-map-print, #work-map-print * { visibility: visible !important }
         #work-map-print { position: absolute !important; left: 0; top: 0; width: 100% }
         .no-print { display: none !important }
-        /* 3 pacientes por folha A4 (~277mm úteis) */
+        /* 3 pacientes por folha A4 (~287mm úteis com margem de 5mm) */
+        .map-header {
+          margin-bottom: 1mm !important;
+          padding-bottom: 0.5mm !important;
+          font-size: 7pt !important;
+        }
         .map-patient {
           break-inside: avoid;
           page-break-inside: avoid;
-          max-height: 90mm;
+          max-height: 95mm;
           min-height: 0;
           overflow: hidden;
-          padding-top: 2mm;
-          padding-bottom: 2mm;
+          padding-top: 1mm;
+          padding-bottom: 1mm;
         }
         .map-patient:nth-of-type(3n) { break-after: page; page-break-after: always }
         .map-patient:last-of-type { break-after: auto; page-break-after: auto }
