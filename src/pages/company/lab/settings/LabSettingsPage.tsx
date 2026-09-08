@@ -661,9 +661,21 @@ function SecuritySection() {
 }
 
 function PrinterLabelSection() {
+  const { layout, isLoading, save } = useLabelLayout()
   const [rotation, setRotation] = useState("0")
   const [width, setWidth] = useState(50)
-  const [height, setHeight] = useState(25)
+  const [height, setHeight] = useState(30)
+  const [copies, setCopies] = useState(1)
+  const [preset, setPreset] = useState<string | null>(null)
+  const [saving, setSaving] = useState(false)
+
+  useEffect(() => {
+    setWidth(layout.widthMm)
+    setHeight(layout.heightMm)
+    setRotation(String(layout.rotation))
+    setCopies(layout.copies)
+    setPreset(layout.preset ?? null)
+  }, [layout])
 
   const presets = [
     { name: "CD410 rotacionado 50x25", w: 50, h: 25, r: "90" },
@@ -676,17 +688,40 @@ function PrinterLabelSection() {
     setWidth(p.w)
     setHeight(p.h)
     setRotation(p.r)
-    toast.info(`Preset ${p.name} aplicado!`)
+    setPreset(p.name)
+    toast.info(`Preset ${p.name} aplicado — clique em Salvar para valer nas impressões.`)
+  }
+
+  const handleSave = async () => {
+    if (!width || !height || width < 10 || height < 10) {
+      toast.error('Informe largura e altura válidas (mínimo 10mm).')
+      return
+    }
+    setSaving(true)
+    try {
+      await save({ widthMm: width, heightMm: height, rotation: Number(rotation), copies: Math.max(1, copies), preset })
+      toast.success('Configuração salva — já vale para todas as novas impressões de etiqueta.')
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : 'Falha ao salvar a configuração.')
+    } finally {
+      setSaving(false)
+    }
   }
 
   return (
     <div className="space-y-8">
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between gap-2 flex-wrap">
         <h3 className="text-lg font-bold">Configuração de Impressora / Etiqueta</h3>
-        <Button variant="outline" size="sm" className="gap-2">
-           <Layout className="h-4 w-4" /> Gerenciar Slots
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button variant="outline" size="sm" className="gap-2">
+            <Layout className="h-4 w-4" /> Gerenciar Slots
+          </Button>
+          <Button size="sm" className="gap-2" onClick={handleSave} disabled={saving || isLoading}>
+            {saving ? 'Salvando...' : 'Salvar'}
+          </Button>
+        </div>
       </div>
+      
       
       <div className="space-y-3">
         <Label>Presets rápidos (CD410 e outros)</Label>
