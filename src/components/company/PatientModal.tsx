@@ -44,12 +44,12 @@ const bloodTypes = ['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-']
 
 export function PatientModal({ open, onClose, onSave }: Props) {
   const [form, setForm] = useState<PatientFormData>({
-    name: '', cpf: '', birthDate: '', phone: '', bloodType: 'O+', allergies: [], email: '', address: '',
+    name: '', cpf: '', birthDate: '', phone: '', bloodType: '', allergies: [], email: '', address: '',
   })
   const [newAllergy, setNewAllergy] = useState('')
 
   useEffect(() => {
-    if (open) setForm({ name: '', cpf: '', birthDate: '', phone: '', bloodType: 'O+', allergies: [], email: '', address: '' })
+    if (open) setForm({ name: '', cpf: '', birthDate: '', phone: '', bloodType: '', allergies: [], email: '', address: '' })
   }, [open])
 
   if (!open) return null
@@ -107,6 +107,7 @@ export function PatientModal({ open, onClose, onSave }: Props) {
               <label className="text-sm font-medium text-foreground">Tipo Sanguíneo</label>
               <select value={form.bloodType} onChange={e => set('bloodType', e.target.value)}
                 className="mt-1 w-full rounded-lg border border-input bg-background px-3 py-2.5 text-sm">
+                <option value="">—</option>
                 {bloodTypes.map(b => <option key={b} value={b}>{b}</option>)}
               </select>
             </div>
