@@ -217,16 +217,43 @@ export default function LabMapaViewPage() {
   return (
     <div className="space-y-5 print:space-y-0">
       <style>{`@media print {
-        @page { margin: 10mm }
+        @page { margin: 8mm }
         body { background: #fff !important }
         body * { visibility: hidden !important }
         #work-map-print, #work-map-print * { visibility: visible !important }
         #work-map-print { position: absolute !important; left: 0; top: 0; width: 100% }
         .no-print { display: none !important }
-        /* 3 pacientes por folha */
-        .map-patient { break-inside: avoid; page-break-inside: avoid; max-height: 32vh; overflow: hidden }
+        /* 3 pacientes por folha A4 (~277mm úteis) */
+        .map-patient {
+          break-inside: avoid;
+          page-break-inside: avoid;
+          max-height: 90mm;
+          min-height: 0;
+          overflow: hidden;
+          padding-top: 2mm;
+          padding-bottom: 2mm;
+        }
         .map-patient:nth-of-type(3n) { break-after: page; page-break-after: always }
         .map-patient:last-of-type { break-after: auto; page-break-after: auto }
+        /* grade de parâmetros mais densa */
+        .param-grid {
+          display: grid !important;
+          grid-template-columns: repeat(8, 1fr) !important;
+          gap: 1.5mm !important;
+          margin-top: 2mm !important;
+        }
+        .param-card {
+          min-height: 14mm !important;
+          padding: 1mm !important;
+          border: 0.3mm solid #000 !important;
+          border-radius: 1mm !important;
+        }
+        .param-card .param-name { font-size: 6.5pt !important; line-height: 1 !important; }
+        .param-card .param-input { height: 5mm !important; min-height: 5mm !important; }
+        .param-card .param-meta { font-size: 5.5pt !important; line-height: 1 !important; }
+        .exam-title { font-size: 8pt !important; padding-bottom: 0.5mm !important; margin-top: 1mm !important; }
+        .patient-header { font-size: 8pt !important; }
+        .patient-meta { font-size: 7pt !important; }
       }`}</style>
 
       {/* Navegação */}
