@@ -47,6 +47,7 @@ export function SampleLabelsPrintModal({
   labName,
 }: Props) {
   const [enviando, setEnviando] = useState(false)
+  const { config } = useLabelConfig()
 
   const printNavegador = () => {
     const d = window.document
