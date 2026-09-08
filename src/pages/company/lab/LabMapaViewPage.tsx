@@ -235,25 +235,26 @@ export default function LabMapaViewPage() {
         }
         .map-patient:nth-of-type(3n) { break-after: page; page-break-after: always }
         .map-patient:last-of-type { break-after: auto; page-break-after: auto }
-        /* grade de parâmetros mais densa */
+        /* grade de parâmetros bem compacta */
         .param-grid {
           display: grid !important;
-          grid-template-columns: repeat(8, 1fr) !important;
-          gap: 1.5mm !important;
-          margin-top: 2mm !important;
+          grid-template-columns: repeat(9, 1fr) !important;
+          gap: 0.8mm !important;
+          margin-top: 0.8mm !important;
         }
         .param-card {
-          min-height: 14mm !important;
-          padding: 1mm !important;
-          border: 0.3mm solid #000 !important;
-          border-radius: 1mm !important;
+          min-height: 0 !important;
+          height: auto !important;
+          padding: 0.5mm 0.6mm !important;
+          border: 0.2mm solid #000 !important;
+          border-radius: 0.6mm !important;
         }
-        .param-card .param-name { font-size: 6.5pt !important; line-height: 1 !important; }
-        .param-card .param-input { height: 5mm !important; min-height: 5mm !important; }
-        .param-card .param-meta { font-size: 5.5pt !important; line-height: 1 !important; }
-        .exam-title { font-size: 8pt !important; padding-bottom: 0.5mm !important; margin-top: 1mm !important; }
-        .patient-header { font-size: 8pt !important; }
-        .patient-meta { font-size: 7pt !important; }
+        .param-card .param-name { font-size: 5.5pt !important; line-height: 1 !important; margin-bottom: 0.2mm !important; }
+        .param-card .param-input { height: 3mm !important; min-height: 3mm !important; margin-bottom: 0.2mm !important; }
+        .param-card .param-meta { font-size: 4.5pt !important; line-height: 1 !important; }
+        .exam-title { font-size: 7pt !important; padding-bottom: 0.2mm !important; margin-top: 0.5mm !important; margin-bottom: 0.3mm !important; }
+        .patient-header { font-size: 7pt !important; margin-bottom: 0.3mm !important; }
+        .patient-meta { font-size: 6pt !important; }
       }`}</style>
 
       {/* Navegação */}
