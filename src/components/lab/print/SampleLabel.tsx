@@ -87,9 +87,9 @@ export const SampleLabel = ({
       }}
     >
       {/* Cabeçalho: urgência / bancada / data */}
-      <div className="flex shrink-0 items-center gap-1 overflow-hidden uppercase">
+      <div className="flex shrink-0 items-center gap-1 uppercase whitespace-nowrap">
         {isUrgent && <span className="bg-black text-white px-1" style={f('sector')}>URG</span>}
-        <span className="flex-1 truncate" style={f('sector')}>{workbench || 'GERAL'}</span>
+        <span className="flex-1 whitespace-nowrap" style={f('sector')}>{workbench || 'GERAL'}</span>
         <span className="whitespace-nowrap" style={f('dateTime')}>{printDate || '---'}</span>
       </div>
 
@@ -110,28 +110,28 @@ export const SampleLabel = ({
       </div>
 
       {/* Código da amostra + hash exclusivo do tubo (interfaceamento) */}
-      <div className="flex shrink-0 items-center justify-between gap-1 overflow-hidden whitespace-nowrap">
+      <div className="flex shrink-0 items-center justify-between gap-1 whitespace-nowrap">
         <span style={f('sampleCode')}>{sampleId}</span>
         {sampleHash && <span className="tracking-tight" style={f('sampleHash')}>{sampleHash}</span>}
       </div>
 
       {/* Dados do paciente */}
-      <div className="shrink-0 truncate uppercase" style={f('patientName')}>{patientName || 'PACIENTE NÃO INFORMADO'}</div>
-      <div className="shrink-0 overflow-hidden whitespace-nowrap" style={f('birthDate')}>
+      <div className="shrink-0 whitespace-nowrap uppercase" style={f('patientName')}>{patientName || 'PACIENTE NÃO INFORMADO'}</div>
+      <div className="shrink-0 whitespace-nowrap" style={f('birthDate')}>
         NASC: {birthDate || '--/--/----'}
       </div>
-      <div className="shrink-0 truncate uppercase" style={f('material')}>
+      <div className="shrink-0 whitespace-nowrap uppercase" style={f('material')}>
         {material || '---'}{tube ? ` (${String(tube).toUpperCase()})` : ''}
       </div>
 
       {/* Referências dos exames */}
-      <div className="shrink-0 overflow-hidden uppercase" style={f('examRefs')}>
+      <div className="shrink-0 uppercase whitespace-nowrap" style={f('examRefs')}>
         {refsText || '—'}
       </div>
 
       {/* Rodapé: Nome do Laboratório (Esquerda) e Software (Direita) */}
-      <div className="flex flex-1 shrink-0 items-end justify-between gap-1 overflow-hidden">
-        <span className="text-slate-600 uppercase truncate max-w-[70%]" style={f('labName')}>
+      <div className="flex flex-1 shrink-0 items-end justify-between gap-1">
+        <span className="text-slate-600 uppercase whitespace-nowrap max-w-[70%]" style={f('labName')}>
           {labName}
         </span>
         <span className="text-slate-500 tracking-tighter opacity-80 whitespace-nowrap" style={f('brand')}>
