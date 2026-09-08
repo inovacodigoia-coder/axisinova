@@ -681,6 +681,15 @@ function PrinterLabelSection() {
 
   const set = (patch: Partial<LabelConfig>) => setConfig({ ...config, ...patch })
 
+  // Com rotação de 90°/270° a etiqueta é desenhada com as medidas invertidas,
+  // para que ao girar ocupe exatamente a etiqueta física configurada.
+  const rotNorm = ((Number(config.rotation) % 360) + 360) % 360
+  const isQuarter = rotNorm === 90 || rotNorm === 270
+  const renderConfig: LabelConfig = isQuarter
+    ? { ...config, widthMm: config.heightMm, heightMm: config.widthMm }
+    : config
+
+
   const applyPreset = (p: typeof presets[number]) => {
     setConfig({ ...config, widthMm: p.w, heightMm: p.h, rotation: p.r, preset: p.name })
     toast.info(`Preset ${p.name} aplicado. Clique em Salvar para gravar.`)
