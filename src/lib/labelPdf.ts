@@ -10,7 +10,8 @@ export async function gerarPdfEtiquetas(
   widthMm = 50,
   heightMm = 30,
 ): Promise<Blob> {
-  const pdf = new jsPDF({ orientation: 'landscape', unit: 'mm', format: [widthMm, heightMm] })
+  const orientation = heightMm > widthMm ? 'portrait' : 'landscape'
+  const pdf = new jsPDF({ orientation, unit: 'mm', format: [widthMm, heightMm] })
 
   for (let i = 0; i < elements.length; i++) {
     const el = elements[i]
@@ -29,7 +30,7 @@ export async function gerarPdfEtiquetas(
     })
 
     const img = canvas.toDataURL('image/png')
-    if (i > 0) pdf.addPage([widthMm, heightMm], 'landscape')
+    if (i > 0) pdf.addPage([widthMm, heightMm], orientation)
     pdf.addImage(img, 'PNG', 0, 0, widthMm, heightMm)
   }
 
