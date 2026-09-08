@@ -321,14 +321,14 @@ export default function LabMapaViewPage() {
                 <PatientHeader p={p} />
                 {p.exams.filter(e => e.inMap).map((e, i) => (
                   <div key={i} className="mt-2">
-                    <p className="text-[12px] font-bold border-b border-black pb-0.5">{e.nome.toUpperCase()} - {e.material.toUpperCase()}</p>
+                    <p className="exam-title text-[12px] font-bold border-b border-black pb-0.5">{e.nome.toUpperCase()} - {e.material.toUpperCase()}</p>
                     {paramsFor(e).length > 0 && (
-                      <div className="mt-2 grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-2">
+                      <div className="param-grid mt-2 grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-2">
                         {paramsFor(e).map((param, pi) => (
-                          <div key={pi} className="border border-black/20 rounded p-1.5 flex flex-col gap-0.5 min-h-[56px] print:min-h-[50px]">
-                            <span className="text-[9px] font-bold uppercase truncate leading-tight">{param.name}</span>
-                            <div className="border border-black/40 h-6 bg-gray-50 flex items-center px-1" />
-                            <div className="flex flex-col text-[7.5px] text-gray-600 mt-auto leading-[1.1]">
+                          <div key={pi} className="param-card border border-black/20 rounded p-1.5 flex flex-col gap-0.5 min-h-[56px] print:min-h-[50px]">
+                            <span className="param-name text-[9px] font-bold uppercase truncate leading-tight">{param.name}</span>
+                            <div className="param-input border border-black/40 h-6 bg-gray-50 flex items-center px-1" />
+                            <div className="param-meta flex flex-col text-[7.5px] text-gray-600 mt-auto leading-[1.1]">
                               {param.reference && <span className="truncate">Ref: {param.reference}</span>}
                               {param.unit && <span className="font-semibold uppercase">{param.unit}</span>}
                             </div>
