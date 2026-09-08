@@ -117,7 +117,7 @@ export function NewPartnerWizard({ open, onOpenChange, companyId, onCreated }: P
             <>
               <div className="space-y-2">
                 <Label>Tipo de Parceiro *</Label>
-                <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+                <div className="grid grid-cols-2 gap-3 sm:grid-cols-5">
                   {TYPE_OPTIONS.map(({ value, icon: Icon }) => (
                     <button
                       key={value}
