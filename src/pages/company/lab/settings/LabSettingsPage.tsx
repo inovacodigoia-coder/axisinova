@@ -41,7 +41,11 @@ import { supabase } from '@/integrations/supabase/client'
 import { useAuth } from '@/context/AuthContext'
 import { useRegisters } from '@/context/RegistersContext'
 import LabMethodsSection from '@/components/lab/settings/LabMethodsSection'
-import { useLabelLayout } from '@/hooks/useLabelLayout'
+import { useLabelLayout, DEFAULT_LABEL_LAYOUT, type LabelLayout } from '@/hooks/useLabelLayout'
+import { useLabSettings } from '@/hooks/useLabSettings'
+import { SampleLabel } from '@/components/lab/print/SampleLabel'
+import { gerarPdfEtiquetas } from '@/lib/labelPdf'
+import { servidorImpressaoAtivo, imprimirDireto, TIPOS_DOCUMENTO } from '@/lib/impressaoLocal'
 
 export default function LabSettingsPage() {
   const [searchParams, setSearchParams] = useSearchParams()
@@ -663,44 +667,36 @@ function SecuritySection() {
 
 function PrinterLabelSection() {
   const { layout, isLoading, save } = useLabelLayout()
-  const [rotation, setRotation] = useState("0")
-  const [width, setWidth] = useState(50)
-  const [height, setHeight] = useState(30)
-  const [copies, setCopies] = useState(1)
-  const [preset, setPreset] = useState<string | null>(null)
+  const [draft, setDraft] = useState<LabelLayout>(DEFAULT_LABEL_LAYOUT)
   const [saving, setSaving] = useState(false)
+  const [testing, setTesting] = useState(false)
+  const { settings: labSettings } = useLabSettings()
 
-  useEffect(() => {
-    setWidth(layout.widthMm)
-    setHeight(layout.heightMm)
-    setRotation(String(layout.rotation))
-    setCopies(layout.copies)
-    setPreset(layout.preset ?? null)
-  }, [layout])
+  useEffect(() => { setDraft(layout) }, [layout])
+
+  const set = <K extends keyof LabelLayout>(key: K, value: LabelLayout[K]) =>
+    setDraft(prev => ({ ...prev, [key]: value }))
 
   const presets = [
-    { name: "CD410 rotacionado 50x25", w: 50, h: 25, r: "90" },
-    { name: "CD410 single 50x25 (2 por página)", w: 50, h: 25, r: "0" },
-    { name: "CD410 single 50x25 (1 por página)", w: 50, h: 25, r: "0" },
-    { name: "50x30 padrão", w: 50, h: 30, r: "0" }
+    { name: "CD410 rotacionado 50x25", w: 50, h: 25, r: 90 },
+    { name: "CD410 single 50x25 (2 por página)", w: 50, h: 25, r: 0 },
+    { name: "CD410 single 50x25 (1 por página)", w: 50, h: 25, r: 0 },
+    { name: "50x30 padrão", w: 50, h: 30, r: 0 },
   ]
 
-  const applyPreset = (p: any) => {
-    setWidth(p.w)
-    setHeight(p.h)
-    setRotation(p.r)
-    setPreset(p.name)
+  const applyPreset = (p: { name: string; w: number; h: number; r: number }) => {
+    setDraft(prev => ({ ...prev, widthMm: p.w, heightMm: p.h, rotation: p.r, preset: p.name }))
     toast.info(`Preset ${p.name} aplicado — clique em Salvar para valer nas impressões.`)
   }
 
   const handleSave = async () => {
-    if (!width || !height || width < 10 || height < 10) {
+    if (!draft.widthMm || !draft.heightMm || draft.widthMm < 10 || draft.heightMm < 10) {
       toast.error('Informe largura e altura válidas (mínimo 10mm).')
       return
     }
     setSaving(true)
     try {
-      await save({ widthMm: width, heightMm: height, rotation: Number(rotation), copies: Math.max(1, copies), preset })
+      await save({ ...draft, copies: Math.max(1, draft.copies) })
       toast.success('Configuração salva — já vale para todas as novas impressões de etiqueta.')
     } catch (e) {
       toast.error(e instanceof Error ? e.message : 'Falha ao salvar a configuração.')
@@ -709,27 +705,91 @@ function PrinterLabelSection() {
     }
   }
 
+  const rotated = Math.abs(draft.rotation % 180) === 90
+  const pageW = rotated ? draft.heightMm : draft.widthMm
+  const pageH = rotated ? draft.widthMm : draft.heightMm
+
+  const handleTestPrint = async () => {
+    if (testing) return
+    setTesting(true)
+    try {
+      const node = document.getElementById('label-test-sheet') as HTMLElement | null
+      if (!node) throw new Error('Pré-visualização indisponível.')
+      const ativo = await servidorImpressaoAtivo()
+      if (ativo) {
+        const pdf = await gerarPdfEtiquetas([node], pageW, pageH)
+        const r = await imprimirDireto(TIPOS_DOCUMENTO.etiquetaCliente, pdf)
+        toast.success(r.mensagem || 'Etiqueta teste enviada para a impressora.')
+        return
+      }
+      const d = window.document
+      const portal = d.createElement('div')
+      portal.id = 'receipt-print-portal'
+      portal.innerHTML = node.outerHTML
+      d.body.appendChild(portal)
+      d.body.classList.add('printing-receipt')
+      const cleanup = () => {
+        d.body.classList.remove('printing-receipt')
+        portal.remove()
+        window.removeEventListener('afterprint', cleanup)
+      }
+      window.addEventListener('afterprint', cleanup)
+      setTimeout(() => { window.print(); setTimeout(cleanup, 800) }, 60)
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : 'Falha ao imprimir a etiqueta teste.')
+    } finally {
+      setTesting(false)
+    }
+  }
+
+  const previewLabel = (
+    <SampleLabel
+      orderNumber="000187"
+      sampleCode="187-00-1-2"
+      patientName="PACIENTE TESTE HOMEM JOSE"
+      birthDate="15/07/1989"
+      material="EDTA"
+      tube="EDTA"
+      workbench="HEMATOLOGIA"
+      printDate={new Date().toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', year: '2-digit', hour: '2-digit', minute: '2-digit' })}
+      labelIndex={1}
+      examRefs={['H']}
+      labName={labSettings?.lab_name || 'LABORATÓRIO'}
+      widthMm={draft.widthMm}
+      heightMm={draft.heightMm}
+      marginMm={draft.marginMm}
+      barcodeHeightPx={draft.barcodeHeightPx}
+      autoFit={draft.autoFit}
+      fontSizes={{
+        header: draft.fontHeader,
+        code: draft.fontCode,
+        patient: draft.fontPatient,
+        small: draft.fontSmall,
+        footer: draft.fontFooter,
+      }}
+    />
+  )
+
   return (
     <div className="space-y-8">
       <div className="flex items-center justify-between gap-2 flex-wrap">
         <h3 className="text-lg font-bold">Configuração de Impressora / Etiqueta</h3>
         <div className="flex items-center gap-2">
-          <Button variant="outline" size="sm" className="gap-2">
-            <Layout className="h-4 w-4" /> Gerenciar Slots
+          <Button variant="outline" size="sm" className="gap-2" onClick={handleTestPrint} disabled={testing}>
+            <Printer className="h-4 w-4" /> {testing ? 'Enviando...' : 'Imprimir etiqueta teste'}
           </Button>
           <Button size="sm" className="gap-2" onClick={handleSave} disabled={saving || isLoading}>
             {saving ? 'Salvando...' : 'Salvar'}
           </Button>
         </div>
       </div>
-      
-      
+
       <div className="space-y-3">
         <Label>Presets rápidos (CD410 e outros)</Label>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
           {presets.map(p => (
-            <button 
-              key={p.name} 
+            <button
+              key={p.name}
               onClick={() => applyPreset(p)}
               className="p-3 text-left rounded-xl border border-border bg-card hover:border-primary transition-all text-xs font-medium focus:ring-2 focus:ring-primary/20 outline-none"
             >
@@ -744,23 +804,31 @@ function PrinterLabelSection() {
           <h4 className="font-bold text-sm uppercase tracking-wider text-muted-foreground flex items-center gap-2">
              Editor de Layout <Edit2 className="h-3 w-3" />
           </h4>
-          
+
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label>Largura (mm)</Label>
-              <Input type="number" value={width} onChange={(e) => setWidth(Number(e.target.value))} />
+              <Input type="number" value={draft.widthMm} onChange={(e) => set('widthMm', Number(e.target.value))} />
             </div>
             <div className="space-y-2">
               <Label>Altura (mm)</Label>
-              <Input type="number" value={height} onChange={(e) => setHeight(Number(e.target.value))} />
+              <Input type="number" value={draft.heightMm} onChange={(e) => set('heightMm', Number(e.target.value))} />
+            </div>
+            <div className="space-y-2">
+              <Label>Margem interna (mm)</Label>
+              <Input type="number" step="0.5" min={0} value={draft.marginMm} onChange={(e) => set('marginMm', Math.max(0, Number(e.target.value) || 0))} />
+            </div>
+            <div className="space-y-2">
+              <Label>Altura do código de barras (px)</Label>
+              <Input type="number" min={8} max={120} value={draft.barcodeHeightPx} onChange={(e) => set('barcodeHeightPx', Math.max(8, Number(e.target.value) || 8))} />
             </div>
           </div>
 
           <div className="space-y-2">
             <Label>Rotação do conteúdo</Label>
-            <select 
-              value={rotation} 
-              onChange={(e) => setRotation(e.target.value)}
+            <select
+              value={String(draft.rotation)}
+              onChange={(e) => set('rotation', Number(e.target.value))}
               className="w-full h-10 px-3 rounded-lg border bg-background text-sm outline-none focus:ring-2 focus:ring-primary/20"
             >
               <option value="0">0° (Padrão)</option>
@@ -772,18 +840,51 @@ function PrinterLabelSection() {
 
           <div className="space-y-2">
             <Label>Cópias por etiqueta</Label>
-            <Input type="number" min={1} max={5} value={copies} onChange={(e) => setCopies(Math.max(1, Number(e.target.value) || 1))} />
+            <Input type="number" min={1} max={5} value={draft.copies} onChange={(e) => set('copies', Math.max(1, Number(e.target.value) || 1))} />
+          </div>
+
+          <label className="flex items-center gap-2 text-sm">
+            <input
+              type="checkbox"
+              checked={draft.autoFit}
+              onChange={(e) => set('autoFit', e.target.checked)}
+              className="h-4 w-4 accent-primary"
+            />
+            Ajustar automaticamente as informações ao tamanho da etiqueta
+          </label>
+
+          <div className="space-y-3 pt-4 border-t">
+            <Label className="text-xs font-bold uppercase text-muted-foreground">Tamanho de cada campo (px)</Label>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label className="text-xs">Cabeçalho / data</Label>
+                <Input type="number" min={4} max={30} value={draft.fontHeader} onChange={(e) => set('fontHeader', Number(e.target.value) || 4)} />
+              </div>
+              <div className="space-y-2">
+                <Label className="text-xs">Código da amostra</Label>
+                <Input type="number" min={4} max={40} value={draft.fontCode} onChange={(e) => set('fontCode', Number(e.target.value) || 4)} />
+              </div>
+              <div className="space-y-2">
+                <Label className="text-xs">Paciente / material</Label>
+                <Input type="number" min={4} max={30} value={draft.fontPatient} onChange={(e) => set('fontPatient', Number(e.target.value) || 4)} />
+              </div>
+              <div className="space-y-2">
+                <Label className="text-xs">Nascimento / exames</Label>
+                <Input type="number" min={4} max={30} value={draft.fontSmall} onChange={(e) => set('fontSmall', Number(e.target.value) || 4)} />
+              </div>
+              <div className="space-y-2">
+                <Label className="text-xs">Rodapé</Label>
+                <Input type="number" min={3} max={20} value={draft.fontFooter} onChange={(e) => set('fontFooter', Number(e.target.value) || 3)} />
+              </div>
+            </div>
           </div>
 
           <div className="pt-4 flex gap-2">
-            <Button variant="outline" size="sm" className="flex-1 gap-2">
-               <Plus className="h-3.5 w-3.5" /> Duplicar Slot
-            </Button>
             <Button
               variant="outline"
               size="sm"
               className="flex-1 gap-2"
-              onClick={() => { setWidth(50); setHeight(30); setRotation('0'); setCopies(1); setPreset(null) }}
+              onClick={() => setDraft(DEFAULT_LABEL_LAYOUT)}
             >
                <History className="h-3.5 w-3.5" /> Resetar
             </Button>
@@ -791,32 +892,20 @@ function PrinterLabelSection() {
         </div>
 
         <div className="space-y-4">
-          <Label className="text-xs font-bold text-muted-foreground uppercase">Preview em Tempo Real</Label>
-          <div className="bg-muted/50 rounded-xl p-8 flex items-center justify-center border-2 border-dashed border-border min-h-[300px]">
-            <div 
-              style={{ 
-                width: `${width * 3.7}px`, 
-                height: `${height * 3.7}px`,
-                transform: `rotate(${rotation}deg)`,
-                transition: 'all 0.3s ease'
-              }} 
-              className="bg-card border-2 border-primary/50 rounded shadow-sm relative p-3 flex flex-col justify-between overflow-hidden"
+          <Label className="text-xs font-bold text-muted-foreground uppercase">Prévia real da etiqueta</Label>
+          <div className="bg-muted/50 rounded-xl p-6 flex items-center justify-center border-2 border-dashed border-border min-h-[300px] overflow-auto">
+            <div
+              id="label-test-sheet"
+              className="label-sheet flex items-center justify-center bg-white shadow-sm"
+              style={{ width: `${pageW}mm`, height: `${pageH}mm`, overflow: 'hidden' }}
             >
-              <div className="flex justify-between items-start">
-                <div className="h-3 w-16 bg-muted rounded" />
-                <div className="h-5 w-5 bg-primary/10 rounded" />
+              <div style={{ transform: `rotate(${draft.rotation}deg)`, transformOrigin: 'center center' }}>
+                {previewLabel}
               </div>
-              <div className="h-2.5 w-24 bg-muted rounded" />
-              <div className="h-2 w-32 bg-muted/50 rounded" />
-              <div className="flex justify-between items-end">
-                  <div className="h-6 w-6 bg-muted rounded" />
-                  <div className="h-5 w-10 bg-muted/50 rounded" />
-              </div>
-              <div className="absolute top-0 right-0 p-1 text-[7px] font-bold text-primary/40 uppercase">Label ID: 001</div>
             </div>
           </div>
           <p className="text-[10px] text-center text-muted-foreground italic">
-            Visualização aproximada. Escala: 1mm ≈ 3.7px
+            Prévia em tamanho real ({pageW}mm × {pageH}mm) com o conteúdo verdadeiro da etiqueta.
           </p>
         </div>
       </div>

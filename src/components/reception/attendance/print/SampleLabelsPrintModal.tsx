@@ -195,6 +195,16 @@ export function SampleLabelsPrintModal({
                     labName={labName}
                     widthMm={layout.widthMm}
                     heightMm={layout.heightMm}
+                    marginMm={layout.marginMm}
+                    barcodeHeightPx={layout.barcodeHeightPx}
+                    autoFit={layout.autoFit}
+                    fontSizes={{
+                      header: layout.fontHeader,
+                      code: layout.fontCode,
+                      patient: layout.fontPatient,
+                      small: layout.fontSmall,
+                      footer: layout.fontFooter,
+                    }}
                   />
                 </div>
               </div>

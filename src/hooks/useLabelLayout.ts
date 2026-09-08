@@ -8,6 +8,14 @@ export interface LabelLayout {
   rotation: number
   copies: number
   preset?: string | null
+  marginMm: number
+  barcodeHeightPx: number
+  autoFit: boolean
+  fontHeader: number
+  fontCode: number
+  fontPatient: number
+  fontSmall: number
+  fontFooter: number
 }
 
 export const DEFAULT_LABEL_LAYOUT: LabelLayout = {
@@ -16,16 +24,37 @@ export const DEFAULT_LABEL_LAYOUT: LabelLayout = {
   rotation: 0,
   copies: 1,
   preset: null,
+  marginMm: 1.5,
+  barcodeHeightPx: 24,
+  autoFit: true,
+  fontHeader: 10,
+  fontCode: 12,
+  fontPatient: 10,
+  fontSmall: 9,
+  fontFooter: 8,
+}
+
+const num = (v: unknown, fallback: number) => {
+  const n = Number(v)
+  return Number.isFinite(n) && n > 0 ? n : fallback
 }
 
 function fromRow(row: Record<string, unknown> | null): LabelLayout {
   if (!row) return DEFAULT_LABEL_LAYOUT
   return {
-    widthMm: Number(row.label_width_mm ?? 50) || 50,
-    heightMm: Number(row.label_height_mm ?? 30) || 30,
+    widthMm: num(row.label_width_mm, 50),
+    heightMm: num(row.label_height_mm, 30),
     rotation: Number(row.label_rotation ?? 0) || 0,
     copies: Math.max(1, Number(row.label_copies ?? 1) || 1),
     preset: (row.label_preset as string) ?? null,
+    marginMm: num(row.label_margin_mm, 1.5),
+    barcodeHeightPx: num(row.label_barcode_height_px, 24),
+    autoFit: row.label_auto_fit === undefined || row.label_auto_fit === null ? true : Boolean(row.label_auto_fit),
+    fontHeader: num(row.label_font_header, 10),
+    fontCode: num(row.label_font_code, 12),
+    fontPatient: num(row.label_font_patient, 10),
+    fontSmall: num(row.label_font_small, 9),
+    fontFooter: num(row.label_font_footer, 8),
   }
 }
 
@@ -43,7 +72,7 @@ export function useLabelLayout() {
     if (!companyId) return
     const { data } = await supabase
       .from('lab_settings')
-      .select('label_width_mm,label_height_mm,label_rotation,label_copies,label_preset')
+      .select('*')
       .eq('company_id', companyId)
       .maybeSingle()
     setLayout(fromRow(data as Record<string, unknown> | null))
@@ -76,7 +105,15 @@ export function useLabelLayout() {
           label_rotation: next.rotation,
           label_copies: next.copies,
           label_preset: next.preset ?? null,
-        },
+          label_margin_mm: next.marginMm,
+          label_barcode_height_px: Math.round(next.barcodeHeightPx),
+          label_auto_fit: next.autoFit,
+          label_font_header: next.fontHeader,
+          label_font_code: next.fontCode,
+          label_font_patient: next.fontPatient,
+          label_font_small: next.fontSmall,
+          label_font_footer: next.fontFooter,
+        } as never,
         { onConflict: 'company_id' },
       )
     if (error) throw error
