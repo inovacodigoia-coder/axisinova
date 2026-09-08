@@ -68,7 +68,9 @@ export const SampleLabel = ({
     const px = style.size * PT_TO_PX;
     return {
       fontSize: `${px.toFixed(2)}px`,
-      lineHeight: `${(px * 1.2).toFixed(2)}px`,
+      // Etiquetas têm pouca altura útil. A entrelinha de 1:1 evita que as
+      // linhas se sobreponham ao código de barras ou sejam cortadas no PDF.
+      lineHeight: `${px.toFixed(2)}px`,
       fontWeight: style.bold ? 700 : 400,
     };
   };
@@ -93,7 +95,7 @@ export const SampleLabel = ({
 
       {/* Código de barras */}
       <div
-        className="flex w-full shrink-0 justify-center overflow-hidden"
+        className="flex w-full shrink-0 items-start justify-center overflow-hidden [&_svg]:block [&_svg]:max-w-full"
         style={{ height: `${barcodeHeightPx}px` }}
       >
         <Barcode
