@@ -1428,7 +1428,7 @@ export function ResultEntryModal({
       </header>
 
       {/* Conteúdo */}
-      <ScrollArea className="flex-1 bg-slate-50">
+      <ScrollArea className="flex-1 bg-slate-50 result-entry-scroll">
         <div className="container max-w-5xl py-8 px-6 space-y-8">
           {groupedPatients.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-20 text-center bg-card rounded-2xl border border-dashed border-border shadow-sm">
