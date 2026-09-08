@@ -104,10 +104,15 @@ export const SampleLabel = ({
     if (!box || !content) return;
     const availW = box.clientWidth;
     const availH = box.clientHeight;
-    const cw = content.scrollWidth;
+    // mede a altura natural do conteúdo (sem escala) para evitar medição circular
+    const prev = content.getAttribute('style') || '';
+    content.style.transform = 'none';
+    content.style.width = `${availW}px`;
+    content.style.height = 'auto';
     const ch = content.scrollHeight;
-    if (!availW || !availH || !cw || !ch) return;
-    const next = Math.min(availW / cw, availH / ch);
+    content.setAttribute('style', prev);
+    if (!availW || !availH || !ch) return;
+    const next = availH / ch;
     const clamped = Math.max(0.4, Math.min(3, next));
     if (Math.abs(clamped - fit) > 0.01) setFit(clamped);
     // eslint-disable-next-line react-hooks/exhaustive-deps
