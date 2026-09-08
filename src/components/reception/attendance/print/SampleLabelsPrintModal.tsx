@@ -86,10 +86,10 @@ export function SampleLabelsPrintModal({
       const ativo = await servidorImpressaoAtivo()
       if (ativo) {
         const nodes = Array.from(
-          window.document.querySelectorAll<HTMLElement>('#labels-print-root .label-sheet > div'),
+          window.document.querySelectorAll<HTMLElement>('#labels-print-root .label-sheet'),
         )
         if (nodes.length) {
-          const pdf = await gerarPdfEtiquetas(nodes)
+          const pdf = await gerarPdfEtiquetas(nodes, pageW, pageH)
           const r = await imprimirDireto(TIPOS_DOCUMENTO.etiquetaCliente, pdf)
           toast.success(r.mensagem || 'Etiquetas enviadas para a impressora.')
           return
