@@ -21,6 +21,9 @@ interface LabelProps {
   companySequenceId?: number | null;
   /** Referências (códigos/siglas) dos exames contidos nesta amostra */
   examRefs?: string[];
+  /** Dimensões físicas da etiqueta (Configuração de Impressora / Etiqueta) */
+  widthMm?: number;
+  heightMm?: number;
 }
 
 export const SampleLabel = ({
