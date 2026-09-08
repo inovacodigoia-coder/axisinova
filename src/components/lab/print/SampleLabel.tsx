@@ -40,6 +40,8 @@ export const SampleLabel = ({
   companySequenceId,
   examRefs = [],
   labName,
+  widthMm = 50,
+  heightMm = 30,
 }: LabelProps & { labName?: string }) => {
   const sampleId = useMemo(() => {
     if (sampleCode) return sampleCode;
