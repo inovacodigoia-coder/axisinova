@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useRef, useState, useLayoutEffect } from 'react';
 import Barcode from 'react-barcode';
 import { buildSampleCode, generateSampleHash } from '@/utils/orderHash';
 
