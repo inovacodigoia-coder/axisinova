@@ -911,13 +911,17 @@ function PrinterLabelSection() {
           </p>
           <style>{`
             @media print {
-              @page { size: ${config.widthMm}mm ${config.heightMm}mm; margin: 0; }
+              @page {
+                size: ${((Number(config.rotation) % 360) + 360) % 360 === 90 || ((Number(config.rotation) % 360) + 360) % 360 === 270 ? `${config.heightMm}mm ${config.widthMm}mm` : `${config.widthMm}mm ${config.heightMm}mm`};
+                margin: 0;
+              }
               body.printing-receipt #receipt-print-portal .label-test-sheet > div {
                 border: none !important;
                 box-shadow: none !important;
               }
             }
           `}</style>
+
         </div>
       </div>
     </div>
