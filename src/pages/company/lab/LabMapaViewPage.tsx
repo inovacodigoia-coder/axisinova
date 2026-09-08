@@ -309,7 +309,7 @@ export default function LabMapaViewPage() {
 
       {/* Conteúdo do mapa */}
       <div id="work-map-print" className="rounded-xl border border-border bg-white p-5 text-black print:rounded-none print:border-0 print:p-0">
-        <div className="mb-3 flex flex-wrap items-baseline gap-x-6 gap-y-1 border-b border-black pb-2 text-[12px]">
+        <div className="map-header mb-3 flex flex-wrap items-baseline gap-x-6 gap-y-1 border-b border-black pb-2 text-[12px]">
           <span><span className="font-semibold">Setor:</span> {(map.sector || '—').toUpperCase()}</span>
           <span><span className="font-semibold">Data:</span> {formatDateTime(map.generatedAt)}</span>
           <span><span className="font-semibold">Responsável:</span> {map.responsible}</span>
