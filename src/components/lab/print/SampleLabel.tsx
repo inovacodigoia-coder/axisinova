@@ -210,5 +210,6 @@ export const SampleLabel = ({
         </span>
       </div>
     </div>
+    </div>
   );
 };
