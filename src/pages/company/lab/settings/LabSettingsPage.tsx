@@ -41,6 +41,7 @@ import { supabase } from '@/integrations/supabase/client'
 import { useAuth } from '@/context/AuthContext'
 import { useRegisters } from '@/context/RegistersContext'
 import LabMethodsSection from '@/components/lab/settings/LabMethodsSection'
+import { useLabelLayout } from '@/hooks/useLabelLayout'
 
 export default function LabSettingsPage() {
   const [searchParams, setSearchParams] = useSearchParams()
