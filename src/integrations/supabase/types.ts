@@ -1875,6 +1875,11 @@ export type Database = {
           email: string | null
           id: string
           lab_name: string | null
+          label_copies: number
+          label_height_mm: number
+          label_preset: string | null
+          label_rotation: number
+          label_width_mm: number
           phone: string | null
           report_footer_text: string | null
           report_header_subtitle: string | null
@@ -1907,6 +1912,11 @@ export type Database = {
           email?: string | null
           id?: string
           lab_name?: string | null
+          label_copies?: number
+          label_height_mm?: number
+          label_preset?: string | null
+          label_rotation?: number
+          label_width_mm?: number
           phone?: string | null
           report_footer_text?: string | null
           report_header_subtitle?: string | null
@@ -1939,6 +1949,11 @@ export type Database = {
           email?: string | null
           id?: string
           lab_name?: string | null
+          label_copies?: number
+          label_height_mm?: number
+          label_preset?: string | null
+          label_rotation?: number
+          label_width_mm?: number
           phone?: string | null
           report_footer_text?: string | null
           report_header_subtitle?: string | null

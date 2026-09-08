@@ -21,6 +21,9 @@ interface LabelProps {
   companySequenceId?: number | null;
   /** Referências (códigos/siglas) dos exames contidos nesta amostra */
   examRefs?: string[];
+  /** Dimensões físicas da etiqueta (Configuração de Impressora / Etiqueta) */
+  widthMm?: number;
+  heightMm?: number;
 }
 
 export const SampleLabel = ({
@@ -37,6 +40,8 @@ export const SampleLabel = ({
   companySequenceId,
   examRefs = [],
   labName,
+  widthMm = 50,
+  heightMm = 30,
 }: LabelProps & { labName?: string }) => {
   const sampleId = useMemo(() => {
     if (sampleCode) return sampleCode;
@@ -54,7 +59,10 @@ export const SampleLabel = ({
   }, [examRefs]);
 
   return (
-    <div className="box-border w-[50mm] h-[30mm] bg-white border border-slate-200 px-1.5 py-[1px] flex flex-col text-black font-mono overflow-hidden">
+    <div
+      style={{ width: `${widthMm}mm`, height: `${heightMm}mm` }}
+      className="box-border bg-white border border-slate-200 px-1.5 py-[1px] flex flex-col text-black font-mono overflow-hidden"
+    >
       {/* Cabeçalho: urgência / bancada / data */}
       <div className="flex h-[12px] shrink-0 items-center gap-1 overflow-hidden text-[10px] leading-[12px] font-bold uppercase">
         {isUrgent && <span className="bg-black text-white px-1">URG</span>}
