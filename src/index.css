@@ -316,3 +316,35 @@ a[href*="lovable.app"],
 #receipt-print-portal { display: none; }
 
 #lab-report-print-root { display: none; }
+
+/* ====== Scrollbar grossa e visível na digitação de resultados ====== */
+.result-entry-scroll [data-radix-scroll-area-scrollbar] {
+  width: 14px;
+  padding: 2px;
+  background: hsl(var(--muted) / 0.5);
+  border-radius: 9999px;
+}
+
+.result-entry-scroll [data-radix-scroll-area-scrollbar]:hover {
+  background: hsl(var(--muted) / 0.8);
+}
+
+.result-entry-scroll [data-radix-scroll-area-thumb] {
+  background: hsl(var(--primary));
+  border-radius: 9999px;
+  opacity: 0.85;
+}
+
+.result-entry-scroll [data-radix-scroll-area-thumb]:hover {
+  opacity: 1;
+  background: hsl(var(--primary) / 0.85);
+}
+
+.result-entry-scroll [data-radix-scroll-area-scrollbar][data-orientation="horizontal"] {
+  width: auto;
+  height: 14px;
+}
+
+.result-entry-scroll [data-radix-scroll-area-scrollbar][data-orientation="horizontal"] [data-radix-scroll-area-thumb] {
+  height: 100%;
+}
