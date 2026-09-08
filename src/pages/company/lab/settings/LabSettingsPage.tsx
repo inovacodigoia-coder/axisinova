@@ -715,49 +715,83 @@ function PrinterLabelSection() {
     return (sheet?.firstElementChild as HTMLElement | null) ?? sheet
   }
 
-  /** Imprime clonando o DOM real da preview (fiel ao que é exibido) */
-  const printNoNavegador = (copies: number) => {
-    const sheet = previewRef.current?.querySelector('.label-test-sheet') as HTMLElement | null
-    if (!sheet) throw new Error('Pré-visualização indisponível para o teste.')
+  /**
+   * Fotografa o mesmo elemento usado pela preview e o imprime sem reconstruir
+   * o layout. Assim fontes, código de barras, margens e espaçamentos ficam
+   * visualmente idênticos aos exibidos no editor.
+   */
+  const printNoNavegador = async (copies: number) => {
+    const label = getLabelElement()
+    if (!label) throw new Error('Pré-visualização indisponível para o teste.')
 
-    // A etiqueta física mantém sempre a largura/altura configuradas.
-    // Quando há rotação de 90°, o conteúdo já é renderizado com as dimensões
-    // invertidas, então após girar ele preenche exatamente a etiqueta.
-    const pageW = config.widthMm
-    const pageH = config.heightMm
+    const rect = label.getBoundingClientRect()
+    const canvas = await html2canvas(label, {
+      scale: 4,
+      backgroundColor: '#ffffff',
+      logging: false,
+      useCORS: true,
+      width: rect.width,
+      height: rect.height,
+      windowWidth: Math.ceil(rect.width),
+      windowHeight: Math.ceil(rect.height),
+      scrollX: 0,
+      scrollY: 0,
+    })
+    const image = canvas.toDataURL('image/png')
+    const frame = document.createElement('iframe')
+    frame.setAttribute('aria-hidden', 'true')
+    frame.style.cssText = 'position:fixed;width:0;height:0;border:0;right:0;bottom:0;visibility:hidden;'
+    document.body.appendChild(frame)
 
-
-    const d = window.document
-    const portal = d.createElement('div')
-    portal.id = 'receipt-print-portal'
-
-    for (let i = 0; i < copies; i++) {
-      const page = d.createElement('div')
-      page.className = 'label-print-page'
-      page.setAttribute(
-        'style',
-        `width:${pageW}mm;height:${pageH}mm;display:flex;align-items:center;justify-content:center;overflow:hidden;page-break-after:always;break-after:page;background:#fff;`,
-      )
-      const clone = sheet.cloneNode(true) as HTMLElement
-      clone.style.transform = `rotate(${config.rotation}deg)`
-      clone.style.transition = 'none'
-      page.appendChild(clone)
-      portal.appendChild(page)
+    const printDocument = frame.contentDocument
+    const printWindow = frame.contentWindow
+    if (!printDocument || !printWindow) {
+      frame.remove()
+      throw new Error('Não foi possível preparar a impressão.')
     }
 
-    d.body.appendChild(portal)
-    d.body.classList.add('printing-receipt')
+    const pages = Array.from({ length: copies }, () => (
+      `<div class="page"><img src="${image}" alt="Etiqueta de teste" /></div>`
+    )).join('')
 
-    const cleanup = () => {
-      d.body.classList.remove('printing-receipt')
-      portal.remove()
-      window.removeEventListener('afterprint', cleanup)
+    printDocument.open()
+    printDocument.write(`<!doctype html><html><head><meta charset="utf-8"><title>Etiqueta de teste</title><style>
+      @page { size: ${config.widthMm}mm ${config.heightMm}mm; margin: 0; }
+      * { box-sizing: border-box; }
+      html, body { margin: 0; padding: 0; background: #fff; }
+      .page {
+        width: ${config.widthMm}mm;
+        height: ${config.heightMm}mm;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        overflow: hidden;
+        break-after: page;
+        page-break-after: always;
+      }
+      .page:last-child { break-after: auto; page-break-after: auto; }
+      img {
+        display: block;
+        width: ${renderConfig.widthMm}mm;
+        height: ${renderConfig.heightMm}mm;
+        max-width: none;
+        transform: rotate(${config.rotation}deg);
+        transform-origin: center;
+      }
+    </style></head><body>${pages}</body></html>`)
+    printDocument.close()
+
+    const firstImage = printDocument.querySelector('img')
+    if (firstImage instanceof HTMLImageElement && !firstImage.complete) {
+      await new Promise<void>((resolve) => {
+        firstImage.onload = () => resolve()
+        firstImage.onerror = () => resolve()
+      })
     }
-    window.addEventListener('afterprint', cleanup)
-    setTimeout(() => {
-      window.print()
-      setTimeout(cleanup, 1000)
-    }, 120)
+
+    printWindow.focus()
+    printWindow.print()
+    window.setTimeout(() => frame.remove(), 1500)
   }
 
 
@@ -779,7 +813,7 @@ function PrinterLabelSection() {
         toast.success(r.mensagem || 'Etiqueta de teste enviada para a impressora.')
         return
       }
-      printNoNavegador(copies)
+      await printNoNavegador(copies)
     } catch (e: any) {
       toast.error(e?.message || 'Falha ao gerar a etiqueta de teste.')
     } finally {
