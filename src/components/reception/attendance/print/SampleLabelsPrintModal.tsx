@@ -178,7 +178,15 @@ export function SampleLabelsPrintModal({
                   ...(idx === printJobs.length - 1 ? { breakAfter: 'avoid', pageBreakAfter: 'avoid' } : {}),
                 }}
               >
-                <div style={{ transform: `rotate(${layout.rotation}deg)`, transformOrigin: 'center center' }}>
+                <div
+                  style={{
+                    width: `${layout.widthMm}mm`,
+                    height: `${layout.heightMm}mm`,
+                    transform: `rotate(${layout.rotation}deg)`,
+                    transformOrigin: 'center center',
+                    flex: '0 0 auto',
+                  }}
+                >
                   <SampleLabel
                     orderNumber={orderNumber}
                     patientName={patientName}

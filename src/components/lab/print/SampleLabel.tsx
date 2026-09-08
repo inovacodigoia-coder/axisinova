@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useRef, useState, useLayoutEffect } from 'react';
 import Barcode from 'react-barcode';
 import { buildSampleCode, generateSampleHash } from '@/utils/orderHash';
 
@@ -86,24 +86,52 @@ export const SampleLabel = ({
     return text.length > 90 ? `${text.slice(0, 87)}...` : text;
   }, [examRefs]);
 
-  // Fator de ajuste do conteúdo em relação ao tamanho base (50x30mm)
-  const scale = autoFit ? Math.min(widthMm / 50, heightMm / 30) : 1;
   const f = { ...DEFAULT_LABEL_FIELD_SIZES, ...(fontSizes || {}) };
-  const px = (n: number) => `${Math.max(4, n * scale).toFixed(1)}px`;
-  const lh = (n: number) => `${Math.max(5, n * scale * 1.18).toFixed(1)}px`;
-  const barH = Math.max(8, Math.round(barcodeHeightPx * scale));
-  // largura da barra proporcional à largura útil da etiqueta
+  const px = (n: number) => `${Math.max(4, n).toFixed(1)}px`;
+  const lh = (n: number) => `${Math.max(5, n * 1.18).toFixed(1)}px`;
+  const barH = Math.max(8, Math.round(barcodeHeightPx));
   const barWidth = Math.max(0.6, Math.min(2, ((widthMm - marginMm * 2) / 47) * 1.1));
+
+  // Ajuste automático: mede o conteúdo real e escala para preencher a etiqueta
+  const boxRef = useRef<HTMLDivElement>(null);
+  const contentRef = useRef<HTMLDivElement>(null);
+  const [fit, setFit] = useState(1);
+
+  useLayoutEffect(() => {
+    if (!autoFit) { setFit(1); return; }
+    const box = boxRef.current;
+    const content = contentRef.current;
+    if (!box || !content) return;
+    const availW = box.clientWidth;
+    const availH = box.clientHeight;
+    const cw = content.scrollWidth;
+    const ch = content.scrollHeight;
+    if (!availW || !availH || !cw || !ch) return;
+    const next = Math.min(availW / cw, availH / ch);
+    const clamped = Math.max(0.4, Math.min(3, next));
+    if (Math.abs(clamped - fit) > 0.01) setFit(clamped);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [autoFit, widthMm, heightMm, marginMm, barcodeHeightPx, sampleId, patientName, refsText, material, tube, workbench, f.header, f.code, f.patient, f.small, f.footer, fit]);
 
   return (
     <div
+      ref={boxRef}
       style={{
         width: `${widthMm}mm`,
         height: `${heightMm}mm`,
         padding: `${marginMm}mm`,
-        gap: `${Math.max(0, 0.4 * scale)}mm`,
       }}
-      className="box-border bg-white border border-slate-200 flex flex-col justify-between text-black font-mono overflow-hidden"
+      className="box-border bg-white border border-slate-200 text-black font-mono overflow-hidden"
+    >
+    <div
+      ref={contentRef}
+      style={{
+        width: fit === 1 ? '100%' : `${100 / fit}%`,
+        height: fit === 1 ? '100%' : `${100 / fit}%`,
+        transform: fit === 1 ? undefined : `scale(${fit})`,
+        transformOrigin: 'top left',
+      }}
+      className="flex flex-col justify-between gap-[1px]"
     >
       {/* Cabeçalho: urgência / bancada / data */}
       <div
@@ -181,6 +209,7 @@ export const SampleLabel = ({
           AXIS INOVA
         </span>
       </div>
+    </div>
     </div>
   );
 };
