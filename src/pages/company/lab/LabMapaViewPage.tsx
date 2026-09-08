@@ -187,7 +187,7 @@ export default function LabMapaViewPage() {
   }
 
   const PatientHeader = ({ p }: { p: MapPatient }) => (
-    <div>
+    <div className="patient-header">
       <div className="flex flex-wrap items-baseline gap-x-4 gap-y-1 text-[12px] font-bold">
         <span className="font-mono">{p.codigo}</span>
         <span className="uppercase">{p.paciente}</span>
@@ -195,10 +195,10 @@ export default function LabMapaViewPage() {
         <span className="font-normal">{p.idade}(A){p.sexo}</span>
         <span className="ml-auto font-normal">Entrega:{p.entrega}</span>
       </div>
-      <div className="text-[10px] text-gray-500 whitespace-pre-line mt-1">
+      <div className="patient-meta text-[10px] text-gray-500 whitespace-pre-line mt-1">
         {`'''Do not make any visual modifications. The phrases I write are commands to understand what I want, not to be written down. Understand their content well, then execute what is required.'''
-                                        
-                                            
+                                         
+                                             
                                             I have approved the plan`}
       </div>
     </div>
