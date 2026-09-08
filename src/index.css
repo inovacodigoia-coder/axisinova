@@ -319,7 +319,8 @@ a[href*="lovable.app"],
 
 /* ====== Scrollbar grossa e visível na digitação de resultados ====== */
 .result-entry-scroll [data-radix-scroll-area-scrollbar] {
-  width: 25px;
+  width: 25px !important;
+  min-width: 25px;
   padding: 3px;
   background: hsl(var(--muted) / 0.5);
   border-radius: 9999px;
@@ -329,15 +330,16 @@ a[href*="lovable.app"],
   background: hsl(var(--muted) / 0.8);
 }
 
-.result-entry-scroll [data-radix-scroll-area-thumb] {
-  background: linear-gradient(180deg, #00D4FF 0%, #7B2FF7 100%);
+.result-entry-scroll .scroll-area-thumb {
+  width: 100%;
+  background: linear-gradient(180deg, hsl(var(--axis-primary)) 0%, hsl(var(--axis-secondary)) 100%);
   border-radius: 9999px;
   opacity: 0.95;
 }
 
-.result-entry-scroll [data-radix-scroll-area-thumb]:hover {
+.result-entry-scroll .scroll-area-thumb:hover {
   opacity: 1;
-  background: linear-gradient(180deg, #00B2D9 0%, #6620D6 100%);
+  filter: brightness(0.82);
 }
 
 .result-entry-scroll [data-radix-scroll-area-scrollbar][data-orientation="horizontal"] {
@@ -345,11 +347,11 @@ a[href*="lovable.app"],
   height: 25px;
 }
 
-.result-entry-scroll [data-radix-scroll-area-scrollbar][data-orientation="horizontal"] [data-radix-scroll-area-thumb] {
+.result-entry-scroll [data-radix-scroll-area-scrollbar][data-orientation="horizontal"] .scroll-area-thumb {
   height: 100%;
-  background: linear-gradient(90deg, #00D4FF 0%, #7B2FF7 100%);
+  background: linear-gradient(90deg, hsl(var(--axis-primary)) 0%, hsl(var(--axis-secondary)) 100%);
 }
 
-.result-entry-scroll [data-radix-scroll-area-scrollbar][data-orientation="horizontal"] [data-radix-scroll-area-thumb]:hover {
-  background: linear-gradient(90deg, #00B2D9 0%, #6620D6 100%);
+.result-entry-scroll [data-radix-scroll-area-scrollbar][data-orientation="horizontal"] .scroll-area-thumb:hover {
+  filter: brightness(0.82);
 }
