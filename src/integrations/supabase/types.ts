@@ -1875,8 +1875,16 @@ export type Database = {
           email: string | null
           id: string
           lab_name: string | null
+          label_auto_fit: boolean
+          label_barcode_height_px: number
           label_copies: number
+          label_font_code: number
+          label_font_footer: number
+          label_font_header: number
+          label_font_patient: number
+          label_font_small: number
           label_height_mm: number
+          label_margin_mm: number
           label_preset: string | null
           label_rotation: number
           label_width_mm: number
@@ -1912,8 +1920,16 @@ export type Database = {
           email?: string | null
           id?: string
           lab_name?: string | null
+          label_auto_fit?: boolean
+          label_barcode_height_px?: number
           label_copies?: number
+          label_font_code?: number
+          label_font_footer?: number
+          label_font_header?: number
+          label_font_patient?: number
+          label_font_small?: number
           label_height_mm?: number
+          label_margin_mm?: number
           label_preset?: string | null
           label_rotation?: number
           label_width_mm?: number
@@ -1949,8 +1965,16 @@ export type Database = {
           email?: string | null
           id?: string
           lab_name?: string | null
+          label_auto_fit?: boolean
+          label_barcode_height_px?: number
           label_copies?: number
+          label_font_code?: number
+          label_font_footer?: number
+          label_font_header?: number
+          label_font_patient?: number
+          label_font_small?: number
           label_height_mm?: number
+          label_margin_mm?: number
           label_preset?: string | null
           label_rotation?: number
           label_width_mm?: number
