@@ -41,7 +41,11 @@ import { supabase } from '@/integrations/supabase/client'
 import { useAuth } from '@/context/AuthContext'
 import { useRegisters } from '@/context/RegistersContext'
 import LabMethodsSection from '@/components/lab/settings/LabMethodsSection'
-import { useLabelLayout } from '@/hooks/useLabelLayout'
+import { useLabelLayout, DEFAULT_LABEL_LAYOUT, type LabelLayout } from '@/hooks/useLabelLayout'
+import { useLabSettings } from '@/hooks/useLabSettings'
+import { SampleLabel } from '@/components/lab/print/SampleLabel'
+import { gerarPdfEtiquetas } from '@/lib/labelPdf'
+import { servidorImpressaoAtivo, imprimirDireto, TIPOS_DOCUMENTO } from '@/lib/impressaoLocal'
 
 export default function LabSettingsPage() {
   const [searchParams, setSearchParams] = useSearchParams()
