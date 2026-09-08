@@ -1,6 +1,13 @@
 import React, { useMemo } from 'react';
 import Barcode from 'react-barcode';
 import { buildSampleCode, generateSampleHash } from '@/utils/orderHash';
+import {
+  LabelConfig,
+  LabelFieldKey,
+  MM_TO_PX,
+  PT_TO_PX,
+  defaultLabelConfig,
+} from '@/types/label-config.types';
 
 interface LabelProps {
   orderNumber: string;
@@ -21,6 +28,8 @@ interface LabelProps {
   companySequenceId?: number | null;
   /** Referências (códigos/siglas) dos exames contidos nesta amostra */
   examRefs?: string[];
+  /** Configuração de tipografia/dimensões da etiqueta */
+  config?: LabelConfig;
 }
 
 export const SampleLabel = ({
@@ -37,6 +46,7 @@ export const SampleLabel = ({
   companySequenceId,
   examRefs = [],
   labName,
+  config = defaultLabelConfig,
 }: LabelProps & { labName?: string }) => {
   const sampleId = useMemo(() => {
     if (sampleCode) return sampleCode;
@@ -53,22 +63,44 @@ export const SampleLabel = ({
     return text.length > 90 ? `${text.slice(0, 87)}...` : text;
   }, [examRefs]);
 
+  const f = (key: LabelFieldKey): React.CSSProperties => {
+    const style = config.fields[key] ?? defaultLabelConfig.fields[key];
+    const px = style.size * PT_TO_PX;
+    return {
+      fontSize: `${px.toFixed(2)}px`,
+      lineHeight: `${(px * 1.2).toFixed(2)}px`,
+      fontWeight: style.bold ? 700 : 400,
+    };
+  };
+
+  const barcodeHeightPx = Math.round(config.barcodeHeightMm * MM_TO_PX);
+
   return (
-    <div className="box-border w-[50mm] h-[30mm] bg-white border border-slate-200 px-1.5 py-[1px] flex flex-col text-black font-mono overflow-hidden">
+    <div
+      className="box-border bg-white border border-slate-200 flex flex-col text-black font-mono overflow-hidden"
+      style={{
+        width: `${config.widthMm}mm`,
+        height: `${config.heightMm}mm`,
+        padding: `${config.marginMm}mm`,
+      }}
+    >
       {/* Cabeçalho: urgência / bancada / data */}
-      <div className="flex h-[12px] shrink-0 items-center gap-1 overflow-hidden text-[10px] leading-[12px] font-bold uppercase">
-        {isUrgent && <span className="bg-black text-white px-1">URG</span>}
-        <span className="flex-1 truncate">{workbench || 'GERAL'}</span>
-        <span className="whitespace-nowrap">{printDate || '---'}</span>
+      <div className="flex shrink-0 items-center gap-1 overflow-hidden uppercase">
+        {isUrgent && <span className="bg-black text-white px-1" style={f('sector')}>URG</span>}
+        <span className="flex-1 truncate" style={f('sector')}>{workbench || 'GERAL'}</span>
+        <span className="whitespace-nowrap" style={f('dateTime')}>{printDate || '---'}</span>
       </div>
 
       {/* Código de barras */}
-      <div className="flex h-[24px] w-full shrink-0 justify-center overflow-hidden">
+      <div
+        className="flex w-full shrink-0 justify-center overflow-hidden"
+        style={{ height: `${barcodeHeightPx}px` }}
+      >
         <Barcode
           value={sampleHash || sampleId || 'ERROR'}
           format="CODE128"
           width={1.1}
-          height={24}
+          height={barcodeHeightPx}
           displayValue={false}
           margin={0}
           background="transparent"
@@ -76,35 +108,34 @@ export const SampleLabel = ({
       </div>
 
       {/* Código da amostra + hash exclusivo do tubo (interfaceamento) */}
-      <div className="flex h-[14px] shrink-0 items-center justify-between gap-1 overflow-hidden whitespace-nowrap">
-        <span className="text-[12px] leading-[14px] font-bold">{sampleId}</span>
-        {sampleHash && <span className="text-[10px] leading-[14px] font-bold tracking-tight">{sampleHash}</span>}
+      <div className="flex shrink-0 items-center justify-between gap-1 overflow-hidden whitespace-nowrap">
+        <span style={f('sampleCode')}>{sampleId}</span>
+        {sampleHash && <span className="tracking-tight" style={f('sampleHash')}>{sampleHash}</span>}
       </div>
 
       {/* Dados do paciente */}
-      <div className="h-[12px] shrink-0 truncate text-[10px] leading-[12px] font-bold uppercase">{patientName || 'PACIENTE NÃO INFORMADO'}</div>
-      <div className="h-[11px] shrink-0 overflow-hidden whitespace-nowrap text-[9.5px] leading-[11px]">
+      <div className="shrink-0 truncate uppercase" style={f('patientName')}>{patientName || 'PACIENTE NÃO INFORMADO'}</div>
+      <div className="shrink-0 overflow-hidden whitespace-nowrap" style={f('birthDate')}>
         NASC: {birthDate || '--/--/----'}
       </div>
-      <div className="h-[12px] shrink-0 truncate text-[10px] leading-[12px] font-bold uppercase">
+      <div className="shrink-0 truncate uppercase" style={f('material')}>
         {material || '---'}{tube ? ` (${String(tube).toUpperCase()})` : ''}
       </div>
 
       {/* Referências dos exames */}
-      <div className="h-[11px] shrink-0 overflow-hidden text-[9px] leading-[11px] font-bold uppercase">
+      <div className="shrink-0 overflow-hidden uppercase" style={f('examRefs')}>
         {refsText || '—'}
       </div>
 
       {/* Rodapé: Nome do Laboratório (Esquerda) e Software (Direita) */}
-      <div className="flex h-[10px] shrink-0 items-end justify-between gap-1 overflow-hidden">
-        <span className="text-[8px] leading-[10px] text-slate-600 font-bold uppercase truncate max-w-[70%]">
+      <div className="flex flex-1 shrink-0 items-end justify-between gap-1 overflow-hidden">
+        <span className="text-slate-600 uppercase truncate max-w-[70%]" style={f('labName')}>
           {labName}
         </span>
-        <span className="text-[8px] leading-[10px] text-slate-500 font-medium tracking-tighter opacity-80 whitespace-nowrap">
+        <span className="text-slate-500 tracking-tighter opacity-80 whitespace-nowrap" style={f('brand')}>
           AXIS INOVA
         </span>
       </div>
     </div>
   );
 };
-
