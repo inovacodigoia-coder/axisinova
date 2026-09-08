@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
-import { Building2, Eye, FileBarChart, FlaskConical, Inbox, RefreshCw, RotateCcw, Search, ShieldCheck, Stethoscope } from 'lucide-react'
+import { Building2, Eye, FileBarChart, FlaskConical, Hospital, Inbox, RefreshCw, RotateCcw, Search, ShieldCheck, Stethoscope } from 'lucide-react'
 import { toast } from 'sonner'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'

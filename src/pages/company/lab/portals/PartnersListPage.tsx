@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Building2, FlaskConical, ShieldCheck, Stethoscope, Search, Plus, Handshake, AlertTriangle } from 'lucide-react'
+import { Building2, FlaskConical, ShieldCheck, Stethoscope, Hospital, Search, Plus, Handshake, AlertTriangle } from 'lucide-react'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -175,6 +175,7 @@ export default function PartnersListPage() {
             <SelectItem value="clinica">Clínica</SelectItem>
             <SelectItem value="convenio">Convênio</SelectItem>
             <SelectItem value="medico">Médico Solicitante</SelectItem>
+            <SelectItem value="hospital">Hospital</SelectItem>
           </SelectContent>
         </Select>
         <Select value={status} onValueChange={setStatus}>
