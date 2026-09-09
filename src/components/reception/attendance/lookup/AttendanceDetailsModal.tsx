@@ -364,10 +364,6 @@ export function AttendanceDetailsModal({ open, onClose, onOrderDeleted, order, p
                       order.status === 'released' || 
                       labOrder.collectionStatus === 'collected';
 
-  const isOrderReleased = order.status === 'released';
-
-
-
   // Resultados digitados/liberados do pedido (mesma fonte da Digitação de Resultados)
   const [labResults, setLabResults] = useState<Record<string, { status: string; notes?: string; values: any[] }>>({})
 
@@ -413,6 +409,23 @@ export function AttendanceDetailsModal({ open, onClose, onOrderDeleted, order, p
     return null
   }
 
+  const releasedExamIds = useMemo(() => new Set(
+    orderExams
+      .filter((exam: any) => getExamResultLetter(exam) === 'L')
+      .map((exam: any) => exam.examId || exam.id)
+      .filter(Boolean)
+  ), [orderExams, labResults])
+
+  const selectedReleasedExamIds = useMemo(() => {
+    const selected = new Set<string>()
+    selectedExams.forEach((id) => {
+      if (releasedExamIds.has(id)) selected.add(id)
+    })
+    return selected
+  }, [releasedExamIds, selectedExams])
+
+  const canPrintReleasedReport = selectedReleasedExamIds.size > 0
+
   const buildReportExam = (e: any) => {
     const res = getExamResult(e)
     return {
@@ -439,14 +452,9 @@ export function AttendanceDetailsModal({ open, onClose, onOrderDeleted, order, p
   }
 
   const filteredOrderForReport = useMemo(() => {
-    let base = selectedExams.size === 0
-      ? orderExams
-      : orderExams.filter(e => selectedExams.has(e.examId || e.id));
-
-    // Em validação, mostrar apenas os exames já liberados no laudo
-    if (order.status === 'validation') {
-      base = base.filter(e => getExamResultLetter(e) === 'L');
-    }
+    const base = orderExams.filter((exam: any) =>
+      selectedReleasedExamIds.has(exam.examId || exam.id)
+    );
 
     return {
       ...labOrder,
@@ -455,11 +463,10 @@ export function AttendanceDetailsModal({ open, onClose, onOrderDeleted, order, p
       labGuides: labOrder.labGuides?.map(guide => ({
         ...guide,
         exams: (guide.exams || [])
-          .filter((e: any) => selectedExams.size === 0 || selectedExams.has(e.examId || e.id))
-          .filter((e: any) => order.status !== 'validation' || getExamResultLetter(e) === 'L')
+          .filter((exam: any) => selectedReleasedExamIds.has(exam.examId || exam.id))
       })).filter(guide => (guide.exams?.length ?? 0) > 0)
     };
-  }, [labOrder, orderExams, selectedExams, labResults, order.status]);
+  }, [labOrder, orderExams, selectedReleasedExamIds, labResults]);
 
   return (
     <Dialog open={open} onOpenChange={(o) => !o && onClose()}>
@@ -692,23 +699,23 @@ export function AttendanceDetailsModal({ open, onClose, onOrderDeleted, order, p
                         variant="ghost" 
                         className={cn(
                           "h-9 w-9 rounded-full bg-white shadow-sm border border-border transition-all",
-                          isOrderReleased && selectedExams.size > 0
+                          canPrintReleasedReport
                             ? "group-hover:text-primary group-hover:border-primary"
                             : "opacity-50 cursor-not-allowed"
                         )}
-                        disabled={!isOrderReleased || selectedExams.size === 0}
+                        disabled={!canPrintReleasedReport}
                         onClick={() => {
-                          if (isOrderReleased && selectedExams.size > 0) {
+                          if (canPrintReleasedReport) {
                             setReportPreviewOpen(true);
                           }
                         }}
-                        title={!isOrderReleased ? 'Disponível apenas quando o pedido estiver Liberado' : 'Visualizar / imprimir laudo dos exames selecionados'}
+                        title={canPrintReleasedReport ? 'Visualizar / imprimir laudo dos exames liberados selecionados' : 'Selecione ao menos um exame liberado'}
                       >
                         <Printer className="h-4 w-4" />
                       </Button>
                       <span className={cn(
                         "text-[9px] font-bold uppercase text-center transition-colors whitespace-pre-line leading-tight",
-                        isOrderReleased && selectedExams.size > 0 ? "text-muted-foreground group-hover:text-primary" : "text-muted-foreground/40"
+                        canPrintReleasedReport ? "text-muted-foreground group-hover:text-primary" : "text-muted-foreground/40"
                       )}>
                         IMPRIMIR{"\n"}LAUDO
                       </span>
