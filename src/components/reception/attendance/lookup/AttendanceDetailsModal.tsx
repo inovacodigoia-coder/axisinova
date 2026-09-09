@@ -365,34 +365,58 @@ export function AttendanceDetailsModal({ open, onClose, onOrderDeleted, order, p
                       labOrder.collectionStatus === 'collected';
 
   // Resultados digitados/liberados do pedido (mesma fonte da Digitação de Resultados)
-  const [labResults, setLabResults] = useState<Record<string, { status: string; notes?: string; values: any[] }>>({})
+  const [labResults, setLabResults] = useState<Record<string, { status: string; notes?: string; values: any[]; releasedAt?: string | null; releasedBy?: string | null }>>({})
+  const [approvers, setApprovers] = useState<Record<string, { name: string; register: string }>>({})
 
   useEffect(() => {
     const orderId = (labOrder as any)?.id || (order as any)?.id
     if (!open || !orderId) return
     setLabResults({})
+    setApprovers({})
     let active = true
     ;(async () => {
       // Sempre pelo ID do pedido (protocolo pode se repetir entre pedidos)
       const { data, error } = await supabase
         .from('lab_exam_results')
-        .select('exam_code, exam_name, status, notes, lab_result_values(parameter_key, parameter_name, value, unit, reference, status, sort_order)')
+        .select('exam_code, exam_name, status, notes, released_at, released_by, lab_result_values(parameter_key, parameter_name, value, unit, reference, status, sort_order)')
         .eq('order_id', orderId)
       if (!active || error || !data) return
-      const map: Record<string, { status: string; notes?: string; values: any[] }> = {}
+      const map: Record<string, { status: string; notes?: string; values: any[]; releasedAt?: string | null; releasedBy?: string | null }> = {}
       data.forEach((row: any) => {
         const entry = {
           status: row.status,
           notes: row.notes || '',
+          releasedAt: row.released_at || null,
+          releasedBy: row.released_by || null,
           values: (row.lab_result_values || []).slice().sort((a: any, b: any) => (a.sort_order ?? 0) - (b.sort_order ?? 0)),
         }
         if (row.exam_code) map[String(row.exam_code).toUpperCase()] = entry
         if (row.exam_name) map[String(row.exam_name).toUpperCase()] = entry
       })
       setLabResults(map)
+
+      // Nome e registro profissional de quem liberou os exames
+      const ids = Array.from(new Set(data.map((r: any) => r.released_by).filter(Boolean))) as string[]
+      if (ids.length > 0) {
+        const { data: profs } = await supabase
+          .from('profiles')
+          .select('id, full_name, council_type, council_uf, council_number')
+          .in('id', ids)
+        if (!active || !profs) return
+        const pm: Record<string, { name: string; register: string }> = {}
+        profs.forEach((p: any) => {
+          const register = [
+            [p.council_type, p.council_uf].filter(Boolean).join('-'),
+            p.council_number,
+          ].filter(Boolean).join(' ').trim()
+          pm[p.id] = { name: p.full_name || '', register }
+        })
+        setApprovers(pm)
+      }
     })()
     return () => { active = false }
   }, [open, labOrder, order])
+
 
   const getExamResult = (exam: any) =>
     labResults[String(exam?.code || '').toUpperCase()] ||
