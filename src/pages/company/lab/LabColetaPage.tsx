@@ -12,6 +12,7 @@ import { Skeleton } from '@/components/ui/skeleton'
 import { useNavigate } from 'react-router-dom'
 import { Badge } from '@/components/ui/badge'
 import { supabase } from "@/integrations/supabase/client"
+import { canSetCollectionDone } from '@/utils/orderStatusFlow'
 
 export default function LabColetaPage() {
   const { user } = useAuth()
