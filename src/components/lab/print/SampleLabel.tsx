@@ -103,13 +103,13 @@ export const SampleLabel = ({
 
       {/* Código de barras */}
       <div
-        className="flex w-full shrink-0 items-start justify-center overflow-hidden [&_canvas]:block [&_canvas]:max-w-full"
+        className="flex w-full shrink-0 items-start justify-center overflow-hidden [&_img]:block [&_img]:h-full [&_img]:max-w-full"
         style={{ height: `${barcodeHeightPx}px` }}
         data-label-barcode
       >
         <Barcode
           value={sampleHash || sampleId || 'ERROR'}
-          renderer="canvas"
+          renderer="img"
           format="CODE128"
           width={1.1}
           height={barcodeHeightPx}
