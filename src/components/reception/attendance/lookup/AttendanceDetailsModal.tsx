@@ -480,8 +480,32 @@ export function AttendanceDetailsModal({ open, onClose, onOrderDeleted, order, p
       selectedReleasedExamIds.has(exam.examId || exam.id)
     );
 
+    // Data/hora e responsável pela liberação (última liberação entre os exames escolhidos)
+    let approvedAt: string | null = null
+    let approverId: string | null = null
+    base.forEach((exam: any) => {
+      const res = getExamResult(exam)
+      if (res?.status !== 'released' || !res?.releasedAt) return
+      if (!approvedAt || new Date(res.releasedAt) > new Date(approvedAt)) {
+        approvedAt = res.releasedAt
+        approverId = res.releasedBy || null
+      }
+    })
+    const approver = approverId ? approvers[approverId] : undefined
+
+    // Médico solicitante: pedido -> guia -> exame
+    const guideWithDoctor: any = (guidesState || []).find((g: any) => g.doctorName)
+    const examWithDoctor: any = base.find((e: any) => e.doctorName)
+    const doctorName = (labOrder as any).doctorName || guideWithDoctor?.doctorName || examWithDoctor?.doctorName || ''
+    const doctorCRM = (labOrder as any).doctorCRM || guideWithDoctor?.doctorCRM || examWithDoctor?.doctorCRM || ''
+
     return {
       ...labOrder,
+      doctorName,
+      doctorCRM,
+      approvedAt,
+      approvedBy: approver?.name || undefined,
+      approvedRegister: approver?.register || undefined,
       exams: base.map(buildReportExam),
       // If we have labGuides, filter them too
       labGuides: labOrder.labGuides?.map(guide => ({
@@ -490,7 +514,8 @@ export function AttendanceDetailsModal({ open, onClose, onOrderDeleted, order, p
           .filter((exam: any) => selectedReleasedExamIds.has(exam.examId || exam.id))
       })).filter(guide => (guide.exams?.length ?? 0) > 0)
     };
-  }, [labOrder, orderExams, selectedReleasedExamIds, labResults]);
+  }, [labOrder, orderExams, selectedReleasedExamIds, labResults, approvers, guidesState]);
+
 
   return (
     <Dialog open={open} onOpenChange={(o) => !o && onClose()}>
