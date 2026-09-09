@@ -76,6 +76,10 @@ export const SampleLabel = ({
   };
 
   const barcodeHeightPx = Math.round(config.barcodeHeightMm * MM_TO_PX);
+  const headerHeightPx = Math.max(
+    config.fields.sector.size * PT_TO_PX * 1.15,
+    config.fields.dateTime.size * PT_TO_PX * 1.15,
+  ) + MM_TO_PX;
 
   return (
     <div
@@ -87,7 +91,11 @@ export const SampleLabel = ({
       }}
     >
       {/* Cabeçalho: urgência / bancada / data */}
-      <div className="flex shrink-0 items-center gap-1 uppercase whitespace-nowrap">
+      <div
+        className="flex shrink-0 items-start gap-1 uppercase whitespace-nowrap overflow-hidden"
+        style={{ height: `${headerHeightPx.toFixed(2)}px` }}
+        data-label-header
+      >
         {isUrgent && <span className="bg-black text-white px-1" style={f('sector')}>URG</span>}
         <span className="flex-1 whitespace-nowrap" style={f('sector')}>{workbench || 'GERAL'}</span>
         <span className="whitespace-nowrap" style={f('dateTime')}>{printDate || '---'}</span>
@@ -95,11 +103,18 @@ export const SampleLabel = ({
 
       {/* Código de barras */}
       <div
-        className="flex w-full shrink-0 items-start justify-center overflow-hidden [&_svg]:block [&_svg]:max-w-full"
-        style={{ height: `${barcodeHeightPx}px` }}
+        className="flex w-full shrink-0 items-start justify-center overflow-hidden [&_img]:block [&_img]:h-full [&_img]:max-w-full"
+        style={{
+          height: `${barcodeHeightPx}px`,
+          // A folga física impede que rasterizadores de PDF encostem as barras
+          // nos glifos do cabeçalho, mesmo quando arredondam pixels de forma diferente.
+          marginTop: '1mm',
+        }}
+        data-label-barcode
       >
         <Barcode
           value={sampleHash || sampleId || 'ERROR'}
+          renderer="img"
           format="CODE128"
           width={1.1}
           height={barcodeHeightPx}
