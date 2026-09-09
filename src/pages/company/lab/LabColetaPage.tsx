@@ -216,7 +216,9 @@ export default function LabColetaPage() {
 
   const handleConfirmColeta = (order: LabAttendanceOrder) => {
     const currentResponsible = tempResponsible[order.id]?.name || user?.name || 'Sistema'
-    updateOrder(order.id, { status: 'collection_done' })
+    if (canSetCollectionDone((order as any).status)) {
+      updateOrder(order.id, { status: 'collection_done' })
+    }
     addAudit(order, 'confirmed', `Coleta realizada por ${currentResponsible}`)
     toast.success('Coleta Realizada com sucesso!')
     setExpandedId(null)
