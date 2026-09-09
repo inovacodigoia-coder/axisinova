@@ -104,7 +104,12 @@ export const SampleLabel = ({
       {/* Código de barras */}
       <div
         className="flex w-full shrink-0 items-start justify-center overflow-hidden [&_img]:block [&_img]:h-full [&_img]:max-w-full"
-        style={{ height: `${barcodeHeightPx}px` }}
+        style={{
+          height: `${barcodeHeightPx}px`,
+          // A folga física impede que rasterizadores de PDF encostem as barras
+          // nos glifos do cabeçalho, mesmo quando arredondam pixels de forma diferente.
+          marginTop: '1mm',
+        }}
         data-label-barcode
       >
         <Barcode
