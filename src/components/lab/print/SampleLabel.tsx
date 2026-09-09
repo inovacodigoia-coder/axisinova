@@ -79,7 +79,7 @@ export const SampleLabel = ({
   const headerHeightPx = Math.max(
     config.fields.sector.size * PT_TO_PX * 1.15,
     config.fields.dateTime.size * PT_TO_PX * 1.15,
-  );
+  ) + MM_TO_PX;
 
   return (
     <div
@@ -92,7 +92,7 @@ export const SampleLabel = ({
     >
       {/* Cabeçalho: urgência / bancada / data */}
       <div
-        className="flex shrink-0 items-center gap-1 uppercase whitespace-nowrap overflow-hidden"
+        className="flex shrink-0 items-start gap-1 uppercase whitespace-nowrap overflow-hidden"
         style={{ height: `${headerHeightPx.toFixed(2)}px` }}
         data-label-header
       >
