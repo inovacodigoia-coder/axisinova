@@ -105,9 +105,10 @@ export const SampleLabel = ({
       <div
         className="label-barcode flex w-full shrink-0 items-stretch justify-center overflow-hidden [&_svg]:block [&_svg]:h-full [&_svg]:w-full [&_svg]:max-w-full"
         style={{
-          height: `${barcodeHeightPx}px`,
-          // Espaço mínimo entre cabeçalho e código de barras para aproveitar a área.
-          marginTop: '2px',
+          height: `${barcodeHeightPx + 2}px`,
+          // Espaço reduzido acima/abaixo para aproveitar a área e ampliar o código.
+          marginTop: '0.8px',
+          marginBottom: '0.8px',
           // Garante que o preto saia cheio em qualquer driver/navegador
           WebkitPrintColorAdjust: 'exact',
           printColorAdjust: 'exact',
@@ -120,7 +121,7 @@ export const SampleLabel = ({
           renderer="svg"
           format="CODE128"
           width={2}
-          height={barcodeHeightPx}
+          height={barcodeHeightPx + 2}
           displayValue={false}
           margin={0}
           background="#ffffff"
