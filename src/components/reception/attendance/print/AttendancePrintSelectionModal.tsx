@@ -31,6 +31,8 @@ interface Props {
   order: AttendanceOrder | null;
   selectedExams?: string[];
   selectedTubes?: string[];
+  /** Permite marcar vários documentos e imprimir todos no CONFIRMAR (fluxo de cadastro). */
+  multiSelect?: boolean;
 }
 
 // Normaliza o material do exame para o tipo de tubo correspondente
