@@ -8,6 +8,7 @@ import { useAttendanceCadastro } from '@/hooks/useAttendanceCadastro';
 import { TUBE_TYPES } from '@/types/lab.types';
 import type { AttendanceOrder } from '@/types/attendance-cadastro.types';
 import { canSetCollectionDone } from '@/utils/orderStatusFlow';
+import { ServidorImpressaoStatus } from '@/components/print/ServidorImpressaoStatus';
 
 interface PrintOption {
   id: string;
