@@ -795,46 +795,23 @@ export function AttendanceCadastroModal({
       {showPrintSelection && createdOrder && (
         <AttendancePrintSelectionModal
           open
+          multiSelect
           order={createdOrder}
           onClose={() => {
             setShowPrintSelection(false)
             setShowAllocation(true)
           }}
           onConfirm={(opts: any) => {
-            if (opts?.action === 'print') {
-              if (opts.optionId === 'etiquetas') {
-                setShowLabelsSelect(true)
-                return
-              }
-              const selected = (opts.options || []).find((o: any) => o.enabled)
-              const fmt = selected?.selectedFormat
-              const isThermal = fmt === 'TÉRMICA'
-              setPrintVias(selected?.id === 'controle_interno' ? ['establishment'] : ['patient'])
-              setPrintOverride({
-                id: 'selecionada',
-                printerName: 'Impressora selecionada',
-                paperSize: isThermal ? '80mm' : (fmt === 'A5' ? 'a5' : 'a4'),
-                showLogo: true,
-                showCompanyName: true,
-                showUnitName: true,
-                showAddress: !isThermal,
-                showPhone: true,
-                showCNPJ: true,
-                showQRCode: true,
-                showBarcode: isThermal,
-                showDoctorInfo: true,
-                showConvenioInfo: true,
-                showAuthorizationInfo: true,
-                showAttachmentChecklist: !isThermal,
-                showObservations: true,
-                showSignatureLine: !isThermal,
-                showTimestamp: true,
-                defaultCopies: opts.printerSettings?.batchSize || 1,
-              })
-              setShowPrint(true)
+            if (opts?.action === 'print-batch') {
+              runPrintQueue(opts.queue || [])
               return
             }
-            // Confirmar: apenas fecha (a coleta já foi confirmada no modal)
+            if (opts?.action === 'print') {
+              const selected = (opts.options || []).find((o: any) => o.enabled)
+              runPrintQueue([{ id: selected?.id, format: selected?.selectedFormat }])
+              return
+            }
+            // Confirmar sem nenhum documento marcado: apenas fecha
             setShowPrintSelection(false)
             setShowAllocation(true)
           }}
