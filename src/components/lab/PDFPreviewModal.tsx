@@ -11,6 +11,9 @@ import { useExamReportConfig } from '@/hooks/useExamReportConfig';
 import { useAuth } from '@/context/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import { ServidorImpressaoStatus } from '@/components/print/ServidorImpressaoStatus';
+import { servidorImpressaoAtivo, imprimirDireto, TIPOS_DOCUMENTO } from '@/lib/impressaoLocal';
+import { gerarPdfElementos } from '@/lib/labelPdf';
 
 
 interface PDFPreviewModalProps {
