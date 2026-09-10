@@ -103,7 +103,7 @@ export const SampleLabel = ({
 
       {/* Código de barras */}
       <div
-        className="flex w-full shrink-0 items-stretch justify-center overflow-hidden [&_svg]:block [&_svg]:h-full [&_svg]:w-full"
+        className="flex w-full shrink-0 items-stretch justify-center overflow-hidden [&_svg]:block [&_svg]:h-full [&_svg]:max-w-full"
         style={{
           height: `${barcodeHeightPx}px`,
           // A folga física impede que rasterizadores de PDF encostem as barras
@@ -117,8 +117,8 @@ export const SampleLabel = ({
           value={sampleHash || sampleId || 'ERROR'}
           renderer="svg"
           format="CODE128"
-          width={2}
-          height={barcodeHeightPx * 4}
+          width={1.5}
+          height={barcodeHeightPx}
           displayValue={false}
           margin={0}
           background="#ffffff"
