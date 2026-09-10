@@ -423,6 +423,7 @@ export function AttendancePrintSelectionModal({ open, onClose, onConfirm, order,
             >
               {isSaving ? <Loader2 className="h-4 w-4 animate-spin" /> : 'CONFIRMAR'}
             </Button>
+            </div>
           </div>
         </div>
       </DialogContent>
