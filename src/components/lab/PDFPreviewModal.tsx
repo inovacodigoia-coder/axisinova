@@ -228,6 +228,7 @@ export default function PDFPreviewModal({
               </div>
             </div>
             <div className="flex items-center gap-2 pr-8">
+              <ServidorImpressaoStatus />
               {getStatusBadge()}
             </div>
           </div>
