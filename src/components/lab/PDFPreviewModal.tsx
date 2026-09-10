@@ -11,6 +11,9 @@ import { useExamReportConfig } from '@/hooks/useExamReportConfig';
 import { useAuth } from '@/context/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import { ServidorImpressaoStatus } from '@/components/print/ServidorImpressaoStatus';
+import { servidorImpressaoAtivo, imprimirDireto, TIPOS_DOCUMENTO } from '@/lib/impressaoLocal';
+import { gerarPdfElementos } from '@/lib/labelPdf';
 
 
 interface PDFPreviewModalProps {
@@ -144,6 +147,35 @@ export default function PDFPreviewModal({
     }, 80);
   }, []);
 
+  // Impressão do laudo: usa o Servidor de Impressão local quando estiver ativo
+  const [enviandoImpressao, setEnviandoImpressao] = React.useState(false);
+
+  const handlePrintLaudo = React.useCallback(async () => {
+    if (enviandoImpressao) return;
+    setEnviandoImpressao(true);
+    try {
+      const ativo = await servidorImpressaoAtivo();
+      if (ativo && documentRef.current) {
+        const pages = Array.from(
+          documentRef.current.querySelectorAll<HTMLElement>('.laudo-page'),
+        );
+        const nodes = pages.length ? pages : [documentRef.current];
+        const pdf = await gerarPdfElementos(nodes, 210);
+        const r = await imprimirDireto(TIPOS_DOCUMENTO.laudo, pdf);
+        toast.success(r.mensagem || 'Laudo enviado para a impressora.');
+        return;
+      }
+      if (onPrint) onPrint();
+      else printLaudoOnly();
+    } catch (e: any) {
+      toast.error(e?.message || 'Falha ao imprimir pelo servidor local. Usando a impressão do navegador.');
+      if (onPrint) onPrint();
+      else printLaudoOnly();
+    } finally {
+      setEnviandoImpressao(false);
+    }
+  }, [enviandoImpressao, onPrint, printLaudoOnly]);
+
 
 
   React.useEffect(() => {
@@ -196,6 +228,7 @@ export default function PDFPreviewModal({
               </div>
             </div>
             <div className="flex items-center gap-2 pr-8">
+              <ServidorImpressaoStatus />
               {getStatusBadge()}
             </div>
           </div>
@@ -316,8 +349,8 @@ export default function PDFPreviewModal({
                 </>
               )
             )}
-            <Button variant="outline" className="gap-2" onClick={onPrint ? onPrint : printLaudoOnly}>
-              <Printer className="h-4 w-4" /> Imprimir
+            <Button variant="outline" className="gap-2" onClick={handlePrintLaudo} disabled={enviandoImpressao}>
+              <Printer className="h-4 w-4" /> {enviandoImpressao ? 'Enviando...' : 'Imprimir'}
             </Button>
 
             <Button className="gradient-bg text-white gap-2" onClick={onDownload ? onDownload : printLaudoOnly}>
