@@ -52,7 +52,7 @@ export const tubeTypeForMaterial = (material: any): string => {
   return 'gel';
 };
 
-export function AttendancePrintSelectionModal({ open, onClose, onConfirm, order, selectedExams, selectedTubes }: Props) {
+export function AttendancePrintSelectionModal({ open, onClose, onConfirm, order, selectedExams, selectedTubes, multiSelect }: Props) {
   const { toast } = useToast();
   const { updateOrder } = useAttendanceCadastro();
   const [options, setOptions] = useState<PrintOption[]>([
