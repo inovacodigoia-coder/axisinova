@@ -519,7 +519,7 @@ export function AttendanceDetailsModal({ open, onClose, onOrderDeleted, order, p
           .filter((exam: any) => selectedReleasedExamIds.has(exam.examId || exam.id))
       })).filter(guide => (guide.exams?.length ?? 0) > 0)
     };
-  }, [labOrder, orderExams, selectedReleasedExamIds, labResults, approvers, guidesState]);
+  }, [labOrder, orderExams, selectedReleasedExamIds, labResults, approvers, guidesState, patient]);
 
 
   return (
