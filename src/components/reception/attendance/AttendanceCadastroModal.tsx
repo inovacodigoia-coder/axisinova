@@ -771,7 +771,7 @@ export function AttendanceCadastroModal({
       {showPrint && controlDoc && (
         <AttendancePrintModal
           open
-          onClose={() => { setShowPrint(false); setShowAllocation(true) }}
+          onClose={() => { setShowPrint(false); runPrintQueue(printQueue) }}
           document={controlDoc}
           autoPrint
           overrideConfig={printOverride}
