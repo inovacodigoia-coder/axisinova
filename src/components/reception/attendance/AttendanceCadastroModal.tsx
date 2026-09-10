@@ -821,6 +821,8 @@ export function AttendanceCadastroModal({
         <SampleLabelsSelectModal
           open
           order={createdOrder}
+          autoPrint
+          birthDate={state.patient?.birthDate}
           onClose={() => { setShowLabelsSelect(false); runPrintQueue(printQueue) }}
         />
       )}

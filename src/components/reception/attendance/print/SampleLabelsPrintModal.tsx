@@ -10,6 +10,18 @@ import { gerarPdfEtiquetas } from '@/lib/labelPdf'
 import { useLabelConfig } from '@/hooks/useLabelConfig'
 
 
+/** Formata a data de nascimento sem sofrer deslocamento de fuso horario. */
+function formatBirthDate(value?: string): string {
+  if (!value) return ''
+  const iso = String(value).slice(0, 10)
+  const m = iso.match(/^(\d{4})-(\d{2})-(\d{2})$/)
+  if (m) return `${m[3]}/${m[2]}/${m[1]}`
+  const br = String(value).match(/^(\d{2})\/(\d{2})\/(\d{4})$/)
+  if (br) return String(value)
+  const d = new Date(value)
+  return isNaN(d.getTime()) ? '' : d.toLocaleDateString('pt-BR')
+}
+
 export interface SampleLabelData {
   sampleId: string
   labelIndex: number
@@ -173,7 +185,7 @@ export function SampleLabelsPrintModal({
                 <SampleLabel
                   orderNumber={orderNumber}
                   patientName={patientName}
-                  birthDate={birthDate ? new Date(birthDate).toLocaleDateString('pt-BR') : ''}
+                  birthDate={formatBirthDate(birthDate)}
                   material={l.material}
                   tube={l.tube}
                   workbench={l.workbench}
