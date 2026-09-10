@@ -8,6 +8,7 @@ import { useAttendanceCadastro } from '@/hooks/useAttendanceCadastro';
 import { TUBE_TYPES } from '@/types/lab.types';
 import type { AttendanceOrder } from '@/types/attendance-cadastro.types';
 import { canSetCollectionDone } from '@/utils/orderStatusFlow';
+import { ServidorImpressaoStatus } from '@/components/print/ServidorImpressaoStatus';
 
 interface PrintOption {
   id: string;
@@ -31,6 +32,8 @@ interface Props {
   order: AttendanceOrder | null;
   selectedExams?: string[];
   selectedTubes?: string[];
+  /** Permite marcar vários documentos e imprimir todos no CONFIRMAR (fluxo de cadastro). */
+  multiSelect?: boolean;
 }
 
 // Normaliza o material do exame para o tipo de tubo correspondente
@@ -50,7 +53,7 @@ export const tubeTypeForMaterial = (material: any): string => {
   return 'gel';
 };
 
-export function AttendancePrintSelectionModal({ open, onClose, onConfirm, order, selectedExams, selectedTubes }: Props) {
+export function AttendancePrintSelectionModal({ open, onClose, onConfirm, order, selectedExams, selectedTubes, multiSelect }: Props) {
   const { toast } = useToast();
   const { updateOrder } = useAttendanceCadastro();
   const [options, setOptions] = useState<PrintOption[]>([
@@ -137,7 +140,11 @@ export function AttendancePrintSelectionModal({ open, onClose, onConfirm, order,
       });
       return;
     }
-    setOptions(prev => prev.map(opt => ({ ...opt, enabled: opt.id === id })));
+    setOptions(prev => prev.map(opt =>
+      multiSelect
+        ? (opt.id === id ? { ...opt, enabled: !opt.enabled } : opt)
+        : { ...opt, enabled: opt.id === id }
+    ));
   };
 
   const setFormat = (id: string, format: any) => {
@@ -225,6 +232,21 @@ export function AttendancePrintSelectionModal({ open, onClose, onConfirm, order,
       }
       setIsSaving(false);
     }
+    const enabled = options.filter(o => o.enabled);
+    if (multiSelect && enabled.length > 0) {
+      onConfirm({
+        action: 'print-batch',
+        options,
+        queue: enabled.map(o => ({ id: o.id, format: o.selectedFormat })),
+        extras,
+        printerSettings,
+        watermark,
+        emptyFields,
+        selectedExams,
+        selectedTubes,
+      });
+      return;
+    }
     onConfirm({ action: 'confirm', options, extras, printerSettings });
   };
 
@@ -270,7 +292,7 @@ export function AttendancePrintSelectionModal({ open, onClose, onConfirm, order,
                       )}>
                         {opt.label}
                       </span>
-                      {opt.enabled && (
+                      {opt.enabled && !multiSelect && (
                         <Button
                           size="sm"
                           onClick={() => handlePrintOption(opt)}
@@ -383,7 +405,9 @@ export function AttendancePrintSelectionModal({ open, onClose, onConfirm, order,
           </div>
 
           {/* Footer Actions */}
-          <div className="px-5 py-3 bg-slate-50 flex items-center justify-end gap-2 border-t border-slate-200">
+          <div className="px-5 py-3 bg-slate-50 flex items-center justify-between gap-2 border-t border-slate-200">
+            {multiSelect ? <ServidorImpressaoStatus /> : <span />}
+            <div className="flex items-center gap-2">
             <Button
               variant="outline"
               size="sm"
@@ -400,6 +424,7 @@ export function AttendancePrintSelectionModal({ open, onClose, onConfirm, order,
             >
               {isSaving ? <Loader2 className="h-4 w-4 animate-spin" /> : 'CONFIRMAR'}
             </Button>
+            </div>
           </div>
         </div>
       </DialogContent>
