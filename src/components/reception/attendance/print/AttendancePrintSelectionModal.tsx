@@ -139,7 +139,11 @@ export function AttendancePrintSelectionModal({ open, onClose, onConfirm, order,
       });
       return;
     }
-    setOptions(prev => prev.map(opt => ({ ...opt, enabled: opt.id === id })));
+    setOptions(prev => prev.map(opt =>
+      multiSelect
+        ? (opt.id === id ? { ...opt, enabled: !opt.enabled } : opt)
+        : { ...opt, enabled: opt.id === id }
+    ));
   };
 
   const setFormat = (id: string, format: any) => {
