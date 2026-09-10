@@ -177,6 +177,55 @@ export function AttendanceCadastroModal({
   const [showSyncSuccess, setShowSyncSuccess] = useState(false)
   const [showSyncWarning, setShowSyncWarning] = useState(false)
 
+  // Monta a configuração de impressão para cada documento selecionado
+  const buildPrintOverride = (id: string, fmt: string, copies = 1) => {
+    const isThermal = fmt === 'TÉRMICA'
+    return {
+      id: 'selecionada',
+      printerName: 'Impressora selecionada',
+      paperSize: isThermal ? '80mm' : (fmt === 'A5' ? 'a5' : 'a4'),
+      showLogo: true,
+      showCompanyName: true,
+      showUnitName: true,
+      showAddress: !isThermal,
+      showPhone: true,
+      showCNPJ: true,
+      showQRCode: true,
+      showBarcode: isThermal,
+      showDoctorInfo: true,
+      showConvenioInfo: true,
+      showAuthorizationInfo: true,
+      showAttachmentChecklist: !isThermal,
+      showObservations: true,
+      showSignatureLine: !isThermal,
+      showTimestamp: true,
+      defaultCopies: copies,
+    }
+  }
+
+  // Imprime, em sequência, todos os documentos marcados no modal de impressão
+  const runPrintQueue = (queue: { id: string; format: string }[]) => {
+    if (!queue.length) {
+      setPrintQueue([])
+      setShowPrintSelection(false)
+      setShowPrint(false)
+      setShowAllocation(true)
+      return
+    }
+    const [next, ...rest] = queue
+    setPrintQueue(rest)
+    setShowPrintSelection(false)
+    if (next.id === 'etiquetas') {
+      setShowPrint(false)
+      setShowLabelsSelect(true)
+      return
+    }
+    setPrintVias(next.id === 'controle_interno' ? ['establishment'] : ['patient'])
+    setPrintOverride(buildPrintOverride(next.id, next.format))
+    setShowPrint(false)
+    setTimeout(() => setShowPrint(true), 60)
+  }
+
   const handleUpdatePatient = async () => {
     if (!state.patient?.id || !state.tempPatient) return
     
