@@ -244,6 +244,19 @@
     display: none !important;
   }
 
+  /* Código de barras: barras cheias, sem clareamento/antialias do navegador */
+  .label-barcode,
+  .label-barcode svg {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+    color-adjust: exact !important;
+    image-rendering: crisp-edges !important;
+    shape-rendering: crispEdges !important;
+  }
+  .label-barcode svg rect {
+    shape-rendering: crispEdges !important;
+  }
+
 
   /* Laudo: imprimir apenas o documento, em A4 */
 
