@@ -368,3 +368,9 @@ a[href*="lovable.app"],
 .result-entry-scroll [data-radix-scroll-area-scrollbar][data-orientation="horizontal"] .scroll-area-thumb:hover {
   filter: brightness(0.82);
 }
+
+/* Código de barras das etiquetas: barras nítidas e 100% pretas em tela e no PDF */
+.label-barcode svg,
+.label-barcode svg rect {
+  shape-rendering: crispEdges;
+}
