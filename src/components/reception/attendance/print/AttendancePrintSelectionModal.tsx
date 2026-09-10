@@ -404,7 +404,9 @@ export function AttendancePrintSelectionModal({ open, onClose, onConfirm, order,
           </div>
 
           {/* Footer Actions */}
-          <div className="px-5 py-3 bg-slate-50 flex items-center justify-end gap-2 border-t border-slate-200">
+          <div className="px-5 py-3 bg-slate-50 flex items-center justify-between gap-2 border-t border-slate-200">
+            {multiSelect ? <ServidorImpressaoStatus /> : <span />}
+            <div className="flex items-center gap-2">
             <Button
               variant="outline"
               size="sm"
