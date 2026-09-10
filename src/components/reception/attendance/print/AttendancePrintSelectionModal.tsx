@@ -231,6 +231,21 @@ export function AttendancePrintSelectionModal({ open, onClose, onConfirm, order,
       }
       setIsSaving(false);
     }
+    const enabled = options.filter(o => o.enabled);
+    if (multiSelect && enabled.length > 0) {
+      onConfirm({
+        action: 'print-batch',
+        options,
+        queue: enabled.map(o => ({ id: o.id, format: o.selectedFormat })),
+        extras,
+        printerSettings,
+        watermark,
+        emptyFields,
+        selectedExams,
+        selectedTubes,
+      });
+      return;
+    }
     onConfirm({ action: 'confirm', options, extras, printerSettings });
   };
 
