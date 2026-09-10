@@ -103,12 +103,15 @@ export const SampleLabel = ({
 
       {/* Código de barras */}
       <div
-        className="flex w-full shrink-0 items-stretch justify-center overflow-hidden [&_svg]:block [&_svg]:h-full [&_svg]:max-w-full"
+        className="label-barcode flex w-full shrink-0 items-stretch justify-center overflow-hidden [&_svg]:block [&_svg]:h-full [&_svg]:w-full [&_svg]:max-w-full"
         style={{
           height: `${barcodeHeightPx}px`,
           // A folga física impede que rasterizadores de PDF encostem as barras
           // nos glifos do cabeçalho, mesmo quando arredondam pixels de forma diferente.
           marginTop: '1mm',
+          // Garante que o preto saia cheio em qualquer driver/navegador
+          WebkitPrintColorAdjust: 'exact',
+          printColorAdjust: 'exact',
         }}
         data-label-barcode
       >
@@ -117,7 +120,7 @@ export const SampleLabel = ({
           value={sampleHash || sampleId || 'ERROR'}
           renderer="svg"
           format="CODE128"
-          width={1.5}
+          width={2}
           height={barcodeHeightPx}
           displayValue={false}
           margin={0}
