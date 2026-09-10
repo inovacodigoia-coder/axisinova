@@ -14,9 +14,13 @@ interface Props {
   open: boolean
   onClose: () => void
   order: any
+  /** Data de nascimento do paciente (fallback quando o pedido nao a possui). */
+  birthDate?: string
+  /** Imprime direto todas as amostras coletadas, sem tela de selecao. */
+  autoPrint?: boolean
 }
 
-export function SampleLabelsSelectModal({ open, onClose, order }: Props) {
+export function SampleLabelsSelectModal({ open, onClose, order, birthDate, autoPrint }: Props) {
   const companySequenceId = useCompanySequenceId()
   const { settings } = useLabSettings()
   const [selected, setSelected] = useState<Set<string>>(new Set())
@@ -46,6 +50,11 @@ export function SampleLabelsSelectModal({ open, onClose, order }: Props) {
     if (open) setSelected(new Set(tubes.filter(t => t.collected).map(t => t.code)))
   }, [open, tubes])
 
+  // Modo automatico: abre direto a impressao com todas as amostras coletadas
+  useEffect(() => {
+    if (open && autoPrint && tubes.some(t => t.collected)) setPrintOpen(true)
+  }, [open, autoPrint, tubes])
+
   const toggle = (code: string) =>
     setSelected(prev => {
       const next = new Set(prev)
@@ -60,7 +69,7 @@ export function SampleLabelsSelectModal({ open, onClose, order }: Props) {
 
   return (
     <>
-      <Dialog open={open && !printOpen} onOpenChange={(o) => !o && onClose()}>
+      <Dialog open={open && !printOpen && !autoPrint} onOpenChange={(o) => !o && onClose()}>
         <DialogContent className="max-w-[560px] p-0 overflow-hidden [&>button]:hidden">
           <div className="flex items-center justify-between border-b border-border px-5 py-3">
             <h2 className="text-base font-bold text-foreground flex items-center gap-2">
@@ -115,10 +124,11 @@ export function SampleLabelsSelectModal({ open, onClose, order }: Props) {
 
       <SampleLabelsPrintModal
         open={printOpen}
-        onClose={() => setPrintOpen(false)}
+        autoPrint={autoPrint}
+        onClose={() => { setPrintOpen(false); if (autoPrint) onClose() }}
         orderNumber={order?.orderNumber || ''}
         patientName={order?.patientName || ''}
-        birthDate={order?.patientBirthDate}
+        birthDate={order?.patientBirthDate || birthDate}
         hash={order?.hash}
         isUrgent={order?.isUrgent}
         labName={settings?.lab_name || ''}
