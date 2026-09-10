@@ -147,6 +147,35 @@ export default function PDFPreviewModal({
     }, 80);
   }, []);
 
+  // Impressão do laudo: usa o Servidor de Impressão local quando estiver ativo
+  const [enviandoImpressao, setEnviandoImpressao] = React.useState(false);
+
+  const handlePrintLaudo = React.useCallback(async () => {
+    if (enviandoImpressao) return;
+    setEnviandoImpressao(true);
+    try {
+      const ativo = await servidorImpressaoAtivo();
+      if (ativo && documentRef.current) {
+        const pages = Array.from(
+          documentRef.current.querySelectorAll<HTMLElement>('.laudo-page'),
+        );
+        const nodes = pages.length ? pages : [documentRef.current];
+        const pdf = await gerarPdfElementos(nodes, 210);
+        const r = await imprimirDireto(TIPOS_DOCUMENTO.laudo, pdf);
+        toast.success(r.mensagem || 'Laudo enviado para a impressora.');
+        return;
+      }
+      if (onPrint) onPrint();
+      else printLaudoOnly();
+    } catch (e: any) {
+      toast.error(e?.message || 'Falha ao imprimir pelo servidor local. Usando a impressão do navegador.');
+      if (onPrint) onPrint();
+      else printLaudoOnly();
+    } finally {
+      setEnviandoImpressao(false);
+    }
+  }, [enviandoImpressao, onPrint, printLaudoOnly]);
+
 
 
   React.useEffect(() => {
