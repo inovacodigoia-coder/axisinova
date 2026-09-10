@@ -15,8 +15,11 @@ export async function gerarPdfEtiquetas(
 
   for (let i = 0; i < elements.length; i++) {
     const el = elements[i]
+    // Escala alta = mais pixels por barra; evita barras "falhadas" na leitura.
+    const targetDpi = 600
+    const scale = Math.min(8, Math.max(4, (widthMm / 25.4) * targetDpi / el.offsetWidth))
     const canvas = await html2canvas(el, {
-      scale: 4,
+      scale,
       backgroundColor: '#ffffff',
       logging: false,
       useCORS: true,
