@@ -349,8 +349,8 @@ export default function PDFPreviewModal({
                 </>
               )
             )}
-            <Button variant="outline" className="gap-2" onClick={onPrint ? onPrint : printLaudoOnly}>
-              <Printer className="h-4 w-4" /> Imprimir
+            <Button variant="outline" className="gap-2" onClick={handlePrintLaudo} disabled={enviandoImpressao}>
+              <Printer className="h-4 w-4" /> {enviandoImpressao ? 'Enviando...' : 'Imprimir'}
             </Button>
 
             <Button className="gradient-bg text-white gap-2" onClick={onDownload ? onDownload : printLaudoOnly}>
