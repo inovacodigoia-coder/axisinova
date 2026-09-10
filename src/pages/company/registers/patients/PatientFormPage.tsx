@@ -198,6 +198,17 @@ export default function PatientFormPage() {
       toast.error(`Erro ao salvar: ${error.message}`)
       return
     }
+    // Propaga o nome atualizado para atendimentos/laudos já existentes
+    if (isEditing && patientId && values.fullName) {
+      const [ordersRes, resultsRes] = await Promise.all([
+        supabase.from('attendance_orders').update({ patient_name: values.fullName }).eq('patient_id', patientId),
+        supabase.from('lab_exam_results').update({ patient_name: values.fullName }).eq('patient_id', patientId),
+      ])
+      if (ordersRes.error || resultsRes.error) {
+        console.error('[PatientFormPage] name sync error:', ordersRes.error || resultsRes.error)
+      }
+    }
+
     toast.success(isEditing ? 'Paciente atualizado!' : 'Paciente cadastrado com sucesso!')
     setPendingValues(null)
     setDuplicates([])

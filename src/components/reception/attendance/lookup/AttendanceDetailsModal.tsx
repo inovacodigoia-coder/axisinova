@@ -501,6 +501,11 @@ export function AttendanceDetailsModal({ open, onClose, onOrderDeleted, order, p
 
     return {
       ...labOrder,
+      // Dados cadastrais sempre do cadastro atual do paciente (evita nome antigo no laudo)
+      patientName: patient?.fullName || labOrder.patientName,
+      patientBirthDate: patient?.birthDate || (labOrder as any).patientBirthDate,
+      patientGender: (labOrder as any).patientGender || patient?.gender,
+      patientCPF: patient?.cpf || (labOrder as any).patientCPF,
       doctorName,
       doctorCRM,
       approvedAt,
@@ -514,7 +519,7 @@ export function AttendanceDetailsModal({ open, onClose, onOrderDeleted, order, p
           .filter((exam: any) => selectedReleasedExamIds.has(exam.examId || exam.id))
       })).filter(guide => (guide.exams?.length ?? 0) > 0)
     };
-  }, [labOrder, orderExams, selectedReleasedExamIds, labResults, approvers, guidesState]);
+  }, [labOrder, orderExams, selectedReleasedExamIds, labResults, approvers, guidesState, patient]);
 
 
   return (
