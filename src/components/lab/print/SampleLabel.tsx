@@ -136,9 +136,9 @@ export const SampleLabel = ({
       </div>
 
       {/* Dados do paciente */}
-      <div className="shrink-0 whitespace-nowrap uppercase" style={f('patientName')}>{patientName || 'PACIENTE NÃO INFORMADO'}</div>
-      <div className="shrink-0 whitespace-nowrap" style={f('birthDate')}>
-        NASC: {birthDate || '--/--/----'}
+      <div className="shrink-0 whitespace-nowrap uppercase" style={f('patientName')}>
+        {patientName || 'PACIENTE NÃO INFORMADO'}
+        <span className="ml-1 normal-case" style={f('birthDate')}>— DN: {birthDate || '--/--/----'}</span>
       </div>
       <div className="shrink-0 whitespace-nowrap uppercase" style={f('material')}>
         {material || '---'}{tube ? ` (${String(tube).toUpperCase()})` : ''}

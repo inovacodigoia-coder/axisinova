@@ -144,7 +144,6 @@ export function estimateContentHeightMm(config: LabelConfig): number {
     'sector',
     'sampleCode',
     'patientName',
-    'birthDate',
     'material',
     'examRefs',
     'labName',
