@@ -79,7 +79,8 @@ export const defaultLabelConfig: LabelConfig = {
   heightMm: 30,
   rotation: 0,
   marginMm: 1,
-  barcodeHeightMm: 6.5,
+  // Altura aproveitando o espaço liberado entre cabeçalho e código de barras.
+  barcodeHeightMm: 8.5,
   fields: defaultLabelFields,
 }
 
