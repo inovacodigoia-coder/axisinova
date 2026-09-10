@@ -291,7 +291,7 @@ export function AttendancePrintSelectionModal({ open, onClose, onConfirm, order,
                       )}>
                         {opt.label}
                       </span>
-                      {opt.enabled && (
+                      {opt.enabled && !multiSelect && (
                         <Button
                           size="sm"
                           onClick={() => handlePrintOption(opt)}
