@@ -434,6 +434,8 @@ export function LabStep3GuidesProcedures({ state, update }: Props) {
                       >
                         <option>CRM</option>
                         <option>CRO</option>
+                        <option>COREM</option>
+                        <option>CRBM</option>
                         <option>RMS</option>
                       </select>
                     </div>

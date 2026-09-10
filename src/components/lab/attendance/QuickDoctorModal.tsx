@@ -105,7 +105,7 @@ export function QuickDoctorModal({ open, onClose, defaultName = '', onCreated }:
               <Label className="text-[11px] uppercase text-muted-foreground">Conselho</Label>
               <select value={council} onChange={e => setCouncil(e.target.value)}
                 className="flex h-10 w-full rounded-md border bg-background px-3 text-sm">
-                <option>CRM</option><option>CRO</option><option>RMS</option>
+                <option>CRM</option><option>CRO</option><option>COREM</option><option>CRBM</option><option>RMS</option>
               </select>
             </div>
             <div>
