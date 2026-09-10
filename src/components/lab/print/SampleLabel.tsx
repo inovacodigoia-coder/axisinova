@@ -103,7 +103,7 @@ export const SampleLabel = ({
 
       {/* Código de barras */}
       <div
-        className="flex w-full shrink-0 items-start justify-center overflow-hidden [&_img]:block [&_img]:h-full [&_img]:max-w-full"
+        className="flex w-full shrink-0 items-stretch justify-center overflow-hidden [&_svg]:block [&_svg]:h-full [&_svg]:w-full"
         style={{
           height: `${barcodeHeightPx}px`,
           // A folga física impede que rasterizadores de PDF encostem as barras
@@ -112,15 +112,17 @@ export const SampleLabel = ({
         }}
         data-label-barcode
       >
+        {/* SVG vetorial: barras nítidas na impressão e sem serrilhado ao rasterizar */}
         <Barcode
           value={sampleHash || sampleId || 'ERROR'}
-          renderer="img"
+          renderer="svg"
           format="CODE128"
-          width={1.1}
-          height={barcodeHeightPx}
+          width={2}
+          height={barcodeHeightPx * 4}
           displayValue={false}
           margin={0}
-          background="transparent"
+          background="#ffffff"
+          lineColor="#000000"
         />
       </div>
 
