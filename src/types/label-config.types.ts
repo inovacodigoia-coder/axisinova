@@ -79,7 +79,8 @@ export const defaultLabelConfig: LabelConfig = {
   heightMm: 30,
   rotation: 0,
   marginMm: 1,
-  barcodeHeightMm: 6.5,
+  // Altura aproveitando o espaço liberado entre cabeçalho e código de barras.
+  barcodeHeightMm: 8.5,
   fields: defaultLabelFields,
 }
 
@@ -139,7 +140,7 @@ export function normalizeLabelConfig(raw: unknown): LabelConfig {
 
 /** Altura estimada (mm) do conteúdo com a configuração atual. */
 export function estimateContentHeightMm(config: LabelConfig): number {
-  const lineMm = (pt: number) => (pt * PT_TO_PX * 1.2) / MM_TO_PX
+  const lineMm = (pt: number, factor = 1.2) => (pt * PT_TO_PX * factor) / MM_TO_PX
   const textLines: LabelFieldKey[] = [
     'sector',
     'sampleCode',
@@ -148,7 +149,8 @@ export function estimateContentHeightMm(config: LabelConfig): number {
     'examRefs',
     'labName',
   ]
-  const headerMm = Math.max(lineMm(config.fields.sector.size), lineMm(config.fields.dateTime.size))
+  // Cabeçalho compacto (line-height 1.05) para eliminar o espaço em branco acima do código.
+  const headerMm = Math.max(lineMm(config.fields.sector.size, 1.05), lineMm(config.fields.dateTime.size, 1.05))
   const codeLineMm = Math.max(lineMm(config.fields.sampleCode.size), lineMm(config.fields.sampleHash.size))
   const footerMm = Math.max(lineMm(config.fields.labName.size), lineMm(config.fields.brand.size))
   const middle = textLines

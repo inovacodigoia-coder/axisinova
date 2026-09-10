@@ -68,18 +68,13 @@ export const SampleLabel = ({
     const px = style.size * PT_TO_PX;
     return {
       fontSize: `${px.toFixed(2)}px`,
-      // Mantém espaço para ascendentes e descendentes; uma entrelinha igual
-      // à fonte faz o html2canvas recortar os caracteres ao gerar o PDF.
-      lineHeight: `${(px * 1.15).toFixed(2)}px`,
+      // Cabeçalho usa entrelinha justa para não deixar espaço em branco acima do código.
+      lineHeight: `${(px * 1.05).toFixed(2)}px`,
       fontWeight: style.bold ? 700 : 400,
     };
   };
 
   const barcodeHeightPx = Math.round(config.barcodeHeightMm * MM_TO_PX);
-  const headerHeightPx = Math.max(
-    config.fields.sector.size * PT_TO_PX * 1.15,
-    config.fields.dateTime.size * PT_TO_PX * 1.15,
-  );
 
   return (
     <div
@@ -90,10 +85,9 @@ export const SampleLabel = ({
         padding: `${config.marginMm}mm`,
       }}
     >
-      {/* Cabeçalho: urgência / bancada / data */}
+      {/* Cabeçalho: urgência / bancada / data — altura natural, sem folga */}
       <div
-        className="flex shrink-0 items-start gap-1 uppercase whitespace-nowrap overflow-hidden"
-        style={{ height: `${headerHeightPx.toFixed(2)}px` }}
+        className="flex shrink-0 items-center gap-1 uppercase whitespace-nowrap overflow-hidden leading-none"
         data-label-header
       >
         {isUrgent && <span className="bg-black text-white px-1" style={f('sector')}>URG</span>}
@@ -101,14 +95,11 @@ export const SampleLabel = ({
         <span className="whitespace-nowrap" style={f('dateTime')}>{printDate || '---'}</span>
       </div>
 
-      {/* Código de barras */}
+      {/* Código de barras — colado no cabeçalho, sem margem extra */}
       <div
         className="label-barcode flex w-full shrink-0 items-stretch justify-center overflow-hidden [&_svg]:block [&_svg]:h-full [&_svg]:w-full [&_svg]:max-w-full"
         style={{
-          height: `${barcodeHeightPx + 2}px`,
-          // Espaço reduzido acima/abaixo para aproveitar a área e ampliar o código.
-          marginTop: '0.8px',
-          marginBottom: '0.8px',
+          height: `${barcodeHeightPx}px`,
           // Garante que o preto saia cheio em qualquer driver/navegador
           WebkitPrintColorAdjust: 'exact',
           printColorAdjust: 'exact',
@@ -121,7 +112,7 @@ export const SampleLabel = ({
           renderer="svg"
           format="CODE128"
           width={2}
-          height={barcodeHeightPx + 2}
+          height={barcodeHeightPx}
           displayValue={false}
           margin={0}
           background="#ffffff"
