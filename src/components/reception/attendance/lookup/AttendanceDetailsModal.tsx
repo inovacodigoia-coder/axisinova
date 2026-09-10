@@ -501,6 +501,11 @@ export function AttendanceDetailsModal({ open, onClose, onOrderDeleted, order, p
 
     return {
       ...labOrder,
+      // Dados cadastrais sempre do cadastro atual do paciente (evita nome antigo no laudo)
+      patientName: patient?.fullName || labOrder.patientName,
+      patientBirthDate: patient?.birthDate || (labOrder as any).patientBirthDate,
+      patientGender: (labOrder as any).patientGender || patient?.gender,
+      patientCPF: patient?.cpf || (labOrder as any).patientCPF,
       doctorName,
       doctorCRM,
       approvedAt,
