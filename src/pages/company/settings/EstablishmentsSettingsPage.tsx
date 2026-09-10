@@ -81,10 +81,23 @@ export default function EstablishmentsSettingsPage() {
         .eq('id', editingEstablishment.id)
       error = err
 
-      // Sync/create matching origin
+      // Sync matching origin (never create duplicates)
       if (!err) {
-        const existingOrigins = (editingEstablishment as any).origins || []
-        if (existingOrigins.length === 0) {
+        const { data: existingOrigins } = await (supabase as any)
+          .from('origins')
+          .select('id')
+          .eq('establishment_id', editingEstablishment.id)
+          .order('created_at', { ascending: true })
+
+        if (existingOrigins && existingOrigins.length > 0) {
+          await (supabase as any)
+            .from('origins')
+            .update({
+              name: formData.name,
+              internal_code: formData.internal_code || null,
+            })
+            .eq('id', existingOrigins[0].id)
+        } else {
           await (supabase as any).from('origins').insert([{
             company_id: user?.companyId,
             establishment_id: editingEstablishment.id,
@@ -94,22 +107,13 @@ export default function EstablishmentsSettingsPage() {
         }
       }
     } else {
-      const { data: newEst, error: err } = await (supabase as any)
+      // A origem correspondente é criada automaticamente pelo backend
+      const { error: err } = await (supabase as any)
         .from('establishments')
         .insert([payload])
         .select()
         .single()
       error = err
-
-      // Auto-create matching origin for the new establishment
-      if (!err && newEst) {
-        await (supabase as any).from('origins').insert([{
-          company_id: user?.companyId,
-          establishment_id: newEst.id,
-          name: formData.name,
-          internal_code: formData.internal_code || null,
-        }])
-      }
     }
 
     if (error) {
