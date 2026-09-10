@@ -821,7 +821,7 @@ export function AttendanceCadastroModal({
         <SampleLabelsSelectModal
           open
           order={createdOrder}
-          onClose={() => setShowLabelsSelect(false)}
+          onClose={() => { setShowLabelsSelect(false); runPrintQueue(printQueue) }}
         />
       )}
       {/* Aviso de Sincronização Pendente */}
