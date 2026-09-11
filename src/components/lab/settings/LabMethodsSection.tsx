@@ -64,7 +64,7 @@ export default function LabMethodsSection() {
     setWorkbenches((data as any[]) || [])
   }
 
-  const fetchBenchExams = async (benchId: string) => {
+  const fetchBenchExams = async (benchId: string, methodName?: string) => {
     if (!benchId) { setBenchExams([]); setSelectedExamIds([]); return }
     try {
       setLoadingExams(true)
@@ -75,8 +75,14 @@ export default function LabMethodsSection() {
         .eq('workbench_id', benchId)
         .order('name')
       if (error) throw error
-      setBenchExams((data as any[]) || [])
-      setSelectedExamIds([])
+      const rows = (data as any[]) || []
+      setBenchExams(rows)
+      const current = (methodName ?? editingMethod?.name ?? '').trim().toLowerCase()
+      setSelectedExamIds(
+        current
+          ? rows.filter(r => (r.methodology || '').trim().toLowerCase() === current).map(r => r.id)
+          : []
+      )
     } catch (e) {
       console.error(e)
       toast.error('Erro ao carregar exames da bancada')
@@ -86,24 +92,54 @@ export default function LabMethodsSection() {
   }
 
   const applyMethodology = async (methodName: string, silent = false) => {
-    if (!methodName || selectedExamIds.length === 0) return true
-    const { data, error } = await supabase
-      .from('exams' as any)
-      .update({ methodology: methodName })
-      .eq('company_id', user?.companyId)
-      .in('id', selectedExamIds)
-      .select('id')
-    if (error) {
-      console.error(error)
-      toast.error(`Erro ao atribuir metodologia: ${error.message}`)
-      return false
+    if (!methodName || !selectedBench) return true
+
+    const previousName = (editingMethod?.name || '').trim().toLowerCase()
+    const toAssign = selectedExamIds
+    const toClear = benchExams
+      .filter(ex => !selectedExamIds.includes(ex.id) &&
+        (ex.methodology || '').trim().toLowerCase() === previousName && previousName)
+      .map(ex => ex.id)
+
+    if (toAssign.length === 0 && toClear.length === 0) return true
+
+    if (toAssign.length > 0) {
+      const { data, error } = await supabase
+        .from('exams' as any)
+        .update({ methodology: methodName })
+        .eq('company_id', user?.companyId)
+        .in('id', toAssign)
+        .select('id')
+      if (error) {
+        console.error(error)
+        toast.error(`Erro ao atribuir metodologia: ${error.message}`)
+        return false
+      }
+      if (((data as any[])?.length ?? 0) === 0) {
+        toast.error('Nenhum exame foi atualizado (verifique as permissões).')
+        return false
+      }
     }
-    const count = (data as any[])?.length ?? 0
-    if (count === 0) {
-      toast.error('Nenhum exame foi atualizado (verifique as permissões).')
-      return false
+
+    if (toClear.length > 0) {
+      const { error } = await supabase
+        .from('exams' as any)
+        .update({ methodology: null })
+        .eq('company_id', user?.companyId)
+        .in('id', toClear)
+      if (error) {
+        console.error(error)
+        toast.error(`Erro ao remover metodologia: ${error.message}`)
+        return false
+      }
     }
-    if (!silent) toast.success(`Metodologia atribuída a ${count} exame(s)`)
+
+    if (!silent) {
+      toast.success(
+        `Metodologia atualizada: ${toAssign.length} vinculado(s)` +
+        (toClear.length > 0 ? `, ${toClear.length} removido(s)` : '')
+      )
+    }
     return true
   }
 
@@ -112,7 +148,7 @@ export default function LabMethodsSection() {
     try {
       setAssigning(true)
       const ok = await applyMethodology(editingMethod.name)
-      if (ok) await fetchBenchExams(selectedBench)
+      if (ok) await fetchBenchExams(selectedBench, editingMethod.name)
     } finally {
       setAssigning(false)
     }
@@ -179,8 +215,8 @@ export default function LabMethodsSection() {
         
         if (error) throw error
         toast.success('Metodologia atualizada com sucesso')
-        if (selectedExamIds.length > 0) {
-          await applyMethodology(formData.name.trim())
+        if (selectedBench) {
+          await applyMethodology(formData.name.trim(), true)
         }
       } else {
         const { error } = await supabase
@@ -443,7 +479,7 @@ export default function LabMethodsSection() {
                 <select
                   className="w-full h-10 px-3 rounded-lg border bg-background text-sm outline-none focus:ring-2 focus:ring-primary/20"
                   value={selectedBench}
-                  onChange={(e) => { setSelectedBench(e.target.value); fetchBenchExams(e.target.value) }}
+                  onChange={(e) => { setSelectedBench(e.target.value); fetchBenchExams(e.target.value, editingMethod?.name) }}
                 >
                   <option value="">Selecione a bancada...</option>
                   {workbenches.map(w => (
