@@ -219,7 +219,7 @@ export default function TVConfigPage() {
         name: mediaName.trim() || mediaFile.name,
         type: mediaFile.type.startsWith('video') ? 'video' : 'image',
         durationSeconds: Number(mediaDuration) || 15,
-        fileUrl: pub.publicUrl, createdAt: new Date().toISOString(),
+        fileUrl: signed.signedUrl, createdAt: new Date().toISOString(),
       }
       const next = [...selectedTv.mediaAttachments, att]
       dispatch({ type: 'UPDATE_TV', payload: { ...selectedTv, mediaAttachments: next } })
