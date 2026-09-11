@@ -67,10 +67,10 @@ export function AttendancePrintSelectionModal({ open, onClose, onConfirm, order,
   const [selectedMaterials, setSelectedMaterials] = useState<Set<string>>(new Set());
   const [isSaving, setIsSaving] = useState(false);
 
-  // Sempre iniciar com apenas o Comprovante selecionado
+  // Sempre iniciar sem nenhuma opção marcada
   React.useEffect(() => {
     if (open) {
-      setOptions(prev => prev.map(o => ({ ...o, enabled: o.id === 'comprovante' })));
+      setOptions(prev => prev.map(o => ({ ...o, enabled: false })));
       setConfirmCollection(false);
       setSelectedMaterials(new Set());
     }
