@@ -479,7 +479,7 @@ export default function LabMethodsSection() {
                 <select
                   className="w-full h-10 px-3 rounded-lg border bg-background text-sm outline-none focus:ring-2 focus:ring-primary/20"
                   value={selectedBench}
-                  onChange={(e) => { setSelectedBench(e.target.value); fetchBenchExams(e.target.value) }}
+                  onChange={(e) => { setSelectedBench(e.target.value); fetchBenchExams(e.target.value, editingMethod?.name) }}
                 >
                   <option value="">Selecione a bancada...</option>
                   {workbenches.map(w => (
