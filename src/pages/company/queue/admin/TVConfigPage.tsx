@@ -209,7 +209,11 @@ export default function TVConfigPage() {
       const path = `${companyId}/${selectedTv.id}/${Date.now()}.${ext}`
       const { error: upErr } = await supabase.storage.from('tv-media').upload(path, mediaFile, { upsert: false, contentType: mediaFile.type })
       if (upErr) throw upErr
-      const { data: pub } = supabase.storage.from('tv-media').getPublicUrl(path)
+      // Bucket privado: gera link assinado de longa duração (10 anos) para o painel público
+      const { data: signed, error: signErr } = await supabase.storage
+        .from('tv-media')
+        .createSignedUrl(path, 60 * 60 * 24 * 365 * 10)
+      if (signErr || !signed?.signedUrl) throw signErr ?? new Error('Não foi possível gerar o link da mídia')
       const att: MediaAttachment = {
         id: `ma_${Date.now()}`, tvId: selectedTv.id,
         name: mediaName.trim() || mediaFile.name,
