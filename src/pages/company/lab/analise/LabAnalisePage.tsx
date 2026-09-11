@@ -176,11 +176,12 @@ export default function LabAnalisePage() {
 
         // Amostra cancelada (volta para Pendente) sai da fila de digitação.
         // Só reaparece quando a coleta for confirmada novamente.
-        const hasOwnCollectionFlag =
-          exam.collected !== undefined || exam.isColeta !== undefined || !!exam.collectedAt;
-        const examIsCollected = hasOwnCollectionFlag
-          ? (!!exam.collected || !!exam.isColeta || !!exam.collectedAt)
-          : true;
+        // Coleta cancelada marca explicitamente collected = false; nesse caso o exame sai da fila.
+        // Caso contrário, considera as marcações próprias OU a coleta confirmada no pedido.
+        const orderCollected = allowedOrderStatuses.includes(orderStatus);
+        const examIsCollected = exam.collected === false
+          ? false
+          : (!!exam.collected || !!exam.isColeta || !!exam.collectedAt || orderCollected);
         // Exames já digitados/liberados permanecem visíveis
         const alreadyWorked = ['digitized', 'released', 'liberado', 'validated', 'retificado'].includes(
           String(exam.status || '').toLowerCase()

@@ -88,12 +88,11 @@ export function OriginSelector() {
     toast.success('Origem definida como padrão para login')
   }
 
-  // Dedupe safeguard: one entry per establishment (keeps first occurrence)
-  const seenEstablishments = new Set<string>()
+  // Dedupe safeguard: remove apenas registros repetidos (mesma origem), nunca unidades distintas
+  const seenOrigins = new Set<string>()
   const uniqueOrigins = availableOrigins.filter(o => {
-    const key = (o as any).establishment_id || o.id
-    if (seenEstablishments.has(key)) return false
-    seenEstablishments.add(key)
+    if (seenOrigins.has(o.id)) return false
+    seenOrigins.add(o.id)
     return true
   })
 

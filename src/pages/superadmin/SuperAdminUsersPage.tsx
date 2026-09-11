@@ -70,19 +70,26 @@ export default function SuperAdminUsersPage() {
         // lockouts, since lock_key is the identifier typed at login (usually the e-mail)
         let emails: Record<string, string | null> = {}
         const ids = profilesRes.data.map((p: any) => p.id as string)
-        if (ids.length > 0) {
-          try {
-            const { data: mail } = await supabase.functions.invoke('get-user-email', {
-              body: { user_ids: ids },
-            })
-            emails = mail?.emails ?? {}
-          } catch {
-            emails = {}
-          }
-        }
+        // A função aceita no máximo 200 ids por chamada — processa em lotes
+        const CHUNK = 200
+        const chunks: string[][] = []
+        for (let i = 0; i < ids.length; i += CHUNK) chunks.push(ids.slice(i, i + CHUNK))
+        const results = await Promise.all(
+          chunks.map(async (chunk) => {
+            try {
+              const { data: mail } = await supabase.functions.invoke('get-user-email', {
+                body: { user_ids: chunk },
+              })
+              return (mail?.emails ?? {}) as Record<string, string | null>
+            } catch {
+              return {} as Record<string, string | null>
+            }
+          })
+        )
+        emails = Object.assign({}, ...results)
 
         const mapped: SystemUser[] = profilesRes.data.map((p: any) => {
-          const email: string | null = emails[p.id] ?? null
+          const email: string | null = emails[p.id] ?? p.email ?? null
 
           const identifiers = [email, p.cpf]
             .filter(Boolean)
