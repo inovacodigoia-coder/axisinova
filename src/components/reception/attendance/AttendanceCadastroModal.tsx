@@ -802,6 +802,22 @@ export function AttendanceCadastroModal({
             setShowAllocation(true)
           }}
           onConfirm={(opts: any) => {
+            // Reflete localmente a coleta confirmada no modal, senao as etiquetas
+            // nao encontram amostras coletadas no pedido em memoria.
+            const collectedTypes: string[] = opts?.collectedMaterials || []
+            if (collectedTypes.length) {
+              const now = new Date().toISOString()
+              setCreatedOrder(prev => prev ? ({
+                ...prev,
+                labGuides: (prev.labGuides || []).map((g: any) => ({
+                  ...g,
+                  exams: (g.exams || []).map((e: any) =>
+                    collectedTypes.includes(tubeTypeForMaterial(e.material))
+                      ? { ...e, collected: true, isColeta: true, collectedAt: e.collectedAt || now }
+                      : e),
+                })),
+              }) : prev)
+            }
             if (opts?.action === 'print-batch') {
               runPrintQueue(opts.queue || [])
               return
