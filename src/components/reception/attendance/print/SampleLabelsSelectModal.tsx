@@ -50,10 +50,13 @@ export function SampleLabelsSelectModal({ open, onClose, order, birthDate, autoP
     if (open) setSelected(new Set(tubes.filter(t => t.collected).map(t => t.code)))
   }, [open, tubes])
 
-  // Modo automatico: abre direto a impressao com todas as amostras coletadas
+  // Modo automatico: abre direto a impressao com todas as amostras coletadas.
+  // Se nenhuma amostra estiver coletada, encerra para nao travar o fluxo numa tela vazia.
   useEffect(() => {
-    if (open && autoPrint && tubes.some(t => t.collected)) setPrintOpen(true)
-  }, [open, autoPrint, tubes])
+    if (!open || !autoPrint || printOpen) return
+    if (tubes.some(t => t.collected)) setPrintOpen(true)
+    else onClose()
+  }, [open, autoPrint, printOpen, tubes, onClose])
 
   const toggle = (code: string) =>
     setSelected(prev => {

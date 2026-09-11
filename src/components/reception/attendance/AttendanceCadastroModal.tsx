@@ -20,7 +20,7 @@ import { Step3Authorization } from './steps/Step3Authorization'
 import { Step4Attachments } from './steps/Step4Attachments'
 import { PaymentModal } from './payment/PaymentModal'
 import { AttendancePrintModal } from './print/AttendancePrintModal'
-import { AttendancePrintSelectionModal } from './print/AttendancePrintSelectionModal'
+import { AttendancePrintSelectionModal, tubeTypeForMaterial } from './print/AttendancePrintSelectionModal'
 import { SampleLabelsSelectModal } from './print/SampleLabelsSelectModal'
 import { LabStep1PatientReview } from '@/components/lab/attendance/steps/LabStep1PatientReview'
 import { LabStep2ExamData } from '@/components/lab/attendance/steps/LabStep2ExamData'
@@ -802,6 +802,22 @@ export function AttendanceCadastroModal({
             setShowAllocation(true)
           }}
           onConfirm={(opts: any) => {
+            // Reflete localmente a coleta confirmada no modal, senao as etiquetas
+            // nao encontram amostras coletadas no pedido em memoria.
+            const collectedTypes: string[] = opts?.collectedMaterials || []
+            if (collectedTypes.length) {
+              const now = new Date().toISOString()
+              setCreatedOrder(prev => prev ? ({
+                ...prev,
+                labGuides: (prev.labGuides || []).map((g: any) => ({
+                  ...g,
+                  exams: (g.exams || []).map((e: any) =>
+                    collectedTypes.includes(tubeTypeForMaterial(e.material))
+                      ? { ...e, collected: true, isColeta: true, collectedAt: e.collectedAt || now }
+                      : e),
+                })),
+              }) : prev)
+            }
             if (opts?.action === 'print-batch') {
               runPrintQueue(opts.queue || [])
               return
