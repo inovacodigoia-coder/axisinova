@@ -23,6 +23,7 @@ import * as XLSX from 'xlsx';
 import { cn } from "@/lib/utils";
 import { toast } from 'sonner';
 import { useRegisters } from '@/context/RegistersContext';
+import { importReferenceAge } from '@/utils/importReferenceAge';
 
 interface ImportarPlanilhaModalProps {
   isOpen: boolean;
@@ -109,6 +110,8 @@ export const ImportarPlanilhaModal = ({ isOpen, onClose, existingCodes = [] }: I
         const catalogData = XLSX.utils.sheet_to_json<any>(catalogSheet);
         const paramsData = paramsSheet ? XLSX.utils.sheet_to_json<any>(paramsSheet) : [];
         const refsData = refsSheet ? XLSX.utils.sheet_to_json<any>(refsSheet) : [];
+        // Validate before any exam is saved, using the same parser for both stores.
+        refsData.forEach(importReferenceAge);
 
         const foundNew: string[] = [];
         const foundUpdate: string[] = [];
@@ -259,8 +262,7 @@ export const ImportarPlanilhaModal = ({ isOpen, onClose, existingCodes = [] }: I
                 maxValue: r['Valor máximo'] ?? r['Valor Máximo'] ?? r['Máximo'] ?? '',
                 textRange: r['Valor texto'] ?? r['Texto'] ?? '',
                 normalText: r['Valor texto'] ?? r['Texto'] ?? '',
-                minAge: Number(r['Idade mínima (anos)'] || r['Idade Mínima'] || 0),
-                maxAge: Number(r['Idade máxima (anos)'] || r['Idade Máxima'] || 150),
+                ...importReferenceAge(r),
                 sex: (String(r['Sexo'] || r['Gênero'] || '').toUpperCase().startsWith('M') ? 'M'
                   : String(r['Sexo'] || r['Gênero'] || '').toUpperCase().startsWith('F') ? 'F' : 'Both'),
                 isPregnant: r['Gestante'] === 'Sim' || r['Gestante'] === true,
@@ -393,8 +395,9 @@ export const ImportarPlanilhaModal = ({ isOpen, onClose, existingCodes = [] }: I
                   min_value: r['Valor mínimo'] || r['Valor mín'] || r['Valor Mínimo'] || r['Mínimo'] || r['MIN']?.toString() || null,
                   max_value: r['Valor máximo'] || r['Valor máx'] || r['Valor Máximo'] || r['Máximo'] || r['MAX']?.toString() || null,
                   text_range: r['Valor texto'] || r['Referência Texto'] || r['Texto'] || null,
-                  age_min: Number(r['Idade mínima (anos)'] || r['Idade mini'] || r['Idade Mín'] || r['Idade Mínima'] || 0),
-                  age_max: Number(r['Idade máxima (anos)'] || r['Idade máxi'] || r['Idade Máx'] || r['Idade Máxima'] || 150),
+                  age_min: importReferenceAge(r).minAge,
+                  age_max: importReferenceAge(r).maxAge,
+                  age_unit: importReferenceAge(r).ageUnit,
                   gender: r['Sexo'] || r['Gênero'] || 'Todos',
                   is_pregnant: r['Gestante'] === 'Sim' || r['Gestante'] === true || !!(r['Gestante'] || false),
                 }));
