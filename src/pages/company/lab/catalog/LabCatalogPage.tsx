@@ -168,6 +168,14 @@ export default function LabCatalogPage() {
       }
       const yn = (v: any) => (v ? 'Sim' : 'Não')
 
+      const ageUnitLabel = (unit?: string) => {
+        const v = String(unit || '').toLowerCase()
+        if (v === 'meses' || v === 'months') return 'Meses'
+        if (v === 'semanas' || v === 'weeks') return 'Semanas'
+        if (v === 'dias' || v === 'days') return 'Dias'
+        return 'Anos'
+      }
+
       // Merge database parameters with context parameters (migration period)
       labExams.forEach(e => {
         const examCode = e.internalCode || e.tussCode || '';
@@ -250,8 +258,9 @@ export default function LabCatalogPage() {
               'Valor mínimo': r.min_value ?? '',
               'Valor máximo': r.max_value ?? '',
               'Valor texto': r.text_range || '',
-              'Idade mínima (anos)': r.age_min ?? 0,
-              'Idade máxima (anos)': r.age_max ?? 120,
+              'Idade mínima': r.age_min ?? 0,
+              'Idade máxima': r.age_max ?? 120,
+              'Unidade da Idade': ageUnitLabel(r.age_unit),
               'Sexo': r.gender || 'both',
               'Gestante': 'Não'
             })
@@ -268,8 +277,9 @@ export default function LabCatalogPage() {
                   'Valor mínimo': r.minValue ?? '',
                   'Valor máximo': r.maxValue ?? '',
                   'Valor texto': r.textRange || '',
-                  'Idade mínima (anos)': r.minAge ?? 0,
-                  'Idade máxima (anos)': r.maxAge ?? 120,
+                  'Idade mínima': r.minAge ?? 0,
+                  'Idade máxima': r.maxAge ?? 120,
+                  'Unidade da Idade': ageUnitLabel(r.ageUnit ?? r.n),
                   'Sexo': r.sex || 'both',
                   'Gestante': r.isPregnant ? 'Sim' : 'Não'
                 })
@@ -286,8 +296,9 @@ export default function LabCatalogPage() {
               'Valor mínimo': r.minValue ?? '',
               'Valor máximo': r.maxValue ?? '',
               'Valor texto': r.textRange || '',
-              'Idade mínima (anos)': r.minAge ?? 0,
-              'Idade máxima (anos)': r.maxAge ?? 120,
+              'Idade mínima': r.minAge ?? 0,
+              'Idade máxima': r.maxAge ?? 120,
+              'Unidade da Idade': ageUnitLabel(r.ageUnit ?? r.n),
               'Sexo': r.sex || 'both',
               'Gestante': r.isPregnant ? 'Sim' : 'Não'
             })
