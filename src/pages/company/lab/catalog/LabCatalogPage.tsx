@@ -168,6 +168,14 @@ export default function LabCatalogPage() {
       }
       const yn = (v: any) => (v ? 'Sim' : 'Não')
 
+      const ageUnitLabel = (unit?: string) => {
+        const v = String(unit || '').toLowerCase()
+        if (v === 'meses' || v === 'months') return 'Meses'
+        if (v === 'semanas' || v === 'weeks') return 'Semanas'
+        if (v === 'dias' || v === 'days') return 'Dias'
+        return 'Anos'
+      }
+
       // Merge database parameters with context parameters (migration period)
       labExams.forEach(e => {
         const examCode = e.internalCode || e.tussCode || '';
