@@ -349,7 +349,7 @@ export default function LaudoDocument({
 
 
 
-  const totalPages = Math.max(pages.length, 1);
+  
 
   const doctorLine = order.doctorName
     ? `${order.doctorName}${order.doctorCRM ? ` — ${order.doctorCRM}` : ''}`
