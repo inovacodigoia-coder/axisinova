@@ -349,7 +349,7 @@ export default function LaudoDocument({
 
 
 
-  const totalPages = Math.max(pages.length, 1);
+  
 
   const doctorLine = order.doctorName
     ? `${order.doctorName}${order.doctorCRM ? ` — ${order.doctorCRM}` : ''}`
@@ -450,12 +450,10 @@ export default function LaudoDocument({
               </div>
             </div>
 
-            <div className="border-t border-zinc-300 pt-2 flex justify-between items-end text-[8px] text-zinc-500 gap-4">
+            <div className="border-t border-zinc-300 pt-2 text-[8px] text-zinc-500">
               <div className="whitespace-pre-line text-left">{footerText || ''}</div>
-              <div className="shrink-0">
-                Página {pageIdx + 1} de {totalPages}
-              </div>
             </div>
+
           </div>
         </div>
       ))}
@@ -470,6 +468,9 @@ export default function LaudoDocument({
             margin: 0 !important;
             padding: 0 !important;
             width: 100% !important;
+            min-height: 0 !important;
+            height: auto !important;
+            overflow: hidden !important;
           }
           .laudo-page { 
             break-after: page; 
@@ -477,6 +478,7 @@ export default function LaudoDocument({
             break-inside: avoid;
             page-break-inside: avoid;
             border: none !important;
+
           }
 
           .laudo-page:last-child { break-after: auto; page-break-after: auto; }
