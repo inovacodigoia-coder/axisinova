@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { Dialog, DialogContent } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
 import { Checkbox } from '@/components/ui/checkbox'
@@ -22,15 +22,27 @@ interface GuideEditorModalProps {
   mode: 'create' | 'edit'
   guide?: GuideDraft
   onSave: (guide: GuideDraft) => void
+  guides?: GuideDraft[]
+  guideIndex?: number
+  onSelectGuide?: (index: number) => void
 }
 
-export function GuideEditorModal({ open, onClose, mode, guide, onSave }: GuideEditorModalProps) {
+export function GuideEditorModal({ open, onClose, mode, guide, onSave, guides, guideIndex, onSelectGuide }: GuideEditorModalProps) {
   const { convenios, doctors, exams: catalog } = useRegisters()
   const [convenioId, setConvenioId] = useState(guide?.convenioId || '')
   const [convenioName, setConvenioName] = useState(guide?.convenioName || '')
   const [doctorId, setDoctorId] = useState(guide?.doctorId || '')
   const [search, setSearch] = useState('')
   const [selected, setSelected] = useState<any[]>(guide?.exams ? [...guide.exams] : [])
+
+  // Sincroniza o formulário quando a guia selecionada muda (troca entre guias do mesmo atendimento)
+  useEffect(() => {
+    setConvenioId(guide?.convenioId || '')
+    setConvenioName(guide?.convenioName || '')
+    setDoctorId(guide?.doctorId || '')
+    setSelected(guide?.exams ? [...guide.exams] : [])
+    setSearch('')
+  }, [guide])
 
   const activeConvenios = useMemo(() => convenios.filter(c => c.isActive !== false), [convenios])
   const activeDoctors = useMemo(() => doctors.filter(d => d.isActive !== false), [doctors])
