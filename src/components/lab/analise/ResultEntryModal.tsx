@@ -802,24 +802,39 @@ export function ResultEntryModal({
         return;
       }
 
-      // Dados do responsável pela aprovação (usuário logado)
-      let approvedBy = user?.name || '';
+      // A aprovação pertence à liberação persistida, nunca à sessão que visualiza.
+      let approvedBy = '';
       let approvedRegister = '';
-      if (user?.id) {
-        const { data: prof } = await supabase
-          .from('profiles')
-          .select('full_name, council_type, council_uf, council_number')
-          .eq('id', user.id)
-          .maybeSingle();
-        if (prof) {
-          approvedBy = prof.full_name || approvedBy;
-          approvedRegister = [prof.council_type, prof.council_uf].filter(Boolean).join('/') +
-            (prof.council_number ? ` ${prof.council_number}` : '');
-          approvedRegister = approvedRegister.trim();
+      let releasedAt: string | null = null;
+      const cid = resolveCompanyId(user?.companyId);
+      const orderId = patient.exams?.[0]?.orderId || patient.id;
+      if (cid && orderId) {
+        const { data: releases, error } = await supabase
+          .from('lab_exam_results')
+          .select('released_by, released_at')
+          .eq('company_id', cid)
+          .eq('order_id', orderId)
+          .eq('status', 'released')
+          .in('exam_ref', patient.exams.filter((e: any) => examStatuses[e.id] === 'released').map(examRefOf))
+          .order('released_at', { ascending: false, nullsFirst: false })
+          .limit(1);
+        if (error) throw error;
+        const release = releases?.[0];
+        releasedAt = release?.released_at || null;
+        if (release?.released_by) {
+          const { data: prof, error: profileError } = await supabase
+            .from('profiles')
+            .select('full_name, council_type, council_uf, council_number')
+            .eq('id', release.released_by)
+            .maybeSingle();
+          if (profileError) throw profileError;
+          approvedBy = prof?.full_name || '';
+          approvedRegister = [
+            [prof?.council_type, prof?.council_uf].filter(Boolean).join('/'),
+            prof?.council_number,
+          ].filter(Boolean).join(' ').trim();
         }
       }
-
-      const releasedAt = new Date().toISOString();
 
       setLaudoOrder({
         patientName: patient.patientName,
