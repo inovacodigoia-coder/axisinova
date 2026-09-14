@@ -79,7 +79,7 @@ export function GuideEditorModal({ open, onClose, mode, guide, onSave }: GuideEd
 
   return (
     <Dialog open={open} onOpenChange={(o) => !o && onClose()}>
-      <DialogContent className="max-w-[860px] w-[95vw] p-0 gap-0 [&>button]:hidden overflow-hidden">
+      <DialogContent className="max-w-[860px] w-[95vw] max-h-[90vh] p-0 gap-0 [&>button]:hidden overflow-hidden flex flex-col">
         <div className="flex items-center justify-between px-5 py-3 border-b border-border bg-white">
           <div className="flex items-center gap-2">
             <FileText className="h-4 w-4 text-primary" />
