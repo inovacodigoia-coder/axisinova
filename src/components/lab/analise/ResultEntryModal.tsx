@@ -102,6 +102,7 @@ export function ResultEntryModal({
   const { canType, canRelease, canCorrect } = useResultEntryPermissions();
   const [correctionUnlocked, setCorrectionUnlocked] = useState<Record<string, boolean>>({});
   const [results, setResults] = useState<Record<string, string>>({});
+  const [externalResultValues, setExternalResultValues] = useState<Record<string, string>>({});
   const [instrumentKeys, setInstrumentKeys] = useState<Set<string>>(new Set());
   const [notes, setNotes] = useState<Record<string, string>>({});
   const [saving, setSaving] = useState(false);
@@ -306,10 +307,11 @@ export function ResultEntryModal({
   }, [results, filteredExams, paramsByExam, instrumentKeys, diffInfoFor]);
 
   // Resolve tokens de fórmula que apontam para OUTROS exames do mesmo pedido (ex.: {BILT} - {BILD})
-  const resolveExternalToken = useCallback((token: string): string | null => {
+  const resolveExternalToken = useCallback((sourceExam: any, token: string): string | null => {
     const wanted = normalizeText(token);
     if (!wanted) return null;
     for (const ex of filteredExams) {
+      if (sourceExam?.orderId && ex.orderId !== sourceExam.orderId) continue;
       const params = (paramsByExam[ex.id] || []) as any[];
       const byCode = params.find((pp) => pp.code && normalizeText(pp.code) === wanted);
       if (byCode) return results[`${ex.id}_${byCode.id}`] ?? null;
@@ -320,15 +322,21 @@ export function ResultEntryModal({
       const byName = params.find((pp) => normalizeText(pp.name) === wanted);
       if (byName) return results[`${ex.id}_${byName.id}`] ?? null;
     }
-    return null;
-  }, [filteredExams, paramsByExam, results]);
+    const orderKey = String(sourceExam?.orderId || '');
+    return externalResultValues[`${orderKey}|${wanted}`] ?? null;
+  }, [filteredExams, paramsByExam, results, externalResultValues]);
 
   // Valor exibido: parâmetros calculados usam a fórmula do catálogo,
   // EXCETO quando o valor veio do equipamento (source 'instrument') — nesse caso o valor do equipamento prevalece
   const getParamValue = useCallback((exam: any, param: any) => {
     const key = `${exam.id}_${param.id}`;
     if (param?.isCalculated && !instrumentKeys.has(key)) {
-      return evaluateFormula(param.formula, getParams(exam), (pid) => results[`${exam.id}_${pid}`] || '', resolveExternalToken);
+      return evaluateFormula(
+        param.formula,
+        getParams(exam),
+        (pid) => results[`${exam.id}_${pid}`] || '',
+        (token) => resolveExternalToken(exam, token),
+      );
     }
     return results[key] || '';
   }, [results, paramsByExam, instrumentKeys, resolveExternalToken]);
@@ -337,11 +345,18 @@ export function ResultEntryModal({
   useEffect(() => {
     const updates: Record<string, string> = {};
     Object.entries(paramsByExam).forEach(([examId, params]: any) => {
+      const exam = filteredExams.find((item: any) => item.id === examId);
+      if (!exam) return;
       (params as any[]).forEach((p: any) => {
         if (!p.isCalculated) return;
         const key = `${examId}_${p.id}`;
         if (instrumentKeys.has(key)) return; // valor veio do equipamento — não recalcular
-        const computed = evaluateFormula(p.formula, params, (pid) => results[`${examId}_${pid}`] || '', resolveExternalToken);
+        const computed = evaluateFormula(
+          p.formula,
+          params,
+          (pid) => results[`${examId}_${pid}`] || '',
+          (token) => resolveExternalToken(exam, token),
+        );
         if (computed && results[key] !== computed) updates[key] = computed;
       });
     });
@@ -523,7 +538,7 @@ export function ResultEntryModal({
       for (let i = 0; i < refs.length; i += CHUNK) {
         const { data, error } = await supabase
           .from('lab_exam_results')
-          .select('id, exam_ref, status, notes, portal_blocked_types, lab_result_values(parameter_key, value, source)')
+          .select('id, order_id, exam_ref, exam_code, exam_name, status, notes, portal_blocked_types, lab_result_values(parameter_key, value, source)')
           .eq('company_id', cid)
           .in('exam_ref', refs.slice(i, i + CHUNK));
         if (error) {
@@ -540,7 +555,7 @@ export function ResultEntryModal({
       for (let i = 0; i < orderIds.length; i += CHUNK) {
         const { data, error } = await supabase
           .from('lab_exam_results')
-          .select('id, exam_ref, status, notes, portal_blocked_types, lab_result_values(parameter_key, value, source)')
+          .select('id, order_id, exam_ref, exam_code, exam_name, status, notes, portal_blocked_types, lab_result_values(parameter_key, value, source)')
           .eq('company_id', cid)
           .in('order_id', orderIds.slice(i, i + CHUNK));
         if (error) continue;
@@ -557,6 +572,7 @@ export function ResultEntryModal({
       const nextNotes: Record<string, string> = {};
       const nextStatuses: Record<string, any> = {};
       const nextBlocks: Record<string, string[]> = {};
+      const nextExternalValues: Record<string, string> = {};
       const nextInstrumentKeys = new Set<string>();
       rows.forEach((row: any) => {
         // exam_ref já é a chave única da instância (pedido:exame)
@@ -575,7 +591,16 @@ export function ResultEntryModal({
           }
           if (v.source === 'instrument') nextInstrumentKeys.add(key);
         });
+        const externalValue = (row.lab_result_values || []).find(
+          (v: any) => v.value !== null && v.value !== undefined && String(v.value).trim() !== '',
+        );
+        if (row.order_id && externalValue) {
+          [row.exam_code, row.exam_name].filter(Boolean).forEach((identifier: string) => {
+            nextExternalValues[`${row.order_id}|${normalizeText(identifier)}`] = String(externalValue.value);
+          });
+        }
       });
+      setExternalResultValues(nextExternalValues);
       setInstrumentKeys(nextInstrumentKeys);
       setResults(prev => {
         const next = { ...prev };
