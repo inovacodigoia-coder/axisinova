@@ -421,6 +421,8 @@ export default function LabCatalogFormPage() {
           <ParametersSection 
             parameters={parameters} 
             setParameters={setParameters} 
+            currentExamId={id}
+            exams={exams}
           />
         </TabsContent>
         <TabsContent value="rules">
@@ -797,7 +799,17 @@ function GeneralInfoSection({
   )
 }
 
-function ParametersSection({ parameters, setParameters }: { parameters: any[], setParameters: (p: any[]) => void }) {
+function ParametersSection({
+  parameters,
+  setParameters,
+  currentExamId,
+  exams,
+}: {
+  parameters: any[];
+  setParameters: (p: any[]) => void;
+  currentExamId?: string;
+  exams: any[];
+}) {
   const [measurementUnits, setMeasurementUnits] = useState<any[]>([])
   const [editingReference, setEditingReference] = useState<any>(null)
   const [dragIndex, setDragIndex] = useState<number | null>(null)
@@ -852,6 +864,13 @@ function ParametersSection({ parameters, setParameters }: { parameters: any[], s
 
   const availableVariables = useMemo(() => {
     return parameters.filter(p => p.name).map(p => p.name)
+  }, [parameters])
+
+  const externalVariables = useMemo(() => {
+    const referencedCodes = parameters.flatMap((param: any) =>
+      Array.from(String(param.formula || '').matchAll(/\{\s*([^}]+?)\s*\}/g), match => match[1].trim().toUpperCase()),
+    )
+    return Array.from(new Set(referencedCodes))
   }, [parameters])
 
   return (
@@ -1168,6 +1187,27 @@ function ParametersSection({ parameters, setParameters }: { parameters: any[], s
                                   [{v}]
                                 </button>
                               ))}
+                              {externalVariables.map(code => {
+                                const selected = new RegExp(`\\{\\s*${code.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\s*\\}`, 'i').test(param.formula || '')
+                                return (
+                                  <button
+                                    key={code}
+                                    type="button"
+                                    onClick={() => {
+                                      const currentFormula = param.formula || ''
+                                      updateParameter(param.id, 'formula', currentFormula + ` {${code}} `)
+                                    }}
+                                    className={cn(
+                                      "px-2 py-0.5 rounded-md border text-[9px] font-bold transition-all shadow-sm",
+                                      selected
+                                        ? "bg-blue-600 border-blue-600 text-primary-foreground"
+                                        : "bg-card border-blue-200 text-blue-700 hover:bg-blue-600 hover:text-primary-foreground",
+                                    )}
+                                  >
+                                    {`{${code}}`}
+                                  </button>
+                                )
+                              })}
                               <button className="px-2 py-0.5 rounded-md bg-white border border-border text-[9px] font-bold opacity-40">{"{peso}"}</button>
                               <button className="px-2 py-0.5 rounded-md bg-white border border-border text-[9px] font-bold opacity-40">{"{sexo}"}</button>
                             </div>
