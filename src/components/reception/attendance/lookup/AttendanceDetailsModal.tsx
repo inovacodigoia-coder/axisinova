@@ -871,18 +871,28 @@ export function AttendanceDetailsModal({ open, onClose, onOrderDeleted, order, p
                     
                     return (
                       <div key={idx} className="bg-white rounded-lg border border-border shadow-sm overflow-hidden mb-4">
-                        <div className="p-4 border-b border-border bg-muted/5 flex items-center justify-between">
-                          <div className="flex flex-col gap-1">
-                            <div className="flex items-center gap-2">
-                              <span className="text-xs font-bold text-secondary uppercase">{idx + 1}. {guide.convenioName || order.convenioName || 'Particular'}</span>
-                            </div>
-                            <div className="flex items-center gap-1 text-[10px] text-muted-foreground">
-                              <User className="h-3 w-3" />
-                              <span>{guide.doctorName || order.doctorName || 'SEM MÉDICO INFORMADO'}</span>
-                              {(guide.doctorCRM || order.doctorCRM) && <span>({guide.doctorCRM || order.doctorCRM})</span>}
-                            </div>
-                          </div>
-                        </div>
+                         <div className="p-4 border-b border-border bg-muted/5 flex items-center justify-between">
+                           <div className="flex flex-col gap-1">
+                             <div className="flex items-center gap-2">
+                               <span className="text-xs font-bold text-secondary uppercase">{idx + 1}. {guide.convenioName || order.convenioName || 'Particular'}</span>
+                             </div>
+                             <div className="flex items-center gap-1 text-[10px] text-muted-foreground">
+                               <User className="h-3 w-3" />
+                               <span>{guide.doctorName || order.doctorName || 'SEM MÉDICO INFORMADO'}</span>
+                               {(guide.doctorCRM || order.doctorCRM) && <span>({guide.doctorCRM || order.doctorCRM})</span>}
+                             </div>
+                           </div>
+                           <Button
+                             size="sm"
+                             variant="outline"
+                             className="h-7 px-2 text-[10px] font-bold uppercase gap-1"
+                             onClick={() => setGuideEditor({ mode: 'edit', index: idx })}
+                             title="Editar esta guia"
+                           >
+                             <Pencil className="h-3 w-3" />
+                             Editar Guia
+                           </Button>
+                         </div>
 
                         <div className="overflow-x-auto">
                           <table className="w-full text-left border-collapse">
@@ -1517,6 +1527,9 @@ export function AttendanceDetailsModal({ open, onClose, onOrderDeleted, order, p
           mode={guideEditor.mode}
           onClose={() => setGuideEditor(null)}
           guide={guidesState[guideEditor.index]}
+          guides={guidesState}
+          guideIndex={guideEditor.index}
+          onSelectGuide={(idx) => setGuideEditor({ mode: 'edit', index: idx })}
           onSave={(updated) => {
             const next = [...guidesState];
             if (guideEditor.mode === "create") next.push(updated);
