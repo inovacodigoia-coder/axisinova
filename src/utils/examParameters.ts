@@ -11,6 +11,7 @@ export interface ResolvedParam {
   section?: string
   type?: string
   options?: string[]
+  code?: string
 }
 
 interface PatientCtx {
@@ -112,6 +113,7 @@ export function buildExamParams(catalogExam: any | undefined, fallbackName: stri
     return {
       id: String(p.id ?? idx + 1),
       name,
+      code: p.code || p.equipment_code || p.equipmentCode || p.codigo || '',
       unit: p.unit || examUnit,
       reference: pickReference(
         (p.referenceValues && p.referenceValues.length ? p.referenceValues : examLevelRefs),
