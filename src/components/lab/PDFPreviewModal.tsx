@@ -1,4 +1,5 @@
 import React from 'react';
+import { createPortal } from 'react-dom';
 import { Button } from "@/components/ui/button";
 import { FileText, Download, X, Printer, ZoomIn, ZoomOut, Maximize2, Minimize2, Share2, Mail, Pencil, Save, RotateCcw, Bold, Italic, Underline as UnderlineIcon } from 'lucide-react';
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -207,7 +208,7 @@ export default function PDFPreviewModal({
 
   if (!isOpen) return null;
 
-  return (
+  return createPortal(
     <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-zinc-950/80 p-2 md:p-4" onMouseDown={onClose}>
       <section
         role="dialog"
@@ -216,7 +217,7 @@ export default function PDFPreviewModal({
         onMouseDown={(event) => event.stopPropagation()}
         className={cn(
           "flex flex-col overflow-hidden border bg-background shadow-2xl transition-all duration-300",
-          isFullscreen ? "h-screen w-screen rounded-none" : "h-[95vh] w-full max-w-[1000px] rounded-lg"
+          isFullscreen ? "h-screen w-screen rounded-none" : "h-[90dvh] w-full max-w-[1000px] rounded-lg"
         )}
       >
         <header className="p-4 border-b bg-muted/30 no-print">
@@ -237,7 +238,7 @@ export default function PDFPreviewModal({
           </div>
         </header>
 
-        <div className="flex-1 bg-zinc-700/50 p-4 md:p-8 overflow-hidden flex flex-col items-center relative">
+        <div className="min-h-0 flex-1 bg-zinc-700/50 p-4 md:p-8 overflow-hidden flex flex-col items-center relative">
           {/* Zoom Controls Overlay */}
           <div className="absolute top-4 right-4 flex gap-2 z-10 no-print bg-zinc-900/80 backdrop-blur-md p-1.5 rounded-lg shadow-xl border border-white/10">
             <Button variant="ghost" size="sm" className="h-8 w-8 p-0 text-white hover:bg-white/10" onClick={handleZoomOut} disabled={zoom <= 50}>
@@ -362,6 +363,7 @@ export default function PDFPreviewModal({
           </div>
         </footer>
       </section>
-    </div>
+    </div>,
+    document.body,
   );
 }

@@ -272,8 +272,8 @@ export default function LaudoDocument({
         ? 'Feminino'
         : 'Outro';
 
-  const approvedName = order.approvedBy || technicalResponsible?.name || '—';
-  const approvedRegister = order.approvedRegister || technicalResponsible?.register || '';
+  const approvedName = order.approvedBy || '—';
+  const approvedRegister = order.approvedRegister?.trim() || '';
 
   // Uma folha por Bancada Técnica (nunca misturar bancadas na mesma página).
   // Exames marcados como "laudo em folha exclusiva" saem sozinhos em uma página.
