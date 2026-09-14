@@ -532,6 +532,25 @@ export function ResultEntryModal({
         }
         if (data) rows.push(...data);
       }
+
+      // Também carrega resultados de TODOS os exames dos mesmos pedidos:
+      // fórmulas calculadas podem referenciar outros exames (ex.: BILI = {BILT} - {BILD})
+      const orderIds = Array.from(new Set(filteredExams.map((e: any) => e.orderId).filter(Boolean)));
+      const knownRefs = new Set(rows.map((r: any) => r.exam_ref));
+      for (let i = 0; i < orderIds.length; i += CHUNK) {
+        const { data, error } = await supabase
+          .from('lab_exam_results')
+          .select('id, exam_ref, status, notes, portal_blocked_types, lab_result_values(parameter_key, value, source)')
+          .eq('company_id', cid)
+          .in('order_id', orderIds.slice(i, i + CHUNK));
+        if (error) continue;
+        (data || []).forEach((r: any) => {
+          if (!knownRefs.has(r.exam_ref)) {
+            knownRefs.add(r.exam_ref);
+            rows.push(r);
+          }
+        });
+      }
       if (!active || rows.length === 0) return;
 
       const nextResults: Record<string, string> = {};
