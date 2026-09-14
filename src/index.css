@@ -259,16 +259,10 @@
 
 
   /* Laudo: imprimir apenas o documento, em A4 */
-  @page laudo {
-    size: A4 portrait;
-    margin: 0;
-  }
-
   body.printing-laudo > *:not(#laudo-print-root) {
     display: none !important;
   }
   body.printing-laudo #laudo-print-root {
-    page: laudo;
     display: block !important;
     position: static !important;
     margin: 0 !important;
@@ -277,7 +271,9 @@
   }
   body.printing-laudo #laudo-print-root .laudo-page {
     width: 210mm !important;
-    min-height: 296mm !important;
+    min-height: 0 !important;
+    height: 296mm !important;
+    overflow: hidden !important;
     padding: 12mm !important;
     margin: 0 auto !important;
     box-shadow: none !important;
