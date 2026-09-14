@@ -240,7 +240,8 @@ export function evaluateFormula(
         if (n.includes('absoluto') !== wanted.includes('absoluto')) return false
         return n.startsWith(wanted) || wanted.startsWith(n)
       })
-    const n = p ? toNum(valueOf(p.id)) : null
+    let n = p ? toNum(valueOf(p.id)) : null
+    if (n == null && resolveExternal) n = toNum(resolveExternal(rawName))
     if (n == null || (p && p.isCalculated && !valueOf(p.id))) {
       missing = true
       return '0'
