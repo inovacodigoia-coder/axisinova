@@ -473,15 +473,18 @@ export default function LaudoDocument({
             overflow: hidden !important;
           }
           .laudo-page { 
-            break-after: page; 
-            page-break-after: always;
+            break-after: auto;
+            page-break-after: auto;
             break-inside: avoid;
             page-break-inside: avoid;
             border: none !important;
 
           }
 
-          .laudo-page:last-child { break-after: auto; page-break-after: auto; }
+          .laudo-page + .laudo-page {
+            break-before: page;
+            page-break-before: always;
+          }
           
           /* Forçar uma página para hemograma (seção break-inside-avoid já existe, mas vamos reforçar) */
           .exame-section {
