@@ -11,6 +11,7 @@ export interface ResolvedParam {
   section?: string
   type?: string
   options?: string[]
+  code?: string
 }
 
 interface PatientCtx {
@@ -112,6 +113,7 @@ export function buildExamParams(catalogExam: any | undefined, fallbackName: stri
     return {
       id: String(p.id ?? idx + 1),
       name,
+      code: p.code || p.equipment_code || p.equipmentCode || p.codigo || '',
       unit: p.unit || examUnit,
       reference: pickReference(
         (p.referenceValues && p.referenceValues.length ? p.referenceValues : examLevelRefs),
@@ -219,23 +221,27 @@ export function evaluateFormula(
   formula: string | undefined,
   params: ResolvedParam[],
   valueOf: (paramId: string) => string,
+  resolveExternal?: (token: string) => string | null,
 ): string {
   if (!formula || !formula.trim()) return ''
 
-  let expr = formula
+  // Aceita tanto [Nome do Parâmetro] quanto {CODIGO} (sintaxe do editor de exames)
+  let expr = formula.replace(/\{([^}]+)\}/g, '[$1]')
   let missing = false
 
   expr = expr.replace(/\[([^\]]+)\]/g, (_m, rawName: string) => {
     const wanted = normalizeText(rawName)
     const p =
       params.find((x) => normalizeText(x.name) === wanted) ||
+      params.find((x) => x.code && normalizeText(x.code) === wanted) ||
       params.find((x) => {
         const n = normalizeText(x.name)
         // evita casar "neutrofilos bastonetes" com "... absoluto"
         if (n.includes('absoluto') !== wanted.includes('absoluto')) return false
         return n.startsWith(wanted) || wanted.startsWith(n)
       })
-    const n = p ? toNum(valueOf(p.id)) : null
+    let n = p ? toNum(valueOf(p.id)) : null
+    if (n == null && resolveExternal) n = toNum(resolveExternal(rawName))
     if (n == null || (p && p.isCalculated && !valueOf(p.id))) {
       missing = true
       return '0'

@@ -305,15 +305,33 @@ export function ResultEntryModal({
     }
   }, [results, filteredExams, paramsByExam, instrumentKeys, diffInfoFor]);
 
+  // Resolve tokens de fórmula que apontam para OUTROS exames do mesmo pedido (ex.: {BILT} - {BILD})
+  const resolveExternalToken = useCallback((token: string): string | null => {
+    const wanted = normalizeText(token);
+    if (!wanted) return null;
+    for (const ex of filteredExams) {
+      const params = (paramsByExam[ex.id] || []) as any[];
+      const byCode = params.find((pp) => pp.code && normalizeText(pp.code) === wanted);
+      if (byCode) return results[`${ex.id}_${byCode.id}`] ?? null;
+      if (ex.code && normalizeText(ex.code) === wanted) {
+        const target = params.find((pp) => !pp.isCalculated) || params[0];
+        if (target) return results[`${ex.id}_${target.id}`] ?? null;
+      }
+      const byName = params.find((pp) => normalizeText(pp.name) === wanted);
+      if (byName) return results[`${ex.id}_${byName.id}`] ?? null;
+    }
+    return null;
+  }, [filteredExams, paramsByExam, results]);
+
   // Valor exibido: parâmetros calculados usam a fórmula do catálogo,
   // EXCETO quando o valor veio do equipamento (source 'instrument') — nesse caso o valor do equipamento prevalece
   const getParamValue = useCallback((exam: any, param: any) => {
     const key = `${exam.id}_${param.id}`;
     if (param?.isCalculated && !instrumentKeys.has(key)) {
-      return evaluateFormula(param.formula, getParams(exam), (pid) => results[`${exam.id}_${pid}`] || '');
+      return evaluateFormula(param.formula, getParams(exam), (pid) => results[`${exam.id}_${pid}`] || '', resolveExternalToken);
     }
     return results[key] || '';
-  }, [results, paramsByExam, instrumentKeys]);
+  }, [results, paramsByExam, instrumentKeys, resolveExternalToken]);
 
   // Persiste automaticamente os calculados no estado para salvar/laudo
   useEffect(() => {
@@ -323,14 +341,14 @@ export function ResultEntryModal({
         if (!p.isCalculated) return;
         const key = `${examId}_${p.id}`;
         if (instrumentKeys.has(key)) return; // valor veio do equipamento — não recalcular
-        const computed = evaluateFormula(p.formula, params, (pid) => results[`${examId}_${pid}`] || '');
+        const computed = evaluateFormula(p.formula, params, (pid) => results[`${examId}_${pid}`] || '', resolveExternalToken);
         if (computed && results[key] !== computed) updates[key] = computed;
       });
     });
     if (Object.keys(updates).length > 0) {
       setResults(prev => ({ ...prev, ...updates }));
     }
-  }, [results, paramsByExam, instrumentKeys]);
+  }, [results, paramsByExam, instrumentKeys, resolveExternalToken]);
 
 
   const totalExams = filteredExams.length;
@@ -513,6 +531,25 @@ export function ResultEntryModal({
           continue;
         }
         if (data) rows.push(...data);
+      }
+
+      // Também carrega resultados de TODOS os exames dos mesmos pedidos:
+      // fórmulas calculadas podem referenciar outros exames (ex.: BILI = {BILT} - {BILD})
+      const orderIds = Array.from(new Set(filteredExams.map((e: any) => e.orderId).filter(Boolean)));
+      const knownRefs = new Set(rows.map((r: any) => r.exam_ref));
+      for (let i = 0; i < orderIds.length; i += CHUNK) {
+        const { data, error } = await supabase
+          .from('lab_exam_results')
+          .select('id, exam_ref, status, notes, portal_blocked_types, lab_result_values(parameter_key, value, source)')
+          .eq('company_id', cid)
+          .in('order_id', orderIds.slice(i, i + CHUNK));
+        if (error) continue;
+        (data || []).forEach((r: any) => {
+          if (!knownRefs.has(r.exam_ref)) {
+            knownRefs.add(r.exam_ref);
+            rows.push(r);
+          }
+        });
       }
       if (!active || rows.length === 0) return;
 
