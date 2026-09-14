@@ -468,6 +468,9 @@ export default function LaudoDocument({
             margin: 0 !important;
             padding: 0 !important;
             width: 100% !important;
+            min-height: 0 !important;
+            height: auto !important;
+            overflow: hidden !important;
           }
           .laudo-page { 
             break-after: page; 
@@ -475,6 +478,7 @@ export default function LaudoDocument({
             break-inside: avoid;
             page-break-inside: avoid;
             border: none !important;
+
           }
 
           .laudo-page:last-child { break-after: auto; page-break-after: auto; }
