@@ -305,15 +305,33 @@ export function ResultEntryModal({
     }
   }, [results, filteredExams, paramsByExam, instrumentKeys, diffInfoFor]);
 
+  // Resolve tokens de fórmula que apontam para OUTROS exames do mesmo pedido (ex.: {BILT} - {BILD})
+  const resolveExternalToken = useCallback((token: string): string | null => {
+    const wanted = normalizeText(token);
+    if (!wanted) return null;
+    for (const ex of filteredExams) {
+      const params = (paramsByExam[ex.id] || []) as any[];
+      const byCode = params.find((pp) => pp.code && normalizeText(pp.code) === wanted);
+      if (byCode) return results[`${ex.id}_${byCode.id}`] ?? null;
+      if (ex.code && normalizeText(ex.code) === wanted) {
+        const target = params.find((pp) => !pp.isCalculated) || params[0];
+        if (target) return results[`${ex.id}_${target.id}`] ?? null;
+      }
+      const byName = params.find((pp) => normalizeText(pp.name) === wanted);
+      if (byName) return results[`${ex.id}_${byName.id}`] ?? null;
+    }
+    return null;
+  }, [filteredExams, paramsByExam, results]);
+
   // Valor exibido: parâmetros calculados usam a fórmula do catálogo,
   // EXCETO quando o valor veio do equipamento (source 'instrument') — nesse caso o valor do equipamento prevalece
   const getParamValue = useCallback((exam: any, param: any) => {
     const key = `${exam.id}_${param.id}`;
     if (param?.isCalculated && !instrumentKeys.has(key)) {
-      return evaluateFormula(param.formula, getParams(exam), (pid) => results[`${exam.id}_${pid}`] || '');
+      return evaluateFormula(param.formula, getParams(exam), (pid) => results[`${exam.id}_${pid}`] || '', resolveExternalToken);
     }
     return results[key] || '';
-  }, [results, paramsByExam, instrumentKeys]);
+  }, [results, paramsByExam, instrumentKeys, resolveExternalToken]);
 
   // Persiste automaticamente os calculados no estado para salvar/laudo
   useEffect(() => {
