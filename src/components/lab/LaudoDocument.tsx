@@ -450,12 +450,10 @@ export default function LaudoDocument({
               </div>
             </div>
 
-            <div className="border-t border-zinc-300 pt-2 flex justify-between items-end text-[8px] text-zinc-500 gap-4">
+            <div className="border-t border-zinc-300 pt-2 text-[8px] text-zinc-500">
               <div className="whitespace-pre-line text-left">{footerText || ''}</div>
-              <div className="shrink-0">
-                Página {pageIdx + 1} de {totalPages}
-              </div>
             </div>
+
           </div>
         </div>
       ))}
