@@ -90,7 +90,7 @@ export function GuideEditorModal({ open, onClose, mode, guide, onSave }: GuideEd
           <Button variant="ghost" size="icon" className="h-8 w-8" onClick={onClose}><X className="h-4 w-4" /></Button>
         </div>
 
-        <div className="p-5 space-y-4 bg-[#F8FAFC] max-h-[calc(90vh-120px)] overflow-y-auto">
+        <div className="p-5 space-y-4 bg-[#F8FAFC] flex-1 min-h-0 overflow-y-auto">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-1">
               <label className="text-[10px] font-bold uppercase text-muted-foreground">Convênio / Plano</label>
