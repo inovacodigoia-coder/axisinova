@@ -1517,6 +1517,9 @@ export function AttendanceDetailsModal({ open, onClose, onOrderDeleted, order, p
           mode={guideEditor.mode}
           onClose={() => setGuideEditor(null)}
           guide={guidesState[guideEditor.index]}
+          guides={guidesState}
+          guideIndex={guideEditor.index}
+          onSelectGuide={(idx) => setGuideEditor({ mode: 'edit', index: idx })}
           onSave={(updated) => {
             const next = [...guidesState];
             if (guideEditor.mode === "create") next.push(updated);

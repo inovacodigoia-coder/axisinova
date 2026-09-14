@@ -103,6 +103,23 @@ export function GuideEditorModal({ open, onClose, mode, guide, onSave, guides, g
         </div>
 
         <div className="p-5 space-y-4 bg-[#F8FAFC] flex-1 min-h-0 overflow-y-auto">
+          {mode === 'edit' && guides && guides.length > 1 && onSelectGuide && (
+            <div className="space-y-1">
+              <label className="text-[10px] font-bold uppercase text-muted-foreground">Guia do atendimento</label>
+              <select
+                value={guideIndex ?? 0}
+                onChange={e => onSelectGuide(Number(e.target.value))}
+                className="w-full rounded-md border border-input bg-white px-3 py-2 text-sm"
+              >
+                {guides.map((g, i) => (
+                  <option key={i} value={i}>
+                    {i + 1}. {g.convenioName || 'Particular'} ({(g.exams || []).length} exame(s))
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
+
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-1">
               <label className="text-[10px] font-bold uppercase text-muted-foreground">Convênio / Plano</label>
