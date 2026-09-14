@@ -259,7 +259,6 @@
 
 
   /* Laudo: imprimir apenas o documento, em A4 */
-
   body.printing-laudo > *:not(#laudo-print-root) {
     display: none !important;
   }
@@ -272,11 +271,27 @@
   }
   body.printing-laudo #laudo-print-root .laudo-page {
     width: 210mm !important;
-    min-height: 297mm !important;
+    min-height: 0 !important;
+    height: auto !important;
     padding: 12mm !important;
     margin: 0 auto !important;
     box-shadow: none !important;
     box-sizing: border-box !important;
+    break-after: auto !important;
+    page-break-after: auto !important;
+  }
+  body.printing-laudo #laudo-print-root .laudo-print-wrapper {
+    display: block !important;
+  }
+  body.printing-laudo #laudo-print-root .laudo-footer {
+    margin-top: 5mm !important;
+  }
+  body.printing-laudo #laudo-print-root .laudo-footer > div {
+    margin-bottom: 3mm !important;
+  }
+  body.printing-laudo #laudo-print-root .laudo-page + .laudo-page {
+    break-before: page !important;
+    page-break-before: always !important;
   }
   body.printing-laudo .no-print {
     display: none !important;

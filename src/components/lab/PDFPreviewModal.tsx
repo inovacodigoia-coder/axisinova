@@ -130,6 +130,9 @@ export default function PDFPreviewModal({
     const root = window.document.createElement('div');
     root.id = 'laudo-print-root';
     root.innerHTML = documentRef.current.innerHTML;
+    const printStyle = window.document.createElement('style');
+    printStyle.textContent = '@media print { @page { size: A4 portrait; margin: 0; } }';
+    root.appendChild(printStyle);
     body.appendChild(root);
     body.classList.add('printing-laudo');
 
