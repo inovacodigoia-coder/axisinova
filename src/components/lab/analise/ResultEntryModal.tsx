@@ -341,14 +341,14 @@ export function ResultEntryModal({
         if (!p.isCalculated) return;
         const key = `${examId}_${p.id}`;
         if (instrumentKeys.has(key)) return; // valor veio do equipamento — não recalcular
-        const computed = evaluateFormula(p.formula, params, (pid) => results[`${examId}_${pid}`] || '');
+        const computed = evaluateFormula(p.formula, params, (pid) => results[`${examId}_${pid}`] || '', resolveExternalToken);
         if (computed && results[key] !== computed) updates[key] = computed;
       });
     });
     if (Object.keys(updates).length > 0) {
       setResults(prev => ({ ...prev, ...updates }));
     }
-  }, [results, paramsByExam, instrumentKeys]);
+  }, [results, paramsByExam, instrumentKeys, resolveExternalToken]);
 
 
   const totalExams = filteredExams.length;
