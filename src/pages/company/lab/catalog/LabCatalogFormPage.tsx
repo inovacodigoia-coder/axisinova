@@ -867,13 +867,15 @@ function ParametersSection({
   }, [parameters])
 
   const externalVariables = useMemo(() => {
-    const seen = new Set<string>()
-    return (exams || [])
+    const catalogCodes = new Set((exams || [])
       .filter((exam: any) => exam.id !== currentExamId && exam.isActive !== false)
       .map((exam: any) => String(exam.internalCode || exam.internal_code || '').trim().toUpperCase())
-      .filter((code: string) => code && !seen.has(code) && seen.add(code))
-      .sort((a: string, b: string) => a.localeCompare(b))
-  }, [exams, currentExamId])
+      .filter(Boolean))
+    const referencedCodes = parameters.flatMap((param: any) =>
+      Array.from(String(param.formula || '').matchAll(/\{\s*([^}]+?)\s*\}/g), match => match[1].trim().toUpperCase()),
+    )
+    return Array.from(new Set(referencedCodes)).filter(code => catalogCodes.has(code))
+  }, [exams, currentExamId, parameters])
 
   return (
     <TooltipProvider>
