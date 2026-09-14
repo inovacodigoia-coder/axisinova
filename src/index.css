@@ -283,6 +283,12 @@
   body.printing-laudo #laudo-print-root .laudo-print-wrapper {
     display: block !important;
   }
+  body.printing-laudo #laudo-print-root .laudo-footer {
+    margin-top: 5mm !important;
+  }
+  body.printing-laudo #laudo-print-root .laudo-footer > div {
+    margin-bottom: 3mm !important;
+  }
   body.printing-laudo #laudo-print-root .laudo-page + .laudo-page {
     break-before: page !important;
     page-break-before: always !important;
