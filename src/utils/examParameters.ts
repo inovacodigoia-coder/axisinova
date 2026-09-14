@@ -221,16 +221,19 @@ export function evaluateFormula(
   formula: string | undefined,
   params: ResolvedParam[],
   valueOf: (paramId: string) => string,
+  resolveExternal?: (token: string) => string | null,
 ): string {
   if (!formula || !formula.trim()) return ''
 
-  let expr = formula
+  // Aceita tanto [Nome do Parâmetro] quanto {CODIGO} (sintaxe do editor de exames)
+  let expr = formula.replace(/\{([^}]+)\}/g, '[$1]')
   let missing = false
 
   expr = expr.replace(/\[([^\]]+)\]/g, (_m, rawName: string) => {
     const wanted = normalizeText(rawName)
     const p =
       params.find((x) => normalizeText(x.name) === wanted) ||
+      params.find((x) => x.code && normalizeText(x.code) === wanted) ||
       params.find((x) => {
         const n = normalizeText(x.name)
         // evita casar "neutrofilos bastonetes" com "... absoluto"
