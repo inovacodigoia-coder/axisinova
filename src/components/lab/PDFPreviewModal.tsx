@@ -126,7 +126,12 @@ export default function PDFPreviewModal({
 
   // Imprime somente o documento do laudo (A4, sem modal/tela)
   const printLaudoOnly = React.useCallback(() => {
-    if (!documentRef.current) return;
+    if (!documentRef.current) {
+      toast.error('Laudo ainda não carregou. Aguarde um instante e tente novamente.');
+      return;
+    }
+    // remove resíduos de impressões anteriores
+    window.document.getElementById('laudo-print-root')?.remove();
     const body = window.document.body;
     const root = window.document.createElement('div');
     root.id = 'laudo-print-root';
