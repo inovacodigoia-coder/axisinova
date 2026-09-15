@@ -18,4 +18,22 @@ describe('evaluateFormula', () => {
     const result = evaluateFormula('{BILT} - {BILD}', [], () => '', token => token === 'BILT' ? '1,8' : null)
     expect(result).toBe('')
   })
+
+  it('calcula INR com abreviação TP, potência e ISI sem colchetes', () => {
+    const params = [
+      { id: '1', name: 'Tempo de Protrombina (paciente)', code: 'TP', unit: 'segundos', reference: '' },
+      { id: '3', name: 'INR (RNI)', unit: '', reference: '', isCalculated: true },
+      { id: '4', name: 'TP (controle médio)', code: 'TP', unit: 'segundos', reference: '' },
+      { id: '5', name: 'ISI (Índice de Sensibilidade Internacional)', code: 'TP', unit: '', reference: '' },
+    ]
+    const values: Record<string, string> = { '1': '11', '4': '10', '5': '1' }
+
+    const result = evaluateFormula(
+      '([TP (paciente)] / [TP (controle médio)]) ^ ISI',
+      params,
+      id => values[id] || '',
+    )
+
+    expect(result).toBe('1,1')
+  })
 })
