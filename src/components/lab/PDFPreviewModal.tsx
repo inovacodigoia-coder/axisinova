@@ -2,7 +2,7 @@ import React from 'react';
 import { createPortal } from 'react-dom';
 import { Button } from "@/components/ui/button";
 import { FileText, Download, X, Printer, ZoomIn, ZoomOut, Maximize2, Minimize2, Share2, Mail, Pencil, Save, RotateCcw, Bold, Italic, Underline as UnderlineIcon } from 'lucide-react';
-import { ScrollArea } from "@/components/ui/scroll-area";
+
 import { cn } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
 import LaudoDocument from './LaudoDocument';
