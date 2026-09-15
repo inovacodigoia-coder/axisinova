@@ -49,6 +49,7 @@ export default function PDFPreviewModal({
 
   const isAdmin = user?.role === 'company_admin' || user?.role === 'super_admin';
   const documentRef = React.useRef<HTMLDivElement>(null);
+  const overlayMouseDown = React.useRef(false);
   const [isEditing, setIsEditing] = React.useState(false);
   const [savedHtml, setSavedHtml] = React.useState<string | null>(null);
   const [saving, setSaving] = React.useState(false);
@@ -125,8 +126,13 @@ export default function PDFPreviewModal({
   const toggleFullscreen = () => setIsFullscreen(!isFullscreen);
 
   // Imprime somente o documento do laudo (A4, sem modal/tela)
-  const printLaudoOnly = React.useCallback(() => {
-    if (!documentRef.current) return;
+  const printLaudoOnly = React.useCallback((): Promise<void> => {
+    if (!documentRef.current) {
+      toast.error('Laudo ainda não carregou. Aguarde um instante e tente novamente.');
+      return Promise.resolve();
+    }
+    // remove resíduos de impressões anteriores
+    window.document.getElementById('laudo-print-root')?.remove();
     const body = window.document.body;
     const root = window.document.createElement('div');
     root.id = 'laudo-print-root';
@@ -137,18 +143,26 @@ export default function PDFPreviewModal({
     body.appendChild(root);
     body.classList.add('printing-laudo');
 
-    let done = false;
-    const cleanup = () => {
-      if (done) return;
-      done = true;
-      body.classList.remove('printing-laudo');
-      root.remove();
-    };
-    window.addEventListener('afterprint', cleanup, { once: true });
-    setTimeout(() => {
-      window.print();
-      setTimeout(cleanup, 1500);
-    }, 80);
+    return new Promise<void>((resolve) => {
+      let done = false;
+      const cleanup = () => {
+        if (done) return;
+        done = true;
+        body.classList.remove('printing-laudo');
+        root.remove();
+        // pequena folga para descartar o clique residual do diálogo de impressão
+        setTimeout(resolve, 300);
+      };
+      window.addEventListener('afterprint', cleanup, { once: true });
+      setTimeout(() => {
+        try {
+          window.print();
+        } catch {
+          /* ignora */
+        }
+        setTimeout(cleanup, 1500);
+      }, 120);
+    });
   }, []);
 
   // Impressão do laudo: usa o Servidor de Impressão local quando estiver ativo
@@ -157,6 +171,13 @@ export default function PDFPreviewModal({
   const handlePrintLaudo = React.useCallback(async () => {
     if (enviandoImpressao) return;
     setEnviandoImpressao(true);
+    let usouFallback = false;
+    const fallback = async () => {
+      if (usouFallback) return;
+      usouFallback = true;
+      if (onPrint) onPrint();
+      else await printLaudoOnly();
+    };
     try {
       const ativo = await servidorImpressaoAtivo();
       if (ativo && documentRef.current) {
@@ -169,12 +190,14 @@ export default function PDFPreviewModal({
         toast.success(r.mensagem || 'Laudo enviado para a impressora.');
         return;
       }
-      if (onPrint) onPrint();
-      else printLaudoOnly();
+      await fallback();
     } catch (e: any) {
       toast.error(e?.message || 'Falha ao imprimir pelo servidor local. Usando a impressão do navegador.');
-      if (onPrint) onPrint();
-      else printLaudoOnly();
+      try {
+        await fallback();
+      } catch {
+        /* ignora */
+      }
     } finally {
       setEnviandoImpressao(false);
     }
@@ -185,7 +208,7 @@ export default function PDFPreviewModal({
   React.useEffect(() => {
     if (!isOpen) return;
     const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') onClose();
+      if (event.key === 'Escape' && !enviandoImpressao) onClose();
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
@@ -209,7 +232,20 @@ export default function PDFPreviewModal({
   if (!isOpen) return null;
 
   return createPortal(
-    <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-zinc-950/80 p-2 md:p-4" onMouseDown={onClose}>
+    <div
+      className="fixed inset-0 z-[9999] flex items-center justify-center bg-zinc-950/80 p-2 md:p-4"
+      onMouseDown={(event) => {
+        // só marca intenção de fechar se o clique começou no fundo escuro
+        overlayMouseDown.current = event.target === event.currentTarget;
+      }}
+      onMouseUp={(event) => {
+        const started = overlayMouseDown.current;
+        overlayMouseDown.current = false;
+        if (!started || event.target !== event.currentTarget) return;
+        if (enviandoImpressao) return;
+        onClose();
+      }}
+    >
       <section
         role="dialog"
         aria-modal="true"
