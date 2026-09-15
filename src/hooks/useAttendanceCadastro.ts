@@ -18,7 +18,7 @@ export function useAttendanceCadastro() {
       if (!companyId) return []
       let query = (supabase
         .from('attendance_orders' as any) as any)
-        .select('*, patients(birth_date, gender)')
+        .select('*, patients(name, birth_date, gender)')
         .eq('company_id', companyId)
       if (!isAdmin) query = query.neq('status', 'deleted')
       const { data, error } = await query.order('created_at', { ascending: false })
