@@ -227,6 +227,21 @@ export function evaluateFormula(
 
   // Aceita tanto [Nome do Parâmetro] quanto {CODIGO} (sintaxe do editor de exames)
   let expr = formula.replace(/\{([^}]+)\}/g, '[$1]')
+
+  // Potenciação: "^" (notação usada no cadastro) equivale a "**" em JavaScript
+  expr = expr.replace(/\^/g, '**')
+
+  // Tokens escritos sem colchetes (ex.: "... ^ ISI") também são resolvidos
+  expr = expr.replace(/\[[^\]]*\]|[A-Za-zÀ-ÿ_][A-Za-zÀ-ÿ0-9_]*/g, (m) => {
+    if (m.startsWith('[')) return m
+    const wanted = normalizeText(m)
+    const known =
+      params.some((x) => normalizeText(x.name) === wanted) ||
+      params.some((x) => x.code && normalizeText(x.code) === wanted) ||
+      params.some((x) => normalizeText(x.name).startsWith(wanted))
+    return known ? `[${m}]` : m
+  })
+
   let missing = false
 
   expr = expr.replace(/\[([^\]]+)\]/g, (_m, rawName: string) => {
