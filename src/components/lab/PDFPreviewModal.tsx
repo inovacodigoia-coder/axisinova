@@ -379,15 +379,15 @@ export default function PDFPreviewModal({
 
         <footer className="no-print flex flex-col-reverse gap-2 border-t bg-background p-4 sm:flex-row sm:justify-between">
           <div className="flex gap-2">
-            {!onClose && (
-              <>
-                <Button variant="outline" size="sm" onClick={onEmail} className="gap-2">
-                  <Mail className="h-4 w-4" /> E-mail
-                </Button>
-                <Button variant="outline" size="sm" onClick={onShare} className="gap-2">
-                  <Share2 className="h-4 w-4" /> Link Público
-                </Button>
-              </>
+            {onEmail && (
+              <Button variant="outline" size="sm" onClick={onEmail} className="gap-2">
+                <Mail className="h-4 w-4" /> E-mail
+              </Button>
+            )}
+            {onShare && (
+              <Button variant="outline" size="sm" onClick={onShare} className="gap-2">
+                <Share2 className="h-4 w-4" /> Link Público
+              </Button>
             )}
           </div>
           <div className="flex gap-2">
