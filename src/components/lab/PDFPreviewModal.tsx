@@ -171,6 +171,13 @@ export default function PDFPreviewModal({
   const handlePrintLaudo = React.useCallback(async () => {
     if (enviandoImpressao) return;
     setEnviandoImpressao(true);
+    let usouFallback = false;
+    const fallback = async () => {
+      if (usouFallback) return;
+      usouFallback = true;
+      if (onPrint) onPrint();
+      else await printLaudoOnly();
+    };
     try {
       const ativo = await servidorImpressaoAtivo();
       if (ativo && documentRef.current) {
@@ -183,12 +190,14 @@ export default function PDFPreviewModal({
         toast.success(r.mensagem || 'Laudo enviado para a impressora.');
         return;
       }
-      if (onPrint) onPrint();
-      else printLaudoOnly();
+      await fallback();
     } catch (e: any) {
       toast.error(e?.message || 'Falha ao imprimir pelo servidor local. Usando a impressão do navegador.');
-      if (onPrint) onPrint();
-      else printLaudoOnly();
+      try {
+        await fallback();
+      } catch {
+        /* ignora */
+      }
     } finally {
       setEnviandoImpressao(false);
     }
