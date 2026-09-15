@@ -1389,6 +1389,7 @@ export function AttendanceDetailsModal({ open, onClose, onOrderDeleted, order, p
           onClose={() => setReportPreviewOpen(false)}
           order={filteredOrderForReport as any}
           onDownload={() => {}}
+          hideEditLaudo
         />
       )}
 

@@ -25,16 +25,18 @@ interface PDFPreviewModalProps {
   onPrint?: () => void;
   onEmail?: () => void;
   onShare?: () => void;
+  hideEditLaudo?: boolean;
 }
 
-export default function PDFPreviewModal({ 
-  isOpen, 
-  onClose, 
+export default function PDFPreviewModal({
+  isOpen,
+  onClose,
   order,
   onDownload,
   onPrint,
   onEmail,
-  onShare
+  onShare,
+  hideEditLaudo = false
 }: PDFPreviewModalProps) {
   const { settings: labSettings } = useLabSettings();
   const { user } = useAuth();
@@ -419,7 +421,7 @@ export default function PDFPreviewModal({
                       <RotateCcw className="h-4 w-4" /> Restaurar original
                     </Button>
                   )}
-                  {protocol && (
+                  {protocol && !hideEditLaudo && (
                     <Button variant="outline" className="gap-2" onClick={() => setIsEditing(true)}>
                       <Pencil className="h-4 w-4" /> Editar laudo
                     </Button>
