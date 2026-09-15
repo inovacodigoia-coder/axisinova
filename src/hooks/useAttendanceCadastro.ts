@@ -30,7 +30,8 @@ export function useAttendanceCadastro() {
         id: item.id,
         orderNumber: item.order_number,
         patientId: item.patient_id,
-        patientName: item.patient_name || '',
+        // Nome sempre atualizado a partir do cadastro do paciente
+        patientName: item.patients?.name || item.patient_name || '',
         patientBirthDate: item.patients?.birth_date,
         patientGender: item.patients?.gender,
         companyId: item.company_id,
