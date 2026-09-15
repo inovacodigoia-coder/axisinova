@@ -411,7 +411,7 @@ export default function PDFPreviewModal({
                       <RotateCcw className="h-4 w-4" /> Restaurar original
                     </Button>
                   )}
-                  {!onClose && (
+                  {protocol && (
                     <Button variant="outline" className="gap-2" onClick={() => setIsEditing(true)}>
                       <Pencil className="h-4 w-4" /> Editar laudo
                     </Button>
@@ -423,13 +423,13 @@ export default function PDFPreviewModal({
               <Printer className="h-4 w-4" /> {enviandoImpressao ? 'Enviando...' : 'Imprimir'}
             </Button>
 
-            <Button className="gradient-bg text-white gap-2" onClick={onDownload ? onDownload : printLaudoOnly}>
+            <Button className="gradient-bg text-white gap-2" onClick={() => (onDownload ? onDownload() : printLaudoOnly())}>
               <Download className="h-4 w-4" /> Download PDF
             </Button>
           </div>
         </footer>
       </section>
     </div>,
-    document.body,
+    portalHost,
   );
 }
