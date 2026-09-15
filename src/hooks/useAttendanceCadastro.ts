@@ -18,7 +18,7 @@ export function useAttendanceCadastro() {
       if (!companyId) return []
       let query = (supabase
         .from('attendance_orders' as any) as any)
-        .select('*, patients(birth_date, gender)')
+        .select('*, patients(name, birth_date, gender)')
         .eq('company_id', companyId)
       if (!isAdmin) query = query.neq('status', 'deleted')
       const { data, error } = await query.order('created_at', { ascending: false })
@@ -30,7 +30,8 @@ export function useAttendanceCadastro() {
         id: item.id,
         orderNumber: item.order_number,
         patientId: item.patient_id,
-        patientName: item.patient_name || '',
+        // Nome sempre atualizado a partir do cadastro do paciente
+        patientName: item.patients?.name || item.patient_name || '',
         patientBirthDate: item.patients?.birth_date,
         patientGender: item.patients?.gender,
         companyId: item.company_id,
