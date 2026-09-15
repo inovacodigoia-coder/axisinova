@@ -375,7 +375,7 @@ export default function PDFPreviewModal({
                 </div>
               </div>
             </div>
-          </ScrollArea>
+          </div>
 
         </div>
 
