@@ -205,14 +205,44 @@ export default function PDFPreviewModal({
 
 
 
+  // Container próprio do portal: impede que cliques/teclas dentro do laudo
+  // sejam interpretados como "clique fora" pelo modal que abriu esta janela
+  // (era isso que fechava tudo ao clicar no título/cabeçalho).
+  const [portalHost, setPortalHost] = React.useState<HTMLDivElement | null>(null);
+
   React.useEffect(() => {
     if (!isOpen) return;
-    const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.key === 'Escape' && !enviandoImpressao) onClose();
+    const host = window.document.createElement('div');
+    host.setAttribute('data-laudo-preview', '');
+    window.document.body.appendChild(host);
+    setPortalHost(host);
+    return () => {
+      setPortalHost(null);
+      host.remove();
     };
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [isOpen, onClose]);
+  }, [isOpen]);
+
+  React.useEffect(() => {
+    if (!portalHost) return;
+    const stop = (event: Event) => event.stopPropagation();
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        event.stopPropagation();
+        if (!enviandoImpressao) onClose();
+        return;
+      }
+      event.stopPropagation();
+    };
+    const events: (keyof DocumentEventMap)[] = [
+      'pointerdown', 'mousedown', 'mouseup', 'click', 'touchstart', 'focusin', 'focusout',
+    ];
+    events.forEach((name) => portalHost.addEventListener(name, stop));
+    portalHost.addEventListener('keydown', onKeyDown);
+    return () => {
+      events.forEach((name) => portalHost.removeEventListener(name, stop));
+      portalHost.removeEventListener('keydown', onKeyDown);
+    };
+  }, [portalHost, onClose, enviandoImpressao]);
 
 
   // Status mapping
