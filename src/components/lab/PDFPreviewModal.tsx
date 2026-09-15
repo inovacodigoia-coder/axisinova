@@ -205,14 +205,44 @@ export default function PDFPreviewModal({
 
 
 
+  // Container próprio do portal: impede que cliques/teclas dentro do laudo
+  // sejam interpretados como "clique fora" pelo modal que abriu esta janela
+  // (era isso que fechava tudo ao clicar no título/cabeçalho).
+  const [portalHost, setPortalHost] = React.useState<HTMLDivElement | null>(null);
+
   React.useEffect(() => {
     if (!isOpen) return;
-    const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.key === 'Escape' && !enviandoImpressao) onClose();
+    const host = window.document.createElement('div');
+    host.setAttribute('data-laudo-preview', '');
+    window.document.body.appendChild(host);
+    setPortalHost(host);
+    return () => {
+      setPortalHost(null);
+      host.remove();
     };
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [isOpen, onClose]);
+  }, [isOpen]);
+
+  React.useEffect(() => {
+    if (!portalHost) return;
+    const stop = (event: Event) => event.stopPropagation();
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        event.stopPropagation();
+        if (!enviandoImpressao) onClose();
+        return;
+      }
+      event.stopPropagation();
+    };
+    const events: (keyof DocumentEventMap)[] = [
+      'pointerdown', 'mousedown', 'mouseup', 'click', 'touchstart', 'focusin', 'focusout',
+    ];
+    events.forEach((name) => portalHost.addEventListener(name, stop));
+    portalHost.addEventListener('keydown', onKeyDown);
+    return () => {
+      events.forEach((name) => portalHost.removeEventListener(name, stop));
+      portalHost.removeEventListener('keydown', onKeyDown);
+    };
+  }, [portalHost, onClose, enviandoImpressao]);
 
 
   // Status mapping
@@ -229,7 +259,7 @@ export default function PDFPreviewModal({
     }
   };
 
-  if (!isOpen) return null;
+  if (!isOpen || !portalHost) return null;
 
   return createPortal(
     <div
@@ -349,15 +379,15 @@ export default function PDFPreviewModal({
 
         <footer className="no-print flex flex-col-reverse gap-2 border-t bg-background p-4 sm:flex-row sm:justify-between">
           <div className="flex gap-2">
-            {!onClose && (
-              <>
-                <Button variant="outline" size="sm" onClick={onEmail} className="gap-2">
-                  <Mail className="h-4 w-4" /> E-mail
-                </Button>
-                <Button variant="outline" size="sm" onClick={onShare} className="gap-2">
-                  <Share2 className="h-4 w-4" /> Link Público
-                </Button>
-              </>
+            {onEmail && (
+              <Button variant="outline" size="sm" onClick={onEmail} className="gap-2">
+                <Mail className="h-4 w-4" /> E-mail
+              </Button>
+            )}
+            {onShare && (
+              <Button variant="outline" size="sm" onClick={onShare} className="gap-2">
+                <Share2 className="h-4 w-4" /> Link Público
+              </Button>
             )}
           </div>
           <div className="flex gap-2">
@@ -381,7 +411,7 @@ export default function PDFPreviewModal({
                       <RotateCcw className="h-4 w-4" /> Restaurar original
                     </Button>
                   )}
-                  {!onClose && (
+                  {protocol && (
                     <Button variant="outline" className="gap-2" onClick={() => setIsEditing(true)}>
                       <Pencil className="h-4 w-4" /> Editar laudo
                     </Button>
@@ -393,13 +423,13 @@ export default function PDFPreviewModal({
               <Printer className="h-4 w-4" /> {enviandoImpressao ? 'Enviando...' : 'Imprimir'}
             </Button>
 
-            <Button className="gradient-bg text-white gap-2" onClick={onDownload ? onDownload : printLaudoOnly}>
+            <Button className="gradient-bg text-white gap-2" onClick={() => (onDownload ? onDownload() : printLaudoOnly())}>
               <Download className="h-4 w-4" /> Download PDF
             </Button>
           </div>
         </footer>
       </section>
     </div>,
-    document.body,
+    portalHost,
   );
 }
