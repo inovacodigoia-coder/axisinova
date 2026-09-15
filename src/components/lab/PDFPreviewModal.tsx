@@ -49,6 +49,7 @@ export default function PDFPreviewModal({
 
   const isAdmin = user?.role === 'company_admin' || user?.role === 'super_admin';
   const documentRef = React.useRef<HTMLDivElement>(null);
+  const overlayMouseDown = React.useRef(false);
   const [isEditing, setIsEditing] = React.useState(false);
   const [savedHtml, setSavedHtml] = React.useState<string | null>(null);
   const [saving, setSaving] = React.useState(false);
