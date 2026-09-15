@@ -2,7 +2,7 @@ import React from 'react';
 import { createPortal } from 'react-dom';
 import { Button } from "@/components/ui/button";
 import { FileText, Download, X, Printer, ZoomIn, ZoomOut, Maximize2, Minimize2, Share2, Mail, Pencil, Save, RotateCcw, Bold, Italic, Underline as UnderlineIcon } from 'lucide-react';
-import { ScrollArea } from "@/components/ui/scroll-area";
+
 import { cn } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
 import LaudoDocument from './LaudoDocument';
@@ -335,13 +335,15 @@ export default function PDFPreviewModal({
             </div>
           )}
 
-          <ScrollArea className="w-full h-full">
+          <div className="w-full h-full min-h-0 overflow-auto overscroll-contain" data-laudo-scroll>
             <div className="flex justify-center p-4 min-w-max">
               <div 
-                className="origin-top transition-transform duration-200 shadow-2xl"
+                className="transition-transform duration-200 shadow-2xl"
                 style={{ 
-                  transform: `scale(${zoom / 100})`,
-                }}
+                  // "zoom" redimensiona o layout (diferente de transform: scale),
+                  // então a rolagem acompanha a altura real do laudo em qualquer zoom
+                  zoom: zoom / 100,
+                } as React.CSSProperties}
               >
                 <div
                   ref={documentRef}
@@ -373,7 +375,7 @@ export default function PDFPreviewModal({
                 </div>
               </div>
             </div>
-          </ScrollArea>
+          </div>
 
         </div>
 
