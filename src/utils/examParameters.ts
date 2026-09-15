@@ -171,6 +171,32 @@ function tokens(value?: string) {
 }
 
 /**
+ * Compara nomes completos com abreviações usadas nas fórmulas do catálogo.
+ * Ex.: "TP (paciente)" corresponde a "Tempo de Protrombina (paciente)".
+ */
+function formulaTokenMatches(parameter: ResolvedParam, token: string) {
+  const wanted = normalizeText(token)
+  const name = normalizeText(parameter.name)
+  const code = normalizeText(parameter.code)
+  if (!wanted) return false
+  if (name === wanted || code === wanted) return true
+  if (name.startsWith(wanted) || wanted.startsWith(name)) return true
+
+  const wantedParts = tokens(token)
+  const nameParts = tokens(parameter.name)
+  if (wantedParts.length < 2 || nameParts.length < 2) return false
+
+  const wantedQualifier = wantedParts.slice(1).join(' ')
+  const nameQualifier = nameParts.slice(-wantedParts.length + 1).join(' ')
+  const nameAcronym = nameParts
+    .slice(0, nameParts.length - wantedParts.length + 1)
+    .map((part) => part[0])
+    .join('')
+
+  return wantedParts[0] === nameAcronym && wantedQualifier === nameQualifier
+}
+
+/**
  * Encontra o exame do catálogo correspondente, tolerando diferenças de nome
  * (ex.: "Hemograma com Contagem de Plaquetas" x "Hemograma Completo").
  */
@@ -234,11 +260,7 @@ export function evaluateFormula(
   // Tokens escritos sem colchetes (ex.: "... ^ ISI") também são resolvidos
   expr = expr.replace(/\[[^\]]*\]|[A-Za-zÀ-ÿ_][A-Za-zÀ-ÿ0-9_]*/g, (m) => {
     if (m.startsWith('[')) return m
-    const wanted = normalizeText(m)
-    const known =
-      params.some((x) => normalizeText(x.name) === wanted) ||
-      params.some((x) => x.code && normalizeText(x.code) === wanted) ||
-      params.some((x) => normalizeText(x.name).startsWith(wanted))
+    const known = params.some((x) => formulaTokenMatches(x, m))
     return known ? `[${m}]` : m
   })
 
@@ -249,6 +271,7 @@ export function evaluateFormula(
     const p =
       params.find((x) => normalizeText(x.name) === wanted) ||
       params.find((x) => x.code && normalizeText(x.code) === wanted) ||
+      params.find((x) => formulaTokenMatches(x, rawName)) ||
       params.find((x) => {
         const n = normalizeText(x.name)
         // evita casar "neutrofilos bastonetes" com "... absoluto"
