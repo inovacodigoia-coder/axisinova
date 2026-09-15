@@ -214,6 +214,12 @@ export default function PDFPreviewModal({
     if (!isOpen) return;
     const host = window.document.createElement('div');
     host.setAttribute('data-laudo-preview', '');
+    // Este preview é aberto sobre outro Dialog (recepção/digitação). O Radix
+    // bloqueia pointer-events no body enquanto o Dialog pai está aberto; como
+    // este portal fica fora dele, precisamos reabilitar os eventos no host.
+    host.style.pointerEvents = 'auto';
+    host.style.position = 'relative';
+    host.style.zIndex = '9999';
     window.document.body.appendChild(host);
     setPortalHost(host);
     return () => {
@@ -263,7 +269,7 @@ export default function PDFPreviewModal({
 
   return createPortal(
     <div
-      className="fixed inset-0 z-[9999] flex items-center justify-center bg-zinc-950/80 p-2 md:p-4"
+      className="pointer-events-auto fixed inset-0 z-[9999] flex items-center justify-center bg-zinc-950/80 p-2 md:p-4"
       onMouseDown={(event) => {
         // só marca intenção de fechar se o clique começou no fundo escuro
         overlayMouseDown.current = event.target === event.currentTarget;
@@ -335,7 +341,7 @@ export default function PDFPreviewModal({
             </div>
           )}
 
-          <div className="w-full h-full min-h-0 overflow-auto overscroll-contain" data-laudo-scroll>
+          <div className="w-full h-full min-h-0 overflow-auto overscroll-contain touch-pan-x touch-pan-y" data-laudo-scroll>
             <div className="flex justify-center p-4 min-w-max">
               <div 
                 className="transition-transform duration-200 shadow-2xl"
