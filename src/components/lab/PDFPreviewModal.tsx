@@ -190,7 +190,7 @@ export default function PDFPreviewModal({
   React.useEffect(() => {
     if (!isOpen) return;
     const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') onClose();
+      if (event.key === 'Escape' && !enviandoImpressao) onClose();
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
@@ -214,7 +214,20 @@ export default function PDFPreviewModal({
   if (!isOpen) return null;
 
   return createPortal(
-    <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-zinc-950/80 p-2 md:p-4" onMouseDown={onClose}>
+    <div
+      className="fixed inset-0 z-[9999] flex items-center justify-center bg-zinc-950/80 p-2 md:p-4"
+      onMouseDown={(event) => {
+        // só marca intenção de fechar se o clique começou no fundo escuro
+        overlayMouseDown.current = event.target === event.currentTarget;
+      }}
+      onMouseUp={(event) => {
+        const started = overlayMouseDown.current;
+        overlayMouseDown.current = false;
+        if (!started || event.target !== event.currentTarget) return;
+        if (enviandoImpressao) return;
+        onClose();
+      }}
+    >
       <section
         role="dialog"
         aria-modal="true"
