@@ -259,7 +259,7 @@ export default function PDFPreviewModal({
     }
   };
 
-  if (!isOpen) return null;
+  if (!isOpen || !portalHost) return null;
 
   return createPortal(
     <div
