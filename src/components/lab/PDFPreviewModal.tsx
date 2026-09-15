@@ -335,13 +335,15 @@ export default function PDFPreviewModal({
             </div>
           )}
 
-          <ScrollArea className="w-full h-full">
+          <div className="w-full h-full min-h-0 overflow-auto overscroll-contain" data-laudo-scroll>
             <div className="flex justify-center p-4 min-w-max">
               <div 
-                className="origin-top transition-transform duration-200 shadow-2xl"
+                className="transition-transform duration-200 shadow-2xl"
                 style={{ 
-                  transform: `scale(${zoom / 100})`,
-                }}
+                  // "zoom" redimensiona o layout (diferente de transform: scale),
+                  // então a rolagem acompanha a altura real do laudo em qualquer zoom
+                  zoom: zoom / 100,
+                } as React.CSSProperties}
               >
                 <div
                   ref={documentRef}
