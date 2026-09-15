@@ -126,10 +126,10 @@ export default function PDFPreviewModal({
   const toggleFullscreen = () => setIsFullscreen(!isFullscreen);
 
   // Imprime somente o documento do laudo (A4, sem modal/tela)
-  const printLaudoOnly = React.useCallback(() => {
+  const printLaudoOnly = React.useCallback((): Promise<void> => {
     if (!documentRef.current) {
       toast.error('Laudo ainda não carregou. Aguarde um instante e tente novamente.');
-      return;
+      return Promise.resolve();
     }
     // remove resíduos de impressões anteriores
     window.document.getElementById('laudo-print-root')?.remove();
@@ -143,18 +143,26 @@ export default function PDFPreviewModal({
     body.appendChild(root);
     body.classList.add('printing-laudo');
 
-    let done = false;
-    const cleanup = () => {
-      if (done) return;
-      done = true;
-      body.classList.remove('printing-laudo');
-      root.remove();
-    };
-    window.addEventListener('afterprint', cleanup, { once: true });
-    setTimeout(() => {
-      window.print();
-      setTimeout(cleanup, 1500);
-    }, 80);
+    return new Promise<void>((resolve) => {
+      let done = false;
+      const cleanup = () => {
+        if (done) return;
+        done = true;
+        body.classList.remove('printing-laudo');
+        root.remove();
+        // pequena folga para descartar o clique residual do diálogo de impressão
+        setTimeout(resolve, 300);
+      };
+      window.addEventListener('afterprint', cleanup, { once: true });
+      setTimeout(() => {
+        try {
+          window.print();
+        } catch {
+          /* ignora */
+        }
+        setTimeout(cleanup, 1500);
+      }, 120);
+    });
   }, []);
 
   // Impressão do laudo: usa o Servidor de Impressão local quando estiver ativo
