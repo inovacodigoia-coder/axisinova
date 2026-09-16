@@ -209,6 +209,9 @@ Deno.serve(async (req) => {
     )
   }
 
+  logCtx.protocol = order.order_number || order.protocol || null
+  logCtx.orderId = order.id
+
   if (!COLLECTED_STATUSES.includes(String(order.status))) {
     return reject(
       `Amostra sample_barcode=${sampleBarcode} pertence ao pedido ${order.protocol} que ainda não teve coleta confirmada (status "${order.status}")`,
@@ -324,6 +327,8 @@ Deno.serve(async (req) => {
     )
   }
 
+
+  logCtx.examName = matchedExam.name || null
 
   const orderExam = orderExamByCatalogId.get(String(matchedExam.id))
 
