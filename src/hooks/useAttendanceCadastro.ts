@@ -44,6 +44,7 @@ export function useAttendanceCadastro() {
         examMode: item.exam_mode as 'clinic' | 'lab',
         deliveryDate: item.delivery_date,
         labGuides: item.lab_guides as any[],
+        isFasting: item.is_fasting ?? undefined,
         serviceType: item.service_type as any,
         paymentType: item.payment_type as any,
         doctorId: item.doctor_id,
