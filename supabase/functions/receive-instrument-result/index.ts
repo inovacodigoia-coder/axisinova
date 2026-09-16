@@ -98,7 +98,7 @@ Deno.serve(async (req) => {
   }
 
   const uniqueKey = (base: string) =>
-    `${base || 'sem-idempotency-key'}#${status ? '' : ''}${Date.now()}-${crypto.randomUUID().slice(0, 8)}`
+    `${base || 'sem-idempotency-key'}#${Date.now()}-${crypto.randomUUID().slice(0, 8)}`
 
   // ---- 2. Body (contrato plano; aceita nomes legados) ----
   let body: any
