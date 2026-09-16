@@ -12,6 +12,7 @@ import { supabase } from '@/integrations/supabase/client'
 import { useAuth } from '@/context/AuthContext'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import OAuthClientsSection from '@/components/lab/integration/OAuthClientsSection'
+import IntegrationEventsLog from '@/components/lab/integration/IntegrationEventsLog'
 
 type KeyRow = {
   id: string
@@ -107,10 +108,15 @@ export default function InstrumentApiKeysPage() {
         <TabsList>
           <TabsTrigger value="oauth">OAuth2 (recomendado)</TabsTrigger>
           <TabsTrigger value="apikey">API Key (legado)</TabsTrigger>
+          <TabsTrigger value="log">Log de Integração</TabsTrigger>
         </TabsList>
 
         <TabsContent value="oauth">
           <OAuthClientsSection />
+        </TabsContent>
+
+        <TabsContent value="log">
+          <IntegrationEventsLog />
         </TabsContent>
 
         <TabsContent value="apikey" className="space-y-6">
