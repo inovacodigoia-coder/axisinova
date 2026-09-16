@@ -40,6 +40,7 @@ export interface AttendanceOrder {
   examMode?: 'clinic' | 'lab'
   deliveryDate?: string
   labGuides?: any[]
+  isFasting?: boolean
 
 
   serviceType: AttendanceServiceType
