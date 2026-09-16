@@ -1466,7 +1466,13 @@ function ReferenceValuesModal({ parameter, onClose, onSave }: { parameter: any, 
           <Button variant="outline" onClick={onClose}>Cancelar</Button>
           <Button className="gradient-bg text-white px-8" onClick={() => {
             if (onSave) {
-              onSave({ referenceValues: faixas });
+              onSave({
+                referenceValues: faixas.map((f) => ({
+                  ...f,
+                  useFasting,
+                  isFasting: useFasting ? !!f.isFasting : false,
+                })),
+              });
             }
             onClose();
           }}>Salvar</Button>
