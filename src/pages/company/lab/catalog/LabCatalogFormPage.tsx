@@ -1442,6 +1442,16 @@ function ReferenceValuesModal({ parameter, onClose, onSave }: { parameter: any, 
                     />
                     <Label className="text-xs cursor-pointer">Gestante</Label>
                   </div>
+                  {useFasting && (
+                    <div className="flex items-center gap-2 pt-5">
+                      <Switch
+                        checked={!!faixa.isFasting}
+                        className="scale-75"
+                        onCheckedChange={(val) => updateFaixa(faixa.id, 'isFasting', val)}
+                      />
+                      <Label className="text-xs cursor-pointer">Jejum</Label>
+                    </div>
+                  )}
                 </div>
               </div>
             </div>
