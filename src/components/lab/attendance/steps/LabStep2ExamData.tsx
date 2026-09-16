@@ -44,14 +44,14 @@ export function LabStep2ExamData({ state, update }: any) {
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div className="space-y-1">
-          <Label className="text-xs">Jejum Desde</Label>
+          <Label className="text-xs">Jejum do paciente</Label>
           <select 
             className="w-full rounded-md border border-input bg-background px-3 py-1.5 text-sm"
-            value={state.fastingSince || "Ontem"}
+            value={state.fastingSince || "Não"}
             onChange={(e) => update({ fastingSince: e.target.value })}
           >
-            <option>Ontem</option>
-            <option>Hoje</option>
+            <option>Não</option>
+            <option>Sim</option>
           </select>
         </div>
         <div className="space-y-1">

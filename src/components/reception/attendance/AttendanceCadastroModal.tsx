@@ -914,7 +914,7 @@ function ReviewPanel({ state, unitName, guicheName, ticketCode }: { state: Cadas
           {state.height && <Row label="📏 Altura" value={`${state.height} m`} />}
           {state.isUrgent && <Row label="🚨 Urgência" value="Sim" />}
           {state.hasFever && <Row label="🌡️ Febre" value="Sim" />}
-          {state.fastingSince && <Row label="🥣 Jejum" value={state.fastingSince} />}
+          <Row label="🥣 Jejum do paciente" value={state.fastingSince || 'Não'} />
           {state.examMode && state.examMode !== 'ask' && <Row label="🏢 Local" value={state.examMode === 'clinic' ? 'Clínica' : 'Laboratório'} />}
 
           <Row label="📎 Documentos" value={`${state.attachments.length} anexado(s)${requiredCount ? ` · ${requiredCount} obrigatório(s)` : ''}`} />
