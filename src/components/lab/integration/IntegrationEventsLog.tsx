@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { Fragment, useEffect, useMemo, useState } from 'react'
 import { Card } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -213,9 +213,8 @@ export default function IntegrationEventsLog() {
                   }
                   const open = expanded === r.id
                   return (
-                    <>
+                    <Fragment key={r.id}>
                       <tr
-                        key={r.id}
                         className="hover:bg-muted/30 cursor-pointer"
                         onClick={() => setExpanded(open ? null : r.id)}
                       >
@@ -237,7 +236,7 @@ export default function IntegrationEventsLog() {
                         </td>
                       </tr>
                       {open && (
-                        <tr key={`${r.id}-d`} className="bg-muted/20">
+                        <tr className="bg-muted/20">
                           <td colSpan={7} className="px-4 py-4 space-y-2 text-xs">
                             {r.error_message && (
                               <p className="text-red-600">
@@ -255,7 +254,7 @@ export default function IntegrationEventsLog() {
                           </td>
                         </tr>
                       )}
-                    </>
+                    </Fragment>
                   )
                 })}
               </tbody>
