@@ -1485,6 +1485,7 @@ export type Database = {
           gender: string | null
           id: string
           internal_code: string | null
+          is_fasting: boolean
           is_pregnant: boolean | null
           max_value: string | null
           min_value: string | null
@@ -1493,6 +1494,7 @@ export type Database = {
           sort_order: number | null
           text_range: string | null
           updated_at: string | null
+          use_fasting: boolean
         }
         Insert: {
           age_max?: number | null
@@ -1505,6 +1507,7 @@ export type Database = {
           gender?: string | null
           id?: string
           internal_code?: string | null
+          is_fasting?: boolean
           is_pregnant?: boolean | null
           max_value?: string | null
           min_value?: string | null
@@ -1513,6 +1516,7 @@ export type Database = {
           sort_order?: number | null
           text_range?: string | null
           updated_at?: string | null
+          use_fasting?: boolean
         }
         Update: {
           age_max?: number | null
@@ -1525,6 +1529,7 @@ export type Database = {
           gender?: string | null
           id?: string
           internal_code?: string | null
+          is_fasting?: boolean
           is_pregnant?: boolean | null
           max_value?: string | null
           min_value?: string | null
@@ -1533,6 +1538,7 @@ export type Database = {
           sort_order?: number | null
           text_range?: string | null
           updated_at?: string | null
+          use_fasting?: boolean
         }
         Relationships: [
           {
