@@ -17,6 +17,8 @@ export interface ResolvedParam {
 interface PatientCtx {
   gender?: string
   age?: number
+  /** Paciente está em jejum (informado no Cadastro de Atendimento). */
+  isFasting?: boolean | null
 }
 
 function normalizeSex(gender?: string): 'M' | 'F' | null {
