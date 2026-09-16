@@ -192,6 +192,7 @@ export function ResultEntryModal({
           patientName: exam.patientName,
           patientBirthDate: exam.patientBirthDate,
           patientGender: exam.patientGender,
+          isFasting: exam.isFasting,
           registeredAt: exam.registeredAt,
           originName: exam.originName,
           doctorName: exam.doctorName,
