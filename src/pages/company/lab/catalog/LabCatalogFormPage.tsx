@@ -1397,6 +1397,7 @@ function ReferenceValuesModal({ parameter, onClose, onSave }: { parameter: any, 
                       <SelectItem value="anos" className="text-xs">Anos</SelectItem>
                       <SelectItem value="meses" className="text-xs">Meses</SelectItem>
                       <SelectItem value="semanas" className="text-xs">Semanas</SelectItem>
+                      <SelectItem value="dias" className="text-xs">Dias</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
