@@ -119,6 +119,8 @@ Deno.serve(async (req) => {
     )
   }
 
+  const logCtx: { protocol?: string | null; orderId?: string | null } = {}
+
   const logEvent = async (status: string, errorMessage?: string) => {
     await supabase.from('instrument_events').insert({
       company_id: companyId,
@@ -138,6 +140,13 @@ Deno.serve(async (req) => {
       },
       status,
       error_message: errorMessage || null,
+      equipment_id: equipmentId,
+      sample_barcode: sampleBarcode,
+      test_code: itemCode,
+      received_value: label || `${imageFormat} (${Math.floor(imageBase64.length * 0.75)} bytes)`,
+      protocol: logCtx.protocol ?? null,
+      order_id: logCtx.orderId ?? null,
+      exam_name: label,
     })
   }
 
