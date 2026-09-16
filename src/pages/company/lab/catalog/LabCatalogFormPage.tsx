@@ -1296,8 +1296,18 @@ function ReferenceValuesModal({ parameter, onClose, onSave }: { parameter: any, 
             <Scale className="h-5 w-5 text-primary" />
             <DialogTitle>Valores de Referência — {parameter.name}</DialogTitle>
           </div>
-          <p className="text-xs text-muted-foreground">Configure múltiplas faixas de referência com condições de idade, sexo e gestante.</p>
+          <p className="text-xs text-muted-foreground">Configure múltiplas faixas de referência com condições de idade, sexo, gestante e jejum.</p>
         </DialogHeader>
+
+        <div className="flex items-center justify-between gap-4 rounded-xl border border-dashed p-3 bg-muted/10">
+          <div>
+            <Label className="text-xs font-bold">Usar condição de jejum</Label>
+            <p className="text-[11px] text-muted-foreground">
+              Ative apenas para exames que possuem valores diferentes com e sem jejum.
+            </p>
+          </div>
+          <Switch checked={useFasting} onCheckedChange={setUseFasting} />
+        </div>
 
         <div className="space-y-6 py-4">
           {faixas.map((faixa, idx) => (
