@@ -262,7 +262,9 @@ export default function LabCatalogPage() {
               'Idade máxima': r.age_max ?? 120,
               'Unidade da Idade': ageUnitLabel(r.age_unit),
               'Sexo': r.gender || 'both',
-              'Gestante': 'Não'
+              'Gestante': 'Não',
+              'Usa condição de jejum': r.use_fasting ? 'Sim' : 'Não',
+              'Jejum': r.is_fasting ? 'Sim' : 'Não'
             })
           })
         } else if (e.parameters && Array.isArray(e.parameters)) {
@@ -281,7 +283,9 @@ export default function LabCatalogPage() {
                   'Idade máxima': r.maxAge ?? 120,
                   'Unidade da Idade': ageUnitLabel(r.ageUnit ?? r.n),
                   'Sexo': r.sex || 'both',
-                  'Gestante': r.isPregnant ? 'Sim' : 'Não'
+                  'Gestante': r.isPregnant ? 'Sim' : 'Não',
+                  'Usa condição de jejum': r.useFasting ? 'Sim' : 'Não',
+                  'Jejum': r.isFasting ? 'Sim' : 'Não'
                 })
               })
             }
@@ -300,7 +304,9 @@ export default function LabCatalogPage() {
               'Idade máxima': r.maxAge ?? 120,
               'Unidade da Idade': ageUnitLabel(r.ageUnit ?? r.n),
               'Sexo': r.sex || 'both',
-              'Gestante': r.isPregnant ? 'Sim' : 'Não'
+              'Gestante': r.isPregnant ? 'Sim' : 'Não',
+              'Usa condição de jejum': r.useFasting ? 'Sim' : 'Não',
+              'Jejum': r.isFasting ? 'Sim' : 'Não'
             })
           })
         }
