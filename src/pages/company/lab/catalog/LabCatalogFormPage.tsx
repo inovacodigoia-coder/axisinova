@@ -1250,8 +1250,13 @@ function ParametersSection({
 
 function ReferenceValuesModal({ parameter, onClose, onSave }: { parameter: any, onClose: () => void, onSave?: (val: any) => void }) {
   const [faixas, setFaixas] = useState<any[]>([])
+  const [useFasting, setUseFasting] = useState(false)
 
   const isTextual = parameter?.type === 'text' || parameter?.type === 'selection'
+
+  useEffect(() => {
+    setUseFasting(!!parameter?.referenceValues?.some((f: any) => f.useFasting))
+  }, [parameter])
 
   useEffect(() => {
     if (parameter && parameter.referenceValues?.length) {
