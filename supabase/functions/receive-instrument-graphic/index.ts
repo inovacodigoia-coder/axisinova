@@ -215,6 +215,9 @@ Deno.serve(async (req) => {
   if (!order) {
     return reject(`Nenhum pedido encontrado com sample_barcode=${sampleBarcode}`)
   }
+  logCtx.protocol = order.order_number || order.protocol || null
+  logCtx.orderId = order.id
+
   if (!COLLECTED_STATUSES.includes(String(order.status))) {
     return reject(
       `Amostra sample_barcode=${sampleBarcode} pertence ao pedido ${order.protocol} que ainda não teve coleta confirmada (status "${order.status}")`,
