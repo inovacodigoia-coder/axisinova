@@ -207,6 +207,39 @@ export default function PDFPreviewModal({
 
 
 
+  // Download do laudo em PDF (gera o arquivo a partir do documento exibido)
+  const [baixandoPdf, setBaixandoPdf] = React.useState(false);
+
+  const handleDownloadPdf = React.useCallback(async () => {
+    if (baixandoPdf) return;
+    if (!documentRef.current) {
+      toast.error('Laudo ainda não carregou. Aguarde um instante e tente novamente.');
+      return;
+    }
+    setBaixandoPdf(true);
+    try {
+      const pages = Array.from(
+        documentRef.current.querySelectorAll<HTMLElement>('.laudo-page'),
+      );
+      const nodes = pages.length ? pages : [documentRef.current];
+      const blob = await gerarPdfElementos(nodes, 210);
+      const url = URL.createObjectURL(blob);
+      const link = window.document.createElement('a');
+      link.href = url;
+      link.download = `laudo-${protocol || 'documento'}.pdf`;
+      window.document.body.appendChild(link);
+      link.click();
+      link.remove();
+      setTimeout(() => URL.revokeObjectURL(url), 4000);
+      toast.success('Laudo baixado em PDF.');
+    } catch (e: any) {
+      console.error('Erro ao gerar PDF do laudo:', e);
+      toast.error(e?.message || 'Não foi possível gerar o PDF do laudo.');
+    } finally {
+      setBaixandoPdf(false);
+    }
+  }, [baixandoPdf, protocol]);
+
   // Container próprio do portal: impede que cliques/teclas dentro do laudo
   // sejam interpretados como "clique fora" pelo modal que abriu esta janela
   // (era isso que fechava tudo ao clicar no título/cabeçalho).
