@@ -17,6 +17,8 @@ export interface ResolvedParam {
 interface PatientCtx {
   gender?: string
   age?: number
+  /** Paciente está em jejum (informado no Cadastro de Atendimento). */
+  isFasting?: boolean | null
 }
 
 function normalizeSex(gender?: string): 'M' | 'F' | null {
@@ -50,11 +52,17 @@ export function ageToYears(value: any, unit?: string): number | null {
   return n
 }
 
-/** Escolhe a faixa de referência que combina com sexo/idade do paciente. */
+/** Indica se a faixa usa a condição de jejum. */
+function rangeUsesFasting(r: any): boolean {
+  return !!(r?.useFasting ?? r?.use_fasting)
+}
+
+/** Escolhe a faixa de referência que combina com sexo/idade/jejum do paciente. */
 export function pickReference(ranges: any[] | undefined, patient: PatientCtx): string {
   if (!ranges || ranges.length === 0) return ''
   const sex = normalizeSex(patient.gender)
   const age = patient.age
+  const fasting = patient.isFasting
 
   const matches = ranges.filter((r) => {
     const rSex = (r.sex ?? r.gender ?? 'Both')?.toString()
@@ -64,10 +72,15 @@ export function pickReference(ranges: any[] | undefined, patient: PatientCtx): s
     const ageOk =
       age == null ||
       ((minAge == null || age >= minAge) && (maxAge == null || age <= maxAge))
-    return sexOk && ageOk
+    // Só filtra por jejum quando a faixa usa essa condição e a informação existe no pedido
+    const fastingOk =
+      !rangeUsesFasting(r) || fasting == null || !!(r.isFasting ?? r.is_fasting) === !!fasting
+    return sexOk && ageOk && fastingOk
   })
 
-  const chosen = matches[0] || ranges[0]
+  // Prioriza faixas que consideram o jejum quando a informação está disponível
+  const chosen =
+    (fasting != null && matches.find((r) => rangeUsesFasting(r))) || matches[0] || ranges[0]
   return formatRange(chosen)
 }
 

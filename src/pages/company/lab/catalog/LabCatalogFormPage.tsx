@@ -1250,8 +1250,13 @@ function ParametersSection({
 
 function ReferenceValuesModal({ parameter, onClose, onSave }: { parameter: any, onClose: () => void, onSave?: (val: any) => void }) {
   const [faixas, setFaixas] = useState<any[]>([])
+  const [useFasting, setUseFasting] = useState(false)
 
   const isTextual = parameter?.type === 'text' || parameter?.type === 'selection'
+
+  useEffect(() => {
+    setUseFasting(!!parameter?.referenceValues?.some((f: any) => f.useFasting))
+  }, [parameter])
 
   useEffect(() => {
     if (parameter && parameter.referenceValues?.length) {
@@ -1291,8 +1296,18 @@ function ReferenceValuesModal({ parameter, onClose, onSave }: { parameter: any, 
             <Scale className="h-5 w-5 text-primary" />
             <DialogTitle>Valores de Referência — {parameter.name}</DialogTitle>
           </div>
-          <p className="text-xs text-muted-foreground">Configure múltiplas faixas de referência com condições de idade, sexo e gestante.</p>
+          <p className="text-xs text-muted-foreground">Configure múltiplas faixas de referência com condições de idade, sexo, gestante e jejum.</p>
         </DialogHeader>
+
+        <div className="flex items-center justify-between gap-4 rounded-xl border border-dashed p-3 bg-muted/10">
+          <div>
+            <Label className="text-xs font-bold">Usar condição de jejum</Label>
+            <p className="text-[11px] text-muted-foreground">
+              Ative apenas para exames que possuem valores diferentes com e sem jejum.
+            </p>
+          </div>
+          <Switch checked={useFasting} onCheckedChange={setUseFasting} />
+        </div>
 
         <div className="space-y-6 py-4">
           {faixas.map((faixa, idx) => (
@@ -1427,6 +1442,16 @@ function ReferenceValuesModal({ parameter, onClose, onSave }: { parameter: any, 
                     />
                     <Label className="text-xs cursor-pointer">Gestante</Label>
                   </div>
+                  {useFasting && (
+                    <div className="flex items-center gap-2 pt-5">
+                      <Switch
+                        checked={!!faixa.isFasting}
+                        className="scale-75"
+                        onCheckedChange={(val) => updateFaixa(faixa.id, 'isFasting', val)}
+                      />
+                      <Label className="text-xs cursor-pointer">Jejum</Label>
+                    </div>
+                  )}
                 </div>
               </div>
             </div>
@@ -1441,7 +1466,13 @@ function ReferenceValuesModal({ parameter, onClose, onSave }: { parameter: any, 
           <Button variant="outline" onClick={onClose}>Cancelar</Button>
           <Button className="gradient-bg text-white px-8" onClick={() => {
             if (onSave) {
-              onSave({ referenceValues: faixas });
+              onSave({
+                referenceValues: faixas.map((f) => ({
+                  ...f,
+                  useFasting,
+                  isFasting: useFasting ? !!f.isFasting : false,
+                })),
+              });
             }
             onClose();
           }}>Salvar</Button>

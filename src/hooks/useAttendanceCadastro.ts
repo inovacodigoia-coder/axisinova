@@ -44,6 +44,7 @@ export function useAttendanceCadastro() {
         examMode: item.exam_mode as 'clinic' | 'lab',
         deliveryDate: item.delivery_date,
         labGuides: item.lab_guides as any[],
+        isFasting: item.is_fasting ?? undefined,
         serviceType: item.service_type as any,
         paymentType: item.payment_type as any,
         doctorId: item.doctor_id,
@@ -171,6 +172,7 @@ export function useAttendanceCadastro() {
           private_value: data.privateValue, 
           delivery_date: ensureIsoDate(data.deliveryDate) || calculatedDeliveryDate,
           lab_guides: data.guides || data.labGuides || [],
+          is_fasting: typeof data.isFasting === 'boolean' ? data.isFasting : null,
           status: data.examMode === 'lab' 
             ? ((data.guides || data.labGuides)?.some((g: any) => g.exams?.some((e: any) => e.collected)) ? 'waiting_collection' : 'open')
             : ((data.guides || data.labGuides)?.some((g: any) => g.exams?.some((e: any) => e.collected)) ? 'collection_done' : 'open'),
@@ -205,6 +207,7 @@ export function useAttendanceCadastro() {
         examMode: item.exam_mode as 'clinic' | 'lab',
         deliveryDate: item.delivery_date,
         labGuides: item.lab_guides as any[],
+        isFasting: item.is_fasting ?? undefined,
         serviceType: item.service_type as any,
         paymentType: item.payment_type as any,
         doctorId: item.doctor_id,

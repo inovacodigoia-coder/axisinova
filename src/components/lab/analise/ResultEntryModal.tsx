@@ -192,6 +192,7 @@ export function ResultEntryModal({
           patientName: exam.patientName,
           patientBirthDate: exam.patientBirthDate,
           patientGender: exam.patientGender,
+          isFasting: exam.isFasting,
           registeredAt: exam.registeredAt,
           originName: exam.originName,
           doctorName: exam.doctorName,
@@ -254,6 +255,7 @@ export function ResultEntryModal({
         const resolved = buildExamParams(catalogExam, exam.name || exam.code, {
           gender: patient.patientGender,
           age,
+          isFasting: patient.isFasting,
         });
         
         map[exam.id] = resolved;

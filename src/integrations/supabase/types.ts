@@ -200,6 +200,7 @@ export type Database = {
           exam_mode: string | null
           hash: string | null
           id: string
+          is_fasting: boolean | null
           lab_guides: Json | null
           order_number: string
           origin_code: string | null
@@ -238,6 +239,7 @@ export type Database = {
           exam_mode?: string | null
           hash?: string | null
           id?: string
+          is_fasting?: boolean | null
           lab_guides?: Json | null
           order_number: string
           origin_code?: string | null
@@ -276,6 +278,7 @@ export type Database = {
           exam_mode?: string | null
           hash?: string | null
           id?: string
+          is_fasting?: boolean | null
           lab_guides?: Json | null
           order_number?: string
           origin_code?: string | null
