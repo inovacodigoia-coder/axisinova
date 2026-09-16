@@ -117,6 +117,9 @@ Deno.serve(async (req) => {
     )
   }
 
+  // Contexto do log (preenchido conforme o processamento avança)
+  const logCtx: { protocol?: string | null; orderId?: string | null; examName?: string | null } = {}
+
   const logEvent = async (status: string, errorMessage?: string) => {
     await supabase.from('instrument_events').insert({
       company_id: companyId,
@@ -127,6 +130,13 @@ Deno.serve(async (req) => {
       payload: body ?? {},
       status,
       error_message: errorMessage || null,
+      equipment_id: equipmentId,
+      sample_barcode: sampleBarcode,
+      test_code: testCode,
+      received_value: String(rawValue ?? ''),
+      protocol: logCtx.protocol ?? null,
+      order_id: logCtx.orderId ?? null,
+      exam_name: logCtx.examName ?? null,
     })
   }
 
@@ -198,6 +208,9 @@ Deno.serve(async (req) => {
         `(pedidos dos últimos 90 dias). Verifique se a chave usada pertence à mesma empresa do pedido.`,
     )
   }
+
+  logCtx.protocol = order.order_number || order.protocol || null
+  logCtx.orderId = order.id
 
   if (!COLLECTED_STATUSES.includes(String(order.status))) {
     return reject(
@@ -314,6 +327,8 @@ Deno.serve(async (req) => {
     )
   }
 
+
+  logCtx.examName = matchedExam.name || null
 
   const orderExam = orderExamByCatalogId.get(String(matchedExam.id))
 

@@ -29,6 +29,13 @@
       "when": 1789533676038,
       "tag": "0003_add_fasting_to_reference_values",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1789579481376,
+      "tag": "0004_instrument_events_log_fields",
+      "breakpoints": true
     }
   ]
 }
