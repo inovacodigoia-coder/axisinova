@@ -248,9 +248,20 @@ export default function LabCatalogPage() {
         const examDbRefs = dbReferences?.filter(r => r.exam_id === e.id) || [];
         
         if (examDbRefs.length > 0) {
+          // Lookup das faixas no JSON do exame (fonte das flags de jejum/gravidez)
+          const jsonRefs = new Map<string, any>()
+          e.parameters?.forEach((p: any) => {
+            p.referenceValues?.forEach((r: any) => {
+              const key = `${(p.name || '').toLowerCase()}|${(r.description || '').toLowerCase()}`
+              jsonRefs.set(key, r)
+            })
+          })
           examDbRefs.forEach(r => {
             const param = dbParameters?.find(p => p.id === r.parameter_id);
             const paramName = param?.name || r.parameter_name || '';
+            const jsonRef = jsonRefs.get(`${paramName.toLowerCase()}|${(r.description || '').toLowerCase()}`)
+            const useFasting = !!(r.use_fasting || jsonRef?.useFasting)
+            const isFasting = !!(r.is_fasting || jsonRef?.isFasting)
             refsData.push({
               'Código': examCode,
               'Nome do parâmetro': paramName,
@@ -262,9 +273,9 @@ export default function LabCatalogPage() {
               'Idade máxima': r.age_max ?? 120,
               'Unidade da Idade': ageUnitLabel(r.age_unit),
               'Sexo': r.gender || 'both',
-              'Gestante': 'Não',
-              'Usa condição de jejum': r.use_fasting ? 'Sim' : 'Não',
-              'Jejum': r.is_fasting ? 'Sim' : 'Não'
+              'Gestante': jsonRef?.isPregnant ? 'Sim' : 'Não',
+              'Usa condição de jejum': useFasting ? 'Sim' : 'Não',
+              'Jejum': isFasting ? 'Sim' : 'Não'
             })
           })
         } else if (e.parameters && Array.isArray(e.parameters)) {
