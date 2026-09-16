@@ -39,7 +39,7 @@ export const API_INFO = {
   version: '1.0.0',
   description:
     'API do sistema de gestão clínica e laboratorial AxisInova. Endpoints de plataforma (Edge Functions), procedures do banco (RPC) e acesso a dados via REST com RLS por empresa.',
-  updatedAt: '2026-09-01',
+  updatedAt: '2026-09-16',
 }
 
 // Host oficial da API. O domínio do site serve apenas o app web e não roteia
@@ -356,13 +356,13 @@ export const API_GROUPS: ApiGroup[] = [
         path: '/receive-instrument-result',
         summary: 'Receber resultado de equipamento',
         description:
-          'Endpoint autenticado por X-API-Key. Um parâmetro por chamada. O result_id identifica o exame no pedido e é compartilhado pelos parâmetros do mesmo painel; parameter_result_id identifica a gravação individual do parâmetro. A amostra é identificada pelo mesmo "sample_barcode" devolvido em /list-orders-for-integration. Toda rejeição vem com { success: false, error } e status 4xx — nunca 200 silencioso.',
+          'Endpoint autenticado por X-API-Key. Um parâmetro por chamada. O result_id identifica o exame no pedido e é compartilhado pelos parâmetros do mesmo painel; parameter_result_id identifica a gravação individual do parâmetro. A amostra é identificada pelo mesmo "sample_barcode" devolvido em /list-orders-for-integration. Toda rejeição vem com { success: false, error } e status 4xx — nunca 200 silencioso. Toda tentativa recebida (gravada, rejeitada, ignorada ou reenvio com idempotency_key repetida) fica registrada no Log de Integração (Cadastros > Equipamentos > Integração > Log de Integração), com amostra, pedido, exame, valor e motivo — consultável dias depois. Só não é registrada a chamada que falha na autenticação (401/403), pois não há empresa identificada.',
         scope: 'company',
         auth: 'Authorization: Bearer <access_token> (OAuth2) ou X-API-Key (legado)',
         params: [
           { name: 'Authorization', in: 'header', type: 'string', required: false, description: 'Bearer <access_token> obtido em /oauth-token (recomendado)' },
           { name: 'X-API-Key', in: 'header', type: 'string', required: false, description: 'Chave de integração fixa da empresa (legado, alternativa ao Bearer)' },
-          { name: 'idempotency_key', in: 'body', type: 'string', required: true, description: 'String única por evento. Reenvio da mesma chave devolve success: true com duplicate: true' },
+          { name: 'idempotency_key', in: 'body', type: 'string', required: true, description: 'String única por evento. Reenvio da mesma chave devolve success: true com duplicate: true (registrado no log como "Reenvio"); se o evento anterior falhou, devolve 409 e exige nova chave' },
           { name: 'sample_barcode', in: 'body', type: 'string', required: true, description: 'Código de barras da amostra (samples[].sample_barcode). Também aceita o sample_code ou o número do pedido' },
           { name: 'equipment_id', in: 'body', type: 'string', required: true, description: 'Identificador de interface do equipamento (serial cadastrado)' },
           { name: 'test_code', in: 'body', type: 'string', required: true, description: 'Código do exame/parâmetro no equipamento' },
@@ -389,8 +389,14 @@ export const API_GROUPS: ApiGroup[] = [
 // 200 evento repetido (não duplica o resultado)
 { "success": true, "duplicate": true, "message": "Evento já processado anteriormente" }
 
-// 422 rejeição com motivo explícito
-{ "success": false, "error": "Nenhum pedido encontrado com sample_barcode=17RGQ3RM6" }`,
+// 422 rejeição com motivo explícito (fica gravada no Log de Integração)
+{ "success": false, "error": "Nenhum pedido encontrado com sample_barcode=17RGQ3RM6" }
+
+// 409 reenvio de uma idempotency_key que já falhou — gere uma nova chave
+{ "success": false, "error": "Reenvio recusado: idempotency_key já recebida e com falha anterior (...). Use uma nova idempotency_key para reenviar." }
+
+// 400 campo obrigatório ausente (também registrado no log)
+{ "success": false, "error": "test_code é obrigatório" }`,
       },
 
       {
@@ -399,7 +405,7 @@ export const API_GROUPS: ApiGroup[] = [
         path: '/receive-instrument-graphic',
         summary: 'Receber gráfico do equipamento (histograma/scattergram)',
         description:
-          'Endpoint autenticado por X-API-Key para envio de imagens geradas pelo analisador (histogramas WBC/RBC/PLT, scattergramas). Um gráfico por chamada. A amostra é identificada pelo mesmo "sample_barcode" devolvido em /list-orders-for-integration. Toda rejeição vem com { success: false, error } e status 4xx — nunca 200 silencioso.',
+          'Endpoint autenticado por X-API-Key para envio de imagens geradas pelo analisador (histogramas WBC/RBC/PLT, scattergramas). Um gráfico por chamada. A amostra é identificada pelo mesmo "sample_barcode" devolvido em /list-orders-for-integration. Toda rejeição vem com { success: false, error } e status 4xx — nunca 200 silencioso. Toda tentativa recebida (gravada, rejeitada ou reenvio) fica registrada no Log de Integração (Cadastros > Equipamentos > Integração), exceto falhas de autenticação (401/403).',
         scope: 'company',
         auth: 'Authorization: Bearer <access_token> (OAuth2) ou X-API-Key (legado)',
         params: [

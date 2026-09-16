@@ -31,6 +31,7 @@ const STATUS_META: Record<string, { label: string; className: string; Icon: type
   processed: { label: 'Gravado', className: 'bg-emerald-500/10 text-emerald-600 border-emerald-500/30', Icon: CheckCircle2 },
   error: { label: 'Rejeitado', className: 'bg-red-500/10 text-red-600 border-red-500/30', Icon: XCircle },
   ignored: { label: 'Ignorado', className: 'bg-amber-500/10 text-amber-600 border-amber-500/30', Icon: AlertTriangle },
+  duplicate: { label: 'Reenvio', className: 'bg-sky-500/10 text-sky-600 border-sky-500/30', Icon: AlertTriangle },
 }
 
 const toIsoStart = (d: string) => (d ? new Date(`${d}T00:00:00`).toISOString() : null)
@@ -140,6 +141,7 @@ export default function IntegrationEventsLog() {
                 <SelectItem value="processed">Gravado</SelectItem>
                 <SelectItem value="error">Rejeitado</SelectItem>
                 <SelectItem value="ignored">Ignorado</SelectItem>
+                <SelectItem value="duplicate">Reenvio (idempotency_key repetida)</SelectItem>
               </SelectContent>
             </Select>
           </div>

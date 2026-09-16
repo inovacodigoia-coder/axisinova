@@ -75,11 +75,37 @@ Deno.serve(async (req) => {
   if (!auth.ok) return fail(auth.error, auth.status)
   const companyId = auth.companyId
 
+  // Registra no log qualquer tentativa, mesmo as rejeitadas antes do processamento
+  const logRaw = async (
+    status: string,
+    errorMessage: string | null,
+    fields: Record<string, unknown>,
+    key: string,
+  ) => {
+    try {
+      await supabase.from('instrument_events').insert({
+        company_id: companyId,
+        idempotency_key: key,
+        event_type: 'RESULT_READY',
+        entity_type: 'sample',
+        status,
+        error_message: errorMessage,
+        ...fields,
+      })
+    } catch (e) {
+      console.error('[receive-instrument-result] falha ao registrar log', e)
+    }
+  }
+
+  const uniqueKey = (base: string) =>
+    `${base || 'sem-idempotency-key'}#${Date.now()}-${crypto.randomUUID().slice(0, 8)}`
+
   // ---- 2. Body (contrato plano; aceita nomes legados) ----
   let body: any
   try {
     body = await req.json()
   } catch {
+    await logRaw('error', 'JSON inválido', { payload: {} }, uniqueKey('json-invalido'))
     return fail('JSON inválido', 400)
   }
 
@@ -91,12 +117,27 @@ Deno.serve(async (req) => {
   const testCode = norm(p.test_code ?? p.code)
   const rawValue = p.value
 
-  if (!idempotencyKey) return fail('idempotency_key é obrigatório', 400)
-  if (!sampleBarcode) return fail('sample_barcode é obrigatório', 400)
-  if (!equipmentId) return fail('equipment_id é obrigatório', 400)
-  if (!testCode) return fail('test_code é obrigatório', 400)
+  const baseFields = {
+    entity_id: sampleBarcode || null,
+    payload: body ?? {},
+    equipment_id: equipmentId || null,
+    sample_barcode: sampleBarcode || null,
+    test_code: testCode || null,
+    received_value: rawValue === undefined || rawValue === null ? null : String(rawValue),
+  }
+
+  const rejectEarly = async (msg: string, status = 400) => {
+    console.error(`[receive-instrument-result] ${msg}`)
+    await logRaw('error', msg, baseFields, uniqueKey(idempotencyKey))
+    return fail(msg, status)
+  }
+
+  if (!idempotencyKey) return await rejectEarly('idempotency_key é obrigatório')
+  if (!sampleBarcode) return await rejectEarly('sample_barcode é obrigatório')
+  if (!equipmentId) return await rejectEarly('equipment_id é obrigatório')
+  if (!testCode) return await rejectEarly('test_code é obrigatório')
   if (rawValue === undefined || rawValue === null || String(rawValue).trim() === '') {
-    return fail('value é obrigatório', 400)
+    return await rejectEarly('value é obrigatório')
   }
 
   // ---- 3. Idempotência ----
@@ -109,12 +150,15 @@ Deno.serve(async (req) => {
 
   if (existingEvent) {
     if (existingEvent.status === 'processed') {
+      const msg = 'Reenvio ignorado: evento com esta idempotency_key já foi processado'
+      await logRaw('duplicate', msg, baseFields, uniqueKey(idempotencyKey))
       return ok({ duplicate: true, message: 'Evento já processado anteriormente', event_id: existingEvent.id })
     }
-    return fail(
-      `Evento com este idempotency_key já foi recebido e falhou: ${existingEvent.error_message || 'erro anterior'}. Use uma nova idempotency_key para reenviar.`,
-      409,
-    )
+    const msg =
+      `Reenvio recusado: idempotency_key já recebida e com falha anterior (${existingEvent.error_message || 'erro anterior'}). ` +
+      'Use uma nova idempotency_key para reenviar.'
+    await logRaw('duplicate', msg, baseFields, uniqueKey(idempotencyKey))
+    return fail(msg, 409)
   }
 
   // Contexto do log (preenchido conforme o processamento avança)
