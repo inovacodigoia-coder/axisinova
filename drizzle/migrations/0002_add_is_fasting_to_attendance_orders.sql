@@ -1,0 +1,1 @@
+ALTER TABLE public.attendance_orders ADD COLUMN IF NOT EXISTS is_fasting boolean;
