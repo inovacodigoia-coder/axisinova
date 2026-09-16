@@ -266,6 +266,8 @@ export const ImportarPlanilhaModal = ({ isOpen, onClose, existingCodes = [] }: I
                 sex: (String(r['Sexo'] || r['Gênero'] || '').toUpperCase().startsWith('M') ? 'M'
                   : String(r['Sexo'] || r['Gênero'] || '').toUpperCase().startsWith('F') ? 'F' : 'Both'),
                 isPregnant: r['Gestante'] === 'Sim' || r['Gestante'] === true,
+                useFasting: r['Usa condição de jejum'] === 'Sim' || r['Usa condição de jejum'] === true || r['Jejum'] === 'Sim' || r['Jejum'] === true,
+                isFasting: r['Jejum'] === 'Sim' || r['Jejum'] === true,
                 order: rIdx + 1,
               }));
 
@@ -400,6 +402,8 @@ export const ImportarPlanilhaModal = ({ isOpen, onClose, existingCodes = [] }: I
                   age_unit: importReferenceAge(r).ageUnit,
                   gender: r['Sexo'] || r['Gênero'] || 'Todos',
                   is_pregnant: r['Gestante'] === 'Sim' || r['Gestante'] === true || !!(r['Gestante'] || false),
+                  use_fasting: r['Usa condição de jejum'] === 'Sim' || r['Usa condição de jejum'] === true || r['Jejum'] === 'Sim' || r['Jejum'] === true,
+                  is_fasting: r['Jejum'] === 'Sim' || r['Jejum'] === true,
                 }));
 
                 const { error: refsError } = await supabase.from('lab_exam_reference_values').insert(refsToInsert);

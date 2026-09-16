@@ -304,7 +304,9 @@ export default function LabCatalogPage() {
               'Idade máxima': r.maxAge ?? 120,
               'Unidade da Idade': ageUnitLabel(r.ageUnit ?? r.n),
               'Sexo': r.sex || 'both',
-              'Gestante': r.isPregnant ? 'Sim' : 'Não'
+              'Gestante': r.isPregnant ? 'Sim' : 'Não',
+              'Usa condição de jejum': r.useFasting ? 'Sim' : 'Não',
+              'Jejum': r.isFasting ? 'Sim' : 'Não'
             })
           })
         }
