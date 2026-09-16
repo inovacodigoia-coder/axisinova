@@ -1119,36 +1119,57 @@ export type Database = {
           created_at: string
           entity_id: string | null
           entity_type: string | null
+          equipment_id: string | null
           error_message: string | null
           event_type: string
+          exam_name: string | null
           id: string
           idempotency_key: string
+          order_id: string | null
           payload: Json
+          protocol: string | null
+          received_value: string | null
+          sample_barcode: string | null
           status: string
+          test_code: string | null
         }
         Insert: {
           company_id: string
           created_at?: string
           entity_id?: string | null
           entity_type?: string | null
+          equipment_id?: string | null
           error_message?: string | null
           event_type: string
+          exam_name?: string | null
           id?: string
           idempotency_key: string
+          order_id?: string | null
           payload?: Json
+          protocol?: string | null
+          received_value?: string | null
+          sample_barcode?: string | null
           status?: string
+          test_code?: string | null
         }
         Update: {
           company_id?: string
           created_at?: string
           entity_id?: string | null
           entity_type?: string | null
+          equipment_id?: string | null
           error_message?: string | null
           event_type?: string
+          exam_name?: string | null
           id?: string
           idempotency_key?: string
+          order_id?: string | null
           payload?: Json
+          protocol?: string | null
+          received_value?: string | null
+          sample_barcode?: string | null
           status?: string
+          test_code?: string | null
         }
         Relationships: [
           {
