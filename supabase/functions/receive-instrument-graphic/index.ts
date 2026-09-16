@@ -72,11 +72,31 @@ Deno.serve(async (req) => {
   if (!auth.ok) return fail(auth.error, auth.status)
   const companyId = auth.companyId
 
+  const logRaw = async (status: string, errorMessage: string | null, fields: Record<string, unknown>, key: string) => {
+    try {
+      await supabase.from('instrument_events').insert({
+        company_id: companyId,
+        idempotency_key: key,
+        event_type: 'GRAPHIC',
+        entity_type: 'sample',
+        status,
+        error_message: errorMessage,
+        ...fields,
+      })
+    } catch (e) {
+      console.error('[receive-instrument-graphic] falha ao registrar log', e)
+    }
+  }
+
+  const uniqueKey = (base: string) =>
+    `${base || 'sem-idempotency-key'}#${Date.now()}-${crypto.randomUUID().slice(0, 8)}`
+
   // ---- 2. Body ----
   let body: any
   try {
     body = await req.json()
   } catch {
+    await logRaw('error', 'JSON inválido', { payload: {} }, uniqueKey('json-invalido'))
     return fail('JSON inválido', 400)
   }
 
@@ -88,17 +108,41 @@ Deno.serve(async (req) => {
   const imageFormat = norm(body?.image_format)
   const imageBase64 = String(body?.image_base64 ?? '').trim()
 
-  if (!idempotencyKey) return fail('idempotency_key é obrigatório', 400)
-  if (!sampleBarcode) return fail('sample_barcode é obrigatório', 400)
-  if (!equipmentId) return fail('equipment_id é obrigatório', 400)
-  if (!itemCode) return fail('item_code é obrigatório', 400)
-  if (!imageFormat) return fail('image_format é obrigatório', 400)
-  if (!ALLOWED_FORMATS.includes(imageFormat)) {
-    return fail(`image_format="${imageFormat}" não suportado — use: ${ALLOWED_FORMATS.join(', ')}`, 400)
+  const baseFields = {
+    entity_id: sampleBarcode || null,
+    payload: {
+      idempotency_key: idempotencyKey,
+      sample_barcode: sampleBarcode,
+      equipment_id: equipmentId,
+      item_code: itemCode,
+      label,
+      image_format: imageFormat,
+      image_bytes: Math.floor(imageBase64.length * 0.75),
+    },
+    equipment_id: equipmentId || null,
+    sample_barcode: sampleBarcode || null,
+    test_code: itemCode || null,
+    received_value: label || (imageFormat ? `${imageFormat} (${Math.floor(imageBase64.length * 0.75)} bytes)` : null),
+    exam_name: label,
   }
-  if (!imageBase64) return fail('image_base64 é obrigatório', 400)
+
+  const rejectEarly = async (msg: string, status = 400) => {
+    console.error(`[receive-instrument-graphic] ${msg}`)
+    await logRaw('error', msg, baseFields, uniqueKey(idempotencyKey))
+    return fail(msg, status)
+  }
+
+  if (!idempotencyKey) return await rejectEarly('idempotency_key é obrigatório')
+  if (!sampleBarcode) return await rejectEarly('sample_barcode é obrigatório')
+  if (!equipmentId) return await rejectEarly('equipment_id é obrigatório')
+  if (!itemCode) return await rejectEarly('item_code é obrigatório')
+  if (!imageFormat) return await rejectEarly('image_format é obrigatório')
+  if (!ALLOWED_FORMATS.includes(imageFormat)) {
+    return await rejectEarly(`image_format="${imageFormat}" não suportado — use: ${ALLOWED_FORMATS.join(', ')}`)
+  }
+  if (!imageBase64) return await rejectEarly('image_base64 é obrigatório')
   if (!isValidBase64(imageBase64)) {
-    return fail('image_base64 inválido, vazio ou maior que 2MB decodificados', 400)
+    return await rejectEarly('image_base64 inválido, vazio ou maior que 2MB decodificados')
   }
 
   // ---- 3. Idempotência ----
@@ -111,12 +155,14 @@ Deno.serve(async (req) => {
 
   if (existingEvent) {
     if (existingEvent.status === 'processed') {
+      await logRaw('duplicate', 'Reenvio ignorado: idempotency_key já processada', baseFields, uniqueKey(idempotencyKey))
       return ok({ duplicate: true, message: 'Evento já processado anteriormente', event_id: existingEvent.id })
     }
-    return fail(
-      `Evento com este idempotency_key já foi recebido e falhou: ${existingEvent.error_message || 'erro anterior'}. Use uma nova idempotency_key para reenviar.`,
-      409,
-    )
+    const msg =
+      `Reenvio recusado: idempotency_key já recebida e com falha anterior (${existingEvent.error_message || 'erro anterior'}). ` +
+      'Use uma nova idempotency_key para reenviar.'
+    await logRaw('duplicate', msg, baseFields, uniqueKey(idempotencyKey))
+    return fail(msg, 409)
   }
 
   const logCtx: { protocol?: string | null; orderId?: string | null } = {}
