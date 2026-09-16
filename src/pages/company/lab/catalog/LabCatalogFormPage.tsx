@@ -72,12 +72,14 @@ import {
 const ageUnitLabel = (unit?: string) => {
   if (unit === 'meses') return 'meses'
   if (unit === 'semanas') return 'semanas'
+  if (unit === 'dias') return 'dias'
   return 'anos'
 }
 
 const normalizeAgeUnit = (unit?: string) => {
   if (unit === 'meses' || unit === 'months') return 'meses'
   if (unit === 'semanas' || unit === 'weeks') return 'semanas'
+  if (unit === 'dias' || unit === 'days') return 'dias'
   return 'anos'
 }
 
