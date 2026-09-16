@@ -96,8 +96,8 @@ export function LabStep6Summary({ state, update, unitName }: Props & { update: (
             </div>
 
             <div className="space-y-1 border-b border-slate-100 pb-2">
-              <span className="text-slate-400 font-medium block text-xs">Jejum</span>
-              <span className="text-slate-700 font-bold uppercase">{state.fastingSince || 'Sem jejum'}</span>
+              <span className="text-slate-400 font-medium block text-xs">Jejum do paciente</span>
+              <span className="text-slate-700 font-bold uppercase">{state.fastingSince || 'Não'}</span>
             </div>
           </div>
         </section>
