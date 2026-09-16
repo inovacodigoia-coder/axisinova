@@ -216,9 +216,12 @@ Deno.serve(async (req) => {
   const orderExamByCatalogId = new Map<string, any>()
   for (const g of guides) {
     for (const e of g?.exams || []) {
-      if (e?.id) {
-        orderExamIds.add(String(e.id))
-        orderExamByCatalogId.set(String(e.id), e)
+      // Exames podem vir no formato completo (id = id do catálogo) ou compacto
+      // (examId/exam_id apontando para o catálogo).
+      const catalogId = e?.examId ?? e?.exam_id ?? e?.catalogId ?? e?.id
+      if (catalogId) {
+        orderExamIds.add(String(catalogId))
+        orderExamByCatalogId.set(String(catalogId), e)
       }
     }
   }
