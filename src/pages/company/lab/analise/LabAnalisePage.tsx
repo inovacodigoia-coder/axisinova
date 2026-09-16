@@ -152,6 +152,7 @@ export default function LabAnalisePage() {
           patientName: order.patientName,
           patientBirthDate: order.patientBirthDate,
           patientGender: order.patientGender,
+          isFasting: (order as any).isFasting,
           registeredAt: order.registeredAt,
           collectionDate: order.updatedAt, // Assumindo updatedAt como data da coleta se status for collection_done
           originId: order.originId,
