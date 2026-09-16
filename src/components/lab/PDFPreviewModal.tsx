@@ -466,8 +466,8 @@ export default function PDFPreviewModal({
               <Printer className="h-4 w-4" /> {enviandoImpressao ? 'Enviando...' : 'Imprimir'}
             </Button>
 
-            <Button className="gradient-bg text-white gap-2" onClick={() => (onDownload ? onDownload() : printLaudoOnly())}>
-              <Download className="h-4 w-4" /> Download PDF
+            <Button className="gradient-bg text-white gap-2" onClick={handleDownloadPdf} disabled={baixandoPdf}>
+              <Download className="h-4 w-4" /> {baixandoPdf ? 'Gerando PDF...' : 'Download PDF'}
             </Button>
           </div>
         </footer>
