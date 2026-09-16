@@ -318,6 +318,8 @@ export default function LabCatalogFormPage() {
                 age_unit: normalizeAgeUnit(ref.ageUnit),
 
                 gender: ref.sex || 'both',
+                use_fasting: !!ref.useFasting,
+                is_fasting: !!ref.isFasting,
                 parameter_name: param.name
               }));
 
