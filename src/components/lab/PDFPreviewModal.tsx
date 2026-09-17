@@ -26,6 +26,7 @@ interface PDFPreviewModalProps {
   onEmail?: () => void;
   onShare?: () => void;
   hideEditLaudo?: boolean;
+  viewOnly?: boolean;
 }
 
 export default function PDFPreviewModal({
@@ -36,7 +37,8 @@ export default function PDFPreviewModal({
   onPrint,
   onEmail,
   onShare,
-  hideEditLaudo = false
+  hideEditLaudo = false,
+  viewOnly = false
 }: PDFPreviewModalProps) {
   const { settings: labSettings } = useLabSettings();
   const { user } = useAuth();
@@ -462,13 +464,17 @@ export default function PDFPreviewModal({
                 </>
               )
             )}
-            <Button variant="outline" className="gap-2" onClick={handlePrintLaudo} disabled={enviandoImpressao}>
-              <Printer className="h-4 w-4" /> {enviandoImpressao ? 'Enviando...' : 'Imprimir'}
-            </Button>
+            {!viewOnly && (
+              <Button variant="outline" className="gap-2" onClick={handlePrintLaudo} disabled={enviandoImpressao}>
+                <Printer className="h-4 w-4" /> {enviandoImpressao ? 'Enviando...' : 'Imprimir'}
+              </Button>
+            )}
 
-            <Button className="gradient-bg text-white gap-2" onClick={handleDownloadPdf} disabled={baixandoPdf}>
-              <Download className="h-4 w-4" /> {baixandoPdf ? 'Gerando PDF...' : 'Download PDF'}
-            </Button>
+            {!viewOnly && (
+              <Button className="gradient-bg text-white gap-2" onClick={handleDownloadPdf} disabled={baixandoPdf}>
+                <Download className="h-4 w-4" /> {baixandoPdf ? 'Gerando PDF...' : 'Download PDF'}
+              </Button>
+            )}
           </div>
         </footer>
       </section>

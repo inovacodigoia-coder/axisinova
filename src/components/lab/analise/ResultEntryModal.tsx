@@ -2285,6 +2285,7 @@ export function ResultEntryModal({
           order={laudoOrder}
           onDownload={() => window.print()}
           onPrint={() => window.print()}
+          viewOnly
         />
       )}
 
