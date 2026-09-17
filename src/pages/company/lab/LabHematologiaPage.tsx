@@ -869,6 +869,7 @@ export default function LabHematologiaPage() {
 
           <div className="space-y-3 bg-card p-3 xl:col-span-4">
             <SectionTitle>Gráficos</SectionTitle>
+            <InstrumentGraphicsSection protocol={selected.protocol} />
             <Tabs defaultValue="histograma">
               <TabsList className="h-8 w-full">
                 <TabsTrigger value="histograma" className="h-7 flex-1 text-xs">Histograma</TabsTrigger>
@@ -877,7 +878,7 @@ export default function LabHematologiaPage() {
               {['histograma', 'scattergram'].map((tab) => (
                 <TabsContent key={tab} value={tab} className="mt-2">
                   <div className="grid grid-cols-2 gap-2">
-                    {GRAPH_AREAS.map((graph) => (
+                    {graphAreas.map((graph) => (
                       <div key={graph} className="relative flex aspect-[4/3] items-center justify-center overflow-hidden rounded border border-border bg-muted">
                         <span className="absolute left-2 top-2 text-[9px] font-bold uppercase text-primary">{graph}</span>
                         <BarChart3 className="h-7 w-7 text-muted-foreground/40" />
