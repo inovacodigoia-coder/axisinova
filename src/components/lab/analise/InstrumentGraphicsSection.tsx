@@ -16,13 +16,21 @@ interface Graphic {
   created_at: string;
 }
 
+const graphicChannel = (graphic: Graphic) => {
+  const source = `${graphic.item_code} ${graphic.label || ''}`.toUpperCase();
+  if (source.includes('WBC')) return 'WBC';
+  if (source.includes('RBC')) return 'RBC';
+  if (source.includes('PLT')) return 'PLT';
+  return String(graphic.item_code || '').toUpperCase();
+};
+
 const mimeFor = (format: string) => {
   const f = String(format || '').toUpperCase();
   if (f === 'JPG') return 'image/jpeg';
   return `image/${f.toLowerCase()}`;
 };
 
-export const InstrumentGraphicsSection = ({ protocol, equipmentId, expanded = false }: { protocol?: string | null; equipmentId?: string; expanded?: boolean }) => {
+export const InstrumentGraphicsSection = ({ protocol, orderId, equipmentId, expanded = false }: { protocol?: string | null; orderId?: string | null; equipmentId?: string; expanded?: boolean }) => {
   const { user } = useAuth();
   const companyId = resolveCompanyId(user?.companyId);
   const [graphics, setGraphics] = useState<Graphic[]>([]);
@@ -31,35 +39,36 @@ export const InstrumentGraphicsSection = ({ protocol, equipmentId, expanded = fa
 
   useEffect(() => {
     setGraphics([]);
-    if (!companyId || !protocol) return;
+    if (!companyId || (!protocol && !orderId)) return;
     let cancelled = false;
     const load = async () => {
       setLoading(true);
-      const { data } = await supabase
+      let query = supabase
         .from('lab_result_graphics' as any)
         .select('id, label, item_code, image_format, image_base64, equipment_id, created_at')
         .eq('company_id', companyId)
-        .eq('protocol', protocol)
         .order('created_at', { ascending: false })
         .limit(50);
+      query = orderId ? query.eq('order_id', orderId) : query.eq('protocol', protocol as string);
+      const { data } = await query;
       if (!cancelled) {
         // Um gráfico por tipo: mantém somente o mais recente de cada item_code/equipamento
         const normalizeEquipment = (v: string) => v.toLowerCase().replace(/[^a-z0-9]/g, '');
         const rows = ((data as any as Graphic[]) || []).filter((g) => !equipmentId || normalizeEquipment(g.equipment_id || '') === normalizeEquipment(equipmentId));
         const seen = new Set<string>();
         const unique = rows.filter((g) => {
-          const key = `${String(g.equipment_id || '').toUpperCase()}|${String(g.item_code || '').toUpperCase()}`;
+          const key = `${String(g.equipment_id || '').toUpperCase()}|${graphicChannel(g)}`;
           if (seen.has(key)) return false;
           seen.add(key);
           return true;
         });
-        setGraphics(expanded ? unique.filter((g) => ['WBC', 'RBC', 'PLT'].includes(g.item_code.toUpperCase())).sort((a, b) => ['WBC', 'RBC', 'PLT'].indexOf(a.item_code.toUpperCase()) - ['WBC', 'RBC', 'PLT'].indexOf(b.item_code.toUpperCase())) : unique);
+        setGraphics(expanded ? unique.filter((g) => ['WBC', 'RBC', 'PLT'].includes(graphicChannel(g))).sort((a, b) => ['WBC', 'RBC', 'PLT'].indexOf(graphicChannel(a)) - ['WBC', 'RBC', 'PLT'].indexOf(graphicChannel(b))) : unique);
         setLoading(false);
       }
     };
     load();
     return () => { cancelled = true; };
-  }, [companyId, protocol, equipmentId, expanded]);
+  }, [companyId, protocol, orderId, equipmentId, expanded]);
 
   if (loading) {
     return (
@@ -79,25 +88,26 @@ export const InstrumentGraphicsSection = ({ protocol, equipmentId, expanded = fa
           Gráficos do Equipamento ({graphics.length})
         </span>
       </div>
-      <div className={expanded ? "grid grid-cols-1 gap-4 md:grid-cols-3" : "flex flex-wrap gap-3"}>
+      <div className={expanded ? "grid grid-cols-1 gap-3 md:grid-cols-3" : "flex flex-wrap gap-3"}>
         {graphics.map((g) => (
           <Button variant="outline"
             key={g.id}
             type="button"
             onClick={() => setPreview(g)}
-            className={`group relative block h-auto p-0 rounded border border-border bg-background overflow-hidden ${expanded ? "w-full" : "w-28"}`}
+            className={`group relative block h-auto overflow-hidden rounded border border-border bg-background p-0 ${expanded ? "w-full shadow-sm" : "w-28"}`}
             title={g.label || g.item_code}
           >
             <img
               src={`data:${mimeFor(g.image_format)};base64,${g.image_base64}`}
               alt={g.label || `Gráfico ${g.item_code}`}
-              className={expanded ? "w-full h-44 object-contain bg-background" : "w-full h-20 object-contain bg-background"}
+              className={expanded ? "h-36 w-full bg-background object-contain p-2" : "h-20 w-full bg-background object-contain"}
             />
-            <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors flex items-center justify-center">
-              <ZoomIn className="h-5 w-5 text-white opacity-0 group-hover:opacity-100 drop-shadow" />
+            <div className="absolute inset-0 flex items-center justify-center bg-foreground/0 transition-colors group-hover:bg-foreground/10">
+              <ZoomIn className="h-5 w-5 text-background opacity-0 drop-shadow group-hover:opacity-100" />
             </div>
-            <div className="px-1.5 py-1 text-[9px] font-bold text-slate-600 truncate border-t border-slate-100">
-              {g.label || g.item_code}
+            <div className="flex items-center justify-between border-t border-border px-2 py-1.5 text-[10px] font-bold text-foreground">
+              <span>{graphicChannel(g)}</span>
+              <span className="truncate pl-2 font-normal text-muted-foreground">{g.label || g.item_code}</span>
             </div>
           </Button>
         ))}

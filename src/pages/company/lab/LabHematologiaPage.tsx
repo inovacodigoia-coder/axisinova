@@ -775,27 +775,33 @@ export default function LabHematologiaPage() {
         </div>
 
         {isCount380 ? (
-          <section className="bg-card p-4 space-y-5" aria-label="Resultados Count 380">
-            <div className="flex items-center justify-between border-b border-border pb-2">
-              <h2 className="text-sm font-semibold">Count_380</h2>
-              <span className="text-xs text-muted-foreground">{selected.examName}</span>
+          <section className="space-y-4 bg-card p-3" aria-label="Resultados Count 380">
+            <div className="flex flex-wrap items-center justify-between gap-2 border-b border-border pb-2">
+              <div>
+                <h2 className="text-sm font-bold">Count_380</h2>
+                <p className="text-[10px] uppercase text-muted-foreground">Hematologia automatizada</p>
+              </div>
+              <Badge variant="outline" className="text-[10px]">{selected.examName}</Badge>
             </div>
-            <InstrumentGraphicsSection protocol={selected.protocol} equipmentId={selectedEquipment?.serial_number} expanded />
-            <div className="grid grid-cols-1 gap-5 lg:grid-cols-3">
+            <section className="space-y-2">
+              <SectionTitle>Histogramas recebidos</SectionTitle>
+              <InstrumentGraphicsSection protocol={selected.protocol} orderId={selected.orderId} equipmentId={selectedEquipment?.serial_number} expanded />
+            </section>
+            <div className="grid grid-cols-1 gap-3 xl:grid-cols-3">
               {[
                 { title: 'WBC · Leucócitos', match: /leuco|lymph|linfo|mid|gran|neutro|mono|eosino|baso|basto|segment|wbc/i },
                 { title: 'RBC · Hemácias', match: /hemacia|eritro|hemoglob|hematoc|vcm|hcm|chcm|rdw|rbc|hgb|hct|mcv|mch/i },
                 { title: 'PLT · Plaquetas', match: /plaquet|plt|mpv|vpm|pdw|pct|plcc|plcr|p.lcr|p.lcc/i },
               ].map((group) => (
-                <section key={group.title} className="min-w-0">
-                  <SectionTitle>{group.title}</SectionTitle>
-                  <div className="grid grid-cols-[minmax(0,1fr)_90px_65px] gap-2 border-b border-border py-2 text-[10px] uppercase text-muted-foreground">
+                <section key={group.title} className="min-w-0 overflow-hidden rounded border border-border bg-background">
+                  <div className="border-b border-border bg-muted/60 px-3 py-2 text-xs font-bold text-foreground">{group.title}</div>
+                  <div className="grid grid-cols-[minmax(0,1fr)_90px_65px] gap-2 border-b border-border px-3 py-1.5 text-[9px] font-bold uppercase text-muted-foreground">
                     <span>Parâmetro</span><span>Resultado</span><span>Unidade</span>
                   </div>
                   {resolvedParams.filter((param) => group.match.test(param.name.normalize('NFD').replace(/[\u0300-\u036f]/g, ''))).map((param) => (
-                    <label key={param.id} className="grid grid-cols-[minmax(0,1fr)_90px_65px] items-center gap-2 border-b border-border py-2">
+                    <label key={param.id} className="grid grid-cols-[minmax(0,1fr)_90px_65px] items-center gap-2 border-b border-border px-3 py-1.5 last:border-b-0">
                       <span className="min-w-0 text-xs">{param.name}<span className="block text-[10px] text-muted-foreground">{param.reference}</span></span>
-                      <Input aria-label={param.name} className="h-8 text-xs" value={getValue(formKeyOfParam(param))} onChange={(event) => setValue(formKeyOfParam(param), event.target.value)} />
+                      <Input aria-label={param.name} className="h-7 text-right font-mono text-xs" value={getValue(formKeyOfParam(param))} onChange={(event) => setValue(formKeyOfParam(param), event.target.value)} />
                       <span className="text-[10px] text-muted-foreground break-words">{param.unit}</span>
                     </label>
                   ))}
