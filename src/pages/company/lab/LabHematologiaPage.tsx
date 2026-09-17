@@ -776,13 +776,6 @@ export default function LabHematologiaPage() {
 
         {isCount380 ? (
           <section className="space-y-4 bg-card p-3" aria-label="Resultados Count 380">
-            <div className="flex flex-wrap items-center justify-between gap-2 border-b border-border pb-2">
-              <div>
-                <h2 className="text-sm font-bold">Count_380</h2>
-                <p className="text-[10px] uppercase text-muted-foreground">Hematologia automatizada</p>
-              </div>
-              <Badge variant="outline" className="text-[10px]">{selected.examName}</Badge>
-            </div>
             <section className="space-y-2">
               <SectionTitle>Histogramas recebidos</SectionTitle>
               <InstrumentGraphicsSection protocol={selected.protocol} orderId={selected.orderId} equipmentId={selectedEquipment?.serial_number} expanded />
