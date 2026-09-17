@@ -282,9 +282,13 @@ export default function LabHematologiaPage() {
     () => equipments.find((e) => e.id === equipmentId) || null,
     [equipments, equipmentId],
   )
-  /** Somente o layout do p8000 (Yumizen P8000) está implementado hoje. */
-  const hasEquipmentLayout =
-    equipments.length === 0 || String(selectedEquipment?.serial_number || '').toLowerCase() === 'p8000'
+  /** Layout do equipamento selecionado (p8000 e Count_380 implementados). */
+  const equipmentLayout = useMemo(() => {
+    const serial = String(selectedEquipment?.serial_number || '').toLowerCase().replace(/[\s-]/g, '_')
+    return EQUIPMENT_LAYOUTS[serial] || null
+  }, [selectedEquipment])
+  const hasEquipmentLayout = equipments.length === 0 || !!equipmentLayout
+  const graphAreas = equipmentLayout?.graphs || GRAPH_AREAS
 
   // Catálogo de Exames (mesma fonte usada na Digitação de Resultados)
   useEffect(() => {
