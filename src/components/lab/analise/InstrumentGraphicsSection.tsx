@@ -41,7 +41,16 @@ export const InstrumentGraphicsSection = ({ protocol }: { protocol?: string | nu
         .order('created_at', { ascending: false })
         .limit(50);
       if (!cancelled) {
-        setGraphics((data as any as Graphic[]) || []);
+        // Um gráfico por tipo: mantém somente o mais recente de cada item_code/equipamento
+        const rows = (data as any as Graphic[]) || [];
+        const seen = new Set<string>();
+        const unique = rows.filter((g) => {
+          const key = `${String(g.equipment_id || '').toUpperCase()}|${String(g.item_code || '').toUpperCase()}`;
+          if (seen.has(key)) return false;
+          seen.add(key);
+          return true;
+        });
+        setGraphics(unique);
         setLoading(false);
       }
     };
