@@ -477,6 +477,11 @@ export function AttendanceCadastroModal({
         guides: state.guides,
         isPregnant: state.tempPatient?.clinicalData?.isPregnant,
         isFasting: String(state.fastingSince || 'Não').toLowerCase().startsWith('s'),
+        weight: state.weight,
+        height: state.height,
+        isUrgent: !!state.isUrgent,
+        hasFever: !!state.hasFever,
+        serviceObservation: state.observation,
         clinicalData: state.tempPatient?.clinicalData,
         observations: {
           notes: state.tempPatient?.generalNotes,
