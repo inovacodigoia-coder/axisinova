@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react'
-import { X, Info, Loader2, AlertTriangle, Scale, Ruler, Flame, Siren, UtensilsCrossed, StickyNote, HeartPulse } from 'lucide-react'
+import { X, Info, Loader2, AlertTriangle, Flame, Siren, StickyNote, HeartPulse } from 'lucide-react'
 import { supabase } from '@/integrations/supabase/client'
 import { cn } from '@/lib/utils'
 
