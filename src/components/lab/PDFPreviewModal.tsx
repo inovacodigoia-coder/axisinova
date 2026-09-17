@@ -26,6 +26,7 @@ interface PDFPreviewModalProps {
   onEmail?: () => void;
   onShare?: () => void;
   hideEditLaudo?: boolean;
+  viewOnly?: boolean;
 }
 
 export default function PDFPreviewModal({
@@ -36,7 +37,8 @@ export default function PDFPreviewModal({
   onPrint,
   onEmail,
   onShare,
-  hideEditLaudo = false
+  hideEditLaudo = false,
+  viewOnly = false
 }: PDFPreviewModalProps) {
   const { settings: labSettings } = useLabSettings();
   const { user } = useAuth();
