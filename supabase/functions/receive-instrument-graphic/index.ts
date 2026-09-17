@@ -271,19 +271,24 @@ Deno.serve(async (req) => {
   }
 
   // ---- 6. Grava o gráfico ----
+  // Um gráfico por tipo (item_code) para cada amostra/equipamento: reenvio atualiza a imagem
   const { data: inserted, error } = await supabase
     .from('lab_result_graphics')
-    .insert({
-      company_id: companyId,
-      order_id: order.id,
-      protocol: order.protocol,
-      sample_barcode: sampleBarcode,
-      equipment_id: equipmentId,
-      item_code: itemCode,
-      label,
-      image_format: imageFormat,
-      image_base64: imageBase64,
-    })
+    .upsert(
+      {
+        company_id: companyId,
+        order_id: order.id,
+        protocol: order.protocol,
+        sample_barcode: sampleBarcode,
+        equipment_id: equipmentId,
+        item_code: itemCode,
+        label,
+        image_format: imageFormat,
+        image_base64: imageBase64,
+        created_at: new Date().toISOString(),
+      },
+      { onConflict: 'company_id,order_id,sample_barcode,equipment_id,item_code' },
+    )
     .select('id')
     .single()
 
