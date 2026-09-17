@@ -1576,6 +1576,8 @@ export function ResultEntryModal({
                       <span className="text-[10px] font-bold text-white/60 uppercase">
                         {getGenderLabel(patient.patientGender)}, {getAge(patient.patientBirthDate)}
                       </span>
+                    </div>
+                    <div className="flex flex-col gap-1">
                       {showTyping && renderProgress('Digitação', typedCount, 'typing')}
                       {showRelease && renderProgress('Liberação', releasedCount, 'release')}
                     </div>
