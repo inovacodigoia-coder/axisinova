@@ -456,7 +456,7 @@ export default function PDFPreviewModal({
                       <RotateCcw className="h-4 w-4" /> Restaurar original
                     </Button>
                   )}
-                  {protocol && !hideEditLaudo && (
+                  {protocol && !hideEditLaudo && !viewOnly && (
                     <Button variant="outline" className="gap-2" onClick={() => setIsEditing(true)}>
                       <Pencil className="h-4 w-4" /> Editar laudo
                     </Button>
