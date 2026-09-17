@@ -149,7 +149,7 @@ export function PatientInfoFloating({ orderId, patientId, patientName, protocol,
                 <StickyNote className="h-3 w-3" /> Dados do Atendimento
               </p>
               <div className="grid grid-cols-2 gap-1.5">
-                <Field label={<span className="flex items-center gap-1"><Scale className="h-2.5 w-2.5" />Peso (kg)</span> as unknown as string} value={order?.weight} />
+                <Field label="Peso (kg)" value={order?.weight} />
                 <Field label="Altura (m)" value={order?.height} />
                 <Field label="Urgência" value={order?.is_urgent ? 'Sim' : 'Não'} accent={!!order?.is_urgent} />
                 <Field label="Febre" value={order?.has_fever ? 'Sim' : 'Não'} accent={!!order?.has_fever} />
