@@ -37,6 +37,7 @@ import {
 } from 'lucide-react';
 import PDFPreviewModal from '@/components/lab/PDFPreviewModal';
 import { InstrumentGraphicsSection } from '@/components/lab/analise/InstrumentGraphicsSection';
+import { PatientInfoFloating } from '@/components/lab/analise/PatientInfoFloating';
 
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
