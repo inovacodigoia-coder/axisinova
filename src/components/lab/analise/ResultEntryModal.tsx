@@ -1581,7 +1581,7 @@ export function ResultEntryModal({
                     </div>
                   </div>
 
-                  </div>
+
                   <div className="flex items-center gap-4">
                     {patientHasLaudo(patient) && (
                       <Button
