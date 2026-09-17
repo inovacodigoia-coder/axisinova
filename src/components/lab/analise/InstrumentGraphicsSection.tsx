@@ -3,6 +3,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/context/AuthContext';
 import { resolveCompanyId } from '@/utils/companyId';
 import { Image as ImageIcon, Loader2, ZoomIn } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 
 interface Graphic {
@@ -21,7 +22,7 @@ const mimeFor = (format: string) => {
   return `image/${f.toLowerCase()}`;
 };
 
-export const InstrumentGraphicsSection = ({ protocol }: { protocol?: string | null }) => {
+export const InstrumentGraphicsSection = ({ protocol, equipmentId, expanded = false }: { protocol?: string | null; equipmentId?: string; expanded?: boolean }) => {
   const { user } = useAuth();
   const companyId = resolveCompanyId(user?.companyId);
   const [graphics, setGraphics] = useState<Graphic[]>([]);
@@ -29,6 +30,7 @@ export const InstrumentGraphicsSection = ({ protocol }: { protocol?: string | nu
   const [preview, setPreview] = useState<Graphic | null>(null);
 
   useEffect(() => {
+    setGraphics([]);
     if (!companyId || !protocol) return;
     let cancelled = false;
     const load = async () => {
@@ -42,7 +44,8 @@ export const InstrumentGraphicsSection = ({ protocol }: { protocol?: string | nu
         .limit(50);
       if (!cancelled) {
         // Um gráfico por tipo: mantém somente o mais recente de cada item_code/equipamento
-        const rows = (data as any as Graphic[]) || [];
+        const normalizeEquipment = (v: string) => v.toLowerCase().replace(/[^a-z0-9]/g, '');
+        const rows = ((data as any as Graphic[]) || []).filter((g) => !equipmentId || normalizeEquipment(g.equipment_id || '') === normalizeEquipment(equipmentId));
         const seen = new Set<string>();
         const unique = rows.filter((g) => {
           const key = `${String(g.equipment_id || '').toUpperCase()}|${String(g.item_code || '').toUpperCase()}`;
@@ -50,13 +53,13 @@ export const InstrumentGraphicsSection = ({ protocol }: { protocol?: string | nu
           seen.add(key);
           return true;
         });
-        setGraphics(unique);
+        setGraphics(expanded ? unique.filter((g) => ['WBC', 'RBC', 'PLT'].includes(g.item_code.toUpperCase())).sort((a, b) => ['WBC', 'RBC', 'PLT'].indexOf(a.item_code.toUpperCase()) - ['WBC', 'RBC', 'PLT'].indexOf(b.item_code.toUpperCase())) : unique);
         setLoading(false);
       }
     };
     load();
     return () => { cancelled = true; };
-  }, [companyId, protocol]);
+  }, [companyId, protocol, equipmentId, expanded]);
 
   if (loading) {
     return (
@@ -66,29 +69,29 @@ export const InstrumentGraphicsSection = ({ protocol }: { protocol?: string | nu
     );
   }
 
-  if (graphics.length === 0) return null;
+  if (graphics.length === 0) return expanded ? <p className="text-xs text-muted-foreground">Nenhum histograma recebido deste equipamento para este pedido.</p> : null;
 
   return (
-    <div className="rounded-xl border border-indigo-100 bg-indigo-50/40 p-4 space-y-3">
+    <div className={expanded ? "space-y-3" : "rounded-lg border border-border bg-muted/40 p-4 space-y-3"}>
       <div className="flex items-center gap-2">
         <ImageIcon className="h-4 w-4 text-indigo-500" />
         <span className="text-[11px] font-black uppercase tracking-wide text-indigo-700">
           Gráficos do Equipamento ({graphics.length})
         </span>
       </div>
-      <div className="flex flex-wrap gap-3">
+      <div className={expanded ? "grid grid-cols-1 gap-4 md:grid-cols-3" : "flex flex-wrap gap-3"}>
         {graphics.map((g) => (
-          <button
+          <Button variant="outline"
             key={g.id}
             type="button"
             onClick={() => setPreview(g)}
-            className="group relative w-28 rounded-lg border border-indigo-100 bg-white overflow-hidden hover:shadow-md transition-all"
+            className={`group relative block h-auto p-0 rounded border border-border bg-background overflow-hidden ${expanded ? "w-full" : "w-28"}`}
             title={g.label || g.item_code}
           >
             <img
               src={`data:${mimeFor(g.image_format)};base64,${g.image_base64}`}
               alt={g.label || `Gráfico ${g.item_code}`}
-              className="w-full h-20 object-contain bg-white"
+              className={expanded ? "w-full h-44 object-contain bg-background" : "w-full h-20 object-contain bg-background"}
             />
             <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors flex items-center justify-center">
               <ZoomIn className="h-5 w-5 text-white opacity-0 group-hover:opacity-100 drop-shadow" />
@@ -96,7 +99,7 @@ export const InstrumentGraphicsSection = ({ protocol }: { protocol?: string | nu
             <div className="px-1.5 py-1 text-[9px] font-bold text-slate-600 truncate border-t border-slate-100">
               {g.label || g.item_code}
             </div>
-          </button>
+          </Button>
         ))}
       </div>
 

@@ -290,6 +290,7 @@ export default function LabHematologiaPage() {
   }, [selectedEquipment])
   const hasEquipmentLayout = equipments.length === 0 || !!equipmentLayout
   const graphAreas = equipmentLayout?.graphs || GRAPH_AREAS
+  const isCount380 = equipmentLayout?.label === 'Count 380'
 
   // Catálogo de Exames (mesma fonte usada na Digitação de Resultados)
   useEffect(() => {
@@ -499,12 +500,12 @@ export default function LabHematologiaPage() {
   const diffOver = diffSum > 100
 
   useEffect(() => {
-    if (!diffAnyFilled) return
+    if (isCount380 || !diffAnyFilled) return
     const auto = String(Math.round((100 - diffSum) * 100) / 100).replace('.', ',')
     if ((values['bast_es_pct'] ?? '') !== auto) {
       setValues((current) => ({ ...current, bast_es_pct: auto }))
     }
-  }, [diffSum, diffAnyFilled, values])
+  }, [diffSum, diffAnyFilled, values, isCount380])
 
   /** Salva o exame selecionado no mesmo formato da Digitação de Resultados. */
   const persistExam = async (status: 'draft' | 'digitized' | 'released') => {
@@ -773,6 +774,49 @@ export default function LabHematologiaPage() {
           )}
         </div>
 
+        {isCount380 ? (
+          <section className="bg-card p-4 space-y-5" aria-label="Resultados Count 380">
+            <div className="flex items-center justify-between border-b border-border pb-2">
+              <h2 className="text-sm font-semibold">Count_380</h2>
+              <span className="text-xs text-muted-foreground">{selected.examName}</span>
+            </div>
+            <InstrumentGraphicsSection protocol={selected.protocol} equipmentId={selectedEquipment?.serial_number} expanded />
+            <div className="grid grid-cols-1 gap-5 lg:grid-cols-3">
+              {[
+                { title: 'WBC · Leucócitos', match: /leuco|lymph|linfo|mid|gran|neutro|mono|eosino|baso|basto|segment|wbc/i },
+                { title: 'RBC · Hemácias', match: /hemacia|eritro|hemoglob|hematoc|vcm|hcm|chcm|rdw|rbc|hgb|hct|mcv|mch/i },
+                { title: 'PLT · Plaquetas', match: /plaquet|plt|mpv|vpm|pdw|pct|plcc|plcr|p.lcr|p.lcc/i },
+              ].map((group) => (
+                <section key={group.title} className="min-w-0">
+                  <SectionTitle>{group.title}</SectionTitle>
+                  <div className="grid grid-cols-[minmax(0,1fr)_90px_65px] gap-2 border-b border-border py-2 text-[10px] uppercase text-muted-foreground">
+                    <span>Parâmetro</span><span>Resultado</span><span>Unidade</span>
+                  </div>
+                  {resolvedParams.filter((param) => group.match.test(param.name.normalize('NFD').replace(/[\u0300-\u036f]/g, ''))).map((param) => (
+                    <label key={param.id} className="grid grid-cols-[minmax(0,1fr)_90px_65px] items-center gap-2 border-b border-border py-2">
+                      <span className="min-w-0 text-xs">{param.name}<span className="block text-[10px] text-muted-foreground">{param.reference}</span></span>
+                      <Input aria-label={param.name} className="h-8 text-xs" value={getValue(formKeyOfParam(param))} onChange={(event) => setValue(formKeyOfParam(param), event.target.value)} />
+                      <span className="text-[10px] text-muted-foreground break-words">{param.unit}</span>
+                    </label>
+                  ))}
+                </section>
+              ))}
+            </div>
+            {resolvedParams.filter((param) => !/leuco|lymph|linfo|mid|gran|neutro|mono|eosino|baso|basto|segment|wbc|hemacia|eritro|hemoglob|hematoc|vcm|hcm|chcm|rdw|rbc|hgb|hct|mcv|mch|plaquet|plt|mpv|vpm|pdw|pct|plcc|plcr|p.lcr|p.lcc/i.test(param.name.normalize('NFD').replace(/[\u0300-\u036f]/g, ''))).map((param) => (
+              <label key={param.id} className="flex flex-wrap items-center gap-3 text-xs">
+                <span>{param.name}</span>
+                <Input aria-label={param.name} className="h-8 w-28" value={getValue(formKeyOfParam(param))} onChange={(event) => setValue(formKeyOfParam(param), event.target.value)} />
+                <span className="text-muted-foreground">{param.unit} · {param.reference}</span>
+              </label>
+            ))}
+            {resolvedParams.length === 0 && <p className="text-sm text-muted-foreground">Nenhum parâmetro cadastrado neste exame.</p>}
+            {flags.length > 0 && <div className="text-xs text-destructive">{flags.join(' · ')}</div>}
+            <label className="block space-y-2 text-xs font-medium">
+              <span>Observações</span>
+              <Textarea value={observacao} onChange={(event) => setObservacao(event.target.value)} rows={3} />
+            </label>
+          </section>
+        ) : (<>
         <div className="grid grid-cols-1 divide-y divide-border bg-border xl:grid-cols-12 xl:divide-x xl:divide-y-0">
           <div className="space-y-4 bg-card p-3 xl:col-span-3">
             <section className="space-y-2">
@@ -945,6 +989,8 @@ export default function LabHematologiaPage() {
             className="resize-none text-xs"
           />
         </section>
+
+        </>)}
 
         <footer className="flex flex-col items-stretch justify-between gap-2 border-t border-border bg-muted/50 px-4 py-3 sm:flex-row sm:items-center">
           <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
