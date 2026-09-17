@@ -83,6 +83,13 @@ const PLATELET_FIELDS = [
 ]
 const GRAPH_AREAS = ['RBC (# versus fL)', 'WBC (# versus fL)', 'BASO (# versus fL)', 'PLAQUETAS (# versus fL)']
 
+/** Layouts de equipamentos hematológicos implementados (chave = identificador/serial em minúsculas). */
+const EQUIPMENT_LAYOUTS: Record<string, { label: string; graphs: string[] }> = {
+  p8000: { label: 'Yumizen P8000', graphs: GRAPH_AREAS },
+  count_380: { label: 'Count 380', graphs: ['WBC (# versus fL)', 'RBC (# versus fL)', 'PLT (# versus fL)'] },
+  count380: { label: 'Count 380', graphs: ['WBC (# versus fL)', 'RBC (# versus fL)', 'PLT (# versus fL)'] },
+}
+
 const maskDecimal = (raw: string) => raw.replace(/\./g, ',').replace(/[^\d,]/g, '').replace(/(,.*),/g, '$1')
 
 const normalize = (text: string) =>
