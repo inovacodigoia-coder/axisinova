@@ -1526,6 +1526,32 @@ export function ResultEntryModal({
             visiblePatients.map((patient, vIdx) => {
               const pIdx = entryMode === 'unico' ? safeIndex : vIdx;
               const isExpanded = !!expandedPatients[patient.protocol];
+              const totalPatientExams = patient.exams.length;
+              const releasedCount = patient.exams.filter((e: any) => examStatuses[e.id] === 'released').length;
+              const typedCount = patient.exams.filter((e: any) => {
+                if (examStatuses[e.id] === 'released') return true;
+                const params = getParams(e);
+                return params.length > 0 && params.every((p: any) => (results[`${e.id}_${p.id}`] || '').trim() !== '');
+              }).length;
+              const showRelease = releasedCount > 0;
+              const showTyping = typedCount > 0 && typedCount > releasedCount;
+              const renderProgress = (label: string, done: number, tone: 'typing' | 'release') => (
+                <div className="flex items-center gap-1.5">
+                  <span className={cn(
+                    'text-[9px] font-black uppercase tracking-wider px-1.5 py-0.5 rounded',
+                    tone === 'release' ? 'bg-emerald-500/20 text-emerald-300' : 'bg-cyan-500/20 text-cyan-300'
+                  )}>
+                    {label} ({done === totalPatientExams ? 'COMPLETA' : 'PARCIAL'})
+                  </span>
+                  <div className="h-1.5 w-16 rounded-full bg-white/15 overflow-hidden">
+                    <div
+                      className={cn('h-full rounded-full transition-all', tone === 'release' ? 'bg-emerald-400' : 'bg-cyan-400')}
+                      style={{ width: `${totalPatientExams ? (done / totalPatientExams) * 100 : 0}%` }}
+                    />
+                  </div>
+                  <span className="text-[9px] font-bold text-white/60">{done}/{totalPatientExams}</span>
+                </div>
+              );
               return (
                 <div key={patient.protocol} className="bg-card rounded-2xl border border-border shadow-sm overflow-hidden animate-in slide-in-from-bottom-4 duration-300" style={{ animationDelay: `${vIdx * 50}ms` }}>
                   {/* Cabeçalho do Paciente */}
@@ -1545,13 +1571,17 @@ export function ResultEntryModal({
                         </span>
                       </div>
 
-                    <div className="flex items-baseline gap-2">
+                    <div className="flex items-baseline gap-2 flex-wrap">
                       <span className="text-base font-black uppercase tracking-tight">{patient.patientName}</span>
                       <span className="text-[10px] font-bold text-white/60 uppercase">
                         {getGenderLabel(patient.patientGender)}, {getAge(patient.patientBirthDate)}
                       </span>
+                      {showTyping && renderProgress('Digitação', typedCount, 'typing')}
+                      {showRelease && renderProgress('Liberação', releasedCount, 'release')}
                     </div>
                   </div>
+
+
                   <div className="flex items-center gap-4">
                     {patientHasLaudo(patient) && (
                       <Button
