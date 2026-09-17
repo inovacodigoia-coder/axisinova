@@ -198,9 +198,12 @@ export type Database = {
           doctor_id: string | null
           doctor_name: string | null
           exam_mode: string | null
+          has_fever: boolean
           hash: string | null
+          height: string | null
           id: string
           is_fasting: boolean | null
+          is_urgent: boolean
           lab_guides: Json | null
           order_number: string
           origin_code: string | null
@@ -214,10 +217,12 @@ export type Database = {
           registered_by: string | null
           registered_by_name: string | null
           requesting_doctor: string | null
+          service_observation: string | null
           service_type: string
           specialty: string | null
           status: string
           updated_at: string
+          weight: string | null
         }
         Insert: {
           attachments?: Json | null
@@ -237,9 +242,12 @@ export type Database = {
           doctor_id?: string | null
           doctor_name?: string | null
           exam_mode?: string | null
+          has_fever?: boolean
           hash?: string | null
+          height?: string | null
           id?: string
           is_fasting?: boolean | null
+          is_urgent?: boolean
           lab_guides?: Json | null
           order_number: string
           origin_code?: string | null
@@ -253,10 +261,12 @@ export type Database = {
           registered_by?: string | null
           registered_by_name?: string | null
           requesting_doctor?: string | null
+          service_observation?: string | null
           service_type: string
           specialty?: string | null
           status?: string
           updated_at?: string
+          weight?: string | null
         }
         Update: {
           attachments?: Json | null
@@ -276,9 +286,12 @@ export type Database = {
           doctor_id?: string | null
           doctor_name?: string | null
           exam_mode?: string | null
+          has_fever?: boolean
           hash?: string | null
+          height?: string | null
           id?: string
           is_fasting?: boolean | null
+          is_urgent?: boolean
           lab_guides?: Json | null
           order_number?: string
           origin_code?: string | null
@@ -292,10 +305,12 @@ export type Database = {
           registered_by?: string | null
           registered_by_name?: string | null
           requesting_doctor?: string | null
+          service_observation?: string | null
           service_type?: string
           specialty?: string | null
           status?: string
           updated_at?: string
+          weight?: string | null
         }
         Relationships: [
           {
