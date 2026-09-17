@@ -33,7 +33,8 @@ import {
   Pencil,
   Settings,
   ChevronLeft,
-  ChevronRight
+  ChevronRight,
+  Info
 } from 'lucide-react';
 import PDFPreviewModal from '@/components/lab/PDFPreviewModal';
 import { InstrumentGraphicsSection } from '@/components/lab/analise/InstrumentGraphicsSection';
@@ -137,6 +138,7 @@ export function ResultEntryModal({
   const [refreshing, setRefreshing] = useState(false);
 
   const [expandedPatients, setExpandedPatients] = useState<Record<string, boolean>>({});
+  const [infoPanel, setInfoPanel] = useState<{ orderId?: string; patientId?: string; patientName: string; protocol: string } | null>(null);
 
 
   /** Campos editáveis: digitação normal ou correção liberada pela permissão */
