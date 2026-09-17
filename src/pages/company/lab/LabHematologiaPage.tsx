@@ -14,6 +14,7 @@ import { useResultEntryPermissions } from '@/hooks/useResultEntryPermissions'
 import { resolveCompanyId } from '@/utils/companyId'
 import { buildExamParams, evaluateFormula, findCatalogExam, type ResolvedParam } from '@/utils/examParameters'
 import { supabase } from '@/integrations/supabase/client'
+import { InstrumentGraphicsSection } from '@/components/lab/analise/InstrumentGraphicsSection'
 
 
 type OrderStatus = string
@@ -82,6 +83,13 @@ const PLATELET_FIELDS = [
   { key: 'pdw', label: 'P.D.W.', unit: 'ratio' },
 ]
 const GRAPH_AREAS = ['RBC (# versus fL)', 'WBC (# versus fL)', 'BASO (# versus fL)', 'PLAQUETAS (# versus fL)']
+
+/** Layouts de equipamentos hematológicos implementados (chave = identificador/serial em minúsculas). */
+const EQUIPMENT_LAYOUTS: Record<string, { label: string; graphs: string[] }> = {
+  p8000: { label: 'Yumizen P8000', graphs: GRAPH_AREAS },
+  count_380: { label: 'Count 380', graphs: ['WBC (# versus fL)', 'RBC (# versus fL)', 'PLT (# versus fL)'] },
+  count380: { label: 'Count 380', graphs: ['WBC (# versus fL)', 'RBC (# versus fL)', 'PLT (# versus fL)'] },
+}
 
 const maskDecimal = (raw: string) => raw.replace(/\./g, ',').replace(/[^\d,]/g, '').replace(/(,.*),/g, '$1')
 
@@ -275,9 +283,13 @@ export default function LabHematologiaPage() {
     () => equipments.find((e) => e.id === equipmentId) || null,
     [equipments, equipmentId],
   )
-  /** Somente o layout do p8000 (Yumizen P8000) está implementado hoje. */
-  const hasEquipmentLayout =
-    equipments.length === 0 || String(selectedEquipment?.serial_number || '').toLowerCase() === 'p8000'
+  /** Layout do equipamento selecionado (p8000 e Count_380 implementados). */
+  const equipmentLayout = useMemo(() => {
+    const serial = String(selectedEquipment?.serial_number || '').toLowerCase().replace(/[\s-]/g, '_')
+    return EQUIPMENT_LAYOUTS[serial] || null
+  }, [selectedEquipment])
+  const hasEquipmentLayout = equipments.length === 0 || !!equipmentLayout
+  const graphAreas = equipmentLayout?.graphs || GRAPH_AREAS
 
   // Catálogo de Exames (mesma fonte usada na Digitação de Resultados)
   useEffect(() => {
@@ -858,6 +870,7 @@ export default function LabHematologiaPage() {
 
           <div className="space-y-3 bg-card p-3 xl:col-span-4">
             <SectionTitle>Gráficos</SectionTitle>
+            <InstrumentGraphicsSection protocol={selected.protocol} />
             <Tabs defaultValue="histograma">
               <TabsList className="h-8 w-full">
                 <TabsTrigger value="histograma" className="h-7 flex-1 text-xs">Histograma</TabsTrigger>
@@ -866,7 +879,7 @@ export default function LabHematologiaPage() {
               {['histograma', 'scattergram'].map((tab) => (
                 <TabsContent key={tab} value={tab} className="mt-2">
                   <div className="grid grid-cols-2 gap-2">
-                    {GRAPH_AREAS.map((graph) => (
+                    {graphAreas.map((graph) => (
                       <div key={graph} className="relative flex aspect-[4/3] items-center justify-center overflow-hidden rounded border border-border bg-muted">
                         <span className="absolute left-2 top-2 text-[9px] font-bold uppercase text-primary">{graph}</span>
                         <BarChart3 className="h-7 w-7 text-muted-foreground/40" />
