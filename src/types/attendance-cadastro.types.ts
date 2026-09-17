@@ -41,6 +41,11 @@ export interface AttendanceOrder {
   deliveryDate?: string
   labGuides?: any[]
   isFasting?: boolean
+  weight?: string
+  height?: string
+  isUrgent?: boolean
+  hasFever?: boolean
+  serviceObservation?: string
 
 
   serviceType: AttendanceServiceType

@@ -33,10 +33,12 @@ import {
   Pencil,
   Settings,
   ChevronLeft,
-  ChevronRight
+  ChevronRight,
+  Info
 } from 'lucide-react';
 import PDFPreviewModal from '@/components/lab/PDFPreviewModal';
 import { InstrumentGraphicsSection } from '@/components/lab/analise/InstrumentGraphicsSection';
+import { PatientInfoFloating } from '@/components/lab/analise/PatientInfoFloating';
 
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -136,6 +138,7 @@ export function ResultEntryModal({
   const [refreshing, setRefreshing] = useState(false);
 
   const [expandedPatients, setExpandedPatients] = useState<Record<string, boolean>>({});
+  const [infoPanel, setInfoPanel] = useState<{ orderId?: string; patientId?: string; patientName: string; protocol: string } | null>(null);
 
 
   /** Campos editáveis: digitação normal ou correção liberada pela permissão */
@@ -1506,6 +1509,16 @@ export function ResultEntryModal({
 
       </header>
 
+      {infoPanel && (
+        <PatientInfoFloating
+          orderId={infoPanel.orderId}
+          patientId={infoPanel.patientId}
+          patientName={infoPanel.patientName}
+          protocol={infoPanel.protocol}
+          onClose={() => setInfoPanel(null)}
+        />
+      )}
+
       {/* Conteúdo */}
       <ScrollArea className="flex-1 bg-slate-50 result-entry-scroll">
         <div className="container max-w-5xl py-8 px-6 space-y-8">
@@ -1569,6 +1582,22 @@ export function ResultEntryModal({
                         <span className="h-6 w-6 rounded bg-white/20 flex items-center justify-center text-[10px] font-black">
                           {pIdx + 1}
                         </span>
+                        <button
+                          type="button"
+                          title="Informações do paciente"
+                          className="h-6 w-6 rounded-full flex items-center justify-center text-white/70 hover:text-cyan-300 hover:bg-white/10 transition-colors"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setInfoPanel({
+                              orderId: patient.exams?.[0]?.orderId,
+                              patientId: patient.patientId,
+                              patientName: patient.patientName,
+                              protocol: patient.protocol,
+                            });
+                          }}
+                        >
+                          <Info className="h-4 w-4" />
+                        </button>
                       </div>
 
                     <div className="flex items-baseline gap-2 flex-wrap">
