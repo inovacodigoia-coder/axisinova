@@ -14,6 +14,7 @@ import { useResultEntryPermissions } from '@/hooks/useResultEntryPermissions'
 import { resolveCompanyId } from '@/utils/companyId'
 import { buildExamParams, evaluateFormula, findCatalogExam, type ResolvedParam } from '@/utils/examParameters'
 import { supabase } from '@/integrations/supabase/client'
+import { InstrumentGraphicsSection } from '@/components/lab/analise/InstrumentGraphicsSection'
 
 
 type OrderStatus = string
