@@ -57,8 +57,43 @@ Deno.serve(async (req) => {
     if (!profile?.company_id || profile.is_active === false) {
       return json({ error: 'Perfil sem empresa vinculada' }, 403)
     }
-    const isManager =
+    let isManager =
       profile.is_admin === true || ['company_admin', 'super_admin'].includes(String(profile.role))
+
+    // Também é gestor quem pertence a um setor cujo perfil de acesso concede
+    // permissões administrativas (ex.: "TI – Administração").
+    if (!isManager) {
+      const { data: links } = await admin
+        .from('sector_users')
+        .select('sector_id')
+        .eq('user_id', user.id)
+        .eq('company_id', profile.company_id)
+
+      const sectorIds = (links ?? []).map((l) => l.sector_id).filter(Boolean)
+      if (sectorIds.length) {
+        const { data: sectors } = await admin
+          .from('company_sectors')
+          .select('allowed_profile_ids')
+          .in('id', sectorIds)
+
+        const profileIds = [...new Set((sectors ?? []).flatMap((s) => s.allowed_profile_ids ?? []))]
+        if (profileIds.length) {
+          const { data: accessProfiles } = await admin
+            .from('access_profiles')
+            .select('permissions, is_active')
+            .in('id', profileIds)
+
+          isManager = (accessProfiles ?? []).some((ap) => {
+            if (ap.is_active === false) return false
+            const perms = (ap.permissions ?? {}) as Record<string, string[]>
+            const settings = perms.settings ?? []
+            const users = perms.users ?? []
+            return settings.includes('edit') || settings.includes('approve') || users.includes('create')
+          })
+        }
+      }
+    }
+
     if (!isManager) return json({ error: 'Somente administradores podem gerar credenciais' }, 403)
 
     const body = (await req.json().catch(() => ({}))) ?? {}
