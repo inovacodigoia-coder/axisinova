@@ -54,7 +54,11 @@ export default function OAuthClientsSection() {
       const { data, error } = await supabase.functions.invoke('create-oauth-client', {
         body: { name: name.trim() },
       })
-      if (error) throw error
+      if (error) {
+        const res = (error as any)?.context as Response | undefined
+        const detail = res ? await res.clone().json().catch(() => null) : null
+        throw new Error(detail?.error || error.message)
+      }
       if ((data as any)?.error) throw new Error((data as any).error)
       setCreated({ client_id: (data as any).client_id, client_secret: (data as any).client_secret })
       toast.success('Credenciais geradas! Copie o client_secret agora — ele não será exibido novamente.')
