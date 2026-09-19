@@ -85,6 +85,13 @@
       "when": 1789781579654,
       "tag": "0011_allow_board_cascade_stage_delete",
       "breakpoints": true
+    },
+    {
+      "idx": 12,
+      "version": "7",
+      "when": 1789786953281,
+      "tag": "0012_add_hospital_and_fasting_fields",
+      "breakpoints": true
     }
   ]
 }

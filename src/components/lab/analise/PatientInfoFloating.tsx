@@ -39,7 +39,7 @@ export function PatientInfoFloating({ orderId, patientId, patientName, protocol,
         if (orderId) {
           const { data } = await (supabase
             .from('attendance_orders' as any) as any)
-            .select('weight, height, is_urgent, has_fever, is_fasting, service_observation')
+            .select('weight, height, is_urgent, has_fever, is_fasting, service_observation, fasting_start_hour, fasting_type, hospital_name, hospital_sector_name, bed, medical_record_number')
             .eq('id', orderId)
             .maybeSingle()
           if (active) setOrder(data || null)
@@ -154,6 +154,12 @@ export function PatientInfoFloating({ orderId, patientId, patientName, protocol,
                 <Field label="Urgência" value={order?.is_urgent ? 'Sim' : 'Não'} accent={!!order?.is_urgent} />
                 <Field label="Febre" value={order?.has_fever ? 'Sim' : 'Não'} accent={!!order?.has_fever} />
                 <Field label="Jejum do paciente" value={fasting === null || fasting === undefined ? '—' : fasting ? 'Sim' : 'Não'} />
+                {order?.fasting_start_hour && <Field label="Início Jejum" value={order.fasting_start_hour} />}
+                {order?.fasting_type && <Field label="Jejum" value={order.fasting_type} />}
+                {order?.hospital_name && <Field label="Hospital" value={order.hospital_name} />}
+                {order?.hospital_sector_name && <Field label="Setor" value={order.hospital_sector_name} />}
+                {order?.bed && <Field label="Leito" value={order.bed} />}
+                {order?.medical_record_number && <Field label="Nº Prontuário" value={order.medical_record_number} />}
               </div>
               {order?.service_observation && (
                 <div className="rounded-md border border-border bg-muted/40 px-2.5 py-1.5">

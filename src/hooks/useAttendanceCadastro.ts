@@ -183,6 +183,14 @@ export function useAttendanceCadastro() {
           is_urgent: !!data.isUrgent,
           has_fever: !!data.hasFever,
           service_observation: data.serviceObservation || null,
+          fasting_start_hour: data.fastingStartHour || null,
+          fasting_type: data.fastingType || null,
+          hospital_id: data.hospitalId || null,
+          hospital_name: data.hospitalName || null,
+          hospital_sector_id: data.hospitalSectorId || null,
+          hospital_sector_name: data.hospitalSectorName || null,
+          bed: data.bed || null,
+          medical_record_number: data.medicalRecordNumber || null,
           status: data.examMode === 'lab' 
             ? ((data.guides || data.labGuides)?.some((g: any) => g.exams?.some((e: any) => e.collected)) ? 'waiting_collection' : 'open')
             : ((data.guides || data.labGuides)?.some((g: any) => g.exams?.some((e: any) => e.collected)) ? 'collection_done' : 'open'),

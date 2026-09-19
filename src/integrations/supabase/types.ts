@@ -186,6 +186,7 @@ export type Database = {
           authorization_date: string | null
           authorization_expiry: string | null
           authorization_password: string | null
+          bed: string | null
           card_expiry: string | null
           card_number: string | null
           company_id: string
@@ -198,13 +199,20 @@ export type Database = {
           doctor_id: string | null
           doctor_name: string | null
           exam_mode: string | null
+          fasting_start_hour: string | null
+          fasting_type: string | null
           has_fever: boolean
           hash: string | null
           height: string | null
+          hospital_id: string | null
+          hospital_name: string | null
+          hospital_sector_id: string | null
+          hospital_sector_name: string | null
           id: string
           is_fasting: boolean | null
           is_urgent: boolean
           lab_guides: Json | null
+          medical_record_number: string | null
           order_number: string
           origin_code: string | null
           origin_id: string | null
@@ -230,6 +238,7 @@ export type Database = {
           authorization_date?: string | null
           authorization_expiry?: string | null
           authorization_password?: string | null
+          bed?: string | null
           card_expiry?: string | null
           card_number?: string | null
           company_id: string
@@ -242,13 +251,20 @@ export type Database = {
           doctor_id?: string | null
           doctor_name?: string | null
           exam_mode?: string | null
+          fasting_start_hour?: string | null
+          fasting_type?: string | null
           has_fever?: boolean
           hash?: string | null
           height?: string | null
+          hospital_id?: string | null
+          hospital_name?: string | null
+          hospital_sector_id?: string | null
+          hospital_sector_name?: string | null
           id?: string
           is_fasting?: boolean | null
           is_urgent?: boolean
           lab_guides?: Json | null
+          medical_record_number?: string | null
           order_number: string
           origin_code?: string | null
           origin_id?: string | null
@@ -274,6 +290,7 @@ export type Database = {
           authorization_date?: string | null
           authorization_expiry?: string | null
           authorization_password?: string | null
+          bed?: string | null
           card_expiry?: string | null
           card_number?: string | null
           company_id?: string
@@ -286,13 +303,20 @@ export type Database = {
           doctor_id?: string | null
           doctor_name?: string | null
           exam_mode?: string | null
+          fasting_start_hour?: string | null
+          fasting_type?: string | null
           has_fever?: boolean
           hash?: string | null
           height?: string | null
+          hospital_id?: string | null
+          hospital_name?: string | null
+          hospital_sector_id?: string | null
+          hospital_sector_name?: string | null
           id?: string
           is_fasting?: boolean | null
           is_urgent?: boolean
           lab_guides?: Json | null
+          medical_record_number?: string | null
           order_number?: string
           origin_code?: string | null
           origin_id?: string | null
@@ -1127,6 +1151,71 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      hospital_sectors: {
+        Row: {
+          company_id: string
+          created_at: string
+          created_by: string | null
+          hospital_id: string
+          id: string
+          is_active: boolean
+          name: string
+        }
+        Insert: {
+          company_id: string
+          created_at?: string
+          created_by?: string | null
+          hospital_id: string
+          id?: string
+          is_active?: boolean
+          name: string
+        }
+        Update: {
+          company_id?: string
+          created_at?: string
+          created_by?: string | null
+          hospital_id?: string
+          id?: string
+          is_active?: boolean
+          name?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "hospital_sectors_hospital_id_fkey"
+            columns: ["hospital_id"]
+            isOneToOne: false
+            referencedRelation: "hospitals"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      hospitals: {
+        Row: {
+          company_id: string
+          created_at: string
+          created_by: string | null
+          id: string
+          is_active: boolean
+          name: string
+        }
+        Insert: {
+          company_id: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          is_active?: boolean
+          name: string
+        }
+        Update: {
+          company_id?: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          is_active?: boolean
+          name?: string
+        }
+        Relationships: []
       }
       instrument_events: {
         Row: {

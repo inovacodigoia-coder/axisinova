@@ -92,6 +92,14 @@ export interface CadastroState {
   isUrgent?: boolean
   hasFever?: boolean
   fastingSince?: string
+  fastingStartHour?: string
+  fastingType?: string
+  hospitalId?: string
+  hospitalName?: string
+  hospitalSectorId?: string
+  hospitalSectorName?: string
+  bed?: string
+  medicalRecordNumber?: string
   deliveryLocation?: string
   observation?: string
   examMode?: 'ask' | 'clinic' | 'lab'
@@ -477,6 +485,14 @@ export function AttendanceCadastroModal({
         guides: state.guides,
         isPregnant: state.tempPatient?.clinicalData?.isPregnant,
         isFasting: String(state.fastingSince || 'Não').toLowerCase().startsWith('s'),
+        fastingStartHour: state.fastingStartHour,
+        fastingType: state.fastingType,
+        hospitalId: state.hospitalId,
+        hospitalName: state.hospitalName,
+        hospitalSectorId: state.hospitalSectorId,
+        hospitalSectorName: state.hospitalSectorName,
+        bed: state.bed,
+        medicalRecordNumber: state.medicalRecordNumber,
         weight: state.weight,
         height: state.height,
         isUrgent: !!state.isUrgent,
