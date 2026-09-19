@@ -310,11 +310,12 @@ export default function SupportBoardPage() {
               : undefined
         }
         meta={activeCard ? {
-          createdBy: names[activeCard.created_by || ''],
-          createdAt: activeCard.created_at,
-          updatedBy: names[activeCard.updated_by || ''],
-          updatedAt: activeCard.updated_at,
+          createdBy: names[cardMeta[activeCard.id]?.createdBy || activeCard.created_by || ''],
+          createdAt: cardMeta[activeCard.id]?.createdAt || activeCard.created_at,
+          updatedBy: names[cardMeta[activeCard.id]?.updatedBy || activeCard.updated_by || ''],
+          updatedAt: cardMeta[activeCard.id]?.updatedAt || activeCard.updated_at,
         } : undefined}
+        onOpenHistory={activeCard ? () => setHistoryCardId(activeCard.id) : undefined}
         onDelete={activeCard ? () => { setFormOpen(false); setDeleteTarget(activeCard) } : undefined}
         onSubmit={async values => {
           if (activeCard) { await updateCard(activeCard.id, values); toast.success('Card atualizado') }
