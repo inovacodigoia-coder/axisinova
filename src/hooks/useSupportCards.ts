@@ -208,7 +208,7 @@ export function useSupportBoardWorkspace(boardId: string | undefined) {
   }, [load])
 
   return {
-    board, stages, fields, cards, canEdit, loading, reload: load,
+    board, stages, fields, cards, canEdit, loading, cardMeta, reload: load,
     saveField, deleteField, moveField,
     createCard, updateCard, moveCard, deleteCard,
   }
