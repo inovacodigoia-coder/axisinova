@@ -350,6 +350,7 @@ export default function SupportBoardPage() {
                     </div>
                   ))}
                 </div>
+                {renderStagePagination(stage.id, stageCards.length)}
               </div>
             )
           })}
