@@ -18,6 +18,9 @@ interface Props {
   stageName?: string
   readOnly: boolean
   lockedReason?: string
+  initialValues?: Record<string, string>
+  sourceLabel?: string | null
+  onOpenSource?: () => void
   onSubmit: (values: Record<string, string>) => Promise<void>
   onDelete?: () => void
   meta?: { createdBy?: string; createdAt?: string; updatedBy?: string; updatedAt?: string }
@@ -25,14 +28,16 @@ interface Props {
 
 const fmt = (iso?: string) => (iso ? new Date(iso).toLocaleString('pt-BR') : '—')
 
-export function CardFormModal({ open, onOpenChange, fields, card, stageName, readOnly, lockedReason, onSubmit, onDelete, meta }: Props) {
+export function CardFormModal({ open, onOpenChange, fields, card, stageName, readOnly, lockedReason, initialValues, sourceLabel, onOpenSource, onSubmit, onDelete, meta }: Props) {
 
   const [values, setValues] = useState<Record<string, string>>({})
   const [saving, setSaving] = useState(false)
 
   useEffect(() => {
-    if (open) setValues(card?.values ? { ...card.values } : {})
+    if (open) setValues(card?.values ? { ...card.values } : { ...(initialValues || {}) })
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open, card])
+
 
   const handleSave = async () => {
     const missing = fields.filter(f => f.is_required && !String(values[f.id] || '').trim())
