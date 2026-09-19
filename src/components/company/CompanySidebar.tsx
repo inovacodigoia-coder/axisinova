@@ -151,8 +151,16 @@ export const NAV_SECTIONS: NavSection[] = [
       { label: 'Relatórios Externos', icon: 'BarChart3', path: '/app/portais/relatorios', module: 'portals' },
     ],
   },
+  {
+    title: 'APOIO',
+    items: [
+      { label: 'Terceirização', icon: 'Truck', path: '/app/apoio/terceirizacao', module: 'portals' },
+      { label: 'Kanban Apoio', icon: 'KanbanSquare', path: '/app/apoio/kanban', module: 'portals' },
+    ],
+  },
 
 ]
+
 
 
 interface CompanySidebarProps {
