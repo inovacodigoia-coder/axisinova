@@ -333,7 +333,7 @@ export default function SupportBoardPage() {
                   <Badge variant="outline">{stageCards.length}</Badge>
                 </div>
                 <div className="space-y-2">
-                  {stageCards.map(card => (
+                  {shownCards.map(card => (
                     <div
                       key={card.id}
                       draggable={canEdit && !isLocked(card)}
