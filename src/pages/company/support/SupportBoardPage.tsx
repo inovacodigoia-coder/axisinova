@@ -231,11 +231,6 @@ export default function SupportBoardPage() {
         }}
       />
 
-      {activeCard && canEdit && !formOpen && (
-        <Button variant="outline" className="mt-4 text-destructive" onClick={() => setDeleteTarget(activeCard)}>
-          <Trash2 className="mr-1 h-4 w-4" />Excluir card selecionado
-        </Button>
-      )}
 
       <AlertDialog open={!!deleteTarget} onOpenChange={v => !v && setDeleteTarget(null)}>
         <AlertDialogContent>
