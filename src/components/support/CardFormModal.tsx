@@ -19,12 +19,14 @@ interface Props {
   readOnly: boolean
   lockedReason?: string
   onSubmit: (values: Record<string, string>) => Promise<void>
+  onDelete?: () => void
   meta?: { createdBy?: string; createdAt?: string; updatedBy?: string; updatedAt?: string }
 }
 
 const fmt = (iso?: string) => (iso ? new Date(iso).toLocaleString('pt-BR') : '—')
 
-export function CardFormModal({ open, onOpenChange, fields, card, stageName, readOnly, lockedReason, onSubmit, meta }: Props) {
+export function CardFormModal({ open, onOpenChange, fields, card, stageName, readOnly, lockedReason, onSubmit, onDelete, meta }: Props) {
+
   const [values, setValues] = useState<Record<string, string>>({})
   const [saving, setSaving] = useState(false)
 
