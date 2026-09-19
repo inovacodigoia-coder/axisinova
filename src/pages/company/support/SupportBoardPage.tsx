@@ -41,7 +41,10 @@ export default function SupportBoardPage() {
   const [draftValues, setDraftValues] = useState<Record<string, string>>({})
   const [draftSource, setDraftSource] = useState<{ source_order_id: string; source_protocol: string | null; source_order_number: string | null } | null>(null)
 
-  const names = useUserNames(cards.flatMap(c => [c.created_by, c.updated_by]))
+  const names = useUserNames([
+    ...cards.flatMap(c => [c.created_by, c.updated_by]),
+    ...Object.values(cardMeta).flatMap(m => [m.createdBy, m.updatedBy]),
+  ])
   const summaryFields = useMemo(() => fields.filter(f => f.show_on_card).slice(0, 4), [fields])
   const endStageId = stages.find(s => s.is_end)?.id
   const stageById = (id: string) => stages.find(s => s.id === id)
