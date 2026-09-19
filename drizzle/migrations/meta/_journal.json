@@ -57,6 +57,13 @@
       "when": 1789778280962,
       "tag": "0007_create_support_cards",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1789778600481,
+      "tag": "0008_support_cards_source_order",
+      "breakpoints": true
     }
   ]
 }

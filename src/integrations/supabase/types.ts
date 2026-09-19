@@ -3335,6 +3335,9 @@ export type Database = {
           created_by: string | null
           id: string
           position: number
+          source_order_id: string | null
+          source_order_number: string | null
+          source_protocol: string | null
           stage_id: string
           updated_at: string
           updated_by: string | null
@@ -3347,6 +3350,9 @@ export type Database = {
           created_by?: string | null
           id?: string
           position?: number
+          source_order_id?: string | null
+          source_order_number?: string | null
+          source_protocol?: string | null
           stage_id: string
           updated_at?: string
           updated_by?: string | null
@@ -3359,6 +3365,9 @@ export type Database = {
           created_by?: string | null
           id?: string
           position?: number
+          source_order_id?: string | null
+          source_order_number?: string | null
+          source_protocol?: string | null
           stage_id?: string
           updated_at?: string
           updated_by?: string | null
