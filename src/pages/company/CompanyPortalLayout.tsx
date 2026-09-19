@@ -342,6 +342,11 @@ function PortalContent() {
               <Route path="portal/parceiro" element={<PartnerPortalPage />} />
               <Route path="portal/paciente" element={<PatientPortalPage />} />
               <Route path="portal/medico" element={<DoctorPortalPage />} />
+
+              {/* Apoio */}
+              <Route path="apoio/terceirizacao" element={<SupportOutsourcingPage />} />
+              <Route path="apoio/kanban" element={<SupportKanbanBoardsPage />} />
+
               <Route path="estoque/fornecedores" element={<LabStockSuppliersPage />} />
               <Route path="estoque/relatorios" element={<LabStockReportsPage />} />
 
