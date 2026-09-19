@@ -45,6 +45,62 @@ export default function SupportBoardPage() {
   const [draftValues, setDraftValues] = useState<Record<string, string>>({})
   const [draftSource, setDraftSource] = useState<{ source_order_id: string; source_protocol: string | null; source_order_number: string | null } | null>(null)
 
+  // Filtros por data (mês ou período personalizado)
+  const [dateMode, setDateMode] = useState<'all' | 'month' | 'custom'>('all')
+  const [filterMonth, setFilterMonth] = useState('')
+  const [filterFrom, setFilterFrom] = useState('')
+  const [filterTo, setFilterTo] = useState('')
+  // Limite de cards visíveis por etapa (5 por vez)
+  const [visibleByStage, setVisibleByStage] = useState<Record<string, number>>({})
+
+  const STAGE_PAGE_SIZE = 5
+  const hasDateFilter = (dateMode === 'month' && !!filterMonth) || (dateMode === 'custom' && (filterFrom || filterTo))
+
+  const clearDateFilter = () => { setDateMode('all'); setFilterMonth(''); setFilterFrom(''); setFilterTo('') }
+
+  const visibleCards = useMemo(() => {
+    if (!hasDateFilter) return cards
+    return cards.filter(c => {
+      const day = c.created_at.slice(0, 10)
+      if (dateMode === 'month') return day.startsWith(filterMonth)
+      if (filterFrom && day < filterFrom) return false
+      if (filterTo && day > filterTo) return false
+      return true
+    })
+  }, [cards, dateMode, filterMonth, filterFrom, filterTo, hasDateFilter])
+
+  const visibleCountFor = (stageId: string) => visibleByStage[stageId] ?? STAGE_PAGE_SIZE
+  const setStageVisible = (stageId: string, n: number) =>
+    setVisibleByStage(prev => ({ ...prev, [stageId]: n }))
+
+  const renderStagePagination = (stageId: string, total: number) => {
+    const shown = visibleCountFor(stageId)
+    if (total <= STAGE_PAGE_SIZE) return null
+    const canMore = shown < total
+    const canBack = shown > STAGE_PAGE_SIZE
+    return (
+      <div className="flex items-center justify-between gap-2 pt-1">
+        <span className="text-[10px] text-muted-foreground">
+          Mostrando {Math.min(shown, total)} de {total}
+        </span>
+        <div className="flex gap-1">
+          {canBack && (
+            <Button size="sm" variant="ghost" className="h-7 px-2 text-xs"
+              onClick={() => setStageVisible(stageId, Math.max(STAGE_PAGE_SIZE, shown - STAGE_PAGE_SIZE))}>
+              <ChevronUp className="mr-1 h-3 w-3" />Voltar
+            </Button>
+          )}
+          {canMore && (
+            <Button size="sm" variant="ghost" className="h-7 px-2 text-xs text-primary"
+              onClick={() => setStageVisible(stageId, shown + STAGE_PAGE_SIZE)}>
+              <ChevronDown className="mr-1 h-3 w-3" />Ver mais {Math.min(STAGE_PAGE_SIZE, total - shown)}
+            </Button>
+          )}
+        </div>
+      </div>
+    )
+  }
+
   const names = useUserNames([
     ...cards.flatMap(c => [c.created_by, c.updated_by]),
     ...Object.values(cardMeta).flatMap(m => [m.createdBy, m.updatedBy]),
