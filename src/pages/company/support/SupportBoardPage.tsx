@@ -1,0 +1,257 @@
+import { useMemo, useState } from 'react'
+import { useNavigate, useParams } from 'react-router-dom'
+import {
+  ArrowLeft, Eye, KanbanSquare, List, Lock, Plus, Settings2, Trash2, User,
+} from 'lucide-react'
+import { Button } from '@/components/ui/button'
+import { Badge } from '@/components/ui/badge'
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
+} from '@/components/ui/alert-dialog'
+import { EmptyState } from '@/components/feedback/EmptyState'
+import { toast } from 'sonner'
+import { cn } from '@/lib/utils'
+import { useSupportBoardWorkspace, useUserNames, type SupportCard } from '@/hooks/useSupportCards'
+import { CardFieldsModal } from '@/components/support/CardFieldsModal'
+import { CardFormModal } from '@/components/support/CardFormModal'
+
+export default function SupportBoardPage() {
+  const { boardId } = useParams<{ boardId: string }>()
+  const navigate = useNavigate()
+  const {
+    board, stages, fields, cards, canEdit, loading,
+    saveField, deleteField, moveField, createCard, updateCard, moveCard, deleteCard,
+  } = useSupportBoardWorkspace(boardId)
+
+  const [view, setView] = useState<'list' | 'kanban'>('kanban')
+  const [fieldsOpen, setFieldsOpen] = useState(false)
+  const [formOpen, setFormOpen] = useState(false)
+  const [activeCard, setActiveCard] = useState<SupportCard | null>(null)
+  const [deleteTarget, setDeleteTarget] = useState<SupportCard | null>(null)
+  const [dragOver, setDragOver] = useState<string | null>(null)
+
+  const names = useUserNames(cards.flatMap(c => [c.created_by, c.updated_by]))
+  const summaryFields = useMemo(() => fields.filter(f => f.show_on_card).slice(0, 4), [fields])
+  const endStageId = stages.find(s => s.is_end)?.id
+  const stageById = (id: string) => stages.find(s => s.id === id)
+
+  const isLocked = (card: SupportCard) => card.stage_id === endStageId
+
+  const openCard = (card: SupportCard) => { setActiveCard(card); setFormOpen(true) }
+
+  const handleDrop = async (stageId: string, cardId: string) => {
+    setDragOver(null)
+    const card = cards.find(c => c.id === cardId)
+    if (!card || card.stage_id === stageId) return
+    if (!canEdit) { toast.error('Você tem apenas permissão de visualização'); return }
+    if (isLocked(card)) { toast.error('Card arquivado na etapa final não pode ser movido'); return }
+    try { await moveCard(cardId, stageId) }
+    catch (e) { toast.error(e instanceof Error ? e.message : 'Falha ao mover o card') }
+  }
+
+  const renderSummary = (card: SupportCard) => (
+    <div className="space-y-1">
+      {summaryFields.map(f => {
+        const value = card.values?.[f.id]
+        if (!value) return null
+        return (
+          <p key={f.id} className="truncate text-xs">
+            <span className="text-muted-foreground">{f.label}: </span>
+            <span className="text-foreground">{value}</span>
+          </p>
+        )
+      })}
+    </div>
+  )
+
+  if (loading) return <div className="p-6 text-sm text-muted-foreground">Carregando quadro...</div>
+  if (!board) return <div className="p-6 text-sm text-muted-foreground">Quadro não encontrado.</div>
+
+  return (
+    <div className="p-6">
+      <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
+        <div className="flex items-center gap-3">
+          <Button size="icon" variant="ghost" onClick={() => navigate('/app/apoio/kanban')}>
+            <ArrowLeft className="h-4 w-4" />
+          </Button>
+          <div>
+            <h1 className="text-2xl font-bold text-foreground">{board.name}</h1>
+            <p className="text-sm text-muted-foreground">
+              {cards.length} card(s) · {stages.length} etapas
+              {!canEdit && ' · somente leitura'}
+            </p>
+          </div>
+        </div>
+
+        <div className="flex flex-wrap items-center gap-2">
+          <div className="flex rounded-lg border p-0.5">
+            <Button size="sm" variant={view === 'list' ? 'secondary' : 'ghost'} onClick={() => setView('list')}>
+              <List className="mr-1 h-4 w-4" />Lista
+            </Button>
+            <Button size="sm" variant={view === 'kanban' ? 'secondary' : 'ghost'} onClick={() => setView('kanban')}>
+              <KanbanSquare className="mr-1 h-4 w-4" />Kanban
+            </Button>
+          </div>
+          {canEdit && (
+            <>
+              <Button variant="outline" onClick={() => setFieldsOpen(true)}>
+                <Settings2 className="mr-1 h-4 w-4" />Configurar Campos
+              </Button>
+              <Button className="gradient-bg text-white" onClick={() => { setActiveCard(null); setFormOpen(true) }}>
+                <Plus className="mr-1 h-4 w-4" />Novo Card
+              </Button>
+            </>
+          )}
+          {!canEdit && <Badge variant="secondary"><Eye className="mr-1 h-3 w-3" />Visualização</Badge>}
+        </div>
+      </div>
+
+      {cards.length === 0 ? (
+        <div className="rounded-xl border bg-card">
+          <EmptyState
+            icon={<KanbanSquare className="h-10 w-10" />}
+            title="Nenhum card neste quadro"
+            description={canEdit ? 'Crie o primeiro card para começar o fluxo.' : 'Ainda não há cards para visualizar.'}
+            action={canEdit ? <Button className="gradient-bg text-white" onClick={() => { setActiveCard(null); setFormOpen(true) }}>Novo Card</Button> : undefined}
+          />
+        </div>
+      ) : view === 'list' ? (
+        <div className="space-y-6">
+          {stages.map(stage => {
+            const stageCards = cards.filter(c => c.stage_id === stage.id)
+            return (
+              <div key={stage.id}>
+                <div className="mb-2 flex items-center gap-2">
+                  <span className="h-3 w-3 rounded-full" style={{ backgroundColor: stage.color }} />
+                  <h2 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">{stage.name}</h2>
+                  <Badge variant="outline">{stageCards.length}</Badge>
+                </div>
+                <div className="space-y-2">
+                  {stageCards.map(card => (
+                    <button
+                      key={card.id}
+                      onClick={() => openCard(card)}
+                      className="flex w-full items-center justify-between gap-4 rounded-lg border bg-card p-3 text-left transition-colors hover:bg-muted/50"
+                    >
+                      <div className="min-w-0 flex-1">{renderSummary(card)}</div>
+                      <div className="flex shrink-0 items-center gap-2 text-xs text-muted-foreground">
+                        {isLocked(card) && <Lock className="h-3 w-3" />}
+                        <User className="h-3 w-3" />
+                        {names[card.updated_by || ''] || '—'}
+                      </div>
+                    </button>
+                  ))}
+                  {stageCards.length === 0 && (
+                    <p className="rounded-lg border border-dashed p-3 text-xs text-muted-foreground">Sem cards nesta etapa.</p>
+                  )}
+                </div>
+              </div>
+            )
+          })}
+        </div>
+      ) : (
+        <div className="flex gap-4 overflow-x-auto pb-4">
+          {stages.map(stage => {
+            const stageCards = cards.filter(c => c.stage_id === stage.id)
+            return (
+              <div
+                key={stage.id}
+                onDragOver={e => { e.preventDefault(); setDragOver(stage.id) }}
+                onDragLeave={() => setDragOver(prev => (prev === stage.id ? null : prev))}
+                onDrop={e => { e.preventDefault(); handleDrop(stage.id, e.dataTransfer.getData('text/plain')) }}
+                className={cn(
+                  'w-72 shrink-0 rounded-xl border bg-muted/30 p-3 transition-colors',
+                  dragOver === stage.id && 'border-primary bg-primary/5'
+                )}
+              >
+                <div className="mb-3 flex items-center gap-2">
+                  <span className="h-3 w-3 rounded-full" style={{ backgroundColor: stage.color }} />
+                  <h2 className="flex-1 truncate text-sm font-semibold">{stage.name}</h2>
+                  <Badge variant="outline">{stageCards.length}</Badge>
+                </div>
+                <div className="space-y-2">
+                  {stageCards.map(card => (
+                    <div
+                      key={card.id}
+                      draggable={canEdit && !isLocked(card)}
+                      onDragStart={e => e.dataTransfer.setData('text/plain', card.id)}
+                      onClick={() => openCard(card)}
+                      className="cursor-pointer rounded-lg border bg-card p-3 shadow-sm transition-shadow hover:shadow-md"
+                    >
+                      {renderSummary(card)}
+                      <div className="mt-2 flex items-center gap-1 text-[10px] text-muted-foreground">
+                        {isLocked(card) && <Lock className="h-3 w-3" />}
+                        <User className="h-3 w-3" />
+                        {names[card.updated_by || ''] || '—'}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )
+          })}
+        </div>
+      )}
+
+      <CardFieldsModal
+        open={fieldsOpen}
+        onOpenChange={setFieldsOpen}
+        fields={fields}
+        onSave={saveField}
+        onDelete={deleteField}
+        onMove={moveField}
+      />
+
+      <CardFormModal
+        open={formOpen}
+        onOpenChange={setFormOpen}
+        fields={fields}
+        card={activeCard}
+        stageName={activeCard ? stageById(activeCard.stage_id)?.name : stages.find(s => s.is_start)?.name}
+        readOnly={!canEdit || (!!activeCard && isLocked(activeCard))}
+        lockedReason={
+          !canEdit
+            ? 'Você tem apenas permissão de visualização neste quadro.'
+            : activeCard && isLocked(activeCard)
+              ? 'Card arquivado na etapa final — somente leitura.'
+              : undefined
+        }
+        meta={activeCard ? {
+          createdBy: names[activeCard.created_by || ''],
+          createdAt: activeCard.created_at,
+          updatedBy: names[activeCard.updated_by || ''],
+          updatedAt: activeCard.updated_at,
+        } : undefined}
+        onSubmit={async values => {
+          if (activeCard) { await updateCard(activeCard.id, values); toast.success('Card atualizado') }
+          else { await createCard(values); toast.success('Card criado na etapa de início') }
+        }}
+      />
+
+      {activeCard && canEdit && !formOpen && (
+        <Button variant="outline" className="mt-4 text-destructive" onClick={() => setDeleteTarget(activeCard)}>
+          <Trash2 className="mr-1 h-4 w-4" />Excluir card selecionado
+        </Button>
+      )}
+
+      <AlertDialog open={!!deleteTarget} onOpenChange={v => !v && setDeleteTarget(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Excluir card</AlertDialogTitle>
+            <AlertDialogDescription>Esta ação não pode ser desfeita.</AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction onClick={async () => {
+              if (!deleteTarget) return
+              try { await deleteCard(deleteTarget.id); toast.success('Card excluído'); setActiveCard(null) }
+              catch (e) { toast.error(e instanceof Error ? e.message : 'Falha ao excluir') }
+              setDeleteTarget(null)
+            }}>Excluir</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </div>
+  )
+}
