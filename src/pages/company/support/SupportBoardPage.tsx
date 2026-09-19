@@ -330,6 +330,12 @@ export default function SupportBoardPage() {
 
 
 
+      <CardTimelineModal
+        open={!!historyCardId}
+        onOpenChange={v => !v && setHistoryCardId(null)}
+        cardId={historyCardId}
+      />
+
       <AlertDialog open={!!deleteTarget} onOpenChange={v => !v && setDeleteTarget(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
