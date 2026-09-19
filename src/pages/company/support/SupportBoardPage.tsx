@@ -305,6 +305,7 @@ export default function SupportBoardPage() {
                   {stageCards.length === 0 && (
                     <p className="rounded-lg border border-dashed p-3 text-xs text-muted-foreground">Sem cards nesta etapa.</p>
                   )}
+                  {renderStagePagination(stage.id, stageCards.length)}
                 </div>
               </div>
             )
@@ -313,7 +314,8 @@ export default function SupportBoardPage() {
       ) : (
         <div className="flex gap-4 overflow-x-auto pb-4">
           {stages.map(stage => {
-            const stageCards = cards.filter(c => c.stage_id === stage.id)
+            const stageCards = visibleCards.filter(c => c.stage_id === stage.id)
+            const shownCards = stageCards.slice(0, visibleCountFor(stage.id))
             return (
               <div
                 key={stage.id}
