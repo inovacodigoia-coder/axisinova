@@ -41,6 +41,19 @@ export interface SupportCard extends SupportCardSource {
 }
 
 
+export interface SupportCardAudit {
+  id: string
+  card_id: string
+  board_id: string
+  action: 'created' | 'field_changed' | 'stage_changed' | 'deleted'
+  field_id: string | null
+  field_label: string | null
+  old_value: string | null
+  new_value: string | null
+  actor_id: string | null
+  created_at: string
+}
+
 export interface SupportBoardDetail {
   id: string
   name: string
