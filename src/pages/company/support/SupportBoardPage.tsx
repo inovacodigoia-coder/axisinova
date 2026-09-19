@@ -1,10 +1,14 @@
 import { useMemo, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import {
-  ArrowLeft, Eye, FileText, KanbanSquare, List, Lock, PencilLine, Plus, Settings2, User,
+  ArrowLeft, CalendarDays, ChevronDown, ChevronUp, Eye, FileText, KanbanSquare, List,
+  Lock, PencilLine, Plus, Settings2, User, X,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
@@ -40,6 +44,62 @@ export default function SupportBoardPage() {
   const [pickerOpen, setPickerOpen] = useState(false)
   const [draftValues, setDraftValues] = useState<Record<string, string>>({})
   const [draftSource, setDraftSource] = useState<{ source_order_id: string; source_protocol: string | null; source_order_number: string | null } | null>(null)
+
+  // Filtros por data (mês ou período personalizado)
+  const [dateMode, setDateMode] = useState<'all' | 'month' | 'custom'>('all')
+  const [filterMonth, setFilterMonth] = useState('')
+  const [filterFrom, setFilterFrom] = useState('')
+  const [filterTo, setFilterTo] = useState('')
+  // Limite de cards visíveis por etapa (5 por vez)
+  const [visibleByStage, setVisibleByStage] = useState<Record<string, number>>({})
+
+  const STAGE_PAGE_SIZE = 5
+  const hasDateFilter = (dateMode === 'month' && !!filterMonth) || (dateMode === 'custom' && (filterFrom || filterTo))
+
+  const clearDateFilter = () => { setDateMode('all'); setFilterMonth(''); setFilterFrom(''); setFilterTo('') }
+
+  const visibleCards = useMemo(() => {
+    if (!hasDateFilter) return cards
+    return cards.filter(c => {
+      const day = c.created_at.slice(0, 10)
+      if (dateMode === 'month') return day.startsWith(filterMonth)
+      if (filterFrom && day < filterFrom) return false
+      if (filterTo && day > filterTo) return false
+      return true
+    })
+  }, [cards, dateMode, filterMonth, filterFrom, filterTo, hasDateFilter])
+
+  const visibleCountFor = (stageId: string) => visibleByStage[stageId] ?? STAGE_PAGE_SIZE
+  const setStageVisible = (stageId: string, n: number) =>
+    setVisibleByStage(prev => ({ ...prev, [stageId]: n }))
+
+  const renderStagePagination = (stageId: string, total: number) => {
+    const shown = visibleCountFor(stageId)
+    if (total <= STAGE_PAGE_SIZE) return null
+    const canMore = shown < total
+    const canBack = shown > STAGE_PAGE_SIZE
+    return (
+      <div className="flex items-center justify-between gap-2 pt-1">
+        <span className="text-[10px] text-muted-foreground">
+          Mostrando {Math.min(shown, total)} de {total}
+        </span>
+        <div className="flex gap-1">
+          {canBack && (
+            <Button size="sm" variant="ghost" className="h-7 px-2 text-xs"
+              onClick={() => setStageVisible(stageId, Math.max(STAGE_PAGE_SIZE, shown - STAGE_PAGE_SIZE))}>
+              <ChevronUp className="mr-1 h-3 w-3" />Voltar
+            </Button>
+          )}
+          {canMore && (
+            <Button size="sm" variant="ghost" className="h-7 px-2 text-xs text-primary"
+              onClick={() => setStageVisible(stageId, shown + STAGE_PAGE_SIZE)}>
+              <ChevronDown className="mr-1 h-3 w-3" />Ver mais {Math.min(STAGE_PAGE_SIZE, total - shown)}
+            </Button>
+          )}
+        </div>
+      </div>
+    )
+  }
 
   const names = useUserNames([
     ...cards.flatMap(c => [c.created_by, c.updated_by]),
@@ -132,7 +192,7 @@ export default function SupportBoardPage() {
           <div>
             <h1 className="text-2xl font-bold text-foreground">{board.name}</h1>
             <p className="text-sm text-muted-foreground">
-              {cards.length} card(s) · {stages.length} etapas
+              {hasDateFilter ? `${visibleCards.length} de ${cards.length}` : cards.length} card(s) · {stages.length} etapas
               {!canEdit && ' · somente leitura'}
             </p>
           </div>
@@ -162,6 +222,46 @@ export default function SupportBoardPage() {
         </div>
       </div>
 
+      <div className="mb-4 flex flex-wrap items-end gap-3 rounded-lg border bg-card p-3">
+        <div className="w-44">
+          <Label className="text-xs">Filtrar por data</Label>
+          <Select value={dateMode} onValueChange={v => setDateMode(v as 'all' | 'month' | 'custom')}>
+            <SelectTrigger className="h-9"><SelectValue /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Todas as datas</SelectItem>
+              <SelectItem value="month">Por mês</SelectItem>
+              <SelectItem value="custom">Período personalizado</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+        {dateMode === 'month' && (
+          <div>
+            <Label className="text-xs">Mês</Label>
+            <Input type="month" className="h-9 w-40" value={filterMonth} onChange={e => setFilterMonth(e.target.value)} />
+          </div>
+        )}
+        {dateMode === 'custom' && (
+          <>
+            <div>
+              <Label className="text-xs">De</Label>
+              <Input type="date" className="h-9 w-40" value={filterFrom} onChange={e => setFilterFrom(e.target.value)} />
+            </div>
+            <div>
+              <Label className="text-xs">Até</Label>
+              <Input type="date" className="h-9 w-40" value={filterTo} onChange={e => setFilterTo(e.target.value)} />
+            </div>
+          </>
+        )}
+        {hasDateFilter && (
+          <Button size="sm" variant="ghost" className="h-9 text-muted-foreground" onClick={clearDateFilter}>
+            <X className="mr-1 h-3 w-3" />Limpar filtro
+          </Button>
+        )}
+        <span className="ml-auto flex items-center gap-1 text-xs text-muted-foreground">
+          <CalendarDays className="h-3 w-3" />Criados em
+        </span>
+      </div>
+
       {cards.length === 0 ? (
         <div className="rounded-xl border bg-card">
           <EmptyState
@@ -171,10 +271,15 @@ export default function SupportBoardPage() {
             action={canEdit ? <Button className="gradient-bg text-white" onClick={() => setOriginOpen(true)}>Novo Card</Button> : undefined}
           />
         </div>
+      ) : visibleCards.length === 0 ? (
+        <p className="rounded-xl border border-dashed bg-card p-6 text-center text-sm text-muted-foreground">
+          Nenhum card criado no período selecionado.
+        </p>
       ) : view === 'list' ? (
         <div className="space-y-6">
           {stages.map(stage => {
-            const stageCards = cards.filter(c => c.stage_id === stage.id)
+            const stageCards = visibleCards.filter(c => c.stage_id === stage.id)
+            const shownCards = stageCards.slice(0, visibleCountFor(stage.id))
             return (
               <div key={stage.id}>
                 <div className="mb-2 flex items-center gap-2">
@@ -183,7 +288,7 @@ export default function SupportBoardPage() {
                   <Badge variant="outline">{stageCards.length}</Badge>
                 </div>
                 <div className="space-y-2">
-                  {stageCards.map(card => (
+                  {shownCards.map(card => (
                     <button
                       key={card.id}
                       onClick={() => openCard(card)}
@@ -200,6 +305,7 @@ export default function SupportBoardPage() {
                   {stageCards.length === 0 && (
                     <p className="rounded-lg border border-dashed p-3 text-xs text-muted-foreground">Sem cards nesta etapa.</p>
                   )}
+                  {renderStagePagination(stage.id, stageCards.length)}
                 </div>
               </div>
             )
@@ -208,7 +314,8 @@ export default function SupportBoardPage() {
       ) : (
         <div className="flex gap-4 overflow-x-auto pb-4">
           {stages.map(stage => {
-            const stageCards = cards.filter(c => c.stage_id === stage.id)
+            const stageCards = visibleCards.filter(c => c.stage_id === stage.id)
+            const shownCards = stageCards.slice(0, visibleCountFor(stage.id))
             return (
               <div
                 key={stage.id}
@@ -226,7 +333,7 @@ export default function SupportBoardPage() {
                   <Badge variant="outline">{stageCards.length}</Badge>
                 </div>
                 <div className="space-y-2">
-                  {stageCards.map(card => (
+                  {shownCards.map(card => (
                     <div
                       key={card.id}
                       draggable={canEdit && !isLocked(card)}
@@ -243,6 +350,7 @@ export default function SupportBoardPage() {
                     </div>
                   ))}
                 </div>
+                {renderStagePagination(stage.id, stageCards.length)}
               </div>
             )
           })}
