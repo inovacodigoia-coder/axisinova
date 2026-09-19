@@ -349,6 +349,8 @@ function PortalContent() {
               {/* Apoio */}
               <Route path="apoio/terceirizacao" element={<SupportOutsourcingPage />} />
               <Route path="apoio/kanban" element={<SupportKanbanBoardsPage />} />
+              <Route path="apoio/kanban/:boardId" element={<SupportBoardPage />} />
+
 
               <Route path="estoque/fornecedores" element={<LabStockSuppliersPage />} />
               <Route path="estoque/relatorios" element={<LabStockReportsPage />} />
