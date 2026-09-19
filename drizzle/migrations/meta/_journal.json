@@ -50,6 +50,13 @@
       "when": 1789777705869,
       "tag": "0006_create_support_kanban_boards",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1789778280962,
+      "tag": "0007_create_support_cards",
+      "breakpoints": true
     }
   ]
 }

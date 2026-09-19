@@ -3277,6 +3277,110 @@ export type Database = {
           },
         ]
       }
+      support_card_fields: {
+        Row: {
+          board_id: string
+          company_id: string
+          created_at: string
+          field_type: string
+          id: string
+          is_required: boolean
+          label: string
+          options: Json
+          position: number
+          show_on_card: boolean
+          updated_at: string
+        }
+        Insert: {
+          board_id: string
+          company_id: string
+          created_at?: string
+          field_type?: string
+          id?: string
+          is_required?: boolean
+          label: string
+          options?: Json
+          position?: number
+          show_on_card?: boolean
+          updated_at?: string
+        }
+        Update: {
+          board_id?: string
+          company_id?: string
+          created_at?: string
+          field_type?: string
+          id?: string
+          is_required?: boolean
+          label?: string
+          options?: Json
+          position?: number
+          show_on_card?: boolean
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "support_card_fields_board_id_fkey"
+            columns: ["board_id"]
+            isOneToOne: false
+            referencedRelation: "support_boards"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      support_cards: {
+        Row: {
+          board_id: string
+          company_id: string
+          created_at: string
+          created_by: string | null
+          id: string
+          position: number
+          stage_id: string
+          updated_at: string
+          updated_by: string | null
+          values: Json
+        }
+        Insert: {
+          board_id: string
+          company_id: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          position?: number
+          stage_id: string
+          updated_at?: string
+          updated_by?: string | null
+          values?: Json
+        }
+        Update: {
+          board_id?: string
+          company_id?: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          position?: number
+          stage_id?: string
+          updated_at?: string
+          updated_by?: string | null
+          values?: Json
+        }
+        Relationships: [
+          {
+            foreignKeyName: "support_cards_board_id_fkey"
+            columns: ["board_id"]
+            isOneToOne: false
+            referencedRelation: "support_boards"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "support_cards_stage_id_fkey"
+            columns: ["stage_id"]
+            isOneToOne: false
+            referencedRelation: "support_board_stages"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       system_settings: {
         Row: {
           key: string
