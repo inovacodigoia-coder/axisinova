@@ -253,11 +253,48 @@ export default function SupportBoardPage() {
         onMove={moveField}
       />
 
+      <Dialog open={originOpen} onOpenChange={setOriginOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader><DialogTitle>Novo Card</DialogTitle></DialogHeader>
+          <div className="grid gap-3">
+            <button onClick={startManualCard} className="flex items-start gap-3 rounded-lg border p-4 text-left hover:bg-muted/50">
+              <PencilLine className="mt-0.5 h-5 w-5 text-primary" />
+              <div>
+                <p className="text-sm font-medium">Preencher manualmente</p>
+                <p className="text-xs text-muted-foreground">Formulário em branco com os campos do quadro.</p>
+              </div>
+            </button>
+            <button onClick={() => { setOriginOpen(false); setPickerOpen(true) }} className="flex items-start gap-3 rounded-lg border p-4 text-left hover:bg-muted/50">
+              <FileText className="mt-0.5 h-5 w-5 text-primary" />
+              <div>
+                <p className="text-sm font-medium">Puxar de um pedido</p>
+                <p className="text-xs text-muted-foreground">Busque por protocolo, nome ou CPF e selecione os exames.</p>
+              </div>
+            </button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {board && (
+        <OrderPickerModal
+          open={pickerOpen}
+          onOpenChange={setPickerOpen}
+          companyId={board.company_id}
+          usedOrderIds={cards.map(c => c.source_order_id).filter(Boolean) as string[]}
+          onConfirm={applyOrder}
+        />
+      )}
+
       <CardFormModal
         open={formOpen}
         onOpenChange={setFormOpen}
         fields={fields}
         card={activeCard}
+        initialValues={draftValues}
+        sourceLabel={activeCard
+          ? (activeCard.source_protocol || activeCard.source_order_number)
+          : (draftSource?.source_protocol || draftSource?.source_order_number || null)}
+        onOpenSource={() => openSource(activeCard, draftSource?.source_protocol || draftSource?.source_order_number)}
         stageName={activeCard ? stageById(activeCard.stage_id)?.name : stages.find(s => s.is_start)?.name}
         readOnly={!canEdit || (!!activeCard && isLocked(activeCard))}
         lockedReason={
@@ -275,11 +312,16 @@ export default function SupportBoardPage() {
         } : undefined}
         onDelete={activeCard ? () => { setFormOpen(false); setDeleteTarget(activeCard) } : undefined}
         onSubmit={async values => {
-
           if (activeCard) { await updateCard(activeCard.id, values); toast.success('Card atualizado') }
-          else { await createCard(values); toast.success('Card criado na etapa de início') }
+          else {
+            await createCard(values, draftSource || undefined)
+            setDraftSource(null); setDraftValues({})
+            toast.success('Card criado na etapa de início')
+          }
         }}
       />
+
+
 
 
       <AlertDialog open={!!deleteTarget} onOpenChange={v => !v && setDeleteTarget(null)}>
