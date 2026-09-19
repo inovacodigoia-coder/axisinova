@@ -17,6 +17,7 @@ import { useSupportBoardWorkspace, useUserNames, type SupportCard } from '@/hook
 import { CardFieldsModal } from '@/components/support/CardFieldsModal'
 import { CardFormModal } from '@/components/support/CardFormModal'
 import { OrderPickerModal, type PickedOrder } from '@/components/support/OrderPickerModal'
+import { CardTimelineModal } from '@/components/support/CardTimelineModal'
 
 const norm = (s: string) => s.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim()
 
@@ -24,9 +25,10 @@ export default function SupportBoardPage() {
   const { boardId } = useParams<{ boardId: string }>()
   const navigate = useNavigate()
   const {
-    board, stages, fields, cards, canEdit, loading,
+    board, stages, fields, cards, canEdit, loading, cardMeta,
     saveField, deleteField, moveField, createCard, updateCard, moveCard, deleteCard,
   } = useSupportBoardWorkspace(boardId)
+  const [historyCardId, setHistoryCardId] = useState<string | null>(null)
 
   const [view, setView] = useState<'list' | 'kanban'>('kanban')
   const [fieldsOpen, setFieldsOpen] = useState(false)
@@ -39,7 +41,10 @@ export default function SupportBoardPage() {
   const [draftValues, setDraftValues] = useState<Record<string, string>>({})
   const [draftSource, setDraftSource] = useState<{ source_order_id: string; source_protocol: string | null; source_order_number: string | null } | null>(null)
 
-  const names = useUserNames(cards.flatMap(c => [c.created_by, c.updated_by]))
+  const names = useUserNames([
+    ...cards.flatMap(c => [c.created_by, c.updated_by]),
+    ...Object.values(cardMeta).flatMap(m => [m.createdBy, m.updatedBy]),
+  ])
   const summaryFields = useMemo(() => fields.filter(f => f.show_on_card).slice(0, 4), [fields])
   const endStageId = stages.find(s => s.is_end)?.id
   const stageById = (id: string) => stages.find(s => s.id === id)
@@ -188,7 +193,7 @@ export default function SupportBoardPage() {
                       <div className="flex shrink-0 items-center gap-2 text-xs text-muted-foreground">
                         {isLocked(card) && <Lock className="h-3 w-3" />}
                         <User className="h-3 w-3" />
-                        {names[card.updated_by || ''] || '—'}
+                        {names[cardMeta[card.id]?.updatedBy || card.updated_by || ''] || '—'}
                       </div>
                     </button>
                   ))}
@@ -233,7 +238,7 @@ export default function SupportBoardPage() {
                       <div className="mt-2 flex items-center gap-1 text-[10px] text-muted-foreground">
                         {isLocked(card) && <Lock className="h-3 w-3" />}
                         <User className="h-3 w-3" />
-                        {names[card.updated_by || ''] || '—'}
+                        {names[cardMeta[card.id]?.updatedBy || card.updated_by || ''] || '—'}
                       </div>
                     </div>
                   ))}
@@ -305,11 +310,12 @@ export default function SupportBoardPage() {
               : undefined
         }
         meta={activeCard ? {
-          createdBy: names[activeCard.created_by || ''],
-          createdAt: activeCard.created_at,
-          updatedBy: names[activeCard.updated_by || ''],
-          updatedAt: activeCard.updated_at,
+          createdBy: names[cardMeta[activeCard.id]?.createdBy || activeCard.created_by || ''],
+          createdAt: cardMeta[activeCard.id]?.createdAt || activeCard.created_at,
+          updatedBy: names[cardMeta[activeCard.id]?.updatedBy || activeCard.updated_by || ''],
+          updatedAt: cardMeta[activeCard.id]?.updatedAt || activeCard.updated_at,
         } : undefined}
+        onOpenHistory={activeCard ? () => setHistoryCardId(activeCard.id) : undefined}
         onDelete={activeCard ? () => { setFormOpen(false); setDeleteTarget(activeCard) } : undefined}
         onSubmit={async values => {
           if (activeCard) { await updateCard(activeCard.id, values); toast.success('Card atualizado') }
@@ -323,6 +329,12 @@ export default function SupportBoardPage() {
 
 
 
+
+      <CardTimelineModal
+        open={!!historyCardId}
+        onOpenChange={v => !v && setHistoryCardId(null)}
+        cardId={historyCardId}
+      />
 
       <AlertDialog open={!!deleteTarget} onOpenChange={v => !v && setDeleteTarget(null)}>
         <AlertDialogContent>

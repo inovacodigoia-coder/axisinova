@@ -41,6 +41,19 @@ export interface SupportCard extends SupportCardSource {
 }
 
 
+export interface SupportCardAudit {
+  id: string
+  card_id: string
+  board_id: string
+  action: 'created' | 'field_changed' | 'stage_changed' | 'deleted'
+  field_id: string | null
+  field_label: string | null
+  old_value: string | null
+  new_value: string | null
+  actor_id: string | null
+  created_at: string
+}
+
 export interface SupportBoardDetail {
   id: string
   name: string
@@ -65,23 +78,36 @@ export function useSupportBoardWorkspace(boardId: string | undefined) {
   const [cards, setCards] = useState<SupportCard[]>([])
   const [canEdit, setCanEdit] = useState(false)
   const [loading, setLoading] = useState(true)
+  const [cardMeta, setCardMeta] = useState<Record<string, { createdBy: string | null; createdAt: string | null; updatedBy: string | null; updatedAt: string | null }>>({})
 
   const load = useCallback(async () => {
     if (!boardId) return
     setLoading(true)
-    const [{ data: boardRow }, { data: stageRows }, { data: fieldRows }, { data: cardRows }, { data: memberRows }] =
+    const [{ data: boardRow }, { data: stageRows }, { data: fieldRows }, { data: cardRows }, { data: memberRows }, { data: auditRows }] =
       await Promise.all([
         supabase.from('support_boards').select('*').eq('id', boardId).maybeSingle(),
         supabase.from('support_board_stages').select('*').eq('board_id', boardId).order('position'),
         supabase.from('support_card_fields').select('*').eq('board_id', boardId).order('position'),
         supabase.from('support_cards').select('*').eq('board_id', boardId).order('created_at'),
         supabase.from('support_board_members').select('*').eq('board_id', boardId).eq('user_id', user?.id ?? ''),
+        supabase.from('support_card_audit').select('card_id, action, actor_id, created_at').eq('board_id', boardId).order('created_at'),
       ])
 
     setBoard(boardRow as SupportBoardDetail | null)
     setStages((stageRows || []) as SupportBoardStage[])
     setFields(((fieldRows || []) as any[]).map(f => ({ ...f, options: (f.options as string[]) || [] })))
     setCards(((cardRows || []) as any[]).map(c => ({ ...c, values: (c.values as Record<string, string>) || {} })))
+
+    const meta: Record<string, { createdBy: string | null; createdAt: string | null; updatedBy: string | null; updatedAt: string | null }> = {}
+    ;((auditRows || []) as any[]).forEach(row => {
+      const entry = meta[row.card_id] || { createdBy: null, createdAt: null, updatedBy: null, updatedAt: null }
+      if (row.action === 'created') { entry.createdBy = row.actor_id; entry.createdAt = row.created_at }
+      entry.updatedBy = row.actor_id
+      entry.updatedAt = row.created_at
+      meta[row.card_id] = entry
+    })
+    setCardMeta(meta)
+
 
     const member = (memberRows || [])[0] as any
     const isManager = user?.role === 'company_admin' || user?.role === 'super_admin'
@@ -182,7 +208,7 @@ export function useSupportBoardWorkspace(boardId: string | undefined) {
   }, [load])
 
   return {
-    board, stages, fields, cards, canEdit, loading, reload: load,
+    board, stages, fields, cards, canEdit, loading, cardMeta, reload: load,
     saveField, deleteField, moveField,
     createCard, updateCard, moveCard, deleteCard,
   }
