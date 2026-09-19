@@ -1,10 +1,11 @@
 import { useMemo, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import {
-  ArrowLeft, Eye, KanbanSquare, List, Lock, Plus, Settings2, Trash2, User,
+  ArrowLeft, Eye, FileText, KanbanSquare, List, Lock, PencilLine, Plus, Settings2, User,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
@@ -15,6 +16,9 @@ import { cn } from '@/lib/utils'
 import { useSupportBoardWorkspace, useUserNames, type SupportCard } from '@/hooks/useSupportCards'
 import { CardFieldsModal } from '@/components/support/CardFieldsModal'
 import { CardFormModal } from '@/components/support/CardFormModal'
+import { OrderPickerModal, type PickedOrder } from '@/components/support/OrderPickerModal'
+
+const norm = (s: string) => s.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim()
 
 export default function SupportBoardPage() {
   const { boardId } = useParams<{ boardId: string }>()
@@ -30,6 +34,10 @@ export default function SupportBoardPage() {
   const [activeCard, setActiveCard] = useState<SupportCard | null>(null)
   const [deleteTarget, setDeleteTarget] = useState<SupportCard | null>(null)
   const [dragOver, setDragOver] = useState<string | null>(null)
+  const [originOpen, setOriginOpen] = useState(false)
+  const [pickerOpen, setPickerOpen] = useState(false)
+  const [draftValues, setDraftValues] = useState<Record<string, string>>({})
+  const [draftSource, setDraftSource] = useState<{ source_order_id: string; source_protocol: string | null; source_order_number: string | null } | null>(null)
 
   const names = useUserNames(cards.flatMap(c => [c.created_by, c.updated_by]))
   const summaryFields = useMemo(() => fields.filter(f => f.show_on_card).slice(0, 4), [fields])
@@ -38,7 +46,42 @@ export default function SupportBoardPage() {
 
   const isLocked = (card: SupportCard) => card.stage_id === endStageId
 
-  const openCard = (card: SupportCard) => { setActiveCard(card); setFormOpen(true) }
+  const openCard = (card: SupportCard) => { setActiveCard(card); setDraftValues({}); setDraftSource(null); setFormOpen(true) }
+
+  const startManualCard = () => {
+    setActiveCard(null); setDraftValues({}); setDraftSource(null)
+    setOriginOpen(false); setFormOpen(true)
+  }
+
+  const applyOrder = (order: PickedOrder, examLabels: string[]) => {
+    const values: Record<string, string> = {}
+    fields.forEach(f => {
+      const label = norm(f.label)
+      if (label === 'nome do paciente' && order.patient_name) values[f.id] = order.patient_name
+      else if (label === 'exame' && examLabels.length) {
+        values[f.id] = f.field_type === 'select'
+          ? (f.options.find(o => norm(o) === norm(examLabels[0])) || '')
+          : examLabels.join(', ')
+      } else if (label === 'data da solicitacao') {
+        values[f.id] = order.created_at.slice(0, 10)
+      }
+    })
+    setActiveCard(null)
+    setDraftValues(values)
+    setDraftSource({
+      source_order_id: order.id,
+      source_protocol: order.protocol,
+      source_order_number: order.order_number,
+    })
+    setFormOpen(true)
+  }
+
+  const openSource = (card: SupportCard | null, fallback?: string | null) => {
+    const ref = card?.source_protocol || card?.source_order_number || fallback
+    if (!ref) return
+    window.open(`/app/lab/analise?busca=${encodeURIComponent(ref)}`, '_blank')
+  }
+
 
   const handleDrop = async (stageId: string, cardId: string) => {
     setDragOver(null)
@@ -62,8 +105,14 @@ export default function SupportBoardPage() {
           </p>
         )
       })}
+      {(card.source_protocol || card.source_order_number) && (
+        <Badge variant="outline" className="mt-1 gap-1 text-[10px] text-primary">
+          <FileText className="h-3 w-3" />{card.source_protocol || card.source_order_number}
+        </Badge>
+      )}
     </div>
   )
+
 
   if (loading) return <div className="p-6 text-sm text-muted-foreground">Carregando quadro...</div>
   if (!board) return <div className="p-6 text-sm text-muted-foreground">Quadro não encontrado.</div>
@@ -98,9 +147,10 @@ export default function SupportBoardPage() {
               <Button variant="outline" onClick={() => setFieldsOpen(true)}>
                 <Settings2 className="mr-1 h-4 w-4" />Configurar Campos
               </Button>
-              <Button className="gradient-bg text-white" onClick={() => { setActiveCard(null); setFormOpen(true) }}>
+              <Button className="gradient-bg text-white" onClick={() => setOriginOpen(true)}>
                 <Plus className="mr-1 h-4 w-4" />Novo Card
               </Button>
+
             </>
           )}
           {!canEdit && <Badge variant="secondary"><Eye className="mr-1 h-3 w-3" />Visualização</Badge>}
@@ -113,7 +163,7 @@ export default function SupportBoardPage() {
             icon={<KanbanSquare className="h-10 w-10" />}
             title="Nenhum card neste quadro"
             description={canEdit ? 'Crie o primeiro card para começar o fluxo.' : 'Ainda não há cards para visualizar.'}
-            action={canEdit ? <Button className="gradient-bg text-white" onClick={() => { setActiveCard(null); setFormOpen(true) }}>Novo Card</Button> : undefined}
+            action={canEdit ? <Button className="gradient-bg text-white" onClick={() => setOriginOpen(true)}>Novo Card</Button> : undefined}
           />
         </div>
       ) : view === 'list' ? (
@@ -203,11 +253,48 @@ export default function SupportBoardPage() {
         onMove={moveField}
       />
 
+      <Dialog open={originOpen} onOpenChange={setOriginOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader><DialogTitle>Novo Card</DialogTitle></DialogHeader>
+          <div className="grid gap-3">
+            <button onClick={startManualCard} className="flex items-start gap-3 rounded-lg border p-4 text-left hover:bg-muted/50">
+              <PencilLine className="mt-0.5 h-5 w-5 text-primary" />
+              <div>
+                <p className="text-sm font-medium">Preencher manualmente</p>
+                <p className="text-xs text-muted-foreground">Formulário em branco com os campos do quadro.</p>
+              </div>
+            </button>
+            <button onClick={() => { setOriginOpen(false); setPickerOpen(true) }} className="flex items-start gap-3 rounded-lg border p-4 text-left hover:bg-muted/50">
+              <FileText className="mt-0.5 h-5 w-5 text-primary" />
+              <div>
+                <p className="text-sm font-medium">Puxar de um pedido</p>
+                <p className="text-xs text-muted-foreground">Busque por protocolo, nome ou CPF e selecione os exames.</p>
+              </div>
+            </button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {board && (
+        <OrderPickerModal
+          open={pickerOpen}
+          onOpenChange={setPickerOpen}
+          companyId={board.company_id}
+          usedOrderIds={cards.map(c => c.source_order_id).filter(Boolean) as string[]}
+          onConfirm={applyOrder}
+        />
+      )}
+
       <CardFormModal
         open={formOpen}
         onOpenChange={setFormOpen}
         fields={fields}
         card={activeCard}
+        initialValues={draftValues}
+        sourceLabel={activeCard
+          ? (activeCard.source_protocol || activeCard.source_order_number)
+          : (draftSource?.source_protocol || draftSource?.source_order_number || null)}
+        onOpenSource={() => openSource(activeCard, draftSource?.source_protocol || draftSource?.source_order_number)}
         stageName={activeCard ? stageById(activeCard.stage_id)?.name : stages.find(s => s.is_start)?.name}
         readOnly={!canEdit || (!!activeCard && isLocked(activeCard))}
         lockedReason={
@@ -225,11 +312,16 @@ export default function SupportBoardPage() {
         } : undefined}
         onDelete={activeCard ? () => { setFormOpen(false); setDeleteTarget(activeCard) } : undefined}
         onSubmit={async values => {
-
           if (activeCard) { await updateCard(activeCard.id, values); toast.success('Card atualizado') }
-          else { await createCard(values); toast.success('Card criado na etapa de início') }
+          else {
+            await createCard(values, draftSource || undefined)
+            setDraftSource(null); setDraftValues({})
+            toast.success('Card criado na etapa de início')
+          }
         }}
       />
+
+
 
 
       <AlertDialog open={!!deleteTarget} onOpenChange={v => !v && setDeleteTarget(null)}>

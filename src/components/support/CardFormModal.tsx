@@ -6,7 +6,7 @@ import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { Badge } from '@/components/ui/badge'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { Lock, Trash2 } from 'lucide-react'
+import { ExternalLink, FileText, Lock, Trash2 } from 'lucide-react'
 import { toast } from 'sonner'
 import type { SupportCard, SupportCardField } from '@/hooks/useSupportCards'
 
@@ -18,6 +18,9 @@ interface Props {
   stageName?: string
   readOnly: boolean
   lockedReason?: string
+  initialValues?: Record<string, string>
+  sourceLabel?: string | null
+  onOpenSource?: () => void
   onSubmit: (values: Record<string, string>) => Promise<void>
   onDelete?: () => void
   meta?: { createdBy?: string; createdAt?: string; updatedBy?: string; updatedAt?: string }
@@ -25,14 +28,16 @@ interface Props {
 
 const fmt = (iso?: string) => (iso ? new Date(iso).toLocaleString('pt-BR') : '—')
 
-export function CardFormModal({ open, onOpenChange, fields, card, stageName, readOnly, lockedReason, onSubmit, onDelete, meta }: Props) {
+export function CardFormModal({ open, onOpenChange, fields, card, stageName, readOnly, lockedReason, initialValues, sourceLabel, onOpenSource, onSubmit, onDelete, meta }: Props) {
 
   const [values, setValues] = useState<Record<string, string>>({})
   const [saving, setSaving] = useState(false)
 
   useEffect(() => {
-    if (open) setValues(card?.values ? { ...card.values } : {})
+    if (open) setValues(card?.values ? { ...card.values } : { ...(initialValues || {}) })
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open, card])
+
 
   const handleSave = async () => {
     const missing = fields.filter(f => f.is_required && !String(values[f.id] || '').trim())
@@ -66,6 +71,19 @@ export function CardFormModal({ open, onOpenChange, fields, card, stageName, rea
             <Lock className="h-4 w-4" />{lockedReason}
           </div>
         )}
+
+        {sourceLabel && (
+          <button
+            onClick={() => onOpenSource?.()}
+            className="flex w-fit items-center gap-2 rounded-lg border border-primary/40 bg-primary/5 px-3 py-1.5 text-xs font-medium text-primary hover:bg-primary/10"
+          >
+            <FileText className="h-3.5 w-3.5" />
+            Atendimento de origem: {sourceLabel}
+            <ExternalLink className="h-3.5 w-3.5" />
+          </button>
+        )}
+
+
 
         <div className="space-y-4">
           {fields.map(field => (
