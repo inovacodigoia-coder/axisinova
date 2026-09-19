@@ -192,7 +192,7 @@ export default function SupportBoardPage() {
           <div>
             <h1 className="text-2xl font-bold text-foreground">{board.name}</h1>
             <p className="text-sm text-muted-foreground">
-              {cards.length} card(s) · {stages.length} etapas
+              {hasDateFilter ? `${visibleCards.length} de ${cards.length}` : cards.length} card(s) · {stages.length} etapas
               {!canEdit && ' · somente leitura'}
             </p>
           </div>
