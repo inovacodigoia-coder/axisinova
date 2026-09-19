@@ -163,7 +163,7 @@ export default function SupportBoardPage() {
             icon={<KanbanSquare className="h-10 w-10" />}
             title="Nenhum card neste quadro"
             description={canEdit ? 'Crie o primeiro card para começar o fluxo.' : 'Ainda não há cards para visualizar.'}
-            action={canEdit ? <Button className="gradient-bg text-white" onClick={() => { setActiveCard(null); setFormOpen(true) }}>Novo Card</Button> : undefined}
+            action={canEdit ? <Button className="gradient-bg text-white" onClick={() => setOriginOpen(true)}>Novo Card</Button> : undefined}
           />
         </div>
       ) : view === 'list' ? (
