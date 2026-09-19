@@ -71,6 +71,20 @@
       "when": 1789779091224,
       "tag": "0009_create_support_card_audit",
       "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1789781534247,
+      "tag": "0010_fix_support_boards_select_policy",
+      "breakpoints": true
+    },
+    {
+      "idx": 11,
+      "version": "7",
+      "when": 1789781579654,
+      "tag": "0011_allow_board_cascade_stage_delete",
+      "breakpoints": true
     }
   ]
 }
