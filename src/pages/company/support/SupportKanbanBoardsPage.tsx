@@ -18,8 +18,10 @@ import { BoardFormModal } from '@/components/support/BoardFormModal'
 import { BoardStagesModal } from '@/components/support/BoardStagesModal'
 
 export default function SupportKanbanBoardsPage() {
+  const navigate = useNavigate()
   const { allSectors } = useCompanyContext()
   const { companyId, boards, users, loading, reload, createBoard, updateBoard, deleteBoard, fetchMembers } = useSupportBoards()
+
   const [search, setSearch] = useState('')
   const [formOpen, setFormOpen] = useState(false)
   const [editing, setEditing] = useState<SupportBoard | null>(null)
