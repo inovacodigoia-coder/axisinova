@@ -64,6 +64,13 @@
       "when": 1789778600481,
       "tag": "0008_support_cards_source_order",
       "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1789779091224,
+      "tag": "0009_create_support_card_audit",
+      "breakpoints": true
     }
   ]
 }

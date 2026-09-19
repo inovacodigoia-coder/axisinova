@@ -3277,6 +3277,48 @@ export type Database = {
           },
         ]
       }
+      support_card_audit: {
+        Row: {
+          action: string
+          actor_id: string | null
+          board_id: string
+          card_id: string
+          company_id: string
+          created_at: string
+          field_id: string | null
+          field_label: string | null
+          id: string
+          new_value: string | null
+          old_value: string | null
+        }
+        Insert: {
+          action: string
+          actor_id?: string | null
+          board_id: string
+          card_id: string
+          company_id: string
+          created_at?: string
+          field_id?: string | null
+          field_label?: string | null
+          id?: string
+          new_value?: string | null
+          old_value?: string | null
+        }
+        Update: {
+          action?: string
+          actor_id?: string | null
+          board_id?: string
+          card_id?: string
+          company_id?: string
+          created_at?: string
+          field_id?: string | null
+          field_label?: string | null
+          id?: string
+          new_value?: string | null
+          old_value?: string | null
+        }
+        Relationships: []
+      }
       support_card_fields: {
         Row: {
           board_id: string
