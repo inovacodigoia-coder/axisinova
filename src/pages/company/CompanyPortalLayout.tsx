@@ -126,6 +126,8 @@ import LabSorotecaStructurePage from './lab/soroteca/LabSorotecaStructurePage'
 import ExternalPortalsPage from './lab/portals/ExternalPortalsPage'
 import SupportOutsourcingPage from './support/SupportOutsourcingPage'
 import SupportKanbanBoardsPage from './support/SupportKanbanBoardsPage'
+import SupportBoardPage from './support/SupportBoardPage'
+
 
 import PartnersHubPage from './lab/portals/PartnersHubPage'
 import PartnerDetailPage from './lab/portals/PartnerDetailPage'
