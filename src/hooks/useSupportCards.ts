@@ -137,7 +137,7 @@ export function useSupportBoardWorkspace(boardId: string | undefined) {
   }, [fields, load])
 
   /* ── Cards ── */
-  const createCard = useCallback(async (values: Record<string, string>) => {
+  const createCard = useCallback(async (values: Record<string, string>, source?: Partial<SupportCardSource>) => {
     if (!boardId || !board) return
     const start = stages.find(s => s.is_start) || stages[0]
     if (!start) throw new Error('Configure uma etapa de Início antes de criar cards.')
@@ -146,9 +146,13 @@ export function useSupportBoardWorkspace(boardId: string | undefined) {
       board_id: boardId,
       stage_id: start.id,
       values,
+      source_order_id: source?.source_order_id ?? null,
+      source_protocol: source?.source_protocol ?? null,
+      source_order_number: source?.source_order_number ?? null,
       created_by: user?.id ?? null,
       updated_by: user?.id ?? null,
     })
+
     if (error) throw error
     await load()
   }, [boardId, board, stages, user?.id, load])
