@@ -193,7 +193,7 @@ export default function SupportBoardPage() {
                       <div className="flex shrink-0 items-center gap-2 text-xs text-muted-foreground">
                         {isLocked(card) && <Lock className="h-3 w-3" />}
                         <User className="h-3 w-3" />
-                        {names[card.updated_by || ''] || '—'}
+                        {names[cardMeta[card.id]?.updatedBy || card.updated_by || ''] || '—'}
                       </div>
                     </button>
                   ))}
@@ -238,7 +238,7 @@ export default function SupportBoardPage() {
                       <div className="mt-2 flex items-center gap-1 text-[10px] text-muted-foreground">
                         {isLocked(card) && <Lock className="h-3 w-3" />}
                         <User className="h-3 w-3" />
-                        {names[card.updated_by || ''] || '—'}
+                        {names[cardMeta[card.id]?.updatedBy || card.updated_by || ''] || '—'}
                       </div>
                     </div>
                   ))}
