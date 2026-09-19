@@ -271,10 +271,15 @@ export default function SupportBoardPage() {
             action={canEdit ? <Button className="gradient-bg text-white" onClick={() => setOriginOpen(true)}>Novo Card</Button> : undefined}
           />
         </div>
+      ) : visibleCards.length === 0 ? (
+        <p className="rounded-xl border border-dashed bg-card p-6 text-center text-sm text-muted-foreground">
+          Nenhum card criado no período selecionado.
+        </p>
       ) : view === 'list' ? (
         <div className="space-y-6">
           {stages.map(stage => {
-            const stageCards = cards.filter(c => c.stage_id === stage.id)
+            const stageCards = visibleCards.filter(c => c.stage_id === stage.id)
+            const shownCards = stageCards.slice(0, visibleCountFor(stage.id))
             return (
               <div key={stage.id}>
                 <div className="mb-2 flex items-center gap-2">
@@ -283,7 +288,7 @@ export default function SupportBoardPage() {
                   <Badge variant="outline">{stageCards.length}</Badge>
                 </div>
                 <div className="space-y-2">
-                  {stageCards.map(card => (
+                  {shownCards.map(card => (
                     <button
                       key={card.id}
                       onClick={() => openCard(card)}
