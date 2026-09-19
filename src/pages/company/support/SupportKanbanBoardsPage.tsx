@@ -1,4 +1,6 @@
 import { useMemo, useState } from 'react'
+import { useNavigate } from 'react-router-dom'
+
 import { Globe, KanbanSquare, Layers, Lock, MoreHorizontal, Pencil, Plus, Search, Settings2, Trash2, Users } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
