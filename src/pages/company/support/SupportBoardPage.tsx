@@ -147,9 +147,10 @@ export default function SupportBoardPage() {
               <Button variant="outline" onClick={() => setFieldsOpen(true)}>
                 <Settings2 className="mr-1 h-4 w-4" />Configurar Campos
               </Button>
-              <Button className="gradient-bg text-white" onClick={() => { setActiveCard(null); setFormOpen(true) }}>
+              <Button className="gradient-bg text-white" onClick={() => setOriginOpen(true)}>
                 <Plus className="mr-1 h-4 w-4" />Novo Card
               </Button>
+
             </>
           )}
           {!canEdit && <Badge variant="secondary"><Eye className="mr-1 h-3 w-3" />Visualização</Badge>}
