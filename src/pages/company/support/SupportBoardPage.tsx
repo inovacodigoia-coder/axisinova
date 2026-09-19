@@ -223,7 +223,9 @@ export default function SupportBoardPage() {
           updatedBy: names[activeCard.updated_by || ''],
           updatedAt: activeCard.updated_at,
         } : undefined}
+        onDelete={activeCard ? () => { setFormOpen(false); setDeleteTarget(activeCard) } : undefined}
         onSubmit={async values => {
+
           if (activeCard) { await updateCard(activeCard.id, values); toast.success('Card atualizado') }
           else { await createCard(values); toast.success('Card criado na etapa de início') }
         }}
