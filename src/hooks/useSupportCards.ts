@@ -23,7 +23,13 @@ export interface SupportCardField {
   position: number
 }
 
-export interface SupportCard {
+export interface SupportCardSource {
+  source_order_id: string | null
+  source_protocol: string | null
+  source_order_number: string | null
+}
+
+export interface SupportCard extends SupportCardSource {
   id: string
   board_id: string
   stage_id: string
@@ -33,6 +39,7 @@ export interface SupportCard {
   created_at: string
   updated_at: string
 }
+
 
 export interface SupportBoardDetail {
   id: string
