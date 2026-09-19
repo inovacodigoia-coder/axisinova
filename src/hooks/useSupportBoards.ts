@@ -105,6 +105,20 @@ export function useSupportBoards() {
     ])
     if (stageError) throw stageError
 
+    const { error: fieldError } = await supabase.from('support_card_fields').insert(
+      DEFAULT_CARD_FIELDS.map((f, index) => ({
+        company_id: companyId,
+        board_id: data.id,
+        label: f.label,
+        field_type: f.field_type,
+        is_required: index === 1,
+        show_on_card: true,
+        position: index,
+      }))
+    )
+    if (fieldError) throw fieldError
+
+
     if (input.visibility === 'private' && input.members.length > 0) {
       const { error: memberError } = await supabase.from('support_board_members').insert(
         input.members.map(m => ({ ...m, company_id: companyId, board_id: data.id }))
