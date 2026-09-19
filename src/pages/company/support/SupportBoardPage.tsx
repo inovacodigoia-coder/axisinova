@@ -105,8 +105,14 @@ export default function SupportBoardPage() {
           </p>
         )
       })}
+      {(card.source_protocol || card.source_order_number) && (
+        <Badge variant="outline" className="mt-1 gap-1 text-[10px] text-primary">
+          <FileText className="h-3 w-3" />{card.source_protocol || card.source_order_number}
+        </Badge>
+      )}
     </div>
   )
+
 
   if (loading) return <div className="p-6 text-sm text-muted-foreground">Carregando quadro...</div>
   if (!board) return <div className="p-6 text-sm text-muted-foreground">Quadro não encontrado.</div>
