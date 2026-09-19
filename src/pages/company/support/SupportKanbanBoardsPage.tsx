@@ -66,10 +66,11 @@ export default function SupportKanbanBoardsPage() {
           {filtered.map(board => (
             <div key={board.id} className="rounded-xl border bg-card p-4 transition-shadow hover:shadow-md">
               <div className="flex items-start justify-between gap-2">
-                <div className="min-w-0">
-                  <h3 className="truncate font-semibold text-foreground">{board.name}</h3>
+                <button className="min-w-0 text-left" onClick={() => navigate(`/app/apoio/kanban/${board.id}`)}>
+                  <h3 className="truncate font-semibold text-foreground hover:text-primary">{board.name}</h3>
                   <p className="truncate text-xs text-muted-foreground">{sectorName(board.sector_id)}</p>
-                </div>
+                </button>
+
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
                     <Button size="icon" variant="ghost"><MoreHorizontal className="h-4 w-4" /></Button>
