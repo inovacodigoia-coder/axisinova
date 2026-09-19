@@ -222,6 +222,46 @@ export default function SupportBoardPage() {
         </div>
       </div>
 
+      <div className="mb-4 flex flex-wrap items-end gap-3 rounded-lg border bg-card p-3">
+        <div className="w-44">
+          <Label className="text-xs">Filtrar por data</Label>
+          <Select value={dateMode} onValueChange={v => setDateMode(v as 'all' | 'month' | 'custom')}>
+            <SelectTrigger className="h-9"><SelectValue /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Todas as datas</SelectItem>
+              <SelectItem value="month">Por mês</SelectItem>
+              <SelectItem value="custom">Período personalizado</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+        {dateMode === 'month' && (
+          <div>
+            <Label className="text-xs">Mês</Label>
+            <Input type="month" className="h-9 w-40" value={filterMonth} onChange={e => setFilterMonth(e.target.value)} />
+          </div>
+        )}
+        {dateMode === 'custom' && (
+          <>
+            <div>
+              <Label className="text-xs">De</Label>
+              <Input type="date" className="h-9 w-40" value={filterFrom} onChange={e => setFilterFrom(e.target.value)} />
+            </div>
+            <div>
+              <Label className="text-xs">Até</Label>
+              <Input type="date" className="h-9 w-40" value={filterTo} onChange={e => setFilterTo(e.target.value)} />
+            </div>
+          </>
+        )}
+        {hasDateFilter && (
+          <Button size="sm" variant="ghost" className="h-9 text-muted-foreground" onClick={clearDateFilter}>
+            <X className="mr-1 h-3 w-3" />Limpar filtro
+          </Button>
+        )}
+        <span className="ml-auto flex items-center gap-1 text-xs text-muted-foreground">
+          <CalendarDays className="h-3 w-3" />Criados em
+        </span>
+      </div>
+
       {cards.length === 0 ? (
         <div className="rounded-xl border bg-card">
           <EmptyState
