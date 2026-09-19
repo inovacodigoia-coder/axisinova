@@ -17,6 +17,7 @@ import { useSupportBoardWorkspace, useUserNames, type SupportCard } from '@/hook
 import { CardFieldsModal } from '@/components/support/CardFieldsModal'
 import { CardFormModal } from '@/components/support/CardFormModal'
 import { OrderPickerModal, type PickedOrder } from '@/components/support/OrderPickerModal'
+import { CardTimelineModal } from '@/components/support/CardTimelineModal'
 
 const norm = (s: string) => s.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim()
 
@@ -24,9 +25,10 @@ export default function SupportBoardPage() {
   const { boardId } = useParams<{ boardId: string }>()
   const navigate = useNavigate()
   const {
-    board, stages, fields, cards, canEdit, loading,
+    board, stages, fields, cards, canEdit, loading, cardMeta,
     saveField, deleteField, moveField, createCard, updateCard, moveCard, deleteCard,
   } = useSupportBoardWorkspace(boardId)
+  const [historyCardId, setHistoryCardId] = useState<string | null>(null)
 
   const [view, setView] = useState<'list' | 'kanban'>('kanban')
   const [fieldsOpen, setFieldsOpen] = useState(false)
