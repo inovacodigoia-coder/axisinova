@@ -29,7 +29,7 @@ interface Props {
 
 const fmt = (iso?: string) => (iso ? new Date(iso).toLocaleString('pt-BR') : '—')
 
-export function CardFormModal({ open, onOpenChange, fields, card, stageName, readOnly, lockedReason, initialValues, sourceLabel, onOpenSource, onSubmit, onDelete, meta }: Props) {
+export function CardFormModal({ open, onOpenChange, fields, card, stageName, readOnly, lockedReason, initialValues, sourceLabel, onOpenSource, onSubmit, onDelete, onOpenHistory, meta }: Props) {
 
   const [values, setValues] = useState<Record<string, string>>({})
   const [saving, setSaving] = useState(false)
@@ -123,9 +123,16 @@ export function CardFormModal({ open, onOpenChange, fields, card, stageName, rea
         </div>
 
         {card && (
-          <div className="mt-4 rounded-lg border bg-muted/30 p-3 text-xs text-muted-foreground">
-            <p>Criado por {meta?.createdBy || '—'} em {fmt(meta?.createdAt)}</p>
-            <p>Alterado por {meta?.updatedBy || '—'} em {fmt(meta?.updatedAt)}</p>
+          <div className="mt-4 flex flex-wrap items-center justify-between gap-2 rounded-lg border bg-muted/30 p-3 text-xs text-muted-foreground">
+            <div>
+              <p>Criado por {meta?.createdBy || '—'} em {fmt(meta?.createdAt)}</p>
+              <p>Última alteração por {meta?.updatedBy || '—'} em {fmt(meta?.updatedAt)}</p>
+            </div>
+            {onOpenHistory && (
+              <Button size="sm" variant="outline" onClick={onOpenHistory}>
+                <History className="mr-1 h-4 w-4" />Ver histórico
+              </Button>
+            )}
           </div>
         )}
 
