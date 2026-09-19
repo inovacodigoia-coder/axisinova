@@ -72,6 +72,19 @@ export function CardFormModal({ open, onOpenChange, fields, card, stageName, rea
           </div>
         )}
 
+        {sourceLabel && (
+          <button
+            onClick={() => onOpenSource?.()}
+            className="flex w-fit items-center gap-2 rounded-lg border border-primary/40 bg-primary/5 px-3 py-1.5 text-xs font-medium text-primary hover:bg-primary/10"
+          >
+            <FileText className="h-3.5 w-3.5" />
+            Atendimento de origem: {sourceLabel}
+            <ExternalLink className="h-3.5 w-3.5" />
+          </button>
+        )}
+
+
+
         <div className="space-y-4">
           {fields.map(field => (
             <div key={field.id}>
