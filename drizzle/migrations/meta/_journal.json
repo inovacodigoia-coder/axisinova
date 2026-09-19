@@ -43,6 +43,13 @@
       "when": 1789606755581,
       "tag": "0005_unique_lab_result_graphics",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1789777705869,
+      "tag": "0006_create_support_kanban_boards",
+      "breakpoints": true
     }
   ]
 }
