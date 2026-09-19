@@ -108,14 +108,22 @@ export function CardFormModal({ open, onOpenChange, fields, card, stageName, rea
           </div>
         )}
 
-        <DialogFooter>
-          <Button variant="outline" onClick={() => onOpenChange(false)}>Fechar</Button>
-          {!readOnly && (
-            <Button className="gradient-bg text-white" onClick={handleSave} disabled={saving}>
-              {saving ? 'Salvando...' : 'Salvar'}
+        <DialogFooter className="gap-2 sm:justify-between">
+          {card && onDelete && !readOnly ? (
+            <Button variant="outline" className="text-destructive" onClick={() => onDelete()}>
+              <Trash2 className="mr-1 h-4 w-4" />Excluir card
             </Button>
-          )}
+          ) : <span />}
+          <div className="flex gap-2">
+            <Button variant="outline" onClick={() => onOpenChange(false)}>Fechar</Button>
+            {!readOnly && (
+              <Button className="gradient-bg text-white" onClick={handleSave} disabled={saving}>
+                {saving ? 'Salvando...' : 'Salvar'}
+              </Button>
+            )}
+          </div>
         </DialogFooter>
+
       </DialogContent>
     </Dialog>
   )
