@@ -1,6 +1,8 @@
 import { useCallback, useEffect, useState } from 'react'
 import { supabase } from '@/integrations/supabase/client'
 import { useAuth } from '@/context/AuthContext'
+import { DEFAULT_CARD_FIELDS } from '@/hooks/useSupportCards'
+
 
 export interface SupportBoardMember {
   id?: string
