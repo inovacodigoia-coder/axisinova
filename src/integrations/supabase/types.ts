@@ -3145,6 +3145,138 @@ export type Database = {
           },
         ]
       }
+      support_board_members: {
+        Row: {
+          board_id: string
+          can_delete: boolean
+          can_edit: boolean
+          can_move: boolean
+          can_view: boolean
+          company_id: string
+          created_at: string
+          id: string
+          user_id: string
+        }
+        Insert: {
+          board_id: string
+          can_delete?: boolean
+          can_edit?: boolean
+          can_move?: boolean
+          can_view?: boolean
+          company_id: string
+          created_at?: string
+          id?: string
+          user_id: string
+        }
+        Update: {
+          board_id?: string
+          can_delete?: boolean
+          can_edit?: boolean
+          can_move?: boolean
+          can_view?: boolean
+          company_id?: string
+          created_at?: string
+          id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "support_board_members_board_id_fkey"
+            columns: ["board_id"]
+            isOneToOne: false
+            referencedRelation: "support_boards"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      support_board_stages: {
+        Row: {
+          board_id: string
+          color: string
+          company_id: string
+          created_at: string
+          id: string
+          is_end: boolean
+          is_start: boolean
+          name: string
+          position: number
+          updated_at: string
+        }
+        Insert: {
+          board_id: string
+          color?: string
+          company_id: string
+          created_at?: string
+          id?: string
+          is_end?: boolean
+          is_start?: boolean
+          name: string
+          position?: number
+          updated_at?: string
+        }
+        Update: {
+          board_id?: string
+          color?: string
+          company_id?: string
+          created_at?: string
+          id?: string
+          is_end?: boolean
+          is_start?: boolean
+          name?: string
+          position?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "support_board_stages_board_id_fkey"
+            columns: ["board_id"]
+            isOneToOne: false
+            referencedRelation: "support_boards"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      support_boards: {
+        Row: {
+          company_id: string
+          created_at: string
+          created_by: string | null
+          id: string
+          name: string
+          sector_id: string | null
+          updated_at: string
+          visibility: string
+        }
+        Insert: {
+          company_id: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          name: string
+          sector_id?: string | null
+          updated_at?: string
+          visibility?: string
+        }
+        Update: {
+          company_id?: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          name?: string
+          sector_id?: string | null
+          updated_at?: string
+          visibility?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "support_boards_sector_id_fkey"
+            columns: ["sector_id"]
+            isOneToOne: false
+            referencedRelation: "company_sectors"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       system_settings: {
         Row: {
           key: string
@@ -3311,6 +3443,8 @@ export type Database = {
         Returns: Json
       }
       auth_release_lockout: { Args: { _lockout_id: string }; Returns: boolean }
+      can_edit_support_board: { Args: { _board_id: string }; Returns: boolean }
+      can_view_support_board: { Args: { _board_id: string }; Returns: boolean }
       company_cnpj_exists: { Args: { _cnpj: string }; Returns: boolean }
       company_id_by_cnpj: { Args: { _cnpj: string }; Returns: string }
       device_public_info: {
