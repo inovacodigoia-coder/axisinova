@@ -474,7 +474,7 @@ export const API_GROUPS: ApiGroup[] = [
         path: '/list-orders-for-integration',
         summary: 'Pedidos coletados/cancelados (pull do middleware)',
         description:
-          'Lista pedidos cuja amostra foi coletada (ou que foram cancelados) após o horário informado em "since". Pedidos ainda não coletados não aparecem. Recomendado chamar a cada 1-2 minutos.',
+          'Lista pedidos cuja amostra foi coletada (ou que foram cancelados) após o horário informado em "since". Pedidos ainda não coletados não aparecem. Recomendado chamar a cada 1-2 minutos. Cada exame traz também o estado de liberação: status = "pending" (sem resultado), "resulted" (digitado, não liberado) ou "released" (liberado). Quando released, vêm released_at (ISO-8601 UTC) e released_by = "manual" (digitado/liberado por uma pessoa no LIS) ou "instrument" (valor recebido pela integração do equipamento).',
         scope: 'company',
         auth: 'Authorization: Bearer <access_token> (OAuth2) ou X-API-Key (legado)',
         params: [
@@ -498,7 +498,10 @@ export const API_GROUPS: ApiGroup[] = [
           "sample_code": "109-00-1-2",
           "collected_at": "2026-08-24T21:36:00.000Z",
           "material": "Soro (gel separador)",
-          "exams": [{ "code": "URE" }, { "code": "CREA" }]
+          "exams": [
+            { "code": "URE", "status": "released", "released_at": "2026-09-19T14:32:10.000Z", "released_by": "manual" },
+            { "code": "CREA", "status": "pending" }
+          ]
         }
       ]
     },

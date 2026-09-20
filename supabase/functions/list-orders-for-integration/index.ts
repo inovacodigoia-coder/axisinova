@@ -147,6 +147,46 @@ Deno.serve(async (req) => {
     for (const p of patients || []) patientMap.set(String(p.id), p)
   }
 
+  // ---- 5b. Estado dos exames (digitado/liberado) por pedido ----
+  // Chave: `${order_id}:${exam_catalog_id}` e também `${order_id}:${exam_code}`
+  const examStateMap = new Map<string, { status: string; released_at: string | null; released_by: string }>()
+  const orderIds = (orders || []).map((o: any) => o.id)
+  if (orderIds.length) {
+    const { data: results } = await supabase
+      .from('lab_exam_results')
+      .select('id, order_id, exam_catalog_id, exam_code, status, released_at')
+      .eq('company_id', companyId)
+      .in('order_id', orderIds)
+
+    const resultIds = (results || []).map((r: any) => r.id)
+    const instrumentResults = new Set<string>()
+    if (resultIds.length) {
+      const { data: values } = await supabase
+        .from('lab_result_values')
+        .select('result_id, source')
+        .in('result_id', resultIds)
+      for (const v of values || []) {
+        if (String(v.source || '') === 'instrument') instrumentResults.add(String(v.result_id))
+      }
+    }
+
+    for (const r of results || []) {
+      const released = String(r.status) === 'released'
+      const entry = {
+        status: released ? 'released' : String(r.status) === 'cancelled' ? 'pending' : 'resulted',
+        released_at: released ? (r.released_at ? new Date(r.released_at).toISOString() : null) : null,
+        released_by: instrumentResults.has(String(r.id)) ? 'instrument' : 'manual',
+      }
+      if (r.exam_catalog_id) examStateMap.set(`${r.order_id}:${String(r.exam_catalog_id)}`, entry)
+      if (r.exam_code) examStateMap.set(`${r.order_id}:${String(r.exam_code).toUpperCase()}`, entry)
+    }
+  }
+
+  const examState = (orderId: string, catalogId: string | null, code: string) =>
+    (catalogId ? examStateMap.get(`${orderId}:${catalogId}`) : undefined) ??
+    examStateMap.get(`${orderId}:${String(code).toUpperCase()}`) ??
+    null
+
   const out: any[] = []
 
   for (const o of orders || []) {
@@ -183,7 +223,9 @@ Deno.serve(async (req) => {
         if (!byTube.has(type)) byTube.set(type, { exams: [], collectedAt: null })
         const bucket = byTube.get(type)!
         const isCollected = e?.collected === true || !!e?.collectedAt
-        bucket.exams.push({ code, material, collected: isCollected })
+        const catalogId = e?.examId ?? e?.exam_id ?? e?.catalogId ?? e?.id ?? null
+        const state = examState(String(o.id), catalogId ? String(catalogId) : null, code)
+        bucket.exams.push({ code, material, collected: isCollected, state })
         const at = e?.collectedAt ? new Date(e.collectedAt) : null
         if (at && !isNaN(at.getTime())) {
           const iso = at.toISOString()
@@ -207,7 +249,16 @@ Deno.serve(async (req) => {
         sample_code: sampleCode,
         collected_at: bucket.collectedAt,
         material: bucket.exams.find((e) => e.material)?.material ?? tube.label,
-        exams: bucket.exams.filter((e) => e.collected).map((e) => ({ code: e.code })),
+        exams: bucket.exams.filter((e) => e.collected).map((e) => {
+          if (!e.state) return { code: e.code, status: 'pending' }
+          if (e.state.status !== 'released') return { code: e.code, status: e.state.status }
+          return {
+            code: e.code,
+            status: 'released',
+            released_at: e.state.released_at,
+            released_by: e.state.released_by,
+          }
+        }),
       })
     })
 
