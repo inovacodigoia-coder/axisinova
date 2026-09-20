@@ -223,7 +223,9 @@ Deno.serve(async (req) => {
         if (!byTube.has(type)) byTube.set(type, { exams: [], collectedAt: null })
         const bucket = byTube.get(type)!
         const isCollected = e?.collected === true || !!e?.collectedAt
-        bucket.exams.push({ code, material, collected: isCollected })
+        const catalogId = e?.examId ?? e?.exam_id ?? e?.catalogId ?? e?.id ?? null
+        const state = examState(String(o.id), catalogId ? String(catalogId) : null, code)
+        bucket.exams.push({ code, material, collected: isCollected, state })
         const at = e?.collectedAt ? new Date(e.collectedAt) : null
         if (at && !isNaN(at.getTime())) {
           const iso = at.toISOString()
