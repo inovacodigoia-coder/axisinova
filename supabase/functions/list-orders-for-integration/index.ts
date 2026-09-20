@@ -249,7 +249,16 @@ Deno.serve(async (req) => {
         sample_code: sampleCode,
         collected_at: bucket.collectedAt,
         material: bucket.exams.find((e) => e.material)?.material ?? tube.label,
-        exams: bucket.exams.filter((e) => e.collected).map((e) => ({ code: e.code })),
+        exams: bucket.exams.filter((e) => e.collected).map((e) => {
+          if (!e.state) return { code: e.code, status: 'pending' }
+          if (e.state.status !== 'released') return { code: e.code, status: e.state.status }
+          return {
+            code: e.code,
+            status: 'released',
+            released_at: e.state.released_at,
+            released_by: e.state.released_by,
+          }
+        }),
       })
     })
 
