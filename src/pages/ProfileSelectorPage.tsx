@@ -11,7 +11,7 @@ import { getLandingRoute } from '@/utils/landingRoute'
 
 export default function ProfileSelectorPage() {
   const { user, logout } = useAuth()
-  const { profiles, selectProfile, selectSector, confirmSession, isSessionReady, activeProfile, activeSector, availableSectors, canAccess } = useCompanyContext()
+  const { profiles, selectProfile, selectSector, confirmSession, isSessionReady, activeProfile, activeSector, availableSectors, canAccess, isSessionHydrated } = useCompanyContext()
   const navigate = useNavigate()
   const [loading, setLoading] = useState(false)
 
