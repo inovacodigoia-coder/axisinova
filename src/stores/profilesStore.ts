@@ -47,17 +47,33 @@ function fromRow(row: any): Profile {
   }
 }
 
-export async function hydrateProfiles(companyId: string) {
-  if (!companyId || hydratedFor === companyId) return
+export function resetProfilesHydration() {
+  hydratedFor = null
+}
+
+/**
+ * Carrega os perfis da empresa.
+ * Só marca como carregado quando a consulta retorna dados — assim uma resposta
+ * vazia (sessão ainda renovando / RLS sem token) não fica cacheada para sempre.
+ * Retorna true quando há perfis disponíveis.
+ */
+export async function hydrateProfiles(companyId: string): Promise<boolean> {
+  if (!companyId) return false
+  if (hydratedFor === companyId) return profiles.length > 0
   const { data, error } = await supabase
     .from('access_profiles')
     .select('*')
     .eq('company_id', companyId)
     .order('code')
-  if (error) throw error
+  if (error) {
+    console.error('Erro ao carregar perfis de acesso:', error)
+    hydratedFor = null
+    return false
+  }
   profiles = (data || []).map(fromRow)
-  hydratedFor = companyId
+  hydratedFor = profiles.length > 0 ? companyId : null
   emit()
+  return profiles.length > 0
 }
 
 export async function saveProfile(profile: Profile) {
