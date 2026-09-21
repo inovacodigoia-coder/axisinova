@@ -101,7 +101,12 @@ export function CompanyProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     let cancelled = false
     const companyId = user?.companyId
-    if (!companyId) { setLinksLoaded(false); return }
+    if (!companyId) {
+      resetProfilesHydration()
+      resetSectorsHydration()
+      setLinksLoaded(false)
+      return
+    }
     setLinksLoaded(false)
 
     const load = async () => {
