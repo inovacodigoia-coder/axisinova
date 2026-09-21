@@ -151,14 +151,19 @@ import { supabase } from '@/integrations/supabase/client'
 let hydratedFor: string | null = null
 
 /** Carrega os vínculos usuário↔setor salvos no banco */
-export async function hydrateSectorUsers(companyId: string) {
-  if (!companyId || hydratedFor === companyId) return
-  hydratedFor = companyId
+export async function hydrateSectorUsers(companyId: string): Promise<boolean> {
+  if (!companyId) return false
+  if (hydratedFor === companyId) return true
   const { data, error } = await supabase
     .from('sector_users')
     .select('sector_id, user_id')
     .eq('company_id', companyId)
-  if (error || !data) return
+  if (error || !data) {
+    if (error) console.error('Erro ao carregar vínculos de setor:', error)
+    hydratedFor = null
+    return false
+  }
+  hydratedFor = companyId
   const map: Record<string, string[]> = {}
   data.forEach(r => {
     map[r.sector_id] = [...(map[r.sector_id] || []), r.user_id]
