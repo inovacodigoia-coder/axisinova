@@ -3,8 +3,8 @@ import { useAuth } from '@/context/AuthContext'
 import type { Profile, Sector, MenuFunction, SystemModule, PermissionAction } from '@/types/permissions.types'
 import type { CompanyUser, Origin } from '@/types/company-portal.types'
 import { MOCK_COMPANY_USERS, getFunctionsForProfile, getUtilitiesForProfile } from '@/mocks/company.mock'
-import { getSectors, useSectors, getAllowedProfileIdsForUser, getSectorsForUser, useSectorUsers, hydrateSectorUsers, hydrateSectors } from '@/stores/sectorsStore'
-import { getProfiles, useProfiles, hydrateProfiles } from '@/stores/profilesStore'
+import { getSectors, useSectors, getAllowedProfileIdsForUser, getSectorsForUser, useSectorUsers, hydrateSectorUsers, hydrateSectors, resetSectorsHydration } from '@/stores/sectorsStore'
+import { getProfiles, useProfiles, hydrateProfiles, resetProfilesHydration } from '@/stores/profilesStore'
 
 import { supabase } from '@/integrations/supabase/client'
 import { toast } from 'sonner'
@@ -96,18 +96,34 @@ export function CompanyProvider({ children }: { children: ReactNode }) {
     setAvailableOrigins([])
   }, [user?.companyId])
 
-  // Carrega os vínculos Usuário↔Setor antes de calcular os perfis disponíveis
+  // Carrega perfis, setores e vínculos Usuário↔Setor antes de calcular os perfis disponíveis.
+  // Se a primeira tentativa voltar vazia (sessão ainda renovando), tenta novamente.
   useEffect(() => {
     let cancelled = false
-    if (!user?.companyId) { setLinksLoaded(false); return }
+    const companyId = user?.companyId
+    if (!companyId) {
+      resetProfilesHydration()
+      resetSectorsHydration()
+      setLinksLoaded(false)
+      return
+    }
     setLinksLoaded(false)
-    Promise.all([
-      hydrateProfiles(user.companyId),
-      hydrateSectors(user.companyId),
-      hydrateSectorUsers(user.companyId),
-    ]).finally(() => {
+
+    const load = async () => {
+      for (let attempt = 0; attempt < 4 && !cancelled; attempt++) {
+        const [hasProfiles] = await Promise.all([
+          hydrateProfiles(companyId).catch(() => false),
+          hydrateSectors(companyId).catch(() => false),
+          hydrateSectorUsers(companyId).catch(() => false),
+        ])
+        if (cancelled) return
+        if (hasProfiles) break
+        await new Promise(r => setTimeout(r, 400 * (attempt + 1)))
+      }
       if (!cancelled) setLinksLoaded(true)
-    })
+    }
+
+    load()
     return () => { cancelled = true }
   }, [user?.companyId])
 
