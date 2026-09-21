@@ -88,7 +88,22 @@ export default function ProfileSelectorPage() {
                 />
               ))}
               {profiles.length === 0 && (
-                <p className="text-sm text-muted-foreground text-center py-4">Nenhum perfil disponível para este usuário.</p>
+                !isSessionHydrated ? (
+                  <div className="flex items-center justify-center gap-2 py-6 text-sm text-muted-foreground">
+                    <span className="h-4 w-4 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+                    Carregando perfis...
+                  </div>
+                ) : (
+                  <div className="text-center py-4 space-y-2">
+                    <p className="text-sm text-muted-foreground">Nenhum perfil disponível para este usuário.</p>
+                    <button
+                      onClick={() => window.location.reload()}
+                      className="text-xs font-semibold text-primary hover:underline"
+                    >
+                      Tentar novamente
+                    </button>
+                  </div>
+                )
               )}
             </div>
           </div>
