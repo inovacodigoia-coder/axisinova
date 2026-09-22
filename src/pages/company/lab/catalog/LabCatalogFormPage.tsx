@@ -73,15 +73,20 @@ const ageUnitLabel = (unit?: string) => {
   if (unit === 'meses') return 'meses'
   if (unit === 'semanas') return 'semanas'
   if (unit === 'dias') return 'dias'
+  if (unit === 'valor' || unit === 'value') return 'valor'
   return 'anos'
 }
+
+const isValueUnit = (unit?: string) => unit === 'valor' || unit === 'value'
 
 const normalizeAgeUnit = (unit?: string) => {
   if (unit === 'meses' || unit === 'months') return 'meses'
   if (unit === 'semanas' || unit === 'weeks') return 'semanas'
   if (unit === 'dias' || unit === 'days') return 'dias'
+  if (unit === 'valor' || unit === 'value') return 'valor'
   return 'anos'
 }
+
 
 export default function LabCatalogFormPage() {
   const navigate = useNavigate()
@@ -316,6 +321,9 @@ export default function LabCatalogFormPage() {
                 age_min: Math.round(Number(ref.minAge ?? 0)),
                 age_max: Math.round(Number(ref.maxAge ?? 150)),
                 age_unit: normalizeAgeUnit(ref.ageUnit),
+                value_min: isValueUnit(normalizeAgeUnit(ref.ageUnit)) ? Number(ref.minAge ?? 0) : null,
+                value_max: isValueUnit(normalizeAgeUnit(ref.ageUnit)) ? Number(ref.maxAge ?? 0) : null,
+
 
                 gender: ref.sex || 'both',
                 use_fasting: !!ref.useFasting,
@@ -1383,10 +1391,11 @@ function ReferenceValuesModal({ parameter, onClose, onSave }: { parameter: any, 
 
                 <div className="space-y-1.5">
                   <Label className="text-[10px] font-bold uppercase text-muted-foreground">
-                    Idade Mín ({ageUnitLabel(faixa.ageUnit)})
+                    {isValueUnit(faixa.ageUnit) ? 'Valor Mín (resultado)' : `Idade Mín (${ageUnitLabel(faixa.ageUnit)})`}
                   </Label>
                   <Input 
                     type="number" 
+                    step="any"
                     className="h-9 text-xs" 
                     value={faixa.minAge} 
                     onChange={(e) => updateFaixa(faixa.id, 'minAge', Number(e.target.value))} 
@@ -1394,10 +1403,11 @@ function ReferenceValuesModal({ parameter, onClose, onSave }: { parameter: any, 
                 </div>
                 <div className="space-y-1.5">
                   <Label className="text-[10px] font-bold uppercase text-muted-foreground">
-                    Idade Máx ({ageUnitLabel(faixa.ageUnit)})
+                    {isValueUnit(faixa.ageUnit) ? 'Valor Máx (resultado)' : `Idade Máx (${ageUnitLabel(faixa.ageUnit)})`}
                   </Label>
                   <Input 
                     type="number" 
+                    step="any"
                     className="h-9 text-xs" 
                     value={faixa.maxAge} 
                     onChange={(e) => updateFaixa(faixa.id, 'maxAge', Number(e.target.value))} 
@@ -1417,9 +1427,16 @@ function ReferenceValuesModal({ parameter, onClose, onSave }: { parameter: any, 
                       <SelectItem value="meses" className="text-xs">Meses</SelectItem>
                       <SelectItem value="semanas" className="text-xs">Semanas</SelectItem>
                       <SelectItem value="dias" className="text-xs">Dias</SelectItem>
+                      <SelectItem value="valor" className="text-xs">Valor</SelectItem>
                     </SelectContent>
                   </Select>
+                  {isValueUnit(faixa.ageUnit) && (
+                    <p className="text-[10px] text-muted-foreground">
+                      Esta faixa é escolhida pelo valor digitado no resultado (entre o valor mín e máx acima), e não pela idade.
+                    </p>
+                  )}
                 </div>
+
 
 
                 <div className="flex items-center gap-4 md:col-span-2 bg-white/50 p-2 rounded-lg border border-dashed">
@@ -1617,11 +1634,14 @@ function ReferenceValuesSection({ parameter, referenceValues = [] }: { parameter
               </div>
 
               <div className="space-y-1.5">
-                <Label className="text-[10px] font-bold uppercase text-muted-foreground">Idade Mín/Máx</Label>
+                <Label className="text-[10px] font-bold uppercase text-muted-foreground">
+                  {isValueUnit(faixa.ageUnit) ? 'Valor Mín/Máx' : 'Idade Mín/Máx'}
+                </Label>
                 <div className="h-9 px-3 flex items-center bg-muted/20 rounded-lg text-xs">
-                  {faixa.minAge ?? 0} a {faixa.maxAge ?? 150} {ageUnitLabel(faixa.ageUnit)}
+                  {faixa.minAge ?? 0} a {faixa.maxAge ?? 150} {isValueUnit(faixa.ageUnit) ? '(valor)' : ageUnitLabel(faixa.ageUnit)}
                 </div>
               </div>
+
 
               <div className="space-y-1.5">
                 <Label className="text-[10px] font-bold uppercase text-muted-foreground">Sexo</Label>

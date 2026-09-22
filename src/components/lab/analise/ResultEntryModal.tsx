@@ -1,6 +1,6 @@
 import { useState, useMemo, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { buildExamParams, catalogKey, findCatalogExam, evaluateFormula, normalizeText } from '@/utils/examParameters';
+import { buildExamParams, catalogKey, findCatalogExam, evaluateFormula, normalizeText, resolveReference } from '@/utils/examParameters';
 
 import { resolveCompanyId } from '@/utils/companyId';
 import { useAuth } from '@/context/AuthContext';
@@ -466,8 +466,8 @@ export function ResultEntryModal({
           parameter_name: p.name || null,
           value,
           unit: p.unit || null,
-          reference: p.reference || null,
-          status: getResultStatus(value, p.reference || '').label || null,
+          reference: resolveReference(p, value) || null,
+          status: getResultStatus(value, resolveReference(p, value)).label || null,
           sort_order: idx,
           // Preserva a origem quando o valor veio do equipamento
           source: instrumentKeys.has(`${exam.id}_${p.id}`) ? 'instrument' : 'manual',
@@ -784,7 +784,8 @@ export function ResultEntryModal({
             status: examStatuses[e.id] === 'released' ? 'liberado' : 'waiting_approval',
             results: getParams(e).map((p: any) => {
               const value = getParamValue(e, p);
-              const st = getResultStatus(value, p.reference || '');
+              const reference = resolveReference(p, value);
+              const st = getResultStatus(value, reference);
               return {
                 parameterId: String(p.id),
                 parameterCode: p.name,
@@ -792,7 +793,7 @@ export function ResultEntryModal({
                 section: p.section || '',
                 value,
                 unit: p.unit || '',
-                referenceRange: p.reference || '—',
+                referenceRange: reference || '—',
                 flag: st.label === 'Alto' ? 'H' : st.label === 'Baixo' ? 'L' : '',
                 status: st.label === 'Alto' || st.label === 'Baixo' ? 'altered' : 'normal',
               };
@@ -1821,7 +1822,8 @@ export function ResultEntryModal({
                         )}>
                           {getParams(exam).map((param: any) => {
                             const value = getParamValue(exam, param);
-                            const status = getResultStatus(value, param.reference || '');
+                            const reference = resolveReference(param, value);
+                            const status = getResultStatus(value, reference);
                             
                             return (
                               <div key={param.id} className={cn(
@@ -1910,7 +1912,7 @@ export function ResultEntryModal({
                                   )}
                                   <div className="w-32 bg-slate-200/50 rounded px-2 py-1 flex flex-col justify-center">
                                     <span className="text-[8px] font-black text-slate-400 uppercase leading-tight">Referência</span>
-                                    <span className="text-[10px] font-bold text-slate-600 truncate">{param.reference || '—'}</span>
+                                    <span className="text-[10px] font-bold text-slate-600 truncate">{reference || '—'}</span>
                                   </div>
                                 </div>
                               </div>

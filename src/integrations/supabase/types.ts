@@ -1620,6 +1620,8 @@ export type Database = {
           text_range: string | null
           updated_at: string | null
           use_fasting: boolean
+          value_max: number | null
+          value_min: number | null
         }
         Insert: {
           age_max?: number | null
@@ -1642,6 +1644,8 @@ export type Database = {
           text_range?: string | null
           updated_at?: string | null
           use_fasting?: boolean
+          value_max?: number | null
+          value_min?: number | null
         }
         Update: {
           age_max?: number | null
@@ -1664,6 +1668,8 @@ export type Database = {
           text_range?: string | null
           updated_at?: string | null
           use_fasting?: boolean
+          value_max?: number | null
+          value_min?: number | null
         }
         Relationships: [
           {
