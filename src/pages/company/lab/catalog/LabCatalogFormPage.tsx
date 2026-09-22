@@ -321,6 +321,9 @@ export default function LabCatalogFormPage() {
                 age_min: Math.round(Number(ref.minAge ?? 0)),
                 age_max: Math.round(Number(ref.maxAge ?? 150)),
                 age_unit: normalizeAgeUnit(ref.ageUnit),
+                value_min: isValueUnit(normalizeAgeUnit(ref.ageUnit)) ? Number(ref.minAge ?? 0) : null,
+                value_max: isValueUnit(normalizeAgeUnit(ref.ageUnit)) ? Number(ref.maxAge ?? 0) : null,
+
 
                 gender: ref.sex || 'both',
                 use_fasting: !!ref.useFasting,
