@@ -104,8 +104,9 @@ export function pickReference(ranges: any[] | undefined, patient: PatientCtx, re
   const textMatched: any[] = []
 
   const matches = ranges.filter((r) => {
-    const rSex = (r.sex ?? r.gender ?? 'Both')?.toString()
-    const sexOk = !rSex || rSex === 'Both' || rSex === 'both' || !sex || rSex.toUpperCase().startsWith(sex)
+    const rSex = normalizeText((r.sex ?? r.gender ?? 'Both')?.toString())
+    const isAnySex = !rSex || rSex === 'both' || rSex === 'todos' || rSex === 'todas'
+    const sexOk = isAnySex || !sex || rSex.toUpperCase().startsWith(sex)
     // Só filtra por jejum quando a faixa usa essa condição e a informação existe no pedido
     const fastingOk =
       !rangeUsesFasting(r) || fasting == null || !!(r.isFasting ?? r.is_fasting) === !!fasting

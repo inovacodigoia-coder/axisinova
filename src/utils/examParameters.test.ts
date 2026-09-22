@@ -1,5 +1,39 @@
 import { describe, expect, it } from 'vitest'
-import { evaluateFormula } from './examParameters'
+import { evaluateFormula, resolveReference } from './examParameters'
+
+describe('resolveReference', () => {
+  it('usa o texto selecionado para escolher a faixa Valor sem alterar a seleção', () => {
+    const param = {
+      type: 'selection',
+      patient: { gender: 'female', age: 35 },
+      reference: '',
+      ranges: [
+        { textRange: 'Raras', minAge: 0.1, maxAge: 3, ageUnit: 'valor', sex: 'Todos' },
+        { textRange: 'Algumas', minAge: 4, maxAge: 10, ageUnit: 'valor', sex: 'Todos' },
+        { textRange: 'Numerosas', minAge: 10, maxAge: 1500, ageUnit: 'valor', sex: 'Todos' },
+      ],
+    }
+
+    const selectedValue = 'Algumas'
+
+    expect(resolveReference(param, selectedValue)).toBe('4 a 10')
+    expect(selectedValue).toBe('Algumas')
+  })
+
+  it('mantém a escolha numérica por intervalo para parâmetros como Densidade e pH', () => {
+    const param = {
+      type: 'numerical',
+      patient: { gender: 'male', age: 40 },
+      reference: '',
+      ranges: [
+        { textRange: 'Baixa', minAge: 1, maxAge: 1.014, ageUnit: 'valor', sex: 'Todos' },
+        { textRange: 'Normal', minAge: 1.015, maxAge: 1.025, ageUnit: 'valor', sex: 'Todos' },
+      ],
+    }
+
+    expect(resolveReference(param, '1,020')).toBe('Normal')
+  })
+})
 
 describe('evaluateFormula', () => {
   it('calcula a bilirrubina indireta com códigos de exames externos', () => {
