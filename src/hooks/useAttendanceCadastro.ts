@@ -30,7 +30,7 @@ export function useAttendanceCadastro() {
         id: item.id,
         orderNumber: item.order_number,
         patientId: item.patient_id,
-        // Nome sempre atualizado a partir do cadastro do paciente
+        // Dados pessoais sempre atualizados a partir do cadastro do paciente.
         patientName: item.patients?.name || item.patient_name || '',
         patientBirthDate: item.patients?.birth_date,
         patientGender: item.patients?.gender,

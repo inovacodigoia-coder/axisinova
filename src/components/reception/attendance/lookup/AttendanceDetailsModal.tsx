@@ -40,6 +40,7 @@ import { ClientInfoModal, type ClientInfoMode } from './ClientInfoModal'
 import { usePermissions } from '@/hooks/usePermissions'
 import { useAuth } from '@/context/AuthContext'
 import { ensurePatientPortalAccess, buildPortalUrl } from '@/hooks/useExternalAccesses'
+import { dbToPatient } from '@/utils/patient.adapter'
 
 import {
   AlertDialog,
@@ -58,14 +59,16 @@ interface AttendanceDetailsModalProps {
   onOrderDeleted?: () => void
   order: AttendanceOrder
   patient?: Patient
+  onPatientUpdated?: (patient: Patient) => void
 }
 
-export function AttendanceDetailsModal({ open, onClose, onOrderDeleted, order, patient }: AttendanceDetailsModalProps) {
+export function AttendanceDetailsModal({ open, onClose, onOrderDeleted, order, patient, onPatientUpdated }: AttendanceDetailsModalProps) {
   const { exams: catalogExams, workbenches } = useRegisters()
   const { isSuperAdmin, isCompanyAdmin } = usePermissions()
   const { user: authUser } = useAuth()
   const isAdmin = isSuperAdmin || isCompanyAdmin
   const [clientModalMode, setClientModalMode] = useState<ClientInfoMode | null>(null)
+  const [currentPatient, setCurrentPatient] = useState<Patient | undefined>(patient)
   const [printSelectionOpen, setPrintSelectionOpen] = useState(false)
   const [reportPreviewOpen, setReportPreviewOpen] = useState(false)
   const [printModalOpen, setPrintModalOpen] = useState(false)
@@ -83,6 +86,21 @@ export function AttendanceDetailsModal({ open, onClose, onOrderDeleted, order, p
   const sampleCodeFor = (tubeIndex: number) => buildSampleCode(order.orderNumber, tubeIndex, companySequenceId)
   const { toast } = useToast()
   const { updateOrder } = useAttendanceCadastro()
+
+  useEffect(() => { setCurrentPatient(patient) }, [patient])
+
+  useEffect(() => {
+    if (!open || !order.patientId) return
+    let active = true
+    ;(async () => {
+      const { data, error } = await supabase.from('patients').select('*').eq('id', order.patientId).single()
+      if (!active || error || !data) return
+      const fresh = dbToPatient(data)
+      setCurrentPatient(fresh)
+      onPatientUpdated?.(fresh)
+    })()
+    return () => { active = false }
+  }, [open, order.patientId, onPatientUpdated])
 
   const [guideEditor, setGuideEditor] = useState<{ mode: 'create' | 'edit'; index: number } | null>(null)
   const [switchConvenioOpen, setSwitchConvenioOpen] = useState(false)
@@ -502,10 +520,10 @@ export function AttendanceDetailsModal({ open, onClose, onOrderDeleted, order, p
     return {
       ...labOrder,
       // Dados cadastrais sempre do cadastro atual do paciente (evita nome antigo no laudo)
-      patientName: patient?.fullName || labOrder.patientName,
-      patientBirthDate: patient?.birthDate || (labOrder as any).patientBirthDate,
-      patientGender: (labOrder as any).patientGender || patient?.gender,
-      patientCPF: patient?.cpf || (labOrder as any).patientCPF,
+      patientName: currentPatient?.fullName || labOrder.patientName,
+      patientBirthDate: currentPatient?.birthDate || (labOrder as any).patientBirthDate,
+      patientGender: currentPatient?.gender || (labOrder as any).patientGender,
+      patientCPF: currentPatient?.cpf || (labOrder as any).patientCPF,
       doctorName,
       doctorCRM,
       approvedAt,
@@ -519,7 +537,7 @@ export function AttendanceDetailsModal({ open, onClose, onOrderDeleted, order, p
           .filter((exam: any) => selectedReleasedExamIds.has(exam.examId || exam.id))
       })).filter(guide => (guide.exams?.length ?? 0) > 0)
     };
-  }, [labOrder, orderExams, selectedReleasedExamIds, labResults, approvers, guidesState, patient]);
+  }, [labOrder, orderExams, selectedReleasedExamIds, labResults, approvers, guidesState, currentPatient]);
 
 
   return (
@@ -664,7 +682,7 @@ export function AttendanceDetailsModal({ open, onClose, onOrderDeleted, order, p
                 </DropdownMenuContent>
               </DropdownMenu>
             </div>
-            <div className="text-sm font-bold text-foreground truncate uppercase">{patient?.fullName || order.patientName}</div>
+            <div className="text-sm font-bold text-foreground truncate uppercase">{currentPatient?.fullName || order.patientName}</div>
           </div>
 
           {/* Forecast Card */}
@@ -1299,7 +1317,7 @@ export function AttendanceDetailsModal({ open, onClose, onOrderDeleted, order, p
             companyId: (order as any).companyId || authUser?.companyId || '',
             patientId: order.patientId,
             patientName: order.patientName,
-            email: patient?.email,
+            email: currentPatient?.email,
           })
 
           // Transform order to print document
@@ -1308,11 +1326,11 @@ export function AttendanceDetailsModal({ open, onClose, onOrderDeleted, order, p
             orderDate: format(new Date(order.registeredAt), 'dd/MM/yyyy'),
             orderTime: format(new Date(order.registeredAt), 'HH:mm'),
             patientId: order.patientId,
-            patientName: order.patientName,
-            patientBirthDate: order.patientBirthDate || patient?.birthDate,
-            patientAge: (order as any).patientAge || patient?.age?.toString() || '0 anos',
-            patientGender: order.patientGender === 'female' ? 'F' : 'M',
-            patientCPF: (order as any).patientCPF || patient?.cpf,
+            patientName: currentPatient?.fullName || order.patientName,
+            patientBirthDate: currentPatient?.birthDate || order.patientBirthDate,
+            patientAge: currentPatient?.age?.toString() || (order as any).patientAge || '0 anos',
+            patientGender: currentPatient?.gender === 'female' ? 'F' : currentPatient?.gender === 'male' ? 'M' : 'Não informado',
+            patientCPF: currentPatient?.cpf || (order as any).patientCPF,
             serviceType: (order.serviceType as string) === 'lab' ? 'LABORATÓRIO' : 'CLÍNICA',
             unitName: (order as any).unitName || 'MATRIZ',
             companyName: settings?.lab_name || 'AXIS INOVA',
@@ -1354,8 +1372,8 @@ export function AttendanceDetailsModal({ open, onClose, onOrderDeleted, order, p
         open={labelsPrintOpen}
         onClose={() => setLabelsPrintOpen(false)}
         orderNumber={order.orderNumber}
-        patientName={order.patientName}
-        birthDate={order.patientBirthDate}
+        patientName={currentPatient?.fullName || order.patientName}
+        birthDate={currentPatient?.birthDate || order.patientBirthDate}
         hash={order.hash}
         isUrgent={(order as any).isUrgent}
         labels={patientTubes
@@ -1573,7 +1591,7 @@ export function AttendanceDetailsModal({ open, onClose, onOrderDeleted, order, p
           open
           onClose={() => setTissGuideOpen(false)}
           order={order}
-          patient={patient}
+          patient={currentPatient}
           guide={guidesState[0] || {
             convenioName: order.convenioName,
             doctorName: order.doctorName,
@@ -1589,7 +1607,11 @@ export function AttendanceDetailsModal({ open, onClose, onOrderDeleted, order, p
           mode={clientModalMode}
           onClose={() => setClientModalMode(null)}
           order={order}
-          patient={patient}
+          patient={currentPatient}
+          onPatientUpdated={(updated) => {
+            setCurrentPatient(updated)
+            onPatientUpdated?.(updated)
+          }}
         />
       )}
       </ScrollArea>
