@@ -10,7 +10,7 @@ import { format } from 'date-fns'
 import { toast } from 'sonner'
 import { usePatientRegistryPermissions } from '@/hooks/usePatientRegistryPermissions'
 import { dbToPatient, patientToDb } from '@/utils/patient.adapter'
-import { formatCPFDisplay, maskCEP, maskCPF, maskRG, maskPhone } from '@/utils/patient.validators'
+import { formatCPFDisplay, formatPhoneDisplay, maskCEP, maskCPF, maskRG, maskPhone } from '@/utils/patient.validators'
 import { z } from 'zod'
 
 export type ClientInfoMode = 'info' | 'edit' | 'history'
@@ -144,20 +144,19 @@ export function ClientInfoModal({ open, mode, onClose, order, patient, onPatient
       if (!active || error || !data) return
       const fresh = dbToPatient(data)
       setCurrent(fresh)
-      onPatientUpdated?.(fresh)
     })()
     return () => { active = false }
-  }, [open, order.patientId, onPatientUpdated])
+  }, [open, order.patientId])
 
   const buildForm = (p?: Patient) => ({
     fullName: p?.fullName || order.patientName || '',
     socialName: p?.socialName || '',
-    cpf: p?.cpf || '',
-    rg: p?.rg || '',
+    cpf: maskCPF(p?.cpf || ''),
+    rg: maskRG(p?.rg || ''),
     birthDate: (p?.birthDate || order.patientBirthDate || '').slice(0, 10),
     gender: p?.gender || (order.patientGender as string) || 'not_informed',
     motherName: p?.motherName || '',
-    phone1: p?.phone1 || '',
+    phone1: maskPhone(p?.phone1 || ''),
     email: p?.email || '',
     addressCep: p?.address?.cep || '',
     addressStreet: p?.address?.street || '',
@@ -249,6 +248,11 @@ export function ClientInfoModal({ open, mode, onClose, order, patient, onPatient
         .single()
       if (error) throw error
       const updated = dbToPatient(data)
+      const { error: ordersError } = await supabase
+        .from('attendance_orders')
+        .update({ patient_name: updated.fullName })
+        .eq('patient_id', patientId)
+      if (ordersError) throw ordersError
       setCurrent(updated)
       onPatientUpdated?.(updated)
       setEditing(false)
@@ -340,7 +344,7 @@ export function ClientInfoModal({ open, mode, onClose, order, patient, onPatient
                <Row label="Nascimento" value={formatBirthDate(current?.birthDate || order.patientBirthDate)} />
                <Row label="Sexo" value={GENDER_LABELS[current?.gender || order.patientGender || 'not_informed'] || 'Não informado'} />
               <Row label="Nome da Mãe" value={current?.motherName} />
-              <Row label="Telefone" value={current?.phone1 || current?.phone2} />
+               <Row label="Telefone" value={formatPhoneDisplay(current?.phone1 || current?.phone2)} />
               <Row label="E-mail" value={current?.email} />
               <Row label="Convênio" value={order.convenioName} />
               <Row label="Carteirinha" value={order.cardNumber} />

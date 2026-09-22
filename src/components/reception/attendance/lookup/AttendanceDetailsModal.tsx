@@ -97,10 +97,9 @@ export function AttendanceDetailsModal({ open, onClose, onOrderDeleted, order, p
       if (!active || error || !data) return
       const fresh = dbToPatient(data)
       setCurrentPatient(fresh)
-      onPatientUpdated?.(fresh)
     })()
     return () => { active = false }
-  }, [open, order.patientId, onPatientUpdated])
+  }, [open, order.patientId])
 
   const [guideEditor, setGuideEditor] = useState<{ mode: 'create' | 'edit'; index: number } | null>(null)
   const [switchConvenioOpen, setSwitchConvenioOpen] = useState(false)
@@ -1316,7 +1315,7 @@ export function AttendanceDetailsModal({ open, onClose, onOrderDeleted, order, p
           const portalAccess = await ensurePatientPortalAccess({
             companyId: (order as any).companyId || authUser?.companyId || '',
             patientId: order.patientId,
-            patientName: order.patientName,
+            patientName: currentPatient?.fullName || order.patientName,
             email: currentPatient?.email,
           })
 
@@ -1612,6 +1611,7 @@ export function AttendanceDetailsModal({ open, onClose, onOrderDeleted, order, p
             setCurrentPatient(updated)
             onPatientUpdated?.(updated)
           }}
+          onPatientUpdated={onPatientUpdated}
         />
       )}
       </ScrollArea>
