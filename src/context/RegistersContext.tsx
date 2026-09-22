@@ -441,7 +441,11 @@ export function RegistersProvider({ children }: { children: ReactNode }) {
 
       if (error) { 
         console.error('[updateExam] Error:', error); 
-        toast.error(`Erro ao atualizar exame: ${error.message}`);
+        toast.error(
+          /failed to fetch|network|load failed/i.test(error.message || '')
+            ? 'Sem conexão no momento. Verifique sua internet e salve novamente.'
+            : `Erro ao atualizar exame: ${error.message}`
+        );
         
         // Rollback state by re-fetching
         const { data: refreshed } = await supabase.from('exams').select('*').eq('id', e.id).single()
