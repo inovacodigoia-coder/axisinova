@@ -403,7 +403,7 @@ export function RegistersProvider({ children }: { children: ReactNode }) {
     if (isDemo) return
     
     try {
-      const { error } = await supabase.from('exams').update({
+      const { error } = await runWithRetry(async () => await supabase.from('exams').update({
         name: e.name, 
         tuss_code: e.tussCode || null, 
         internal_code: e.internalCode || null, 
