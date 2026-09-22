@@ -7,8 +7,14 @@ export const formatCurrencyCompact = (value: number): string => {
   return formatCurrency(value)
 }
 
-export const formatDate = (date: string | Date): string =>
-  new Intl.DateTimeFormat('pt-BR').format(typeof date === 'string' ? new Date(date) : date)
+export const formatDate = (date: string | Date): string => {
+  if (!date) return ''
+  try {
+    return new Intl.DateTimeFormat('pt-BR').format(typeof date === 'string' ? new Date(date) : date)
+  } catch {
+    return String(date)
+  }
+}
 
 export const formatDateLong = (date: string | Date): string =>
   new Intl.DateTimeFormat('pt-BR', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' }).format(
@@ -98,3 +104,28 @@ export const getDayName = (date: Date): string =>
 
 export const getDayNameShort = (date: Date): string =>
   date.toLocaleDateString('pt-BR', { weekday: 'short' })
+
+export const formatRG = (rg?: string): string => rg || ''
+
+export const formatGender = (gender?: string): string => {
+  switch (String(gender || '').toLowerCase()) {
+    case 'male': return 'Masculino'
+    case 'female': return 'Feminino'
+    case 'other': return 'Outro'
+    case 'not_informed': return 'Não informado'
+    default: return gender || 'Não informado'
+  }
+}
+
+export const formatAddress = (address?: any): string => {
+  if (!address) return ''
+  return [
+    address.street,
+    address.number,
+    address.complement,
+    address.neighborhood,
+    address.city,
+    address.state,
+    address.cep
+  ].filter(Boolean).join(', ')
+}

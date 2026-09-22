@@ -9,6 +9,9 @@ import { supabase } from '@/integrations/supabase/client'
 import { format } from 'date-fns'
 import { toast } from 'sonner'
 import { usePatientRegistryPermissions } from '@/hooks/usePatientRegistryPermissions'
+import { dbToPatient, patientToDb } from '@/utils/patient.adapter'
+import { formatCPFDisplay, formatPhoneDisplay, maskCEP, maskCPF, maskRG, maskPhone } from '@/utils/patient.validators'
+import { z } from 'zod'
 
 export type ClientInfoMode = 'info' | 'edit' | 'history'
 
@@ -70,6 +73,43 @@ function fmt(d?: string | null) {
   try { return format(new Date(d), 'dd/MM/yyyy HH:mm') } catch { return d }
 }
 
+function formatBirthDate(value?: string | null) {
+  if (!value) return ''
+  const dateOnly = value.slice(0, 10)
+  const match = dateOnly.match(/^(\d{4})-(\d{2})-(\d{2})$/)
+  return match ? `${match[3]}/${match[2]}/${match[1]}` : value
+}
+
+function formatRG(value?: string | null) {
+  return value ? maskRG(value) : ''
+}
+
+const GENDER_LABELS: Record<string, string> = {
+  female: 'Feminino',
+  male: 'Masculino',
+  other: 'Outro',
+  not_informed: 'Não informado',
+}
+
+const clientUpdateSchema = z.object({
+  fullName: z.string().trim().min(2, 'Informe o nome completo.').max(200),
+  socialName: z.string().trim().max(200),
+  cpf: z.string().max(14),
+  rg: z.string().max(15),
+  birthDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Informe uma data de nascimento válida.'),
+  gender: z.enum(['female', 'male', 'other', 'not_informed']),
+  motherName: z.string().trim().max(200),
+  phone1: z.string().max(16),
+  email: z.string().trim().email('Informe um e-mail válido.').max(255).or(z.literal('')),
+  addressCep: z.string().max(9),
+  addressStreet: z.string().trim().max(200),
+  addressNumber: z.string().trim().max(20),
+  addressComplement: z.string().trim().max(120),
+  addressNeighborhood: z.string().trim().max(120),
+  addressCity: z.string().trim().max(120),
+  addressState: z.string().trim().max(2),
+})
+
 interface Props {
   open: boolean
   mode: ClientInfoMode
@@ -92,16 +132,39 @@ export function ClientInfoModal({ open, mode, onClose, order, patient, onPatient
   useEffect(() => { setCurrent(patient) }, [patient])
   useEffect(() => { if (!open) { setEditing(false) } }, [open])
 
+  useEffect(() => {
+    if (!open || !order.patientId) return
+    let active = true
+    ;(async () => {
+      const { data, error } = await supabase
+        .from('patients')
+        .select('*')
+        .eq('id', order.patientId)
+        .single()
+      if (!active || error || !data) return
+      const fresh = dbToPatient(data)
+      setCurrent(fresh)
+    })()
+    return () => { active = false }
+  }, [open, order.patientId])
+
   const buildForm = (p?: Patient) => ({
     fullName: p?.fullName || order.patientName || '',
     socialName: p?.socialName || '',
-    cpf: p?.cpf || '',
-    rg: p?.rg || '',
+    cpf: maskCPF(p?.cpf || ''),
+    rg: maskRG(p?.rg || ''),
     birthDate: (p?.birthDate || order.patientBirthDate || '').slice(0, 10),
     gender: p?.gender || (order.patientGender as string) || 'not_informed',
     motherName: p?.motherName || '',
-    phone1: p?.phone1 || '',
+    phone1: maskPhone(p?.phone1 || ''),
     email: p?.email || '',
+    addressCep: p?.address?.cep || '',
+    addressStreet: p?.address?.street || '',
+    addressNumber: p?.address?.number || '',
+    addressComplement: p?.address?.complement || '',
+    addressNeighborhood: p?.address?.neighborhood || '',
+    addressCity: p?.address?.city || '',
+    addressState: p?.address?.state || '',
   })
 
   useEffect(() => {
@@ -129,8 +192,13 @@ export function ClientInfoModal({ open, mode, onClose, order, patient, onPatient
   }, [open, mode, order.patientId])
 
   const address = useMemo(() => current?.address
-    ? [current.address.street, current.address.number, current.address.neighborhood, current.address.city, current.address.state]
-        .filter(Boolean).join(', ')
+    ? [
+        [current.address.street, current.address.number].filter(Boolean).join(', '),
+        current.address.complement,
+        current.address.neighborhood,
+        [current.address.city, current.address.state].filter(Boolean).join('/'),
+        current.address.cep ? `CEP ${maskCEP(current.address.cep)}` : '',
+      ].filter(Boolean).join(' · ')
     : undefined, [current])
 
   const patientId = current?.id || order.patientId
@@ -146,17 +214,31 @@ export function ClientInfoModal({ open, mode, onClose, order, patient, onPatient
     }
     setSaving(true)
     try {
-      const { patientToDb, dbToPatient } = await import('@/utils/patient.adapter')
+      const parsed = clientUpdateSchema.safeParse(form)
+      if (!parsed.success) {
+        toast.error(parsed.error.issues[0]?.message || 'Revise os dados informados.')
+        return
+      }
+      const values = parsed.data
       const payload = patientToDb({
-        fullName: form.fullName.trim(),
-        socialName: form.socialName,
-        cpf: form.cpf,
-        rg: form.rg,
-        birthDate: form.birthDate || undefined,
-        gender: form.gender as Patient['gender'],
-        motherName: form.motherName,
-        phone1: form.phone1,
-        email: form.email,
+        fullName: values.fullName,
+        socialName: values.socialName,
+        cpf: values.cpf,
+        rg: values.rg,
+        birthDate: values.birthDate,
+        gender: values.gender,
+        motherName: values.motherName,
+        phone1: values.phone1,
+        email: values.email,
+        address: {
+          cep: values.addressCep,
+          street: values.addressStreet,
+          number: values.addressNumber,
+          complement: values.addressComplement,
+          neighborhood: values.addressNeighborhood,
+          city: values.addressCity,
+          state: values.addressState.toUpperCase(),
+        },
       })
       const { data, error } = await supabase
         .from('patients')
@@ -166,6 +248,11 @@ export function ClientInfoModal({ open, mode, onClose, order, patient, onPatient
         .single()
       if (error) throw error
       const updated = dbToPatient(data)
+      const { error: ordersError } = await supabase
+        .from('attendance_orders')
+        .update({ patient_name: updated.fullName })
+        .eq('patient_id', patientId)
+      if (ordersError) throw ordersError
       setCurrent(updated)
       onPatientUpdated?.(updated)
       setEditing(false)
@@ -221,8 +308,8 @@ export function ClientInfoModal({ open, mode, onClose, order, patient, onPatient
             <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
               <EditField label="Nome" value={form.fullName} onChange={v => setForm(f => ({ ...f, fullName: v }))} />
               <EditField label="Nome Social" value={form.socialName} onChange={v => setForm(f => ({ ...f, socialName: v }))} />
-              <EditField label="CPF" value={form.cpf} onChange={v => setForm(f => ({ ...f, cpf: v }))} />
-              <EditField label="RG" value={form.rg} onChange={v => setForm(f => ({ ...f, rg: v }))} />
+               <EditField label="CPF" value={form.cpf} onChange={v => setForm(f => ({ ...f, cpf: maskCPF(v) }))} />
+               <EditField label="RG" value={form.rg} onChange={v => setForm(f => ({ ...f, rg: maskRG(v) }))} />
               <EditField label="Nascimento" type="date" value={form.birthDate} onChange={v => setForm(f => ({ ...f, birthDate: v }))} />
               <EditField
                 label="Sexo"
@@ -236,22 +323,28 @@ export function ClientInfoModal({ open, mode, onClose, order, patient, onPatient
                 ]}
               />
               <EditField label="Nome da Mãe" value={form.motherName} onChange={v => setForm(f => ({ ...f, motherName: v }))} />
-              <EditField label="Telefone" value={form.phone1} onChange={v => setForm(f => ({ ...f, phone1: v }))} />
+               <EditField label="Telefone" value={form.phone1} onChange={v => setForm(f => ({ ...f, phone1: maskPhone(v) }))} />
               <EditField label="E-mail" value={form.email} onChange={v => setForm(f => ({ ...f, email: v }))} />
               <Row label="Convênio" value={order.convenioName} />
               <Row label="Carteirinha" value={order.cardNumber} />
-              <Row label="Endereço" value={address} />
+               <EditField label="CEP" value={form.addressCep} onChange={v => setForm(f => ({ ...f, addressCep: maskCEP(v) }))} />
+               <EditField label="Endereço" value={form.addressStreet} onChange={v => setForm(f => ({ ...f, addressStreet: v }))} />
+               <EditField label="Número" value={form.addressNumber} onChange={v => setForm(f => ({ ...f, addressNumber: v }))} />
+               <EditField label="Complemento" value={form.addressComplement} onChange={v => setForm(f => ({ ...f, addressComplement: v }))} />
+               <EditField label="Bairro" value={form.addressNeighborhood} onChange={v => setForm(f => ({ ...f, addressNeighborhood: v }))} />
+               <EditField label="Cidade" value={form.addressCity} onChange={v => setForm(f => ({ ...f, addressCity: v }))} />
+               <EditField label="UF" value={form.addressState} onChange={v => setForm(f => ({ ...f, addressState: v.replace(/[^a-z]/gi, '').slice(0, 2).toUpperCase() }))} />
             </div>
           ) : (
             <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
               <Row label="Nome" value={current?.fullName || order.patientName} />
               <Row label="Nome Social" value={current?.socialName} />
-              <Row label="CPF" value={current?.cpf} />
-              <Row label="RG" value={current?.rg} />
-              <Row label="Nascimento" value={current?.birthDate || order.patientBirthDate} />
-              <Row label="Sexo" value={current?.gender || order.patientGender} />
+               <Row label="CPF" value={formatCPFDisplay(current?.cpf)} />
+               <Row label="RG" value={formatRG(current?.rg)} />
+               <Row label="Nascimento" value={formatBirthDate(current?.birthDate || order.patientBirthDate)} />
+               <Row label="Sexo" value={GENDER_LABELS[current?.gender || order.patientGender || 'not_informed'] || 'Não informado'} />
               <Row label="Nome da Mãe" value={current?.motherName} />
-              <Row label="Telefone" value={current?.phone1 || current?.phone2} />
+               <Row label="Telefone" value={formatPhoneDisplay(current?.phone1 || current?.phone2)} />
               <Row label="E-mail" value={current?.email} />
               <Row label="Convênio" value={order.convenioName} />
               <Row label="Carteirinha" value={order.cardNumber} />

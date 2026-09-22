@@ -138,7 +138,7 @@ export function AttendanceLookupModal({ open, onClose, unitName, guicheName, onA
   // Somente usuários com a atribuição ADM (checkbox no modal Editar Usuário) veem pedidos excluídos
   const isAdmin = user?.isAdmin === true || user?.role === 'super_admin'
   const { orders, updateOrder, loading } = useAttendanceCadastro()
-  const { patients, loading: patientsLoading } = usePatients()
+  const { patients, loading: patientsLoading, refresh: refreshPatients } = usePatients()
   const { settings } = useLabSettings()
   const companySequenceId = useCompanySequenceId()
   const [search, setSearch] = useState('')
@@ -491,6 +491,7 @@ export function AttendanceLookupModal({ open, onClose, unitName, guicheName, onA
           onClose={() => setDetailsOrder(null)}
           order={detailsOrder}
           patient={patientById.get(detailsOrder.patientId)}
+          onPatientUpdated={() => { void refreshPatients() }}
         />
       )}
     </Dialog>
