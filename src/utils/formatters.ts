@@ -98,3 +98,26 @@ export const getDayName = (date: Date): string =>
 
 export const getDayNameShort = (date: Date): string =>
   date.toLocaleDateString('pt-BR', { weekday: 'short' })
+
+export const formatGender = (gender?: string): string => {
+  switch (String(gender || '').toLowerCase()) {
+    case 'male': return 'Masculino'
+    case 'female': return 'Feminino'
+    case 'other': return 'Outro'
+    case 'not_informed': return 'Não informado'
+    default: return gender || 'Não informado'
+  }
+}
+
+export const formatAddress = (address?: any): string => {
+  if (!address) return ''
+  return [
+    address.street,
+    address.number,
+    address.complement,
+    address.neighborhood,
+    address.city,
+    address.state,
+    address.cep
+  ].filter(Boolean).join(', ')
+}
