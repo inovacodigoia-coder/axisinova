@@ -1531,6 +1531,9 @@ export function AttendanceDetailsModal({ open, onClose, onOrderDeleted, order, p
           guides={guidesState}
           guideIndex={guideEditor.index}
           onSelectGuide={(idx) => setGuideEditor({ mode: 'edit', index: idx })}
+          fallbackDoctorId={order.doctorId}
+          fallbackDoctorName={order.doctorName}
+          fallbackDoctorCRM={order.doctorCRM}
           onSave={(updated) => {
             const next = [...guidesState];
             if (guideEditor.mode === "create") next.push(updated);
