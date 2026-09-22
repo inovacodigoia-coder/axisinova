@@ -83,6 +83,7 @@ export const SYSTEM_MODULES: { key: SystemModule; label: string; icon: string }[
   { key: 'pharmacy', label: 'Farmácia Hospitalar', icon: 'Pill' },
   { key: 'serotheque', label: 'Soroteca', icon: 'Database' },
   { key: 'portals', label: 'Portais Externos', icon: 'Users' },
+  { key: 'patient_registry', label: 'Cadastro do Cliente (Paciente)', icon: 'UserCog' },
 ]
 
 
