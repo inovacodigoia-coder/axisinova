@@ -320,6 +320,28 @@ export function RegistersProvider({ children }: { children: ReactNode }) {
   }, [isDemo])
 
   // --- Exams ---
+  // Reenvia automaticamente quando a rede falha (TypeError: Failed to fetch)
+  const runWithRetry = async <T,>(fn: () => Promise<T>, attempts = 3): Promise<T> => {
+    let lastErr: any
+    for (let i = 0; i < attempts; i++) {
+      try {
+        const res: any = await fn()
+        const msg = res?.error?.message || ''
+        if (res?.error && /failed to fetch|network|load failed/i.test(msg) && i < attempts - 1) {
+          lastErr = res.error
+          await new Promise(r => setTimeout(r, 600 * (i + 1)))
+          continue
+        }
+        return res
+      } catch (err: any) {
+        lastErr = err
+        if (!/failed to fetch|network|load failed/i.test(err?.message || '') || i === attempts - 1) throw err
+        await new Promise(r => setTimeout(r, 600 * (i + 1)))
+      }
+    }
+    throw lastErr
+  }
+
   const addExam = useCallback(async (e: Exam) => {
     const id = ensureUUID(e.id)
     const entity = { ...e, id, companyId: companyId || e.companyId }
@@ -329,7 +351,7 @@ export function RegistersProvider({ children }: { children: ReactNode }) {
       return entity
     }
 
-    const { data, error } = await supabase.from('exams').insert({
+    const { data, error } = await runWithRetry(async () => await supabase.from('exams').insert({
       id, 
       company_id: companyId, 
       name: e.name, 
@@ -361,11 +383,15 @@ export function RegistersProvider({ children }: { children: ReactNode }) {
       selected_materials: e.selectedMaterials || [],
       default_material: e.defaultMaterial || null,
       workbench_id: e.workbenchId || null,
-    } as any).select().single()
+    } as any).select().single())
 
     if (error) {
       console.error('[exams.insert]', error)
-      toast.error(`Erro ao salvar exame: ${error.message}`)
+      toast.error(
+        /failed to fetch|network|load failed/i.test(error.message || '')
+          ? 'Sem conexão no momento. Verifique sua internet e salve novamente.'
+          : `Erro ao salvar exame: ${error.message}`
+      )
       throw error
     } else if (data) {
       const mapped = mapExamRow(data)
@@ -381,7 +407,7 @@ export function RegistersProvider({ children }: { children: ReactNode }) {
     if (isDemo) return
     
     try {
-      const { error } = await supabase.from('exams').update({
+      const { error } = await runWithRetry(async () => await supabase.from('exams').update({
         name: e.name, 
         tuss_code: e.tussCode || null, 
         internal_code: e.internalCode || null, 
@@ -411,11 +437,15 @@ export function RegistersProvider({ children }: { children: ReactNode }) {
         selected_materials: e.selectedMaterials || [],
         default_material: e.defaultMaterial || null,
         workbench_id: e.workbenchId || null
-      } as any).eq('id', e.id)
+      } as any).eq('id', e.id))
 
       if (error) { 
         console.error('[updateExam] Error:', error); 
-        toast.error(`Erro ao atualizar exame: ${error.message}`);
+        toast.error(
+          /failed to fetch|network|load failed/i.test(error.message || '')
+            ? 'Sem conexão no momento. Verifique sua internet e salve novamente.'
+            : `Erro ao atualizar exame: ${error.message}`
+        );
         
         // Rollback state by re-fetching
         const { data: refreshed } = await supabase.from('exams').select('*').eq('id', e.id).single()
