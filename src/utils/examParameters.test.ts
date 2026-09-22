@@ -33,6 +33,22 @@ describe('resolveReference', () => {
 
     expect(resolveReference(param, '1,020')).toBe('Normal')
   })
+
+  it('aceita limites escritos como texto (ex.: <50) quando a unidade é Valor', () => {
+    const param = {
+      type: 'numerical',
+      patient: { gender: 'female', age: 30 },
+      reference: '',
+      ranges: [
+        { description: 'Abaixo de 50', minAge: '<50', maxAge: '', ageUnit: 'valor', sex: 'Todos' },
+        { description: 'Entre 50 e 100', minAge: '50', maxAge: '100', ageUnit: 'valor', sex: 'Todos' },
+      ],
+    }
+
+    expect(resolveReference(param, '30')).toBe('<50')
+    expect(resolveReference(param, '80')).toBe('50 a 100')
+    expect(resolveReference(param, '200')).toBe('')
+  })
 })
 
 describe('evaluateFormula', () => {
