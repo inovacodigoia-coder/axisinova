@@ -95,13 +95,15 @@ export function GuideEditorModal({ open, onClose, mode, guide, onSave, guides, g
     const doctor = activeDoctors.find(d => d.id === doctorId)
     const convenio = activeConvenios.find(c => c.id === convenioId)
     onSave({
+      ...(guide || {}),
       convenioId: convenio?.id,
       convenioName: convenio?.name || convenioName || 'Particular',
-      doctorId: doctor?.id,
-      doctorName: doctor?.fullName || doctor?.name,
-      doctorCRM: doctor?.crm,
+      doctorId: doctor?.id ?? (doctorId ? doctorId : undefined),
+      doctorName: doctor ? (doctor.fullName || (doctor as any).name) : (doctorId ? guide?.doctorName : undefined),
+      doctorCRM: doctor?.crm ?? (doctorId ? guide?.doctorCRM : undefined),
+      ...(doctor ? { doctorCrm: doctor.crm, doctorCrmState: (doctor as any).crmState } : {}),
       exams: selected,
-    })
+    } as GuideDraft)
     onClose()
   }
 
