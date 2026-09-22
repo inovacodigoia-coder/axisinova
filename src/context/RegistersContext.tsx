@@ -387,7 +387,11 @@ export function RegistersProvider({ children }: { children: ReactNode }) {
 
     if (error) {
       console.error('[exams.insert]', error)
-      toast.error(`Erro ao salvar exame: ${error.message}`)
+      toast.error(
+        /failed to fetch|network|load failed/i.test(error.message || '')
+          ? 'Sem conexão no momento. Verifique sua internet e salve novamente.'
+          : `Erro ao salvar exame: ${error.message}`
+      )
       throw error
     } else if (data) {
       const mapped = mapExamRow(data)
