@@ -25,6 +25,9 @@ interface GuideEditorModalProps {
   guides?: GuideDraft[]
   guideIndex?: number
   onSelectGuide?: (index: number) => void
+  fallbackDoctorId?: string
+  fallbackDoctorName?: string
+  fallbackDoctorCRM?: string
 }
 
 export function GuideEditorModal({ open, onClose, mode, guide, onSave, guides, guideIndex, onSelectGuide, fallbackDoctorId, fallbackDoctorName, fallbackDoctorCRM }: GuideEditorModalProps) {
