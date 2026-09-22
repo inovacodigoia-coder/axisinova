@@ -178,6 +178,9 @@ export function pickReference(ranges: any[] | undefined, patient: PatientCtx, re
     return valueBounds(textMatched[0]) || formatRange(textMatched[0])
   }
 
+  // Sem faixa compatível quando todas dependem do valor digitado, não há referência
+  if (ranges.every(isValueRange) && matches.length === 0 && textMatched.length === 0) return ''
+
   // Faixa por valor tem prioridade quando o resultado já foi digitado
   const chosen =
     matches.find((r) => isValueRange(r)) ||
