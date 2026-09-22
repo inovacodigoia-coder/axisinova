@@ -92,8 +92,9 @@ export function pickReference(ranges: any[] | undefined, patient: PatientCtx, re
 
     if (isValueRange(r)) {
       if (value == null) return false
-      const min = toNumber(r.minAge ?? r.age_min)
-      const max = toNumber(r.maxAge ?? r.age_max)
+      const min = toNumber(r.minAge ?? r.value_min ?? r.age_min)
+      const max = toNumber(r.maxAge ?? r.value_max ?? r.age_max)
+
       const valueOk = (min == null || value >= min) && (max == null || value <= max)
       return sexOk && fastingOk && valueOk
     }
