@@ -1652,7 +1652,9 @@ function ReferenceValuesSection({ parameter, referenceValues = [] }: { parameter
                   {isValueUnit(faixa.ageUnit) ? 'Valor Mín/Máx' : 'Idade Mín/Máx'}
                 </Label>
                 <div className="h-9 px-3 flex items-center bg-muted/20 rounded-lg text-xs">
-                  {faixa.minAge ?? 0} a {faixa.maxAge ?? 150} {isValueUnit(faixa.ageUnit) ? '(valor)' : ageUnitLabel(faixa.ageUnit)}
+                  {isValueUnit(faixa.ageUnit)
+                    ? [faixa.minAge, faixa.maxAge].filter((v: any) => v != null && String(v).trim() !== '').join(' a ') || '—'
+                    : `${faixa.minAge ?? 0} a ${faixa.maxAge ?? 150} ${ageUnitLabel(faixa.ageUnit)}`}
                 </div>
               </div>
 
