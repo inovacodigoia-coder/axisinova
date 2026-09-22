@@ -309,27 +309,39 @@ export default function LabCatalogFormPage() {
               // Delete existing ones for this parameter to refresh
               await supabase.from('lab_exam_reference_values').delete().eq('parameter_id', parameterId);
               
-              const refValuesToInsert = param.referenceValues.map((ref: any) => ({
-                exam_id: examId,
-                parameter_id: parameterId,
-                company_id: companyId,
-                internal_code: examData.internalCode,
-                description: ref.description || '',
-                min_value: ref.minValue?.toString() || null,
-                max_value: ref.maxValue?.toString() || null,
-                text_range: ref.textRange || null,
-                age_min: Math.round(Number(ref.minAge ?? 0)),
-                age_max: Math.round(Number(ref.maxAge ?? 150)),
-                age_unit: normalizeAgeUnit(ref.ageUnit),
-                value_min: isValueUnit(normalizeAgeUnit(ref.ageUnit)) ? Number(ref.minAge ?? 0) : null,
-                value_max: isValueUnit(normalizeAgeUnit(ref.ageUnit)) ? Number(ref.maxAge ?? 0) : null,
+              const refValuesToInsert = param.referenceValues.map((ref: any) => {
+                const refIsValueUnit = isValueUnit(normalizeAgeUnit(ref.ageUnit));
+                // Na unidade "Valor", os limites do resultado podem ser texto (ex.: "<50")
+                const boundText = (v: any) => {
+                  const s = v == null ? '' : String(v).trim();
+                  return s === '' ? null : s;
+                };
+                const ageInt = (v: any) => {
+                  const n = Math.round(Number(v));
+                  return isFinite(n) ? n : 0;
+                };
+                return {
+                  exam_id: examId,
+                  parameter_id: parameterId,
+                  company_id: companyId,
+                  internal_code: examData.internalCode,
+                  description: ref.description || '',
+                  min_value: ref.minValue?.toString() || null,
+                  max_value: ref.maxValue?.toString() || null,
+                  text_range: ref.textRange || null,
+                  age_min: refIsValueUnit ? 0 : ageInt(ref.minAge ?? 0),
+                  age_max: refIsValueUnit ? 0 : ageInt(ref.maxAge ?? 150),
+                  age_unit: normalizeAgeUnit(ref.ageUnit),
+                  value_min: refIsValueUnit ? boundText(ref.minAge) : null,
+                  value_max: refIsValueUnit ? boundText(ref.maxAge) : null,
 
 
-                gender: ref.sex || 'both',
-                use_fasting: !!ref.useFasting,
-                is_fasting: !!ref.isFasting,
-                parameter_name: param.name
-              }));
+                  gender: ref.sex || 'both',
+                  use_fasting: !!ref.useFasting,
+                  is_fasting: !!ref.isFasting,
+                  parameter_name: param.name
+                };
+              });
 
               if (refValuesToInsert.length > 0) {
                 await supabase.from('lab_exam_reference_values').insert(refValuesToInsert);
@@ -1394,11 +1406,12 @@ function ReferenceValuesModal({ parameter, onClose, onSave }: { parameter: any, 
                     {isValueUnit(faixa.ageUnit) ? 'Valor Mín (resultado)' : `Idade Mín (${ageUnitLabel(faixa.ageUnit)})`}
                   </Label>
                   <Input 
-                    type="number" 
-                    step="any"
+                    type={isValueUnit(faixa.ageUnit) ? 'text' : 'number'} 
+                    step={isValueUnit(faixa.ageUnit) ? undefined : 'any'}
+                    placeholder={isValueUnit(faixa.ageUnit) ? 'Ex: 10 ou <50' : undefined}
                     className="h-9 text-xs" 
-                    value={faixa.minAge} 
-                    onChange={(e) => updateFaixa(faixa.id, 'minAge', Number(e.target.value))} 
+                    value={faixa.minAge ?? ''} 
+                    onChange={(e) => updateFaixa(faixa.id, 'minAge', isValueUnit(faixa.ageUnit) ? e.target.value : Number(e.target.value))} 
                   />
                 </div>
                 <div className="space-y-1.5">
@@ -1406,11 +1419,12 @@ function ReferenceValuesModal({ parameter, onClose, onSave }: { parameter: any, 
                     {isValueUnit(faixa.ageUnit) ? 'Valor Máx (resultado)' : `Idade Máx (${ageUnitLabel(faixa.ageUnit)})`}
                   </Label>
                   <Input 
-                    type="number" 
-                    step="any"
+                    type={isValueUnit(faixa.ageUnit) ? 'text' : 'number'} 
+                    step={isValueUnit(faixa.ageUnit) ? undefined : 'any'}
+                    placeholder={isValueUnit(faixa.ageUnit) ? 'Ex: 500 ou >=50' : undefined}
                     className="h-9 text-xs" 
-                    value={faixa.maxAge} 
-                    onChange={(e) => updateFaixa(faixa.id, 'maxAge', Number(e.target.value))} 
+                    value={faixa.maxAge ?? ''} 
+                    onChange={(e) => updateFaixa(faixa.id, 'maxAge', isValueUnit(faixa.ageUnit) ? e.target.value : Number(e.target.value))} 
                   />
                 </div>
                 <div className="space-y-1.5 md:col-span-2">
