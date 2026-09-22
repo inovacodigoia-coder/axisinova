@@ -320,6 +320,28 @@ export function RegistersProvider({ children }: { children: ReactNode }) {
   }, [isDemo])
 
   // --- Exams ---
+  // Reenvia automaticamente quando a rede falha (TypeError: Failed to fetch)
+  const runWithRetry = async <T,>(fn: () => Promise<T>, attempts = 3): Promise<T> => {
+    let lastErr: any
+    for (let i = 0; i < attempts; i++) {
+      try {
+        const res: any = await fn()
+        const msg = res?.error?.message || ''
+        if (res?.error && /failed to fetch|network|load failed/i.test(msg) && i < attempts - 1) {
+          lastErr = res.error
+          await new Promise(r => setTimeout(r, 600 * (i + 1)))
+          continue
+        }
+        return res
+      } catch (err: any) {
+        lastErr = err
+        if (!/failed to fetch|network|load failed/i.test(err?.message || '') || i === attempts - 1) throw err
+        await new Promise(r => setTimeout(r, 600 * (i + 1)))
+      }
+    }
+    throw lastErr
+  }
+
   const addExam = useCallback(async (e: Exam) => {
     const id = ensureUUID(e.id)
     const entity = { ...e, id, companyId: companyId || e.companyId }
