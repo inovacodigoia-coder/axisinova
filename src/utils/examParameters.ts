@@ -158,6 +158,8 @@ export function buildExamParams(catalogExam: any | undefined, fallbackName: stri
         name: catalogExam?.name || fallbackName,
         unit: examUnit,
         reference: pickReference(examLevelRefs, patient),
+        ranges: examLevelRefs,
+        patient,
       },
     ]
   }
@@ -166,15 +168,15 @@ export function buildExamParams(catalogExam: any | undefined, fallbackName: stri
     const name = p.name || `Parâmetro ${idx + 1}`
     const isCalculated = !!(p.isCalculated || p.is_calculated)
     const formula = (p.formula && String(p.formula).trim()) || (isCalculated ? defaultFormulaFor(name) : '')
+    const ranges = p.referenceValues && p.referenceValues.length ? p.referenceValues : examLevelRefs
     return {
       id: String(p.id ?? idx + 1),
       name,
       code: p.code || p.equipment_code || p.equipmentCode || p.codigo || '',
       unit: p.unit || examUnit,
-      reference: pickReference(
-        (p.referenceValues && p.referenceValues.length ? p.referenceValues : examLevelRefs),
-        patient,
-      ),
+      reference: pickReference(ranges, patient),
+      ranges,
+      patient,
       isCalculated,
       formula,
       section: p.section || p.secao || '',
@@ -182,6 +184,7 @@ export function buildExamParams(catalogExam: any | undefined, fallbackName: stri
       options: normalizeOptions(p.options ?? p.selection_options ?? p.selectionOptions),
     }
   })
+
 }
 
 /**
