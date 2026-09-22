@@ -42,6 +42,7 @@ function formatRange(r: any): string {
   if (min != null && max != null && min !== '' && max !== '') return `${min} a ${max}`
   if (min != null && min !== '') return `> ${min}`
   if (max != null && max !== '') return `< ${max}`
+  if (isValueRange(r)) return valueBounds(r)
   return r.description || ''
 }
 
@@ -80,16 +81,41 @@ function rangeText(r: any): string {
   return (r?.normalText ?? r?.textRange ?? r?.text_range ?? r?.description ?? '').toString()
 }
 
+/** Indica se um limite já traz o sentido escrito ("<50", ">=10", "≤ 5"). */
+function boundHasOperator(v: any): boolean {
+  return /^[<>≤≥]/.test(String(v ?? '').trim())
+}
+
 /** Limites mín/máx do resultado cadastrados na faixa do tipo "Valor". */
 function valueBounds(r: any): string {
   const min = r?.minAge ?? r?.value_min ?? r?.age_min
   const max = r?.maxAge ?? r?.value_max ?? r?.age_max
-  const hasMin = min != null && min !== ''
-  const hasMax = max != null && max !== ''
-  if (hasMin && hasMax) return `${min} a ${max}`
-  if (hasMin) return `> ${min}`
-  if (hasMax) return `< ${max}`
+  const hasMin = min != null && String(min).trim() !== ''
+  const hasMax = max != null && String(max).trim() !== ''
+  if (hasMin && hasMax) {
+    const minOp = boundHasOperator(min)
+    const maxOp = boundHasOperator(max)
+    if (minOp && maxOp) return `${min} e ${max}`
+    if (minOp) return String(min).trim()
+    if (maxOp) return String(max).trim()
+    return `${min} a ${max}`
+  }
+  if (hasMin) return boundHasOperator(min) ? String(min).trim() : `> ${min}`
+  if (hasMax) return boundHasOperator(max) ? String(max).trim() : `< ${max}`
   return ''
+}
+
+/**
+ * Interpreta um limite cadastrado na faixa "Valor", que pode ser texto
+ * (ex.: "<50", ">=10"). O operador escrito define a direção do limite.
+ */
+function parseBound(raw: any): { op: string | null; n: number | null } {
+  const s = String(raw ?? '').trim()
+  if (!s) return { op: null, n: null }
+  const m = s.match(/^([<>≤≥]+)\s*(.*)$/)
+  const n = toNumber(m ? m[2] : s)
+  if (n == null) return { op: null, n: null }
+  return { op: m ? m[1] : null, n }
 }
 
 /** Escolhe a faixa de referência que combina com sexo/idade/jejum do paciente. */
@@ -122,9 +148,21 @@ export function pickReference(ranges: any[] | undefined, patient: PatientCtx, re
         return ok
       }
 
-      const min = toNumber(r.minAge ?? r.value_min ?? r.age_min)
-      const max = toNumber(r.maxAge ?? r.value_max ?? r.age_max)
-      return (min == null || value >= min) && (max == null || value <= max)
+      // Limites podem ser números ou textos com operador ("<50", ">=10")
+      const minB = parseBound(r.minAge ?? r.value_min ?? r.age_min)
+      const maxB = parseBound(r.maxAge ?? r.value_max ?? r.age_max)
+      let lower: number | null = null
+      let upper: number | null = null
+      if (minB.n != null) {
+        // um "mínimo" escrito como "<50" na verdade limita por cima
+        if (minB.op?.includes('<')) upper = upper ?? minB.n
+        else lower = lower ?? minB.n
+      }
+      if (maxB.n != null) {
+        if (maxB.op?.includes('>')) lower = lower ?? maxB.n
+        else upper = upper ?? maxB.n
+      }
+      return (lower == null || value >= lower) && (upper == null || value <= upper)
     }
 
     const minAge = ageToYears(r.minAge ?? r.age_min, r.ageUnit ?? r.age_unit)
@@ -139,6 +177,9 @@ export function pickReference(ranges: any[] | undefined, patient: PatientCtx, re
   if (textMatched.length > 0) {
     return valueBounds(textMatched[0]) || formatRange(textMatched[0])
   }
+
+  // Sem faixa compatível quando todas dependem do valor digitado, não há referência
+  if (ranges.every(isValueRange) && matches.length === 0 && textMatched.length === 0) return ''
 
   // Faixa por valor tem prioridade quando o resultado já foi digitado
   const chosen =
