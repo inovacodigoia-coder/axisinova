@@ -1388,10 +1388,11 @@ function ReferenceValuesModal({ parameter, onClose, onSave }: { parameter: any, 
 
                 <div className="space-y-1.5">
                   <Label className="text-[10px] font-bold uppercase text-muted-foreground">
-                    Idade Mín ({ageUnitLabel(faixa.ageUnit)})
+                    {isValueUnit(faixa.ageUnit) ? 'Valor Mín (resultado)' : `Idade Mín (${ageUnitLabel(faixa.ageUnit)})`}
                   </Label>
                   <Input 
                     type="number" 
+                    step="any"
                     className="h-9 text-xs" 
                     value={faixa.minAge} 
                     onChange={(e) => updateFaixa(faixa.id, 'minAge', Number(e.target.value))} 
@@ -1399,10 +1400,11 @@ function ReferenceValuesModal({ parameter, onClose, onSave }: { parameter: any, 
                 </div>
                 <div className="space-y-1.5">
                   <Label className="text-[10px] font-bold uppercase text-muted-foreground">
-                    Idade Máx ({ageUnitLabel(faixa.ageUnit)})
+                    {isValueUnit(faixa.ageUnit) ? 'Valor Máx (resultado)' : `Idade Máx (${ageUnitLabel(faixa.ageUnit)})`}
                   </Label>
                   <Input 
                     type="number" 
+                    step="any"
                     className="h-9 text-xs" 
                     value={faixa.maxAge} 
                     onChange={(e) => updateFaixa(faixa.id, 'maxAge', Number(e.target.value))} 
@@ -1422,9 +1424,16 @@ function ReferenceValuesModal({ parameter, onClose, onSave }: { parameter: any, 
                       <SelectItem value="meses" className="text-xs">Meses</SelectItem>
                       <SelectItem value="semanas" className="text-xs">Semanas</SelectItem>
                       <SelectItem value="dias" className="text-xs">Dias</SelectItem>
+                      <SelectItem value="valor" className="text-xs">Valor</SelectItem>
                     </SelectContent>
                   </Select>
+                  {isValueUnit(faixa.ageUnit) && (
+                    <p className="text-[10px] text-muted-foreground">
+                      Esta faixa é escolhida pelo valor digitado no resultado (entre o valor mín e máx acima), e não pela idade.
+                    </p>
+                  )}
                 </div>
+
 
 
                 <div className="flex items-center gap-4 md:col-span-2 bg-white/50 p-2 rounded-lg border border-dashed">
