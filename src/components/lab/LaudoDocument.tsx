@@ -27,7 +27,17 @@ interface LaudoDocumentProps {
 }
 
 const fmtDateTime = (v?: string) => (v ? new Date(v).toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' }) : '—');
-const fmtDate = (v?: string) => (v ? new Date(v).toLocaleDateString('pt-BR') : '—');
+const parseLocalDate = (value?: string) => {
+  if (!value) return null;
+  const dateOnly = value.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  if (dateOnly) {
+    const [, year, month, day] = dateOnly;
+    return new Date(Number(year), Number(month) - 1, Number(day));
+  }
+  const parsed = new Date(value);
+  return Number.isNaN(parsed.getTime()) ? null : parsed;
+};
+const fmtDate = (v?: string) => parseLocalDate(v)?.toLocaleDateString('pt-BR') || '—';
 const fmtTime = (v?: string) => (v ? new Date(v).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }) : '—');
 
 function InfoRow({ label, value }: { label: string; value?: React.ReactNode }) {
@@ -262,8 +272,13 @@ export default function LaudoDocument({
   isRetified,
   retificationDetails,
 }: LaudoDocumentProps) {
-  const birth = order.patientBirthDate ? new Date(order.patientBirthDate) : null;
-  const patientAge = birth ? new Date().getFullYear() - birth.getFullYear() : 0;
+  const birth = parseLocalDate(order.patientBirthDate);
+  const today = new Date();
+  const patientAge = birth
+    ? today.getFullYear() - birth.getFullYear()
+      - (today.getMonth() < birth.getMonth()
+        || (today.getMonth() === birth.getMonth() && today.getDate() < birth.getDate()) ? 1 : 0)
+    : 0;
 
   const genderLabel =
     order.patientGender === 'M' || order.patientGender === 'male'
