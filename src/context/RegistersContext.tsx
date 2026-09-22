@@ -351,7 +351,7 @@ export function RegistersProvider({ children }: { children: ReactNode }) {
       return entity
     }
 
-    const { data, error } = await runWithRetry(() => supabase.from('exams').insert({
+    const { data, error } = await runWithRetry(async () => await supabase.from('exams').insert({
       id, 
       company_id: companyId, 
       name: e.name, 
