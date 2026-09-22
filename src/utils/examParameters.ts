@@ -75,6 +75,23 @@ function rangeUsesFasting(r: any): boolean {
   return !!(r?.useFasting ?? r?.use_fasting)
 }
 
+/** Texto cadastrado na faixa ("Valor de Referência (texto)"). */
+function rangeText(r: any): string {
+  return (r?.normalText ?? r?.textRange ?? r?.text_range ?? r?.description ?? '').toString()
+}
+
+/** Limites mín/máx do resultado cadastrados na faixa do tipo "Valor". */
+function valueBounds(r: any): string {
+  const min = r?.minAge ?? r?.value_min ?? r?.age_min
+  const max = r?.maxAge ?? r?.value_max ?? r?.age_max
+  const hasMin = min != null && min !== ''
+  const hasMax = max != null && max !== ''
+  if (hasMin && hasMax) return `${min} a ${max}`
+  if (hasMin) return `> ${min}`
+  if (hasMax) return `< ${max}`
+  return ''
+}
+
 /** Escolhe a faixa de referência que combina com sexo/idade/jejum do paciente. */
 export function pickReference(ranges: any[] | undefined, patient: PatientCtx, resultValue?: any): string {
   if (!ranges || ranges.length === 0) return ''
@@ -82,6 +99,9 @@ export function pickReference(ranges: any[] | undefined, patient: PatientCtx, re
   const age = patient.age
   const fasting = patient.isFasting
   const value = toNumber(resultValue)
+  const textValue = normalizeText(String(resultValue ?? ''))
+
+  const textMatched: any[] = []
 
   const matches = ranges.filter((r) => {
     const rSex = (r.sex ?? r.gender ?? 'Both')?.toString()
@@ -91,12 +111,19 @@ export function pickReference(ranges: any[] | undefined, patient: PatientCtx, re
       !rangeUsesFasting(r) || fasting == null || !!(r.isFasting ?? r.is_fasting) === !!fasting
 
     if (isValueRange(r)) {
-      if (value == null) return false
+      if (!sexOk || !fastingOk) return false
+
+      // Resultado por seleção/texto: casa pelo texto cadastrado na faixa
+      if (value == null) {
+        if (!textValue) return false
+        const ok = normalizeText(rangeText(r)) === textValue
+        if (ok) textMatched.push(r)
+        return ok
+      }
+
       const min = toNumber(r.minAge ?? r.value_min ?? r.age_min)
       const max = toNumber(r.maxAge ?? r.value_max ?? r.age_max)
-
-      const valueOk = (min == null || value >= min) && (max == null || value <= max)
-      return sexOk && fastingOk && valueOk
+      return (min == null || value >= min) && (max == null || value <= max)
     }
 
     const minAge = ageToYears(r.minAge ?? r.age_min, r.ageUnit ?? r.age_unit)
@@ -106,6 +133,11 @@ export function pickReference(ranges: any[] | undefined, patient: PatientCtx, re
       ((minAge == null || age >= minAge) && (maxAge == null || age <= maxAge))
     return sexOk && ageOk && fastingOk
   })
+
+  // Faixa escolhida pelo texto selecionado mostra os limites de resultado cadastrados
+  if (textMatched.length > 0) {
+    return valueBounds(textMatched[0]) || formatRange(textMatched[0])
+  }
 
   // Faixa por valor tem prioridade quando o resultado já foi digitado
   const chosen =
@@ -124,8 +156,12 @@ export function pickReference(ranges: any[] | undefined, patient: PatientCtx, re
 export function resolveReference(param: any, value?: any): string {
   const ranges: any[] = Array.isArray(param?.ranges) ? param.ranges : []
   if (!ranges.some(isValueRange)) return param?.reference || ''
+  const hasValue = value != null && String(value).trim() !== ''
+  // Sem resultado digitado, uma faixa por valor ainda não pode ser escolhida
+  if (!hasValue && ranges.every(isValueRange)) return ''
   return pickReference(ranges, param?.patient || {}, value) || param?.reference || ''
 }
+
 
 
 /** Normaliza a lista de opções de um parâmetro do tipo Seleção. */
