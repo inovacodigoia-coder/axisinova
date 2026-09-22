@@ -12,14 +12,19 @@ export interface ResolvedParam {
   type?: string
   options?: string[]
   code?: string
+  /** Faixas cadastradas (usadas quando a faixa depende do valor digitado). */
+  ranges?: any[]
+  /** Contexto do paciente usado para resolver a faixa. */
+  patient?: PatientCtx
 }
 
-interface PatientCtx {
+export interface PatientCtx {
   gender?: string
   age?: number
   /** Paciente está em jejum (informado no Cadastro de Atendimento). */
   isFasting?: boolean | null
 }
+
 
 function normalizeSex(gender?: string): 'M' | 'F' | null {
   if (!gender) return null
