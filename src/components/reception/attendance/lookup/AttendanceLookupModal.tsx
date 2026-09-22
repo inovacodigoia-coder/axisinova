@@ -491,6 +491,7 @@ export function AttendanceLookupModal({ open, onClose, unitName, guicheName, onA
           onClose={() => setDetailsOrder(null)}
           order={detailsOrder}
           patient={patientById.get(detailsOrder.patientId)}
+          onPatientUpdated={() => refresh()}
           onPatientUpdated={() => { void refreshPatients() }}
         />
       )}
