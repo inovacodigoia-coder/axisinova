@@ -1612,7 +1612,6 @@ export function AttendanceDetailsModal({ open, onClose, onOrderDeleted, order, p
             setCurrentPatient(updated)
             onPatientUpdated?.(updated)
           }}
-          onPatientUpdated={onPatientUpdated}
         />
       )}
       </ScrollArea>

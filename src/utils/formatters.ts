@@ -121,3 +121,4 @@ export const formatAddress = (address?: any): string => {
     address.cep
   ].filter(Boolean).join(', ')
 }
+export const formatRG = (rg?: string): string => rg || ''
