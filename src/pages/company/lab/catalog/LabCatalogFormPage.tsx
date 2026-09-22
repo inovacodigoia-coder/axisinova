@@ -73,15 +73,20 @@ const ageUnitLabel = (unit?: string) => {
   if (unit === 'meses') return 'meses'
   if (unit === 'semanas') return 'semanas'
   if (unit === 'dias') return 'dias'
+  if (unit === 'valor' || unit === 'value') return 'valor'
   return 'anos'
 }
+
+const isValueUnit = (unit?: string) => unit === 'valor' || unit === 'value'
 
 const normalizeAgeUnit = (unit?: string) => {
   if (unit === 'meses' || unit === 'months') return 'meses'
   if (unit === 'semanas' || unit === 'weeks') return 'semanas'
   if (unit === 'dias' || unit === 'days') return 'dias'
+  if (unit === 'valor' || unit === 'value') return 'valor'
   return 'anos'
 }
+
 
 export default function LabCatalogFormPage() {
   const navigate = useNavigate()
