@@ -25,24 +25,40 @@ interface GuideEditorModalProps {
   guides?: GuideDraft[]
   guideIndex?: number
   onSelectGuide?: (index: number) => void
+  fallbackDoctorId?: string
+  fallbackDoctorName?: string
+  fallbackDoctorCRM?: string
 }
 
-export function GuideEditorModal({ open, onClose, mode, guide, onSave, guides, guideIndex, onSelectGuide }: GuideEditorModalProps) {
+export function GuideEditorModal({ open, onClose, mode, guide, onSave, guides, guideIndex, onSelectGuide, fallbackDoctorId, fallbackDoctorName, fallbackDoctorCRM }: GuideEditorModalProps) {
   const { convenios, doctors, exams: catalog } = useRegisters()
   const [convenioId, setConvenioId] = useState(guide?.convenioId || '')
   const [convenioName, setConvenioName] = useState(guide?.convenioName || '')
-  const [doctorId, setDoctorId] = useState(guide?.doctorId || '')
+  const [doctorId, setDoctorId] = useState('')
   const [search, setSearch] = useState('')
   const [selected, setSelected] = useState<any[]>(guide?.exams ? [...guide.exams] : [])
+
+  // Resolve o médico da guia (por id, nome ou CRM) com fallback no médico do atendimento
+  const resolveDoctorId = (g?: GuideDraft) => {
+    if (g?.doctorId) return g.doctorId
+    const name = (g?.doctorName || fallbackDoctorName || '').trim().toLowerCase()
+    const crm = (g?.doctorCRM || fallbackDoctorCRM || '').trim().toLowerCase()
+    const match = doctors.find(d =>
+      (name && ((d.fullName || (d as any).name || '').trim().toLowerCase() === name)) ||
+      (crm && (d.crm || '').trim().toLowerCase() === crm)
+    )
+    return match?.id || fallbackDoctorId || ''
+  }
 
   // Sincroniza o formulário quando a guia selecionada muda (troca entre guias do mesmo atendimento)
   useEffect(() => {
     setConvenioId(guide?.convenioId || '')
     setConvenioName(guide?.convenioName || '')
-    setDoctorId(guide?.doctorId || '')
+    setDoctorId(resolveDoctorId(guide))
     setSelected(guide?.exams ? [...guide.exams] : [])
     setSearch('')
-  }, [guide])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [guide, doctors, fallbackDoctorId, fallbackDoctorName, fallbackDoctorCRM])
 
   const activeConvenios = useMemo(() => convenios.filter(c => c.isActive !== false), [convenios])
   const activeDoctors = useMemo(() => doctors.filter(d => d.isActive !== false), [doctors])
@@ -79,13 +95,15 @@ export function GuideEditorModal({ open, onClose, mode, guide, onSave, guides, g
     const doctor = activeDoctors.find(d => d.id === doctorId)
     const convenio = activeConvenios.find(c => c.id === convenioId)
     onSave({
+      ...(guide || {}),
       convenioId: convenio?.id,
       convenioName: convenio?.name || convenioName || 'Particular',
-      doctorId: doctor?.id,
-      doctorName: doctor?.fullName || doctor?.name,
-      doctorCRM: doctor?.crm,
+      doctorId: doctor?.id ?? (doctorId ? doctorId : undefined),
+      doctorName: doctor ? (doctor.fullName || (doctor as any).name) : (doctorId ? guide?.doctorName : undefined),
+      doctorCRM: doctor?.crm ?? (doctorId ? guide?.doctorCRM : undefined),
+      ...(doctor ? { doctorCrm: doctor.crm, doctorCrmState: (doctor as any).crmState } : {}),
       exams: selected,
-    })
+    } as GuideDraft)
     onClose()
   }
 

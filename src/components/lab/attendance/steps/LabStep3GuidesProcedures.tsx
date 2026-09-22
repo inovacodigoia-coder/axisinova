@@ -151,13 +151,22 @@ export function LabStep3GuidesProcedures({ state, update }: Props) {
     // Update guide with doctor data
     const newGuides = guides.map(g => g.id === activeGuideId ? { 
       ...g, 
+      doctorId: doc.id,
       doctorCrm: doc.crm,
       doctorCrmState: doc.crmState,
       doctorName: doc.fullName,
       doctorCbos: '225125' // Default or based on specialty if available
     } : g);
     setGuides(newGuides);
-    update({ guides: newGuides });
+    // Propaga o médico para o atendimento (aparece nos Detalhes do Atendimento e no laudo)
+    update({
+      guides: newGuides,
+      doctorId: doc.id,
+      doctorName: doc.fullName,
+      doctorCRM: doc.crm,
+      requestingDoctor: doc.fullName,
+      specialty: doc.specialty || undefined,
+    } as any);
     setDoctorSearch(doc.fullName);
     setShowDoctorDropdown(false);
   };
