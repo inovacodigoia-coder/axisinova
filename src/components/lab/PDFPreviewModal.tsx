@@ -46,9 +46,49 @@ export default function PDFPreviewModal({
   const [zoom, setZoom] = React.useState(100);
   const [isFullscreen, setIsFullscreen] = React.useState(false);
 
+  // Dados cadastrais sempre lidos do cadastro atual do paciente,
+  // mesmo que o exame já tenha sido liberado.
+  const [livePatient, setLivePatient] = React.useState<any>(null);
+
+  React.useEffect(() => {
+    let active = true;
+    if (!isOpen) { setLivePatient(null); return; }
+    (async () => {
+      try {
+        let patientId = (order as any)?.patientId as string | undefined;
+        const protocolRef = (order as any)?.protocol as string | undefined;
+        if (!patientId && protocolRef) {
+          const { data: ord } = await supabase
+            .from('attendance_orders')
+            .select('patient_id')
+            .eq('protocol', protocolRef)
+            .maybeSingle();
+          patientId = (ord as any)?.patient_id || undefined;
+        }
+        if (!patientId) { if (active) setLivePatient(null); return; }
+        const { data } = await supabase
+          .from('patients')
+          .select('name, birth_date, gender, cpf')
+          .eq('id', patientId)
+          .maybeSingle();
+        if (active) setLivePatient(data || null);
+      } catch {
+        if (active) setLivePatient(null);
+      }
+    })();
+    return () => { active = false; };
+  }, [isOpen, (order as any)?.patientId, (order as any)?.protocol]);
+
   const enrichedOrder = React.useMemo(
-    () => ({ ...order, exams: enrichExams((order as any)?.exams || []) }),
-    [order, enrichExams],
+    () => ({
+      ...order,
+      patientName: livePatient?.name || (order as any)?.patientName,
+      patientBirthDate: livePatient?.birth_date || (order as any)?.patientBirthDate,
+      patientGender: livePatient?.gender || (order as any)?.patientGender,
+      patientCPF: livePatient?.cpf || (order as any)?.patientCPF,
+      exams: enrichExams((order as any)?.exams || []),
+    }),
+    [order, enrichExams, livePatient],
   );
 
   const isAdmin = user?.role === 'company_admin' || user?.role === 'super_admin';
