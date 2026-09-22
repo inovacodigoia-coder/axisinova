@@ -45,12 +45,25 @@ function formatRange(r: any): string {
   return r.description || ''
 }
 
+/** A faixa é delimitada pelo valor do resultado (e não pela idade). */
+export function isValueRange(r: any): boolean {
+  const u = (r?.ageUnit ?? r?.age_unit ?? '').toString().toLowerCase()
+  return u === 'valor' || u === 'value'
+}
+
+const toNumber = (v: any): number | null => {
+  if (v == null || v === '') return null
+  const n = Number(String(v).replace(/\s/g, '').replace(',', '.'))
+  return isFinite(n) ? n : null
+}
+
 /** Converte um limite de idade (anos/meses/semanas) para anos. */
 export function ageToYears(value: any, unit?: string): number | null {
   if (value == null || value === '') return null
   const n = Number(value)
   if (!isFinite(n)) return null
   const u = (unit || 'anos').toString().toLowerCase()
+  if (u === 'valor' || u === 'value') return null
   if (u === 'meses' || u === 'months') return n / 12
   if (u === 'semanas' || u === 'weeks') return n / 52.1786
   if (u === 'dias' || u === 'days') return n / 365.25
@@ -63,31 +76,56 @@ function rangeUsesFasting(r: any): boolean {
 }
 
 /** Escolhe a faixa de referência que combina com sexo/idade/jejum do paciente. */
-export function pickReference(ranges: any[] | undefined, patient: PatientCtx): string {
+export function pickReference(ranges: any[] | undefined, patient: PatientCtx, resultValue?: any): string {
   if (!ranges || ranges.length === 0) return ''
   const sex = normalizeSex(patient.gender)
   const age = patient.age
   const fasting = patient.isFasting
+  const value = toNumber(resultValue)
 
   const matches = ranges.filter((r) => {
     const rSex = (r.sex ?? r.gender ?? 'Both')?.toString()
     const sexOk = !rSex || rSex === 'Both' || rSex === 'both' || !sex || rSex.toUpperCase().startsWith(sex)
+    // Só filtra por jejum quando a faixa usa essa condição e a informação existe no pedido
+    const fastingOk =
+      !rangeUsesFasting(r) || fasting == null || !!(r.isFasting ?? r.is_fasting) === !!fasting
+
+    if (isValueRange(r)) {
+      if (value == null) return false
+      const min = toNumber(r.minAge ?? r.age_min)
+      const max = toNumber(r.maxAge ?? r.age_max)
+      const valueOk = (min == null || value >= min) && (max == null || value <= max)
+      return sexOk && fastingOk && valueOk
+    }
+
     const minAge = ageToYears(r.minAge ?? r.age_min, r.ageUnit ?? r.age_unit)
     const maxAge = ageToYears(r.maxAge ?? r.age_max, r.ageUnit ?? r.age_unit)
     const ageOk =
       age == null ||
       ((minAge == null || age >= minAge) && (maxAge == null || age <= maxAge))
-    // Só filtra por jejum quando a faixa usa essa condição e a informação existe no pedido
-    const fastingOk =
-      !rangeUsesFasting(r) || fasting == null || !!(r.isFasting ?? r.is_fasting) === !!fasting
     return sexOk && ageOk && fastingOk
   })
 
-  // Prioriza faixas que consideram o jejum quando a informação está disponível
+  // Faixa por valor tem prioridade quando o resultado já foi digitado
   const chosen =
-    (fasting != null && matches.find((r) => rangeUsesFasting(r))) || matches[0] || ranges[0]
+    matches.find((r) => isValueRange(r)) ||
+    (fasting != null && matches.find((r) => rangeUsesFasting(r))) ||
+    matches[0] ||
+    ranges.find((r) => !isValueRange(r)) ||
+    ranges[0]
   return formatRange(chosen)
 }
+
+/**
+ * Referência final de um parâmetro considerando o valor digitado.
+ * Quando o parâmetro tem faixas por valor, a referência muda conforme o resultado.
+ */
+export function resolveReference(param: any, value?: any): string {
+  const ranges: any[] = Array.isArray(param?.ranges) ? param.ranges : []
+  if (!ranges.some(isValueRange)) return param?.reference || ''
+  return pickReference(ranges, param?.patient || {}, value) || param?.reference || ''
+}
+
 
 /** Normaliza a lista de opções de um parâmetro do tipo Seleção. */
 export function normalizeOptions(raw: any): string[] {
