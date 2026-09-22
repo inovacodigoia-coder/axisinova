@@ -433,7 +433,7 @@ export function RegistersProvider({ children }: { children: ReactNode }) {
         selected_materials: e.selectedMaterials || [],
         default_material: e.defaultMaterial || null,
         workbench_id: e.workbenchId || null
-      } as any).eq('id', e.id)
+      } as any).eq('id', e.id))
 
       if (error) { 
         console.error('[updateExam] Error:', error); 
