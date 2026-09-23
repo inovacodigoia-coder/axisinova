@@ -628,9 +628,12 @@ export function ResultEntryModal({
       const nextBlocks: Record<string, string[]> = {};
       const nextExternalValues: Record<string, string> = {};
       const nextInstrumentKeys = new Set<string>();
+      const nextLaudos: Record<string, string> = {};
       rows.forEach((row: any) => {
         // exam_ref já é a chave única da instância (pedido:exame)
         const examId = String(row.exam_ref);
+        // Laudo indicado pelo equipamento (laudo_code) abre automaticamente na digitação
+        if (row.laudo_id) nextLaudos[examId] = String(row.laudo_id);
         if (Array.isArray(row.portal_blocked_types) && row.portal_blocked_types.length > 0) {
           nextBlocks[examId] = row.portal_blocked_types as string[];
         }
@@ -664,6 +667,7 @@ export function ResultEntryModal({
         });
         return next;
       });
+      setLaudoByExam(prev => ({ ...nextLaudos, ...prev }));
       setNotes(prev => ({ ...nextNotes, ...prev }));
       setExamStatuses(prev => ({ ...nextStatuses, ...prev }));
       setPortalBlocks(prev => ({ ...nextBlocks, ...prev }));
