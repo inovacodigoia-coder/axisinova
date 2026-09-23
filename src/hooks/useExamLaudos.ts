@@ -12,6 +12,10 @@ export interface ExamLaudo {
   methodology: string | null
   parameters: any[]
   reference_values: any[]
+  result_deadline_days: number | null
+  workbench_id: string | null
+  selected_materials: string[]
+  default_material: string | null
 }
 
 /** Próximo código sequencial no formato L001, L002... */
