@@ -494,7 +494,15 @@ export default function LabCatalogFormPage() {
             onOpenMethodologySearch={() => setIsMethodologySearchOpen(true)}
           />
         </TabsContent>
-        <TabsContent value="report">
+        <TabsContent value="report" className="space-y-4">
+          <ExamLaudosSection
+            examId={isEditing ? id : undefined}
+            companyId={companyIdForLaudos}
+            laudos={laudos}
+            selectedLaudoId={selectedLaudoId}
+            onSelect={setSelectedLaudoId}
+            onReload={reloadLaudos}
+          />
           <ExamReportSection
             data={examData}
             parameters={parameters}
