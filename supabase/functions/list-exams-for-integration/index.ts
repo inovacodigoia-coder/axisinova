@@ -97,6 +97,7 @@ Deno.serve(async (req) => {
       is_active: e.is_active !== false,
       parent_code: null,
       parameter_order: null,
+      laudos: laudosByExam.get(String(e.id)) || [],
     })
 
     // Parâmetros do exame = "painel" que se desdobra em vários resultados
