@@ -120,6 +120,13 @@
       "when": 1790135822609,
       "tag": "0016_add_laudo_operational_fields",
       "breakpoints": true
+    },
+    {
+      "idx": 17,
+      "version": "7",
+      "when": 1790137057918,
+      "tag": "0017_create_triage_module",
+      "breakpoints": true
     }
   ]
 }

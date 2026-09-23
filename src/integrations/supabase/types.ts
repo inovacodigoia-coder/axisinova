@@ -3776,6 +3776,196 @@ export type Database = {
           },
         ]
       }
+      triage_classifications: {
+        Row: {
+          changed_by: string | null
+          color: string
+          company_id: string
+          created_at: string
+          entry_id: string
+          id: string
+          notes: string | null
+          reason: string
+          target_minutes: number
+        }
+        Insert: {
+          changed_by?: string | null
+          color: string
+          company_id: string
+          created_at?: string
+          entry_id: string
+          id?: string
+          notes?: string | null
+          reason?: string
+          target_minutes: number
+        }
+        Update: {
+          changed_by?: string | null
+          color?: string
+          company_id?: string
+          created_at?: string
+          entry_id?: string
+          id?: string
+          notes?: string | null
+          reason?: string
+          target_minutes?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "triage_classifications_entry_id_fkey"
+            columns: ["entry_id"]
+            isOneToOne: false
+            referencedRelation: "triage_entries"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      triage_entries: {
+        Row: {
+          arrived_at: string
+          classified_at: string | null
+          classified_by: string | null
+          color: string | null
+          company_id: string
+          complaint: string | null
+          created_at: string
+          created_by: string | null
+          discriminators: Json
+          flowchart: string | null
+          id: string
+          order_id: string | null
+          patient_birth_date: string | null
+          patient_cpf: string | null
+          patient_id: string | null
+          patient_name: string
+          protocol: string | null
+          source: string
+          status: string
+          target_minutes: number | null
+          ticket_code: string | null
+          ticket_id: string | null
+          updated_at: string
+          vitals: Json
+          wristband_printed_at: string | null
+        }
+        Insert: {
+          arrived_at?: string
+          classified_at?: string | null
+          classified_by?: string | null
+          color?: string | null
+          company_id: string
+          complaint?: string | null
+          created_at?: string
+          created_by?: string | null
+          discriminators?: Json
+          flowchart?: string | null
+          id?: string
+          order_id?: string | null
+          patient_birth_date?: string | null
+          patient_cpf?: string | null
+          patient_id?: string | null
+          patient_name: string
+          protocol?: string | null
+          source?: string
+          status?: string
+          target_minutes?: number | null
+          ticket_code?: string | null
+          ticket_id?: string | null
+          updated_at?: string
+          vitals?: Json
+          wristband_printed_at?: string | null
+        }
+        Update: {
+          arrived_at?: string
+          classified_at?: string | null
+          classified_by?: string | null
+          color?: string | null
+          company_id?: string
+          complaint?: string | null
+          created_at?: string
+          created_by?: string | null
+          discriminators?: Json
+          flowchart?: string | null
+          id?: string
+          order_id?: string | null
+          patient_birth_date?: string | null
+          patient_cpf?: string | null
+          patient_id?: string | null
+          patient_name?: string
+          protocol?: string | null
+          source?: string
+          status?: string
+          target_minutes?: number | null
+          ticket_code?: string | null
+          ticket_id?: string | null
+          updated_at?: string
+          vitals?: Json
+          wristband_printed_at?: string | null
+        }
+        Relationships: []
+      }
+      triage_settings: {
+        Row: {
+          company_id: string
+          reclassification_mode: string
+          updated_at: string
+          wristband_height_mm: number
+          wristband_width_mm: number
+        }
+        Insert: {
+          company_id: string
+          reclassification_mode?: string
+          updated_at?: string
+          wristband_height_mm?: number
+          wristband_width_mm?: number
+        }
+        Update: {
+          company_id?: string
+          reclassification_mode?: string
+          updated_at?: string
+          wristband_height_mm?: number
+          wristband_width_mm?: number
+        }
+        Relationships: []
+      }
+      triage_wristband_prints: {
+        Row: {
+          company_id: string
+          created_at: string
+          entry_id: string
+          id: string
+          is_reprint: boolean
+          printed_by: string | null
+          reason: string | null
+        }
+        Insert: {
+          company_id: string
+          created_at?: string
+          entry_id: string
+          id?: string
+          is_reprint?: boolean
+          printed_by?: string | null
+          reason?: string | null
+        }
+        Update: {
+          company_id?: string
+          created_at?: string
+          entry_id?: string
+          id?: string
+          is_reprint?: boolean
+          printed_by?: string | null
+          reason?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "triage_wristband_prints_entry_id_fkey"
+            columns: ["entry_id"]
+            isOneToOne: false
+            referencedRelation: "triage_entries"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       user_origin_preferences: {
         Row: {
           company_id: string
