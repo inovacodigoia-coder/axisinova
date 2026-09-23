@@ -313,7 +313,7 @@ export function ResultEntryModal({
       });
     });
     return map;
-  }, [groupedPatients, catalogList]);
+  }, [groupedPatients, catalogList, activeLaudoFor]);
 
   const getParams = (exam: any) => paramsByExam[exam.id] || [{ id: '1', name: exam?.name || '', unit: '', reference: '' }];
 
