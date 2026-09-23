@@ -484,6 +484,7 @@ export function ResultEntryModal({
         patient_name: exam.patientName || null,
         status,
         notes: notes[exam.id] || null,
+        laudo_id: activeLaudoFor(exam)?.id || null,
       };
       if (status === 'digitized') {
         payload.typed_by = user?.id || null;
