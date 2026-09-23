@@ -387,7 +387,9 @@ export const ImportarPlanilhaModal = ({ isOpen, onClose, existingCodes = [] }: I
               await supabase.from('lab_exam_reference_values').delete().eq('parameter_id', parameterId);
 
               if (refsForParam.length > 0) {
-                const refsToInsert = refsForParam.map((r: any) => ({
+                const refsToInsert = refsForParam.map((r: any) => {
+                  const age = importReferenceAge(r);
+                  return {
                   exam_id: examId,
                   parameter_id: parameterId,
                   company_id: companyId,
