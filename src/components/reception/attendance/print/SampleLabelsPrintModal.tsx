@@ -96,7 +96,7 @@ export function SampleLabelsPrintModal({
         const lista: DadosEtiqueta[] = labels.map((l, i) => ({
           codigoAmostra: l.sampleId,
           painel: l.workbench || undefined,
-          dataHora: printDate,
+          dataHora: new Date().toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', year: '2-digit', hour: '2-digit', minute: '2-digit' }),
           codigoExterno: orderNumber || undefined,
           paciente: patientName || undefined,
           nascimento: formatBirthDate(birthDate) || undefined,
