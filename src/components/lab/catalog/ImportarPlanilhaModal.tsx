@@ -387,7 +387,9 @@ export const ImportarPlanilhaModal = ({ isOpen, onClose, existingCodes = [] }: I
               await supabase.from('lab_exam_reference_values').delete().eq('parameter_id', parameterId);
 
               if (refsForParam.length > 0) {
-                const refsToInsert = refsForParam.map((r: any) => ({
+                const refsToInsert = refsForParam.map((r: any) => {
+                  const age = importReferenceAge(r);
+                  return {
                   exam_id: examId,
                   parameter_id: parameterId,
                   company_id: companyId,
@@ -397,14 +399,17 @@ export const ImportarPlanilhaModal = ({ isOpen, onClose, existingCodes = [] }: I
                   min_value: r['Valor mínimo'] || r['Valor mín'] || r['Valor Mínimo'] || r['Mínimo'] || r['MIN']?.toString() || null,
                   max_value: r['Valor máximo'] || r['Valor máx'] || r['Valor Máximo'] || r['Máximo'] || r['MAX']?.toString() || null,
                   text_range: r['Valor texto'] || r['Referência Texto'] || r['Texto'] || null,
-                  age_min: importReferenceAge(r).minAge,
-                  age_max: importReferenceAge(r).maxAge,
-                  age_unit: importReferenceAge(r).ageUnit,
+                  age_min: age.minAge,
+                  age_max: age.maxAge,
+                  age_unit: age.ageUnit,
+                  value_min: age.valueMin,
+                  value_max: age.valueMax,
                   gender: r['Sexo'] || r['Gênero'] || 'Todos',
                   is_pregnant: r['Gestante'] === 'Sim' || r['Gestante'] === true || !!(r['Gestante'] || false),
                   use_fasting: r['Usa condição de jejum'] === 'Sim' || r['Usa condição de jejum'] === true || r['Jejum'] === 'Sim' || r['Jejum'] === true,
                   is_fasting: r['Jejum'] === 'Sim' || r['Jejum'] === true,
-                }));
+                  };
+                });
 
                 const { error: refsError } = await supabase.from('lab_exam_reference_values').insert(refsToInsert);
                 if (refsError) console.error('[ImportarPlanilhaModal] Error inserting references:', refsError);

@@ -173,8 +173,11 @@ export default function LabCatalogPage() {
         if (v === 'meses' || v === 'months') return 'Meses'
         if (v === 'semanas' || v === 'weeks') return 'Semanas'
         if (v === 'dias' || v === 'days') return 'Dias'
+        if (v === 'valor' || v === 'value') return 'Valor'
         return 'Anos'
       }
+      const isValor = (unit?: string) => ageUnitLabel(unit) === 'Valor'
+      const txt = (v: any) => (v == null || String(v).trim() === '' ? '' : String(v).trim())
 
       // Merge database parameters with context parameters (migration period)
       labExams.forEach(e => {
@@ -269,9 +272,11 @@ export default function LabCatalogPage() {
               'Valor mínimo': r.min_value ?? '',
               'Valor máximo': r.max_value ?? '',
               'Valor texto': r.text_range || '',
-              'Idade mínima': r.age_min ?? 0,
-              'Idade máxima': r.age_max ?? 120,
+              'Idade mínima': isValor(r.age_unit) ? '' : (r.age_min ?? 0),
+              'Idade máxima': isValor(r.age_unit) ? '' : (r.age_max ?? 120),
               'Unidade da Idade': ageUnitLabel(r.age_unit),
+              'Valor Mín (resultado)': isValor(r.age_unit) ? txt(r.value_min ?? jsonRef?.minAge) : '',
+              'Valor Máx (resultado)': isValor(r.age_unit) ? txt(r.value_max ?? jsonRef?.maxAge) : '',
               'Sexo': r.gender || 'both',
               'Gestante': jsonRef?.isPregnant ? 'Sim' : 'Não',
               'Usa condição de jejum': useFasting ? 'Sim' : 'Não',
@@ -290,9 +295,11 @@ export default function LabCatalogPage() {
                   'Valor mínimo': r.minValue ?? '',
                   'Valor máximo': r.maxValue ?? '',
                   'Valor texto': r.textRange || '',
-                  'Idade mínima': r.minAge ?? 0,
-                  'Idade máxima': r.maxAge ?? 120,
+                  'Idade mínima': isValor(r.ageUnit ?? r.n) ? '' : (r.minAge ?? 0),
+                  'Idade máxima': isValor(r.ageUnit ?? r.n) ? '' : (r.maxAge ?? 120),
                   'Unidade da Idade': ageUnitLabel(r.ageUnit ?? r.n),
+                  'Valor Mín (resultado)': isValor(r.ageUnit ?? r.n) ? txt(r.minAge) : '',
+                  'Valor Máx (resultado)': isValor(r.ageUnit ?? r.n) ? txt(r.maxAge) : '',
                   'Sexo': r.sex || 'both',
                   'Gestante': r.isPregnant ? 'Sim' : 'Não',
                   'Usa condição de jejum': r.useFasting ? 'Sim' : 'Não',
@@ -311,9 +318,11 @@ export default function LabCatalogPage() {
               'Valor mínimo': r.minValue ?? '',
               'Valor máximo': r.maxValue ?? '',
               'Valor texto': r.textRange || '',
-              'Idade mínima': r.minAge ?? 0,
-              'Idade máxima': r.maxAge ?? 120,
+              'Idade mínima': isValor(r.ageUnit ?? r.n) ? '' : (r.minAge ?? 0),
+              'Idade máxima': isValor(r.ageUnit ?? r.n) ? '' : (r.maxAge ?? 120),
               'Unidade da Idade': ageUnitLabel(r.ageUnit ?? r.n),
+              'Valor Mín (resultado)': isValor(r.ageUnit ?? r.n) ? txt(r.minAge) : '',
+              'Valor Máx (resultado)': isValor(r.ageUnit ?? r.n) ? txt(r.maxAge) : '',
               'Sexo': r.sex || 'both',
               'Gestante': r.isPregnant ? 'Sim' : 'Não',
               'Usa condição de jejum': r.useFasting ? 'Sim' : 'Não',
