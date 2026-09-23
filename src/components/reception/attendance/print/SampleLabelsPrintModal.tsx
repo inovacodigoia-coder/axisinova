@@ -91,16 +91,29 @@ export function SampleLabelsPrintModal({
     setEnviando(true)
     try {
       const ativo = await servidorImpressaoAtivo()
-      if (ativo) {
-        const nodes = Array.from(
-          window.document.querySelectorAll<HTMLElement>('#labels-print-root .label-sheet'),
-        )
-        if (nodes.length) {
-          const pdf = await gerarPdfEtiquetas(nodes, sheetW, sheetH)
-          const r = await imprimirDireto(TIPOS_DOCUMENTO.etiquetaCliente, pdf)
-          toast.success(r.mensagem || 'Etiquetas enviadas para a impressora.')
-          return
-        }
+      if (ativo && labels.length) {
+        // Envia TODAS as etiquetas do pedido em uma única chamada (um trabalho só).
+        const lista: DadosEtiqueta[] = labels.map((l, i) => ({
+          codigoAmostra: l.sampleId,
+          painel: l.workbench || undefined,
+          dataHora: printDate,
+          codigoExterno: orderNumber || undefined,
+          paciente: patientName || undefined,
+          nascimento: formatBirthDate(birthDate) || undefined,
+          tipoAmostra: [l.material, l.tube ? `(${String(l.tube).toUpperCase()})` : '']
+            .filter(Boolean)
+            .join(' ') || undefined,
+          exames: (l.examRefs || []).join(' ') || undefined,
+          laboratorio: labName || undefined,
+          urgente: !!isUrgent,
+          fimPedido: i === labels.length - 1,
+        }))
+        const r = await imprimirEtiquetas(TIPOS_DOCUMENTO.etiquetaCliente, lista)
+        toast.success(r.mensagem || `${r.etiquetas} etiqueta(s) enviada(s) para impressão.`)
+        return
+      }
+      if (!ativo) {
+        toast.warning('Servidor de Impressão AisAxius não está aberto. Usando a impressão do navegador.')
       }
       printNavegador()
     } catch (err) {
