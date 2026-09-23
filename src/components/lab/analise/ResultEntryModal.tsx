@@ -1718,7 +1718,29 @@ export function ResultEntryModal({
                                   <Badge variant="outline" className="bg-white text-primary border-primary/20 text-[10px] font-black h-5 uppercase">
                                     {exam.code}
                                   </Badge>
-                                  <h4 className="text-sm font-black uppercase tracking-tight">{exam.name}</h4>
+                                   <h4 className="text-sm font-black uppercase tracking-tight">{exam.name}</h4>
+
+                                   {/* Laudo do exame (quando há mais de um cadastrado) */}
+                                   {laudosForExam(exam).length > 1 && (
+                                     <div onClick={(e) => e.stopPropagation()}>
+                                       <Select
+                                         value={String(activeLaudoFor(exam)?.id || '')}
+                                         onValueChange={(val) => setLaudoByExam(prev => ({ ...prev, [exam.id]: val }))}
+                                       >
+                                         <SelectTrigger className="h-6 w-[190px] text-[10px] font-bold uppercase bg-white">
+                                           <SelectValue placeholder="Laudo" />
+                                         </SelectTrigger>
+                                         <SelectContent className="z-[120]">
+                                           {laudosForExam(exam).map((l: any) => (
+                                             <SelectItem key={l.id} value={String(l.id)} className="text-xs">
+                                               {l.code} — {l.name}
+                                             </SelectItem>
+                                           ))}
+                                         </SelectContent>
+                                       </Select>
+                                     </div>
+                                   )}
+                                   
                                   
                                   {/* Ações do Exame */}
                                   <DropdownMenu>
