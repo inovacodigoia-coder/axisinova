@@ -278,8 +278,37 @@ export default function LabCatalogFormPage() {
         examId = newExam?.id;
       }
 
-      // Save Parameters to the new table
-      if (examId && (parameters.length > 0 || isEditing)) {
+      // Salva a configuração no laudo selecionado (ou cria o laudo padrão do exame novo)
+      if (examId) {
+        const { data: prof } = await supabase.auth.getUser();
+        const { data: profRow } = await supabase
+          .from('profiles')
+          .select('company_id')
+          .eq('id', prof.user?.id)
+          .single();
+        const cid = profRow?.company_id;
+        if (cid) {
+          if (selectedLaudoId) {
+            await supabase
+              .from('exam_laudos')
+              .update({
+                methodology: examData.methodology || null,
+                parameters: parameters || [],
+                reference_values: examData.referenceValues || [],
+              })
+              .eq('id', selectedLaudoId)
+          } else {
+            await ensureDefaultLaudo(examId, cid, {
+              methodology: examData.methodology,
+              parameters,
+              referenceValues: examData.referenceValues,
+            })
+          }
+        }
+      }
+
+      // Save Parameters to the new table (somente o laudo de Ordem 1 alimenta o exame)
+      if (examId && isDefaultLaudo && (parameters.length > 0 || isEditing)) {
         // Get company_id from profile
         const { data: profile } = await supabase.auth.getUser();
         const { data: profileData } = await supabase
