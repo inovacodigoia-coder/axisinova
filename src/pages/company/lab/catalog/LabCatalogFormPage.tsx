@@ -251,9 +251,14 @@ export default function LabCatalogFormPage() {
 
     setIsSaving(true)
     try {
+      // O exame guarda sempre a configuração do laudo de Ordem 1;
+      // os demais laudos guardam a sua configuração apenas em exam_laudos.
+      const baseLaudo = laudos.find((l) => l.id === defaultLaudoId)
       const finalData = {
         ...examData,
-        parameters: parameters || [],
+        methodology: isDefaultLaudo ? examData.methodology : (baseLaudo?.methodology || ''),
+        referenceValues: isDefaultLaudo ? examData.referenceValues : (baseLaudo?.reference_values || []),
+        parameters: isDefaultLaudo ? (parameters || []) : (baseLaudo?.parameters || []),
         confirmationQuestions: confirmationQuestions || [],
       }
 
