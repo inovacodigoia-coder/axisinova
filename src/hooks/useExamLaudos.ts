@@ -40,7 +40,7 @@ export function useExamLaudos(examId?: string) {
     setLoading(true)
     const { data, error } = await supabase
       .from('exam_laudos')
-      .select('id, exam_id, company_id, code, name, sort_order, is_active, methodology, parameters, reference_values')
+      .select('id, exam_id, company_id, code, name, sort_order, is_active, methodology, parameters, reference_values, result_deadline_days, workbench_id, selected_materials, default_material')
       .eq('exam_id', examId)
       .order('sort_order', { ascending: true })
     setLoading(false)
@@ -53,6 +53,7 @@ export function useExamLaudos(examId?: string) {
         ...l,
         parameters: Array.isArray(l.parameters) ? l.parameters : [],
         reference_values: Array.isArray(l.reference_values) ? l.reference_values : [],
+        selected_materials: Array.isArray(l.selected_materials) ? l.selected_materials : [],
       })) as ExamLaudo[],
     )
   }, [examId])
@@ -83,6 +84,10 @@ export async function ensureDefaultLaudo(examId: string, companyId: string, exam
       methodology: exam?.methodology || null,
       parameters: exam?.parameters || [],
       reference_values: exam?.referenceValues || [],
+      result_deadline_days: exam?.resultDeadlineDays ?? null,
+      workbench_id: exam?.workbenchId || null,
+      selected_materials: exam?.selectedMaterials || [],
+      default_material: exam?.defaultMaterial || null,
     })
     .select('id')
     .single()
