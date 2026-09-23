@@ -210,6 +210,10 @@ export function ResultEntryModal({
 
   // Catálogo de Exames (parâmetros e faixas de referência reais)
   const [catalogList, setCatalogList] = useState<any[]>([]);
+  /** Laudos cadastrados por exame do catálogo (exam_id -> laudos ativos, em ordem). */
+  const [laudosByCatalogExam, setLaudosByCatalogExam] = useState<Record<string, any[]>>({});
+  /** Laudo escolhido para cada linha de exame da digitação (exam.id -> laudo.id). */
+  const [laudoByExam, setLaudoByExam] = useState<Record<string, string>>({});
 
   useEffect(() => {
     if (!isOpen) return;
@@ -221,8 +225,40 @@ export function ResultEntryModal({
       if (error || !active || !data) return;
       setCatalogList(data as any[]);
     })();
+    (async () => {
+      const { data } = await supabase
+        .from('exam_laudos')
+        .select('id, exam_id, code, name, sort_order, is_active, parameters, reference_values, methodology')
+        .eq('is_active', true)
+        .order('sort_order', { ascending: true });
+      if (!active || !data) return;
+      const map: Record<string, any[]> = {};
+      (data as any[]).forEach((l) => {
+        (map[String(l.exam_id)] ||= []).push(l);
+      });
+      setLaudosByCatalogExam(map);
+    })();
     return () => { active = false; };
   }, [isOpen]);
+
+  /** Laudos ativos do exame do catálogo correspondente à linha de digitação. */
+  const laudosForExam = useCallback((exam: any) => {
+    const catalogExam = findCatalogExam(catalogList, {
+      examId: exam?.examId,
+      code: exam?.code,
+      name: exam?.name,
+    });
+    if (!catalogExam?.id) return [];
+    return laudosByCatalogExam[String(catalogExam.id)] || [];
+  }, [catalogList, laudosByCatalogExam]);
+
+  /** Laudo ativo da linha: o indicado pelo equipamento/operador ou o de Ordem 1. */
+  const activeLaudoFor = useCallback((exam: any) => {
+    const list = laudosForExam(exam);
+    if (list.length === 0) return null;
+    const chosen = laudoByExam[exam.id];
+    return list.find((l: any) => String(l.id) === String(chosen)) || list[0];
+  }, [laudosForExam, laudoByExam]);
 
   // Bancadas Técnicas (ordem definida em Configurações do Laboratório)
   const [workbenchList, setWorkbenchList] = useState<any[]>([]);
@@ -248,12 +284,24 @@ export function ResultEntryModal({
         ? differenceInYears(new Date(), new Date(patient.patientBirthDate))
         : undefined;
       patient.exams.forEach((exam: any) => {
-        const catalogExam = findCatalogExam(catalogList, {
+        const baseCatalogExam = findCatalogExam(catalogList, {
           examId: exam.examId,
           code: exam.code,
           name: exam.name,
         });
-        
+
+        // Quando o exame tem mais de um laudo, vale a configuração do laudo ativo
+        const laudo = activeLaudoFor(exam);
+        const laudoParams = Array.isArray(laudo?.parameters) ? laudo.parameters : [];
+        const catalogExam = laudo && laudoParams.length > 0
+          ? {
+              ...baseCatalogExam,
+              parameters: laudoParams,
+              reference_values: Array.isArray(laudo.reference_values) ? laudo.reference_values : baseCatalogExam?.reference_values,
+              methodology: laudo.methodology || baseCatalogExam?.methodology,
+            }
+          : baseCatalogExam;
+
         // Log para depuração interna se necessário
         const resolved = buildExamParams(catalogExam, exam.name || exam.code, {
           gender: patient.patientGender,
@@ -265,7 +313,7 @@ export function ResultEntryModal({
       });
     });
     return map;
-  }, [groupedPatients, catalogList]);
+  }, [groupedPatients, catalogList, activeLaudoFor]);
 
   const getParams = (exam: any) => paramsByExam[exam.id] || [{ id: '1', name: exam?.name || '', unit: '', reference: '' }];
 
@@ -436,6 +484,7 @@ export function ResultEntryModal({
         patient_name: exam.patientName || null,
         status,
         notes: notes[exam.id] || null,
+        laudo_id: activeLaudoFor(exam)?.id || null,
       };
       if (status === 'digitized') {
         payload.typed_by = user?.id || null;
@@ -543,7 +592,7 @@ export function ResultEntryModal({
       for (let i = 0; i < refs.length; i += CHUNK) {
         const { data, error } = await supabase
           .from('lab_exam_results')
-          .select('id, order_id, exam_ref, exam_code, exam_name, status, notes, portal_blocked_types, lab_result_values(parameter_key, value, source)')
+          .select('id, order_id, exam_ref, exam_code, exam_name, status, notes, portal_blocked_types, laudo_id, lab_result_values(parameter_key, value, source)')
           .eq('company_id', cid)
           .in('exam_ref', refs.slice(i, i + CHUNK));
         if (error) {
@@ -560,7 +609,7 @@ export function ResultEntryModal({
       for (let i = 0; i < orderIds.length; i += CHUNK) {
         const { data, error } = await supabase
           .from('lab_exam_results')
-          .select('id, order_id, exam_ref, exam_code, exam_name, status, notes, portal_blocked_types, lab_result_values(parameter_key, value, source)')
+          .select('id, order_id, exam_ref, exam_code, exam_name, status, notes, portal_blocked_types, laudo_id, lab_result_values(parameter_key, value, source)')
           .eq('company_id', cid)
           .in('order_id', orderIds.slice(i, i + CHUNK));
         if (error) continue;
@@ -579,9 +628,12 @@ export function ResultEntryModal({
       const nextBlocks: Record<string, string[]> = {};
       const nextExternalValues: Record<string, string> = {};
       const nextInstrumentKeys = new Set<string>();
+      const nextLaudos: Record<string, string> = {};
       rows.forEach((row: any) => {
         // exam_ref já é a chave única da instância (pedido:exame)
         const examId = String(row.exam_ref);
+        // Laudo indicado pelo equipamento (laudo_code) abre automaticamente na digitação
+        if (row.laudo_id) nextLaudos[examId] = String(row.laudo_id);
         if (Array.isArray(row.portal_blocked_types) && row.portal_blocked_types.length > 0) {
           nextBlocks[examId] = row.portal_blocked_types as string[];
         }
@@ -615,6 +667,7 @@ export function ResultEntryModal({
         });
         return next;
       });
+      setLaudoByExam(prev => ({ ...nextLaudos, ...prev }));
       setNotes(prev => ({ ...nextNotes, ...prev }));
       setExamStatuses(prev => ({ ...nextStatuses, ...prev }));
       setPortalBlocks(prev => ({ ...nextBlocks, ...prev }));
@@ -1665,7 +1718,29 @@ export function ResultEntryModal({
                                   <Badge variant="outline" className="bg-white text-primary border-primary/20 text-[10px] font-black h-5 uppercase">
                                     {exam.code}
                                   </Badge>
-                                  <h4 className="text-sm font-black uppercase tracking-tight">{exam.name}</h4>
+                                   <h4 className="text-sm font-black uppercase tracking-tight">{exam.name}</h4>
+
+                                   {/* Laudo do exame (quando há mais de um cadastrado) */}
+                                   {laudosForExam(exam).length > 1 && (
+                                     <div onClick={(e) => e.stopPropagation()}>
+                                       <Select
+                                         value={String(activeLaudoFor(exam)?.id || '')}
+                                         onValueChange={(val) => setLaudoByExam(prev => ({ ...prev, [exam.id]: val }))}
+                                       >
+                                         <SelectTrigger className="h-6 w-[190px] text-[10px] font-bold uppercase bg-white">
+                                           <SelectValue placeholder="Laudo" />
+                                         </SelectTrigger>
+                                         <SelectContent className="z-[120]">
+                                           {laudosForExam(exam).map((l: any) => (
+                                             <SelectItem key={l.id} value={String(l.id)} className="text-xs">
+                                               {l.code} — {l.name}
+                                             </SelectItem>
+                                           ))}
+                                         </SelectContent>
+                                       </Select>
+                                     </div>
+                                   )}
+                                   
                                   
                                   {/* Ações do Exame */}
                                   <DropdownMenu>

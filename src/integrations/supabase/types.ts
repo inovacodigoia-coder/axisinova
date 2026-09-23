@@ -871,6 +871,122 @@ export type Database = {
           },
         ]
       }
+      exam_delivery_estimates: {
+        Row: {
+          company_id: string
+          created_at: string
+          days: number
+          exam_id: string
+          hours: number
+          id: string
+          minutes: number
+          no_estimate: boolean
+          origin_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          company_id: string
+          created_at?: string
+          days?: number
+          exam_id: string
+          hours?: number
+          id?: string
+          minutes?: number
+          no_estimate?: boolean
+          origin_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          company_id?: string
+          created_at?: string
+          days?: number
+          exam_id?: string
+          hours?: number
+          id?: string
+          minutes?: number
+          no_estimate?: boolean
+          origin_id?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "exam_delivery_estimates_exam_id_fkey"
+            columns: ["exam_id"]
+            isOneToOne: false
+            referencedRelation: "exams"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "exam_delivery_estimates_origin_id_fkey"
+            columns: ["origin_id"]
+            isOneToOne: false
+            referencedRelation: "origins"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      exam_laudos: {
+        Row: {
+          code: string
+          company_id: string
+          created_at: string
+          exam_id: string
+          id: string
+          is_active: boolean
+          methodology: string | null
+          name: string
+          parameters: Json
+          reference_values: Json
+          report_observations: string | null
+          report_single_page: boolean
+          report_template_id: string | null
+          sort_order: number
+          updated_at: string
+        }
+        Insert: {
+          code: string
+          company_id: string
+          created_at?: string
+          exam_id: string
+          id?: string
+          is_active?: boolean
+          methodology?: string | null
+          name: string
+          parameters?: Json
+          reference_values?: Json
+          report_observations?: string | null
+          report_single_page?: boolean
+          report_template_id?: string | null
+          sort_order?: number
+          updated_at?: string
+        }
+        Update: {
+          code?: string
+          company_id?: string
+          created_at?: string
+          exam_id?: string
+          id?: string
+          is_active?: boolean
+          methodology?: string | null
+          name?: string
+          parameters?: Json
+          reference_values?: Json
+          report_observations?: string | null
+          report_single_page?: boolean
+          report_template_id?: string | null
+          sort_order?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "exam_laudos_exam_id_fkey"
+            columns: ["exam_id"]
+            isOneToOne: false
+            referencedRelation: "exams"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       exams: {
         Row: {
           attachment_rules: Json
@@ -1537,6 +1653,7 @@ export type Database = {
           is_calculated: boolean | null
           is_hidden: boolean | null
           is_required: boolean | null
+          laudo_id: string | null
           name: string
           origin: string | null
           reference_values: string | null
@@ -1558,6 +1675,7 @@ export type Database = {
           is_calculated?: boolean | null
           is_hidden?: boolean | null
           is_required?: boolean | null
+          laudo_id?: string | null
           name: string
           origin?: string | null
           reference_values?: string | null
@@ -1579,6 +1697,7 @@ export type Database = {
           is_calculated?: boolean | null
           is_hidden?: boolean | null
           is_required?: boolean | null
+          laudo_id?: string | null
           name?: string
           origin?: string | null
           reference_values?: string | null
@@ -1594,6 +1713,13 @@ export type Database = {
             columns: ["exam_id"]
             isOneToOne: false
             referencedRelation: "exams"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "lab_exam_parameters_laudo_id_fkey"
+            columns: ["laudo_id"]
+            isOneToOne: false
+            referencedRelation: "exam_laudos"
             referencedColumns: ["id"]
           },
         ]
@@ -1612,6 +1738,7 @@ export type Database = {
           internal_code: string | null
           is_fasting: boolean
           is_pregnant: boolean | null
+          laudo_id: string | null
           max_value: string | null
           min_value: string | null
           parameter_id: string | null
@@ -1636,6 +1763,7 @@ export type Database = {
           internal_code?: string | null
           is_fasting?: boolean
           is_pregnant?: boolean | null
+          laudo_id?: string | null
           max_value?: string | null
           min_value?: string | null
           parameter_id?: string | null
@@ -1660,6 +1788,7 @@ export type Database = {
           internal_code?: string | null
           is_fasting?: boolean
           is_pregnant?: boolean | null
+          laudo_id?: string | null
           max_value?: string | null
           min_value?: string | null
           parameter_id?: string | null
@@ -1680,6 +1809,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "lab_exam_reference_values_laudo_id_fkey"
+            columns: ["laudo_id"]
+            isOneToOne: false
+            referencedRelation: "exam_laudos"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "lab_exam_reference_values_parameter_id_fkey"
             columns: ["parameter_id"]
             isOneToOne: false
@@ -1697,6 +1833,7 @@ export type Database = {
           exam_name: string | null
           exam_ref: string
           id: string
+          laudo_id: string | null
           notes: string | null
           order_id: string | null
           patient_id: string | null
@@ -1719,6 +1856,7 @@ export type Database = {
           exam_name?: string | null
           exam_ref: string
           id?: string
+          laudo_id?: string | null
           notes?: string | null
           order_id?: string | null
           patient_id?: string | null
@@ -1741,6 +1879,7 @@ export type Database = {
           exam_name?: string | null
           exam_ref?: string
           id?: string
+          laudo_id?: string | null
           notes?: string | null
           order_id?: string | null
           patient_id?: string | null
@@ -1755,7 +1894,15 @@ export type Database = {
           updated_at?: string
           version?: number
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "lab_exam_results_laudo_id_fkey"
+            columns: ["laudo_id"]
+            isOneToOne: false
+            referencedRelation: "exam_laudos"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       lab_methods: {
         Row: {
@@ -1942,6 +2089,7 @@ export type Database = {
           flag: string | null
           id: string
           instrument_code: string | null
+          laudo_id: string | null
           parameter_key: string
           parameter_name: string | null
           reference: string | null
@@ -1960,6 +2108,7 @@ export type Database = {
           flag?: string | null
           id?: string
           instrument_code?: string | null
+          laudo_id?: string | null
           parameter_key: string
           parameter_name?: string | null
           reference?: string | null
@@ -1978,6 +2127,7 @@ export type Database = {
           flag?: string | null
           id?: string
           instrument_code?: string | null
+          laudo_id?: string | null
           parameter_key?: string
           parameter_name?: string | null
           reference?: string | null
@@ -1991,6 +2141,13 @@ export type Database = {
           value?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "lab_result_values_laudo_id_fkey"
+            columns: ["laudo_id"]
+            isOneToOne: false
+            referencedRelation: "exam_laudos"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "lab_result_values_result_id_fkey"
             columns: ["result_id"]

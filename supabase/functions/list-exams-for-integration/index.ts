@@ -52,6 +52,26 @@ Deno.serve(async (req) => {
 
   const benchName = new Map((benches || []).map((b: any) => [String(b.id), b.name as string]))
 
+  // Laudos cadastrados por exame (o equipamento informa o laudo em laudo_code)
+  const { data: laudoRows } = await supabase
+    .from('exam_laudos')
+    .select('exam_id, code, name, sort_order, is_active')
+    .eq('company_id', companyId)
+    .order('sort_order', { ascending: true })
+
+  const laudosByExam = new Map<string, any[]>()
+  for (const l of laudoRows || []) {
+    const key = String((l as any).exam_id)
+    const list = laudosByExam.get(key) || []
+    list.push({
+      code: (l as any).code,
+      name: (l as any).name,
+      order: (l as any).sort_order,
+      is_active: (l as any).is_active !== false,
+    })
+    laudosByExam.set(key, list)
+  }
+
   const materialOf = (e: any): string | null => {
     if (e.default_material) return String(e.default_material)
     const sel = e.selected_materials
@@ -77,6 +97,7 @@ Deno.serve(async (req) => {
       is_active: e.is_active !== false,
       parent_code: null,
       parameter_order: null,
+      laudos: laudosByExam.get(String(e.id)) || [],
     })
 
     // Parâmetros do exame = "painel" que se desdobra em vários resultados

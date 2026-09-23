@@ -1,5 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react'
 import { supabase } from '@/integrations/supabase/client'
+import { useExamLaudos, ensureDefaultLaudo } from '@/hooks/useExamLaudos'
+import ExamLaudosSection from '@/components/lab/catalog/ExamLaudosSection'
 import { Card } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -143,6 +145,12 @@ export default function LabCatalogFormPage() {
   })
 
   const [parameters, setParameters] = useState<any[]>([])
+  // ===== Laudos do exame (cada laudo tem a sua própria configuração) =====
+  const { laudos, reload: reloadLaudos } = useExamLaudos(isEditing ? id : undefined)
+  const [selectedLaudoId, setSelectedLaudoId] = useState<string>('')
+  const companyIdForLaudos = laudos[0]?.company_id
+  const defaultLaudoId = laudos[0]?.id || ''
+  const isDefaultLaudo = !selectedLaudoId || selectedLaudoId === defaultLaudoId
   const [confirmationQuestions, setConfirmationQuestions] = useState<string[]>([])
   const [availableEquipments, setAvailableEquipments] = useState<any[]>([])
   const [isMethodologySearchOpen, setIsMethodologySearchOpen] = useState(false)
@@ -217,6 +225,25 @@ export default function LabCatalogFormPage() {
     setExamData(prev => ({ ...prev, parameters }))
   }, [parameters])
 
+  // Seleciona o laudo de Ordem 1 assim que a lista carrega
+  useEffect(() => {
+    if (!selectedLaudoId && laudos.length > 0) setSelectedLaudoId(laudos[0].id)
+  }, [laudos, selectedLaudoId])
+
+  // Ao trocar de laudo, carrega a configuração daquele laudo
+  useEffect(() => {
+    if (!selectedLaudoId) return
+    const laudo = laudos.find((l) => l.id === selectedLaudoId)
+    if (!laudo) return
+    setParameters(Array.isArray(laudo.parameters) ? laudo.parameters : [])
+    setExamData(prev => ({
+      ...prev,
+      methodology: laudo.methodology || '',
+      referenceValues: Array.isArray(laudo.reference_values) ? laudo.reference_values : [],
+    }))
+  }, [selectedLaudoId, laudos])
+
+
   const handleSave = async () => {
     if (!examData.name) {
       toast.error('O nome do exame é obrigatório')
@@ -225,9 +252,14 @@ export default function LabCatalogFormPage() {
 
     setIsSaving(true)
     try {
+      // O exame guarda sempre a configuração do laudo de Ordem 1;
+      // os demais laudos guardam a sua configuração apenas em exam_laudos.
+      const baseLaudo = laudos.find((l) => l.id === defaultLaudoId)
       const finalData = {
         ...examData,
-        parameters: parameters || [],
+        methodology: isDefaultLaudo ? examData.methodology : (baseLaudo?.methodology || ''),
+        referenceValues: isDefaultLaudo ? examData.referenceValues : (baseLaudo?.reference_values || []),
+        parameters: isDefaultLaudo ? (parameters || []) : (baseLaudo?.parameters || []),
         confirmationQuestions: confirmationQuestions || [],
       }
 
@@ -247,8 +279,37 @@ export default function LabCatalogFormPage() {
         examId = newExam?.id;
       }
 
-      // Save Parameters to the new table
-      if (examId && (parameters.length > 0 || isEditing)) {
+      // Salva a configuração no laudo selecionado (ou cria o laudo padrão do exame novo)
+      if (examId) {
+        const { data: prof } = await supabase.auth.getUser();
+        const { data: profRow } = await supabase
+          .from('profiles')
+          .select('company_id')
+          .eq('id', prof.user?.id)
+          .single();
+        const cid = profRow?.company_id;
+        if (cid) {
+          if (selectedLaudoId) {
+            await supabase
+              .from('exam_laudos')
+              .update({
+                methodology: examData.methodology || null,
+                parameters: parameters || [],
+                reference_values: examData.referenceValues || [],
+              })
+              .eq('id', selectedLaudoId)
+          } else {
+            await ensureDefaultLaudo(examId, cid, {
+              methodology: examData.methodology,
+              parameters,
+              referenceValues: examData.referenceValues,
+            })
+          }
+        }
+      }
+
+      // Save Parameters to the new table (somente o laudo de Ordem 1 alimenta o exame)
+      if (examId && isDefaultLaudo && (parameters.length > 0 || isEditing)) {
         // Get company_id from profile
         const { data: profile } = await supabase.auth.getUser();
         const { data: profileData } = await supabase
@@ -434,7 +495,15 @@ export default function LabCatalogFormPage() {
             onOpenMethodologySearch={() => setIsMethodologySearchOpen(true)}
           />
         </TabsContent>
-        <TabsContent value="report">
+        <TabsContent value="report" className="space-y-4">
+          <ExamLaudosSection
+            examId={isEditing ? id : undefined}
+            companyId={companyIdForLaudos}
+            laudos={laudos}
+            selectedLaudoId={selectedLaudoId}
+            onSelect={setSelectedLaudoId}
+            onReload={reloadLaudos}
+          />
           <ExamReportSection
             data={examData}
             parameters={parameters}
