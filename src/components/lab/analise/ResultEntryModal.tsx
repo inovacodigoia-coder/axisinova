@@ -210,6 +210,10 @@ export function ResultEntryModal({
 
   // Catálogo de Exames (parâmetros e faixas de referência reais)
   const [catalogList, setCatalogList] = useState<any[]>([]);
+  /** Laudos cadastrados por exame do catálogo (exam_id -> laudos ativos, em ordem). */
+  const [laudosByCatalogExam, setLaudosByCatalogExam] = useState<Record<string, any[]>>({});
+  /** Laudo escolhido para cada linha de exame da digitação (exam.id -> laudo.id). */
+  const [laudoByExam, setLaudoByExam] = useState<Record<string, string>>({});
 
   useEffect(() => {
     if (!isOpen) return;
@@ -221,8 +225,40 @@ export function ResultEntryModal({
       if (error || !active || !data) return;
       setCatalogList(data as any[]);
     })();
+    (async () => {
+      const { data } = await supabase
+        .from('exam_laudos')
+        .select('id, exam_id, code, name, sort_order, is_active, parameters, reference_values, methodology')
+        .eq('is_active', true)
+        .order('sort_order', { ascending: true });
+      if (!active || !data) return;
+      const map: Record<string, any[]> = {};
+      (data as any[]).forEach((l) => {
+        (map[String(l.exam_id)] ||= []).push(l);
+      });
+      setLaudosByCatalogExam(map);
+    })();
     return () => { active = false; };
   }, [isOpen]);
+
+  /** Laudos ativos do exame do catálogo correspondente à linha de digitação. */
+  const laudosForExam = useCallback((exam: any) => {
+    const catalogExam = findCatalogExam(catalogList, {
+      examId: exam?.examId,
+      code: exam?.code,
+      name: exam?.name,
+    });
+    if (!catalogExam?.id) return [];
+    return laudosByCatalogExam[String(catalogExam.id)] || [];
+  }, [catalogList, laudosByCatalogExam]);
+
+  /** Laudo ativo da linha: o indicado pelo equipamento/operador ou o de Ordem 1. */
+  const activeLaudoFor = useCallback((exam: any) => {
+    const list = laudosForExam(exam);
+    if (list.length === 0) return null;
+    const chosen = laudoByExam[exam.id];
+    return list.find((l: any) => String(l.id) === String(chosen)) || list[0];
+  }, [laudosForExam, laudoByExam]);
 
   // Bancadas Técnicas (ordem definida em Configurações do Laboratório)
   const [workbenchList, setWorkbenchList] = useState<any[]>([]);
@@ -248,12 +284,24 @@ export function ResultEntryModal({
         ? differenceInYears(new Date(), new Date(patient.patientBirthDate))
         : undefined;
       patient.exams.forEach((exam: any) => {
-        const catalogExam = findCatalogExam(catalogList, {
+        const baseCatalogExam = findCatalogExam(catalogList, {
           examId: exam.examId,
           code: exam.code,
           name: exam.name,
         });
-        
+
+        // Quando o exame tem mais de um laudo, vale a configuração do laudo ativo
+        const laudo = activeLaudoFor(exam);
+        const laudoParams = Array.isArray(laudo?.parameters) ? laudo.parameters : [];
+        const catalogExam = laudo && laudoParams.length > 0
+          ? {
+              ...baseCatalogExam,
+              parameters: laudoParams,
+              reference_values: Array.isArray(laudo.reference_values) ? laudo.reference_values : baseCatalogExam?.reference_values,
+              methodology: laudo.methodology || baseCatalogExam?.methodology,
+            }
+          : baseCatalogExam;
+
         // Log para depuração interna se necessário
         const resolved = buildExamParams(catalogExam, exam.name || exam.code, {
           gender: patient.patientGender,
