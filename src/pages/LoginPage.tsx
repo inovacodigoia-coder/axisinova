@@ -53,10 +53,14 @@ export default function LoginPage() {
   // Redirect if already authenticated
   useEffect(() => {
     if (isAuthenticated && user) {
+      if (nextPath) {
+        navigate(nextPath, { replace: true })
+        return
+      }
       toast.success(`Você já está conectado como ${user.name}`)
       navigate(getRedirectByRole(user.role), { replace: true })
     }
-  }, [isAuthenticated, user, navigate])
+  }, [isAuthenticated, user, navigate, nextPath])
 
   // Cooldown timer
   useEffect(() => {
@@ -114,11 +118,13 @@ export default function LoginPage() {
       }
 
       setIsLoading(false)
-      if (result.redirectTo) {
+      if (nextPath) {
+        navigate(nextPath, { replace: true })
+      } else if (result.redirectTo) {
         navigate(result.redirectTo, { replace: true })
       }
     },
-    [email, password, login, failCount, cooldown, isLoading, navigate]
+    [email, password, login, failCount, cooldown, isLoading, navigate, nextPath]
   )
 
   // Typewriter fill for dev card
