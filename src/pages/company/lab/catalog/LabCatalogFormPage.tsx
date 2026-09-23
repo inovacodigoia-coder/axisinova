@@ -240,6 +240,10 @@ export default function LabCatalogFormPage() {
       ...prev,
       methodology: laudo.methodology || '',
       referenceValues: Array.isArray(laudo.reference_values) ? laudo.reference_values : [],
+      resultDeadlineDays: laudo.result_deadline_days ?? prev.resultDeadlineDays,
+      workbenchId: laudo.workbench_id || '',
+      selectedMaterials: Array.isArray(laudo.selected_materials) ? laudo.selected_materials : [],
+      defaultMaterial: laudo.default_material || '',
     }))
   }, [selectedLaudoId, laudos])
 
@@ -258,6 +262,10 @@ export default function LabCatalogFormPage() {
       const finalData = {
         ...examData,
         methodology: isDefaultLaudo ? examData.methodology : (baseLaudo?.methodology || ''),
+        resultDeadlineDays: isDefaultLaudo ? examData.resultDeadlineDays : (baseLaudo?.result_deadline_days ?? examData.resultDeadlineDays),
+        workbenchId: isDefaultLaudo ? examData.workbenchId : (baseLaudo?.workbench_id || ''),
+        selectedMaterials: isDefaultLaudo ? examData.selectedMaterials : (baseLaudo?.selected_materials || []),
+        defaultMaterial: isDefaultLaudo ? examData.defaultMaterial : (baseLaudo?.default_material || ''),
         referenceValues: isDefaultLaudo ? examData.referenceValues : (baseLaudo?.reference_values || []),
         parameters: isDefaultLaudo ? (parameters || []) : (baseLaudo?.parameters || []),
         confirmationQuestions: confirmationQuestions || [],
@@ -296,6 +304,10 @@ export default function LabCatalogFormPage() {
                 methodology: examData.methodology || null,
                 parameters: parameters || [],
                 reference_values: examData.referenceValues || [],
+                result_deadline_days: examData.resultDeadlineDays ?? null,
+                workbench_id: examData.workbenchId || null,
+                selected_materials: examData.selectedMaterials || [],
+                default_material: examData.defaultMaterial || null,
               })
               .eq('id', selectedLaudoId)
           } else {
@@ -303,6 +315,10 @@ export default function LabCatalogFormPage() {
               methodology: examData.methodology,
               parameters,
               referenceValues: examData.referenceValues,
+              resultDeadlineDays: examData.resultDeadlineDays,
+              workbenchId: examData.workbenchId,
+              selectedMaterials: examData.selectedMaterials,
+              defaultMaterial: examData.defaultMaterial,
             })
           }
         }
@@ -557,8 +573,8 @@ function GeneralInfoSection({
   const [measurementUnits, setMeasurementUnits] = useState<any[]>([])
 
   useEffect(() => {
-    if (data.selectedMaterials) setSelectedMaterials(data.selectedMaterials)
-    if (data.defaultMaterial) setDefaultMaterial(data.defaultMaterial)
+    setSelectedMaterials(Array.isArray(data.selectedMaterials) ? data.selectedMaterials : [])
+    setDefaultMaterial(data.defaultMaterial || '')
   }, [data.selectedMaterials, data.defaultMaterial])
 
   useEffect(() => {
