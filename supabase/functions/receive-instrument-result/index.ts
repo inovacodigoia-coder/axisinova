@@ -432,6 +432,7 @@ Deno.serve(async (req) => {
     patient_name: order.patient_name,
     status: 'digitized',
     typed_at: nowIso,
+    laudo_id: laudoId,
   }
 
   if (resultId) {
