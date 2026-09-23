@@ -148,6 +148,7 @@ export default function LabCatalogFormPage() {
   // ===== Laudos do exame (cada laudo tem a sua própria configuração) =====
   const { laudos, reload: reloadLaudos } = useExamLaudos(isEditing ? id : undefined)
   const [selectedLaudoId, setSelectedLaudoId] = useState<string>('')
+  const companyIdForLaudos = laudos[0]?.company_id
   const defaultLaudoId = laudos[0]?.id || ''
   const isDefaultLaudo = !selectedLaudoId || selectedLaudoId === defaultLaudoId
   const [confirmationQuestions, setConfirmationQuestions] = useState<string[]>([])
