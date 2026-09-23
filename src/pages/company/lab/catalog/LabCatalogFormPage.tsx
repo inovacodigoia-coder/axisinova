@@ -224,6 +224,25 @@ export default function LabCatalogFormPage() {
     setExamData(prev => ({ ...prev, parameters }))
   }, [parameters])
 
+  // Seleciona o laudo de Ordem 1 assim que a lista carrega
+  useEffect(() => {
+    if (!selectedLaudoId && laudos.length > 0) setSelectedLaudoId(laudos[0].id)
+  }, [laudos, selectedLaudoId])
+
+  // Ao trocar de laudo, carrega a configuração daquele laudo
+  useEffect(() => {
+    if (!selectedLaudoId) return
+    const laudo = laudos.find((l) => l.id === selectedLaudoId)
+    if (!laudo) return
+    setParameters(Array.isArray(laudo.parameters) ? laudo.parameters : [])
+    setExamData(prev => ({
+      ...prev,
+      methodology: laudo.methodology || '',
+      referenceValues: Array.isArray(laudo.reference_values) ? laudo.reference_values : [],
+    }))
+  }, [selectedLaudoId, laudos])
+
+
   const handleSave = async () => {
     if (!examData.name) {
       toast.error('O nome do exame é obrigatório')
