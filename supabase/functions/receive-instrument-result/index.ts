@@ -395,6 +395,30 @@ Deno.serve(async (req) => {
     return fail(msg, 409)
   }
 
+  // ---- Laudo do exame: usa o indicado pelo equipamento ou o de Ordem 1 ----
+  const { data: examLaudos } = await supabase
+    .from('exam_laudos')
+    .select('id, code, is_active')
+    .eq('company_id', companyId)
+    .eq('exam_id', matchedExam.id)
+    .order('sort_order', { ascending: true })
+
+  let laudoId: string | null = null
+  if (laudoCode) {
+    const found = (examLaudos || []).find(
+      (l: any) => String(l.code).trim().toUpperCase() === laudoCode.toUpperCase() && l.is_active !== false,
+    )
+    if (!found) {
+      return reject(
+        `laudo_code="${laudoCode}" não existe (ou está inativo) no exame "${matchedExam.name}". ` +
+          `Laudos cadastrados: ${(examLaudos || []).map((l: any) => l.code).join(', ') || 'nenhum'}.`,
+      )
+    }
+    laudoId = found.id
+  } else {
+    laudoId = (examLaudos || []).find((l: any) => l.is_active !== false)?.id ?? null
+  }
+
   let resultId = existingResult?.id as string | undefined
   const resultPayload = {
     company_id: companyId,
