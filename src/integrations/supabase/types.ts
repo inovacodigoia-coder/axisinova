@@ -935,6 +935,8 @@ export type Database = {
           is_active: boolean
           methodology: string | null
           name: string
+          parameters: Json
+          reference_values: Json
           report_observations: string | null
           report_single_page: boolean
           report_template_id: string | null
@@ -950,6 +952,8 @@ export type Database = {
           is_active?: boolean
           methodology?: string | null
           name: string
+          parameters?: Json
+          reference_values?: Json
           report_observations?: string | null
           report_single_page?: boolean
           report_template_id?: string | null
@@ -965,6 +969,8 @@ export type Database = {
           is_active?: boolean
           methodology?: string | null
           name?: string
+          parameters?: Json
+          reference_values?: Json
           report_observations?: string | null
           report_single_page?: boolean
           report_template_id?: string | null
