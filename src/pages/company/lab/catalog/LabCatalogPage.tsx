@@ -173,8 +173,11 @@ export default function LabCatalogPage() {
         if (v === 'meses' || v === 'months') return 'Meses'
         if (v === 'semanas' || v === 'weeks') return 'Semanas'
         if (v === 'dias' || v === 'days') return 'Dias'
+        if (v === 'valor' || v === 'value') return 'Valor'
         return 'Anos'
       }
+      const isValor = (unit?: string) => ageUnitLabel(unit) === 'Valor'
+      const txt = (v: any) => (v == null || String(v).trim() === '' ? '' : String(v).trim())
 
       // Merge database parameters with context parameters (migration period)
       labExams.forEach(e => {
