@@ -115,6 +115,8 @@ Deno.serve(async (req) => {
   const sampleBarcode = String(p.sample_barcode ?? p.sample_id ?? p.sample_code ?? '').trim()
   const equipmentId = String(p.equipment_id ?? p.instrument_code ?? p.equipment ?? '').trim()
   const testCode = norm(p.test_code ?? p.code)
+  // Laudo indicado pelo equipamento (opcional). Sem ele, vale o laudo de Ordem 1.
+  const laudoCode = String(p.laudo_code ?? '').trim()
   const rawValue = p.value
 
   const baseFields = {
