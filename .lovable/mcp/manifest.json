@@ -1,0 +1,147 @@
+{
+  "version": 1,
+  "sdk_version": "3.0.2",
+  "path": "/functions/v1/mcp",
+  "auth": {
+    "type": "oauth",
+    "issuer": "https://taicjeqqizmsnlibwbbn.supabase.co/auth/v1",
+    "accepted_audiences": [
+      "authenticated"
+    ]
+  },
+  "mcp": {
+    "server": {
+      "name": "axis-inova",
+      "version": "0.1.0",
+      "title": "Axis Inova"
+    },
+    "tools": [
+      {
+        "name": "search_patients",
+        "title": "Buscar pacientes",
+        "description": "Busca pacientes da empresa do usuário por nome ou CPF.",
+        "annotations": {
+          "readOnlyHint": true,
+          "idempotentHint": true,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "query": {
+              "type": "string",
+              "minLength": 2,
+              "description": "Nome parcial ou CPF do paciente."
+            },
+            "limit": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 50,
+              "description": "Máximo de pacientes retornados (padrão 10)."
+            }
+          },
+          "required": [
+            "query"
+          ],
+          "additionalProperties": false,
+          "$schema": "http://json-schema.org/draft-07/schema#"
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "list_attendance_orders",
+        "title": "Listar atendimentos",
+        "description": "Lista os atendimentos/pedidos recentes, com filtros opcionais por protocolo, paciente ou status.",
+        "annotations": {
+          "readOnlyHint": true,
+          "idempotentHint": true,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "protocol": {
+              "type": "string",
+              "description": "Protocolo exato do atendimento."
+            },
+            "patient_name": {
+              "type": "string",
+              "description": "Nome parcial do paciente."
+            },
+            "status": {
+              "type": "string",
+              "description": "Status do atendimento."
+            },
+            "limit": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 50,
+              "description": "Máximo de atendimentos retornados (padrão 10)."
+            }
+          },
+          "additionalProperties": false,
+          "$schema": "http://json-schema.org/draft-07/schema#"
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "list_exam_results",
+        "title": "Listar exames do pedido",
+        "description": "Lista os exames de um atendimento pelo protocolo, com status de digitação e liberação.",
+        "annotations": {
+          "readOnlyHint": true,
+          "idempotentHint": true,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "protocol": {
+              "type": "string",
+              "minLength": 1,
+              "description": "Protocolo do atendimento."
+            }
+          },
+          "required": [
+            "protocol"
+          ],
+          "additionalProperties": false,
+          "$schema": "http://json-schema.org/draft-07/schema#"
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "list_exam_catalog",
+        "title": "Consultar catálogo de exames",
+        "description": "Consulta o catálogo de exames da empresa por nome ou código interno.",
+        "annotations": {
+          "readOnlyHint": true,
+          "idempotentHint": true,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "query": {
+              "type": "string",
+              "description": "Nome parcial ou código do exame."
+            },
+            "only_active": {
+              "type": "boolean",
+              "description": "Retornar apenas exames ativos (padrão true)."
+            },
+            "limit": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 100,
+              "description": "Máximo de exames retornados (padrão 20)."
+            }
+          },
+          "additionalProperties": false,
+          "$schema": "http://json-schema.org/draft-07/schema#"
+        },
+        "outputSchema": null
+      }
+    ]
+  }
+}

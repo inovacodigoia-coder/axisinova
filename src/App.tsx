@@ -45,6 +45,7 @@ const LabColetaPage = lazy(() => import("./pages/company/lab/LabColetaPage"));
 const DesignSystemPage = lazy(() => import("./pages/DesignSystemPage"));
 const DocsPage = lazy(() => import("./pages/DocsPage"));
 const ExternalPortalPage = lazy(() => import("./pages/portal/ExternalPortalPage"));
+const OAuthConsent = lazy(() => import("./pages/OAuthConsent"));
 
 const queryClient = new QueryClient();
 
@@ -72,6 +73,7 @@ const App = () => (
                       <Route path="/reset-password" element={<ResetPasswordPage />} />
                       <Route path="/unauthorized" element={<UnauthorizedPage />} />
                       <Route path="/primeiro-acesso" element={<FirstAccessPasswordPage />} />
+                      <Route path="/.lovable/oauth/consent" element={<OAuthConsent />} />
 
                       {/* Public kiosk/panel routes */}
                       <Route path="/totem" element={<SchedulingProvider><TotemPage /></SchedulingProvider>} />
