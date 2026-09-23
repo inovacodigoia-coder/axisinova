@@ -7,7 +7,7 @@ import { Layout, Edit2, Plus, History, Printer, Save, Loader2, AlertTriangle, Ty
 import { toast } from 'sonner'
 import { SampleLabel } from '@/components/lab/print/SampleLabel'
 import { ServidorImpressaoStatus } from '@/components/print/ServidorImpressaoStatus'
-import { servidorImpressaoAtivo, imprimirDireto, TIPOS_DOCUMENTO } from '@/lib/impressaoLocal'
+import { servidorImpressaoAtivo, imprimirEtiquetas, TIPOS_DOCUMENTO } from '@/lib/impressaoLocal'
 import { gerarPdfEtiquetas } from '@/lib/labelPdf'
 import { useLabelConfig } from '@/hooks/useLabelConfig'
 import { useLabSettings } from '@/hooks/useLabSettings'
@@ -153,8 +153,18 @@ export function LabPrinterLabelSection() {
         return
       }
 
-      const pdf = await gerarPdfEtiquetas([node], sheetW, sheetH)
-      const r = await imprimirDireto(TIPOS_DOCUMENTO.etiquetaCliente, pdf)
+      const r = await imprimirEtiquetas(TIPOS_DOCUMENTO.etiquetaCliente, [{
+        codigoAmostra: TEST_LABEL.sampleCode,
+        painel: TEST_LABEL.workbench,
+        dataHora: new Date().toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', year: '2-digit', hour: '2-digit', minute: '2-digit' }),
+        codigoExterno: TEST_LABEL.orderNumber,
+        paciente: TEST_LABEL.patientName,
+        nascimento: TEST_LABEL.birthDate,
+        tipoAmostra: `${TEST_LABEL.material} (${TEST_LABEL.tube})`,
+        exames: TEST_LABEL.examRefs.join(' '),
+        laboratorio: settings?.lab_name || undefined,
+        fimPedido: true,
+      }])
       toast.success(r.mensagem || 'Etiqueta de teste enviada para a impressora.')
     } catch (err) {
       toast.error(err instanceof Error ? err.message : 'Falha ao enviar a impressão teste.')
