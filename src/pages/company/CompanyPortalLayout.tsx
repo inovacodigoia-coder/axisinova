@@ -50,6 +50,7 @@ import NotificationsSettingsPage from './settings/NotificationsSettingsPage'
 import EstablishmentsSettingsPage from './settings/EstablishmentsSettingsPage'
 import OriginsPage from './settings/OriginsPage'
 import ReceptionLayout from './reception/ReceptionLayout'
+import TriagePage from './triage/TriagePage'
 import SchedulingPage from './scheduling/SchedulingPage'
 import ConfirmationsPage from './scheduling/ConfirmationsPage'
 import AbsenteesPage from './scheduling/AbsenteesPage'
@@ -244,6 +245,7 @@ function PortalContent() {
               <Route path="faltosos" element={<AbsenteesPage />} />
               <Route path="historico-paciente" element={<PatientHistoryPage />} />
               <Route path="recepcao" element={<ReceptionLayout />} />
+              <Route path="triagem" element={<TriagePage />} />
               <Route path="recepcao/cadastro-direto" element={<DirectCadastroPage />} />
               <Route path="medico" element={<MedicalDashboardPage />} />
               <Route path="atendimento/:appointmentId" element={<AttendancePage />} />

@@ -8,7 +8,8 @@ import {
   Home, Calendar, UserCheck, FileText, DollarSign, FlaskConical, BarChart3,
   TrendingUp, Users, Settings, Database, Monitor, Building2,
   LogOut, ChevronLeft, ChevronRight, X, Stethoscope, TicketCheck, ShieldCheck, Ruler, Layout, Beaker as BeakerIcon,
-  PieChart, Warehouse, Package as PackageIcon, UserPlus, FileSearch, Menu, Handshake, Droplet, Truck, KanbanSquare
+  PieChart, Warehouse, Package as PackageIcon, UserPlus, FileSearch, Menu, Handshake, Droplet, Truck, KanbanSquare,
+  Activity
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
@@ -17,7 +18,8 @@ import type { SystemModule } from '@/types/permissions.types'
 const ICON_MAP: Record<string, any> = {
   Calendar, UserCheck, FileText, DollarSign, FlaskConical, BarChart3,
   TrendingUp, Users, Settings, Database, Monitor, Building2, Stethoscope, Home, TicketCheck, Ruler, Layout, Beaker: BeakerIcon,
-  PieChart, Warehouse, Package: PackageIcon, UserPlus, FileSearch, Handshake, Droplet, Truck, KanbanSquare
+  PieChart, Warehouse, Package: PackageIcon, UserPlus, FileSearch, Handshake, Droplet, Truck, KanbanSquare,
+  Activity
 }
 
 
@@ -43,6 +45,7 @@ export const NAV_SECTIONS: NavSection[] = [
       { label: 'Recepção', icon: 'UserCheck', path: '/app/recepcao', module: 'reception' },
       { label: 'Iniciar Cadastro', icon: 'UserPlus', path: '/app/recepcao/cadastro-direto', module: 'reception' },
       { label: 'Buscar Cadastro', icon: 'FileSearch', path: '/app/recepcao?lookup=true', module: 'reception' },
+      { label: 'Triagem', icon: 'Activity', path: '/app/triagem', module: 'reception' },
       { label: 'Painel Médico', icon: 'Stethoscope', path: '/app/medico', module: 'medical_record' },
       { label: 'Prontuário', icon: 'FileText', path: '/app/prontuario', module: 'medical_record' },
     ],
