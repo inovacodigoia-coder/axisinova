@@ -5,8 +5,7 @@ import { Printer, X, Loader2 } from 'lucide-react'
 import { toast } from 'sonner'
 import { SampleLabel } from '@/components/lab/print/SampleLabel'
 import { ServidorImpressaoStatus } from '@/components/print/ServidorImpressaoStatus'
-import { servidorImpressaoAtivo, imprimirDireto, TIPOS_DOCUMENTO } from '@/lib/impressaoLocal'
-import { gerarPdfEtiquetas } from '@/lib/labelPdf'
+import { servidorImpressaoAtivo, imprimirEtiquetas, TIPOS_DOCUMENTO, DadosEtiqueta } from '@/lib/impressaoLocal'
 import { useLabelConfig } from '@/hooks/useLabelConfig'
 
 
