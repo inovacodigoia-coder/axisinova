@@ -930,6 +930,7 @@ export type Database = {
           code: string
           company_id: string
           created_at: string
+          default_material: string | null
           exam_id: string
           id: string
           is_active: boolean
@@ -940,13 +941,17 @@ export type Database = {
           report_observations: string | null
           report_single_page: boolean
           report_template_id: string | null
+          result_deadline_days: number | null
+          selected_materials: Json | null
           sort_order: number
           updated_at: string
+          workbench_id: string | null
         }
         Insert: {
           code: string
           company_id: string
           created_at?: string
+          default_material?: string | null
           exam_id: string
           id?: string
           is_active?: boolean
@@ -957,13 +962,17 @@ export type Database = {
           report_observations?: string | null
           report_single_page?: boolean
           report_template_id?: string | null
+          result_deadline_days?: number | null
+          selected_materials?: Json | null
           sort_order?: number
           updated_at?: string
+          workbench_id?: string | null
         }
         Update: {
           code?: string
           company_id?: string
           created_at?: string
+          default_material?: string | null
           exam_id?: string
           id?: string
           is_active?: boolean
@@ -974,8 +983,11 @@ export type Database = {
           report_observations?: string | null
           report_single_page?: boolean
           report_template_id?: string | null
+          result_deadline_days?: number | null
+          selected_materials?: Json | null
           sort_order?: number
           updated_at?: string
+          workbench_id?: string | null
         }
         Relationships: [
           {

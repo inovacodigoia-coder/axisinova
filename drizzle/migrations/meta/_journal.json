@@ -113,6 +113,13 @@
       "when": 1790126201732,
       "tag": "0015_add_exam_laudos_parameters_json",
       "breakpoints": true
+    },
+    {
+      "idx": 16,
+      "version": "7",
+      "when": 1790135822609,
+      "tag": "0016_add_laudo_operational_fields",
+      "breakpoints": true
     }
   ]
 }
