@@ -1,5 +1,5 @@
 import { useState, useCallback, useEffect, useRef } from 'react'
-import { useNavigate, Link } from 'react-router-dom'
+import { useNavigate, Link, useSearchParams } from 'react-router-dom'
 import { useAuth } from '@/context/AuthContext'
 import { getRedirectByRole } from '@/mocks/users.mock'
 import { Mail, Lock, Eye, EyeOff, AlertCircle, Calendar, FileText, DollarSign, BarChart3, X, ChevronDown, ChevronUp } from 'lucide-react'
@@ -19,6 +19,11 @@ const FEATURES = [
 export default function LoginPage() {
   const { login, isAuthenticated, user } = useAuth()
   const navigate = useNavigate()
+  const [searchParams] = useSearchParams()
+
+  // Destino de retorno (ex.: tela de autorização de integrações). Só caminhos internos.
+  const rawNext = searchParams.get('next')
+  const nextPath = rawNext && rawNext.startsWith('/') && !rawNext.startsWith('//') ? rawNext : null
 
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
