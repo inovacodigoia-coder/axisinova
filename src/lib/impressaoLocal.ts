@@ -23,6 +23,49 @@ export const TIPOS_DOCUMENTO = {
 
 export type TipoDocumento = (typeof TIPOS_DOCUMENTO)[keyof typeof TIPOS_DOCUMENTO];
 
+/** Dados de uma etiqueta enviados ao servidor local (ele monta o ZPL e imprime). */
+export interface DadosEtiqueta {
+  codigoAmostra: string;
+  painel?: string;
+  dataHora?: string;
+  codigoExterno?: string;
+  paciente?: string;
+  nascimento?: string;
+  tipoAmostra?: string;
+  exames?: string;
+  laboratorio?: string;
+  fimPedido?: boolean;
+  urgente?: boolean;
+  bombinha?: boolean;
+  marca?: boolean;
+  invertida?: boolean;
+  copias?: number;
+}
+
+/**
+ * Imprime todas as etiquetas de um pedido de uma só vez (um único trabalho na impressora).
+ * Não gera PDF: envia apenas os dados e o servidor local monta a etiqueta em ZPL.
+ */
+export async function imprimirEtiquetas(
+  tipo: TipoDocumento | string,
+  etiquetas: DadosEtiqueta[]
+): Promise<{ ok: true; mensagem: string; etiquetas: number }> {
+  if (!etiquetas.length) throw new Error("Nenhuma etiqueta para imprimir.");
+  if (etiquetas.some((e) => !e.codigoAmostra)) {
+    throw new Error("Etiqueta sem código da amostra.");
+  }
+
+  const resp = await fetch(`${AISAXIUS_URL}/print`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ tipo, etiquetas }),
+  });
+
+  const data = await resp.json().catch(() => ({}));
+  if (!resp.ok) throw new Error(data.erro || "Falha ao imprimir as etiquetas.");
+  return data;
+}
+
 /** Verifica se o app está aberto na bandeja do Windows, antes de tentar imprimir. */
 export async function servidorImpressaoAtivo(): Promise<boolean> {
   try {
