@@ -160,6 +160,7 @@ export const NAV_SECTIONS: NavSection[] = [
     items: [
       { label: 'Terceirização', icon: 'Truck', path: '/app/apoio/terceirizacao', module: 'portals' },
       { label: 'Kanban Apoio', icon: 'KanbanSquare', path: '/app/apoio/kanban', module: 'portals' },
+      { label: 'Conectar Agentes', icon: 'Bot', path: '/app/conectar-agentes', module: 'portals' },
     ],
   },
 

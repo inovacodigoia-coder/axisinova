@@ -101,6 +101,7 @@ import LabBudgetsPage from './lab/orcamentos/LabBudgetsPage'
 import LabBudgetFormPage from './lab/orcamentos/LabBudgetFormPage'
 import LabBudgetDetailPage from './lab/orcamentos/LabBudgetDetailPage'
 import LabDashboard from './lab/LabDashboard'
+import ConnectAgentsPage from './ConnectAgentsPage'
 
 import DirectCadastroPage from './reception/DirectCadastroPage'
 
@@ -354,6 +355,7 @@ function PortalContent() {
               <Route path="apoio/terceirizacao" element={<SupportOutsourcingPage />} />
               <Route path="apoio/kanban" element={<SupportKanbanBoardsPage />} />
               <Route path="apoio/kanban/:boardId" element={<SupportBoardPage />} />
+              <Route path="conectar-agentes" element={<ConnectAgentsPage />} />
 
 
               <Route path="estoque/fornecedores" element={<LabStockSuppliersPage />} />
