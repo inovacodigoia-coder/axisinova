@@ -57,6 +57,10 @@ export default function ExamLaudosSection({ examId, companyId, laudos, selectedL
       methodology: source?.methodology || null,
       parameters: source?.parameters || [],
       reference_values: source?.reference_values || [],
+      result_deadline_days: source?.result_deadline_days ?? null,
+      workbench_id: source?.workbench_id || null,
+      selected_materials: source?.selected_materials || [],
+      default_material: source?.default_material || null,
     })
     setSaving(false)
     if (error) {

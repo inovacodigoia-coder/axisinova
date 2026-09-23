@@ -573,8 +573,8 @@ function GeneralInfoSection({
   const [measurementUnits, setMeasurementUnits] = useState<any[]>([])
 
   useEffect(() => {
-    if (data.selectedMaterials) setSelectedMaterials(data.selectedMaterials)
-    if (data.defaultMaterial) setDefaultMaterial(data.defaultMaterial)
+    setSelectedMaterials(Array.isArray(data.selectedMaterials) ? data.selectedMaterials : [])
+    setDefaultMaterial(data.defaultMaterial || '')
   }, [data.selectedMaterials, data.defaultMaterial])
 
   useEffect(() => {
