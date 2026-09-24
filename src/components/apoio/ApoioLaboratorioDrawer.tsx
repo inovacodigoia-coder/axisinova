@@ -21,7 +21,7 @@ export interface ApoioLab {
   endpoint_url: string | null
   ambiente: string | null
   modo_contingencia: boolean
-  opcoes: { valorReferencia?: number; papelTimbrado?: boolean; grafico?: boolean; dadosConstantes?: boolean } | null
+  opcoes: { valorReferencia?: number; papelTimbrado?: boolean; grafico?: boolean; dadosConstantes?: boolean; prefixoPedido?: string | null } | null
   dias_transporte: number
   prazo_contagem?: 'corridos' | 'uteis'
   guardar_pdf_sempre: boolean
@@ -67,7 +67,7 @@ export function ApoioLaboratorioDrawer({ open, lab, readOnly, podeCatalogo = fal
   const [f, setF] = useState({
     nome: '', cnpj: '', contato_nome: '', contato_email: '', contato_telefone: '', dias_transporte: 1, prazo_contagem: 'uteis' as 'corridos' | 'uteis',
     conector: 'manual' as 'pardini' | 'manual', cod_lab: '', senha: '', endpoint_url: ENDPOINT_PADRAO, ambiente: 'homologacao',
-    valorReferencia: 2, papelTimbrado: false, grafico: true, guardar_pdf_sempre: true,
+    valorReferencia: 2, papelTimbrado: false, grafico: true, prefixoPedido: '', guardar_pdf_sempre: true,
     licenca_sanitaria: '', licenca_validade: '',
   })
   const [verSenha, setVerSenha] = useState(false)
@@ -86,13 +86,13 @@ export function ApoioLaboratorioDrawer({ open, lab, readOnly, podeCatalogo = fal
         nome: lab.nome, cnpj: lab.cnpj ? maskCnpj(lab.cnpj) : '', contato_nome: lab.contato_nome || '', contato_email: lab.contato_email || '',
         contato_telefone: lab.contato_telefone || '', dias_transporte: lab.dias_transporte ?? 1, prazo_contagem: lab.prazo_contagem === 'corridos' ? 'corridos' : 'uteis', conector: lab.conector,
         cod_lab: lab.cod_lab || '', senha: '', endpoint_url: lab.endpoint_url || ENDPOINT_PADRAO, ambiente: lab.ambiente || 'homologacao',
-        valorReferencia: lab.opcoes?.valorReferencia ?? 2, papelTimbrado: !!lab.opcoes?.papelTimbrado, grafico: lab.opcoes?.grafico ?? true,
+        valorReferencia: lab.opcoes?.valorReferencia ?? 2, papelTimbrado: !!lab.opcoes?.papelTimbrado, grafico: lab.opcoes?.grafico ?? true, prefixoPedido: lab.opcoes?.prefixoPedido || '',
         guardar_pdf_sempre: lab.guardar_pdf_sempre, licenca_sanitaria: lab.licenca_sanitaria || '', licenca_validade: lab.licenca_validade || '',
       })
       supabase.from('apoio_certificacao').select('id, tipo, numero, validade, arquivo_path').eq('apoio_id', lab.id).order('created_at')
         .then(({ data }) => setCerts(((data || []) as any[]).map(c => ({ ...c, tipo: c.tipo || '', numero: c.numero || '', validade: c.validade || '' }))))
     } else {
-      setF(p => ({ ...p, nome: '', cnpj: '', contato_nome: '', contato_email: '', contato_telefone: '', dias_transporte: 1, prazo_contagem: 'uteis', conector: 'manual', cod_lab: '', senha: '', endpoint_url: ENDPOINT_PADRAO, ambiente: 'homologacao', valorReferencia: 2, papelTimbrado: false, grafico: true, guardar_pdf_sempre: true, licenca_sanitaria: '', licenca_validade: '' }))
+      setF(p => ({ ...p, nome: '', cnpj: '', contato_nome: '', contato_email: '', contato_telefone: '', dias_transporte: 1, prazo_contagem: 'uteis', conector: 'manual', cod_lab: '', senha: '', endpoint_url: ENDPOINT_PADRAO, ambiente: 'homologacao', valorReferencia: 2, papelTimbrado: false, grafico: true, prefixoPedido: '', guardar_pdf_sempre: true, licenca_sanitaria: '', licenca_validade: '' }))
       setCerts([])
     }
   }, [open, lab])
@@ -108,6 +108,7 @@ export function ApoioLaboratorioDrawer({ open, lab, readOnly, podeCatalogo = fal
       if (!f.endpoint_url.trim() || !/^https:\/\//.test(f.endpoint_url.trim())) e.endpoint_url = 'Informe um endpoint https válido'
       if (!f.senha && !lab?.senha_definida) e.senha = 'Informe a senha'
     }
+    if (f.prefixoPedido && !/^[A-Za-z0-9-]{1,8}$/.test(f.prefixoPedido)) e.prefixoPedido = 'Use até 8 letras, números ou hífen, sem espaço'
     certs.forEach((c, i) => { if (!c.tipo.trim()) e[`cert_${i}`] = 'Informe o tipo' })
     setErros(e)
     if (Object.keys(e).length) return toast.error('Corrija os campos destacados')
@@ -122,7 +123,7 @@ export function ApoioLaboratorioDrawer({ open, lab, readOnly, podeCatalogo = fal
         cod_lab: f.conector === 'pardini' ? f.cod_lab.trim() : null,
         endpoint_url: f.conector === 'pardini' ? f.endpoint_url.trim() : null,
         ambiente: f.ambiente,
-        opcoes: { ...(lab?.opcoes || {}), valorReferencia: Number(f.valorReferencia), papelTimbrado: f.papelTimbrado, grafico: f.grafico },
+        opcoes: { ...(lab?.opcoes || {}), valorReferencia: Number(f.valorReferencia), papelTimbrado: f.papelTimbrado, grafico: f.grafico, prefixoPedido: f.prefixoPedido.trim().toUpperCase() || null },
         guardar_pdf_sempre: f.guardar_pdf_sempre,
         licenca_sanitaria: f.licenca_sanitaria.trim() || null, licenca_validade: f.licenca_validade || null,
       }
@@ -246,6 +247,12 @@ export function ApoioLaboratorioDrawer({ open, lab, readOnly, podeCatalogo = fal
                     <label className={label}>Código do laboratório no apoio *</label>
                     <input className={input} maxLength={50} value={f.cod_lab} onChange={e => set('cod_lab', e.target.value)} />
                     <Err k="cod_lab" />
+                  </div>
+                  <div>
+                    <label className={label}>Prefixo do código do pedido</label>
+                    <input className={input} maxLength={8} placeholder="Ex.: AXI" value={f.prefixoPedido} onChange={e => set('prefixoPedido', e.target.value.replace(/\s/g, '').toUpperCase())} />
+                    <p className="mt-1 text-[11px] text-muted-foreground">Opcional. Vai na frente do código do pedido enviado ao apoio (máx. 15 caracteres no total). Vazio = código do pedido como está.</p>
+                    <Err k="prefixoPedido" />
                   </div>
                   <div>
                     <label className={label}>Senha *</label>
