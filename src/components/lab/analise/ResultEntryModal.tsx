@@ -36,6 +36,7 @@ import {
   ChevronRight,
   Info
 } from 'lucide-react';
+import { useApoioCancelamento } from '@/components/apoio/useApoioCancelamento';
 import PDFPreviewModal from '@/components/lab/PDFPreviewModal';
 import { InstrumentGraphicsSection } from '@/components/lab/analise/InstrumentGraphicsSection';
 import { PatientInfoFloating } from '@/components/lab/analise/PatientInfoFloating';
@@ -112,6 +113,7 @@ export function ResultEntryModal({
   const [portalBlocks, setPortalBlocks] = useState<Record<string, string[]>>({});
   const [examActions, setExamActions] = useState<Record<string, { type: string; reason?: string; details?: string; applied?: boolean }>>({});
   const [cancelModal, setCancelModal] = useState<{ isOpen: boolean; exam: any } | null>(null);
+  const { cancelarNoApoio, dialog: apoioCancelDialog } = useApoioCancelamento();
   const [cancelReason, setCancelReason] = useState("");
   const [cancelConfirmed, setCancelConfirmed] = useState(false);
   const [retestReasons, setRetestReasons] = useState<Record<string, { reason: string; details: string }>>({});
@@ -1236,6 +1238,9 @@ export function ResultEntryModal({
 
   const handleCancelConfirm = async (examId: string, reason: string) => {
     const exam = filteredExams.find(e => e.id === examId);
+    setCancelModal(null);
+    const segue = await cancelarNoApoio(exam?.orderId, String(exam?.examId || exam?.id?.split(':').pop() || ''), reason);
+    if (!segue) return;
     setExamStatuses(prev => ({ ...prev, [examId]: 'cancelled' }));
     setExamActions(prev => ({ ...prev, [examId]: { type: 'cancelado', reason } }));
     setCancelModal(null);
@@ -2285,6 +2290,7 @@ export function ResultEntryModal({
       </footer>
 
       {/* Modal de Cancelamento */}
+      {apoioCancelDialog}
       {cancelModal && (
         <Dialog open={cancelModal.isOpen} onOpenChange={(open) => { if (!open) { setCancelModal(null); setCancelReason(""); setCancelConfirmed(false); } }}>
           <DialogContent className="sm:max-w-[450px] p-0 overflow-hidden border-none shadow-2xl z-[150]">
