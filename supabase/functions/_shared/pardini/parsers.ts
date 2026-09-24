@@ -87,3 +87,54 @@ export function parsePendencias(xml: string): Pendencia[] {
 }
 
 export const _attr = attr
+
+// ---------- Modelos de resultado (ModelosTodos / modelos.xml) ----------
+export interface ModeloValor { chave: string; nome: string; unidade: string; tipo: string; casas: number | null }
+export interface ModeloExame { codExmApoio: string; materialNome: string; exameNome: string; codigoFormato: string; itens: ModeloValor[] }
+
+/** Atributo ou filho simples, olhando só o cabeçalho do bloco (sem os sub-blocos) */
+function campo(bloco: string, sub: string[], ...nomes: string[]): string {
+  let cab = bloco
+  for (const s of sub) cab = cab.replace(new RegExp(`<(?:\\w+:)?${s}\\b[\\s\\S]*`, 'i'), '')
+  for (const n of nomes) { const a = attr(bloco, n); if (a) return a.trim() }
+  for (const n of nomes) { const t = texto(cab, n); if (t) return t }
+  return ''
+}
+
+export function parseModelos(xml: string): ModeloExame[] {
+  const out: ModeloExame[] = []
+  for (const se of blocos(xml, 'SuperExame')) {
+    const codExmApoio = campo(se, ['Exame'], 'CodExmApoio').toUpperCase()
+    if (!codExmApoio) continue
+    let codigoFormato = campo(se, ['Exame'], 'CodigoFormato')
+    let exameNome = '', materialNome = campo(se, ['Exame'], 'Material', 'NomeMaterial', 'MaterialNome')
+    const itens: ModeloValor[] = [], vistos = new Set<string>()
+    const id = (b: string, sub: string[]) => campo(b, sub, 'id', 'Id', 'ID', 'Codigo')
+    for (const ex of filhos(se, 'Exame')) {
+      codigoFormato ||= campo(ex, ['ItemDeExame'], 'CodigoFormato')
+      exameNome ||= campo(ex, ['ItemDeExame'], 'Nome', 'NomeExame')
+      const idEx = id(ex, ['ItemDeExame'])
+      for (const it of filhos(ex, 'ItemDeExame')) {
+        const idIt = id(it, ['Resultado'])
+        for (const res of filhos(it, 'Resultado')) {
+          const idRes = id(res, ['Valor'])
+          for (const v of filhos(res, 'Valor')) {
+            const chave = [idEx, idIt, idRes, id(v, [])].join('/')
+            if (vistos.has(chave)) continue
+            vistos.add(chave)
+            const casas = campo(v, [], 'CasasDecimais', 'Decimais')
+            itens.push({
+              chave,
+              nome: campo(res, ['Valor'], 'Nome') || campo(it, ['Resultado'], 'Nome') || campo(v, [], 'Nome') || chave,
+              unidade: campo(v, [], 'Unidade') || campo(res, ['Valor'], 'Unidade'),
+              tipo: (campo(v, [], 'Tipo', 'TipoValor') || campo(res, ['Valor'], 'Tipo')).toLowerCase(),
+              casas: casas && !isNaN(Number(casas)) ? Number(casas) : null,
+            })
+          }
+        }
+      }
+    }
+    out.push({ codExmApoio, materialNome, exameNome, codigoFormato, itens })
+  }
+  return out
+}
