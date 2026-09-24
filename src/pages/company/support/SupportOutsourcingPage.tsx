@@ -5,6 +5,7 @@ import { EmptyState } from '@/components/feedback/EmptyState'
 import { supabase } from '@/integrations/supabase/client'
 import { useApoioEntitlement, APOIO_BLOQUEADO_MSG } from '@/hooks/useApoio'
 import { ApoioLaboratoriosTab } from '@/components/apoio/ApoioLaboratoriosTab'
+import { ApoioExamesTab } from '@/components/apoio/depara/ApoioExamesTab'
 
 const ABAS = [
   { key: 'exames', label: 'Exames terceirizados' },
@@ -27,7 +28,7 @@ export function ApoioBloqueadoAviso() {
 
 export default function SupportOutsourcingPage() {
   const [params, setParams] = useSearchParams()
-  const aba = (ABAS.some(a => a.key === params.get('aba')) ? params.get('aba') : 'laboratorios') as Aba
+  const aba = (ABAS.some(a => a.key === params.get('aba')) ? params.get('aba') : 'exames') as Aba
   const { enabled, loading } = useApoioEntitlement()
   const [indicadores, setIndicadores] = useState<Indicador[]>([])
   const [reload, setReload] = useState(0)
@@ -74,7 +75,7 @@ export default function SupportOutsourcingPage() {
         {ABAS.map(a => (
           <button
             key={a.key}
-            onClick={() => setParams(p => { p.set('aba', a.key); return p }, { replace: true })}
+            onClick={() => setParams(() => { const p = new URLSearchParams(); p.set('aba', a.key); return p }, { replace: true })}
             className={`px-4 py-2.5 text-sm font-medium border-b-2 whitespace-nowrap transition-colors ${aba === a.key ? 'border-primary text-primary' : 'border-transparent text-muted-foreground hover:text-foreground'}`}
           >
             {a.label}
@@ -84,6 +85,8 @@ export default function SupportOutsourcingPage() {
 
       {aba === 'laboratorios' ? (
         <ApoioLaboratoriosTab moduloLiberado={enabled} onChanged={() => setReload(r => r + 1)} />
+      ) : aba === 'exames' ? (
+        <ApoioExamesTab moduloLiberado={enabled} />
       ) : (
         <div className="rounded-2xl border border-border bg-card">
           <EmptyState icon={<Clock className="h-10 w-10" />} title="Disponível em breve" description="Esta aba será liberada nas próximas etapas do módulo." />
