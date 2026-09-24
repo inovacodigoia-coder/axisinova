@@ -22,6 +22,7 @@ export interface ApoioLab {
   modo_contingencia: boolean
   opcoes: { valorReferencia?: number; papelTimbrado?: boolean; grafico?: boolean; dadosConstantes?: boolean } | null
   dias_transporte: number
+  prazo_contagem?: 'corridos' | 'uteis'
   guardar_pdf_sempre: boolean
   licenca_sanitaria: string | null
   licenca_validade: string | null
@@ -62,7 +63,7 @@ export function ApoioLaboratorioDrawer({ open, lab, readOnly, onClose, onSaved }
 }) {
   const { companyId } = useApoioEntitlement()
   const [f, setF] = useState({
-    nome: '', cnpj: '', contato_nome: '', contato_email: '', contato_telefone: '', dias_transporte: 1,
+    nome: '', cnpj: '', contato_nome: '', contato_email: '', contato_telefone: '', dias_transporte: 1, prazo_contagem: 'uteis' as 'corridos' | 'uteis',
     conector: 'manual' as 'pardini' | 'manual', cod_lab: '', senha: '', endpoint_url: ENDPOINT_PADRAO, ambiente: 'homologacao',
     valorReferencia: 2, papelTimbrado: false, grafico: true, guardar_pdf_sempre: true,
     licenca_sanitaria: '', licenca_validade: '',
@@ -80,7 +81,7 @@ export function ApoioLaboratorioDrawer({ open, lab, readOnly, onClose, onSaved }
     if (lab) {
       setF({
         nome: lab.nome, cnpj: lab.cnpj ? maskCnpj(lab.cnpj) : '', contato_nome: lab.contato_nome || '', contato_email: lab.contato_email || '',
-        contato_telefone: lab.contato_telefone || '', dias_transporte: lab.dias_transporte ?? 1, conector: lab.conector,
+        contato_telefone: lab.contato_telefone || '', dias_transporte: lab.dias_transporte ?? 1, prazo_contagem: lab.prazo_contagem === 'corridos' ? 'corridos' : 'uteis', conector: lab.conector,
         cod_lab: lab.cod_lab || '', senha: '', endpoint_url: lab.endpoint_url || ENDPOINT_PADRAO, ambiente: lab.ambiente || 'homologacao',
         valorReferencia: lab.opcoes?.valorReferencia ?? 2, papelTimbrado: !!lab.opcoes?.papelTimbrado, grafico: lab.opcoes?.grafico ?? true,
         guardar_pdf_sempre: lab.guardar_pdf_sempre, licenca_sanitaria: lab.licenca_sanitaria || '', licenca_validade: lab.licenca_validade || '',
@@ -88,7 +89,7 @@ export function ApoioLaboratorioDrawer({ open, lab, readOnly, onClose, onSaved }
       supabase.from('apoio_certificacao').select('id, tipo, numero, validade, arquivo_path').eq('apoio_id', lab.id).order('created_at')
         .then(({ data }) => setCerts(((data || []) as any[]).map(c => ({ ...c, tipo: c.tipo || '', numero: c.numero || '', validade: c.validade || '' }))))
     } else {
-      setF(p => ({ ...p, nome: '', cnpj: '', contato_nome: '', contato_email: '', contato_telefone: '', dias_transporte: 1, conector: 'manual', cod_lab: '', senha: '', endpoint_url: ENDPOINT_PADRAO, ambiente: 'homologacao', valorReferencia: 2, papelTimbrado: false, grafico: true, guardar_pdf_sempre: true, licenca_sanitaria: '', licenca_validade: '' }))
+      setF(p => ({ ...p, nome: '', cnpj: '', contato_nome: '', contato_email: '', contato_telefone: '', dias_transporte: 1, prazo_contagem: 'uteis', conector: 'manual', cod_lab: '', senha: '', endpoint_url: ENDPOINT_PADRAO, ambiente: 'homologacao', valorReferencia: 2, papelTimbrado: false, grafico: true, guardar_pdf_sempre: true, licenca_sanitaria: '', licenca_validade: '' }))
       setCerts([])
     }
   }, [open, lab])
@@ -114,7 +115,7 @@ export function ApoioLaboratorioDrawer({ open, lab, readOnly, onClose, onSaved }
       const row: Record<string, unknown> = {
         company_id: companyId, nome: f.nome.trim(), cnpj: onlyDigits(f.cnpj) || null,
         contato_nome: f.contato_nome.trim() || null, contato_email: f.contato_email.trim() || null, contato_telefone: onlyDigits(f.contato_telefone) || null,
-        dias_transporte: Number(f.dias_transporte), conector: f.conector,
+        dias_transporte: Number(f.dias_transporte), prazo_contagem: f.prazo_contagem, conector: f.conector,
         cod_lab: f.conector === 'pardini' ? f.cod_lab.trim() : null,
         endpoint_url: f.conector === 'pardini' ? f.endpoint_url.trim() : null,
         ambiente: f.ambiente,
@@ -201,6 +202,14 @@ export function ApoioLaboratorioDrawer({ open, lab, readOnly, onClose, onSaved }
                 <input type="number" min={0} max={60} className={input} value={f.dias_transporte} onChange={e => set('dias_transporte', Number(e.target.value))} />
                 <Err k="dias_transporte" />
               </div>
+            </div>
+            <div>
+              <label className={label}>Contagem do prazo do apoio</label>
+              <select className={input} value={f.prazo_contagem} onChange={e => set('prazo_contagem', e.target.value as any)}>
+                <option value="uteis">Dias úteis</option>
+                <option value="corridos">Dias corridos</option>
+              </select>
+              <p className="mt-1 text-[11px] text-muted-foreground">Prazo do exame de apoio = prazo do apoio + dias de transporte, nesta contagem.</p>
             </div>
             <div className="grid gap-3 sm:grid-cols-3">
               <div><label className={label}>Contato</label><input className={input} maxLength={120} value={f.contato_nome} onChange={e => set('contato_nome', e.target.value)} /></div>
