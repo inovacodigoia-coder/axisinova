@@ -946,6 +946,7 @@ export type Database = {
           nome: string
           opcoes: Json
           prazo_contagem: string
+          senha_cifrada: string | null
           senha_secret_id: string | null
           updated_at: string
         }
@@ -974,6 +975,7 @@ export type Database = {
           nome: string
           opcoes?: Json
           prazo_contagem?: string
+          senha_cifrada?: string | null
           senha_secret_id?: string | null
           updated_at?: string
         }
@@ -1002,6 +1004,7 @@ export type Database = {
           nome?: string
           opcoes?: Json
           prazo_contagem?: string
+          senha_cifrada?: string | null
           senha_secret_id?: string | null
           updated_at?: string
         }
@@ -6783,6 +6786,14 @@ export type Database = {
         Returns: undefined
       }
       apoio_seed_company: { Args: { _company_id: string }; Returns: undefined }
+      apoio_senha_gravar_cifrada: {
+        Args: { _apoio_id: string; _chave: string; _senha: string }
+        Returns: undefined
+      }
+      apoio_senha_ler_cifrada: {
+        Args: { _apoio_id: string; _chave: string }
+        Returns: string
+      }
       apoio_set_senha: {
         Args: { _apoio_id: string; _senha: string }
         Returns: undefined

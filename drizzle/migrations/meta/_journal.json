@@ -281,6 +281,13 @@
       "when": 1790217682144,
       "tag": "0039_apoio_integ_status",
       "breakpoints": true
+    },
+    {
+      "idx": 40,
+      "version": "7",
+      "when": 1790218485545,
+      "tag": "0040_apoio_senha_cifrada",
+      "breakpoints": true
     }
   ]
 }
