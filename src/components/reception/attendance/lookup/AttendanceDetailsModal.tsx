@@ -1366,7 +1366,7 @@ export function AttendanceDetailsModal({ open, onClose, onOrderDeleted, order, p
               .map(exam => ({
                 name: exam.name,
                 code: exam.code || '',
-                forecastDate: exam.previsaoEntrega || order.deliveryDate || '',
+                forecastDate: exam.previsaoEntrega || exam.expectedDeliveryDate || order.deliveryDate || '',
                 doctorName: exam.doctorName || order.doctorName,
                 doctorCRM: exam.doctorCRM || order.doctorCRM
               }))
