@@ -688,13 +688,56 @@ export function LabStep3GuidesProcedures({ state, update }: Props) {
               </tr>
             ) : (
               activeGuide?.exams.map((exam, index) => (
-                <tr key={index} className="border-b hover:bg-muted/10">
+                <React.Fragment key={index}>
+                <tr className="border-b hover:bg-muted/10">
                     <td className="px-4 py-4 text-xs font-medium">
                       {exam.name} {exam.tussCode && `- ${exam.tussCode}`}
                       {exam.bancadaTipo === 'apoio' && (
-                        <span className="ml-2 inline-flex items-center rounded-full border border-primary/30 bg-primary/10 px-2 py-0.5 text-[10px] font-semibold text-primary">
-                          Apoio: {exam.apoioNome || exam.bancadaNome}
-                        </span>
+                        <Popover onOpenChange={(o) => { if (o) void carregarOpcoes(exam.id); }}>
+                          <PopoverTrigger asChild>
+                            <button type="button" className="ml-2 inline-flex items-center gap-1 rounded-full border border-border bg-muted px-2 py-0.5 text-[10px] font-semibold text-foreground hover:bg-muted/70">
+                              <Truck className="h-3 w-3" /> Apoio: {exam.apoioNome || exam.bancadaNome} <ChevronDown className="h-3 w-3" />
+                            </button>
+                          </PopoverTrigger>
+                          <PopoverContent className="w-80 p-2" align="start">
+                            {(() => {
+                              const opc = opcoesPorExame[exam.id] || [];
+                              const apoios = opc.filter(o => o.tipo === 'apoio');
+                              const internas = opc.filter(o => o.tipo !== 'apoio');
+                              return (
+                                <div className="space-y-2 text-xs">
+                                  <div className="font-bold uppercase text-[10px] text-muted-foreground px-1">Trocar apoio</div>
+                                  {apoios.length === 0 && <div className="px-1 text-muted-foreground">Carregando...</div>}
+                                  {apoios.map(o => (
+                                    <button key={o.bancada_id} type="button" disabled={o.bancada_id === exam.bancadaId}
+                                      onClick={() => trocarDestino(index, o)}
+                                      className={cn('w-full text-left rounded-md px-2 py-1.5 hover:bg-muted', o.bancada_id === exam.bancadaId && 'bg-muted font-semibold')}>
+                                      <div className="flex justify-between"><span>{o.apoio_nome}</span><span>{o.tem_preco ? fmtBRL(o.preco) : 'sem preço'}</span></div>
+                                      <div className="text-[10px] text-muted-foreground">Prazo: {fmtData(o.prazo)}{o.modo === 'manual' ? ' · modo manual' : ''}</div>
+                                    </button>
+                                  ))}
+                                  {internas.length > 0 && (
+                                    <>
+                                      <div className="font-bold uppercase text-[10px] text-muted-foreground px-1 pt-1 border-t">Fazer internamente</div>
+                                      {internas.map(o => (
+                                        <button key={o.bancada_id} type="button" onClick={() => trocarDestino(index, o)} className="w-full text-left rounded-md px-2 py-1.5 hover:bg-muted">
+                                          <div>{o.bancada_nome}</div>
+                                          <div className="text-[10px] text-muted-foreground">Prazo: {fmtData(o.prazo)}</div>
+                                        </button>
+                                      ))}
+                                    </>
+                                  )}
+                                </div>
+                              );
+                            })()}
+                          </PopoverContent>
+                        </Popover>
+                      )}
+                      {exam.bancadaTipo !== 'apoio' && exam.bancadaOrigem === 'troca_atendimento' && (opcoesPorExame[exam.id] || []).some(o => o.tipo === 'apoio') && (
+                        <button type="button" className="ml-2 text-[10px] underline text-muted-foreground"
+                          onClick={() => { const o = (opcoesPorExame[exam.id] || []).find(x => x.atual); if (o) trocarDestino(index, o); }}>
+                          voltar para o apoio
+                        </button>
                       )}
                     </td>
                     <td className="px-4 py-4 text-xs">{exam.material || '—'}</td>
@@ -756,11 +799,68 @@ export function LabStep3GuidesProcedures({ state, update }: Props) {
                         </div>
                     </td>
                 </tr>
+                {exam.bancadaTipo === 'apoio' && ((exam.apoioInfoComp || []).length > 0 || (exam.apoioCondicoes || []).length > 0) && (
+                  <tr className="border-b bg-muted/20">
+                    <td colSpan={7} className="px-4 py-3">
+                      <div className="text-[10px] font-bold uppercase text-muted-foreground mb-2">Dados exigidos por {exam.apoioNome}</div>
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                        {(exam.apoioInfoComp || []).map((c: string) => {
+                          const v = exam.apoioInfo?.info_comp?.[c] ?? '';
+                          const num = infoCompNumerico(c);
+                          const invalido = !String(v).trim() || (num && !/^\d+(\.\d+)?$/.test(String(v).trim()));
+                          return (
+                            <div key={c}>
+                              <Label className="text-[11px]">{c} *</Label>
+                              <Input className={cn('h-8 text-xs', invalido && 'border-destructive')} value={v} inputMode={num ? 'decimal' : undefined}
+                                placeholder={num ? 'ex.: 70.5' : ''}
+                                onChange={(ev) => setApoioInfo(index, {}, { [c]: num ? ev.target.value.replace(',', '.') : ev.target.value })} />
+                              {!String(v).trim() && <p className="text-[10px] text-destructive mt-0.5">Obrigatório para o apoio</p>}
+                              {String(v).trim() && invalido && <p className="text-[10px] text-destructive mt-0.5">Use número com ponto decimal</p>}
+                            </div>
+                          );
+                        })}
+                        {(exam.apoioCondicoes || []).length > 0 && (
+                          <div>
+                            <Label className="text-[11px]">Condição *</Label>
+                            <select className={cn('h-8 w-full rounded-md border bg-background px-2 text-xs', !exam.apoioInfo?.condicao && 'border-destructive')}
+                              value={exam.apoioInfo?.condicao || ''} onChange={(ev) => setApoioInfo(index, { condicao: ev.target.value })}>
+                              <option value="">Selecione...</option>
+                              {(exam.apoioCondicoes as string[]).map(c => <option key={c} value={c}>{c}</option>)}
+                            </select>
+                          </div>
+                        )}
+                      </div>
+                    </td>
+                  </tr>
+                )}
+                </React.Fragment>
               ))
             )}
           </tbody>
         </table>
       </div>
+
+      {temApoio && (precisaAbreviar || errosApoio.length > 0) && (
+        <div className="border rounded-xl bg-card p-4 space-y-3">
+          <h3 className="text-sm font-bold uppercase tracking-wider flex items-center gap-2"><Truck className="h-4 w-4" /> Envio ao laboratório de apoio</h3>
+          {precisaAbreviar && (
+            <div>
+              <Label className="text-xs">Nome que será enviado ao apoio (máx. {APOIO_NOME_MAX} caracteres)</Label>
+              <p className="text-[11px] text-muted-foreground mb-1">O nome do paciente tem {nomePaciente.trim().length} caracteres. Sugestão abreviada — pode editar.</p>
+              <Input className={cn('h-8 text-xs uppercase', nomeEnvio.trim().length > APOIO_NOME_MAX && 'border-destructive')} value={nomeEnvio}
+                onChange={(ev) => update({ apoioNomeEnvio: ev.target.value.toUpperCase() })} />
+              <p className={cn('text-[10px] mt-0.5', nomeEnvio.trim().length > APOIO_NOME_MAX ? 'text-destructive' : 'text-muted-foreground')}>{nomeEnvio.trim().length}/{APOIO_NOME_MAX}</p>
+            </div>
+          )}
+          {errosApoio.filter(e => !e.includes('nome')).length > 0 && (
+            <ul className="space-y-1">
+              {errosApoio.map(e => (
+                <li key={e} className="flex items-start gap-2 text-xs text-destructive"><AlertTriangle className="h-3.5 w-3.5 mt-0.5 shrink-0" />{e}</li>
+              ))}
+            </ul>
+          )}
+        </div>
+      )}
 
       {/* Modal Adicionar Exame */}
       <Dialog open={showExamModal} onOpenChange={setShowExamModal}>
