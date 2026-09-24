@@ -404,6 +404,8 @@ export default function CompanyDetailPage() {
                 </div>
               )}
 
+              <ApoioEntitlementToggle companyId={companyId || ''} />
+
             </div>
           </div>
 
@@ -635,6 +637,55 @@ function ResourcesTab({ company, plan, companyId }: { company: any; plan: any; c
               Aplicar alterações
             </button>
           </div>
+        </div>
+      )}
+    </div>
+  )
+}
+
+
+function ApoioEntitlementToggle({ companyId }: { companyId: string }) {
+  const [state, setState] = useState<{ enabled: boolean; at: string | null; by: string | null } | null>(null)
+  const [log, setLog] = useState<{ acao: string; created_at: string }[]>([])
+  const load = async () => {
+    if (!companyId) return
+    const { data } = await supabase.from('companies').select('apoio_enabled, apoio_released_at, apoio_released_by').eq('id', companyId).maybeSingle()
+    const d = data as any
+    setState({ enabled: !!d?.apoio_enabled, at: d?.apoio_released_at ?? null, by: d?.apoio_released_by ?? null })
+    const { data: a } = await supabase.from('apoio_auditoria').select('acao, created_at').eq('company_id', companyId).eq('tabela', 'companies').order('created_at', { ascending: false }).limit(5)
+    setLog((a as any) || [])
+  }
+  useEffect(() => { void load() }, [companyId])
+  if (!state) return null
+  return (
+    <div className="border-t border-border pt-4 space-y-2">
+      <div className="flex items-start justify-between gap-4">
+        <div className="min-w-0">
+          <p className="font-medium flex items-center gap-2 text-foreground">🚚 Apoio / Terceirização</p>
+          <p className="text-xs text-muted-foreground">Libera o módulo de laboratórios de apoio (terceirização de exames, remessas, contingência e Kanban Apoio).</p>
+        </div>
+        <input
+          type="checkbox"
+          checked={state.enabled}
+          onChange={async e => {
+            const enabled = e.target.checked
+            const { data: auth } = await supabase.auth.getUser()
+            const row: Record<string, unknown> = { apoio_enabled: enabled }
+            if (enabled) { row.apoio_released_at = new Date().toISOString(); row.apoio_released_by = auth.user?.email || 'Super Admin' }
+            const { error } = await supabase.from('companies').update(row as never).eq('id', companyId)
+            if (error) { toast.error('Não foi possível alterar a liberação'); return }
+            toast.success(enabled ? 'Módulo Apoio liberado para a empresa.' : 'Módulo Apoio bloqueado para a empresa.')
+            void load()
+          }}
+          className="mt-1 h-5 w-10 shrink-0 rounded-full accent-primary cursor-pointer"
+        />
+      </div>
+      {state.enabled && (
+        <p className="text-xs text-muted-foreground">Liberado em {state.at ? new Date(state.at).toLocaleString('pt-BR') : '—'} por {state.by || '—'}</p>
+      )}
+      {log.length > 0 && (
+        <div className="text-[11px] text-muted-foreground space-y-0.5">
+          {log.map((l, i) => <p key={i}>{new Date(l.created_at).toLocaleString('pt-BR')} — {l.acao === 'modulo_liberado' ? 'Liberado' : 'Bloqueado'}</p>)}
         </div>
       )}
     </div>

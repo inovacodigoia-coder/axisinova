@@ -10,6 +10,7 @@ import type { Sector, SystemModule, PermissionsMap, PermissionAction, Profile } 
 import { SYSTEM_MODULES, ALL_ACTIONS, ACTION_LABELS } from '@/types/permissions.types'
 import { NAV_SECTIONS } from '@/components/company/CompanySidebar'
 import { toast } from 'sonner'
+import { resolveCompanyId } from '@/utils/companyId'
 
 interface RealUser {
   id: string
@@ -124,7 +125,7 @@ export default function SectorsPage() {
           </p>
           <button
             onClick={async () => {
-              const companyId = user?.companyId
+              const companyId = resolveCompanyId(user?.companyId)
               if (!companyId) return
               try {
                 const nextCode = Math.max(0, ...allProfiles.map(p => p.code || 0)) + 1
