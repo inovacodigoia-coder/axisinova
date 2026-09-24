@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react'
-import { AlertTriangle, BookOpen, Download, FileUp, History, Loader2, RefreshCw, Tag } from 'lucide-react'
+import { AlertTriangle, BookOpen, Download, FileUp, History, Loader2, RefreshCw, Tag, Trash2 } from 'lucide-react'
 import { toast } from 'sonner'
 import { supabase } from '@/integrations/supabase/client'
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog'
@@ -277,11 +277,12 @@ export function ReferenciaSection({ apoio, podeGerenciar, moduloLiberado }: { ap
   const [alertas, setAlertas] = useState<any[]>([])
   const [dlg, setDlg] = useState<'cat' | 'preco' | null>(null)
   const [verHist, setVerHist] = useState(false)
+  const [remover, setRemover] = useState<{ txt: string; busy: boolean; bloq: any[] | null } | null>(null)
 
   const load = useCallback(async () => {
     const [r, i, a] = await Promise.all([
       db.rpc('apoio_referencia_resumo', { _apoio_id: apoio.id }),
-      db.from('apoio_preco_importacao').select('id, arquivo_nome, linhas_total, linhas_ok, linhas_erro, erros, ficticia, created_at').eq('apoio_id', apoio.id).order('created_at', { ascending: false }).limit(20),
+      db.from('apoio_preco_importacao').select('id, arquivo_nome, linhas_total, linhas_ok, linhas_erro, erros, ficticia, removida_em, created_at').eq('apoio_id', apoio.id).order('created_at', { ascending: false }).limit(20),
       db.from('apoio_catalogo_alerta').select('id, mensagem, created_at').eq('apoio_id', apoio.id).eq('lido', false).order('created_at', { ascending: false }).limit(20),
     ])
     setResumo(r.data); setImps(i.data || []); setAlertas(a.data || [])
@@ -290,6 +291,15 @@ export function ReferenciaSection({ apoio, podeGerenciar, moduloLiberado }: { ap
 
   const marcarLido = async (id: string) => { await db.from('apoio_catalogo_alerta').update({ lido: true }).eq('id', id); load() }
   const pode = podeGerenciar && moduloLiberado
+  const removerFicticia = async () => {
+    if (!remover) return
+    setRemover({ ...remover, busy: true })
+    const { data, error } = await db.rpc('apoio_remover_tabela_ficticia', { _apoio_id: apoio.id })
+    if (error) { toast.error('Não foi possível remover', { description: error.message }); setRemover({ ...remover, busy: false }); return }
+    if (!data?.ok) { setRemover({ ...remover, busy: false, bloq: data?.exames || [] }); return }
+    toast.success(`Tabela fictícia removida: ${data.precos_removidos} preços apagados`)
+    setRemover(null); load()
+  }
   const btn = 'flex items-center gap-1.5 rounded-lg border border-border px-3 py-1.5 text-xs font-medium hover:bg-muted disabled:opacity-50'
 
   return (
@@ -308,6 +318,7 @@ export function ReferenciaSection({ apoio, podeGerenciar, moduloLiberado }: { ap
       <div className="flex flex-wrap gap-2">
         {apoio.conector === 'pardini' && <button type="button" disabled={!pode} onClick={() => setDlg('cat')} className={btn}><RefreshCw className="h-3.5 w-3.5" />Atualizar catálogo do apoio</button>}
         <button type="button" disabled={!pode} onClick={() => setDlg('preco')} className={btn}><FileUp className="h-3.5 w-3.5" />Importar tabela de preços</button>
+        {resumo?.preco_ficticio && <button type="button" disabled={!pode} onClick={() => setRemover({ txt: '', busy: false, bloq: null })} className={btn + ' text-destructive'}><Trash2 className="h-3.5 w-3.5" />Remover tabela fictícia</button>}
         <button type="button" onClick={() => setVerHist(v => !v)} className={btn}><History className="h-3.5 w-3.5" />Histórico de importações ({imps.length})</button>
       </div>
       {verHist && (
@@ -316,7 +327,7 @@ export function ReferenciaSection({ apoio, podeGerenciar, moduloLiberado }: { ap
             {imps.map(i => (
               <li key={i.id} className="flex items-center gap-2 px-3 py-2">
                 <div className="flex-1 min-w-0">
-                  <p className="truncate font-medium">{i.arquivo_nome || 'arquivo'} {i.ficticia && <span className="ml-1 rounded bg-warning/20 px-1.5 text-[10px] font-bold">FICTÍCIA</span>}</p>
+                  <p className="truncate font-medium">{i.arquivo_nome || 'arquivo'} {i.ficticia && <span className="ml-1 rounded bg-warning/20 px-1.5 text-[10px] font-bold">FICTÍCIA</span>}{i.removida_em && <span className="ml-1 rounded bg-muted px-1.5 text-[10px] font-bold">REMOVIDA em {dataHora(i.removida_em)}</span>}</p>
                   <p className="text-muted-foreground">{dataHora(i.created_at)} · {i.linhas_ok}/{i.linhas_total} gravadas · {i.linhas_erro} erros</p>
                 </div>
                 {i.linhas_erro > 0 && <a href="#" onClick={e => { e.preventDefault(); baixarErros(i) }} className="flex items-center gap-1 text-primary hover:underline"><Download className="h-3.5 w-3.5" />Erros</a>}
@@ -325,6 +336,26 @@ export function ReferenciaSection({ apoio, podeGerenciar, moduloLiberado }: { ap
           </ul>
         )
       )}
+      <Dialog open={!!remover} onOpenChange={o => !o && !remover?.busy && setRemover(null)}>
+        <DialogContent className="max-w-md">
+          <DialogHeader><DialogTitle>Remover tabela fictícia?</DialogTitle></DialogHeader>
+          {remover?.bloq ? (
+            <div className="space-y-2 text-sm">
+              <p className="text-destructive font-medium">Remoção bloqueada: estes exames já transmitidos usaram preço fictício sem a marcação de fictício.</p>
+              <ul className="max-h-48 overflow-y-auto rounded-lg border border-border text-xs">{remover.bloq.map((b: any) => <li key={b.id} className="border-b border-border px-3 py-1.5 last:border-0">{b.exame || 'Exame'} ({b.codigo}) · {brl(b.custo)} · {b.status}</li>)}</ul>
+            </div>
+          ) : (
+            <div className="space-y-3 text-sm">
+              <p className="text-muted-foreground">Apaga somente os preços marcados como fictícios deste apoio. O histórico de importações é mantido (marcado como removido) e os custos já gravados como fictícios continuam como estão.</p>
+              <div><label className="text-xs font-medium text-muted-foreground">Digite REMOVER para confirmar</label><input className="mt-1 w-full rounded-lg border border-input bg-background px-3 py-2 text-sm" value={remover?.txt || ''} onChange={e => remover && setRemover({ ...remover, txt: e.target.value })} /></div>
+            </div>
+          )}
+          <DialogFooter>
+            <button onClick={() => setRemover(null)} disabled={remover?.busy} className="rounded-xl border border-border px-4 py-2 text-sm">{remover?.bloq ? 'Fechar' : 'Cancelar'}</button>
+            {!remover?.bloq && <button onClick={removerFicticia} disabled={remover?.txt !== 'REMOVER' || remover?.busy} className="flex items-center gap-2 rounded-xl bg-destructive px-5 py-2 text-sm font-semibold text-destructive-foreground disabled:opacity-60">{remover?.busy && <Loader2 className="h-4 w-4 animate-spin" />} Remover</button>}
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
       <CatalogoUploadDialog apoio={apoio} open={dlg === 'cat'} onClose={() => setDlg(null)} onDone={load} />
       <PrecoImportDialog apoio={apoio} open={dlg === 'preco'} onClose={() => setDlg(null)} onDone={load} />
     </section>
