@@ -25,7 +25,7 @@ export interface Linha {
 }
 
 const semNome = (i: ModeloItem) => !i.nome || i.nome === i.chave
-const tipoLis = (t: string): 'numerical' | 'text' => /decimal|inteir|numer|float/i.test(t || '') ? 'numerical' : 'text'
+const tipoLis = (t: string): 'numerical' | 'text' => /^(decimal|inteir|num[eé]ric|float|integer)/i.test((t || '').trim()) ? 'numerical' : 'text'
 const longo = (n: number | null | undefined) => (n ?? 0) > 255
 const eq = (a: any, b: any) => (a ?? null) === (b ?? null) || String(a ?? '') === String(b ?? '')
 
