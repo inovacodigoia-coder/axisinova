@@ -1,3 +1,4 @@
+import { materialPorNome, useMateriaisTubos } from '@/lib/tubos'
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { Boxes, History, ListChecks, Loader2, MoreHorizontal, Pencil, Plus, Power, Search, Trash2, FlaskConical } from 'lucide-react'
@@ -14,14 +15,16 @@ import { ApoioAnalitosSheet } from './ApoioAnalitosSheet'
 import { ApoioLoteDialog } from './ApoioLoteDialog'
 import { CadastrarPardiniDialog } from './CadastrarPardiniDialog'
 
-type Falta = 'orientacoes' | 'critico' | 'preco' | 'tuss'
-const FALTA_LABEL: Record<Falta, string> = { orientacoes: 'Orientações ao paciente', critico: 'Valor crítico', preco: 'Preço real', tuss: 'TUSS' }
+type Falta = 'orientacoes' | 'critico' | 'preco' | 'tuss' | 'tubo'
+const FALTA_LABEL: Record<Falta, string> = { orientacoes: 'Orientações ao paciente', critico: 'Valor crítico', preco: 'Preço real', tuss: 'TUSS', tubo: 'Tubo' }
 const faltas = (e: any, d: { ficticio: boolean; tem_preco: boolean }): Falta[] => {
   const f: Falta[] = []
   if (!String(e.preparation_instructions || '').trim()) f.push('orientacoes')
   f.push('critico')
   if (!d.tem_preco || d.ficticio) f.push('preco')
   if (!String(e.tuss_code || '').trim()) f.push('tuss')
+  const mats: string[] = Array.isArray(e.selected_materials) ? e.selected_materials : []
+  if (mats.some(m => { const x = materialPorNome(m); return !x || !x.recipiente_id })) f.push('tubo')
   return f
 }
 
