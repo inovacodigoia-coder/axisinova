@@ -442,7 +442,6 @@ export function RegistersProvider({ children }: { children: ReactNode }) {
         interfacing_parameters: e.interfacingParameters || [],
         selected_materials: e.selectedMaterials || [],
         material_tubos: e.materialTubos || {},
-      material_tubos: e.materialTubos || {},
         default_material: e.defaultMaterial || null,
         workbench_id: e.workbenchId || null
       } as any).eq('id', e.id))
