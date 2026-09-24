@@ -770,6 +770,68 @@ export type Database = {
           },
         ]
       }
+      apoio_impressao_fila: {
+        Row: {
+          conteudo: string
+          created_at: string
+          criado_por: string | null
+          empresa_id: string
+          enviado_em: string | null
+          erro: string | null
+          id: string
+          impresso_em: string | null
+          impressora: string | null
+          referencia: string | null
+          status: string
+          tentativas: number
+          tipo: string
+          unidade_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          conteudo: string
+          created_at?: string
+          criado_por?: string | null
+          empresa_id: string
+          enviado_em?: string | null
+          erro?: string | null
+          id?: string
+          impresso_em?: string | null
+          impressora?: string | null
+          referencia?: string | null
+          status?: string
+          tentativas?: number
+          tipo: string
+          unidade_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          conteudo?: string
+          created_at?: string
+          criado_por?: string | null
+          empresa_id?: string
+          enviado_em?: string | null
+          erro?: string | null
+          id?: string
+          impresso_em?: string | null
+          impressora?: string | null
+          referencia?: string | null
+          status?: string
+          tentativas?: number
+          tipo?: string
+          unidade_id?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "apoio_impressao_fila_empresa_id_fkey"
+            columns: ["empresa_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       apoio_laboratorio: {
         Row: {
           ambiente: string
@@ -778,6 +840,7 @@ export type Database = {
           cod_lab: string | null
           company_id: string
           conector: string
+          conferir_apos_etiqueta: boolean
           contato_email: string | null
           contato_nome: string | null
           contato_telefone: string | null
@@ -803,6 +866,7 @@ export type Database = {
           cod_lab?: string | null
           company_id: string
           conector?: string
+          conferir_apos_etiqueta?: boolean
           contato_email?: string | null
           contato_nome?: string | null
           contato_telefone?: string | null
@@ -828,6 +892,7 @@ export type Database = {
           cod_lab?: string | null
           company_id?: string
           conector?: string
+          conferir_apos_etiqueta?: boolean
           contato_email?: string | null
           contato_nome?: string | null
           contato_telefone?: string | null
@@ -1328,15 +1393,18 @@ export type Database = {
       apoio_remessa: {
         Row: {
           apoio_id: string
+          bipados: Json
           cod_lote_apoio: string | null
           cod_lote_lab: number | null
           company_id: string
+          conferencia_forcada: string | null
           conferido_em: string | null
           conferido_por: string | null
           created_at: string
           criado_por: string | null
           entregue_a: string | null
           entregue_em: string | null
+          entregue_registrado_por: string | null
           id: string
           mensagem_id: string | null
           modo: string
@@ -1348,15 +1416,18 @@ export type Database = {
         }
         Insert: {
           apoio_id: string
+          bipados?: Json
           cod_lote_apoio?: string | null
           cod_lote_lab?: number | null
           company_id: string
+          conferencia_forcada?: string | null
           conferido_em?: string | null
           conferido_por?: string | null
           created_at?: string
           criado_por?: string | null
           entregue_a?: string | null
           entregue_em?: string | null
+          entregue_registrado_por?: string | null
           id?: string
           mensagem_id?: string | null
           modo?: string
@@ -1368,15 +1439,18 @@ export type Database = {
         }
         Update: {
           apoio_id?: string
+          bipados?: Json
           cod_lote_apoio?: string | null
           cod_lote_lab?: number | null
           company_id?: string
+          conferencia_forcada?: string | null
           conferido_em?: string | null
           conferido_por?: string | null
           created_at?: string
           criado_por?: string | null
           entregue_a?: string | null
           entregue_em?: string | null
+          entregue_registrado_por?: string | null
           id?: string
           mensagem_id?: string | null
           modo?: string
@@ -5807,6 +5881,10 @@ export type Database = {
         }
         Returns: Json
       }
+      apoio_codigo_aliquota: {
+        Args: { _apoio: string; _pedido: string }
+        Returns: string
+      }
       apoio_custo_previsto: {
         Args: { _pedido_exame_id: string }
         Returns: number
@@ -5855,6 +5933,40 @@ export type Database = {
         Args: { _pedido_exame_id: string }
         Returns: boolean
       }
+      apoio_impressao_pegar: {
+        Args: { _empresa: string; _limite?: number }
+        Returns: {
+          conteudo: string
+          created_at: string
+          criado_por: string | null
+          empresa_id: string
+          enviado_em: string | null
+          erro: string | null
+          id: string
+          impresso_em: string | null
+          impressora: string | null
+          referencia: string | null
+          status: string
+          tentativas: number
+          tipo: string
+          unidade_id: string | null
+          updated_at: string
+        }[]
+        SetofOptions: {
+          from: "*"
+          to: "apoio_impressao_fila"
+          isOneToOne: false
+          isSetofReturn: true
+        }
+      }
+      apoio_impressao_reenfileirar: {
+        Args: { _empresa?: string }
+        Returns: number
+      }
+      apoio_item_material: {
+        Args: { _exame: string; _pedido: string }
+        Returns: string
+      }
       apoio_modulo_liberado: { Args: { _company_id: string }; Returns: boolean }
       apoio_mudar_status: {
         Args: {
@@ -5871,6 +5983,84 @@ export type Database = {
         Returns: number
       }
       apoio_referencia_resumo: { Args: { _apoio_id: string }; Returns: Json }
+      apoio_remessa_adicionar: {
+        Args: { _ids: string[]; _remessa: string }
+        Returns: number
+      }
+      apoio_remessa_bipar: {
+        Args: { _codigo: string; _remessa: string }
+        Returns: Json
+      }
+      apoio_remessa_cancelar: { Args: { _remessa: string }; Returns: number }
+      apoio_remessa_checar: { Args: { _perm?: boolean }; Returns: string }
+      apoio_remessa_criar: {
+        Args: { _apoio: string; _ids: string[]; _temperatura: string }
+        Returns: Json
+      }
+      apoio_remessa_disponiveis: {
+        Args: { _apoio?: string }
+        Returns: {
+          apoio_id: string
+          apoio_nome: string
+          codigo_apoio: string
+          criado_em: string
+          exame_id: string
+          exame_nome: string
+          id: string
+          material: string
+          order_number: string
+          paciente: string
+          pedido_id: string
+          prazo_previsto: string
+          tubo: string
+        }[]
+      }
+      apoio_remessa_entrega: {
+        Args: { _entregue_a: string; _entregue_em: string; _remessa: string }
+        Returns: undefined
+      }
+      apoio_remessa_forcar_conferencia: {
+        Args: { _justificativa: string; _remessa: string }
+        Returns: undefined
+      }
+      apoio_remessa_lista: {
+        Args: never
+        Returns: {
+          apoio_id: string
+          apoio_nome: string
+          cod_lote_lab: number
+          conferencia_forcada: string
+          conferido_em: string
+          conferir_apos_etiqueta: boolean
+          created_at: string
+          criado_por_nome: string
+          entregue_a: string
+          entregue_em: string
+          exames: number
+          id: string
+          modo: string
+          status: string
+          temperatura: string
+          transmitido_em: string
+          tubos: number
+        }[]
+      }
+      apoio_remessa_remover: {
+        Args: { _pedido_exame: string }
+        Returns: undefined
+      }
+      apoio_remessa_tubos: {
+        Args: { _remessa: string }
+        Returns: {
+          bipado: boolean
+          codigo: string
+          exames: string
+          order_number: string
+          paciente: string
+          pedido_id: string
+          pos_transmissao: boolean
+        }[]
+      }
       apoio_remover_tabela_ficticia: {
         Args: { _apoio_id: string }
         Returns: Json
