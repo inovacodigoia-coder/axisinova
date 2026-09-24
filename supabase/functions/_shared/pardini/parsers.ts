@@ -138,3 +138,8 @@ export function parseModelos(xml: string): ModeloExame[] {
   }
   return out
 }
+
+export const MSG_MODELOS_PARDINI = "O Pardini não conseguiu gerar os modelos agora (falha do lado do Pardini). Use 'Enviar modelos.xml manualmente'."
+/** Nunca expõe erro cru do Caché/SOAP ao usuário (o original fica no log de integração) */
+export const amigavelModelos = (msg: string) =>
+  /Badly formed SOAP|ERRO\s*#|<info>|UNDEFINED|fault/i.test(msg || '') ? MSG_MODELOS_PARDINI : msg

@@ -3,7 +3,7 @@
 import { adminClient, apoiosAutomaticos, autenticar, corsHeaders, idMsg, json, paraCada, uuidOk } from '../_shared/pardini/contexto.ts'
 import { brData, chamar } from '../_shared/pardini/soap.ts'
 import { conteudoUtil, contarTag, esc } from '../_shared/pardini/xml.ts'
-import { parseModelos } from '../_shared/pardini/parsers.ts'
+import { parseModelos, amigavelModelos } from '../_shared/pardini/parsers.ts'
 
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders })
@@ -12,15 +12,22 @@ Deno.serve(async (req) => {
   if (quem instanceof Response) return quem
   const body = await req.json().catch(() => ({}))
   const labs = await apoiosAutomaticos(admin, uuidOk(body?.apoio_id) ? body.apoio_id : undefined, quem.companyId)
+  const todos = body?.operacao === 'todos' // clique no painel; a rotina semanal usa ModelosSolicitados
   const out = await paraCada(admin, labs, 'modelos', async (ctx) => {
     const hoje = new Date(), ini = new Date(Date.now() - 365 * 864e5)
-    const xml = `<Consulta><Protocolo>1</Protocolo><ID>${idMsg()}</ID><SolicitaResultado><CodLab>${esc(ctx.lab.cod_lab)}</CodLab><Operacao>ModelosTodos</Operacao><Acao>Mostra</Acao><DataInicial>${brData(ini)}</DataInicial><HoraInicial>00:00:00</HoraInicial><DataFinal>${brData(hoje)}</DataFinal><HoraFinal>23:59:59</HoraFinal><Grafico>0</Grafico><UnidadeNoValor>0</UnidadeNoValor><DadosConstantes>1</DadosConstantes><valorReferencia>${esc(ctx.lab.opcoes?.valorReferencia ?? 1)}</valorReferencia></SolicitaResultado></Consulta>`
-    const util = conteudoUtil(await chamar(ctx, 'getResultado', [['XML', 'string', xml]], { tentativas: 2, timeoutMs: 120_000 }))
+    const xml = `<Consulta><Protocolo>1</Protocolo><ID>${idMsg()}</ID><SolicitaResultado><CodLab>${esc(ctx.lab.cod_lab)}</CodLab><Operacao>${todos ? 'ModelosTodos' : 'ModelosSolicitados'}</Operacao><Acao>Mostra</Acao><DataInicial>${brData(ini)}</DataInicial><HoraInicial>00:00:00</HoraInicial><DataFinal>${brData(hoje)}</DataFinal><HoraFinal>23:59:59</HoraFinal><Grafico>0</Grafico><UnidadeNoValor>0</UnidadeNoValor><DadosConstantes>1</DadosConstantes><valorReferencia>${esc(ctx.lab.opcoes?.valorReferencia ?? 1)}</valorReferencia></SolicitaResultado></Consulta>`
+    let util: string
+    try {
+      util = conteudoUtil(await chamar(ctx, 'getResultado', [['XML', 'string', xml]], { tentativas: 1, timeoutMs: 120_000 }))
+    } catch (e) { throw new Error(amigavelModelos((e as Error).message)) }
+    // Erro do Caché dentro do conteúdo (texto original já está no log de integração)
+    if (/ERRO\s*#|<info>|Badly formed SOAP/i.test(util) && !/<(?:\w+:)?SuperExame\b/i.test(util)) throw new Error(amigavelModelos(util))
     const modelos = parseModelos(util)
     const esperado = contarTag(util, 'SuperExame')
     if (esperado !== modelos.length) throw new Error(`Contagem de modelos não bate: arquivo tem ${esperado} SuperExame, li ${modelos.length}. Nada foi gravado.`)
 
     const agora = new Date().toISOString()
+    if (todos) {
     const rows = modelos.map((m) => ({
       company_id: ctx.lab.company_id, apoio_id: ctx.lab.id, cod_exm_apoio: m.codExmApoio,
       material_nome: m.materialNome || null, exame_nome: m.exameNome || null, codigo_formato: m.codigoFormato || null,
@@ -29,6 +36,7 @@ Deno.serve(async (req) => {
     for (let i = 0; i < rows.length; i += 300) {
       const { error } = await admin.from('apoio_modelo_resultado').upsert(rows.slice(i, i + 300), { onConflict: 'apoio_id,cod_exm_apoio' })
       if (error) throw new Error(`Falha ao gravar modelos: ${error.message}`)
+    }
     }
 
     const formatos = new Map<string, string>()
