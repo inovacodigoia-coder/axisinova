@@ -115,7 +115,7 @@ export function parseModelos(xml: string): ModeloExame[] {
     const codExmApoio = campo(se, ['Exame'], 'CodExmApoio').toUpperCase()
     if (!codExmApoio) continue
     let codigoFormato = campo(se, ['Exame'], 'CodigoFormato')
-    let exameNome = '', materialNome = campo(se, ['Exame'], 'Material', 'NomeMaterial', 'MaterialNome')
+    let exameNome = campo(se, ['Exame'], 'ExameNome'), materialNome = campo(se, ['Exame'], 'Material', 'NomeMaterial', 'MaterialNome')
     const itens: ModeloValor[] = [], vistos = new Set<string>()
     // Mesma chave do resultado: idExame/idItemDeExame/idResultado/idValor
     for (const ex of filhos(se, 'Exame')) {
