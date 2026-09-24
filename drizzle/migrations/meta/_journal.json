@@ -337,6 +337,13 @@
       "when": 1790265387304,
       "tag": "0047_apoio_alerta_material",
       "breakpoints": true
+    },
+    {
+      "idx": 48,
+      "version": "7",
+      "when": 1790266395224,
+      "tag": "0048_fix_apoio_laudo_ajustar_extras",
+      "breakpoints": true
     }
   ]
 }
