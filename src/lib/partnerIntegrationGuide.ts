@@ -280,16 +280,28 @@ Content-Type: application/json
     "estado_civil": "Casada",
     "email": "maria@email.com",
     "gestante": false,
-    "peso_kg": 68.5,
-    "altura_m": 1.62,
     "endereco": {
       "cep": "59000-000",
       "logradouro": "Rua das Flores",
       "numero": "120"
     },
-    "alergias": ["Dipirona"],
-    "medicacoes_continuas": ["Losartana 50mg"],
-    "observacoes_gerais": "Paciente com jejum confirmado."
+    "tipo_sanguineo": "O+",
+    "alergias": ["Dipirona (Leve)"],
+    "condicoes_cronicas": ["HAS", "DM Tipo 2"],
+    "medicacoes_continuas": ["Losartana - 5mg (1 ao dia)"],
+    "observacoes_gerais": "Paciente com sobrepeso."
+  },
+  "atendimento": {
+    "peso_kg": 68.5,
+    "altura_m": 1.62,
+    "urgencia": false,
+    "febre": false,
+    "jejum": true,
+    "hospital": "Hospital Maternidade",
+    "setor": "UTI Adulto",
+    "leito": "12B",
+    "numero_prontuario": "PR-004512",
+    "observacao_atendimento": "Coleta no leito."
   },
   "exames": [
     { "codigo": "${ex1.code}" },
@@ -312,10 +324,24 @@ Content-Type: application/json
   }
 }`)
   p('Campos obrigatórios do paciente: nome e cpf. Todos os demais são opcionais — o que não for enviado (ou vier como null) é registrado como nulo e pode ser completado pela equipe no momento da criação do atendimento.')
+  h2('Dados Clínicos (paciente)')
+  bullets([
+    'tipo_sanguineo: texto (A+, A-, B+, B-, AB+, AB-, O+, O-).',
+    'alergias: lista de textos ou texto separado por vírgula.',
+    'condicoes_cronicas: lista de textos (ex.: HAS, DM Tipo 1, DM Tipo 2, Asma).',
+    'medicacoes_continuas: lista de textos ou texto separado por vírgula.',
+    'observacoes_gerais: texto livre (Observações Gerais).',
+  ])
+  h2('Guias e Procedimentos (atendimento)')
+  bullets([
+    'peso_kg e altura_m: número ou texto com vírgula (ex.: "68,5").',
+    'urgencia, febre, jejum: true/false ou "sim"/"nao".',
+    'hospital, setor, leito, numero_prontuario: texto.',
+    'observacao_atendimento: texto livre (Observação do Atendimento).',
+  ])
+  h2('Outras regras')
   bullets([
     'gestante: aceita true/false ou "sim"/"nao".',
-    'peso_kg e altura_m: aceitam número ou texto com vírgula (ex.: "68,5").',
-    'alergias e medicacoes_continuas: lista de textos ou texto separado por vírgula.',
     'convenio.validade: AAAA-MM-DD ou DD/MM/AAAA.',
   ])
   h2('Resposta de sucesso (202 — pedido recebido)')

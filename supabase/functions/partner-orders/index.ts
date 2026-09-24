@@ -315,9 +315,24 @@ async function createOrder(req: Request, supabase: any, companyId: string, partn
         logradouro: strOrNull(paciente?.logradouro ?? endereco?.logradouro),
         numero: strOrNull(paciente?.numero ?? endereco?.numero),
       },
-      alergias: listOrNull(paciente?.alergias),
-      medicacoes_continuas: listOrNull(paciente?.medicacoes_continuas),
+      tipo_sanguineo: strOrNull(paciente?.tipo_sanguineo ?? paciente?.dados_clinicos?.tipo_sanguineo),
+      alergias: listOrNull(paciente?.alergias ?? paciente?.dados_clinicos?.alergias),
+      condicoes_cronicas: listOrNull(paciente?.condicoes_cronicas ?? paciente?.dados_clinicos?.condicoes_cronicas),
+      medicacoes_continuas: listOrNull(paciente?.medicacoes_continuas ?? paciente?.dados_clinicos?.medicacoes_continuas),
       observacoes_gerais: strOrNull(paciente?.observacoes_gerais),
+    }
+    const at = body?.atendimento ?? {}
+    const resolvedAtendimento = {
+      peso_kg: numOrNull(at?.peso_kg ?? paciente?.peso_kg ?? paciente?.peso),
+      altura_m: numOrNull(at?.altura_m ?? paciente?.altura_m ?? paciente?.altura),
+      urgencia: boolOrNull(at?.urgencia),
+      febre: boolOrNull(at?.febre),
+      jejum: boolOrNull(at?.jejum),
+      hospital: strOrNull(at?.hospital),
+      setor: strOrNull(at?.setor),
+      leito: strOrNull(at?.leito),
+      numero_prontuario: strOrNull(at?.numero_prontuario),
+      observacao_atendimento: strOrNull(at?.observacao_atendimento),
     }
 
     // ---- fila de Pedidos Recebidos: nada é criado no sistema ainda ----
@@ -340,6 +355,7 @@ async function createOrder(req: Request, supabase: any, companyId: string, partn
             convenio: resolvedConvenio,
             medico: resolvedMedico,
             pacienteExtras: resolvedPacienteExtras,
+            atendimento: resolvedAtendimento,
             exams: matched.map((e) => ({
               code: String(e.internal_code ?? '').toUpperCase(),
               name: e.name,
