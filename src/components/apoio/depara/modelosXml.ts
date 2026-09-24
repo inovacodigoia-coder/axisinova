@@ -1,4 +1,4 @@
-export interface ModeloItem { chave: string; nome: string; unidade: string; tipo: string; casas: number | null }
+export interface ModeloItem { chave: string; nome: string; unidade: string; tipo: string; casas: number | null; tamanho?: number | null }
 export interface Modelo { codigoFormato: string; itens: ModeloItem[] }
 
 /** Atributo (case-insensitive) ou texto de filho direto */
@@ -38,25 +38,29 @@ export function extrairModelo(doc: Document, codigoApoio: string): Modelo | null
   return modeloDe(se)
 }
 
+const kids = (el: Element, tag: string) => Array.from(el.children).filter(c => c.tagName.toLowerCase() === tag.toLowerCase())
+const desc = (el: Element, tag: string) => Array.from(el.getElementsByTagName('*')).filter(c => c.tagName.toLowerCase() === tag.toLowerCase())
+const num = (v: string) => v && !isNaN(Number(v)) ? Number(v) : null
+
+/** Mesma chave do resultado do Pardini: idExame/idItemDeExame/idResultado/idValor */
 function modeloDe(se: Element): Modelo {
-  const codigoFormato = val(se, 'CodigoFormato') || Array.from(se.getElementsByTagName('*')).map(e => val(e, 'CodigoFormato')).find(Boolean) || ''
-  const valores = Array.from(se.getElementsByTagName('*')).filter(e => e.tagName.toLowerCase() === 'valor')
+  const codigoFormato = val(se, 'CodigoFormato') || desc(se, 'CodigoFormato').map(e => (e.textContent || '').trim()).find(Boolean) || ''
   const itens: ModeloItem[] = []
   const vistos = new Set<string>()
-  for (const v of valores) {
-    const res = up(v, 'Resultado'), item = up(v, 'ItemDeExame'), ex = up(v, 'Exame')
-    const id = (e: Element | null) => val(e, 'id', 'Id', 'ID', 'Codigo')
-    const chave = [id(ex), id(item), id(res), id(v)].join('/')
-    if (vistos.has(chave)) continue
-    vistos.add(chave)
-    const casas = val(v, 'CasasDecimais', 'Decimais')
-    itens.push({
-      chave,
-      nome: val(res, 'Nome') || val(item, 'Nome') || val(v, 'Nome') || chave,
-      unidade: val(v, 'Unidade') || val(res, 'Unidade'),
-      tipo: (val(v, 'Tipo', 'TipoValor') || val(res, 'Tipo')).toLowerCase(),
-      casas: casas && !isNaN(Number(casas)) ? Number(casas) : null,
-    })
+  for (const ex of kids(se, 'Exame')) {
+    for (const it of kids(ex, 'ItemDeExame')) {
+      const nomeIt = val(it, 'Nome')
+      for (const res of kids(it, 'Resultado')) {
+        const unidade = val(res, 'UnidadeDeMedida', 'Unidade')
+        for (const v of desc(res, 'Valor')) {
+          const chave = [val(ex, 'idExame'), val(it, 'idItemDeExame'), val(res, 'idResultado'), val(v, 'idValor')].join('/')
+          if (vistos.has(chave)) continue
+          vistos.add(chave)
+          itens.push({ chave, nome: nomeIt || val(res, 'Nome'), unidade, tipo: val(v, 'Tipo', 'TipoValor').toLowerCase(),
+            casas: num(val(v, 'CasasDecimais', 'Decimais')), tamanho: num(val(v, 'TamanhoMaximo')) })
+        }
+      }
+    }
   }
   return { codigoFormato, itens }
 }
@@ -79,7 +83,7 @@ export function extrairTodos(doc: Document): ModeloCompleto[] {
     if (!cod) continue
     const m = modeloDe(s)
     const ex = Array.from(s.children).find(c => c.tagName.toLowerCase() === 'exame') || null
-    out.push({ ...m, codExmApoio: cod, materialNome: val(s, 'Material', 'NomeMaterial', 'MaterialNome'), exameNome: val(ex, 'Nome', 'NomeExame'),
+    out.push({ ...m, codExmApoio: cod, materialNome: val(s, 'Material', 'NomeMaterial', 'MaterialNome'), exameNome: val(s, 'ExameNome') || val(ex, 'Nome', 'NomeExame'),
       unidadeProdutiva: val(s, 'UnidadeProdutiva'), metodo: val(s, 'Metodo'), ultimaLiberacao: dataBR(val(s, 'UltimaLiberacao')) })
   }
   return out

@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
-import { CheckCircle2, CloudDownload, Copy, FileUp, Layers, Loader2, Wand2 } from 'lucide-react'
+import { CheckCircle2, CloudDownload, Copy, FileUp, Layers, Loader2, Sparkles, Wand2 } from 'lucide-react'
 import { supabase } from '@/integrations/supabase/client'
 import { toast } from 'sonner'
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet'
@@ -7,6 +7,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { Badge } from '@/components/ui/badge'
 import { db, norm } from './deparaUtils'
 import { extrairTodos, lerXml, type ModeloItem } from './modelosXml'
+import { AjustarLaudoDialog } from './AjustarLaudoDialog'
 
 interface Param { id: string; name: string; unit: string | null; casas_decimais?: number | null }
 interface Formato { codigo_formato: string; cod_exm_apoio: string; metodo: string | null; unidade_produtiva: string | null; ultima_liberacao: string | null; total: number; mapeados: number; recente: boolean; itens: ModeloItem[] }
@@ -40,6 +41,8 @@ export function ApoioAnalitosSheet({ deparaId, exameNome, readOnly, onClose, onC
   const [podeAuto, setPodeAuto] = useState<boolean | null>(null)
   const [nomeExame, setNomeExame] = useState('')
   const [previa, setPrevia] = useState<Previa[] | null>(null)
+  const [ajustar, setAjustar] = useState(false)
+  const fecharAjuste = useCallback(() => setAjustar(false), [])
 
   const load = useCallback(async (manter?: string) => {
     if (!deparaId) return
@@ -242,6 +245,17 @@ export function ApoioAnalitosSheet({ deparaId, exameNome, readOnly, onClose, onC
               </div>
             )}
 
+            {!readOnly && formatos.some(f => f.itens.length) && (
+              <div className="flex flex-wrap items-center gap-2 rounded-xl border border-primary/30 bg-primary/5 p-3">
+                <button onClick={() => setAjustar(true)} disabled={busy} className="gradient-bg flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-semibold text-primary-foreground disabled:opacity-50">
+                  <Sparkles className="h-3.5 w-3.5" />Ajustar laudo ao modelo do Pardini
+                </button>
+                <span className="text-xs text-muted-foreground">
+                  {(dp.modelo_mudou || recMapeados < recentes.length) && recMapeados > 0 ? <b className="text-warning">Formato novo: ajustar laudo de novo?</b> : 'Escolha o laudo e o sistema cria, ajusta e mapeia todos os campos. Você confere a prévia antes de gravar.'}
+                </span>
+              </div>
+            )}
+
             {formatos.length > 0 && (
               <div className="overflow-x-auto rounded-xl border border-border">
                 <table className="w-full text-xs">
@@ -320,6 +334,8 @@ export function ApoioAnalitosSheet({ deparaId, exameNome, readOnly, onClose, onC
             </div>
           </div>
         )}
+
+        {dp && <AjustarLaudoDialog open={ajustar} deparaId={dp.id} apoioId={dp.apoio_id} formatos={formatos} onClose={fecharAjuste} onDone={() => { load(fmt); onChanged() }} />}
 
         <Dialog open={!!previa} onOpenChange={o => !o && setPrevia(null)}>
           <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">

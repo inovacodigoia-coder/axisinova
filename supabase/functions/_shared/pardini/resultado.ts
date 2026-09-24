@@ -113,6 +113,21 @@ export async function importar(ctx: Ctx, pedidos: PedidoRes[], opts: { reprocess
       }
       if (situacao === 'importado' && s.conteudo.analitos.some((a) => { const m = mapa.get(a.chave); return !m || (!m.ignorar && !m.parametro_id) })) situacao = 'pendente_depara'
 
+      // Obrigatórios do laudo ajustado ao modelo do apoio (origem 'apoio'): nada vai para Validação em branco
+      if (situacao === 'importado') {
+        const pids = [...new Set([...mapa.values()].map((m) => m.parametro_id).filter(Boolean))] as string[]
+        if (pids.length) {
+          const { data: req } = await admin.from('lab_exam_parameters').select('id, name').in('id', pids).eq('origin', 'apoio').eq('is_required', true).eq('is_hidden', false)
+          const vazios = (req ?? []).filter((r: any) => !s.conteudo.analitos.some((a) => mapa.get(a.chave)?.parametro_id === r.id && String(a.valor_bruto ?? a.valor ?? '').trim() !== ''))
+          if (vazios.length) {
+            situacao = 'incompleto'
+            const desc = `Resultado do apoio incompleto: ${vazios.map((v: any) => v.name).join(', ')}`
+            const { data: ja } = await admin.from('apoio_acao_pendente').select('id').eq('pedido_exame_id', pe.id).eq('tipo', 'resultado_incompleto').is('concluida_em', null).limit(1)
+            if (!ja?.length) await admin.from('apoio_acao_pendente').insert({ company_id: pe.company_id, pedido_exame_id: pe.id, tipo: 'resultado_incompleto', descricao: desc })
+          }
+        }
+      }
+
       // Comparação com digitação manual anterior
       const { data: manual } = await admin.from('apoio_resultado_versao').select('id, conteudo').eq('pedido_exame_id', pe.id).eq('origem', 'manual').not('situacao', 'in', '(substituido,descartado)').order('created_at', { ascending: false }).limit(1).maybeSingle()
       if (situacao === 'importado' && manual) {

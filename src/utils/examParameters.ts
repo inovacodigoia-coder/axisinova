@@ -3,6 +3,8 @@
 
 export interface ResolvedParam {
   id: string
+  /** id do parâmetro no cadastro (lab_exam_parameters), usado pelo De/Para do apoio */
+  dbId?: string
   name: string
   unit: string
   reference: string
@@ -250,6 +252,7 @@ export function buildExamParams(catalogExam: any | undefined, fallbackName: stri
     const ranges = p.referenceValues && p.referenceValues.length ? p.referenceValues : examLevelRefs
     return {
       id: String(p.id ?? idx + 1),
+      dbId: p.dbId ? String(p.dbId) : undefined,
       name,
       code: p.code || p.equipment_code || p.equipmentCode || p.codigo || '',
       unit: p.unit || examUnit,

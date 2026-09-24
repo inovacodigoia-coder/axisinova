@@ -1188,6 +1188,7 @@ function ParametersSection({
                           <SelectContent>
                             <SelectItem value="manual" className="text-[10px]">Manual</SelectItem>
                             <SelectItem value="equipment" className="text-[10px]">Equipamento</SelectItem>
+                            <SelectItem value="apoio" className="text-[10px]">Apoio</SelectItem>
                           </SelectContent>
                         </Select>
                       </td>

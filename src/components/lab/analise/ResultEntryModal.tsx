@@ -339,7 +339,7 @@ export function ResultEntryModal({
     if (!ap) return base;
     if (ap.exige_pdf) return [];
     const mapeados = ap.analitos.filter(a => !a.ignorar && a.parametro_id).map(a => String(a.parametro_id));
-    return mapeados.length ? base.filter((p: any) => mapeados.includes(String(p.id))) : base;
+    return mapeados.length ? base.filter((p: any) => mapeados.includes(String(p.dbId ?? p.id)) || mapeados.includes(String(p.id))) : base;
   };
 
   // Preenche o resultado vindo do apoio (via De/Para de analito), como o resultado de equipamento
@@ -357,14 +357,16 @@ export function ResultEntryModal({
         c.analitos.forEach((a: any) => {
           const m = ap.analitos.find(x => x.chave === a.chave);
           if (!m || m.ignorar || !m.parametro_id) return;
-          const k = `${examKey}_${m.parametro_id}`;
+          const pid = String(m.parametro_id);
+          const alvo = (paramsByExam[examKey] || []).find((p: any) => p.dbId === pid);
+          const k = `${examKey}_${alvo ? alvo.id : pid}`;
           novosRes[k] = formatarCasas(String(a.valor ?? ''), m.casas_decimais);
           if (a.referencia) refs[k] = String(a.referencia);
         });
         const nota = notaDoApoio(c);
         if (nota) novasNotas[examKey] = nota;
       } else if (v.origem === 'manual') {
-        Object.entries(c.valores || {}).forEach(([pid, val]) => { novosRes[`${examKey}_${pid}`] = String(val ?? ''); });
+        Object.entries(c.valores || {}).forEach(([pid, val]) => { const alvo = (paramsByExam[examKey] || []).find((p: any) => p.dbId === pid); novosRes[`${examKey}_${alvo ? alvo.id : pid}`] = String(val ?? ''); });
         if (c.nota) novasNotas[examKey] = c.nota;
       }
     });
@@ -376,7 +378,7 @@ export function ResultEntryModal({
     if (Object.keys(novasNotas).length) setNotes(prev => { const n = { ...prev }; Object.entries(novasNotas).forEach(([k, v]) => { if (!(prev[k] || '').trim()) n[k] = v; }); return n; });
     setApoioRefs(refs);
     setApoioExecutor(prev => ({ ...exec, ...prev }));
-  }, [apoioPorExame]);
+  }, [apoioPorExame, paramsByExam]);
 
   /** Valida/aplica a regra do apoio antes de concluir ou liberar. Lança erro se o banco recusar. */
   const apoioGate = async (exam: any, status: 'draft' | 'digitized' | 'released') => {
@@ -385,7 +387,7 @@ export function ResultEntryModal({
     if (status === 'digitized') {
       const valores: Record<string, string> = {};
       const casasDe = (pid: string) => ap.analitos.find(a => String(a.parametro_id) === String(pid))?.casas_decimais;
-      getParams(exam).forEach((p: any) => { valores[String(p.id)] = formatarCasas(results[`${exam.id}_${p.id}`] || '', casasDe(p.id)); });
+      getParams(exam).forEach((p: any) => { const pid = String(p.dbId ?? p.id); valores[pid] = formatarCasas(results[`${exam.id}_${p.id}`] || '', casasDe(pid)); });
       const { error } = await supabase.rpc('apoio_analise_concluir' as any, {
         _pe: ap.id, _valores: temIntegracao(ap) ? null : valores, _nota: notes[exam.id] || null, _executor: apoioExecutor[exam.id] ?? null,
         _metodo: temIntegracao(ap) ? null : ((apoioMetodo[exam.id] ?? metodoCadastro(exam)) || null),

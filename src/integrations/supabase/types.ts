@@ -3970,6 +3970,7 @@ export type Database = {
           reference_values: string | null
           section: string | null
           sort_order: number | null
+          tamanho_maximo: number | null
           type: string | null
           unit: string | null
           updated_at: string | null
@@ -3993,6 +3994,7 @@ export type Database = {
           reference_values?: string | null
           section?: string | null
           sort_order?: number | null
+          tamanho_maximo?: number | null
           type?: string | null
           unit?: string | null
           updated_at?: string | null
@@ -4016,6 +4018,7 @@ export type Database = {
           reference_values?: string | null
           section?: string | null
           sort_order?: number | null
+          tamanho_maximo?: number | null
           type?: string | null
           unit?: string | null
           updated_at?: string | null
@@ -7065,6 +7068,18 @@ export type Database = {
           updated_at: string
         }[]
       }
+      apoio_laudo_ajustar: {
+        Args: {
+          _depara: string
+          _laudo: string
+          _mapas: Json
+          _modo: string
+          _nome: string
+          _params: Json
+        }
+        Returns: Json
+      }
+      apoio_laudo_ajuste_dados: { Args: { _depara: string }; Returns: Json }
       apoio_laudos_resumo: {
         Args: never
         Returns: {
@@ -7632,6 +7647,7 @@ export type Database = {
           unit_id: string
         }[]
       }
+      perm_modulo: { Args: { _acao: string; _mod: string }; Returns: boolean }
       pharmacy_dispense: {
         Args: { _dispensation_id: string }
         Returns: undefined

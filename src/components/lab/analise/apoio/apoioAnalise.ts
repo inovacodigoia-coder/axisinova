@@ -41,6 +41,7 @@ export function bloqueiosApoio(e?: ApoioEstado): string[] {
   if (temIntegracao(e) && e.faltam.length) b.push(`Faltam ${e.faltam.length} parâmetros sem mapeamento`);
   if (temIntegracao(e) && e.modelo_mudou) b.push('Modelo do apoio mudou: revise o De/Para deste exame');
   if (e.versao?.situacao === 'divergente') b.push('Resultado divergente: escolha uma versão');
+  if (e.versao?.situacao === 'incompleto') b.push('Resultado do apoio incompleto: preencha ou justifique na tarefa do Kanban');
   if (ehRetificado(e) && !e.versao?.ciente_em) b.push('Confirme a retificação do apoio');
   if (e.exige_pdf && !temPdf(e)) b.push('Este exame exige o PDF do laudo do apoio');
   if (!e.versao && !apoioEditavel(e)) b.push(`Aguardando resultado do ${e.apoio_nome}`);
