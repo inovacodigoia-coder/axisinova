@@ -2,6 +2,9 @@ import React, { useState, useEffect, useMemo } from 'react'
 import { supabase } from '@/integrations/supabase/client'
 import { useExamLaudos, ensureDefaultLaudo } from '@/hooks/useExamLaudos'
 import ExamLaudosSection from '@/components/lab/catalog/ExamLaudosSection'
+import ExamLaudoBancadaSection from '@/components/lab/catalog/ExamLaudoBancadaSection'
+import BancadaTrocaDialog from '@/components/lab/catalog/BancadaTrocaDialog'
+import { SelectGroup, SelectLabel } from '@/components/ui/select'
 import { Card } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -152,6 +155,7 @@ export default function LabCatalogFormPage() {
   const companyIdForLaudos = laudos[0]?.company_id
   const defaultLaudoId = laudos[0]?.id || ''
   const isDefaultLaudo = !selectedLaudoId || selectedLaudoId === defaultLaudoId
+  const examCompanyId = companyIdForLaudos || (exams || []).find((e: any) => e.id === id)?.companyId
   const [confirmationQuestions, setConfirmationQuestions] = useState<string[]>([])
   const [availableEquipments, setAvailableEquipments] = useState<any[]>([])
   const [isMethodologySearchOpen, setIsMethodologySearchOpen] = useState(false)
@@ -533,11 +537,19 @@ export default function LabCatalogFormPage() {
         <TabsContent value="general">
           <GeneralInfoSection 
             isEditing={isEditing} 
-            data={examData} 
+            data={{ ...examData, workbenchId: examBancadaId }} 
             workbenches={workbenches}
             showGlobalRefs={showGlobalRefs}
             setShowGlobalRefs={setShowGlobalRefs}
-            onChange={(newData) => setExamData(prev => ({ ...prev, ...newData }))} 
+            onChange={(newData) => {
+              if ((newData as any).workbenchId !== undefined) {
+                const { workbenchId, ...rest } = newData as any
+                handleBancadaChange(workbenchId)
+                if (Object.keys(rest).length) setExamData(prev => ({ ...prev, ...rest }))
+                return
+              }
+              setExamData(prev => ({ ...prev, ...newData }))
+            }} 
             onOpenMethodologySearch={() => setIsMethodologySearchOpen(true)}
           />
         </TabsContent>
@@ -549,6 +561,12 @@ export default function LabCatalogFormPage() {
             selectedLaudoId={selectedLaudoId}
             onSelect={setSelectedLaudoId}
             onReload={reloadLaudos}
+          />
+          <ExamLaudoBancadaSection
+            examId={isEditing ? id : undefined}
+            companyId={examCompanyId}
+            workbenches={workbenches || []}
+            laudos={laudos}
           />
           <ExamReportSection
             data={examData}
@@ -568,6 +586,17 @@ export default function LabCatalogFormPage() {
            <RulesSection />
         </TabsContent>
       </Tabs>
+
+      <BancadaTrocaDialog
+        open={!!bancadaPendente}
+        onOpenChange={(v) => { if (!v) setBancadaPendente(null) }}
+        examId={isEditing ? id : undefined}
+        companyId={examCompanyId}
+        bancadaNova={bancadaPendente ? (workbenches || []).find((w: any) => w.id === bancadaPendente) || null : null}
+        bancadaAtualNome={(workbenches || []).find((w: any) => w.id === originalBancadaId)?.name}
+        laudos={laudos}
+        onConfirmed={(bid) => { setExamBancadaId(bid); setOriginalBancadaId(bid) }}
+      />
 
       <LabMethodologySearchModal 
         isOpen={isMethodologySearchOpen}
