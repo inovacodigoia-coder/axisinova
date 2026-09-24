@@ -128,3 +128,14 @@ Deno.test('fixture_lista_erros_reduzida: 9 erros, href resolvido, categorias', (
   assertEquals([cat['10035'], cat['10213'], cat['10214']], ['comercial', 'comercial', 'comercial'])
   assertEquals(e.find((x) => x.codigo === '10151')!.mensagem, 'Não foram informadas nem a Idade nem a Data de Nascimento do paciente.')
 })
+
+Deno.test('modelo: chave igual à do resultado, nome, unidade e tamanho', async () => {
+  const { parseModelos } = await import('./parsers.ts')
+  const xml = await Deno.readTextFile(new URL('./fixtures/fixture_resultado_reduzido.xml', import.meta.url))
+  const ms = parseModelos(xml)
+  const hg = ms.find((m) => m.codExmApoio === 'S|HG|1')!
+  if (!hg || hg.itens[0].chave !== '1/1/1/1' || hg.itens[0].nome !== 'Hemacias' || hg.itens[0].unidade !== '/mm3' || hg.itens[0].tamanho !== 10) throw new Error(JSON.stringify(hg?.itens[0]))
+  if (new Set(hg.itens.map((i) => i.chave)).size !== hg.itens.length || hg.itens.length < 10) throw new Error('chaves repetidas')
+  const mic = ms.find((m) => m.codExmApoio === 'U-24|M-ALB|1')!
+  if (mic.itens.length !== 1 || mic.itens[0].unidade !== 'mg/24 h') throw new Error(JSON.stringify(mic.itens)) // InfAdicional não entra
+})
