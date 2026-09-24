@@ -117,6 +117,42 @@ export default function SectorsPage() {
         ))}
       </div>
 
+      {tab === 'sectors' && canAccess('settings', 'create') && !allProfiles.some(p => (((p.permissions as any)?.apoio || []) as string[]).length > 0) && (
+        <div className="rounded-2xl border border-primary/30 bg-primary/5 p-4 flex flex-col sm:flex-row sm:items-center gap-3">
+          <p className="text-sm text-foreground flex-1">
+            Sugestão: crie o setor <b>Terceirização</b> com o perfil <b>Operador de Terceirização</b> (remessas, modo manual, Kanban, relatórios) e dê a <b>Conferir resultados de apoio</b> ao perfil do responsável técnico (setor Digitação–Laudos).
+          </p>
+          <button
+            onClick={async () => {
+              const companyId = user?.companyId
+              if (!companyId) return
+              try {
+                const nextCode = Math.max(0, ...allProfiles.map(p => p.code || 0)) + 1
+                const now = new Date().toISOString()
+                const profile: Profile = {
+                  id: `prof_${Date.now()}`, code: nextCode, name: 'Operador de Terceirização',
+                  description: 'Remessas, modo manual, Kanban e relatórios do Apoio',
+                  companyId, isActive: true, createdBy: 'admin', createdAt: now, updatedAt: now,
+                  permissions: { apoio: ['apoio.remessa.operar', 'apoio.manual.operar', 'apoio.kanban.ver', 'apoio.relatorios.ver'] as any },
+                }
+                await saveProfile(profile)
+                await saveSector({
+                  id: `sec_${Date.now()}`, name: 'Terceirização', companyId, isActive: true,
+                  description: 'Terceirização de exames para laboratórios de apoio',
+                  allowedProfiles: [profile.id],
+                })
+                toast.success('Setor Terceirização criado', { description: 'Agora adicione os usuários ao setor.' })
+              } catch (error: any) {
+                toast.error('Erro ao criar setor sugerido', { description: error?.message })
+              }
+            }}
+            className="gradient-bg rounded-xl px-4 py-2 text-sm font-semibold text-white shadow hover:opacity-90 whitespace-nowrap"
+          >
+            Criar setor sugerido
+          </button>
+        </div>
+      )}
+
       {tab === 'sectors' && (
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
         {sectors.filter(s => s.isActive).map(s => (
