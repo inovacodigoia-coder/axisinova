@@ -1018,6 +1018,60 @@ export type Database = {
           },
         ]
       }
+      apoio_modelo_resultado: {
+        Row: {
+          apoio_id: string
+          atualizado_em: string
+          cod_exm_apoio: string
+          codigo_formato: string | null
+          company_id: string
+          exame_nome: string | null
+          id: string
+          material_nome: string | null
+          modelo_json: Json
+          origem: string
+        }
+        Insert: {
+          apoio_id: string
+          atualizado_em?: string
+          cod_exm_apoio: string
+          codigo_formato?: string | null
+          company_id: string
+          exame_nome?: string | null
+          id?: string
+          material_nome?: string | null
+          modelo_json?: Json
+          origem?: string
+        }
+        Update: {
+          apoio_id?: string
+          atualizado_em?: string
+          cod_exm_apoio?: string
+          codigo_formato?: string | null
+          company_id?: string
+          exame_nome?: string | null
+          id?: string
+          material_nome?: string | null
+          modelo_json?: Json
+          origem?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "apoio_modelo_resultado_apoio_id_fkey"
+            columns: ["apoio_id"]
+            isOneToOne: false
+            referencedRelation: "apoio_laboratorio"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "apoio_modelo_resultado_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       apoio_modo_manual_periodo: {
         Row: {
           apoio_id: string
