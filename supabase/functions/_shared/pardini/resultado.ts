@@ -68,6 +68,39 @@ async function sha(s: string) {
   const d = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(s))
   return [...new Uint8Array(d)].map((b) => b.toString(16).padStart(2, '0')).join('')
 }
+export interface ItemFmt { chave: string; nome: string; unidade: string; tipo: string; casas: number | null }
+const nrm = (x: string) => (x || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toUpperCase().replace(/\s+/g, ' ').trim()
+const tipoN = (t: string) => /num/i.test(t || '') ? 'N' : 'T'
+/** Formatos idênticos: mesmos valores (nome + unidade + tipo + casas) na mesma ordem */
+export function formatoIdentico(a: ItemFmt[], b: ItemFmt[]) {
+  return a.length > 0 && a.length === b.length && a.every((x, i) => nrm(x.nome) === nrm(b[i].nome) && nrm(x.unidade) === nrm(b[i].unidade) && tipoN(x.tipo) === tipoN(b[i].tipo) && (x.casas ?? 0) === (b[i].casas ?? 0))
+}
+
+/** Formato novo idêntico a um já mapeado → copia o mapeamento (sem reter), com log e auditoria */
+export async function mapearIdentico(admin: any, lab: { id: string; company_id: string }, deparaId: string, companyId: string, s: Super) {
+  const { data: mod } = await admin.from('apoio_modelo_resultado').select('modelo_json').eq('apoio_id', lab.id).eq('cod_exm_apoio', s.codExmApoio).eq('codigo_formato', s.codigoFormato).maybeSingle()
+  const novo: ItemFmt[] = (mod?.modelo_json?.length ? mod.modelo_json : s.conteudo.analitos).map((a: any) => ({ chave: a.chave, nome: a.nome, unidade: a.unidade || '', tipo: a.tipo || '', casas: a.casas ?? null }))
+  const { data: rows } = await admin.from('apoio_depara_analito').select('codigo_formato, chave_analito, nome_apoio, parametro_id, ignorar, casas_decimais').eq('depara_exame_id', deparaId)
+  const porFmt = new Map<string, any[]>()
+  for (const r of rows ?? []) if (r.parametro_id || r.ignorar) porFmt.set(r.codigo_formato, [...(porFmt.get(r.codigo_formato) ?? []), r])
+  if (!porFmt.size) return []
+  const { data: mods } = await admin.from('apoio_modelo_resultado').select('codigo_formato, modelo_json').eq('apoio_id', lab.id).eq('cod_exm_apoio', s.codExmApoio).in('codigo_formato', [...porFmt.keys()])
+  for (const m of mods ?? []) {
+    const velho: ItemFmt[] = m.modelo_json ?? []
+    if (!formatoIdentico(velho, novo)) continue
+    const mapV = new Map(porFmt.get(m.codigo_formato)!.map((r: any) => [r.chave_analito, r]))
+    if (!velho.every((v) => mapV.has(v.chave))) continue // formato de origem precisa estar 100% mapeado
+    const ins = novo.map((n, i) => { const o = mapV.get(velho[i].chave); return { company_id: companyId, depara_exame_id: deparaId, codigo_formato: s.codigoFormato, chave_analito: n.chave, nome_apoio: n.nome, parametro_id: o.parametro_id, ignorar: o.ignorar, casas_decimais: o.casas_decimais } })
+    const { error } = await admin.from('apoio_depara_analito').upsert(ins, { onConflict: 'depara_exame_id,codigo_formato,chave_analito' })
+    if (error) return []
+    const msg = `Formato ${s.codigoFormato} mapeado automaticamente (idêntico ao ${m.codigo_formato})`
+    await admin.from('apoio_chamada_log').insert({ company_id: lab.company_id, apoio_id: lab.id, operacao: 'formato_auto', erro: null, requisicao: msg, resposta: null }).then(() => {}, () => {})
+    await admin.from('apoio_auditoria').insert({ company_id: lab.company_id, tabela: 'apoio_depara_analito', registro_id: deparaId, acao: 'FORMATO_AUTO', usuario_id: null, depois: { mensagem: msg, cod_exm_apoio: s.codExmApoio, novo: s.codigoFormato, origem: m.codigo_formato } }).then(() => {}, () => {})
+    return ins
+  }
+  return []
+}
+
 const retif = (s: string) => !!s && !/^(n|nao|não|0|false)$/i.test(s.trim())
 
 export interface ResumoImport { exames: number; novos: number; repetidos: number; orfaos: number; pendentes: number; divergentes: number }
@@ -102,6 +135,10 @@ export async function importar(ctx: Ctx, pedidos: PedidoRes[], opts: { reprocess
         // De/Para escolhido pelo CodigoFormato do SuperExame (um exame tem vários formatos vigentes)
         const { data: an } = await admin.from('apoio_depara_analito').select('chave_analito, parametro_id, ignorar').eq('depara_exame_id', dp.id).eq('codigo_formato', s.codigoFormato || dp.codigo_formato || '')
         for (const a of an ?? []) if (a.ignorar || a.parametro_id) mapa.set(a.chave_analito, a)
+        if (!mapa.size && s.codigoFormato) {
+          const auto = await mapearIdentico(admin, lab, dp.id, pe.company_id, s)
+          for (const a of auto) if (a.ignorar || a.parametro_id) mapa.set(a.chave_analito, a)
+        }
       }
       if (!mapa.size) {
         // Formato novo/não mapeado: não preenche nada, retém e avisa quem gerencia o De/Para
@@ -109,7 +146,10 @@ export async function importar(ctx: Ctx, pedidos: PedidoRes[], opts: { reprocess
         mapa.clear()
         const desc = `Formato novo do apoio: revisar De/Para (${s.codExmApoio} · formato ${s.codigoFormato || '?'})`
         const { data: ja } = await admin.from('apoio_acao_pendente').select('id').eq('pedido_exame_id', pe.id).eq('tipo', 'revisar_depara').is('concluida_em', null).limit(1)
-        if (!ja?.length) await admin.from('apoio_acao_pendente').insert({ company_id: pe.company_id, pedido_exame_id: pe.id, tipo: 'revisar_depara', descricao: desc })
+        if (!ja?.length) {
+          await admin.from('apoio_acao_pendente').insert({ company_id: pe.company_id, pedido_exame_id: pe.id, tipo: 'revisar_depara', descricao: desc })
+          await admin.rpc('apoio_alertar', { _company: pe.company_id, _evento: 'apoio_formato_novo', _perm: 'apoio.depara.gerenciar', _titulo: 'Formato novo do apoio', _msg: desc, _rota: '/app/apoio/kanban?visao=excecoes' }).then(() => {}, () => {})
+        }
       }
       if (situacao === 'importado' && s.conteudo.analitos.some((a) => { const m = mapa.get(a.chave); return !m || (!m.ignorar && !m.parametro_id) })) situacao = 'pendente_depara'
 

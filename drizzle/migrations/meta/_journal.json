@@ -330,6 +330,13 @@
       "when": 1790265149424,
       "tag": "0046_apoio_ajuste_laudo_cadastro",
       "breakpoints": true
+    },
+    {
+      "idx": 47,
+      "version": "7",
+      "when": 1790265387304,
+      "tag": "0047_apoio_alerta_material",
+      "breakpoints": true
     }
   ]
 }
