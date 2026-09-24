@@ -192,6 +192,26 @@ export default function LabColetaPage() {
     return [...internos, ...apoio]
   }
 
+  // Exame com mais de um material aceito: o coletor escolhe; o tubo segue o material
+  const materiaisDoExame = (exam: any): string[] => {
+    const cat: any = (registersContext?.exams || []).find((c: any) => c.id === exam.examId)
+    return Array.isArray(cat?.selectedMaterials) ? cat.selectedMaterials : []
+  }
+  const recipienteDoLaudo = (exam: any, material: string): string | null => {
+    const cat: any = (registersContext?.exams || []).find((c: any) => c.id === exam.examId)
+    const mat = cadTubos.materiais.find(m => m.nome.localeCompare(material, 'pt-BR', { sensitivity: 'base' }) === 0)
+    return (mat && cat?.materialTubos?.[mat.id]?.recipiente_id) || null
+  }
+  const trocarMaterial = (order: LabAttendanceOrder, exam: any, material: string) => {
+    const labGuides = ((order as any).labGuides || []).map((g: any) => ({
+      ...g,
+      exams: (g.exams || []).map((e: any) => ((e.examId || e.id) === exam.examId && e.code === exam.code)
+        ? { ...e, material, recipienteId: recipienteDoLaudo(exam, material) }
+        : e),
+    }))
+    updateOrder(order.id, { labGuides } as any)
+  }
+
   const addAudit = (order: LabAttendanceOrder, action: any, details?: string) => {
 
     const trail = order.auditTrail || []
@@ -582,7 +602,7 @@ export default function LabColetaPage() {
                                 </div>
                                 <div className="flex-1 space-y-1">
                                   <div className="flex items-center gap-2">
-                                    <div className={cn("w-3 h-3 rounded-full", tube.color)}></div>
+                                    <div className={cn("w-3 h-3 rounded-full", tube.color)} style={tube.color ? undefined : { backgroundColor: tube.hex }}></div>
                                     <p className="text-sm font-bold text-foreground">{tube.label} ({tube.volume})</p>
                                   </div>
                                   <p className="text-xs text-muted-foreground">
@@ -592,6 +612,22 @@ export default function LabColetaPage() {
                                       .join(', ')}
                                   </p>
 
+                                  {[...new Set(order.exams
+                                    ?.filter(exam => examMatchesTube(exam, tube.type))
+                                    .map(exam => isApoio(exam) ? null : avisoTubo(exam))
+                                    .filter(Boolean))].map(a => (
+                                    <p key={a as string} className="flex items-center gap-1 text-[11px] font-semibold text-amber-600"><AlertCircle className="h-3 w-3" />{a}</p>
+                                  ))}
+                                  {order.exams
+                                    ?.filter(exam => examMatchesTube(exam, tube.type) && !isApoio(exam) && materiaisDoExame(exam).length > 1)
+                                    .map(exam => (
+                                      <label key={`${exam.examId}-${exam.code}`} className="flex items-center gap-2 text-[11px]" onClick={ev => ev.stopPropagation()}>
+                                        <span className="text-muted-foreground">Material de {exam.name}:</span>
+                                        <select value={exam.material} onChange={ev => trocarMaterial(order, exam, ev.target.value)} className="rounded border border-input bg-background px-1.5 py-0.5">
+                                          {[...new Set([exam.material, ...materiaisDoExame(exam)])].map(m => <option key={m} value={m}>{m}</option>)}
+                                        </select>
+                                      </label>
+                                    ))}
                                   {(tube as any).apoioNome ? (
                                     <p className="text-[10px] font-mono font-bold text-primary">Rótulo: {(tube as any).codigo} · APOIO {String((tube as any).apoioNome).toUpperCase()}</p>
                                   ) : (

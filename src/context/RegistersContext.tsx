@@ -99,6 +99,7 @@ function mapExamRow(row: any): Exam {
     },
     interfacingParameters: row.interfacing_parameters || [],
     selectedMaterials: row.selected_materials || [],
+    materialTubos: row.material_tubos || {},
     defaultMaterial: row.default_material || '',
   }
 }
@@ -384,6 +385,7 @@ export function RegistersProvider({ children }: { children: ReactNode }) {
       interfacing_config: e.interfacingConfig || {},
       interfacing_parameters: e.interfacingParameters || [],
       selected_materials: e.selectedMaterials || [],
+      material_tubos: e.materialTubos || {},
       default_material: e.defaultMaterial || null,
       workbench_id: e.workbenchId || null,
     } as any).select().single())
@@ -439,6 +441,8 @@ export function RegistersProvider({ children }: { children: ReactNode }) {
         interfacing_config: e.interfacingConfig || {},
         interfacing_parameters: e.interfacingParameters || [],
         selected_materials: e.selectedMaterials || [],
+        material_tubos: e.materialTubos || {},
+      material_tubos: e.materialTubos || {},
         default_material: e.defaultMaterial || null,
         workbench_id: e.workbenchId || null
       } as any).eq('id', e.id))
