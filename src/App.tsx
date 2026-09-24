@@ -13,6 +13,7 @@ import { SchedulingProvider } from "@/context/SchedulingContext";
 import { ErrorBoundary } from "@/components/feedback/ErrorBoundary";
 import { SuperAdminRoute, PrivateRoute } from "@/router/guards";
 import { LoadingScreen } from "@/components/feedback/LoadingScreen";
+import { UpdateBanner } from "@/components/UpdateBanner";
 
 // Lazy loading components
 const LandingPage = lazy(() => import("./pages/LandingPage"));
@@ -55,6 +56,7 @@ const App = () => (
       <TooltipProvider>
         <Toaster />
         <Sonner />
+        <UpdateBanner />
         <BrowserRouter>
           <AuthProvider>
             <CompanyProvider>
