@@ -4,6 +4,7 @@ import { adminClient, autenticar, carregarCtx, corsHeaders, cursorGravar, idMsg,
 import { chamar, hojeBR, PardiniErro, type Ctx } from '../_shared/pardini/soap.ts'
 import { conteudoUtil, esc, texto } from '../_shared/pardini/xml.ts'
 import { parseAdmitido } from '../_shared/pardini/parsers.ts'
+import { montarRegistro } from '../_shared/pardini/registro.ts'
 
 const Body = z.object({ remessa_id: z.string().uuid() })
 const cortar = (s: unknown, n: number) => String(s ?? '').slice(0, n)
@@ -18,29 +19,6 @@ const novoCodPed = (base: string) => `${cortar(base, 8)}-${Math.random().toStrin
 const codColisao = (pe: PardiniErro | null, neg: { codigo: string; msg: string } | null) => {
   const txt = `${pe?.codigo ?? ''} ${pe?.message ?? ''} ${neg?.codigo ?? ''} ${neg?.msg ?? ''}`
   return /10023/.test(txt) ? '10023' : /10217/.test(txt) ? '10217' : null
-}
-
-function montarRegistro(ctx: Ctx, remessa: any, exames: any[], msgId: string) {
-  const { data, hora } = hojeBR()
-  const porPedido = new Map<string, any[]>()
-  for (const e of exames) { const k = e.pedido_id; porPedido.set(k, [...(porPedido.get(k) ?? []), e]) }
-  const pedidos = [...porPedido.values()].map((es) => {
-    const e0 = es[0], o = e0.ordem, p = e0.paciente ?? {}
-    const info = e0.info_complementar ?? {}
-    const nome = cortar(info.nome_envio || p.name || o.patient_name, 35)
-    const dPed = String(o.created_at ?? '').slice(0, 10), hPed = new Date(o.created_at).toISOString().slice(11, 19)
-    const exXml = es.map((e) => {
-      const ic = e.info_complementar?.info_comp ?? {}
-      const infos = Object.entries(ic).map(([k, v]) => `<InformacaoComplementar><InfoComp>${esc(k)}</InfoComp><Valor>${esc(String(v).replace(',', '.'))}</Valor></InformacaoComplementar>`).join('')
-      const cond = e.info_complementar?.condicao ? `<InformacaoComplementar><InfoComp>CONDICAO</InfoComp><Valor>${esc(e.info_complementar.condicao)}</Valor></InformacaoComplementar>` : ''
-      const col = e.coletado_em ? new Date(e.coletado_em) : new Date(o.created_at)
-      const br = new Date(col.getTime() - 3 * 3600_000).toISOString()
-      return `<Exame><CodExmApoio>${esc(`${e.codigo_apoio}|${e.sequencial ?? 1}`)}</CodExmApoio><CodExmLab>${esc(cortar(e.cod_exm_lab, 15))}</CodExmLab><DataColeta>${br.slice(0, 10)}</DataColeta><HoraColeta>${br.slice(11, 19)}</HoraColeta>${infos}${cond}</Exame>`
-    }).join('')
-    const cpf = String(p.cpf ?? '').replace(/\D/g, '')
-    return `<Pedido><CodPedLab>${esc(e0.cod_ped_lab)}</CodPedLab><DataPed>${dPed}</DataPed><HoraPed>${hPed}</HoraPed><Obs>${esc(cortar(info.obs_envio ?? remessa.observacao ?? '', 70))}</Obs><Paciente><CodPacLab>${esc(cortar(String(o.patient_id ?? '').replace(/-/g, ''), 15))}</CodPacLab><Nome>${esc(nome)}</Nome><Sexo>${sexo(p.gender)}</Sexo>${p.birth_date ? `<DataNasc>${String(p.birth_date).slice(0, 10)}</DataNasc>` : ''}${cpf.length === 11 ? `<CPF>${cpf}</CPF>` : ''}</Paciente>${exXml}</Pedido>`
-  }).join('')
-  return `<Registro><Protocolo>2</Protocolo><ID>${msgId}</ID><Lote><CodLab>${esc(ctx.lab.cod_lab)}</CodLab><CodLoteLab>${remessa.cod_lote_lab}</CodLoteLab><DataLote>${data}</DataLote><HoraLote>${hora}</HoraLote>${pedidos}</Lote></Registro>`
 }
 
 const consultaLote = (ctx: Ctx, remessa: any) =>
@@ -188,7 +166,7 @@ Deno.serve(async (req) => {
     let util: string
     await admin.from('apoio_remessa').update({ envio_sem_resposta: true }).eq('id', remessa.id)
     try {
-      const resp = await chamar(ctx, 'getPedido', [['XML', 'string', montarRegistro(ctx, remessa, exames, msgId)]])
+      const resp = await chamar(ctx, 'getPedido', [['XML', 'string', montarRegistro(ctx.lab.cod_lab, remessa, exames, msgId)]])
       util = conteudoUtil(resp)
     } catch (e) {
       const pe = e as PardiniErro
