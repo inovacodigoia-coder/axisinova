@@ -9,7 +9,8 @@ export interface Super {
 }
 export interface PedidoRes { codPedApoio: string; codPedLab: string; nome: string; retificacao: string; supers: Super[] }
 
-const nomeDe = (b: string) => attr(b, 'Nome') || attr(b, 'Descricao') || texto(b.replace(/<(ItemDeExame|Resultado|Conteudo)\b[\s\S]*/i, ''), 'Nome') || ''
+// Nome do analito: <Nome> do próprio ItemDeExame (antes dos Resultados); o atributo Nome do Resultado ("%") é só o rótulo
+const nomeDe = (b: string) => texto(b.replace(/^<[^>]*>/, '').replace(/<(Resultado|Conteudo)\b[\s\S]*/i, ''), 'Nome') || attr(b, 'Nome') || attr(b, 'Descricao') || ''
 
 export function parseResultados(xml: string): PedidoRes[] {
   const out: PedidoRes[] = []
