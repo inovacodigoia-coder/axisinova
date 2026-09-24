@@ -58,6 +58,8 @@ export interface Exam {
   preparationInstructions?: string
   estimatedDurationMinutes?: number
   resultDeadlineDays?: number
+  /** Contagem do prazo: dias corridos (padrão dos exames antigos) ou úteis */
+  prazoContagem?: 'corridos' | 'uteis'
   requiresAuthorization: boolean
   authorizationInstructions?: string
   attachmentRules: AttachmentRule[]

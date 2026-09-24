@@ -114,6 +114,7 @@ export default function LabCatalogFormPage() {
     preparationInstructions: '',
     estimatedDurationMinutes: 30,
     resultDeadlineDays: 1,
+    prazoContagem: 'corridos' as 'corridos' | 'uteis',
     requiresAuthorization: false,
     showDuration: true,
     showDeadline: true,
@@ -178,6 +179,15 @@ export default function LabCatalogFormPage() {
     fetchEquipments();
   }, []);
 
+  // Exame novo: contagem de prazo vem do padrão da empresa
+  useEffect(() => {
+    if (isEditing) return
+    supabase.from('lab_settings').select('prazo_contagem_padrao').maybeSingle().then(({ data }) => {
+      const v = (data as any)?.prazo_contagem_padrao
+      if (v === 'uteis' || v === 'corridos') setExamData(prev => ({ ...prev, prazoContagem: v }))
+    })
+  }, [isEditing])
+
   useEffect(() => {
     if (isEditing && exams && exams.length > 0) {
       const existingExam = exams.find((e: any) => e.id === id)
@@ -191,6 +201,7 @@ export default function LabCatalogFormPage() {
           preparationInstructions: existingExam.preparationInstructions || "",
           estimatedDurationMinutes: existingExam.estimatedDurationMinutes || 30,
           resultDeadlineDays: existingExam.resultDeadlineDays || 1,
+          prazoContagem: existingExam.prazoContagem === 'uteis' ? 'uteis' : 'corridos',
           requiresAuthorization: existingExam.requiresAuthorization || false,
           showDuration: existingExam.showDuration ?? true,
           showDeadline: existingExam.showDeadline ?? true,
@@ -704,16 +715,28 @@ function GeneralInfoSection({
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 pt-4 border-t border-border/50">
         <div className="space-y-4">
-          <Label className="text-sm font-bold uppercase tracking-wider text-muted-foreground">Prazo entrega (dias úteis)</Label>
-          <div className="flex items-center gap-3 h-11 px-4 bg-muted/20 rounded-xl border border-border/50">
-            <Clock className="h-4 w-4 text-muted-foreground" />
-            <Input 
-              type="number"
-              min="0"
-              value={data.resultDeadlineDays || 0}
-              onChange={(e) => onChange({ resultDeadlineDays: parseInt(e.target.value) || 0 })}
-              className="border-none bg-transparent h-auto p-0 focus-visible:ring-0 text-base font-medium"
-            />
+          <Label className="text-sm font-bold uppercase tracking-wider text-muted-foreground">Prazo entrega (dias)</Label>
+          <div className="flex gap-2">
+            <div className="flex flex-1 items-center gap-3 h-11 px-4 bg-muted/20 rounded-xl border border-border/50">
+              <Clock className="h-4 w-4 text-muted-foreground" />
+              <Input 
+                type="number"
+                min="0"
+                value={data.resultDeadlineDays || 0}
+                onChange={(e) => onChange({ resultDeadlineDays: parseInt(e.target.value) || 0 })}
+                className="border-none bg-transparent h-auto p-0 focus-visible:ring-0 text-base font-medium"
+              />
+            </div>
+            <select
+              aria-label="Contagem"
+              title="Contagem"
+              value={data.prazoContagem || 'corridos'}
+              onChange={(e) => onChange({ prazoContagem: e.target.value as 'corridos' | 'uteis' })}
+              className="h-11 rounded-xl border border-border/50 bg-muted/20 px-2 text-sm"
+            >
+              <option value="corridos">Dias corridos</option>
+              <option value="uteis">Dias úteis</option>
+            </select>
           </div>
         </div>
         <div className="space-y-4">
