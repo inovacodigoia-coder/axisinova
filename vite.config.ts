@@ -4,6 +4,16 @@ import path from "path";
 import { componentTagger } from "lovable-tagger";
 import { mcpPlugin } from "@lovable.dev/mcp-js/stacks/supabase/vite";
 
+// Versão única por build: embutida no app e publicada em /version.json
+const BUILD_VERSION = new Date().toISOString().replace(/[-:.]/g, "").slice(0, 15) + "Z";
+const versionPlugin = () => ({
+  name: "axis-app-version",
+  apply: "build" as const,
+  generateBundle(this: any) {
+    this.emitFile({ type: "asset", fileName: "version.json", source: JSON.stringify({ version: BUILD_VERSION }) });
+  },
+});
+
 // https://vitejs.dev/config/
 export default defineConfig(({ mode }) => ({
   server: {
@@ -13,7 +23,8 @@ export default defineConfig(({ mode }) => ({
       overlay: false,
     },
   },
-  plugins: [react(), mcpPlugin(), mode === "development" && componentTagger()].filter(Boolean),
+  define: { __APP_VERSION__: JSON.stringify(mode === 'production' ? BUILD_VERSION : 'dev') },
+  plugins: [react(), mcpPlugin(), versionPlugin(), mode === "development" && componentTagger()].filter(Boolean),
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "./src"),

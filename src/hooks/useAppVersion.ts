@@ -1,25 +1,14 @@
 import { useEffect, useState } from "react";
 import { APP_VERSION } from "@/lib/version";
 
-const POLL_INTERVAL_MS = 5 * 60 * 1000; // 5 minutos
-const VERSION_RE = /APP_VERSION:\s*string\s*=\s*"([^"]+)"/;
+const POLL_INTERVAL_MS = 2 * 60 * 1000; // 2 minutos
 
 async function fetchDeployedVersion(): Promise<string | null> {
   try {
-    // Busca o HTML publicado sem cache e extrai a versão embutida no bundle.
-    const htmlRes = await fetch(`/index.html?_v=${Date.now()}`, { cache: "no-store" });
-    if (!htmlRes.ok) return null;
-    const html = await htmlRes.text();
-
-    const scripts = [...html.matchAll(/<script[^>]+src="([^"]+\.js)"/g)].map((m) => m[1]);
-    for (const src of scripts) {
-      const res = await fetch(`${src}?_v=${Date.now()}`, { cache: "no-store" });
-      if (!res.ok) continue;
-      const text = await res.text();
-      const match = text.match(VERSION_RE);
-      if (match) return match[1];
-    }
-    return null;
+    const res = await fetch(`/version.json?_v=${Date.now()}`, { cache: "no-store" });
+    if (!res.ok) return null;
+    const data = await res.json();
+    return typeof data?.version === "string" ? data.version : null;
   } catch {
     return null; // offline ou erro de rede: tenta de novo no próximo ciclo
   }
@@ -33,7 +22,7 @@ export function useAppVersion(): boolean {
   const [updateAvailable, setUpdateAvailable] = useState(false);
 
   useEffect(() => {
-    if (APP_VERSION === "__APP_VERSION__") return; // ambiente de desenvolvimento
+    if (APP_VERSION === "dev") return; // ambiente de desenvolvimento
     let cancelled = false;
 
     const check = async () => {
@@ -45,11 +34,13 @@ export function useAppVersion(): boolean {
     const interval = setInterval(check, POLL_INTERVAL_MS);
     const onFocus = () => check();
     window.addEventListener("focus", onFocus);
+    document.addEventListener("visibilitychange", onFocus);
 
     return () => {
       cancelled = true;
       clearInterval(interval);
       window.removeEventListener("focus", onFocus);
+      document.removeEventListener("visibilitychange", onFocus);
     };
   }, []);
 
