@@ -853,6 +853,8 @@ export type Database = {
           licenca_sanitaria: string | null
           licenca_validade: string | null
           modo_contingencia: boolean
+          modo_manual_desde: string | null
+          modo_manual_por: string | null
           nome: string
           opcoes: Json
           prazo_contagem: string
@@ -879,6 +881,8 @@ export type Database = {
           licenca_sanitaria?: string | null
           licenca_validade?: string | null
           modo_contingencia?: boolean
+          modo_manual_desde?: string | null
+          modo_manual_por?: string | null
           nome: string
           opcoes?: Json
           prazo_contagem?: string
@@ -905,6 +909,8 @@ export type Database = {
           licenca_sanitaria?: string | null
           licenca_validade?: string | null
           modo_contingencia?: boolean
+          modo_manual_desde?: string | null
+          modo_manual_por?: string | null
           nome?: string
           opcoes?: Json
           prazo_contagem?: string
@@ -5928,6 +5934,10 @@ export type Database = {
             Returns: number
           }
         | { Args: { _ate: string; _de: string }; Returns: number }
+      apoio_envio_manual: {
+        Args: { _itens: Json; _remessa: string }
+        Returns: number
+      }
       apoio_exame_atendimento: { Args: { _exam: string }; Returns: Json }
       apoio_exame_coletado: {
         Args: { _pedido_exame_id: string }
@@ -5967,6 +5977,34 @@ export type Database = {
         Args: { _exame: string; _pedido: string }
         Returns: string
       }
+      apoio_manual_buscar: {
+        Args: { _apoio: string; _q: string }
+        Returns: {
+          cod_bar_apoio: string
+          cod_lote_lab: number
+          cod_ped_apoio: string
+          codigo_apoio: string
+          exame: string
+          id: string
+          order_number: string
+          paciente: string
+          pedido_id: string
+          proximos: string[]
+          remessa_id: string
+          status: string
+        }[]
+      }
+      apoio_manual_mudar_status: {
+        Args: {
+          _detalhamento?: string
+          _disposicao?: string
+          _motivo: string
+          _pe: string
+          _pendencia?: string
+          _status: Database["public"]["Enums"]["apoio_status"]
+        }
+        Returns: undefined
+      }
       apoio_modulo_liberado: { Args: { _company_id: string }; Returns: boolean }
       apoio_mudar_status: {
         Args: {
@@ -5981,6 +6019,10 @@ export type Database = {
       apoio_prazo_vigente: {
         Args: { _apoio_id: string; _codigo: string; _data?: string }
         Returns: number
+      }
+      apoio_proximos_status: {
+        Args: { _de: Database["public"]["Enums"]["apoio_status"] }
+        Returns: string[]
       }
       apoio_referencia_resumo: { Args: { _apoio_id: string }; Returns: Json }
       apoio_remessa_adicionar: {
@@ -6065,12 +6107,20 @@ export type Database = {
         Args: { _apoio_id: string }
         Returns: Json
       }
+      apoio_resultado_conferir: {
+        Args: { _versao: string }
+        Returns: undefined
+      }
       apoio_seed_company: { Args: { _company_id: string }; Returns: undefined }
       apoio_set_senha: {
         Args: { _apoio_id: string; _senha: string }
         Returns: undefined
       }
       apoio_tem_permissao: { Args: { _perm: string }; Returns: boolean }
+      apoio_valida_cod_ped: {
+        Args: { _apoio: string; _cod: string }
+        Returns: boolean
+      }
       auth_check_lockout: {
         Args: { _identifier: string; _ip: string }
         Returns: Json
