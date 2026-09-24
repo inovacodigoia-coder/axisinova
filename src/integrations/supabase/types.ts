@@ -540,6 +540,21 @@ export type Database = {
           },
         ]
       }
+      apoio_cron_config: {
+        Row: {
+          id: number
+          token: string
+        }
+        Insert: {
+          id?: number
+          token?: string
+        }
+        Update: {
+          id?: number
+          token?: string
+        }
+        Relationships: []
+      }
       apoio_cursor: {
         Row: {
           apoio_id: string
@@ -549,6 +564,8 @@ export type Database = {
           rotina: string
           ultima_execucao: string | null
           ultimo_erro: string | null
+          ultimo_erro_em: string | null
+          ultimo_sucesso: string | null
           updated_at: string
         }
         Insert: {
@@ -559,6 +576,8 @@ export type Database = {
           rotina: string
           ultima_execucao?: string | null
           ultimo_erro?: string | null
+          ultimo_erro_em?: string | null
+          ultimo_sucesso?: string | null
           updated_at?: string
         }
         Update: {
@@ -569,6 +588,8 @@ export type Database = {
           rotina?: string
           ultima_execucao?: string | null
           ultimo_erro?: string | null
+          ultimo_erro_em?: string | null
+          ultimo_sucesso?: string | null
           updated_at?: string
         }
         Relationships: [
@@ -1035,6 +1056,42 @@ export type Database = {
           },
           {
             foreignKeyName: "apoio_modo_manual_periodo_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      apoio_pdf_contador: {
+        Row: {
+          apoio_id: string
+          chamadas: number
+          company_id: string
+          dia: string
+        }
+        Insert: {
+          apoio_id: string
+          chamadas?: number
+          company_id: string
+          dia?: string
+        }
+        Update: {
+          apoio_id?: string
+          chamadas?: number
+          company_id?: string
+          dia?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "apoio_pdf_contador_apoio_id_fkey"
+            columns: ["apoio_id"]
+            isOneToOne: false
+            referencedRelation: "apoio_laboratorio"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "apoio_pdf_contador_company_id_fkey"
             columns: ["company_id"]
             isOneToOne: false
             referencedRelation: "companies"
@@ -6441,6 +6498,10 @@ export type Database = {
           p_status_novo: Database["public"]["Enums"]["apoio_status"]
         }
         Returns: undefined
+      }
+      apoio_pdf_contar: {
+        Args: { _apoio: string; _company: string }
+        Returns: number
       }
       apoio_prazo_vigente: {
         Args: { _apoio_id: string; _codigo: string; _data?: string }
