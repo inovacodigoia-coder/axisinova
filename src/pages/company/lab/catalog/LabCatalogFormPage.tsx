@@ -286,7 +286,7 @@ export default function LabCatalogFormPage() {
         ...examData,
         methodology: isDefaultLaudo ? examData.methodology : (baseLaudo?.methodology || ''),
         resultDeadlineDays: isDefaultLaudo ? examData.resultDeadlineDays : (baseLaudo?.result_deadline_days ?? examData.resultDeadlineDays),
-        workbenchId: isDefaultLaudo ? examData.workbenchId : (baseLaudo?.workbench_id || ''),
+        workbenchId: examBancadaId,
         selectedMaterials: isDefaultLaudo ? examData.selectedMaterials : (baseLaudo?.selected_materials || []),
         defaultMaterial: isDefaultLaudo ? examData.defaultMaterial : (baseLaudo?.default_material || ''),
         referenceValues: isDefaultLaudo ? examData.referenceValues : (baseLaudo?.reference_values || []),
@@ -339,7 +339,7 @@ export default function LabCatalogFormPage() {
               parameters,
               referenceValues: examData.referenceValues,
               resultDeadlineDays: examData.resultDeadlineDays,
-              workbenchId: examData.workbenchId,
+              workbenchId: examBancadaId,
               selectedMaterials: examData.selectedMaterials,
               defaultMaterial: examData.defaultMaterial,
             })
