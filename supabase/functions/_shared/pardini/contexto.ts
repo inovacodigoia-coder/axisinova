@@ -1,6 +1,6 @@
 import { createClient } from 'npm:@supabase/supabase-js@2'
 import { corsHeaders } from 'npm:@supabase/supabase-js@2/cors'
-import type { Ctx, Lab } from './soap.ts'
+import { definirOrigem, type Ctx, type Lab } from './soap.ts'
 
 export { corsHeaders }
 export const json = (body: unknown, status = 200) =>
