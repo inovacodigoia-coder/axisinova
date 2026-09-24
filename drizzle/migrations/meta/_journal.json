@@ -267,6 +267,20 @@
       "when": 1790216619361,
       "tag": "0037_apoio_relatorios_prompt10",
       "breakpoints": true
+    },
+    {
+      "idx": 38,
+      "version": "7",
+      "when": 1790217500817,
+      "tag": "0038_apoio_integracao_prompt11",
+      "breakpoints": true
+    },
+    {
+      "idx": 39,
+      "version": "7",
+      "when": 1790217682144,
+      "tag": "0039_apoio_integ_status",
+      "breakpoints": true
     }
   ]
 }
