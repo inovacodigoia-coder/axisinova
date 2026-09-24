@@ -15,6 +15,9 @@ import { toast } from 'sonner';
 import { ServidorImpressaoStatus } from '@/components/print/ServidorImpressaoStatus';
 import { servidorImpressaoAtivo, imprimirDireto, TIPOS_DOCUMENTO } from '@/lib/impressaoLocal';
 import { gerarPdfElementos } from '@/lib/labelPdf';
+import { PDFDocument } from 'pdf-lib';
+
+const ddmm = (d?: string | null) => d ? d.slice(0, 10).split('-').reverse().slice(0, 2).join('/') : '';
 
 
 interface PDFPreviewModalProps {
@@ -79,6 +82,22 @@ export default function PDFPreviewModal({
     return () => { active = false; };
   }, [isOpen, (order as any)?.patientId, (order as any)?.protocol]);
 
+  // Exames de bancada de apoio deste pedido
+  const [apoioItens, setApoioItens] = React.useState<any[]>([]);
+  const [retificados, setRetificados] = React.useState<{ exam_ref: string; retificado_em: string }[]>([]);
+  React.useEffect(() => {
+    const pedidoId = (order as any)?.id as string | undefined;
+    if (!isOpen || !pedidoId) { setApoioItens([]); setRetificados([]); return; }
+    supabase.rpc('apoio_laudos_resumo' as any).then(({ data }) => setApoioItens(((data as any[]) || []).filter(r => r.pedido_id === pedidoId)));
+    supabase.from('lab_exam_results').select('exam_ref, retificado_em').eq('order_id', pedidoId).not('retificado_em', 'is', null)
+      .then(({ data }) => setRetificados((data as any) || []));
+  }, [isOpen, (order as any)?.id]);
+
+  const apoioDoExame = React.useCallback((e: any) => {
+    const ids = [e?.examId, e?.id, String(e?.id || '').split(':').pop()].filter(Boolean).map(String);
+    return apoioItens.find(a => ids.includes(String(a.exame_id)));
+  }, [apoioItens]);
+
   const enrichedOrder = React.useMemo(
     () => ({
       ...order,
@@ -86,9 +105,20 @@ export default function PDFPreviewModal({
       patientBirthDate: livePatient?.birth_date || (order as any)?.patientBirthDate,
       patientGender: livePatient?.gender || (order as any)?.patientGender,
       patientCPF: livePatient?.cpf || (order as any)?.patientCPF,
-      exams: enrichExams((order as any)?.exams || []),
+      exams: enrichExams((order as any)?.exams || []).map((e: any) => {
+        const a = apoioDoExame(e);
+        if (!a) return e;
+        return {
+          ...e,
+          realizadoPor: e.realizadoPor || a.apoio_nome,
+          executorInformado: a.executor || undefined,
+          apoioEmAndamento: a.liberado ? undefined : `Em andamento: exame realizado em laboratório de apoio${a.prazo ? `, previsão ${ddmm(a.prazo)}` : ''}`,
+          apoioPdfAnexo: a.exige_pdf && a.liberado && !!a.pdf_path,
+          isRetificado: e.isRetificado || retificados.some(r => String(r.exam_ref).endsWith(`:${a.exame_id}`)),
+        };
+      }),
     }),
-    [order, enrichExams, livePatient],
+    [order, enrichExams, livePatient, apoioDoExame, retificados],
   );
 
   const isAdmin = user?.role === 'company_admin' || user?.role === 'super_admin';
@@ -209,6 +239,23 @@ export default function PDFPreviewModal({
     });
   }, []);
 
+  /** Anexa os PDFs de apoio (exames somente PDF) ao laudo gerado, na ordem dos exames */
+  const anexarPdfsApoio = React.useCallback(async (laudo: Blob): Promise<Blob> => {
+    const paths = (enrichedOrder.exams || []).filter((e: any) => e.apoioPdfAnexo).map((e: any) => apoioDoExame(e)?.pdf_path).filter(Boolean);
+    if (!paths.length) return laudo;
+    const out = await PDFDocument.load(await laudo.arrayBuffer());
+    for (const path of paths) {
+      const { data } = await supabase.storage.from('apoio-documentos').download(path);
+      if (!data) continue;
+      try {
+        const src = await PDFDocument.load(await data.arrayBuffer());
+        (await out.copyPages(src, src.getPageIndices())).forEach(pg => out.addPage(pg));
+      } catch { toast.error('Não foi possível anexar um PDF do apoio'); }
+    }
+    return new Blob([await out.save()], { type: 'application/pdf' });
+  }, [enrichedOrder, apoioDoExame]);
+  const temPdfApoio = (enrichedOrder.exams || []).some((e: any) => e.apoioPdfAnexo);
+
   // Impressão do laudo: usa o Servidor de Impressão local quando estiver ativo
   const [enviandoImpressao, setEnviandoImpressao] = React.useState(false);
 
@@ -220,6 +267,12 @@ export default function PDFPreviewModal({
       if (usouFallback) return;
       usouFallback = true;
       if (onPrint) onPrint();
+      else if (temPdfApoio && documentRef.current) {
+        // Com PDF do apoio anexo: gera o PDF completo e abre para imprimir
+        const pages = Array.from(documentRef.current.querySelectorAll<HTMLElement>('.laudo-page'));
+        const blob = await anexarPdfsApoio(await gerarPdfElementos(pages.length ? pages : [documentRef.current], 210));
+        window.open(URL.createObjectURL(blob), '_blank');
+      }
       else await printLaudoOnly();
     };
     try {
@@ -229,7 +282,7 @@ export default function PDFPreviewModal({
           documentRef.current.querySelectorAll<HTMLElement>('.laudo-page'),
         );
         const nodes = pages.length ? pages : [documentRef.current];
-        const pdf = await gerarPdfElementos(nodes, 210);
+        const pdf = await anexarPdfsApoio(await gerarPdfElementos(nodes, 210));
         const r = await imprimirDireto(TIPOS_DOCUMENTO.laudo, pdf);
         toast.success(r.mensagem || 'Laudo enviado para a impressora.');
         return;
@@ -245,7 +298,7 @@ export default function PDFPreviewModal({
     } finally {
       setEnviandoImpressao(false);
     }
-  }, [enviandoImpressao, onPrint, printLaudoOnly]);
+  }, [enviandoImpressao, onPrint, printLaudoOnly, temPdfApoio, anexarPdfsApoio]);
 
 
 
@@ -264,7 +317,7 @@ export default function PDFPreviewModal({
         documentRef.current.querySelectorAll<HTMLElement>('.laudo-page'),
       );
       const nodes = pages.length ? pages : [documentRef.current];
-      const blob = await gerarPdfElementos(nodes, 210);
+      const blob = await anexarPdfsApoio(await gerarPdfElementos(nodes, 210));
       const url = URL.createObjectURL(blob);
       const link = window.document.createElement('a');
       link.href = url;
@@ -280,7 +333,7 @@ export default function PDFPreviewModal({
     } finally {
       setBaixandoPdf(false);
     }
-  }, [baixandoPdf, protocol]);
+  }, [baixandoPdf, protocol, anexarPdfsApoio]);
 
   // Container próprio do portal: impede que cliques/teclas dentro do laudo
   // sejam interpretados como "clique fora" pelo modal que abriu esta janela
@@ -452,7 +505,8 @@ export default function PDFPreviewModal({
                           : (labSettings?.signature_register || labSettings?.responsible_register || ""),
                         signatureUrl: labSettings?.signature_image_url || undefined,
                       }}
-                      isRetified={order.exams?.some(e => e.isRetificado)}
+                      isRetified={(enrichedOrder.exams || []).some((e: any) => e.isRetificado)}
+                      retificationDetails={retificados.length ? { date: retificados[0].retificado_em, reason: 'Resultado retificado pelo laboratório de apoio', userName: '' } : undefined}
                     />
                   )}
                 </div>
