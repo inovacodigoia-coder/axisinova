@@ -288,6 +288,13 @@
       "when": 1790218485545,
       "tag": "0040_apoio_senha_cifrada",
       "breakpoints": true
+    },
+    {
+      "idx": 41,
+      "version": "7",
+      "when": 1790260461847,
+      "tag": "0041_apoio_modelo_resultado",
+      "breakpoints": true
     }
   ]
 }

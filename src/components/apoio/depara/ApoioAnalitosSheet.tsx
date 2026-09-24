@@ -1,10 +1,11 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
-import { AlertTriangle, CheckCircle2, Copy, FileUp, Loader2, Wand2 } from 'lucide-react'
+import { AlertTriangle, CheckCircle2, CloudDownload, Copy, FileUp, Loader2, Wand2 } from 'lucide-react'
+import { supabase } from '@/integrations/supabase/client'
 import { toast } from 'sonner'
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet'
 import { Badge } from '@/components/ui/badge'
 import { db, norm } from './deparaUtils'
-import { extrairModelo, lerXml, type ModeloItem } from './modelosXml'
+import { extrairModelo, extrairTodos, lerXml, type ModeloItem } from './modelosXml'
 
 interface Param { id: string; name: string; unit: string | null; casas_decimais?: number | null }
 
@@ -16,10 +17,28 @@ export function ApoioAnalitosSheet({ deparaId, exameNome, readOnly, onClose, onC
   const [map, setMap] = useState<Record<string, string>>({})
   const [antigos, setAntigos] = useState<Record<string, string>>({})
   const [busy, setBusy] = useState(false)
+  const [buscando, setBuscando] = useState(false)
+  const [podeAuto, setPodeAuto] = useState<boolean | null>(null)
+  const [nomeExame, setNomeExame] = useState('')
+  const [info, setInfo] = useState<{ codigo_formato: string | null; atualizado_em: string; origem: string } | null>(null)
 
   const load = useCallback(async () => {
     if (!deparaId) return
-    const { data: d } = await db.from('apoio_depara_exame').select('id, company_id, exame_id, codigo_apoio, codigo_formato, modelo, codigo_formato_anterior, modelo_anterior, modelo_mudou, modelo_carregado_em').eq('id', deparaId).single()
+    const { data: d } = await db.from('apoio_depara_exame').select('id, company_id, apoio_id, exame_id, codigo_apoio, codigo_formato, modelo, codigo_formato_anterior, modelo_anterior, modelo_mudou, modelo_carregado_em').eq('id', deparaId).single()
+    const [{ data: ex }, { data: lab }, { data: mr }] = await Promise.all([
+      db.from('exams').select('internal_code, name').eq('id', d.exame_id).maybeSingle(),
+      db.from('apoio_laboratorio').select('conector, cod_lab, senha_secret_id, senha_cifrada').eq('id', d.apoio_id).maybeSingle(),
+      db.from('apoio_modelo_resultado').select('codigo_formato, modelo_json, atualizado_em, origem').eq('apoio_id', d.apoio_id).eq('cod_exm_apoio', String(d.codigo_apoio).toUpperCase()).maybeSingle(),
+    ])
+    setNomeExame(ex ? [ex.internal_code, ex.name].filter(Boolean).join(' · ') : '')
+    setPodeAuto(!!lab && String(lab.conector || 'pardini').toLowerCase().includes('pardini') && !!lab.cod_lab && !!(lab.senha_secret_id || lab.senha_cifrada))
+    setInfo(mr ? { codigo_formato: mr.codigo_formato, atualizado_em: mr.atualizado_em, origem: mr.origem } : null)
+    // Abre já carregado: exame sem modelo e modelo disponível no banco
+    if ((!d.modelo || !d.modelo.length) && mr?.modelo_json?.length) {
+      const upd = { modelo: mr.modelo_json, codigo_formato: mr.codigo_formato, modelo_carregado_em: new Date().toISOString() }
+      const { error } = await db.from('apoio_depara_exame').update(upd).eq('id', d.id)
+      if (!error) Object.assign(d, upd)
+    }
     setDp(d)
     const [{ data: ps }, { data: an }] = await Promise.all([
       db.from('lab_exam_parameters').select('id, name, unit, casas_decimais').eq('exam_id', d.exame_id).order('sort_order'),
@@ -53,12 +72,7 @@ export function ApoioAnalitosSheet({ deparaId, exameNome, readOnly, onClose, onC
     }
   }, [dp, itens])
 
-  const carregar = async (file: File) => {
-    setBusy(true)
-    try {
-      const doc = await lerXml(file)
-      const mod = extrairModelo(doc, dp.codigo_apoio)
-      if (!mod) throw new Error(`Não encontrei o exame ${dp.codigo_apoio} no arquivo`)
+  const aplicar = async (mod: { codigoFormato: string; itens: ModeloItem[] }) => {
       if (!mod.itens.length) throw new Error('O modelo deste exame não tem valores')
       const mudou = !!dp.codigo_formato && dp.codigo_formato !== mod.codigoFormato
       const upd: any = { modelo: mod.itens, codigo_formato: mod.codigoFormato, modelo_carregado_em: new Date().toISOString() }
@@ -68,6 +82,49 @@ export function ApoioAnalitosSheet({ deparaId, exameNome, readOnly, onClose, onC
       if (error) throw error
       toast[mudou ? 'warning' : 'success'](mudou ? 'O modelo do apoio mudou: revise a comparação' : `Modelo carregado: ${mod.itens.length} valores`)
       await load(); onChanged()
+  }
+
+  const buscarNoBanco = async () => {
+    const { data } = await db.from('apoio_modelo_resultado').select('codigo_formato, modelo_json').eq('apoio_id', dp.apoio_id).eq('cod_exm_apoio', String(dp.codigo_apoio).toUpperCase()).maybeSingle()
+    return data?.modelo_json?.length ? { codigoFormato: data.codigo_formato || '', itens: data.modelo_json as ModeloItem[] } : null
+  }
+
+  const buscarPardini = async () => {
+    if (buscando) return
+    setBuscando(true)
+    try {
+      let mod = await buscarNoBanco()
+      if (!mod) {
+        const { data, error } = await supabase.functions.invoke('apoio-modelos', { body: { apoio_id: dp.apoio_id } })
+        if (error) throw error
+        const r = data?.resultados?.[0]
+        if (r && !r.ok) throw new Error(r.erro || r.error || 'Falha ao buscar modelos no Pardini')
+        mod = await buscarNoBanco()
+        if (!mod) throw new Error(`O Pardini não retornou modelo para ${dp.codigo_apoio}`)
+      }
+      await aplicar(mod)
+    } catch (e: any) {
+      toast.error('Não foi possível buscar o modelo', { description: e.message })
+    } finally { setBuscando(false) }
+  }
+
+  const carregar = async (file: File) => {
+    setBusy(true)
+    try {
+      const doc = await lerXml(file)
+      const todos = extrairTodos(doc)
+      if (todos.length) {
+        const agora = new Date().toISOString()
+        const rows = todos.map(m => ({ company_id: dp.company_id, apoio_id: dp.apoio_id, cod_exm_apoio: m.codExmApoio, material_nome: m.materialNome || null, exame_nome: m.exameNome || null, codigo_formato: m.codigoFormato || null, modelo_json: m.itens, origem: 'manual', atualizado_em: agora }))
+        for (let i = 0; i < rows.length; i += 300) {
+          const { error } = await db.from('apoio_modelo_resultado').upsert(rows.slice(i, i + 300), { onConflict: 'apoio_id,cod_exm_apoio' })
+          if (error) throw error
+        }
+        toast.info(`${todos.length} modelos do arquivo guardados para todos os exames`)
+      }
+      const mod = extrairModelo(doc, dp.codigo_apoio)
+      if (!mod) throw new Error(`Não encontrei o exame ${dp.codigo_apoio} no arquivo`)
+      await aplicar(mod)
     } catch (e: any) {
       toast.error('Não foi possível carregar o modelo', { description: e.message })
     } finally { setBusy(false) }
@@ -119,7 +176,7 @@ export function ApoioAnalitosSheet({ deparaId, exameNome, readOnly, onClose, onC
   return (
     <Sheet open={!!deparaId} onOpenChange={o => !o && onClose()}>
       <SheetContent className="w-full sm:max-w-3xl overflow-y-auto">
-        <SheetHeader><SheetTitle>De/Para de analitos — {exameNome}</SheetTitle></SheetHeader>
+        <SheetHeader><SheetTitle>De/Para de analitos — {nomeExame || exameNome}</SheetTitle></SheetHeader>
         {!dp ? <Loader2 className="mt-6 h-5 w-5 animate-spin" /> : (
           <div className="mt-4 space-y-4">
             <div className="flex flex-wrap items-center gap-2 text-sm">
@@ -130,10 +187,17 @@ export function ApoioAnalitosSheet({ deparaId, exameNome, readOnly, onClose, onC
                 ? <span className="flex items-center gap-1 text-xs font-medium text-success"><CheckCircle2 className="h-4 w-4" />Todos mapeados</span>
                 : <span className="text-xs font-medium text-destructive">Faltam {faltam}</span>)}
             </div>
+            {info && <p className="text-xs text-muted-foreground">Modelo: CodigoFormato {info.codigo_formato || '—'} · atualizado em {new Date(info.atualizado_em).toLocaleString('pt-BR')} ({info.origem === 'automatico' ? 'automático' : 'manual'})</p>}
+            {!readOnly && podeAuto === false && <p className="text-xs text-muted-foreground">Busca automática indisponível: cadastre o código e a senha do Pardini na integração deste apoio.</p>}
             {!readOnly && (
               <div className="flex flex-wrap gap-2">
+                <span title={podeAuto === false ? 'Cadastre o código e a senha do Pardini na integração deste apoio.' : undefined}>
+                  <button onClick={buscarPardini} disabled={!podeAuto || buscando || busy} className="gradient-bg flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-semibold text-primary-foreground disabled:opacity-50">
+                    {buscando ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <CloudDownload className="h-3.5 w-3.5" />} Buscar modelo do Pardini
+                  </button>
+                </span>
                 <label className={`flex cursor-pointer items-center gap-1.5 rounded-lg border border-border px-3 py-1.5 text-xs font-medium hover:bg-muted ${busy ? 'opacity-50 pointer-events-none' : ''}`}>
-                  {busy ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <FileUp className="h-3.5 w-3.5" />} Carregar modelo do apoio (modelos.xml)
+                  {busy ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <FileUp className="h-3.5 w-3.5" />} Enviar modelos.xml manualmente
                   <input type="file" accept=".xml" className="hidden" onChange={e => { const f = e.target.files?.[0]; if (f) carregar(f); e.target.value = '' }} />
                 </label>
                 {itens.length > 0 && <button onClick={mapearPorNome} className="flex items-center gap-1.5 rounded-lg border border-border px-3 py-1.5 text-xs font-medium hover:bg-muted"><Wand2 className="h-3.5 w-3.5" />Mapear por nome</button>}
