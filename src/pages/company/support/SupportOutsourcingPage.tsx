@@ -38,9 +38,10 @@ export default function SupportOutsourcingPage() {
   useEffect(() => {
     (async () => {
       const { data: labs } = await supabase.from('apoio_laboratorio').select('id, nome, modo_contingencia').eq('ativo', true).order('nome')
-      const { data: cursores } = await supabase.from('apoio_cursor').select('apoio_id, ultimo_erro, ultima_execucao, updated_at')
+      const { data: cursores } = await supabase.from('apoio_cursor').select('apoio_id, ultimo_erro, ultimo_erro_em, ultimo_sucesso, ultima_execucao, updated_at')
       setIndicadores((labs || []).map((l: any) => {
-        const erro = (cursores || []).filter((c: any) => c.apoio_id === l.id && c.ultimo_erro)
+        // Vermelho só quando o último erro é mais recente que o último sucesso da mesma rotina
+        const erro = (cursores || []).filter((c: any) => c.apoio_id === l.id && c.ultimo_erro && (!c.ultimo_sucesso || String(c.ultimo_erro_em || c.updated_at) > String(c.ultimo_sucesso)))
           .sort((a: any, b: any) => String(b.updated_at).localeCompare(String(a.updated_at)))[0] as any
         return { id: l.id, nome: l.nome, modo: l.modo_contingencia, erroEm: erro ? (erro.updated_at || erro.ultima_execucao) : null }
       }))
