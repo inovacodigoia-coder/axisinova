@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { AlertTriangle, BookOpen, Download, FileUp, History, Loader2, RefreshCw, Tag, Trash2 } from 'lucide-react'
 import { toast } from 'sonner'
 import { supabase } from '@/integrations/supabase/client'
@@ -24,31 +24,100 @@ interface Resumo { catalogo_total: number; catalogo_atualizado_em: string | null
 
 /* ------------------------------ Catálogo ------------------------------ */
 
+export interface CatalogoInfo { ultima: { created_at: string; total_arquivo: number; auto: boolean; usuario: string | null } | null; falha: { motivo: string; em: string } | null }
+
+export async function carregarCatalogoInfo(apoioIds: string[]): Promise<Record<string, CatalogoInfo>> {
+  const out: Record<string, CatalogoInfo> = {}
+  if (!apoioIds.length) return out
+  const [{ data: syncs }, { data: curs }] = await Promise.all([
+    db.from('apoio_catalogo_sincronizacao').select('apoio_id, created_at, total_arquivo, executado_por').in('apoio_id', apoioIds).order('created_at', { ascending: false }).limit(200),
+    db.from('apoio_cursor').select('apoio_id, ultimo_erro, ultimo_erro_em, ultimo_sucesso').eq('rotina', 'catalogo').in('apoio_id', apoioIds),
+  ])
+  const uids = [...new Set((syncs || []).map((s: any) => s.executado_por).filter(Boolean))]
+  const { data: profs } = uids.length ? await db.from('profiles').select('id, full_name').in('id', uids) : { data: [] as any[] }
+  const nome = new Map<string, string>((profs || []).map((p: any) => [p.id, p.full_name]))
+  for (const id of apoioIds) {
+    const s: any = (syncs || []).find((x: any) => x.apoio_id === id)
+    const c: any = (curs || []).find((x: any) => x.apoio_id === id)
+    out[id] = {
+      ultima: s ? { created_at: s.created_at, total_arquivo: s.total_arquivo, auto: !s.executado_por, usuario: s.executado_por ? (nome.get(s.executado_por) || 'usuário') : null } : null,
+      falha: c?.ultimo_erro && (!c.ultimo_sucesso || String(c.ultimo_erro_em) > String(c.ultimo_sucesso)) ? { motivo: c.ultimo_erro, em: c.ultimo_erro_em } : null,
+    }
+  }
+  return out
+}
+
+export function CatalogoInfoLinha({ info }: { info?: CatalogoInfo }) {
+  return (
+    <div className="space-y-1 text-xs text-muted-foreground">
+      <p>Atualização automática: todo dia às 02:00</p>
+      <p>Última atualização: {info?.ultima ? `${dataHora(info.ultima.created_at)} — ${info.ultima.auto ? 'automática' : `manual por ${info.ultima.usuario}`} — ${info.ultima.total_arquivo.toLocaleString('pt-BR')} exames` : 'nunca'}</p>
+      {info?.falha && <span title={info.falha.motivo} className="inline-flex items-center gap-1 rounded-full border border-warning/40 bg-warning/10 px-2 py-0.5 text-[11px] font-medium text-foreground"><AlertTriangle className="h-3 w-3 text-warning" />Última atualização automática falhou: {info.falha.motivo}</span>}
+    </div>
+  )
+}
+
+type ResCat = { atualizado_em: string; total: number; novos?: number; alterados?: number; desativados?: number; terceirizados_afetados: number; alertas: string[] }
+
 export function CatalogoUploadDialog({ apoio, open, onClose, onDone }: { apoio: { id: string; nome: string } | null; open: boolean; onClose: () => void; onDone?: () => void }) {
   const [file, setFile] = useState<File | null>(null)
-  const [busy, setBusy] = useState(false)
-  const [res, setRes] = useState<{ atualizado_em: string; total: number; terceirizados_afetados: number; alertas: string[] } | null>(null)
-  useEffect(() => { if (open) { setFile(null); setRes(null) } }, [open])
+  const [busy, setBusy] = useState<'auto' | 'manual' | null>(null)
+  const [res, setRes] = useState<ResCat | null>(null)
+  const [podeAuto, setPodeAuto] = useState<boolean | null>(null)
+  const [info, setInfo] = useState<CatalogoInfo | undefined>()
+  const trava = useRef(false)
+
+  const carregarInfo = useCallback(async () => {
+    if (!apoio) return
+    const m = await carregarCatalogoInfo([apoio.id]); setInfo(m[apoio.id])
+  }, [apoio])
+
+  useEffect(() => {
+    if (!open || !apoio) return
+    setFile(null); setRes(null); setPodeAuto(null); void carregarInfo()
+    ;(async () => {
+      const { data } = await db.from('apoio_laboratorio').select('conector, cod_lab, senha_secret_id, senha_cifrada').eq('id', apoio.id).maybeSingle()
+      const d: any = data
+      setPodeAuto(!!d && d.conector === 'pardini' && !!d.cod_lab && !!(d.senha_secret_id || d.senha_cifrada))
+    })()
+  }, [open, apoio, carregarInfo])
+
+  const concluir = (data: ResCat) => {
+    setRes(data)
+    toast.success(`Catálogo atualizado: ${data.total.toLocaleString('pt-BR')} exames lidos`, { description: `${data.novos ?? 0} novos, ${data.alterados ?? 0} alterados, ${data.desativados ?? 0} desativados` })
+    void carregarInfo(); onDone?.()
+  }
+  const erroDe = async (data: any, error: any, padrao: string) => {
+    let msg = data?.error
+    try { msg = msg || (await error?.context?.json())?.error } catch { /* */ }
+    return msg || padrao
+  }
+
+  const baixar = async () => {
+    if (!apoio || trava.current) return
+    trava.current = true; setBusy('auto')
+    try {
+      const { data, error } = await supabase.functions.invoke('apoio-catalogo', { body: { apoio_id: apoio.id } })
+      if (error || !data?.ok) throw new Error(await erroDe(data, error, 'Não foi possível baixar do Pardini agora. Tente de novo ou envie o arquivo manualmente.'))
+      concluir(data)
+    } catch (e: any) {
+      toast.error(e.message); void carregarInfo()
+    } finally { trava.current = false; setBusy(null) }
+  }
 
   const enviar = async () => {
-    if (!file || !apoio) return
-    setBusy(true)
+    if (!file || !apoio || trava.current) return
+    trava.current = true; setBusy('manual')
     try {
       const fd = new FormData()
       fd.append('apoio_id', apoio.id)
       fd.append('file', file)
       const { data, error } = await supabase.functions.invoke('apoio-catalogo-sincronizar', { body: fd })
-      if (error || !data?.ok) {
-        let msg = data?.error
-        try { msg = msg || (await (error as any)?.context?.json())?.error } catch { /* */ }
-        throw new Error(msg || 'Falha ao atualizar o catálogo')
-      }
-      setRes(data)
-      toast.success(`Catálogo atualizado em ${dataHora(data.atualizado_em)}. ${data.terceirizados_afetados} exames terceirizados afetados`)
-      onDone?.()
+      if (error || !data?.ok) throw new Error(await erroDe(data, error, 'Falha ao atualizar o catálogo'))
+      concluir(data)
     } catch (e: any) {
       toast.error('Não foi possível atualizar o catálogo', { description: e.message })
-    } finally { setBusy(false) }
+    } finally { trava.current = false; setBusy(null) }
   }
 
   return (
@@ -56,17 +125,35 @@ export function CatalogoUploadDialog({ apoio, open, onClose, onDone }: { apoio: 
       <DialogContent className="max-w-lg">
         <DialogHeader><DialogTitle>Atualizar catálogo do apoio — {apoio?.nome}</DialogTitle></DialogHeader>
         {!res ? (
-          <div className="space-y-3 text-sm">
-            <p className="text-muted-foreground">Envie o arquivo <b>tabexalhpV2.xml</b> do Pardini. O catálogo é guardado só como referência; exames que sumirem do arquivo ficam inativos (nunca apagados).</p>
-            <label className="flex cursor-pointer items-center gap-2 rounded-xl border border-dashed border-border px-4 py-6 text-primary hover:bg-muted/40">
-              <FileUp className="h-5 w-5" /> {file ? file.name : 'Escolher arquivo XML'}
-              <input type="file" accept=".xml,text/xml,application/xml" className="hidden" onChange={e => setFile(e.target.files?.[0] || null)} />
-            </label>
+          <div className="space-y-4 text-sm">
+            <CatalogoInfoLinha info={info} />
+            <div className="space-y-2 rounded-xl border border-border p-4">
+              <p className="font-medium text-foreground">Baixar do Pardini agora</p>
+              <p className="text-xs text-muted-foreground">Baixa o tabexalhpV2.xml direto do Pardini usando o código e a senha da integração deste apoio. Só leitura.</p>
+              <button onClick={baixar} disabled={!podeAuto || !!busy} className="gradient-bg flex items-center gap-2 rounded-xl px-5 py-2 text-sm font-semibold text-primary-foreground disabled:opacity-60">
+                {busy === 'auto' ? <Loader2 className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4" />} {busy === 'auto' ? 'Baixando…' : 'Baixar do Pardini agora'}
+              </button>
+              {podeAuto === false && <p className="text-xs text-muted-foreground">Cadastre o código e a senha do Pardini na integração deste apoio.</p>}
+            </div>
+            <div className="space-y-2 rounded-xl border border-border p-4">
+              <p className="font-medium text-foreground">Enviar arquivo manualmente</p>
+              <p className="text-xs text-muted-foreground">Use quando o Pardini estiver fora do ar ou o apoio não tiver integração. Exames que sumirem do arquivo ficam inativos (nunca apagados).</p>
+              <label className="flex cursor-pointer items-center gap-2 rounded-xl border border-dashed border-border px-4 py-4 text-primary hover:bg-muted/40">
+                <FileUp className="h-5 w-5" /> {file ? file.name : 'Escolher arquivo XML'}
+                <input type="file" accept=".xml,text/xml,application/xml" className="hidden" onChange={e => setFile(e.target.files?.[0] || null)} />
+              </label>
+              <button onClick={enviar} disabled={!file || !!busy} className="flex items-center gap-2 rounded-xl border border-border px-4 py-2 text-sm font-medium disabled:opacity-60">{busy === 'manual' && <Loader2 className="h-4 w-4 animate-spin" />} Enviar arquivo</button>
+            </div>
           </div>
         ) : (
           <div className="space-y-3 text-sm">
-            <p className="font-medium">Catálogo atualizado em {dataHora(res.atualizado_em)}. {res.terceirizados_afetados} exames terceirizados afetados.</p>
-            <p className="text-muted-foreground">{res.total.toLocaleString('pt-BR')} exames no arquivo.</p>
+            <p className="font-medium">Catálogo atualizado em {dataHora(res.atualizado_em)}.</p>
+            <div className="grid grid-cols-4 gap-2 text-center">
+              {([['Lidos', res.total], ['Novos', res.novos ?? 0], ['Alterados', res.alterados ?? 0], ['Desativados', res.desativados ?? 0]] as const).map(([l, v]) => (
+                <div key={l} className="rounded-xl border border-border p-2"><p className="text-lg font-bold text-foreground">{Number(v).toLocaleString('pt-BR')}</p><p className="text-xs text-muted-foreground">{l}</p></div>
+              ))}
+            </div>
+            <p className="text-muted-foreground">{res.terceirizados_afetados} exames terceirizados afetados.</p>
             {res.alertas.length > 0 && (
               <ul className="space-y-1 rounded-xl border border-warning/40 bg-warning/10 p-3 text-xs">
                 {res.alertas.map((a, i) => <li key={i} className="flex gap-2"><AlertTriangle className="h-3.5 w-3.5 shrink-0 text-warning" />{a}</li>)}
@@ -75,8 +162,7 @@ export function CatalogoUploadDialog({ apoio, open, onClose, onDone }: { apoio: 
           </div>
         )}
         <DialogFooter>
-          <button onClick={onClose} disabled={busy} className="rounded-xl border border-border px-4 py-2 text-sm">{res ? 'Fechar' : 'Cancelar'}</button>
-          {!res && <button onClick={enviar} disabled={!file || busy} className="gradient-bg flex items-center gap-2 rounded-xl px-5 py-2 text-sm font-semibold text-primary-foreground disabled:opacity-60">{busy && <Loader2 className="h-4 w-4 animate-spin" />} Atualizar</button>}
+          <button onClick={onClose} disabled={!!busy} className="rounded-xl border border-border px-4 py-2 text-sm">{res ? 'Fechar' : 'Cancelar'}</button>
         </DialogFooter>
       </DialogContent>
     </Dialog>
