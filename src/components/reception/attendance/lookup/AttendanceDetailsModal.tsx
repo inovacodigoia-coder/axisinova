@@ -456,6 +456,17 @@ export function AttendanceDetailsModal({ open, onClose, onOrderDeleted, order, p
     return null
   }
 
+  const [metodosApoio, setMetodosApoio] = useState<Record<string, string>>({})
+  useEffect(() => {
+    const id = (order as any)?.id
+    if (!open || !id) return
+    supabase.rpc('apoio_metodos_laudo' as any, { _pedidos: [id] }).then(({ data }) => {
+      const m: Record<string, string> = {}
+      ;((data as any[]) || []).forEach((r: any) => { if (r.metodo) m[r.exame_id] = r.metodo })
+      setMetodosApoio(m)
+    })
+  }, [open, (order as any)?.id])
+
   const releasedExamIds = useMemo(() => new Set(
     orderExams
       .filter((exam: any) => getExamResultLetter(exam) === 'L')
@@ -475,12 +486,14 @@ export function AttendanceDetailsModal({ open, onClose, onOrderDeleted, order, p
 
   const buildReportExam = (e: any) => {
     const res = getExamResult(e)
+    const metodoApoio = metodosApoio[e.examId || e.id]
     return {
       examId: e.examId || e.id,
       code: e.code,
       name: e.name,
       material: e.material || 'Soro',
-      methodology: e.methodology || '',
+      // Exame de apoio: método do resultado; sem método no resultado, o do cadastro
+      methodology: metodoApoio || e.methodology || '',
       workbench: e.workbench || 'Geral',
       workbenchOrder: e.workbenchOrder ?? 9999,
       status: res?.status === 'released' ? 'liberado' : 'waiting_approval',
