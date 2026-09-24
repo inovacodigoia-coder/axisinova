@@ -252,7 +252,7 @@ export function AttendanceDetailsModal({ open, onClose, onOrderDeleted, order, p
       const nextGuides = (guidesState || []).map((g: any) => ({
         ...g,
         exams: (g.exams || []).map((e: any) =>
-          !e.collected && pendingSelectedTubes.some(t => matchesTube(e.material, t))
+          !e.collected && pendingSelectedTubes.some(t => matchesTube(e, t))
             ? { ...e, collected: true, collectedAt: now }
             : e
         )
@@ -286,7 +286,7 @@ export function AttendanceDetailsModal({ open, onClose, onOrderDeleted, order, p
       const nextGuides = (guidesState || []).map((g: any) => ({
         ...g,
         exams: (g.exams || []).map((e: any) =>
-          collectedSelectedTubes.some(t => matchesTube(e.material, t))
+          collectedSelectedTubes.some(t => matchesTube(e, t))
             ? { ...e, collected: false, collectedAt: null, isColeta: false }
             : e
         )
@@ -1195,11 +1195,11 @@ export function AttendanceDetailsModal({ open, onClose, onOrderDeleted, order, p
                             />
                           </td>
                           <td className="px-4 py-3">
-                            <span className={cn("text-white rounded-full px-2 py-0.5 text-[9px] font-bold", tube.color)}>
+                            <span className={cn("text-white rounded-full px-2 py-0.5 text-[9px] font-bold", tube.color)} style={tube.color ? undefined : { backgroundColor: (tube as any).hex }}>
                               {sampleCodeFor(tubeIdx + 1)}
                             </span>
                           </td>
-                          <td className="px-4 py-3 text-muted-foreground font-bold">{tube.label.toUpperCase()} ({tube.type.toUpperCase()})</td>
+                          <td className="px-4 py-3 text-muted-foreground font-bold">{etiquetaTubo(tube).material.toUpperCase()}{etiquetaTubo(tube).tube ? ` (${etiquetaTubo(tube).tube})` : ""}</td>
                           <td className="px-4 py-3 text-muted-foreground uppercase">{tubeWorkbench(tube)}</td>
                           <td className="px-4 py-3 text-muted-foreground uppercase">
                             {tube.type === 'urina' ? 'URINA'
