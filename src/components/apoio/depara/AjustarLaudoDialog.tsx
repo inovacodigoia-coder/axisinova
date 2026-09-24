@@ -82,7 +82,9 @@ export function AjustarLaudoDialog({ open, deparaId, apoioId, formatos, onClose,
       onDone(); onClose()
     } catch (e: any) {
       console.error(e)
-      toast.error('Não foi possível ajustar o laudo. Nada foi alterado.', { description: /permiss/i.test(e?.message || '') ? e.message : 'Tente novamente. Se continuar, avise o suporte.' })
+      const msg: string = e?.message || ''
+      const motivo = msg.startsWith('[AJUSTE]') ? msg.replace('[AJUSTE]', '').trim() : /permiss/i.test(msg) ? 'Você não tem permissão para editar laudos.' : 'Tente novamente. Se continuar, avise o suporte.'
+      toast.error('Não foi possível ajustar o laudo. Nada foi alterado.', { description: motivo })
     } finally { setBusy(false) }
   }
 
