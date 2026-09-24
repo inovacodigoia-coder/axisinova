@@ -344,6 +344,13 @@ export default function LabCatalogFormPage() {
               defaultMaterial: examData.defaultMaterial,
             })
           }
+          // Liga o laudo padrão à bancada do exame (se ainda não houver ligação)
+          if (examBancadaId) {
+            await supabase.from('exame_laudo_bancada' as any).upsert(
+              { company_id: cid, exame_id: examId, bancada_id: examBancadaId, laudo_id: null, ativo: true } as any,
+              { onConflict: 'exame_id,bancada_id', ignoreDuplicates: true },
+            )
+          }
         }
       }
 
