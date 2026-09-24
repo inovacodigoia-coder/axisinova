@@ -365,6 +365,13 @@
       "when": 1790271639032,
       "tag": "0051_apoio_numeracao_unica_colisao",
       "breakpoints": true
+    },
+    {
+      "idx": 52,
+      "version": "7",
+      "when": 1790272112754,
+      "tag": "0052_apoio_log_integracao_portugues",
+      "breakpoints": true
     }
   ]
 }
