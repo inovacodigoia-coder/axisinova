@@ -207,6 +207,9 @@ function ExamBlock({ exam, order }: { exam: any; order?: any }) {
       <p className="text-[9px] text-zinc-500">
         Material: {exam.material || 'Soro'}
       </p>
+      {exam.realizadoPor && (
+        <p className="text-[9px] text-zinc-500">Exame realizado por: {exam.realizadoPor}</p>
+      )}
       {exam.methodology && (
         <p className="text-[9px] text-zinc-500">Método: {exam.methodology}</p>
       )}
@@ -306,6 +309,7 @@ export default function LaudoDocument({
       const tpl = exam.reportTemplate || null;
       let h = 46; // título + material + divisor
       if (exam.methodology) h += 12;
+      if (exam.realizadoPor) h += 12;
       h += Math.max(sections, 1) * 20; // cabeçalhos de seção + header da tabela
       h += rows * 15;
       if (tpl?.header_html) h += 28;

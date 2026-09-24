@@ -2,6 +2,9 @@ import React, { useState, useEffect, useMemo } from 'react'
 import { supabase } from '@/integrations/supabase/client'
 import { useExamLaudos, ensureDefaultLaudo } from '@/hooks/useExamLaudos'
 import ExamLaudosSection from '@/components/lab/catalog/ExamLaudosSection'
+import ExamLaudoBancadaSection from '@/components/lab/catalog/ExamLaudoBancadaSection'
+import BancadaTrocaDialog from '@/components/lab/catalog/BancadaTrocaDialog'
+import { SelectGroup, SelectLabel } from '@/components/ui/select'
 import { Card } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -152,9 +155,20 @@ export default function LabCatalogFormPage() {
   const companyIdForLaudos = laudos[0]?.company_id
   const defaultLaudoId = laudos[0]?.id || ''
   const isDefaultLaudo = !selectedLaudoId || selectedLaudoId === defaultLaudoId
+  const examCompanyId = companyIdForLaudos || (exams || []).find((e: any) => e.id === id)?.companyId
   const [confirmationQuestions, setConfirmationQuestions] = useState<string[]>([])
   const [availableEquipments, setAvailableEquipments] = useState<any[]>([])
   const [isMethodologySearchOpen, setIsMethodologySearchOpen] = useState(false)
+  // Bancada Técnica do exame (decide interno x apoio). Troca em exame existente passa pela prontidão/prévia.
+  const [examBancadaId, setExamBancadaId] = useState('')
+  const [originalBancadaId, setOriginalBancadaId] = useState('')
+  const [bancadaPendente, setBancadaPendente] = useState<string | null>(null)
+
+  const handleBancadaChange = (val: string) => {
+    if (!isEditing || !id) { setExamBancadaId(val); return }
+    if (val === originalBancadaId) { setExamBancadaId(val); return }
+    setBancadaPendente(val)
+  }
 
   useEffect(() => {
     const fetchEquipments = async () => {
@@ -227,6 +241,8 @@ export default function LabCatalogFormPage() {
         })
         setParameters(existingExam.parameters || [])
         setConfirmationQuestions(existingExam.confirmationQuestions || [])
+        setExamBancadaId(existingExam.workbenchId || '')
+        setOriginalBancadaId(existingExam.workbenchId || '')
       }
     }
   }, [isEditing, id, exams])
@@ -274,7 +290,7 @@ export default function LabCatalogFormPage() {
         ...examData,
         methodology: isDefaultLaudo ? examData.methodology : (baseLaudo?.methodology || ''),
         resultDeadlineDays: isDefaultLaudo ? examData.resultDeadlineDays : (baseLaudo?.result_deadline_days ?? examData.resultDeadlineDays),
-        workbenchId: isDefaultLaudo ? examData.workbenchId : (baseLaudo?.workbench_id || ''),
+        workbenchId: examBancadaId,
         selectedMaterials: isDefaultLaudo ? examData.selectedMaterials : (baseLaudo?.selected_materials || []),
         defaultMaterial: isDefaultLaudo ? examData.defaultMaterial : (baseLaudo?.default_material || ''),
         referenceValues: isDefaultLaudo ? examData.referenceValues : (baseLaudo?.reference_values || []),
@@ -327,10 +343,17 @@ export default function LabCatalogFormPage() {
               parameters,
               referenceValues: examData.referenceValues,
               resultDeadlineDays: examData.resultDeadlineDays,
-              workbenchId: examData.workbenchId,
+              workbenchId: examBancadaId,
               selectedMaterials: examData.selectedMaterials,
               defaultMaterial: examData.defaultMaterial,
             })
+          }
+          // Liga o laudo padrão à bancada do exame (se ainda não houver ligação)
+          if (examBancadaId) {
+            await supabase.from('exame_laudo_bancada' as any).upsert(
+              { company_id: cid, exame_id: examId, bancada_id: examBancadaId, laudo_id: null, ativo: true } as any,
+              { onConflict: 'exame_id,bancada_id', ignoreDuplicates: true },
+            )
           }
         }
       }
@@ -514,11 +537,19 @@ export default function LabCatalogFormPage() {
         <TabsContent value="general">
           <GeneralInfoSection 
             isEditing={isEditing} 
-            data={examData} 
+            data={{ ...examData, workbenchId: examBancadaId }} 
             workbenches={workbenches}
             showGlobalRefs={showGlobalRefs}
             setShowGlobalRefs={setShowGlobalRefs}
-            onChange={(newData) => setExamData(prev => ({ ...prev, ...newData }))} 
+            onChange={(newData) => {
+              if ((newData as any).workbenchId !== undefined) {
+                const { workbenchId, ...rest } = newData as any
+                handleBancadaChange(workbenchId)
+                if (Object.keys(rest).length) setExamData(prev => ({ ...prev, ...rest }))
+                return
+              }
+              setExamData(prev => ({ ...prev, ...newData }))
+            }} 
             onOpenMethodologySearch={() => setIsMethodologySearchOpen(true)}
           />
         </TabsContent>
@@ -530,6 +561,12 @@ export default function LabCatalogFormPage() {
             selectedLaudoId={selectedLaudoId}
             onSelect={setSelectedLaudoId}
             onReload={reloadLaudos}
+          />
+          <ExamLaudoBancadaSection
+            examId={isEditing ? id : undefined}
+            companyId={examCompanyId}
+            workbenches={workbenches || []}
+            laudos={laudos}
           />
           <ExamReportSection
             data={examData}
@@ -549,6 +586,17 @@ export default function LabCatalogFormPage() {
            <RulesSection />
         </TabsContent>
       </Tabs>
+
+      <BancadaTrocaDialog
+        open={!!bancadaPendente}
+        onOpenChange={(v) => { if (!v) setBancadaPendente(null) }}
+        examId={isEditing ? id : undefined}
+        companyId={examCompanyId}
+        bancadaNova={bancadaPendente ? (workbenches || []).find((w: any) => w.id === bancadaPendente) || null : null}
+        bancadaAtualNome={(workbenches || []).find((w: any) => w.id === originalBancadaId)?.name}
+        laudos={laudos}
+        onConfirmed={(bid) => { setExamBancadaId(bid); setOriginalBancadaId(bid) }}
+      />
 
       <LabMethodologySearchModal 
         isOpen={isMethodologySearchOpen}
@@ -682,9 +730,22 @@ function GeneralInfoSection({
             </SelectTrigger>
             <SelectContent>
               {workbenches && workbenches.length > 0 ? (
-                workbenches.map(wb => (
-                  <SelectItem key={wb.id} value={wb.id}>{wb.name}</SelectItem>
-                ))
+                <>
+                  <SelectGroup>
+                    <SelectLabel>Internas</SelectLabel>
+                    {workbenches.filter((wb: any) => wb.tipo !== 'apoio' && (wb.isActive !== false || wb.id === data.workbenchId)).map((wb: any) => (
+                      <SelectItem key={wb.id} value={wb.id}>{wb.name}</SelectItem>
+                    ))}
+                  </SelectGroup>
+                  {workbenches.some((wb: any) => wb.tipo === 'apoio') && (
+                    <SelectGroup>
+                      <SelectLabel>Apoio</SelectLabel>
+                      {workbenches.filter((wb: any) => wb.tipo === 'apoio' && (wb.isActive !== false || wb.id === data.workbenchId)).map((wb: any) => (
+                        <SelectItem key={wb.id} value={wb.id}>🚚 {wb.name}</SelectItem>
+                      ))}
+                    </SelectGroup>
+                  )}
+                </>
               ) : (
                 <SelectItem value="none" disabled>Nenhuma bancada cadastrada</SelectItem>
               )}

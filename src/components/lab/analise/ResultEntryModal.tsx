@@ -256,7 +256,8 @@ export function ResultEntryModal({
   const activeLaudoFor = useCallback((exam: any) => {
     const list = laudosForExam(exam);
     if (list.length === 0) return null;
-    const chosen = laudoByExam[exam.id];
+    // Ordem: escolhido na digitação/equipamento > laudo congelado da bancada do item > Ordem 1
+    const chosen = laudoByExam[exam.id] || exam?.laudoId;
     return list.find((l: any) => String(l.id) === String(chosen)) || list[0];
   }, [laudosForExam, laudoByExam]);
 
@@ -824,15 +825,18 @@ export function ResultEntryModal({
         .filter((e: any) => examStatuses[e.id] === 'digitized' || examStatuses[e.id] === 'released')
         .map((e: any) => {
           const catalogExam = findCatalogExam(catalogList, { examId: e.examId, code: e.code, name: e.name });
-          const workbenchId = catalogExam?.workbench_id || e.workbenchId;
+          // Bancada congelada no item do pedido (troca de bancada acompanha o laudo)
+          const workbenchId = e.bancadaId || catalogExam?.workbench_id || e.workbenchId;
+          const laudoAtivo = activeLaudoFor(e);
           const workbenchName = workbenchNames[workbenchId] || e.workbench || '';
           return {
             examId: e.id,
             code: e.code,
             name: catalogExam?.name || e.name,
             material: e.material || catalogExam?.default_material || 'Soro',
-            methodology: catalogExam?.methodology || '',
+            methodology: laudoAtivo?.methodology || catalogExam?.methodology || '',
             workbench: workbenchName,
+            realizadoPor: e.bancadaTipo === 'apoio' ? (e.apoioNome || workbenchName) : undefined,
             workbenchOrder: orderOfWorkbench(workbenchId, workbenchName || e.workbench),
             status: examStatuses[e.id] === 'released' ? 'liberado' : 'waiting_approval',
             results: getParams(e).map((p: any) => {

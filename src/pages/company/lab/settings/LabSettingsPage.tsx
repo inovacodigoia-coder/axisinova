@@ -921,14 +921,26 @@ function MethodsSection() {
 }
 
 function WorkbenchesSection() {
-  const { workbenches, addWorkbench, updateWorkbench, removeWorkbench, isLoading } = useRegisters()
+  const { workbenches, exams, addWorkbench, updateWorkbench, removeWorkbench, isLoading } = useRegisters() as any
   const [isDialogOpen, setIsDialogOpen] = useState(false)
   const [editingWorkbench, setEditingWorkbench] = useState<any>(null)
   const [workbenchName, setWorkbenchName] = useState('')
   const [workbenchDesc, setWorkbenchDesc] = useState('')
   const [reportBreakPolicy, setReportBreakPolicy] = useState<'sequential' | 'dedicated_page' | 'default'>('default')
   const [reportOrder, setReportOrder] = useState(0)
+  const [tipo, setTipo] = useState<'interna' | 'apoio'>('interna')
+  const [apoioId, setApoioId] = useState('')
+  const [ativa, setAtiva] = useState(true)
+  const [apoios, setApoios] = useState<{ id: string; nome: string; ativo: boolean }[]>([])
   const [saving, setSaving] = useState(false)
+
+  useEffect(() => {
+    supabase.from('apoio_laboratorio').select('id, nome, ativo').order('nome')
+      .then(({ data }) => setApoios(((data as any[]) || []).map(a => ({ id: a.id, nome: a.nome, ativo: a.ativo !== false }))))
+  }, [])
+
+  const examCount = (id: string) => ((exams || []) as any[]).filter(e => e.workbenchId === id).length
+  const apoioNome = (id?: string | null) => apoios.find(a => a.id === id)?.nome || 'apoio'
 
   const handleOpenDialog = (workbench?: any) => {
     if (workbench) {
@@ -937,20 +949,46 @@ function WorkbenchesSection() {
       setWorkbenchDesc(workbench.description || '')
       setReportBreakPolicy(workbench.reportBreakPolicy || 'default')
       setReportOrder(workbench.reportOrder || 0)
+      setTipo(workbench.tipo === 'apoio' ? 'apoio' : 'interna')
+      setApoioId(workbench.apoioId || '')
+      setAtiva(workbench.isActive !== false)
     } else {
       setEditingWorkbench(null)
       setWorkbenchName('')
       setWorkbenchDesc('')
       setReportBreakPolicy('default')
       setReportOrder(0)
+      setTipo('interna')
+      setApoioId('')
+      setAtiva(true)
     }
     setIsDialogOpen(true)
+  }
+
+  const handleRemove = async (b: any) => {
+    const n = examCount(b.id)
+    if (n > 0) {
+      toast.error(`Esta bancada é usada por ${n} exame(s). Troque a bancada desses exames antes de excluir.`)
+      return
+    }
+    await removeWorkbench(b.id)
   }
 
   const handleSave = async () => {
     if (!workbenchName) {
       toast.error('Nome é obrigatório')
       return
+    }
+    if (tipo === 'apoio' && !apoioId) {
+      toast.error('Escolha o laboratório de apoio desta bancada')
+      return
+    }
+    if (editingWorkbench && !ativa && editingWorkbench.isActive !== false) {
+      const n = examCount(editingWorkbench.id)
+      if (n > 0) {
+        toast.error(`Esta bancada é usada por ${n} exame(s). Troque a bancada desses exames antes de inativar.`)
+        return
+      }
     }
 
     setSaving(true)
@@ -960,7 +998,9 @@ function WorkbenchesSection() {
         description: workbenchDesc,
         reportBreakPolicy,
         reportOrder,
-        isActive: true
+        isActive: ativa,
+        tipo,
+        apoioId: tipo === 'apoio' ? apoioId : null,
       }
 
       if (editingWorkbench) {
@@ -972,7 +1012,7 @@ function WorkbenchesSection() {
       }
       setIsDialogOpen(false)
     } catch (error) {
-      toast.error('Erro ao salvar bancada')
+      // mensagem já exibida
     } finally {
       setSaving(false)
     }
@@ -993,12 +1033,19 @@ function WorkbenchesSection() {
         </div>
       ) : (
         <div className="space-y-2">
-          {workbenches.map(b => (
-            <div key={b.id} className="p-4 border rounded-xl bg-card flex items-center justify-between hover:border-primary/30 transition-all">
-              <div className="grid grid-cols-[1fr_2fr_1fr_100px] gap-4 items-center w-full mr-4">
+          {workbenches.map((b: any) => (
+            <div key={b.id} className={cn("p-4 border rounded-xl bg-card flex items-center justify-between hover:border-primary/30 transition-all", b.isActive === false && 'opacity-60')}>
+              <div className="grid grid-cols-[1fr_1fr_2fr_1fr_100px] gap-4 items-center w-full mr-4">
                 <div>
                   <p className="font-bold text-sm">{b.name}</p>
-                  <p className="text-[10px] text-muted-foreground uppercase font-medium">Bancada</p>
+                  <p className="text-[10px] text-muted-foreground uppercase font-medium">
+                    Bancada{b.isActive === false ? ' · inativa' : ''} · {examCount(b.id)} exame(s)
+                  </p>
+                </div>
+                <div>
+                  {b.tipo === 'apoio'
+                    ? <Badge variant="outline" className="border-accent text-accent-foreground bg-accent/20">Apoio: {apoioNome(b.apoioId)}</Badge>
+                    : <Badge variant="secondary">Interna</Badge>}
                 </div>
                 <div>
                   <p className="text-xs text-muted-foreground line-clamp-1">{b.description || '—'}</p>
@@ -1019,7 +1066,7 @@ function WorkbenchesSection() {
                 <Button variant="ghost" size="sm" className="h-8 w-8 p-0" onClick={() => handleOpenDialog(b)}>
                   <Edit2 className="h-3.5 w-3.5" />
                 </Button>
-                <Button variant="ghost" size="sm" className="h-8 w-8 p-0 text-red-600" onClick={() => removeWorkbench(b.id)}>
+                <Button variant="ghost" size="sm" className="h-8 w-8 p-0 text-destructive" onClick={() => handleRemove(b)}>
                   <Trash2 className="h-3.5 w-3.5" />
                 </Button>
               </div>
@@ -1038,7 +1085,7 @@ function WorkbenchesSection() {
           <DialogHeader>
             <DialogTitle>{editingWorkbench ? 'Editar Bancada' : 'Nova Bancada'}</DialogTitle>
             <DialogDescription>
-              Cadastre uma bancada técnica para organizar seus exames.
+              A bancada decide onde o exame é feito: aqui no laboratório (interna) ou num laboratório de apoio.
             </DialogDescription>
           </DialogHeader>
           <div className="grid gap-4 py-4">
@@ -1051,6 +1098,46 @@ function WorkbenchesSection() {
                 placeholder="Ex: Bioquímica"
               />
             </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="grid gap-2">
+                <Label htmlFor="wb-tipo">Tipo *</Label>
+                <select
+                  id="wb-tipo"
+                  value={tipo}
+                  disabled={!!editingWorkbench && examCount(editingWorkbench.id) > 0}
+                  onChange={(e) => setTipo(e.target.value as any)}
+                  className="w-full h-10 px-3 rounded-lg border bg-background text-sm outline-none focus:ring-2 focus:ring-primary/20"
+                >
+                  <option value="interna">Interna</option>
+                  <option value="apoio">Apoio</option>
+                </select>
+              </div>
+              {tipo === 'apoio' && (
+                <div className="grid gap-2">
+                  <Label htmlFor="wb-apoio">Laboratório de apoio *</Label>
+                  <select
+                    id="wb-apoio"
+                    value={apoioId}
+                    disabled={!!editingWorkbench && examCount(editingWorkbench.id) > 0}
+                    onChange={(e) => setApoioId(e.target.value)}
+                    className="w-full h-10 px-3 rounded-lg border bg-background text-sm outline-none focus:ring-2 focus:ring-primary/20"
+                  >
+                    <option value="">Selecione…</option>
+                    {apoios.filter(a => a.ativo || a.id === apoioId).map(a => <option key={a.id} value={a.id}>{a.nome}</option>)}
+                  </select>
+                  {apoios.length === 0 && <p className="text-[10px] text-muted-foreground">Cadastre o apoio em Terceirização › Laboratórios.</p>}
+                </div>
+              )}
+            </div>
+            {editingWorkbench && examCount(editingWorkbench.id) > 0 && (
+              <p className="text-[11px] text-muted-foreground">Tipo e apoio não mudam enquanto houver exames nesta bancada ({examCount(editingWorkbench.id)}).</p>
+            )}
+            {editingWorkbench && (
+              <div className="flex items-center justify-between rounded-lg border p-3">
+                <Label htmlFor="wb-ativa">Bancada ativa</Label>
+                <Switch id="wb-ativa" checked={ativa} onCheckedChange={setAtiva} />
+              </div>
+            )}
             <div className="grid gap-2">
               <Label htmlFor="wb-desc">Descrição</Label>
               <textarea

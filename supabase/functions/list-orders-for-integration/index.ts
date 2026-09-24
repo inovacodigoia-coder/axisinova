@@ -126,6 +126,8 @@ Deno.serve(async (req) => {
       for (const e of Array.isArray(g?.exams) ? g.exams : []) {
         const t = e?.collectedAt ? new Date(e.collectedAt).getTime() : 0
         if (!isNaN(t) && t > latest) latest = t
+        const tb = e?.bancadaTrocadaEm ? new Date(e.bancadaTrocadaEm).getTime() : 0
+        if (!isNaN(tb) && tb > latest) latest = tb
       }
     }
     return latest || updated
@@ -182,6 +184,16 @@ Deno.serve(async (req) => {
     }
   }
 
+  // ---- 5c. Bancadas: só exames de bancada INTERNA vão ao ServidorAisaxius ----
+  const { data: benches } = await supabase.from('lab_workbenches').select('id, tipo').eq('company_id', companyId)
+  const benchTipo = new Map<string, string>((benches || []).map((b: any) => [String(b.id), String(b.tipo || 'interna')]))
+  const { data: examRows } = await supabase.from('exams').select('id, workbench_id').eq('company_id', companyId)
+  const examBench = new Map<string, string | null>((examRows || []).map((e: any) => [String(e.id), e.workbench_id ? String(e.workbench_id) : null]))
+  const itemTipo = (e: any): string => {
+    const bid = e?.bancadaId || examBench.get(String(e?.id ?? '')) || null
+    return (bid && benchTipo.get(String(bid))) || e?.bancadaTipo || 'interna'
+  }
+
   const examState = (orderId: string, catalogId: string | null, code: string) =>
     (catalogId ? examStateMap.get(`${orderId}:${catalogId}`) : undefined) ??
     examStateMap.get(`${orderId}:${String(code).toUpperCase()}`) ??
@@ -218,6 +230,10 @@ Deno.serve(async (req) => {
       for (const e of list) {
         const code = String(e?.internalCode || e?.tussCode || e?.code || e?.id || '').trim()
         if (!code) continue
+        // Exame de bancada de apoio não roda no equipamento. Se já tinha sido enviado
+        // (retirado da bancada interna depois da coleta), sai como status "cancelled".
+        const retirado = itemTipo(e) === 'apoio'
+        if (retirado && e?.integracaoCancelada !== true) continue
         const material = e?.material ?? e?.defaultMaterial ?? null
         const type = tubeTypeForMaterial(material)
         if (!byTube.has(type)) byTube.set(type, { exams: [], collectedAt: null })
@@ -225,7 +241,7 @@ Deno.serve(async (req) => {
         const isCollected = e?.collected === true || !!e?.collectedAt
         const catalogId = e?.examId ?? e?.exam_id ?? e?.catalogId ?? e?.id ?? null
         const state = examState(String(o.id), catalogId ? String(catalogId) : null, code)
-        bucket.exams.push({ code, material, collected: isCollected, state })
+        bucket.exams.push({ code, material, collected: isCollected, state, cancelled: retirado })
         const at = e?.collectedAt ? new Date(e.collectedAt) : null
         if (at && !isNaN(at.getTime())) {
           const iso = at.toISOString()
@@ -250,6 +266,7 @@ Deno.serve(async (req) => {
         collected_at: bucket.collectedAt,
         material: bucket.exams.find((e) => e.material)?.material ?? tube.label,
         exams: bucket.exams.filter((e) => e.collected).map((e) => {
+          if (e.cancelled) return { code: e.code, status: 'cancelled' }
           if (!e.state) return { code: e.code, status: 'pending' }
           if (e.state.status !== 'released') return { code: e.code, status: e.state.status }
           return {

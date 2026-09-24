@@ -177,6 +177,9 @@ export interface LabWorkbench {
   reportBreakPolicy: 'sequential' | 'dedicated_page' | 'default'
   reportOrder: number
   isActive: boolean
+  /** interna = roda no laboratório/equipamento; apoio = vai para um laboratório de apoio */
+  tipo?: 'interna' | 'apoio'
+  apoioId?: string | null
   createdAt?: string
 }
 
