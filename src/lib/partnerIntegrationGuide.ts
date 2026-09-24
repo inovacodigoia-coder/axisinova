@@ -280,8 +280,6 @@ Content-Type: application/json
     "estado_civil": "Casada",
     "email": "maria@email.com",
     "gestante": false,
-    "peso_kg": 68.5,
-    "altura_m": 1.62,
     "endereco": {
       "cep": "59000-000",
       "logradouro": "Rua das Flores",
@@ -294,8 +292,6 @@ Content-Type: application/json
     "observacoes_gerais": "Paciente com sobrepeso."
   },
   "atendimento": {
-    "peso_kg": 68.5,
-    "altura_m": 1.62,
     "urgencia": false,
     "febre": false,
     "jejum": true,
