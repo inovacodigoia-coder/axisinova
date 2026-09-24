@@ -35,7 +35,7 @@ export async function carregarCatalogoInfo(apoioIds: string[]): Promise<Record<s
   ])
   const uids = [...new Set((syncs || []).map((s: any) => s.executado_por).filter(Boolean))]
   const { data: profs } = uids.length ? await db.from('profiles').select('id, full_name').in('id', uids) : { data: [] as any[] }
-  const nome = new Map((profs || []).map((p: any) => [p.id, p.full_name]))
+  const nome = new Map<string, string>((profs || []).map((p: any) => [p.id, p.full_name]))
   for (const id of apoioIds) {
     const s: any = (syncs || []).find((x: any) => x.apoio_id === id)
     const c: any = (curs || []).find((x: any) => x.apoio_id === id)
