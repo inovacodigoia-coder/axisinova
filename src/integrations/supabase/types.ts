@@ -2456,6 +2456,152 @@ export type Database = {
           },
         ]
       }
+      exame_bancada_troca: {
+        Row: {
+          bancada_de: string | null
+          bancada_para: string | null
+          company_id: string
+          created_at: string
+          detalhes: Json | null
+          exame_id: string
+          id: string
+          itens_movidos: number
+          motivo: string | null
+          pedido_id: string | null
+          pedido_item_ref: string | null
+          tipo: string
+          usuario_id: string | null
+        }
+        Insert: {
+          bancada_de?: string | null
+          bancada_para?: string | null
+          company_id: string
+          created_at?: string
+          detalhes?: Json | null
+          exame_id: string
+          id?: string
+          itens_movidos?: number
+          motivo?: string | null
+          pedido_id?: string | null
+          pedido_item_ref?: string | null
+          tipo: string
+          usuario_id?: string | null
+        }
+        Update: {
+          bancada_de?: string | null
+          bancada_para?: string | null
+          company_id?: string
+          created_at?: string
+          detalhes?: Json | null
+          exame_id?: string
+          id?: string
+          itens_movidos?: number
+          motivo?: string | null
+          pedido_id?: string | null
+          pedido_item_ref?: string | null
+          tipo?: string
+          usuario_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "exame_bancada_troca_bancada_de_fkey"
+            columns: ["bancada_de"]
+            isOneToOne: false
+            referencedRelation: "lab_workbenches"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "exame_bancada_troca_bancada_para_fkey"
+            columns: ["bancada_para"]
+            isOneToOne: false
+            referencedRelation: "lab_workbenches"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "exame_bancada_troca_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "exame_bancada_troca_exame_id_fkey"
+            columns: ["exame_id"]
+            isOneToOne: false
+            referencedRelation: "exams"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "exame_bancada_troca_pedido_id_fkey"
+            columns: ["pedido_id"]
+            isOneToOne: false
+            referencedRelation: "attendance_orders"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      exame_laudo_bancada: {
+        Row: {
+          ativo: boolean
+          bancada_id: string
+          company_id: string
+          created_at: string
+          exame_id: string
+          id: string
+          laudo_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          ativo?: boolean
+          bancada_id: string
+          company_id: string
+          created_at?: string
+          exame_id: string
+          id?: string
+          laudo_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          ativo?: boolean
+          bancada_id?: string
+          company_id?: string
+          created_at?: string
+          exame_id?: string
+          id?: string
+          laudo_id?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "exame_laudo_bancada_bancada_id_fkey"
+            columns: ["bancada_id"]
+            isOneToOne: false
+            referencedRelation: "lab_workbenches"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "exame_laudo_bancada_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "exame_laudo_bancada_exame_id_fkey"
+            columns: ["exame_id"]
+            isOneToOne: false
+            referencedRelation: "exams"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "exame_laudo_bancada_laudo_id_fkey"
+            columns: ["laudo_id"]
+            isOneToOne: false
+            referencedRelation: "exam_laudos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       exams: {
         Row: {
           attachment_rules: Json
@@ -3880,6 +4026,7 @@ export type Database = {
       }
       lab_workbenches: {
         Row: {
+          apoio_id: string | null
           company_id: string
           created_at: string | null
           description: string | null
@@ -3888,9 +4035,11 @@ export type Database = {
           name: string
           report_break_policy: string | null
           report_order: number | null
+          tipo: string
           updated_at: string | null
         }
         Insert: {
+          apoio_id?: string | null
           company_id: string
           created_at?: string | null
           description?: string | null
@@ -3899,9 +4048,11 @@ export type Database = {
           name: string
           report_break_policy?: string | null
           report_order?: number | null
+          tipo?: string
           updated_at?: string | null
         }
         Update: {
+          apoio_id?: string | null
           company_id?: string
           created_at?: string | null
           description?: string | null
@@ -3910,9 +4061,18 @@ export type Database = {
           name?: string
           report_break_policy?: string | null
           report_order?: number | null
+          tipo?: string
           updated_at?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "lab_workbenches_apoio_id_fkey"
+            columns: ["apoio_id"]
+            isOneToOne: false
+            referencedRelation: "apoio_laboratorio"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       login_attempts: {
         Row: {
@@ -5726,6 +5886,78 @@ export type Database = {
         Returns: Json
       }
       auth_release_lockout: { Args: { _lockout_id: string }; Returns: boolean }
+      bancada_aplicar_item: {
+        Args: {
+          _bancada: string
+          _base: string
+          _ex: Json
+          _exam: string
+          _motivo: string
+          _origem: string
+        }
+        Returns: Json
+      }
+      bancada_cancelar_apoio: {
+        Args: { _exam: string; _motivo: string; _pedido: string }
+        Returns: string
+      }
+      bancada_item_coletado: {
+        Args: { _ex: Json; _order_status: string }
+        Returns: boolean
+      }
+      bancada_item_tem_resultado: {
+        Args: { _exam: string; _order: string }
+        Returns: boolean
+      }
+      bancada_itens_exame: {
+        Args: { _exam: string }
+        Returns: {
+          apoio_status: string
+          bancada_id: string
+          coletado: boolean
+          criado_em: string
+          ei: number
+          gi: number
+          order_number: string
+          origem: string
+          paciente: string
+          pedido_id: string
+        }[]
+      }
+      bancada_laudo: {
+        Args: { _bancada: string; _exam: string }
+        Returns: string
+      }
+      bancada_prazo: {
+        Args: { _bancada: string; _de: string; _exam: string }
+        Returns: Json
+      }
+      bancada_prontidao: {
+        Args: { _bancada: string; _exam: string }
+        Returns: Json
+      }
+      bancada_tem_laudo: {
+        Args: { _bancada: string; _exam: string }
+        Returns: boolean
+      }
+      bancada_troca_previa: {
+        Args: { _bancada: string; _exam: string }
+        Returns: Json
+      }
+      bancada_trocar_cadastro: {
+        Args: { _bancada: string; _exam: string; _motivo?: string }
+        Returns: Json
+      }
+      bancada_trocar_pontual: {
+        Args: {
+          _bancada: string
+          _ei: number
+          _gi: number
+          _motivo: string
+          _pedido: string
+        }
+        Returns: Json
+      }
       calcular_prazo: {
         Args: {
           _company_id: string
@@ -5766,6 +5998,10 @@ export type Database = {
       eh_dia_util: {
         Args: { _company_id: string; _d: string }
         Returns: boolean
+      }
+      exame_destino: {
+        Args: { _bancada_id?: string; _exam_id: string }
+        Returns: Json
       }
       generate_external_access_code: { Args: never; Returns: string }
       get_user_company_id: { Args: { _user_id: string }; Returns: string }

@@ -190,6 +190,13 @@
       "when": 1790212459033,
       "tag": "0026_apoio_depara_lista",
       "breakpoints": true
+    },
+    {
+      "idx": 27,
+      "version": "7",
+      "when": 1790213033956,
+      "tag": "0027_bancada_destino_exame",
+      "breakpoints": true
     }
   ]
 }
