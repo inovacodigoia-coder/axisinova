@@ -26,7 +26,12 @@ export function parseResultados(xml: string): PedidoRes[] {
         c.metodo ||= texto(semItens, 'Metodo'); c.interpretacao ||= texto(semItens, 'Interpretacao')
         c.nota ||= texto(semItens, 'Nota'); c.comentario_patologista ||= texto(semItens, 'ComentarioDoPatologista')
         c.observacao ||= texto(semItens, 'Observacao')
-        for (const ia of filhos(semItens, 'InfAdicional')) { const t = texto(`<x>${ia}</x>`, 'InfAdicional'); if (t) c.inf_adicional!.push(t) }
+        for (const ia of filhos(semItens, 'InfAdicional')) {
+          const v = filhos(ia, 'Valor')[0] ?? ''
+          const val = numeroPardini(texto(`<x>${v}</x>`, 'Valor'), attr(v, 'Tipo'), attr(v, 'CasasDecimais'))
+          const t = [texto(ia, 'Descricao'), [val, texto(ia, 'Unidade')].filter(Boolean).join(' ')].filter(Boolean).join(': ')
+          if (t) c.inf_adicional!.push(t)
+        }
         for (const it of filhos(ex, 'ItemDeExame')) {
           const idI = attr(it, 'idItemDeExame')
           for (const r of filhos(it, 'Resultado')) {
