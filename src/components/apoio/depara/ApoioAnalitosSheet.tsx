@@ -6,7 +6,7 @@ import { Badge } from '@/components/ui/badge'
 import { db, norm } from './deparaUtils'
 import { extrairModelo, lerXml, type ModeloItem } from './modelosXml'
 
-interface Param { id: string; name: string; unit: string | null }
+interface Param { id: string; name: string; unit: string | null; casas_decimais?: number | null }
 
 export function ApoioAnalitosSheet({ deparaId, exameNome, readOnly, onClose, onChanged }: {
   deparaId: string | null; exameNome: string; readOnly: boolean; onClose: () => void; onChanged: () => void
