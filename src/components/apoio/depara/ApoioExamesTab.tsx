@@ -46,6 +46,7 @@ const situacoes = (d: Lista): Sit[] => {
 
 export function ApoioExamesTab({ moduloLiberado }: { moduloLiberado: boolean }) {
   const { companyId } = useApoioEntitlement()
+  const cadTubos = useMateriaisTubos(companyId)
   const { has } = useApoioPermissions()
   const pode = has('apoio.depara.gerenciar') && moduloLiberado
   const [sp, setSp] = useSearchParams()
@@ -124,7 +125,7 @@ export function ApoioExamesTab({ moduloLiberado }: { moduloLiberado: boolean }) 
       }
     }
     return out
-  }, [exames, porExame, filtro, fApoio, fSit, fSetor, fFalta, q])
+  }, [exames, porExame, filtro, fApoio, fSit, fSetor, fFalta, q, cadTubos])
 
   const [limite, setLimite] = useState(50)
   useEffect(() => setLimite(50), [filtro, fApoio, fSit, fSetor, fFalta, q])
