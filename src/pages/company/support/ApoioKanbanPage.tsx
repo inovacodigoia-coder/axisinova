@@ -27,7 +27,7 @@ const TODOS_STATUS = Object.keys(STATUS_APOIO)
 export default function ApoioKanbanPage() {
   const { user } = useAuth()
   const userId = (user as any)?.id as string | undefined
-  const { allOrigins } = useCompanyContext() as any
+  const { availableOrigins: allOrigins } = useCompanyContext() as any
   const apoio = useApoioEntitlement()
   const { has } = useApoioPermissions()
   const bloqueado = !apoio.loading && !apoio.enabled
