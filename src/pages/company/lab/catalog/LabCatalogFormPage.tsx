@@ -730,9 +730,22 @@ function GeneralInfoSection({
             </SelectTrigger>
             <SelectContent>
               {workbenches && workbenches.length > 0 ? (
-                workbenches.map(wb => (
-                  <SelectItem key={wb.id} value={wb.id}>{wb.name}</SelectItem>
-                ))
+                <>
+                  <SelectGroup>
+                    <SelectLabel>Internas</SelectLabel>
+                    {workbenches.filter((wb: any) => wb.tipo !== 'apoio' && (wb.isActive !== false || wb.id === data.workbenchId)).map((wb: any) => (
+                      <SelectItem key={wb.id} value={wb.id}>{wb.name}</SelectItem>
+                    ))}
+                  </SelectGroup>
+                  {workbenches.some((wb: any) => wb.tipo === 'apoio') && (
+                    <SelectGroup>
+                      <SelectLabel>Apoio</SelectLabel>
+                      {workbenches.filter((wb: any) => wb.tipo === 'apoio' && (wb.isActive !== false || wb.id === data.workbenchId)).map((wb: any) => (
+                        <SelectItem key={wb.id} value={wb.id}>🚚 {wb.name}</SelectItem>
+                      ))}
+                    </SelectGroup>
+                  )}
+                </>
               ) : (
                 <SelectItem value="none" disabled>Nenhuma bancada cadastrada</SelectItem>
               )}
