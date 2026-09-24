@@ -115,8 +115,8 @@ export function CadastroPrevia({ cad, companyId, mats, setMats, met, setMet, onM
             <div className="space-y-1.5">
               <p>Metodologia nova: <span className="font-medium">{m.sugerido}</span></p>
               <div className="flex flex-wrap gap-3">
-                <label className="flex items-center gap-1.5"><input type="radio" checked={m.opcao === 'criar' || (m.opcao === 'existente' && !!m.existente && m.aberto)} onChange={() => setMet({ ...m, opcao: 'criar', aberto: true })} />Criar</label>
-                <label className="flex items-center gap-1.5"><input type="radio" checked={m.opcao === 'existente' && !m.aberto} onChange={() => setMet({ ...m, opcao: 'existente', aberto: false })} />Usar uma existente</label>
+                <label className="flex items-center gap-1.5"><input type="radio" checked={m.opcao === 'criar'} onChange={() => setMet({ ...m, opcao: 'criar', aberto: true })} />Criar</label>
+                <label className="flex items-center gap-1.5"><input type="radio" checked={m.opcao === 'existente'} onChange={() => setMet({ ...m, opcao: 'existente', aberto: false })} />Usar uma existente</label>
                 <label className="flex items-center gap-1.5"><input type="radio" checked={m.opcao === 'nao'} onChange={() => setMet({ ...m, opcao: 'nao', aberto: false })} />Não preencher</label>
               </div>
               {m.opcao === 'criar' && (
