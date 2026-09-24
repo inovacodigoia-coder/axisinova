@@ -188,33 +188,16 @@ export function AttendanceDetailsModal({ open, onClose, onOrderDeleted, order, p
     }];
   }, [labOrder, order, guidesState]);
 
-  // Normaliza o material do exame para o tipo de tubo correspondente
-  const tubeTypeForMaterial = (material: any): string => {
-    const m = String(material || '')
-      .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
-      .toLowerCase().trim();
-    if (!m) return 'gel';
-    if (m.includes('fezes') || m.includes('fecal')) return 'fezes';
-    if (m.includes('escarro') || m.includes('secrec') || m.includes('swab') || m.includes('saliva')) return 'escarro';
-    if (m.includes('urina')) return 'urina';
-    if (m.includes('edta') || m.includes('sangue total') || m.includes('hemograma')) return 'edta';
-    if (m.includes('citrat') || m.includes('coagulacao')) return 'citrato';
-    if (m.includes('plasma')) return 'citrato';
-    if (m.includes('soro') || m.includes('gel') || m.includes('sangue')) return 'gel';
-    if (m.includes('frasco')) return 'urina';
-    return 'gel';
-  };
+  const tubeTypeForMaterial = (e: any): string => tuboDoExame(e);
 
   // Exames pertencentes a cada tubo/amostra
   const examsForTube = (tube: any) =>
-    orderExams.filter((e: any) => tubeTypeForMaterial(e.material) === tube.type);
+    orderExams.filter((e: any) => tubeTypeForMaterial(e) === tube.type);
 
   // Derived tubes list — considera todas as bancadas/materiais do pedido
   const patientTubes = useMemo(() => {
-    const types = new Set(orderExams.map((e: any) => tubeTypeForMaterial(e.material)));
-    const list = TUBE_TYPES.filter(tube => types.has(tube.type));
-    return list.length > 0 ? list : TUBE_TYPES.filter(t => t.type === 'gel');
-  }, [orderExams]);
+    return tubosDosExames(orderExams);
+  }, [orderExams, cadTubos]);
 
   // Bancada real do exame (catálogo -> lab_workbenches)
   const findCatalog = (e: any) =>
@@ -241,7 +224,7 @@ export function AttendanceDetailsModal({ open, onClose, onOrderDeleted, order, p
   };
 
   // ---- Coleta por amostra ----
-  const matchesTube = (material: any, tube: any) => tubeTypeForMaterial(material) === tube.type;
+  const matchesTube = (examOrMaterial: any, tube: any) => tubeTypeForMaterial(examOrMaterial) === tube.type;
 
   const tubeIsCollected = (tube: any) => {
     const exams = examsForTube(tube);

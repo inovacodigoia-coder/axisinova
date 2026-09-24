@@ -5,7 +5,7 @@ import { CheckCircle2, X, Droplets, AlertTriangle, Loader2, Printer } from 'luci
 import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
 import { useAttendanceCadastro } from '@/hooks/useAttendanceCadastro';
-import { TUBE_TYPES } from '@/types/lab.types';
+import { tuboDoExame, tuboInfo } from '@/lib/tubos';
 import type { AttendanceOrder } from '@/types/attendance-cadastro.types';
 import { canSetCollectionDone } from '@/utils/orderStatusFlow';
 import { ServidorImpressaoStatus } from '@/components/print/ServidorImpressaoStatus';
@@ -36,22 +36,8 @@ interface Props {
   multiSelect?: boolean;
 }
 
-// Normaliza o material do exame para o tipo de tubo correspondente
-export const tubeTypeForMaterial = (material: any): string => {
-  const m = String(material || '')
-    .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
-    .toLowerCase().trim();
-  if (!m) return 'gel';
-  if (m.includes('fezes') || m.includes('fecal')) return 'fezes';
-  if (m.includes('escarro') || m.includes('secrec') || m.includes('swab') || m.includes('saliva')) return 'escarro';
-  if (m.includes('urina')) return 'urina';
-  if (m.includes('edta') || m.includes('sangue total') || m.includes('hemograma')) return 'edta';
-  if (m.includes('citrat') || m.includes('coagulacao')) return 'citrato';
-  if (m.includes('plasma')) return 'citrato';
-  if (m.includes('soro') || m.includes('gel') || m.includes('sangue')) return 'gel';
-  if (m.includes('frasco')) return 'urina';
-  return 'gel';
-};
+// Tubo do exame: vem do cadastro de Materiais e Tubos (ver src/lib/tubos.ts)
+export const tubeTypeForMaterial = (examOrMaterial: any): string => tuboDoExame(examOrMaterial);
 
 export function AttendancePrintSelectionModal({ open, onClose, onConfirm, order, selectedExams, selectedTubes, multiSelect }: Props) {
   const { toast } = useToast();
@@ -100,8 +86,8 @@ export function AttendancePrintSelectionModal({ open, onClose, onConfirm, order,
   const materials = useMemo(() => {
     const map = new Map<string, { type: string; label: string; color: string; collected: boolean; exams: string[] }>();
     allExams.forEach((e: any) => {
-      const type = tubeTypeForMaterial(e.material);
-      const tube = TUBE_TYPES.find(t => t.type === type) || TUBE_TYPES[0];
+      const type = tubeTypeForMaterial(e);
+      const tube = tuboInfo(type);
       const current = map.get(type) || { type, label: tube.label, color: tube.color, collected: true, exams: [] };
       current.collected = current.collected && !!e.collected;
       current.exams.push(e.name);
@@ -166,7 +152,7 @@ export function AttendancePrintSelectionModal({ open, onClose, onConfirm, order,
     const nextGuides = guides.map((g: any) => ({
       ...g,
       exams: (g.exams || []).map((e: any) =>
-        collectedTypes.includes(tubeTypeForMaterial(e.material))
+        collectedTypes.includes(tubeTypeForMaterial(e))
           ? { ...e, collected: true, isColeta: true, collectedAt: e.collectedAt || now }
           : e
       ),

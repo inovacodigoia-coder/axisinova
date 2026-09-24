@@ -839,7 +839,7 @@ export function AttendanceCadastroModal({
                 labGuides: (prev.labGuides || []).map((g: any) => ({
                   ...g,
                   exams: (g.exams || []).map((e: any) =>
-                    collectedTypes.includes(tubeTypeForMaterial(e.material))
+                    collectedTypes.includes(tubeTypeForMaterial(e))
                       ? { ...e, collected: true, isColeta: true, collectedAt: e.collectedAt || now }
                       : e),
                 })),
