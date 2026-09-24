@@ -10,7 +10,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { useApoioPermissions } from '@/hooks/useApoio'
 import { maskCnpj } from '@/lib/cnpj'
 import { ApoioLaboratorioDrawer, type ApoioLab } from './ApoioLaboratorioDrawer'
-import { CatalogoUploadDialog, PrecoImportDialog } from './ApoioReferencia'
+import { CatalogoUploadDialog, PrecoImportDialog, CatalogoInfoLinha, carregarCatalogoInfo, type CatalogoInfo } from './ApoioReferencia'
 
 const diasAte = (d: string) => Math.floor((new Date(d + 'T00:00:00').getTime() - new Date(new Date().toDateString()).getTime()) / 86400000)
 
@@ -31,6 +31,7 @@ export function ApoioLaboratoriosTab({ moduloLiberado, onChanged }: { moduloLibe
   const [labs, setLabs] = useState<ApoioLab[]>([])
   const [erros, setErros] = useState<Record<string, boolean>>({})
   const [loading, setLoading] = useState(true)
+  const [catInfo, setCatInfo] = useState<Record<string, CatalogoInfo>>({})
   const [busca, setBusca] = useState('')
   const [fConector, setFConector] = useState<'todos' | 'pardini' | 'manual'>('todos')
   const [fAtivo, setFAtivo] = useState<'todos' | 'ativos' | 'inativos'>('ativos')
@@ -50,6 +51,7 @@ export function ApoioLaboratoriosTab({ moduloLiberado, onChanged }: { moduloLibe
     const e: Record<string, boolean> = {}
     ;(cur || []).forEach((c: any) => { if (c.ultimo_erro) e[c.apoio_id] = true })
     setErros(e)
+    setCatInfo(await carregarCatalogoInfo(((data || []) as any[]).filter(r => r.conector === 'pardini').map(r => r.id)))
     setLoading(false)
   }
   useEffect(() => { void load() }, [])
@@ -168,7 +170,7 @@ export function ApoioLaboratoriosTab({ moduloLiberado, onChanged }: { moduloLibe
                 const txt = l.modo_contingencia ? 'Modo manual' : erros[l.id] ? 'Falha' : 'OK'
                 return (
                   <tr key={l.id} className="border-b border-border last:border-0 hover:bg-muted/20">
-                    <td className="px-4 py-3 font-medium text-foreground">{l.nome}</td>
+                    <td className="px-4 py-3 font-medium text-foreground">{l.nome}{l.conector === 'pardini' && <div className="mt-1 font-normal"><CatalogoInfoLinha info={catInfo[l.id]} /></div>}</td>
                     <td className="px-4 py-3 font-mono text-xs">{l.cnpj ? maskCnpj(l.cnpj) : '—'}</td>
                     <td className="px-4 py-3"><Badge variant={l.conector === 'pardini' ? 'default' : 'secondary'}>{l.conector === 'pardini' ? 'Pardini' : 'Manual'}</Badge></td>
                     <td className="px-4 py-3 text-xs">{l.conector === 'pardini' ? (l.ambiente === 'producao' ? 'Produção' : 'Homologação') : '—'}</td>
@@ -208,7 +210,7 @@ export function ApoioLaboratoriosTab({ moduloLiberado, onChanged }: { moduloLibe
         onSaved={() => { setDrawer({ open: false, lab: null }); refresh() }}
       />
 
-      <CatalogoUploadDialog apoio={refDlg?.tipo === 'cat' ? refDlg.lab : null} open={refDlg?.tipo === 'cat'} onClose={() => setRefDlg(null)} />
+      <CatalogoUploadDialog apoio={refDlg?.tipo === 'cat' ? refDlg.lab : null} open={refDlg?.tipo === 'cat'} onClose={() => setRefDlg(null)} onDone={() => void load()} />
       <PrecoImportDialog apoio={refDlg?.tipo === 'preco' ? refDlg.lab : null} open={refDlg?.tipo === 'preco'} onClose={() => setRefDlg(null)} />
 
       <AlertDialog open={!!confirmModo} onOpenChange={o => !o && setConfirmModo(null)}>

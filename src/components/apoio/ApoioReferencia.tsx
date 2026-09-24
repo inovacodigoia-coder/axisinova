@@ -30,11 +30,11 @@ export async function carregarCatalogoInfo(apoioIds: string[]): Promise<Record<s
   const out: Record<string, CatalogoInfo> = {}
   if (!apoioIds.length) return out
   const [{ data: syncs }, { data: curs }] = await Promise.all([
-    supabase.from('apoio_catalogo_sincronizacao').select('apoio_id, created_at, total_arquivo, executado_por').in('apoio_id', apoioIds).order('created_at', { ascending: false }).limit(200),
-    supabase.from('apoio_cursor').select('apoio_id, ultimo_erro, ultimo_erro_em, ultimo_sucesso').eq('rotina', 'catalogo').in('apoio_id', apoioIds),
+    db.from('apoio_catalogo_sincronizacao').select('apoio_id, created_at, total_arquivo, executado_por').in('apoio_id', apoioIds).order('created_at', { ascending: false }).limit(200),
+    db.from('apoio_cursor').select('apoio_id, ultimo_erro, ultimo_erro_em, ultimo_sucesso').eq('rotina', 'catalogo').in('apoio_id', apoioIds),
   ])
   const uids = [...new Set((syncs || []).map((s: any) => s.executado_por).filter(Boolean))]
-  const { data: profs } = uids.length ? await supabase.from('profiles').select('id, full_name').in('id', uids) : { data: [] as any[] }
+  const { data: profs } = uids.length ? await db.from('profiles').select('id, full_name').in('id', uids) : { data: [] as any[] }
   const nome = new Map((profs || []).map((p: any) => [p.id, p.full_name]))
   for (const id of apoioIds) {
     const s: any = (syncs || []).find((x: any) => x.apoio_id === id)
@@ -76,7 +76,7 @@ export function CatalogoUploadDialog({ apoio, open, onClose, onDone }: { apoio: 
     if (!open || !apoio) return
     setFile(null); setRes(null); setPodeAuto(null); void carregarInfo()
     ;(async () => {
-      const { data } = await supabase.from('apoio_laboratorio').select('conector, cod_lab, senha_secret_id, senha_cifrada').eq('id', apoio.id).maybeSingle()
+      const { data } = await db.from('apoio_laboratorio').select('conector, cod_lab, senha_secret_id, senha_cifrada').eq('id', apoio.id).maybeSingle()
       const d: any = data
       setPodeAuto(!!d && d.conector === 'pardini' && !!d.cod_lab && !!(d.senha_secret_id || d.senha_cifrada))
     })()
