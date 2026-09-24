@@ -90,7 +90,15 @@ export const _attr = attr
 
 // ---------- Modelos de resultado (ModelosTodos / modelos.xml) ----------
 export interface ModeloValor { chave: string; nome: string; unidade: string; tipo: string; casas: number | null }
-export interface ModeloExame { codExmApoio: string; materialNome: string; exameNome: string; codigoFormato: string; itens: ModeloValor[] }
+export interface ModeloExame { codExmApoio: string; materialNome: string; exameNome: string; codigoFormato: string; unidadeProdutiva: string; metodo: string; ultimaLiberacao: string | null; itens: ModeloValor[] }
+
+/** "dd/mm/aaaa[ hh:mm[:ss]]" ou ISO -> ISO; vazio -> null */
+export function dataPardini(v: string): string | null {
+  const t = (v || '').trim(); if (!t) return null
+  const m = t.match(/^(\d{2})\/(\d{2})\/(\d{4})(?:[ T](\d{2}):(\d{2})(?::(\d{2}))?)?/)
+  if (m) return `${m[3]}-${m[2]}-${m[1]}T${m[4] || '00'}:${m[5] || '00'}:${m[6] || '00'}-03:00`
+  const d = new Date(t); return isNaN(d.getTime()) ? null : d.toISOString()
+}
 
 /** Atributo ou filho simples, olhando só o cabeçalho do bloco (sem os sub-blocos) */
 function campo(bloco: string, sub: string[], ...nomes: string[]): string {
@@ -134,7 +142,8 @@ export function parseModelos(xml: string): ModeloExame[] {
         }
       }
     }
-    out.push({ codExmApoio, materialNome, exameNome, codigoFormato, itens })
+    out.push({ codExmApoio, materialNome, exameNome, codigoFormato, itens,
+      unidadeProdutiva: campo(se, ['Exame'], 'UnidadeProdutiva'), metodo: campo(se, ['Exame'], 'Metodo'), ultimaLiberacao: dataPardini(campo(se, ['Exame'], 'UltimaLiberacao')) })
   }
   return out
 }

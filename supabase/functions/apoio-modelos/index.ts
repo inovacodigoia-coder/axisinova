@@ -30,11 +30,11 @@ Deno.serve(async (req) => {
     if (todos) {
     const rows = modelos.map((m) => ({
       company_id: ctx.lab.company_id, apoio_id: ctx.lab.id, cod_exm_apoio: m.codExmApoio,
-      material_nome: m.materialNome || null, exame_nome: m.exameNome || null, codigo_formato: m.codigoFormato || null,
+      material_nome: m.materialNome || null, exame_nome: m.exameNome || null, codigo_formato: m.codigoFormato || '', unidade_produtiva: m.unidadeProdutiva || null, metodo: m.metodo || null, ultima_liberacao: m.ultimaLiberacao,
       modelo_json: m.itens, origem: 'automatico', atualizado_em: agora,
     }))
     for (let i = 0; i < rows.length; i += 300) {
-      const { error } = await admin.from('apoio_modelo_resultado').upsert(rows.slice(i, i + 300), { onConflict: 'apoio_id,cod_exm_apoio' })
+      const { error } = await admin.from('apoio_modelo_resultado').upsert(rows.slice(i, i + 300), { onConflict: 'apoio_id,cod_exm_apoio,codigo_formato' })
       if (error) throw new Error(`Falha ao gravar modelos: ${error.message}`)
     }
     }
