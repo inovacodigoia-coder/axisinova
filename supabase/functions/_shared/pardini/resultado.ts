@@ -148,7 +148,7 @@ export async function importar(ctx: Ctx, pedidos: PedidoRes[], opts: { reprocess
         const { data: ja } = await admin.from('apoio_acao_pendente').select('id').eq('pedido_exame_id', pe.id).eq('tipo', 'revisar_depara').is('concluida_em', null).limit(1)
         if (!ja?.length) {
           await admin.from('apoio_acao_pendente').insert({ company_id: pe.company_id, pedido_exame_id: pe.id, tipo: 'revisar_depara', descricao: desc })
-          await admin.rpc('apoio_alertar', { _company: pe.company_id, _evento: 'apoio_formato_novo', _perm: 'apoio.resultado.liberar', _titulo: 'Formato novo do apoio', _msg: desc, _rota: '/app/apoio/kanban?visao=excecoes' }).then(() => {}, () => {})
+          await admin.rpc('apoio_alertar', { _company: pe.company_id, _evento: 'apoio_formato_novo', _perm: 'apoio.depara.gerenciar', _titulo: 'Formato novo do apoio', _msg: desc, _rota: '/app/apoio/kanban?visao=excecoes' }).then(() => {}, () => {})
         }
       }
       if (situacao === 'importado' && s.conteudo.analitos.some((a) => { const m = mapa.get(a.chave); return !m || (!m.ignorar && !m.parametro_id) })) situacao = 'pendente_depara'
