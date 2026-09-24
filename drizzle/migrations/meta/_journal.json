@@ -169,6 +169,13 @@
       "when": 1790211880373,
       "tag": "0023_apoio_prazo_fonte_unica",
       "breakpoints": true
+    },
+    {
+      "idx": 24,
+      "version": "7",
+      "when": 1790212004898,
+      "tag": "0024_apoio_remover_tabela_ficticia",
+      "breakpoints": true
     }
   ]
 }
