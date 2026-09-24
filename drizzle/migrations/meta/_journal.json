@@ -204,6 +204,13 @@
       "when": 1790213074055,
       "tag": "0028_bancada_trocar_cadastro_auditoria",
       "breakpoints": true
+    },
+    {
+      "idx": 29,
+      "version": "7",
+      "when": 1790213556358,
+      "tag": "0029_bancada_prontidao_fix_array",
+      "breakpoints": true
     }
   ]
 }
