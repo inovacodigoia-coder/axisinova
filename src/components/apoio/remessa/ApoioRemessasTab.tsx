@@ -12,6 +12,7 @@ import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '
 import { EmptyState } from '@/components/feedback/EmptyState'
 import { useApoioEntitlement, useApoioPermissions } from '@/hooks/useApoio'
 import { TEMPERATURAS, TuboRemessa, ItemRemessa, gerarEpl, baixarTexto, gerarRomaneio } from './remessaDocs'
+import { imprimirEtiquetas, servidorImpressaoAtivo, DadosEtiqueta } from '@/lib/impressaoLocal'
 
 interface Remessa {
   id: string; cod_lote_lab: number; apoio_id: string; apoio_nome: string; created_at: string; criado_por_nome: string | null
@@ -295,8 +296,29 @@ function DetalheRemessa({ id, remessa: r0, pode, onClose, onChanged }: { id: str
   const romaneio = () => gerarRomaneio({ laboratorio: labNome, apoio: r.apoio_nome, numero: r.cod_lote_lab, temperatura: r.temperatura, itens, totalTubos: tubos.length })
   const baixarPdf = () => romaneio().save(`romaneio-remessa-${r.cod_lote_lab}.pdf`)
   const imprimirRomaneio = async () => {
-    const b64 = romaneio().output('datauristring').split(',')[1]
-    if (await enfileirar('romaneio_pdf', b64, `remessa:${r.cod_lote_lab}`)) toast.success('Romaneio enviado para a fila de impressão')
+    if (!(await servidorImpressaoAtivo())) {
+      toast.error('Servidor de Impressão AisAxius não está aberto. Abra o programa na bandeja do Windows e tente de novo.')
+      return
+    }
+    const linhas = itens.filter(i => i.tubo)
+    if (!linhas.length) { toast.error('Nenhum tubo com código nesta remessa para imprimir.'); return }
+    const etiquetas: DadosEtiqueta[] = linhas.map((i, idx) => ({
+      codigoAmostra: i.tubo,
+      codigoExterno: i.order_number || undefined,
+      paciente: i.paciente || undefined,
+      exames: i.exame || undefined,
+      tipoAmostra: i.material || undefined,
+      painel: r.apoio_nome || undefined,
+      dataHora: fmt(r.created_at),
+      laboratorio: r.apoio_nome || undefined,
+      fimPedido: idx === linhas.length - 1,
+    }))
+    try {
+      const res = await imprimirEtiquetas('etiqueta_apoio_pardini', etiquetas)
+      toast.success(`${res?.etiquetas ?? etiquetas.length} etiqueta(s) enviada(s) para impressão.`)
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Falha ao imprimir as etiquetas.')
+    }
   }
 
   const etapas = [
