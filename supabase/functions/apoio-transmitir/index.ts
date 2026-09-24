@@ -2,7 +2,8 @@
 import { z } from 'npm:zod@3'
 import { adminClient, autenticar, carregarCtx, corsHeaders, cursorGravar, idMsg, json } from '../_shared/pardini/contexto.ts'
 import { chamar, hojeBR, PardiniErro, type Ctx } from '../_shared/pardini/soap.ts'
-import { conteudoUtil, esc, filhos, texto } from '../_shared/pardini/xml.ts'
+import { conteudoUtil, esc, texto } from '../_shared/pardini/xml.ts'
+import { parseAdmitido } from '../_shared/pardini/parsers.ts'
 
 const Body = z.object({ remessa_id: z.string().uuid() })
 const cortar = (s: unknown, n: number) => String(s ?? '').slice(0, n)
@@ -44,16 +45,17 @@ function erroNegocio(util: string): { codigo: string; msg: string } | null {
 
 async function aplicarAdmitido(ctx: Ctx, remessa: any, exames: any[], util: string) {
   const { admin, lab } = ctx
-  const codLoteApoio = texto(util, 'CodLoteApoio')
+  const adm = parseAdmitido(util)
+  if (!adm) throw new Error('Resposta sem RegistroAdmitido')
+  const codLoteApoio = adm.codLoteApoio
   let recipientes = 0
   const transmitidos = new Set<string>()
-  for (const p of filhos(util, 'Pedido')) {
-    const codPedLab = texto(p.replace(/<Recipiente\b[\s\S]*/i, ''), 'CodPedLab')
-    const codPedApoio = texto(p.replace(/<Recipiente\b[\s\S]*/i, ''), 'CodPedApoio')
+  for (const p of adm.pedidos) {
+    const codPedLab = p.codPedLab, codPedApoio = p.codPedApoio
     const doPedido = exames.filter((e) => String(e.ordem.order_number ?? e.ordem.protocol).replace(/\s/g, '').slice(0, 15) === codPedLab)
-    for (const r of filhos(p, 'Recipiente')) {
-      const codBar = texto(r, 'CodBarApoio'), epl = texto(r, 'EtqCodBar')
-      const codigos = filhos(r, 'Exame').map((x) => texto(x, 'CodExmApoio').toUpperCase())
+    for (const r of p.recipientes) {
+      const codBar = r.codBarApoio, epl = r.etiquetaEpl
+      const codigos = r.exames.map((x) => x.codExmApoio.toUpperCase())
       const { data: existente } = await admin.from('apoio_recipiente').select('id').eq('remessa_id', remessa.id).eq('cod_bar_apoio', codBar).maybeSingle()
       let recId = existente?.id
       if (!recId) {
@@ -66,7 +68,7 @@ async function aplicarAdmitido(ctx: Ctx, remessa: any, exames: any[], util: stri
       }
       for (const e of doPedido) {
         const c = `${e.codigo_apoio}|${e.sequencial ?? 1}`.toUpperCase()
-        if (codigos.length && !codigos.includes(c) && !codigos.some((x) => x.startsWith(String(e.codigo_apoio).toUpperCase()))) continue
+        if (codigos.length && !codigos.includes(c)) continue
         await admin.from('apoio_pedido_exame').update({ cod_ped_apoio: codPedApoio, recipiente_id: recId, erro: null }).eq('id', e.id)
         transmitidos.add(e.id)
       }
