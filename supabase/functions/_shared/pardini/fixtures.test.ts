@@ -139,3 +139,10 @@ Deno.test('modelo: chave igual à do resultado, nome, unidade e tamanho', async 
   const mic = ms.find((m) => m.codExmApoio === 'U-24|M-ALB|1')!
   if (mic.itens.length !== 1 || mic.itens[0].unidade !== 'mg/24 h') throw new Error(JSON.stringify(mic.itens)) // InfAdicional não entra
 })
+
+Deno.test('modelo: ValorDeReferencia nunca vira parâmetro', async () => {
+  const { parseModelos } = await import('./parsers.ts')
+  const xml = `<SuperExame><CodExmApoio>DIV|HCTAB|1</CodExmApoio><CodigoFormato>20817</CodigoFormato><Exame idExame="1"><ItemDeExame idItemDeExame="1"><Resultado idResultado="1"><Conteudo><Valor idValor="1" Tipo="alfanumerico" TamanhoMaximo="14" /></Conteudo></Resultado><Resultado idResultado="2"><Conteudo><Valor idValor="1" Tipo="alfanumerico" TamanhoMaximo="1350" /></Conteudo><ValorDeReferencia><Valor idValor="2" Tipo="alfanumerico" TamanhoMaximo="165" /></ValorDeReferencia></Resultado></ItemDeExame></Exame></SuperExame>`
+  const itens = parseModelos(xml)[0]?.itens ?? []
+  assertEquals(itens.map((i) => [i.chave, i.tamanho]), [['1/1/1/1', 14], ['1/1/2/1', 1350]])
+})
