@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { upsertSector } from '@/stores/sectorsStore'
 import { supabase } from '@/integrations/supabase/client'
 import { useParams, useNavigate } from 'react-router-dom'
 import { ArrowLeft, Plus, Pencil, Trash2, GripVertical, Copy, Eye, EyeOff, RefreshCw, ExternalLink } from 'lucide-react'
