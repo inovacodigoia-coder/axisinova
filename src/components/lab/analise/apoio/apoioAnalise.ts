@@ -61,7 +61,17 @@ export function useApoioAnalise(pedidoIds: string[]) {
   const recarregar = useCallback(async () => {
     if (!key) { setLista([]); return; }
     const { data, error } = await supabase.rpc('apoio_analise_estado' as any, { _pedidos: key.split(',') });
-    if (!error) setLista((data as any) || []);
+    if (error) return;
+    const l: ApoioEstado[] = (data as any) || [];
+    // Casas decimais: De/Para (se preenchido) -> máscara do parâmetro -> valor como veio
+    const pids = Array.from(new Set(l.flatMap(e => (e.analitos || []).map(a => a.parametro_id).filter(Boolean)))) as string[];
+    if (pids.length) {
+      const { data: ps } = await (supabase as any).from('lab_exam_parameters').select('id, casas_decimais').in('id', pids);
+      const mask: Record<string, number | null> = {};
+      (ps || []).forEach((p: any) => { mask[p.id] = p.casas_decimais; });
+      l.forEach(e => (e.analitos || []).forEach(a => { if (a.casas_decimais == null && a.parametro_id) a.casas_decimais = mask[a.parametro_id] ?? null; }));
+    }
+    setLista(l);
   }, [key]);
   useEffect(() => { recarregar(); }, [recarregar]);
   const porExame = useMemo(() => {

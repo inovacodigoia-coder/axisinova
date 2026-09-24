@@ -387,6 +387,7 @@ export default function LabCatalogFormPage() {
               unit: param.unit || '',
               is_required: param.isMandatory ?? true,
               allow_negative: param.allowNegative ?? false,
+              casas_decimais: param.decimals === '' || param.decimals == null ? null : Number(param.decimals),
               is_calculated: param.isCalculated ?? false,
               is_hidden: param.isHidden ?? false,
               formula: param.formula || '',
@@ -1192,6 +1193,7 @@ function ParametersSection({
                       </td>
                       <td className="px-2 py-2">
                         <div className="flex gap-1 items-center">
+                          <input type="number" min={0} max={6} title="Casas decimais no laudo" placeholder="Casas" value={param.decimals ?? ''} onChange={(e) => updateParameter(param.id, 'decimals', e.target.value === '' ? null : Number(e.target.value))} className="mb-1 w-full rounded-md border border-input bg-background px-2 py-1 text-[11px]" />
                           <Select value={param.unit} onValueChange={(val) => updateParameter(param.id, 'unit', val)}>
                             <SelectTrigger className="h-8 text-[10px] flex-1 border-transparent hover:border-border focus:border-primary group-hover:bg-white bg-transparent px-2">
                               <SelectValue placeholder="Unid." />

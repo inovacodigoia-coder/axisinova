@@ -6,7 +6,7 @@ import { Badge } from '@/components/ui/badge'
 import { db, norm } from './deparaUtils'
 import { extrairModelo, lerXml, type ModeloItem } from './modelosXml'
 
-interface Param { id: string; name: string; unit: string | null }
+interface Param { id: string; name: string; unit: string | null; casas_decimais?: number | null }
 
 export function ApoioAnalitosSheet({ deparaId, exameNome, readOnly, onClose, onChanged }: {
   deparaId: string | null; exameNome: string; readOnly: boolean; onClose: () => void; onChanged: () => void
@@ -22,20 +22,23 @@ export function ApoioAnalitosSheet({ deparaId, exameNome, readOnly, onClose, onC
     const { data: d } = await db.from('apoio_depara_exame').select('id, company_id, exame_id, codigo_apoio, codigo_formato, modelo, codigo_formato_anterior, modelo_anterior, modelo_mudou, modelo_carregado_em').eq('id', deparaId).single()
     setDp(d)
     const [{ data: ps }, { data: an }] = await Promise.all([
-      db.from('lab_exam_parameters').select('id, name, unit').eq('exam_id', d.exame_id).order('sort_order'),
-      db.from('apoio_depara_analito').select('codigo_formato, chave_analito, parametro_id, ignorar').eq('depara_exame_id', deparaId),
+      db.from('lab_exam_parameters').select('id, name, unit, casas_decimais').eq('exam_id', d.exame_id).order('sort_order'),
+      db.from('apoio_depara_analito').select('codigo_formato, chave_analito, parametro_id, ignorar, casas_decimais').eq('depara_exame_id', deparaId),
     ])
     setParams(ps || [])
-    const m: Record<string, string> = {}, a: Record<string, string> = {}
+    const m: Record<string, string> = {}, a: Record<string, string> = {}, cs: Record<string, number | null> = {}
+    for (const i of (d.modelo || []) as ModeloItem[]) cs[i.chave] = i.casas ?? null
     for (const r of an || []) {
+      if (r.codigo_formato === (d.codigo_formato || '') && r.casas_decimais != null) cs[r.chave_analito] = r.casas_decimais
       const v = r.ignorar ? 'ignorar' : r.parametro_id || ''
       if (r.codigo_formato === (d.codigo_formato || '')) m[r.chave_analito] = v
       else if (r.codigo_formato === (d.codigo_formato_anterior || '')) a[r.chave_analito] = v
     }
-    setMap(m); setAntigos(a)
+    setMap(m); setAntigos(a); setCasas(cs)
   }, [deparaId])
   useEffect(() => { setDp(null); load() }, [load])
 
+  const [casas, setCasas] = useState<Record<string, number | null>>({})
   const itens: ModeloItem[] = dp?.modelo || []
   const faltam = itens.filter(i => !map[i.chave]).length
   const comparacao = useMemo(() => {
@@ -60,6 +63,7 @@ export function ApoioAnalitosSheet({ deparaId, exameNome, readOnly, onClose, onC
       const mudou = !!dp.codigo_formato && dp.codigo_formato !== mod.codigoFormato
       const upd: any = { modelo: mod.itens, codigo_formato: mod.codigoFormato, modelo_carregado_em: new Date().toISOString() }
       if (mudou) Object.assign(upd, { modelo_anterior: dp.modelo, codigo_formato_anterior: dp.codigo_formato, modelo_mudou: true })
+      setCasas(c => { const n = { ...c }; mod.itens.forEach(i => { if (i.casas != null) n[i.chave] = i.casas }); return n })
       const { error } = await db.from('apoio_depara_exame').update(upd).eq('id', dp.id)
       if (error) throw error
       toast[mudou ? 'warning' : 'success'](mudou ? 'O modelo do apoio mudou: revise a comparação' : `Modelo carregado: ${mod.itens.length} valores`)
@@ -100,6 +104,7 @@ export function ApoioAnalitosSheet({ deparaId, exameNome, readOnly, onClose, onC
       const rows = itens.filter(i => map[i.chave]).map(i => ({
         company_id: dp.company_id, depara_exame_id: dp.id, codigo_formato: fmt, chave_analito: i.chave, nome_apoio: i.nome,
         parametro_id: map[i.chave] === 'ignorar' ? null : map[i.chave], ignorar: map[i.chave] === 'ignorar',
+        casas_decimais: casas[i.chave] ?? null,
       }))
       if (rows.length) { const { error } = await db.from('apoio_depara_analito').insert(rows); if (error) throw error }
       if (dp.modelo_mudou && rows.length === itens.length) await db.from('apoio_depara_exame').update({ modelo_mudou: false }).eq('id', dp.id)
@@ -150,7 +155,7 @@ export function ApoioAnalitosSheet({ deparaId, exameNome, readOnly, onClose, onC
             ) : (
               <div className="overflow-x-auto rounded-xl border border-border">
                 <table className="w-full text-xs">
-                  <thead className="bg-muted/50 text-left text-muted-foreground"><tr><th className="px-3 py-2">Valor no apoio</th><th className="px-3 py-2">Chave</th><th className="px-3 py-2">Unid.</th><th className="px-3 py-2">Tipo</th><th className="px-3 py-2 w-64">Parâmetro nosso</th></tr></thead>
+                  <thead className="bg-muted/50 text-left text-muted-foreground"><tr><th className="px-3 py-2">Valor no apoio</th><th className="px-3 py-2">Chave</th><th className="px-3 py-2">Unid.</th><th className="px-3 py-2">Tipo</th><th className="px-3 py-2 w-64">Parâmetro nosso</th><th className="px-3 py-2 w-28">Casas decimais</th></tr></thead>
                   <tbody>
                     {itens.map(i => (
                       <tr key={i.chave} className={`border-t border-border ${!map[i.chave] ? 'bg-destructive/5' : ''}`}>
@@ -165,6 +170,19 @@ export function ApoioAnalitosSheet({ deparaId, exameNome, readOnly, onClose, onC
                             {params.map(p => <option key={p.id} value={p.id}>{p.name}{p.unit ? ` (${p.unit})` : ''}</option>)}
                           </select>
                         </td>
+                        {(() => {
+                          const par = params.find(p => p.id === map[i.chave])
+                          const nossa = par?.casas_decimais
+                          const dif = casas[i.chave] != null && nossa != null && casas[i.chave] !== nossa
+                          return (
+                            <td className={`px-3 py-2 ${dif ? 'bg-warning/20' : ''}`}>
+                              <input type="number" min={0} max={6} disabled={readOnly} value={casas[i.chave] ?? ''} placeholder={nossa != null ? String(nossa) : '—'}
+                                onChange={e => setCasas(c => ({ ...c, [i.chave]: e.target.value === '' ? null : Number(e.target.value) }))}
+                                className="w-16 rounded-lg border border-input bg-background px-2 py-1.5" />
+                              {dif && <p className="mt-1 text-[10px] leading-tight text-foreground">Apoio manda {casas[i.chave]} casa{casas[i.chave] === 1 ? '' : 's'}; nosso laudo usa {nossa}</p>}
+                            </td>
+                          )
+                        })()}
                       </tr>
                     ))}
                   </tbody>
