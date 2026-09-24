@@ -36,8 +36,7 @@ const LAB_COLS = 'id, company_id, nome, cod_lab, endpoint_url, opcoes, modo_cont
 export async function carregarCtx(admin: any, apoioId: string): Promise<Ctx> {
   const { data: lab, error } = await admin.from('apoio_laboratorio').select(LAB_COLS).eq('id', apoioId).single()
   if (error || !lab) throw new Error('Laboratório de apoio não encontrado')
-  const { data: senha, error: e2 } = await admin.rpc('apoio_get_senha', { _apoio_id: apoioId })
-  if (e2) throw new Error('Não foi possível ler a senha do conector (função apoio_get_senha ausente?)')
+  const senha = await lerSenha(admin, apoioId)
   if (!senha) throw new Error('Senha do conector não cadastrada')
   return { admin, lab: lab as Lab, senha: senha as string }
 }
@@ -90,3 +89,14 @@ export async function paraCada(admin: any, labs: Lab[], rotina: string, fn: (ctx
 
 export const uuidOk = (s: unknown) => typeof s === 'string' && /^[0-9a-f-]{36}$/i.test(s)
 export const idMsg = () => `AX${Date.now()}${Math.floor(Math.random() * 1000)}`
+
+/** Senha do conector: tenta o Vault (apoio_get_senha); se a função não existir, usa a coluna cifrada. */
+export async function lerSenha(admin: any, apoioId: string): Promise<string | null> {
+  const v = await admin.rpc('apoio_get_senha', { _apoio_id: apoioId })
+  if (!v.error && v.data) return v.data as string
+  const chave = Deno.env.get('APOIO_CRYPTO_KEY')
+  if (!chave) throw new Error('Chave de cifragem do conector ausente')
+  const c = await admin.rpc('apoio_senha_ler_cifrada', { _apoio_id: apoioId, _chave: chave })
+  if (c.error) throw new Error('Não foi possível ler a senha do conector')
+  return (c.data as string) ?? null
+}

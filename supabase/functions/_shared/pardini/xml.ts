@@ -1,4 +1,5 @@
-// Utilitários de XML tolerantes (sem DOM): tags desconhecidas são ignoradas.
+// Utilitários de XML. O envelope SOAP é lido com parser de verdade (xmldom); o XML interno com helpers tolerantes.
+import { DOMParser } from 'npm:@xmldom/xmldom@0.8.10'
 
 export const esc = (s: unknown) =>
   String(s ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&apos;')
@@ -18,12 +19,17 @@ export function corrigirAcentos(s: string): string {
   } catch { return s }
 }
 
-/** Decodifica bytes de resposta respeitando o encoding declarado */
+/** Respostas do webservice (SOAP): sempre UTF-8, mesmo com o XML interno declarando ISO-8859-1 */
 export function decodificar(buf: Uint8Array): string {
-  const head = new TextDecoder('latin1').decode(buf.slice(0, 200))
-  const enc = /encoding=["']iso-8859-1["']/i.test(head) ? 'iso-8859-1' : 'utf-8'
-  return new TextDecoder(enc).decode(buf)
+  return new TextDecoder('utf-8').decode(buf)
 }
+
+/** Arquivos baixados por URL (tabexalhpV2.xml, modelos.xml): ISO-8859-1 de verdade */
+export function decodificarArquivo(buf: Uint8Array): string {
+  return new TextDecoder('iso-8859-1').decode(buf)
+}
+
+const semDeclaracao = (s: string) => s.replace(/^\uFEFF?\s*<\?xml[^>]*\?>/i, '').trim()
 
 const reTag = (tag: string) => `(?:[\\w-]+:)?${tag}`
 
@@ -78,17 +84,36 @@ export function attr(bloco: string, nome: string): string {
 }
 
 /**
- * Extrai o XML útil que vem dentro do retorno SOAP: em CDATA (getResultado)
- * ou como texto escapado (&lt;RegistroAdmitido&gt;… no getPedido).
+ * Extrai o XML útil do retorno SOAP. O envelope é lido com parser XML de verdade e usamos o
+ * textContent do elemento *Result / return, que junta todos os pedaços de CDATA
+ * (o Pardini divide o bloco em vários: "]]]]><![CDATA[>"). Nunca usar regex no CDATA.
  */
 export function conteudoUtil(envelope: string): string {
+  let doc: any
+  try { doc = new DOMParser({ errorHandler: { warning: () => {}, error: () => {}, fatalError: () => {} } }).parseFromString(semDeclaracao(envelope), 'text/xml') } catch { doc = null }
+  if (doc?.documentElement) {
+    const todos = doc.getElementsByTagName('*')
+    let alvo: any = null
+    for (let i = 0; i < todos.length; i++) {
+      const n = todos[i].localName || todos[i].nodeName
+      if (/Result$/i.test(n) || n === 'return') { alvo = todos[i]; break }
+    }
+    if (alvo) {
+      const t = String(alvo.textContent ?? '')
+      return /</.test(t) ? semDeclaracao(t) : t.trim()
+    }
+    const body = doc.getElementsByTagNameNS('*', 'Body')[0]
+    if (body) {
+      const t = String(body.textContent ?? '')
+      if (/<[A-Za-z]/.test(t)) return semDeclaracao(t)
+    }
+  }
   const body = envelope.match(/<(?:\w+:)?Body[^>]*>([\s\S]*)<\/(?:\w+:)?Body>/i)?.[1] ?? envelope
-  const cd = body.match(/<!\[CDATA\[([\s\S]*?)\]\]>/)
-  if (cd) return corrigirAcentos(cd[1].replace(/^\s*<\?xml[^>]*>/, ''))
-  const esc = body.match(/&lt;\??[A-Za-z][\s\S]*&gt;/)
-  if (esc) return corrigirAcentos(desescapar(esc[0]).replace(/^\s*<\?xml[^>]*>/, ''))
-  return corrigirAcentos(body)
+  return semDeclaracao(body)
 }
+
+/** Quantos <Pedido> aparecem no texto (para conferir contra o que foi lido) */
+export const contarTag = (xml: string, tag: string) => (xml.match(new RegExp(`<(?:[\\w-]+:)?${tag}[\\s>/]`, 'g')) ?? []).length
 
 /** Resolve SOAP-encoding multi-ref (href="#idN") embutindo os <multiRef id="idN"> */
 export function resolverHref(xml: string): string {

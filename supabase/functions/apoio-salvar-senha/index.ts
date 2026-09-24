@@ -32,8 +32,11 @@ Deno.serve(async (req) => {
     if (!pode) return json({ error: "Sem permissão para gerenciar laboratórios de apoio" }, 403);
 
     const admin = createClient(url, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!);
-    const { error } = await admin.rpc("apoio_set_senha", { _apoio_id: apoioId, _senha: senha });
-    if (error) return json({ error: "Não foi possível guardar a senha" }, 500);
+    // Alternativa sem Vault (sempre gravada): cifrada com a chave que só existe nas Edge Functions.
+    const chave = Deno.env.get("APOIO_CRYPTO_KEY");
+    const cif = chave ? await admin.rpc("apoio_senha_gravar_cifrada", { _apoio_id: apoioId, _senha: senha, _chave: chave }) : { error: new Error("sem chave") };
+    const vault = await admin.rpc("apoio_set_senha", { _apoio_id: apoioId, _senha: senha });
+    if (cif.error && vault.error) return json({ error: "Não foi possível guardar a senha" }, 500);
     return json({ ok: true });
   } catch (_e) {
     return json({ error: "Erro inesperado" }, 500);
