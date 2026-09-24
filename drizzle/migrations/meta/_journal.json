@@ -246,6 +246,13 @@
       "when": 1790215457844,
       "tag": "0034_apoio_kanban_prompt8",
       "breakpoints": true
+    },
+    {
+      "idx": 35,
+      "version": "7",
+      "when": 1790215494202,
+      "tag": "0035_apoio_kanban_lista_fix",
+      "breakpoints": true
     }
   ]
 }
