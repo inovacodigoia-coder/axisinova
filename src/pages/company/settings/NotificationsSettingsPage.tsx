@@ -11,6 +11,7 @@ export default function NotificationsSettingsPage() {
     { name: 'Resultado disponível', email: true, sms: false },
     { name: 'Lembrete de exame (dia ant.)', email: false, sms: true },
     { name: 'Confirmação de agendamento', email: true, sms: true },
+    { name: 'Recoleta necessária (exame de apoio)', email: true, sms: true },
   ];
 
   const doctorEvents = [

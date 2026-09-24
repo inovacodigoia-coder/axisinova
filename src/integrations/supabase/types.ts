@@ -126,6 +126,70 @@ export type Database = {
           },
         ]
       }
+      apoio_acao_pendente: {
+        Row: {
+          company_id: string
+          concluida_em: string | null
+          concluida_por: string | null
+          created_at: string
+          criada_por: string | null
+          descricao: string
+          id: string
+          observacao: string | null
+          pedido_exame_id: string
+          tipo: string
+          updated_at: string
+        }
+        Insert: {
+          company_id: string
+          concluida_em?: string | null
+          concluida_por?: string | null
+          created_at?: string
+          criada_por?: string | null
+          descricao: string
+          id?: string
+          observacao?: string | null
+          pedido_exame_id: string
+          tipo?: string
+          updated_at?: string
+        }
+        Update: {
+          company_id?: string
+          concluida_em?: string | null
+          concluida_por?: string | null
+          created_at?: string
+          criada_por?: string | null
+          descricao?: string
+          id?: string
+          observacao?: string | null
+          pedido_exame_id?: string
+          tipo?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "apoio_acao_pendente_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "apoio_acao_pendente_pedido_exame_id_fkey"
+            columns: ["pedido_exame_id"]
+            isOneToOne: false
+            referencedRelation: "apoio_pedido_exame"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "apoio_acao_pendente_pedido_exame_id_fkey"
+            columns: ["pedido_exame_id"]
+            isOneToOne: false
+            referencedRelation: "apoio_pedido_exame_v"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       apoio_auditoria: {
         Row: {
           acao: string
@@ -1620,6 +1684,7 @@ export type Database = {
           id: string
           nome: string
           ordem: number
+          padrao: boolean
           updated_at: string
         }
         Insert: {
@@ -1631,6 +1696,7 @@ export type Database = {
           id?: string
           nome: string
           ordem?: number
+          padrao?: boolean
           updated_at?: string
         }
         Update: {
@@ -1642,6 +1708,7 @@ export type Database = {
           id?: string
           nome?: string
           ordem?: number
+          padrao?: boolean
           updated_at?: string
         }
         Relationships: [
@@ -5878,6 +5945,10 @@ export type Database = {
       }
     }
     Functions: {
+      apoio_acao_concluir: {
+        Args: { _id: string; _observacao: string }
+        Returns: undefined
+      }
       apoio_cancelar_pedido_exame: {
         Args: {
           _cancelar_no_apoio?: boolean
@@ -5977,6 +6048,55 @@ export type Database = {
         Args: { _exame: string; _pedido: string }
         Returns: string
       }
+      apoio_kanban_atribuir: {
+        Args: { _pe: string; _usuario: string }
+        Returns: undefined
+      }
+      apoio_kanban_comentar: {
+        Args: { _pe: string; _texto: string }
+        Returns: undefined
+      }
+      apoio_kanban_lista: {
+        Args: { _desde_liberado?: string }
+        Returns: {
+          acao_pendente: string
+          acao_pendente_id: string
+          apoio_id: string
+          apoio_manual: boolean
+          apoio_nome: string
+          cod_barras: string[]
+          cod_lote_lab: string
+          cod_ped_apoio: string
+          codigo_apoio: string
+          created_at: string
+          critico: boolean
+          dias_em_atraso: number
+          divergente: boolean
+          exame_codigo: string
+          exame_id: string
+          exame_nome: string
+          id: string
+          modo: string
+          paciente_nome: string
+          pedido_id: string
+          pedido_numero: string
+          pedido_protocolo: string
+          prazo_previsto: string
+          remessa_id: string
+          responsavel_id: string
+          responsavel_nome: string
+          retificado: boolean
+          situacao_prazo: string
+          status: Database["public"]["Enums"]["apoio_status"]
+          status_apoio_cod: string
+          status_apoio_desc: string
+          status_desconhecido: boolean
+          tem_pdf: boolean
+          tem_pendencia: boolean
+          unidade_id: string
+          updated_at: string
+        }[]
+      }
       apoio_manual_buscar: {
         Args: { _apoio: string; _q: string }
         Returns: {
@@ -6023,6 +6143,15 @@ export type Database = {
       apoio_proximos_status: {
         Args: { _de: Database["public"]["Enums"]["apoio_status"] }
         Returns: string[]
+      }
+      apoio_recoleta: {
+        Args: {
+          _avisar?: boolean
+          _motivo: string
+          _nova_data: string
+          _pe: string
+        }
+        Returns: string
       }
       apoio_referencia_resumo: { Args: { _apoio_id: string }; Returns: Json }
       apoio_remessa_adicionar: {

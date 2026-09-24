@@ -127,8 +127,7 @@ import LabSorotecaDashboardPage from './lab/soroteca/LabSorotecaDashboardPage'
 import LabSorotecaStructurePage from './lab/soroteca/LabSorotecaStructurePage'
 import ExternalPortalsPage from './lab/portals/ExternalPortalsPage'
 import SupportOutsourcingPage from './support/SupportOutsourcingPage'
-import SupportKanbanBoardsPage from './support/SupportKanbanBoardsPage'
-import SupportBoardPage from './support/SupportBoardPage'
+import ApoioKanbanPage from './support/ApoioKanbanPage'
 
 
 import PartnersHubPage from './lab/portals/PartnersHubPage'
@@ -353,8 +352,8 @@ function PortalContent() {
 
               {/* Apoio */}
               <Route path="apoio/terceirizacao" element={<SupportOutsourcingPage />} />
-              <Route path="apoio/kanban" element={<SupportKanbanBoardsPage />} />
-              <Route path="apoio/kanban/:boardId" element={<SupportBoardPage />} />
+              <Route path="apoio/kanban" element={<ApoioKanbanPage />} />
+              <Route path="apoio/kanban/:boardId" element={<Navigate to="/app/apoio/kanban" replace />} />
               <Route path="conectar-agentes" element={<ConnectAgentsPage />} />
 
 
