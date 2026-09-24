@@ -493,9 +493,14 @@ export type Database = {
           http_status: number | null
           id: string
           operacao: string
+          origem: string | null
           requisicao: string | null
+          resolvido_em: string | null
+          resolvido_obs: string | null
+          resolvido_por: string | null
           resposta: string | null
           updated_at: string
+          usuario_id: string | null
         }
         Insert: {
           apoio_id?: string | null
@@ -506,9 +511,14 @@ export type Database = {
           http_status?: number | null
           id?: string
           operacao: string
+          origem?: string | null
           requisicao?: string | null
+          resolvido_em?: string | null
+          resolvido_obs?: string | null
+          resolvido_por?: string | null
           resposta?: string | null
           updated_at?: string
+          usuario_id?: string | null
         }
         Update: {
           apoio_id?: string | null
@@ -519,9 +529,14 @@ export type Database = {
           http_status?: number | null
           id?: string
           operacao?: string
+          origem?: string | null
           requisicao?: string | null
+          resolvido_em?: string | null
+          resolvido_obs?: string | null
+          resolvido_por?: string | null
           resposta?: string | null
           updated_at?: string
+          usuario_id?: string | null
         }
         Relationships: [
           {
@@ -557,10 +572,13 @@ export type Database = {
       }
       apoio_cursor: {
         Row: {
+          alerta_em: string | null
           apoio_id: string
           ate: string | null
           company_id: string
           created_at: string
+          falhas_desde: string | null
+          falhas_n: number
           resolvido_em: string | null
           rotina: string
           ultima_execucao: string | null
@@ -570,10 +588,13 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          alerta_em?: string | null
           apoio_id: string
           ate?: string | null
           company_id: string
           created_at?: string
+          falhas_desde?: string | null
+          falhas_n?: number
           resolvido_em?: string | null
           rotina: string
           ultima_execucao?: string | null
@@ -583,10 +604,13 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          alerta_em?: string | null
           apoio_id?: string
           ate?: string | null
           company_id?: string
           created_at?: string
+          falhas_desde?: string | null
+          falhas_n?: number
           resolvido_em?: string | null
           rotina?: string
           ultima_execucao?: string | null
@@ -7325,7 +7349,68 @@ export type Database = {
           status: Database["public"]["Enums"]["apoio_status"]
         }[]
       }
+      apoio_log__tipo: { Args: { _op: string; _req: string }; Returns: string }
+      apoio_log_limpar: { Args: never; Returns: number }
+      apoio_log_lista: {
+        Args: {
+          _apoio?: string
+          _busca?: string
+          _fim?: string
+          _ini?: string
+          _limite?: number
+          _offset?: number
+          _remessa?: string
+          _situacao?: string
+          _tipo?: string
+        }
+        Returns: {
+          apoio_id: string
+          apoio_nome: string
+          cod_lote: string
+          codigos: string[]
+          created_at: string
+          duracao_ms: number
+          falha_interna: boolean
+          http_status: number
+          id: string
+          login_recusado: boolean
+          origem: string
+          recuperado: boolean
+          remessa_id: string
+          remessa_numero: number
+          resolvido_em: string
+          resolvido_obs: string
+          sem_conexao: boolean
+          situacao: string
+          texto_pardini: string
+          tipo: string
+          total: number
+          usuario_nome: string
+        }[]
+      }
+      apoio_log_repeticoes: {
+        Args: { _id: string }
+        Returns: {
+          desde: string
+          vezes: number
+        }[]
+      }
       apoio_log_reprocessar: { Args: { _log: string }; Returns: undefined }
+      apoio_log_resolver: {
+        Args: { _id: string; _obs: string }
+        Returns: undefined
+      }
+      apoio_log_tecnico: {
+        Args: { _id: string }
+        Returns: {
+          duracao_ms: number
+          erro: string
+          http_status: number
+          operacao: string
+          requisicao: string
+          resposta: string
+        }[]
+      }
       apoio_manual_buscar: {
         Args: { _apoio: string; _q: string }
         Returns: {

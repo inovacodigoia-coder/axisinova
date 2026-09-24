@@ -1,6 +1,6 @@
 import { createClient } from 'npm:@supabase/supabase-js@2'
 import { corsHeaders } from 'npm:@supabase/supabase-js@2/cors'
-import type { Ctx, Lab } from './soap.ts'
+import { definirOrigem, type Ctx, type Lab } from './soap.ts'
 
 export { corsHeaders }
 export const json = (body: unknown, status = 200) =>
@@ -15,7 +15,7 @@ export async function autenticar(req: Request, admin: any, perm?: string): Promi
   const cron = req.headers.get('x-apoio-cron')
   if (cron) {
     const { data } = await admin.from('apoio_cron_config').select('token').eq('id', 1).maybeSingle()
-    if (data?.token && data.token === cron) return { tipo: 'cron' }
+    if (data?.token && data.token === cron) { definirOrigem('automatico'); return { tipo: 'cron' } }
     return json({ error: 'Token inválido' }, 401)
   }
   const h = req.headers.get('Authorization')
@@ -28,6 +28,7 @@ export async function autenticar(req: Request, admin: any, perm?: string): Promi
     if (!ok) return json({ error: 'Você não tem permissão para esta ação' }, 403)
   }
   const { data: cid } = await client.rpc('get_user_company_id', { _user_id: user.id })
+  definirOrigem('manual', user.id)
   return { tipo: 'usuario', userId: user.id, companyId: cid as string, client }
 }
 
@@ -60,12 +61,29 @@ export async function cursorLer(admin: any, lab: Lab, rotina: string) {
   return data as { ate: string | null; ultimo_sucesso: string | null } | null
 }
 
+const ROTINA_PT: Record<string, string> = { transmissao: 'Transmitir remessa', resultado: 'Buscar resultados', rastreabilidade: 'Status das amostras', pendencia: 'Pendências técnicas', catalogo: 'Baixar catálogo', modelos: 'Buscar modelos', recebimento: 'Confirmar recebimento', pdf: 'Baixar laudo PDF', cancelamento: 'Cancelar exame', conexao: 'Testar conexão' }
+
 export async function cursorGravar(admin: any, lab: Lab, rotina: string, r: { ate?: string; erro?: string | null }) {
   const agora = new Date().toISOString()
   const row: any = { company_id: lab.company_id, apoio_id: lab.id, rotina, ultima_execucao: agora }
   if (r.ate) row.ate = r.ate
-  if (r.erro) { row.ultimo_erro = r.erro.slice(0, 2000); row.ultimo_erro_em = agora }
-  else { row.ultimo_sucesso = agora }
+  const { data: atual } = await admin.from('apoio_cursor').select('falhas_desde, falhas_n, alerta_em').eq('apoio_id', lab.id).eq('rotina', rotina).maybeSingle()
+  if (r.erro) {
+    row.ultimo_erro = r.erro.slice(0, 2000); row.ultimo_erro_em = agora
+    row.falhas_desde = atual?.falhas_desde || agora
+    row.falhas_n = (atual?.falhas_n || 0) + 1
+    // Um aviso por rotina: o primeiro na hora, depois no máximo 1 por hora, agrupado
+    const ultimoAviso = atual?.alerta_em ? new Date(atual.alerta_em).getTime() : 0
+    if (!ultimoAviso || Date.now() - ultimoAviso > 3600_000) {
+      row.alerta_em = agora
+      const desde = new Date(row.falhas_desde).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit', timeZone: 'America/Sao_Paulo' })
+      const nome = ROTINA_PT[rotina] || rotina
+      const msg = row.falhas_n > 1 ? `${nome} falhou ${row.falhas_n} vezes desde ${desde}.` : `${nome} falhou às ${desde}.`
+      await admin.rpc('apoio_alertar', { _company: lab.company_id, _evento: 'apoio_integracao_falha', _perm: 'apoio.laboratorio.gerenciar', _titulo: `Falha na integração com ${lab.nome}`, _msg: msg, _rota: `/app/apoio/terceirizacao?aba=log&sit=nao_sucesso&apoio=${lab.id}`, _prioridade: 'high' }).then(() => {}, () => {})
+    }
+  } else {
+    row.ultimo_sucesso = agora; row.falhas_desde = null; row.falhas_n = 0; row.alerta_em = null
+  }
   await admin.from('apoio_cursor').upsert(row, { onConflict: 'apoio_id,rotina' })
 }
 

@@ -22,12 +22,17 @@ export function envelope(op: string, login: string, senha: string, params: Param
   return `<soapenv:Envelope xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/" xmlns:sch="${NS}"><soapenv:Header/><soapenv:Body><sch:${op} soapenv:encodingStyle="http://schemas.xmlsoap.org/soap/encoding/"><login xsi:type="xsd:string">${esc(login)}</login><passwd xsi:type="xsd:string">${esc(senha)}</passwd>${ps}</sch:${op}></soapenv:Body></soapenv:Envelope>`
 }
 
+let origemAtual: { origem: 'automatico' | 'manual'; usuarioId: string | null } = { origem: 'automatico', usuarioId: null }
+/** Quem disparou as chamadas desta requisição (rotina agendada ou clique de usuário) */
+export function definirOrigem(origem: 'automatico' | 'manual', usuarioId: string | null = null) { origemAtual = { origem, usuarioId } }
+
 const mascarar = (s: string) => s.replace(/(<passwd[^>]*>)[\s\S]*?(<\/passwd>)/gi, '$1***$2')
 
 async function log(ctx: Ctx, op: string, req: string, resp: string | null, http: number | null, ms: number, erro: string | null) {
   await ctx.admin.from('apoio_chamada_log').insert({
     company_id: ctx.lab.company_id, apoio_id: ctx.lab.id, operacao: op, requisicao: mascarar(req).slice(0, 200_000),
     resposta: resp?.slice(0, 500_000) ?? null, http_status: http, duracao_ms: ms, erro,
+    origem: origemAtual.origem, usuario_id: origemAtual.usuarioId,
   }).then(() => {}, () => {})
 }
 

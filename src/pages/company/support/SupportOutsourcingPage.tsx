@@ -1,9 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { AlertTriangle, Clock } from 'lucide-react'
-import { toast } from 'sonner'
-import { Button } from '@/components/ui/button'
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
 import { EmptyState } from '@/components/feedback/EmptyState'
 import { supabase } from '@/integrations/supabase/client'
 import { useApoioEntitlement, APOIO_BLOQUEADO_MSG } from '@/hooks/useApoio'
@@ -11,12 +8,14 @@ import { ApoioLaboratoriosTab } from '@/components/apoio/ApoioLaboratoriosTab'
 import { ApoioExamesTab } from '@/components/apoio/depara/ApoioExamesTab'
 import { ApoioContingenciaTab } from '@/components/apoio/contingencia/ApoioContingenciaTab'
 import { ApoioRemessasTab } from '@/components/apoio/remessa/ApoioRemessasTab'
+import { ApoioLogTab } from '@/components/apoio/log/ApoioLogTab'
 
 const ABAS = [
   { key: 'exames', label: 'Exames terceirizados' },
   { key: 'remessas', label: 'Remessas' },
   { key: 'contingencia', label: 'Contingência' },
   { key: 'laboratorios', label: 'Laboratórios' },
+  { key: 'log', label: 'Log de integração' },
 ] as const
 type Aba = typeof ABAS[number]['key']
 
@@ -76,27 +75,14 @@ export default function SupportOutsourcingPage() {
               ? `Falha na integração (última: ${new Date(i.erroEm).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })})`
               : 'Integração OK'
             return (
-              <Popover key={i.id}>
-                <PopoverTrigger asChild>
-                  <button type="button" title={i.erroMsg ? traduzErro(i.erroMsg) : undefined} className="flex items-center gap-2 rounded-full border border-border bg-card px-3 py-1.5 text-xs">
-                    <span className={`h-2.5 w-2.5 rounded-full ${cor}`} />
-                    <b className="text-foreground">{i.nome}</b>
-                    <span className="text-muted-foreground">{txt}</span>
-                  </button>
-                </PopoverTrigger>
-                {i.erroEm && !i.modo && (
-                  <PopoverContent className="w-80 space-y-2 text-xs">
-                    <p className="font-semibold text-foreground">Causa ({ROTINAS[i.rotina || ''] || i.rotina})</p>
-                    <p className="text-muted-foreground">{traduzErro(i.erroMsg || '')}</p>
-                    <p className="text-muted-foreground">Em {new Date(i.erroEm).toLocaleString('pt-BR')}</p>
-                    <Button size="sm" variant="outline" className="w-full" onClick={async () => {
-                      const { error } = await supabase.rpc('apoio_cursor_resolver' as any, { _apoio: i.id })
-                      if (error) return toast.error(error.message)
-                      toast.success('Marcado como resolvido'); setReload(x => x + 1)
-                    }}>Marcar como resolvido</Button>
-                  </PopoverContent>
-                )}
-              </Popover>
+              <button key={i.id} type="button"
+                title={i.erroEm && !i.modo ? `${traduzErro(i.erroMsg || '')} (${ROTINAS[i.rotina || ''] || i.rotina}). Clique para ver o log.` : undefined}
+                onClick={() => i.erroEm && !i.modo && setParams(() => new URLSearchParams({ aba: 'log', sit: 'nao_sucesso', apoio: i.id }), { replace: true })}
+                className="flex items-center gap-2 rounded-full border border-border bg-card px-3 py-1.5 text-xs">
+                <span className={`h-2.5 w-2.5 rounded-full ${cor}`} />
+                <b className="text-foreground">{i.nome}</b>
+                <span className="text-muted-foreground">{txt}</span>
+              </button>
             )
           })}
         </div>
@@ -122,6 +108,8 @@ export default function SupportOutsourcingPage() {
         <ApoioExamesTab moduloLiberado={enabled} />
       ) : aba === 'contingencia' ? (
         <ApoioContingenciaTab moduloLiberado={enabled} onChanged={() => setReload(r => r + 1)} />
+      ) : aba === 'log' ? (
+        <ApoioLogTab />
       ) : aba === 'remessas' ? (
         <ApoioRemessasTab moduloLiberado={enabled} />
       ) : (
