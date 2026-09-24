@@ -11,7 +11,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import type { AttendanceOrder } from '@/types/attendance-cadastro.types'
 import type { Patient } from '@/types/patient.types'
 import type { LabAttendanceOrder } from '@/types/lab.types'
-import { TUBE_TYPES } from '@/types/lab.types'
+import { tuboDoExame, tubosDosExames, useMateriaisTubos, etiquetaTubo } from '@/lib/tubos'
 import { cn } from '@/lib/utils'
 import { AttendancePrintSelectionModal } from '../print/AttendancePrintSelectionModal'
 import { SampleLabelsPrintModal } from '../print/SampleLabelsPrintModal'
@@ -70,6 +70,7 @@ export function AttendanceDetailsModal({ open, onClose, onOrderDeleted, order, p
   const { exams: catalogExams, workbenches } = useRegisters()
   const { isSuperAdmin, isCompanyAdmin } = usePermissions()
   const { user: authUser } = useAuth()
+  const cadTubos = useMateriaisTubos(authUser?.companyId)
   const isAdmin = isSuperAdmin || isCompanyAdmin
   const [clientModalMode, setClientModalMode] = useState<ClientInfoMode | null>(null)
   const [currentPatient, setCurrentPatient] = useState<Patient | undefined>(patient)

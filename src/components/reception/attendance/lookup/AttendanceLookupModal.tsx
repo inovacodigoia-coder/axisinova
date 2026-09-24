@@ -10,7 +10,7 @@ import { useAttendanceCadastro } from '@/hooks/useAttendanceCadastro'
 import { usePatients } from '@/hooks/usePatients'
 import { useLabSettings } from '@/hooks/useLabSettings'
 import { useCompanySequenceId } from '@/hooks/useCompanySequenceId'
-import { tubosDosExames } from '@/lib/tubos'
+import { tubosDosExames, useMateriaisTubos } from '@/lib/tubos'
 import { buildSampleCode, generateSampleHash } from '@/utils/orderHash'
 import { AttendancePrintModal } from '../print/AttendancePrintModal'
 import { AttendanceDetailsModal } from './AttendanceDetailsModal'
@@ -116,6 +116,7 @@ const ATTENDANCE_STATUS_LABELS: Record<string, { label: string, color: string }>
 
 export function AttendanceLookupModal({ open, onClose, unitName, guicheName, onAddProcedure }: AttendanceLookupModalProps) {
   const { user } = useAuth()
+  useMateriaisTubos(user?.companyId)
   // Somente usuários com a atribuição ADM (checkbox no modal Editar Usuário) veem pedidos excluídos
   const isAdmin = user?.isAdmin === true || user?.role === 'super_admin'
   const { orders, updateOrder, loading } = useAttendanceCadastro()
