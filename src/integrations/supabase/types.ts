@@ -5798,6 +5798,15 @@ export type Database = {
       }
     }
     Functions: {
+      apoio_cancelar_pedido_exame: {
+        Args: {
+          _cancelar_no_apoio?: boolean
+          _exam: string
+          _motivo?: string
+          _pedido: string
+        }
+        Returns: Json
+      }
       apoio_custo_previsto: {
         Args: { _pedido_exame_id: string }
         Returns: number
@@ -5841,6 +5850,7 @@ export type Database = {
             Returns: number
           }
         | { Args: { _ate: string; _de: string }; Returns: number }
+      apoio_exame_atendimento: { Args: { _exam: string }; Returns: Json }
       apoio_exame_coletado: {
         Args: { _pedido_exame_id: string }
         Returns: boolean
