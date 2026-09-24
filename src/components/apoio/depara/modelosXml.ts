@@ -35,6 +35,10 @@ export function extrairModelo(doc: Document, codigoApoio: string): Modelo | null
     return c === alvo || c.startsWith(alvo + '|')
   })
   if (!se) return null
+  return modeloDe(se)
+}
+
+function modeloDe(se: Element): Modelo {
   const codigoFormato = val(se, 'CodigoFormato') || Array.from(se.getElementsByTagName('*')).map(e => val(e, 'CodigoFormato')).find(Boolean) || ''
   const valores = Array.from(se.getElementsByTagName('*')).filter(e => e.tagName.toLowerCase() === 'valor')
   const itens: ModeloItem[] = []
@@ -66,8 +70,7 @@ export function extrairTodos(doc: Document): ModeloCompleto[] {
   for (const s of supers) {
     const cod = val(s, 'CodExmApoio').toUpperCase()
     if (!cod) continue
-    const m = extrairModelo(doc, cod)
-    if (!m) continue
+    const m = modeloDe(s)
     const ex = Array.from(s.children).find(c => c.tagName.toLowerCase() === 'exame') || null
     out.push({ ...m, codExmApoio: cod, materialNome: val(s, 'Material', 'NomeMaterial', 'MaterialNome'), exameNome: val(ex, 'Nome', 'NomeExame') })
   }
