@@ -11,6 +11,9 @@ export interface Occupancy { id: string; bed_id: string; patient_name: string; p
 export interface Referral { id: string; occupancy_id: string; bed_id: string; sector_name: string; patient_name: string; manchester_color: string | null; notes: string | null; status: string; referred_at: string; returned_at: string | null }
 export interface Sector { id: string; name: string; hospital_id: string | null; is_active: boolean }
 
+/** Setores de encaminhamento pré-cadastrados por padrão (além de Laboratório e Raio-X, fixos no painel do leito) */
+export const DEFAULT_SECTORS = ['ECG', 'Ultrassom', 'Endoscopia', 'Fisioterapia']
+
 export async function rpc(name: string, args: Record<string, any>, ok?: string) {
   const { data, error } = await db.rpc(name, args)
   if (error) { toast.error(error.message); return null }
@@ -35,7 +38,15 @@ export function useCollectionPosts() {
       db.from('bed_occupancies').select('*').eq('company_id', companyId).eq('status', 'active'),
       db.from('bed_referral_sectors').select('*').eq('company_id', companyId).order('name'),
     ])
-    setPosts(p.data || []); setBeds(b.data || []); setOccupancies(o.data || []); setSectors(s.data || [])
+    let sectorList: Sector[] = s.data || []
+    // Pré-cadastra os setores padrão de encaminhamento (idempotente; editáveis/inativáveis como os demais)
+    const missing = DEFAULT_SECTORS.filter(n => !sectorList.some(x => x.name.trim().toLowerCase() === n.toLowerCase()))
+    if (missing.length > 0) {
+      await db.from('bed_referral_sectors').insert(missing.map(name => ({ company_id: companyId, name })))
+      const { data } = await db.from('bed_referral_sectors').select('*').eq('company_id', companyId).order('name')
+      sectorList = data || sectorList
+    }
+    setPosts(p.data || []); setBeds(b.data || []); setOccupancies(o.data || []); setSectors(sectorList)
     setLoading(false)
   }, [companyId])
 

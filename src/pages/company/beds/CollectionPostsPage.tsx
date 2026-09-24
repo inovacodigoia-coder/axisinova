@@ -214,7 +214,7 @@ function ConfigTab({ cp, hospitals }: { cp: ReturnType<typeof useCollectionPosts
       <Card>
         <CardHeader><CardTitle className="text-base">Outros setores de encaminhamento</CardTitle></CardHeader>
         <CardContent className="space-y-3">
-          <p className="text-xs text-muted-foreground">Laboratório e Raio-X sempre aparecem. Adicione outros (ex.: ECG, Ultrassom).</p>
+          <p className="text-xs text-muted-foreground">Laboratório e Raio-X sempre aparecem. ECG, Ultrassom, Endoscopia e Fisioterapia já vêm cadastrados — você pode inativar qualquer um e adicionar outros livremente.</p>
           <div className="flex gap-2"><Input value={sector} onChange={e => setSector(e.target.value)} placeholder="ECG" /><Button onClick={() => { cp.addSector(sector, hid); setSector('') }}>Adicionar</Button></div>
           <div className="flex flex-wrap gap-2">
             {cp.sectors.map(s => <Badge key={s.id} variant={s.is_active ? 'default' : 'outline'} className="cursor-pointer" onClick={() => cp.toggleSector(s)}>{s.name}{!s.is_active && ' (inativo)'}</Badge>)}
