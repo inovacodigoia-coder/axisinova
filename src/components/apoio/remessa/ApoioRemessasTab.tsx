@@ -12,6 +12,8 @@ import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '
 import { EmptyState } from '@/components/feedback/EmptyState'
 import { useApoioEntitlement, useApoioPermissions } from '@/hooks/useApoio'
 import { TEMPERATURAS, TuboRemessa, ItemRemessa, gerarEpl, baixarTexto, gerarRomaneio } from './remessaDocs'
+import { HistoricoRemessa } from '@/components/apoio/log/ApoioLogTab'
+import { useSearchParams } from 'react-router-dom'
 import { imprimirEtiquetas, servidorImpressaoAtivo, DadosEtiqueta } from '@/lib/impressaoLocal'
 
 interface Remessa {
@@ -57,7 +59,8 @@ export function ApoioRemessasTab({ moduloLiberado }: { moduloLiberado: boolean }
   const [fApoio, setFApoio] = useState(''); const [fStatus, setFStatus] = useState('')
   const [fTemp, setFTemp] = useState(''); const [fDe, setFDe] = useState(''); const [fAte, setFAte] = useState('')
   const [nova, setNova] = useState(false)
-  const [aberta, setAberta] = useState<string | null>(null)
+  const [urlParams] = useSearchParams()
+  const [aberta, setAberta] = useState<string | null>(urlParams.get('remessa'))
 
   const carregar = useCallback(async () => {
     setLoading(true)
@@ -377,6 +380,8 @@ function DetalheRemessa({ id, remessa: r0, pode, onClose, onChanged }: { id: str
             <Button variant="outline" size="sm" className="gap-2 text-destructive" onClick={() => { if (confirm('Cancelar esta remessa? Os exames voltam para "aguardando remessa".')) rpc('apoio_remessa_cancelar', { _remessa: r.id }, 'Remessa cancelada') }}><Ban className="h-4 w-4" />Cancelar remessa</Button>
           )}
         </div>
+
+        <HistoricoRemessa remessaId={r.id} />
 
         <div className="mt-5">
           <div className="mb-2 flex items-center justify-between">
