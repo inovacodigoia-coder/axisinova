@@ -12,6 +12,18 @@ import { brl, db, norm, type ExameLis } from './deparaUtils'
 import { ApoioDeparaDrawer, type DeparaRow } from './ApoioDeparaDrawer'
 import { ApoioAnalitosSheet } from './ApoioAnalitosSheet'
 import { ApoioLoteDialog } from './ApoioLoteDialog'
+import { CadastrarPardiniDialog } from './CadastrarPardiniDialog'
+
+type Falta = 'orientacoes' | 'critico' | 'preco' | 'tuss'
+const FALTA_LABEL: Record<Falta, string> = { orientacoes: 'Orientações ao paciente', critico: 'Valor crítico', preco: 'Preço real', tuss: 'TUSS' }
+const faltas = (e: any, d: { ficticio: boolean; tem_preco: boolean }): Falta[] => {
+  const f: Falta[] = []
+  if (!String(e.preparation_instructions || '').trim()) f.push('orientacoes')
+  f.push('critico')
+  if (!d.tem_preco || d.ficticio) f.push('preco')
+  if (!String(e.tuss_code || '').trim()) f.push('tuss')
+  return f
+}
 
 interface Lista extends DeparaRow {
   apoio_nome: string; descricao_apoio: string | null; catalogo_ativo: boolean; tem_preco: boolean; preco: number | null; ficticio: boolean
@@ -35,7 +47,7 @@ export function ApoioExamesTab({ moduloLiberado }: { moduloLiberado: boolean }) 
   const pode = has('apoio.depara.gerenciar') && moduloLiberado
   const [sp, setSp] = useSearchParams()
   const filtro = (sp.get('filtro') || 'terceirizados') as 'terceirizados' | 'nao' | 'todos'
-  const fApoio = sp.get('apoio') || '', fSit = (sp.get('situacao') || '') as Sit | 'alerta' | '', fSetor = sp.get('setor') || '', q = sp.get('q') || ''
+  const fApoio = sp.get('apoio') || '', fSit = (sp.get('situacao') || '') as Sit | 'alerta' | '', fSetor = sp.get('setor') || '', fFalta = (sp.get('falta') || '') as Falta | '', q = sp.get('q') || ''
   const setP = (k: string, v: string) => setSp(p => { if (v) p.set(k, v); else p.delete(k); return p }, { replace: true })
 
   const [loading, setLoading] = useState(true)
@@ -47,13 +59,14 @@ export function ApoioExamesTab({ moduloLiberado }: { moduloLiberado: boolean }) 
   const [analitos, setAnalitos] = useState<{ id: string; nome: string } | null>(null)
   const [sel, setSel] = useState<Set<string>>(new Set())
   const [lote, setLote] = useState(false)
+  const [cadPardini, setCadPardini] = useState(false)
   const [hist, setHist] = useState<{ d: Lista; rows: any[] | null } | null>(null)
   const [excluir, setExcluir] = useState<{ d: Lista; envios: number } | null>(null)
 
   const load = useCallback(async () => {
     setLoading(true)
     const [ex, wb, ap, li] = await Promise.all([
-      db.from('exams').select('id, internal_code, name, workbench_id, default_material, selected_materials').eq('type', 'lab').eq('is_active', true).order('name').limit(5000),
+      db.from('exams').select('id, internal_code, name, workbench_id, default_material, selected_materials, preparation_instructions, tuss_code').eq('type', 'lab').eq('is_active', true).order('name').limit(5000),
       db.from('lab_workbenches').select('id, name'),
       db.from('apoio_laboratorio').select('id, nome').eq('ativo', true).order('nome'),
       db.rpc('apoio_depara_lista'),
@@ -102,15 +115,16 @@ export function ApoioExamesTab({ moduloLiberado }: { moduloLiberado: boolean }) 
           const s = situacoes(r.d)
           if (fSit === 'alerta' ? !(s.includes('modelo_mudou') || s.includes('desativado')) : !s.includes(fSit)) continue
         }
+        if (fFalta && (!r.d || !faltas(e, r.d).includes(fFalta))) continue
         if (qn && !(norm(e.name).includes(qn) || norm(e.internal_code || '').includes(qn) || (r.d?.codigo_apoio || '').toUpperCase().includes(q.trim().toUpperCase()))) continue
         out.push(r)
       }
     }
     return out
-  }, [exames, porExame, filtro, fApoio, fSit, fSetor, q])
+  }, [exames, porExame, filtro, fApoio, fSit, fSetor, fFalta, q])
 
   const [limite, setLimite] = useState(50)
-  useEffect(() => setLimite(50), [filtro, fApoio, fSit, fSetor, q])
+  useEffect(() => setLimite(50), [filtro, fApoio, fSit, fSetor, fFalta, q])
 
   const alternarAtivo = async (d: Lista) => {
     const { error } = await db.from('apoio_depara_exame').update({ ativo: !d.ativo }).eq('id', d.id)
@@ -170,6 +184,10 @@ export function ApoioExamesTab({ moduloLiberado }: { moduloLiberado: boolean }) 
         <select value={fSetor} onChange={e => setP('setor', e.target.value)} className="rounded-lg border border-input bg-background px-3 py-2 text-sm">
           <option value="">Todos os setores</option>{Object.entries(setores).map(([id, n]) => <option key={id} value={id}>{n}</option>)}
         </select>
+        <select value={fFalta} onChange={e => setP('falta', e.target.value)} className="rounded-lg border border-input bg-background px-3 py-2 text-sm">
+          <option value="">Falta preencher: todos</option>{(Object.keys(FALTA_LABEL) as Falta[]).map(k => <option key={k} value={k}>{FALTA_LABEL[k]}</option>)}
+        </select>
+        <button disabled={!pode || apoios.length === 0} onClick={() => setCadPardini(true)} className="whitespace-nowrap rounded-xl border border-border px-4 py-2 text-sm font-medium disabled:opacity-50">Cadastrar exame do Pardini no LIS</button>
         {filtro === 'nao' && sel.size > 0 && <button disabled={!pode} onClick={() => setLote(true)} className="rounded-xl border border-primary px-4 py-2 text-sm font-semibold text-primary disabled:opacity-50">Terceirizar vários ({sel.size})</button>}
         <button disabled={!pode || apoios.length === 0} onClick={() => setDrawer({ open: true, depara: null, exame: null })} className="gradient-bg flex items-center gap-2 whitespace-nowrap rounded-xl px-4 py-2 text-sm font-semibold text-primary-foreground shadow-lg disabled:opacity-50"><Plus className="h-4 w-4" />Terceirizar exame</button>
       </div>
@@ -186,7 +204,7 @@ export function ApoioExamesTab({ moduloLiberado }: { moduloLiberado: boolean }) 
                 {filtro === 'nao' && <th className="px-3 py-3"><input type="checkbox" className="accent-primary" checked={linhas.length > 0 && linhas.every(l => sel.has(l.exame.id))} onChange={e => setSel(e.target.checked ? new Set(linhas.map(l => l.exame.id)) : new Set())} /></th>}
                 <th className="px-3 py-3">Nosso exame</th><th className="px-3 py-3">Setor</th><th className="px-3 py-3">Apoio</th><th className="px-3 py-3">Código no apoio</th>
                 <th className="px-3 py-3">Descrição no apoio</th><th className="px-3 py-3">Preço vigente</th><th className="px-3 py-3">Prazo</th><th className="px-3 py-3">Analitos</th>
-                <th className="px-3 py-3">PDF</th><th className="px-3 py-3">Situação</th><th className="px-3 py-3">Ativo</th><th className="px-3 py-3" />
+                <th className="px-3 py-3">PDF</th><th className="px-3 py-3">Situação</th><th className="px-3 py-3">Falta preencher</th><th className="px-3 py-3">Ativo</th><th className="px-3 py-3" />
               </tr>
             </thead>
             <tbody>
@@ -206,6 +224,7 @@ export function ApoioExamesTab({ moduloLiberado }: { moduloLiberado: boolean }) 
                       <td className="px-3 py-2 text-xs"><button onClick={() => setAnalitos({ id: d.id, nome: e.name })} className={`font-semibold hover:underline ${d.analitos_total === 0 || d.analitos_mapeados < d.analitos_total ? 'text-destructive' : 'text-success'}`}>{d.analitos_mapeados}/{d.analitos_total}</button></td>
                       <td className="px-3 py-2 text-xs">{d.exige_pdf ? 'Sim' : 'Não'}</td>
                       <td className="px-3 py-2"><div className="flex flex-wrap gap-1">{situacoes(d).map(s => <Badge key={s} variant={s === 'sem_preco' ? 'outline' : 'destructive'} className={`text-[10px] ${s === 'sem_preco' ? 'border-warning text-warning' : ''}`}>{SIT_LABEL[s]}</Badge>)}</div></td>
+                      <td className="px-3 py-2"><div className="flex flex-wrap gap-1">{faltas(e, d).map(f => <Badge key={f} variant="outline" className="cursor-pointer text-[10px]" onClick={() => setP('falta', f)}>{FALTA_LABEL[f]}</Badge>)}</div></td>
                       <td className="px-3 py-2 text-xs">{d.ativo ? 'Sim' : 'Não'}</td>
                       <td className="px-3 py-2 text-right">
                         <DropdownMenu>
@@ -222,7 +241,7 @@ export function ApoioExamesTab({ moduloLiberado }: { moduloLiberado: boolean }) 
                         </DropdownMenu>
                       </td>
                     </>) : (<>
-                      <td colSpan={9} className="px-3 py-2 text-xs text-muted-foreground">Interno {terceirizado(e.id) ? '' : '· não terceirizado'}</td>
+                      <td colSpan={10} className="px-3 py-2 text-xs text-muted-foreground">Interno {terceirizado(e.id) ? '' : '· não terceirizado'}</td>
                       <td className="px-3 py-2 text-right"><button disabled={!pode || apoios.length === 0} onClick={() => setDrawer({ open: true, depara: null, exame: e.id })} className="text-xs font-medium text-primary hover:underline disabled:opacity-50">Terceirizar</button></td>
                     </>)}
                   </tr>
@@ -243,6 +262,7 @@ export function ApoioExamesTab({ moduloLiberado }: { moduloLiberado: boolean }) 
         onClose={() => setDrawer({ open: false, depara: null, exame: null })}
         onSaved={id => { const nome = exMap.get(drawer.exame || '')?.name || lista.find(l => l.id === id) && exMap.get(lista.find(l => l.id === id)!.exame_id)?.name || 'Exame'; setDrawer({ open: false, depara: null, exame: null }); load().then(() => setAnalitos({ id, nome })) }} />
       <ApoioAnalitosSheet deparaId={analitos?.id || null} exameNome={analitos?.nome || ''} readOnly={!pode} onClose={() => setAnalitos(null)} onChanged={load} />
+      <CadastrarPardiniDialog open={cadPardini} apoios={apoios} companyId={companyId} onClose={() => { setCadPardini(false); load() }} />
       <ApoioLoteDialog open={lote} exames={selecionados} apoios={apoios} companyId={companyId} onClose={() => setLote(false)} onSaved={() => { setSel(new Set()); load() }} />
 
       <Dialog open={!!hist} onOpenChange={o => !o && setHist(null)}>
