@@ -35,8 +35,7 @@ export function useApoioCancelamento() {
     if (e2) { toast.error('Não foi possível marcar o cancelamento no apoio.'); return true; }
     const r2: any = d2;
     if (r2?.resultado === 'marcado') {
-      if (r2.tarefa_criada) toast.success(`Tarefa "Cancelar no portal do ${r2.apoio_nome}" criada no Kanban.`);
-      else if (r2.sem_quadro) toast.warning(`Marcado para cancelar no ${r2.apoio_nome}. Nenhum quadro Kanban encontrado para criar a tarefa.`);
+      if (r2.tarefa_criada) toast.success(`Ação "Cancelar no portal do ${r2.apoio_nome}" criada em Exceções › Ação manual pendente, no Kanban Apoio.`);
       else toast.success(`Marcado para cancelar no ${r2.apoio_nome}.`);
     }
     return true;
