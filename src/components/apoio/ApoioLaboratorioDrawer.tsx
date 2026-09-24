@@ -48,6 +48,15 @@ const maskFone = (v: string) => {
   return d.replace(/^(\d{2})(\d)/, '($1) $2').replace(/(\d{5})(\d)/, '$1-$2')
 }
 
+function Sec({ n, t, children }: { n: number; t: string; children: React.ReactNode }) {
+  return (
+    <section className="rounded-2xl border border-border bg-card p-4 space-y-3">
+      <h3 className="text-sm font-semibold text-foreground">{n}. {t}</h3>
+      {children}
+    </section>
+  )
+}
+
 export function ApoioLaboratorioDrawer({ open, lab, readOnly, onClose, onSaved }: {
   open: boolean; lab: ApoioLab | null; readOnly: boolean; onClose: () => void; onSaved: () => void
 }) {
@@ -166,12 +175,6 @@ export function ApoioLaboratorioDrawer({ open, lab, readOnly, onClose, onSaved }
   const input = 'mt-1 w-full rounded-lg border border-input bg-background px-3 py-2 text-sm disabled:opacity-70'
   const label = 'text-xs font-medium text-muted-foreground'
   const Err = ({ k }: { k: string }) => erros[k] ? <p className="mt-1 text-[11px] text-destructive">{erros[k]}</p> : null
-  const Sec = ({ n, t, children }: { n: number; t: string; children: React.ReactNode }) => (
-    <section className="rounded-2xl border border-border bg-card p-4 space-y-3">
-      <h3 className="text-sm font-semibold text-foreground">{n}. {t}</h3>
-      {children}
-    </section>
-  )
   const ro = readOnly
 
   return (
