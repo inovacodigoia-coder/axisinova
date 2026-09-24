@@ -6,6 +6,7 @@ import { supabase } from '@/integrations/supabase/client'
 import { useApoioEntitlement, APOIO_BLOQUEADO_MSG } from '@/hooks/useApoio'
 import { ApoioLaboratoriosTab } from '@/components/apoio/ApoioLaboratoriosTab'
 import { ApoioExamesTab } from '@/components/apoio/depara/ApoioExamesTab'
+import { ApoioRemessasTab } from '@/components/apoio/remessa/ApoioRemessasTab'
 
 const ABAS = [
   { key: 'exames', label: 'Exames terceirizados' },
@@ -87,6 +88,8 @@ export default function SupportOutsourcingPage() {
         <ApoioLaboratoriosTab moduloLiberado={enabled} onChanged={() => setReload(r => r + 1)} />
       ) : aba === 'exames' ? (
         <ApoioExamesTab moduloLiberado={enabled} />
+      ) : aba === 'remessas' ? (
+        <ApoioRemessasTab moduloLiberado={enabled} />
       ) : (
         <div className="rounded-2xl border border-border bg-card">
           <EmptyState icon={<Clock className="h-10 w-10" />} title="Disponível em breve" description="Esta aba será liberada nas próximas etapas do módulo." />
