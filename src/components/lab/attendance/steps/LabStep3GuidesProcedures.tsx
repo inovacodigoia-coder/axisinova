@@ -234,14 +234,27 @@ export function LabStep3GuidesProcedures({ state, update }: Props) {
     const convenio = activeConvenios.find(c => c.name === activeGuide?.plan);
     const examPrice = convenio?.examPrices?.find(p => p.examId === selectedExam.id)?.price;
 
+    // Destino pela Bancada Técnica: apoio usa prazo do apoio + transporte; congela bancada/laudo no item
+    let destino: any = null;
+    try {
+      const { data } = await supabase.rpc('exame_destino' as any, { _exam_id: selectedExam.id });
+      destino = data;
+    } catch { destino = null; }
+    const destinoPrazo = destino?.tipo === 'apoio' && destino?.prazo ? `${destino.prazo}T15:00:00.000Z` : null;
+
     const examData = {
       ...selectedExam,
+      ...(destino?.bancada_id ? {
+        bancadaId: destino.bancada_id, bancadaNome: destino.bancada_nome, bancadaTipo: destino.tipo,
+        apoioId: destino.apoio_id ?? null, apoioNome: destino.apoio_nome ?? null, laudoId: destino.laudo_id ?? null,
+        bancadaOrigem: 'cadastro',
+      } : {}),
       material: examMaterial,
       collected: examCollected,
       isColeta: examCollected, // Consistent with other parts of the app
       quantity: 1,
       price: activeGuide?.plan === 'PARTICULAR' || convenio?.type === 'private' ? examPrice : undefined,
-      expectedDeliveryDate: examDeadline || (selectedExam.resultDeadlineDays ? await calculateDeadline(selectedExam.resultDeadlineDays, selectedExam.prazoContagem === 'uteis' ? 'uteis' : 'corridos') : null)
+      expectedDeliveryDate: examDeadline || destinoPrazo || (selectedExam.resultDeadlineDays ? await calculateDeadline(selectedExam.resultDeadlineDays, selectedExam.prazoContagem === 'uteis' ? 'uteis' : 'corridos') : null)
     };
 
     const newGuides = guides.map(g => {
