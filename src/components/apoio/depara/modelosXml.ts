@@ -61,7 +61,14 @@ function modeloDe(se: Element): Modelo {
   return { codigoFormato, itens }
 }
 
-export interface ModeloCompleto extends Modelo { codExmApoio: string; materialNome: string; exameNome: string }
+export interface ModeloCompleto extends Modelo { codExmApoio: string; materialNome: string; exameNome: string; unidadeProdutiva: string; metodo: string; ultimaLiberacao: string | null }
+
+function dataBR(v: string): string | null {
+  const t = (v || '').trim(); if (!t) return null
+  const m = t.match(/^(\d{2})\/(\d{2})\/(\d{4})(?:[ T](\d{2}):(\d{2})(?::(\d{2}))?)?/)
+  if (m) return `${m[3]}-${m[2]}-${m[1]}T${m[4] || '00'}:${m[5] || '00'}:${m[6] || '00'}-03:00`
+  const d = new Date(t); return isNaN(d.getTime()) ? null : d.toISOString()
+}
 
 /** Todos os <SuperExame> do arquivo (para gravar em apoio_modelo_resultado de uma vez) */
 export function extrairTodos(doc: Document): ModeloCompleto[] {
@@ -72,7 +79,8 @@ export function extrairTodos(doc: Document): ModeloCompleto[] {
     if (!cod) continue
     const m = modeloDe(s)
     const ex = Array.from(s.children).find(c => c.tagName.toLowerCase() === 'exame') || null
-    out.push({ ...m, codExmApoio: cod, materialNome: val(s, 'Material', 'NomeMaterial', 'MaterialNome'), exameNome: val(ex, 'Nome', 'NomeExame') })
+    out.push({ ...m, codExmApoio: cod, materialNome: val(s, 'Material', 'NomeMaterial', 'MaterialNome'), exameNome: val(ex, 'Nome', 'NomeExame'),
+      unidadeProdutiva: val(s, 'UnidadeProdutiva'), metodo: val(s, 'Metodo'), ultimaLiberacao: dataBR(val(s, 'UltimaLiberacao')) })
   }
   return out
 }
