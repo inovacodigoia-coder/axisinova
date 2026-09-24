@@ -126,6 +126,1284 @@ export type Database = {
           },
         ]
       }
+      apoio_auditoria: {
+        Row: {
+          acao: string
+          antes: Json | null
+          company_id: string
+          created_at: string
+          depois: Json | null
+          id: string
+          registro_id: string | null
+          tabela: string
+          updated_at: string
+          usuario_id: string | null
+        }
+        Insert: {
+          acao: string
+          antes?: Json | null
+          company_id: string
+          created_at?: string
+          depois?: Json | null
+          id?: string
+          registro_id?: string | null
+          tabela: string
+          updated_at?: string
+          usuario_id?: string | null
+        }
+        Update: {
+          acao?: string
+          antes?: Json | null
+          company_id?: string
+          created_at?: string
+          depois?: Json | null
+          id?: string
+          registro_id?: string | null
+          tabela?: string
+          updated_at?: string
+          usuario_id?: string | null
+        }
+        Relationships: []
+      }
+      apoio_catalogo_exame: {
+        Row: {
+          apoio_id: string
+          ativo: boolean
+          codigo: string
+          company_id: string
+          condicoes: Json | null
+          conservantes: Json | null
+          created_at: string
+          descricao: string | null
+          exige_pdf: boolean
+          id: string
+          info_comp: Json | null
+          materiais: Json | null
+          mnexa: string | null
+          mnmat: string | null
+          origem_admissivel: string | null
+          sincronizado_em: string | null
+          updated_at: string
+        }
+        Insert: {
+          apoio_id: string
+          ativo?: boolean
+          codigo: string
+          company_id: string
+          condicoes?: Json | null
+          conservantes?: Json | null
+          created_at?: string
+          descricao?: string | null
+          exige_pdf?: boolean
+          id?: string
+          info_comp?: Json | null
+          materiais?: Json | null
+          mnexa?: string | null
+          mnmat?: string | null
+          origem_admissivel?: string | null
+          sincronizado_em?: string | null
+          updated_at?: string
+        }
+        Update: {
+          apoio_id?: string
+          ativo?: boolean
+          codigo?: string
+          company_id?: string
+          condicoes?: Json | null
+          conservantes?: Json | null
+          created_at?: string
+          descricao?: string | null
+          exige_pdf?: boolean
+          id?: string
+          info_comp?: Json | null
+          materiais?: Json | null
+          mnexa?: string | null
+          mnmat?: string | null
+          origem_admissivel?: string | null
+          sincronizado_em?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "apoio_catalogo_exame_apoio_id_fkey"
+            columns: ["apoio_id"]
+            isOneToOne: false
+            referencedRelation: "apoio_laboratorio"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "apoio_catalogo_exame_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      apoio_certificacao: {
+        Row: {
+          apoio_id: string
+          arquivo_path: string | null
+          company_id: string
+          created_at: string
+          id: string
+          numero: string | null
+          tipo: string
+          updated_at: string
+          validade: string | null
+        }
+        Insert: {
+          apoio_id: string
+          arquivo_path?: string | null
+          company_id: string
+          created_at?: string
+          id?: string
+          numero?: string | null
+          tipo: string
+          updated_at?: string
+          validade?: string | null
+        }
+        Update: {
+          apoio_id?: string
+          arquivo_path?: string | null
+          company_id?: string
+          created_at?: string
+          id?: string
+          numero?: string | null
+          tipo?: string
+          updated_at?: string
+          validade?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "apoio_certificacao_apoio_id_fkey"
+            columns: ["apoio_id"]
+            isOneToOne: false
+            referencedRelation: "apoio_laboratorio"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "apoio_certificacao_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      apoio_chamada_log: {
+        Row: {
+          apoio_id: string | null
+          company_id: string
+          created_at: string
+          duracao_ms: number | null
+          erro: string | null
+          http_status: number | null
+          id: string
+          operacao: string
+          requisicao: string | null
+          resposta: string | null
+          updated_at: string
+        }
+        Insert: {
+          apoio_id?: string | null
+          company_id: string
+          created_at?: string
+          duracao_ms?: number | null
+          erro?: string | null
+          http_status?: number | null
+          id?: string
+          operacao: string
+          requisicao?: string | null
+          resposta?: string | null
+          updated_at?: string
+        }
+        Update: {
+          apoio_id?: string | null
+          company_id?: string
+          created_at?: string
+          duracao_ms?: number | null
+          erro?: string | null
+          http_status?: number | null
+          id?: string
+          operacao?: string
+          requisicao?: string | null
+          resposta?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "apoio_chamada_log_apoio_id_fkey"
+            columns: ["apoio_id"]
+            isOneToOne: false
+            referencedRelation: "apoio_laboratorio"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "apoio_chamada_log_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      apoio_cursor: {
+        Row: {
+          apoio_id: string
+          ate: string | null
+          company_id: string
+          created_at: string
+          rotina: string
+          ultima_execucao: string | null
+          ultimo_erro: string | null
+          updated_at: string
+        }
+        Insert: {
+          apoio_id: string
+          ate?: string | null
+          company_id: string
+          created_at?: string
+          rotina: string
+          ultima_execucao?: string | null
+          ultimo_erro?: string | null
+          updated_at?: string
+        }
+        Update: {
+          apoio_id?: string
+          ate?: string | null
+          company_id?: string
+          created_at?: string
+          rotina?: string
+          ultima_execucao?: string | null
+          ultimo_erro?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "apoio_cursor_apoio_id_fkey"
+            columns: ["apoio_id"]
+            isOneToOne: false
+            referencedRelation: "apoio_laboratorio"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "apoio_cursor_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      apoio_depara_analito: {
+        Row: {
+          chave_analito: string
+          codigo_formato: string
+          company_id: string
+          created_at: string
+          depara_exame_id: string
+          id: string
+          ignorar: boolean
+          nome_apoio: string | null
+          parametro_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          chave_analito: string
+          codigo_formato?: string
+          company_id: string
+          created_at?: string
+          depara_exame_id: string
+          id?: string
+          ignorar?: boolean
+          nome_apoio?: string | null
+          parametro_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          chave_analito?: string
+          codigo_formato?: string
+          company_id?: string
+          created_at?: string
+          depara_exame_id?: string
+          id?: string
+          ignorar?: boolean
+          nome_apoio?: string | null
+          parametro_id?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "apoio_depara_analito_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "apoio_depara_analito_depara_exame_id_fkey"
+            columns: ["depara_exame_id"]
+            isOneToOne: false
+            referencedRelation: "apoio_depara_exame"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "apoio_depara_analito_parametro_id_fkey"
+            columns: ["parametro_id"]
+            isOneToOne: false
+            referencedRelation: "lab_exam_parameters"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      apoio_depara_exame: {
+        Row: {
+          apoio_id: string
+          ativo: boolean
+          codigo_apoio: string
+          company_id: string
+          created_at: string
+          exame_id: string
+          id: string
+          prioridade: number
+          updated_at: string
+        }
+        Insert: {
+          apoio_id: string
+          ativo?: boolean
+          codigo_apoio: string
+          company_id: string
+          created_at?: string
+          exame_id: string
+          id?: string
+          prioridade?: number
+          updated_at?: string
+        }
+        Update: {
+          apoio_id?: string
+          ativo?: boolean
+          codigo_apoio?: string
+          company_id?: string
+          created_at?: string
+          exame_id?: string
+          id?: string
+          prioridade?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "apoio_depara_exame_apoio_id_fkey"
+            columns: ["apoio_id"]
+            isOneToOne: false
+            referencedRelation: "apoio_laboratorio"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "apoio_depara_exame_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "apoio_depara_exame_exame_id_fkey"
+            columns: ["exame_id"]
+            isOneToOne: false
+            referencedRelation: "exams"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      apoio_documento: {
+        Row: {
+          company_id: string
+          created_at: string
+          enviado_por: string | null
+          id: string
+          origem: string | null
+          pedido_exame_id: string
+          storage_path: string
+          tipo: string
+          updated_at: string
+        }
+        Insert: {
+          company_id: string
+          created_at?: string
+          enviado_por?: string | null
+          id?: string
+          origem?: string | null
+          pedido_exame_id: string
+          storage_path: string
+          tipo: string
+          updated_at?: string
+        }
+        Update: {
+          company_id?: string
+          created_at?: string
+          enviado_por?: string | null
+          id?: string
+          origem?: string | null
+          pedido_exame_id?: string
+          storage_path?: string
+          tipo?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "apoio_documento_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "apoio_documento_pedido_exame_id_fkey"
+            columns: ["pedido_exame_id"]
+            isOneToOne: false
+            referencedRelation: "apoio_pedido_exame"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "apoio_documento_pedido_exame_id_fkey"
+            columns: ["pedido_exame_id"]
+            isOneToOne: false
+            referencedRelation: "apoio_pedido_exame_v"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      apoio_erro: {
+        Row: {
+          apoio_id: string
+          categoria: string | null
+          codigo: string
+          company_id: string
+          created_at: string
+          id: string
+          mensagem: string | null
+          updated_at: string
+        }
+        Insert: {
+          apoio_id: string
+          categoria?: string | null
+          codigo: string
+          company_id: string
+          created_at?: string
+          id?: string
+          mensagem?: string | null
+          updated_at?: string
+        }
+        Update: {
+          apoio_id?: string
+          categoria?: string | null
+          codigo?: string
+          company_id?: string
+          created_at?: string
+          id?: string
+          mensagem?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "apoio_erro_apoio_id_fkey"
+            columns: ["apoio_id"]
+            isOneToOne: false
+            referencedRelation: "apoio_laboratorio"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "apoio_erro_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      apoio_laboratorio: {
+        Row: {
+          ambiente: string
+          ativo: boolean
+          cnpj: string | null
+          cod_lab: string | null
+          company_id: string
+          conector: string
+          contato_email: string | null
+          contato_nome: string | null
+          contato_telefone: string | null
+          created_at: string
+          dias_transporte: number
+          endpoint_url: string | null
+          guardar_pdf_sempre: boolean
+          id: string
+          licenca_sanitaria: string | null
+          licenca_validade: string | null
+          modo_contingencia: boolean
+          nome: string
+          opcoes: Json
+          senha_secret_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          ambiente?: string
+          ativo?: boolean
+          cnpj?: string | null
+          cod_lab?: string | null
+          company_id: string
+          conector?: string
+          contato_email?: string | null
+          contato_nome?: string | null
+          contato_telefone?: string | null
+          created_at?: string
+          dias_transporte?: number
+          endpoint_url?: string | null
+          guardar_pdf_sempre?: boolean
+          id?: string
+          licenca_sanitaria?: string | null
+          licenca_validade?: string | null
+          modo_contingencia?: boolean
+          nome: string
+          opcoes?: Json
+          senha_secret_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          ambiente?: string
+          ativo?: boolean
+          cnpj?: string | null
+          cod_lab?: string | null
+          company_id?: string
+          conector?: string
+          contato_email?: string | null
+          contato_nome?: string | null
+          contato_telefone?: string | null
+          created_at?: string
+          dias_transporte?: number
+          endpoint_url?: string | null
+          guardar_pdf_sempre?: boolean
+          id?: string
+          licenca_sanitaria?: string | null
+          licenca_validade?: string | null
+          modo_contingencia?: boolean
+          nome?: string
+          opcoes?: Json
+          senha_secret_id?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "apoio_laboratorio_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      apoio_pedido_exame: {
+        Row: {
+          amostra_id: string | null
+          apoio_id: string
+          cod_ped_apoio: string | null
+          codigo_apoio: string | null
+          company_id: string
+          created_at: string
+          critico: boolean
+          custo_previsto: number | null
+          erro: Json | null
+          exame_id: string | null
+          id: string
+          info_complementar: Json | null
+          modo: string
+          pedido_id: string
+          prazo_previsto: string | null
+          preco_ficticio: boolean
+          recipiente_id: string | null
+          remessa_id: string | null
+          responsavel_id: string | null
+          sequencial: number
+          status: Database["public"]["Enums"]["apoio_status"]
+          status_apoio_cod: string | null
+          status_apoio_desc: string | null
+          status_apoio_em: string | null
+          updated_at: string
+        }
+        Insert: {
+          amostra_id?: string | null
+          apoio_id: string
+          cod_ped_apoio?: string | null
+          codigo_apoio?: string | null
+          company_id: string
+          created_at?: string
+          critico?: boolean
+          custo_previsto?: number | null
+          erro?: Json | null
+          exame_id?: string | null
+          id?: string
+          info_complementar?: Json | null
+          modo?: string
+          pedido_id: string
+          prazo_previsto?: string | null
+          preco_ficticio?: boolean
+          recipiente_id?: string | null
+          remessa_id?: string | null
+          responsavel_id?: string | null
+          sequencial?: number
+          status?: Database["public"]["Enums"]["apoio_status"]
+          status_apoio_cod?: string | null
+          status_apoio_desc?: string | null
+          status_apoio_em?: string | null
+          updated_at?: string
+        }
+        Update: {
+          amostra_id?: string | null
+          apoio_id?: string
+          cod_ped_apoio?: string | null
+          codigo_apoio?: string | null
+          company_id?: string
+          created_at?: string
+          critico?: boolean
+          custo_previsto?: number | null
+          erro?: Json | null
+          exame_id?: string | null
+          id?: string
+          info_complementar?: Json | null
+          modo?: string
+          pedido_id?: string
+          prazo_previsto?: string | null
+          preco_ficticio?: boolean
+          recipiente_id?: string | null
+          remessa_id?: string | null
+          responsavel_id?: string | null
+          sequencial?: number
+          status?: Database["public"]["Enums"]["apoio_status"]
+          status_apoio_cod?: string | null
+          status_apoio_desc?: string | null
+          status_apoio_em?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "apoio_pedido_exame_apoio_id_fkey"
+            columns: ["apoio_id"]
+            isOneToOne: false
+            referencedRelation: "apoio_laboratorio"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "apoio_pedido_exame_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "apoio_pedido_exame_exame_id_fkey"
+            columns: ["exame_id"]
+            isOneToOne: false
+            referencedRelation: "exams"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "apoio_pedido_exame_pedido_id_fkey"
+            columns: ["pedido_id"]
+            isOneToOne: false
+            referencedRelation: "attendance_orders"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "apoio_pedido_exame_recipiente_id_fkey"
+            columns: ["recipiente_id"]
+            isOneToOne: false
+            referencedRelation: "apoio_recipiente"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "apoio_pedido_exame_remessa_id_fkey"
+            columns: ["remessa_id"]
+            isOneToOne: false
+            referencedRelation: "apoio_remessa"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      apoio_pedido_exame_historico: {
+        Row: {
+          company_id: string
+          created_at: string
+          dados: Json | null
+          id: string
+          motivo: string | null
+          origem: string
+          pedido_exame_id: string
+          status_de: Database["public"]["Enums"]["apoio_status"] | null
+          status_para: Database["public"]["Enums"]["apoio_status"]
+          updated_at: string
+          usuario_id: string | null
+        }
+        Insert: {
+          company_id: string
+          created_at?: string
+          dados?: Json | null
+          id?: string
+          motivo?: string | null
+          origem: string
+          pedido_exame_id: string
+          status_de?: Database["public"]["Enums"]["apoio_status"] | null
+          status_para: Database["public"]["Enums"]["apoio_status"]
+          updated_at?: string
+          usuario_id?: string | null
+        }
+        Update: {
+          company_id?: string
+          created_at?: string
+          dados?: Json | null
+          id?: string
+          motivo?: string | null
+          origem?: string
+          pedido_exame_id?: string
+          status_de?: Database["public"]["Enums"]["apoio_status"] | null
+          status_para?: Database["public"]["Enums"]["apoio_status"]
+          updated_at?: string
+          usuario_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "apoio_pedido_exame_historico_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "apoio_pedido_exame_historico_pedido_exame_id_fkey"
+            columns: ["pedido_exame_id"]
+            isOneToOne: false
+            referencedRelation: "apoio_pedido_exame"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "apoio_pedido_exame_historico_pedido_exame_id_fkey"
+            columns: ["pedido_exame_id"]
+            isOneToOne: false
+            referencedRelation: "apoio_pedido_exame_v"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      apoio_pendencia_tecnica: {
+        Row: {
+          cod_ped_apoio: string | null
+          codigo_apoio: string | null
+          company_id: string
+          created_at: string
+          detalhamento: string | null
+          disposicao: string | null
+          id: string
+          pedido_exame_id: string | null
+          pendencia: string | null
+          recebida_em: string | null
+          resolucao: string | null
+          resolvida_em: string | null
+          resolvida_por: string | null
+          situacao: string | null
+          updated_at: string
+        }
+        Insert: {
+          cod_ped_apoio?: string | null
+          codigo_apoio?: string | null
+          company_id: string
+          created_at?: string
+          detalhamento?: string | null
+          disposicao?: string | null
+          id?: string
+          pedido_exame_id?: string | null
+          pendencia?: string | null
+          recebida_em?: string | null
+          resolucao?: string | null
+          resolvida_em?: string | null
+          resolvida_por?: string | null
+          situacao?: string | null
+          updated_at?: string
+        }
+        Update: {
+          cod_ped_apoio?: string | null
+          codigo_apoio?: string | null
+          company_id?: string
+          created_at?: string
+          detalhamento?: string | null
+          disposicao?: string | null
+          id?: string
+          pedido_exame_id?: string | null
+          pendencia?: string | null
+          recebida_em?: string | null
+          resolucao?: string | null
+          resolvida_em?: string | null
+          resolvida_por?: string | null
+          situacao?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "apoio_pendencia_tecnica_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "apoio_pendencia_tecnica_pedido_exame_id_fkey"
+            columns: ["pedido_exame_id"]
+            isOneToOne: false
+            referencedRelation: "apoio_pedido_exame"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "apoio_pendencia_tecnica_pedido_exame_id_fkey"
+            columns: ["pedido_exame_id"]
+            isOneToOne: false
+            referencedRelation: "apoio_pedido_exame_v"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      apoio_preco: {
+        Row: {
+          apoio_id: string
+          codigo: string
+          company_id: string
+          created_at: string
+          ficticio: boolean
+          id: string
+          importacao_id: string | null
+          prazo_dias_uteis: number | null
+          preco: number
+          updated_at: string
+          vigencia_fim: string | null
+          vigencia_inicio: string
+        }
+        Insert: {
+          apoio_id: string
+          codigo: string
+          company_id: string
+          created_at?: string
+          ficticio?: boolean
+          id?: string
+          importacao_id?: string | null
+          prazo_dias_uteis?: number | null
+          preco: number
+          updated_at?: string
+          vigencia_fim?: string | null
+          vigencia_inicio?: string
+        }
+        Update: {
+          apoio_id?: string
+          codigo?: string
+          company_id?: string
+          created_at?: string
+          ficticio?: boolean
+          id?: string
+          importacao_id?: string | null
+          prazo_dias_uteis?: number | null
+          preco?: number
+          updated_at?: string
+          vigencia_fim?: string | null
+          vigencia_inicio?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "apoio_preco_apoio_id_fkey"
+            columns: ["apoio_id"]
+            isOneToOne: false
+            referencedRelation: "apoio_laboratorio"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "apoio_preco_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "apoio_preco_importacao_id_fkey"
+            columns: ["importacao_id"]
+            isOneToOne: false
+            referencedRelation: "apoio_preco_importacao"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      apoio_preco_importacao: {
+        Row: {
+          apoio_id: string
+          arquivo_nome: string | null
+          company_id: string
+          created_at: string
+          erros: Json | null
+          ficticia: boolean
+          id: string
+          importado_por: string | null
+          linhas_erro: number | null
+          linhas_ok: number | null
+          linhas_total: number | null
+          updated_at: string
+        }
+        Insert: {
+          apoio_id: string
+          arquivo_nome?: string | null
+          company_id: string
+          created_at?: string
+          erros?: Json | null
+          ficticia?: boolean
+          id?: string
+          importado_por?: string | null
+          linhas_erro?: number | null
+          linhas_ok?: number | null
+          linhas_total?: number | null
+          updated_at?: string
+        }
+        Update: {
+          apoio_id?: string
+          arquivo_nome?: string | null
+          company_id?: string
+          created_at?: string
+          erros?: Json | null
+          ficticia?: boolean
+          id?: string
+          importado_por?: string | null
+          linhas_erro?: number | null
+          linhas_ok?: number | null
+          linhas_total?: number | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "apoio_preco_importacao_apoio_id_fkey"
+            columns: ["apoio_id"]
+            isOneToOne: false
+            referencedRelation: "apoio_laboratorio"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "apoio_preco_importacao_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      apoio_recipiente: {
+        Row: {
+          bipado: boolean
+          bipado_em: string | null
+          cancelado: boolean
+          cod_bar_apoio: string | null
+          cod_ped_apoio: string | null
+          company_id: string
+          created_at: string
+          etiqueta_epl: string | null
+          id: string
+          impressoes: number
+          remessa_id: string
+          updated_at: string
+        }
+        Insert: {
+          bipado?: boolean
+          bipado_em?: string | null
+          cancelado?: boolean
+          cod_bar_apoio?: string | null
+          cod_ped_apoio?: string | null
+          company_id: string
+          created_at?: string
+          etiqueta_epl?: string | null
+          id?: string
+          impressoes?: number
+          remessa_id: string
+          updated_at?: string
+        }
+        Update: {
+          bipado?: boolean
+          bipado_em?: string | null
+          cancelado?: boolean
+          cod_bar_apoio?: string | null
+          cod_ped_apoio?: string | null
+          company_id?: string
+          created_at?: string
+          etiqueta_epl?: string | null
+          id?: string
+          impressoes?: number
+          remessa_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "apoio_recipiente_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "apoio_recipiente_remessa_id_fkey"
+            columns: ["remessa_id"]
+            isOneToOne: false
+            referencedRelation: "apoio_remessa"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      apoio_remessa: {
+        Row: {
+          apoio_id: string
+          cod_lote_apoio: string | null
+          cod_lote_lab: number | null
+          company_id: string
+          conferido_em: string | null
+          conferido_por: string | null
+          created_at: string
+          criado_por: string | null
+          entregue_a: string | null
+          entregue_em: string | null
+          id: string
+          mensagem_id: string | null
+          modo: string
+          observacao: string | null
+          status: string
+          temperatura: string
+          transmitido_em: string | null
+          updated_at: string
+        }
+        Insert: {
+          apoio_id: string
+          cod_lote_apoio?: string | null
+          cod_lote_lab?: number | null
+          company_id: string
+          conferido_em?: string | null
+          conferido_por?: string | null
+          created_at?: string
+          criado_por?: string | null
+          entregue_a?: string | null
+          entregue_em?: string | null
+          id?: string
+          mensagem_id?: string | null
+          modo?: string
+          observacao?: string | null
+          status?: string
+          temperatura?: string
+          transmitido_em?: string | null
+          updated_at?: string
+        }
+        Update: {
+          apoio_id?: string
+          cod_lote_apoio?: string | null
+          cod_lote_lab?: number | null
+          company_id?: string
+          conferido_em?: string | null
+          conferido_por?: string | null
+          created_at?: string
+          criado_por?: string | null
+          entregue_a?: string | null
+          entregue_em?: string | null
+          id?: string
+          mensagem_id?: string | null
+          modo?: string
+          observacao?: string | null
+          status?: string
+          temperatura?: string
+          transmitido_em?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "apoio_remessa_apoio_id_fkey"
+            columns: ["apoio_id"]
+            isOneToOne: false
+            referencedRelation: "apoio_laboratorio"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "apoio_remessa_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      apoio_resultado_versao: {
+        Row: {
+          cod_exm_apoio: string | null
+          cod_ped_apoio: string | null
+          codigo_formato: string | null
+          company_id: string
+          conferido_por: string | null
+          conteudo: Json | null
+          created_at: string
+          digitado_por: string | null
+          hash: string | null
+          id: string
+          origem: string
+          pedido_exame_id: string | null
+          retificacao: string | null
+          situacao: string
+          updated_at: string
+          xml_original: string | null
+        }
+        Insert: {
+          cod_exm_apoio?: string | null
+          cod_ped_apoio?: string | null
+          codigo_formato?: string | null
+          company_id: string
+          conferido_por?: string | null
+          conteudo?: Json | null
+          created_at?: string
+          digitado_por?: string | null
+          hash?: string | null
+          id?: string
+          origem: string
+          pedido_exame_id?: string | null
+          retificacao?: string | null
+          situacao?: string
+          updated_at?: string
+          xml_original?: string | null
+        }
+        Update: {
+          cod_exm_apoio?: string | null
+          cod_ped_apoio?: string | null
+          codigo_formato?: string | null
+          company_id?: string
+          conferido_por?: string | null
+          conteudo?: Json | null
+          created_at?: string
+          digitado_por?: string | null
+          hash?: string | null
+          id?: string
+          origem?: string
+          pedido_exame_id?: string | null
+          retificacao?: string | null
+          situacao?: string
+          updated_at?: string
+          xml_original?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "apoio_resultado_versao_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "apoio_resultado_versao_pedido_exame_id_fkey"
+            columns: ["pedido_exame_id"]
+            isOneToOne: false
+            referencedRelation: "apoio_pedido_exame"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "apoio_resultado_versao_pedido_exame_id_fkey"
+            columns: ["pedido_exame_id"]
+            isOneToOne: false
+            referencedRelation: "apoio_pedido_exame_v"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      apoio_status_map: {
+        Row: {
+          apoio_id: string
+          cod_apoio: string
+          company_id: string
+          created_at: string
+          descricao_apoio: string | null
+          id: string
+          status_nosso: Database["public"]["Enums"]["apoio_status"]
+          updated_at: string
+        }
+        Insert: {
+          apoio_id: string
+          cod_apoio: string
+          company_id: string
+          created_at?: string
+          descricao_apoio?: string | null
+          id?: string
+          status_nosso: Database["public"]["Enums"]["apoio_status"]
+          updated_at?: string
+        }
+        Update: {
+          apoio_id?: string
+          cod_apoio?: string
+          company_id?: string
+          created_at?: string
+          descricao_apoio?: string | null
+          id?: string
+          status_nosso?: Database["public"]["Enums"]["apoio_status"]
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "apoio_status_map_apoio_id_fkey"
+            columns: ["apoio_id"]
+            isOneToOne: false
+            referencedRelation: "apoio_laboratorio"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "apoio_status_map_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      apoio_visao_kanban: {
+        Row: {
+          company_id: string
+          compartilhada: boolean
+          created_at: string
+          dono_id: string | null
+          filtros: Json
+          id: string
+          nome: string
+          ordem: number
+          updated_at: string
+        }
+        Insert: {
+          company_id: string
+          compartilhada?: boolean
+          created_at?: string
+          dono_id?: string | null
+          filtros?: Json
+          id?: string
+          nome: string
+          ordem?: number
+          updated_at?: string
+        }
+        Update: {
+          company_id?: string
+          compartilhada?: boolean
+          created_at?: string
+          dono_id?: string | null
+          filtros?: Json
+          id?: string
+          nome?: string
+          ordem?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "apoio_visao_kanban_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       appointments: {
         Row: {
           company_id: string
@@ -467,6 +1745,9 @@ export type Database = {
       }
       companies: {
         Row: {
+          apoio_enabled: boolean
+          apoio_released_at: string | null
+          apoio_released_by: string | null
           armazenamento_limite_gb: number | null
           armazenamento_usado_gb: number | null
           bairro: string | null
@@ -502,6 +1783,9 @@ export type Database = {
           website: string | null
         }
         Insert: {
+          apoio_enabled?: boolean
+          apoio_released_at?: string | null
+          apoio_released_by?: string | null
           armazenamento_limite_gb?: number | null
           armazenamento_usado_gb?: number | null
           bairro?: string | null
@@ -537,6 +1821,9 @@ export type Database = {
           website?: string | null
         }
         Update: {
+          apoio_enabled?: boolean
+          apoio_released_at?: string | null
+          apoio_released_by?: string | null
           armazenamento_limite_gb?: number | null
           armazenamento_usado_gb?: number | null
           bairro?: string | null
@@ -4034,9 +5321,112 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      apoio_pedido_exame_v: {
+        Row: {
+          amostra_id: string | null
+          apoio_id: string | null
+          apoio_nome: string | null
+          cod_lote_lab: number | null
+          cod_ped_apoio: string | null
+          codigo_apoio: string | null
+          company_id: string | null
+          created_at: string | null
+          critico: boolean | null
+          custo_previsto: number | null
+          dias_em_atraso: number | null
+          erro: Json | null
+          exame_id: string | null
+          exame_nome: string | null
+          id: string | null
+          info_complementar: Json | null
+          modo: string | null
+          paciente_nome: string | null
+          patient_id: string | null
+          pedido_id: string | null
+          pedido_numero: string | null
+          pedido_protocolo: string | null
+          prazo_previsto: string | null
+          preco_ficticio: boolean | null
+          recipiente_id: string | null
+          remessa_id: string | null
+          remessa_status: string | null
+          responsavel_id: string | null
+          sequencial: number | null
+          situacao_prazo: string | null
+          status: Database["public"]["Enums"]["apoio_status"] | null
+          status_apoio_cod: string | null
+          status_apoio_desc: string | null
+          status_apoio_em: string | null
+          updated_at: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "apoio_pedido_exame_apoio_id_fkey"
+            columns: ["apoio_id"]
+            isOneToOne: false
+            referencedRelation: "apoio_laboratorio"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "apoio_pedido_exame_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "apoio_pedido_exame_exame_id_fkey"
+            columns: ["exame_id"]
+            isOneToOne: false
+            referencedRelation: "exams"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "apoio_pedido_exame_pedido_id_fkey"
+            columns: ["pedido_id"]
+            isOneToOne: false
+            referencedRelation: "attendance_orders"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "apoio_pedido_exame_recipiente_id_fkey"
+            columns: ["recipiente_id"]
+            isOneToOne: false
+            referencedRelation: "apoio_recipiente"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "apoio_pedido_exame_remessa_id_fkey"
+            columns: ["remessa_id"]
+            isOneToOne: false
+            referencedRelation: "apoio_remessa"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "attendance_orders_patient_id_fkey"
+            columns: ["patient_id"]
+            isOneToOne: false
+            referencedRelation: "patients"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Functions: {
+      apoio_dias_uteis: { Args: { _ate: string; _de: string }; Returns: number }
+      apoio_modulo_liberado: { Args: { _company_id: string }; Returns: boolean }
+      apoio_mudar_status: {
+        Args: {
+          p_dados?: Json
+          p_motivo?: string
+          p_origem: string
+          p_pedido_exame_id: string
+          p_status_novo: Database["public"]["Enums"]["apoio_status"]
+        }
+        Returns: undefined
+      }
+      apoio_seed_company: { Args: { _company_id: string }; Returns: undefined }
+      apoio_tem_permissao: { Args: { _perm: string }; Returns: boolean }
       auth_check_lockout: {
         Args: { _identifier: string; _ip: string }
         Returns: Json
@@ -4140,6 +5530,20 @@ export type Database = {
       }
     }
     Enums: {
+      apoio_status:
+        | "aguardando_remessa"
+        | "em_remessa"
+        | "transmitido"
+        | "recebido_apoio"
+        | "em_analise"
+        | "pendencia_tecnica"
+        | "nova_coleta"
+        | "liberado_apoio"
+        | "importado"
+        | "importado_com_pendencia"
+        | "liberado_local"
+        | "cancelado"
+        | "erro_transmissao"
       app_role:
         | "company_admin"
         | "doctor"
@@ -4280,6 +5684,21 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
+      apoio_status: [
+        "aguardando_remessa",
+        "em_remessa",
+        "transmitido",
+        "recebido_apoio",
+        "em_analise",
+        "pendencia_tecnica",
+        "nova_coleta",
+        "liberado_apoio",
+        "importado",
+        "importado_com_pendencia",
+        "liberado_local",
+        "cancelado",
+        "erro_transmissao",
+      ],
       app_role: [
         "company_admin",
         "doctor",
