@@ -1,3 +1,4 @@
+import { supabase } from '@/integrations/supabase/client';
 import { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Card } from '@/components/ui/card';
@@ -24,6 +25,8 @@ import {
   Calendar as CalendarIcon,
   Trash2,
   Layout
+  Truck as Truck,
+  AlertTriangle as AlertTriangle,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -692,6 +695,8 @@ export default function LabAnalisePage() {
                                         onChange={() => toggleProtocolSelection(group.protocol)}
                                       />
                                       <span className="text-[10px] font-black font-mono text-muted-foreground">Pedido {group.protocol}</span>
+                                      {group.exams.some((e: any) => apoioModos[`${e.orderId}:${e.examId}`]) && <Truck className="h-3 w-3 text-muted-foreground" aria-label="Tem exame de apoio" />}
+                                      {group.exams.some((e: any) => apoioModos[`${e.orderId}:${e.examId}`]?.alerta) && <AlertTriangle className="h-3 w-3 text-destructive" aria-label="Exame de apoio com alerta" />}
                                     </div>
                                     <span className="flex items-center gap-1 text-[10px] text-muted-foreground font-bold">
                                       <Clock className="h-3 w-3" /> 10m
