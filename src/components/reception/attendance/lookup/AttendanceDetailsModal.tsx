@@ -1,4 +1,5 @@
 import { formatCPF, formatPhone, formatAge, formatGender, formatAddress } from "@/utils/formatters"
+import { fmtDiaMes } from '@/lib/apoioAtendimento'
 import { useState, useMemo, useEffect } from 'react'
 import { Dialog, DialogContent } from '@/components/ui/dialog'
 import { X, Printer, Pencil, Trash2, Plus, ArrowLeft, MoreVertical, CreditCard, Droplets, ShieldCheck, DollarSign, Calendar, Clock, MapPin, User, FileText, ChevronDown, History, BarChart3, Database, RefreshCw, Info, Smartphone, Calculator, Loader2, Eye, AlertTriangle } from 'lucide-react'
