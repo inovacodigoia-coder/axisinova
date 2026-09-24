@@ -18,6 +18,7 @@ export function ApoioAnalitosSheet({ deparaId, exameNome, readOnly, onClose, onC
   const [antigos, setAntigos] = useState<Record<string, string>>({})
   const [busy, setBusy] = useState(false)
   const [buscando, setBuscando] = useState(false)
+  const [destacarManual, setDestacarManual] = useState(false)
   const [podeAuto, setPodeAuto] = useState<boolean | null>(null)
   const [nomeExame, setNomeExame] = useState('')
   const [info, setInfo] = useState<{ codigo_formato: string | null; atualizado_em: string; origem: string } | null>(null)
@@ -95,7 +96,7 @@ export function ApoioAnalitosSheet({ deparaId, exameNome, readOnly, onClose, onC
     try {
       let mod = await buscarNoBanco()
       if (!mod) {
-        const { data, error } = await supabase.functions.invoke('apoio-modelos', { body: { apoio_id: dp.apoio_id } })
+        const { data, error } = await supabase.functions.invoke('apoio-modelos', { body: { apoio_id: dp.apoio_id, operacao: 'todos' } })
         if (error) throw error
         const r = data?.resultados?.[0]
         if (r && !r.ok) throw new Error(r.erro || r.error || 'Falha ao buscar modelos no Pardini')
@@ -104,7 +105,10 @@ export function ApoioAnalitosSheet({ deparaId, exameNome, readOnly, onClose, onC
       }
       await aplicar(mod)
     } catch (e: any) {
-      toast.error('Não foi possível buscar o modelo', { description: e.message })
+      const raw = String(e?.message || '')
+      const pardini = /Badly formed SOAP|ERRO\s*#|<info>|UNDEFINED|fault|Pardini não conseguiu/i.test(raw)
+      if (pardini) setDestacarManual(true)
+      toast.error('Não foi possível buscar o modelo', { description: pardini ? "O Pardini não conseguiu gerar os modelos agora (falha do lado do Pardini). Use 'Enviar modelos.xml manualmente'." : raw })
     } finally { setBuscando(false) }
   }
 
@@ -188,6 +192,7 @@ export function ApoioAnalitosSheet({ deparaId, exameNome, readOnly, onClose, onC
                 : <span className="text-xs font-medium text-destructive">Faltam {faltam}</span>)}
             </div>
             {info && <p className="text-xs text-muted-foreground">Modelo: CodigoFormato {info.codigo_formato || '—'} · atualizado em {new Date(info.atualizado_em).toLocaleString('pt-BR')} ({info.origem === 'automatico' ? 'automático' : 'manual'})</p>}
+            {!readOnly && <p className="text-xs text-muted-foreground">Dica: envie o modelos.xml uma vez; ele serve para todos os exames.</p>}
             {!readOnly && podeAuto === false && <p className="text-xs text-muted-foreground">Busca automática indisponível: cadastre o código e a senha do Pardini na integração deste apoio.</p>}
             {!readOnly && (
               <div className="flex flex-wrap gap-2">
@@ -196,7 +201,7 @@ export function ApoioAnalitosSheet({ deparaId, exameNome, readOnly, onClose, onC
                     {buscando ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <CloudDownload className="h-3.5 w-3.5" />} Buscar modelo do Pardini
                   </button>
                 </span>
-                <label className={`flex cursor-pointer items-center gap-1.5 rounded-lg border border-border px-3 py-1.5 text-xs font-medium hover:bg-muted ${busy ? 'opacity-50 pointer-events-none' : ''}`}>
+                <label className={`flex cursor-pointer items-center gap-1.5 rounded-lg border px-3 py-1.5 text-xs font-medium hover:bg-muted ${destacarManual ? 'border-primary ring-2 ring-primary/40' : 'border-border'} ${busy ? 'opacity-50 pointer-events-none' : ''}`}>
                   {busy ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <FileUp className="h-3.5 w-3.5" />} Enviar modelos.xml manualmente
                   <input type="file" accept=".xml" className="hidden" onChange={e => { const f = e.target.files?.[0]; if (f) carregar(f); e.target.value = '' }} />
                 </label>
