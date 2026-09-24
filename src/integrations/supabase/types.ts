@@ -994,6 +994,54 @@ export type Database = {
           },
         ]
       }
+      apoio_modo_manual_periodo: {
+        Row: {
+          apoio_id: string
+          company_id: string
+          created_at: string
+          desligado_por: string | null
+          fim: string | null
+          id: string
+          inicio: string
+          ligado_por: string | null
+        }
+        Insert: {
+          apoio_id: string
+          company_id: string
+          created_at?: string
+          desligado_por?: string | null
+          fim?: string | null
+          id?: string
+          inicio?: string
+          ligado_por?: string | null
+        }
+        Update: {
+          apoio_id?: string
+          company_id?: string
+          created_at?: string
+          desligado_por?: string | null
+          fim?: string | null
+          id?: string
+          inicio?: string
+          ligado_por?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "apoio_modo_manual_periodo_apoio_id_fkey"
+            columns: ["apoio_id"]
+            isOneToOne: false
+            referencedRelation: "apoio_laboratorio"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "apoio_modo_manual_periodo_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       apoio_pedido_exame: {
         Row: {
           amostra_id: string | null
@@ -3467,6 +3515,7 @@ export type Database = {
       lab_exam_parameters: {
         Row: {
           allow_negative: boolean | null
+          casas_decimais: number | null
           company_id: string
           created_at: string | null
           equipment_code: string | null
@@ -3489,6 +3538,7 @@ export type Database = {
         }
         Insert: {
           allow_negative?: boolean | null
+          casas_decimais?: number | null
           company_id: string
           created_at?: string | null
           equipment_code?: string | null
@@ -3511,6 +3561,7 @@ export type Database = {
         }
         Update: {
           allow_negative?: boolean | null
+          casas_decimais?: number | null
           company_id?: string
           created_at?: string | null
           equipment_code?: string | null
@@ -4368,6 +4419,97 @@ export type Database = {
             columns: ["patient_id"]
             isOneToOne: false
             referencedRelation: "patients"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      notificacao_evento_config: {
+        Row: {
+          assunto: string | null
+          canal_email: boolean
+          canal_sistema: boolean
+          canal_sms: boolean
+          company_id: string
+          created_at: string
+          evento: string
+          id: string
+          publico: string
+          template: string | null
+          updated_at: string
+        }
+        Insert: {
+          assunto?: string | null
+          canal_email?: boolean
+          canal_sistema?: boolean
+          canal_sms?: boolean
+          company_id: string
+          created_at?: string
+          evento: string
+          id?: string
+          publico: string
+          template?: string | null
+          updated_at?: string
+        }
+        Update: {
+          assunto?: string | null
+          canal_email?: boolean
+          canal_sistema?: boolean
+          canal_sms?: boolean
+          company_id?: string
+          created_at?: string
+          evento?: string
+          id?: string
+          publico?: string
+          template?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "notificacao_evento_config_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      notificacao_historico: {
+        Row: {
+          canal: string
+          company_id: string
+          conteudo: string | null
+          created_at: string
+          destinatario: string | null
+          evento: string
+          id: string
+          status: string
+        }
+        Insert: {
+          canal: string
+          company_id: string
+          conteudo?: string | null
+          created_at?: string
+          destinatario?: string | null
+          evento: string
+          id?: string
+          status?: string
+        }
+        Update: {
+          canal?: string
+          company_id?: string
+          conteudo?: string | null
+          created_at?: string
+          destinatario?: string | null
+          evento?: string
+          id?: string
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "notificacao_historico_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
             referencedColumns: ["id"]
           },
         ]
@@ -6010,10 +6152,24 @@ export type Database = {
       }
     }
     Functions: {
+      apoio__mascarar: { Args: { _t: string }; Returns: string }
       apoio_acao_concluir: {
         Args: { _id: string; _observacao: string }
         Returns: undefined
       }
+      apoio_alertar: {
+        Args: {
+          _company: string
+          _evento: string
+          _msg: string
+          _perm: string
+          _prioridade?: string
+          _rota: string
+          _titulo: string
+        }
+        Returns: number
+      }
+      apoio_alertas_rodar: { Args: { _resumo?: boolean }; Returns: Json }
       apoio_analise__pe: {
         Args: { _pe: string }
         Returns: {
@@ -6246,6 +6402,7 @@ export type Database = {
           status: Database["public"]["Enums"]["apoio_status"]
         }[]
       }
+      apoio_log_reprocessar: { Args: { _log: string }; Returns: undefined }
       apoio_manual_buscar: {
         Args: { _apoio: string; _q: string }
         Returns: {
@@ -6303,6 +6460,172 @@ export type Database = {
         Returns: string
       }
       apoio_referencia_resumo: { Args: { _apoio_id: string }; Returns: Json }
+      apoio_rel__base: {
+        Args: { _apoio: string; _fim: string; _ini: string; _unidade: string }
+        Returns: {
+          apoio_id: string
+          apoio_nome: string
+          company_id: string
+          convenio_id: string
+          criado_em: string
+          critico: boolean
+          custo_previsto: number
+          erro_transmissao: boolean
+          exame_id: string
+          exame_nome: string
+          id: string
+          liberado_em: string
+          modo: string
+          paciente: string
+          pedido_id: string
+          prazo_previsto: string
+          preco_ficticio: boolean
+          protocolo: string
+          recoleta: boolean
+          responsavel_id: string
+          status: string
+          transmitido_em: string
+          unidade_id: string
+          unidade_nome: string
+        }[]
+      }
+      apoio_rel__checar: { Args: { _perm: string }; Returns: undefined }
+      apoio_rel_atrasos: {
+        Args: { _apoio?: string; _fim: string; _ini: string; _unidade?: string }
+        Returns: {
+          apoio: string
+          critico: boolean
+          dias_atraso: number
+          etapa: string
+          exame: string
+          paciente: string
+          pedido: string
+          responsavel: string
+        }[]
+      }
+      apoio_rel_custo: {
+        Args: { _apoio?: string; _fim: string; _ini: string; _unidade?: string }
+        Returns: {
+          apoio: string
+          custo_medio: number
+          custo_total: number
+          exame: string
+          exames: number
+          ficticio: boolean
+          mes: string
+        }[]
+      }
+      apoio_rel_log: {
+        Args: {
+          _apoio?: string
+          _fim: string
+          _ini: string
+          _operacao?: string
+          _so_erros?: boolean
+          _unidade?: string
+        }
+        Returns: {
+          apoio: string
+          criado_em: string
+          duracao_ms: number
+          erro: string
+          http_status: number
+          id: string
+          operacao: string
+          requisicao: string
+          resposta: string
+        }[]
+      }
+      apoio_rel_margem: {
+        Args: { _apoio?: string; _fim: string; _ini: string; _unidade?: string }
+        Returns: {
+          apoio: string
+          cobrado_medio: number
+          custo_medio: number
+          exame: string
+          exames: number
+          ficticio: boolean
+          margem_media: number
+          margem_pct: number
+          sem_preco: number
+        }[]
+      }
+      apoio_rel_modo_manual: {
+        Args: { _apoio?: string; _fim: string; _ini: string; _unidade?: string }
+        Returns: {
+          apoio: string
+          desligado_em: string
+          desligado_por: string
+          exames_manuais: number
+          horas: number
+          ligado_em: string
+          ligado_por: string
+        }[]
+      }
+      apoio_rel_painel: {
+        Args: { _apoio?: string; _fim: string; _ini: string; _unidade?: string }
+        Returns: Json
+      }
+      apoio_rel_pendencias: {
+        Args: { _apoio?: string; _fim: string; _ini: string; _unidade?: string }
+        Returns: {
+          aberta_em: string
+          apoio: string
+          exame: string
+          horas_ate_resolver: number
+          motivo: string
+          paciente: string
+          pedido: string
+          resolvida_em: string
+          situacao: string
+          tipo: string
+        }[]
+      }
+      apoio_rel_qualificacao: {
+        Args: {
+          _apoio?: string
+          _fim?: string
+          _ini?: string
+          _unidade?: string
+        }
+        Returns: {
+          apoio: string
+          dias_restantes: number
+          documento: string
+          numero: string
+          situacao: string
+          validade: string
+        }[]
+      }
+      apoio_rel_remessas: {
+        Args: { _apoio?: string; _fim: string; _ini: string; _unidade?: string }
+        Returns: {
+          apoio: string
+          conferencia: string
+          conferido_por: string
+          criada_em: string
+          entregue_a: string
+          entregue_em: string
+          exames: number
+          lote: number
+          status: string
+          temperatura: string
+          tubos: number
+        }[]
+      }
+      apoio_rel_tat: {
+        Args: { _apoio?: string; _fim: string; _ini: string; _unidade?: string }
+        Returns: {
+          apoio: string
+          exame: string
+          exames: number
+          no_prazo_pct: number
+          prometido_medio: number
+          real_mediana: number
+          real_medio: number
+          real_p90: number
+        }[]
+      }
       apoio_remessa_adicionar: {
         Args: { _ids: string[]; _remessa: string }
         Returns: number
@@ -6395,6 +6718,10 @@ export type Database = {
         Returns: undefined
       }
       apoio_tem_permissao: { Args: { _perm: string }; Returns: boolean }
+      apoio_usuarios_com: {
+        Args: { _company: string; _perm: string }
+        Returns: string[]
+      }
       apoio_valida_cod_ped: {
         Args: { _apoio: string; _cod: string }
         Returns: boolean
