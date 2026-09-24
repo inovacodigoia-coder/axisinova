@@ -22,6 +22,8 @@ import { CardFieldsModal } from '@/components/support/CardFieldsModal'
 import { CardFormModal } from '@/components/support/CardFormModal'
 import { OrderPickerModal, type PickedOrder } from '@/components/support/OrderPickerModal'
 import { CardTimelineModal } from '@/components/support/CardTimelineModal'
+import { useApoioEntitlement } from '@/hooks/useApoio'
+import { ApoioBloqueadoAviso } from '@/pages/company/support/SupportOutsourcingPage'
 
 const norm = (s: string) => s.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim()
 
@@ -184,6 +186,7 @@ export default function SupportBoardPage() {
 
   return (
     <div className="p-6">
+      <ApoioAvisoSlot />
       <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
         <div className="flex items-center gap-3">
           <Button size="icon" variant="ghost" onClick={() => navigate('/app/apoio/kanban')}>
@@ -463,4 +466,10 @@ export default function SupportBoardPage() {
       </AlertDialog>
     </div>
   )
+}
+
+function ApoioAvisoSlot() {
+  const { enabled, loading } = useApoioEntitlement()
+  if (loading || enabled) return null
+  return <div className="mb-4"><ApoioBloqueadoAviso /></div>
 }
