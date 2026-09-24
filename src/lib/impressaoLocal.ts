@@ -20,7 +20,34 @@ export const TIPOS_DOCUMENTO = {
   fichaTrabalho: "ficha_trabalho",
   etiquetaColhedor: "etiqueta_colhedor",
   etiquetaApoioPardini: "etiqueta_apoio_pardini",
+  romaneioApoioPardini: "romaneio_apoio_pardini",
 } as const;
+
+/** Texto (ex.: .epl) para base64 preservando os bytes em Latin-1 quando possível. */
+export function textoParaBase64(texto: string): string {
+  let bin = "";
+  for (const ch of texto) {
+    const c = ch.charCodeAt(0);
+    bin += c < 256 ? String.fromCharCode(c) : "?";
+  }
+  return btoa(bin);
+}
+
+/** Repassa bytes prontos (EPL/ZPL) à impressora. Lista = um único trabalho. */
+export async function imprimirRaw(
+  tipo: TipoDocumento | string,
+  base64OuLista: string | string[]
+): Promise<{ ok: true; mensagem: string; etiquetas?: number }> {
+  const campo = Array.isArray(base64OuLista) ? "raws" : "raw";
+  const resp = await fetch(`${AISAXIUS_URL}/print`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ tipo, [campo]: base64OuLista }),
+  });
+  const data = await resp.json().catch(() => ({}));
+  if (!resp.ok) throw new Error(data.erro || "Falha ao imprimir a(s) etiqueta(s).");
+  return data;
+}
 
 export type TipoDocumento = (typeof TIPOS_DOCUMENTO)[keyof typeof TIPOS_DOCUMENTO];
 

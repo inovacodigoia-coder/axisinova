@@ -14,7 +14,7 @@ import { useApoioEntitlement, useApoioPermissions } from '@/hooks/useApoio'
 import { TEMPERATURAS, TuboRemessa, ItemRemessa, gerarEpl, baixarTexto, gerarRomaneio } from './remessaDocs'
 import { HistoricoRemessa } from '@/components/apoio/log/ApoioLogTab'
 import { useSearchParams } from 'react-router-dom'
-import { imprimirEtiquetas, servidorImpressaoAtivo, DadosEtiqueta } from '@/lib/impressaoLocal'
+import { imprimirDireto, imprimirRaw, textoParaBase64, servidorImpressaoAtivo } from '@/lib/impressaoLocal'
 
 interface Remessa {
   id: string; cod_lote_lab: number; apoio_id: string; apoio_nome: string; created_at: string; criado_por_nome: string | null
@@ -290,39 +290,47 @@ function DetalheRemessa({ id, remessa: r0, pode, onClose, onChanged }: { id: str
     return true
   }
   const eplDe = (rc: any) => rc.etiqueta_epl || gerarEpl(rc.cod_bar_apoio, r.apoio_nome, rc.cod_ped_apoio || '')
+  void enfileirar
+  const servidorOk = async () => {
+    if (await servidorImpressaoAtivo()) return true
+    toast.error('Servidor de Impressão AisAxius não está aberto. Abra o programa na bandeja do Windows e tente de novo.')
+    return false
+  }
+  const contarImpressao = async (lista: any[]) => {
+    await Promise.all(lista.map(rc => supabase.from('apoio_recipiente').update({ impressoes: (rc.impressoes || 0) + 1 }).eq('id', rc.id)))
+    carregar()
+  }
   const imprimirEtiqueta = async (rc: any) => {
-    if (await enfileirar('etiqueta_epl', eplDe(rc), `remessa:${r.cod_lote_lab}:${rc.cod_bar_apoio}`)) {
-      await supabase.from('apoio_recipiente').update({ impressoes: (rc.impressoes || 0) + 1 }).eq('id', rc.id)
-      toast.success('Etiqueta enviada para a fila de impressão'); carregar()
+    if (!(await servidorOk())) return
+    try {
+      const res = await imprimirRaw('etiqueta_apoio_pardini', textoParaBase64(eplDe(rc)))
+      toast.success(res?.mensagem || 'Etiqueta enviada para impressão.')
+      await contarImpressao([rc])
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Falha ao imprimir a etiqueta.')
     }
   }
-  const imprimirTodas = async () => { for (const rc of recip) await imprimirEtiqueta(rc) }
+  const imprimirTodas = async () => {
+    if (!recip.length) { toast.error('Nenhum recipiente para imprimir.'); return }
+    if (!(await servidorOk())) return
+    try {
+      const res = await imprimirRaw('etiqueta_apoio_pardini', recip.map(rc => textoParaBase64(eplDe(rc))))
+      toast.success(`${res?.etiquetas ?? recip.length} etiqueta(s) enviada(s) para impressão.`)
+      await contarImpressao(recip)
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Falha ao imprimir as etiquetas.')
+    }
+  }
 
   const romaneio = () => gerarRomaneio({ laboratorio: labNome, apoio: r.apoio_nome, numero: r.cod_lote_lab, temperatura: r.temperatura, itens, totalTubos: tubos.length })
   const baixarPdf = () => romaneio().save(`romaneio-remessa-${r.cod_lote_lab}.pdf`)
   const imprimirRomaneio = async () => {
-    if (!(await servidorImpressaoAtivo())) {
-      toast.error('Servidor de Impressão AisAxius não está aberto. Abra o programa na bandeja do Windows e tente de novo.')
-      return
-    }
-    const linhas = itens.filter(i => i.tubo)
-    if (!linhas.length) { toast.error('Nenhum tubo com código nesta remessa para imprimir.'); return }
-    const etiquetas: DadosEtiqueta[] = linhas.map((i, idx) => ({
-      codigoAmostra: i.tubo,
-      codigoExterno: i.order_number || undefined,
-      paciente: i.paciente || undefined,
-      exames: i.exame || undefined,
-      tipoAmostra: i.material || undefined,
-      painel: r.apoio_nome || undefined,
-      dataHora: fmt(r.created_at),
-      laboratorio: r.apoio_nome || undefined,
-      fimPedido: idx === linhas.length - 1,
-    }))
+    if (!(await servidorOk())) return
     try {
-      const res = await imprimirEtiquetas('etiqueta_apoio_pardini', etiquetas)
-      toast.success(`${res?.etiquetas ?? etiquetas.length} etiqueta(s) enviada(s) para impressão.`)
+      const res = await imprimirDireto('romaneio_apoio_pardini', romaneio().output('blob'))
+      toast.success(res?.mensagem || 'Romaneio enviado para impressão.')
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : 'Falha ao imprimir as etiquetas.')
+      toast.error(err instanceof Error ? err.message : 'Falha ao imprimir o romaneio.')
     }
   }
 
