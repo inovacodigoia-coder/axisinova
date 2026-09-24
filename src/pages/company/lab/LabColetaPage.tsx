@@ -108,7 +108,7 @@ export default function LabColetaPage() {
       (order.protocol || "").toLowerCase().includes(search.toLowerCase())
     
     const matchesWorkbench = filterWorkbench === 'all' || 
-      order.exams?.some(exam => exam?.workbench === filterWorkbench)
+      order.exams?.some(exam => exam?.workbench === filterWorkbench || (exam as any)?.bancadaId === filterWorkbench)
 
     const matchesConvenio = filterConvenio === 'all' || 
       order.convenioId === filterConvenio || 
@@ -148,7 +148,19 @@ export default function LabColetaPage() {
       .replace(/[^a-z0-9]+/g, ' ')
       .trim()
 
+  const isApoio = (exam: any) => exam?.bancadaTipo === 'apoio' && !!exam?.apoioId
+  // Tubo/alíquota separado por apoio (não divide tubo com exames internos)
+  const apoiosDoPedido = (order: LabAttendanceOrder) => {
+    const m = new Map<string, string>()
+    ;(order.exams || []).forEach((e: any) => { if (isApoio(e)) m.set(e.apoioId, e.apoioNome || 'Apoio') })
+    return [...m.entries()].sort((a, b) => a[0].localeCompare(b[0]))
+  }
+  const codigoAliquotaApoio = (order: LabAttendanceOrder, apoioId: string) =>
+    `${String(order.protocol || '').toUpperCase()}-AP${apoiosDoPedido(order).findIndex(([id]) => id === apoioId) + 1}`
+
   const examMatchesTube = (exam: LabAttendanceOrder['exams'][number], tubeType: string) => {
+    if (tubeType.startsWith('apoio:')) return isApoio(exam) && (exam as any).apoioId === tubeType.slice(6)
+    if (isApoio(exam)) return false
     const material = normalizeMaterial(exam.material)
 
     if (tubeType === 'edta') {
@@ -179,8 +191,10 @@ export default function LabColetaPage() {
   
   // Total de tubos únicos necessários para todos os pedidos na fila
   const totalTubes = filteredOrders.reduce((acc, order) => {
-    const uniqueMaterials = new Set(order.exams?.map(e => e.material).filter(Boolean))
-    return acc + (uniqueMaterials.size || 1)
+    const internos = (order.exams || []).filter(e => !isApoio(e))
+    const uniqueMaterials = new Set(internos.map(e => e.material).filter(Boolean))
+    const apoios = apoiosDoPedido(order).length
+    return acc + (internos.length ? (uniqueMaterials.size || 1) : 0) + apoios
   }, 0)
 
   // Tempo médio de espera
@@ -189,12 +203,16 @@ export default function LabColetaPage() {
     : 0
 
   const getOrderTubes = (order: LabAttendanceOrder) => {
-    const exams = order.exams || []
-    const matchedTubes = TUBE_TYPES.filter(tube =>
+    const exams = (order.exams || []).filter(e => !isApoio(e))
+    const matchedTubes: any[] = TUBE_TYPES.filter(tube =>
       exams.some(exam => examMatchesTube(exam, tube.type))
     )
-
-    return matchedTubes.length > 0 ? matchedTubes : exams.length > 0 ? [TUBE_TYPES[0]] : []
+    const internos = matchedTubes.length > 0 ? matchedTubes : exams.length > 0 ? [TUBE_TYPES[0]] : []
+    const apoio = apoiosDoPedido(order).map(([id, nome]) => ({
+      type: `apoio:${id}`, label: `Alíquota separada — Apoio: ${nome}`, volume: 'alíquota', color: 'bg-muted-foreground',
+      apoioNome: nome, codigo: codigoAliquotaApoio(order, id),
+    }))
+    return [...internos, ...apoio]
   }
 
   const addAudit = (order: LabAttendanceOrder, action: any, details?: string) => {
@@ -217,8 +235,16 @@ export default function LabColetaPage() {
 
   const handleConfirmColeta = (order: LabAttendanceOrder) => {
     const currentResponsible = tempResponsible[order.id]?.name || user?.name || 'Sistema'
+    // Exames de apoio: a marcação vale por alíquota (coleta parcial)
+    const sel = selectedTubes[order.id] || []
+    const temApoio = apoiosDoPedido(order).length > 0
+    const labGuides = temApoio ? ((order as any).labGuides || []).map((g: any) => ({
+      ...g, exams: (g.exams || []).map((e: any) => isApoio(e) ? { ...e, collected: sel.includes(`apoio:${e.apoioId}`) } : e),
+    })) : undefined
     if (canSetCollectionDone((order as any).status)) {
-      updateOrder(order.id, { status: 'collection_done' })
+      updateOrder(order.id, { status: 'collection_done', ...(labGuides ? { labGuides } : {}) } as any)
+    } else if (labGuides) {
+      updateOrder(order.id, { labGuides } as any)
     }
     addAudit(order, 'confirmed', `Coleta realizada por ${currentResponsible}`)
     toast.success('Coleta Realizada com sucesso!')
@@ -585,11 +611,15 @@ export default function LabColetaPage() {
                                   <p className="text-xs text-muted-foreground">
                                     Exames: {order.exams
                                       ?.filter(exam => examMatchesTube(exam, tube.type))
-                                      .map(exam => exam.name)
+                                      .map(exam => isApoio(exam) ? `${exam.name} (Apoio: ${(exam as any).apoioNome || ''})` : exam.name)
                                       .join(', ')}
                                   </p>
 
-                                  <p className="text-[10px] font-mono font-bold text-primary">Rótulo: {order.protocol}-A</p>
+                                  {(tube as any).apoioNome ? (
+                                    <p className="text-[10px] font-mono font-bold text-primary">Rótulo: {(tube as any).codigo} · APOIO {String((tube as any).apoioNome).toUpperCase()}</p>
+                                  ) : (
+                                    <p className="text-[10px] font-mono font-bold text-primary">Rótulo: {order.protocol}-A</p>
+                                  )}
                                 </div>
                               </div>
                             </div>
