@@ -91,7 +91,7 @@ export async function aplicarCatalogo(admin: any, lab: { id: string; company_id:
     if (relevantes.length) {
       const { data: dps } = await admin.from("apoio_depara_exame").select("exame_id, codigo_apoio")
         .eq("apoio_id", apoioId).eq("ativo", true).in("codigo_apoio", relevantes);
-      const ids = [...new Set((dps ?? []).map((d) => d.exame_id))];
+      const ids = [...new Set((dps ?? []).map((d: any) => d.exame_id))];
       const { data: exs } = ids.length ? await admin.from("exams").select("id, name").in("id", ids) : { data: [] as any[] };
       const nome = new Map((exs ?? []).map((e: any) => [e.id, e.name]));
       const desSet = new Set(desativar);
