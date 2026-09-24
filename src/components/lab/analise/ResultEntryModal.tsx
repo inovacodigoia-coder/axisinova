@@ -127,6 +127,7 @@ export function ResultEntryModal({
   // ===== Exames de bancada de apoio =====
   const { porExame: apoioPorExame, recarregar: recarregarApoio } = useApoioAnalise(filteredExams.map((e: any) => e.orderId));
   const [apoioExecutor, setApoioExecutor] = useState<Record<string, string>>({});
+  const [apoioMetodo, setApoioMetodo] = useState<Record<string, string>>({});
   const [apoioRefs, setApoioRefs] = useState<Record<string, string>>({});
   const apoioDe = (exam: any) => apoioPorExame[exam?.id];
 
@@ -327,6 +328,11 @@ export function ResultEntryModal({
     return map;
   }, [groupedPatients, catalogList, activeLaudoFor]);
 
+  const metodoCadastro = (exam: any): string => {
+    const c = findCatalogExam(catalogList, { examId: exam.examId, code: exam.code, name: exam.name });
+    return activeLaudoFor(exam)?.methodology || c?.methodology || '';
+  };
+
   const getParams = (exam: any) => {
     const base = paramsByExam[exam.id] || [{ id: '1', name: exam?.name || '', unit: '', reference: '' }];
     const ap = apoioPorExame[exam?.id];
@@ -382,6 +388,7 @@ export function ResultEntryModal({
       getParams(exam).forEach((p: any) => { valores[String(p.id)] = formatarCasas(results[`${exam.id}_${p.id}`] || '', casasDe(p.id)); });
       const { error } = await supabase.rpc('apoio_analise_concluir' as any, {
         _pe: ap.id, _valores: temIntegracao(ap) ? null : valores, _nota: notes[exam.id] || null, _executor: apoioExecutor[exam.id] ?? null,
+        _metodo: temIntegracao(ap) ? null : ((apoioMetodo[exam.id] ?? metodoCadastro(exam)) || null),
       });
       if (error) { toast.error(`${exam.name}: ${error.message}`); throw error; }
     } else {
@@ -907,7 +914,8 @@ export function ResultEntryModal({
             code: e.code,
             name: catalogExam?.name || e.name,
             material: e.material || catalogExam?.default_material || 'Soro',
-            methodology: laudoAtivo?.methodology || catalogExam?.methodology || '',
+            // Exame de apoio: método realmente usado no resultado; senão, o do cadastro
+            methodology: (apoioPorExame[e.id]?.versao?.conteudo?.metodo || '').trim() || laudoAtivo?.methodology || catalogExam?.methodology || '',
             workbench: workbenchName,
             realizadoPor: e.bancadaTipo === 'apoio' ? (e.apoioNome || workbenchName) : undefined,
             workbenchOrder: orderOfWorkbench(workbenchId, workbenchName || e.workbench),
@@ -1975,6 +1983,8 @@ export function ResultEntryModal({
                             e={apoioDe(exam)!}
                             companyId={resolveCompanyId(user?.companyId) || ''}
                             executor={apoioExecutor[exam.id] || ''}
+                            metodo={apoioMetodo[exam.id] ?? metodoCadastro(exam)}
+                            onMetodo={(v: string) => setApoioMetodo(m => ({ ...m, [exam.id]: v }))}
                             onExecutor={(v) => setApoioExecutor(prev => ({ ...prev, [exam.id]: v }))}
                             nomeParam={(pid) => (paramsByExam[exam.id] || []).find((p: any) => String(p.id) === String(pid))?.name || pid}
                             onChanged={recarregarApoio}

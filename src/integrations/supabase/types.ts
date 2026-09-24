@@ -6393,6 +6393,7 @@ export type Database = {
       apoio_analise_concluir: {
         Args: {
           _executor?: string
+          _metodo?: string
           _nota?: string
           _pe: string
           _valores?: Json
@@ -6617,6 +6618,15 @@ export type Database = {
           _status: Database["public"]["Enums"]["apoio_status"]
         }
         Returns: undefined
+      }
+      apoio_metodos_laudo: {
+        Args: { _pedidos: string[] }
+        Returns: {
+          codigo_formato: string
+          exame_id: string
+          metodo: string
+          pedido_id: string
+        }[]
       }
       apoio_modelos_commit: {
         Args: {
