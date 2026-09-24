@@ -9,7 +9,11 @@ const Body = z.object({ remessa_id: z.string().uuid() })
 const cortar = (s: unknown, n: number) => String(s ?? '').slice(0, n)
 const sexo = (g: string) => /^(m|male|masc)/i.test(g || '') ? 'Masculino' : /^(f|female|fem)/i.test(g || '') ? 'Feminino' : 'Indefinido'
 const RECUPERAVEIS = ['10023', '10217']
-const baseCodPed = (o: any) => cortar(String(o?.order_number ?? o?.protocol ?? '').replace(/\s/g, ''), 15)
+const baseCodPed = (o: any, prefixo?: string | null) => {
+  const pre = String(prefixo ?? '').replace(/\s/g, '').toUpperCase().slice(0, 8)
+  const num = String(o?.order_number ?? o?.protocol ?? '').replace(/\s/g, '')
+  return pre + num.slice(Math.max(0, num.length - (15 - pre.length)))
+}
 const novoCodPed = (base: string) => `${cortar(base, 8)}-${Math.random().toString(36).slice(2, 8).toUpperCase()}`
 const codColisao = (pe: PardiniErro | null, neg: { codigo: string; msg: string } | null) => {
   const txt = `${pe?.codigo ?? ''} ${pe?.message ?? ''} ${neg?.codigo ?? ''} ${neg?.msg ?? ''}`
@@ -141,7 +145,7 @@ Deno.serve(async (req) => {
   for (const e of exames) {
     if (!codPorPedido.has(e.pedido_id)) {
       const { data: outros } = await admin.from('apoio_pedido_exame').select('cod_ped_lab').eq('pedido_id', e.pedido_id).eq('apoio_id', remessa.apoio_id).not('cod_ped_lab', 'is', null).limit(1)
-      codPorPedido.set(e.pedido_id, outros?.[0]?.cod_ped_lab || baseCodPed(e.ordem))
+      codPorPedido.set(e.pedido_id, outros?.[0]?.cod_ped_lab || baseCodPed(e.ordem, (ctx.lab as any).opcoes?.prefixoPedido))
     }
     e.cod_ped_lab = codPorPedido.get(e.pedido_id)
     await admin.from('apoio_pedido_exame').update({ cod_ped_lab: e.cod_ped_lab }).eq('id', e.id)
