@@ -1,4 +1,4 @@
-const CACHE_NAME = 'axis-patient-portal-v1'
+const CACHE_NAME = 'axis-patient-portal-v2'
 
 self.addEventListener('install', (event) => {
   event.waitUntil(

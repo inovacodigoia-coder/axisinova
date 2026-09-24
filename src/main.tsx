@@ -1,3 +1,12 @@
+// Depois de um deploy, abas abertas podem pedir arquivos antigos que não existem mais: recarrega uma vez
+window.addEventListener('vite:preloadError', (e) => {
+  e.preventDefault()
+  const k = 'axis-reload-after-deploy'
+  if (sessionStorage.getItem(k)) return
+  sessionStorage.setItem(k, '1')
+  window.location.reload()
+})
+window.addEventListener('load', () => setTimeout(() => sessionStorage.removeItem('axis-reload-after-deploy'), 10000))
 import { createRoot } from "react-dom/client";
 import App from "./App.tsx";
 import "./index.css";
