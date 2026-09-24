@@ -162,6 +162,13 @@
       "when": 1790211666412,
       "tag": "0022_apoio_referencia_catalogo_precos",
       "breakpoints": true
+    },
+    {
+      "idx": 23,
+      "version": "7",
+      "when": 1790211880373,
+      "tag": "0023_apoio_prazo_fonte_unica",
+      "breakpoints": true
     }
   ]
 }

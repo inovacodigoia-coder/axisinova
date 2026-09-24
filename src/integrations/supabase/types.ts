@@ -857,6 +857,7 @@ export type Database = {
           recipiente_id: string | null
           remessa_id: string | null
           responsavel_id: string | null
+          sem_prazo_apoio: boolean
           sequencial: number
           status: Database["public"]["Enums"]["apoio_status"]
           status_apoio_cod: string | null
@@ -885,6 +886,7 @@ export type Database = {
           recipiente_id?: string | null
           remessa_id?: string | null
           responsavel_id?: string | null
+          sem_prazo_apoio?: boolean
           sequencial?: number
           status?: Database["public"]["Enums"]["apoio_status"]
           status_apoio_cod?: string | null
@@ -913,6 +915,7 @@ export type Database = {
           recipiente_id?: string | null
           remessa_id?: string | null
           responsavel_id?: string | null
+          sem_prazo_apoio?: boolean
           sequencial?: number
           status?: Database["public"]["Enums"]["apoio_status"]
           status_apoio_cod?: string | null
@@ -1114,6 +1117,7 @@ export type Database = {
           ficticio: boolean
           id: string
           importacao_id: string | null
+          prazo_dias: number | null
           prazo_dias_uteis: number | null
           preco: number
           updated_at: string
@@ -1128,6 +1132,7 @@ export type Database = {
           ficticio?: boolean
           id?: string
           importacao_id?: string | null
+          prazo_dias?: number | null
           prazo_dias_uteis?: number | null
           preco: number
           updated_at?: string
@@ -1142,6 +1147,7 @@ export type Database = {
           ficticio?: boolean
           id?: string
           importacao_id?: string | null
+          prazo_dias?: number | null
           prazo_dias_uteis?: number | null
           preco?: number
           updated_at?: string
@@ -5542,6 +5548,7 @@ export type Database = {
           remessa_id: string | null
           remessa_status: string | null
           responsavel_id: string | null
+          sem_prazo_apoio: boolean | null
           sequencial: number | null
           situacao_prazo: string | null
           status: Database["public"]["Enums"]["apoio_status"] | null
@@ -5628,6 +5635,10 @@ export type Database = {
           p_status_novo: Database["public"]["Enums"]["apoio_status"]
         }
         Returns: undefined
+      }
+      apoio_prazo_vigente: {
+        Args: { _apoio_id: string; _codigo: string; _data?: string }
+        Returns: number
       }
       apoio_referencia_resumo: { Args: { _apoio_id: string }; Returns: Json }
       apoio_seed_company: { Args: { _company_id: string }; Returns: undefined }
