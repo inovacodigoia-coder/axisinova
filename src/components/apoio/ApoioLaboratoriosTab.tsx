@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
-import { MoreHorizontal, Plus, Search, Building2, Loader2, CheckCircle2, XCircle, Pencil, Plug, Hand, Power, Trash2 } from 'lucide-react'
+import { MoreHorizontal, Plus, Search, Building2, Loader2, CheckCircle2, XCircle, Pencil, Plug, Hand, Power, Trash2, RefreshCw, FileUp } from 'lucide-react'
 import { toast } from 'sonner'
 import { supabase } from '@/integrations/supabase/client'
 import { EmptyState } from '@/components/feedback/EmptyState'
@@ -10,6 +10,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { useApoioPermissions } from '@/hooks/useApoio'
 import { maskCnpj } from '@/lib/cnpj'
 import { ApoioLaboratorioDrawer, type ApoioLab } from './ApoioLaboratorioDrawer'
+import { CatalogoUploadDialog, PrecoImportDialog } from './ApoioReferencia'
 
 const diasAte = (d: string) => Math.floor((new Date(d + 'T00:00:00').getTime() - new Date(new Date().toDateString()).getTime()) / 86400000)
 
@@ -25,6 +26,8 @@ export function LicencaBadge({ validade }: { validade: string | null }) {
 export function ApoioLaboratoriosTab({ moduloLiberado, onChanged }: { moduloLiberado: boolean; onChanged: () => void }) {
   const { has } = useApoioPermissions()
   const podeGerenciar = has('apoio.laboratorio.gerenciar') && moduloLiberado
+  const podeCatalogo = has('apoio.catalogo.gerenciar') && moduloLiberado
+  const [refDlg, setRefDlg] = useState<{ tipo: 'cat' | 'preco'; lab: ApoioLab } | null>(null)
   const [labs, setLabs] = useState<ApoioLab[]>([])
   const [erros, setErros] = useState<Record<string, boolean>>({})
   const [loading, setLoading] = useState(true)
@@ -39,7 +42,7 @@ export function ApoioLaboratoriosTab({ moduloLiberado, onChanged }: { moduloLibe
   const load = async () => {
     setLoading(true)
     const { data, error } = await supabase.from('apoio_laboratorio')
-      .select('id, company_id, nome, cnpj, conector, cod_lab, senha_secret_id, endpoint_url, ambiente, modo_contingencia, opcoes, dias_transporte, prazo_contagem, guardar_pdf_sempre, licenca_sanitaria, licenca_validade, contato_nome, contato_email, contato_telefone, ativo')
+      .select('id, company_id, nome, cnpj, conector, cod_lab, senha_secret_id, endpoint_url, ambiente, modo_contingencia, opcoes, dias_transporte, prazo_contagem, guardar_pdf_sempre, licenca_sanitaria, licenca_validade, licenca_arquivo_path, contato_nome, contato_email, contato_telefone, ativo')
       .order('nome')
     if (error) toast.error('Erro ao carregar laboratórios de apoio')
     setLabs(((data || []) as any[]).map(r => ({ ...r, senha_definida: !!r.senha_secret_id, senha_secret_id: undefined })))
@@ -178,6 +181,8 @@ export function ApoioLaboratoriosTab({ moduloLiberado, onChanged }: { moduloLibe
                         <DropdownMenuContent align="end">
                           <DropdownMenuItem onClick={() => setDrawer({ open: true, lab: l })}><Pencil className="mr-2 h-4 w-4" />{podeGerenciar ? 'Editar' : 'Ver detalhes'}</DropdownMenuItem>
                           <DropdownMenuItem disabled={!moduloLiberado} onClick={() => testar(l)}><Plug className="mr-2 h-4 w-4" />Testar conexão</DropdownMenuItem>
+                          {l.conector === 'pardini' && <DropdownMenuItem disabled={!podeCatalogo} onClick={() => setRefDlg({ tipo: 'cat', lab: l })}><RefreshCw className="mr-2 h-4 w-4" />Atualizar catálogo do apoio</DropdownMenuItem>}
+                          <DropdownMenuItem disabled={!podeCatalogo} onClick={() => setRefDlg({ tipo: 'preco', lab: l })}><FileUp className="mr-2 h-4 w-4" />Importar tabela de preços</DropdownMenuItem>
                           <DropdownMenuItem disabled={!podeGerenciar} onClick={() => setConfirmModo(l)}><Hand className="mr-2 h-4 w-4" />{l.modo_contingencia ? 'Voltar ao automático' : 'Ativar modo manual'}</DropdownMenuItem>
                           <DropdownMenuItem disabled={!podeGerenciar} onClick={() => alternarAtivo(l)}><Power className="mr-2 h-4 w-4" />{l.ativo ? 'Inativar' : 'Reativar'}</DropdownMenuItem>
                           <DropdownMenuSeparator />
@@ -197,9 +202,14 @@ export function ApoioLaboratoriosTab({ moduloLiberado, onChanged }: { moduloLibe
         open={drawer.open}
         lab={drawer.lab}
         readOnly={!podeGerenciar}
+        podeCatalogo={podeCatalogo}
+        moduloLiberado={moduloLiberado}
         onClose={() => setDrawer({ open: false, lab: null })}
         onSaved={() => { setDrawer({ open: false, lab: null }); refresh() }}
       />
+
+      <CatalogoUploadDialog apoio={refDlg?.tipo === 'cat' ? refDlg.lab : null} open={refDlg?.tipo === 'cat'} onClose={() => setRefDlg(null)} />
+      <PrecoImportDialog apoio={refDlg?.tipo === 'preco' ? refDlg.lab : null} open={refDlg?.tipo === 'preco'} onClose={() => setRefDlg(null)} />
 
       <AlertDialog open={!!confirmModo} onOpenChange={o => !o && setConfirmModo(null)}>
         <AlertDialogContent>

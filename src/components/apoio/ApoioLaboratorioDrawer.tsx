@@ -7,6 +7,7 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sh
 import { isValidCnpj, maskCnpj, onlyDigits } from '@/lib/cnpj'
 import { useApoioEntitlement } from '@/hooks/useApoio'
 import { LicencaBadge } from './ApoioLaboratoriosTab'
+import { ReferenciaSection } from './ApoioReferencia'
 
 export interface ApoioLab {
   id: string
@@ -26,6 +27,7 @@ export interface ApoioLab {
   guardar_pdf_sempre: boolean
   licenca_sanitaria: string | null
   licenca_validade: string | null
+  licenca_arquivo_path?: string | null
   contato_nome: string | null
   contato_email: string | null
   contato_telefone: string | null
@@ -58,8 +60,8 @@ function Sec({ n, t, children }: { n: number; t: string; children: React.ReactNo
   )
 }
 
-export function ApoioLaboratorioDrawer({ open, lab, readOnly, onClose, onSaved }: {
-  open: boolean; lab: ApoioLab | null; readOnly: boolean; onClose: () => void; onSaved: () => void
+export function ApoioLaboratorioDrawer({ open, lab, readOnly, podeCatalogo = false, moduloLiberado = true, onClose, onSaved }: {
+  open: boolean; lab: ApoioLab | null; readOnly: boolean; podeCatalogo?: boolean; moduloLiberado?: boolean; onClose: () => void; onSaved: () => void
 }) {
   const { companyId } = useApoioEntitlement()
   const [f, setF] = useState({
@@ -74,10 +76,11 @@ export function ApoioLaboratorioDrawer({ open, lab, readOnly, onClose, onSaved }
   const [removidas, setRemovidas] = useState<Cert[]>([])
   const [editCert, setEditCert] = useState<number | null>(null)
   const [saving, setSaving] = useState(false)
+  const [licFile, setLicFile] = useState<File | null>(null)
 
   useEffect(() => {
     if (!open) return
-    setErros({}); setVerSenha(false); setRemovidas([]); setEditCert(null)
+    setErros({}); setVerSenha(false); setRemovidas([]); setEditCert(null); setLicFile(null)
     if (lab) {
       setF({
         nome: lab.nome, cnpj: lab.cnpj ? maskCnpj(lab.cnpj) : '', contato_nome: lab.contato_nome || '', contato_email: lab.contato_email || '',
@@ -136,6 +139,16 @@ export function ApoioLaboratorioDrawer({ open, lab, readOnly, onClose, onSaved }
       if (f.conector === 'pardini' && f.senha) {
         const { data, error } = await supabase.functions.invoke('apoio-salvar-senha', { body: { apoio_id: id, senha: f.senha } })
         if (error || !data?.ok) throw new Error(data?.error || 'Não foi possível guardar a senha')
+      }
+
+      if (licFile) {
+        const ext = (licFile.name.split('.').pop() || 'pdf').toLowerCase().replace(/[^a-z0-9]/g, '')
+        const path = `${companyId}/licenca/${id}/${crypto.randomUUID()}.${ext}`
+        const { error: upErr } = await supabase.storage.from('apoio-documentos').upload(path, licFile)
+        if (upErr) throw new Error('Falha ao enviar a licença: ' + upErr.message)
+        const { error: lErr } = await supabase.from('apoio_laboratorio').update({ licenca_arquivo_path: path } as never).eq('id', id!)
+        if (lErr) throw lErr
+        if (lab?.licenca_arquivo_path) await supabase.storage.from('apoio-documentos').remove([lab.licenca_arquivo_path])
       }
 
       for (const c of removidas) {
@@ -304,6 +317,21 @@ export function ApoioLaboratorioDrawer({ open, lab, readOnly, onClose, onSaved }
                 {f.licenca_validade && <div className="mt-1 text-xs"><LicencaBadge validade={f.licenca_validade} /></div>}
               </div>
             </div>
+            <div className="flex flex-wrap items-center gap-3 text-xs">
+              {lab?.licenca_arquivo_path && !licFile && (
+                <a href="#" onClick={e => { e.preventDefault(); baixar(lab.licenca_arquivo_path!) }} className="flex items-center gap-1 font-medium text-primary hover:underline"><Download className="h-3.5 w-3.5" /> Visualizar / baixar licença</a>
+              )}
+              {!ro && (
+                <label className="flex cursor-pointer items-center gap-1 text-primary">
+                  <Upload className="h-3.5 w-3.5" /> {licFile ? licFile.name : lab?.licenca_arquivo_path ? 'Trocar arquivo da licença' : 'Enviar arquivo da licença (PDF/imagem)'}
+                  <input type="file" accept="application/pdf,image/*" className="hidden" onChange={e => {
+                    const file = e.target.files?.[0] || null
+                    if (file && file.size > 10 * 1024 * 1024) { toast.error('Arquivo acima de 10 MB'); return }
+                    setLicFile(file)
+                  }} />
+                </label>
+              )}
+            </div>
 
             <div className="space-y-2">
               <div className="flex items-center justify-between">
@@ -340,7 +368,7 @@ export function ApoioLaboratorioDrawer({ open, lab, readOnly, onClose, onSaved }
                     <p className="font-medium text-foreground truncate">{c.tipo || '(sem tipo)'} {c.numero && <span className="text-muted-foreground">· {c.numero}</span>}</p>
                     <div className="text-xs"><LicencaBadge validade={c.validade || null} /></div>
                   </div>
-                  {c.arquivo_path && !c._file && <button type="button" disabled={false} onClick={() => baixar(c.arquivo_path!)} className="p-1 text-primary" title="Baixar"><Download className="h-4 w-4" /></button>}
+                  {c.arquivo_path && !c._file && <a href="#" onClick={e => { e.preventDefault(); baixar(c.arquivo_path!) }} className="p-1 text-primary" title="Visualizar / baixar"><Download className="h-4 w-4" /></a>}
                   {c._file && <span className="text-[11px] text-muted-foreground">novo arquivo</span>}
                   {!ro && <button type="button" onClick={() => setEditCert(i)} className="p-1 text-muted-foreground" title="Editar"><Pencil className="h-4 w-4" /></button>}
                   {!ro && <button type="button" onClick={() => { setRemovidas(r => [...r, c]); setCerts(cs => cs.filter((_, j) => j !== i)) }} className="p-1 text-destructive" title="Excluir"><Trash2 className="h-4 w-4" /></button>}
@@ -350,6 +378,12 @@ export function ApoioLaboratorioDrawer({ open, lab, readOnly, onClose, onSaved }
             </div>
           </Sec>
         </fieldset>
+
+        {lab && (
+          <div className="mt-4">
+            <ReferenciaSection apoio={lab} podeGerenciar={podeCatalogo} moduloLiberado={moduloLiberado} />
+          </div>
+        )}
 
         <div className="sticky bottom-0 mt-4 flex justify-end gap-2 border-t border-border bg-background py-3">
           <button onClick={onClose} className="flex items-center gap-1 rounded-xl border border-border px-4 py-2 text-sm"><X className="h-4 w-4" /> {ro ? 'Fechar' : 'Cancelar'}</button>
