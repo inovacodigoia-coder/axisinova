@@ -40,6 +40,8 @@ import { useApoioCancelamento } from '@/components/apoio/useApoioCancelamento';
 import PDFPreviewModal from '@/components/lab/PDFPreviewModal';
 import { InstrumentGraphicsSection } from '@/components/lab/analise/InstrumentGraphicsSection';
 import { PatientInfoFloating } from '@/components/lab/analise/PatientInfoFloating';
+import { useApoioAnalise, apoioEditavel, bloqueiosApoio, formatarCasas, notaDoApoio, temIntegracao } from '@/components/lab/analise/apoio/apoioAnalise';
+import { ApoioExamBlock, ApoioSelo } from '@/components/lab/analise/apoio/ApoioExamBlock';
 
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -122,6 +124,11 @@ export function ResultEntryModal({
   const [laudoOrder, setLaudoOrder] = useState<any>(null);
   const [laudoOpen, setLaudoOpen] = useState(false);
   const [laudoLoading, setLaudoLoading] = useState(false);
+  // ===== Exames de bancada de apoio =====
+  const { porExame: apoioPorExame, recarregar: recarregarApoio } = useApoioAnalise(filteredExams.map((e: any) => e.orderId));
+  const [apoioExecutor, setApoioExecutor] = useState<Record<string, string>>({});
+  const [apoioRefs, setApoioRefs] = useState<Record<string, string>>({});
+  const apoioDe = (exam: any) => apoioPorExame[exam?.id];
 
   const [viewMode, setViewMode] = useState<'grid' | 'list'>(() => {
     if (typeof window === 'undefined') return 'list';
@@ -145,6 +152,8 @@ export function ResultEntryModal({
 
   /** Campos editáveis: digitação normal ou correção liberada pela permissão */
   const isExamEditable = (examId: string) => {
+    const ap = apoioPorExame[examId];
+    if (ap && !apoioEditavel(ap)) return false;
     if (canCorrect && correctionUnlocked[examId]) return true;
     if (!canType) return false;
     return examStatuses[examId] !== 'released';
@@ -318,7 +327,68 @@ export function ResultEntryModal({
     return map;
   }, [groupedPatients, catalogList, activeLaudoFor]);
 
-  const getParams = (exam: any) => paramsByExam[exam.id] || [{ id: '1', name: exam?.name || '', unit: '', reference: '' }];
+  const getParams = (exam: any) => {
+    const base = paramsByExam[exam.id] || [{ id: '1', name: exam?.name || '', unit: '', reference: '' }];
+    const ap = apoioPorExame[exam?.id];
+    if (!ap) return base;
+    if (ap.exige_pdf) return [];
+    const mapeados = ap.analitos.filter(a => !a.ignorar && a.parametro_id).map(a => String(a.parametro_id));
+    return mapeados.length ? base.filter((p: any) => mapeados.includes(String(p.id))) : base;
+  };
+
+  // Preenche o resultado vindo do apoio (via De/Para de analito), como o resultado de equipamento
+  useEffect(() => {
+    const novosRes: Record<string, string> = {};
+    const novasNotas: Record<string, string> = {};
+    const refs: Record<string, string> = {};
+    const exec: Record<string, string> = {};
+    Object.entries(apoioPorExame).forEach(([examKey, ap]) => {
+      const v = ap.versao;
+      if (!v) return;
+      if (v.executor_informado) exec[examKey] = v.executor_informado;
+      const c = v.conteudo || {};
+      if (v.origem === 'integracao' && Array.isArray(c.analitos)) {
+        c.analitos.forEach((a: any) => {
+          const m = ap.analitos.find(x => x.chave === a.chave);
+          if (!m || m.ignorar || !m.parametro_id) return;
+          const k = `${examKey}_${m.parametro_id}`;
+          novosRes[k] = formatarCasas(String(a.valor ?? ''), m.casas_decimais);
+          if (a.referencia) refs[k] = String(a.referencia);
+        });
+        const nota = notaDoApoio(c);
+        if (nota) novasNotas[examKey] = nota;
+      } else if (v.origem === 'manual') {
+        Object.entries(c.valores || {}).forEach(([pid, val]) => { novosRes[`${examKey}_${pid}`] = String(val ?? ''); });
+        if (c.nota) novasNotas[examKey] = c.nota;
+      }
+    });
+    if (Object.keys(novosRes).length) setResults(prev => {
+      const n = { ...prev };
+      Object.entries(novosRes).forEach(([k, val]) => { if (!(prev[k] || '').trim() || apoioPorExame[k.split('_')[0]]?.versao?.origem === 'integracao') n[k] = val; });
+      return n;
+    });
+    if (Object.keys(novasNotas).length) setNotes(prev => { const n = { ...prev }; Object.entries(novasNotas).forEach(([k, v]) => { if (!(prev[k] || '').trim()) n[k] = v; }); return n; });
+    setApoioRefs(refs);
+    setApoioExecutor(prev => ({ ...exec, ...prev }));
+  }, [apoioPorExame]);
+
+  /** Valida/aplica a regra do apoio antes de concluir ou liberar. Lança erro se o banco recusar. */
+  const apoioGate = async (exam: any, status: 'draft' | 'digitized' | 'released') => {
+    const ap = apoioPorExame[exam.id];
+    if (!ap || status === 'draft') return;
+    if (status === 'digitized') {
+      const valores: Record<string, string> = {};
+      const casasDe = (pid: string) => ap.analitos.find(a => String(a.parametro_id) === String(pid))?.casas_decimais;
+      getParams(exam).forEach((p: any) => { valores[String(p.id)] = formatarCasas(results[`${exam.id}_${p.id}`] || '', casasDe(p.id)); });
+      const { error } = await supabase.rpc('apoio_analise_concluir' as any, {
+        _pe: ap.id, _valores: temIntegracao(ap) ? null : valores, _nota: notes[exam.id] || null, _executor: apoioExecutor[exam.id] ?? null,
+      });
+      if (error) { toast.error(`${exam.name}: ${error.message}`); throw error; }
+    } else {
+      const { error } = await supabase.rpc('apoio_analise_liberar' as any, { _pe: ap.id });
+      if (error) { toast.error(`${exam.name}: ${error.message}`); throw error; }
+    }
+  };
 
   // ===== Diferencial de Glóbulos Brancos (Hemograma) =====
   // Neutrófilos bastonetes (%) = 100 - (segmentados + linfócitos + monócitos + eosinófilos)
@@ -475,6 +545,7 @@ export function ResultEntryModal({
     const nowIso = new Date().toISOString();
 
     for (const exam of exams) {
+      await apoioGate(exam, status);
       const params = getParams(exam);
       const payload: any = {
         company_id: cid,
@@ -518,7 +589,7 @@ export function ResultEntryModal({
           parameter_name: p.name || null,
           value,
           unit: p.unit || null,
-          reference: resolveReference(p, value) || null,
+          reference: apoioRefs[`${exam.id}_${p.id}`] || resolveReference(p, value) || null,
           status: getResultStatus(value, resolveReference(p, value)).label || null,
           sort_order: idx,
           // Preserva a origem quando o valor veio do equipamento
@@ -1701,7 +1772,7 @@ export function ResultEntryModal({
                   <div className="p-6 space-y-6 border-t border-slate-100 animate-in slide-in-from-top-2 duration-200">
                     <InstrumentGraphicsSection protocol={patient.protocol} />
                     {patient.exams.map((exam: any) => {
-                      const hasResult = getParams(exam).some((p: any) => 
+                      const hasResult = (apoioDe(exam)?.exige_pdf && apoioDe(exam)!.docs.some(d => d.tipo !== 'grafico')) || getParams(exam).some((p: any) => 
                         (results[`${exam.id}_${p.id}`] || '').trim() !== ''
                       );
                       const isDigitized = examStatuses[exam.id] === 'digitized' && hasResult;
@@ -1728,6 +1799,7 @@ export function ResultEntryModal({
                                     {exam.code}
                                   </Badge>
                                    <h4 className="text-sm font-black uppercase tracking-tight">{exam.name}</h4>
+                                   {apoioDe(exam) && <ApoioSelo e={apoioDe(exam)!} />}
 
                                    {/* Laudo do exame (quando há mais de um cadastrado) */}
                                    {laudosForExam(exam).length > 1 && (
@@ -1823,9 +1895,10 @@ export function ResultEntryModal({
                                 <Button 
                                   onClick={() => handleConcluirExame(exam.id)}
                                   size="sm" 
-                                  disabled={!getParams(exam).every((p: any) => 
+                                  disabled={bloqueiosApoio(apoioDe(exam)).length > 0 || !getParams(exam).every((p: any) => 
                                     (results[`${exam.id}_${p.id}`] || '').trim() !== ''
                                   )}
+                                  title={bloqueiosApoio(apoioDe(exam)).join(' · ') || undefined}
                                   className="h-7 px-3 text-[9px] font-black uppercase gap-1.5 bg-sky-500 hover:bg-sky-600 text-white shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
                                 >
                                   <CheckCircle2 className="h-3 w-3" />
@@ -1897,6 +1970,17 @@ export function ResultEntryModal({
                           </div>
                         </div>
 
+                        {apoioDe(exam) && (
+                          <ApoioExamBlock
+                            e={apoioDe(exam)!}
+                            companyId={resolveCompanyId(user?.companyId) || ''}
+                            executor={apoioExecutor[exam.id] || ''}
+                            onExecutor={(v) => setApoioExecutor(prev => ({ ...prev, [exam.id]: v }))}
+                            nomeParam={(pid) => (paramsByExam[exam.id] || []).find((p: any) => String(p.id) === String(pid))?.name || pid}
+                            onChanged={recarregarApoio}
+                          />
+                        )}
+
                         {/* Parâmetros do Exame */}
                         <div className={cn(
                           "grid gap-x-8 gap-y-4 pt-2",
@@ -1906,7 +1990,7 @@ export function ResultEntryModal({
                         )}>
                           {getParams(exam).map((param: any) => {
                             const value = getParamValue(exam, param);
-                            const reference = resolveReference(param, value);
+                            const reference = apoioRefs[`${exam.id}_${param.id}`] || resolveReference(param, value);
                             const status = getResultStatus(value, reference);
                             
                             return (

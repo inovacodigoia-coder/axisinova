@@ -208,7 +208,13 @@ function ExamBlock({ exam, order }: { exam: any; order?: any }) {
         Material: {exam.material || 'Soro'}
       </p>
       {exam.realizadoPor && (
-        <p className="text-[9px] text-zinc-500">Exame realizado por: {exam.realizadoPor}</p>
+        <p className="text-[9px] text-zinc-500">Exame realizado por: {exam.realizadoPor}{exam.executorInformado ? ` · Executor: ${exam.executorInformado}` : ''}</p>
+      )}
+      {exam.apoioEmAndamento && (
+        <p className="mt-2 text-[10px] font-semibold text-zinc-700">{exam.apoioEmAndamento}</p>
+      )}
+      {exam.apoioPdfAnexo && (
+        <p className="mt-2 text-[10px] font-semibold text-zinc-700">Laudo do laboratório de apoio anexo a este documento.</p>
       )}
       {exam.methodology && (
         <p className="text-[9px] text-zinc-500">Método: {exam.methodology}</p>
@@ -221,7 +227,7 @@ function ExamBlock({ exam, order }: { exam: any; order?: any }) {
       )}
       <div className="mb-3" />
 
-      {sections.map((section, sIdx) => {
+      {!exam.apoioEmAndamento && !exam.apoioPdfAnexo && sections.map((section, sIdx) => {
         const white = isWhiteSeries(section.name);
         const { paired, hasPairs } = white ? buildPairedRows(section.rows) : { paired: [], hasPairs: false };
         return (
