@@ -159,8 +159,8 @@ export const NAV_SECTIONS: NavSection[] = [
   {
     title: 'APOIO',
     items: [
-      { label: 'Terceirização', icon: 'Truck', path: '/app/apoio/terceirizacao', module: 'portals' },
-      { label: 'Kanban Apoio', icon: 'KanbanSquare', path: '/app/apoio/kanban', module: 'portals' },
+      { label: 'Terceirização', icon: 'Truck', path: '/app/apoio/terceirizacao', module: 'apoio' },
+      { label: 'Kanban Apoio', icon: 'KanbanSquare', path: '/app/apoio/kanban', module: 'apoio' },
       { label: 'Conectar Agentes', icon: 'Bot', path: '/app/conectar-agentes', module: 'portals' },
     ],
   },

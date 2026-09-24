@@ -150,7 +150,7 @@ export default function SectorsPage() {
             {s.description && <p className="text-xs text-muted-foreground mt-1">{s.description}</p>}
             <div className="mt-4 flex items-center gap-4 text-xs text-muted-foreground">
               <span className="flex items-center gap-1"><ShieldCheck className="h-3.5 w-3.5" /> {s.allowedProfiles.length} perfis</span>
-              <span className="flex items-center gap-1"><LayoutList className="h-3.5 w-3.5" /> {Object.keys(mergePermissions(allProfiles, new Set(s.allowedProfiles))).filter(k => (mergePermissions(allProfiles, new Set(s.allowedProfiles)) as any)[k]?.includes('view')).length} módulos</span>
+              <span className="flex items-center gap-1"><LayoutList className="h-3.5 w-3.5" /> {countModules(mergePermissions(allProfiles, new Set(s.allowedProfiles)))} módulos</span>
               <span className="flex items-center gap-1">
                 <Users className="h-3.5 w-3.5" />
                 {loadingUsers ? <Loader2 className="h-3 w-3 animate-spin" /> : `${getUserCountForSector(s.id)} usuários`}
@@ -164,7 +164,7 @@ export default function SectorsPage() {
       {tab === 'profiles' && (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           {allProfiles.map(p => {
-            const modules = Object.keys(p.permissions || {}).filter(k => (p.permissions as any)[k]?.includes('view')).length
+            const modules = countModules(p.permissions || {})
             const linkedSectors = sectors.filter(s => s.allowedProfiles.includes(p.id)).length
             return (
               <div key={p.id} className="rounded-2xl border border-border bg-card p-5 shadow-[0_4px_24px_rgba(0,0,0,0.06)] hover:border-primary/30 transition-all group">
@@ -475,6 +475,14 @@ function SectorForm({ sector, profiles, companyId, onSave, onCancel }: { sector:
 
 
 /* ── Prévia de acessos do setor (menu lateral + permissões) ── */
+function countModules(perms: PermissionsMap): number {
+  return Object.keys(perms).filter(k => {
+    const v = (perms as any)[k] as string[] | undefined
+    if (!v?.length) return false
+    return k === 'apoio' ? true : v.includes('view')
+  }).length
+}
+
 function mergePermissions(profiles: any[], allowedIds: Set<string>): PermissionsMap {
   const merged: PermissionsMap = {}
   profiles.filter(p => allowedIds.has(p.id)).forEach(p => {
@@ -496,7 +504,7 @@ export function SectorAccessPreview({ profiles, allowedIds, overrides, onToggleO
 }) {
   const perms = mergePermissions(profiles, allowedIds)
   const ov = overrides || {}
-  const baseCan = (m: SystemModule | null) => !m ? true : (perms[m]?.includes('view') ?? false)
+  const baseCan = (m: SystemModule | null) => !m ? true : m === 'apoio' ? ((perms[m]?.length ?? 0) > 0) : (perms[m]?.includes('view') ?? false)
   const can = (path: string, m: SystemModule | null) => {
     if (path in ov) return ov[path]
     return baseCan(m)
