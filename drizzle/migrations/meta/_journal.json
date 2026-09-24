@@ -183,6 +183,13 @@
       "when": 1790212435698,
       "tag": "0025_apoio_depara_exames_terceirizados",
       "breakpoints": true
+    },
+    {
+      "idx": 26,
+      "version": "7",
+      "when": 1790212459033,
+      "tag": "0026_apoio_depara_lista",
+      "breakpoints": true
     }
   ]
 }

@@ -5649,6 +5649,28 @@ export type Database = {
           envios: number
         }[]
       }
+      apoio_depara_lista: {
+        Args: never
+        Returns: {
+          analitos_mapeados: number
+          analitos_total: number
+          apoio_id: string
+          apoio_nome: string
+          ativo: boolean
+          catalogo_ativo: boolean
+          codigo_apoio: string
+          descricao_apoio: string
+          exame_id: string
+          exige_pdf: boolean
+          ficticio: boolean
+          id: string
+          materiais: Json
+          modelo_mudou: boolean
+          prazo_dias: number
+          preco: number
+          tem_preco: boolean
+        }[]
+      }
       apoio_depara_referencia: {
         Args: { _apoio_id: string; _codigo: string }
         Returns: Json
