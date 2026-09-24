@@ -292,6 +292,8 @@ Content-Type: application/json
     "observacoes_gerais": "Paciente com sobrepeso."
   },
   "atendimento": {
+    "peso_kg": 68.5,
+    "altura_m": 1.62,
     "urgencia": false,
     "febre": false,
     "jejum": true,
