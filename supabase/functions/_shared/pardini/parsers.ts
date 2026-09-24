@@ -128,9 +128,9 @@ export function parseModelos(xml: string): ModeloExame[] {
         for (const res of filhos(it, 'Resultado')) {
           const idRes = attr(res, 'idResultado')
           const unidade = texto(res, 'UnidadeDeMedida') || campo(res, ['Valor', 'Conteudo'], 'Unidade')
-          // Valor dentro de <ValorDeReferencia> é referência, nunca resultado
-          const semRef = res.replace(/<(?:\w+:)?ValorDeReferencia\b[\s\S]*?<\/(?:\w+:)?ValorDeReferencia>/gi, '').replace(/<(?:\w+:)?ValorDeReferencia\b[^>]*\/>/gi, '')
-          for (const v of blocos(semRef, 'Valor')) {
+          // Só <Resultado>/<Conteudo>/<Valor> representa resultado. Não percorra o
+          // Resultado inteiro: ValorDeReferencia também contém tags <Valor>.
+          for (const conteudo of filhos(res, 'Conteudo')) for (const v of blocos(conteudo, 'Valor')) {
             const chave = [idEx, idIt, idRes, attr(v, 'idValor')].join('/')
             if (vistos.has(chave)) continue
             vistos.add(chave)

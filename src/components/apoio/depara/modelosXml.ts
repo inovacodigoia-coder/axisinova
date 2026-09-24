@@ -10,12 +10,6 @@ function val(el: Element | null, ...nomes: string[]): string {
   }
   return ''
 }
-const up = (el: Element, tag: string): Element | null => {
-  let p = el.parentElement
-  while (p) { if (p.tagName.toLowerCase() === tag.toLowerCase()) return p; p = p.parentElement }
-  return null
-}
-
 export async function lerXml(file: File): Promise<Document> {
   const buf = new Uint8Array(await file.arrayBuffer())
   const head = new TextDecoder('latin1').decode(buf.slice(0, 200))
@@ -52,8 +46,9 @@ function modeloDe(se: Element): Modelo {
       const nomeIt = val(it, 'Nome')
       for (const res of kids(it, 'Resultado')) {
         const unidade = val(res, 'UnidadeDeMedida', 'Unidade')
-        // Valor dentro de <ValorDeReferencia> é referência, nunca resultado
-        for (const v of desc(res, 'Valor').filter(v => !up(v, 'ValorDeReferencia'))) {
+        // Só <Resultado>/<Conteudo>/<Valor> representa resultado. Qualquer <Valor>
+        // em ValorDeReferencia (ou em outro bloco auxiliar) é metadado e não entra.
+        for (const conteudo of kids(res, 'Conteudo')) for (const v of desc(conteudo, 'Valor')) {
           const chave = [val(ex, 'idExame'), val(it, 'idItemDeExame'), val(res, 'idResultado'), val(v, 'idValor')].join('/')
           if (vistos.has(chave)) continue
           vistos.add(chave)
