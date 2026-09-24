@@ -20,6 +20,8 @@ export type SystemModule =
   | 'portals'
   | 'result_entry'
   | 'patient_registry'
+  /** Apoio / Terceirização: guarda códigos 'apoio.*' (não ações) */
+  | 'apoio'
 
 export type PermissionAction = 'view' | 'create' | 'edit' | 'delete' | 'export' | 'approve'
 
@@ -94,6 +96,21 @@ export const RESULT_ENTRY_PERMISSIONS: { action: PermissionAction; label: string
   { action: 'create', label: 'Digitar', description: 'Preencher e concluir a digitação dos resultados' },
   { action: 'approve', label: 'Liberar exame', description: 'Liberar exames digitados' },
   { action: 'edit', label: 'Correção', description: 'Corrigir resultados já digitados ou liberados' },
+]
+
+/** Permissões do módulo Apoio / Terceirização (gravadas em permissions.apoio como códigos) */
+export const APOIO_PERMISSIONS: { code: string; label: string; description: string }[] = [
+  { code: 'apoio.laboratorio.gerenciar', label: 'Gerenciar laboratórios de apoio', description: 'Cadastrar, editar, inativar e excluir laboratórios de apoio' },
+  { code: 'apoio.catalogo.gerenciar', label: 'Manter catálogo e preços do apoio', description: 'Atualizar catálogo de referência e tabelas de preço' },
+  { code: 'apoio.depara.gerenciar', label: 'Terceirizar exames / De-Para', description: 'Definir quais exames vão para o apoio e o De/Para' },
+  { code: 'apoio.remessa.operar', label: 'Montar e transmitir remessas', description: 'Criar remessas, imprimir e enviar ao apoio' },
+  { code: 'apoio.manual.operar', label: 'Operar o modo manual / contingência', description: 'Lançar status e resultados manualmente quando a integração falha' },
+  { code: 'apoio.resultado.conferir', label: 'Conferir resultados de apoio', description: 'Conferir resultados, divergências e retificações' },
+  { code: 'apoio.kanban.ver', label: 'Ver o Kanban Apoio', description: 'Acompanhar os exames terceirizados no Kanban' },
+  { code: 'apoio.relatorios.ver', label: 'Ver relatórios do apoio', description: 'Relatórios de prazos, pendências e produção' },
+  { code: 'apoio.financeiro.ver', label: 'Ver custos e margens', description: 'Ver custo previsto, preços e margens' },
+  { code: 'apoio.bancada.trocar_cadastro', label: 'Trocar a bancada no cadastro do exame', description: 'Mudar a bancada padrão (interna/apoio) no catálogo' },
+  { code: 'apoio.bancada.trocar_pontual', label: 'Trocar a bancada de um exame no pedido', description: 'Mudar a bancada só para um pedido específico' },
 ]
 
 export const ACTION_LABELS: Record<PermissionAction, string> = {

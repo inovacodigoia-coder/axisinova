@@ -353,6 +353,7 @@ export function CompanyProvider({ children }: { children: ReactNode }) {
     }
     const perms = activeProfile.permissions[module]
     if (!perms) return false
+    if (module === 'apoio') return perms.length > 0
     if (!action) return perms.length > 0
     return perms.includes(action)
   }, [user, activeProfile, activeSector])

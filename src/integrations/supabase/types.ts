@@ -5483,6 +5483,10 @@ export type Database = {
         Returns: undefined
       }
       apoio_seed_company: { Args: { _company_id: string }; Returns: undefined }
+      apoio_set_senha: {
+        Args: { _apoio_id: string; _senha: string }
+        Returns: undefined
+      }
       apoio_tem_permissao: { Args: { _perm: string }; Returns: boolean }
       auth_check_lockout: {
         Args: { _identifier: string; _ip: string }

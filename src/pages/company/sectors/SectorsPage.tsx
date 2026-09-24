@@ -10,6 +10,7 @@ import type { Sector, SystemModule, PermissionsMap, PermissionAction, Profile } 
 import { SYSTEM_MODULES, ALL_ACTIONS, ACTION_LABELS } from '@/types/permissions.types'
 import { NAV_SECTIONS } from '@/components/company/CompanySidebar'
 import { toast } from 'sonner'
+import { resolveCompanyId } from '@/utils/companyId'
 
 interface RealUser {
   id: string
@@ -117,6 +118,42 @@ export default function SectorsPage() {
         ))}
       </div>
 
+      {tab === 'sectors' && canAccess('settings', 'create') && !allProfiles.some(p => (((p.permissions as any)?.apoio || []) as string[]).length > 0) && (
+        <div className="rounded-2xl border border-primary/30 bg-primary/5 p-4 flex flex-col sm:flex-row sm:items-center gap-3">
+          <p className="text-sm text-foreground flex-1">
+            Sugestão: crie o setor <b>Terceirização</b> com o perfil <b>Operador de Terceirização</b> (remessas, modo manual, Kanban, relatórios) e dê a <b>Conferir resultados de apoio</b> ao perfil do responsável técnico (setor Digitação–Laudos).
+          </p>
+          <button
+            onClick={async () => {
+              const companyId = resolveCompanyId(user?.companyId)
+              if (!companyId) return
+              try {
+                const nextCode = Math.max(0, ...allProfiles.map(p => p.code || 0)) + 1
+                const now = new Date().toISOString()
+                const profile: Profile = {
+                  id: `prof_${Date.now()}`, code: nextCode, name: 'Operador de Terceirização',
+                  description: 'Remessas, modo manual, Kanban e relatórios do Apoio',
+                  companyId, isActive: true, createdBy: 'admin', createdAt: now, updatedAt: now,
+                  permissions: { apoio: ['apoio.remessa.operar', 'apoio.manual.operar', 'apoio.kanban.ver', 'apoio.relatorios.ver'] as any },
+                }
+                await saveProfile(profile)
+                await saveSector({
+                  id: `sec_${Date.now()}`, name: 'Terceirização', companyId, isActive: true,
+                  description: 'Terceirização de exames para laboratórios de apoio',
+                  allowedProfiles: [profile.id],
+                })
+                toast.success('Setor Terceirização criado', { description: 'Agora adicione os usuários ao setor.' })
+              } catch (error: any) {
+                toast.error('Erro ao criar setor sugerido', { description: error?.message })
+              }
+            }}
+            className="gradient-bg rounded-xl px-4 py-2 text-sm font-semibold text-white shadow hover:opacity-90 whitespace-nowrap"
+          >
+            Criar setor sugerido
+          </button>
+        </div>
+      )}
+
       {tab === 'sectors' && (
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
         {sectors.filter(s => s.isActive).map(s => (
@@ -150,7 +187,7 @@ export default function SectorsPage() {
             {s.description && <p className="text-xs text-muted-foreground mt-1">{s.description}</p>}
             <div className="mt-4 flex items-center gap-4 text-xs text-muted-foreground">
               <span className="flex items-center gap-1"><ShieldCheck className="h-3.5 w-3.5" /> {s.allowedProfiles.length} perfis</span>
-              <span className="flex items-center gap-1"><LayoutList className="h-3.5 w-3.5" /> {Object.keys(mergePermissions(allProfiles, new Set(s.allowedProfiles))).filter(k => (mergePermissions(allProfiles, new Set(s.allowedProfiles)) as any)[k]?.includes('view')).length} módulos</span>
+              <span className="flex items-center gap-1"><LayoutList className="h-3.5 w-3.5" /> {countModules(mergePermissions(allProfiles, new Set(s.allowedProfiles)))} módulos</span>
               <span className="flex items-center gap-1">
                 <Users className="h-3.5 w-3.5" />
                 {loadingUsers ? <Loader2 className="h-3 w-3 animate-spin" /> : `${getUserCountForSector(s.id)} usuários`}
@@ -164,7 +201,7 @@ export default function SectorsPage() {
       {tab === 'profiles' && (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           {allProfiles.map(p => {
-            const modules = Object.keys(p.permissions || {}).filter(k => (p.permissions as any)[k]?.includes('view')).length
+            const modules = countModules(p.permissions || {})
             const linkedSectors = sectors.filter(s => s.allowedProfiles.includes(p.id)).length
             return (
               <div key={p.id} className="rounded-2xl border border-border bg-card p-5 shadow-[0_4px_24px_rgba(0,0,0,0.06)] hover:border-primary/30 transition-all group">
@@ -475,6 +512,14 @@ function SectorForm({ sector, profiles, companyId, onSave, onCancel }: { sector:
 
 
 /* ── Prévia de acessos do setor (menu lateral + permissões) ── */
+function countModules(perms: PermissionsMap): number {
+  return Object.keys(perms).filter(k => {
+    const v = (perms as any)[k] as string[] | undefined
+    if (!v?.length) return false
+    return k === 'apoio' ? true : v.includes('view')
+  }).length
+}
+
 function mergePermissions(profiles: any[], allowedIds: Set<string>): PermissionsMap {
   const merged: PermissionsMap = {}
   profiles.filter(p => allowedIds.has(p.id)).forEach(p => {
@@ -496,7 +541,7 @@ export function SectorAccessPreview({ profiles, allowedIds, overrides, onToggleO
 }) {
   const perms = mergePermissions(profiles, allowedIds)
   const ov = overrides || {}
-  const baseCan = (m: SystemModule | null) => !m ? true : (perms[m]?.includes('view') ?? false)
+  const baseCan = (m: SystemModule | null) => !m ? true : m === 'apoio' ? ((perms[m]?.length ?? 0) > 0) : (perms[m]?.includes('view') ?? false)
   const can = (path: string, m: SystemModule | null) => {
     if (path in ov) return ov[path]
     return baseCan(m)
