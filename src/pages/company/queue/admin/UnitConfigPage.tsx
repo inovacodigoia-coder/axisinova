@@ -139,8 +139,10 @@ export default function UnitConfigPage() {
       const nome = novoSetor.trim()
       if (!nome) { toast.error('Informe o nome do novo setor'); return false }
       const id = crypto.randomUUID()
-      const { error } = await supabase.from('company_sectors').insert({ id, company_id: companyId, name: nome, is_active: true } as never)
+      const { data: row, error } = await supabase.from('company_sectors').insert({ id, company_id: companyId, name: nome, is_active: true } as never).select('*').single()
       if (error) { toast.error('Não foi possível criar o setor: ' + error.message); return false }
+      const r = row as any
+      upsertSector({ id: r.id, name: r.name, companyId: r.company_id, description: r.description || undefined, isActive: r.is_active, allowedProfiles: r.allowed_profile_ids || [], allowedQueueTypes: r.allowed_queue_types || [], allowedDeadlineEditProfiles: r.allowed_deadline_profile_ids || [], moduleOverrides: r.module_overrides || {} })
       return id
     }
     return gSector || null
