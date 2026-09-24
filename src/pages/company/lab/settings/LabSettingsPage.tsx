@@ -42,6 +42,8 @@ import { LabPrinterLabelSection } from '@/components/lab/settings/LabPrinterLabe
 import { useAuth } from '@/context/AuthContext'
 import { useRegisters } from '@/context/RegistersContext'
 import LabMethodsSection from '@/components/lab/settings/LabMethodsSection'
+import MateriaisTubosSection from '@/components/lab/settings/MateriaisTubosSection'
+import { TestTube } from 'lucide-react'
 import HolidaysSection from '@/components/lab/settings/HolidaysSection'
 import PrazoSettingsCard from '@/components/lab/settings/PrazoSettingsCard'
 
@@ -123,6 +125,7 @@ export default function LabSettingsPage() {
           <p className="px-3 py-2 mt-4 text-[10px] font-bold text-muted-foreground uppercase tracking-wider">Técnico</p>
           <NavItem active={activeTab === 'equipment'} onClick={() => setActiveTab('equipment')} icon={<Monitor className="h-4 w-4" />} label="Máquinas / Equip." />
           <NavItem active={activeTab === 'units'} onClick={() => setActiveTab('units')} icon={<Ruler className="h-4 w-4" />} label="Unidades de Medida" />
+          <NavItem active={activeTab === 'materiais'} onClick={() => setActiveTab('materiais')} icon={<TestTube className="h-4 w-4" />} label="Materiais e Tubos" />
           <NavItem active={activeTab === 'methods'} onClick={() => setActiveTab('methods')} icon={<Beaker className="h-4 w-4" />} label="Metodologias" />
           <NavItem active={activeTab === 'workbenches'} onClick={() => setActiveTab('workbenches')} icon={<Layout className="h-4 w-4" />} label="Bancadas" />
           <NavItem active={activeTab === 'collection-reasons'} onClick={() => setActiveTab('collection-reasons')} icon={<AlertCircle className="h-4 w-4" />} label="Motivos de Coleta" />
@@ -162,6 +165,9 @@ export default function LabSettingsPage() {
               </div>
               <div className={activeTab === 'units' ? 'block' : 'hidden'}>
                 <UnitsSection />
+              </div>
+              <div className={activeTab === 'materiais' ? 'block' : 'hidden'}>
+                {activeTab === 'materiais' && <MateriaisTubosSection />}
               </div>
               <div className={activeTab === 'methods' ? 'block' : 'hidden'}>
                 <MethodsSection />

@@ -95,6 +95,7 @@ export const NAV_SECTIONS: NavSection[] = [
     items: [
       { label: 'Catálogo de Exames', icon: 'FlaskConical', path: '/app/cadastros/catalogo', module: 'lab_registers' },
       { label: 'Unidades de Medida', icon: 'Ruler', path: '/app/configuracoes/laboratorio?tab=units', module: 'lab_registers' },
+      { label: 'Materiais e Tubos', icon: 'TestTube', path: '/app/configuracoes/laboratorio?tab=materiais', module: 'lab_registers' },
       { label: 'Metodologias', icon: 'Beaker', path: '/app/configuracoes/laboratorio?tab=methods', module: 'lab_registers' },
       { label: 'Bancadas', icon: 'Layout', path: '/app/configuracoes/laboratorio?tab=workbenches', module: 'lab_registers' },
       { label: 'Equipamentos', icon: 'Monitor', path: '/app/cadastros/equipamentos', module: 'lab_registers' },
