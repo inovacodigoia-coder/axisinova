@@ -84,8 +84,9 @@ Deno.test('fixture_resultado_RETIFICADO_derivado: anterior vira substituído, va
   assertEquals(vs[1].retificacao, 'S')
   assertEquals(vs[1].conteudo.analitos[0].valor, '14')
   assertEquals(vs[1].situacao, 'importado')
-  // Exame liberado + retificação: volta para a Validação (reabertura feita pelo gatilho de retificação no banco)
-  assert(rpc.some((x) => x.n === 'apoio_integ_status' && x._motivo === 'Resultado retificado recebido'))
+  // Exame liberado + retificação: a volta para a Validação é do gatilho apoio_resultado_retificado_trg
+  // (dispara no insert com retificacao='S'); o importador não força status por cima de liberado_local.
+  assert(!rpc.some((x) => x.n === 'apoio_integ_status' && x._motivo === 'Resultado retificado recebido'))
 })
 
 for (const f of ['envio_resposta.xml', 'consulta_lote_resposta.xml']) {
