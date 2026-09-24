@@ -6392,6 +6392,15 @@ export type Database = {
         Args: { _empresa?: string }
         Returns: number
       }
+      apoio_integ_status: {
+        Args: {
+          _dados?: Json
+          _motivo?: string
+          _novo: Database["public"]["Enums"]["apoio_status"]
+          _pe: string
+        }
+        Returns: boolean
+      }
       apoio_item_material: {
         Args: { _exame: string; _pedido: string }
         Returns: string
