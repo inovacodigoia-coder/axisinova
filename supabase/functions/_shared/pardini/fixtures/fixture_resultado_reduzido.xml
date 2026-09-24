@@ -1,0 +1,190 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<SOAP-ENV:Envelope xmlns:SOAP-ENV='http://schemas.xmlsoap.org/soap/envelope/' xmlns:xsi='http://www.w3.org/2001/XMLSchema-instance' xmlns:s='http://www.w3.org/2001/XMLSchema' xmlns:SOAP-ENC='http://schemas.xmlsoap.org/soap/encoding/' xmlns:tns='http://hermespardini.com.br/b2b/apoio/schemas' xmlns:types='http://hermespardini.com.br/b2b/apoio/schemas'>
+  <SOAP-ENV:Body SOAP-ENV:encodingStyle='http://schemas.xmlsoap.org/soap/encoding/'><types:getResultadoResponse><getResultadoResult><![CDATA[<?xml version="1.0" encoding="ISO-8859-1" ?>
+<Resultados>
+  <Protocolo>1</Protocolo>
+  <ID>teste-leitura-1</ID>
+  <ControleDeLote>
+    <Emissor>HERMES PARDINI</Emissor>
+    <DataEmissao>2026-09-23</DataEmissao>
+    <HoraEmissao>20:15:43</HoraEmissao>
+    <Periodo>
+      <DataInicial>2026-09-17</DataInicial>
+      <HoraInicial>00:00:00</HoraInicial>
+      <DataFinal>2026-09-23</DataFinal>
+      <HoraFinal>23:59:59</HoraFinal>
+    </Periodo>
+    <CodLab>12000</CodLab>
+  </ControleDeLote>
+    <Pedido>
+    <CodPedApoio>B0T2MA2</CodPedApoio>
+    <CodPedLab>121962</CodPedLab>
+    <Nome>ATENDIMENTO TESTE ENVIOS APOIO</Nome>
+    <SuperExame>
+      <MaterialNome>URINA 24 HORAS</MaterialNome>
+      <ExameNome>MICROALBUMINÚRIA</ExameNome>
+      <CodExmApoio>U-24|M-ALB|1</CodExmApoio>
+      <CodExmLab>1325</CodExmLab>
+      <CodigoFormato>8392</CodigoFormato>
+      <ValorReferenciaBlocoTexto>  VALOR DE REFERÊNCIA: INFERIOR  A 30 mg/24 h</ValorReferenciaBlocoTexto>
+      <Exame idExame="1">
+        <InfAdicional idInfAdicional="1">
+          <Descricao>VOLUME URINÁRIO</Descricao>
+          <Valor CasasDecimais="0" TamanhoMaximo="6" Tipo="decimal" idValor="1">2.500</Valor>
+          <Unidade>mL</Unidade>
+        </InfAdicional>
+        <Metodo>TURBIDIMETRIA</Metodo>
+        <Nota>- Valores falsamente baixos podem ocorrer em pacientes
+  com macroproteinúria.</Nota>
+        <ItemDeExame idItemDeExame="1">
+          <Resultado idResultado="1">
+            <Conteudo>
+              <Valor CasasDecimais="0" TamanhoMaximo="5" Tipo="decimal" idValor="1">12</Valor>
+            </Conteudo>
+            <UnidadeDeMedida>mg/24 h</UnidadeDeMedida>
+          </Resultado>
+        </ItemDeExame>
+        <Observacao>RESULTADO GERADO PELA AREA DA T.I. PARA TESTES DE IMPORTACAO.
+</Observacao>
+      </Exame>
+    </SuperExame>
+  </Pedido>
+  <Pedido>
+    <CodPedApoio>B0TGCWC</CodPedApoio>
+    <CodPedLab>2600460000</CodPedLab>
+    <Nome>TESTE EGILA CONCEICAO SILVA</Nome>
+    <SuperExame>
+      <MaterialNome>SANGUE TOTAL EM EDTA</MaterialNome>
+      <ExameNome>HEMOGRAMA</ExameNome>
+      <CodExmApoio>S|HG|1</CodExmApoio>
+      <CodExmLab>HTESTE_01</CodExmLab>
+      <CodigoFormato>20077</CodigoFormato>
+      <Exame idExame="1">
+        <Metodo>CONTAGEM AUTOMATIZADA ATRAVES DE CITOMETRIA DE FLUXO</Metodo>
+        <ItemDeExame idItemDeExame="1"><Nome>Hemacias</Nome><Resultado idResultado="1"><Conteudo><Valor CasasDecimais="0" TamanhoMaximo="10" Tipo="decimal" idValor="1">3.610.000</Valor></Conteudo><UnidadeDeMedida>/mm3</UnidadeDeMedida></Resultado><Observacao /></ItemDeExame>
+        <ItemDeExame idItemDeExame="2"><Nome>Hemoglobina</Nome><Resultado idResultado="1"><Conteudo><Valor CasasDecimais="1" TamanhoMaximo="4" Tipo="decimal" idValor="1">10,3</Valor></Conteudo><UnidadeDeMedida>g/dl</UnidadeDeMedida></Resultado></ItemDeExame>
+        <ItemDeExame idItemDeExame="3"><Nome>Hematocrito</Nome><Resultado idResultado="1"><Conteudo><Valor CasasDecimais="1" TamanhoMaximo="4" Tipo="decimal" idValor="1">30,0</Valor></Conteudo><UnidadeDeMedida>%</UnidadeDeMedida></Resultado></ItemDeExame>
+        <ItemDeExame idItemDeExame="4"><Nome>VCM</Nome><Resultado idResultado="1"><Conteudo><Valor CasasDecimais="1" TamanhoMaximo="5" Tipo="decimal" idValor="1">83,1</Valor></Conteudo><UnidadeDeMedida>fl</UnidadeDeMedida></Resultado></ItemDeExame>
+        <ItemDeExame idItemDeExame="5"><Nome>HCM</Nome><Resultado idResultado="1"><Conteudo><Valor CasasDecimais="1" TamanhoMaximo="5" Tipo="decimal" idValor="1">28,5</Valor></Conteudo><UnidadeDeMedida>pg</UnidadeDeMedida></Resultado></ItemDeExame>
+        <ItemDeExame idItemDeExame="6"><Nome>CHCM</Nome><Resultado idResultado="1"><Conteudo><Valor CasasDecimais="1" TamanhoMaximo="5" Tipo="decimal" idValor="1">34,3</Valor></Conteudo><UnidadeDeMedida>g/dl</UnidadeDeMedida></Resultado></ItemDeExame>
+        <ItemDeExame idItemDeExame="7"><Nome>RDW</Nome><Resultado idResultado="1"><Conteudo><Valor CasasDecimais="1" TamanhoMaximo="5" Tipo="decimal" idValor="1">17,5</Valor></Conteudo><UnidadeDeMedida>%</UnidadeDeMedida></Resultado></ItemDeExame>
+        <ItemDeExame idItemDeExame="8"><Nome>Leucocitos - Global</Nome><Resultado idResultado="1"><Conteudo><Valor CasasDecimais="0" TamanhoMaximo="7" Tipo="decimal" idValor="1">188.760</Valor></Conteudo><UnidadeDeMedida>/mm3</UnidadeDeMedida></Resultado></ItemDeExame>
+        <ItemDeExame idItemDeExame="9"><Nome>Neutrofilos Bastonetes</Nome><Resultado Nome="%" idResultado="1"><Conteudo><Valor CasasDecimais="1" TamanhoMaximo="4" Tipo="decimal" idValor="1">6,0</Valor></Conteudo><UnidadeDeMedida>%</UnidadeDeMedida></Resultado><Resultado idResultado="2"><Conteudo><Valor CasasDecimais="0" TamanhoMaximo="8" Tipo="decimal" idValor="1">11.326</Valor></Conteudo><UnidadeDeMedida>/mm3</UnidadeDeMedida></Resultado></ItemDeExame>
+        <ItemDeExame idItemDeExame="10"><Nome>Neutrofilos Segmentados</Nome><Resultado Nome="%" idResultado="1"><Conteudo><Valor CasasDecimais="1" TamanhoMaximo="4" Tipo="decimal" idValor="1">55,0</Valor></Conteudo><UnidadeDeMedida>%</UnidadeDeMedida></Resultado><Resultado idResultado="2"><Conteudo><Valor CasasDecimais="0" TamanhoMaximo="8" Tipo="decimal" idValor="1">103.818</Valor></Conteudo><UnidadeDeMedida>/mm3</UnidadeDeMedida></Resultado></ItemDeExame>
+        <ItemDeExame idItemDeExame="11"><Nome>Linfocitos</Nome><Resultado Nome="%" idResultado="1"><Conteudo><Valor CasasDecimais="1" TamanhoMaximo="4" Tipo="decimal" idValor="1">2,0</Valor></Conteudo><UnidadeDeMedida>%</UnidadeDeMedida></Resultado><Resultado idResultado="2"><Conteudo><Valor CasasDecimais="0" TamanhoMaximo="8" Tipo="decimal" idValor="1">3.775</Valor></Conteudo><UnidadeDeMedida>/mm3</UnidadeDeMedida></Resultado></ItemDeExame>
+        <ItemDeExame idItemDeExame="12"><Nome>Linfocitos Atipicos</Nome><Resultado Nome="%" idResultado="1"><Conteudo><Valor CasasDecimais="1" TamanhoMaximo="4" Tipo="decimal" idValor="1" /></Conteudo><UnidadeDeMedida>%</UnidadeDeMedida></Resultado><Resultado idResultado="2"><Conteudo><Valor CasasDecimais="0" TamanhoMaximo="8" Tipo="decimal" idValor="1" /></Conteudo><UnidadeDeMedida>/mm3</UnidadeDeMedida></Resultado></ItemDeExame>
+        <ItemDeExame idItemDeExame="13"><Nome>Monocitos</Nome><Resultado Nome="%" idResultado="1"><Conteudo><Valor CasasDecimais="1" TamanhoMaximo="4" Tipo="decimal" idValor="1">3,0</Valor></Conteudo><UnidadeDeMedida>%</UnidadeDeMedida></Resultado><Resultado idResultado="2"><Conteudo><Valor CasasDecimais="0" TamanhoMaximo="8" Tipo="decimal" idValor="1">5.663</Valor></Conteudo><UnidadeDeMedida>/mm3</UnidadeDeMedida></Resultado></ItemDeExame>
+        <ItemDeExame idItemDeExame="14"><Nome>Eosinofilos</Nome><Resultado Nome="%" idResultado="1"><Conteudo><Valor CasasDecimais="1" TamanhoMaximo="4" Tipo="decimal" idValor="1">2,0</Valor></Conteudo><UnidadeDeMedida>%</UnidadeDeMedida></Resultado><Resultado idResultado="2"><Conteudo><Valor CasasDecimais="0" TamanhoMaximo="8" Tipo="decimal" idValor="1">3.775</Valor></Conteudo><UnidadeDeMedida>/mm3</UnidadeDeMedida></Resultado></ItemDeExame>
+        <ItemDeExame idItemDeExame="15"><Nome>Basofilos</Nome><Resultado Nome="%" idResultado="1"><Conteudo><Valor CasasDecimais="1" TamanhoMaximo="4" Tipo="decimal" idValor="1">3,0</Valor></Conteudo><UnidadeDeMedida>%</UnidadeDeMedida></Resultado><Resultado idResultado="2"><Conteudo><Valor CasasDecimais="0" TamanhoMaximo="8" Tipo="decimal" idValor="1">5.663</Valor></Conteudo><UnidadeDeMedida>/mm3</UnidadeDeMedida></Resultado></ItemDeExame>
+        <ItemDeExame idItemDeExame="16"><Nome>Metamielocitos</Nome><Resultado Nome="%" idResultado="1"><Conteudo><Valor CasasDecimais="1" TamanhoMaximo="4" Tipo="decimal" idValor="1">3,0</Valor></Conteudo><UnidadeDeMedida>%</UnidadeDeMedida></Resultado><Resultado idResultado="2"><Conteudo><Valor CasasDecimais="0" TamanhoMaximo="8" Tipo="decimal" idValor="1">5.663</Valor></Conteudo><UnidadeDeMedida>/mm3</UnidadeDeMedida></Resultado></ItemDeExame>
+        <ItemDeExame idItemDeExame="17"><Nome>Mielocitos</Nome><Resultado Nome="%" idResultado="1"><Conteudo><Valor CasasDecimais="1" TamanhoMaximo="4" Tipo="decimal" idValor="1">9,0</Valor></Conteudo><UnidadeDeMedida>%</UnidadeDeMedida></Resultado><Resultado idResultado="2"><Conteudo><Valor CasasDecimais="0" TamanhoMaximo="8" Tipo="decimal" idValor="1">16.988</Valor></Conteudo><UnidadeDeMedida>/mm3</UnidadeDeMedida></Resultado></ItemDeExame>
+        <ItemDeExame idItemDeExame="18"><Nome>Promielocitos</Nome><Resultado Nome="%" idResultado="1"><Conteudo><Valor CasasDecimais="1" TamanhoMaximo="4" Tipo="decimal" idValor="1">7,0</Valor></Conteudo><UnidadeDeMedida>%</UnidadeDeMedida></Resultado><Resultado idResultado="2"><Conteudo><Valor CasasDecimais="0" TamanhoMaximo="8" Tipo="decimal" idValor="1">13.213</Valor></Conteudo><UnidadeDeMedida>/mm3</UnidadeDeMedida></Resultado></ItemDeExame>
+        <ItemDeExame idItemDeExame="19"><Nome>Blastos</Nome><Resultado Nome="%" idResultado="1"><Conteudo><Valor CasasDecimais="1" TamanhoMaximo="4" Tipo="decimal" idValor="1">10,0</Valor></Conteudo><UnidadeDeMedida>%</UnidadeDeMedida></Resultado><Resultado idResultado="2"><Conteudo><Valor CasasDecimais="0" TamanhoMaximo="8" Tipo="decimal" idValor="1">18.876</Valor></Conteudo><UnidadeDeMedida>/mm3</UnidadeDeMedida></Resultado></ItemDeExame>
+        <ItemDeExame idItemDeExame="20"><Nome>Celulas Atipicas</Nome><Resultado Nome="%" idResultado="1"><Conteudo><Valor CasasDecimais="1" TamanhoMaximo="4" Tipo="decimal" idValor="1">0,0</Valor></Conteudo><UnidadeDeMedida>%</UnidadeDeMedida></Resultado><Resultado idResultado="2"><Conteudo><Valor CasasDecimais="0" TamanhoMaximo="8" Tipo="decimal" idValor="1">0</Valor></Conteudo><UnidadeDeMedida>/mm3</UnidadeDeMedida></Resultado></ItemDeExame>
+        <ItemDeExame idItemDeExame="21"><Nome>Plaquetas</Nome><Resultado idResultado="1"><Conteudo><Valor CasasDecimais="0" TamanhoMaximo="9" Tipo="decimal" idValor="1">265.000</Valor></Conteudo><UnidadeDeMedida>/mm3</UnidadeDeMedida></Resultado></ItemDeExame>
+        <Observacao>OBS.: SÉRIE BRANCA REVISTA E CONFIRMADA
+      PRESENÇA DE 3 ERITROBLASTOS EM 100 LEUCÓCITOS CONTADOS
+      POIQUILOCITOSE COM DACRIÓCITOS
+      POLICROMATOFILIA
+      RESULTADO GERADO PELA AREA DA T.I. PARA TESTES DE IMPORTACAO.
+</Observacao>
+      </Exame>
+    </SuperExame>
+    <SuperExame>
+      <MaterialNome>SORO</MaterialNome>
+      <ExameNome>TSH ULTRA SENSÍVEL</ExameNome>
+      <CodExmApoio>S|TSH-B|1</CodExmApoio>
+      <CodExmLab>TSHB_01</CodExmLab>
+      <CodigoFormato>21397</CodigoFormato>
+      <ValorReferenciaBlocoTexto>  VALORES DE REFERÊNCIA: 
+    CRIANÇAS : DE 1  A 23 MESES  : DE 0,69 A 8,55 microUI/mL
+               DE 2  A 12 ANOS   : DE 0,70 A 6,55 microUI/mL
+               DE 13 A 18 ANOS   : DE 0,47 A 5,94 microUI/mL
+    ADULTOS  : DE 0,48 A 5,60 microUI/mL
+    GESTANTES: PRIMEIRO TRIMESTRE: DE 0,05 A 4,49 microUI/mL
+               SEGUNDO  TRIMESTRE: DE 0,61 A 4,97 microUI/mL
+               TERCEIRO TRIMESTRE: DE 0,65 A 5,06 microUI/mL</ValorReferenciaBlocoTexto>
+      <Exame idExame="1">
+        <Metodo>QUIMIOLUMINESCÊNCIA</Metodo>
+        <ItemDeExame idItemDeExame="1"><Resultado idResultado="1"><Conteudo><Valor CasasDecimais="2" TamanhoMaximo="10" Tipo="decimal" idValor="1">3,59</Valor></Conteudo><UnidadeDeMedida>microUI/mL</UnidadeDeMedida></Resultado></ItemDeExame>
+        <Observacao />
+      </Exame>
+    </SuperExame>
+  </Pedido>
+  <Pedido>
+    <CodPedApoio>B0TVLWE</CodPedApoio>
+    <CodPedLab>122109</CodPedLab>
+    <Nome>TESTE PCLAB ON LINE</Nome>
+    <SuperExame>
+      <MaterialNome>SORO</MaterialNome>
+      <ExameNome>CROMO</ExameNome>
+      <CodExmApoio>S|CROMO|3</CodExmApoio>
+      <CodExmLab>1216</CodExmLab>
+      <CodigoFormato>21802</CodigoFormato>
+      <ValorReferenciaBlocoTexto>  VALOR DE REFERÊNCIA: ATÉ 3,4 mcg/L</ValorReferenciaBlocoTexto>
+      <Exame idExame="1">
+        <Metodo>ESPECTROMETRIA DE MASSAS COM PLASMA ACOPLADO INDUTIVAMENTE (ICP-MS)
+-  Método in house</Metodo>
+        <ItemDeExame idItemDeExame="1"><Resultado idResultado="1"><Conteudo><Valor CasasDecimais="0" TamanhoMaximo="48" Tipo="alfanumerico" idValor="1">INFERIOR A 0,5 mcg/L</Valor></Conteudo></Resultado></ItemDeExame>
+        <Observacao>O resultado obtido esta abaixo da sensibilidade analítica
+(limite inferior) do ensaio.
+</Observacao>
+      </Exame>
+    </SuperExame>
+    <SuperExame>
+      <MaterialNome>SORO</MaterialNome>
+      <ExameNome>IMUNOFIXAÇÃO</ExameNome>
+      <CodExmApoio>S|IMUFIX|1</CodExmApoio>
+      <CodExmLab>1143</CodExmLab>
+      <CodigoFormato>8918</CodigoFormato>
+      <ValorReferenciaBlocoTexto>  VALOR DE REFERÊNCIA: AUSÊNCIA DE PROTEÍNA MONOCLONAL.</ValorReferenciaBlocoTexto>
+      <Exame idExame="1">
+        <Metodo>IMUNOFIXAÇÃO</Metodo>
+        <ItemDeExame idItemDeExame="1">
+          <Resultado idResultado="1"><Conteudo><Valor CasasDecimais="0" TamanhoMaximo="343" Tipo="alfanumerico" idValor="1">PRESENÇA DE SUGESTIVA PROTEÍNA MONOCLONAL
+IgG/KAPPA.</Valor></Conteudo></Resultado>
+          <Observacao>Obs.: O termo sugestiva proteína monoclonal descreve uma banda de limites
+tênues, podendo corresponder a uma anormalidade transitória associada
+a processos infecciosos ou inflamatórios ou, mais raramente, a uma
+gamopatia monoclonal. Sugere-se a critério médico, a repetição do exame.
+RESULTADO GERADO PELA AREA DA T.I. PARA TESTES DE IMPORTACAO.</Observacao>
+        </ItemDeExame>
+      </Exame>
+    </SuperExame>
+    <SuperExame>
+      <MaterialNome>SANGUE TOTAL EM HEPARINA SODICA</MaterialNome>
+      <ExameNome>MERCÚRIO</ExameNome>
+      <CodExmApoio>S|MERCUR|4</CodExmApoio>
+      <CodExmLab>1264</CodExmLab>
+      <CodigoFormato>22619</CodigoFormato>
+      <ValorReferenciaBlocoTexto>  VALORES DE REFERÊNCIA:
+    ATÉ 1,0 mcg/dL
+    EXPOSIÇÃO SIGNIFICATIVA AO MERCÚRIO ORGÂNICO  : SUPERIOR A  5,0 mcg/dL
+    EXPOSIÇÃO SIGNIFICATIVA AO MERCÚRIO INORGÂNICO: SUPERIOR A 20,0 mcg/dL</ValorReferenciaBlocoTexto>
+      <Exame idExame="1">
+        <Metodo>ESPECTROMETRIA DE MASSAS COM PLASMA ACOPLADO INDUTIVAMENTE (ICP-MS)
+-  Método in house</Metodo>
+        <ItemDeExame idItemDeExame="1"><Resultado idResultado="1"><Conteudo><Valor CasasDecimais="0" TamanhoMaximo="49" Tipo="alfanumerico" idValor="1">0,2 mcg/dL</Valor></Conteudo></Resultado></ItemDeExame>
+        <Observacao />
+      </Exame>
+    </SuperExame>
+    <SuperExame>
+      <MaterialNome>SORO</MaterialNome>
+      <ExameNome>MANGANÊS</ExameNome>
+      <CodExmApoio>S|MN|5</CodExmApoio>
+      <CodExmLab>1265</CodExmLab>
+      <CodigoFormato>21803</CodigoFormato>
+      <ValorReferenciaBlocoTexto>  VALOR DE REFERÊNCIA: ATÉ 2,0 mcg/L</ValorReferenciaBlocoTexto>
+      <Exame idExame="1">
+        <Metodo>ESPECTROMETRIA DE MASSAS COM PLASMA ACOPLADO INDUTIVAMENTE (ICP-MS)
+-  Método in house</Metodo>
+        <ItemDeExame idItemDeExame="1"><Resultado idResultado="1"><Conteudo><Valor CasasDecimais="0" TamanhoMaximo="48" Tipo="alfanumerico" idValor="1">INFERIOR A 1,0 mcg/L</Valor></Conteudo></Resultado></ItemDeExame>
+        <Observacao>O resultado obtido esta abaixo da sensibilidade analítica
+(limite inferior) do ensaio.
+</Observacao>
+      </Exame>
+    </SuperExame>
+  </Pedido>
+</Resultados>
+]]></getResultadoResult></types:getResultadoResponse></SOAP-ENV:Body>
+</SOAP-ENV:Envelope>

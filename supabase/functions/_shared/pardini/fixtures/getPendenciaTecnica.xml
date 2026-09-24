@@ -1,0 +1,4 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<SOAP-ENV:Envelope xmlns:SOAP-ENV='http://schemas.xmlsoap.org/soap/envelope/' xmlns:xsi='http://www.w3.org/2001/XMLSchema-instance' xmlns:s='http://www.w3.org/2001/XMLSchema' xmlns:SOAP-ENC='http://schemas.xmlsoap.org/soap/encoding/' xmlns:tns='http://hermespardini.com.br/b2b/apoio/schemas' xmlns:types='http://hermespardini.com.br/b2b/apoio/schemas'>
+  <SOAP-ENV:Body SOAP-ENV:encodingStyle='http://schemas.xmlsoap.org/soap/encoding/'><types:getPendenciaTecnicaResponse><getPendenciaTecnicaResult xsi:type="types:XMLPendenciaTecnica"><PendenciasTecnicas SOAP-ENC:arrayType="types:PendenciaTecnicaPedido[1]"><PendenciaTecnicaPedido xsi:type="types:PendenciaTecnicaPedido"><retorno>Não existe(m) pendência(s) técnica(s) para o período consultado.</retorno></PendenciaTecnicaPedido></PendenciasTecnicas></getPendenciaTecnicaResult></types:getPendenciaTecnicaResponse></SOAP-ENV:Body>
+</SOAP-ENV:Envelope>
