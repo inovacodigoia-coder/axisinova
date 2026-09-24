@@ -42,6 +42,8 @@ import { usePermissions } from '@/hooks/usePermissions'
 import { useAuth } from '@/context/AuthContext'
 import { ensurePatientPortalAccess, buildPortalUrl } from '@/hooks/useExternalAccesses'
 import { dbToPatient } from '@/utils/patient.adapter'
+import TrocaBancadaPontualDialog from '@/components/lab/attendance/TrocaBancadaPontualDialog'
+import { useApoioPermissions } from '@/hooks/useApoio'
 
 import {
   AlertDialog,
@@ -106,6 +108,8 @@ export function AttendanceDetailsModal({ open, onClose, onOrderDeleted, order, p
   const [switchConvenioOpen, setSwitchConvenioOpen] = useState(false)
   const [tissGuideOpen, setTissGuideOpen] = useState(false)
   const [guidesState, setGuidesState] = useState<any[]>((order as any).labGuides || [])
+  const [trocaPontual, setTrocaPontual] = useState<{ gi: number; ei: number; exam: any } | null>(null)
+  const { has: hasApoioPerm } = useApoioPermissions()
 
   useEffect(() => {
     setGuidesState((order as any).labGuides || [])
@@ -970,6 +974,12 @@ export function AttendanceDetailsModal({ open, onClose, onOrderDeleted, order, p
                                       <div className="flex items-center gap-2">
                                         <span className="bg-primary text-white rounded-full px-1.5 py-0.5 text-[8px] font-bold">EX</span>
                                         <span className="font-medium text-foreground uppercase">{exam.name}</span>
+                                        {exam.bancadaTipo === 'apoio' && (
+                                          <span className="rounded-full border border-primary/30 bg-primary/10 px-1.5 py-0.5 text-[9px] font-semibold text-primary">Apoio: {exam.apoioNome || exam.bancadaNome}</span>
+                                        )}
+                                        {exam.bancadaOrigem === 'troca_pontual' && (
+                                          <span className="rounded-full border border-accent bg-accent/30 px-1.5 py-0.5 text-[9px] font-semibold text-accent-foreground" title={exam.bancadaMotivo}>Bancada trocada: {exam.bancadaMotivo}</span>
+                                        )}
                                       </div>
                                     </td>
                                     <td className="px-4 py-3 text-muted-foreground font-mono uppercase">{(exam.code || exam.internalCode || '0000000').toUpperCase()}</td>
@@ -1041,6 +1051,12 @@ export function AttendanceDetailsModal({ open, onClose, onOrderDeleted, order, p
                                             }}
                                           >
                                             <Eye className="h-3.5 w-3.5" />
+                                          </Button>
+                                        )}
+                                        {hasApoioPerm('apoio.bancada.trocar_pontual') && guidesState.length > 0 && (
+                                          <Button size="icon" variant="outline" className="h-7 w-7 bg-white" title="Trocar bancada deste exame"
+                                            onClick={() => setTrocaPontual({ gi: idx, ei: examIdx, exam })}>
+                                            <RefreshCw className="h-3.5 w-3.5" />
                                           </Button>
                                         )}
                                         <Button size="icon" variant="outline" className="h-7 w-7 bg-white"><Pencil className="h-3.5 w-3.5" /></Button>
@@ -1541,7 +1557,21 @@ export function AttendanceDetailsModal({ open, onClose, onOrderDeleted, order, p
       </AlertDialog>
 
       {guideEditor && (
-        <GuideEditorModal
+        {trocaPontual && (
+        <TrocaBancadaPontualDialog
+          open={!!trocaPontual}
+          onOpenChange={(v) => { if (!v) setTrocaPontual(null) }}
+          pedidoId={order.id}
+          guideIndex={trocaPontual.gi}
+          examIndex={trocaPontual.ei}
+          exam={trocaPontual.exam}
+          onDone={(item) => {
+            if (!item) return
+            setGuidesState(prev => prev.map((g: any, gi: number) => gi !== trocaPontual.gi ? g : { ...g, exams: (g.exams || []).map((e: any, ei: number) => ei === trocaPontual.ei ? item : e) }))
+          }}
+        />
+      )}
+      <GuideEditorModal
           open
           mode={guideEditor.mode}
           onClose={() => setGuideEditor(null)}
