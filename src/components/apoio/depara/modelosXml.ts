@@ -56,3 +56,20 @@ export function extrairModelo(doc: Document, codigoApoio: string): Modelo | null
   }
   return { codigoFormato, itens }
 }
+
+export interface ModeloCompleto extends Modelo { codExmApoio: string; materialNome: string; exameNome: string }
+
+/** Todos os <SuperExame> do arquivo (para gravar em apoio_modelo_resultado de uma vez) */
+export function extrairTodos(doc: Document): ModeloCompleto[] {
+  const supers = Array.from(doc.getElementsByTagName('*')).filter(e => e.tagName.toLowerCase() === 'superexame')
+  const out: ModeloCompleto[] = []
+  for (const s of supers) {
+    const cod = val(s, 'CodExmApoio').toUpperCase()
+    if (!cod) continue
+    const m = extrairModelo(doc, cod)
+    if (!m) continue
+    const ex = Array.from(s.children).find(c => c.tagName.toLowerCase() === 'exame') || null
+    out.push({ ...m, codExmApoio: cod, materialNome: val(s, 'Material', 'NomeMaterial', 'MaterialNome'), exameNome: val(ex, 'Nome', 'NomeExame') })
+  }
+  return out
+}
