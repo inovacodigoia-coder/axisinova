@@ -239,6 +239,13 @@
       "when": 1790215140566,
       "tag": "0033_apoio_contingencia_prompt7",
       "breakpoints": true
+    },
+    {
+      "idx": 34,
+      "version": "7",
+      "when": 1790215457844,
+      "tag": "0034_apoio_kanban_prompt8",
+      "breakpoints": true
     }
   ]
 }
