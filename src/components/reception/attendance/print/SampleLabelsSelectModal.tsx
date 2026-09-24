@@ -3,12 +3,12 @@ import { Dialog, DialogContent } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
 import { Printer, X, Tag } from 'lucide-react'
 import { cn } from '@/lib/utils'
-import { TUBE_TYPES } from '@/types/lab.types'
+import { useAuth } from '@/context/AuthContext'
+import { useMateriaisTubos, tubosDosExames, tuboDoExame, etiquetaTubo } from '@/lib/tubos'
 import { buildSampleCode } from '@/utils/orderHash'
 import { useCompanySequenceId } from '@/hooks/useCompanySequenceId'
 import { useLabSettings } from '@/hooks/useLabSettings'
 import { SampleLabelsPrintModal } from './SampleLabelsPrintModal'
-import { tubeTypeForMaterial } from './AttendancePrintSelectionModal'
 
 interface Props {
   open: boolean
@@ -23,6 +23,8 @@ interface Props {
 export function SampleLabelsSelectModal({ open, onClose, order, birthDate, autoPrint }: Props) {
   const companySequenceId = useCompanySequenceId()
   const { settings } = useLabSettings()
+  const { user } = useAuth()
+  const cad = useMateriaisTubos(user?.companyId)
   const [selected, setSelected] = useState<Set<string>>(new Set())
   const [printOpen, setPrintOpen] = useState(false)
 
@@ -32,10 +34,8 @@ export function SampleLabelsSelectModal({ open, onClose, order, birthDate, autoP
   )
 
   const tubes = useMemo(() => {
-    const types = new Set(exams.map((e: any) => tubeTypeForMaterial(e.material)))
-    const list = TUBE_TYPES.filter(t => types.has(t.type))
-    return (list.length ? list : TUBE_TYPES.filter(t => t.type === 'gel')).map((tube, idx) => {
-      const tubeExams = exams.filter((e: any) => tubeTypeForMaterial(e.material) === tube.type)
+    return tubosDosExames(exams).map((tube, idx) => {
+      const tubeExams = exams.filter((e: any) => tuboDoExame(e) === tube.type)
       return {
         ...tube,
         index: idx + 1,
@@ -44,7 +44,7 @@ export function SampleLabelsSelectModal({ open, onClose, order, birthDate, autoP
         collected: tubeExams.length > 0 && tubeExams.every((e: any) => !!e.collected),
       }
     })
-  }, [exams, order?.orderNumber, companySequenceId])
+  }, [exams, order?.orderNumber, companySequenceId, cad])
 
   useEffect(() => {
     if (open) setSelected(new Set(tubes.filter(t => t.collected).map(t => t.code)))
@@ -100,7 +100,7 @@ export function SampleLabelsSelectModal({ open, onClose, order, birthDate, autoP
                     checked={selected.has(t.code)}
                     onChange={() => toggle(t.code)}
                   />
-                  <span className={cn('h-2.5 w-2.5 rounded-full', t.color)} />
+                  <span className={cn('h-2.5 w-2.5 rounded-full', t.color)} style={t.color ? undefined : { backgroundColor: t.hex }} />
                   <div>
                     <p className="text-xs font-bold uppercase text-foreground">{t.label} · {t.code}</p>
                     <p className="text-[10px] text-muted-foreground truncate max-w-[320px]">
@@ -138,8 +138,7 @@ export function SampleLabelsSelectModal({ open, onClose, order, birthDate, autoP
         labels={chosen.map(t => ({
           sampleId: t.code,
           labelIndex: t.index,
-          material: t.label,
-          tube: t.type,
+          ...etiquetaTubo(t),
           workbench: t.exams[0]?.workbench || 'GERAL',
           examRefs: t.exams.map((e: any) => e.code || String(e.name || '').slice(0, 12)),
         }))}
