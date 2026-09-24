@@ -52,7 +52,8 @@ function modeloDe(se: Element): Modelo {
       const nomeIt = val(it, 'Nome')
       for (const res of kids(it, 'Resultado')) {
         const unidade = val(res, 'UnidadeDeMedida', 'Unidade')
-        for (const v of desc(res, 'Valor')) {
+        // Valor dentro de <ValorDeReferencia> é referência, nunca resultado
+        for (const v of desc(res, 'Valor').filter(v => !up(v, 'ValorDeReferencia'))) {
           const chave = [val(ex, 'idExame'), val(it, 'idItemDeExame'), val(res, 'idResultado'), val(v, 'idValor')].join('/')
           if (vistos.has(chave)) continue
           vistos.add(chave)
