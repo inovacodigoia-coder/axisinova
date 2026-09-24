@@ -102,6 +102,10 @@ export async function importar(ctx: Ctx, pedidos: PedidoRes[], opts: { reprocess
         // De/Para escolhido pelo CodigoFormato do SuperExame (um exame tem vários formatos vigentes)
         const { data: an } = await admin.from('apoio_depara_analito').select('chave_analito, parametro_id, ignorar').eq('depara_exame_id', dp.id).eq('codigo_formato', s.codigoFormato || dp.codigo_formato || '')
         for (const a of an ?? []) if (a.ignorar || a.parametro_id) mapa.set(a.chave_analito, a)
+        if (!mapa.size && s.codigoFormato) {
+          const auto = await mapearIdentico(admin, lab, dp.id, pe.company_id, s)
+          for (const a of auto) if (a.ignorar || a.parametro_id) mapa.set(a.chave_analito, a)
+        }
       }
       if (!mapa.size) {
         // Formato novo/não mapeado: não preenche nada, retém e avisa quem gerencia o De/Para
