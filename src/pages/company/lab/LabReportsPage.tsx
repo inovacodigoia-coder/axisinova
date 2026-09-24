@@ -16,7 +16,8 @@ import {
   ChevronRight,
   User,
   ExternalLink,
-  Calendar as CalendarIcon
+  Calendar as CalendarIcon,
+  Truck
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -53,6 +54,9 @@ export default function LabReportsPage() {
   const [showDelivery, setShowDelivery] = useState(false);
   const [showEmail, setShowEmail] = useState(false);
   const [filterStatus, setFilterStatus] = useState<string>('all');
+  const [apoioItens, setApoioItens] = useState<any[]>([]);
+  const [retificadosPorPedido, setRetificadosPorPedido] = useState<Set<string>>(new Set());
+  const [soApoio, setSoApoio] = useState(false);
   const [resultsByProtocol, setResultsByProtocol] = useState<Record<string, { released: number; total: number }>>({});
 
   useEffect(() => {
@@ -61,6 +65,13 @@ export default function LabReportsPage() {
       return () => clearTimeout(timer);
     }
   }, [ordersLoading]);
+
+  useEffect(() => {
+    if (!user?.companyId) return;
+    supabase.rpc('apoio_laudos_resumo' as any).then(({ data }) => setApoioItens((data as any[]) || []));
+    supabase.from('lab_exam_results').select('order_id').eq('company_id', user.companyId).not('retificado_em', 'is', null)
+      .then(({ data }) => setRetificadosPorPedido(new Set(((data as any[]) || []).map(r => r.order_id))));
+  }, [user?.companyId]);
 
   // Load persisted exam results (source of truth for released/typed exams)
   useEffect(() => {
@@ -106,10 +117,17 @@ export default function LabReportsPage() {
 
         
         // Map status
+        const apoio = apoioItens.filter(a => a.pedido_id === order.id);
+        const apoioPendentes = apoio.filter(a => !a.liberado);
+        const prev = apoioPendentes.map(a => a.prazo).filter(Boolean).sort().pop();
+        const apoioTooltip = apoioPendentes.length
+          ? Array.from(new Set(apoioPendentes.map(a => a.apoio_nome))).map(n => `${apoioPendentes.filter(a => a.apoio_nome === n).length} no apoio ${n}`).join(' · ') + (prev ? ` (previsão ${String(prev).slice(0, 10).split('-').reverse().slice(0, 2).join('/')})` : '')
+          : '';
         let reportStatus: 'liberado' | 'pending' | 'retificado' | 'parcial' = 'pending';
         if (releasedExams > 0 && releasedExams < totalExams) reportStatus = 'parcial';
         else if (releasedExams === totalExams && totalExams > 0) reportStatus = 'liberado';
         else if ((order.status as string) === 'retificado') reportStatus = 'retificado';
+        if (retificadosPorPedido.has(order.id)) reportStatus = 'retificado';
 
         return {
           id: order.id,
@@ -125,16 +143,19 @@ export default function LabReportsPage() {
           examsCount: `${releasedExams}/${totalExams} ${releasedExams === totalExams ? '✅' : '⏳'}`,
           exams: exams,
           deliveryStatus: (order as any).deliveryStatus || 'not_delivered',
-          rawOrder: order
+          rawOrder: order,
+          temApoio: apoio.length > 0,
+          apoioPendente: apoioPendentes.length > 0,
+          apoioTooltip,
         };
       })
       .filter(report => {
         const matchesSearch = report.patientName.toLowerCase().includes(search.toLowerCase()) || 
                               report.protocol.includes(search);
         const matchesStatus = filterStatus === 'all' || report.status === filterStatus;
-        return matchesSearch && matchesStatus;
+        return matchesSearch && matchesStatus && (!soApoio || report.temApoio);
       });
-  }, [orders, search, filterStatus, resultsByProtocol]);
+  }, [orders, search, filterStatus, resultsByProtocol, apoioItens, retificadosPorPedido, soApoio]);
 
   const handlePreview = (report: any) => {
     setSelectedReport(report.rawOrder);
@@ -176,9 +197,18 @@ export default function LabReportsPage() {
           <p className="text-sm text-muted-foreground">Gerencie a emissão, visualização e entrega de laudos laboratoriais.</p>
         </div>
         <div className="flex gap-2">
-          <Button variant="outline" className="gap-2">
-            <Filter className="h-4 w-4" /> Filtros
-          </Button>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline" className="gap-2">
+                <Filter className="h-4 w-4" /> Filtros{soApoio ? ' (1)' : ''}
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-56">
+              <DropdownMenuItem onClick={() => setSoApoio(v => !v)} className="gap-2">
+                <Truck className="h-4 w-4" /> {soApoio ? '✓ ' : ''}Com exame em apoio
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
       </div>
 
@@ -201,7 +231,7 @@ export default function LabReportsPage() {
               onClick={() => setFilterStatus(status)}
               className="capitalize text-xs h-8"
             >
-              {status === 'all' ? 'Todos' : status}
+              {({ all: 'Todos', pending: 'Pendente', parcial: 'Parcial', liberado: 'Liberado', retificado: 'Retificado' } as Record<string, string>)[status] || status}
             </Button>
           ))}
         </div>
@@ -243,7 +273,9 @@ export default function LabReportsPage() {
               ) : (
                 reports.map((report) => (
                   <tr key={report.id} className="hover:bg-muted/30 transition-colors group">
-                    <td className="px-4 py-4 font-mono font-bold text-xs">{report.protocol}</td>
+                    <td className="px-4 py-4 font-mono font-bold text-xs">
+                      <span className="inline-flex items-center gap-1.5">{report.protocol}{report.apoioPendente && <Truck className="h-3.5 w-3.5 text-muted-foreground" aria-label="Exame em laboratório de apoio" />}</span>
+                    </td>
                     <td className="px-4 py-4">
                       <div className="flex flex-col">
                         <span className="font-bold">{report.patientName}</span>
@@ -256,7 +288,7 @@ export default function LabReportsPage() {
                     <td className="px-4 py-4">{report.doctorName}</td>
                     <td className="px-4 py-4">
                       <div className="flex items-center gap-1.5">
-                        <span className="font-medium">{report.examsCount}</span>
+                        <span className="font-medium" title={report.apoioTooltip || undefined}>{report.examsCount}</span>
                       </div>
                     </td>
                     <td className="px-4 py-4">{getStatusBadge(report.status)}</td>

@@ -3,6 +3,7 @@ import type { AppNotification, NotificationCategory, NotificationGroup } from '@
 import { MOCK_NOTIFICATIONS, SIMULATED_NOTIFICATIONS } from '@/mocks/notifications.mock'
 import { NOTIFICATION_INTERVAL_MS } from '@/utils/constants'
 import { useAuth } from '@/context/AuthContext'
+import { supabase } from '@/integrations/supabase/client'
 
 interface NotificationState {
   notifications: AppNotification[]
@@ -102,6 +103,24 @@ export function NotificationContextProvider({ children }: { children: ReactNode 
     return () => clearInterval(interval)
   }, [isDemo])
 
+  // Avisos gravados no banco para o usuário (ex.: retificação de resultado do apoio)
+  useEffect(() => {
+    if (!user || isDemo) return
+    const vistos = new Set<string>()
+    const carregar = async () => {
+      const { data } = await supabase.from('user_notifications' as any).select('*').is('read_at', null).order('created_at', { ascending: false }).limit(30)
+      ;((data as any[]) || []).forEach(n => {
+        if (vistos.has(n.id)) return
+        vistos.add(n.id)
+        dispatch({ type: 'ADD', payload: { id: `db_${n.id}`, userId: n.user_id, category: n.category || 'results', priority: n.priority || 'high',
+          status: 'unread', title: n.title, message: n.message, actionRoute: n.action_route || undefined, createdAt: n.created_at } as any })
+      })
+    }
+    carregar()
+    const t = setInterval(carregar, 60000)
+    return () => clearInterval(t)
+  }, [user, isDemo])
+
   const activeNotifications = useMemo(
     () => state.notifications.filter(n => n.status !== 'archived'),
     [state.notifications]
@@ -136,7 +155,10 @@ export function NotificationContextProvider({ children }: { children: ReactNode 
     dispatch({ type: 'ADD', payload: { ...n, id: `n_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`, createdAt: new Date().toISOString(), status: 'unread' } })
   }, [])
 
-  const markRead = useCallback((id: string) => dispatch({ type: 'MARK_READ', payload: id }), [])
+  const markRead = useCallback((id: string) => {
+    dispatch({ type: 'MARK_READ', payload: id })
+    if (id.startsWith('db_')) supabase.from('user_notifications' as any).update({ read_at: new Date().toISOString() }).eq('id', id.slice(3)).then(() => {})
+  }, [])
   const markAllRead = useCallback(() => dispatch({ type: 'MARK_ALL_READ' }), [])
   const archive = useCallback((id: string) => dispatch({ type: 'ARCHIVE', payload: id }), [])
   const clearAll = useCallback(() => dispatch({ type: 'CLEAR_ALL' }), [])
