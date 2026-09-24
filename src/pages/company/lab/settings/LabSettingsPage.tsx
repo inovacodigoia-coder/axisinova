@@ -43,6 +43,7 @@ import { useAuth } from '@/context/AuthContext'
 import { useRegisters } from '@/context/RegistersContext'
 import LabMethodsSection from '@/components/lab/settings/LabMethodsSection'
 import HolidaysSection from '@/components/lab/settings/HolidaysSection'
+import PrazoSettingsCard from '@/components/lab/settings/PrazoSettingsCard'
 
 export default function LabSettingsPage() {
   const [searchParams, setSearchParams] = useSearchParams()
@@ -125,7 +126,7 @@ export default function LabSettingsPage() {
           <NavItem active={activeTab === 'methods'} onClick={() => setActiveTab('methods')} icon={<Beaker className="h-4 w-4" />} label="Metodologias" />
           <NavItem active={activeTab === 'workbenches'} onClick={() => setActiveTab('workbenches')} icon={<Layout className="h-4 w-4" />} label="Bancadas" />
           <NavItem active={activeTab === 'collection-reasons'} onClick={() => setActiveTab('collection-reasons')} icon={<AlertCircle className="h-4 w-4" />} label="Motivos de Coleta" />
-          <NavItem active={activeTab === 'holidays'} onClick={() => setActiveTab('holidays')} icon={<History className="h-4 w-4" />} label="Feriados" />
+          <NavItem active={activeTab === 'holidays'} onClick={() => setActiveTab('holidays')} icon={<History className="h-4 w-4" />} label="Prazos e Feriados" />
           
           <p className="px-3 py-2 mt-4 text-[10px] font-bold text-muted-foreground uppercase tracking-wider">Sistema</p>
           <NavItem active={activeTab === 'security'} onClick={() => setActiveTab('security')} icon={<ShieldCheck className="h-4 w-4" />} label="Segurança" />
@@ -157,7 +158,7 @@ export default function LabSettingsPage() {
                 <LabPrinterLabelSection />
               </div>
               <div className={activeTab === 'holidays' ? 'block' : 'hidden'}>
-                {activeTab === 'holidays' && <HolidaysSection />}
+                {activeTab === 'holidays' && <><PrazoSettingsCard /><div className="h-4" /><HolidaysSection /></>}
               </div>
               <div className={activeTab === 'units' ? 'block' : 'hidden'}>
                 <UnitsSection />

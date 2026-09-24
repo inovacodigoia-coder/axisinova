@@ -182,6 +182,7 @@ export type Database = {
           mnexa: string | null
           mnmat: string | null
           origem_admissivel: string | null
+          prazo_dias: number | null
           sincronizado_em: string | null
           updated_at: string
         }
@@ -201,6 +202,7 @@ export type Database = {
           mnexa?: string | null
           mnmat?: string | null
           origem_admissivel?: string | null
+          prazo_dias?: number | null
           sincronizado_em?: string | null
           updated_at?: string
         }
@@ -220,6 +222,7 @@ export type Database = {
           mnexa?: string | null
           mnmat?: string | null
           origem_admissivel?: string | null
+          prazo_dias?: number | null
           sincronizado_em?: string | null
           updated_at?: string
         }
@@ -642,6 +645,7 @@ export type Database = {
           modo_contingencia: boolean
           nome: string
           opcoes: Json
+          prazo_contagem: string
           senha_secret_id: string | null
           updated_at: string
         }
@@ -665,6 +669,7 @@ export type Database = {
           modo_contingencia?: boolean
           nome: string
           opcoes?: Json
+          prazo_contagem?: string
           senha_secret_id?: string | null
           updated_at?: string
         }
@@ -688,6 +693,7 @@ export type Database = {
           modo_contingencia?: boolean
           nome?: string
           opcoes?: Json
+          prazo_contagem?: string
           senha_secret_id?: string | null
           updated_at?: string
         }
@@ -717,6 +723,7 @@ export type Database = {
           info_complementar: Json | null
           modo: string
           pedido_id: string
+          prazo_contagem: string
           prazo_previsto: string | null
           preco_ficticio: boolean
           recipiente_id: string | null
@@ -744,6 +751,7 @@ export type Database = {
           info_complementar?: Json | null
           modo?: string
           pedido_id: string
+          prazo_contagem?: string
           prazo_previsto?: string | null
           preco_ficticio?: boolean
           recipiente_id?: string | null
@@ -771,6 +779,7 @@ export type Database = {
           info_complementar?: Json | null
           modo?: string
           pedido_id?: string
+          prazo_contagem?: string
           prazo_previsto?: string | null
           preco_ficticio?: boolean
           recipiente_id?: string | null
@@ -2306,6 +2315,7 @@ export type Database = {
           methodology: string | null
           name: string
           parameters: Json | null
+          prazo_contagem: string
           preparation_instructions: string | null
           reference_values: Json | null
           report_observations: string | null
@@ -2340,6 +2350,7 @@ export type Database = {
           methodology?: string | null
           name: string
           parameters?: Json | null
+          prazo_contagem?: string
           preparation_instructions?: string | null
           reference_values?: Json | null
           report_observations?: string | null
@@ -2374,6 +2385,7 @@ export type Database = {
           methodology?: string | null
           name?: string
           parameters?: Json | null
+          prazo_contagem?: string
           preparation_instructions?: string | null
           reference_values?: Json | null
           report_observations?: string | null
@@ -3530,6 +3542,7 @@ export type Database = {
           label_rotation: number
           label_width_mm: number
           phone: string | null
+          prazo_contagem_padrao: string
           report_footer_text: string | null
           report_header_subtitle: string | null
           report_header_title: string | null
@@ -3540,6 +3553,7 @@ export type Database = {
           report_watermark_text: string | null
           responsible_name: string | null
           responsible_register: string | null
+          sabado_dia_util: boolean
           signature_auto_on_release: boolean
           signature_image_url: string | null
           signature_include_register: boolean
@@ -3576,6 +3590,7 @@ export type Database = {
           label_rotation?: number
           label_width_mm?: number
           phone?: string | null
+          prazo_contagem_padrao?: string
           report_footer_text?: string | null
           report_header_subtitle?: string | null
           report_header_title?: string | null
@@ -3586,6 +3601,7 @@ export type Database = {
           report_watermark_text?: string | null
           responsible_name?: string | null
           responsible_register?: string | null
+          sabado_dia_util?: boolean
           signature_auto_on_release?: boolean
           signature_image_url?: string | null
           signature_include_register?: boolean
@@ -3622,6 +3638,7 @@ export type Database = {
           label_rotation?: number
           label_width_mm?: number
           phone?: string | null
+          prazo_contagem_padrao?: string
           report_footer_text?: string | null
           report_header_subtitle?: string | null
           report_header_title?: string | null
@@ -3632,6 +3649,7 @@ export type Database = {
           report_watermark_text?: string | null
           responsible_name?: string | null
           responsible_register?: string | null
+          sabado_dia_util?: boolean
           signature_auto_on_release?: boolean
           signature_image_url?: string | null
           signature_include_register?: boolean
@@ -5389,6 +5407,7 @@ export type Database = {
           pedido_id: string | null
           pedido_numero: string | null
           pedido_protocolo: string | null
+          prazo_contagem: string | null
           prazo_previsto: string | null
           preco_ficticio: boolean | null
           recipiente_id: string | null
@@ -5503,11 +5522,29 @@ export type Database = {
         Returns: Json
       }
       auth_release_lockout: { Args: { _lockout_id: string }; Returns: boolean }
+      calcular_prazo: {
+        Args: {
+          _company_id: string
+          _contagem: string
+          _data_inicial: string
+          _dias: number
+        }
+        Returns: string
+      }
       can_edit_support_board: { Args: { _board_id: string }; Returns: boolean }
       can_view_support_board: { Args: { _board_id: string }; Returns: boolean }
       carregar_feriados_nacionais: { Args: { _ano: number }; Returns: number }
       company_cnpj_exists: { Args: { _cnpj: string }; Returns: boolean }
       company_id_by_cnpj: { Args: { _cnpj: string }; Returns: string }
+      contar_dias_prazo: {
+        Args: {
+          _ate: string
+          _company_id: string
+          _contagem: string
+          _de: string
+        }
+        Returns: number
+      }
       data_pascoa: { Args: { _ano: number }; Returns: string }
       device_public_info: {
         Args: { _kind: string; _slug: string }

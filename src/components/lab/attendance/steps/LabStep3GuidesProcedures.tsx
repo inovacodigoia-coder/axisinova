@@ -192,12 +192,12 @@ export function LabStep3GuidesProcedures({ state, update }: Props) {
     setShowExamModal(true);
   };
 
-  // Prazo em dias úteis (pula sábados, domingos e feriados) — função única do banco: somar_dias_uteis
-  const calculateDeadline = async (days: number) => {
+  // Prazo pela função única do banco (calcular_prazo), na contagem do exame: corridos (padrão) ou úteis
+  const calculateDeadline = async (days: number, contagem: 'corridos' | 'uteis' = 'corridos') => {
     const now = new Date();
     const pad = (n: number) => String(n).padStart(2, '0');
     const today = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}`;
-    const { data, error } = await supabase.rpc('somar_dias_uteis', { _company_id: null as any, _data_inicial: today, _dias: days });
+    const { data, error } = await supabase.rpc('calcular_prazo', { _company_id: null as any, _data_inicial: today, _dias: days, _contagem: contagem });
     if (error || !data) {
       const fallback = new Date(now);
       fallback.setDate(fallback.getDate() + days);
@@ -219,7 +219,7 @@ export function LabStep3GuidesProcedures({ state, update }: Props) {
       return new Date().toISOString();
     };
 
-    setTempDeadline(normalizeToIso(exam.expectedDeliveryDate || await calculateDeadline(exam.resultDeadlineDays || 1)));
+    setTempDeadline(normalizeToIso(exam.expectedDeliveryDate || await calculateDeadline(exam.resultDeadlineDays || 1, exam.prazoContagem === 'uteis' ? 'uteis' : 'corridos')));
     setTempCollectionDate(new Date().toISOString());
     setShowDeadlineModal(true);
   };
@@ -241,7 +241,7 @@ export function LabStep3GuidesProcedures({ state, update }: Props) {
       isColeta: examCollected, // Consistent with other parts of the app
       quantity: 1,
       price: activeGuide?.plan === 'PARTICULAR' || convenio?.type === 'private' ? examPrice : undefined,
-      expectedDeliveryDate: examDeadline || (selectedExam.resultDeadlineDays ? await calculateDeadline(selectedExam.resultDeadlineDays) : null)
+      expectedDeliveryDate: examDeadline || (selectedExam.resultDeadlineDays ? await calculateDeadline(selectedExam.resultDeadlineDays, selectedExam.prazoContagem === 'uteis' ? 'uteis' : 'corridos') : null)
     };
 
     const newGuides = guides.map(g => {

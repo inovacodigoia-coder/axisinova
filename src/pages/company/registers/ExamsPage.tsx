@@ -248,7 +248,7 @@ function ExamFormModal({ exam, specialties, onClose, onSave }: {
           </div>
           <div className="grid grid-cols-2 gap-4">
             <div><label className="text-sm font-medium">Duração estimada (min)</label><input type="number" value={duration} onChange={e => setDuration(+e.target.value)} className="mt-1 w-full rounded-lg border border-input bg-background px-3 py-2 text-sm" /></div>
-            <div><label className="text-sm font-medium">Prazo resultado (dias úteis)</label><input type="number" value={resultDays} onChange={e => setResultDays(+e.target.value)} className="mt-1 w-full rounded-lg border border-input bg-background px-3 py-2 text-sm" /></div>
+            <div><label className="text-sm font-medium">Prazo resultado (dias)</label><input type="number" value={resultDays} onChange={e => setResultDays(+e.target.value)} className="mt-1 w-full rounded-lg border border-input bg-background px-3 py-2 text-sm" /></div>
           </div>
           <div><label className="text-sm font-medium">Instrução de preparo</label><textarea value={preparation} onChange={e => setPreparation(e.target.value)} rows={2} placeholder="Orientações enviadas ao paciente (ex: jejum, preparo intestinal)" className="mt-1 w-full rounded-lg border border-input bg-background px-3 py-2 text-sm" /></div>
           <label className="flex items-center gap-2 text-sm font-medium cursor-pointer">
