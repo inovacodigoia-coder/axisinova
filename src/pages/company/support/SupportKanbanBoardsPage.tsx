@@ -18,6 +18,8 @@ import { useCompanyContext } from '@/context/CompanyContext'
 import { useSupportBoards, type SupportBoard } from '@/hooks/useSupportBoards'
 import { BoardFormModal } from '@/components/support/BoardFormModal'
 import { BoardStagesModal } from '@/components/support/BoardStagesModal'
+import { useApoioEntitlement } from '@/hooks/useApoio'
+import { ApoioBloqueadoAviso } from '@/pages/company/support/SupportOutsourcingPage'
 
 export default function SupportKanbanBoardsPage() {
   const navigate = useNavigate()
@@ -35,16 +37,19 @@ export default function SupportKanbanBoardsPage() {
     return term ? boards.filter(b => b.name.toLowerCase().includes(term)) : boards
   }, [boards, search])
 
+  const apoio = useApoioEntitlement()
+  const bloqueado = !apoio.loading && !apoio.enabled
   const sectorName = (id: string | null) => allSectors.find(s => s.id === id)?.name || 'Sem setor'
 
   return (
     <div className="p-6">
+      {bloqueado && <div className="mb-4"><ApoioBloqueadoAviso /></div>}
       <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
         <div>
           <h1 className="text-2xl font-bold text-foreground">Kanban Apoio</h1>
           <p className="text-sm text-muted-foreground">Gerencie os quadros de apoio e suas etapas.</p>
         </div>
-        <Button className="gradient-bg text-white" onClick={() => { setEditing(null); setFormOpen(true) }}>
+        <Button disabled={bloqueado} className="gradient-bg text-white" onClick={() => { setEditing(null); setFormOpen(true) }}>
           <Plus className="mr-1 h-4 w-4" />Novo Quadro
         </Button>
       </div>
@@ -62,7 +67,7 @@ export default function SupportKanbanBoardsPage() {
             icon={<KanbanSquare className="h-10 w-10" />}
             title="Nenhum quadro criado"
             description="Crie o primeiro quadro de apoio para organizar o fluxo em etapas."
-            action={<Button className="gradient-bg text-white" onClick={() => { setEditing(null); setFormOpen(true) }}>Novo Quadro</Button>}
+            action={<Button disabled={bloqueado} className="gradient-bg text-white" onClick={() => { setEditing(null); setFormOpen(true) }}>Novo Quadro</Button>}
           />
         </div>
       ) : (
