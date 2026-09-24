@@ -19,6 +19,7 @@ export const TIPOS_DOCUMENTO = {
   etiquetaLote: "etiqueta_lote",
   fichaTrabalho: "ficha_trabalho",
   etiquetaColhedor: "etiqueta_colhedor",
+  etiquetaApoioPardini: "etiqueta_apoio_pardini",
 } as const;
 
 export type TipoDocumento = (typeof TIPOS_DOCUMENTO)[keyof typeof TIPOS_DOCUMENTO];
