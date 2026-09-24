@@ -29,8 +29,9 @@ export function ApoioSelo({ e }: { e: ApoioEstado }) {
   );
 }
 
-export function ApoioExamBlock({ e, companyId, executor, onExecutor, nomeParam, onChanged }: {
+export function ApoioExamBlock({ e, companyId, executor, onExecutor, nomeParam, onChanged, metodo, onMetodo }: {
   e: ApoioEstado; companyId: string; executor: string; onExecutor: (v: string) => void
+  metodo?: string; onMetodo?: (v: string) => void
   nomeParam: (id: string) => string; onChanged: () => void
 }) {
   const [urls, setUrls] = useState<Record<string, string>>({});
@@ -70,8 +71,25 @@ export function ApoioExamBlock({ e, companyId, executor, onExecutor, nomeParam, 
   const pdfs = e.docs.filter(d => d.tipo !== 'grafico');
   const graficos = e.docs.filter(d => d.tipo === 'grafico');
 
+  const cv = e.versao?.conteudo || {};
+  const metodoRec = (cv.metodo || '').trim();
+  const formatoRec = cv.codigo_formato || '';
+  const metodoAntes = (e.anterior?.conteudo?.metodo || '').trim();
+  const metodoMudou = ehRetificado(e) && !!e.anterior && metodoAntes !== metodoRec;
+
   return (
     <div className="space-y-3">
+      {e.versao && (formatoRec || metodoRec) && (
+        <div className="rounded-lg border border-border bg-muted/50 px-3 py-2 text-xs">
+          <span className="font-bold">{[formatoRec && `Formato ${formatoRec}`, metodoRec].filter(Boolean).join(' · ')}</span>
+        </div>
+      )}
+      {metodoMudou && (
+        <div className="rounded-lg border border-destructive/40 bg-destructive/10 p-3 text-xs text-destructive">
+          <p className="font-black">Método alterado pelo apoio</p>
+          <p>Antes: {metodoAntes || '—'} → Agora: <b>{metodoRec || '—'}</b></p>
+        </div>
+      )}
       {aguardando && (
         <div className="rounded-lg border border-border bg-muted p-3 text-xs font-bold uppercase text-muted-foreground">
           Aguardando resultado do {e.apoio_nome} (prazo {fmtD(e.prazo)})
@@ -84,6 +102,13 @@ export function ApoioExamBlock({ e, companyId, executor, onExecutor, nomeParam, 
             {enviando ? <Loader2 className="mr-1 h-3 w-3 animate-spin" /> : <Paperclip className="mr-1 h-3 w-3" />}Anexar PDF
           </Button>
           <input ref={fileRef} type="file" accept="application/pdf" className="hidden" onChange={ev => { anexar(ev.target.files?.[0]); ev.target.value = ''; }} />
+        </div>
+      )}
+
+      {manualDigitando && onMetodo && (
+        <div className="flex flex-wrap items-center gap-2 text-xs">
+          <span className="font-bold">Método (opcional):</span>
+          <Input className="h-8 max-w-md text-xs" placeholder="Método informado pelo apoio" value={metodo || ''} onChange={ev => onMetodo(ev.target.value)} />
         </div>
       )}
 
