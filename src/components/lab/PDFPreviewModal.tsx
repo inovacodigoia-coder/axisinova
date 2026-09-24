@@ -252,7 +252,7 @@ export default function PDFPreviewModal({
         (await out.copyPages(src, src.getPageIndices())).forEach(pg => out.addPage(pg));
       } catch { toast.error('Não foi possível anexar um PDF do apoio'); }
     }
-    return new Blob([await out.save()], { type: 'application/pdf' });
+    return new Blob([(await out.save()) as unknown as BlobPart], { type: 'application/pdf' });
   }, [enrichedOrder, apoioDoExame]);
   const temPdfApoio = (enrichedOrder.exams || []).some((e: any) => e.apoioPdfAnexo);
 
