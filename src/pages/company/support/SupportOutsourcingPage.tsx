@@ -6,6 +6,7 @@ import { supabase } from '@/integrations/supabase/client'
 import { useApoioEntitlement, APOIO_BLOQUEADO_MSG } from '@/hooks/useApoio'
 import { ApoioLaboratoriosTab } from '@/components/apoio/ApoioLaboratoriosTab'
 import { ApoioExamesTab } from '@/components/apoio/depara/ApoioExamesTab'
+import { ApoioContingenciaTab } from '@/components/apoio/contingencia/ApoioContingenciaTab'
 import { ApoioRemessasTab } from '@/components/apoio/remessa/ApoioRemessasTab'
 
 const ABAS = [
@@ -88,6 +89,8 @@ export default function SupportOutsourcingPage() {
         <ApoioLaboratoriosTab moduloLiberado={enabled} onChanged={() => setReload(r => r + 1)} />
       ) : aba === 'exames' ? (
         <ApoioExamesTab moduloLiberado={enabled} />
+      ) : aba === 'contingencia' ? (
+        <ApoioContingenciaTab moduloLiberado={enabled} onChanged={() => setReload(r => r + 1)} />
       ) : aba === 'remessas' ? (
         <ApoioRemessasTab moduloLiberado={enabled} />
       ) : (

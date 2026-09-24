@@ -127,7 +127,7 @@ function EnvioManual({ lab, pode }: { lab: Lab; pode: boolean }) {
       ped.exames.push({ id: p.id, nome: p.exams?.name || p.codigo_apoio, material: (mat as any) || '', status: p.status })
     }
     const idsComErro = new Set(((pes as any) || []).filter((p: any) => p.status === 'erro_transmissao').map((p: any) => p.remessa_id))
-    const extra = idsComErro.size ? (await supabase.from('apoio_remessa').select('id, cod_lote_lab, status, temperatura, created_at').in('id', [...idsComErro])).data || [] : []
+    const extra = idsComErro.size ? (await supabase.from('apoio_remessa').select('id, cod_lote_lab, status, temperatura, created_at').in("id", [...idsComErro] as string[])).data || [] : []
     const todas = [...(rs || []), ...extra.filter((e: any) => !(rs || []).some((r: any) => r.id === e.id))]
     setRemessas(todas); setDados(map)
   }, [lab.id])
