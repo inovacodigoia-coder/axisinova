@@ -561,6 +561,7 @@ export type Database = {
           ate: string | null
           company_id: string
           created_at: string
+          resolvido_em: string | null
           rotina: string
           ultima_execucao: string | null
           ultimo_erro: string | null
@@ -573,6 +574,7 @@ export type Database = {
           ate?: string | null
           company_id: string
           created_at?: string
+          resolvido_em?: string | null
           rotina: string
           ultima_execucao?: string | null
           ultimo_erro?: string | null
@@ -585,6 +587,7 @@ export type Database = {
           ate?: string | null
           company_id?: string
           created_at?: string
+          resolvido_em?: string | null
           rotina?: string
           ultima_execucao?: string | null
           ultimo_erro?: string | null
@@ -1070,6 +1073,38 @@ export type Database = {
           },
         ]
       }
+      apoio_lote_usado: {
+        Row: {
+          cod_lote_lab: number
+          company_id: string
+          created_at: string
+          motivo: string | null
+          remessa_id: string | null
+        }
+        Insert: {
+          cod_lote_lab: number
+          company_id: string
+          created_at?: string
+          motivo?: string | null
+          remessa_id?: string | null
+        }
+        Update: {
+          cod_lote_lab?: number
+          company_id?: string
+          created_at?: string
+          motivo?: string | null
+          remessa_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "apoio_lote_usado_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       apoio_modelo_import: {
         Row: {
           apoio_id: string
@@ -1264,6 +1299,7 @@ export type Database = {
           amostra_id: string | null
           apoio_id: string
           cod_ped_apoio: string | null
+          cod_ped_lab: string | null
           codigo_apoio: string | null
           company_id: string
           created_at: string
@@ -1293,6 +1329,7 @@ export type Database = {
           amostra_id?: string | null
           apoio_id: string
           cod_ped_apoio?: string | null
+          cod_ped_lab?: string | null
           codigo_apoio?: string | null
           company_id: string
           created_at?: string
@@ -1322,6 +1359,7 @@ export type Database = {
           amostra_id?: string | null
           apoio_id?: string
           cod_ped_apoio?: string | null
+          cod_ped_lab?: string | null
           codigo_apoio?: string | null
           company_id?: string
           created_at?: string
@@ -1734,6 +1772,7 @@ export type Database = {
           bipados: Json
           cod_lote_apoio: string | null
           cod_lote_lab: number | null
+          colisao: string | null
           company_id: string
           conferencia_forcada: string | null
           conferido_em: string | null
@@ -1743,6 +1782,7 @@ export type Database = {
           entregue_a: string | null
           entregue_em: string | null
           entregue_registrado_por: string | null
+          envio_sem_resposta: boolean
           id: string
           mensagem_id: string | null
           modo: string
@@ -1757,6 +1797,7 @@ export type Database = {
           bipados?: Json
           cod_lote_apoio?: string | null
           cod_lote_lab?: number | null
+          colisao?: string | null
           company_id: string
           conferencia_forcada?: string | null
           conferido_em?: string | null
@@ -1766,6 +1807,7 @@ export type Database = {
           entregue_a?: string | null
           entregue_em?: string | null
           entregue_registrado_por?: string | null
+          envio_sem_resposta?: boolean
           id?: string
           mensagem_id?: string | null
           modo?: string
@@ -1780,6 +1822,7 @@ export type Database = {
           bipados?: Json
           cod_lote_apoio?: string | null
           cod_lote_lab?: number | null
+          colisao?: string | null
           company_id?: string
           conferencia_forcada?: string | null
           conferido_em?: string | null
@@ -1789,6 +1832,7 @@ export type Database = {
           entregue_a?: string | null
           entregue_em?: string | null
           entregue_registrado_por?: string | null
+          envio_sem_resposta?: boolean
           id?: string
           mensagem_id?: string | null
           modo?: string
@@ -7004,6 +7048,7 @@ export type Database = {
           amostra_id: string | null
           apoio_id: string
           cod_ped_apoio: string | null
+          cod_ped_lab: string | null
           codigo_apoio: string | null
           company_id: string
           created_at: string
@@ -7082,6 +7127,7 @@ export type Database = {
         Args: { _apoio: string; _pedido: string }
         Returns: string
       }
+      apoio_cursor_resolver: { Args: { _apoio: string }; Returns: undefined }
       apoio_custo_previsto: {
         Args: { _pedido_exame_id: string }
         Returns: number
@@ -7345,6 +7391,7 @@ export type Database = {
         Args: { _apoio_id: string; _codigo: string; _data?: string }
         Returns: number
       }
+      apoio_proximo_lote: { Args: { _company: string }; Returns: number }
       apoio_proximos_status: {
         Args: { _de: Database["public"]["Enums"]["apoio_status"] }
         Returns: string[]
@@ -7591,6 +7638,7 @@ export type Database = {
         Args: { _pedido_exame: string }
         Returns: undefined
       }
+      apoio_remessa_renumerar: { Args: { _remessa: string }; Returns: number }
       apoio_remessa_tubos: {
         Args: { _remessa: string }
         Returns: {

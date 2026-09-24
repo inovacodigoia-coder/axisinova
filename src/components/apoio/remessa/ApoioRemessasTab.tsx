@@ -234,8 +234,10 @@ function DetalheRemessa({ id, remessa: r0, pode, onClose, onChanged }: { id: str
   const [entrega, setEntrega] = useState(false); const [entA, setEntA] = useState(''); const [entEm, setEntEm] = useState('')
   const [transmitindo, setTransmitindo] = useState(false)
   const [labNome, setLabNome] = useState('')
+  const [colisao, setColisao] = useState<string | null>(null)
 
   const carregar = useCallback(async () => {
+    supabase.from('apoio_remessa').select('colisao').eq('id', id).maybeSingle().then(({ data }) => setColisao((data as any)?.colisao ?? null))
     const [{ data: l }, { data: pe }, { data: t }, { data: rc }] = await Promise.all([
       supabase.rpc('apoio_remessa_lista' as any),
       supabase.from('apoio_pedido_exame').select('id, pedido_id, exame_id, codigo_apoio, status, apoio_id, exams(name), attendance_orders(order_number, patient_name)').eq('remessa_id', id),
@@ -350,6 +352,17 @@ function DetalheRemessa({ id, remessa: r0, pode, onClose, onChanged }: { id: str
             </div>
           ))}
         </div>
+        {colisao && r.status === 'erro' && (
+          <div className="mt-3 flex flex-wrap items-center gap-2 rounded-md border border-destructive/40 bg-destructive/10 p-3 text-xs text-destructive">
+            <AlertTriangle className="h-4 w-4" />
+            <span className="flex-1"><b>Número já usado no Pardini.</b> {colisao}. Nada foi enviado com este número; gere um número novo e transmita de novo.</span>
+            {pode && <Button size="sm" variant="outline" onClick={async () => {
+              const { data, error } = await supabase.rpc('apoio_remessa_renumerar' as any, { _remessa: r.id })
+              if (error) return toast.error(erroMsg(error))
+              toast.success(`Número novo gerado: ${data}. Agora é só transmitir de novo.`); atualizar()
+            }}>Gerar número novo</Button>}
+          </div>
+        )}
         {r.conferencia_forcada && <p className="mt-2 text-xs text-[hsl(38,92%,30%)]">Conferência forçada: {r.conferencia_forcada}</p>}
 
         <div className="mt-4 flex flex-wrap gap-2">

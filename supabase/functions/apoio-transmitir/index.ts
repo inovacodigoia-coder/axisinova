@@ -9,6 +9,12 @@ const Body = z.object({ remessa_id: z.string().uuid() })
 const cortar = (s: unknown, n: number) => String(s ?? '').slice(0, n)
 const sexo = (g: string) => /^(m|male|masc)/i.test(g || '') ? 'Masculino' : /^(f|female|fem)/i.test(g || '') ? 'Feminino' : 'Indefinido'
 const RECUPERAVEIS = ['10023', '10217']
+const baseCodPed = (o: any) => cortar(String(o?.order_number ?? o?.protocol ?? '').replace(/\s/g, ''), 15)
+const novoCodPed = (base: string) => `${cortar(base, 8)}-${Math.random().toString(36).slice(2, 8).toUpperCase()}`
+const codColisao = (pe: PardiniErro | null, neg: { codigo: string; msg: string } | null) => {
+  const txt = `${pe?.codigo ?? ''} ${pe?.message ?? ''} ${neg?.codigo ?? ''} ${neg?.msg ?? ''}`
+  return /10023/.test(txt) ? '10023' : /10217/.test(txt) ? '10217' : null
+}
 
 function montarRegistro(ctx: Ctx, remessa: any, exames: any[], msgId: string) {
   const { data, hora } = hojeBR()
@@ -28,7 +34,7 @@ function montarRegistro(ctx: Ctx, remessa: any, exames: any[], msgId: string) {
       return `<Exame><CodExmApoio>${esc(`${e.codigo_apoio}|${e.sequencial ?? 1}`)}</CodExmApoio><CodExmLab>${esc(cortar(e.cod_exm_lab, 15))}</CodExmLab><DataColeta>${br.slice(0, 10)}</DataColeta><HoraColeta>${br.slice(11, 19)}</HoraColeta>${infos}${cond}</Exame>`
     }).join('')
     const cpf = String(p.cpf ?? '').replace(/\D/g, '')
-    return `<Pedido><CodPedLab>${esc(cortar(String(o.order_number ?? o.protocol).replace(/\s/g, ''), 15))}</CodPedLab><DataPed>${dPed}</DataPed><HoraPed>${hPed}</HoraPed><Obs>${esc(cortar(info.obs_envio ?? remessa.observacao ?? '', 70))}</Obs><Paciente><CodPacLab>${esc(cortar(String(o.patient_id ?? '').replace(/-/g, ''), 15))}</CodPacLab><Nome>${esc(nome)}</Nome><Sexo>${sexo(p.gender)}</Sexo>${p.birth_date ? `<DataNasc>${String(p.birth_date).slice(0, 10)}</DataNasc>` : ''}${cpf.length === 11 ? `<CPF>${cpf}</CPF>` : ''}</Paciente>${exXml}</Pedido>`
+    return `<Pedido><CodPedLab>${esc(e0.cod_ped_lab)}</CodPedLab><DataPed>${dPed}</DataPed><HoraPed>${hPed}</HoraPed><Obs>${esc(cortar(info.obs_envio ?? remessa.observacao ?? '', 70))}</Obs><Paciente><CodPacLab>${esc(cortar(String(o.patient_id ?? '').replace(/-/g, ''), 15))}</CodPacLab><Nome>${esc(nome)}</Nome><Sexo>${sexo(p.gender)}</Sexo>${p.birth_date ? `<DataNasc>${String(p.birth_date).slice(0, 10)}</DataNasc>` : ''}${cpf.length === 11 ? `<CPF>${cpf}</CPF>` : ''}</Paciente>${exXml}</Pedido>`
   }).join('')
   return `<Registro><Protocolo>2</Protocolo><ID>${msgId}</ID><Lote><CodLab>${esc(ctx.lab.cod_lab)}</CodLab><CodLoteLab>${remessa.cod_lote_lab}</CodLoteLab><DataLote>${data}</DataLote><HoraLote>${hora}</HoraLote>${pedidos}</Lote></Registro>`
 }
@@ -118,7 +124,7 @@ Deno.serve(async (req) => {
   if (ctx.lab.modo_contingencia) { await admin.from('apoio_remessa').update({ status: rem0.status }).eq('id', remessa.id); return json({ ok: false, motivo: 'Apoio em modo manual: use a aba Contingência' }) }
 
   // Exames da remessa + dados do pedido/paciente
-  const { data: pes } = await admin.from('apoio_pedido_exame').select('id, pedido_id, exame_id, codigo_apoio, sequencial, status, info_complementar').eq('remessa_id', remessa.id).neq('status', 'cancelado')
+  const { data: pes } = await admin.from('apoio_pedido_exame').select('id, pedido_id, exame_id, codigo_apoio, sequencial, status, info_complementar, cod_ped_lab').eq('remessa_id', remessa.id).neq('status', 'cancelado')
   const exames: any[] = []
   for (const e of pes ?? []) {
     const { data: o } = await admin.from('attendance_orders').select('id, order_number, protocol, created_at, patient_id, patient_name, lab_guides').eq('id', e.pedido_id).single()
@@ -128,6 +134,35 @@ Deno.serve(async (req) => {
     exames.push({ ...e, ordem: o, paciente: p, cod_exm_lab: ex?.internal_code || e.exame_id.slice(0, 15), coletado_em: item?.collectedAt })
   }
   if (!exames.length) { await admin.from('apoio_remessa').update({ status: rem0.status }).eq('id', remessa.id); return json({ ok: false, motivo: 'Remessa sem exames' }) }
+
+  // CodPedLab: uma vez gravado para o pedido, nunca muda (reenvio usa o mesmo)
+  const codPorPedido = new Map<string, string>()
+  for (const e of exames) if (e.cod_ped_lab) codPorPedido.set(e.pedido_id, e.cod_ped_lab)
+  for (const e of exames) {
+    if (!codPorPedido.has(e.pedido_id)) {
+      const { data: outros } = await admin.from('apoio_pedido_exame').select('cod_ped_lab').eq('pedido_id', e.pedido_id).eq('apoio_id', remessa.apoio_id).not('cod_ped_lab', 'is', null).limit(1)
+      codPorPedido.set(e.pedido_id, outros?.[0]?.cod_ped_lab || baseCodPed(e.ordem))
+    }
+    e.cod_ped_lab = codPorPedido.get(e.pedido_id)
+    await admin.from('apoio_pedido_exame').update({ cod_ped_lab: e.cod_ped_lab }).eq('id', e.id)
+  }
+
+  // Colisão com número de outro integrador (1ª transmissão): nunca consultar, pedir número novo
+  const colidiu = async (cod: string) => {
+    const motivo = cod === '10023'
+      ? `Remessa ${remessa.cod_lote_lab}: número de lote já usado no Pardini`
+      : `Remessa ${remessa.cod_lote_lab}: código de pedido já usado no Pardini`
+    if (cod === '10217') {
+      for (const pid of new Set(exames.map((e) => e.pedido_id))) {
+        const novo = novoCodPed(codPorPedido.get(pid) || '')
+        await admin.from('apoio_pedido_exame').update({ cod_ped_lab: novo }).eq('pedido_id', pid).eq('apoio_id', remessa.apoio_id).is('cod_ped_apoio', null)
+      }
+    }
+    for (const e of exames) await admin.from('apoio_pedido_exame').update({ erro: { codigo: cod, mensagem: motivo, categoria: 'numero_usado' } }).eq('id', e.id)
+    await admin.from('apoio_remessa').update({ status: 'erro', colisao: motivo, envio_sem_resposta: false }).eq('id', remessa.id)
+    await cursorGravar(admin, ctx.lab, 'transmissao', { erro: motivo })
+    return json({ ok: false, colisao: true, motivo: `${motivo}. ${cod === '10023' ? 'Clique em "Gerar número novo" e transmita de novo.' : 'Um código novo de pedido já foi gerado; clique em "Gerar número novo" e transmita de novo.'}` })
+  }
 
   const recuperar = async () => {
     const resp = await chamar(ctx, 'getPedido', [['XML', 'string', consultaLote(ctx, remessa)]], { tentativas: 3 })
@@ -139,20 +174,30 @@ Deno.serve(async (req) => {
   try {
     let r
     if (jaEnviada) {
-      // Já houve tentativa com este lote: primeiro tenta recuperar, nunca reenviar às cegas
-      try { r = await recuperar(); await cursorGravar(admin, ctx.lab, 'transmissao', {}); return json({ ok: true, recuperado: true, ...r }) } catch { /* segue para envio */ }
+      // Tentativa anterior deste lote ficou sem resposta: recupera pelo lote antes de reenviar
+      try {
+        r = await recuperar()
+        await admin.from('apoio_remessa').update({ envio_sem_resposta: false }).eq('id', remessa.id)
+        await cursorGravar(admin, ctx.lab, 'transmissao', {}); return json({ ok: true, recuperado: true, ...r })
+      } catch { /* segue para envio */ }
     }
     let util: string
+    await admin.from('apoio_remessa').update({ envio_sem_resposta: true }).eq('id', remessa.id)
     try {
       const resp = await chamar(ctx, 'getPedido', [['XML', 'string', montarRegistro(ctx, remessa, exames, msgId)]])
       util = conteudoUtil(resp)
     } catch (e) {
       const pe = e as PardiniErro
-      if (pe.tipo === 'timeout' || pe.tipo === 'rede' || RECUPERAVEIS.includes(pe.codigo ?? '')) { r = await recuperar(); return json({ ok: true, recuperado: true, ...r }) }
+      if (pe.tipo === 'timeout' || pe.tipo === 'rede') { r = await recuperar(); await admin.from('apoio_remessa').update({ envio_sem_resposta: false }).eq('id', remessa.id); return json({ ok: true, recuperado: true, ...r }) }
+      await admin.from('apoio_remessa').update({ envio_sem_resposta: false }).eq('id', remessa.id)
+      const cod = codColisao(pe, null)
+      if (cod) { if (jaEnviada) { r = await recuperar(); return json({ ok: true, recuperado: true, ...r }) } return await colidiu(cod) }
       throw e
     }
+    await admin.from('apoio_remessa').update({ envio_sem_resposta: false }).eq('id', remessa.id)
     const neg = erroNegocio(util)
-    if (neg && RECUPERAVEIS.includes(neg.codigo)) { r = await recuperar(); return json({ ok: true, recuperado: true, ...r }) }
+    const codN = neg ? codColisao(null, neg) : null
+    if (codN) { if (jaEnviada) { r = await recuperar(); return json({ ok: true, recuperado: true, ...r }) } return await colidiu(codN) }
     if (neg) {
       const { data: ae } = neg.codigo ? await admin.from('apoio_erro').select('mensagem, categoria').eq('apoio_id', ctx.lab.id).eq('codigo', neg.codigo).maybeSingle() : { data: null }
       const motivo = `${neg.codigo ? neg.codigo + ' – ' : ''}${ae?.mensagem || neg.msg}${ae?.categoria ? ` (${ae.categoria})` : ''}`
@@ -171,6 +216,6 @@ Deno.serve(async (req) => {
     const msg = (e as Error).message
     await admin.from('apoio_remessa').update({ status: 'erro' }).eq('id', remessa.id)
     await cursorGravar(admin, ctx.lab, 'transmissao', { erro: msg })
-    return json({ ok: false, motivo: `Falha na transmissão: ${msg}. A próxima tentativa recupera pelo lote, sem duplicar.` })
+    return json({ ok: false, motivo: `Falha na transmissão: ${msg}. Se o Pardini não respondeu, a próxima tentativa consulta o lote antes de reenviar, sem duplicar.` })
   }
 })
