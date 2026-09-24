@@ -1,4 +1,5 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
+import { supabase } from '@/integrations/supabase/client'
 import { useParams, useNavigate } from 'react-router-dom'
 import { ArrowLeft, Plus, Pencil, Trash2, GripVertical, Copy, Eye, EyeOff, RefreshCw, ExternalLink } from 'lucide-react'
 import { toast } from 'sonner'
@@ -47,6 +48,10 @@ export default function UnitConfigPage() {
   const [guicheModal, setGuicheModal] = useState<Guiche | null | 'new'>(null)
   const [gName, setGName] = useState('')
   const [gType, setGType] = useState<'external' | 'internal'>('external')
+  const [gSector, setGSector] = useState('')
+  const [novoSetor, setNovoSetor] = useState<string | null>(null)
+  const [setores, setSetores] = useState<{ id: string; name: string }[]>([])
+  const [guicheSetor, setGuicheSetor] = useState<Record<string, string>>({})
 
   // Totem modal
   const [totemModal, setTotemModal] = useState<Totem | null | 'new'>(null)
@@ -109,10 +114,36 @@ export default function UnitConfigPage() {
   const addLinkedQueue = (id: string) => { if (!qLinkedIds.includes(id)) setQLinkedIds([...qLinkedIds, id]) }
   const removeLinkedQueue = (id: string) => setQLinkedIds(qLinkedIds.filter(x => x !== id))
 
+  const carregarSetores = async () => {
+    if (!companyId || isDemoCompany) return
+    const [{ data: s }, { data: gs }] = await Promise.all([
+      supabase.from('company_sectors').select('id,name').eq('company_id', companyId).eq('is_active', true).order('name'),
+      supabase.from('queue_guiches').select('id,sector_id').eq('unit_id', unitId || ''),
+    ])
+    setSetores((s as { id: string; name: string }[]) || [])
+    const m: Record<string, string> = {}
+    ;(gs as { id: string; sector_id: string | null }[] | null)?.forEach(r => { if (r.sector_id) m[r.id] = r.sector_id })
+    setGuicheSetor(m)
+  }
+  useEffect(() => { carregarSetores() }, [companyId, unitId])
+
   const openGuicheModal = (g: Guiche | 'new') => {
-    if (g === 'new') { setGName(''); setGType('external') }
-    else { setGName(g.name); setGType(g.type) }
+    if (g === 'new') { setGName(''); setGType('external'); setGSector('') }
+    else { setGName(g.name); setGType(g.type); setGSector(guicheSetor[g.id] || '') }
+    setNovoSetor(null)
     setGuicheModal(g)
+  }
+
+  const resolverSetor = async (): Promise<string | null | false> => {
+    if (novoSetor !== null) {
+      const nome = novoSetor.trim()
+      if (!nome) { toast.error('Informe o nome do novo setor'); return false }
+      const id = crypto.randomUUID()
+      const { error } = await supabase.from('company_sectors').insert({ id, company_id: companyId, name: nome, is_active: true } as never)
+      if (error) { toast.error('Não foi possível criar o setor: ' + error.message); return false }
+      return id
+    }
+    return gSector || null
   }
 
   const saveGuiche = async () => {
@@ -127,13 +158,21 @@ export default function UnitConfigPage() {
         toast.success('Guichê atualizado')
       }
     } else {
+      const setor = await resolverSetor()
+      if (setor === false) { setSaving(false); return }
+      let gid: string | null = null
       if (guicheModal === 'new') {
         const g = await addGuicheDB(unitId!, gName, gType, companyId)
-        if (g) toast.success('Guichê criado')
+        if (g) { gid = (g as { id: string }).id; toast.success('Guichê criado') }
       } else if (guicheModal) {
         const ok = await updateGuicheDB(guicheModal.id, gName, gType)
-        if (ok) toast.success('Guichê atualizado')
+        if (ok) { gid = guicheModal.id; toast.success('Guichê atualizado') }
       }
+      if (gid) {
+        const { error } = await supabase.from('queue_guiches').update({ sector_id: setor } as never).eq('id', gid)
+        if (error) toast.error('Não foi possível gravar o setor: ' + error.message)
+      }
+      await carregarSetores()
     }
     setSaving(false)
     setGuicheModal(null)
@@ -459,6 +498,24 @@ export default function UnitConfigPage() {
             <div className="space-y-3">
               <div className="space-y-1"><label className="text-sm font-medium text-foreground">Nome *</label><input type="text" value={gName} onChange={e => setGName(e.target.value)} className="w-full rounded-lg border border-input bg-background px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-ring" /></div>
               <div className="space-y-1"><label className="text-sm font-medium text-foreground">Tipo</label><select value={gType} onChange={e => setGType(e.target.value as 'external' | 'internal')} className="w-full rounded-lg border border-input bg-background px-3 py-2.5 text-sm"><option value="external">Externo</option><option value="internal">Interno</option></select></div>
+              {!isDemoCompany && (
+                <div className="space-y-1">
+                  <label className="text-sm font-medium text-foreground">Setor</label>
+                  {novoSetor === null ? (
+                    <select value={gSector} onChange={e => { if (e.target.value === '__novo') setNovoSetor(''); else setGSector(e.target.value) }} className="w-full rounded-lg border border-input bg-background px-3 py-2.5 text-sm">
+                      <option value="">{setores.length ? 'Sem setor' : 'Nenhum setor cadastrado'}</option>
+                      {setores.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
+                      <option value="__novo">+ Criar novo setor</option>
+                    </select>
+                  ) : (
+                    <div className="flex gap-2">
+                      <input autoFocus type="text" value={novoSetor} onChange={e => setNovoSetor(e.target.value)} placeholder="Nome do novo setor" className="flex-1 rounded-lg border border-input bg-background px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-ring" />
+                      <button type="button" onClick={() => setNovoSetor(null)} className="rounded-lg border border-input px-3 text-sm hover:bg-muted">Voltar</button>
+                    </div>
+                  )}
+                  <p className="text-[11px] text-muted-foreground">Setor onde fica este consultório ou sala.</p>
+                </div>
+              )}
             </div>
             <div className="flex gap-3 justify-end">
               <button onClick={() => setGuicheModal(null)} className="rounded-lg border border-input px-4 py-2.5 text-sm font-medium hover:bg-muted">Cancelar</button>

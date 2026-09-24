@@ -1,0 +1,1 @@
+ALTER TABLE public.queue_guiches ADD COLUMN IF NOT EXISTS sector_id text REFERENCES public.company_sectors(id) ON DELETE SET NULL;

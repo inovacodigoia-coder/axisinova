@@ -5864,6 +5864,7 @@ export type Database = {
           id: string
           is_active: boolean
           name: string
+          sector_id: string | null
           type: string
           unit_id: string
         }
@@ -5873,6 +5874,7 @@ export type Database = {
           id?: string
           is_active?: boolean
           name: string
+          sector_id?: string | null
           type?: string
           unit_id: string
         }
@@ -5882,6 +5884,7 @@ export type Database = {
           id?: string
           is_active?: boolean
           name?: string
+          sector_id?: string | null
           type?: string
           unit_id?: string
         }
@@ -5891,6 +5894,13 @@ export type Database = {
             columns: ["company_id"]
             isOneToOne: false
             referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "queue_guiches_sector_id_fkey"
+            columns: ["sector_id"]
+            isOneToOne: false
+            referencedRelation: "company_sectors"
             referencedColumns: ["id"]
           },
           {
