@@ -27,6 +27,8 @@ import {
 } from "@/components/ui/dialog";
 import { Switch } from "@/components/ui/switch";
 import { QuickDoctorModal } from "@/components/lab/attendance/QuickDoctorModal";
+import { Truck, ChevronDown, AlertTriangle } from 'lucide-react';
+import { abreviarNome, APOIO_NOME_MAX, validarApoio, infoCompNumerico, type ApoioInfo } from '@/lib/apoioAtendimento';
 
 interface Props {
   state: any;
@@ -225,6 +227,56 @@ export function LabStep3GuidesProcedures({ state, update }: Props) {
   };
 
 
+  // ── Exames de apoio ────────────────────────────────────────────────
+  const [opcoesPorExame, setOpcoesPorExame] = useState<Record<string, any[]>>({});
+  const carregarOpcoes = async (examId: string): Promise<any[]> => {
+    if (opcoesPorExame[examId]) return opcoesPorExame[examId];
+    try {
+      const { data } = await supabase.rpc('apoio_exame_atendimento' as any, { _exam: examId });
+      const opc = ((data as any)?.opcoes || []) as any[];
+      setOpcoesPorExame(prev => ({ ...prev, [examId]: opc }));
+      return opc;
+    } catch { return []; }
+  };
+
+  const updateExamAt = (index: number, fn: (e: any) => any) => {
+    const newGuides = guides.map(g => g.id === activeGuideId ? { ...g, exams: g.exams.map((e, i) => i === index ? fn(e) : e) } : g);
+    setGuides(newGuides);
+    update({ guides: newGuides });
+  };
+
+  const trocarDestino = (index: number, o: any) => {
+    updateExamAt(index, (e) => {
+      const base = {
+        ...e, bancadaId: o.bancada_id, bancadaNome: o.bancada_nome, bancadaTipo: o.tipo, laudoId: o.laudo_id ?? null,
+        bancadaOrigem: o.atual ? 'cadastro' : 'troca_atendimento',
+        expectedDeliveryDate: o.prazo ? `${o.prazo}T15:00:00.000Z` : e.expectedDeliveryDate,
+        prazoContagem: o.contagem ?? e.prazoContagem,
+      };
+      if (o.tipo === 'apoio') {
+        return { ...base, apoioId: o.apoio_id, apoioNome: o.apoio_nome, apoioCodigo: o.codigo_apoio, apoioPreco: o.preco ?? null,
+          apoioModo: o.modo, apoioInfoComp: o.info_comp || [], apoioCondicoes: o.condicoes || [],
+          apoioInfo: e.apoioId === o.apoio_id ? (e.apoioInfo || {}) : { nome_envio: e.apoioInfo?.nome_envio } };
+      }
+      const { apoioId, apoioNome, apoioCodigo, apoioPreco, apoioModo, apoioInfoComp, apoioCondicoes, apoioInfo, ...rest } = base;
+      return { ...rest, apoioId: null, apoioNome: null };
+    });
+    toast.success(o.tipo === 'apoio' ? `Exame vai para ${o.apoio_nome}` : `Exame será feito internamente (${o.bancada_nome})`);
+  };
+
+  const setApoioInfo = (index: number, patch: Partial<ApoioInfo>, comp?: Record<string, string>) => {
+    updateExamAt(index, (e) => ({ ...e, apoioInfo: { ...(e.apoioInfo || {}), ...patch, ...(comp ? { info_comp: { ...(e.apoioInfo?.info_comp || {}), ...comp } } : {}) } }));
+  };
+
+  const fmtBRL = (v: any) => v == null ? '—' : `R$ ${Number(v).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`;
+  const fmtData = (p?: string) => p ? p.split('-').reverse().join('/') : 'sem prazo';
+
+  const temApoio = guides.some(g => g.exams.some((e: any) => e.bancadaTipo === 'apoio'));
+  const nomePaciente = String(state.patient?.fullName || '');
+  const precisaAbreviar = temApoio && nomePaciente.trim().length > APOIO_NOME_MAX;
+  const nomeEnvio = state.apoioNomeEnvio ?? abreviarNome(nomePaciente);
+  const errosApoio = temApoio ? validarApoio(state) : [];
+
   const handleAddOrUpdateExam = async () => {
     if (!selectedExam) {
       toast.error("Selecione um exame");
@@ -242,6 +294,22 @@ export function LabStep3GuidesProcedures({ state, update }: Props) {
     } catch { destino = null; }
     const destinoPrazo = destino?.tipo === 'apoio' && destino?.prazo ? `${destino.prazo}T15:00:00.000Z` : null;
 
+    // Exame de apoio: opções de troca, informação complementar e condições do catálogo do apoio
+    let apoioExtra: any = {};
+    if (destino?.tipo === 'apoio') {
+      const opcoes = await carregarOpcoes(selectedExam.id);
+      const atual = opcoes.find((o: any) => o.bancada_id === destino.bancada_id);
+      const anterior = editingExamIndex !== null ? activeGuide?.exams[editingExamIndex] : null;
+      apoioExtra = {
+        apoioCodigo: atual?.codigo_apoio ?? destino.codigo_apoio ?? null,
+        apoioPreco: atual?.preco ?? null,
+        apoioModo: atual?.modo ?? null,
+        apoioInfoComp: atual?.info_comp || [],
+        apoioCondicoes: atual?.condicoes || [],
+        apoioInfo: anterior?.apoioInfo || {},
+      };
+    }
+
     const examData = {
       ...selectedExam,
       ...(destino?.bancada_id ? {
@@ -249,6 +317,7 @@ export function LabStep3GuidesProcedures({ state, update }: Props) {
         apoioId: destino.apoio_id ?? null, apoioNome: destino.apoio_nome ?? null, laudoId: destino.laudo_id ?? null,
         bancadaOrigem: 'cadastro',
       } : {}),
+      ...apoioExtra,
       material: examMaterial,
       collected: examCollected,
       isColeta: examCollected, // Consistent with other parts of the app
