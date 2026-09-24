@@ -155,6 +155,16 @@ export default function LabCatalogFormPage() {
   const [confirmationQuestions, setConfirmationQuestions] = useState<string[]>([])
   const [availableEquipments, setAvailableEquipments] = useState<any[]>([])
   const [isMethodologySearchOpen, setIsMethodologySearchOpen] = useState(false)
+  // Bancada Técnica do exame (decide interno x apoio). Troca em exame existente passa pela prontidão/prévia.
+  const [examBancadaId, setExamBancadaId] = useState('')
+  const [originalBancadaId, setOriginalBancadaId] = useState('')
+  const [bancadaPendente, setBancadaPendente] = useState<string | null>(null)
+
+  const handleBancadaChange = (val: string) => {
+    if (!isEditing || !id) { setExamBancadaId(val); return }
+    if (val === originalBancadaId) { setExamBancadaId(val); return }
+    setBancadaPendente(val)
+  }
 
   useEffect(() => {
     const fetchEquipments = async () => {
@@ -227,6 +237,8 @@ export default function LabCatalogFormPage() {
         })
         setParameters(existingExam.parameters || [])
         setConfirmationQuestions(existingExam.confirmationQuestions || [])
+        setExamBancadaId(existingExam.workbenchId || '')
+        setOriginalBancadaId(existingExam.workbenchId || '')
       }
     }
   }, [isEditing, id, exams])
