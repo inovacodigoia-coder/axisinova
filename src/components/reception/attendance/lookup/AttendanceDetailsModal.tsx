@@ -1556,8 +1556,7 @@ export function AttendanceDetailsModal({ open, onClose, onOrderDeleted, order, p
         </AlertDialogContent>
       </AlertDialog>
 
-      {guideEditor && (
-        {trocaPontual && (
+      {trocaPontual && (
         <TrocaBancadaPontualDialog
           open={!!trocaPontual}
           onOpenChange={(v) => { if (!v) setTrocaPontual(null) }}
@@ -1571,7 +1570,9 @@ export function AttendanceDetailsModal({ open, onClose, onOrderDeleted, order, p
           }}
         />
       )}
-      <GuideEditorModal
+
+      {guideEditor && (
+        <GuideEditorModal
           open
           mode={guideEditor.mode}
           onClose={() => setGuideEditor(null)}
