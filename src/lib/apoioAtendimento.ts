@@ -9,10 +9,8 @@ export function abreviarNome(nome: string, max = APOIO_NOME_MAX): string {
   const partes = limpo.split(' ')
   if (partes.length <= 2) return limpo.slice(0, max)
   const conectivos = new Set(['DA', 'DE', 'DO', 'DAS', 'DOS', 'E'])
-  // Índices do meio que podem ser abreviados, começando pelo mais próximo do último nome
-  const meio = partes.map((_, i) => i).slice(1, -1).reverse()
-  // Passo 1: abreviar sobrenomes do meio (não conectivos), da direita para a esquerda
-  for (const i of meio.slice().reverse()) {
+  // Passo 1: abreviar sobrenomes do meio (não conectivos), da esquerda para a direita, até caber
+  for (let i = 1; i < partes.length - 1; i++) {
     if (partes.join(' ').length <= max) break
     if (conectivos.has(partes[i]) || partes[i].length <= 1) continue
     partes[i] = partes[i][0]
