@@ -45,7 +45,7 @@ export const NAV_SECTIONS: NavSection[] = [
       { label: 'Recepção', icon: 'UserCheck', path: '/app/recepcao', module: 'reception' },
       { label: 'Iniciar Cadastro', icon: 'UserPlus', path: '/app/recepcao/cadastro-direto', module: 'reception' },
       { label: 'Buscar Cadastro', icon: 'FileSearch', path: '/app/recepcao?lookup=true', module: 'reception' },
-      { label: 'Triagem', icon: 'Activity', path: '/app/triagem', module: 'reception' },
+      { label: 'Triagem Hospitalar ', icon: 'Activity', path: '/app/triagem', module: 'reception' },
       { label: 'Postos de Coleta', icon: 'BedDouble', path: '/app/postos-coleta', module: 'reception' },
       { label: 'Painel Médico', icon: 'Stethoscope', path: '/app/medico', module: 'medical_record' },
       { label: 'Prontuário', icon: 'FileText', path: '/app/prontuario', module: 'medical_record' },
