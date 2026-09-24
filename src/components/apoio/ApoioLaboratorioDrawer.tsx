@@ -21,7 +21,7 @@ export interface ApoioLab {
   endpoint_url: string | null
   ambiente: string | null
   modo_contingencia: boolean
-  opcoes: { valorReferencia?: number; papelTimbrado?: boolean; grafico?: boolean; dadosConstantes?: boolean } | null
+  opcoes: { valorReferencia?: number; papelTimbrado?: boolean; grafico?: boolean; dadosConstantes?: boolean; prefixoPedido?: string | null } | null
   dias_transporte: number
   prazo_contagem?: 'corridos' | 'uteis'
   guardar_pdf_sempre: boolean
