@@ -154,7 +154,7 @@ export function PrecoImportDialog({ apoio, open, onClose, onDone }: { apoio: { i
         if (vistos.has(codigo)) { err('Código repetido no arquivo'); continue }
         const preco = Number(get('preco').replace(/\s|R\$/g, '').replace(/\.(?=\d{3}(\D|$))/g, '').replace(',', '.'))
         if (!get('preco') || !isFinite(preco) || preco < 0) { err('Preço inválido'); continue }
-        const pz = get('prazo_dias_uteis')
+        const pz = (get('prazo_dias') || get('prazo_dias_uteis'))
         const prazo = pz ? Number(pz) : null
         if (pz && (!Number.isInteger(prazo) || (prazo as number) < 0)) { err('Prazo inválido'); continue }
         const ini = parseData(get('vigencia_inicio')); const fim = parseData(get('vigencia_fim'))
@@ -193,7 +193,7 @@ export function PrecoImportDialog({ apoio, open, onClose, onDone }: { apoio: { i
         erros: previa.erros, ficticia: previa.ficticio, importado_por: user?.id,
       }).select('id').single()
       if (error) throw error
-      const rows = previa.ok.map(o => ({ company_id: apoio.company_id, apoio_id: apoio.id, codigo: o.codigo, preco: o.preco, prazo_dias_uteis: o.prazo, vigencia_inicio: o.inicio, vigencia_fim: o.fim, ficticio: o.ficticio, importacao_id: imp.id }))
+      const rows = previa.ok.map(o => ({ company_id: apoio.company_id, apoio_id: apoio.id, codigo: o.codigo, preco: o.preco, prazo_dias: o.prazo, vigencia_inicio: o.inicio, vigencia_fim: o.fim, ficticio: o.ficticio, importacao_id: imp.id }))
       for (let k = 0; k < rows.length; k += 500) {
         const { error: e2 } = await db.from('apoio_preco').insert(rows.slice(k, k + 500))
         if (e2) throw e2
@@ -211,7 +211,7 @@ export function PrecoImportDialog({ apoio, open, onClose, onDone }: { apoio: { i
       <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto">
         <DialogHeader><DialogTitle>Importar tabela de preços — {apoio?.nome}</DialogTitle></DialogHeader>
         <div className="space-y-3 text-sm">
-          <p className="text-muted-foreground">CSV separado por <b>;</b> (UTF-8): codigo_apoio;descricao;material;origem_admissivel;preco;prazo_dias_uteis;vigencia_inicio;vigencia_fim;FICTICIO. Cada preço vira uma nova vigência; a anterior é fechada, nunca sobrescrita.</p>
+          <p className="text-muted-foreground">CSV separado por <b>;</b> (UTF-8): codigo_apoio;descricao;material;origem_admissivel;preco;prazo_dias_uteis (ou prazo_dias);vigencia_inicio;vigencia_fim;FICTICIO. Cada preço vira uma nova vigência; a anterior é fechada, nunca sobrescrita.</p>
           <label className="flex cursor-pointer items-center gap-2 rounded-xl border border-dashed border-border px-4 py-4 text-primary hover:bg-muted/40">
             {busy && !previa ? <Loader2 className="h-5 w-5 animate-spin" /> : <FileUp className="h-5 w-5" />} {file ? file.name : 'Escolher arquivo CSV'}
             <input type="file" accept=".csv,text/csv" className="hidden" disabled={busy} onChange={e => { const f = e.target.files?.[0]; if (f) analisar(f); e.target.value = '' }} />
