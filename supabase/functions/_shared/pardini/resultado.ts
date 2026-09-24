@@ -5,7 +5,7 @@ import type { Ctx } from './soap.ts'
 export interface Analito { chave: string; nome: string; valor: string; valor_bruto: string; unidade: string; referencia: string; tipo: string; casas: number | null }
 export interface Super {
   codExmApoio: string; codExmLab: string; codigoFormato: string; retificacao: string; materialNome: string; exameNome: string; xml: string
-  conteudo: { analitos: Analito[]; metodo?: string; interpretacao?: string; nota?: string; comentario_patologista?: string; observacao?: string; inf_adicional?: string[]; referencia_texto?: string; material?: string; exame?: string }
+  conteudo: { analitos: Analito[]; metodo?: string; codigo_formato?: string; interpretacao?: string; nota?: string; comentario_patologista?: string; observacao?: string; inf_adicional?: string[]; referencia_texto?: string; material?: string; exame?: string }
 }
 export interface PedidoRes { codPedApoio: string; codPedLab: string; nome: string; retificacao: string; supers: Super[] }
 
@@ -51,6 +51,9 @@ export function parseResultados(xml: string): PedidoRes[] {
         }
       }
       c.referencia_texto = texto(cabS, 'ValorReferenciaBlocoTexto'); c.material = texto(cabS, 'MaterialNome'); c.exame = texto(cabS, 'ExameNome')
+      // Método: o do <Exame> prevalece; se não vier, usa o do <SuperExame>
+      c.metodo = (c.metodo || texto(cabS, 'Metodo') || '').trim() || undefined
+      c.codigo_formato = texto(cabS, 'CodigoFormato') || undefined
       ped.supers.push({
         codExmApoio: texto(cabS, 'CodExmApoio'), codExmLab: texto(cabS, 'CodExmLab'), codigoFormato: texto(cabS, 'CodigoFormato'),
         retificacao: texto(cabS, 'Retificacao'), materialNome: c.material, exameNome: c.exame, xml: s, conteudo: c,
