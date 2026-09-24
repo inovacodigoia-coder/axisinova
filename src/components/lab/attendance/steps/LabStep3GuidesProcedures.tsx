@@ -1,4 +1,5 @@
 import React, { useState, useMemo, useEffect } from 'react';
+import { materialPorNome } from '@/lib/tubos'
 import { Card } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -319,6 +320,7 @@ export function LabStep3GuidesProcedures({ state, update }: Props) {
       } : {}),
       ...apoioExtra,
       material: examMaterial,
+      recipienteId: (selectedExam as any)?.materialTubos?.[materialPorNome(examMaterial)?.id ?? '']?.recipiente_id ?? null,
       collected: examCollected,
       isColeta: examCollected, // Consistent with other parts of the app
       quantity: 1,
