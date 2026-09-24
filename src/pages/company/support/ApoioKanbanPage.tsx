@@ -1,3 +1,4 @@
+import { CatalogoAlertasFaixa } from '@/components/apoio/kanban/CatalogoAlertasFaixa'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { AlertTriangle, ChevronDown, ChevronUp, Copy, FileText, GripVertical, Hand, Lock, MoreHorizontal, Pencil, Plus, RefreshCw, Repeat, Search, Trash2 } from 'lucide-react'
 import { toast } from 'sonner'
