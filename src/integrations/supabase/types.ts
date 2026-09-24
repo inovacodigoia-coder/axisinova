@@ -2567,6 +2567,50 @@ export type Database = {
           },
         ]
       }
+      feriado: {
+        Row: {
+          abrangencia: string
+          company_id: string | null
+          created_at: string
+          data: string
+          descricao: string
+          id: string
+          municipio: string | null
+          uf: string | null
+          updated_at: string
+        }
+        Insert: {
+          abrangencia?: string
+          company_id?: string | null
+          created_at?: string
+          data: string
+          descricao: string
+          id?: string
+          municipio?: string | null
+          uf?: string | null
+          updated_at?: string
+        }
+        Update: {
+          abrangencia?: string
+          company_id?: string | null
+          created_at?: string
+          data?: string
+          descricao?: string
+          id?: string
+          municipio?: string | null
+          uf?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "feriado_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       hospital_sectors: {
         Row: {
           company_id: string
@@ -5413,7 +5457,20 @@ export type Database = {
       }
     }
     Functions: {
-      apoio_dias_uteis: { Args: { _ate: string; _de: string }; Returns: number }
+      apoio_custo_previsto: {
+        Args: { _pedido_exame_id: string }
+        Returns: number
+      }
+      apoio_dias_uteis:
+        | {
+            Args: { _ate: string; _company_id: string; _de: string }
+            Returns: number
+          }
+        | { Args: { _ate: string; _de: string }; Returns: number }
+      apoio_exame_coletado: {
+        Args: { _pedido_exame_id: string }
+        Returns: boolean
+      }
       apoio_modulo_liberado: { Args: { _company_id: string }; Returns: boolean }
       apoio_mudar_status: {
         Args: {
@@ -5444,8 +5501,10 @@ export type Database = {
       auth_release_lockout: { Args: { _lockout_id: string }; Returns: boolean }
       can_edit_support_board: { Args: { _board_id: string }; Returns: boolean }
       can_view_support_board: { Args: { _board_id: string }; Returns: boolean }
+      carregar_feriados_nacionais: { Args: { _ano: number }; Returns: number }
       company_cnpj_exists: { Args: { _cnpj: string }; Returns: boolean }
       company_id_by_cnpj: { Args: { _cnpj: string }; Returns: string }
+      data_pascoa: { Args: { _ano: number }; Returns: string }
       device_public_info: {
         Args: { _kind: string; _slug: string }
         Returns: Json
@@ -5457,6 +5516,10 @@ export type Database = {
           _slug: string
           _username: string
         }
+        Returns: boolean
+      }
+      eh_dia_util: {
+        Args: { _company_id: string; _d: string }
         Returns: boolean
       }
       generate_external_access_code: { Args: never; Returns: string }
@@ -5505,6 +5568,10 @@ export type Database = {
       portal_log_attempt: {
         Args: { p_action?: string; p_code: string; p_success: boolean }
         Returns: undefined
+      }
+      somar_dias_uteis: {
+        Args: { _company_id: string; _data_inicial: string; _dias: number }
+        Returns: string
       }
       totem_create_ticket: {
         Args: { _preferential?: boolean; _queue_line_id: string; _slug: string }

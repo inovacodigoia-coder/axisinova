@@ -9,6 +9,7 @@ import {
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
+import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/context/AuthContext';
 import { useCompanyContext } from '@/context/CompanyContext';
 import {
@@ -191,13 +192,22 @@ export function LabStep3GuidesProcedures({ state, update }: Props) {
     setShowExamModal(true);
   };
 
-  const calculateDeadline = (days: number) => {
-    const date = new Date();
-    date.setDate(date.getDate() + days);
-    return date.toISOString();
+  // Prazo em dias úteis (pula sábados, domingos e feriados) — função única do banco: somar_dias_uteis
+  const calculateDeadline = async (days: number) => {
+    const now = new Date();
+    const pad = (n: number) => String(n).padStart(2, '0');
+    const today = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}`;
+    const { data, error } = await supabase.rpc('somar_dias_uteis', { _company_id: null as any, _data_inicial: today, _dias: days });
+    if (error || !data) {
+      const fallback = new Date(now);
+      fallback.setDate(fallback.getDate() + days);
+      return fallback.toISOString();
+    }
+    const [y, m, d] = String(data).split('-').map(Number);
+    return new Date(y, m - 1, d, now.getHours(), now.getMinutes()).toISOString();
   };
 
-  const handleOpenDeadlineModal = (exam: any) => {
+  const handleOpenDeadlineModal = async (exam: any) => {
     const normalizeToIso = (val: any) => {
       if (!val) return new Date().toISOString();
       if (/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}/.test(val)) return val;
@@ -209,13 +219,13 @@ export function LabStep3GuidesProcedures({ state, update }: Props) {
       return new Date().toISOString();
     };
 
-    setTempDeadline(normalizeToIso(exam.expectedDeliveryDate || calculateDeadline(exam.resultDeadlineDays || 1)));
+    setTempDeadline(normalizeToIso(exam.expectedDeliveryDate || await calculateDeadline(exam.resultDeadlineDays || 1)));
     setTempCollectionDate(new Date().toISOString());
     setShowDeadlineModal(true);
   };
 
 
-  const handleAddOrUpdateExam = () => {
+  const handleAddOrUpdateExam = async () => {
     if (!selectedExam) {
       toast.error("Selecione um exame");
       return;
@@ -231,7 +241,7 @@ export function LabStep3GuidesProcedures({ state, update }: Props) {
       isColeta: examCollected, // Consistent with other parts of the app
       quantity: 1,
       price: activeGuide?.plan === 'PARTICULAR' || convenio?.type === 'private' ? examPrice : undefined,
-      expectedDeliveryDate: examDeadline || (selectedExam.resultDeadlineDays ? calculateDeadline(selectedExam.resultDeadlineDays) : null)
+      expectedDeliveryDate: examDeadline || (selectedExam.resultDeadlineDays ? await calculateDeadline(selectedExam.resultDeadlineDays) : null)
     };
 
     const newGuides = guides.map(g => {

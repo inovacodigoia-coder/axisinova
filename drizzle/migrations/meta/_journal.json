@@ -134,6 +134,13 @@
       "when": 1790209727290,
       "tag": "0018_create_apoio_module",
       "breakpoints": true
+    },
+    {
+      "idx": 19,
+      "version": "7",
+      "when": 1790210555620,
+      "tag": "0019_apoio_permissions_holidays_collection",
+      "breakpoints": true
     }
   ]
 }

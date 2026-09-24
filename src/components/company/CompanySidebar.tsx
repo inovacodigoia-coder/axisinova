@@ -9,7 +9,7 @@ import {
   TrendingUp, Users, Settings, Database, Monitor, Building2,
   LogOut, ChevronLeft, ChevronRight, X, Stethoscope, TicketCheck, ShieldCheck, Ruler, Layout, Beaker as BeakerIcon,
   PieChart, Warehouse, Package as PackageIcon, UserPlus, FileSearch, Menu, Handshake, Droplet, Truck, KanbanSquare, Bot,
-  Activity
+  Activity, CalendarDays
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
@@ -19,7 +19,7 @@ const ICON_MAP: Record<string, any> = {
   Calendar, UserCheck, FileText, DollarSign, FlaskConical, BarChart3,
   TrendingUp, Users, Settings, Database, Monitor, Building2, Stethoscope, Home, TicketCheck, Ruler, Layout, Beaker: BeakerIcon,
   PieChart, Warehouse, Package: PackageIcon, UserPlus, FileSearch, Handshake, Droplet, Truck, KanbanSquare, Bot,
-  Activity
+  Activity, CalendarDays
 }
 
 
@@ -97,6 +97,7 @@ export const NAV_SECTIONS: NavSection[] = [
       { label: 'Metodologias', icon: 'Beaker', path: '/app/configuracoes/laboratorio?tab=methods', module: 'lab_registers' },
       { label: 'Bancadas', icon: 'Layout', path: '/app/configuracoes/laboratorio?tab=workbenches', module: 'lab_registers' },
       { label: 'Equipamentos', icon: 'Monitor', path: '/app/cadastros/equipamentos', module: 'lab_registers' },
+      { label: 'Feriados', icon: 'CalendarDays', path: '/app/configuracoes/laboratorio?tab=holidays', module: 'lab_registers' },
       { label: 'Abreviaturas', icon: 'FileText', path: '/app/configuracoes/abreviaturas', module: 'lab_registers' },
     ],
   },
