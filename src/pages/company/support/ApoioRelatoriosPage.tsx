@@ -24,7 +24,7 @@ const brl = (v: any) => v == null ? '' : Number(v).toLocaleString('pt-BR', { sty
 const dt = (v: any) => v ? new Date(v).toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' }) : ''
 const dd = (v: any) => v ? String(v).slice(0, 10).split('-').reverse().join('/') : ''
 const num = (v: any) => v == null ? '—' : String(v).replace('.', ',')
-const etapa = (s: string) => (STATUS_APOIO as any)?.[s]?.label || (STATUS_APOIO as any)?.[s] || s
+const etapa = (s: string) => STATUS_APOIO[s] || s
 
 interface Rel {
   id: string; titulo: string; desc: string; rpc: string; perm?: 'financeiro' | 'admin'; cols: Coluna[]
@@ -247,7 +247,7 @@ function Relatorio({ rel, args, filtroTxt, permitido, onVoltar }: { rel: Rel; ar
           <Button variant="outline" size="sm" onClick={() => exportarPdf(nomeArq, rel.titulo, filtroTxt, rel.cols, rows, aviso)} className="gap-2"><FileText className="h-4 w-4" /> PDF</Button>
         </div>
       </div>
-      {ficticio && <div className="flex items-center gap-2 rounded-xl border border-warning/40 bg-warning/15 px-4 py-2 text-sm font-semibold text-warning-foreground"><AlertTriangle className="h-4 w-4 text-warning" /> Valores fictícios: há preços de tabela fictícia neste relatório.</div>}
+      {ficticio && <div className="flex items-center gap-2 rounded-xl border border-warning/40 bg-warning/15 px-4 py-2 text-sm font-semibold text-foreground"><AlertTriangle className="h-4 w-4 text-warning" /> Valores fictícios: há preços de tabela fictícia neste relatório.</div>}
       {rel.id === 'log' && (
         <div className="flex flex-wrap items-center gap-3">
           <Input placeholder="Operação (ex.: enviarPedido)" value={operacao} onChange={e => setOperacao(e.target.value)} className="w-64" />
