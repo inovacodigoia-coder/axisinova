@@ -120,7 +120,7 @@ export async function importar(ctx: Ctx, pedidos: PedidoRes[], opts: { reprocess
       })
       if (!pe) {
         res.orfaos++
-        await admin.from('apoio_chamada_log').insert({ company_id: lab.company_id, apoio_id: lab.id, operacao: 'orfao', erro: `Resultado sem pedido: ${p.codPedApoio} / ${s.codExmApoio}`, requisicao: null, resposta: s.xml.slice(0, 50_000) })
+        // Conta compartilhada: resultado de outro integrador — ignorar sem gravar dados do paciente
         continue
       }
       const hash = await sha(s.xml)
