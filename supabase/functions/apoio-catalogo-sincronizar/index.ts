@@ -41,8 +41,9 @@ Deno.serve(async (req) => {
     if (itens.length === 0) return json({ ok: false, error: "Nenhum <EXAME> válido encontrado no arquivo" }, 400);
 
     const admin = createClient(url, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!);
-    const { sync, afetados, alertas } = await aplicarCatalogo(admin, lab, itens, file.name, user.id);
-    return json({ ok: true, atualizado_em: sync.created_at, total: itens.length, terceirizados_afetados: afetados, alertas: alertas.map((a) => a.mensagem) });
+    const r = await aplicarCatalogo(admin, lab, itens, file.name, user.id);
+    await admin.from("apoio_chamada_log").insert({ company_id: lab.company_id, apoio_id: lab.id, operacao: "catalogo", requisicao: `UPLOAD ${file.name.slice(0, 150)}`, resposta: `${itens.length} exames`, http_status: 200, duracao_ms: 0, erro: null }).then(() => {}, () => {});
+    return json({ ok: true, atualizado_em: r.sync.created_at, total: itens.length, novos: r.novos, alterados: r.alterados, desativados: r.desativados, terceirizados_afetados: r.afetados, alertas: r.alertas.map((a) => a.mensagem) });
   } catch (e) {
     console.error(e);
     return json({ ok: false, error: (e as Error).message || "Erro ao processar o catálogo" }, 500);

@@ -119,5 +119,5 @@ export async function aplicarCatalogo(admin: any, lab: { id: string; company_id:
       usuario_id: userId, depois: { total: itens.length, novos, alterados: alterados.length, desativados: desativar.length, afetados },
     }).then(() => {}, () => {});
 
-  return { sync, total: itens.length, afetados, alertas }
+  return { sync, total: itens.length, afetados, alertas, novos, alterados: alterados.length, desativados: desativar.length }
 }
