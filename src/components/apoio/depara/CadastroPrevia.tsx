@@ -11,17 +11,73 @@ export interface Cadastro {
   metodos: { codigo_formato: string; metodo: string | null; ultima_liberacao: string | null }[]
   metodologias: { id: string; name: string; description: string | null }[]
   prazo: { prazo_dias: number | null; ficticio: boolean } | null
+  /** Cadastro de Materiais e De/Para de material do apoio (carregado no cliente) */
+  ctx?: MatCtx
 }
-export interface MatLinha { pardini: string; alvo: string; novo: string; incluir: boolean; jaTem: boolean; semEquivalente: boolean }
+export interface MatCtx {
+  materiais: { id: string; nome: string; recipiente_id: string | null; ativo: boolean }[]
+  recipientes: { id: string; nome: string; sigla: string; aditivo: string | null; ativo: boolean }[]
+  depara: { material_apoio: string; material_id: string }[]
+}
+export interface MatLinha { pardini: string; alvo: string; novo: string; novoRec: string; incluir: boolean; jaTem: boolean; semEquivalente: boolean; materialId: string | null; viaDepara: boolean }
+
+/** Carrega o cadastro de Materiais + De/Para de material do apoio. */
+export async function carregarMatCtx(companyId: string, apoioId: string): Promise<MatCtx> {
+  const [m, r, d] = await Promise.all([
+    db.from('lab_material').select('id, nome, recipiente_id, ativo').eq('company_id', companyId),
+    db.from('lab_recipiente').select('id, nome, sigla, aditivo, ativo').eq('company_id', companyId).order('ordem'),
+    db.from('apoio_depara_material').select('material_apoio, material_id').eq('apoio_id', apoioId),
+  ])
+  return { materiais: m.data ?? [], recipientes: r.data ?? [], depara: d.data ?? [] }
+}
+
+/** Tubo sugerido pelo CONSERVANTE do Pardini (só sugestão). */
+export function sugerirRecipiente(ctx: MatCtx | undefined, conservantes: string[] = []): string {
+  if (!ctx) return ''
+  for (const c of conservantes) {
+    const n = norm(c); if (!n) continue
+    const r = ctx.recipientes.find(x => x.ativo && [x.nome, x.sigla, x.aditivo ?? ''].some(t => { const tt = norm(t); return tt && (tt.includes(n) || n.includes(tt)) }))
+    if (r) return r.id
+  }
+  return ''
+}
+
+/** Cria materiais novos (com tubo) e grava o De/Para de material. Devolve os nomes a adicionar no laudo. */
+export async function gravarMateriais(companyId: string, apoioId: string, ls: MatLinha[], ctx?: MatCtx): Promise<string[]> {
+  const nomes: string[] = []
+  for (const l of ls) {
+    if (!(l.incluir || l.jaTem)) continue
+    let id = l.materialId, nome = l.alvo
+    if (l.alvo === NOVO) {
+      nome = l.novo.trim()
+      const ja = ctx?.materiais.find(m => norm(m.nome) === norm(nome))
+      if (ja) id = ja.id
+      else {
+        const { data, error } = await db.from('lab_material').insert({ company_id: companyId, nome, recipiente_id: l.novoRec }).select('id').single()
+        if (error) throw new Error(`[AJUSTE] Falha ao gravar o material ${nome}`)
+        id = data.id
+      }
+    } else if (!id) id = ctx?.materiais.find(m => norm(m.nome) === norm(nome))?.id ?? null
+    if (id && !l.viaDepara) {
+      await db.from('apoio_depara_material').upsert({ company_id: companyId, apoio_id: apoioId, material_apoio: l.pardini, material_id: id }, { onConflict: 'apoio_id,material_apoio', ignoreDuplicates: true })
+    }
+    if (l.incluir && !l.jaTem && nome) nomes.push(nome)
+  }
+  return nomes
+}
 export interface MetEstado { sugerido: string; outros: string[]; casada: string | null; incluir: boolean; opcao: '' | 'criar' | 'existente' | 'nao'; existente: string; nome: string; desc: string; aberto: boolean }
 
 export function montarMateriais(c: Cadastro): MatLinha[] {
   const exame = Array.isArray(c.materiais_exame) ? c.materiais_exame : []
-  const opcoes = [...new Set([...CHIPS, ...exame])]
+  const cadMats = c.ctx?.materiais.filter(m => m.ativo) ?? []
+  const sug = sugerirRecipiente(c.ctx, c.catalogo?.conservantes ?? [])
   return (c.catalogo?.materiais ?? []).map(p => {
-    const chip = opcoes.find(o => norm(o) === norm(p))
-    const jaTem = !!chip && exame.some(e => norm(e) === norm(chip))
-    return { pardini: p, alvo: chip ?? '', novo: '', incluir: !!chip && !jaTem, jaTem, semEquivalente: !chip }
+    const dp = c.ctx?.depara.find(d => norm(d.material_apoio) === norm(p))
+    const viaDp = dp ? c.ctx!.materiais.find(m => m.id === dp.material_id) : undefined
+    const porNome = viaDp ?? cadMats.find(m => norm(m.nome) === norm(p))
+    const alvo = porNome?.nome ?? (c.ctx ? '' : (CHIPS.find(o => norm(o) === norm(p)) ?? ''))
+    const jaTem = !!alvo && exame.some(e => norm(e) === norm(alvo))
+    return { pardini: p, alvo, novo: '', novoRec: sug, incluir: !!alvo && !jaTem, jaTem, semEquivalente: !alvo, materialId: porNome?.id ?? null, viaDepara: !!viaDp }
   })
 }
 
@@ -53,12 +109,18 @@ export function materiaisFinal(ls: MatLinha[]) {
   return ls.filter(l => l.incluir && !l.jaTem).map(l => (l.alvo === NOVO ? l.novo.trim() : l.alvo)).filter(Boolean)
 }
 
+/** Mensagem de pendência de material (undefined = ok). */
+export function faltaMaterial(ls: MatLinha[]): string | undefined {
+  const l = ls.find(m => m.incluir && m.alvo === NOVO && (!m.novo.trim() || !m.novoRec))
+  if (l) return !l.novo.trim() ? 'Dê um nome ao material novo' : `Escolha o tubo do material ${l.novo.trim()}`
+}
+
 export function CadastroPrevia({ cad, companyId, mats, setMats, met, setMet, onMetodologiaCriada }: {
   cad: Cadastro; companyId: string; mats: MatLinha[]; setMats: (f: (l: MatLinha[]) => MatLinha[]) => void
   met: MetEstado | null; setMet: (m: MetEstado | null) => void; onMetodologiaCriada: (m: { id: string; name: string; description: string | null }) => void
 }) {
   const [salvando, setSalvando] = useState(false)
-  const opcoes = [...new Set([...CHIPS, ...(cad.materiais_exame || [])])]
+  const opcoes = cad.ctx ? cad.ctx.materiais.filter(x => x.ativo).map(x => x.nome) : [...new Set([...CHIPS, ...(cad.materiais_exame || [])])]
   const setMat = (i: number, p: Partial<MatLinha>) => setMats(ls => ls.map((l, j) => (j === i ? { ...l, ...p } : l)))
   const m = met
 
@@ -88,15 +150,21 @@ export function CadastroPrevia({ cad, companyId, mats, setMats, met, setMet, onM
                   <input type="checkbox" disabled={l.jaTem} checked={l.jaTem || l.incluir} onChange={e => setMat(i, { incluir: e.target.checked })} aria-label="Aplicar" />
                   <span className="font-medium">{l.pardini}</span>
                   {l.jaTem ? <span className="text-muted-foreground">→ {l.alvo} (já aceito)</span>
-                    : !l.semEquivalente ? <span className="text-muted-foreground">→ adicionar {l.alvo}</span>
+                    : !l.semEquivalente ? <span className="text-muted-foreground">→ adicionar {l.alvo}{l.viaDepara ? ' (De/Para de material)' : ''}</span>
                     : <>
-                        <span className="text-warning">sem equivalente: escolher</span>
-                        <select value={l.alvo} onChange={e => setMat(i, { alvo: e.target.value, incluir: !!e.target.value })} className="rounded border border-input bg-background px-2 py-1">
-                          <option value="">—</option>
+                        <span className="text-warning">sem equivalente:</span>
+                        <select value={l.alvo} onChange={e => setMat(i, { alvo: e.target.value, incluir: !!e.target.value, materialId: cad.ctx?.materiais.find(x => x.nome === e.target.value)?.id ?? null })} className="rounded border border-input bg-background px-2 py-1">
+                          <option value="">— usar material existente —</option>
                           {opcoes.map(o => <option key={o} value={o}>{o}</option>)}
-                          <option value={NOVO}>Criar material novo…</option>
+                          <option value={NOVO}>Criar material…</option>
                         </select>
-                        {l.alvo === NOVO && <input value={l.novo} onChange={e => setMat(i, { novo: e.target.value })} placeholder="Nome do material" className="rounded border border-input bg-background px-2 py-1" />}
+                        {l.alvo === NOVO && <>
+                          <input value={l.novo} onChange={e => setMat(i, { novo: e.target.value })} placeholder="Nome do material" className="rounded border border-input bg-background px-2 py-1" />
+                          <select value={l.novoRec} onChange={e => setMat(i, { novoRec: e.target.value })} className="rounded border border-input bg-background px-2 py-1">
+                            <option value="">— tubo (obrigatório) —</option>
+                            {(cad.ctx?.recipientes ?? []).filter(r => r.ativo).map(r => <option key={r.id} value={r.id}>{r.nome} ({r.sigla})</option>)}
+                          </select>
+                        </>}
                       </>}
                 </div>
               ))}

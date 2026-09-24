@@ -4,7 +4,7 @@ import { Loader2, Search } from 'lucide-react'
 import { toast } from 'sonner'
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { carregarCatalogo, db, exigePdfSugerido, norm, type CatItem } from './deparaUtils'
-import { CHIPS } from './CadastroPrevia'
+import { carregarMatCtx } from './CadastroPrevia'
 import { terceirizarCompleto } from './autoTerceirizar'
 
 const titulo = (s: string) => s.toLowerCase().replace(/(^|\s)\S/g, c => c.toUpperCase())
@@ -29,7 +29,11 @@ export function CadastrarPardiniDialog({ open, apoios, companyId, onClose }: { o
     if (!sel || !nome.trim()) return
     setBusy(true)
     try {
-      const mats = sel.materiais.map(m => CHIPS.find(c => norm(c) === norm(m))).filter(Boolean) as string[]
+      const ctx = await carregarMatCtx(companyId, apoioId)
+      const mats = sel.materiais.map(m => {
+        const dp = ctx.depara.find(d => norm(d.material_apoio) === norm(m))
+        return (dp && ctx.materiais.find(x => x.id === dp.material_id)?.nome) || ctx.materiais.find(x => x.ativo && norm(x.nome) === norm(m))?.nome
+      }).filter(Boolean) as string[]
       const { data: ex, error } = await db.from('exams').insert({ company_id: companyId, name: nome.trim(), type: 'lab', is_active: true, default_material: mats[0] ?? null, selected_materials: mats }).select('id, internal_code, name, workbench_id, default_material, selected_materials').single()
       if (error) throw error
       const r = await terceirizarCompleto(companyId, apoioId, ex, sel, exigePdfSugerido(sel.descricao))

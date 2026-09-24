@@ -7,7 +7,7 @@ import { supabase } from '@/integrations/supabase/client'
 import {
   Home, Calendar, UserCheck, FileText, DollarSign, FlaskConical, BarChart3,
   TrendingUp, Users, Settings, Database, Monitor, Building2,
-  LogOut, ChevronLeft, ChevronRight, X, Stethoscope, TicketCheck, ShieldCheck, Ruler, Layout, Beaker as BeakerIcon,
+  LogOut, ChevronLeft, ChevronRight, X, Stethoscope, TicketCheck, ShieldCheck, Ruler, Layout, Beaker as BeakerIcon, TestTube,
   PieChart, Warehouse, Package as PackageIcon, UserPlus, FileSearch, Menu, Handshake, Droplet, Truck, KanbanSquare, Bot,
   Activity, CalendarDays, BedDouble
 } from 'lucide-react'
@@ -17,7 +17,7 @@ import type { SystemModule } from '@/types/permissions.types'
 
 const ICON_MAP: Record<string, any> = {
   Calendar, UserCheck, FileText, DollarSign, FlaskConical, BarChart3,
-  TrendingUp, Users, Settings, Database, Monitor, Building2, Stethoscope, Home, TicketCheck, Ruler, Layout, Beaker: BeakerIcon,
+  TrendingUp, Users, Settings, Database, Monitor, Building2, Stethoscope, Home, TicketCheck, Ruler, Layout, Beaker: BeakerIcon, TestTube,
   PieChart, Warehouse, Package: PackageIcon, UserPlus, FileSearch, Handshake, Droplet, Truck, KanbanSquare, Bot,
   Activity, CalendarDays, BedDouble
 }
@@ -95,6 +95,7 @@ export const NAV_SECTIONS: NavSection[] = [
     items: [
       { label: 'Catálogo de Exames', icon: 'FlaskConical', path: '/app/cadastros/catalogo', module: 'lab_registers' },
       { label: 'Unidades de Medida', icon: 'Ruler', path: '/app/configuracoes/laboratorio?tab=units', module: 'lab_registers' },
+      { label: 'Materiais e Tubos', icon: 'TestTube', path: '/app/configuracoes/laboratorio?tab=materiais', module: 'lab_registers' },
       { label: 'Metodologias', icon: 'Beaker', path: '/app/configuracoes/laboratorio?tab=methods', module: 'lab_registers' },
       { label: 'Bancadas', icon: 'Layout', path: '/app/configuracoes/laboratorio?tab=workbenches', module: 'lab_registers' },
       { label: 'Equipamentos', icon: 'Monitor', path: '/app/cadastros/equipamentos', module: 'lab_registers' },

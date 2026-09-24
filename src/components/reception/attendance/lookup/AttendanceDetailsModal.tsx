@@ -11,7 +11,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import type { AttendanceOrder } from '@/types/attendance-cadastro.types'
 import type { Patient } from '@/types/patient.types'
 import type { LabAttendanceOrder } from '@/types/lab.types'
-import { TUBE_TYPES } from '@/types/lab.types'
+import { tuboDoExame, tubosDosExames, useMateriaisTubos, etiquetaTubo } from '@/lib/tubos'
 import { cn } from '@/lib/utils'
 import { AttendancePrintSelectionModal } from '../print/AttendancePrintSelectionModal'
 import { SampleLabelsPrintModal } from '../print/SampleLabelsPrintModal'
@@ -70,6 +70,7 @@ export function AttendanceDetailsModal({ open, onClose, onOrderDeleted, order, p
   const { exams: catalogExams, workbenches } = useRegisters()
   const { isSuperAdmin, isCompanyAdmin } = usePermissions()
   const { user: authUser } = useAuth()
+  const cadTubos = useMateriaisTubos(authUser?.companyId)
   const isAdmin = isSuperAdmin || isCompanyAdmin
   const [clientModalMode, setClientModalMode] = useState<ClientInfoMode | null>(null)
   const [currentPatient, setCurrentPatient] = useState<Patient | undefined>(patient)
@@ -188,33 +189,16 @@ export function AttendanceDetailsModal({ open, onClose, onOrderDeleted, order, p
     }];
   }, [labOrder, order, guidesState]);
 
-  // Normaliza o material do exame para o tipo de tubo correspondente
-  const tubeTypeForMaterial = (material: any): string => {
-    const m = String(material || '')
-      .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
-      .toLowerCase().trim();
-    if (!m) return 'gel';
-    if (m.includes('fezes') || m.includes('fecal')) return 'fezes';
-    if (m.includes('escarro') || m.includes('secrec') || m.includes('swab') || m.includes('saliva')) return 'escarro';
-    if (m.includes('urina')) return 'urina';
-    if (m.includes('edta') || m.includes('sangue total') || m.includes('hemograma')) return 'edta';
-    if (m.includes('citrat') || m.includes('coagulacao')) return 'citrato';
-    if (m.includes('plasma')) return 'citrato';
-    if (m.includes('soro') || m.includes('gel') || m.includes('sangue')) return 'gel';
-    if (m.includes('frasco')) return 'urina';
-    return 'gel';
-  };
+  const tubeTypeForMaterial = (e: any): string => tuboDoExame(e);
 
   // Exames pertencentes a cada tubo/amostra
   const examsForTube = (tube: any) =>
-    orderExams.filter((e: any) => tubeTypeForMaterial(e.material) === tube.type);
+    orderExams.filter((e: any) => tubeTypeForMaterial(e) === tube.type);
 
   // Derived tubes list — considera todas as bancadas/materiais do pedido
   const patientTubes = useMemo(() => {
-    const types = new Set(orderExams.map((e: any) => tubeTypeForMaterial(e.material)));
-    const list = TUBE_TYPES.filter(tube => types.has(tube.type));
-    return list.length > 0 ? list : TUBE_TYPES.filter(t => t.type === 'gel');
-  }, [orderExams]);
+    return tubosDosExames(orderExams);
+  }, [orderExams, cadTubos]);
 
   // Bancada real do exame (catálogo -> lab_workbenches)
   const findCatalog = (e: any) =>
@@ -241,7 +225,7 @@ export function AttendanceDetailsModal({ open, onClose, onOrderDeleted, order, p
   };
 
   // ---- Coleta por amostra ----
-  const matchesTube = (material: any, tube: any) => tubeTypeForMaterial(material) === tube.type;
+  const matchesTube = (examOrMaterial: any, tube: any) => tubeTypeForMaterial(examOrMaterial) === tube.type;
 
   const tubeIsCollected = (tube: any) => {
     const exams = examsForTube(tube);
@@ -268,7 +252,7 @@ export function AttendanceDetailsModal({ open, onClose, onOrderDeleted, order, p
       const nextGuides = (guidesState || []).map((g: any) => ({
         ...g,
         exams: (g.exams || []).map((e: any) =>
-          !e.collected && pendingSelectedTubes.some(t => matchesTube(e.material, t))
+          !e.collected && pendingSelectedTubes.some(t => matchesTube(e, t))
             ? { ...e, collected: true, collectedAt: now }
             : e
         )
@@ -302,7 +286,7 @@ export function AttendanceDetailsModal({ open, onClose, onOrderDeleted, order, p
       const nextGuides = (guidesState || []).map((g: any) => ({
         ...g,
         exams: (g.exams || []).map((e: any) =>
-          collectedSelectedTubes.some(t => matchesTube(e.material, t))
+          collectedSelectedTubes.some(t => matchesTube(e, t))
             ? { ...e, collected: false, collectedAt: null, isColeta: false }
             : e
         )
@@ -1211,11 +1195,11 @@ export function AttendanceDetailsModal({ open, onClose, onOrderDeleted, order, p
                             />
                           </td>
                           <td className="px-4 py-3">
-                            <span className={cn("text-white rounded-full px-2 py-0.5 text-[9px] font-bold", tube.color)}>
+                            <span className={cn("text-white rounded-full px-2 py-0.5 text-[9px] font-bold", tube.color)} style={tube.color ? undefined : { backgroundColor: (tube as any).hex }}>
                               {sampleCodeFor(tubeIdx + 1)}
                             </span>
                           </td>
-                          <td className="px-4 py-3 text-muted-foreground font-bold">{tube.label.toUpperCase()} ({tube.type.toUpperCase()})</td>
+                          <td className="px-4 py-3 text-muted-foreground font-bold">{etiquetaTubo(tube).material.toUpperCase()}{etiquetaTubo(tube).tube ? ` (${etiquetaTubo(tube).tube})` : ""}</td>
                           <td className="px-4 py-3 text-muted-foreground uppercase">{tubeWorkbench(tube)}</td>
                           <td className="px-4 py-3 text-muted-foreground uppercase">
                             {tube.type === 'urina' ? 'URINA'
@@ -1417,8 +1401,7 @@ export function AttendanceDetailsModal({ open, onClose, onOrderDeleted, order, p
           .map(({ tube, idx }) => ({
             sampleId: sampleCodeFor(idx + 1),
             labelIndex: idx + 1,
-            material: tube.label,
-            tube: tube.type,
+            ...etiquetaTubo(tube),
             workbench: tubeWorkbench(tube),
             examRefs: examsForTube(tube).map(examRefOf),
           }))}

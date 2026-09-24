@@ -752,6 +752,58 @@ export type Database = {
           },
         ]
       }
+      apoio_depara_material: {
+        Row: {
+          apoio_id: string
+          company_id: string
+          created_at: string
+          id: string
+          material_apoio: string
+          material_id: string
+          mnmat: string | null
+        }
+        Insert: {
+          apoio_id: string
+          company_id: string
+          created_at?: string
+          id?: string
+          material_apoio: string
+          material_id: string
+          mnmat?: string | null
+        }
+        Update: {
+          apoio_id?: string
+          company_id?: string
+          created_at?: string
+          id?: string
+          material_apoio?: string
+          material_id?: string
+          mnmat?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "apoio_depara_material_apoio_id_fkey"
+            columns: ["apoio_id"]
+            isOneToOne: false
+            referencedRelation: "apoio_laboratorio"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "apoio_depara_material_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "apoio_depara_material_material_id_fkey"
+            columns: ["material_id"]
+            isOneToOne: false
+            referencedRelation: "lab_material"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       apoio_documento: {
         Row: {
           company_id: string
@@ -3039,6 +3091,7 @@ export type Database = {
           exam_id: string
           id: string
           is_active: boolean
+          material_tubos: Json
           methodology: string | null
           name: string
           parameters: Json
@@ -3060,6 +3113,7 @@ export type Database = {
           exam_id: string
           id?: string
           is_active?: boolean
+          material_tubos?: Json
           methodology?: string | null
           name: string
           parameters?: Json
@@ -3081,6 +3135,7 @@ export type Database = {
           exam_id?: string
           id?: string
           is_active?: boolean
+          material_tubos?: Json
           methodology?: string | null
           name?: string
           parameters?: Json
@@ -3266,6 +3321,7 @@ export type Database = {
           interfacing_parameters: Json | null
           internal_code: string | null
           is_active: boolean
+          material_tubos: Json
           measurement_unit: string | null
           methodology: string | null
           name: string
@@ -3301,6 +3357,7 @@ export type Database = {
           interfacing_parameters?: Json | null
           internal_code?: string | null
           is_active?: boolean
+          material_tubos?: Json
           measurement_unit?: string | null
           methodology?: string | null
           name: string
@@ -3336,6 +3393,7 @@ export type Database = {
           interfacing_parameters?: Json | null
           internal_code?: string | null
           is_active?: boolean
+          material_tubos?: Json
           measurement_unit?: string | null
           methodology?: string | null
           name?: string
@@ -4223,6 +4281,63 @@ export type Database = {
           },
         ]
       }
+      lab_material: {
+        Row: {
+          ativo: boolean
+          company_id: string
+          created_at: string
+          descricao: string | null
+          id: string
+          legado: boolean
+          nome: string
+          ordem: number
+          recipiente_id: string | null
+          sigla: string | null
+          updated_at: string
+        }
+        Insert: {
+          ativo?: boolean
+          company_id: string
+          created_at?: string
+          descricao?: string | null
+          id?: string
+          legado?: boolean
+          nome: string
+          ordem?: number
+          recipiente_id?: string | null
+          sigla?: string | null
+          updated_at?: string
+        }
+        Update: {
+          ativo?: boolean
+          company_id?: string
+          created_at?: string
+          descricao?: string | null
+          id?: string
+          legado?: boolean
+          nome?: string
+          ordem?: number
+          recipiente_id?: string | null
+          sigla?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "lab_material_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "lab_material_recipiente_id_fkey"
+            columns: ["recipiente_id"]
+            isOneToOne: false
+            referencedRelation: "lab_recipiente"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       lab_methods: {
         Row: {
           company_id: string
@@ -4254,6 +4369,62 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "lab_methods_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      lab_recipiente: {
+        Row: {
+          aditivo: string | null
+          ativo: boolean
+          company_id: string
+          cor_hex: string | null
+          cor_tampa: string | null
+          created_at: string
+          id: string
+          nome: string
+          observacao: string | null
+          ordem: number
+          sigla: string
+          updated_at: string
+          volume_ml: number | null
+        }
+        Insert: {
+          aditivo?: string | null
+          ativo?: boolean
+          company_id: string
+          cor_hex?: string | null
+          cor_tampa?: string | null
+          created_at?: string
+          id?: string
+          nome: string
+          observacao?: string | null
+          ordem?: number
+          sigla: string
+          updated_at?: string
+          volume_ml?: number | null
+        }
+        Update: {
+          aditivo?: string | null
+          ativo?: boolean
+          company_id?: string
+          cor_hex?: string | null
+          cor_tampa?: string | null
+          created_at?: string
+          id?: string
+          nome?: string
+          observacao?: string | null
+          ordem?: number
+          sigla?: string
+          updated_at?: string
+          volume_ml?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "lab_recipiente_company_id_fkey"
             columns: ["company_id"]
             isOneToOne: false
             referencedRelation: "companies"
@@ -7641,6 +7812,15 @@ export type Database = {
       }
       is_company_manager: { Args: { _user_id: string }; Returns: boolean }
       lab_equipments_master_company: { Args: never; Returns: string }
+      lab_materiais_seed: { Args: { _company: string }; Returns: undefined }
+      lab_materiais_uso: {
+        Args: never
+        Returns: {
+          exames: number
+          material_id: string
+        }[]
+      }
+      lab_norm: { Args: { t: string }; Returns: string }
       next_attendance_order_number: {
         Args: { _company_id: string; _origin_code: string; _origin_id: string }
         Returns: string

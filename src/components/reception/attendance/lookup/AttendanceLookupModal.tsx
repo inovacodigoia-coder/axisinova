@@ -10,7 +10,7 @@ import { useAttendanceCadastro } from '@/hooks/useAttendanceCadastro'
 import { usePatients } from '@/hooks/usePatients'
 import { useLabSettings } from '@/hooks/useLabSettings'
 import { useCompanySequenceId } from '@/hooks/useCompanySequenceId'
-import { TUBE_TYPES } from '@/types/lab.types'
+import { tubosDosExames, useMateriaisTubos } from '@/lib/tubos'
 import { buildSampleCode, generateSampleHash } from '@/utils/orderHash'
 import { AttendancePrintModal } from '../print/AttendancePrintModal'
 import { AttendanceDetailsModal } from './AttendanceDetailsModal'
@@ -37,29 +37,10 @@ const DATE_PRESETS: { value: DatePreset; label: string }[] = [
   { value: 'all', label: 'Todos' },
 ]
 
-/** Mesma regra do modal de detalhes: material do exame -> tipo de tubo/amostra */
-function tubeTypeForMaterial(material: any): string {
-  const m = String(material || '')
-    .normalize('NFD').replace(/[̀-ͯ]/g, '')
-    .toLowerCase().trim()
-  if (!m) return 'gel'
-  if (m.includes('fezes') || m.includes('fecal')) return 'fezes'
-  if (m.includes('escarro') || m.includes('secrec') || m.includes('swab') || m.includes('saliva')) return 'escarro'
-  if (m.includes('urina')) return 'urina'
-  if (m.includes('edta') || m.includes('sangue total') || m.includes('hemograma')) return 'edta'
-  if (m.includes('citrat') || m.includes('coagulacao')) return 'citrato'
-  if (m.includes('plasma')) return 'citrato'
-  if (m.includes('soro') || m.includes('gel') || m.includes('sangue')) return 'gel'
-  if (m.includes('frasco')) return 'urina'
-  return 'gel'
-}
-
 /** Códigos e hashes alfanuméricos das amostras (etiquetas) de um pedido */
 function sampleCodesAndHashesForOrder(order: AttendanceOrder, companySequenceId: number | null): string[] {
   const exams = (order.labGuides || []).flatMap((g: any) => g?.exams || [])
-  const types = new Set(exams.map((e: any) => tubeTypeForMaterial(e?.material)))
-  const tubes = TUBE_TYPES.filter((t: any) => types.has(t.type))
-  const list = tubes.length > 0 ? tubes : (exams.length > 0 ? TUBE_TYPES.filter((t: any) => t.type === 'gel') : [])
+  const list = tubosDosExames(exams)
   const out: string[] = []
   list.forEach((_: any, idx: number) => {
     const code = buildSampleCode(order.orderNumber, idx + 1, companySequenceId)
@@ -135,6 +116,7 @@ const ATTENDANCE_STATUS_LABELS: Record<string, { label: string, color: string }>
 
 export function AttendanceLookupModal({ open, onClose, unitName, guicheName, onAddProcedure }: AttendanceLookupModalProps) {
   const { user } = useAuth()
+  useMateriaisTubos(user?.companyId)
   // Somente usuários com a atribuição ADM (checkbox no modal Editar Usuário) veem pedidos excluídos
   const isAdmin = user?.isAdmin === true || user?.role === 'super_admin'
   const { orders, updateOrder, loading } = useAttendanceCadastro()

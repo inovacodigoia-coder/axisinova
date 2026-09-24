@@ -86,6 +86,8 @@ export interface Exam {
   }[]
   selectedMaterials?: string[]
   defaultMaterial?: string
+  /** { material_id: { recipiente_id, volume_ml } } — tubo específico deste exame */
+  materialTubos?: Record<string, { recipiente_id?: string | null; volume_ml?: number | null }>
 }
 
 export interface Procedure {

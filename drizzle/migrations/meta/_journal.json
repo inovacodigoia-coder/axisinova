@@ -351,6 +351,13 @@
       "when": 1790267319298,
       "tag": "0049_apoio_ajuste_materiais_no_laudo",
       "breakpoints": true
+    },
+    {
+      "idx": 50,
+      "version": "7",
+      "when": 1790268753522,
+      "tag": "0050_materiais_e_tubos",
+      "breakpoints": true
     }
   ]
 }
