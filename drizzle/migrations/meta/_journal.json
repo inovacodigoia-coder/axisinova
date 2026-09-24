@@ -344,6 +344,13 @@
       "when": 1790266395224,
       "tag": "0048_fix_apoio_laudo_ajustar_extras",
       "breakpoints": true
+    },
+    {
+      "idx": 49,
+      "version": "7",
+      "when": 1790267319298,
+      "tag": "0049_apoio_ajuste_materiais_no_laudo",
+      "breakpoints": true
     }
   ]
 }
