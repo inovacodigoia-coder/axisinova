@@ -101,7 +101,7 @@ export default function LabAnalisePage() {
   const { availableOrigins: establishments } = useCompanyContext();
   
   const [loading, setLoading] = useState(true);
-  const [search, setSearch] = useState('');
+  const [search, setSearch] = useState(() => new URLSearchParams(window.location.search).get('pedido') || '');
   const [protocolSearch, setProtocolSearch] = useState('');
   const [selectedOrderId, setSelectedOrderId] = useState<string | null>(null);
   const [selectedExamId, setSelectedExamId] = useState<string | null>(null);
