@@ -94,11 +94,19 @@ export async function importar(ctx: Ctx, pedidos: PedidoRes[], opts: { reprocess
       // De/Para
       const { data: dp } = await admin.from('apoio_depara_exame').select('id, codigo_formato').eq('apoio_id', lab.id).eq('exame_id', pe.exame_id).eq('ativo', true).order('prioridade').limit(1).maybeSingle()
       let situacao = 'importado'
-      if (dp?.codigo_formato && s.codigoFormato && dp.codigo_formato !== s.codigoFormato) situacao = 'pendente_formato'
       const mapa = new Map<string, { parametro_id: string | null; ignorar: boolean }>()
       if (dp) {
+        // De/Para escolhido pelo CodigoFormato do SuperExame (um exame tem vários formatos vigentes)
         const { data: an } = await admin.from('apoio_depara_analito').select('chave_analito, parametro_id, ignorar').eq('depara_exame_id', dp.id).eq('codigo_formato', s.codigoFormato || dp.codigo_formato || '')
-        for (const a of an ?? []) mapa.set(a.chave_analito, a)
+        for (const a of an ?? []) if (a.ignorar || a.parametro_id) mapa.set(a.chave_analito, a)
+      }
+      if (!mapa.size) {
+        // Formato novo/não mapeado: não preenche nada, retém e avisa quem gerencia o De/Para
+        situacao = 'pendente_formato'
+        mapa.clear()
+        const desc = `Formato novo do apoio: revisar De/Para (${s.codExmApoio} · formato ${s.codigoFormato || '?'})`
+        const { data: ja } = await admin.from('apoio_acao_pendente').select('id').eq('pedido_exame_id', pe.id).eq('tipo', 'revisar_depara').is('concluida_em', null).limit(1)
+        if (!ja?.length) await admin.from('apoio_acao_pendente').insert({ company_id: pe.company_id, pedido_exame_id: pe.id, tipo: 'revisar_depara', descricao: desc })
       }
       if (situacao === 'importado' && s.conteudo.analitos.some((a) => { const m = mapa.get(a.chave); return !m || (!m.ignorar && !m.parametro_id) })) situacao = 'pendente_depara'
 
