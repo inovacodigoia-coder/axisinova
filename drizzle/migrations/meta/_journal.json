@@ -253,6 +253,13 @@
       "when": 1790215494202,
       "tag": "0035_apoio_kanban_lista_fix",
       "breakpoints": true
+    },
+    {
+      "idx": 36,
+      "version": "7",
+      "when": 1790215964036,
+      "tag": "0036_apoio_analise_prompt9",
+      "breakpoints": true
     }
   ]
 }

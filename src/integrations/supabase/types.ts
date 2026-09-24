@@ -590,6 +590,7 @@ export type Database = {
       }
       apoio_depara_analito: {
         Row: {
+          casas_decimais: number | null
           chave_analito: string
           codigo_formato: string
           company_id: string
@@ -602,6 +603,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          casas_decimais?: number | null
           chave_analito: string
           codigo_formato?: string
           company_id: string
@@ -614,6 +616,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          casas_decimais?: number | null
           chave_analito?: string
           codigo_formato?: string
           company_id?: string
@@ -1549,6 +1552,8 @@ export type Database = {
       }
       apoio_resultado_versao: {
         Row: {
+          ciente_em: string | null
+          ciente_por: string | null
           cod_exm_apoio: string | null
           cod_ped_apoio: string | null
           codigo_formato: string | null
@@ -1557,16 +1562,20 @@ export type Database = {
           conteudo: Json | null
           created_at: string
           digitado_por: string | null
+          executor_informado: string | null
           hash: string | null
           id: string
           origem: string
           pedido_exame_id: string | null
+          resolucao: Json | null
           retificacao: string | null
           situacao: string
           updated_at: string
           xml_original: string | null
         }
         Insert: {
+          ciente_em?: string | null
+          ciente_por?: string | null
           cod_exm_apoio?: string | null
           cod_ped_apoio?: string | null
           codigo_formato?: string | null
@@ -1575,16 +1584,20 @@ export type Database = {
           conteudo?: Json | null
           created_at?: string
           digitado_por?: string | null
+          executor_informado?: string | null
           hash?: string | null
           id?: string
           origem: string
           pedido_exame_id?: string | null
+          resolucao?: Json | null
           retificacao?: string | null
           situacao?: string
           updated_at?: string
           xml_original?: string | null
         }
         Update: {
+          ciente_em?: string | null
+          ciente_por?: string | null
           cod_exm_apoio?: string | null
           cod_ped_apoio?: string | null
           codigo_formato?: string | null
@@ -1593,10 +1606,12 @@ export type Database = {
           conteudo?: Json | null
           created_at?: string
           digitado_por?: string | null
+          executor_informado?: string | null
           hash?: string | null
           id?: string
           origem?: string
           pedido_exame_id?: string | null
+          resolucao?: Json | null
           retificacao?: string | null
           situacao?: string
           updated_at?: string
@@ -3651,6 +3666,7 @@ export type Database = {
           protocol: string | null
           released_at: string | null
           released_by: string | null
+          retificado_em: string | null
           status: string
           typed_at: string | null
           typed_by: string | null
@@ -3674,6 +3690,7 @@ export type Database = {
           protocol?: string | null
           released_at?: string | null
           released_by?: string | null
+          retificado_em?: string | null
           status?: string
           typed_at?: string | null
           typed_by?: string | null
@@ -3697,6 +3714,7 @@ export type Database = {
           protocol?: string | null
           released_at?: string | null
           released_by?: string | null
+          retificado_em?: string | null
           status?: string
           typed_at?: string | null
           typed_by?: string | null
@@ -5783,6 +5801,53 @@ export type Database = {
           },
         ]
       }
+      user_notifications: {
+        Row: {
+          action_route: string | null
+          category: string
+          company_id: string
+          created_at: string
+          id: string
+          message: string
+          priority: string
+          read_at: string | null
+          title: string
+          user_id: string
+        }
+        Insert: {
+          action_route?: string | null
+          category?: string
+          company_id: string
+          created_at?: string
+          id?: string
+          message: string
+          priority?: string
+          read_at?: string | null
+          title: string
+          user_id: string
+        }
+        Update: {
+          action_route?: string | null
+          category?: string
+          company_id?: string
+          created_at?: string
+          id?: string
+          message?: string
+          priority?: string
+          read_at?: string | null
+          title?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_notifications_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       user_origin_preferences: {
         Row: {
           company_id: string
@@ -5949,6 +6014,76 @@ export type Database = {
         Args: { _id: string; _observacao: string }
         Returns: undefined
       }
+      apoio_analise__pe: {
+        Args: { _pe: string }
+        Returns: {
+          amostra_id: string | null
+          apoio_id: string
+          cod_ped_apoio: string | null
+          codigo_apoio: string | null
+          company_id: string
+          created_at: string
+          critico: boolean
+          custo_previsto: number | null
+          erro: Json | null
+          exame_id: string | null
+          id: string
+          info_complementar: Json | null
+          modo: string
+          pedido_id: string
+          prazo_contagem: string
+          prazo_previsto: string | null
+          preco_ficticio: boolean
+          recipiente_id: string | null
+          remessa_id: string | null
+          responsavel_id: string | null
+          sem_prazo_apoio: boolean
+          sequencial: number
+          status: Database["public"]["Enums"]["apoio_status"]
+          status_apoio_cod: string | null
+          status_apoio_desc: string | null
+          status_apoio_em: string | null
+          updated_at: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "apoio_pedido_exame"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      apoio_analise__status: {
+        Args: {
+          _motivo: string
+          _origem: string
+          _para: Database["public"]["Enums"]["apoio_status"]
+          _r: Database["public"]["Tables"]["apoio_pedido_exame"]["Row"]
+        }
+        Returns: undefined
+      }
+      apoio_analise_anexar_pdf: {
+        Args: { _path: string; _pe: string }
+        Returns: string
+      }
+      apoio_analise_ciente_retificacao: {
+        Args: { _pe: string }
+        Returns: undefined
+      }
+      apoio_analise_concluir: {
+        Args: {
+          _executor?: string
+          _nota?: string
+          _pe: string
+          _valores?: Json
+        }
+        Returns: Json
+      }
+      apoio_analise_estado: { Args: { _pedidos: string[] }; Returns: Json }
+      apoio_analise_liberar: { Args: { _pe: string }; Returns: Json }
+      apoio_analise_resolver_divergencia: {
+        Args: { _motivo: string; _pe: string; _usar: string }
+        Returns: undefined
+      }
       apoio_cancelar_pedido_exame: {
         Args: {
           _cancelar_no_apoio?: boolean
@@ -6095,6 +6230,20 @@ export type Database = {
           tem_pendencia: boolean
           unidade_id: string
           updated_at: string
+        }[]
+      }
+      apoio_laudos_resumo: {
+        Args: never
+        Returns: {
+          apoio_nome: string
+          exame_id: string
+          executor: string
+          exige_pdf: boolean
+          liberado: boolean
+          pdf_path: string
+          pedido_id: string
+          prazo: string
+          status: Database["public"]["Enums"]["apoio_status"]
         }[]
       }
       apoio_manual_buscar: {
