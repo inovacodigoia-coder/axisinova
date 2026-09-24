@@ -120,6 +120,26 @@ export default function LabAnalisePage() {
   const [selectedStatuses, setSelectedStatuses] = useState<string[]>([]);
   const [showFilters, setShowFilters] = useState(false);
   const [quickFiltersOpen, setQuickFiltersOpen] = useState(false);
+  // Exames de apoio (modo e alertas) por pedido:exame
+  const [apoioModos, setApoioModos] = useState<Record<string, { modo: string; alerta: boolean }>>({});
+  useEffect(() => {
+    supabase.rpc('apoio_laudos_resumo' as any).then(async ({ data }) => {
+      const m: Record<string, { modo: string; alerta: boolean }> = {};
+      const ids = ((data as any[]) || []).map(r => r.pedido_id);
+      const { data: pes } = ids.length ? await supabase.from('apoio_pedido_exame').select('id, pedido_id, exame_id, modo, status').in('pedido_id', Array.from(new Set(ids))).neq('status', 'cancelado') : { data: [] as any[] };
+      const peIds = (pes || []).map((p: any) => p.id);
+      const { data: vers } = peIds.length ? await supabase.from('apoio_resultado_versao').select('pedido_exame_id, situacao, retificacao, origem').in('pedido_exame_id', peIds) : { data: [] as any[] };
+      (pes || []).forEach((p: any) => {
+        const vs = (vers || []).filter((v: any) => v.pedido_exame_id === p.id);
+        const ultimo = vs.find((v: any) => !['substituido', 'descartado'].includes(v.situacao));
+        m[`${p.pedido_id}:${p.exame_id}`] = {
+          modo: ultimo?.origem === 'manual' ? 'manual' : p.modo === 'manual' && !ultimo ? 'manual' : 'automatico',
+          alerta: p.status === 'importado_com_pendencia' || vs.some((v: any) => v.situacao === 'divergente' || !['', 'N', '0'].includes(String(v.retificacao || ''))),
+        };
+      });
+      setApoioModos(m);
+    });
+  }, [orders]);
 
   useEffect(() => {
     const timer = setTimeout(() => setLoading(false), 800);
@@ -208,11 +228,18 @@ export default function LabAnalisePage() {
       // é agrupada por paciente. O filtro de bancada afeta quais exames aparecem
       // dentro do grupo do paciente.
       const matchesWorkbench = selectedWorkbenches.length === 0 || 
+                               selectedWorkbenches.includes(exam.bancadaId || '') ||
                                selectedWorkbenches.includes(exam.workbenchId || exam.workbench || '');
       
       // Filtro de Origem
-      const matchesOrigin = selectedEstablishments.length === 0 || 
-                             selectedEstablishments.includes(exam.originId || '');
+      const apoioModo = apoioModos[`${exam.orderId}:${exam.examId}`];
+      const origensReais = selectedEstablishments.filter(o => !o.startsWith('__apoio'));
+      const querApoioInt = selectedEstablishments.includes('__apoio_integracao');
+      const querApoioMan = selectedEstablishments.includes('__apoio_manual');
+      const matchesOrigin = selectedEstablishments.length === 0 || (
+        (origensReais.length === 0 || origensReais.includes(exam.originId || '')) &&
+        (!(querApoioInt || querApoioMan) || (!!apoioModo && ((querApoioInt && apoioModo.modo !== 'manual') || (querApoioMan && apoioModo.modo === 'manual'))))
+      );
 
       // Filtro de Período baseado na data de atendimento (registeredAt)
       const examDate = parseLocalDate(exam.registeredAt);
@@ -496,6 +523,17 @@ export default function LabAnalisePage() {
                               </Button>
                             </DropdownMenuTrigger>
                             <DropdownMenuContent className="w-56">
+                              {[{ id: '__apoio_integracao', name: 'Apoio (integração)' }, { id: '__apoio_manual', name: 'Apoio (manual)' }].map(est => (
+                                <DropdownMenuCheckboxItem
+                                  key={est.id}
+                                  checked={selectedEstablishments.includes(est.id)}
+                                  onCheckedChange={(checked) => {
+                                    setSelectedEstablishments(prev => checked ? [...prev, est.id] : prev.filter(id => id !== est.id));
+                                  }}
+                                >
+                                  {est.name}
+                                </DropdownMenuCheckboxItem>
+                              ))}
                               {establishments.map(est => (
                                 <DropdownMenuCheckboxItem
                                   key={est.id}

@@ -1772,7 +1772,7 @@ export function ResultEntryModal({
                   <div className="p-6 space-y-6 border-t border-slate-100 animate-in slide-in-from-top-2 duration-200">
                     <InstrumentGraphicsSection protocol={patient.protocol} />
                     {patient.exams.map((exam: any) => {
-                      const hasResult = getParams(exam).some((p: any) => 
+                      const hasResult = (apoioDe(exam)?.exige_pdf && apoioDe(exam)!.docs.some(d => d.tipo !== 'grafico')) || getParams(exam).some((p: any) => 
                         (results[`${exam.id}_${p.id}`] || '').trim() !== ''
                       );
                       const isDigitized = examStatuses[exam.id] === 'digitized' && hasResult;
