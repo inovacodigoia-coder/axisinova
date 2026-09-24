@@ -5,7 +5,8 @@ import { Search, ChevronDown, User, Beaker, ClipboardList, Printer, Check, X, Al
 import { cn } from '@/lib/utils'
 import { useAttendanceCadastro } from '@/hooks/useAttendanceCadastro'
 import { useRegisters } from '@/context/RegistersContext'
-import { TUBE_TYPES, LabAttendanceOrder, LabExam } from '@/types/lab.types'
+import { LabAttendanceOrder, LabExam } from '@/types/lab.types'
+import { useMateriaisTubos, tuboDoExame, tubosDosExames, avisoTubo } from '@/lib/tubos'
 import { toast } from 'sonner'
 import { useAuth } from '@/context/AuthContext'
 import { Skeleton } from '@/components/ui/skeleton'
@@ -16,6 +17,7 @@ import { canSetCollectionDone } from '@/utils/orderStatusFlow'
 
 export default function LabColetaPage() {
   const { user } = useAuth()
+  const cadTubos = useMateriaisTubos(user?.companyId)
   const { orders, updateOrder, refresh } = useAttendanceCadastro()
   const navigate = useNavigate()
   const [loading, setLoading] = useState(true)
@@ -161,29 +163,7 @@ export default function LabColetaPage() {
   const examMatchesTube = (exam: LabAttendanceOrder['exams'][number], tubeType: string) => {
     if (tubeType.startsWith('apoio:')) return isApoio(exam) && (exam as any).apoioId === tubeType.slice(6)
     if (isApoio(exam)) return false
-    const material = normalizeMaterial(exam.material)
-
-    if (tubeType === 'edta') {
-      return material.includes('edta') || material.includes('sangue total')
-    }
-    if (tubeType === 'gel') {
-      return material.includes('soro') || material.includes('gel separador')
-    }
-    if (tubeType === 'citrato') {
-      return material.includes('citrato') || material.includes('plasma')
-    }
-    if (tubeType === 'urina') {
-      return material.includes('urina')
-    }
-    if (tubeType === 'fezes') {
-      return material.includes('fezes') || material.includes('fecal')
-    }
-    if (tubeType === 'escarro') {
-      return material.includes('escarro') || material.includes('secrec') ||
-        material.includes('swab') || material.includes('saliva')
-    }
-
-    return material.includes(normalizeMaterial(tubeType))
+    return tuboDoExame(exam) === tubeType
   }
 
   // Cálculos Reais para os Cards
@@ -204,10 +184,7 @@ export default function LabColetaPage() {
 
   const getOrderTubes = (order: LabAttendanceOrder) => {
     const exams = (order.exams || []).filter(e => !isApoio(e))
-    const matchedTubes: any[] = TUBE_TYPES.filter(tube =>
-      exams.some(exam => examMatchesTube(exam, tube.type))
-    )
-    const internos = matchedTubes.length > 0 ? matchedTubes : exams.length > 0 ? [TUBE_TYPES[0]] : []
+    const internos: any[] = tubosDosExames(exams)
     const apoio = apoiosDoPedido(order).map(([id, nome]) => ({
       type: `apoio:${id}`, label: `Alíquota separada — Apoio: ${nome}`, volume: 'alíquota', color: 'bg-muted-foreground',
       apoioNome: nome, codigo: codigoAliquotaApoio(order, id),
