@@ -89,7 +89,7 @@ export function parsePendencias(xml: string): Pendencia[] {
 export const _attr = attr
 
 // ---------- Modelos de resultado (ModelosTodos / modelos.xml) ----------
-export interface ModeloValor { chave: string; nome: string; unidade: string; tipo: string; casas: number | null }
+export interface ModeloValor { chave: string; nome: string; unidade: string; tipo: string; casas: number | null; tamanho?: number | null }
 export interface ModeloExame { codExmApoio: string; materialNome: string; exameNome: string; codigoFormato: string; unidadeProdutiva: string; metodo: string; ultimaLiberacao: string | null; itens: ModeloValor[] }
 
 /** "dd/mm/aaaa[ hh:mm[:ss]]" ou ISO -> ISO; vazio -> null */
@@ -117,26 +117,27 @@ export function parseModelos(xml: string): ModeloExame[] {
     let codigoFormato = campo(se, ['Exame'], 'CodigoFormato')
     let exameNome = '', materialNome = campo(se, ['Exame'], 'Material', 'NomeMaterial', 'MaterialNome')
     const itens: ModeloValor[] = [], vistos = new Set<string>()
-    const id = (b: string, sub: string[]) => campo(b, sub, 'id', 'Id', 'ID', 'Codigo')
+    // Mesma chave do resultado: idExame/idItemDeExame/idResultado/idValor
     for (const ex of filhos(se, 'Exame')) {
       codigoFormato ||= campo(ex, ['ItemDeExame'], 'CodigoFormato')
       exameNome ||= campo(ex, ['ItemDeExame'], 'Nome', 'NomeExame')
-      const idEx = id(ex, ['ItemDeExame'])
+      const idEx = attr(ex, 'idExame')
       for (const it of filhos(ex, 'ItemDeExame')) {
-        const idIt = id(it, ['Resultado'])
+        const idIt = attr(it, 'idItemDeExame')
+        const nomeIt = campo(it, ['Resultado'], 'Nome')
         for (const res of filhos(it, 'Resultado')) {
-          const idRes = id(res, ['Valor'])
-          for (const v of filhos(res, 'Valor')) {
-            const chave = [idEx, idIt, idRes, id(v, [])].join('/')
+          const idRes = attr(res, 'idResultado')
+          const unidade = texto(res, 'UnidadeDeMedida') || campo(res, ['Valor', 'Conteudo'], 'Unidade')
+          for (const v of blocos(res, 'Valor')) {
+            const chave = [idEx, idIt, idRes, attr(v, 'idValor')].join('/')
             if (vistos.has(chave)) continue
             vistos.add(chave)
-            const casas = campo(v, [], 'CasasDecimais', 'Decimais')
+            const casas = attr(v, 'CasasDecimais'), tam = attr(v, 'TamanhoMaximo')
             itens.push({
-              chave,
-              nome: campo(res, ['Valor'], 'Nome') || campo(it, ['Resultado'], 'Nome') || campo(v, [], 'Nome') || chave,
-              unidade: campo(v, [], 'Unidade') || campo(res, ['Valor'], 'Unidade'),
-              tipo: (campo(v, [], 'Tipo', 'TipoValor') || campo(res, ['Valor'], 'Tipo')).toLowerCase(),
+              chave, nome: nomeIt || campo(res, ['Valor', 'Conteudo'], 'Nome'), unidade,
+              tipo: attr(v, 'Tipo').toLowerCase(),
               casas: casas && !isNaN(Number(casas)) ? Number(casas) : null,
+              tamanho: tam && !isNaN(Number(tam)) ? Number(tam) : null,
             })
           }
         }
