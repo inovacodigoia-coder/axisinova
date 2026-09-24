@@ -1018,42 +1018,93 @@ export type Database = {
           },
         ]
       }
+      apoio_modelo_import: {
+        Row: {
+          apoio_id: string
+          company_id: string
+          created_at: string
+          dados: Json
+          id: number
+          lote: string
+        }
+        Insert: {
+          apoio_id: string
+          company_id: string
+          created_at?: string
+          dados: Json
+          id?: number
+          lote: string
+        }
+        Update: {
+          apoio_id?: string
+          company_id?: string
+          created_at?: string
+          dados?: Json
+          id?: number
+          lote?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "apoio_modelo_import_apoio_id_fkey"
+            columns: ["apoio_id"]
+            isOneToOne: false
+            referencedRelation: "apoio_laboratorio"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "apoio_modelo_import_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       apoio_modelo_resultado: {
         Row: {
           apoio_id: string
           atualizado_em: string
           cod_exm_apoio: string
-          codigo_formato: string | null
+          codigo_formato: string
           company_id: string
           exame_nome: string | null
           id: string
           material_nome: string | null
+          metodo: string | null
           modelo_json: Json
           origem: string
+          ultima_liberacao: string | null
+          unidade_produtiva: string | null
         }
         Insert: {
           apoio_id: string
           atualizado_em?: string
           cod_exm_apoio: string
-          codigo_formato?: string | null
+          codigo_formato?: string
           company_id: string
           exame_nome?: string | null
           id?: string
           material_nome?: string | null
+          metodo?: string | null
           modelo_json?: Json
           origem?: string
+          ultima_liberacao?: string | null
+          unidade_produtiva?: string | null
         }
         Update: {
           apoio_id?: string
           atualizado_em?: string
           cod_exm_apoio?: string
-          codigo_formato?: string | null
+          codigo_formato?: string
           company_id?: string
           exame_nome?: string | null
           id?: string
           material_nome?: string | null
+          metodo?: string | null
           modelo_json?: Json
           origem?: string
+          ultima_liberacao?: string | null
+          unidade_produtiva?: string | null
         }
         Relationships: [
           {
@@ -6378,6 +6429,19 @@ export type Database = {
           envios: number
         }[]
       }
+      apoio_depara_formatos: {
+        Args: { _depara: string }
+        Returns: {
+          cod_exm_apoio: string
+          codigo_formato: string
+          mapeados: number
+          metodo: string
+          recente: boolean
+          total: number
+          ultima_liberacao: string
+          unidade_produtiva: string
+        }[]
+      }
       apoio_depara_lista: {
         Args: never
         Returns: {
@@ -6553,6 +6617,15 @@ export type Database = {
           _status: Database["public"]["Enums"]["apoio_status"]
         }
         Returns: undefined
+      }
+      apoio_modelos_commit: {
+        Args: {
+          _apoio: string
+          _esperado: number
+          _lote: string
+          _origem?: string
+        }
+        Returns: Json
       }
       apoio_modulo_liberado: { Args: { _company_id: string }; Returns: boolean }
       apoio_mudar_status: {
