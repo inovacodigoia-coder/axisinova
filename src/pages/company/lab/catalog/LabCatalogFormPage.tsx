@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react'
+import { MateriaisAceitos } from '@/components/lab/catalog/MateriaisAceitos'
 import { supabase } from '@/integrations/supabase/client'
 import { useExamLaudos, ensureDefaultLaudo } from '@/hooks/useExamLaudos'
 import ExamLaudosSection from '@/components/lab/catalog/ExamLaudosSection'
@@ -271,6 +272,7 @@ export default function LabCatalogFormPage() {
       workbenchId: laudo.workbench_id || '',
       selectedMaterials: Array.isArray(laudo.selected_materials) ? laudo.selected_materials : [],
       defaultMaterial: laudo.default_material || '',
+      materialTubos: (laudo as any).material_tubos || {},
     }))
   }, [selectedLaudoId, laudos])
 
@@ -293,6 +295,7 @@ export default function LabCatalogFormPage() {
         workbenchId: examBancadaId,
         selectedMaterials: isDefaultLaudo ? examData.selectedMaterials : (baseLaudo?.selected_materials || []),
         defaultMaterial: isDefaultLaudo ? examData.defaultMaterial : (baseLaudo?.default_material || ''),
+        materialTubos: isDefaultLaudo ? ((examData as any).materialTubos || {}) : ((baseLaudo as any)?.material_tubos || {}),
         referenceValues: isDefaultLaudo ? examData.referenceValues : (baseLaudo?.reference_values || []),
         parameters: isDefaultLaudo ? (parameters || []) : (baseLaudo?.parameters || []),
         confirmationQuestions: confirmationQuestions || [],
@@ -335,7 +338,8 @@ export default function LabCatalogFormPage() {
                 workbench_id: examData.workbenchId || null,
                 selected_materials: examData.selectedMaterials || [],
                 default_material: examData.defaultMaterial || null,
-              })
+                material_tubos: (examData as any).materialTubos || {},
+              } as any)
               .eq('id', selectedLaudoId)
           } else {
             await ensureDefaultLaudo(examId, cid, {
@@ -627,7 +631,6 @@ function GeneralInfoSection({
   onOpenMethodologySearch: () => void
 }) {
   const navigate = useNavigate()
-  const materials = ['Sangue Total', 'Soro', 'Plasma', 'Urina', 'Fezes', 'Secreção', 'Líquor', 'Swab']
   const [selectedMaterials, setSelectedMaterials] = useState<string[]>(data.selectedMaterials || [])
   const [defaultMaterial, setDefaultMaterial] = useState(data.defaultMaterial || "")
   const [measurementUnits, setMeasurementUnits] = useState<any[]>([])
@@ -834,28 +837,14 @@ function GeneralInfoSection({
         </div>
       </div>
 
-      <div className="space-y-4 pt-4 border-t border-border/50">
-        <Label className="text-sm font-bold uppercase tracking-wider text-muted-foreground">Materiais Aceitos</Label>
-        <div className="flex flex-wrap gap-2">
-          {[...new Set([...materials, ...selectedMaterials])].map(mat => (
-            <button
-              key={mat}
-              type="button"
-              onClick={() => toggleMaterial(mat)}
-              onDoubleClick={() => handleSetDefault(mat)}
-              className={cn(
-                "px-4 py-2 rounded-full border text-sm font-medium transition-all flex items-center gap-2",
-                selectedMaterials.includes(mat) 
-                  ? "bg-primary/5 border-primary text-primary shadow-[0_0_10px_rgba(var(--primary-rgb),0.1)]" 
-                  : "bg-background border-border text-muted-foreground hover:border-primary/50"
-              )}
-            >
-              {defaultMaterial === mat && <Star className="h-3 w-3 fill-primary text-primary" />}
-              {mat}
-            </button>
-          ))}
-        </div>
-      </div>
+      <MateriaisAceitos
+        selecionados={selectedMaterials}
+        padrao={defaultMaterial}
+        tubos={data.materialTubos || {}}
+        onToggle={toggleMaterial}
+        onPadrao={handleSetDefault}
+        onTubos={(t) => onChange({ materialTubos: t })}
+      />
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-8 pt-4 border-t border-border/50">
         <div className="space-y-3">

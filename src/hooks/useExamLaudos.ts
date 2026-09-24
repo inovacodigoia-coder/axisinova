@@ -15,6 +15,7 @@ export interface ExamLaudo {
   result_deadline_days: number | null
   workbench_id: string | null
   selected_materials: string[]
+  material_tubos?: Record<string, { recipiente_id?: string | null; volume_ml?: number | null }>
   default_material: string | null
 }
 
@@ -40,7 +41,7 @@ export function useExamLaudos(examId?: string) {
     setLoading(true)
     const { data, error } = await supabase
       .from('exam_laudos')
-      .select('id, exam_id, company_id, code, name, sort_order, is_active, methodology, parameters, reference_values, result_deadline_days, workbench_id, selected_materials, default_material')
+      .select('id, exam_id, company_id, code, name, sort_order, is_active, methodology, parameters, reference_values, result_deadline_days, workbench_id, selected_materials, default_material, material_tubos')
       .eq('exam_id', examId)
       .order('sort_order', { ascending: true })
     setLoading(false)
