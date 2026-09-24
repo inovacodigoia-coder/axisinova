@@ -837,7 +837,7 @@ function GeneralInfoSection({
       <div className="space-y-4 pt-4 border-t border-border/50">
         <Label className="text-sm font-bold uppercase tracking-wider text-muted-foreground">Materiais Aceitos</Label>
         <div className="flex flex-wrap gap-2">
-          {['Sangue Total', 'Soro', 'Plasma', 'Urina', 'Fezes', 'Secreção', 'Líquor', 'Swab'].map(mat => (
+          {[...new Set([...materials, ...selectedMaterials])].map(mat => (
             <button
               key={mat}
               type="button"

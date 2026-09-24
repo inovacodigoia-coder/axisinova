@@ -7068,17 +7068,31 @@ export type Database = {
           updated_at: string
         }[]
       }
-      apoio_laudo_ajustar: {
-        Args: {
-          _depara: string
-          _laudo: string
-          _mapas: Json
-          _modo: string
-          _nome: string
-          _params: Json
-        }
-        Returns: Json
-      }
+      apoio_laudo_ajustar:
+        | {
+            Args: {
+              _depara: string
+              _laudo: string
+              _mapas: Json
+              _modo: string
+              _nome: string
+              _params: Json
+            }
+            Returns: Json
+          }
+        | {
+            Args: {
+              _depara: string
+              _extras: Json
+              _laudo: string
+              _mapas: Json
+              _modo: string
+              _nome: string
+              _params: Json
+            }
+            Returns: Json
+          }
+      apoio_laudo_ajuste_cadastro: { Args: { _depara: string }; Returns: Json }
       apoio_laudo_ajuste_dados: { Args: { _depara: string }; Returns: Json }
       apoio_laudos_resumo: {
         Args: never

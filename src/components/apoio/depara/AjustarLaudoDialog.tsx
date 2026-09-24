@@ -4,6 +4,9 @@ import { toast } from 'sonner'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { db } from './deparaUtils'
 import { montarAjuste, montarPayload, type Acao, type FormatoAjuste, type Linha, type Modo } from './ajusteLaudo'
+import { CadastroPrevia, montarMateriais, montarMetodo, materiaisFinal, metodoFinal, type Cadastro, type MatLinha, type MetEstado } from './CadastroPrevia'
+import { useAuth } from '@/context/AuthContext'
+import { resolveCompanyId } from '@/utils/companyId'
 
 interface Laudo { id: string; code: string; name: string; padrao: boolean; parameters: any[]; bancadas: { id: string; name: string; tipo: string; apoio_id: string | null }[]; com_historico: string[] }
 interface Dados { pode: boolean; bancada_apoio: { id: string; name: string } | null; laudos: Laudo[] }
@@ -25,10 +28,15 @@ export function AjustarLaudoDialog({ open, deparaId, apoioId, formatos, onClose,
   const [linhas, setLinhas] = useState<Linha[] | null>(null)
   const [verReap, setVerReap] = useState(false)
   const [busy, setBusy] = useState(false)
+  const [cad, setCad] = useState<Cadastro | null>(null)
+  const [mats, setMats] = useState<MatLinha[]>([])
+  const [met, setMet] = useState<MetEstado | null>(null)
+  const { user } = useAuth()
+  const companyId = resolveCompanyId(user?.companyId) || ''
 
   useEffect(() => {
     if (!open) return
-    setDados(null); setLinhas(null); setConfirmo(false); setCompartilhado('copia'); setVerReap(false)
+    setDados(null); setLinhas(null); setConfirmo(false); setCompartilhado('copia'); setVerReap(false); setCad(null)
     db.rpc('apoio_laudo_ajuste_dados', { _depara: deparaId }).then(({ data, error }: any) => {
       if (error) { toast.error('Não foi possível carregar os laudos do exame'); onClose(); return }
       const d = data as Dados
@@ -37,6 +45,7 @@ export function AjustarLaudoDialog({ open, deparaId, apoioId, formatos, onClose,
       const sugerirNovo = d.laudos.length === 1 && d.laudos[0].code === 'L001' && doApoio?.id === d.laudos[0].id
       setEscolha(sugerirNovo || !d.laudos.length ? NOVO : (doApoio ?? d.laudos[0]).id)
     })
+    db.rpc('apoio_laudo_ajuste_cadastro', { _depara: deparaId }).then(({ data }: any) => { if (data) setCad(data as Cadastro) })
   }, [open, deparaId, apoioId, onClose])
 
   const laudo = dados?.laudos.find(l => l.id === escolha)
@@ -49,6 +58,7 @@ export function AjustarLaudoDialog({ open, deparaId, apoioId, formatos, onClose,
     const params = laudo ? (Array.isArray(laudo.parameters) ? laudo.parameters : []) : []
     const l = montarAjuste(formatos, params, new Set(laudo?.com_historico.map(String) ?? []), modo)
     if (!l.length) return toast.info('Nenhum modelo do Pardini carregado para este exame')
+    if (cad) { setMats(montarMateriais(cad)); setMet(montarMetodo(cad)) }
     setLinhas(l)
   }
 
@@ -58,11 +68,15 @@ export function AjustarLaudoDialog({ open, deparaId, apoioId, formatos, onClose,
   const confirmar = async () => {
     if (!linhas) return
     if (linhas.some(l => l.incluir && !l.sobra && !l.nome.trim())) return toast.error('Dê um nome a todos os parâmetros')
+    const metodologia = metodoFinal(met)
+    if (metodologia === undefined) return toast.error('Decida a metodologia nova: criar, usar uma existente ou não preencher')
+    if (mats.some(m => m.incluir && m.alvo === '__novo' && !m.novo.trim())) return toast.error('Dê um nome ao material novo')
     setBusy(true)
     try {
       const { params, mapas } = montarPayload(linhas, modo)
       const nome = modo === 'copia' ? `${laudo!.name} (Pardini)` : nomeNovo
-      const { data, error } = await db.rpc('apoio_laudo_ajustar', { _depara: deparaId, _laudo: laudo?.id ?? null, _modo: modo, _nome: nome, _params: params, _mapas: mapas })
+      const _extras = { materiais: materiaisFinal(mats), metodologia }
+      const { data, error } = await db.rpc('apoio_laudo_ajustar', { _depara: deparaId, _laudo: laudo?.id ?? null, _modo: modo, _nome: nome, _params: params, _mapas: mapas, _extras })
       if (error) throw error
       toast.success('Laudo ajustado ao modelo do Pardini', { description: `${data.criados} criado(s) · ${data.ajustados} ajustado(s) · ${data.reaproveitados} reaproveitado(s) · ${data.excluidos} excluído(s) · ${data.inativados} inativado(s)` })
       onDone(); onClose()
@@ -114,6 +128,8 @@ export function AjustarLaudoDialog({ open, deparaId, apoioId, formatos, onClose,
             <p className="text-muted-foreground">
               {modo === 'novo' ? `Laudo novo "${nomeNovo}"` : modo === 'copia' ? `Cópia de ${laudo!.code} só para o Pardini` : `${laudo!.code} · ${laudo!.name}`} — nada é gravado até você confirmar. Desmarque o que não quiser aplicar.
             </p>
+            {cad && <CadastroPrevia cad={cad} companyId={companyId} mats={mats} setMats={setMats} met={met} setMet={setMet}
+              onMetodologiaCriada={m => setCad(c => c && { ...c, metodologias: [...c.metodologias, m] })} />}
             <div className="flex flex-wrap gap-2">
               {GRUPOS.map(g => <span key={g.acao} className="rounded-full border border-border px-2.5 py-1 font-medium">{g.titulo}: {cont[g.acao]}</span>)}
             </div>
