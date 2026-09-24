@@ -1,4 +1,5 @@
 import { formatCPF, formatPhone, formatAge, formatGender, formatAddress } from "@/utils/formatters"
+import { fmtDiaMes } from '@/lib/apoioAtendimento'
 import { useState, useMemo, useEffect } from 'react'
 import { Dialog, DialogContent } from '@/components/ui/dialog'
 import { X, Printer, Pencil, Trash2, Plus, ArrowLeft, MoreVertical, CreditCard, Droplets, ShieldCheck, DollarSign, Calendar, Clock, MapPin, User, FileText, ChevronDown, History, BarChart3, Database, RefreshCw, Info, Smartphone, Calculator, Loader2, Eye, AlertTriangle } from 'lucide-react'
@@ -980,6 +981,11 @@ export function AttendanceDetailsModal({ open, onClose, onOrderDeleted, order, p
                                         {exam.bancadaOrigem === 'troca_pontual' && (
                                           <span className="rounded-full border border-accent bg-accent/30 px-1.5 py-0.5 text-[9px] font-semibold text-accent-foreground" title={exam.bancadaMotivo}>Bancada trocada: {exam.bancadaMotivo}</span>
                                         )}
+                                        {exam.prazoRecalculadoTroca && (
+                                          <span className="rounded-full border border-border bg-muted px-1.5 py-0.5 text-[9px] font-medium text-muted-foreground">
+                                            Prazo recalculado na troca de bancada{exam.prazoAnterior ? ` (antes: ${fmtDiaMes(exam.prazoAnterior)})` : ''}
+                                          </span>
+                                        )}
                                       </div>
                                     </td>
                                     <td className="px-4 py-3 text-muted-foreground font-mono uppercase">{(exam.code || exam.internalCode || '0000000').toUpperCase()}</td>
@@ -1366,7 +1372,7 @@ export function AttendanceDetailsModal({ open, onClose, onOrderDeleted, order, p
               .map(exam => ({
                 name: exam.name,
                 code: exam.code || '',
-                forecastDate: exam.previsaoEntrega || order.deliveryDate || '',
+                forecastDate: exam.previsaoEntrega || exam.expectedDeliveryDate || order.deliveryDate || '',
                 doctorName: exam.doctorName || order.doctorName,
                 doctorCRM: exam.doctorCRM || order.doctorCRM
               }))

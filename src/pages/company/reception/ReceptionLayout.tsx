@@ -109,7 +109,7 @@ export default function ReceptionLayout() {
         (guide.exams || []).map((exam: any) => ({
           name: exam.name,
           code: exam.code || '',
-          forecastDate: exam.forecastDate || '',
+          forecastDate: exam.forecastDate || exam.expectedDeliveryDate || '',
           doctorName: guide.doctorName || order.doctorName,
           doctorCRM: guide.doctorCRM || order.doctorCRM
         }))

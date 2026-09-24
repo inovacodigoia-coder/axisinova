@@ -24,6 +24,7 @@ import { AttendancePrintSelectionModal, tubeTypeForMaterial } from './print/Atte
 import { SampleLabelsSelectModal } from './print/SampleLabelsSelectModal'
 import { LabStep1PatientReview } from '@/components/lab/attendance/steps/LabStep1PatientReview'
 import { LabStep2ExamData } from '@/components/lab/attendance/steps/LabStep2ExamData'
+import { validarApoio, aplicarNomeEnvio } from '@/lib/apoioAtendimento'
 import { LabStep3GuidesProcedures } from '@/components/lab/attendance/steps/LabStep3GuidesProcedures'
 import { QueueAllocationModal } from './queue-allocation/QueueAllocationModal'
 import { LabStep4Payment } from '@/components/lab/attendance/steps/LabStep4Payment'
@@ -322,7 +323,7 @@ export function AttendanceCadastroModal({
         const hasPlanAndExam = state.guides?.some((g: any) =>
           !!g.plan?.trim() && (g.exams?.length || 0) > 0
         )
-        return hasPlanAndExam
+        return hasPlanAndExam && validarApoio(state).length === 0
       }
       if (stepLabel === 'Pagamento') return true
       if (stepLabel === 'Autorização') return true
@@ -388,7 +389,7 @@ export function AttendanceCadastroModal({
         (guide.exams || []).map((exam: any) => ({
           name: exam.name,
           code: exam.code || '',
-          forecastDate: exam.forecastDate || '',
+          forecastDate: exam.forecastDate || exam.expectedDeliveryDate || '',
           doctorName: guide.doctorName || order.doctorName,
           doctorCRM: guide.doctorCRM || order.doctorCRM
         }))
@@ -433,6 +434,10 @@ export function AttendanceCadastroModal({
     if (isLabFlow && (!state.patient || !state.guides || state.guides.length === 0)) {
       toast.error('Dados incompletos: Cliente ou Guias ausentes')
       return
+    }
+    if (isLabFlow) {
+      const errosApoio = validarApoio(state)
+      if (errosApoio.length > 0) { toast.error(errosApoio[0]); return }
     }
 
     finalizingRef.current = true
@@ -482,7 +487,7 @@ export function AttendanceCadastroModal({
         originCode: state.originCode,
         originName: state.originId === activeOrigin?.id ? activeOrigin?.name : state.guides?.[0]?.originName,
         patientSequenceId: state.patient?.sequenceId || state.tempPatient?.sequenceId,
-        guides: state.guides,
+        guides: aplicarNomeEnvio(state.guides, state),
         isPregnant: state.tempPatient?.clinicalData?.isPregnant,
         isFasting: String(state.fastingSince || 'Não').toLowerCase().startsWith('s'),
         fastingStartHour: state.fastingStartHour,
