@@ -166,7 +166,7 @@ Deno.serve(async (req) => {
     let util: string
     await admin.from('apoio_remessa').update({ envio_sem_resposta: true }).eq('id', remessa.id)
     try {
-      const resp = await chamar(ctx, 'getPedido', [['XML', 'string', montarRegistro(ctx.lab.cod_lab, remessa, exames, msgId)]])
+      const resp = await chamar(ctx, 'getPedido', [['XML', 'string', montarRegistro(ctx.lab.cod_lab ?? '', remessa, exames, msgId)]])
       util = conteudoUtil(resp)
     } catch (e) {
       const pe = e as PardiniErro
