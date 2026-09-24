@@ -372,6 +372,13 @@
       "when": 1790272112754,
       "tag": "0052_apoio_log_integracao_portugues",
       "breakpoints": true
+    },
+    {
+      "idx": 53,
+      "version": "7",
+      "when": 1790290332385,
+      "tag": "0053_guiche_setor",
+      "breakpoints": true
     }
   ]
 }
