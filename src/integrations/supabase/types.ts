@@ -165,6 +165,74 @@ export type Database = {
         }
         Relationships: []
       }
+      apoio_catalogo_alerta: {
+        Row: {
+          apoio_id: string
+          codigo_apoio: string
+          company_id: string
+          created_at: string
+          exame_id: string | null
+          id: string
+          lido: boolean
+          mensagem: string
+          sincronizacao_id: string | null
+          tipo: string
+        }
+        Insert: {
+          apoio_id: string
+          codigo_apoio: string
+          company_id: string
+          created_at?: string
+          exame_id?: string | null
+          id?: string
+          lido?: boolean
+          mensagem: string
+          sincronizacao_id?: string | null
+          tipo: string
+        }
+        Update: {
+          apoio_id?: string
+          codigo_apoio?: string
+          company_id?: string
+          created_at?: string
+          exame_id?: string | null
+          id?: string
+          lido?: boolean
+          mensagem?: string
+          sincronizacao_id?: string | null
+          tipo?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "apoio_catalogo_alerta_apoio_id_fkey"
+            columns: ["apoio_id"]
+            isOneToOne: false
+            referencedRelation: "apoio_laboratorio"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "apoio_catalogo_alerta_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "apoio_catalogo_alerta_exame_id_fkey"
+            columns: ["exame_id"]
+            isOneToOne: false
+            referencedRelation: "exams"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "apoio_catalogo_alerta_sincronizacao_id_fkey"
+            columns: ["sincronizacao_id"]
+            isOneToOne: false
+            referencedRelation: "apoio_catalogo_sincronizacao"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       apoio_catalogo_exame: {
         Row: {
           apoio_id: string
@@ -236,6 +304,63 @@ export type Database = {
           },
           {
             foreignKeyName: "apoio_catalogo_exame_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      apoio_catalogo_sincronizacao: {
+        Row: {
+          alterados: number
+          apoio_id: string
+          arquivo_nome: string | null
+          company_id: string
+          created_at: string
+          desativados: number
+          executado_por: string | null
+          id: string
+          novos: number
+          terceirizados_afetados: number
+          total_arquivo: number
+        }
+        Insert: {
+          alterados?: number
+          apoio_id: string
+          arquivo_nome?: string | null
+          company_id: string
+          created_at?: string
+          desativados?: number
+          executado_por?: string | null
+          id?: string
+          novos?: number
+          terceirizados_afetados?: number
+          total_arquivo?: number
+        }
+        Update: {
+          alterados?: number
+          apoio_id?: string
+          arquivo_nome?: string | null
+          company_id?: string
+          created_at?: string
+          desativados?: number
+          executado_por?: string | null
+          id?: string
+          novos?: number
+          terceirizados_afetados?: number
+          total_arquivo?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "apoio_catalogo_sincronizacao_apoio_id_fkey"
+            columns: ["apoio_id"]
+            isOneToOne: false
+            referencedRelation: "apoio_laboratorio"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "apoio_catalogo_sincronizacao_company_id_fkey"
             columns: ["company_id"]
             isOneToOne: false
             referencedRelation: "companies"
@@ -640,6 +765,7 @@ export type Database = {
           endpoint_url: string | null
           guardar_pdf_sempre: boolean
           id: string
+          licenca_arquivo_path: string | null
           licenca_sanitaria: string | null
           licenca_validade: string | null
           modo_contingencia: boolean
@@ -664,6 +790,7 @@ export type Database = {
           endpoint_url?: string | null
           guardar_pdf_sempre?: boolean
           id?: string
+          licenca_arquivo_path?: string | null
           licenca_sanitaria?: string | null
           licenca_validade?: string | null
           modo_contingencia?: boolean
@@ -688,6 +815,7 @@ export type Database = {
           endpoint_url?: string | null
           guardar_pdf_sempre?: boolean
           id?: string
+          licenca_arquivo_path?: string | null
           licenca_sanitaria?: string | null
           licenca_validade?: string | null
           modo_contingencia?: boolean
@@ -5501,6 +5629,7 @@ export type Database = {
         }
         Returns: undefined
       }
+      apoio_referencia_resumo: { Args: { _apoio_id: string }; Returns: Json }
       apoio_seed_company: { Args: { _company_id: string }; Returns: undefined }
       apoio_set_senha: {
         Args: { _apoio_id: string; _senha: string }
