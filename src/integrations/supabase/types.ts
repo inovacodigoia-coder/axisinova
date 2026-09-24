@@ -2288,6 +2288,279 @@ export type Database = {
           },
         ]
       }
+      bed_occupancies: {
+        Row: {
+          allocated_at: string
+          allocated_by: string | null
+          away: boolean
+          bed_id: string
+          company_id: string
+          id: string
+          manchester_color: string | null
+          patient_id: string | null
+          patient_name: string
+          release_reason: string | null
+          released_at: string | null
+          released_by: string | null
+          status: string
+          triage_entry_id: string | null
+        }
+        Insert: {
+          allocated_at?: string
+          allocated_by?: string | null
+          away?: boolean
+          bed_id: string
+          company_id: string
+          id?: string
+          manchester_color?: string | null
+          patient_id?: string | null
+          patient_name: string
+          release_reason?: string | null
+          released_at?: string | null
+          released_by?: string | null
+          status?: string
+          triage_entry_id?: string | null
+        }
+        Update: {
+          allocated_at?: string
+          allocated_by?: string | null
+          away?: boolean
+          bed_id?: string
+          company_id?: string
+          id?: string
+          manchester_color?: string | null
+          patient_id?: string | null
+          patient_name?: string
+          release_reason?: string | null
+          released_at?: string | null
+          released_by?: string | null
+          status?: string
+          triage_entry_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "bed_occupancies_bed_id_fkey"
+            columns: ["bed_id"]
+            isOneToOne: false
+            referencedRelation: "beds"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      bed_referral_sectors: {
+        Row: {
+          company_id: string
+          created_at: string
+          hospital_id: string | null
+          id: string
+          is_active: boolean
+          name: string
+        }
+        Insert: {
+          company_id: string
+          created_at?: string
+          hospital_id?: string | null
+          id?: string
+          is_active?: boolean
+          name: string
+        }
+        Update: {
+          company_id?: string
+          created_at?: string
+          hospital_id?: string | null
+          id?: string
+          is_active?: boolean
+          name?: string
+        }
+        Relationships: []
+      }
+      bed_referrals: {
+        Row: {
+          bed_id: string
+          company_id: string
+          id: string
+          manchester_color: string | null
+          notes: string | null
+          occupancy_id: string
+          patient_name: string
+          referred_at: string
+          referred_by: string | null
+          returned_at: string | null
+          returned_by: string | null
+          sector_id: string | null
+          sector_name: string
+          status: string
+        }
+        Insert: {
+          bed_id: string
+          company_id: string
+          id?: string
+          manchester_color?: string | null
+          notes?: string | null
+          occupancy_id: string
+          patient_name: string
+          referred_at?: string
+          referred_by?: string | null
+          returned_at?: string | null
+          returned_by?: string | null
+          sector_id?: string | null
+          sector_name: string
+          status?: string
+        }
+        Update: {
+          bed_id?: string
+          company_id?: string
+          id?: string
+          manchester_color?: string | null
+          notes?: string | null
+          occupancy_id?: string
+          patient_name?: string
+          referred_at?: string
+          referred_by?: string | null
+          returned_at?: string | null
+          returned_by?: string | null
+          sector_id?: string | null
+          sector_name?: string
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "bed_referrals_bed_id_fkey"
+            columns: ["bed_id"]
+            isOneToOne: false
+            referencedRelation: "beds"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "bed_referrals_occupancy_id_fkey"
+            columns: ["occupancy_id"]
+            isOneToOne: false
+            referencedRelation: "bed_occupancies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      bed_status_log: {
+        Row: {
+          bed_id: string
+          changed_at: string
+          changed_by: string | null
+          company_id: string
+          from_status: string | null
+          id: string
+          note: string | null
+          occupancy_id: string | null
+          to_status: string
+        }
+        Insert: {
+          bed_id: string
+          changed_at?: string
+          changed_by?: string | null
+          company_id: string
+          from_status?: string | null
+          id?: string
+          note?: string | null
+          occupancy_id?: string | null
+          to_status: string
+        }
+        Update: {
+          bed_id?: string
+          changed_at?: string
+          changed_by?: string | null
+          company_id?: string
+          from_status?: string | null
+          id?: string
+          note?: string | null
+          occupancy_id?: string | null
+          to_status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "bed_status_log_bed_id_fkey"
+            columns: ["bed_id"]
+            isOneToOne: false
+            referencedRelation: "beds"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      beds: {
+        Row: {
+          company_id: string
+          created_at: string
+          current_occupancy_id: string | null
+          id: string
+          is_active: boolean
+          name: string
+          post_id: string
+          sort_order: number
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          company_id: string
+          created_at?: string
+          current_occupancy_id?: string | null
+          id?: string
+          is_active?: boolean
+          name: string
+          post_id: string
+          sort_order?: number
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          company_id?: string
+          created_at?: string
+          current_occupancy_id?: string | null
+          id?: string
+          is_active?: boolean
+          name?: string
+          post_id?: string
+          sort_order?: number
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "beds_post_id_fkey"
+            columns: ["post_id"]
+            isOneToOne: false
+            referencedRelation: "collection_posts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      collection_posts: {
+        Row: {
+          company_id: string
+          created_at: string
+          created_by: string | null
+          hospital_id: string | null
+          id: string
+          is_active: boolean
+          name: string
+        }
+        Insert: {
+          company_id: string
+          created_at?: string
+          created_by?: string | null
+          hospital_id?: string | null
+          id?: string
+          is_active?: boolean
+          name: string
+        }
+        Update: {
+          company_id?: string
+          created_at?: string
+          created_by?: string | null
+          hospital_id?: string | null
+          id?: string
+          is_active?: boolean
+          name?: string
+        }
+        Relationships: []
+      }
       companies: {
         Row: {
           apoio_enabled: boolean
@@ -4588,6 +4861,70 @@ export type Database = {
           },
         ]
       }
+      medication_doses: {
+        Row: {
+          administered_at: string | null
+          administered_by: string | null
+          company_id: string
+          created_at: string
+          dose_number: number
+          id: string
+          notes: string | null
+          occupancy_id: string
+          prescription_id: string
+          prescription_item_id: string
+          scheduled_at: string
+        }
+        Insert: {
+          administered_at?: string | null
+          administered_by?: string | null
+          company_id: string
+          created_at?: string
+          dose_number: number
+          id?: string
+          notes?: string | null
+          occupancy_id: string
+          prescription_id: string
+          prescription_item_id: string
+          scheduled_at: string
+        }
+        Update: {
+          administered_at?: string | null
+          administered_by?: string | null
+          company_id?: string
+          created_at?: string
+          dose_number?: number
+          id?: string
+          notes?: string | null
+          occupancy_id?: string
+          prescription_id?: string
+          prescription_item_id?: string
+          scheduled_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "medication_doses_occupancy_id_fkey"
+            columns: ["occupancy_id"]
+            isOneToOne: false
+            referencedRelation: "bed_occupancies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "medication_doses_prescription_id_fkey"
+            columns: ["prescription_id"]
+            isOneToOne: false
+            referencedRelation: "prescriptions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "medication_doses_prescription_item_id_fkey"
+            columns: ["prescription_item_id"]
+            isOneToOne: false
+            referencedRelation: "prescription_items"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       notificacao_evento_config: {
         Row: {
           assunto: string | null
@@ -4948,6 +5285,148 @@ export type Database = {
             columns: ["company_id"]
             isOneToOne: false
             referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      pharmacy_dispensations: {
+        Row: {
+          company_id: string
+          created_at: string
+          dispensed_at: string | null
+          dispensed_by: string | null
+          id: string
+          prescription_id: string
+          status: string
+          urgent: boolean
+        }
+        Insert: {
+          company_id: string
+          created_at?: string
+          dispensed_at?: string | null
+          dispensed_by?: string | null
+          id?: string
+          prescription_id: string
+          status?: string
+          urgent?: boolean
+        }
+        Update: {
+          company_id?: string
+          created_at?: string
+          dispensed_at?: string | null
+          dispensed_by?: string | null
+          id?: string
+          prescription_id?: string
+          status?: string
+          urgent?: boolean
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pharmacy_dispensations_prescription_id_fkey"
+            columns: ["prescription_id"]
+            isOneToOne: false
+            referencedRelation: "prescriptions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      prescription_items: {
+        Row: {
+          company_id: string
+          created_at: string
+          dose: string
+          doses_count: number
+          first_dose_at: string
+          id: string
+          interval_hours: number
+          medication: string
+          prescription_id: string
+          route: string
+        }
+        Insert: {
+          company_id: string
+          created_at?: string
+          dose: string
+          doses_count?: number
+          first_dose_at?: string
+          id?: string
+          interval_hours?: number
+          medication: string
+          prescription_id: string
+          route?: string
+        }
+        Update: {
+          company_id?: string
+          created_at?: string
+          dose?: string
+          doses_count?: number
+          first_dose_at?: string
+          id?: string
+          interval_hours?: number
+          medication?: string
+          prescription_id?: string
+          route?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "prescription_items_prescription_id_fkey"
+            columns: ["prescription_id"]
+            isOneToOne: false
+            referencedRelation: "prescriptions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      prescriptions: {
+        Row: {
+          bed_id: string
+          company_id: string
+          created_at: string
+          created_by: string | null
+          doctor_name: string | null
+          id: string
+          notes: string | null
+          occupancy_id: string
+          patient_name: string
+          status: string
+        }
+        Insert: {
+          bed_id: string
+          company_id: string
+          created_at?: string
+          created_by?: string | null
+          doctor_name?: string | null
+          id?: string
+          notes?: string | null
+          occupancy_id: string
+          patient_name: string
+          status?: string
+        }
+        Update: {
+          bed_id?: string
+          company_id?: string
+          created_at?: string
+          created_by?: string | null
+          doctor_name?: string | null
+          id?: string
+          notes?: string | null
+          occupancy_id?: string
+          patient_name?: string
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "prescriptions_bed_id_fkey"
+            columns: ["bed_id"]
+            isOneToOne: false
+            referencedRelation: "beds"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "prescriptions_occupancy_id_fkey"
+            columns: ["occupancy_id"]
+            isOneToOne: false
+            referencedRelation: "bed_occupancies"
             referencedColumns: ["id"]
           },
         ]
@@ -6317,6 +6796,16 @@ export type Database = {
       }
     }
     Functions: {
+      _bed_log: {
+        Args: {
+          _bed: string
+          _from: string
+          _note: string
+          _occ: string
+          _to: string
+        }
+        Returns: undefined
+      }
       apoio__mascarar: { Args: { _t: string }; Returns: string }
       apoio_acao_concluir: {
         Args: { _id: string; _observacao: string }
@@ -7031,6 +7520,34 @@ export type Database = {
         }
         Returns: Json
       }
+      bed_allocate: {
+        Args: {
+          _bed_id: string
+          _color?: string
+          _patient_id?: string
+          _patient_name: string
+          _triage_entry_id: string
+        }
+        Returns: string
+      }
+      bed_mark_clean: { Args: { _bed_id: string }; Returns: undefined }
+      bed_refer: {
+        Args: {
+          _notes?: string
+          _occupancy_id: string
+          _sector_id?: string
+          _sector_name: string
+        }
+        Returns: string
+      }
+      bed_referral_update: {
+        Args: { _referral_id: string; _status: string }
+        Returns: undefined
+      }
+      bed_release: {
+        Args: { _bed_id: string; _reason: string }
+        Returns: undefined
+      }
       calcular_prazo: {
         Args: {
           _company_id: string
@@ -7067,6 +7584,10 @@ export type Database = {
           _username: string
         }
         Returns: boolean
+      }
+      dose_administer: {
+        Args: { _dose_id: string; _notes?: string }
+        Returns: undefined
       }
       eh_dia_util: {
         Args: { _company_id: string; _d: string }
@@ -7111,6 +7632,10 @@ export type Database = {
           unit_id: string
         }[]
       }
+      pharmacy_dispense: {
+        Args: { _dispensation_id: string }
+        Returns: undefined
+      }
       portal_fetch: {
         Args: { p_code: string; p_password: string }
         Returns: Json
@@ -7122,6 +7647,16 @@ export type Database = {
       portal_log_attempt: {
         Args: { p_action?: string; p_code: string; p_success: boolean }
         Returns: undefined
+      }
+      prescription_create: {
+        Args: {
+          _doctor_name: string
+          _items: Json
+          _notes: string
+          _occupancy_id: string
+          _urgent?: boolean
+        }
+        Returns: string
       }
       somar_dias_uteis: {
         Args: { _company_id: string; _data_inicial: string; _dias: number }
