@@ -15,7 +15,8 @@ Deno.test('fixture_resultado_reduzido: 3 pedidos, acentos, 2.500 = 2500, hemogra
   assertEquals(contarTag(util, 'Pedido'), 3)
   const micro = peds[0].supers[0]
   assertEquals(micro.exameNome, 'MICROALBUMINÚRIA')
-  assert(!/Ã/.test(util), 'acentos quebrados')
+  assert(!/Ã[\x80-\xBF©¡³ª§š‰‡]/.test(util), 'acentos quebrados')
+  assert(util.includes('IMUNOFIXAÇÃO') && util.includes('MANGANÊS'))
   assertEquals(micro.conteudo.inf_adicional, ['VOLUME URINÁRIO: 2500 mL'])
   assertEquals(micro.conteudo.analitos[0].valor, '12')
   const hg = peds[1].supers.find((s) => s.codExmApoio === 'S|HG|1')!
