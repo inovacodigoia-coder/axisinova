@@ -1401,8 +1401,7 @@ export function AttendanceDetailsModal({ open, onClose, onOrderDeleted, order, p
           .map(({ tube, idx }) => ({
             sampleId: sampleCodeFor(idx + 1),
             labelIndex: idx + 1,
-            material: tube.label,
-            tube: tube.type,
+            ...etiquetaTubo(tube),
             workbench: tubeWorkbench(tube),
             examRefs: examsForTube(tube).map(examRefOf),
           }))}
