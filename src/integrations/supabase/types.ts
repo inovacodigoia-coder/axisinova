@@ -1191,6 +1191,8 @@ export type Database = {
           linhas_erro: number | null
           linhas_ok: number | null
           linhas_total: number | null
+          removida_em: string | null
+          removida_por: string | null
           updated_at: string
         }
         Insert: {
@@ -1205,6 +1207,8 @@ export type Database = {
           linhas_erro?: number | null
           linhas_ok?: number | null
           linhas_total?: number | null
+          removida_em?: string | null
+          removida_por?: string | null
           updated_at?: string
         }
         Update: {
@@ -1219,6 +1223,8 @@ export type Database = {
           linhas_erro?: number | null
           linhas_ok?: number | null
           linhas_total?: number | null
+          removida_em?: string | null
+          removida_por?: string | null
           updated_at?: string
         }
         Relationships: [
@@ -5641,6 +5647,10 @@ export type Database = {
         Returns: number
       }
       apoio_referencia_resumo: { Args: { _apoio_id: string }; Returns: Json }
+      apoio_remover_tabela_ficticia: {
+        Args: { _apoio_id: string }
+        Returns: Json
+      }
       apoio_seed_company: { Args: { _company_id: string }; Returns: undefined }
       apoio_set_senha: {
         Args: { _apoio_id: string; _senha: string }

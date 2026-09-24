@@ -154,7 +154,7 @@ Deno.serve(async (req) => {
     }
     await admin.from("apoio_auditoria").insert({
       company_id: lab.company_id, tabela: "apoio_catalogo_exame", registro_id: apoioId, acao: "SINCRONIZAR",
-      usuario_id: user.id, dados_novos: { total: itens.length, novos, alterados: alterados.length, desativados: desativar.length, afetados },
+      usuario_id: user.id, depois: { total: itens.length, novos, alterados: alterados.length, desativados: desativar.length, afetados },
     }).then(() => {}, () => {});
 
     return json({ ok: true, atualizado_em: sync.created_at, total: itens.length, terceirizados_afetados: afetados, alertas: alertas.map((a) => a.mensagem) });
