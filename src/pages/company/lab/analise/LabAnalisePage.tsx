@@ -24,9 +24,9 @@ import {
   ChevronDown,
   Calendar as CalendarIcon,
   Trash2,
-  Layout
-  Truck as Truck,
-  AlertTriangle as AlertTriangle,
+  Layout,
+  Truck,
+  AlertTriangle,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
