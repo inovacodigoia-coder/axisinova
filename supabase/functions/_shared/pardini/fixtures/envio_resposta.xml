@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<SOAP-ENV:Envelope xmlns:SOAP-ENV='http://schemas.xmlsoap.org/soap/envelope/' xmlns:xsi='http://www.w3.org/2001/XMLSchema-instance' xmlns:s='http://www.w3.org/2001/XMLSchema' xmlns:SOAP-ENC='http://schemas.xmlsoap.org/soap/encoding/' xmlns:tns='http://hermespardini.com.br/b2b/apoio/schemas' xmlns:types='http://hermespardini.com.br/b2b/apoio/schemas'>
+  <SOAP-ENV:Body SOAP-ENV:encodingStyle='http://schemas.xmlsoap.org/soap/encoding/'><types:getPedidoResponse><getPedidoResult><![CDATA[<?xml version="1.0" encoding="ISO-8859-1" ?>
+<RegistroAdmitido>
+  <ID>axisinova-teste-2609232021</ID>
+  <!-- Resultado do Pedido de Exames -->
+  <Lote>
+    <CodLab>12000</CodLab>
+    <CodLoteLab>2609232021</CodLoteLab>
+    <CodLoteApoio>183701</CodLoteApoio>
+    <DataLoteApoio>2026-09-23</DataLoteApoio>
+    <HoraLoteApoio>20:21:39</HoraLoteApoio>
+    <Pedido>
+      <CodPedLab>AXITST202138</CodPedLab>
+      <CodPedApoio>B0U2FK8</CodPedApoio>
+      <Recipiente>
+        <CodBarApoio>222728429601</CodBarApoio>
+        <EtqCodBar>
+N
+R30,10
+D10
+A210,0,0,1,1,1,N,"TESTE AXISINOVA"
+B285,65,0,1,2,1,70,N,"222728429601"
+A210,20,0,1,1,1,N,"222-7284296-01  23/09/2026 20:21"
+A210,35,0,1,1,1,N,"CONV: 12000"
+A330,35,0,1,1,1,N,"PED.CONV: AXITST202138"
+A210,50,0,1,1,1,N,"SOLUCAO"
+A430,50,0,1,1,1,N,"DN 01/01/1990"
+A195,220,3,1,1,1,R,"SOLUCAO"
+A210,143,0,1,1,1,N,"SORO"
+A210,158,0,1,1,1,N,""
+A210,173,0,1,1,1,N,"VOL: 250ul"
+A450,173,0,1,1,1,N,"(REFRIG.)"
+A210,188,0,1,1,1,N,"U"
+A210,206,0,1,1,1,N,""
+P1
+N
+</EtqCodBar>
+        <Exame>
+          <CodExmApoio>S|U|1</CodExmApoio>
+          <CodExmLab>URE</CodExmLab>
+        </Exame>
+      </Recipiente>
+    </Pedido>
+  </Lote>
+</RegistroAdmitido>]]></getPedidoResult></types:getPedidoResponse></SOAP-ENV:Body>
+</SOAP-ENV:Envelope>

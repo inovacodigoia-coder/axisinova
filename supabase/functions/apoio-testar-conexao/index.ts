@@ -1,27 +1,9 @@
 // Testa a conexão chamando getListaErroPedido e atualiza a tabela de erros do apoio.
 import { adminClient, autenticar, carregarCtx, corsHeaders, cursorGravar, json, uuidOk } from '../_shared/pardini/contexto.ts'
 import { chamar } from '../_shared/pardini/soap.ts'
-import { desescapar, resolverHref } from '../_shared/pardini/xml.ts'
 
-const COMERCIAL = ['10035', '10040', '10204', '10205', '10206', '10213', '10214', '10226', '10228']
-const TECNICO = ['10103', '10110', '10207', '10227']
-export const categoria = (c: string) => ['10023', '10217'].includes(c) ? 'duplicidade' : COMERCIAL.includes(c) ? 'comercial' : TECNICO.includes(c) ? 'tecnico' : 'preenchimento'
-
-function extrair(xml: string): { codigo: string; mensagem: string }[] {
-  const r = resolverHref(xml)
-  const out = new Map<string, string>()
-  // Pares <tagA>1xxxx</tagA><tagB>mensagem</tagB> (em qualquer ordem)
-  const re1 = /<([\w:-]+)[^>]*>\s*(1\d{4})\s*<\/\1>\s*<([\w:-]+)[^>]*>([^<]+)<\/\3>/g
-  const re2 = /<([\w:-]+)[^>]*>([^<]{3,})<\/\1>\s*<([\w:-]+)[^>]*>\s*(1\d{4})\s*<\/\3>/g
-  let m
-  while ((m = re1.exec(r))) out.set(m[2], desescapar(m[4]).trim())
-  while ((m = re2.exec(r))) if (!out.has(m[4])) out.set(m[4], desescapar(m[2]).trim())
-  // Texto "10023 - mensagem" / "10023;mensagem"
-  for (const t of r.replace(/<[^>]+>/g, '\n').split('\n')) {
-    const x = t.match(/^\s*(1\d{4})\s*[-;:|]\s*(.+)$/); if (x && !out.has(x[1])) out.set(x[1], desescapar(x[2]).trim())
-  }
-  return [...out.entries()].map(([codigo, mensagem]) => ({ codigo, mensagem }))
-}
+import { categoriaErro as categoria, parseListaErro } from '../_shared/pardini/parsers.ts'
+const extrair = parseListaErro
 
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders })
