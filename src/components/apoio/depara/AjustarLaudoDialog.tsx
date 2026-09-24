@@ -4,7 +4,7 @@ import { toast } from 'sonner'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { db } from './deparaUtils'
 import { montarAjuste, montarPayload, type Acao, type FormatoAjuste, type Linha, type Modo } from './ajusteLaudo'
-import { CadastroPrevia, montarMateriais, montarMetodo, materiaisFinal, metodoFinal, type Cadastro, type MatLinha, type MetEstado } from './CadastroPrevia'
+import { CadastroPrevia, montarMateriais, montarMetodo, metodoFinal, carregarMatCtx, gravarMateriais, faltaMaterial, type Cadastro, type MatLinha, type MetEstado } from './CadastroPrevia'
 import { useAuth } from '@/context/AuthContext'
 import { resolveCompanyId } from '@/utils/companyId'
 
@@ -45,7 +45,7 @@ export function AjustarLaudoDialog({ open, deparaId, apoioId, formatos, onClose,
       const sugerirNovo = d.laudos.length === 1 && d.laudos[0].code === 'L001' && doApoio?.id === d.laudos[0].id
       setEscolha(sugerirNovo || !d.laudos.length ? NOVO : (doApoio ?? d.laudos[0]).id)
     })
-    db.rpc('apoio_laudo_ajuste_cadastro', { _depara: deparaId }).then(({ data }: any) => { if (data) setCad(data as Cadastro) })
+    db.rpc('apoio_laudo_ajuste_cadastro', { _depara: deparaId }).then(async ({ data }: any) => { if (data) setCad({ ...(data as Cadastro), ctx: await carregarMatCtx(companyId, apoioId) }) })
   }, [open, deparaId, apoioId, onClose])
 
   const laudo = dados?.laudos.find(l => l.id === escolha)
@@ -70,12 +70,12 @@ export function AjustarLaudoDialog({ open, deparaId, apoioId, formatos, onClose,
     if (linhas.some(l => l.incluir && !l.sobra && !l.nome.trim())) return toast.error('Dê um nome a todos os parâmetros')
     const metodologia = metodoFinal(met)
     if (metodologia === undefined) return toast.error('Decida a metodologia nova: criar, usar uma existente ou não preencher')
-    if (mats.some(m => m.incluir && m.alvo === '__novo' && !m.novo.trim())) return toast.error('Dê um nome ao material novo')
+    const fm = faltaMaterial(mats); if (fm) return toast.error(fm)
     setBusy(true)
     try {
       const { params, mapas } = montarPayload(linhas, modo)
       const nome = modo === 'copia' ? `${laudo!.name} (Pardini)` : nomeNovo
-      const _extras = { materiais: materiaisFinal(mats), metodologia }
+      const _extras = { materiais: await gravarMateriais(companyId, apoioId, mats, cad?.ctx), metodologia }
       const { data, error } = await db.rpc('apoio_laudo_ajustar', { _depara: deparaId, _laudo: laudo?.id ?? null, _modo: modo, _nome: nome, _params: params, _mapas: mapas, _extras })
       if (error) throw error
       toast.success('Laudo ajustado ao modelo do Pardini', { description: `${data.criados} criado(s) · ${data.ajustados} ajustado(s) · ${data.reaproveitados} reaproveitado(s) · ${data.excluidos} excluído(s) · ${data.inativados} inativado(s)` })
