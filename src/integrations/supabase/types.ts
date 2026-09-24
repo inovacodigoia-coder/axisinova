@@ -590,10 +590,17 @@ export type Database = {
           apoio_id: string
           ativo: boolean
           codigo_apoio: string
+          codigo_formato: string | null
+          codigo_formato_anterior: string | null
           company_id: string
           created_at: string
           exame_id: string
+          exige_pdf: boolean
           id: string
+          modelo: Json | null
+          modelo_anterior: Json | null
+          modelo_carregado_em: string | null
+          modelo_mudou: boolean
           prioridade: number
           updated_at: string
         }
@@ -601,10 +608,17 @@ export type Database = {
           apoio_id: string
           ativo?: boolean
           codigo_apoio: string
+          codigo_formato?: string | null
+          codigo_formato_anterior?: string | null
           company_id: string
           created_at?: string
           exame_id: string
+          exige_pdf?: boolean
           id?: string
+          modelo?: Json | null
+          modelo_anterior?: Json | null
+          modelo_carregado_em?: string | null
+          modelo_mudou?: boolean
           prioridade?: number
           updated_at?: string
         }
@@ -612,10 +626,17 @@ export type Database = {
           apoio_id?: string
           ativo?: boolean
           codigo_apoio?: string
+          codigo_formato?: string | null
+          codigo_formato_anterior?: string | null
           company_id?: string
           created_at?: string
           exame_id?: string
+          exige_pdf?: boolean
           id?: string
+          modelo?: Json | null
+          modelo_anterior?: Json | null
+          modelo_carregado_em?: string | null
+          modelo_mudou?: boolean
           prioridade?: number
           updated_at?: string
         }
@@ -5620,6 +5641,39 @@ export type Database = {
       apoio_custo_previsto: {
         Args: { _pedido_exame_id: string }
         Returns: number
+      }
+      apoio_depara_envios: {
+        Args: { _ids: string[] }
+        Returns: {
+          depara_id: string
+          envios: number
+        }[]
+      }
+      apoio_depara_lista: {
+        Args: never
+        Returns: {
+          analitos_mapeados: number
+          analitos_total: number
+          apoio_id: string
+          apoio_nome: string
+          ativo: boolean
+          catalogo_ativo: boolean
+          codigo_apoio: string
+          descricao_apoio: string
+          exame_id: string
+          exige_pdf: boolean
+          ficticio: boolean
+          id: string
+          materiais: Json
+          modelo_mudou: boolean
+          prazo_dias: number
+          preco: number
+          tem_preco: boolean
+        }[]
+      }
+      apoio_depara_referencia: {
+        Args: { _apoio_id: string; _codigo: string }
+        Returns: Json
       }
       apoio_dias_uteis:
         | {
