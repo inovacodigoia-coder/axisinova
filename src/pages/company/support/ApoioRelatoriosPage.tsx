@@ -227,9 +227,9 @@ function Relatorio({ rel, args, filtroTxt, permitido, onVoltar }: { rel: Rel; ar
   const nomeArq = `apoio-${rel.id}-${args._ini}-${args._fim}`
 
   const reprocessar = async (id: string) => {
-    const { error } = await db.rpc('apoio_log_reprocessar', { _log: id })
-    if (error) toast.error('Não foi possível reprocessar', { description: error.message })
-    else { toast.success('Marcado para reprocessar na próxima rodada da integração'); carregar() }
+    const { data, error } = await supabase.functions.invoke('apoio-resultado', { body: { reprocessar_log_id: id } })
+    if (error || !data?.ok) toast.error('Não foi possível reprocessar', { description: data?.motivo || error?.message })
+    else { toast.success(`Reprocessado: ${data.novos ?? 0} novo(s), ${data.pendentes ?? 0} pendente(s)`); carregar() }
   }
 
   if (!permitido) return <div className="flex flex-col items-center gap-2 p-16 text-muted-foreground"><Lock className="h-8 w-8" />Você não tem permissão para este relatório.</div>

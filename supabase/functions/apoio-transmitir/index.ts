@@ -80,6 +80,8 @@ async function aplicarAdmitido(ctx: Ctx, remessa: any, exames: any[], util: stri
     const e = exames.find((x) => x.id === id)
     if (e?.status === 'erro_transmissao') await admin.rpc('apoio_integ_status', { _pe: id, _novo: 'em_remessa', _motivo: 'Nova tentativa de transmissão' })
     await admin.rpc('apoio_integ_status', { _pe: id, _novo: 'transmitido', _motivo: 'Transmitido ao apoio', _dados: { cod_lote_apoio: codLoteApoio } })
+    // Ponto da Soroteca: ainda não existe cadastro de amostras armazenadas; fica a marcação no exame.
+    await admin.from('apoio_pedido_exame').update({ info_complementar: { ...(e?.info_complementar ?? {}), armazenada_no_apoio: lab.nome ?? 'apoio', armazenada_em: new Date().toISOString() } }).eq('id', id)
   }
   // Recipientes provisórios (gerados antes da transmissão) que o apoio não devolveu ficam cancelados
   await admin.from('apoio_recipiente').update({ cancelado: true }).eq('remessa_id', remessa.id).is('cod_ped_apoio', null)
