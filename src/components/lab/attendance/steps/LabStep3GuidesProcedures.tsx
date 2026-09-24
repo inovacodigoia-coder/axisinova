@@ -622,6 +622,11 @@ export function LabStep3GuidesProcedures({ state, update }: Props) {
                 <tr key={index} className="border-b hover:bg-muted/10">
                     <td className="px-4 py-4 text-xs font-medium">
                       {exam.name} {exam.tussCode && `- ${exam.tussCode}`}
+                      {exam.bancadaTipo === 'apoio' && (
+                        <span className="ml-2 inline-flex items-center rounded-full border border-primary/30 bg-primary/10 px-2 py-0.5 text-[10px] font-semibold text-primary">
+                          Apoio: {exam.apoioNome || exam.bancadaNome}
+                        </span>
+                      )}
                     </td>
                     <td className="px-4 py-4 text-xs">{exam.material || '—'}</td>
                     <td className="px-4 py-4 text-center">
