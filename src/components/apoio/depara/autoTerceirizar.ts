@@ -1,6 +1,6 @@
 import { db, norm, type CatItem, type ExameLis } from './deparaUtils'
 import { montarAjuste, montarPayload, type FormatoAjuste } from './ajusteLaudo'
-import { montarMateriais, montarMetodo, type Cadastro } from './CadastroPrevia'
+import { montarMateriais, montarMetodo, carregarMatCtx, gravarMateriais, type Cadastro } from './CadastroPrevia'
 import type { ModeloItem } from './modelosXml'
 
 export type Confianca = 'alta' | 'media' | 'sem'
@@ -36,8 +36,9 @@ export async function terceirizarCompleto(companyId: string, apoioId: string, ex
     const { data: cad } = await db.rpc('apoio_laudo_ajuste_cadastro', { _depara: dp.id })
     let materiais: string[] = [], metodologia: string | null = null
     if (cad) {
-      const mats = montarMateriais(cad as Cadastro)
-      materiais = mats.filter(m => m.incluir && !m.jaTem && m.alvo).map(m => m.alvo)
+      const ctx = await carregarMatCtx(companyId, apoioId)
+      const mats = montarMateriais({ ...(cad as Cadastro), ctx })
+      materiais = await gravarMateriais(companyId, apoioId, mats.filter(m => !m.semEquivalente), ctx)
       for (const m of mats.filter(m => m.semEquivalente)) base.pendencias.push(`Material sem equivalente: ${m.pardini}`)
       const met = montarMetodo(cad as Cadastro)
       if (met?.casada) metodologia = met.casada
