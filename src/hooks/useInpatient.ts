@@ -15,7 +15,7 @@ export interface AdmissionRequest {
 }
 
 /** Setores de internação pré-cadastrados por padrão (editáveis/inativáveis) */
-export const DEFAULT_INPATIENT_UNITS = ['UTI', 'Centro Cirúrgico', 'Internação Pediátrica', 'Clínica Médica']
+export const DEFAULT_INPATIENT_UNITS = ['UTI', 'Centro Cirúrgico', 'Internação Pediátrica', 'Clínica Médica', 'Maternidade', 'UTI Neonatal']
 export const INP_STATUS_LABEL: Record<InpBed['status'], string> = { free: 'Livre', reserved: 'Reservado', occupied: 'Ocupado', cleaning: 'Em higienização' }
 
 export function useInpatient() {
