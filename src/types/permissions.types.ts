@@ -20,6 +20,8 @@ export type SystemModule =
   | 'portals'
   | 'result_entry'
   | 'patient_registry'
+  /** Internação: ação 'approve' = Regulação (aprovar/recusar/confirmar chegada) */
+  | 'inpatient'
   /** Apoio / Terceirização: guarda códigos 'apoio.*' (não ações) */
   | 'apoio'
 
@@ -86,6 +88,7 @@ export const SYSTEM_MODULES: { key: SystemModule; label: string; icon: string }[
   { key: 'serotheque', label: 'Soroteca', icon: 'Database' },
   { key: 'portals', label: 'Portais Externos', icon: 'Users' },
   { key: 'patient_registry', label: 'Cadastro do Cliente (Paciente)', icon: 'UserCog' },
+  { key: 'inpatient', label: 'Internação / Regulação', icon: 'BedDouble' },
 ]
 
 

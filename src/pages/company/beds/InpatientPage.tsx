@@ -15,6 +15,7 @@ import { cn } from '@/lib/utils'
 import { rpc } from '@/hooks/useCollectionPosts'
 import { useHospitals } from '@/hooks/useHospitals'
 import { useInpatient, INP_STATUS_LABEL, type InpBed, type AdmissionRequest } from '@/hooks/useInpatient'
+import { useInpatientPermissions } from '@/hooks/useInpatientPermissions'
 import { AdmissionRequestDialog } from '@/components/inpatient/AdmissionRequestDialog'
 import { EmptyState } from '@/components/feedback/EmptyState'
 
@@ -98,6 +99,7 @@ function MapTab({ ip }: { ip: IP }) {
 }
 
 function InpBedSheet({ ip, bed, request, onClose }: { ip: IP; bed: InpBed | null; request: AdmissionRequest | null; onClose: () => void }) {
+  const { canRegulate } = useInpatientPermissions()
   const [logs, setLogs] = useState<any[]>([])
   const [transfer, setTransfer] = useState(false)
   const live = bed ? ip.beds.find(b => b.id === bed.id) || bed : null
@@ -121,7 +123,7 @@ function InpBedSheet({ ip, bed, request, onClose }: { ip: IP; bed: InpBed | null
               {request.admitted_at && <p className="text-muted-foreground">Internado em {fmt(request.admitted_at)}</p>}
             </div>
           )}
-          {live.status === 'reserved' && request && (
+          {live.status === 'reserved' && request && canRegulate && (
             <div className="flex gap-2">
               <Button onClick={() => rpc('admission_confirm_transfer', { _request_id: request.id }, 'Paciente internado no leito').then(ip.reload)}><CheckCircle2 className="h-4 w-4 mr-1" />Confirmar chegada do paciente</Button>
               <Button variant="outline" onClick={() => rpc('admission_cancel', { _request_id: request.id }, 'Reserva cancelada; leito livre').then(ip.reload)}>Cancelar reserva</Button>
@@ -154,6 +156,7 @@ function InpBedSheet({ ip, bed, request, onClose }: { ip: IP; bed: InpBed | null
 }
 
 function QueueTab({ ip }: { ip: IP }) {
+  const { canRegulate } = useInpatientPermissions()
   const [approve, setApprove] = useState<AdmissionRequest | null>(null)
   const [refuse, setRefuse] = useState<AdmissionRequest | null>(null)
   const [newReq, setNewReq] = useState(false)
@@ -174,8 +177,10 @@ function QueueTab({ ip }: { ip: IP }) {
                 <p>Setor pretendido: <b>{unitName(r.requested_unit_id)}</b> · Motivo: {r.reason}</p>
                 <p className="text-muted-foreground text-xs">Origem: {r.origin_label} · {fmt(r.requested_at)}{r.doctor_name && ` · Dr(a). ${r.doctor_name}`}{r.notes && ` · ${r.notes}`}</p>
               </div>
-              <Button size="sm" onClick={() => setApprove(r)}><CheckCircle2 className="h-4 w-4 mr-1" />Aprovar</Button>
-              <Button size="sm" variant="outline" onClick={() => setRefuse(r)}><XCircle className="h-4 w-4 mr-1" />Recusar / redirecionar</Button>
+              {canRegulate && <>
+                <Button size="sm" onClick={() => setApprove(r)}><CheckCircle2 className="h-4 w-4 mr-1" />Aprovar</Button>
+                <Button size="sm" variant="outline" onClick={() => setRefuse(r)}><XCircle className="h-4 w-4 mr-1" />Recusar / redirecionar</Button>
+              </>}
             </div>
           ))}
         </CardContent>
@@ -189,7 +194,7 @@ function QueueTab({ ip }: { ip: IP }) {
               <span>{r.patient_name} · {unitName(r.approved_unit_id || r.requested_unit_id)}{r.bed_id && ` · ${ip.beds.find(b => b.id === r.bed_id)?.name || ''}`}{r.refusal_reason && <span className="text-muted-foreground"> · Motivo da recusa: {r.refusal_reason}</span>}</span>
               <div className="flex items-center gap-2">
                 <Badge variant="outline">{REQ_STATUS[r.status] || r.status}</Badge>
-                {r.status === 'approved' && <>
+                {r.status === 'approved' && canRegulate && <>
                   <Button size="sm" onClick={() => rpc('admission_confirm_transfer', { _request_id: r.id }, 'Paciente internado no leito').then(ip.reload)}>Confirmar chegada</Button>
                   <Button size="sm" variant="ghost" onClick={() => rpc('admission_cancel', { _request_id: r.id }, 'Reserva cancelada').then(ip.reload)}>Cancelar</Button>
                 </>}
