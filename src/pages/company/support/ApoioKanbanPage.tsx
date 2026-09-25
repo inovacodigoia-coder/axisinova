@@ -50,6 +50,7 @@ export default function ApoioKanbanPage() {
   const [mover, setMover] = useState<{ card: KCard; status: string; motivo: string } | null>(null)
   const [faixaAberta, setFaixaAberta] = useState(true)
   const [autoAtualizar, setAutoAtualizar] = useState(false)
+  const [segundos, setSegundos] = useState(30)
   const dragTab = useRef<string | null>(null)
 
   const carregar = useCallback(async () => {
@@ -86,10 +87,16 @@ export default function ApoioKanbanPage() {
     return () => { clearTimeout(timer.current); supabase.removeChannel(ch) }
   }, [apoio.enabled, apoio.companyId, carregar])
 
-  // Atualização automática a cada 30 segundos (quando ligada)
+  // Atualização automática a cada 30 segundos (quando ligada), com contagem visível
   useEffect(() => {
     if (!autoAtualizar) return
-    const t = setInterval(() => carregar(), 30000)
+    setSegundos(30)
+    const t = setInterval(() => {
+      setSegundos(s => {
+        if (s <= 1) { carregar(); return 30 }
+        return s - 1
+      })
+    }, 1000)
     return () => clearInterval(t)
   }, [autoAtualizar, carregar])
 
@@ -183,7 +190,7 @@ export default function ApoioKanbanPage() {
           </div>
           <div className="flex gap-2">
             <div className="flex">
-              <Button variant="outline" className="rounded-r-none border-r-0" onClick={carregar} disabled={loading}><RefreshCw className={`mr-1 h-4 w-4 ${loading ? 'animate-spin' : ''}`} />Atualizar</Button>
+              <Button variant="outline" className="rounded-r-none border-r-0" onClick={() => { carregar(); if (autoAtualizar) setSegundos(30) }} disabled={loading}><RefreshCw className={`mr-1 h-4 w-4 ${loading ? 'animate-spin' : ''}`} />Atualizar</Button>
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <Button variant="outline" className={`rounded-l-none px-2 ${autoAtualizar ? 'border-primary text-primary' : ''}`} aria-label="Opções de atualização">
@@ -200,9 +207,9 @@ export default function ApoioKanbanPage() {
               </DropdownMenu>
             </div>
             {autoAtualizar && (
-              <span className="flex items-center gap-1 rounded-lg border border-primary/30 bg-primary/5 px-2 text-xs font-medium text-primary">
+              <span className="flex items-center gap-1 rounded-lg border border-primary/30 bg-primary/5 px-2 text-xs font-medium text-primary" title="Atualização automática — atualiza quando o contador chega a 0">
                 <span className="relative flex h-2 w-2"><span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-primary opacity-60" /><span className="relative inline-flex h-2 w-2 rounded-full bg-primary" /></span>
-                Automático 30s
+                Automático · atualiza em {segundos}s
               </span>
             )}
             <Button className="gradient-bg text-white" disabled={bloqueado} onClick={() => setEditVisao({ id: '', nome: '', filtros: {}, compartilhada: false, dono_id: userId || null, ordem: 0 })}><Plus className="mr-1 h-4 w-4" />Nova visão</Button>
