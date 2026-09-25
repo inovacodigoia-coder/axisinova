@@ -50,6 +50,7 @@ export default function ApoioKanbanPage() {
   const [mover, setMover] = useState<{ card: KCard; status: string; motivo: string } | null>(null)
   const [faixaAberta, setFaixaAberta] = useState(true)
   const [autoAtualizar, setAutoAtualizar] = useState(false)
+  const [segundos, setSegundos] = useState(30)
   const dragTab = useRef<string | null>(null)
 
   const carregar = useCallback(async () => {
