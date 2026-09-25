@@ -86,6 +86,13 @@ export default function ApoioKanbanPage() {
     return () => { clearTimeout(timer.current); supabase.removeChannel(ch) }
   }, [apoio.enabled, apoio.companyId, carregar])
 
+  // Atualização automática a cada 30 segundos (quando ligada)
+  useEffect(() => {
+    if (!autoAtualizar) return
+    const t = setInterval(() => carregar(), 30000)
+    return () => clearInterval(t)
+  }, [autoAtualizar, carregar])
+
   // mantém o drawer com dados atualizados
   useEffect(() => { if (aberto) { const n = cards.find(c => c.id === aberto.id); if (n && n !== aberto) setAberto(n) } }, [cards]) // eslint-disable-line
 
