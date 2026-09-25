@@ -379,6 +379,13 @@
       "when": 1790290332385,
       "tag": "0053_guiche_setor",
       "breakpoints": true
+    },
+    {
+      "idx": 54,
+      "version": "7",
+      "when": 1790299134060,
+      "tag": "0054_internacao_etapa3",
+      "breakpoints": true
     }
   ]
 }

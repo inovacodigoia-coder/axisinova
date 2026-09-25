@@ -61,6 +61,125 @@ export type Database = {
           },
         ]
       }
+      admission_requests: {
+        Row: {
+          admitted_at: string | null
+          admitted_by: string | null
+          approved_unit_id: string | null
+          bed_id: string | null
+          company_id: string
+          decided_at: string | null
+          decided_by: string | null
+          doctor_name: string | null
+          ended_at: string | null
+          ended_by: string | null
+          id: string
+          notes: string | null
+          origin_bed_id: string | null
+          origin_inpatient_bed_id: string | null
+          origin_label: string | null
+          origin_occupancy_id: string | null
+          origin_type: string
+          patient_id: string | null
+          patient_name: string
+          reason: string
+          refusal_reason: string | null
+          requested_at: string
+          requested_by: string | null
+          requested_unit_id: string
+          status: string
+          suggested_unit_id: string | null
+          urgency: string
+        }
+        Insert: {
+          admitted_at?: string | null
+          admitted_by?: string | null
+          approved_unit_id?: string | null
+          bed_id?: string | null
+          company_id: string
+          decided_at?: string | null
+          decided_by?: string | null
+          doctor_name?: string | null
+          ended_at?: string | null
+          ended_by?: string | null
+          id?: string
+          notes?: string | null
+          origin_bed_id?: string | null
+          origin_inpatient_bed_id?: string | null
+          origin_label?: string | null
+          origin_occupancy_id?: string | null
+          origin_type: string
+          patient_id?: string | null
+          patient_name: string
+          reason: string
+          refusal_reason?: string | null
+          requested_at?: string
+          requested_by?: string | null
+          requested_unit_id: string
+          status?: string
+          suggested_unit_id?: string | null
+          urgency?: string
+        }
+        Update: {
+          admitted_at?: string | null
+          admitted_by?: string | null
+          approved_unit_id?: string | null
+          bed_id?: string | null
+          company_id?: string
+          decided_at?: string | null
+          decided_by?: string | null
+          doctor_name?: string | null
+          ended_at?: string | null
+          ended_by?: string | null
+          id?: string
+          notes?: string | null
+          origin_bed_id?: string | null
+          origin_inpatient_bed_id?: string | null
+          origin_label?: string | null
+          origin_occupancy_id?: string | null
+          origin_type?: string
+          patient_id?: string | null
+          patient_name?: string
+          reason?: string
+          refusal_reason?: string | null
+          requested_at?: string
+          requested_by?: string | null
+          requested_unit_id?: string
+          status?: string
+          suggested_unit_id?: string | null
+          urgency?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "admission_requests_approved_unit_id_fkey"
+            columns: ["approved_unit_id"]
+            isOneToOne: false
+            referencedRelation: "inpatient_units"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "admission_requests_bed_id_fkey"
+            columns: ["bed_id"]
+            isOneToOne: false
+            referencedRelation: "inpatient_beds"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "admission_requests_requested_unit_id_fkey"
+            columns: ["requested_unit_id"]
+            isOneToOne: false
+            referencedRelation: "inpatient_units"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "admission_requests_suggested_unit_id_fkey"
+            columns: ["suggested_unit_id"]
+            isOneToOne: false
+            referencedRelation: "inpatient_units"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       api_partners: {
         Row: {
           api_authorized: boolean
@@ -3769,6 +3888,124 @@ export type Database = {
         }
         Relationships: []
       }
+      inpatient_bed_log: {
+        Row: {
+          bed_id: string
+          changed_at: string
+          changed_by: string | null
+          company_id: string
+          from_status: string | null
+          id: string
+          note: string | null
+          request_id: string | null
+          to_status: string
+        }
+        Insert: {
+          bed_id: string
+          changed_at?: string
+          changed_by?: string | null
+          company_id: string
+          from_status?: string | null
+          id?: string
+          note?: string | null
+          request_id?: string | null
+          to_status: string
+        }
+        Update: {
+          bed_id?: string
+          changed_at?: string
+          changed_by?: string | null
+          company_id?: string
+          from_status?: string | null
+          id?: string
+          note?: string | null
+          request_id?: string | null
+          to_status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "inpatient_bed_log_bed_id_fkey"
+            columns: ["bed_id"]
+            isOneToOne: false
+            referencedRelation: "inpatient_beds"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      inpatient_beds: {
+        Row: {
+          company_id: string
+          created_at: string
+          current_request_id: string | null
+          id: string
+          is_active: boolean
+          name: string
+          sort_order: number
+          status: string
+          unit_id: string
+          updated_at: string
+        }
+        Insert: {
+          company_id: string
+          created_at?: string
+          current_request_id?: string | null
+          id?: string
+          is_active?: boolean
+          name: string
+          sort_order?: number
+          status?: string
+          unit_id: string
+          updated_at?: string
+        }
+        Update: {
+          company_id?: string
+          created_at?: string
+          current_request_id?: string | null
+          id?: string
+          is_active?: boolean
+          name?: string
+          sort_order?: number
+          status?: string
+          unit_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "inpatient_beds_unit_id_fkey"
+            columns: ["unit_id"]
+            isOneToOne: false
+            referencedRelation: "inpatient_units"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      inpatient_units: {
+        Row: {
+          company_id: string
+          created_at: string
+          hospital_id: string | null
+          id: string
+          is_active: boolean
+          name: string
+        }
+        Insert: {
+          company_id: string
+          created_at?: string
+          hospital_id?: string | null
+          id?: string
+          is_active?: boolean
+          name: string
+        }
+        Update: {
+          company_id?: string
+          created_at?: string
+          hospital_id?: string | null
+          id?: string
+          is_active?: boolean
+          name?: string
+        }
+        Relationships: []
+      }
       instrument_events: {
         Row: {
           company_id: string
@@ -7058,6 +7295,42 @@ export type Database = {
         }
         Returns: undefined
       }
+      _inp_set: {
+        Args: { _bed: string; _note: string; _req: string; _to: string }
+        Returns: undefined
+      }
+      admission_approve: {
+        Args: { _bed_id: string; _request_id: string }
+        Returns: undefined
+      }
+      admission_cancel: { Args: { _request_id: string }; Returns: undefined }
+      admission_confirm_transfer: {
+        Args: { _request_id: string }
+        Returns: undefined
+      }
+      admission_refuse: {
+        Args: {
+          _reason: string
+          _request_id: string
+          _suggested_unit_id?: string
+        }
+        Returns: undefined
+      }
+      admission_request_create: {
+        Args: {
+          _doctor_name?: string
+          _notes?: string
+          _origin_inpatient_bed_id?: string
+          _origin_label?: string
+          _origin_occupancy_id?: string
+          _patient_id?: string
+          _patient_name: string
+          _reason: string
+          _requested_unit_id: string
+          _urgency?: string
+        }
+        Returns: string
+      }
       apoio__mascarar: { Args: { _t: string }; Returns: string }
       apoio_acao_concluir: {
         Args: { _id: string; _observacao: string }
@@ -7953,6 +8226,8 @@ export type Database = {
         Args: { _company_id: string }
         Returns: undefined
       }
+      inpatient_discharge: { Args: { _bed_id: string }; Returns: undefined }
+      inpatient_mark_clean: { Args: { _bed_id: string }; Returns: undefined }
       is_company_manager: { Args: { _user_id: string }; Returns: boolean }
       lab_equipments_master_company: { Args: never; Returns: string }
       lab_materiais_seed: { Args: { _company: string }; Returns: undefined }
