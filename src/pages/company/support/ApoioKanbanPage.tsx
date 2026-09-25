@@ -1,6 +1,6 @@
 import { CatalogoAlertasFaixa } from '@/components/apoio/kanban/CatalogoAlertasFaixa'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { AlertTriangle, ChevronDown, ChevronUp, Copy, FileText, GripVertical, Hand, Lock, MoreHorizontal, Pencil, Plus, RefreshCw, Repeat, Search, Trash2 } from 'lucide-react'
+import { AlertTriangle, Check, ChevronDown, ChevronUp, Clock, Copy, FileText, GripVertical, Hand, Lock, MoreHorizontal, Pencil, Plus, RefreshCw, Repeat, Search, Trash2 } from 'lucide-react'
 import { toast } from 'sonner'
 import { supabase } from '@/integrations/supabase/client'
 import { Button } from '@/components/ui/button'
@@ -49,6 +49,7 @@ export default function ApoioKanbanPage() {
   const [permitidos, setPermitidos] = useState<string[]>([])
   const [mover, setMover] = useState<{ card: KCard; status: string; motivo: string } | null>(null)
   const [faixaAberta, setFaixaAberta] = useState(true)
+  const [autoAtualizar, setAutoAtualizar] = useState(false)
   const dragTab = useRef<string | null>(null)
 
   const carregar = useCallback(async () => {
@@ -84,6 +85,13 @@ export default function ApoioKanbanPage() {
       }).subscribe()
     return () => { clearTimeout(timer.current); supabase.removeChannel(ch) }
   }, [apoio.enabled, apoio.companyId, carregar])
+
+  // Atualização automática a cada 30 segundos (quando ligada)
+  useEffect(() => {
+    if (!autoAtualizar) return
+    const t = setInterval(() => carregar(), 30000)
+    return () => clearInterval(t)
+  }, [autoAtualizar, carregar])
 
   // mantém o drawer com dados atualizados
   useEffect(() => { if (aberto) { const n = cards.find(c => c.id === aberto.id); if (n && n !== aberto) setAberto(n) } }, [cards]) // eslint-disable-line
@@ -174,7 +182,29 @@ export default function ApoioKanbanPage() {
             <p className="text-sm text-muted-foreground">Acompanhe cada exame enviado ao apoio até a liberação</p>
           </div>
           <div className="flex gap-2">
-            <Button variant="outline" onClick={carregar} disabled={loading}><RefreshCw className={`mr-1 h-4 w-4 ${loading ? 'animate-spin' : ''}`} />Atualizar</Button>
+            <div className="flex">
+              <Button variant="outline" className="rounded-r-none border-r-0" onClick={carregar} disabled={loading}><RefreshCw className={`mr-1 h-4 w-4 ${loading ? 'animate-spin' : ''}`} />Atualizar</Button>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="outline" className={`rounded-l-none px-2 ${autoAtualizar ? 'border-primary text-primary' : ''}`} aria-label="Opções de atualização">
+                    <ChevronDown className="h-4 w-4" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  <DropdownMenuItem onClick={() => setAutoAtualizar(v => !v)}>
+                    <Clock className={`mr-2 h-4 w-4 ${autoAtualizar ? 'text-primary' : ''}`} />
+                    {autoAtualizar ? 'Desligar atualização automática' : 'Atualizar automaticamente a cada 30s'}
+                    {autoAtualizar && <Check className="ml-auto h-4 w-4 text-primary" />}
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </div>
+            {autoAtualizar && (
+              <span className="flex items-center gap-1 rounded-lg border border-primary/30 bg-primary/5 px-2 text-xs font-medium text-primary">
+                <span className="relative flex h-2 w-2"><span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-primary opacity-60" /><span className="relative inline-flex h-2 w-2 rounded-full bg-primary" /></span>
+                Automático 30s
+              </span>
+            )}
             <Button className="gradient-bg text-white" disabled={bloqueado} onClick={() => setEditVisao({ id: '', nome: '', filtros: {}, compartilhada: false, dono_id: userId || null, ordem: 0 })}><Plus className="mr-1 h-4 w-4" />Nova visão</Button>
           </div>
         </div>
