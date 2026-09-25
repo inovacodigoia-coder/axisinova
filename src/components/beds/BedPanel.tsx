@@ -10,6 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Textarea } from '@/components/ui/textarea'
 import { Plus, Trash2, Pill, Send, LogOut, Clock, CheckCircle2, AlertTriangle } from 'lucide-react'
 import { MANCHESTER_COLORS, type ManchesterColor } from '@/data/manchester'
+import { AdmissionRequestDialog } from '@/components/inpatient/AdmissionRequestDialog'
 import { rpc, type Bed, type Occupancy, type Sector } from '@/hooks/useCollectionPosts'
 
 const db = supabase as any
@@ -42,6 +43,8 @@ export function BedPanel({ bed, occupancy, sectors, onClose }: Props) {
   const [sector, setSector] = useState('')
   const [refNotes, setRefNotes] = useState('')
   const [, setTick] = useState(0)
+  const [showAdm, setShowAdm] = useState(false)
+  const [admReq, setAdmReq] = useState<any | null>(null)
 
   const load = useCallback(async () => {
     if (!occupancy || !bed) return
@@ -51,6 +54,8 @@ export function BedPanel({ bed, occupancy, sectors, onClose }: Props) {
       db.from('bed_referrals').select('*').eq('occupancy_id', occupancy.id).order('referred_at', { ascending: false }),
       db.from('bed_status_log').select('*').eq('bed_id', bed.id).order('changed_at', { ascending: false }).limit(30),
     ])
+    const { data: adm } = await db.from('admission_requests').select('*').eq('origin_occupancy_id', occupancy.id).in('status', ['pending', 'approved']).maybeSingle()
+    setAdmReq(adm || null)
     const ids = (p.data || []).map((x: any) => x.id)
     const [it, ds] = ids.length ? await Promise.all([
       db.from('prescription_items').select('*').in('prescription_id', ids),
@@ -108,9 +113,16 @@ export function BedPanel({ bed, occupancy, sectors, onClose }: Props) {
                 <SelectTrigger className="w-44"><LogOut className="h-4 w-4 mr-1" /><SelectValue placeholder="Liberar leito" /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="alta">Alta do posto</SelectItem>
-                  <SelectItem value="internacao">Encaminhar para internação</SelectItem>
                 </SelectContent>
               </Select>
+            </section>
+
+            <section className="rounded-lg border p-3 flex items-center justify-between text-sm">
+              {admReq
+                ? <span>Internação: <b>{admReq.status === 'pending' ? 'aguardando aprovação de vaga' : 'vaga reservada — aguardando transferência'}</b>. O paciente continua neste leito até a transferência.</span>
+                : <span className="text-muted-foreground">Precisa internar este paciente?</span>}
+              {!admReq && <Button size="sm" variant="outline" onClick={() => setShowAdm(true)}>Solicitar internação</Button>}
+              <AdmissionRequestDialog open={showAdm} onOpenChange={setShowAdm} patientName={occupancy.patient_name} patientId={occupancy.patient_id} originOccupancyId={occupancy.id} onDone={load} />
             </section>
 
             <section className="space-y-2">
