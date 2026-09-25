@@ -9,12 +9,14 @@ import { useDoctorQueue } from '@/hooks/useDoctorQueue'
 import { NoPatientsInQueueState } from '@/components/medical/empty-states/NoPatientsInQueueState'
 import { Clock, Users, CheckCircle, Timer, Play, Eye, AlertTriangle, AlertCircle } from 'lucide-react'
 import { motion } from 'framer-motion'
+import { AdmissionRequestDialog } from '@/components/inpatient/AdmissionRequestDialog'
 
 function getAge(birthDate: string) {
   return Math.floor((Date.now() - new Date(birthDate).getTime()) / (365.25 * 24 * 60 * 60 * 1000))
 }
 
 export default function MedicalDashboardPage() {
+  const [admOpen, setAdmOpen] = useState(false)
   const navigate = useNavigate()
   const { user } = useAuth()
   const { doctors, specialties } = useRegisters()
@@ -250,6 +252,13 @@ export default function MedicalDashboardPage() {
               >
                 Continuar Atendimento
               </button>
+              <button
+                onClick={() => setAdmOpen(true)}
+                className="mt-2 w-full py-2 text-sm font-medium rounded-lg border border-border bg-card hover:bg-muted transition-colors"
+              >
+                Solicitar internação
+              </button>
+              <AdmissionRequestDialog open={admOpen} onOpenChange={setAdmOpen} patientName={activeAppt.patientName} />
             </div>
           )}
 
