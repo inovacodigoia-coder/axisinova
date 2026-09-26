@@ -442,6 +442,13 @@
       "when": 1790459889391,
       "tag": "0062_faixas_unicas_e_auditoria_geral",
       "breakpoints": true
+    },
+    {
+      "idx": 63,
+      "version": "7",
+      "when": 1790459953514,
+      "tag": "0063_faixas_conservacao_propria_empresa",
+      "breakpoints": true
     }
   ]
 }

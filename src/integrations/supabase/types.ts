@@ -7809,7 +7809,7 @@ export type Database = {
         Args: { _pedido_exame_id: string }
         Returns: boolean
       }
-      apoio_faixas_conservacao: { Args: { _company: string }; Returns: Json }
+      apoio_faixas_conservacao: { Args: { _company?: string }; Returns: Json }
       apoio_impressao_pegar: {
         Args: { _empresa: string; _limite?: number }
         Returns: {

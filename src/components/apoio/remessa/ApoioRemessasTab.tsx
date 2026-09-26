@@ -362,7 +362,7 @@ function DetalheRemessa({ id, remessa: r0, pode, onClose, onChanged }: { id: str
   const romaneio = () => gerarRomaneio({ laboratorio: labNome, apoio: r.apoio_nome, numero: r.cod_lote_lab, saida: r.saida_prevista,
     itens: itensAtivos.map(i => ({ ...i, conservacao: consItem(i).k })), totalTubos: tubos.length - (recip.length - recipAtivos.length) })
   const [faixasCond, setFaixasCond] = useState<Record<string, { min?: number; max?: number; nome?: string }>>({})
-  useEffect(() => { if (!entrega) return; supabase.rpc('apoio_faixas_conservacao' as any, { _company: (r as any).company_id }).then(({ data }) => setFaixasCond((data as any) || {})) }, [entrega])
+  useEffect(() => { if (!entrega) return; supabase.rpc('apoio_faixas_conservacao' as any, {}).then(({ data }) => setFaixasCond((data as any) || {})) }, [entrega])
   const faixaTxt = (k: string) => { const f = faixasCond[k]; if (!f) return 'sem faixa nas Condições de transporte'; return f.min == null ? `≤ ${f.max} °C` : f.max == null ? `≥ ${f.min} °C` : `${f.min} a ${f.max} °C` }
   const sacosPresentes = ORDEM_CONSERVACAO.filter(k => recipAtivos.some(rc => rc.conservacao === k))
   const pendSeparar = recipAtivos.filter(rc => !rc.separado || !rc.conservacao || rc.conservacao === 'verificar').length
