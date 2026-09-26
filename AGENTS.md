@@ -1,1 +1,3 @@
 - Conservação do tubo do apoio é calculada por trigger em apoio_recipiente a partir da etiqueta EPL (tabela editável em apoio_laboratorio.conservacao_textos) — assim a transmissão e o XML ao Pardini não mudam.
+- Triagem Lab: unidade = origem (`origins.papel_*`, `laboratorio_destino_id`); permissões em `permissions.triagem`, checadas no banco por `triagem_tem_permissao`; auditoria reaproveita `apoio_auditar` → `apoio_auditoria`. Why: não duplicar cadastro de unidades nem trilha de auditoria.
+- Horário de coleta: único campo `collectedAt` (+ `collectedBy`) no exame em `lab_guides`; correção só via RPC `lab_coleta_corrigir_horario` (justificativa + auditoria). Why: é o campo que o Apoio envia como DataColeta/HoraColeta.

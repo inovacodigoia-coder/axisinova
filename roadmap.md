@@ -8,3 +8,5 @@
 - [x] Fazer Detalhes Atendimento consultar sempre o cadastro atual do paciente.
 - [x] Atualizar a listagem após editar Informações do Cliente.
 - [x] Exibir sexo em português, nascimento em dia/mês/ano e máscaras de CPF, RG, telefone e endereço.
+- [x] T01 Triagem Lab: cadastros e permissões
+- [ ] T02 malote / T03 tela de triagem (próximos prompts)
