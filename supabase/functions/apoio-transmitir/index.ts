@@ -40,7 +40,7 @@ async function aplicarAdmitido(ctx: Ctx, remessa: any, exames: any[], util: stri
   const transmitidos = new Set<string>()
   for (const p of adm.pedidos) {
     const codPedLab = p.codPedLab, codPedApoio = p.codPedApoio
-    const doPedido = exames.filter((e) => String(e.ordem.order_number ?? e.ordem.protocol).replace(/\s/g, '').slice(0, 15) === codPedLab)
+    const doPedido = exames.filter((e) => String(e.cod_ped_lab ?? '').toUpperCase() === String(codPedLab).toUpperCase())
     for (const r of p.recipientes) {
       const codBar = r.codBarApoio, epl = r.etiquetaEpl
       const codigos = r.exames.map((x) => x.codExmApoio.toUpperCase())
@@ -90,7 +90,8 @@ Deno.serve(async (req) => {
 
   const { data: rem0 } = await admin.from('apoio_remessa').select('*').eq('id', parsed.data.remessa_id).maybeSingle()
   if (!rem0 || (quem.companyId && rem0.company_id !== quem.companyId)) return json({ ok: false, motivo: 'Remessa não encontrada' }, 404)
-  const jaEnviada = !!rem0.mensagem_id
+  // Só consulta o lote quando a tentativa anterior ficou sem resposta (timeout/queda)
+  const jaEnviada = !!rem0.envio_sem_resposta
   const presa = rem0.status === 'transmitindo' && Date.now() - new Date(rem0.updated_at).getTime() > 5 * 60_000
   const permitidos = presa ? ['transmitindo'] : ['aberta', 'conferida', 'erro']
   const msgId = rem0.mensagem_id || idMsg()
