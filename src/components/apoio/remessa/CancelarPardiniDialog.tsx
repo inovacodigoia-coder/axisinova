@@ -13,8 +13,9 @@ type Resultado = { id: string; resultado: 'cancelado' | 'recusado' | 'sem_confir
 
 const MOTIVOS = ['Erro de cadastro', 'Paciente desistiu', 'Amostra inadequada / perdida', 'Enviado por engano', 'Outro']
 
-export function CancelarPardiniDialog({ itens, marcados, open, onClose, onDone }: {
+export function CancelarPardiniDialog({ itens, marcados, open, onClose, onDone, onFinish }: {
   itens: ItemCancelavel[]; marcados: string[]; open: boolean; onClose: () => void; onDone: () => void
+  onFinish?: (r: { resultados: Resultado[]; destino: 'fila' | 'atendimento' }) => void
 }) {
   const [sel, setSel] = useState<string[]>([])
   const [motivo, setMotivo] = useState(''); const [outro, setOutro] = useState('')
@@ -31,14 +32,17 @@ export function CancelarPardiniDialog({ itens, marcados, open, onClose, onDone }
 
   const executar = async () => {
     setConfirmar(false); setRodando(true); setFeitos([])
+    const todos: Resultado[] = []
     for (const id of sel) {
       const { data, error } = await supabase.functions.invoke('apoio-cancelar', { body: { modo: 'remessa', pedido_exame_id: id, motivo: motivoFinal, destino } })
       const r: Resultado = error
         ? { id, resultado: 'recusado', mensagem: (data as any)?.error || error.message || 'Falha ao cancelar' }
         : { id, resultado: (data as any)?.resultado || 'recusado', mensagem: (data as any)?.mensagem || (data as any)?.error || '' }
+      todos.push(r)
       setFeitos(f => [...f, r])
     }
     setRodando(false); onDone()
+    onFinish?.({ resultados: todos, destino: destino as 'fila' | 'atendimento' })
   }
 
   const nome = (id: string) => { const i = itens.find(x => x.id === id); return i ? `${i.paciente} · ${i.exame}` : id }
