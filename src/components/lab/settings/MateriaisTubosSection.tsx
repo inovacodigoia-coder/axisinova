@@ -25,6 +25,8 @@ export const Bolinha = ({ hex }: { hex?: string | null }) => (
   <span className="inline-block h-3 w-3 shrink-0 rounded-full border border-border" style={{ backgroundColor: hex || 'transparent' }} />
 )
 
+const numOuNulo = (v: unknown) => (v === null || v === undefined || v === '' ? null : Number(v))
+
 export function RecipienteSelect({ value, onChange, recipientes, vazio = '— escolher —' }: { value: string; onChange: (v: string) => void; recipientes: Recipiente[]; vazio?: string }) {
   return (
     <select value={value} onChange={e => onChange(e.target.value)} className="h-9 w-full rounded-md border border-input bg-background px-2 text-sm">
@@ -65,6 +67,8 @@ export default function MateriaisTubosSection() {
     })()
   }, [cid])
 
+  const [condicoes, setCondicoes] = useState<{ id: string; nome: string; ativo: boolean }[]>([])
+  useEffect(() => { if (cid) db.from('triagem_condicao_transporte').select('id, nome, ativo').eq('company_id', cid).order('ordem').then(({ data }: any) => setCondicoes(data ?? [])) }, [cid])
   const recs = cad.recipientes
   const recDe = (id?: string | null) => recs.find(r => r.id === id)
   const usoRec = (id: string) => cad.materiais.filter(m => m.recipiente_id === id).length
@@ -83,10 +87,11 @@ export default function MateriaisTubosSection() {
     const m = editMat!; const e: Record<string, string> = {}
     if (!m.nome?.trim()) e.nome = 'Informe o nome'
     else if (cad.materiais.some(x => x.id !== m.id && normMat(x.nome) === normMat(m.nome))) e.nome = 'Já existe um material com esse nome'
+    if ([m.estab_ambiente_h, m.estab_refrigerado_h, m.estab_congelado_h].some(v => v !== null && v !== undefined && (v as any) !== '' && !(Number(v) > 0))) e.estab = 'Estabilidade deve ser maior que zero (ou vazia)'
     if (!m.recipiente_id && !(m.id && m.legado)) e.recipiente_id = 'Escolha o tubo/recipiente padrão'
     setErros(e); if (Object.keys(e).length) return
     setSalvando(true)
-    const row = { company_id: cid, nome: m.nome!.trim(), sigla: m.sigla?.trim() || null, recipiente_id: m.recipiente_id || null, descricao: m.descricao?.trim() || null, ativo: m.ativo ?? true, ordem: m.ordem ?? 0, updated_at: new Date().toISOString() }
+    const row = { company_id: cid, nome: m.nome!.trim(), sigla: m.sigla?.trim() || null, recipiente_id: m.recipiente_id || null, descricao: m.descricao?.trim() || null, condicao_transporte_id: m.condicao_transporte_id || null, estab_ambiente_h: numOuNulo(m.estab_ambiente_h), estab_refrigerado_h: numOuNulo(m.estab_refrigerado_h), estab_congelado_h: numOuNulo(m.estab_congelado_h), ativo: m.ativo ?? true, ordem: m.ordem ?? 0, updated_at: new Date().toISOString() }
     const { error } = m.id ? await db.from('lab_material').update(row).eq('id', m.id) : await db.from('lab_material').insert(row)
     setSalvando(false)
     if (error) return toast.error('Não foi possível salvar o material', { description: 'Confira os campos e tente de novo.' })
@@ -276,6 +281,22 @@ export default function MateriaisTubosSection() {
             <div><Label>Sigla</Label><Input value={editMat.sigla ?? ''} onChange={e => setEditMat({ ...editMat, sigla: e.target.value })} /></div>
             <div><Label>Recipiente padrão *</Label><RecipienteSelect value={editMat.recipiente_id ?? ''} onChange={v => setEditMat({ ...editMat, recipiente_id: v || null })} recipientes={recs} vazio="Recipiente: definir" /><Erro k="recipiente_id" /></div>
             <div><Label>Descrição</Label><Input value={editMat.descricao ?? ''} onChange={e => setEditMat({ ...editMat, descricao: e.target.value })} /></div>
+            <div className="rounded-lg border border-border p-3 space-y-2">
+              <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Transporte e estabilidade</p>
+              <div><Label>Condição de transporte padrão</Label>
+                <select className="h-9 w-full rounded-md border border-input bg-background px-2 text-sm" value={editMat.condicao_transporte_id ?? ''} onChange={e => setEditMat({ ...editMat, condicao_transporte_id: e.target.value || null })}>
+                  <option value="">Não definida</option>
+                  {condicoes.filter(c => c.ativo || c.id === editMat.condicao_transporte_id).map(c => <option key={c.id} value={c.id}>{c.nome}</option>)}
+                </select>
+              </div>
+              <div className="grid grid-cols-3 gap-2">
+                {([['estab_ambiente_h', 'Ambiente (h)'], ['estab_refrigerado_h', 'Refrigerado (h)'], ['estab_congelado_h', 'Congelado (h)']] as const).map(([k, l]) => (
+                  <div key={k}><Label className="text-xs">{l}</Label><Input type="number" min={0} step="0.5" placeholder="não se aplica" value={(editMat as any)[k] ?? ''} onChange={e => setEditMat({ ...editMat, [k]: e.target.value === '' ? null : Number(e.target.value) })} /></div>
+                ))}
+              </div>
+              <p className="text-[11px] text-muted-foreground">Defina conforme a bula do fabricante / POP; o sistema avisa quando a amostra se aproximar do limite. Vazio = não se aplica.</p>
+              <Erro k="estab" />
+            </div>
             <label className="flex items-center gap-2 text-sm"><input type="checkbox" checked={editMat.ativo ?? true} onChange={e => setEditMat({ ...editMat, ativo: e.target.checked })} />Ativo</label>
           </div>}
           <DialogFooter><Button variant="outline" onClick={() => setEditMat(null)}>Cancelar</Button><Button onClick={salvarMat} disabled={salvando}>{salvando && <Loader2 className="mr-1 h-4 w-4 animate-spin" />}Salvar</Button></DialogFooter>

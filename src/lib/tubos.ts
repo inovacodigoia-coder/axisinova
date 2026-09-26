@@ -9,7 +9,7 @@ import { supabase } from '@/integrations/supabase/client'
 import { TUBE_TYPES } from '@/types/lab.types'
 
 export interface Recipiente { id: string; nome: string; sigla: string; cor_tampa: string | null; cor_hex: string | null; aditivo: string | null; volume_ml: number | null; observacao: string | null; ativo: boolean; ordem: number }
-export interface Material { id: string; nome: string; sigla: string | null; recipiente_id: string | null; descricao: string | null; legado: boolean; ativo: boolean; ordem: number }
+export interface Material { id: string; nome: string; sigla: string | null; recipiente_id: string | null; descricao: string | null; legado: boolean; ativo: boolean; ordem: number; condicao_transporte_id?: string | null; estab_ambiente_h?: number | null; estab_refrigerado_h?: number | null; estab_congelado_h?: number | null }
 export interface Tubo { type: string; label: string; sigla: string; color: string; hex: string; volume: string; indefinido?: boolean }
 
 export const normMat = (s: unknown) => String(s ?? '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/\s+/g, ' ').trim()
