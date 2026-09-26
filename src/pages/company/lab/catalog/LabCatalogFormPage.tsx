@@ -46,7 +46,7 @@ import {
   GripVertical
 } from 'lucide-react'
 import { useNavigate, useParams } from 'react-router-dom'
-import { EstabilidadeExameCard } from '@/components/lab/triagem/EstabilidadeExameCard'
+import { EstabilidadeExameCard, ESTAB_VAZIA, estabilidadeParaLinha, salvarEstabilidadeExame, type Estabilidade } from '@/components/lab/triagem/EstabilidadeExameCard'
 import LabMethodologySearchModal from '@/components/lab/catalog/LabMethodologySearchModal'
 import ExamReportSection from '@/components/lab/catalog/ExamReportSection'
 import { cn } from '@/lib/utils'
@@ -278,11 +278,13 @@ export default function LabCatalogFormPage() {
   }, [selectedLaudoId, laudos])
 
 
+  const [estab, setEstab] = useState<Estabilidade>(ESTAB_VAZIA)
   const handleSave = async () => {
     if (!examData.name) {
       toast.error('O nome do exame é obrigatório')
       return
     }
+    try { estabilidadeParaLinha(estab) } catch (e: any) { toast.error(e.message); return }
 
     setIsSaving(true)
     try {
@@ -317,6 +319,8 @@ export default function LabCatalogFormPage() {
         } as any)
         examId = newExam?.id;
       }
+      // Estabilidade própria do exame: gravada no mesmo Salvar (inclusive no exame novo)
+      if (examId) await salvarEstabilidadeExame(examId, estab)
 
       // Salva a configuração no laudo selecionado (ou cria o laudo padrão do exame novo)
       if (examId) {
@@ -558,7 +562,7 @@ export default function LabCatalogFormPage() {
             }} 
             onOpenMethodologySearch={() => setIsMethodologySearchOpen(true)}
           />
-          <EstabilidadeExameCard examId={isEditing ? id : undefined} />
+          <EstabilidadeExameCard examId={isEditing ? id : undefined} value={estab} onChange={setEstab} />
         </TabsContent>
         <TabsContent value="report" className="space-y-4">
           <ExamLaudosSection
