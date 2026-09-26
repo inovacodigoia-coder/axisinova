@@ -836,6 +836,7 @@ export type Database = {
           codigo_formato: string | null
           codigo_formato_anterior: string | null
           company_id: string
+          conservacao: string
           created_at: string
           exame_id: string
           exige_pdf: boolean
@@ -854,6 +855,7 @@ export type Database = {
           codigo_formato?: string | null
           codigo_formato_anterior?: string | null
           company_id: string
+          conservacao?: string
           created_at?: string
           exame_id: string
           exige_pdf?: boolean
@@ -872,6 +874,7 @@ export type Database = {
           codigo_formato?: string | null
           codigo_formato_anterior?: string | null
           company_id?: string
+          conservacao?: string
           created_at?: string
           exame_id?: string
           exige_pdf?: boolean
@@ -1129,6 +1132,7 @@ export type Database = {
       }
       apoio_laboratorio: {
         Row: {
+          alerta_guarda_min: number
           ambiente: string
           ativo: boolean
           cnpj: string | null
@@ -1136,13 +1140,16 @@ export type Database = {
           company_id: string
           conector: string
           conferir_apos_etiqueta: boolean
+          conservacao_textos: Json
           contato_email: string | null
           contato_nome: string | null
           contato_telefone: string | null
           created_at: string
           dias_transporte: number
           endpoint_url: string | null
+          faixas_temperatura: Json
           guardar_pdf_sempre: boolean
+          horarios_motoboy: string[]
           id: string
           licenca_arquivo_path: string | null
           licenca_sanitaria: string | null
@@ -1158,6 +1165,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          alerta_guarda_min?: number
           ambiente?: string
           ativo?: boolean
           cnpj?: string | null
@@ -1165,13 +1173,16 @@ export type Database = {
           company_id: string
           conector?: string
           conferir_apos_etiqueta?: boolean
+          conservacao_textos?: Json
           contato_email?: string | null
           contato_nome?: string | null
           contato_telefone?: string | null
           created_at?: string
           dias_transporte?: number
           endpoint_url?: string | null
+          faixas_temperatura?: Json
           guardar_pdf_sempre?: boolean
+          horarios_motoboy?: string[]
           id?: string
           licenca_arquivo_path?: string | null
           licenca_sanitaria?: string | null
@@ -1187,6 +1198,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          alerta_guarda_min?: number
           ambiente?: string
           ativo?: boolean
           cnpj?: string | null
@@ -1194,13 +1206,16 @@ export type Database = {
           company_id?: string
           conector?: string
           conferir_apos_etiqueta?: boolean
+          conservacao_textos?: Json
           contato_email?: string | null
           contato_nome?: string | null
           contato_telefone?: string | null
           created_at?: string
           dias_transporte?: number
           endpoint_url?: string | null
+          faixas_temperatura?: Json
           guardar_pdf_sempre?: boolean
+          horarios_motoboy?: string[]
           id?: string
           licenca_arquivo_path?: string | null
           licenca_sanitaria?: string | null
@@ -1866,11 +1881,16 @@ export type Database = {
           cod_bar_apoio: string | null
           cod_ped_apoio: string | null
           company_id: string
+          conservacao: string | null
+          conservacao_origem: string | null
+          conservacao_texto: string | null
           created_at: string
           etiqueta_epl: string | null
           id: string
           impressoes: number
           remessa_id: string
+          separado: boolean
+          separado_em: string | null
           updated_at: string
         }
         Insert: {
@@ -1880,11 +1900,16 @@ export type Database = {
           cod_bar_apoio?: string | null
           cod_ped_apoio?: string | null
           company_id: string
+          conservacao?: string | null
+          conservacao_origem?: string | null
+          conservacao_texto?: string | null
           created_at?: string
           etiqueta_epl?: string | null
           id?: string
           impressoes?: number
           remessa_id: string
+          separado?: boolean
+          separado_em?: string | null
           updated_at?: string
         }
         Update: {
@@ -1894,11 +1919,16 @@ export type Database = {
           cod_bar_apoio?: string | null
           cod_ped_apoio?: string | null
           company_id?: string
+          conservacao?: string | null
+          conservacao_origem?: string | null
+          conservacao_texto?: string | null
           created_at?: string
           etiqueta_epl?: string | null
           id?: string
           impressoes?: number
           remessa_id?: string
+          separado?: boolean
+          separado_em?: string | null
           updated_at?: string
         }
         Relationships: [
@@ -1931,6 +1961,8 @@ export type Database = {
           conferido_por: string | null
           created_at: string
           criado_por: string | null
+          entrega_forcada: string | null
+          entrega_sacos: Json | null
           entregue_a: string | null
           entregue_em: string | null
           entregue_registrado_por: string | null
@@ -1939,6 +1971,8 @@ export type Database = {
           mensagem_id: string | null
           modo: string
           observacao: string | null
+          saida_prevista: string | null
+          separada_em: string | null
           status: string
           temperatura: string
           transmitido_em: string | null
@@ -1956,6 +1990,8 @@ export type Database = {
           conferido_por?: string | null
           created_at?: string
           criado_por?: string | null
+          entrega_forcada?: string | null
+          entrega_sacos?: Json | null
           entregue_a?: string | null
           entregue_em?: string | null
           entregue_registrado_por?: string | null
@@ -1964,6 +2000,8 @@ export type Database = {
           mensagem_id?: string | null
           modo?: string
           observacao?: string | null
+          saida_prevista?: string | null
+          separada_em?: string | null
           status?: string
           temperatura?: string
           transmitido_em?: string | null
@@ -1981,6 +2019,8 @@ export type Database = {
           conferido_por?: string | null
           created_at?: string
           criado_por?: string | null
+          entrega_forcada?: string | null
+          entrega_sacos?: Json | null
           entregue_a?: string | null
           entregue_em?: string | null
           entregue_registrado_por?: string | null
@@ -1989,6 +2029,8 @@ export type Database = {
           mensagem_id?: string | null
           modo?: string
           observacao?: string | null
+          saida_prevista?: string | null
+          separada_em?: string | null
           status?: string
           temperatura?: string
           transmitido_em?: string | null
@@ -7350,6 +7392,13 @@ export type Database = {
         Args: { _id: string; _observacao: string; _resultado: string }
         Returns: undefined
       }
+      apoio_alerta_guarda: {
+        Args: never
+        Returns: {
+          conservacao: string
+          tubos: number
+        }[]
+      }
       apoio_alertar: {
         Args: {
           _company: string
@@ -7458,6 +7507,18 @@ export type Database = {
       apoio_codigo_aliquota: {
         Args: { _apoio: string; _pedido: string }
         Returns: string
+      }
+      apoio_conservacao_definir: {
+        Args: { _conservacao: string; _recipiente: string }
+        Returns: undefined
+      }
+      apoio_conservacao_epl: {
+        Args: { _epl: string; _mapa: Json }
+        Returns: Record<string, unknown>
+      }
+      apoio_conservacao_reprocessar: {
+        Args: { _remessa: string }
+        Returns: number
       }
       apoio_cursor_resolver: { Args: { _apoio: string }; Returns: undefined }
       apoio_custo_previsto: {
@@ -7976,7 +8037,12 @@ export type Database = {
       apoio_remessa_cancelar: { Args: { _remessa: string }; Returns: number }
       apoio_remessa_checar: { Args: { _perm?: boolean }; Returns: string }
       apoio_remessa_criar: {
-        Args: { _apoio: string; _ids: string[]; _temperatura: string }
+        Args: {
+          _apoio: string
+          _ids: string[]
+          _saida_prevista?: string
+          _temperatura?: string
+        }
         Returns: Json
       }
       apoio_remessa_disponiveis: {
@@ -7998,8 +8064,14 @@ export type Database = {
         }[]
       }
       apoio_remessa_entrega: {
-        Args: { _entregue_a: string; _entregue_em: string; _remessa: string }
-        Returns: undefined
+        Args: {
+          _entregue_a: string
+          _entregue_em: string
+          _forcar?: string
+          _remessa: string
+          _sacos?: Json
+        }
+        Returns: Json
       }
       apoio_remessa_forcar_conferencia: {
         Args: { _justificativa: string; _remessa: string }
@@ -8021,6 +8093,10 @@ export type Database = {
           exames: number
           id: string
           modo: string
+          previsto: boolean
+          sacos: Json
+          saida_prevista: string
+          separada_em: string
           status: string
           temperatura: string
           transmitido_em: string
@@ -8060,6 +8136,10 @@ export type Database = {
       apoio_senha_ler_cifrada: {
         Args: { _apoio_id: string; _chave: string }
         Returns: string
+      }
+      apoio_separar_bipar: {
+        Args: { _codigo: string; _remessa: string }
+        Returns: Json
       }
       apoio_set_senha: {
         Args: { _apoio_id: string; _senha: string }
