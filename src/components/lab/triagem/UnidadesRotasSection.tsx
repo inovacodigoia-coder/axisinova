@@ -250,12 +250,6 @@ function Rotas({ rotas, origens, conds, pode, companyId, recarregar }: { rotas: 
             </div>
             <div><Label>Condições aceitas</Label>
               <div className="flex flex-wrap gap-3">{conds.filter(c => c.ativo || edit.condicao_ids.includes(c.id!)).map(c => <label key={c.id} className="flex items-center gap-2 text-sm"><input type="checkbox" checked={edit.condicao_ids.includes(c.id!)} onChange={() => setEdit({ ...edit, condicao_ids: toggle(edit.condicao_ids, c.id!) })} />{c.nome}</label>)}</div></div>
-            <div><Label>Usada pelo Apoio como</Label>
-              <select className="h-10 w-full rounded-md border border-input bg-background px-2 text-sm" value={edit.conservacao || ''} onChange={e => setEdit({ ...edit, conservacao: e.target.value || null })}>
-                <option value="">Nenhuma</option>
-                {Object.entries(CONS_APOIO).map(([k, l]) => { const outra = (conds ?? []).find(c => c.conservacao === k && c.id !== edit.id); return <option key={k} value={k} disabled={!!outra}>Saco {l}{outra ? ` (já em "${outra.nome}")` : ''}</option> })}
-              </select>
-              <p className="mt-1 text-[11px] text-muted-foreground">A faixa desta condição é a usada para conferir a temperatura do saco no "Registrar entrega" do Apoio.</p></div>
             <label className="flex items-center gap-2 text-sm"><input type="checkbox" checked={edit.ativo} onChange={e => setEdit({ ...edit, ativo: e.target.checked })} />Ativa</label>
           </div>}
           <DialogFooter><Button variant="outline" onClick={() => setEdit(null)}>Cancelar</Button><Button onClick={salvar} disabled={salvando}>{salvando && <Loader2 className="mr-1 h-4 w-4 animate-spin" />}Salvar</Button></DialogFooter>
