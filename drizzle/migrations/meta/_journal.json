@@ -428,6 +428,13 @@
       "when": 1790446619125,
       "tag": "0060_apoio_log_lista_timeout",
       "breakpoints": true
+    },
+    {
+      "idx": 61,
+      "version": "7",
+      "when": 1790459109339,
+      "tag": "0061_triagem_lab_t01_cadastros",
+      "breakpoints": true
     }
   ]
 }

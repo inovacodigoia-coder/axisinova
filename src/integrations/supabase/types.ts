@@ -3556,6 +3556,9 @@ export type Database = {
           default_destination: string | null
           default_material: string | null
           default_origin: string | null
+          estab_ambiente_h: number | null
+          estab_congelado_h: number | null
+          estab_refrigerado_h: number | null
           estimated_duration_minutes: number | null
           id: string
           interfacing_config: Json | null
@@ -3592,6 +3595,9 @@ export type Database = {
           default_destination?: string | null
           default_material?: string | null
           default_origin?: string | null
+          estab_ambiente_h?: number | null
+          estab_congelado_h?: number | null
+          estab_refrigerado_h?: number | null
           estimated_duration_minutes?: number | null
           id?: string
           interfacing_config?: Json | null
@@ -3628,6 +3634,9 @@ export type Database = {
           default_destination?: string | null
           default_material?: string | null
           default_origin?: string | null
+          estab_ambiente_h?: number | null
+          estab_congelado_h?: number | null
+          estab_refrigerado_h?: number | null
           estimated_duration_minutes?: number | null
           id?: string
           interfacing_config?: Json | null
@@ -4644,8 +4653,12 @@ export type Database = {
         Row: {
           ativo: boolean
           company_id: string
+          condicao_transporte_id: string | null
           created_at: string
           descricao: string | null
+          estab_ambiente_h: number | null
+          estab_congelado_h: number | null
+          estab_refrigerado_h: number | null
           id: string
           legado: boolean
           nome: string
@@ -4657,8 +4670,12 @@ export type Database = {
         Insert: {
           ativo?: boolean
           company_id: string
+          condicao_transporte_id?: string | null
           created_at?: string
           descricao?: string | null
+          estab_ambiente_h?: number | null
+          estab_congelado_h?: number | null
+          estab_refrigerado_h?: number | null
           id?: string
           legado?: boolean
           nome: string
@@ -4670,8 +4687,12 @@ export type Database = {
         Update: {
           ativo?: boolean
           company_id?: string
+          condicao_transporte_id?: string | null
           created_at?: string
           descricao?: string | null
+          estab_ambiente_h?: number | null
+          estab_congelado_h?: number | null
+          estab_refrigerado_h?: number | null
           id?: string
           legado?: boolean
           nome?: string
@@ -4686,6 +4707,13 @@ export type Database = {
             columns: ["company_id"]
             isOneToOne: false
             referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "lab_material_condicao_transporte_id_fkey"
+            columns: ["condicao_transporte_id"]
+            isOneToOne: false
+            referencedRelation: "triagem_condicao_transporte"
             referencedColumns: ["id"]
           },
           {
@@ -4728,6 +4756,59 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "lab_methods_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      lab_motivo_coleta: {
+        Row: {
+          ativo: boolean
+          categoria: string | null
+          company_id: string
+          created_at: string
+          descricao: string
+          exige_justificativa: boolean
+          gera_recoleta: boolean
+          id: string
+          ordem: number
+          texto_ressalva: string | null
+          tipo: string
+          updated_at: string
+        }
+        Insert: {
+          ativo?: boolean
+          categoria?: string | null
+          company_id: string
+          created_at?: string
+          descricao: string
+          exige_justificativa?: boolean
+          gera_recoleta?: boolean
+          id?: string
+          ordem?: number
+          texto_ressalva?: string | null
+          tipo: string
+          updated_at?: string
+        }
+        Update: {
+          ativo?: boolean
+          categoria?: string | null
+          company_id?: string
+          created_at?: string
+          descricao?: string
+          exige_justificativa?: boolean
+          gera_recoleta?: boolean
+          id?: string
+          ordem?: number
+          texto_ressalva?: string | null
+          tipo?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "lab_motivo_coleta_company_id_fkey"
             columns: ["company_id"]
             isOneToOne: false
             referencedRelation: "companies"
@@ -5556,7 +5637,12 @@ export type Database = {
           establishment_id: string
           id: string
           internal_code: string | null
+          laboratorio_destino_id: string | null
           name: string
+          papel_coleta: boolean
+          papel_coleta_externa: boolean
+          papel_hospital: boolean
+          papel_laboratorio: boolean
           updated_at: string | null
         }
         Insert: {
@@ -5565,7 +5651,12 @@ export type Database = {
           establishment_id: string
           id?: string
           internal_code?: string | null
+          laboratorio_destino_id?: string | null
           name: string
+          papel_coleta?: boolean
+          papel_coleta_externa?: boolean
+          papel_hospital?: boolean
+          papel_laboratorio?: boolean
           updated_at?: string | null
         }
         Update: {
@@ -5574,7 +5665,12 @@ export type Database = {
           establishment_id?: string
           id?: string
           internal_code?: string | null
+          laboratorio_destino_id?: string | null
           name?: string
+          papel_coleta?: boolean
+          papel_coleta_externa?: boolean
+          papel_hospital?: boolean
+          papel_laboratorio?: boolean
           updated_at?: string | null
         }
         Relationships: [
@@ -5590,6 +5686,13 @@ export type Database = {
             columns: ["establishment_id"]
             isOneToOne: false
             referencedRelation: "establishments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "origins_laboratorio_destino_id_fkey"
+            columns: ["laboratorio_destino_id"]
+            isOneToOne: false
+            referencedRelation: "origins"
             referencedColumns: ["id"]
           },
         ]
@@ -7130,6 +7233,119 @@ export type Database = {
           },
         ]
       }
+      triagem_condicao_transporte: {
+        Row: {
+          ativo: boolean
+          company_id: string
+          cor: string
+          created_at: string
+          icone: string
+          id: string
+          nome: string
+          ordem: number
+          temp_max: number | null
+          temp_min: number | null
+          updated_at: string
+        }
+        Insert: {
+          ativo?: boolean
+          company_id: string
+          cor?: string
+          created_at?: string
+          icone?: string
+          id?: string
+          nome: string
+          ordem?: number
+          temp_max?: number | null
+          temp_min?: number | null
+          updated_at?: string
+        }
+        Update: {
+          ativo?: boolean
+          company_id?: string
+          cor?: string
+          created_at?: string
+          icone?: string
+          id?: string
+          nome?: string
+          ordem?: number
+          temp_max?: number | null
+          temp_min?: number | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "triagem_condicao_transporte_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      triagem_rota: {
+        Row: {
+          ativo: boolean
+          company_id: string
+          condicao_ids: string[]
+          created_at: string
+          destino_id: string
+          dias_semana: number[]
+          horarios: string[]
+          id: string
+          nome: string
+          origem_ids: string[]
+          transito_max_min: number
+          transportador: string | null
+          updated_at: string
+        }
+        Insert: {
+          ativo?: boolean
+          company_id: string
+          condicao_ids?: string[]
+          created_at?: string
+          destino_id: string
+          dias_semana?: number[]
+          horarios?: string[]
+          id?: string
+          nome: string
+          origem_ids?: string[]
+          transito_max_min?: number
+          transportador?: string | null
+          updated_at?: string
+        }
+        Update: {
+          ativo?: boolean
+          company_id?: string
+          condicao_ids?: string[]
+          created_at?: string
+          destino_id?: string
+          dias_semana?: number[]
+          horarios?: string[]
+          id?: string
+          nome?: string
+          origem_ids?: string[]
+          transito_max_min?: number
+          transportador?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "triagem_rota_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "triagem_rota_destino_id_fkey"
+            columns: ["destino_id"]
+            isOneToOne: false
+            referencedRelation: "origins"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       user_notifications: {
         Row: {
           action_route: string | null
@@ -8339,6 +8555,19 @@ export type Database = {
       inpatient_discharge: { Args: { _bed_id: string }; Returns: undefined }
       inpatient_mark_clean: { Args: { _bed_id: string }; Returns: undefined }
       is_company_manager: { Args: { _user_id: string }; Returns: boolean }
+      lab_coleta_corrigir_horario: {
+        Args: {
+          _exame_ids: string[]
+          _justificativa: string
+          _novo: string
+          _pedido: string
+        }
+        Returns: number
+      }
+      lab_coleta_registrar: {
+        Args: { _detalhes: Json; _pedido: string }
+        Returns: undefined
+      }
       lab_equipments_master_company: { Args: never; Returns: string }
       lab_materiais_seed: { Args: { _company: string }; Returns: undefined }
       lab_materiais_uso: {
@@ -8426,6 +8655,9 @@ export type Database = {
           unit_id: string
         }[]
       }
+      triagem__semear: { Args: { _company: string }; Returns: undefined }
+      triagem_semear_padroes: { Args: never; Returns: undefined }
+      triagem_tem_permissao: { Args: { _perm: string }; Returns: boolean }
     }
     Enums: {
       apoio_status:
