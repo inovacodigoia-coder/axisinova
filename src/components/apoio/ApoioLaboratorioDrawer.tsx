@@ -43,7 +43,6 @@ const TRANSPORTE_PADRAO = {
   horarios: '', textos: '(REFRIG.)=refrigerado', alerta_min: 60,
 }
 const transporteDe = (lab: ApoioLab) => {
-  const n = (v: unknown, d: string) => (v === undefined || v === null ? d : String(v))
   return {
     horarios: (lab.horarios_motoboy || []).join(', '),
     textos: Object.entries(lab.conservacao_textos || { '(REFRIG.)': 'refrigerado' }).map(([k, v]) => `${k}=${v}`).join('\n'),
