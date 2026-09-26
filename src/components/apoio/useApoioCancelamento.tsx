@@ -1,4 +1,4 @@
-import { useCallback, useRef, useState } from 'react';
+import { useCallback, useMemo, useRef, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import {
@@ -73,6 +73,9 @@ export function useApoioCancelamento() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  const itensQuadro = useMemo(() => (quadro ? [quadro] : []), [quadro]);
+  const marcadosQuadro = useMemo(() => (quadro ? [quadro.id] : []), [quadro]);
+
   const dialog = (
     <>
       <AlertDialog open={!!pergunta} onOpenChange={(o) => { if (!o) responder(null); }}>
@@ -89,7 +92,7 @@ export function useApoioCancelamento() {
         </AlertDialogContent>
       </AlertDialog>
       <CancelarPardiniDialog
-        open={!!quadro} itens={quadro ? [quadro] : []} marcados={quadro ? [quadro.id] : []}
+        open={!!quadro} itens={itensQuadro} marcados={marcadosQuadro}
         onClose={fecharQuadro} onDone={() => {}}
         onFinish={({ resultados, destino }) => {
           // Só segue cancelando localmente quando o Pardini confirmou e o destino é o atendimento.
