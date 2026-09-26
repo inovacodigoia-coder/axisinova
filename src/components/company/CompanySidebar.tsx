@@ -85,6 +85,7 @@ export const NAV_SECTIONS: NavSection[] = [
     items: [
       { label: 'Dashboard', icon: 'Home', path: '/app/lab/dashboard', module: 'lab_technical' },
       { label: 'Coleta', icon: 'FlaskConical', path: '/app/lab/coleta', module: 'lab_technical' },
+      { label: 'Triagem Lab', icon: 'ClipboardList', path: '/app/lab/triagem', module: 'triagem' },
       { label: 'Mapa de Trabalho', icon: 'FileText', path: '/app/lab/mapa', module: 'lab_technical' },
       { label: 'Análise', icon: 'Database', path: '/app/lab/analise', module: 'lab_technical' },
       { label: 'Hematologia', icon: 'Droplet', path: '/app/lab/validacao', module: 'lab_technical' },

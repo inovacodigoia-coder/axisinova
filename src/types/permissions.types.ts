@@ -24,6 +24,8 @@ export type SystemModule =
   | 'inpatient'
   /** Apoio / Terceirização: guarda códigos 'apoio.*' (não ações) */
   | 'apoio'
+  /** Triagem Lab: guarda códigos 'triagem.*' (não ações) */
+  | 'triagem'
 
 export type PermissionAction = 'view' | 'create' | 'edit' | 'delete' | 'export' | 'approve'
 
