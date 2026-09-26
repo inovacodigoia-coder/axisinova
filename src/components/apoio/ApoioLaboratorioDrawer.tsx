@@ -35,24 +35,18 @@ export interface ApoioLab {
   horarios_motoboy?: string[] | null
   conservacao_textos?: Record<string, string> | null
   alerta_guarda_min?: number | null
-  faixas_temperatura?: Record<string, { min?: number; max?: number }> | null
 }
 
 interface Cert { id?: string; tipo: string; numero: string; validade: string; arquivo_path: string | null; _file?: File | null }
 
 const TRANSPORTE_PADRAO = {
   horarios: '', textos: '(REFRIG.)=refrigerado', alerta_min: 60,
-  amb_min: '15', amb_max: '25', ref_min: '2', ref_max: '8', cong_max: '-10',
 }
 const transporteDe = (lab: ApoioLab) => {
-  const fx = lab.faixas_temperatura || {}
-  const n = (v: unknown, d: string) => (v === undefined || v === null ? d : String(v))
   return {
     horarios: (lab.horarios_motoboy || []).join(', '),
     textos: Object.entries(lab.conservacao_textos || { '(REFRIG.)': 'refrigerado' }).map(([k, v]) => `${k}=${v}`).join('\n'),
     alerta_min: lab.alerta_guarda_min ?? 60,
-    amb_min: n(fx.ambiente?.min, '15'), amb_max: n(fx.ambiente?.max, '25'),
-    ref_min: n(fx.refrigerado?.min, '2'), ref_max: n(fx.refrigerado?.max, '8'), cong_max: n(fx.congelado?.max, '-10'),
   }
 }
 const ENDPOINT_PADRAO = 'https://www.hermespardini.com.br/b2b/HPWS.XMLServer.cls'
@@ -138,11 +132,6 @@ export function ApoioLaboratorioDrawer({ open, lab, readOnly, podeCatalogo = fal
       if (!k || !['ambiente', 'refrigerado', 'congelado'].includes(v || '')) { e.textos = 'Cada linha: TEXTO=ambiente, refrigerado ou congelado'; break }
       textos[k] = v
     }
-    const num = (v: string) => (v.trim() === '' ? undefined : Number(v.replace(',', '.')))
-    const faixas = {
-      ambiente: { min: num(f.amb_min), max: num(f.amb_max) }, refrigerado: { min: num(f.ref_min), max: num(f.ref_max) }, congelado: { max: num(f.cong_max) },
-    }
-    if (Object.values(faixas).some(x => Object.values(x).some(v => v !== undefined && Number.isNaN(v)))) e.faixas = 'Faixas de temperatura inválidas'
     certs.forEach((c, i) => { if (!c.tipo.trim()) e[`cert_${i}`] = 'Informe o tipo' })
     setErros(e)
     if (Object.keys(e).length) return toast.error('Corrija os campos destacados')
@@ -161,7 +150,6 @@ export function ApoioLaboratorioDrawer({ open, lab, readOnly, podeCatalogo = fal
         guardar_pdf_sempre: f.guardar_pdf_sempre,
         licenca_sanitaria: f.licenca_sanitaria.trim() || null, licenca_validade: f.licenca_validade || null,
         horarios_motoboy: [...new Set(horarios)].sort(), conservacao_textos: textos, alerta_guarda_min: Math.max(1, Number(f.alerta_min) || 60),
-        faixas_temperatura: JSON.parse(JSON.stringify(faixas)),
       }
       let id = lab?.id
       if (id) {
@@ -287,14 +275,7 @@ export function ApoioLaboratorioDrawer({ open, lab, readOnly, podeCatalogo = fal
               </div>
               <div>
                 <label className={label}>Faixas de temperatura na saída (°C)</label>
-                <div className="mt-1 grid grid-cols-2 gap-2 text-xs sm:grid-cols-5">
-                  <label>Ambiente mín.<input className={input} value={f.amb_min} onChange={e => set('amb_min', e.target.value)} /></label>
-                  <label>Ambiente máx.<input className={input} value={f.amb_max} onChange={e => set('amb_max', e.target.value)} /></label>
-                  <label>Refrig. mín.<input className={input} value={f.ref_min} onChange={e => set('ref_min', e.target.value)} /></label>
-                  <label>Refrig. máx.<input className={input} value={f.ref_max} onChange={e => set('ref_max', e.target.value)} /></label>
-                  <label>Congelado máx.<input className={input} value={f.cong_max} onChange={e => set('cong_max', e.target.value)} /></label>
-                </div>
-                <Err k="faixas" />
+                <p className="mt-1 text-[11px] text-muted-foreground">Vêm das Condições de transporte (Configurações do Laboratório › Unidades e Rotas). <a className="underline" href="/app/configuracoes/laboratorio">Abrir Condições de transporte</a></p>
               </div>
             </div>
           </Sec>

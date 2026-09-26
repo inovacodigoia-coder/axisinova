@@ -17,7 +17,8 @@ import { useTriagemPermissions } from '@/hooks/useTriagem'
 const db = supabase as any
 const DIAS = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb']
 type Origem = { id: string; name: string; internal_code: string | null; papel_coleta: boolean; papel_laboratorio: boolean; papel_coleta_externa: boolean; papel_hospital: boolean; laboratorio_destino_id: string | null }
-type Cond = { id?: string; nome: string; temp_min: number | null; temp_max: number | null; cor: string; icone: string; ativo: boolean; ordem?: number }
+type Cond = { id?: string; nome: string; temp_min: number | null; temp_max: number | null; cor: string; icone: string; ativo: boolean; ordem?: number; conservacao?: string | null }
+const CONS_APOIO: Record<string, string> = { ambiente: 'Ambiente', refrigerado: 'Refrigerado', congelado: 'Congelado' }
 type Rota = { id?: string; nome: string; origem_ids: string[]; destino_id: string; horarios: string[]; dias_semana: number[]; transito_max_min: number; transportador: string | null; condicao_ids: string[]; ativo: boolean }
 
 const faixa = (c: Cond) => c.temp_min == null ? `≤ ${c.temp_max} °C` : c.temp_max == null ? `≥ ${c.temp_min} °C` : `${c.temp_min} a ${c.temp_max} °C`
@@ -95,7 +96,7 @@ function Condicoes({ conds, pode, companyId, recarregar }: { conds: Cond[] | nul
     if (edit.temp_min != null && edit.temp_max != null && edit.temp_min > edit.temp_max) e.faixa = 'A mínima não pode ser maior que a máxima'
     setErros(e); if (Object.keys(e).length) return
     setSalvando(true)
-    const row = { company_id: companyId, nome: edit.nome.trim(), temp_min: edit.temp_min, temp_max: edit.temp_max, cor: edit.cor, icone: edit.icone, ativo: edit.ativo, updated_at: new Date().toISOString() }
+    const row = { company_id: companyId, nome: edit.nome.trim(), temp_min: edit.temp_min, temp_max: edit.temp_max, cor: edit.cor, icone: edit.icone, ativo: edit.ativo, conservacao: edit.conservacao || null, updated_at: new Date().toISOString() }
     const { error } = edit.id ? await db.from('triagem_condicao_transporte').update(row).eq('id', edit.id) : await db.from('triagem_condicao_transporte').insert(row)
     setSalvando(false)
     if (error) return toast.error(msgErro(error, 'Não foi possível salvar a condição'))
@@ -104,6 +105,7 @@ function Condicoes({ conds, pode, companyId, recarregar }: { conds: Cond[] | nul
   const confirmarExcluir = async () => {
     if (!excluir?.id) return
     const { error } = await db.from('triagem_condicao_transporte').delete().eq('id', excluir.id)
+    if (error && error.message?.includes('usada pelo Apoio')) { toast.error(error.message); setExcluir(null); return }
     if (error && (error.message?.includes('EM_USO') || error.code === '23503')) {
       const r = await db.from('triagem_condicao_transporte').update({ ativo: false }).eq('id', excluir.id)
       r.error ? toast.error('Não foi possível inativar') : toast.info('Condição em uso (rota ou material): foi inativada em vez de excluída')
@@ -116,12 +118,12 @@ function Condicoes({ conds, pode, companyId, recarregar }: { conds: Cond[] | nul
   return (
     <div className="space-y-3 pt-2">
       <div className="flex items-center justify-between">
-        <p className="text-xs text-muted-foreground">Ajuste conforme a estabilidade dos exames e o POP do laboratório.</p>
+        <p className="text-xs text-muted-foreground">Ajuste conforme a estabilidade dos exames e o POP do laboratório. Estas faixas também valem para o Apoio (sacos, Registrar entrega e não conformidade).</p>
         {pode && <Button size="sm" className="gap-1" onClick={() => { setErros({}); setEdit({ nome: '', temp_min: null, temp_max: null, cor: '#0EA5E9', icone: 'thermometer', ativo: true }) }}><Plus className="h-4 w-4" />Nova condição</Button>}
       </div>
       {conds.length === 0 ? <p className="py-6 text-center text-sm italic text-muted-foreground">Nenhuma condição cadastrada.</p> : conds.map(c => (
         <div key={c.id} className={cn('flex items-center justify-between rounded-xl border bg-card p-3', !c.ativo && 'opacity-60')}>
-          <div className="flex items-center gap-3"><Thermometer className="h-5 w-5" style={{ color: c.cor }} /><div><p className="text-sm font-bold">{c.nome}{!c.ativo && <span className="ml-2 text-[10px] font-normal text-muted-foreground">(inativa)</span>}</p><p className="text-xs text-muted-foreground">{faixa(c)}</p></div></div>
+          <div className="flex items-center gap-3"><Thermometer className="h-5 w-5" style={{ color: c.cor }} /><div><p className="text-sm font-bold">{c.nome}{!c.ativo && <span className="ml-2 text-[10px] font-normal text-muted-foreground">(inativa)</span>}</p><p className="text-xs text-muted-foreground">{faixa(c)}{c.conservacao && <span className="ml-2 rounded bg-muted px-1.5 py-0.5 text-[10px]">Apoio: saco {CONS_APOIO[c.conservacao]}</span>}</p></div></div>
           {pode && <div className="flex gap-1"><Button variant="ghost" size="sm" className="h-8 w-8 p-0" onClick={() => { setErros({}); setEdit({ ...c }) }}><Edit2 className="h-3.5 w-3.5" /></Button><Button variant="ghost" size="sm" className="h-8 w-8 p-0" onClick={() => setExcluir(c)}><Trash2 className="h-3.5 w-3.5 text-muted-foreground" /></Button></div>}
         </div>))}
       <Dialog open={!!edit} onOpenChange={o => !o && setEdit(null)}>
@@ -138,6 +140,12 @@ function Condicoes({ conds, pode, companyId, recarregar }: { conds: Cond[] | nul
               <div><Label>Cor</Label><Input type="color" value={edit.cor} onChange={e => setEdit({ ...edit, cor: e.target.value })} /></div>
               <div><Label>Ícone</Label><select className="h-10 w-full rounded-md border border-input bg-background px-2 text-sm" value={edit.icone} onChange={e => setEdit({ ...edit, icone: e.target.value })}><option value="thermometer">Termômetro</option><option value="sun">Sol</option><option value="snowflake">Floco de neve</option></select></div>
             </div>
+            <div><Label>Usada pelo Apoio como</Label>
+              <select className="h-10 w-full rounded-md border border-input bg-background px-2 text-sm" value={edit.conservacao || ''} onChange={e => setEdit({ ...edit, conservacao: e.target.value || null })}>
+                <option value="">Nenhuma</option>
+                {Object.entries(CONS_APOIO).map(([k, l]) => { const outra = (conds ?? []).find(c => c.conservacao === k && c.id !== edit.id); return <option key={k} value={k} disabled={!!outra}>Saco {l}{outra ? ` (já em "${outra.nome}")` : ''}</option> })}
+              </select>
+              <p className="mt-1 text-[11px] text-muted-foreground">A faixa desta condição é a usada para conferir a temperatura do saco no "Registrar entrega" do Apoio.</p></div>
             <label className="flex items-center gap-2 text-sm"><input type="checkbox" checked={edit.ativo} onChange={e => setEdit({ ...edit, ativo: e.target.checked })} />Ativa</label>
           </div>}
           <DialogFooter><Button variant="outline" onClick={() => setEdit(null)}>Cancelar</Button><Button onClick={salvar} disabled={salvando}>{salvando && <Loader2 className="mr-1 h-4 w-4 animate-spin" />}Salvar</Button></DialogFooter>

@@ -1,49 +1,50 @@
-import { useEffect, useState } from 'react'
+import { useEffect } from 'react'
 import { supabase } from '@/integrations/supabase/client'
 import { Card } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { Button } from '@/components/ui/button'
-import { toast } from 'sonner'
-import { Loader2 } from 'lucide-react'
 
 const CAMPOS = [['estab_ambiente_h', 'Ambiente (h)'], ['estab_refrigerado_h', 'Refrigerado (h)'], ['estab_congelado_h', 'Congelado (h)']] as const
-type K = typeof CAMPOS[number][0]
+export type EstabKey = typeof CAMPOS[number][0]
+export type Estabilidade = Record<EstabKey, string>
+export const ESTAB_VAZIA: Estabilidade = { estab_ambiente_h: '', estab_refrigerado_h: '', estab_congelado_h: '' }
 
-/** Sobrescrita opcional da estabilidade do material para este exame (ex.: potássio sem centrifugar) */
-export function EstabilidadeExameCard({ examId }: { examId?: string }) {
-  const [v, setV] = useState<Record<K, string>>({ estab_ambiente_h: '', estab_refrigerado_h: '', estab_congelado_h: '' })
-  const [salvando, setSalvando] = useState(false)
+/** Converte para as colunas do exame; lança erro se algum valor for inválido */
+export function estabilidadeParaLinha(v: Estabilidade): Record<EstabKey, number | null> {
+  const row = {} as Record<EstabKey, number | null>
+  for (const [k] of CAMPOS) {
+    const s = String(v[k] ?? '').trim().replace(',', '.')
+    if (s !== '' && !(Number(s) > 0)) throw new Error('Estabilidade deve ser maior que zero (ou vazia)')
+    row[k] = s === '' ? null : Number(s)
+  }
+  return row
+}
+
+/** Grava a estabilidade própria do exame (chamado pelo Salvar do exame) */
+export async function salvarEstabilidadeExame(examId: string, v: Estabilidade) {
+  const { error } = await (supabase as any).from('exams').update(estabilidadeParaLinha(v)).eq('id', examId)
+  if (error) throw new Error('Não foi possível salvar a estabilidade do exame')
+}
+
+/** Sobrescrita opcional da estabilidade do material para este exame (ex.: potássio sem centrifugar). Salva junto com o exame. */
+export function EstabilidadeExameCard({ examId, value, onChange }: { examId?: string; value: Estabilidade; onChange: (v: Estabilidade) => void }) {
   useEffect(() => {
     if (!examId) return
     ;(supabase as any).from('exams').select('estab_ambiente_h, estab_refrigerado_h, estab_congelado_h').eq('id', examId).maybeSingle()
-      .then(({ data }: any) => data && setV({ estab_ambiente_h: data.estab_ambiente_h ?? '', estab_refrigerado_h: data.estab_refrigerado_h ?? '', estab_congelado_h: data.estab_congelado_h ?? '' }))
+      .then(({ data }: any) => data && onChange({ estab_ambiente_h: String(data.estab_ambiente_h ?? ''), estab_refrigerado_h: String(data.estab_refrigerado_h ?? ''), estab_congelado_h: String(data.estab_congelado_h ?? '') }))
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [examId])
-  if (!examId) return <Card className="mt-4 p-4 text-xs text-muted-foreground">Salve o exame para definir uma estabilidade própria (sobrescreve a do material).</Card>
-  const salvar = async () => {
-    const row: any = {}
-    for (const [k] of CAMPOS) {
-      const s = String(v[k] ?? '').trim()
-      if (s !== '' && !(Number(s) > 0)) { toast.error('Estabilidade deve ser maior que zero (ou vazia)'); return }
-      row[k] = s === '' ? null : Number(s)
-    }
-    setSalvando(true)
-    const { error } = await (supabase as any).from('exams').update(row).eq('id', examId)
-    setSalvando(false)
-    error ? toast.error('Não foi possível salvar a estabilidade do exame') : toast.success('Estabilidade do exame salva')
-  }
   return (
     <Card className="mt-4 p-4 space-y-3">
       <div>
         <p className="text-sm font-semibold">Estabilidade própria do exame (opcional)</p>
-        <p className="text-[11px] text-muted-foreground">Vazio = usa a estabilidade do material. Use quando o analito tem limite menor (ex.: potássio sem centrifugar). Defina conforme a bula do fabricante / POP.</p>
+        <p className="text-[11px] text-muted-foreground">Vazio = usa a estabilidade do material. Use quando o analito tem limite menor (ex.: potássio sem centrifugar). Defina conforme a bula do fabricante / POP. É gravada no botão Salvar do exame.</p>
       </div>
       <div className="grid grid-cols-3 gap-3">
         {CAMPOS.map(([k, l]) => (
-          <div key={k}><Label className="text-xs">{l}</Label><Input type="number" min={0} step="0.5" placeholder="do material" value={v[k]} onChange={e => setV({ ...v, [k]: e.target.value })} /></div>
+          <div key={k}><Label className="text-xs">{l}</Label><Input type="number" min={0} step="0.5" placeholder="do material" value={value[k]} onChange={e => onChange({ ...value, [k]: e.target.value })} /></div>
         ))}
       </div>
-      <div className="flex justify-end"><Button size="sm" variant="outline" onClick={salvar} disabled={salvando}>{salvando && <Loader2 className="mr-1 h-4 w-4 animate-spin" />}Salvar estabilidade</Button></div>
     </Card>
   )
 }
