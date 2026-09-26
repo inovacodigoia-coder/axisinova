@@ -393,6 +393,13 @@
       "when": 1790432595616,
       "tag": "0055_kanban_avisar_paciente",
       "breakpoints": true
+    },
+    {
+      "idx": 56,
+      "version": "7",
+      "when": 1790444954961,
+      "tag": "0056_cancelar_no_pardini",
+      "breakpoints": true
     }
   ]
 }

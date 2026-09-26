@@ -14,6 +14,7 @@ import { useApoioEntitlement, useApoioPermissions } from '@/hooks/useApoio'
 import { TEMPERATURAS, TuboRemessa, ItemRemessa, gerarEpl, baixarTexto, gerarRomaneio } from './remessaDocs'
 import { HistoricoRemessa } from '@/components/apoio/log/ApoioLogTab'
 import { useSearchParams } from 'react-router-dom'
+import { CancelarPardiniDialog } from './CancelarPardiniDialog'
 import { imprimirDireto, imprimirRaw, textoParaBase64, servidorImpressaoAtivo } from '@/lib/impressaoLocal'
 
 interface Remessa {
@@ -36,6 +37,8 @@ const STATUS: Record<string, { label: string; cls: string }> = {
   erro: { label: 'Erro', cls: 'bg-destructive/15 text-destructive' },
   manual: { label: 'Manual', cls: 'bg-secondary text-secondary-foreground' },
   cancelada: { label: 'Cancelada', cls: 'bg-destructive/10 text-destructive' },
+  cancelada_apoio: { label: 'Cancelada no apoio', cls: 'bg-destructive/15 text-destructive' },
+  cancelada_parcial: { label: 'Cancelada parcialmente', cls: 'bg-[hsl(25,95%,53%)]/15 text-[hsl(25,95%,35%)]' },
 }
 const fmt = (d?: string | null) => d ? new Date(d).toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', year: '2-digit', hour: '2-digit', minute: '2-digit' }) : '—'
 const erroMsg = (e: any) => e?.message || String(e)
@@ -233,7 +236,9 @@ function DetalheRemessa({ id, remessa: r0, pode, onClose, onChanged }: { id: str
   const { companyId } = useApoioEntitlement()
   const { has } = useApoioPermissions()
   const [r, setR] = useState<Remessa | undefined>(r0)
-  const [itens, setItens] = useState<(ItemRemessa & { status: string })[]>([])
+  const [itens, setItens] = useState<(ItemRemessa & { status: string; cod_ped_apoio?: string | null; cancel?: any })[]>([])
+  const [cancelarSel, setCancelarSel] = useState<string[] | null>(null)
+  const [nomes, setNomes] = useState<Record<string, string>>({})
   const [tubos, setTubos] = useState<TuboRemessa[]>([])
   const [recip, setRecip] = useState<any[]>([])
   const [bipando, setBipando] = useState(false)
@@ -248,19 +253,21 @@ function DetalheRemessa({ id, remessa: r0, pode, onClose, onChanged }: { id: str
     supabase.from('apoio_remessa').select('colisao').eq('id', id).maybeSingle().then(({ data }) => setColisao((data as any)?.colisao ?? null))
     const [{ data: l }, { data: pe }, { data: t }, { data: rc }] = await Promise.all([
       supabase.rpc('apoio_remessa_lista' as any),
-      supabase.from('apoio_pedido_exame').select('id, pedido_id, exame_id, codigo_apoio, status, apoio_id, exams(name), attendance_orders(order_number, patient_name)').eq('remessa_id', id),
+      supabase.from('apoio_pedido_exame').select('id, pedido_id, exame_id, codigo_apoio, status, apoio_id, cod_ped_apoio, info_complementar, exams(name), attendance_orders(order_number, patient_name)').eq('remessa_id', id),
       supabase.rpc('apoio_remessa_tubos' as any, { _remessa: id }),
-      supabase.from('apoio_recipiente').select('*').eq('remessa_id', id).eq('cancelado', false).order('cod_bar_apoio'),
+      supabase.from('apoio_recipiente').select('*').eq('remessa_id', id).order('cod_bar_apoio'),
     ])
     setR(((l as any) || []).find((x: Remessa) => x.id === id))
     const tb = ((t as any) || []) as TuboRemessa[]
     setTubos(tb); setRecip((rc as any) || [])
     const mat = await Promise.all(((pe as any) || []).map((p: any) => supabase.rpc('apoio_item_material' as any, { _pedido: p.pedido_id, _exame: p.exame_id })))
     setItens(((pe as any) || []).map((p: any, i: number) => ({
-      id: p.id, status: p.status, paciente: p.attendance_orders?.patient_name || '', order_number: p.attendance_orders?.order_number || '',
+      id: p.id, status: p.status, cod_ped_apoio: p.cod_ped_apoio, cancel: p.info_complementar?.cancel_apoio || null, paciente: p.attendance_orders?.patient_name || '', order_number: p.attendance_orders?.order_number || '',
       exame: p.exams?.name || p.codigo_apoio, material: (mat[i].data as any) || '',
       tubo: tb.find(x => x.pedido_id === p.pedido_id)?.codigo || '',
     })))
+    const ids = [...new Set(((pe as any) || []).map((p: any) => p.info_complementar?.cancel_apoio?.por).filter(Boolean))] as string[]
+    if (ids.length) supabase.from('profiles').select('id, full_name').in('id', ids).then(({ data }) => setNomes(Object.fromEntries(((data as any) || []).map((x: any) => [x.id, x.full_name]))))
   }, [id])
   useEffect(() => { carregar() }, [carregar])
   useEffect(() => {
@@ -277,7 +284,7 @@ function DetalheRemessa({ id, remessa: r0, pode, onClose, onChanged }: { id: str
 
   if (!r) return null
   const podeEditar = pode && ['aberta', 'conferida'].includes(r.status)
-  const transmitida = ['transmitida', 'parcial', 'manual'].includes(r.status)
+  const transmitida = ['transmitida', 'parcial', 'manual', 'cancelada_apoio', 'cancelada_parcial'].includes(r.status)
   const podeTransmitir = pode && (r.status === 'conferida' || (r.status === 'aberta' && r.conferir_apos_etiqueta))
 
   const transmitir = async () => {
@@ -306,6 +313,7 @@ function DetalheRemessa({ id, remessa: r0, pode, onClose, onChanged }: { id: str
     carregar()
   }
   const imprimirEtiqueta = async (rc: any) => {
+    if (rc.cancelado) return toast.error('Tubo cancelado no Pardini')
     if (!(await servidorOk())) return
     try {
       const res = await imprimirRaw('etiqueta_apoio_pardini', textoParaBase64(eplDe(rc)))
@@ -316,10 +324,10 @@ function DetalheRemessa({ id, remessa: r0, pode, onClose, onChanged }: { id: str
     }
   }
   const imprimirTodas = async () => {
-    if (!recip.length) { toast.error('Nenhum recipiente para imprimir.'); return }
+    if (!recipAtivos.length) { toast.error('Nenhum recipiente para imprimir.'); return }
     if (!(await servidorOk())) return
     try {
-      const res = await imprimirRaw('etiqueta_apoio_pardini', recip.map(rc => textoParaBase64(eplDe(rc))))
+      const res = await imprimirRaw('etiqueta_apoio_pardini', recipAtivos.map(rc => textoParaBase64(eplDe(rc))))
       toast.success(`${res?.etiquetas ?? recip.length} etiqueta(s) enviada(s) para impressão.`)
       await contarImpressao(recip)
     } catch (err) {
@@ -327,9 +335,14 @@ function DetalheRemessa({ id, remessa: r0, pode, onClose, onChanged }: { id: str
     }
   }
 
-  const romaneio = () => gerarRomaneio({ laboratorio: labNome, apoio: r.apoio_nome, numero: r.cod_lote_lab, temperatura: r.temperatura, itens, totalTubos: tubos.length })
+  const itensAtivos = itens.filter(i => !(i.status === 'cancelado' && i.cancel?.estado === 'cancelado'))
+  const recipAtivos = recip.filter(rc => !rc.cancelado)
+  const romaneio = () => gerarRomaneio({ laboratorio: labNome, apoio: r.apoio_nome, numero: r.cod_lote_lab, temperatura: r.temperatura, itens: itensAtivos, totalTubos: tubos.length - (recip.length - recipAtivos.length) })
+  const podeCancelarApoio = has('apoio.remessa.cancelar') && ['transmitida', 'parcial', 'cancelada_parcial'].includes(r.status) && r.modo !== 'manual'
+  const cancelaveis = itens.filter(i => i.cod_ped_apoio && i.status !== 'cancelado')
   const baixarPdf = () => romaneio().save(`romaneio-remessa-${r.cod_lote_lab}.pdf`)
   const imprimirRomaneio = async () => {
+    if (r.status === 'cancelada_apoio') return toast.error('Remessa cancelada no Pardini: romaneio bloqueado.')
     if (!(await servidorOk())) return
     try {
       const res = await imprimirDireto('romaneio_apoio_pardini', romaneio().output('blob'))
@@ -385,10 +398,14 @@ function DetalheRemessa({ id, remessa: r0, pode, onClose, onChanged }: { id: str
           <Button variant="outline" size="sm" className="gap-2" disabled={!pode || r.status === 'cancelada'} onClick={() => setBipando(true)}><ScanLine className="h-4 w-4" />Conferir por leitura</Button>
           <Button size="sm" className="gap-2" disabled={!podeTransmitir || transmitindo} onClick={transmitir}>
             {transmitindo ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}{transmitindo ? 'Transmitindo…' : 'Transmitir'}</Button>
-          <Button variant="outline" size="sm" className="gap-2" onClick={imprimirRomaneio} disabled={!pode}><Printer className="h-4 w-4" />Imprimir romaneio</Button>
+          <Button variant="outline" size="sm" className="gap-2" onClick={imprimirRomaneio} disabled={!pode || r.status === 'cancelada_apoio'}><Printer className="h-4 w-4" />Imprimir romaneio</Button>
           <Button variant="outline" size="sm" className="gap-2" onClick={baixarPdf}><FileText className="h-4 w-4" />Baixar PDF</Button>
           <Button variant="outline" size="sm" className="gap-2" disabled={!pode || r.status === 'cancelada'} onClick={() => { setEntA(r.entregue_a || ''); setEntEm(new Date(Date.now() - new Date().getTimezoneOffset() * 60000).toISOString().slice(0, 16)); setEntrega(true) }}><PackageCheck className="h-4 w-4" />Registrar entrega</Button>
           {has('apoio.remessa.operar') && r.status === 'aberta' && <Button variant="outline" size="sm" onClick={() => setForcar(true)}>Forçar conferência</Button>}
+          {podeCancelarApoio && !r.entregue_em && cancelaveis.length > 0 && (
+            <Button variant="outline" size="sm" className="gap-2 text-destructive" onClick={() => setCancelarSel(cancelaveis.map(i => i.id))}><Ban className="h-4 w-4" />Cancelar no Pardini</Button>
+          )}
+          {podeCancelarApoio && r.entregue_em && <p className="w-full text-xs text-muted-foreground">A amostra já foi entregue ao Pardini. O cancelamento é feito direto com o apoio.</p>}
           {pode && !transmitida && r.status !== 'cancelada' && (
             <Button variant="outline" size="sm" className="gap-2 text-destructive" onClick={() => { if (confirm('Cancelar esta remessa? Os exames voltam para "aguardando remessa".')) rpc('apoio_remessa_cancelar', { _remessa: r.id }, 'Remessa cancelada') }}><Ban className="h-4 w-4" />Cancelar remessa</Button>
           )}
@@ -403,30 +420,38 @@ function DetalheRemessa({ id, remessa: r0, pode, onClose, onChanged }: { id: str
           </div>
           <table className="w-full text-sm">
             <thead className="text-xs uppercase text-muted-foreground"><tr>{['Paciente', 'Pedido', 'Tubo', 'Exame', 'Material', ''].map(h => <th key={h} className="px-2 py-1 text-left">{h}</th>)}</tr></thead>
-            <tbody>{itens.map(i => (
-              <tr key={i.id} className="border-t border-border">
+            <tbody>{itens.map(i => {
+              const canc = i.cancel?.estado === 'cancelado' && i.status === 'cancelado'
+              const semConf = i.cancel?.estado === 'sem_confirmacao' && i.status !== 'cancelado'
+              return (<>
+              <tr key={i.id} className={`border-t border-border ${canc ? 'text-muted-foreground line-through' : ''}`}>
                 <td className="px-2 py-1.5">{i.paciente}</td><td className="px-2 py-1.5">{i.order_number}</td>
                 <td className="px-2 py-1.5 font-mono text-xs">{i.tubo}{tubos.find(t => t.codigo === i.tubo)?.bipado && <CheckCircle2 className="ml-1 inline h-3.5 w-3.5 text-[hsl(var(--success))]" />}</td>
                 <td className="px-2 py-1.5">{i.exame}</td><td className="px-2 py-1.5">{i.material || '—'}</td>
-                <td className="px-2 py-1.5 text-right">{podeEditar && <Button size="sm" variant="ghost" onClick={() => rpc('apoio_remessa_remover', { _pedido_exame: i.id }, 'Exame removido da remessa')}><X className="h-4 w-4" /></Button>}</td>
-              </tr>))}</tbody>
+                <td className="px-2 py-1.5 text-right">{podeEditar && <Button size="sm" variant="ghost" onClick={() => rpc('apoio_remessa_remover', { _pedido_exame: i.id }, 'Exame removido da remessa')}><X className="h-4 w-4" /></Button>}
+                  {podeCancelarApoio && !r.entregue_em && i.cod_ped_apoio && i.status !== 'cancelado' && <Button size="sm" variant="ghost" className="text-destructive" onClick={() => setCancelarSel([i.id])}>{semConf ? 'Tentar de novo' : 'Cancelar no Pardini'}</Button>}</td>
+              </tr>
+              {(canc || semConf) && <tr key={i.id + ':c'}><td colSpan={6} className={`px-2 pb-1.5 text-xs ${semConf ? 'text-[hsl(38,92%,30%)]' : 'text-destructive'}`}>
+                {canc ? `Cancelado no apoio · ${i.cancel.destino === 'fila' ? 'voltou para a fila do apoio' : 'cancelado no atendimento'}` : 'Cancelamento sem confirmação do Pardini'} · Motivo: {i.cancel.motivo} · {nomes[i.cancel.por] || 'Usuário'} · {fmt(i.cancel.em)}
+              </td></tr>}
+              </>)})}</tbody>
           </table>
         </div>
 
         {transmitida && (
           <div className="mt-6">
             <div className="mb-2 flex items-center justify-between"><h3 className="font-semibold">Recipientes do apoio</h3>
-              <Button size="sm" variant="outline" className="gap-2" disabled={!pode || !recip.length} onClick={imprimirTodas}><Printer className="h-4 w-4" />Imprimir todas</Button></div>
+              <Button size="sm" variant="outline" className="gap-2" disabled={!pode || !recipAtivos.length} onClick={imprimirTodas}><Printer className="h-4 w-4" />Imprimir todas</Button></div>
             {recip.length === 0 ? <p className="text-sm text-muted-foreground">O apoio ainda não devolveu recipientes.</p> : (
               <table className="w-full text-sm"><thead className="text-xs uppercase text-muted-foreground"><tr>{['Código de barras do apoio', 'Exames do tubo', 'Impressões', ''].map(h => <th key={h} className="px-2 py-1 text-left">{h}</th>)}</tr></thead>
                 <tbody>{recip.map(rc => (
-                  <tr key={rc.id} className="border-t border-border">
-                    <td className="px-2 py-1.5 font-mono">{rc.cod_bar_apoio}</td>
+                  <tr key={rc.id} className={`border-t border-border ${rc.cancelado ? 'text-muted-foreground' : ''}`}>
+                    <td className="px-2 py-1.5 font-mono"><span className={rc.cancelado ? 'line-through' : ''}>{rc.cod_bar_apoio}</span>{rc.cancelado && <span className="ml-2 text-xs text-destructive no-underline">Tubo cancelado no Pardini</span>}</td>
                     <td className="px-2 py-1.5">{tubos.find(t => t.codigo === rc.cod_bar_apoio)?.exames || '—'}</td>
                     <td className="px-2 py-1.5">{rc.impressoes}</td>
                     <td className="px-2 py-1.5 text-right space-x-1">
-                      <Button size="sm" variant="outline" disabled={!pode} onClick={() => imprimirEtiqueta(rc)}><Printer className="mr-1 h-3.5 w-3.5" />Imprimir etiqueta</Button>
-                      <Button size="sm" variant="ghost" onClick={() => baixarTexto(`${rc.cod_bar_apoio}.epl`, eplDe(rc))}><Download className="mr-1 h-3.5 w-3.5" />Baixar .epl</Button>
+                      <Button size="sm" variant="outline" disabled={!pode || rc.cancelado} onClick={() => imprimirEtiqueta(rc)}><Printer className="mr-1 h-3.5 w-3.5" />Imprimir etiqueta</Button>
+                      <Button size="sm" variant="ghost" disabled={rc.cancelado} onClick={() => baixarTexto(`${rc.cod_bar_apoio}.epl`, eplDe(rc))}><Download className="mr-1 h-3.5 w-3.5" />Baixar .epl</Button>
                     </td>
                   </tr>))}</tbody></table>
             )}
@@ -458,6 +483,8 @@ function DetalheRemessa({ id, remessa: r0, pode, onClose, onChanged }: { id: str
             <DialogFooter><Button disabled={!entA.trim() || !entEm} onClick={async () => { if (await rpc('apoio_remessa_entrega', { _remessa: r.id, _entregue_a: entA, _entregue_em: new Date(entEm).toISOString() }, 'Entrega registrada')) setEntrega(false) }}>Salvar</Button></DialogFooter>
           </DialogContent>
         </Dialog>
+        <CancelarPardiniDialog open={!!cancelarSel} marcados={cancelarSel || []} onClose={() => setCancelarSel(null)} onDone={atualizar}
+          itens={(cancelarSel && cancelarSel.length === 1 ? itens.filter(i => i.id === cancelarSel[0]) : cancelaveis).map(i => ({ id: i.id, paciente: i.paciente, order_number: i.order_number, exame: i.exame, tubo: i.tubo }))} />
       </SheetContent>
     </Sheet>
   )
