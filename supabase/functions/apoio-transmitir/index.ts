@@ -95,7 +95,7 @@ Deno.serve(async (req) => {
   if (parsed.data.operacao === 'consultar') {
     try {
       const ctxC = await carregarCtx(admin, rem0.apoio_id)
-      const resp = await chamar(ctxC, 'getPedido', [['XML', 'string', consultaLote(ctxC, rem0)]], { tentativas: 1, timeoutMs: (parsed.data.espera_s ?? 60) * 1000 })
+      const resp = await chamar(ctxC, 'getPedido', [['XML', 'string', consultaLote(ctxC, rem0)]], { tentativas: 1, timeoutMs: (parsed.data.espera_s ?? 120) * 1000 })
       const util = conteudoUtil(resp)
       return json({ ok: /RegistroAdmitido/i.test(util), util, bruto: String(resp).slice(0, 20000) })
     } catch (e) {
@@ -164,40 +164,50 @@ Deno.serve(async (req) => {
     return json({ ok: false, colisao: true, motivo: `${motivo}. ${cod === '10023' ? 'Clique em "Gerar número novo" e transmita de novo.' : 'Um código novo de pedido já foi gerado; clique em "Gerar número novo" e transmita de novo.'}` })
   }
 
+  // Regra: no máximo UMA chamada ao Pardini por execução (120 s, 1 tentativa), para caber no limite da função (~150 s)
+  const ESPERA_MS = 120_000
   const recuperar = async () => {
-    const resp = await chamar(ctx, 'getPedido', [['XML', 'string', consultaLote(ctx, remessa)]], { tentativas: 3 })
+    const resp = await chamar(ctx, 'getPedido', [['XML', 'string', consultaLote(ctx, remessa)]], { tentativas: 1, timeoutMs: ESPERA_MS })
     const util = conteudoUtil(resp)
     if (!/RegistroAdmitido/i.test(util)) throw new PardiniErro(erroNegocio(util)?.msg || 'ConsultaLote sem RegistroAdmitido', 'negocio')
     return aplicarAdmitido(ctx, remessa, exames, util)
   }
+  const pedirConsulta = (msg: string) => json({ ok: false, sem_resposta: true, motivo: `${msg} Use "Consultar lote" antes de transmitir de novo.` })
 
   try {
     let r
     if (jaEnviada) {
-      // Tentativa anterior deste lote ficou sem resposta: recupera pelo lote antes de reenviar
+      // Tentativa anterior deste lote ficou sem resposta: só consulta o lote (sem reenviar na mesma execução)
       try {
         r = await recuperar()
         await admin.from('apoio_remessa').update({ envio_sem_resposta: false }).eq('id', remessa.id)
         await cursorGravar(admin, ctx.lab, 'transmissao', {}); return json({ ok: true, recuperado: true, ...r })
-      } catch { /* segue para envio */ }
+      } catch (e) {
+        const pe = e as PardiniErro
+        if (pe.tipo === 'timeout' || pe.tipo === 'rede') return pedirConsulta(`ConsultaLote sem resposta (${pe.message}).`)
+        // Pardini respondeu que não tem o lote: libera para transmitir de novo no próximo clique
+        await admin.from('apoio_remessa').update({ envio_sem_resposta: false }).eq('id', remessa.id)
+        return json({ ok: false, motivo: `O Pardini não encontrou este lote (${pe.message}). Clique em "Transmitir" de novo para enviar.` })
+      }
     }
     let util: string
     await admin.from('apoio_remessa').update({ envio_sem_resposta: true }).eq('id', remessa.id)
     try {
-      const resp = await chamar(ctx, 'getPedido', [['XML', 'string', montarRegistro(ctx.lab.cod_lab ?? '', remessa, exames, msgId)]])
+      const resp = await chamar(ctx, 'getPedido', [['XML', 'string', montarRegistro(ctx.lab.cod_lab ?? '', remessa, exames, msgId)]], { tentativas: 1, timeoutMs: ESPERA_MS })
       util = conteudoUtil(resp)
     } catch (e) {
       const pe = e as PardiniErro
-      if (pe.tipo === 'timeout' || pe.tipo === 'rede') { r = await recuperar(); await admin.from('apoio_remessa').update({ envio_sem_resposta: false }).eq('id', remessa.id); return json({ ok: true, recuperado: true, ...r }) }
+      // Sem resposta: fica marcada "envio sem resposta"; não consulta sozinho
+      if (pe.tipo === 'timeout' || pe.tipo === 'rede') return pedirConsulta(`Transmissão sem resposta (${pe.message}).`)
       await admin.from('apoio_remessa').update({ envio_sem_resposta: false }).eq('id', remessa.id)
       const cod = codColisao(pe, null)
-      if (cod) { if (jaEnviada) { r = await recuperar(); return json({ ok: true, recuperado: true, ...r }) } return await colidiu(cod) }
+      if (cod) { if (jaEnviada) return pedirConsulta('O Pardini informou que o lote já existe.'); return await colidiu(cod) }
       throw e
     }
     await admin.from('apoio_remessa').update({ envio_sem_resposta: false }).eq('id', remessa.id)
     const neg = erroNegocio(util)
     const codN = neg ? codColisao(null, neg) : null
-    if (codN) { if (jaEnviada) { r = await recuperar(); return json({ ok: true, recuperado: true, ...r }) } return await colidiu(codN) }
+    if (codN) { if (jaEnviada) return pedirConsulta('O Pardini informou que o lote já existe.'); return await colidiu(codN) }
     if (neg) {
       const { data: ae } = neg.codigo ? await admin.from('apoio_erro').select('mensagem, categoria').eq('apoio_id', ctx.lab.id).eq('codigo', neg.codigo).maybeSingle() : { data: null }
       const motivo = `${neg.codigo ? neg.codigo + ' – ' : ''}${ae?.mensagem || neg.msg}${ae?.categoria ? ` (${ae.categoria})` : ''}`
