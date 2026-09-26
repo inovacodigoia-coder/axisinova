@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { Plus, Truck, Printer, Download, ScanLine, X, CheckCircle2, AlertTriangle, Send, PackageCheck, Ban, FileText, Loader2 } from 'lucide-react'
+import { Plus, Truck, Printer, Download, ScanLine, X, CheckCircle2, AlertTriangle, Send, PackageCheck, Ban, FileText, Loader2, RefreshCw } from 'lucide-react'
 import { toast } from 'sonner'
 import { supabase } from '@/integrations/supabase/client'
 import { Button } from '@/components/ui/button'
@@ -88,7 +88,12 @@ export function ApoioRemessasTab({ moduloLiberado }: { moduloLiberado: boolean }
           <div><p className="text-2xl font-bold text-foreground leading-none">{aguardando}</p>
             <p className="text-xs text-muted-foreground">exames aguardando remessa (coleta registrada)</p></div>
         </button>
-        <Button onClick={() => setNova(true)} disabled={!pode || !moduloLiberado} className="gap-2"><Plus className="h-4 w-4" />Nova remessa</Button>
+        <div className="flex items-center gap-2">
+          <Button variant="outline" onClick={() => carregar()} disabled={loading} className="gap-2">
+            {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />}Atualizar
+          </Button>
+          <Button onClick={() => setNova(true)} disabled={!pode || !moduloLiberado} className="gap-2"><Plus className="h-4 w-4" />Nova remessa</Button>
+        </div>
       </div>
 
       <div className="flex flex-wrap gap-2">
