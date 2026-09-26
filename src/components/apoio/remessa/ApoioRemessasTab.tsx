@@ -11,10 +11,12 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sh
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { EmptyState } from '@/components/feedback/EmptyState'
 import { useApoioEntitlement, useApoioPermissions } from '@/hooks/useApoio'
-import { TEMPERATURAS, TuboRemessa, ItemRemessa, gerarEpl, baixarTexto, gerarRomaneio } from './remessaDocs'
+import { TuboRemessa, ItemRemessa, gerarEpl, baixarTexto, gerarRomaneio } from './remessaDocs'
 import { HistoricoRemessa } from '@/components/apoio/log/ApoioLogTab'
 import { useSearchParams } from 'react-router-dom'
 import { CancelarPardiniDialog } from './CancelarPardiniDialog'
+import { SepararTemperaturaDialog } from './SepararTemperaturaDialog'
+import { CONSERVACAO, ORDEM_CONSERVACAO, ORIGEM_CONSERVACAO, proximaSaida, resumoSacos } from './conservacao'
 import { imprimirDireto, imprimirRaw, textoParaBase64, servidorImpressaoAtivo } from '@/lib/impressaoLocal'
 
 interface Remessa {
@@ -22,6 +24,7 @@ interface Remessa {
   temperatura: string; exames: number; tubos: number; status: string; modo: string; entregue_a: string | null
   entregue_em: string | null; conferido_em: string | null; transmitido_em: string | null; conferencia_forcada: string | null
   conferir_apos_etiqueta: boolean
+  saida_prevista: string | null; separada_em: string | null; sacos: Record<string, number> | null; previsto: boolean
 }
 interface Disponivel {
   id: string; pedido_id: string; order_number: string; paciente: string; exame_id: string; exame_nome: string; material: string
@@ -57,7 +60,8 @@ export function ApoioRemessasTab({ moduloLiberado }: { moduloLiberado: boolean }
   const pode = has('apoio.remessa.operar')
   const [lista, setLista] = useState<Remessa[]>([])
   const [aguardando, setAguardando] = useState(0)
-  const [apoios, setApoios] = useState<{ id: string; nome: string; conferir_apos_etiqueta: boolean }[]>([])
+  const [apoios, setApoios] = useState<{ id: string; nome: string; conferir_apos_etiqueta: boolean; horarios_motoboy: string[] | null }[]>([])
+  const [guarda, setGuarda] = useState<{ conservacao: string; tubos: number }[]>([])
   const [loading, setLoading] = useState(true)
   const [fApoio, setFApoio] = useState(''); const [fStatus, setFStatus] = useState('')
   const [fTemp, setFTemp] = useState(''); const [fDe, setFDe] = useState(''); const [fAte, setFAte] = useState('')
@@ -67,10 +71,11 @@ export function ApoioRemessasTab({ moduloLiberado }: { moduloLiberado: boolean }
 
   const carregar = useCallback(async () => {
     setLoading(true)
+    supabase.rpc('apoio_alerta_guarda' as any).then(({ data }) => setGuarda(((data as any) || []) as any))
     const [{ data: r }, { data: d }, { data: a }] = await Promise.all([
       supabase.rpc('apoio_remessa_lista' as any),
       supabase.rpc('apoio_remessa_disponiveis' as any, {}),
-      supabase.from('apoio_laboratorio').select('id, nome, conferir_apos_etiqueta').eq('ativo', true).order('nome'),
+      supabase.from('apoio_laboratorio').select('id, nome, conferir_apos_etiqueta, horarios_motoboy').eq('ativo', true).order('nome'),
     ])
     setLista((r as any) || []); setAguardando(((d as any) || []).length); setApoios((a as any) || [])
     setLoading(false)
@@ -78,7 +83,7 @@ export function ApoioRemessasTab({ moduloLiberado }: { moduloLiberado: boolean }
   useEffect(() => { carregar() }, [carregar])
 
   const filtrada = useMemo(() => lista.filter(r =>
-    (!fApoio || r.apoio_id === fApoio) && (!fStatus || r.status === fStatus) && (!fTemp || r.temperatura === fTemp) &&
+    (!fApoio || r.apoio_id === fApoio) && (!fStatus || r.status === fStatus) && (!fTemp || !!r.sacos?.[fTemp]) &&
     (!fDe || r.created_at.slice(0, 10) >= fDe) && (!fAte || r.created_at.slice(0, 10) <= fAte)), [lista, fApoio, fStatus, fTemp, fDe, fAte])
 
   const sel = 'h-9 rounded-lg border border-input bg-background px-2 text-sm'
@@ -99,6 +104,13 @@ export function ApoioRemessasTab({ moduloLiberado }: { moduloLiberado: boolean }
         </div>
       </div>
 
+      {guarda.length > 0 && (
+        <div className="flex items-center gap-2 rounded-xl border border-warning/50 bg-warning/10 px-4 py-3 text-sm text-[hsl(38,92%,30%)]">
+          <AlertTriangle className="h-5 w-5" />
+          <span><b>{guarda.map(g => `${g.tubos} tubo(s) ${g.conservacao === 'congelado' ? 'congelado(s)' : 'refrigerado(s)'}`).join(' e ')}</b> aguardando guarda. Abra a remessa e use "Separar por temperatura".</span>
+        </div>
+      )}
+
       <div className="flex flex-wrap gap-2">
         <select className={sel} value={fApoio} onChange={e => setFApoio(e.target.value)}>
           <option value="">Todos os apoios</option>{apoios.map(a => <option key={a.id} value={a.id}>{a.nome}</option>)}
@@ -107,7 +119,7 @@ export function ApoioRemessasTab({ moduloLiberado }: { moduloLiberado: boolean }
           <option value="">Todos os status</option>{Object.entries(STATUS).map(([k, v]) => <option key={k} value={k}>{v.label}</option>)}
         </select>
         <select className={sel} value={fTemp} onChange={e => setFTemp(e.target.value)}>
-          <option value="">Todas as temperaturas</option>{Object.entries(TEMPERATURAS).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
+          <option value="">Todos os sacos</option><option value="congelado">Com congelado</option><option value="refrigerado">Com refrigerado</option>
         </select>
         <Input type="date" className="h-9 w-40" value={fDe} onChange={e => setFDe(e.target.value)} />
         <Input type="date" className="h-9 w-40" value={fAte} onChange={e => setFAte(e.target.value)} />
@@ -119,7 +131,7 @@ export function ApoioRemessasTab({ moduloLiberado }: { moduloLiberado: boolean }
         ) : (
           <table className="w-full text-sm">
             <thead className="bg-muted/40 text-xs uppercase text-muted-foreground">
-              <tr>{['Nº', 'Apoio', 'Criada em', 'Por', 'Temperatura', 'Exames', 'Tubos', 'Status', 'Modo', 'Entregue a / em', ''].map(h =>
+              <tr>{['Nº', 'Apoio', 'Criada em', 'Por', 'Sacos', 'Exames', 'Tubos', 'Status', 'Modo', 'Entregue a / em', ''].map(h =>
                 <th key={h} className="px-3 py-2 text-left font-semibold">{h}</th>)}</tr>
             </thead>
             <tbody>
@@ -129,10 +141,10 @@ export function ApoioRemessasTab({ moduloLiberado }: { moduloLiberado: boolean }
                   <td className="px-3 py-2">{r.apoio_nome}</td>
                   <td className="px-3 py-2">{fmt(r.created_at)}</td>
                   <td className="px-3 py-2">{r.criado_por_nome || '—'}</td>
-                  <td className="px-3 py-2">{TEMPERATURAS[r.temperatura]}</td>
+                  <td className="px-3 py-2 whitespace-nowrap" title={r.previsto ? 'Previsto pelo cadastro' : 'Pela etiqueta do apoio'}>{resumoSacos(r.sacos)}{r.previsto && r.sacos && <span className="ml-1 text-[10px] text-muted-foreground">(previsto)</span>}</td>
                   <td className="px-3 py-2">{r.exames}</td>
                   <td className="px-3 py-2">{r.tubos}</td>
-                  <td className="px-3 py-2"><span className={`rounded-full px-2 py-0.5 text-xs font-medium ${STATUS[r.status]?.cls}`}>{STATUS[r.status]?.label || r.status}</span></td>
+                  <td className="px-3 py-2"><span className={`rounded-full px-2 py-0.5 text-xs font-medium ${STATUS[r.status]?.cls}`}>{STATUS[r.status]?.label || r.status}</span>{r.separada_em && !r.entregue_em && <span className="ml-1 rounded-full bg-primary/10 px-2 py-0.5 text-xs text-primary">Separada</span>}</td>
                   <td className="px-3 py-2">{r.modo === 'manual' ? 'Manual' : 'Auto'}</td>
                   <td className="px-3 py-2">{r.entregue_a ? `${r.entregue_a} · ${fmt(r.entregue_em)}` : '—'}</td>
                   <td className="px-3 py-2"><Button size="sm" variant="ghost">Abrir</Button></td>
@@ -192,14 +204,14 @@ function SelecaoExames({ apoioId, onSel, selecionados }: { apoioId: string; sele
   )
 }
 
-function NovaRemessa({ apoios, onClose, onCriada }: { apoios: { id: string; nome: string }[]; onClose: () => void; onCriada: (id: string) => void }) {
-  const [apoio, setApoio] = useState(''); const [temp, setTemp] = useState('')
+function NovaRemessa({ apoios, onClose, onCriada }: { apoios: { id: string; nome: string; horarios_motoboy?: string[] | null }[]; onClose: () => void; onCriada: (id: string) => void }) {
+  const [apoio, setApoio] = useState(''); const [saida, setSaida] = useState('')
   const [sel, setSel] = useState<string[]>([]); const [salvando, setSalvando] = useState(false)
   const criar = async () => {
-    if (!apoio || !temp) return toast.error('Escolha o apoio e a temperatura')
+    if (!apoio) return toast.error('Escolha o apoio')
     if (!sel.length) return toast.error('Selecione ao menos um exame')
     setSalvando(true)
-    const { data, error } = await supabase.rpc('apoio_remessa_criar' as any, { _apoio: apoio, _temperatura: temp, _ids: sel })
+    const { data, error } = await supabase.rpc('apoio_remessa_criar' as any, { _apoio: apoio, _ids: sel, _saida_prevista: saida ? new Date(saida).toISOString() : null })
     setSalvando(false)
     if (error) return toast.error(erroMsg(error))
     toast.success(`Remessa nº ${(data as any).cod_lote_lab} criada`)
@@ -212,13 +224,12 @@ function NovaRemessa({ apoios, onClose, onCriada }: { apoios: { id: string; nome
         <div className="mt-4 space-y-4">
           <div className="grid grid-cols-2 gap-3">
             <label className="text-sm">Apoio*
-              <select className="mt-1 h-10 w-full rounded-lg border border-input bg-background px-2" value={apoio} onChange={e => { setApoio(e.target.value); setSel([]) }}>
+              <select className="mt-1 h-10 w-full rounded-lg border border-input bg-background px-2" value={apoio} onChange={e => { setApoio(e.target.value); setSel([]); setSaida(proximaSaida(apoios.find(a => a.id === e.target.value)?.horarios_motoboy)) }}>
                 <option value="">Selecione</option>{apoios.map(a => <option key={a.id} value={a.id}>{a.nome}</option>)}
               </select></label>
-            <label className="text-sm">Temperatura*
-              <select className="mt-1 h-10 w-full rounded-lg border border-input bg-background px-2" value={temp} onChange={e => setTemp(e.target.value)}>
-                <option value="">Selecione</option>{Object.entries(TEMPERATURAS).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
-              </select></label>
+            <label className="text-sm">Saída prevista (motoboy)
+              <Input type="datetime-local" className="mt-1 h-10" value={saida} onChange={e => setSaida(e.target.value)} />
+              <span className="text-[11px] text-muted-foreground">{apoio && !(apoios.find(a => a.id === apoio)?.horarios_motoboy || []).length ? 'Sem horários de motoboy no cadastro do apoio.' : 'Sugerido pelo próximo horário do motoboy. A temperatura agora é por tubo.'}</span></label>
           </div>
           <SelecaoExames apoioId={apoio} selecionados={sel} onSel={setSel} />
           <div className="flex justify-end gap-2 pt-2">
@@ -236,7 +247,10 @@ function DetalheRemessa({ id, remessa: r0, pode, onClose, onChanged }: { id: str
   const { companyId } = useApoioEntitlement()
   const { has } = useApoioPermissions()
   const [r, setR] = useState<Remessa | undefined>(r0)
-  const [itens, setItens] = useState<(ItemRemessa & { status: string; cod_ped_apoio?: string | null; cancel?: any })[]>([])
+  const [itens, setItens] = useState<(ItemRemessa & { status: string; cod_ped_apoio?: string | null; cancel?: any; exame_id?: string; recipiente_id?: string | null })[]>([])
+  const [prevista, setPrevista] = useState<Record<string, string>>({})
+  const [separando, setSeparando] = useState(false)
+  const [sacosTemp, setSacosTemp] = useState<Record<string, string>>({}); const [forcarEnt, setForcarEnt] = useState('')
   const [cancelarSel, setCancelarSel] = useState<string[] | null>(null)
   const [nomes, setNomes] = useState<Record<string, string>>({})
   const [tubos, setTubos] = useState<TuboRemessa[]>([])
@@ -253,16 +267,19 @@ function DetalheRemessa({ id, remessa: r0, pode, onClose, onChanged }: { id: str
     supabase.from('apoio_remessa').select('colisao').eq('id', id).maybeSingle().then(({ data }) => setColisao((data as any)?.colisao ?? null))
     const [{ data: l }, { data: pe }, { data: t }, { data: rc }] = await Promise.all([
       supabase.rpc('apoio_remessa_lista' as any),
-      supabase.from('apoio_pedido_exame').select('id, pedido_id, exame_id, codigo_apoio, status, apoio_id, cod_ped_apoio, info_complementar, exams(name), attendance_orders(order_number, patient_name)').eq('remessa_id', id),
+      supabase.from('apoio_pedido_exame').select('id, pedido_id, exame_id, recipiente_id, codigo_apoio, status, apoio_id, cod_ped_apoio, info_complementar, exams(name), attendance_orders(order_number, patient_name)').eq('remessa_id', id),
       supabase.rpc('apoio_remessa_tubos' as any, { _remessa: id }),
       supabase.from('apoio_recipiente').select('*').eq('remessa_id', id).order('cod_bar_apoio'),
     ])
     setR(((l as any) || []).find((x: Remessa) => x.id === id))
+    const apoioId = ((pe as any) || [])[0]?.apoio_id
+    if (apoioId) supabase.from('apoio_depara_exame').select('exame_id, conservacao').eq('apoio_id', apoioId).eq('ativo', true)
+      .then(({ data }) => setPrevista(Object.fromEntries(((data as any) || []).map((d: any) => [d.exame_id, d.conservacao]))))
     const tb = ((t as any) || []) as TuboRemessa[]
     setTubos(tb); setRecip((rc as any) || [])
     const mat = await Promise.all(((pe as any) || []).map((p: any) => supabase.rpc('apoio_item_material' as any, { _pedido: p.pedido_id, _exame: p.exame_id })))
     setItens(((pe as any) || []).map((p: any, i: number) => ({
-      id: p.id, status: p.status, cod_ped_apoio: p.cod_ped_apoio, cancel: p.info_complementar?.cancel_apoio || null, paciente: p.attendance_orders?.patient_name || '', order_number: p.attendance_orders?.order_number || '',
+      id: p.id, exame_id: p.exame_id, recipiente_id: p.recipiente_id, status: p.status, cod_ped_apoio: p.cod_ped_apoio, cancel: p.info_complementar?.cancel_apoio || null, paciente: p.attendance_orders?.patient_name || '', order_number: p.attendance_orders?.order_number || '',
       exame: p.exams?.name || p.codigo_apoio, material: (mat[i].data as any) || '',
       tubo: tb.find(x => x.pedido_id === p.pedido_id)?.codigo || '',
     })))
@@ -337,7 +354,25 @@ function DetalheRemessa({ id, remessa: r0, pode, onClose, onChanged }: { id: str
 
   const itensAtivos = itens.filter(i => !(i.status === 'cancelado' && i.cancel?.estado === 'cancelado'))
   const recipAtivos = recip.filter(rc => !rc.cancelado)
-  const romaneio = () => gerarRomaneio({ laboratorio: labNome, apoio: r.apoio_nome, numero: r.cod_lote_lab, temperatura: r.temperatura, itens: itensAtivos, totalTubos: tubos.length - (recip.length - recipAtivos.length) })
+  const consItem = (i: { exame_id?: string; recipiente_id?: string | null }) => {
+    const rc = recip.find(x => x.id === i.recipiente_id)
+    if (rc) return { k: rc.conservacao || 'verificar', previsto: false }
+    return { k: prevista[i.exame_id || ''] || 'nao_informado', previsto: true }
+  }
+  const romaneio = () => gerarRomaneio({ laboratorio: labNome, apoio: r.apoio_nome, numero: r.cod_lote_lab, saida: r.saida_prevista,
+    itens: itensAtivos.map(i => ({ ...i, conservacao: consItem(i).k })), totalTubos: tubos.length - (recip.length - recipAtivos.length) })
+  const sacosPresentes = ORDEM_CONSERVACAO.filter(k => recipAtivos.some(rc => rc.conservacao === k))
+  const pendSeparar = recipAtivos.filter(rc => !rc.separado || !rc.conservacao || rc.conservacao === 'verificar').length
+  const divergencias = (rc: any) => {
+    if (!rc.conservacao || rc.conservacao === 'verificar') return []
+    return [...new Set(itens.filter(i => i.recipiente_id === rc.id).map(i => prevista[i.exame_id || '']).filter(c => c && c !== 'nao_informado' && c !== rc.conservacao))]
+  }
+  const definirCons = (rc: any, cons: string) => rpc('apoio_conservacao_definir', { _recipiente: rc.id, _conservacao: cons }, 'Conservação definida')
+  const reprocessar = async () => {
+    const { data, error } = await supabase.rpc('apoio_conservacao_reprocessar' as any, { _remessa: r.id })
+    if (error) return toast.error(erroMsg(error))
+    toast.success(`Etiqueta relida em ${data} tubo(s)`); atualizar()
+  }
   const podeCancelarApoio = has('apoio.remessa.cancelar') && ['transmitida', 'parcial', 'cancelada_parcial'].includes(r.status) && r.modo !== 'manual'
   const cancelaveis = itens.filter(i => i.cod_ped_apoio && i.status !== 'cancelado')
   const baixarPdf = () => romaneio().save(`romaneio-remessa-${r.cod_lote_lab}.pdf`)
@@ -354,7 +389,7 @@ function DetalheRemessa({ id, remessa: r0, pode, onClose, onChanged }: { id: str
 
   const etapas = [
     { k: 'Criada', em: r.created_at }, { k: 'Conferida', em: r.conferido_em },
-    { k: 'Transmitida', em: r.transmitido_em }, { k: 'Entregue', em: r.entregue_em },
+    { k: 'Transmitida', em: r.transmitido_em }, { k: 'Separada', em: r.separada_em }, { k: 'Entregue', em: r.entregue_em },
   ]
 
   return (
@@ -367,7 +402,7 @@ function DetalheRemessa({ id, remessa: r0, pode, onClose, onChanged }: { id: str
         </SheetHeader>
         <div className="mt-3 grid grid-cols-2 gap-2 text-sm md:grid-cols-4">
           <div><p className="text-xs text-muted-foreground">Apoio</p>{r.apoio_nome}</div>
-          <div><p className="text-xs text-muted-foreground">Temperatura</p>{TEMPERATURAS[r.temperatura]}</div>
+          <div><p className="text-xs text-muted-foreground">Saída prevista</p>{r.saida_prevista ? fmt(r.saida_prevista) : '—'}</div>
           <div><p className="text-xs text-muted-foreground">Modo</p>{r.modo === 'manual' ? 'Manual' : 'Automático'}</div>
           <div><p className="text-xs text-muted-foreground">Por</p>{r.criado_por_nome || '—'}</div>
         </div>
@@ -400,7 +435,9 @@ function DetalheRemessa({ id, remessa: r0, pode, onClose, onChanged }: { id: str
             {transmitindo ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}{transmitindo ? 'Transmitindo…' : 'Transmitir'}</Button>
           <Button variant="outline" size="sm" className="gap-2" onClick={imprimirRomaneio} disabled={!pode || r.status === 'cancelada_apoio'}><Printer className="h-4 w-4" />Imprimir romaneio</Button>
           <Button variant="outline" size="sm" className="gap-2" onClick={baixarPdf}><FileText className="h-4 w-4" />Baixar PDF</Button>
-          <Button variant="outline" size="sm" className="gap-2" disabled={!pode || r.status === 'cancelada'} onClick={() => { setEntA(r.entregue_a || ''); setEntEm(new Date(Date.now() - new Date().getTimezoneOffset() * 60000).toISOString().slice(0, 16)); setEntrega(true) }}><PackageCheck className="h-4 w-4" />Registrar entrega</Button>
+          <Button variant="outline" size="sm" className="gap-2" disabled={!pode || r.status === 'cancelada'} onClick={() => { setSacosTemp({}); setForcarEnt(''); setEntA(r.entregue_a || ''); setEntEm(new Date(Date.now() - new Date().getTimezoneOffset() * 60000).toISOString().slice(0, 16)); setEntrega(true) }}><PackageCheck className="h-4 w-4" />Registrar entrega</Button>
+          {transmitida && recipAtivos.length > 0 && <Button variant="outline" size="sm" className="gap-2" disabled={!pode || !!r.entregue_em} onClick={() => setSeparando(true)}>❄️ Separar por temperatura</Button>}
+          {transmitida && recipAtivos.length > 0 && pode && <Button variant="ghost" size="sm" onClick={reprocessar}>Reler etiqueta (conservação)</Button>}
           {has('apoio.remessa.operar') && r.status === 'aberta' && <Button variant="outline" size="sm" onClick={() => setForcar(true)}>Forçar conferência</Button>}
           {podeCancelarApoio && !r.entregue_em && cancelaveis.length > 0 && (
             <Button variant="outline" size="sm" className="gap-2 text-destructive" onClick={() => setCancelarSel(cancelaveis.map(i => i.id))}><Ban className="h-4 w-4" />Cancelar no Pardini</Button>
@@ -419,7 +456,7 @@ function DetalheRemessa({ id, remessa: r0, pode, onClose, onChanged }: { id: str
             {podeEditar && <Button size="sm" variant="ghost" className="gap-1" onClick={() => { setAddSel([]); setAdicionar(true) }}><Plus className="h-4 w-4" />Adicionar exames</Button>}
           </div>
           <table className="w-full text-sm">
-            <thead className="text-xs uppercase text-muted-foreground"><tr>{['Paciente', 'Pedido', 'Tubo', 'Exame', 'Material', ''].map(h => <th key={h} className="px-2 py-1 text-left">{h}</th>)}</tr></thead>
+            <thead className="text-xs uppercase text-muted-foreground"><tr>{['Paciente', 'Pedido', 'Tubo', 'Exame', 'Material', 'Conservação', ''].map(h => <th key={h} className="px-2 py-1 text-left">{h}</th>)}</tr></thead>
             <tbody>{itens.map(i => {
               const canc = i.cancel?.estado === 'cancelado' && i.status === 'cancelado'
               const semConf = i.cancel?.estado === 'sem_confirmacao' && i.status !== 'cancelado'
@@ -428,10 +465,11 @@ function DetalheRemessa({ id, remessa: r0, pode, onClose, onChanged }: { id: str
                 <td className="px-2 py-1.5">{i.paciente}</td><td className="px-2 py-1.5">{i.order_number}</td>
                 <td className="px-2 py-1.5 font-mono text-xs">{i.tubo}{tubos.find(t => t.codigo === i.tubo)?.bipado && <CheckCircle2 className="ml-1 inline h-3.5 w-3.5 text-[hsl(var(--success))]" />}</td>
                 <td className="px-2 py-1.5">{i.exame}</td><td className="px-2 py-1.5">{i.material || '—'}</td>
+                <td className="px-2 py-1.5">{(() => { const c = consItem(i); const m = CONSERVACAO[c.k]; return <span className={`whitespace-nowrap rounded-full border px-2 py-0.5 text-xs ${m.cls}`}>{m.icon} {m.label}{c.previsto && c.k !== 'nao_informado' ? ' (previsto)' : ''}</span> })()}</td>
                 <td className="px-2 py-1.5 text-right">{podeEditar && <Button size="sm" variant="ghost" onClick={() => rpc('apoio_remessa_remover', { _pedido_exame: i.id }, 'Exame removido da remessa')}><X className="h-4 w-4" /></Button>}
                   {podeCancelarApoio && !r.entregue_em && i.cod_ped_apoio && i.status !== 'cancelado' && <Button size="sm" variant="ghost" className="text-destructive" onClick={() => setCancelarSel([i.id])}>{semConf ? 'Tentar de novo' : 'Cancelar no Pardini'}</Button>}</td>
               </tr>
-              {(canc || semConf) && <tr key={i.id + ':c'}><td colSpan={6} className={`px-2 pb-1.5 text-xs ${semConf ? 'text-[hsl(38,92%,30%)]' : 'text-destructive'}`}>
+              {(canc || semConf) && <tr key={i.id + ':c'}><td colSpan={7} className={`px-2 pb-1.5 text-xs ${semConf ? 'text-[hsl(38,92%,30%)]' : 'text-destructive'}`}>
                 {canc ? `Cancelado no apoio · ${i.cancel.destino === 'fila' ? 'voltou para a fila do apoio' : 'cancelado no atendimento'}` : 'Cancelamento sem confirmação do Pardini'} · Motivo: {i.cancel.motivo} · {nomes[i.cancel.por] || 'Usuário'} · {fmt(i.cancel.em)}
               </td></tr>}
               </Fragment>)})}</tbody>
@@ -443,11 +481,21 @@ function DetalheRemessa({ id, remessa: r0, pode, onClose, onChanged }: { id: str
             <div className="mb-2 flex items-center justify-between"><h3 className="font-semibold">Recipientes do apoio</h3>
               <Button size="sm" variant="outline" className="gap-2" disabled={!pode || !recipAtivos.length} onClick={imprimirTodas}><Printer className="h-4 w-4" />Imprimir todas</Button></div>
             {recip.length === 0 ? <p className="text-sm text-muted-foreground">O apoio ainda não devolveu recipientes.</p> : (
-              <table className="w-full text-sm"><thead className="text-xs uppercase text-muted-foreground"><tr>{['Código de barras do apoio', 'Exames do tubo', 'Impressões', ''].map(h => <th key={h} className="px-2 py-1 text-left">{h}</th>)}</tr></thead>
+              <table className="w-full text-sm"><thead className="text-xs uppercase text-muted-foreground"><tr>{['Código de barras do apoio', 'Exames do tubo', 'Conservação', 'Impressões', ''].map(h => <th key={h} className="px-2 py-1 text-left">{h}</th>)}</tr></thead>
                 <tbody>{recip.map(rc => (
                   <tr key={rc.id} className={`border-t border-border ${rc.cancelado ? 'text-muted-foreground' : ''}`}>
                     <td className="px-2 py-1.5 font-mono"><span className={rc.cancelado ? 'line-through' : ''}>{rc.cod_bar_apoio}</span>{rc.cancelado && <span className="ml-2 text-xs text-destructive no-underline">Tubo cancelado no Pardini</span>}</td>
                     <td className="px-2 py-1.5">{tubos.find(t => t.codigo === rc.cod_bar_apoio)?.exames || '—'}</td>
+                    <td className="px-2 py-1.5">
+                      {(() => { const m = CONSERVACAO[rc.conservacao || 'verificar']; return <span className={`whitespace-nowrap rounded-full border px-2 py-0.5 text-xs ${m.cls}`}>{m.icon} {m.label}</span> })()}
+                      <span className="ml-1 text-[10px] text-muted-foreground">{rc.conservacao_origem ? ORIGEM_CONSERVACAO[rc.conservacao_origem] : rc.conservacao_texto ? `etiqueta: ${rc.conservacao_texto}` : 'etiqueta sem texto'}</span>
+                      {rc.separado && <CheckCircle2 className="ml-1 inline h-3.5 w-3.5 text-[hsl(var(--success))]" />}
+                      {(!rc.conservacao || rc.conservacao === 'verificar') && pode && !rc.cancelado && (
+                        <select className="ml-1 h-7 rounded border border-input bg-background px-1 text-xs" value="" onChange={e => e.target.value && definirCons(rc, e.target.value)}>
+                          <option value="">Escolher…</option>{ORDEM_CONSERVACAO.map(k => <option key={k} value={k}>{CONSERVACAO[k].label}</option>)}
+                        </select>)}
+                      {divergencias(rc).map(d => <p key={d} className="mt-1 text-xs text-[hsl(38,92%,30%)]">⚠️ {r.apoio_nome} pede {CONSERVACAO[rc.conservacao].label.toUpperCase()}; o cadastro diz {CONSERVACAO[d].label.toUpperCase()}</p>)}
+                    </td>
                     <td className="px-2 py-1.5">{rc.impressoes}</td>
                     <td className="px-2 py-1.5 text-right space-x-1">
                       <Button size="sm" variant="outline" disabled={!pode || rc.cancelado} onClick={() => imprimirEtiqueta(rc)}><Printer className="mr-1 h-3.5 w-3.5" />Imprimir etiqueta</Button>
@@ -458,6 +506,7 @@ function DetalheRemessa({ id, remessa: r0, pode, onClose, onChanged }: { id: str
           </div>
         )}
 
+        {separando && <SepararTemperaturaDialog remessa={r} onClose={() => { setSeparando(false); atualizar() }} onChanged={carregar} />}
         {bipando && <Bipagem remessaId={r.id} tubos={tubos} onClose={() => setBipando(false)} onChanged={atualizar} />}
 
         <Dialog open={adicionar} onOpenChange={setAdicionar}>
@@ -480,7 +529,23 @@ function DetalheRemessa({ id, remessa: r0, pode, onClose, onChanged }: { id: str
           <DialogContent><DialogHeader><DialogTitle>Registrar entrega</DialogTitle></DialogHeader>
             <label className="text-sm">Quem levou*<Input value={entA} onChange={e => setEntA(e.target.value)} /></label>
             <label className="text-sm">Data e hora*<Input type="datetime-local" value={entEm} onChange={e => setEntEm(e.target.value)} /></label>
-            <DialogFooter><Button disabled={!entA.trim() || !entEm} onClick={async () => { if (await rpc('apoio_remessa_entrega', { _remessa: r.id, _entregue_a: entA, _entregue_em: new Date(entEm).toISOString() }, 'Entrega registrada')) setEntrega(false) }}>Salvar</Button></DialogFooter>
+            {sacosPresentes.length > 0 && <div className="space-y-2">
+              <p className="text-sm font-medium">Temperatura de cada saco na saída (°C)</p>
+              {sacosPresentes.map(k => <label key={k} className="flex items-center gap-2 text-sm"><span className="w-36">{CONSERVACAO[k].icon} {CONSERVACAO[k].label}</span>
+                <Input className="h-8 w-28" inputMode="decimal" value={sacosTemp[k] || ''} onChange={e => setSacosTemp(s => ({ ...s, [k]: e.target.value }))} /></label>)}
+            </div>}
+            {pendSeparar > 0 && <div className="rounded-md border border-warning/50 bg-warning/10 p-2 text-xs text-[hsl(38,92%,30%)] space-y-1">
+              <p><b>{pendSeparar} tubo(s) em "Verificar" ou não separado(s).</b> Separe por temperatura antes de entregar, ou force com justificativa.</p>
+              <Textarea value={forcarEnt} onChange={e => setForcarEnt(e.target.value)} placeholder="Justificativa para forçar a entrega" />
+            </div>}
+            <DialogFooter><Button disabled={!entA.trim() || !entEm || (pendSeparar > 0 && forcarEnt.trim().length < 5)} onClick={async () => {
+              const sacos = sacosPresentes.map(k => ({ conservacao: k, tubos: recipAtivos.filter(rc => rc.conservacao === k).length, temperatura: (sacosTemp[k] || '').replace(',', '.') }))
+              const { data, error } = await supabase.rpc('apoio_remessa_entrega' as any, { _remessa: r.id, _entregue_a: entA, _entregue_em: new Date(entEm).toISOString(), _sacos: sacos, _forcar: pendSeparar > 0 ? forcarEnt : null })
+              if (error) return toast.error(erroMsg(error))
+              const nc = (data as any)?.nao_conformidades || 0
+              if (nc) toast.warning(`Entrega registrada com ${nc} não conformidade(s) de temperatura`); else toast.success('Entrega registrada')
+              setEntrega(false); atualizar()
+            }}>Salvar</Button></DialogFooter>
           </DialogContent>
         </Dialog>
         <CancelarPardiniDialog open={!!cancelarSel} marcados={cancelarSel || []} onClose={() => setCancelarSel(null)} onDone={atualizar}

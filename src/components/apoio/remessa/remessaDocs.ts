@@ -17,8 +17,10 @@ export interface ItemRemessa {
   exame: string
   material: string
   tubo: string
+  conservacao?: string
 }
 
+/** DEPRECATED (12C): temperatura agora é por tubo; mantido para dados antigos */
 export const TEMPERATURAS: Record<string, string> = {
   ambiente: 'Ambiente', refrigerada: 'Refrigerada', congelada: 'Congelada',
 }
