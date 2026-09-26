@@ -1200,26 +1200,3 @@ function WorkbenchesSection() {
   )
 }
 
-function LogsSection() {
-  const logs = [
-    { time: '14:32:01', user: 'Alexsandro', action: 'Coleta registrada', detail: 'Protocolo 20260716-001', color: 'bg-teal-500' },
-    { time: '14:30:15', user: 'Sistema', action: 'Login', detail: 'Acesso via Web', color: 'bg-emerald-500' },
-  ]
-  return (
-    <div className="space-y-6">
-      <h3 className="text-lg font-bold">Logs de Auditoria</h3>
-      <div className="space-y-3">
-        {logs.map((l, i) => (
-          <div key={i} className="flex gap-4 text-xs items-center p-3 rounded-lg border bg-muted/20">
-            <span className="font-mono text-muted-foreground">{l.time}</span>
-            <div className="flex-1">
-              <span className="font-bold">{l.user}</span>
-              <div className={cn("inline-flex ml-3 text-[9px] uppercase font-black px-1.5 py-0.5 rounded text-white", l.color)}>{l.action}</div>
-              <p className="text-muted-foreground mt-0.5">{l.detail}</p>
-            </div>
-          </div>
-        ))}
-      </div>
-    </div>
-  )
-}
