@@ -90,6 +90,18 @@ Deno.serve(async (req) => {
 
   const { data: rem0 } = await admin.from('apoio_remessa').select('*').eq('id', parsed.data.remessa_id).maybeSingle()
   if (!rem0 || (quem.companyId && rem0.company_id !== quem.companyId)) return json({ ok: false, motivo: 'Remessa não encontrada' }, 404)
+
+  // Modo "consultar": só ConsultaLote (getPedido com <Consulta>), sem transmitir nem alterar a remessa
+  if (parsed.data.operacao === 'consultar') {
+    try {
+      const ctxC = await carregarCtx(admin, rem0.apoio_id)
+      const resp = await chamar(ctxC, 'getPedido', [['XML', 'string', consultaLote(ctxC, rem0)]], { tentativas: 1 })
+      const util = conteudoUtil(resp)
+      return json({ ok: /RegistroAdmitido/i.test(util), util, bruto: String(resp).slice(0, 20000) })
+    } catch (e) {
+      return json({ ok: false, motivo: (e as Error).message })
+    }
+  }
   // Só consulta o lote quando a tentativa anterior ficou sem resposta (timeout/queda)
   const jaEnviada = !!rem0.envio_sem_resposta
   const presa = rem0.status === 'transmitindo' && Date.now() - new Date(rem0.updated_at).getTime() > 5 * 60_000
