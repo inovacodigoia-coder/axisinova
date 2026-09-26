@@ -6,7 +6,7 @@ import { conteudoUtil, esc, texto } from '../_shared/pardini/xml.ts'
 import { parseAdmitido } from '../_shared/pardini/parsers.ts'
 import { montarRegistro } from '../_shared/pardini/registro.ts'
 
-const Body = z.object({ remessa_id: z.string().uuid() })
+const Body = z.object({ remessa_id: z.string().uuid(), operacao: z.enum(['consultar']).optional() })
 const cortar = (s: unknown, n: number) => String(s ?? '').slice(0, n)
 const sexo = (g: string) => /^(m|male|masc)/i.test(g || '') ? 'Masculino' : /^(f|female|fem)/i.test(g || '') ? 'Feminino' : 'Indefinido'
 const RECUPERAVEIS = ['10023', '10217']
