@@ -1,6 +1,7 @@
 import { formatCPF, formatPhone, formatAge, formatGender, formatAddress } from "@/utils/formatters"
 import { fmtDiaMes } from '@/lib/apoioAtendimento'
 import { useState, useMemo, useEffect } from 'react'
+import { CorrigirHorarioColetaDialog } from '@/components/lab/triagem/CorrigirHorarioColetaDialog'
 import { Dialog, DialogContent } from '@/components/ui/dialog'
 import { X, Printer, Pencil, Trash2, Plus, ArrowLeft, MoreVertical, CreditCard, Droplets, ShieldCheck, DollarSign, Calendar, Clock, MapPin, User, FileText, ChevronDown, History, BarChart3, Database, RefreshCw, Info, Smartphone, Calculator, Loader2, Eye, AlertTriangle } from 'lucide-react'
 import { useLabSettings } from '@/hooks/useLabSettings'
@@ -91,6 +92,7 @@ export function AttendanceDetailsModal({ open, onClose, onOrderDeleted, order, p
   const sampleCodeFor = (tubeIndex: number) => buildSampleCode(order.orderNumber, tubeIndex, companySequenceId)
   const { toast } = useToast()
   const { updateOrder } = useAttendanceCadastro()
+  const [corrigirColeta, setCorrigirColeta] = useState<{ examId: string; nome: string; atual: string } | null>(null)
 
   useEffect(() => { setCurrentPatient(patient) }, [patient])
 
@@ -997,9 +999,11 @@ export function AttendanceDetailsModal({ open, onClose, onOrderDeleted, order, p
                                       <div className="flex flex-col items-center gap-0.5">
                                         <div className={cn("w-2.5 h-2.5 rounded-full", examIsCollected ? "bg-emerald-500" : "bg-slate-300")} />
                                         {examIsCollected && exam.collectedAt && (
-                                          <span className="text-[9px] text-muted-foreground">
+                                          <button type="button" title="Corrigir horário da coleta (com justificativa)"
+                                            className="text-[9px] text-muted-foreground underline decoration-dotted hover:text-primary"
+                                            onClick={() => setCorrigirColeta({ examId: exam.examId || exam.id, nome: exam.name, atual: exam.collectedAt })}>
                                             {format(new Date(exam.collectedAt), 'dd/MM HH:mm')}
-                                          </span>
+                                          </button>
                                         )}
                                       </div>
                                     </td>
@@ -1647,6 +1651,7 @@ export function AttendanceDetailsModal({ open, onClose, onOrderDeleted, order, p
           }}
         />
       )}
+      {corrigirColeta && order?.id && <CorrigirHorarioColetaDialog pedidoId={order.id} examId={corrigirColeta.examId} examNome={corrigirColeta.nome} atual={corrigirColeta.atual} onClose={() => setCorrigirColeta(null)} />}
       </ScrollArea>
     </DialogContent>
   </Dialog>

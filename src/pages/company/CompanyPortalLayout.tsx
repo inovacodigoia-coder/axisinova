@@ -49,6 +49,7 @@ import CompanyDataSettingsPage from './settings/CompanyDataSettingsPage'
 import NotificationsSettingsPage from './settings/NotificationsSettingsPage'
 import EstablishmentsSettingsPage from './settings/EstablishmentsSettingsPage'
 import OriginsPage from './settings/OriginsPage'
+import LabTriagemPage from './lab/LabTriagemPage'
 import ReceptionLayout from './reception/ReceptionLayout'
 import TriagePage from './triage/TriagePage'
 import CollectionPostsPage from './beds/CollectionPostsPage'
@@ -323,6 +324,7 @@ function PortalContent() {
               {/* Lab Technical Sector */}
               <Route path="lab/dashboard" element={<LabDashboard />} />
               <Route path="lab/coleta" element={<LabColetaPage />} />
+              <Route path="lab/triagem" element={<LabTriagemPage />} />
               <Route path="lab/mapa" element={<LabMapaPage />} />
               <Route path="lab/mapa/:codigo" element={<LabMapaViewPage />} />
               <Route path="lab/analise" element={<LabAnalisePage />} />

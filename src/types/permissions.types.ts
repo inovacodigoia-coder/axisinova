@@ -24,6 +24,8 @@ export type SystemModule =
   | 'inpatient'
   /** Apoio / Terceirização: guarda códigos 'apoio.*' (não ações) */
   | 'apoio'
+  /** Triagem Lab: guarda códigos 'triagem.*' (não ações) */
+  | 'triagem'
 
 export type PermissionAction = 'view' | 'create' | 'edit' | 'delete' | 'export' | 'approve'
 
@@ -115,6 +117,19 @@ export const APOIO_PERMISSIONS: { code: string; label: string; description: stri
   { code: 'apoio.financeiro.ver', label: 'Ver custos e margens', description: 'Ver custo previsto, preços e margens' },
   { code: 'apoio.bancada.trocar_cadastro', label: 'Trocar a bancada no cadastro do exame', description: 'Mudar a bancada padrão (interna/apoio) no catálogo' },
   { code: 'apoio.bancada.trocar_pontual', label: 'Trocar a bancada de um exame no pedido', description: 'Mudar a bancada só para um pedido específico' },
+]
+
+/** Permissões do módulo Triagem Lab (gravadas em permissions.triagem como códigos; checadas no banco por triagem_tem_permissao) */
+export const TRIAGEM_PERMISSIONS: { code: string; label: string; description: string }[] = [
+  { code: 'triagem.config', label: 'Configurar unidades, rotas e critérios', description: 'Papéis das unidades, condições de transporte, rotas e motivos de coleta' },
+  { code: 'triagem.malote.despachar', label: 'Montar e despachar malote', description: 'Montar o malote na unidade de coleta e despachar' },
+  { code: 'triagem.malote.receber', label: 'Receber malote', description: 'Registrar o recebimento do malote no laboratório' },
+  { code: 'triagem.triar', label: 'Triar amostras', description: 'Conferir as amostras recebidas' },
+  { code: 'triagem.rejeitar', label: 'Rejeitar amostra', description: 'Rejeitar amostra com motivo (gera recoleta)' },
+  { code: 'triagem.ressalva', label: 'Aceitar com ressalva', description: 'Aceitar amostra com ressalva no laudo' },
+  { code: 'triagem.aliquota', label: 'Fazer alíquota', description: 'Separar alíquotas na triagem' },
+  { code: 'triagem.painel.ver', label: 'Ver painel da triagem', description: 'Acompanhar o painel da Triagem Lab' },
+  { code: 'triagem.relatorios.ver', label: 'Ver relatórios da triagem', description: 'Indicadores de rejeição, trânsito e temperatura' },
 ]
 
 export const ACTION_LABELS: Record<PermissionAction, string> = {
