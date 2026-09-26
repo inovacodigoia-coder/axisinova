@@ -46,6 +46,9 @@ import MateriaisTubosSection from '@/components/lab/settings/MateriaisTubosSecti
 import { TestTube } from 'lucide-react'
 import HolidaysSection from '@/components/lab/settings/HolidaysSection'
 import PrazoSettingsCard from '@/components/lab/settings/PrazoSettingsCard'
+import MotivosColetaSection from '@/components/lab/triagem/MotivosColetaSection'
+import UnidadesRotasSection from '@/components/lab/triagem/UnidadesRotasSection'
+import LogsAuditoriaSection from '@/components/lab/triagem/LogsAuditoriaSection'
 
 export default function LabSettingsPage() {
   const [searchParams, setSearchParams] = useSearchParams()
@@ -128,6 +131,7 @@ export default function LabSettingsPage() {
           <NavItem active={activeTab === 'materiais'} onClick={() => setActiveTab('materiais')} icon={<TestTube className="h-4 w-4" />} label="Materiais e Tubos" />
           <NavItem active={activeTab === 'methods'} onClick={() => setActiveTab('methods')} icon={<Beaker className="h-4 w-4" />} label="Metodologias" />
           <NavItem active={activeTab === 'workbenches'} onClick={() => setActiveTab('workbenches')} icon={<Layout className="h-4 w-4" />} label="Bancadas" />
+          <NavItem active={activeTab === 'unidades-rotas'} onClick={() => setActiveTab('unidades-rotas')} icon={<Layout className="h-4 w-4" />} label="Unidades e Rotas" />
           <NavItem active={activeTab === 'collection-reasons'} onClick={() => setActiveTab('collection-reasons')} icon={<AlertCircle className="h-4 w-4" />} label="Motivos de Coleta" />
           <NavItem active={activeTab === 'holidays'} onClick={() => setActiveTab('holidays')} icon={<History className="h-4 w-4" />} label="Prazos e Feriados" />
           
@@ -166,6 +170,9 @@ export default function LabSettingsPage() {
               <div className={activeTab === 'units' ? 'block' : 'hidden'}>
                 <UnitsSection />
               </div>
+              <div className={activeTab === 'unidades-rotas' ? 'block' : 'hidden'}>
+                {activeTab === 'unidades-rotas' && <UnidadesRotasSection />}
+              </div>
               <div className={activeTab === 'materiais' ? 'block' : 'hidden'}>
                 {activeTab === 'materiais' && <MateriaisTubosSection />}
               </div>
@@ -179,13 +186,13 @@ export default function LabSettingsPage() {
                 <EquipmentRedirect />
               </div>
               <div className={activeTab === 'collection-reasons' ? 'block' : 'hidden'}>
-                <CollectionReasonsSection />
+                {activeTab === 'collection-reasons' && <MotivosColetaSection />}
               </div>
               <div className={activeTab === 'report-layout' ? 'block' : 'hidden'}>
                 <ReportLayoutSection settings={settings} setSettings={setSettings} />
               </div>
               <div className={activeTab === 'logs' ? 'block' : 'hidden'}>
-                <LogsSection />
+                {activeTab === 'logs' && <LogsAuditoriaSection />}
               </div>
               
               <div className="mt-8 pt-6 border-t flex justify-end">
@@ -1189,37 +1196,6 @@ function WorkbenchesSection() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
-    </div>
-  )
-}
-
-function CollectionReasonsSection() {
-  const reasons = [
-    { code: 'CANCEL_JEJUM', label: 'Jejum inadequado', type: 'cancel' },
-    { code: 'POSTPONE_INSUMO', label: 'Insumo indisponível', type: 'postpone' },
-  ]
-  return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <h3 className="text-lg font-bold">Motivos de Coleta</h3>
-        <Button size="sm" className="gradient-bg text-white gap-2"><Plus className="h-4 w-4" /> Novo Motivo</Button>
-      </div>
-      <div className="space-y-2">
-        {reasons.map(r => (
-          <div key={r.code} className="p-4 border rounded-xl bg-card flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className={cn(
-                "text-[10px] uppercase font-black px-1.5 py-0.5 rounded text-white",
-                r.type === 'cancel' ? 'bg-red-500' : 'bg-amber-500'
-              )}>
-                {r.type === 'cancel' ? 'Cancelar' : 'Adiar'}
-              </div>
-              <p className="font-bold text-sm">{r.label}</p>
-            </div>
-            <Button variant="ghost" size="sm" className="h-8 w-8 p-0"><Trash2 className="h-3.5 w-3.5 text-muted-foreground" /></Button>
-          </div>
-        ))}
-      </div>
     </div>
   )
 }
