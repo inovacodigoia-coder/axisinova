@@ -7237,6 +7237,7 @@ export type Database = {
         Row: {
           ativo: boolean
           company_id: string
+          conservacao: string | null
           cor: string
           created_at: string
           icone: string
@@ -7250,6 +7251,7 @@ export type Database = {
         Insert: {
           ativo?: boolean
           company_id: string
+          conservacao?: string | null
           cor?: string
           created_at?: string
           icone?: string
@@ -7263,6 +7265,7 @@ export type Database = {
         Update: {
           ativo?: boolean
           company_id?: string
+          conservacao?: string | null
           cor?: string
           created_at?: string
           icone?: string
@@ -7806,6 +7809,7 @@ export type Database = {
         Args: { _pedido_exame_id: string }
         Returns: boolean
       }
+      apoio_faixas_conservacao: { Args: { _company: string }; Returns: Json }
       apoio_impressao_pegar: {
         Args: { _empresa: string; _limite?: number }
         Returns: {
@@ -8374,6 +8378,29 @@ export type Database = {
       apoio_valida_cod_ped: {
         Args: { _apoio: string; _cod: string }
         Returns: boolean
+      }
+      auditoria_lista: {
+        Args: {
+          _ate?: string
+          _de?: string
+          _limite?: number
+          _modulo?: string
+          _offset?: number
+          _usuario?: string
+        }
+        Returns: {
+          acao: string
+          antes: Json
+          created_at: string
+          depois: Json
+          fonte: string
+          id: string
+          modulo: string
+          tabela: string
+          total: number
+          usuario_id: string
+          usuario_nome: string
+        }[]
       }
       auth_check_lockout: {
         Args: { _identifier: string; _ip: string }
