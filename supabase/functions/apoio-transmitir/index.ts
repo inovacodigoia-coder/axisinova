@@ -126,6 +126,11 @@ Deno.serve(async (req) => {
       codPorPedido.set(e.pedido_id, outros?.[0]?.cod_ped_lab || baseCodPed(e.ordem, (ctx.lab as any).opcoes?.prefixoPedido))
     }
     e.cod_ped_lab = codPorPedido.get(e.pedido_id)
+    // CodPedLab é obrigatório no XSD do Pardini: sem número de pedido, bloqueia em vez de enviar sem a tag
+    if (!e.cod_ped_lab) {
+      await admin.from('apoio_remessa').update({ status: rem0.status }).eq('id', remessa.id)
+      return json({ ok: false, motivo: `Pedido ${e.ordem?.order_number ?? e.pedido_id} sem número: não foi possível gerar o código do pedido (CodPedLab). Verifique o cadastro do pedido e tente de novo. Nada foi transmitido.` })
+    }
     await admin.from('apoio_pedido_exame').update({ cod_ped_lab: e.cod_ped_lab }).eq('id', e.id)
   }
 
