@@ -7555,6 +7555,7 @@ export type Database = {
           ativo: boolean
           catalogo_ativo: boolean
           codigo_apoio: string
+          conservacao: string
           descricao_apoio: string
           exame_id: string
           exige_pdf: boolean
