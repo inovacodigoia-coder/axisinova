@@ -252,10 +252,13 @@ export type Database = {
           concluida_por: string | null
           created_at: string
           criada_por: string | null
+          dados: Json | null
           descricao: string
           id: string
           observacao: string | null
           pedido_exame_id: string
+          proxima_tentativa: string | null
+          tentativas: number
           tipo: string
           updated_at: string
         }
@@ -265,10 +268,13 @@ export type Database = {
           concluida_por?: string | null
           created_at?: string
           criada_por?: string | null
+          dados?: Json | null
           descricao: string
           id?: string
           observacao?: string | null
           pedido_exame_id: string
+          proxima_tentativa?: string | null
+          tentativas?: number
           tipo?: string
           updated_at?: string
         }
@@ -278,10 +284,13 @@ export type Database = {
           concluida_por?: string | null
           created_at?: string
           criada_por?: string | null
+          dados?: Json | null
           descricao?: string
           id?: string
           observacao?: string | null
           pedido_exame_id?: string
+          proxima_tentativa?: string | null
+          tentativas?: number
           tipo?: string
           updated_at?: string
         }
@@ -7332,8 +7341,13 @@ export type Database = {
         Returns: string
       }
       apoio__mascarar: { Args: { _t: string }; Returns: string }
+      apoio_acao_adiar: { Args: { _id: string }; Returns: undefined }
       apoio_acao_concluir: {
         Args: { _id: string; _observacao: string }
+        Returns: undefined
+      }
+      apoio_acao_registrar_contato: {
+        Args: { _id: string; _observacao: string; _resultado: string }
         Returns: undefined
       }
       apoio_alertar: {
@@ -8241,6 +8255,10 @@ export type Database = {
       lab_norm: { Args: { t: string }; Returns: string }
       next_attendance_order_number: {
         Args: { _company_id: string; _origin_code: string; _origin_id: string }
+        Returns: string
+      }
+      notificar_paciente_recoleta: {
+        Args: { _motivo: string; _pe: string }
         Returns: string
       }
       panel_tickets: {

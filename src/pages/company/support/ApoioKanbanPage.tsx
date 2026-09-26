@@ -47,7 +47,7 @@ export default function ApoioKanbanPage() {
   const [excluir, setExcluir] = useState<Visao | null>(null)
   const [arrastando, setArrastando] = useState<KCard | null>(null)
   const [permitidos, setPermitidos] = useState<string[]>([])
-  const [mover, setMover] = useState<{ card: KCard; status: string; motivo: string } | null>(null)
+  const [mover, setMover] = useState<{ card: KCard; status: string; motivo: string; pendencia?: string; detalhamento?: string; disposicao?: string } | null>(null)
   const [faixaAberta, setFaixaAberta] = useState(true)
   const [autoAtualizar, setAutoAtualizar] = useState(false)
   const [segundos, setSegundos] = useState(30)
@@ -143,7 +143,10 @@ export default function ApoioKanbanPage() {
   }
   const confirmarMover = async () => {
     if (!mover) return
-    const { error } = await supabase.rpc('apoio_manual_mudar_status' as any, { _pe: mover.card.id, _status: mover.status, _motivo: mover.motivo })
+    const comPend = ['pendencia_tecnica', 'nova_coleta'].includes(mover.status)
+    if (comPend && !mover.pendencia?.trim()) return toast.error('Informe a pendência')
+    const { error } = await supabase.rpc('apoio_manual_mudar_status' as any, { _pe: mover.card.id, _status: mover.status, _motivo: mover.motivo,
+      _pendencia: comPend ? mover.pendencia : null, _detalhamento: comPend ? mover.detalhamento || null : null, _disposicao: comPend ? mover.disposicao || null : null })
     if (error) return toast.error(err(error))
     toast.success(`Movido para ${STATUS_APOIO[mover.status]}`); setMover(null); carregar()
   }
@@ -302,8 +305,13 @@ export default function ApoioKanbanPage() {
           <DialogHeader><DialogTitle>Mover para “{mover && STATUS_APOIO[mover.status]}”</DialogTitle></DialogHeader>
           <Label>Motivo*</Label>
           <Textarea value={mover?.motivo || ''} onChange={e => setMover(m => m && { ...m, motivo: e.target.value })} placeholder="Ex.: confirmado no portal do apoio" />
-          {mover && ['pendencia_tecnica', 'nova_coleta'].includes(mover.status) && <p className="text-xs text-muted-foreground">Para pendência técnica ou nova coleta com detalhamento, use a aba Contingência › Status manual, ou “Abrir recoleta”.</p>}
-          <DialogFooter><Button variant="outline" onClick={() => setMover(null)}>Voltar</Button><Button disabled={!mover?.motivo.trim()} onClick={confirmarMover}>Confirmar</Button></DialogFooter>
+          {mover && ['pendencia_tecnica', 'nova_coleta'].includes(mover.status) && <div className="grid gap-2">
+            <label className="text-sm">Pendência*<Input value={mover.pendencia || ''} onChange={e => setMover(m => m && { ...m, pendencia: e.target.value })} /></label>
+            <label className="text-sm">Detalhamento<Textarea value={mover.detalhamento || ''} onChange={e => setMover(m => m && { ...m, detalhamento: e.target.value })} /></label>
+            <label className="text-sm">Disposição<Input value={mover.disposicao || ''} onChange={e => setMover(m => m && { ...m, disposicao: e.target.value })} /></label>
+            {mover.status === 'nova_coleta' && <p className="text-xs text-muted-foreground">Abre a recoleta: cria um novo exame ligado a este e a tarefa “Avisar paciente”.</p>}
+          </div>}
+          <DialogFooter><Button variant="outline" onClick={() => setMover(null)}>Voltar</Button><Button disabled={!mover?.motivo.trim() || (['pendencia_tecnica', 'nova_coleta'].includes(mover?.status || '') && !mover?.pendencia?.trim())} onClick={confirmarMover}>Confirmar</Button></DialogFooter>
         </DialogContent>
       </Dialog>
 

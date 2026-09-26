@@ -128,6 +128,8 @@ export default function NotificationsSettingsPage() {
         <div>
           <h1 className="text-2xl font-bold text-foreground">Notificações Automáticas</h1>
           <p className="text-sm text-muted-foreground">Configure os disparos automáticos para pacientes, médicos, parceiros e setores internos.</p>
+          {/* Remover quando o envio real (notificar_paciente_recoleta) existir */}
+          <p className="mt-1 inline-block rounded-md border border-warning/40 bg-warning/10 px-2 py-0.5 text-xs text-muted-foreground">Envio automático ainda não disponível: os avisos viram tarefas no Kanban Apoio</p>
         </div>
         <Button onClick={salvar} disabled={saving} className="gradient-bg gap-2">
           <Save className="h-4 w-4" /> Salvar Configurações
