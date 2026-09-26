@@ -46,6 +46,7 @@ import {
   GripVertical
 } from 'lucide-react'
 import { useNavigate, useParams } from 'react-router-dom'
+import { EstabilidadeExameCard } from '@/components/lab/triagem/EstabilidadeExameCard'
 import LabMethodologySearchModal from '@/components/lab/catalog/LabMethodologySearchModal'
 import ExamReportSection from '@/components/lab/catalog/ExamReportSection'
 import { cn } from '@/lib/utils'
@@ -557,6 +558,7 @@ export default function LabCatalogFormPage() {
             }} 
             onOpenMethodologySearch={() => setIsMethodologySearchOpen(true)}
           />
+          <EstabilidadeExameCard examId={isEditing ? id : undefined} />
         </TabsContent>
         <TabsContent value="report" className="space-y-4">
           <ExamLaudosSection
