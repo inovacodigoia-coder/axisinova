@@ -32,10 +32,29 @@ export interface ApoioLab {
   contato_email: string | null
   contato_telefone: string | null
   ativo: boolean
+  horarios_motoboy?: string[] | null
+  conservacao_textos?: Record<string, string> | null
+  alerta_guarda_min?: number | null
+  faixas_temperatura?: Record<string, { min?: number; max?: number }> | null
 }
 
 interface Cert { id?: string; tipo: string; numero: string; validade: string; arquivo_path: string | null; _file?: File | null }
 
+const TRANSPORTE_PADRAO = {
+  horarios: '', textos: '(REFRIG.)=refrigerado', alerta_min: 60,
+  amb_min: '15', amb_max: '25', ref_min: '2', ref_max: '8', cong_max: '-10',
+}
+const transporteDe = (lab: ApoioLab) => {
+  const fx = lab.faixas_temperatura || {}
+  const n = (v: unknown, d: string) => (v === undefined || v === null ? d : String(v))
+  return {
+    horarios: (lab.horarios_motoboy || []).join(', '),
+    textos: Object.entries(lab.conservacao_textos || { '(REFRIG.)': 'refrigerado' }).map(([k, v]) => `${k}=${v}`).join('\n'),
+    alerta_min: lab.alerta_guarda_min ?? 60,
+    amb_min: n(fx.ambiente?.min, '15'), amb_max: n(fx.ambiente?.max, '25'),
+    ref_min: n(fx.refrigerado?.min, '2'), ref_max: n(fx.refrigerado?.max, '8'), cong_max: n(fx.congelado?.max, '-10'),
+  }
+}
 const ENDPOINT_PADRAO = 'https://www.hermespardini.com.br/b2b/HPWS.XMLServer.cls'
 
 const schema = z.object({
@@ -69,6 +88,7 @@ export function ApoioLaboratorioDrawer({ open, lab, readOnly, podeCatalogo = fal
     conector: 'manual' as 'pardini' | 'manual', cod_lab: '', senha: '', endpoint_url: ENDPOINT_PADRAO, ambiente: 'homologacao',
     valorReferencia: 2, papelTimbrado: false, grafico: true, prefixoPedido: '', guardar_pdf_sempre: true,
     licenca_sanitaria: '', licenca_validade: '',
+    ...TRANSPORTE_PADRAO,
   })
   const [verSenha, setVerSenha] = useState(false)
   const [erros, setErros] = useState<Record<string, string>>({})
@@ -88,11 +108,12 @@ export function ApoioLaboratorioDrawer({ open, lab, readOnly, podeCatalogo = fal
         cod_lab: lab.cod_lab || '', senha: '', endpoint_url: lab.endpoint_url || ENDPOINT_PADRAO, ambiente: lab.ambiente || 'homologacao',
         valorReferencia: lab.opcoes?.valorReferencia ?? 2, papelTimbrado: !!lab.opcoes?.papelTimbrado, grafico: lab.opcoes?.grafico ?? true, prefixoPedido: lab.opcoes?.prefixoPedido || '',
         guardar_pdf_sempre: lab.guardar_pdf_sempre, licenca_sanitaria: lab.licenca_sanitaria || '', licenca_validade: lab.licenca_validade || '',
+        ...transporteDe(lab),
       })
       supabase.from('apoio_certificacao').select('id, tipo, numero, validade, arquivo_path').eq('apoio_id', lab.id).order('created_at')
         .then(({ data }) => setCerts(((data || []) as any[]).map(c => ({ ...c, tipo: c.tipo || '', numero: c.numero || '', validade: c.validade || '' }))))
     } else {
-      setF(p => ({ ...p, nome: '', cnpj: '', contato_nome: '', contato_email: '', contato_telefone: '', dias_transporte: 1, prazo_contagem: 'uteis', conector: 'manual', cod_lab: '', senha: '', endpoint_url: ENDPOINT_PADRAO, ambiente: 'homologacao', valorReferencia: 2, papelTimbrado: false, grafico: true, prefixoPedido: '', guardar_pdf_sempre: true, licenca_sanitaria: '', licenca_validade: '' }))
+      setF(p => ({ ...p, nome: '', cnpj: '', contato_nome: '', contato_email: '', contato_telefone: '', dias_transporte: 1, prazo_contagem: 'uteis', conector: 'manual', cod_lab: '', senha: '', endpoint_url: ENDPOINT_PADRAO, ambiente: 'homologacao', valorReferencia: 2, papelTimbrado: false, grafico: true, prefixoPedido: '', guardar_pdf_sempre: true, licenca_sanitaria: '', licenca_validade: '', ...TRANSPORTE_PADRAO }))
       setCerts([])
     }
   }, [open, lab])
@@ -109,6 +130,19 @@ export function ApoioLaboratorioDrawer({ open, lab, readOnly, podeCatalogo = fal
       if (!f.senha && !lab?.senha_definida) e.senha = 'Informe a senha'
     }
     if (f.prefixoPedido && !/^[A-Za-z0-9-]{1,8}$/.test(f.prefixoPedido)) e.prefixoPedido = 'Use até 8 letras, números ou hífen, sem espaço'
+    const horarios = f.horarios.split(/[,;\s]+/).map(h => h.trim()).filter(Boolean)
+    if (horarios.some(h => !/^([01]\d|2[0-3]):[0-5]\d$/.test(h))) e.horarios = 'Use horários no formato HH:MM, separados por vírgula'
+    const textos: Record<string, string> = {}
+    for (const l of f.textos.split('\n').map(x => x.trim()).filter(Boolean)) {
+      const [k, v] = l.split('=').map(x => x?.trim())
+      if (!k || !['ambiente', 'refrigerado', 'congelado'].includes(v || '')) { e.textos = 'Cada linha: TEXTO=ambiente, refrigerado ou congelado'; break }
+      textos[k] = v
+    }
+    const num = (v: string) => (v.trim() === '' ? undefined : Number(v.replace(',', '.')))
+    const faixas = {
+      ambiente: { min: num(f.amb_min), max: num(f.amb_max) }, refrigerado: { min: num(f.ref_min), max: num(f.ref_max) }, congelado: { max: num(f.cong_max) },
+    }
+    if (Object.values(faixas).some(x => Object.values(x).some(v => v !== undefined && Number.isNaN(v)))) e.faixas = 'Faixas de temperatura inválidas'
     certs.forEach((c, i) => { if (!c.tipo.trim()) e[`cert_${i}`] = 'Informe o tipo' })
     setErros(e)
     if (Object.keys(e).length) return toast.error('Corrija os campos destacados')
@@ -126,6 +160,8 @@ export function ApoioLaboratorioDrawer({ open, lab, readOnly, podeCatalogo = fal
         opcoes: { ...(lab?.opcoes || {}), valorReferencia: Number(f.valorReferencia), papelTimbrado: f.papelTimbrado, grafico: f.grafico, prefixoPedido: f.prefixoPedido.trim().toUpperCase() || null },
         guardar_pdf_sempre: f.guardar_pdf_sempre,
         licenca_sanitaria: f.licenca_sanitaria.trim() || null, licenca_validade: f.licenca_validade || null,
+        horarios_motoboy: [...new Set(horarios)].sort(), conservacao_textos: textos, alerta_guarda_min: Math.max(1, Number(f.alerta_min) || 60),
+        faixas_temperatura: JSON.parse(JSON.stringify(faixas)),
       }
       let id = lab?.id
       if (id) {
@@ -229,6 +265,37 @@ export function ApoioLaboratorioDrawer({ open, lab, readOnly, podeCatalogo = fal
               <div><label className={label}>Contato</label><input className={input} maxLength={120} value={f.contato_nome} onChange={e => set('contato_nome', e.target.value)} /></div>
               <div><label className={label}>E-mail</label><input className={input} maxLength={255} value={f.contato_email} onChange={e => set('contato_email', e.target.value)} /><Err k="contato_email" /></div>
               <div><label className={label}>Telefone</label><input className={input} value={maskFone(f.contato_telefone)} onChange={e => set('contato_telefone', e.target.value)} /></div>
+            </div>
+            <div className="rounded-xl border border-border p-3 space-y-3">
+              <p className="text-xs font-semibold text-foreground">Transporte e conservação</p>
+              <div>
+                <label className={label}>Horários de coleta do motoboy</label>
+                <input className={input} placeholder="Ex.: 10:00, 16:00" value={f.horarios} onChange={e => set('horarios', e.target.value)} />
+                <p className="mt-1 text-[11px] text-muted-foreground">Opcional. A "Nova remessa" sugere o próximo horário como saída prevista.</p>
+                <Err k="horarios" />
+              </div>
+              <div>
+                <label className={label}>Textos da etiqueta do apoio → conservação</label>
+                <textarea className={input + ' font-mono'} rows={3} value={f.textos} onChange={e => set('textos', e.target.value)} />
+                <p className="mt-1 text-[11px] text-muted-foreground">Uma linha por texto, ex.: (REFRIG.)=refrigerado. Texto não listado deixa o tubo em "Verificar".</p>
+                <Err k="textos" />
+              </div>
+              <div>
+                <label className={label}>Alerta de guarda (minutos)</label>
+                <input type="number" min={1} className={input} value={f.alerta_min} onChange={e => set('alerta_min', Number(e.target.value))} />
+                <p className="mt-1 text-[11px] text-muted-foreground">Avisa quando tubo refrigerado ou congelado transmitido há mais tempo que isso ainda não foi separado.</p>
+              </div>
+              <div>
+                <label className={label}>Faixas de temperatura na saída (°C)</label>
+                <div className="mt-1 grid grid-cols-2 gap-2 text-xs sm:grid-cols-5">
+                  <label>Ambiente mín.<input className={input} value={f.amb_min} onChange={e => set('amb_min', e.target.value)} /></label>
+                  <label>Ambiente máx.<input className={input} value={f.amb_max} onChange={e => set('amb_max', e.target.value)} /></label>
+                  <label>Refrig. mín.<input className={input} value={f.ref_min} onChange={e => set('ref_min', e.target.value)} /></label>
+                  <label>Refrig. máx.<input className={input} value={f.ref_max} onChange={e => set('ref_max', e.target.value)} /></label>
+                  <label>Congelado máx.<input className={input} value={f.cong_max} onChange={e => set('cong_max', e.target.value)} /></label>
+                </div>
+                <Err k="faixas" />
+              </div>
             </div>
           </Sec>
 
