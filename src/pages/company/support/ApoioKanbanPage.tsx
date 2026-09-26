@@ -53,9 +53,11 @@ export default function ApoioKanbanPage() {
   const [segundos, setSegundos] = useState(30)
   const dragTab = useRef<string | null>(null)
 
+  const [guarda, setGuarda] = useState<{ conservacao: string; tubos: number }[]>([])
   const carregar = useCallback(async () => {
     if (!apoio.enabled || !podeVer) return
     setLoading(true)
+    supabase.rpc('apoio_alerta_guarda' as any).then(({ data }) => setGuarda(((data as any) || []) as any))
     const { data, error } = await supabase.rpc('apoio_kanban_lista' as any, { _desde_liberado: verTodosLiberados ? '1900-01-01' : null })
     setLoading(false)
     if (error) return toast.error(err(error))
@@ -186,6 +188,12 @@ export default function ApoioKanbanPage() {
     <TooltipProvider>
       <div className="space-y-4 p-6">
         {bloqueado && <ApoioBloqueadoAviso />}
+        {guarda.length > 0 && (
+          <div className="flex items-center gap-2 rounded-xl border border-warning/50 bg-warning/10 px-4 py-3 text-sm text-[hsl(38,92%,30%)]">
+            <AlertTriangle className="h-5 w-5" />
+            <span><b>{guarda.map(g => `${g.tubos} tubo(s) ${g.conservacao === 'congelado' ? 'congelado(s)' : 'refrigerado(s)'}`).join(' e ')}</b> aguardando guarda. Separe em Terceirização › Remessas.</span>
+          </div>
+        )}
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div>
             <h1 className="text-2xl font-bold text-foreground">Kanban Apoio</h1>
