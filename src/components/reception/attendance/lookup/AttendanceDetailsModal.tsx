@@ -91,6 +91,7 @@ export function AttendanceDetailsModal({ open, onClose, onOrderDeleted, order, p
   const sampleCodeFor = (tubeIndex: number) => buildSampleCode(order.orderNumber, tubeIndex, companySequenceId)
   const { toast } = useToast()
   const { updateOrder } = useAttendanceCadastro()
+  const [corrigirColeta, setCorrigirColeta] = useState<{ examId: string; nome: string; atual: string } | null>(null)
 
   useEffect(() => { setCurrentPatient(patient) }, [patient])
 
@@ -997,9 +998,11 @@ export function AttendanceDetailsModal({ open, onClose, onOrderDeleted, order, p
                                       <div className="flex flex-col items-center gap-0.5">
                                         <div className={cn("w-2.5 h-2.5 rounded-full", examIsCollected ? "bg-emerald-500" : "bg-slate-300")} />
                                         {examIsCollected && exam.collectedAt && (
-                                          <span className="text-[9px] text-muted-foreground">
+                                          <button type="button" title="Corrigir horário da coleta (com justificativa)"
+                                            className="text-[9px] text-muted-foreground underline decoration-dotted hover:text-primary"
+                                            onClick={() => setCorrigirColeta({ examId: exam.examId || exam.id, nome: exam.name, atual: exam.collectedAt })}>
                                             {format(new Date(exam.collectedAt), 'dd/MM HH:mm')}
-                                          </span>
+                                          </button>
                                         )}
                                       </div>
                                     </td>
