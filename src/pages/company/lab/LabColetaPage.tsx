@@ -31,6 +31,8 @@ export default function LabColetaPage() {
   const [isChangingResponsible, setIsChangingResponsible] = useState<string | null>(null)
   const [responsibleCredentials, setResponsibleCredentials] = useState({ username: '', password: '' })
   const [tempResponsible, setTempResponsible] = useState<Record<string, { id: string, name: string }>>({})
+  // Horário da coleta por tubo (datetime-local), por pedido
+  const [horarios, setHorarios] = useState<Record<string, Record<string, string>>>({})
 
   /* Do not make any visual modifications. The phrases I write are commands to understand what I want, not to be written down. Understand their content well, then execute what is required.
                                             
@@ -230,20 +232,40 @@ export default function LabColetaPage() {
     addAudit(order, 'opened')
   }
 
-  const handleConfirmColeta = (order: LabAttendanceOrder) => {
+  const handleConfirmColeta = async (order: LabAttendanceOrder) => {
     const currentResponsible = tempResponsible[order.id]?.name || user?.name || 'Sistema'
-    // Exames de apoio: a marcação vale por alíquota (coleta parcial)
+    const responsavel = { id: tempResponsible[order.id]?.id || user?.id || null, name: currentResponsible }
     const sel = selectedTubes[order.id] || []
-    const temApoio = apoiosDoPedido(order).length > 0
-    const labGuides = temApoio ? ((order as any).labGuides || []).map((g: any) => ({
-      ...g, exams: (g.exams || []).map((e: any) => isApoio(e) ? { ...e, collected: sel.includes(`apoio:${e.apoioId}`) } : e),
-    })) : undefined
+    // Horário de cada tubo marcado → copiado para cada exame do tubo (mesmo campo collectedAt que a Recepção preenche e o Apoio envia como DataColeta/HoraColeta)
+    const porExame = new Map<string, string>()
+    const antes: any[] = [], depois: any[] = []
+    for (const t of sel) {
+      const v = horarioTubo(order, t)
+      const d = new Date(v)
+      if (!v || isNaN(d.getTime())) { toast.error('Informe o horário da coleta de cada tubo marcado'); return }
+      if (d.getTime() > Date.now() + 5 * 60000) { toast.error('O horário da coleta não pode estar no futuro'); return }
+      const iso = d.toISOString()
+      const rec = recepcaoTubo(order, t)
+      antes.push({ tubo: t, recepcao: rec || null }); depois.push({ tubo: t, collectedAt: iso, alterado: !!rec && new Date(rec).getTime() !== d.getTime() })
+      ;(order.exams || []).filter(e => examMatchesTube(e, t)).forEach((e: any) => porExame.set(`${e.examId}|${e.code}`, iso))
+    }
+    // Exames de apoio: a marcação vale por alíquota (coleta parcial)
+    const labGuides = ((order as any).labGuides || []).map((g: any) => ({
+      ...g, exams: (g.exams || []).map((e: any) => {
+        const iso = porExame.get(`${e.examId || e.id}|${e.code}`)
+        if (iso) return { ...e, collected: true, isColeta: true, collectedAt: iso, collectedBy: responsavel }
+        if (isApoio(e)) return { ...e, collected: false }
+        return e
+      }),
+    }))
     if (canSetCollectionDone((order as any).status)) {
-      updateOrder(order.id, { status: 'collection_done', ...(labGuides ? { labGuides } : {}) } as any)
-    } else if (labGuides) {
+      updateOrder(order.id, { status: 'collection_done', labGuides } as any)
+    } else {
       updateOrder(order.id, { labGuides } as any)
     }
-    addAudit(order, 'confirmed', `Coleta realizada por ${currentResponsible}`)
+    ;(supabase as any).rpc('lab_coleta_registrar', { _pedido: order.id, _detalhes: { antes: { tubos: antes }, depois: { tubos: depois, responsavel } } })
+      .then(({ error }: any) => error && console.error('auditoria coleta', error))
+    addAudit(order, 'confirmed', `Coleta realizada por ${currentResponsible}${depois.some(d => d.alterado) ? ' (horário da Recepção corrigido)' : ''}`)
     toast.success('Coleta Realizada com sucesso!')
     setExpandedId(null)
   }
@@ -258,6 +280,19 @@ export default function LabColetaPage() {
     setExpandedId(null)
     toast.info('Coleta adiada.')
   }
+
+  // Horário vindo da Recepção (se algum exame do tubo já tiver)
+  const recepcaoTubo = (order: LabAttendanceOrder, tubeType: string): string | undefined =>
+    (order.exams || []).filter(e => examMatchesTube(e, tubeType)).map((e: any) => e.collectedAt).find(Boolean)
+  const paraLocal = (d: Date) => new Date(d.getTime() - d.getTimezoneOffset() * 60000).toISOString().slice(0, 16)
+  const horarioTubo = (order: LabAttendanceOrder, tubeType: string) => {
+    const v = horarios[order.id]?.[tubeType]
+    if (v) return v
+    const rec = recepcaoTubo(order, tubeType)
+    return paraLocal(rec ? new Date(rec) : new Date())
+  }
+  const setHorarioTubo = (orderId: string, tubeType: string, v: string) =>
+    setHorarios(prev => ({ ...prev, [orderId]: { ...(prev[orderId] || {}), [tubeType]: v } }))
 
   const toggleTube = (orderId: string, tubeType: string) => {
     setSelectedTubes(prev => {
@@ -628,6 +663,17 @@ export default function LabColetaPage() {
                                         </select>
                                       </label>
                                     ))}
+                                  {tubesSelected.includes(tube.type) && (
+                                    <div className="flex flex-wrap items-center gap-2 pt-1" onClick={ev => ev.stopPropagation()}>
+                                      <span className="text-[11px] font-semibold text-foreground">Horário da coleta:</span>
+                                      <input type="datetime-local" className="rounded border border-input bg-background px-1.5 py-0.5 text-[11px]"
+                                        value={horarioTubo(order, tube.type)} max={paraLocal(new Date())}
+                                        onChange={ev => setHorarioTubo(order.id, tube.type, ev.target.value)} />
+                                      {recepcaoTubo(order, tube.type) && (
+                                        <span className="text-[10px] font-semibold text-amber-600">Horário vindo da Recepção — confirme ou corrija</span>
+                                      )}
+                                    </div>
+                                  )}
                                   {(tube as any).apoioNome ? (
                                     <p className="text-[10px] font-mono font-bold text-primary">Rótulo: {(tube as any).codigo} · APOIO {String((tube as any).apoioNome).toUpperCase()}</p>
                                   ) : (
