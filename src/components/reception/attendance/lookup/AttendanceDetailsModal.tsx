@@ -1,6 +1,7 @@
 import { formatCPF, formatPhone, formatAge, formatGender, formatAddress } from "@/utils/formatters"
 import { fmtDiaMes } from '@/lib/apoioAtendimento'
 import { useState, useMemo, useEffect } from 'react'
+import { CorrigirHorarioColetaDialog } from '@/components/lab/triagem/CorrigirHorarioColetaDialog'
 import { Dialog, DialogContent } from '@/components/ui/dialog'
 import { X, Printer, Pencil, Trash2, Plus, ArrowLeft, MoreVertical, CreditCard, Droplets, ShieldCheck, DollarSign, Calendar, Clock, MapPin, User, FileText, ChevronDown, History, BarChart3, Database, RefreshCw, Info, Smartphone, Calculator, Loader2, Eye, AlertTriangle } from 'lucide-react'
 import { useLabSettings } from '@/hooks/useLabSettings'
@@ -1650,6 +1651,7 @@ export function AttendanceDetailsModal({ open, onClose, onOrderDeleted, order, p
           }}
         />
       )}
+      {corrigirColeta && order?.id && <CorrigirHorarioColetaDialog pedidoId={order.id} examId={corrigirColeta.examId} examNome={corrigirColeta.nome} atual={corrigirColeta.atual} onClose={() => setCorrigirColeta(null)} />}
       </ScrollArea>
     </DialogContent>
   </Dialog>
