@@ -7756,6 +7756,7 @@ export type Database = {
           sem_conexao: boolean
           situacao: string
           texto_pardini: string
+          timeout_s: number
           tipo: string
           total: number
           usuario_nome: string
