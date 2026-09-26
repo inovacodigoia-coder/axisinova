@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { Fragment, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Plus, Truck, Printer, Download, ScanLine, X, CheckCircle2, AlertTriangle, Send, PackageCheck, Ban, FileText, Loader2, RefreshCw } from 'lucide-react'
 import { toast } from 'sonner'
 import { supabase } from '@/integrations/supabase/client'
@@ -423,7 +423,7 @@ function DetalheRemessa({ id, remessa: r0, pode, onClose, onChanged }: { id: str
             <tbody>{itens.map(i => {
               const canc = i.cancel?.estado === 'cancelado' && i.status === 'cancelado'
               const semConf = i.cancel?.estado === 'sem_confirmacao' && i.status !== 'cancelado'
-              return (<>
+              return (<Fragment key={i.id}>
               <tr key={i.id} className={`border-t border-border ${canc ? 'text-muted-foreground line-through' : ''}`}>
                 <td className="px-2 py-1.5">{i.paciente}</td><td className="px-2 py-1.5">{i.order_number}</td>
                 <td className="px-2 py-1.5 font-mono text-xs">{i.tubo}{tubos.find(t => t.codigo === i.tubo)?.bipado && <CheckCircle2 className="ml-1 inline h-3.5 w-3.5 text-[hsl(var(--success))]" />}</td>
@@ -434,7 +434,7 @@ function DetalheRemessa({ id, remessa: r0, pode, onClose, onChanged }: { id: str
               {(canc || semConf) && <tr key={i.id + ':c'}><td colSpan={6} className={`px-2 pb-1.5 text-xs ${semConf ? 'text-[hsl(38,92%,30%)]' : 'text-destructive'}`}>
                 {canc ? `Cancelado no apoio · ${i.cancel.destino === 'fila' ? 'voltou para a fila do apoio' : 'cancelado no atendimento'}` : 'Cancelamento sem confirmação do Pardini'} · Motivo: {i.cancel.motivo} · {nomes[i.cancel.por] || 'Usuário'} · {fmt(i.cancel.em)}
               </td></tr>}
-              </>)})}</tbody>
+              </Fragment>)})}</tbody>
           </table>
         </div>
 
