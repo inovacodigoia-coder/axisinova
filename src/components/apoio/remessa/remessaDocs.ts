@@ -46,7 +46,7 @@ export function baixarTexto(nome: string, conteudo: string) {
 }
 
 export function gerarRomaneio(opts: {
-  laboratorio: string; apoio: string; numero: number | string; temperatura: string;
+  laboratorio: string; apoio: string; numero: number | string; saida?: string | null;
   itens: ItemRemessa[]; totalTubos: number
 }): jsPDF {
   const doc = new jsPDF({ unit: 'mm', format: 'a4' })
@@ -59,7 +59,7 @@ export function gerarRomaneio(opts: {
   y += 5; doc.text(`Apoio: ${opts.apoio}`, M, y)
   doc.text(`Remessa nº ${opts.numero}`, W - M, y, { align: 'right' })
   y += 5; doc.text(`Data/hora: ${new Date().toLocaleString('pt-BR')}`, M, y)
-  doc.text(`Temperatura: ${TEMPERATURAS[opts.temperatura] || opts.temperatura}`, W - M, y, { align: 'right' })
+  doc.text(`Saída prevista: ${opts.saida ? new Date(opts.saida).toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', year: '2-digit', hour: '2-digit', minute: '2-digit' }) : '—'}`, W - M, y, { align: 'right' })
   y += 6
   const cols = [
     { t: 'Paciente', w: 55 }, { t: 'Pedido', w: 25 }, { t: 'Código de barras', w: 32 },
@@ -72,8 +72,19 @@ export function gerarRomaneio(opts: {
     cols.forEach(c => { doc.text(c.t, x, y + 5); x += c.w })
     y += 7; doc.setFont('helvetica', 'normal')
   }
+  const NOMES: Record<string, string> = { ambiente: 'AMBIENTE', refrigerado: 'REFRIGERADO', congelado: 'CONGELADO', verificar: 'VERIFICAR', nao_informado: 'CONSERVAÇÃO NÃO INFORMADA' }
+  const ordem = ['ambiente', 'refrigerado', 'congelado', 'verificar', 'nao_informado']
+  const grupos = ordem.map(k => ({ k, itens: opts.itens.filter(i => (i.conservacao || 'nao_informado') === k) })).filter(g => g.itens.length)
+  const totalSacos = grupos.filter(g => ['ambiente', 'refrigerado', 'congelado'].includes(g.k)).length
+  let nSaco = 0
+  grupos.forEach(g => {
+  if (y > 240) { doc.addPage(); y = 16 }
+  const ehSaco = ['ambiente', 'refrigerado', 'congelado'].includes(g.k)
+  if (ehSaco) nSaco++
+  doc.setFont('helvetica', 'bold'); doc.setFontSize(10)
+  doc.text(`${ehSaco ? `Saco ${nSaco}/${totalSacos} · ` : ''}${NOMES[g.k]}`, M, y + 5); y += 7
   header()
-  opts.itens.forEach(it => {
+  g.itens.forEach(it => {
     if (y > 250) { doc.addPage(); y = 16; header() }
     const vals = [it.paciente, it.order_number, it.tubo, it.exame, it.material]
     let x = M + 1
@@ -83,6 +94,10 @@ export function gerarRomaneio(opts: {
     })
     doc.setDrawColor(220); doc.line(M, y + 7, W - M, y + 7)
     y += 7
+  })
+  doc.setFont('helvetica', 'bold'); doc.setFontSize(8)
+  doc.text(`Subtotal ${NOMES[g.k].toLowerCase()}: ${g.itens.length} exame(s) · ${new Set(g.itens.map(i => i.tubo).filter(Boolean)).size} tubo(s)`, W - M, y + 5, { align: 'right' })
+  y += 10; doc.setFont('helvetica', 'normal')
   })
   y += 6
   doc.setFont('helvetica', 'bold'); doc.setFontSize(10)
