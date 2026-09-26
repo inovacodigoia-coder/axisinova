@@ -620,6 +620,7 @@ export type Database = {
           erro: string | null
           http_status: number | null
           id: string
+          observacao: string | null
           operacao: string
           origem: string | null
           requisicao: string | null
@@ -638,6 +639,7 @@ export type Database = {
           erro?: string | null
           http_status?: number | null
           id?: string
+          observacao?: string | null
           operacao: string
           origem?: string | null
           requisicao?: string | null
@@ -656,6 +658,7 @@ export type Database = {
           erro?: string | null
           http_status?: number | null
           id?: string
+          observacao?: string | null
           operacao?: string
           origem?: string | null
           requisicao?: string | null
