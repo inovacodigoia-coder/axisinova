@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Download, Eye, Hand, Loader2, MessageSquare, Printer, RefreshCw, RotateCcw, Send, UserPlus, XCircle, CheckCircle2, ArrowRightLeft } from 'lucide-react'
+import { Download, Eye, Hand, Loader2, MessageSquare, Printer, RefreshCw, RotateCcw, Send, UserPlus, XCircle, CheckCircle2, ArrowRightLeft, Phone, Clock } from 'lucide-react'
 import { toast } from 'sonner'
 import { supabase } from '@/integrations/supabase/client'
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet'
@@ -20,6 +20,7 @@ import { type KCard, corPrazo, fmtData, fmtDataHora } from './kanbanShared'
 
 const err = (e: any) => e?.message || String(e)
 const ORIGEM: Record<string, string> = { sistema: 'Sistema', integracao: 'Integração', manual: 'Manual' }
+const CONTATO: Record<string, string> = { avisado: 'Avisado', nao_atendeu: 'Não atendeu', numero_errado: 'Número errado' }
 
 export function KanbanCardDrawer({ card, companyId, usuarios, onClose, onChanged, onMudarStatus }: {
   card: KCard | null; companyId: string; usuarios: { id: string; nome: string }[]
@@ -38,6 +39,7 @@ export function KanbanCardDrawer({ card, companyId, usuarios, onClose, onChanged
   const [comentario, setComentario] = useState('')
   const [feito, setFeito] = useState<{ id: string; obs: string } | null>(null)
   const [recoleta, setRecoleta] = useState<{ motivo: string; data: string; avisar: boolean } | null>(null)
+  const [contato, setContato] = useState<{ id: string; resultado: string; obs: string } | null>(null)
   const [cancelar, setCancelar] = useState<string | null>(null)
   const nome = (id?: string | null) => usuarios.find(u => u.id === id)?.nome || (id ? 'Usuário' : '—')
 
@@ -101,13 +103,32 @@ export function KanbanCardDrawer({ card, companyId, usuarios, onClose, onChanged
             </div>
           </SheetHeader>
 
-          {card.acao_pendente_id && (
+          {card.acao_pendente_id && (() => {
+            const a = acoes.find(x => x.id === card.acao_pendente_id)
+            const aviso = a?.tipo === 'avisar_paciente'
+            const d = a?.dados || {}
+            const podeAvisar = podeManual || has('apoio.remessa.operar')
+            return (
             <div className="mt-4 rounded-xl border border-warning/40 bg-warning/10 p-3 text-sm">
               <p className="flex items-center gap-2 font-semibold"><Hand className="h-4 w-4" />Ação manual pendente</p>
-              <p className="mt-1">{card.acao_pendente}</p>
-              {podeManual && <Button size="sm" className="mt-2" onClick={() => setFeito({ id: card.acao_pendente_id!, obs: '' })}><CheckCircle2 className="mr-1 h-4 w-4" />Marcar como feito</Button>}
-            </div>
-          )}
+              <p className="mt-1">{aviso ? a.descricao : card.acao_pendente}</p>
+              {aviso && <dl className="mt-2 grid grid-cols-2 gap-x-3 gap-y-1 text-xs">
+                <div><dt className="text-muted-foreground">Paciente</dt><dd className="font-medium">{d.nome || '—'}</dd></div>
+                <div><dt className="text-muted-foreground">Telefone</dt><dd className="font-medium">{d.telefone || '—'}</dd></div>
+                <div><dt className="text-muted-foreground">Celular</dt><dd className="font-medium">{d.celular || '—'}</dd></div>
+                <div><dt className="text-muted-foreground">E-mail</dt><dd className="font-medium break-all">{d.email || '—'}</dd></div>
+                <div><dt className="text-muted-foreground">Tentativas</dt><dd className="font-medium">{a.tentativas || 0}</dd></div>
+                {a.proxima_tentativa && <div><dt className="text-muted-foreground">Tentar de novo em</dt><dd className="font-medium">{fmtDataHora(a.proxima_tentativa)}</dd></div>}
+              </dl>}
+              {aviso && (d.contatos || []).length > 0 && <ul className="mt-2 space-y-1 text-xs text-muted-foreground">{d.contatos.map((c: any, i: number) =>
+                <li key={i}>{fmtDataHora(c.em)} · {nome(c.por)} · {CONTATO[c.resultado] || c.resultado}{c.observacao ? ` — ${c.observacao}` : ''}</li>)}</ul>}
+              {aviso ? podeAvisar && <div className="mt-2 flex flex-wrap gap-2">
+                <Button size="sm" onClick={() => setContato({ id: a.id, resultado: 'avisado', obs: '' })}><Phone className="mr-1 h-4 w-4" />Liguei / avisei</Button>
+                <Button size="sm" variant="outline" onClick={() => rpc('apoio_acao_adiar', { _id: a.id }, 'Reagendado para amanhã')}><Clock className="mr-1 h-4 w-4" />Tentar de novo depois</Button>
+              </div>
+                : podeManual && <Button size="sm" className="mt-2" onClick={() => setFeito({ id: card.acao_pendente_id!, obs: '' })}><CheckCircle2 className="mr-1 h-4 w-4" />Marcar como feito</Button>}
+            </div>)
+          })()}
 
           <dl className="mt-4 grid grid-cols-2 gap-x-4 gap-y-2 text-sm">
             {[
