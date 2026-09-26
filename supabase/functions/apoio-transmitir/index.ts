@@ -6,7 +6,7 @@ import { conteudoUtil, esc, texto } from '../_shared/pardini/xml.ts'
 import { parseAdmitido } from '../_shared/pardini/parsers.ts'
 import { montarRegistro } from '../_shared/pardini/registro.ts'
 
-const Body = z.object({ remessa_id: z.string().uuid(), operacao: z.enum(['consultar']).optional() })
+const Body = z.object({ remessa_id: z.string().uuid(), operacao: z.enum(['consultar']).optional(), espera_s: z.number().int().min(10).max(120).optional() })
 const cortar = (s: unknown, n: number) => String(s ?? '').slice(0, n)
 const sexo = (g: string) => /^(m|male|masc)/i.test(g || '') ? 'Masculino' : /^(f|female|fem)/i.test(g || '') ? 'Feminino' : 'Indefinido'
 const RECUPERAVEIS = ['10023', '10217']
@@ -95,7 +95,7 @@ Deno.serve(async (req) => {
   if (parsed.data.operacao === 'consultar') {
     try {
       const ctxC = await carregarCtx(admin, rem0.apoio_id)
-      const resp = await chamar(ctxC, 'getPedido', [['XML', 'string', consultaLote(ctxC, rem0)]], { tentativas: 1 })
+      const resp = await chamar(ctxC, 'getPedido', [['XML', 'string', consultaLote(ctxC, rem0)]], { tentativas: 1, timeoutMs: (parsed.data.espera_s ?? 60) * 1000 })
       const util = conteudoUtil(resp)
       return json({ ok: /RegistroAdmitido/i.test(util), util, bruto: String(resp).slice(0, 20000) })
     } catch (e) {
