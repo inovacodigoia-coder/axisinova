@@ -361,6 +361,9 @@ function DetalheRemessa({ id, remessa: r0, pode, onClose, onChanged }: { id: str
   }
   const romaneio = () => gerarRomaneio({ laboratorio: labNome, apoio: r.apoio_nome, numero: r.cod_lote_lab, saida: r.saida_prevista,
     itens: itensAtivos.map(i => ({ ...i, conservacao: consItem(i).k })), totalTubos: tubos.length - (recip.length - recipAtivos.length) })
+  const [faixasCond, setFaixasCond] = useState<Record<string, { min?: number; max?: number; nome?: string }>>({})
+  useEffect(() => { if (!entrega) return; supabase.rpc('apoio_faixas_conservacao' as any, { _company: (r as any).company_id }).then(({ data }) => setFaixasCond((data as any) || {})) }, [entrega])
+  const faixaTxt = (k: string) => { const f = faixasCond[k]; if (!f) return 'sem faixa nas Condições de transporte'; return f.min == null ? `≤ ${f.max} °C` : f.max == null ? `≥ ${f.min} °C` : `${f.min} a ${f.max} °C` }
   const sacosPresentes = ORDEM_CONSERVACAO.filter(k => recipAtivos.some(rc => rc.conservacao === k))
   const pendSeparar = recipAtivos.filter(rc => !rc.separado || !rc.conservacao || rc.conservacao === 'verificar').length
   const divergencias = (rc: any) => {
@@ -532,7 +535,7 @@ function DetalheRemessa({ id, remessa: r0, pode, onClose, onChanged }: { id: str
             {sacosPresentes.length > 0 && <div className="space-y-2">
               <p className="text-sm font-medium">Temperatura de cada saco na saída (°C)</p>
               {sacosPresentes.map(k => <label key={k} className="flex items-center gap-2 text-sm"><span className="w-36">{CONSERVACAO[k].icon} {CONSERVACAO[k].label}</span>
-                <Input className="h-8 w-28" inputMode="decimal" value={sacosTemp[k] || ''} onChange={e => setSacosTemp(s => ({ ...s, [k]: e.target.value }))} /></label>)}
+                <Input className="h-8 w-28" inputMode="decimal" value={sacosTemp[k] || ''} onChange={e => setSacosTemp(s => ({ ...s, [k]: e.target.value }))} /><span className="text-[11px] text-muted-foreground">{faixaTxt(k)}</span></label>)}
             </div>}
             {pendSeparar > 0 && <div className="rounded-md border border-warning/50 bg-warning/10 p-2 text-xs text-[hsl(38,92%,30%)] space-y-1">
               <p><b>{pendSeparar} tubo(s) em "Verificar" ou não separado(s).</b> Separe por temperatura antes de entregar, ou force com justificativa.</p>

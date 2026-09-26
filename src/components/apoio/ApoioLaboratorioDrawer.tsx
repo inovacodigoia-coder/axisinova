@@ -275,7 +275,7 @@ export function ApoioLaboratorioDrawer({ open, lab, readOnly, podeCatalogo = fal
               </div>
               <div>
                 <label className={label}>Faixas de temperatura na saída (°C)</label>
-                <p className="mt-1 text-[11px] text-muted-foreground">Vêm das Condições de transporte (Configurações do Laboratório › Unidades e Rotas). <a className="underline" href="/app/lab/configuracoes">Abrir Condições de transporte</a></p>
+                <p className="mt-1 text-[11px] text-muted-foreground">Vêm das Condições de transporte (Configurações do Laboratório › Unidades e Rotas). <a className="underline" href="/app/configuracoes/laboratorio">Abrir Condições de transporte</a></p>
               </div>
             </div>
           </Sec>
