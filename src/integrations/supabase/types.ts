@@ -7435,6 +7435,17 @@ export type Database = {
         Args: { _motivo: string; _pe: string; _usar: string }
         Returns: undefined
       }
+      apoio_cancelamento_registrar: {
+        Args: {
+          _destino: string
+          _motivo: string
+          _pe: string
+          _resposta: string
+          _resultado: string
+          _usuario: string
+        }
+        Returns: Json
+      }
       apoio_cancelar_pedido_exame: {
         Args: {
           _cancelar_no_apoio?: boolean

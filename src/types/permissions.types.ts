@@ -107,6 +107,7 @@ export const APOIO_PERMISSIONS: { code: string; label: string; description: stri
   { code: 'apoio.catalogo.gerenciar', label: 'Manter catálogo e preços do apoio', description: 'Atualizar catálogo de referência e tabelas de preço' },
   { code: 'apoio.depara.gerenciar', label: 'Terceirizar exames / De-Para', description: 'Definir quais exames vão para o apoio e o De/Para' },
   { code: 'apoio.remessa.operar', label: 'Montar e transmitir remessas', description: 'Criar remessas, imprimir e enviar ao apoio' },
+  { code: 'apoio.remessa.cancelar', label: 'Cancelar remessa no apoio', description: 'Cancelar no Pardini exames de remessa já transmitida' },
   { code: 'apoio.manual.operar', label: 'Operar o modo manual / contingência', description: 'Lançar status e resultados manualmente quando a integração falha' },
   { code: 'apoio.resultado.conferir', label: 'Conferir resultados de apoio', description: 'Conferir resultados, divergências e retificações' },
   { code: 'apoio.kanban.ver', label: 'Ver o Kanban Apoio', description: 'Acompanhar os exames terceirizados no Kanban' },
