@@ -1,0 +1,1 @@
+- Conservação do tubo do apoio é calculada por trigger em apoio_recipiente a partir da etiqueta EPL (tabela editável em apoio_laboratorio.conservacao_textos) — assim a transmissão e o XML ao Pardini não mudam.

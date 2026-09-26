@@ -5,7 +5,7 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sh
 import { Badge } from '@/components/ui/badge'
 import { brl, carregarCatalogo, db, exigePdfSugerido, norm, sugerir, type CatItem, type ExameLis } from './deparaUtils'
 
-export interface DeparaRow { id: string; exame_id: string; apoio_id: string; codigo_apoio: string; exige_pdf: boolean; ativo: boolean }
+export interface DeparaRow { id: string; exame_id: string; apoio_id: string; codigo_apoio: string; exige_pdf: boolean; ativo: boolean; conservacao?: string | null }
 
 export function ApoioDeparaDrawer({ open, depara, exameInicial, exames, apoios, deparas, companyId, readOnly, onClose, onSaved }: {
   open: boolean; depara: DeparaRow | null; exameInicial: string | null; exames: ExameLis[]; apoios: { id: string; nome: string }[]
@@ -19,6 +19,7 @@ export function ApoioDeparaDrawer({ open, depara, exameInicial, exames, apoios, 
   const [codigo, setCodigo] = useState('')
   const [buscaCat, setBuscaCat] = useState('')
   const [exigePdf, setExigePdf] = useState(false)
+  const [conservacao, setConservacao] = useState('nao_informado')
   const [ref, setRef] = useState<{ tem_preco: boolean; preco: number | null; ficticio: boolean; prazo_dias: number | null } | null>(null)
   const [saving, setSaving] = useState(false)
   const [editId, setEditId] = useState<string | null>(null)
@@ -30,6 +31,7 @@ export function ApoioDeparaDrawer({ open, depara, exameInicial, exames, apoios, 
     setApoioId(depara?.apoio_id || (apoios.length === 1 ? apoios[0].id : ''))
     setCodigo(depara?.codigo_apoio || '')
     setExigePdf(depara?.exige_pdf || false)
+    setConservacao(depara?.conservacao || 'nao_informado')
     setBuscaEx(''); setBuscaCat(''); setRef(null)
   }, [open, depara, exameInicial, apoios])
 
@@ -37,7 +39,7 @@ export function ApoioDeparaDrawer({ open, depara, exameInicial, exames, apoios, 
   useEffect(() => {
     if (!open || depara || !exameId || !apoioId) return
     const ex = deparas.find(d => d.exame_id === exameId && d.apoio_id === apoioId)
-    if (ex && ex.id !== editId) { setEditId(ex.id); setCodigo(ex.codigo_apoio); setExigePdf(ex.exige_pdf); toast.info('Este exame já é terceirizado com este apoio: abrindo em edição') }
+    if (ex && ex.id !== editId) { setEditId(ex.id); setCodigo(ex.codigo_apoio); setExigePdf(ex.exige_pdf); setConservacao(ex.conservacao || 'nao_informado'); toast.info('Este exame já é terceirizado com este apoio: abrindo em edição') }
     if (!ex && editId && !depara) { setEditId(null) }
   }, [exameId, apoioId]) // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -84,7 +86,7 @@ export function ApoioDeparaDrawer({ open, depara, exameInicial, exames, apoios, 
     setSaving(true)
     try {
       let id = editId
-      const payload = { codigo_apoio: codigo, exige_pdf: exigePdf, ativo: true }
+      const payload = { codigo_apoio: codigo, exige_pdf: exigePdf, conservacao, ativo: true }
       if (id) {
         const antigo = deparas.find(d => d.id === id)
         const extra = antigo && antigo.codigo_apoio !== codigo ? { codigo_formato: null, modelo: null, modelo_mudou: false, codigo_formato_anterior: null, modelo_anterior: null } : {}
@@ -188,6 +190,16 @@ export function ApoioDeparaDrawer({ open, depara, exameInicial, exames, apoios, 
               <input type="checkbox" className="mt-1 accent-primary" checked={exigePdf} onChange={e => setExigePdf(e.target.checked)} />
               <span>Exige PDF<span className="block text-[11px] text-muted-foreground">Marque em anatomia patológica, citologia, imuno-histoquímica e biópsia</span></span>
             </label>
+            <div>
+              <label className={label}>Conservação para transporte</label>
+              <select className={input} value={conservacao} onChange={e => setConservacao(e.target.value)}>
+                <option value="nao_informado">Não informado</option>
+                <option value="ambiente">Ambiente</option>
+                <option value="refrigerado">Refrigerado</option>
+                <option value="congelado">Congelado</option>
+              </select>
+              <p className="mt-1 text-[11px] text-muted-foreground">Previsão do laboratório. Depois da transmissão, vale o que vier na etiqueta do apoio.</p>
+            </div>
             <div className="grid grid-cols-2 gap-3 text-sm">
               <div className="rounded-lg border border-border p-3"><p className={label}>Preço vigente</p>
                 {!codigo ? '—' : ref?.tem_preco ? <p className="font-semibold">{ref.preco != null ? brl(ref.preco) : 'definido'} {ref.ficticio && <Badge className="ml-1 bg-warning text-warning-foreground">fictício</Badge>}</p> : <p className="font-semibold text-warning">Sem preço</p>}

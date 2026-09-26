@@ -43,7 +43,7 @@ export function ApoioLaboratoriosTab({ moduloLiberado, onChanged }: { moduloLibe
   const load = async () => {
     setLoading(true)
     const { data, error } = await supabase.from('apoio_laboratorio')
-      .select('id, company_id, nome, cnpj, conector, cod_lab, senha_secret_id, endpoint_url, ambiente, modo_contingencia, opcoes, dias_transporte, prazo_contagem, guardar_pdf_sempre, licenca_sanitaria, licenca_validade, licenca_arquivo_path, contato_nome, contato_email, contato_telefone, ativo')
+      .select('id, company_id, nome, cnpj, conector, cod_lab, senha_secret_id, endpoint_url, ambiente, modo_contingencia, opcoes, dias_transporte, prazo_contagem, guardar_pdf_sempre, licenca_sanitaria, licenca_validade, licenca_arquivo_path, contato_nome, contato_email, contato_telefone, ativo, horarios_motoboy, conservacao_textos, alerta_guarda_min, faixas_temperatura')
       .order('nome')
     if (error) toast.error('Erro ao carregar laboratórios de apoio')
     setLabs(((data || []) as any[]).map(r => ({ ...r, senha_definida: !!r.senha_secret_id, senha_secret_id: undefined })))
