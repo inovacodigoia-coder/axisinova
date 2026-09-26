@@ -7,6 +7,7 @@ export interface LinhaLog {
   http_status: number | null; duracao_ms: number | null; codigos: string[] | null; texto_pardini: string | null
   falha_interna: boolean; sem_conexao: boolean; login_recusado: boolean; recuperado: boolean; situacao: Situacao
   cod_lote: string | null; remessa_id: string | null; remessa_numero: number | null; resolvido_em: string | null; resolvido_obs: string | null; total: number
+  timeout_s?: number | null
 }
 
 export interface Traducao { resumo: string; oQueFazer: string; lado: Lado; pendente?: boolean }
@@ -40,7 +41,15 @@ export function traduzir(l: LinhaLog, tabelaErros: Map<string, string> = new Map
   if (neg && entre(neg, 10104, 10112)) return { resumo: `Informação da amostra inválida para o Pardini${l.texto_pardini ? ` (${l.texto_pardini})` : ''}.`, oQueFazer: 'Confira material, conservante e informação complementar do exame.', lado: 'cadastro' }
   if (l.login_recusado) return { resumo: 'Código ou senha do Pardini recusados.', oQueFazer: 'Confira em Terceirização › Laboratórios.', lado: 'cadastro' }
   if (l.falha_interna) return { resumo: `O servidor do Pardini falhou ao processar (${op}). Não é problema do seu cadastro.`, oQueFazer: 'Tente mais tarde; se repetir, avise o suporte do Pardini.', lado: 'pardini' }
-  if (l.sem_conexao) return { resumo: 'Não foi possível falar com o Pardini (internet ou Pardini fora do ar).', oQueFazer: `A rotina tenta de novo sozinha por volta das ${proximaRotina()}.`, lado: 'rede' }
+  if (l.sem_conexao) {
+    // Transmitir/Consultar lote NUNCA são repetidos por rotina; só as buscas periódicas (resultados, status, PDF...) têm rotina
+    const manual = l.tipo === 'transmitir' || l.tipo === 'consultar_lote' || l.tipo === 'cancelamento'
+    const oQueFazer = manual
+      ? (l.tipo === 'cancelamento' ? 'Nada é repetido sozinho. Confira o exame antes de tentar cancelar de novo.' : 'Nada é repetido sozinho. Se a remessa ainda não tem código do Pardini, use "Consultar lote" antes de transmitir de novo.')
+      : `A rotina tenta de novo sozinha por volta das ${proximaRotina()}.`
+    const resumo = l.timeout_s != null ? `O Pardini não respondeu em ${l.timeout_s} s.` : 'Não foi possível falar com o Pardini (internet ou Pardini fora do ar).'
+    return { resumo, oQueFazer, lado: l.timeout_s != null ? 'pardini' : 'rede' }
+  }
   if (neg || cods.length) {
     const c = neg || cods[0]
     const txt = tabelaErros.get(c) || l.texto_pardini || 'sem descrição'
