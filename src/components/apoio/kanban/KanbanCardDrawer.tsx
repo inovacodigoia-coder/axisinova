@@ -233,13 +233,29 @@ export function KanbanCardDrawer({ card, companyId, usuarios, onClose, onChanged
         </DialogContent>
       </Dialog>
 
+      <Dialog open={!!contato} onOpenChange={o => !o && setContato(null)}>
+        <DialogContent>
+          <DialogHeader><DialogTitle>Liguei / avisei</DialogTitle></DialogHeader>
+          <Label>Resultado*</Label>
+          <Select value={contato?.resultado} onValueChange={v => setContato(c => c && { ...c, resultado: v })}>
+            <SelectTrigger><SelectValue /></SelectTrigger>
+            <SelectContent>{Object.entries(CONTATO).map(([k, v]) => <SelectItem key={k} value={k}>{v}</SelectItem>)}</SelectContent>
+          </Select>
+          <Label>Observação</Label>
+          <Textarea value={contato?.obs || ''} onChange={e => setContato(c => c && { ...c, obs: e.target.value })} placeholder="Ex.: falei com a mãe, vem amanhã às 8h" />
+          <p className="text-xs text-muted-foreground">“Avisado” conclui a tarefa. “Não atendeu” ou “Número errado” somam uma tentativa e a tarefa continua aberta.</p>
+          <DialogFooter><Button variant="outline" onClick={() => setContato(null)}>Voltar</Button>
+            <Button onClick={async () => { if (contato && await rpc('apoio_acao_registrar_contato', { _id: contato.id, _resultado: contato.resultado, _observacao: contato.obs }, contato.resultado === 'avisado' ? 'Paciente avisado — tarefa concluída' : 'Tentativa registrada')) setContato(null) }}>Salvar</Button></DialogFooter>
+        </DialogContent>
+      </Dialog>
+
       <Dialog open={!!recoleta} onOpenChange={o => !o && setRecoleta(null)}>
         <DialogContent>
           <DialogHeader><DialogTitle>Abrir recoleta</DialogTitle></DialogHeader>
           <div className="space-y-3">
             <div><Label>Motivo*</Label><Textarea value={recoleta?.motivo || ''} onChange={e => setRecoleta(r => r && { ...r, motivo: e.target.value })} /></div>
             <div><Label>Nova data de coleta*</Label><Input type="date" value={recoleta?.data || ''} onChange={e => setRecoleta(r => r && { ...r, data: e.target.value })} /></div>
-            <label className="flex items-center gap-2 text-sm"><Checkbox checked={!!recoleta?.avisar} onCheckedChange={v => setRecoleta(r => r && { ...r, avisar: !!v })} />Avisar paciente (“Recoleta necessária (exame de apoio)”)</label>
+            <label className="flex items-center gap-2 text-sm"><Checkbox checked={!!recoleta?.avisar} onCheckedChange={v => setRecoleta(r => r && { ...r, avisar: !!v })} />Registrar aviso “Recoleta necessária (exame de apoio)” (a tarefa “Avisar paciente” é criada sempre)</label>
             <p className="text-xs text-muted-foreground">O exame atual vai para “Nova coleta” e um novo exame entra em “Aguardando remessa”, ligado a este.</p>
           </div>
           <DialogFooter><Button variant="outline" onClick={() => setRecoleta(null)}>Voltar</Button>
