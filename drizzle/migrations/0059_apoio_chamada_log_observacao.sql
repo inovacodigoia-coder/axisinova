@@ -1,0 +1,2 @@
+ALTER TABLE public.apoio_chamada_log ADD COLUMN IF NOT EXISTS observacao text;
+UPDATE public.apoio_chamada_log SET observacao = 'Executada pelo assistente Lovable com sessão gerada em nome do usuário, a pedido de inovacodigoia@inovacodigoia.com.br — 26/09/2026' WHERE id = 'ffaa95ea-c382-4c77-84ac-1baa52aaed29';

@@ -414,6 +414,13 @@
       "when": 1790446041804,
       "tag": "0058_apoio_depara_lista_conservacao",
       "breakpoints": true
+    },
+    {
+      "idx": 59,
+      "version": "7",
+      "when": 1790446470973,
+      "tag": "0059_apoio_chamada_log_observacao",
+      "breakpoints": true
     }
   ]
 }
