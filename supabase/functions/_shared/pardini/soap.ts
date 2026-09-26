@@ -72,7 +72,7 @@ export async function chamar(ctx: Ctx, op: string, params: Param[], opts: { tent
       clearTimeout(timer)
       if (e instanceof PardiniErro) throw e
       const timeout = (e as Error).name === 'AbortError'
-      const msg = timeout ? 'Tempo esgotado (60 s)' : `Erro de rede: ${(e as Error).message}`
+      const msg = timeout ? `Tempo esgotado (${Math.round((opts.timeoutMs ?? 60_000) / 1000)} s)` : `Erro de rede: ${(e as Error).message}`
       await log(ctx, op, body, null, null, Date.now() - ini, msg)
       ultimo = new PardiniErro(msg, timeout ? 'timeout' : 'rede')
       if (t < max) { await esperar(t); continue }
