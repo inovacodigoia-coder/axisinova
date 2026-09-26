@@ -12,6 +12,13 @@ import { useAuth } from '@/context/AuthContext';
 import { useCompanyContext } from '@/context/CompanyContext';
 import type { Origin, Establishment } from '@/types/company-portal.types';
 
+const PAPEIS = [
+  { k: 'papel_coleta', label: 'Coleta', curto: 'Coleta', desc: 'Posto/unidade que coleta' },
+  { k: 'papel_laboratorio', label: 'Laboratório que analisa', curto: 'Laboratório', desc: 'Recebe malote e faz a triagem' },
+  { k: 'papel_coleta_externa', label: 'Coleta externa', curto: 'Coleta externa', desc: 'Domiciliar/empresas; o coletor sai dela' },
+  { k: 'papel_hospital', label: 'Hospital / Pronto-socorro', curto: 'Hospital/PS', desc: 'Amostras de internados/urgência' },
+] as const;
+
 export default function OriginsPage() {
   const { user } = useAuth();
   const { refreshOrigins } = useCompanyContext();
@@ -23,7 +30,12 @@ export default function OriginsPage() {
   const [formData, setFormData] = useState({
     name: '',
     internal_code: '',
-    establishment_id: ''
+    establishment_id: '',
+    papel_coleta: true,
+    papel_laboratorio: false,
+    papel_coleta_externa: false,
+    papel_hospital: false,
+    laboratorio_destino_id: '' as string,
   });
 
   const loadData = async () => {
@@ -53,14 +65,21 @@ export default function OriginsPage() {
       setFormData({
         name: origin.name,
         internal_code: origin.internal_code || '',
-        establishment_id: origin.establishment_id
+        establishment_id: origin.establishment_id,
+        papel_coleta: (origin as any).papel_coleta ?? true,
+        papel_laboratorio: (origin as any).papel_laboratorio ?? false,
+        papel_coleta_externa: (origin as any).papel_coleta_externa ?? false,
+        papel_hospital: (origin as any).papel_hospital ?? false,
+        laboratorio_destino_id: (origin as any).laboratorio_destino_id || '',
       });
     } else {
       setEditingOrigin(null);
       setFormData({ 
         name: '', 
         internal_code: '', 
-        establishment_id: establishments.find(e => e.is_main_branch)?.id || establishments[0]?.id || ''
+        establishment_id: establishments.find(e => e.is_main_branch)?.id || establishments[0]?.id || '',
+        papel_coleta: true, papel_laboratorio: false, papel_coleta_externa: false, papel_hospital: false,
+        laboratorio_destino_id: origins.find(o => o.internal_code === '00')?.id || '',
       });
     }
     setIsModalOpen(true);
@@ -71,9 +90,18 @@ export default function OriginsPage() {
       toast.error('Preencha os campos obrigatórios');
       return;
     }
+    if (!formData.papel_coleta && !formData.papel_laboratorio && !formData.papel_coleta_externa && !formData.papel_hospital) {
+      toast.error('Marque pelo menos um papel da unidade');
+      return;
+    }
+    if (formData.papel_laboratorio && formData.laboratorio_destino_id && formData.laboratorio_destino_id === editingOrigin?.id) {
+      toast.error('A unidade não pode ser o próprio laboratório de destino');
+      return;
+    }
 
     const payload = {
       ...formData,
+      laboratorio_destino_id: formData.laboratorio_destino_id || null,
       company_id: user?.companyId
     };
 
@@ -92,7 +120,7 @@ export default function OriginsPage() {
     }
 
     if (error) {
-      toast.error('Erro ao salvar origem');
+      toast.error(/permiss|laborat|própri/i.test(error.message || '') ? error.message : 'Erro ao salvar origem');
     } else {
       toast.success(editingOrigin ? 'Atualizado com sucesso' : 'Criado com sucesso');
       setIsModalOpen(false);
@@ -108,7 +136,7 @@ export default function OriginsPage() {
       .eq('id', id);
 
     if (error) {
-      toast.error('Erro ao excluir');
+      toast.error(error.code === '23503' ? 'Esta origem está em uso (destino de outra unidade, rota ou atendimentos) e não pode ser excluída.' : 'Erro ao excluir');
     } else {
       toast.success('Excluído com sucesso');
       loadData();
@@ -121,7 +149,8 @@ export default function OriginsPage() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold">Origens de Atendimento</h1>
-          <p className="text-muted-foreground">Gerencie as origens vinculadas às suas unidades</p>
+          <p className="text-muted-foreground">Gerencie as origens (unidades) e os papéis de cada uma na coleta e na Triagem Lab</p>
+          {origins.length === 1 && <p className="mt-1 text-xs text-muted-foreground">Empresa sem filial: a matriz é unidade de Coleta e Laboratório ao mesmo tempo, sem transporte.</p>}
         </div>
         <Button onClick={() => handleOpenModal()} className="gradient-bg text-white gap-2">
           <Plus className="h-4 w-4" /> Nova Origem
@@ -135,19 +164,21 @@ export default function OriginsPage() {
               <th className="px-4 py-3 text-left font-medium text-muted-foreground">Cód. Interno</th>
               <th className="px-4 py-3 text-left font-medium text-muted-foreground">Nome da Origem</th>
               <th className="px-4 py-3 text-left font-medium text-muted-foreground">Unidade / Estabelecimento</th>
+              <th className="px-4 py-3 text-left font-medium text-muted-foreground">Papéis</th>
+              <th className="px-4 py-3 text-left font-medium text-muted-foreground">Lab. de destino</th>
               <th className="px-4 py-3 text-left font-medium text-muted-foreground">Ações</th>
             </tr>
           </thead>
           <tbody>
             {isLoading ? (
               <tr>
-                <td colSpan={4} className="px-4 py-10 text-center">
+                <td colSpan={6} className="px-4 py-10 text-center">
                   <div className="h-6 w-6 animate-spin rounded-full border-2 border-primary border-t-transparent mx-auto" />
                 </td>
               </tr>
             ) : origins.length === 0 ? (
               <tr>
-                <td colSpan={4} className="px-4 py-10 text-center text-muted-foreground italic">
+                <td colSpan={6} className="px-4 py-10 text-center text-muted-foreground italic">
                   Nenhuma origem cadastrada.
                 </td>
               </tr>
@@ -166,6 +197,19 @@ export default function OriginsPage() {
                       <Building2 className="h-4 w-4" />
                       {origin.establishments?.name || 'Não vinculado'}
                     </div>
+                  </td>
+                  <td className="px-4 py-3">
+                    <div className="flex flex-wrap gap-1">
+                      {PAPEIS.filter(p => origin[p.k]).map(p => (
+                        <span key={p.k} className="rounded bg-primary/10 px-1.5 py-0.5 text-[10px] font-semibold text-primary">{p.curto}</span>
+                      ))}
+                    </div>
+                  </td>
+                  <td className="px-4 py-3 text-muted-foreground">
+                    {origins.length === 1 ? <span className="text-[11px] italic">Sem transporte</span>
+                      : origin.papel_coleta && !origin.papel_laboratorio
+                        ? (origins.find(o => o.id === origin.laboratorio_destino_id)?.name || <span className="text-[11px] text-warning">Definir</span>)
+                        : '—'}
                   </td>
                   <td className="px-4 py-3">
                     <div className="flex items-center gap-2">
@@ -231,6 +275,27 @@ export default function OriginsPage() {
                   </SelectContent>
                 </Select>
               </div>
+            </div>
+            <div className="space-y-2 rounded-lg border border-border p-3">
+              <Label>Papéis da unidade</Label>
+              <div className="grid grid-cols-2 gap-2">
+                {PAPEIS.map(p => (
+                  <label key={p.k} className="flex items-start gap-2 text-sm cursor-pointer">
+                    <input type="checkbox" className="accent-primary mt-1" checked={(formData as any)[p.k]} onChange={e => setFormData({ ...formData, [p.k]: e.target.checked })} />
+                    <span><span className="block font-medium">{p.label}</span><span className="block text-[11px] text-muted-foreground">{p.desc}</span></span>
+                  </label>
+                ))}
+              </div>
+              {formData.papel_coleta && !formData.papel_laboratorio && (
+                <div className="space-y-1 pt-2">
+                  <Label>Laboratório de destino padrão</Label>
+                  <select className="h-9 w-full rounded-md border border-input bg-background px-2 text-sm" value={formData.laboratorio_destino_id} onChange={e => setFormData({ ...formData, laboratorio_destino_id: e.target.value })}>
+                    <option value="">Não definido</option>
+                    {origins.filter(o => o.papel_laboratorio && o.id !== editingOrigin?.id).map(o => <option key={o.id} value={o.id}>{o.internal_code ? `${o.internal_code} · ` : ''}{o.name}</option>)}
+                  </select>
+                  <p className="text-[11px] text-muted-foreground">Para onde vão os malotes desta unidade.</p>
+                </div>
+              )}
             </div>
           </div>
           <DialogFooter>
