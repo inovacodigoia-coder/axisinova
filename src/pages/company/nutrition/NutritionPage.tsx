@@ -285,10 +285,14 @@ function Relatorio({ pacientes, marcas, data }: { pacientes: Paciente[]; marcas:
   const tot = linhas.reduce((s, [, v]) => ({ p: s.p + v.p, a: s.a + v.a }), { p: 0, a: 0 })
   const servidas = marcas.filter(m => m.servido_em && refs.some(r => r.key === m.refeicao)).length
   const titulo = `Nutrição — ${ref === 'dia' ? 'Dia completo' : refs[0].label} — ${data.split('-').reverse().join('/')}`
-  const csv = () => {
-    const rows = [['Dieta', 'Pacientes', 'Acompanhantes', 'Refeições'], ...linhas.map(([k, v]) => [k, v.p, v.a, (v.p + v.a) * n]), ['Total', tot.p, tot.a, (tot.p + tot.a) * n]]
-    const blob = new Blob(['\ufeff' + rows.map(r => r.join(';')).join('\n')], { type: 'text/csv;charset=utf-8' })
-    const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = `nutricao-${data}-${ref}.csv`; a.click()
+  const csv = async () => {
+    const XLSX = await import('xlsx')
+    const rows = [[titulo], [], ['Dieta', 'Pacientes', 'Acompanhantes', 'Refeições'], ...linhas.map(([k, v]) => [k, v.p, v.a, (v.p + v.a) * n]), ['Total', tot.p, tot.a, (tot.p + tot.a) * n], [], ['Bandejas servidas', servidas]]
+    const ws = XLSX.utils.aoa_to_sheet(rows)
+    ws['!cols'] = [{ wch: 28 }, { wch: 12 }, { wch: 15 }, { wch: 12 }]
+    const wb = XLSX.utils.book_new()
+    XLSX.utils.book_append_sheet(wb, ws, 'Nutrição')
+    XLSX.writeFile(wb, `nutricao-${data}-${ref}.xlsx`)
   }
   const imprimir = () => {
     const el = document.getElementById('nutri-relatorio'); if (!el) return
@@ -304,7 +308,7 @@ function Relatorio({ pacientes, marcas, data }: { pacientes: Paciente[]; marcas:
           <SelectContent><SelectItem value="dia">Dia completo</SelectItem>{REFEICOES.map(r => <SelectItem key={r.key} value={r.key}>{r.label}</SelectItem>)}</SelectContent>
         </Select>
         <Button size="sm" variant="outline" onClick={imprimir}><Printer className="h-4 w-4 mr-1" />Imprimir</Button>
-        <Button size="sm" variant="outline" onClick={csv}><Download className="h-4 w-4 mr-1" />Excel (CSV)</Button>
+        <Button size="sm" variant="outline" onClick={csv}><Download className="h-4 w-4 mr-1" />Excel</Button>
       </div>
       <div id="nutri-relatorio">
         <h3 className="font-semibold mb-2">{titulo}</h3>

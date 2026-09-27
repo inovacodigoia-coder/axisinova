@@ -257,17 +257,35 @@ export function useTriage() {
   }, [tick, entries, settings, reclassify])
 
   const sendToDoctor = useCallback(
-    async (entryId: string) => {
-      const { error } = await supabase.from('triage_entries').update({ status: 'in_doctor' }).eq('id', entryId)
+    async (entryId: string, sectorId?: string | null) => {
+      const { error } = await supabase.from('triage_entries')
+        .update({ status: 'in_doctor', destination_sector_id: sectorId || null, sent_to_doctor_at: new Date().toISOString() } as any)
+        .eq('id', entryId)
       if (error) {
         toast.error('Não foi possível enviar para a fila do médico')
         return false
       }
+      toast.success('Paciente enviado para a fila do médico')
       await loadEntries()
       return true
     },
     [loadEntries],
   )
+
+  /** Médico inicia o atendimento (sai da fila de espera). */
+  const startDoctor = useCallback(async (entryId: string) => {
+    const { error } = await supabase.from('triage_entries')
+      .update({ status: 'in_attendance', doctor_started_at: new Date().toISOString(), doctor_started_by: userId || null } as any)
+      .eq('id', entryId)
+    if (error) { toast.error('Não foi possível iniciar o atendimento'); return false }
+    await loadEntries(); return true
+  }, [userId, loadEntries])
+
+  const finishDoctor = useCallback(async (entryId: string) => {
+    const { error } = await supabase.from('triage_entries').update({ status: 'done' }).eq('id', entryId)
+    if (error) { toast.error('Não foi possível concluir'); return false }
+    await loadEntries(); return true
+  }, [loadEntries])
 
   const registerPrint = useCallback(
     async (entryId: string, isReprint: boolean, reason?: string) => {
