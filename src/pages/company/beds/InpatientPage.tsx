@@ -121,6 +121,10 @@ function InpBedSheet({ ip, bed, request, onClose }: { ip: IP; bed: InpBed | null
               <p>Motivo: {request.reason}</p>
               <p className="text-muted-foreground">Origem: {request.origin_label} · {request.urgency === 'urgente' ? 'Urgente' : 'Eletiva'}{request.doctor_name && ` · Dr(a). ${request.doctor_name}`}</p>
               {request.admitted_at && <p className="text-muted-foreground">Internado em {fmt(request.admitted_at)}</p>}
+              <label className="flex items-center gap-2 pt-1">
+                <input type="checkbox" checked={!!request.has_companion} onChange={e => rpc('admission_set_companion', { _request_id: request.id, _value: e.target.checked }, 'Acompanhante atualizado').then(ip.reload)} />
+                Paciente terá acompanhante
+              </label>
             </div>
           )}
           {live.status === 'reserved' && request && canRegulate && (
@@ -149,7 +153,7 @@ function InpBedSheet({ ip, bed, request, onClose }: { ip: IP; bed: InpBed | null
           </section>
         </div>
         {request && <AdmissionRequestDialog open={transfer} onOpenChange={setTransfer} title="Transferir para outro setor de internação"
-          patientName={request.patient_name} patientId={request.patient_id} originInpatientBedId={live.id} onDone={ip.reload} />}
+          patientName={request.patient_name} patientId={request.patient_id} originInpatientBedId={live.id} hasCompanion={!!request.has_companion} onDone={ip.reload} />}
       </SheetContent>
     </Sheet>
   )

@@ -9,7 +9,7 @@ import {
   TrendingUp, Users, Settings, Database, Monitor, Building2,
   LogOut, ChevronLeft, ChevronRight, X, Stethoscope, TicketCheck, ShieldCheck, Ruler, Layout, Beaker as BeakerIcon, TestTube,
   PieChart, Warehouse, Package as PackageIcon, UserPlus, FileSearch, Menu, Handshake, Droplet, Truck, KanbanSquare, Bot,
-  Activity, CalendarDays, BedDouble
+  Activity, CalendarDays, BedDouble, Utensils
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
@@ -19,7 +19,7 @@ const ICON_MAP: Record<string, any> = {
   Calendar, UserCheck, FileText, DollarSign, FlaskConical, BarChart3,
   TrendingUp, Users, Settings, Database, Monitor, Building2, Stethoscope, Home, TicketCheck, Ruler, Layout, Beaker: BeakerIcon, TestTube,
   PieChart, Warehouse, Package: PackageIcon, UserPlus, FileSearch, Handshake, Droplet, Truck, KanbanSquare, Bot,
-  Activity, CalendarDays, BedDouble
+  Activity, CalendarDays, BedDouble, Utensils
 }
 
 
@@ -48,6 +48,7 @@ export const NAV_SECTIONS: NavSection[] = [
       { label: 'Triagem Hospitalar ', icon: 'Activity', path: '/app/triagem', module: 'reception' },
       { label: 'Postos de Coleta', icon: 'BedDouble', path: '/app/postos-coleta', module: 'reception' },
       { label: 'Internação', icon: 'BedDouble', path: '/app/internacao', module: 'reception' },
+      { label: 'Nutrição', icon: 'Utensils', path: '/app/nutricao', module: 'nutrition' },
       { label: 'Painel Médico', icon: 'Stethoscope', path: '/app/medico', module: 'medical_record' },
       { label: 'Prontuário', icon: 'FileText', path: '/app/prontuario', module: 'medical_record' },
     ],
