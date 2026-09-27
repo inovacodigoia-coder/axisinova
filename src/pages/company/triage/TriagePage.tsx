@@ -18,6 +18,7 @@ import TriageClassificationModal from '@/components/triage/TriageClassificationM
 import { WristbandLabel } from '@/components/triage/WristbandLabel'
 import { gerarPdfEtiquetas } from '@/lib/labelPdf'
 import { useImpressaoLocal } from '@/hooks/useImpressaoLocal'
+import { supabase } from '@/integrations/supabase/client'
 
 export default function TriagePage() {
   const {
@@ -33,6 +34,13 @@ export default function TriagePage() {
   const [printTarget, setPrintTarget] = useState<TriageEntry | null>(null)
   const [reprint, setReprint] = useState<{ entry: TriageEntry; reason: string; notes: string } | null>(null)
   const wristbandRef = useRef<HTMLDivElement>(null)
+  const [sendTarget, setSendTarget] = useState<TriageEntry | null>(null)
+  const [sendSector, setSendSector] = useState('')
+  const [sectors, setSectors] = useState<{ id: string; name: string }[]>([])
+  React.useEffect(() => {
+    (supabase as any).from('company_sectors').select('id, name').eq('is_active', true).order('name')
+      .then(({ data }: any) => setSectors(data || []))
+  }, [])
 
   const doctorQueue = useMemo(
     () => classified.slice().sort((a, b) => {
@@ -186,7 +194,7 @@ export default function TriagePage() {
                     <Printer className="h-3.5 w-3.5" /> {e.wristband_printed_at ? 'Reimprimir' : 'Pulseira'}
                   </Button>
                   {e.status !== 'in_doctor' && (
-                    <Button size="sm" className="gradient-bg text-white" onClick={() => sendToDoctor(e.id)}>
+                    <Button size="sm" className="gradient-bg text-white" onClick={() => { setSendSector(''); setSendTarget(e) }}>
                       Enviar ao médico
                     </Button>
                   )}
@@ -349,6 +357,23 @@ export default function TriagePage() {
           />
         </div>
       )}
+          <Dialog open={!!sendTarget} onOpenChange={(o) => !o && setSendTarget(null)}>
+        <DialogContent>
+          <DialogHeader><DialogTitle>Enviar ao médico — {sendTarget?.patient_name}</DialogTitle></DialogHeader>
+          <Label>Setor de atendimento</Label>
+          <Select value={sendSector || 'todos'} onValueChange={(v) => setSendSector(v === 'todos' ? '' : v)}>
+            <SelectTrigger><SelectValue /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="todos">Qualquer setor (todos os médicos veem)</SelectItem>
+              {sectors.map((x) => <SelectItem key={x.id} value={x.id}>{x.name}</SelectItem>)}
+            </SelectContent>
+          </Select>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setSendTarget(null)}>Cancelar</Button>
+            <Button onClick={async () => { if (sendTarget && await sendToDoctor(sendTarget.id, sendSector || null)) setSendTarget(null) }}>Enviar</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }
