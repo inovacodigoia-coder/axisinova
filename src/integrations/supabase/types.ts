@@ -73,6 +73,7 @@ export type Database = {
           doctor_name: string | null
           ended_at: string | null
           ended_by: string | null
+          has_companion: boolean
           id: string
           notes: string | null
           origin_bed_id: string | null
@@ -102,6 +103,7 @@ export type Database = {
           doctor_name?: string | null
           ended_at?: string | null
           ended_by?: string | null
+          has_companion?: boolean
           id?: string
           notes?: string | null
           origin_bed_id?: string | null
@@ -131,6 +133,7 @@ export type Database = {
           doctor_name?: string | null
           ended_at?: string | null
           ended_by?: string | null
+          has_companion?: boolean
           id?: string
           notes?: string | null
           origin_bed_id?: string | null
@@ -5630,6 +5633,125 @@ export type Database = {
           },
         ]
       }
+      nutricao_dieta: {
+        Row: {
+          ativo: boolean
+          company_id: string
+          created_at: string
+          id: string
+          nome: string
+          ordem: number
+        }
+        Insert: {
+          ativo?: boolean
+          company_id: string
+          created_at?: string
+          id?: string
+          nome: string
+          ordem?: number
+        }
+        Update: {
+          ativo?: boolean
+          company_id?: string
+          created_at?: string
+          id?: string
+          nome?: string
+          ordem?: number
+        }
+        Relationships: []
+      }
+      nutricao_paciente: {
+        Row: {
+          admission_request_id: string
+          company_id: string
+          dieta_id: string | null
+          observacoes: string | null
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          admission_request_id: string
+          company_id: string
+          dieta_id?: string | null
+          observacoes?: string | null
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          admission_request_id?: string
+          company_id?: string
+          dieta_id?: string | null
+          observacoes?: string | null
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "nutricao_paciente_admission_request_id_fkey"
+            columns: ["admission_request_id"]
+            isOneToOne: true
+            referencedRelation: "admission_requests"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "nutricao_paciente_dieta_id_fkey"
+            columns: ["dieta_id"]
+            isOneToOne: false
+            referencedRelation: "nutricao_dieta"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      nutricao_refeicao: {
+        Row: {
+          acompanhante: boolean
+          admission_request_id: string
+          company_id: string
+          conferido_em: string | null
+          conferido_por: string | null
+          data: string
+          dieta_nome: string | null
+          id: string
+          refeicao: string
+          servido_em: string | null
+          servido_por: string | null
+        }
+        Insert: {
+          acompanhante?: boolean
+          admission_request_id: string
+          company_id: string
+          conferido_em?: string | null
+          conferido_por?: string | null
+          data: string
+          dieta_nome?: string | null
+          id?: string
+          refeicao: string
+          servido_em?: string | null
+          servido_por?: string | null
+        }
+        Update: {
+          acompanhante?: boolean
+          admission_request_id?: string
+          company_id?: string
+          conferido_em?: string | null
+          conferido_por?: string | null
+          data?: string
+          dieta_nome?: string | null
+          id?: string
+          refeicao?: string
+          servido_em?: string | null
+          servido_por?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "nutricao_refeicao_admission_request_id_fkey"
+            columns: ["admission_request_id"]
+            isOneToOne: false
+            referencedRelation: "admission_requests"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       origins: {
         Row: {
           company_id: string
@@ -7604,6 +7726,10 @@ export type Database = {
         }
         Returns: string
       }
+      admission_set_companion: {
+        Args: { _request_id: string; _value: boolean }
+        Returns: undefined
+      }
       apoio__mascarar: { Args: { _t: string }; Returns: string }
       apoio_acao_adiar: { Args: { _id: string }; Returns: undefined }
       apoio_acao_concluir: {
@@ -8613,6 +8739,17 @@ export type Database = {
         Args: { _motivo: string; _pe: string }
         Returns: string
       }
+      nutricao_marcar: {
+        Args: {
+          _data: string
+          _etapa: string
+          _refeicao: string
+          _request_id: string
+          _valor: boolean
+        }
+        Returns: undefined
+      }
+      nutricao_tem_permissao: { Args: { _acao: string }; Returns: boolean }
       panel_tickets: {
         Args: { _slug: string }
         Returns: {
