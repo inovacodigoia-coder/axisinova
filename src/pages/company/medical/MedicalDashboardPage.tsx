@@ -9,6 +9,7 @@ import { useDoctorQueue } from '@/hooks/useDoctorQueue'
 import { NoPatientsInQueueState } from '@/components/medical/empty-states/NoPatientsInQueueState'
 import { Clock, Users, CheckCircle, Timer, Play, Eye, AlertTriangle, AlertCircle } from 'lucide-react'
 import { motion } from 'framer-motion'
+import { TriageDoctorQueue } from '@/components/medical/TriageDoctorQueue'
 import { AdmissionRequestDialog } from '@/components/inpatient/AdmissionRequestDialog'
 
 function getAge(birthDate: string) {
@@ -150,6 +151,7 @@ export default function MedicalDashboardPage() {
       <div className="grid lg:grid-cols-5 gap-6">
         {/* Left - Patient list */}
         <div className="lg:col-span-3 space-y-3">
+          <TriageDoctorQueue />
           <h2 className="text-lg font-semibold text-foreground">Agenda do Dia</h2>
           {todayAppts.length === 0 && <NoPatientsInQueueState />}
           {todayAppts.map(appt => {
