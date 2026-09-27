@@ -154,7 +154,7 @@ function InpBedSheet({ ip, bed, request, onClose }: { ip: IP; bed: InpBed | null
             ) : (
               <div className="flex gap-2">
                 <Button variant="outline" onClick={() => setTransfer(true)}><ArrowRightLeft className="h-4 w-4 mr-1" />Transferir de setor</Button>
-                <Button variant="destructive" onClick={() => rpc('inpatient_discharge', { _bed_id: live.id }, 'Alta registrada; leito em higienização').then(ip.reload)}><LogOut className="h-4 w-4 mr-1" />Dar alta</Button>
+                {canRegulate && <Button variant="destructive" onClick={() => rpc('inpatient_discharge', { _bed_id: live.id }, 'Alta registrada; leito em higienização').then(ip.reload)}><LogOut className="h-4 w-4 mr-1" />Dar alta</Button>}
               </div>
             )
           )}
