@@ -21,6 +21,7 @@ export const TIPOS_DOCUMENTO = {
   etiquetaColhedor: "etiqueta_colhedor",
   etiquetaApoioPardini: "etiqueta_apoio_pardini",
   romaneioApoioPardini: "romaneio_apoio_pardini",
+  etiquetaNutricao: "etiqueta_nutricao",
 } as const;
 
 /** Texto (ex.: .epl) para base64 preservando os bytes em Latin-1 quando possível. */
