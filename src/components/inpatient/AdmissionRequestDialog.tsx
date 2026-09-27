@@ -7,6 +7,7 @@ import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { rpc } from '@/hooks/useCollectionPosts'
+import { toast } from 'sonner'
 
 const db = supabase as any
 
@@ -48,7 +49,14 @@ export function AdmissionRequestDialog({ open, onOpenChange, patientName = '', p
       _doctor_name: doctor || null, _patient_id: patientId || null,
       _origin_occupancy_id: originOccupancyId || null, _origin_inpatient_bed_id: originInpatientBedId || null,
     }, 'Solicitação enviada para aprovação de vaga')
-    if (res) await rpc('admission_set_companion', { _request_id: res, _value: companion === 'sim' })
+    if (res) {
+      // A solicitação nasce com o acompanhante "não confirmado"; se este passo falhar,
+      // o paciente continua pendente na Nutrição e o usuário é avisado.
+      const { error } = await db.rpc('admission_set_companion', { _request_id: res, _value: companion === 'sim' })
+      if (error) {
+        toast.error('A internação foi solicitada, mas a resposta "Paciente terá acompanhante?" NÃO foi gravada. Confirme no leito da Internação — o paciente aparece como pendente na Nutrição.', { duration: 12000 })
+      }
+    }
     setBusy(false)
     if (res) { onOpenChange(false); onDone?.() }
   }

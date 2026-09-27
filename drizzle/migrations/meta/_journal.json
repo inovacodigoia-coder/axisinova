@@ -470,6 +470,13 @@
       "when": 1790476134659,
       "tag": "0066_nutricao_pendencias_etiqueta",
       "breakpoints": true
+    },
+    {
+      "idx": 67,
+      "version": "7",
+      "when": 1790477669927,
+      "tag": "0067_regulacao_permissao_fila_medico",
+      "breakpoints": true
     }
   ]
 }

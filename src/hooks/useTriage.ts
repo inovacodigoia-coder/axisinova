@@ -24,6 +24,8 @@ export interface TriageEntry {
   classified_at: string | null
   arrived_at: string
   wristband_printed_at: string | null
+  destination_sector_id?: string | null
+  sent_to_doctor_at?: string | null
   created_at: string
 }
 
@@ -257,17 +259,35 @@ export function useTriage() {
   }, [tick, entries, settings, reclassify])
 
   const sendToDoctor = useCallback(
-    async (entryId: string) => {
-      const { error } = await supabase.from('triage_entries').update({ status: 'in_doctor' }).eq('id', entryId)
+    async (entryId: string, sectorId?: string | null) => {
+      const { error } = await supabase.from('triage_entries')
+        .update({ status: 'in_doctor', destination_sector_id: sectorId || null, sent_to_doctor_at: new Date().toISOString() } as any)
+        .eq('id', entryId)
       if (error) {
         toast.error('Não foi possível enviar para a fila do médico')
         return false
       }
+      toast.success('Paciente enviado para a fila do médico')
       await loadEntries()
       return true
     },
     [loadEntries],
   )
+
+  /** Médico inicia o atendimento (sai da fila de espera). */
+  const startDoctor = useCallback(async (entryId: string) => {
+    const { error } = await supabase.from('triage_entries')
+      .update({ status: 'in_attendance', doctor_started_at: new Date().toISOString(), doctor_started_by: userId || null } as any)
+      .eq('id', entryId)
+    if (error) { toast.error('Não foi possível iniciar o atendimento'); return false }
+    await loadEntries(); return true
+  }, [userId, loadEntries])
+
+  const finishDoctor = useCallback(async (entryId: string) => {
+    const { error } = await supabase.from('triage_entries').update({ status: 'done' }).eq('id', entryId)
+    if (error) { toast.error('Não foi possível concluir'); return false }
+    await loadEntries(); return true
+  }, [loadEntries])
 
   const registerPrint = useCallback(
     async (entryId: string, isReprint: boolean, reason?: string) => {
@@ -309,14 +329,15 @@ export function useTriage() {
   /** Fila do médico: prioridade por cor e, dentro da cor, por tempo de espera. */
   const doctorQueue = useMemo(() => {
     return entries
-      .filter((e) => e.status === 'in_doctor' || e.status === 'classified')
+      .filter((e) => e.status === 'in_doctor')
       .sort((a, b) => {
         const pa = a.color ? MANCHESTER_COLORS[a.color].priority : 99
         const pb = b.color ? MANCHESTER_COLORS[b.color].priority : 99
         if (pa !== pb) return pa - pb
-        return new Date(a.classified_at || a.arrived_at).getTime() - new Date(b.classified_at || b.arrived_at).getTime()
+        return new Date(a.sent_to_doctor_at || a.classified_at || a.arrived_at).getTime() - new Date(b.sent_to_doctor_at || b.classified_at || b.arrived_at).getTime()
       })
   }, [entries, tick])
+  const inAttendance = useMemo(() => entries.filter((e) => e.status === 'in_attendance'), [entries])
 
   const waiting = useMemo(() => entries.filter((e) => e.status === 'waiting'), [entries])
   const classified = useMemo(() => entries.filter((e) => e.status !== 'waiting'), [entries, tick])
@@ -324,6 +345,6 @@ export function useTriage() {
   return {
     companyId, userId, loading, entries, waiting, classified, doctorQueue,
     tickets, settings, reload, createEntry, classify, reclassify,
-    sendToDoctor, registerPrint, updateSettings, tick,
+    sendToDoctor, startDoctor, finishDoctor, inAttendance, registerPrint, updateSettings, tick,
   }
 }
