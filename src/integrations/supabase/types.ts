@@ -67,6 +67,7 @@ export type Database = {
           admitted_by: string | null
           approved_unit_id: string | null
           bed_id: string | null
+          companion_confirmed: boolean
           company_id: string
           decided_at: string | null
           decided_by: string | null
@@ -97,6 +98,7 @@ export type Database = {
           admitted_by?: string | null
           approved_unit_id?: string | null
           bed_id?: string | null
+          companion_confirmed?: boolean
           company_id: string
           decided_at?: string | null
           decided_by?: string | null
@@ -127,6 +129,7 @@ export type Database = {
           admitted_by?: string | null
           approved_unit_id?: string | null
           bed_id?: string | null
+          companion_confirmed?: boolean
           company_id?: string
           decided_at?: string | null
           decided_by?: string | null
@@ -5119,6 +5122,7 @@ export type Database = {
           label_preset: string | null
           label_rotation: number
           label_width_mm: number
+          nutricao_label_config: Json | null
           phone: string | null
           prazo_contagem_padrao: string
           report_footer_text: string | null
@@ -5167,6 +5171,7 @@ export type Database = {
           label_preset?: string | null
           label_rotation?: number
           label_width_mm?: number
+          nutricao_label_config?: Json | null
           phone?: string | null
           prazo_contagem_padrao?: string
           report_footer_text?: string | null
@@ -5215,6 +5220,7 @@ export type Database = {
           label_preset?: string | null
           label_rotation?: number
           label_width_mm?: number
+          nutricao_label_config?: Json | null
           phone?: string | null
           prazo_contagem_padrao?: string
           report_footer_text?: string | null
