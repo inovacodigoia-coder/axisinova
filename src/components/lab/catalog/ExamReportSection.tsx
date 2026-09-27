@@ -38,6 +38,8 @@ function formatReference(p: any): string {
       if (r.normalText) return String(r.normalText)
       const min = r.minValue ?? r.min
       const max = r.maxValue ?? r.max
+       if (max != null && String(max).trim() && !Number.isFinite(Number(String(max).replace(',', '.')))) return String(max).trim()
+       if (min != null && String(min).trim() && !Number.isFinite(Number(String(min).replace(',', '.')))) return String(min).trim()
       if (min != null && max != null) return `${min} - ${max}`
       if (min != null) return `> ${min}`
       if (max != null) return `< ${max}`
