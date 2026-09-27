@@ -54,6 +54,7 @@ import ReceptionLayout from './reception/ReceptionLayout'
 import TriagePage from './triage/TriagePage'
 import CollectionPostsPage from './beds/CollectionPostsPage'
 import InpatientPage from './beds/InpatientPage'
+import NutritionPage from './nutrition/NutritionPage'
 import SchedulingPage from './scheduling/SchedulingPage'
 import ConfirmationsPage from './scheduling/ConfirmationsPage'
 import AbsenteesPage from './scheduling/AbsenteesPage'
@@ -252,6 +253,7 @@ function PortalContent() {
               <Route path="triagem" element={<TriagePage />} />
               <Route path="postos-coleta" element={<CollectionPostsPage />} />
               <Route path="internacao" element={<InpatientPage />} />
+              <Route path="nutricao" element={<NutritionPage />} />
               <Route path="recepcao/cadastro-direto" element={<DirectCadastroPage />} />
               <Route path="medico" element={<MedicalDashboardPage />} />
               <Route path="atendimento/:appointmentId" element={<AttendancePage />} />

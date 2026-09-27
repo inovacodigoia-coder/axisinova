@@ -11,7 +11,7 @@ export interface AdmissionRequest {
   id: string; patient_name: string; patient_id: string | null; origin_type: 'post' | 'consultorio' | 'inpatient'; origin_label: string | null
   origin_occupancy_id: string | null; origin_inpatient_bed_id: string | null; requested_unit_id: string; approved_unit_id: string | null; bed_id: string | null
   reason: string; urgency: 'eletiva' | 'urgente'; notes: string | null; doctor_name: string | null; status: string; refusal_reason: string | null
-  suggested_unit_id: string | null; requested_at: string; decided_at: string | null; admitted_at: string | null
+  suggested_unit_id: string | null; requested_at: string; has_companion: boolean; decided_at: string | null; admitted_at: string | null
 }
 
 /** Setores de internação pré-cadastrados por padrão (editáveis/inativáveis) */

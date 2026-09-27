@@ -26,6 +26,8 @@ export type SystemModule =
   | 'apoio'
   /** Triagem Lab: guarda códigos 'triagem.*' (não ações) */
   | 'triagem'
+  /** Nutrição: view=painel, edit=dieta, approve=conferir (nutricionista), create=marcar servido, export=relatório */
+  | 'nutrition'
 
 export type PermissionAction = 'view' | 'create' | 'edit' | 'delete' | 'export' | 'approve'
 
@@ -91,6 +93,7 @@ export const SYSTEM_MODULES: { key: SystemModule; label: string; icon: string }[
   { key: 'portals', label: 'Portais Externos', icon: 'Users' },
   { key: 'patient_registry', label: 'Cadastro do Cliente (Paciente)', icon: 'UserCog' },
   { key: 'inpatient', label: 'Internação / Regulação', icon: 'BedDouble' },
+  { key: 'nutrition', label: 'Nutrição', icon: 'Utensils' },
 ]
 
 

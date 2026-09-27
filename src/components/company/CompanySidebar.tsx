@@ -48,6 +48,7 @@ export const NAV_SECTIONS: NavSection[] = [
       { label: 'Triagem Hospitalar ', icon: 'Activity', path: '/app/triagem', module: 'reception' },
       { label: 'Postos de Coleta', icon: 'BedDouble', path: '/app/postos-coleta', module: 'reception' },
       { label: 'Internação', icon: 'BedDouble', path: '/app/internacao', module: 'reception' },
+      { label: 'Nutrição', icon: 'Utensils', path: '/app/nutricao', module: 'nutrition' },
       { label: 'Painel Médico', icon: 'Stethoscope', path: '/app/medico', module: 'medical_record' },
       { label: 'Prontuário', icon: 'FileText', path: '/app/prontuario', module: 'medical_record' },
     ],

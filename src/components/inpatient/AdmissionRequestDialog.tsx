@@ -19,11 +19,12 @@ interface Props {
   originInpatientBedId?: string | null
   doctorName?: string
   title?: string
+  hasCompanion?: boolean
   onDone?: () => void
 }
 
 /** Formulário único de solicitação de internação (leito do posto, Painel Médico ou transferência entre setores) */
-export function AdmissionRequestDialog({ open, onOpenChange, patientName = '', patientId, originOccupancyId, originInpatientBedId, doctorName = '', title, onDone }: Props) {
+export function AdmissionRequestDialog({ open, onOpenChange, patientName = '', patientId, originOccupancyId, originInpatientBedId, doctorName = '', title, hasCompanion = false, onDone }: Props) {
   const [units, setUnits] = useState<{ id: string; name: string }[]>([])
   const [name, setName] = useState(patientName)
   const [unit, setUnit] = useState('')
@@ -32,10 +33,11 @@ export function AdmissionRequestDialog({ open, onOpenChange, patientName = '', p
   const [notes, setNotes] = useState('')
   const [doctor, setDoctor] = useState(doctorName)
   const [busy, setBusy] = useState(false)
+  const [companion, setCompanion] = useState<'' | 'sim' | 'nao'>('')
 
   useEffect(() => {
     if (!open) return
-    setName(patientName); setDoctor(doctorName); setUnit(''); setReason(''); setNotes(''); setUrgency('eletiva')
+    setName(patientName); setDoctor(doctorName); setUnit(''); setReason(''); setNotes(''); setUrgency('eletiva'); setCompanion(originInpatientBedId ? (hasCompanion ? 'sim' : 'nao') : '')
     db.from('inpatient_units').select('id, name').eq('is_active', true).order('name').then(({ data }: any) => setUnits(data || []))
   }, [open, patientName, doctorName])
 
@@ -46,6 +48,7 @@ export function AdmissionRequestDialog({ open, onOpenChange, patientName = '', p
       _doctor_name: doctor || null, _patient_id: patientId || null,
       _origin_occupancy_id: originOccupancyId || null, _origin_inpatient_bed_id: originInpatientBedId || null,
     }, 'Solicitação enviada para aprovação de vaga')
+    if (res && companion === 'sim') await rpc('admission_set_companion', { _request_id: res, _value: true })
     setBusy(false)
     if (res) { onOpenChange(false); onDone?.() }
   }
@@ -71,12 +74,18 @@ export function AdmissionRequestDialog({ open, onOpenChange, patientName = '', p
             </div>
           </div>
           <div><Label>Motivo / diagnóstico *</Label><Input value={reason} onChange={e => setReason(e.target.value)} /></div>
+          <div><Label>Paciente terá acompanhante? *</Label>
+            <Select value={companion} onValueChange={v => setCompanion(v as any)}>
+              <SelectTrigger><SelectValue placeholder="Escolha" /></SelectTrigger>
+              <SelectContent><SelectItem value="sim">Sim</SelectItem><SelectItem value="nao">Não</SelectItem></SelectContent>
+            </Select>
+          </div>
           <div><Label>Médico solicitante</Label><Input value={doctor} onChange={e => setDoctor(e.target.value)} /></div>
           <div><Label>Observações</Label><Textarea value={notes} onChange={e => setNotes(e.target.value)} /></div>
         </div>
         <DialogFooter>
           <Button variant="outline" onClick={() => onOpenChange(false)}>Cancelar</Button>
-          <Button disabled={busy || !name.trim() || !unit || !reason.trim()} onClick={submit}>Enviar solicitação</Button>
+          <Button disabled={busy || !name.trim() || !unit || !reason.trim() || !companion} onClick={submit}>Enviar solicitação</Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>
