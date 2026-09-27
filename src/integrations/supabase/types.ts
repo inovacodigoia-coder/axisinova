@@ -7225,7 +7225,10 @@ export type Database = {
           complaint: string | null
           created_at: string
           created_by: string | null
+          destination_sector_id: string | null
           discriminators: Json
+          doctor_started_at: string | null
+          doctor_started_by: string | null
           flowchart: string | null
           id: string
           order_id: string | null
@@ -7234,6 +7237,7 @@ export type Database = {
           patient_id: string | null
           patient_name: string
           protocol: string | null
+          sent_to_doctor_at: string | null
           source: string
           status: string
           target_minutes: number | null
@@ -7252,7 +7256,10 @@ export type Database = {
           complaint?: string | null
           created_at?: string
           created_by?: string | null
+          destination_sector_id?: string | null
           discriminators?: Json
+          doctor_started_at?: string | null
+          doctor_started_by?: string | null
           flowchart?: string | null
           id?: string
           order_id?: string | null
@@ -7261,6 +7268,7 @@ export type Database = {
           patient_id?: string | null
           patient_name: string
           protocol?: string | null
+          sent_to_doctor_at?: string | null
           source?: string
           status?: string
           target_minutes?: number | null
@@ -7279,7 +7287,10 @@ export type Database = {
           complaint?: string | null
           created_at?: string
           created_by?: string | null
+          destination_sector_id?: string | null
           discriminators?: Json
+          doctor_started_at?: string | null
+          doctor_started_by?: string | null
           flowchart?: string | null
           id?: string
           order_id?: string | null
@@ -7288,6 +7299,7 @@ export type Database = {
           patient_id?: string | null
           patient_name?: string
           protocol?: string | null
+          sent_to_doctor_at?: string | null
           source?: string
           status?: string
           target_minutes?: number | null
@@ -7297,7 +7309,15 @@ export type Database = {
           vitals?: Json
           wristband_printed_at?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "triage_entries_destination_sector_id_fkey"
+            columns: ["destination_sector_id"]
+            isOneToOne: false
+            referencedRelation: "company_sectors"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       triage_settings: {
         Row: {
@@ -8713,6 +8733,7 @@ export type Database = {
       }
       inpatient_discharge: { Args: { _bed_id: string }; Returns: undefined }
       inpatient_mark_clean: { Args: { _bed_id: string }; Returns: undefined }
+      internacao_tem_permissao: { Args: { _acao: string }; Returns: boolean }
       is_company_manager: { Args: { _user_id: string }; Returns: boolean }
       lab_coleta_corrigir_horario: {
         Args: {
