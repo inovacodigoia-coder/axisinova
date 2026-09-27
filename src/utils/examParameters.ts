@@ -41,6 +41,10 @@ function formatRange(r: any): string {
   if (r.normalText || r.textRange || r.text_range) return r.normalText || r.textRange || r.text_range
   const min = r.minValue ?? r.min_value
   const max = r.maxValue ?? r.max_value
+  // Limites textuais são descrições de referência, não comparações numéricas.
+  // Ex.: "Presença maciça de leucócitos" não deve virar "< Presença maciça...".
+  if (max != null && String(max).trim() && toNumber(max) == null) return String(max).trim()
+  if (min != null && String(min).trim() && toNumber(min) == null) return String(min).trim()
   if (min != null && max != null && min !== '' && max !== '') return `${min} a ${max}`
   if (min != null && min !== '') return `> ${min}`
   if (max != null && max !== '') return `< ${max}`

@@ -1,7 +1,18 @@
 import { describe, expect, it } from 'vitest'
-import { evaluateFormula, resolveReference } from './examParameters'
+import { evaluateFormula, pickReference, resolveReference } from './examParameters'
 
 describe('resolveReference', () => {
+  it('mostra somente o texto cadastrado quando o valor máximo da referência é uma frase', () => {
+    const text = 'Presença maciça de leucócitos impedindo a visualização das demais estruturas'
+    const ranges = [{ minValue: '', maxValue: text, minAge: '>50', ageUnit: 'valor', sex: 'Todos' }]
+    expect(pickReference(ranges, { gender: 'female' }, '55')).toBe(text)
+    expect(resolveReference({ ranges, patient: { gender: 'female' }, reference: '' }, '55')).toBe(text)
+  })
+
+  it('preserva o sinal de comparação em limites numéricos', () => {
+    expect(pickReference([{ maxValue: '50' }], {})).toBe('< 50')
+  })
+
   it('usa o texto selecionado para escolher a faixa Valor sem alterar a seleção', () => {
     const param = {
       type: 'selection',
