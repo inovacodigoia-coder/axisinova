@@ -58,6 +58,12 @@ function MapTab({ ip }: { ip: IP }) {
   const units = ip.units.filter(u => u.is_active)
   const [unitId, setUnitId] = useState('')
   const [openBed, setOpenBed] = useState<InpBed | null>(null)
+  const [leitoParam, setLeitoParam] = useState(() => new URLSearchParams(window.location.search).get('leito'))
+  useEffect(() => {
+    if (!leitoParam) return
+    const b = ip.beds.find(x => x.id === leitoParam)
+    if (b) { setUnitId(b.unit_id); setOpenBed(b); setLeitoParam(null) }
+  }, [leitoParam, ip.beds])
   useEffect(() => { if (!unitId && units[0]) setUnitId(units[0].id) }, [units, unitId])
   const beds = ip.beds.filter(b => b.unit_id === unitId && b.is_active)
   const reqById = useMemo(() => Object.fromEntries(ip.requests.map(r => [r.id, r])), [ip.requests])
@@ -125,6 +131,12 @@ function InpBedSheet({ ip, bed, request, onClose }: { ip: IP; bed: InpBed | null
                 <input type="checkbox" checked={!!request.has_companion} onChange={e => rpc('admission_set_companion', { _request_id: request.id, _value: e.target.checked }, 'Acompanhante atualizado').then(ip.reload)} />
                 Paciente terá acompanhante
               </label>
+              {!(request as any).companion_confirmed && (
+                <div className="flex items-center gap-2 text-xs text-destructive">
+                  Acompanhante não confirmado.
+                  <Button size="sm" variant="outline" className="h-7" onClick={() => rpc('admission_set_companion', { _request_id: request.id, _value: false }, 'Confirmado: sem acompanhante').then(ip.reload)}>Confirmar sem acompanhante</Button>
+                </div>
+              )}
             </div>
           )}
           {live.status === 'reserved' && request && canRegulate && (
