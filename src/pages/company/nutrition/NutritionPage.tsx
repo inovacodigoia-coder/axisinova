@@ -17,6 +17,8 @@ import { EmptyState } from '@/components/feedback/EmptyState'
 import { useLabelConfig } from '@/hooks/useLabelConfig'
 import { servidorImpressaoAtivo, imprimirDireto, TIPOS_DOCUMENTO } from '@/lib/impressaoLocal'
 import { gerarPdfEtiquetas } from '@/lib/labelPdf'
+import { useNutricaoLabelConfig } from '@/hooks/useNutricaoLabelConfig'
+import Barcode from 'react-barcode'
 import type { PermissionAction } from '@/types/permissions.types'
 
 const db = supabase as any
@@ -32,7 +34,7 @@ type RefKey = typeof REFEICOES[number]['key']
 
 interface Dieta { id: string; nome: string; ordem: number; ativo: boolean }
 interface Paciente {
-  requestId: string; nome: string; leito: string; setor: string; acompanhante: boolean
+  requestId: string; bedId: string; nome: string; leito: string; setor: string; acompanhante: boolean; acompConfirmado: boolean
   dietaId: string | null; dieta: string | null; obs: string
 }
 interface Marca { admission_request_id: string; refeicao: RefKey; conferido_em: string | null; servido_em: string | null }
@@ -72,7 +74,7 @@ export default function NutritionPage() {
     const beds = (b.data || []).filter((x: any) => x.current_request_id)
     const ids = beds.map((x: any) => x.current_request_id)
     const [r, np] = ids.length ? await Promise.all([
-      db.from('admission_requests').select('id,patient_name,has_companion').in('id', ids),
+      db.from('admission_requests').select('id,patient_name,has_companion,companion_confirmed').in('id', ids),
       db.from('nutricao_paciente').select('*').in('admission_request_id', ids),
     ]) : [{ data: [] }, { data: [] }]
     const dl: Dieta[] = d.data || []
@@ -82,8 +84,8 @@ export default function NutritionPage() {
       const req = (r.data || []).find((x: any) => x.id === bed.current_request_id)
       const n = (np.data || []).find((x: any) => x.admission_request_id === bed.current_request_id)
       return {
-        requestId: bed.current_request_id, nome: req?.patient_name || '—', leito: bed.name, setor: unitName(bed.unit_id),
-        acompanhante: !!req?.has_companion, dietaId: n?.dieta_id || null,
+        requestId: bed.current_request_id, bedId: bed.id, nome: req?.patient_name || '—', leito: bed.name, setor: unitName(bed.unit_id),
+        acompanhante: !!req?.has_companion, acompConfirmado: !!req?.companion_confirmed, dietaId: n?.dieta_id || null,
         dieta: dl.find(x => x.id === n?.dieta_id)?.nome || null, obs: n?.observacoes || '',
       }
     }).sort((a: Paciente, b: Paciente) => (a.setor + a.leito).localeCompare(b.setor + b.leito)))
@@ -105,6 +107,7 @@ export default function NutritionPage() {
   }, [companyId, load])
 
   const totalAcomp = pacientes.filter(p => p.acompanhante).length
+  const pendentes = pacientes.filter(p => !p.dieta || !p.acompConfirmado)
   const porDieta = useMemo(() => {
     const map = new Map<string, { pacientes: number; acomp: number }>()
     pacientes.forEach(p => {
@@ -128,6 +131,25 @@ export default function NutritionPage() {
         <Card><CardContent className="pt-5"><p className="text-sm text-muted-foreground">Acompanhantes</p><p className="text-3xl font-bold">{totalAcomp}</p></CardContent></Card>
         <Card><CardContent className="pt-5"><p className="text-sm text-muted-foreground">Refeições por refeição (pacientes + acompanhantes)</p><p className="text-3xl font-bold">{pacientes.length + totalAcomp}</p><p className="text-xs text-muted-foreground">{(pacientes.length + totalAcomp) * 5} no dia</p></CardContent></Card>
       </div>
+      {pendentes.length > 0 && (
+        <Card className="border-destructive/50">
+          <CardContent className="pt-4 space-y-2">
+            <p className="font-semibold flex items-center gap-2 text-destructive"><AlertTriangle className="h-4 w-4" />Pendências: {pendentes.length} paciente(s)
+              <span className="text-sm font-normal text-muted-foreground">({pendentes.filter(p => !p.dieta).length} sem dieta · {pendentes.filter(p => !p.acompConfirmado).length} sem acompanhante confirmado)</span></p>
+            <div className="divide-y">{pendentes.map(p => (
+              <div key={p.requestId} className="flex items-center justify-between gap-2 py-1.5 text-sm flex-wrap">
+                <span><b>{p.nome}</b> · {p.setor} · {p.leito}
+                  {!p.dieta && <Badge variant="destructive" className="ml-2">Sem dieta</Badge>}
+                  {!p.acompConfirmado && <Badge variant="outline" className="ml-2">Acompanhante não confirmado</Badge>}</span>
+                <span className="flex gap-2">
+                  {!p.dieta && perms.dieta && <Button size="sm" variant="outline" onClick={() => setEditing(p)}>Definir dieta</Button>}
+                  {!p.acompConfirmado && <Button size="sm" variant="outline" asChild><a href={`/app/internacao?leito=${p.bedId}`}>Abrir leito</a></Button>}
+                </span>
+              </div>
+            ))}</div>
+          </CardContent>
+        </Card>
+      )}
       {porDieta.length > 0 && (
         <div className="flex flex-wrap gap-2">
           {porDieta.map(([k, v]) => <Badge key={k} variant={k === 'Sem dieta definida' ? 'destructive' : 'secondary'}>{k}: {v.pacientes}{v.acomp ? ` + ${v.acomp} acomp.` : ''}</Badge>)}
@@ -304,8 +326,9 @@ function Etiquetas({ pacientes }: { pacientes: Paciente[] }) {
   const [sel, setSel] = useState<string[]>([])
   const [busy, setBusy] = useState(false)
   const rootRef = useRef<HTMLDivElement>(null)
-  const { config } = useLabelConfig()
-  const w = config.widthMm, h = config.heightMm
+  const { config: labConfig } = useLabelConfig()
+  const { config: nc } = useNutricaoLabelConfig()
+  const w = nc?.widthMm ?? labConfig.widthMm, h = nc?.heightMm ?? labConfig.heightMm
   const refLabel = REFEICOES.find(r => r.key === ref)!.label
   const escolhidos = pacientes.filter(p => sel.includes(p.requestId))
   const semDieta = escolhidos.filter(p => !p.dieta)
@@ -315,7 +338,8 @@ function Etiquetas({ pacientes }: { pacientes: Paciente[] }) {
     setBusy(true)
     try {
       const els = Array.from(rootRef.current?.querySelectorAll<HTMLElement>('.nutri-label') || [])
-      if (await servidorImpressaoAtivo()) {
+      // Só envia direto à impressora quando o tipo "Etiqueta de Nutrição" está configurado.
+      if (nc && await servidorImpressaoAtivo()) {
         try {
           const pdf = await gerarPdfEtiquetas(els, w, h)
           const r = await imprimirDireto(TIPOS_DOCUMENTO.etiquetaNutricao, pdf)
@@ -334,6 +358,7 @@ function Etiquetas({ pacientes }: { pacientes: Paciente[] }) {
     } finally { setBusy(false) }
   }
 
+  const txt = { fontSize: `${nc?.textoSizePt ?? 7}pt`, fontWeight: nc?.textoBold ? 700 : 400 }
   return (
     <div className="space-y-3">
       <div className="flex flex-wrap items-center gap-2">
@@ -343,7 +368,7 @@ function Etiquetas({ pacientes }: { pacientes: Paciente[] }) {
         </Select>
         <Button size="sm" variant="outline" onClick={() => setSel(sel.length === pacientes.length ? [] : pacientes.map(p => p.requestId))}>{sel.length === pacientes.length ? 'Desmarcar todos' : 'Marcar todos'}</Button>
         <Button size="sm" disabled={!sel.length || busy} onClick={imprimir}><Printer className="h-4 w-4 mr-1" />Imprimir {sel.length || ''}</Button>
-        <span className="text-xs text-muted-foreground">Etiqueta {w}×{h} mm (Configurações › Impressora / Etiqueta)</span>
+        <span className="text-xs text-muted-foreground">Etiqueta {w}×{h} mm · {nc ? 'Etiqueta de Nutrição configurada (direto na impressora)' : 'Etiqueta de Nutrição não configurada — imprime pelo navegador'}</span>
       </div>
       {semDieta.length > 0 && <p className="text-sm text-destructive flex items-center gap-1"><AlertTriangle className="h-4 w-4" />{semDieta.length} paciente(s) sem dieta — a impressão fica bloqueada até definir.</p>}
       <div className="grid gap-1 md:grid-cols-2">{pacientes.map(p => (
@@ -354,12 +379,13 @@ function Etiquetas({ pacientes }: { pacientes: Paciente[] }) {
       ))}</div>
       <div ref={rootRef} className="flex flex-wrap gap-3">
         {escolhidos.map(p => (
-          <div key={p.requestId} className="nutri-label border bg-background text-foreground overflow-hidden" style={{ width: `${w}mm`, height: `${h}mm`, padding: '1.5mm', fontSize: '7pt', lineHeight: 1.15, fontFamily: 'sans-serif' }}>
-            <div style={{ fontWeight: 700, fontSize: '8.5pt', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{p.nome}</div>
+          <div key={p.requestId} className="nutri-label border bg-background text-foreground overflow-hidden" style={{ width: `${w}mm`, height: `${h}mm`, padding: `${nc?.marginMm ?? 1.5}mm`, lineHeight: 1.15, fontFamily: 'sans-serif', ...txt }}>
+            <div style={{ fontWeight: (nc?.nomeBold ?? true) ? 700 : 400, fontSize: `${nc?.nomeSizePt ?? 8.5}pt`, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{p.nome}</div>
             <div>{p.setor} · {p.leito}</div>
             <div><b>{refLabel}</b> · Dieta: <b>{p.dieta || '—'}</b></div>
             {p.obs && <div style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>Obs: {p.obs}</div>}
             {p.acompanhante && <div style={{ fontWeight: 700 }}>+ BANDEJA DO ACOMPANHANTE</div>}
+            {nc?.barcode && <Barcode value={p.requestId.slice(0, 8).toUpperCase()} height={18} width={1} fontSize={8} margin={0} displayValue={false} />}
           </div>
         ))}
       </div>

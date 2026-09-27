@@ -48,7 +48,7 @@ export function AdmissionRequestDialog({ open, onOpenChange, patientName = '', p
       _doctor_name: doctor || null, _patient_id: patientId || null,
       _origin_occupancy_id: originOccupancyId || null, _origin_inpatient_bed_id: originInpatientBedId || null,
     }, 'Solicitação enviada para aprovação de vaga')
-    if (res && companion === 'sim') await rpc('admission_set_companion', { _request_id: res, _value: true })
+    if (res) await rpc('admission_set_companion', { _request_id: res, _value: companion === 'sim' })
     setBusy(false)
     if (res) { onOpenChange(false); onDone?.() }
   }

@@ -11,6 +11,7 @@ import { servidorImpressaoAtivo, imprimirEtiquetas, TIPOS_DOCUMENTO } from '@/li
 import { gerarPdfEtiquetas } from '@/lib/labelPdf'
 import { useLabelConfig } from '@/hooks/useLabelConfig'
 import { useLabSettings } from '@/hooks/useLabSettings'
+import { NutricaoLabelConfigCard } from './NutricaoLabelConfigCard'
 import {
   BARCODE_MAX_MM,
   BARCODE_MIN_MM,
@@ -175,6 +176,7 @@ export function LabPrinterLabelSection() {
 
   return (
     <div className="space-y-8">
+      <NutricaoLabelConfigCard />
       <div className="flex items-center justify-between gap-3 flex-wrap">
         <h3 className="text-lg font-bold">Configuração de Impressora / Etiqueta</h3>
         <div className="flex items-center gap-2">
