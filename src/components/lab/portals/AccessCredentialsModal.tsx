@@ -1,4 +1,6 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
+import { supabase } from '@/integrations/supabase/client'
+import { Input } from '@/components/ui/input'
 import { QRCodeSVG } from 'qrcode.react'
 import { Copy, Check, RefreshCw, AlertTriangle, Link2 } from 'lucide-react'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog'
@@ -8,7 +10,7 @@ import {
 } from '@/components/ui/alert-dialog'
 import { Button } from '@/components/ui/button'
 import { toast } from 'sonner'
-import { buildPortalUrl, type ExternalAccessRecord } from '@/hooks/useExternalAccesses'
+import { buildPortalUrl, cpfLast4, generatePassword, type ExternalAccessRecord, type PasswordKind } from '@/hooks/useExternalAccesses'
 
 interface Props {
   open: boolean
@@ -16,6 +18,7 @@ interface Props {
   access: ExternalAccessRecord | null
   isNew?: boolean
   onRegenerate?: (id: string) => Promise<ExternalAccessRecord>
+  onSetPassword?: (id: string, password: string, kind: PasswordKind) => Promise<ExternalAccessRecord>
 }
 
 function CopyField({ label, value }: { label: string; value: string }) {
@@ -39,9 +42,34 @@ function CopyField({ label, value }: { label: string; value: string }) {
   )
 }
 
-export function AccessCredentialsModal({ open, onOpenChange, access, isNew, onRegenerate }: Props) {
+export function AccessCredentialsModal({ open, onOpenChange, access, isNew, onRegenerate, onSetPassword }: Props) {
   const [confirmOpen, setConfirmOpen] = useState(false)
   const [regenerating, setRegenerating] = useState(false)
+  const [cpf4, setCpf4] = useState<string | null>(null)
+  const [personalOpen, setPersonalOpen] = useState(false)
+  const [personal, setPersonal] = useState('')
+  const [saving, setSaving] = useState(false)
+
+  useEffect(() => {
+    setCpf4(null); setPersonalOpen(false); setPersonal('')
+    if (!open || !access?.patient_id) return
+    supabase.from('patients').select('cpf').eq('id', access.patient_id).maybeSingle()
+      .then(({ data }) => setCpf4(cpfLast4((data as any)?.cpf)))
+  }, [open, access?.patient_id])
+
+  const applyPassword = async (pwd: string, kind: PasswordKind) => {
+    if (!onSetPassword || !access) return
+    setSaving(true)
+    try {
+      await onSetPassword(access.id, pwd, kind)
+      toast.success('Senha alterada')
+      setPersonalOpen(false); setPersonal('')
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : 'Falha ao alterar a senha')
+    } finally {
+      setSaving(false)
+    }
+  }
 
   if (!access) return null
 
@@ -93,6 +121,29 @@ export function AccessCredentialsModal({ open, onOpenChange, access, isNew, onRe
                 <CopyField label="Código" value={access.access_code} />
                 <CopyField label="Senha" value={access.access_password} />
               </div>
+              {onSetPassword && (
+                <div className="rounded-md border p-3 space-y-2">
+                  <p className="text-xs font-semibold text-muted-foreground">
+                    Mudar senha · atual: {access.password_kind === 'cpf' ? '4 últimos dígitos do CPF' : access.password_kind === 'personal' ? 'senha pessoal' : 'aleatória'}
+                  </p>
+                  <div className="flex flex-wrap gap-2">
+                    <Button size="sm" variant={access.password_kind === 'cpf' ? 'default' : 'outline'} disabled={saving || !cpf4}
+                      title={cpf4 ? undefined : 'Paciente sem CPF cadastrado'}
+                      onClick={() => cpf4 && applyPassword(cpf4, 'cpf')}>4 últimos do CPF</Button>
+                    <Button size="sm" variant="outline" disabled={saving}
+                      onClick={() => applyPassword(generatePassword(), 'random')}>Gerar aleatória</Button>
+                    <Button size="sm" variant={access.password_kind === 'personal' ? 'default' : 'outline'} disabled={saving}
+                      onClick={() => setPersonalOpen((v) => !v)}>Senha pessoal</Button>
+                  </div>
+                  {personalOpen && (
+                    <div className="flex gap-2">
+                      <Input inputMode="numeric" maxLength={8} placeholder="4 a 8 números" value={personal}
+                        onChange={(e) => setPersonal(e.target.value.replace(/\D/g, ''))} />
+                      <Button size="sm" disabled={saving || personal.length < 4} onClick={() => applyPassword(personal, 'personal')}>Salvar</Button>
+                    </div>
+                  )}
+                </div>
+              )}
               <div className="flex flex-col gap-2 sm:flex-row">
                 <Button className="flex-1 gap-2" onClick={handleCopyAll}>
                   <Link2 className="h-4 w-4" /> Copiar tudo
