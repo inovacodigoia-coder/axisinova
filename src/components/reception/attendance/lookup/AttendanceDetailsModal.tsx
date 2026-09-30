@@ -1341,6 +1341,7 @@ export function AttendanceDetailsModal({ open, onClose, onOrderDeleted, order, p
             patientId: order.patientId,
             patientName: currentPatient?.fullName || order.patientName,
             email: currentPatient?.email,
+            cpf: currentPatient?.cpf || (order as any).patientCPF,
           })
 
           // Transform order to print document
@@ -1366,6 +1367,7 @@ export function AttendanceDetailsModal({ open, onClose, onOrderDeleted, order, p
             paymentType: order.paymentType === 'private' ? 'PARTICULAR' : 'CONVÊNIO',
             locatorCode: portalAccess?.access_code || order.orderNumber.replace('-', ''),
             password: portalAccess?.access_password || '',
+            passwordKind: portalAccess?.password_kind,
             portalUrl: portalAccess ? buildPortalUrl(portalAccess.access_code) : undefined,
             attachments: [],
             exams: orderExams

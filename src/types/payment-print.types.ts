@@ -119,6 +119,7 @@ export interface AttendanceControlDocument {
   companyLogo?: string
   locatorCode?: string
   password?: string
+  passwordKind?: 'random' | 'cpf' | 'personal'
   portalUrl?: string
   doctorName?: string
   doctorCRM?: string
