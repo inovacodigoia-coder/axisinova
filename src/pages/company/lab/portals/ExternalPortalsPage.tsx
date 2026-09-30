@@ -35,7 +35,7 @@ export default function ExternalPortalsPage() {
 
   const {
     accesses, loading, companyId,
-    createAccess, regenerateCredentials, deleteAccess, toggleStatus,
+    createAccess, regenerateCredentials, setPassword, deleteAccess, toggleStatus,
   } = useExternalAccesses();
 
   const filteredList = useMemo(() => {
@@ -288,6 +288,7 @@ export default function ExternalPortalsPage() {
         access={credentialsFor}
         isNew={credentialsIsNew}
         onRegenerate={handleRegenerate}
+        onSetPassword={async (id, pwd, kind) => { const r = await setPassword(id, pwd, kind); setCredentialsFor(r); return r; }}
       />
     </div>
   );

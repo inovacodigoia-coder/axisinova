@@ -1,0 +1,2 @@
+ALTER TABLE public.external_accesses ADD COLUMN IF NOT EXISTS password_kind text NOT NULL DEFAULT 'random';
+ALTER TABLE public.external_accesses ADD CONSTRAINT external_accesses_password_kind_chk CHECK (password_kind IN ('random','cpf','personal'));

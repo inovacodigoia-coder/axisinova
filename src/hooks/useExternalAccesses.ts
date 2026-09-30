@@ -3,6 +3,20 @@ import { supabase } from '@/integrations/supabase/client'
 import { useAuth } from '@/context/AuthContext'
 import { resolveCompanyId } from '@/utils/companyId'
 
+export type PasswordKind = 'random' | 'cpf' | 'personal'
+
+export function cpfLast4(cpf?: string | null): string | null {
+  const d = (cpf || '').replace(/\D/g, '')
+  return d.length >= 4 ? d.slice(-4) : null
+}
+
+/** Texto da senha no comprovante: CPF e pessoal viram dica, aleatória mostra o número. */
+export function passwordHint(kind: PasswordKind | undefined | null, password: string): string {
+  if (kind === 'cpf') return 'Os 4 últimos dígitos do CPF'
+  if (kind === 'personal') return 'Senha pessoal'
+  return password
+}
+
 export type ExternalAccessType = 'parceiro' | 'local' | 'medico' | 'paciente'
 
 export interface ExternalAccessRecord {
@@ -14,6 +28,7 @@ export interface ExternalAccessRecord {
   status: 'active' | 'inactive'
   access_code: string
   access_password: string
+  password_kind?: PasswordKind
   patient_id: string | null
   doctor_id: string | null
   origin_id: string | null
@@ -30,7 +45,7 @@ export interface ExternalAccessRecord {
 
 export type ExternalAccessInput = Omit<
   ExternalAccessRecord,
-  'id' | 'company_id' | 'access_code' | 'access_password' | 'last_access_at' | 'created_at'
+  'id' | 'company_id' | 'access_code' | 'access_password' | 'password_kind' | 'last_access_at' | 'created_at'
 >
 
 export function generatePassword(): string {
@@ -122,7 +137,7 @@ export function useExternalAccesses() {
       const access_password = generatePassword()
       const { data, error: err } = await supabase
         .from('external_accesses')
-        .update({ access_code, access_password } as never)
+        .update({ access_code, access_password, password_kind: 'random' } as never)
         .eq('id', id)
         .select('*')
         .single()
@@ -133,6 +148,20 @@ export function useExternalAccesses() {
     },
     [generateCode],
   )
+
+  const setPassword = useCallback(async (id: string, password: string, kind: PasswordKind) => {
+    if (!/^\d{4,8}$/.test(password)) throw new Error('A senha deve ter de 4 a 8 números')
+    const { data, error: err } = await supabase
+      .from('external_accesses')
+      .update({ access_password: password, password_kind: kind } as never)
+      .eq('id', id)
+      .select('*')
+      .single()
+    if (err) throw new Error(err.message)
+    const record = data as unknown as ExternalAccessRecord
+    setAccesses((prev) => prev.map((a) => (a.id === id ? record : a)))
+    return record
+  }, [])
 
   const deleteAccess = useCallback(async (id: string) => {
     const { error: err } = await supabase.from('external_accesses').delete().eq('id', id)
@@ -163,6 +192,7 @@ export function useExternalAccesses() {
     createAccess,
     updateAccess,
     regenerateCredentials,
+    setPassword,
     deleteAccess,
     toggleStatus,
   }
@@ -177,8 +207,10 @@ export async function ensurePatientPortalAccess(params: {
   patientId: string
   patientName: string
   email?: string | null
+  cpf?: string | null
 }): Promise<ExternalAccessRecord | null> {
-  const { companyId, patientId, patientName, email } = params
+  const { companyId, patientId, patientName, email, cpf } = params
+  const last4 = cpfLast4(cpf)
   if (!companyId || !patientId) return null
   try {
     const { data: existing } = await supabase
@@ -209,7 +241,8 @@ export async function ensurePatientPortalAccess(params: {
         partner_origin_ids: [],
         permissions: {},
         access_code: code as string,
-        access_password: generatePassword(),
+        access_password: last4 || generatePassword(),
+        password_kind: last4 ? 'cpf' : 'random',
       } as never)
       .select('*')
       .single()

@@ -1,3 +1,4 @@
+import { passwordHint } from '@/hooks/useExternalAccesses'
 import { QRCodeSVG } from 'qrcode.react'
 import type { AttendanceControlDocument, PrinterConfig } from '@/types/payment-print.types'
 import { format, parseISO, isValid } from 'date-fns'
@@ -102,7 +103,7 @@ export function AttendanceReceiptVia({ document: doc, config, via }: Props) {
           {doc.locatorCode && (
             <div className="mt-2">
               <div><strong>Acesso:</strong> {doc.locatorCode}</div>
-              <div><strong>Senha:</strong> {doc.password}</div>
+              <div><strong>Senha:</strong> {passwordHint(doc.passwordKind, doc.password || '')}</div>
             </div>
           )}
         </div>

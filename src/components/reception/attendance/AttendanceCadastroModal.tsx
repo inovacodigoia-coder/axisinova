@@ -416,6 +416,7 @@ export function AttendanceCadastroModal({
       companyPhone: '(84) 3333-0000',
       locatorCode: portalAccess?.access_code,
       password: portalAccess?.access_password,
+      passwordKind: portalAccess?.password_kind,
       portalUrl: portalAccess ? buildPortalUrl(portalAccess.access_code) : undefined,
     }
   }, [state.patient, unitName, guicheName, portalAccess])
@@ -528,6 +529,7 @@ export function AttendanceCadastroModal({
             patientId: order.patientId,
             patientName: order.patientName,
             email: state.patient?.email,
+            cpf: (state.patient as any)?.cpf,
           })
           if (access) setPortalAccess(access)
         }
