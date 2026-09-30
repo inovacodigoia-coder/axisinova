@@ -3758,6 +3758,7 @@ export type Database = {
           origin_id: string | null
           partner_origin_ids: string[]
           partner_type: string | null
+          password_kind: string
           patient_id: string | null
           permissions: Json
           phone: string | null
@@ -3783,6 +3784,7 @@ export type Database = {
           origin_id?: string | null
           partner_origin_ids?: string[]
           partner_type?: string | null
+          password_kind?: string
           patient_id?: string | null
           permissions?: Json
           phone?: string | null
@@ -3808,6 +3810,7 @@ export type Database = {
           origin_id?: string | null
           partner_origin_ids?: string[]
           partner_type?: string | null
+          password_kind?: string
           patient_id?: string | null
           permissions?: Json
           phone?: string | null
