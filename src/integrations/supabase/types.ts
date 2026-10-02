@@ -3162,6 +3162,7 @@ export type Database = {
       }
       doctors: {
         Row: {
+          agenda_enabled: boolean
           birth_date: string | null
           blocked_at: string | null
           blocked_reason: string | null
@@ -3182,6 +3183,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          agenda_enabled?: boolean
           birth_date?: string | null
           blocked_at?: string | null
           blocked_reason?: string | null
@@ -3202,6 +3204,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          agenda_enabled?: boolean
           birth_date?: string | null
           blocked_at?: string | null
           blocked_reason?: string | null
