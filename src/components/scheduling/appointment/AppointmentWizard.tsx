@@ -38,7 +38,7 @@ export function AppointmentWizard({ open, onClose, onSave, prefilledDoctor, pref
 
   if (!open) return null
 
-  const activeDoctors = doctors.filter(d => d.isActive && !d.isBlocked)
+  const activeDoctors = doctors.filter(d => d.isActive && !d.isBlocked && d.agendaEnabled !== false)
   const activeConvenios = convenios.filter(c => c.isActive)
   const hasDoctors = activeDoctors.length > 0
   const hasConvenios = activeConvenios.length > 0

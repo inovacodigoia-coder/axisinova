@@ -14,6 +14,8 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSepara
 import { MOCK_COMPANIES } from '@/mocks/superadmin.mock'
 import { MOCK_PLANS } from '@/mocks/superadmin.mock'
 
+function isUnlimitedCalc(l: number | null) { return l === null || l >= 999 }
+
 export default function DoctorsPage() {
   const { canAccess } = useCompanyContext()
   const { user } = useAuth()
@@ -21,6 +23,7 @@ export default function DoctorsPage() {
   const [search, setSearch] = useState('')
   const [specFilter, setSpecFilter] = useState('')
   const [statusFilter, setStatusFilter] = useState<'' | 'active' | 'blocked' | 'inactive'>('')
+  const [agendaFilter, setAgendaFilter] = useState<'' | 'enabled' | 'disabled'>('')
   const [showForm, setShowForm] = useState(false)
   const [editing, setEditing] = useState<Doctor | null>(null)
   const [showBlock, setShowBlock] = useState<Doctor | null>(null)
@@ -34,7 +37,8 @@ export default function DoctorsPage() {
   const plan = MOCK_PLANS.find(p => p.name === company?.plano)
   const doctorLimit = plan?.maxDoctors ?? company?.medicosLimite ?? 15
   const isUnlimited = doctorLimit === null || doctorLimit >= 999
-  const activeDoctors = doctors.filter(d => d.isActive).length
+  const activeDoctors = doctors.filter(d => d.isActive && d.agendaEnabled !== false).length
+  const agendaSlotsLeft = isUnlimitedCalc(doctorLimit) ? Infinity : Math.max(0, doctorLimit - activeDoctors)
   const isAtLimit = !isUnlimited && activeDoctors >= doctorLimit
   const isNearLimit = !isUnlimited && !isAtLimit && activeDoctors >= doctorLimit - 2
   const ADDON_PRICE_PER_DOCTOR = 79
@@ -45,6 +49,8 @@ export default function DoctorsPage() {
     if (statusFilter === 'active' && (!d.isActive || d.isBlocked)) return false
     if (statusFilter === 'blocked' && !d.isBlocked) return false
     if (statusFilter === 'inactive' && d.isActive) return false
+    if (agendaFilter === 'enabled' && d.agendaEnabled === false) return false
+    if (agendaFilter === 'disabled' && d.agendaEnabled !== false) return false
     return true
   })
 
@@ -59,9 +65,9 @@ export default function DoctorsPage() {
         <div className="rounded-xl border border-destructive/30 bg-destructive/5 p-4 flex items-start gap-3">
           <AlertTriangle className="h-5 w-5 text-destructive shrink-0 mt-0.5" />
           <div className="flex-1">
-            <p className="text-sm font-semibold text-destructive">Limite de médicos atingido ({activeDoctors}/{doctorLimit})</p>
+            <p className="text-sm font-semibold text-destructive">Limite de agendas ativas atingido ({activeDoctors}/{doctorLimit})</p>
             <p className="text-xs text-muted-foreground mt-1">
-              Seu plano <strong>{company?.plano}</strong> permite até {doctorLimit} médicos. Para adicionar mais, solicite ao administrador do sistema.
+              Seu plano <strong>{company?.plano}</strong> permite até {doctorLimit} médicos com agenda ativa. Você pode continuar cadastrando médicos sem agenda. Para ativar mais agendas, solicite ao administrador do sistema.
             </p>
           </div>
           <button onClick={() => setShowRequestMore(true)} className="shrink-0 rounded-lg bg-primary px-3 py-1.5 text-xs font-semibold text-primary-foreground hover:opacity-90 flex items-center gap-1.5">
@@ -73,7 +79,7 @@ export default function DoctorsPage() {
         <div className="rounded-xl border border-[hsl(33,100%,50%)]/30 bg-[hsl(33,100%,50%)]/5 p-4 flex items-start gap-3">
           <AlertTriangle className="h-5 w-5 text-[hsl(33,100%,50%)] shrink-0 mt-0.5" />
           <div className="flex-1">
-            <p className="text-sm font-semibold text-[hsl(33,100%,50%)]">Próximo do limite de médicos ({activeDoctors}/{doctorLimit})</p>
+            <p className="text-sm font-semibold text-[hsl(33,100%,50%)]">Próximo do limite de agendas ativas ({activeDoctors}/{doctorLimit})</p>
             <p className="text-xs text-muted-foreground mt-1">
               Restam apenas {doctorLimit - activeDoctors} vaga(s) no plano <strong>{company?.plano}</strong>.
             </p>
@@ -123,7 +129,7 @@ export default function DoctorsPage() {
           <h1 className="text-2xl font-bold text-foreground">
             Médicos{' '}
             <span className="text-muted-foreground text-lg font-normal">
-              ({activeDoctors}{!isUnlimited ? ` / ${doctorLimit}` : ''} cadastrados)
+              ({activeDoctors}{!isUnlimited ? ` / ${doctorLimit}` : ''} com agenda ativa · {doctors.length} cadastrados)
             </span>
           </h1>
           <p className="text-sm text-muted-foreground">Gestão de profissionais médicos</p>
@@ -146,7 +152,7 @@ export default function DoctorsPage() {
             <Settings className="h-4 w-4" /> Gerenciar Especialidades
           </button>
           {canAccess('registers', 'create') && (
-            isAtLimit ? (
+            false ? (
               <button onClick={() => setShowRequestMore(true)} className="rounded-xl border border-primary/50 bg-primary/5 px-4 py-2.5 text-sm font-semibold text-primary hover:bg-primary/10 flex items-center gap-2">
                 <ArrowUpCircle className="h-4 w-4" /> Solicitar mais médicos
               </button>
@@ -174,6 +180,11 @@ export default function DoctorsPage() {
           <option value="blocked">Bloqueados</option>
           <option value="inactive">Inativos</option>
         </select>
+        <select value={agendaFilter} onChange={e => setAgendaFilter(e.target.value as any)} className="rounded-lg border border-input bg-background px-3 py-2 text-sm">
+          <option value="">Todos os cadastrados</option>
+          <option value="enabled">Com agenda ativa</option>
+          <option value="disabled">Sem agenda</option>
+        </select>
       </div>
 
       <div className="rounded-2xl border border-border bg-card overflow-hidden">
@@ -186,6 +197,7 @@ export default function DoctorsPage() {
                 <th className="px-4 py-3 text-left font-medium text-muted-foreground">CRM</th>
                 <th className="px-4 py-3 text-left font-medium text-muted-foreground">Especialidades</th>
                 <th className="px-4 py-3 text-left font-medium text-muted-foreground">Convênios</th>
+                <th className="px-4 py-3 text-left font-medium text-muted-foreground">Agenda</th>
                 <th className="px-4 py-3 text-left font-medium text-muted-foreground">Status</th>
                 <th className="px-4 py-3 text-left font-medium text-muted-foreground">Ações</th>
               </tr>
@@ -211,6 +223,11 @@ export default function DoctorsPage() {
                       </div>
                     </td>
                     <td className="px-4 py-3 text-sm text-muted-foreground">{d.enabledConvenioIds.length} convênios</td>
+                    <td className="px-4 py-3">
+                      <span className={`inline-flex rounded-full px-2 py-0.5 text-[10px] font-bold ${d.agendaEnabled !== false ? 'bg-primary/10 text-primary' : 'bg-muted text-muted-foreground'}`}>
+                        {d.agendaEnabled !== false ? 'Ativa' : 'Desabilitada'}
+                      </span>
+                    </td>
                     <td className="px-4 py-3">
                       <span className={`inline-flex rounded-full px-2 py-0.5 text-[10px] font-bold ${
                         d.isBlocked ? 'bg-destructive/10 text-destructive'
@@ -270,6 +287,8 @@ export default function DoctorsPage() {
           doctor={editing}
           specialties={specialties}
           convenios={convenios}
+          agendaSlotsLeft={agendaSlotsLeft}
+          doctorLimit={isUnlimited ? null : doctorLimit}
           onClose={() => { setShowForm(false); setEditing(null) }}
           onSave={(d) => {
             if (editing) updateDoctor(d)
@@ -367,8 +386,10 @@ export default function DoctorsPage() {
 }
 
 // ─── Doctor Form Modal ─────────────────────────────────────────
-function DoctorFormModal({ doctor, specialties, convenios, onClose, onSave }: {
+function DoctorFormModal({ doctor, specialties, convenios, agendaSlotsLeft, doctorLimit, onClose, onSave }: {
   doctor: Doctor | null
+  agendaSlotsLeft: number
+  doctorLimit: number | null
   specialties: import('@/types/registers.types').Specialty[]
   convenios: import('@/types/registers.types').Convenio[]
   onClose: () => void
@@ -386,6 +407,9 @@ function DoctorFormModal({ doctor, specialties, convenios, onClose, onSave }: {
   const [scheduleInterval, setScheduleInterval] = useState(doctor?.scheduleConfig?.intervalBetween || 10)
   const [blockedDates, setBlockedDates] = useState<string[]>(doctor?.scheduleConfig?.blockedDates || [])
   const [activeTab, setActiveTab] = useState('dados')
+  const wasEnabled = !!doctor && doctor.agendaEnabled !== false && doctor.isActive
+  const canEnableAgenda = wasEnabled || agendaSlotsLeft > 0
+  const [agendaEnabled, setAgendaEnabled] = useState<boolean>(doctor ? doctor.agendaEnabled !== false : agendaSlotsLeft > 0)
   const [allConvenios, setAllConvenios] = useState(false)
 
   const toggleConv = (id: string) => {
@@ -400,6 +424,7 @@ function DoctorFormModal({ doctor, specialties, convenios, onClose, onSave }: {
 
   const handleSave = () => {
     if (!name || !crm || selectedSpecs.length === 0) { toast.error('Preencha os campos obrigatórios'); return }
+    if (agendaEnabled && !canEnableAgenda) { toast.error(`Limite do plano atingido: ${doctorLimit} médicos com agenda ativa. Desabilite a agenda de outro médico ou amplie o plano.`); return }
     
     // Convert DayScheduleConfig[] to WorkDayConfig[] if schedule was edited
     const workDays = scheduleDays
@@ -421,6 +446,7 @@ function DoctorFormModal({ doctor, specialties, convenios, onClose, onSave }: {
       phone, email,
       enabledConvenioIds: Array.from(enabledConvenios),
       isActive: doctor?.isActive ?? true,
+      agendaEnabled,
       isBlocked: doctor?.isBlocked ?? false,
       scheduleConfig: { consultationDuration: scheduleDuration, intervalBetween: scheduleInterval, workDays, blockedDates },
       createdAt: doctor?.createdAt || new Date().toISOString(),
@@ -449,6 +475,29 @@ function DoctorFormModal({ doctor, specialties, convenios, onClose, onSave }: {
         <div className="p-6 space-y-4">
           {activeTab === 'dados' && (
             <>
+              <div className="flex items-start justify-between gap-4 rounded-xl border border-border bg-muted/30 p-4">
+                <div>
+                  <p className="text-sm font-semibold text-foreground">Habilitar agenda</p>
+                  <p className="text-xs text-muted-foreground mt-0.5">
+                    Só médicos com agenda habilitada aparecem no Agendamento e contam no limite do plano
+                    {doctorLimit !== null && ` (${Number.isFinite(agendaSlotsLeft) ? agendaSlotsLeft : '∞'} vaga(s) livre(s) de ${doctorLimit})`}.
+                  </p>
+                  {!canEnableAgenda && !agendaEnabled && (
+                    <p className="text-xs text-destructive mt-1">Limite do plano atingido. Desabilite a agenda de outro médico para ativar esta.</p>
+                  )}
+                </div>
+                <button
+                  type="button"
+                  role="switch"
+                  aria-checked={agendaEnabled}
+                  aria-label="Habilitar agenda"
+                  disabled={!agendaEnabled && !canEnableAgenda}
+                  onClick={() => setAgendaEnabled(v => !v)}
+                  className={`relative h-6 w-11 shrink-0 rounded-full transition-colors disabled:opacity-40 disabled:cursor-not-allowed ${agendaEnabled ? 'bg-primary' : 'bg-border'}`}
+                >
+                  <span className={`absolute top-0.5 h-5 w-5 rounded-full bg-background shadow transition-all ${agendaEnabled ? 'left-[22px]' : 'left-0.5'}`} />
+                </button>
+              </div>
               <div><label className="text-sm font-medium">Nome completo *</label><input value={name} onChange={e => setName(e.target.value)} className="mt-1 w-full rounded-lg border border-input bg-background px-3 py-2 text-sm" /></div>
               <div className="grid grid-cols-2 gap-4">
                 <div><label className="text-sm font-medium">CRM *</label><input value={crm} onChange={e => setCrm(e.target.value)} className="mt-1 w-full rounded-lg border border-input bg-background px-3 py-2 text-sm" /></div>

@@ -55,7 +55,7 @@ function mapDoctorRow(row: any): Doctor {
     specialtyIds: row.specialty_ids || [], phone: row.phone, email: row.email, birthDate: row.birth_date,
     photo: row.photo, enabledConvenioIds: row.enabled_convenio_ids || [],
     scheduleConfig: row.schedule_config || undefined,
-    isActive: row.is_active, isBlocked: row.is_blocked, blockedReason: row.blocked_reason,
+    isActive: row.is_active, isBlocked: row.is_blocked, blockedReason: row.blocked_reason, agendaEnabled: row.agenda_enabled ?? false,
     blockedAt: row.blocked_at, createdAt: row.created_at, updatedAt: row.updated_at,
   }
 }
@@ -249,7 +249,7 @@ export function RegistersProvider({ children }: { children: ReactNode }) {
       specialty_ids: d.specialtyIds, phone: d.phone || null, email: d.email || null,
       birth_date: d.birthDate || null, photo: d.photo || null,
       enabled_convenio_ids: d.enabledConvenioIds, schedule_config: d.scheduleConfig || null,
-      is_active: d.isActive, is_blocked: d.isBlocked,
+      is_active: d.isActive, is_blocked: d.isBlocked, agenda_enabled: d.agendaEnabled ?? false,
       blocked_reason: d.blockedReason || null, blocked_at: d.blockedAt || null,
     } as any)
     if (error) {
@@ -267,7 +267,7 @@ export function RegistersProvider({ children }: { children: ReactNode }) {
       specialty_ids: d.specialtyIds, phone: d.phone || null, email: d.email || null,
       birth_date: d.birthDate || null, photo: d.photo || null,
       enabled_convenio_ids: d.enabledConvenioIds, schedule_config: d.scheduleConfig || null,
-      is_active: d.isActive, is_blocked: d.isBlocked,
+      is_active: d.isActive, is_blocked: d.isBlocked, agenda_enabled: d.agendaEnabled ?? false,
       blocked_reason: d.blockedReason || null, blocked_at: d.blockedAt || null,
     } as any).eq('id', d.id)
     if (error) { console.error(error); toast.error('Erro ao atualizar médico') }

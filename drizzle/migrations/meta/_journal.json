@@ -484,6 +484,13 @@
       "when": 1790807901508,
       "tag": "0068_external_access_password_kind",
       "breakpoints": true
+    },
+    {
+      "idx": 69,
+      "version": "7",
+      "when": 1790985304944,
+      "tag": "0069_doctors_agenda_enabled",
+      "breakpoints": true
     }
   ]
 }

@@ -31,7 +31,7 @@ export function AgendaFilters({
 }: Props) {
   const { doctors, convenios, exams, procedures } = useRegisters()
 
-  const activeDoctors = useMemo(() => doctors.filter(d => d.isActive && !d.isBlocked), [doctors])
+  const activeDoctors = useMemo(() => doctors.filter(d => d.isActive && !d.isBlocked && d.agendaEnabled !== false), [doctors])
   const selectedDoctor = doctors.find(d => d.id === doctorFilter)
 
   const filteredConvenios = useMemo(() => {
@@ -49,7 +49,7 @@ export function AgendaFilters({
         {activeDoctors.length === 0 ? (
           <DependencyAlert
             icon="⚠️"
-            message="Nenhum médico ativo. Cadastre médicos em Cadastros → Médicos"
+            message="Nenhum médico com agenda habilitada. Habilite em Cadastros → Médicos"
             actionLabel="Cadastrar Médico"
             actionRoute="/app/cadastros/medicos"
           />
