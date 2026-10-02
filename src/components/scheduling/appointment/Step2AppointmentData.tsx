@@ -36,7 +36,7 @@ export function Step2AppointmentData({ patient, formData, onChange, prefilledDoc
   const today = new Date().toISOString().split('T')[0]
   const [showRestrictions, setShowRestrictions] = useState(false)
 
-  const activeDoctors = useMemo(() => doctors.filter(d => d.isActive && !d.isBlocked), [doctors])
+  const activeDoctors = useMemo(() => doctors.filter(d => d.isActive && !d.isBlocked && d.agendaEnabled !== false), [doctors])
   const activeExams = useMemo(() => exams.filter(e => e.isActive), [exams])
   const activeProcedures = useMemo(() => procedures.filter(p => p.isActive), [procedures])
 

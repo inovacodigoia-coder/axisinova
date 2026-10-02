@@ -31,7 +31,7 @@ export function AgendaFilters({
 }: Props) {
   const { doctors, convenios, exams, procedures } = useRegisters()
 
-  const activeDoctors = useMemo(() => doctors.filter(d => d.isActive && !d.isBlocked && d.agendaEnabled), [doctors])
+  const activeDoctors = useMemo(() => doctors.filter(d => d.isActive && !d.isBlocked && d.agendaEnabled !== false), [doctors])
   const selectedDoctor = doctors.find(d => d.id === doctorFilter)
 
   const filteredConvenios = useMemo(() => {

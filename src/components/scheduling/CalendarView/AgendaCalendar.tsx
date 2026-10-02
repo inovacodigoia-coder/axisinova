@@ -29,7 +29,7 @@ export function AgendaCalendar({ selectedDate, appointments, doctorFilter, viewM
   const { doctors, specialties } = useRegisters()
 
   const activeDoctors = useMemo(() => {
-    const active = doctors.filter(d => d.isActive && !d.isBlocked && d.agendaEnabled)
+    const active = doctors.filter(d => d.isActive && !d.isBlocked && d.agendaEnabled !== false)
     if (doctorFilter !== 'all') return active.filter(d => d.id === doctorFilter)
     return active
   }, [doctors, doctorFilter])

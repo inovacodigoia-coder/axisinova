@@ -16,7 +16,7 @@ export default function SchedulingPage() {
   const { doctors, convenios, specialties } = useRegisters()
   const { appointments, addAppointment, updateAppointment } = useScheduling()
 
-  const activeDoctors = useMemo(() => doctors.filter(d => d.isActive && !d.isBlocked), [doctors])
+  const activeDoctors = useMemo(() => doctors.filter(d => d.isActive && !d.isBlocked && d.agendaEnabled !== false), [doctors])
 
   const [selectedDate, setSelectedDate] = useState(new Date())
   const [doctorFilter, setDoctorFilter] = useState('all')
