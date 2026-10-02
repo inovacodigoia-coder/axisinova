@@ -139,6 +139,8 @@ export interface Doctor {
   isBlocked?: boolean
   blockedReason?: string
   blockedAt?: string
+  /** Agenda habilitada: aparece em /app/agendamento e conta no limite do plano */
+  agendaEnabled?: boolean
   isActive: boolean
   createdAt?: string
   updatedAt?: string;
