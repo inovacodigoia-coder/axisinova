@@ -38,11 +38,11 @@ export default function WhatsappRequestsPage() {
     const cIds = [...new Set(list.map(r => r.company_id))]
     const uIds = [...new Set(list.map(r => r.solicitado_por).filter(Boolean))] as string[]
     const [{ data: cs }, { data: us }] = await Promise.all([
-      cIds.length ? supabase.from('companies').select('id, nome_fantasia, razao_social').in('id', cIds) : Promise.resolve({ data: [] as any[] }),
-      uIds.length ? supabase.from('profiles').select('id, name').in('id', uIds) : Promise.resolve({ data: [] as any[] }),
+      cIds.length ? supabase.from('companies').select('id, nome_fantasia').in('id', cIds) : Promise.resolve({ data: [] as any[] }),
+      uIds.length ? supabase.from('profiles').select('id, full_name').in('id', uIds) : Promise.resolve({ data: [] as any[] }),
     ])
-    const cm = new Map((cs || []).map((c: any) => [c.id, c.nome_fantasia || c.razao_social]))
-    const um = new Map((us || []).map((u: any) => [u.id, u.name]))
+    const cm = new Map((cs || []).map((c: any) => [c.id, c.nome_fantasia]))
+    const um = new Map((us || []).map((u: any) => [u.id, u.full_name]))
     setRows(list.map(r => ({ ...r, empresa: cm.get(r.company_id) || '—', solicitante: (r.solicitado_por && um.get(r.solicitado_por)) || '—' })))
     setLoading(false)
   }, [filtro])
