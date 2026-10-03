@@ -46,9 +46,12 @@ export function CompanyWhatsappPanel({ companyId }: { companyId: string }) {
     void salvar(true, null)
   }
 
-  const desligar = () => {
+  const desligar = async () => {
     setConfirmOff(false)
-    // TODO Etapa 2: desconectar de verdade todas as instâncias da empresa na uazapi antes de bloquear.
+    setSaving(true)
+    const { data, error } = await supabase.functions.invoke('whatsapp-instancia', { body: { acao: 'desconectar_empresa', company_id: companyId } })
+    setSaving(false)
+    if (error || !data?.ok) toast.warning(data?.mensagem || 'Alguns números não foram desconectados; o envio será bloqueado mesmo assim.')
     void salvar(false, null)
   }
 
