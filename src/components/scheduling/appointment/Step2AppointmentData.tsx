@@ -41,18 +41,24 @@ export function Step2AppointmentData({ patient, formData, onChange, prefilledDoc
   const activeProcedures = useMemo(() => procedures.filter(p => p.isActive), [procedures])
 
   const selectedDoctor = doctors.find(d => d.id === formData.doctorId)
-  const typesFor = (doc?: typeof doctors[0]): AppointmentType[] => {
+  // Tipos permitidos: se houver data, vale apenas o dia da semana daquela data;
+  // sem data, vale a união de todos os dias ativos da agenda.
+  const typesFor = (doc?: typeof doctors[0], date?: string): AppointmentType[] => {
     if (!doc) return []
-    const wds: any[] = (doc.scheduleConfig?.workDays || []).filter((w: any) => w.isActive)
+    let wds: any[] = (doc.scheduleConfig?.workDays || []).filter((w: any) => w.isActive)
+    if (date) {
+      const dow = new Date(date + 'T12:00:00').getDay()
+      wds = wds.filter((w: any) => w.dayOfWeek === dow)
+    }
     const set = new Set<string>()
     wds.forEach(w => (w.attendanceTypes?.length ? w.attendanceTypes : ['consultation']).forEach((t: string) => set.add(t)))
     return (['consultation', 'exam', 'procedure'] as AppointmentType[]).filter(t => set.has(t))
   }
-  const allowedTypes = typesFor(selectedDoctor)
+  const allowedTypes = typesFor(selectedDoctor, formData.date || undefined)
   useEffect(() => {
     if (selectedDoctor && allowedTypes.length && !allowedTypes.includes(formData.type)) onChange({ type: allowedTypes[0], examId: '' })
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [formData.doctorId, allowedTypes.join()])
+  }, [formData.doctorId, formData.date, allowedTypes.join()])
   const slotsResult = useAvailableSlots(selectedDoctor, formData.date, appointments)
 
   const age = differenceInYears(new Date(), new Date(patient.birthDate))
@@ -110,7 +116,7 @@ export function Step2AppointmentData({ patient, formData, onChange, prefilledDoc
           {/* Doctor */}
           <div>
             <label className="text-sm font-medium text-foreground">Médico/Profissional *</label>
-            <select value={formData.doctorId} onChange={e => { const id = e.target.value; const allowed = typesFor(doctors.find(d => d.id === id)); onChange({ doctorId: id, convenioId: '', time: '', ...(allowed.includes(formData.type) ? {} : { type: allowed[0] || 'consultation', examId: '' }) }) }}
+            <select value={formData.doctorId} onChange={e => { const id = e.target.value; const allowed = typesFor(doctors.find(d => d.id === id), formData.date || undefined); onChange({ doctorId: id, convenioId: '', time: '', ...(allowed.includes(formData.type) ? {} : { type: allowed[0] || 'consultation', examId: '' }) }) }}
               disabled={!!prefilledDoctor}
               className="mt-1 w-full rounded-lg border border-input bg-background px-3 py-2.5 text-sm disabled:opacity-60">
               <option value="">Selecione...</option>
@@ -126,7 +132,7 @@ export function Step2AppointmentData({ patient, formData, onChange, prefilledDoc
             {!formData.doctorId ? (
               <p className="text-xs text-muted-foreground">Selecione o médico para ver os tipos liberados.</p>
             ) : allowedTypes.length === 0 ? (
-              <p className="text-xs text-destructive">Este médico não tem tipo de atendimento configurado na agenda.</p>
+              <p className="text-xs text-destructive">{formData.date ? 'Este médico não atende nesta data. Selecione outro dia.' : 'Este médico não tem tipo de atendimento configurado na agenda.'}</p>
             ) : (
             <div className="flex gap-2">
               {([
