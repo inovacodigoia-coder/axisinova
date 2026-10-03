@@ -67,8 +67,8 @@ export function useAvailableSlots(
       return { slots: [], error: 'not_working_day', dayName: DAY_NAMES[dayOfWeek] }
     }
 
-    const duration = doctor.scheduleConfig.consultationDuration
-    const interval = doctor.scheduleConfig.intervalBetween
+    const duration = workDay.slotDuration ?? doctor.scheduleConfig.consultationDuration
+    const interval = workDay.intervalBetween ?? doctor.scheduleConfig.intervalBetween
     const allSlots = generateTimeSlots(
       workDay.startTime,
       workDay.endTime,
