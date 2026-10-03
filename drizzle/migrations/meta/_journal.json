@@ -498,6 +498,13 @@
       "when": 1790985638450,
       "tag": "0070_doctors_agenda_default_disabled",
       "breakpoints": true
+    },
+    {
+      "idx": 71,
+      "version": "7",
+      "when": 1790998054123,
+      "tag": "0071_whatsapp_etapa1",
+      "breakpoints": true
     }
   ]
 }
