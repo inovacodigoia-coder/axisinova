@@ -125,7 +125,7 @@ export default function WhatsappSettingsPage() {
         <>
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <p className="text-sm font-medium text-foreground"><strong>{insts.length}</strong> de <strong>{autorizados}</strong> números em uso</p>
-            <Button onClick={onAdicionar} disabled={pendente && !temCota} className="h-11 gradient-primary text-primary-foreground">
+            <Button onClick={onAdicionar} disabled={pendente && !temCota} className="h-11 gradient-bg text-primary-foreground">
               <Plus className="mr-2 h-4 w-4" /> Adicionar número
             </Button>
           </div>
@@ -254,7 +254,7 @@ function NumeroCard({ inst, onChange, onConectar }: { inst: Inst; onChange: () =
           ? <Button variant="outline" className="h-11 text-destructive" onClick={() => setConfirmar(true)} disabled={salvando}>
               <Unlink className="mr-2 h-4 w-4" /> Desconectar
             </Button>
-          : <Button className="h-11 gradient-primary text-primary-foreground" onClick={onConectar} disabled={salvando}>
+          : <Button className="h-11 gradient-bg text-primary-foreground" onClick={onConectar} disabled={salvando}>
               <Link2 className="mr-2 h-4 w-4" /> Conectar número
             </Button>}
       </div>
@@ -298,7 +298,7 @@ function NovoNumeroDialog({ open, onOpenChange, onCriado }: { open: boolean; onO
         <Input value={apelido} onChange={e => setApelido(e.target.value)} maxLength={60} placeholder="Apelido" className="h-11" autoFocus />
         <DialogFooter>
           <Button variant="outline" className="h-11" onClick={() => onOpenChange(false)}>Cancelar</Button>
-          <Button className="h-11 gradient-primary text-primary-foreground" onClick={criar} disabled={salvando}>
+          <Button className="h-11 gradient-bg text-primary-foreground" onClick={criar} disabled={salvando}>
             {salvando && <Loader2 className="mr-2 h-4 w-4 animate-spin" />} Criar e conectar
           </Button>
         </DialogFooter>
@@ -333,7 +333,7 @@ function SolicitarDialog({ open, onOpenChange, companyId, pendente, onEnviado }:
         <Textarea value={obs} onChange={e => setObs(e.target.value)} placeholder="Observação (opcional)" maxLength={500} />
         <DialogFooter>
           <Button variant="outline" className="h-11" onClick={() => onOpenChange(false)}>Cancelar</Button>
-          <Button className="h-11 gradient-primary text-primary-foreground" onClick={enviar} disabled={salvando || pendente}>Enviar solicitação</Button>
+          <Button className="h-11 gradient-bg text-primary-foreground" onClick={enviar} disabled={salvando || pendente}>Enviar solicitação</Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>
@@ -392,7 +392,7 @@ function QrDialog({ inst, onClose }: { inst: Inst; onClose: () => void }) {
             {fase === 'expirado' && (
               <div className="text-center space-y-3">
                 <p className="text-sm font-semibold text-foreground">QR Code expirado</p>
-                <Button className="h-11 gradient-primary text-primary-foreground" onClick={() => void iniciar()}>Gerar novo QR Code</Button>
+                <Button className="h-11 gradient-bg text-primary-foreground" onClick={() => void iniciar()}>Gerar novo QR Code</Button>
               </div>
             )}
           </div>
