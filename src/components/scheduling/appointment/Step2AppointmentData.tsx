@@ -116,7 +116,7 @@ export function Step2AppointmentData({ patient, formData, onChange, prefilledDoc
           {/* Doctor */}
           <div>
             <label className="text-sm font-medium text-foreground">Médico/Profissional *</label>
-            <select value={formData.doctorId} onChange={e => { const id = e.target.value; const allowed = typesFor(doctors.find(d => d.id === id)); onChange({ doctorId: id, convenioId: '', time: '', ...(allowed.includes(formData.type) ? {} : { type: allowed[0] || 'consultation', examId: '' }) }) }}
+            <select value={formData.doctorId} onChange={e => { const id = e.target.value; const allowed = typesFor(doctors.find(d => d.id === id), formData.date || undefined); onChange({ doctorId: id, convenioId: '', time: '', ...(allowed.includes(formData.type) ? {} : { type: allowed[0] || 'consultation', examId: '' }) }) }}
               disabled={!!prefilledDoctor}
               className="mt-1 w-full rounded-lg border border-input bg-background px-3 py-2.5 text-sm disabled:opacity-60">
               <option value="">Selecione...</option>
@@ -132,7 +132,7 @@ export function Step2AppointmentData({ patient, formData, onChange, prefilledDoc
             {!formData.doctorId ? (
               <p className="text-xs text-muted-foreground">Selecione o médico para ver os tipos liberados.</p>
             ) : allowedTypes.length === 0 ? (
-              <p className="text-xs text-destructive">Este médico não tem tipo de atendimento configurado na agenda.</p>
+              <p className="text-xs text-destructive">{formData.date ? 'Este médico não atende nesta data. Selecione outro dia.' : 'Este médico não tem tipo de atendimento configurado na agenda.'}</p>
             ) : (
             <div className="flex gap-2">
               {([
