@@ -185,8 +185,7 @@ Deno.serve(async (req) => {
       if ((count ?? 0) >= (emp.whatsapp_numeros_autorizados ?? 0))
         return erro(403, 'COTA_NUMEROS_ESGOTADA', 'A empresa já usa todos os números autorizados.')
       const nome = `axis-${companyId.slice(0, 8)}-${crypto.randomUUID().slice(0, 8)}`
-      const r = await uaz('POST', '/instance/init', { admintoken: ADMIN }, { name: nome })
-      const r2 = r.status === 404 ? await uaz('POST', '/instance/create', { admintoken: ADMIN }, { name: nome }) : r
+      const r2 = await uaz('POST', '/instance/create', { admintoken: ADMIN }, { name: nome })
       if (r2.status < 200 || r2.status >= 300) return erroUaz(r2.status, r2.retryAfter)
       const token = r2.json?.token ?? r2.json?.instance?.token
       if (!token) return erro(502, 'ERRO_SERVIDOR', 'O servidor do WhatsApp não devolveu a chave do número.')
