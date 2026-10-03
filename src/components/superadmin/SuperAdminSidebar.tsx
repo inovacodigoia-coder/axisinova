@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { NavLink, useLocation } from 'react-router-dom'
 import { useAuth } from '@/context/AuthContext'
 import {
-  BarChart3, Building2, Users, CreditCard, Settings, FileText, AlertTriangle, LogOut, ChevronLeft, ChevronRight, X, ShieldAlert,
+  BarChart3, Building2, Users, CreditCard, Settings, FileText, AlertTriangle, LogOut, ChevronLeft, ChevronRight, X, ShieldAlert, MessageCircle,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
@@ -11,6 +11,7 @@ const navItems = [
   { label: 'Empresas', icon: Building2, path: '/superadmin/empresas' },
   { label: 'Usuários do Sistema', icon: Users, path: '/superadmin/usuarios' },
   { label: 'Planos e Preços', icon: CreditCard, path: '/superadmin/planos' },
+  { label: 'Números WhatsApp', icon: MessageCircle, path: '/superadmin/whatsapp' },
   { label: 'Configurações Globais', icon: Settings, path: '/superadmin/configuracoes' },
   { label: 'Log de Auditoria', icon: FileText, path: '/superadmin/auditoria' },
   { label: 'Auditoria de Login', icon: ShieldAlert, path: '/superadmin/auditoria-login' },

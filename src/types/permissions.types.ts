@@ -122,6 +122,12 @@ export const APOIO_PERMISSIONS: { code: string; label: string; description: stri
   { code: 'apoio.bancada.trocar_pontual', label: 'Trocar a bancada de um exame no pedido', description: 'Mudar a bancada só para um pedido específico' },
 ]
 
+/** Permissões do WhatsApp (gravadas em permissions.whatsapp; checadas no banco por whatsapp_tem_permissao; administrador tem todas) */
+export const WHATSAPP_PERMISSIONS: { code: string; label: string; description: string }[] = [
+  { code: 'configuracoes.whatsapp', label: 'Configurar WhatsApp', description: 'Gerenciar números, modelos de mensagem e envio de teste' },
+  { code: 'whatsapp.fila', label: 'Ver fila do WhatsApp', description: 'Visualizar a fila e o histórico de envios' },
+]
+
 /** Permissões do módulo Triagem Lab (gravadas em permissions.triagem como códigos; checadas no banco por triagem_tem_permissao) */
 export const TRIAGEM_PERMISSIONS: { code: string; label: string; description: string }[] = [
   { code: 'triagem.config', label: 'Configurar unidades, rotas e critérios', description: 'Papéis das unidades, condições de transporte, rotas e motivos de coleta' },
