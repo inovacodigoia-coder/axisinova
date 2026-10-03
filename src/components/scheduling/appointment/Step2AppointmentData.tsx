@@ -41,18 +41,24 @@ export function Step2AppointmentData({ patient, formData, onChange, prefilledDoc
   const activeProcedures = useMemo(() => procedures.filter(p => p.isActive), [procedures])
 
   const selectedDoctor = doctors.find(d => d.id === formData.doctorId)
-  const typesFor = (doc?: typeof doctors[0]): AppointmentType[] => {
+  // Tipos permitidos: se houver data, vale apenas o dia da semana daquela data;
+  // sem data, vale a união de todos os dias ativos da agenda.
+  const typesFor = (doc?: typeof doctors[0], date?: string): AppointmentType[] => {
     if (!doc) return []
-    const wds: any[] = (doc.scheduleConfig?.workDays || []).filter((w: any) => w.isActive)
+    let wds: any[] = (doc.scheduleConfig?.workDays || []).filter((w: any) => w.isActive)
+    if (date) {
+      const dow = new Date(date + 'T12:00:00').getDay()
+      wds = wds.filter((w: any) => w.dayOfWeek === dow)
+    }
     const set = new Set<string>()
     wds.forEach(w => (w.attendanceTypes?.length ? w.attendanceTypes : ['consultation']).forEach((t: string) => set.add(t)))
     return (['consultation', 'exam', 'procedure'] as AppointmentType[]).filter(t => set.has(t))
   }
-  const allowedTypes = typesFor(selectedDoctor)
+  const allowedTypes = typesFor(selectedDoctor, formData.date || undefined)
   useEffect(() => {
     if (selectedDoctor && allowedTypes.length && !allowedTypes.includes(formData.type)) onChange({ type: allowedTypes[0], examId: '' })
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [formData.doctorId, allowedTypes.join()])
+  }, [formData.doctorId, formData.date, allowedTypes.join()])
   const slotsResult = useAvailableSlots(selectedDoctor, formData.date, appointments)
 
   const age = differenceInYears(new Date(), new Date(patient.birthDate))
