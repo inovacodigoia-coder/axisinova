@@ -45,10 +45,11 @@ export function Step2AppointmentData({ patient, formData, onChange, prefilledDoc
   // sem data, vale a união de todos os dias ativos da agenda.
   const typesFor = (doc?: typeof doctors[0], date?: string): AppointmentType[] => {
     if (!doc) return []
-    let wds: any[] = (doc.scheduleConfig?.workDays || []).filter((w: any) => w.isActive)
+    let wds: any[] = (doc.scheduleConfig?.workDays || []).filter((w: any) => w.isActive !== false)
     if (date) {
       const dow = new Date(date + 'T12:00:00').getDay()
-      wds = wds.filter((w: any) => w.dayOfWeek === dow)
+      // A agenda grava o dia da semana em `day` (0=domingo … 6=sábado)
+      wds = wds.filter((w: any) => Number(w.day ?? w.dayOfWeek) === dow)
     }
     const set = new Set<string>()
     wds.forEach(w => (w.attendanceTypes?.length ? w.attendanceTypes : ['consultation']).forEach((t: string) => set.add(t)))
