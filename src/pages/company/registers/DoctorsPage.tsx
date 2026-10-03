@@ -435,6 +435,10 @@ function DoctorFormModal({ doctor, specialties, convenios, agendaSlotsLeft, doct
           endTime: d.endTime,
           lunchStart: d.lunchStart,
           lunchEnd: d.lunchEnd,
+          attendanceTypes: d.attendanceTypes,
+          slotDuration: d.slotDuration,
+          intervalBetween: d.intervalBetween,
+          maxPatients: d.maxPatients,
         }))
       : doctor?.scheduleConfig?.workDays || []
 
@@ -578,10 +582,10 @@ function DoctorFormModal({ doctor, specialties, convenios, agendaSlotsLeft, doct
                 endTime: wd.endTime,
                 lunchStart: wd.lunchStart,
                 lunchEnd: wd.lunchEnd,
-                attendanceTypes: ['consultation'] as DayScheduleConfig['attendanceTypes'],
-                slotDuration: doctor.scheduleConfig!.consultationDuration,
-                intervalBetween: doctor.scheduleConfig!.intervalBetween,
-                maxPatients: 0,
+                attendanceTypes: (wd.attendanceTypes?.length ? wd.attendanceTypes : ['consultation']) as DayScheduleConfig['attendanceTypes'],
+                slotDuration: wd.slotDuration ?? doctor.scheduleConfig!.consultationDuration,
+                intervalBetween: wd.intervalBetween ?? doctor.scheduleConfig!.intervalBetween,
+                maxPatients: wd.maxPatients ?? 0,
                 roomId: undefined,
               })) : undefined) as DayScheduleConfig[] | undefined}
               defaultDuration={scheduleDuration}
@@ -594,6 +598,11 @@ function DoctorFormModal({ doctor, specialties, convenios, agendaSlotsLeft, doct
                 toast.success('Configuração de agenda salva')
               }}
               onBlockedDatesChange={setBlockedDates}
+              onChange={(days, dur, intv) => {
+                setScheduleDays(days)
+                setScheduleDuration(dur)
+                setScheduleInterval(intv)
+              }}
             />
           )}
         </div>
