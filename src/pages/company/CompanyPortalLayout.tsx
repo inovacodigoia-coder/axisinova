@@ -47,6 +47,7 @@ import PrinterSettingsPage from './settings/PrinterSettingsPage'
 import VoiceSettingsPage from './settings/VoiceSettingsPage'
 import CompanyDataSettingsPage from './settings/CompanyDataSettingsPage'
 import NotificationsSettingsPage from './settings/NotificationsSettingsPage'
+import WhatsappSettingsPage from './settings/WhatsappSettingsPage'
 import EstablishmentsSettingsPage from './settings/EstablishmentsSettingsPage'
 import OriginsPage from './settings/OriginsPage'
 import LabTriagemPage from './lab/LabTriagemPage'
@@ -291,6 +292,7 @@ function PortalContent() {
               <Route path="configuracoes/impressora" element={<PrinterSettingsPage />} />
               <Route path="configuracoes/voz" element={<VoiceSettingsPage />} />
               <Route path="configuracoes/notificacoes" element={<NotificationsSettingsPage />} />
+              <Route path="configuracoes/whatsapp" element={<WhatsappSettingsPage />} />
               <Route path="configuracoes/estabelecimentos" element={<EstablishmentsSettingsPage />} />
               <Route path="configuracoes/origens" element={<OriginsPage />} />
               <Route path="configuracoes/laboratorio" element={<LabSettingsPage />} />

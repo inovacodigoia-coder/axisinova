@@ -1,11 +1,14 @@
+import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Building2, Palette, DoorOpen, Bell, Printer, Volume2, MapPin, Settings2, Beaker, Shield } from 'lucide-react'
+import { supabase } from '@/integrations/supabase/client'
+import { Building2, Palette, DoorOpen, Bell, Printer, Volume2, MapPin, Settings2, Beaker, Shield, MessageCircle } from 'lucide-react'
 
 const CARDS = [
   { key: 'dados', label: 'Dados da Empresa', desc: 'Razão social, CNPJ, contato', icon: Building2, path: '/app/configuracoes/dados' },
   { key: 'visual', label: 'Visual', desc: 'Cores, logo e personalização', icon: Palette, path: '/app/configuracoes/visual' },
   { key: 'rooms', label: 'Salas e Setores', desc: 'Consultórios e salas de exame', icon: DoorOpen, path: '/app/configuracoes/salas' },
   { key: 'notifications', label: 'Notificações', desc: 'E-mail, WhatsApp e alertas', icon: Bell, path: '/app/configuracoes/notificacoes' },
+  { key: 'whatsapp', label: 'WhatsApp', desc: 'Números de envio e mensagens automáticas', icon: MessageCircle, path: '/app/configuracoes/whatsapp' },
   { key: 'printer', label: 'Configuração de Impressora', desc: 'Configure as impressoras para emissão do controle de atendimento', icon: Printer, path: '/app/configuracoes/impressora' },
   { key: 'voice', label: 'Voz e Chamada', desc: 'Síntese de voz para senhas', icon: Volume2, path: '/app/configuracoes/voz' },
   { key: 'establishments', label: 'Estab. e Origem', desc: 'Filiais e pontos de atendimento', icon: MapPin, path: '/app/configuracoes/estabelecimentos' },
@@ -16,6 +19,11 @@ const CARDS = [
 
 export default function CompanySettingsPage() {
   const navigate = useNavigate()
+  const [podeWhatsapp, setPodeWhatsapp] = useState(false)
+  useEffect(() => {
+    supabase.rpc('whatsapp_tem_permissao' as any, { _perm: 'configuracoes.whatsapp' }).then(({ data }) => setPodeWhatsapp(!!data))
+  }, [])
+  const cards = CARDS.filter(c => c.key !== 'whatsapp' || podeWhatsapp)
 
   return (
     <div className="space-y-6">
@@ -25,7 +33,7 @@ export default function CompanySettingsPage() {
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-        {CARDS.map(card => (
+        {cards.map(card => (
           <button key={card.key} onClick={() => navigate(card.path)}
             className="rounded-2xl border border-border bg-card p-6 text-left hover:border-primary/30 hover:shadow-lg transition-all group">
             <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-primary/10 mb-4 group-hover:bg-primary/20 transition-colors">
