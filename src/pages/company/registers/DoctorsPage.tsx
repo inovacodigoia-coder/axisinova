@@ -409,7 +409,7 @@ function DoctorFormModal({ doctor, specialties, convenios, agendaSlotsLeft, doct
   const [activeTab, setActiveTab] = useState('dados')
   const wasEnabled = !!doctor && doctor.agendaEnabled !== false && doctor.isActive
   const canEnableAgenda = wasEnabled || agendaSlotsLeft > 0
-  const [agendaEnabled, setAgendaEnabled] = useState<boolean>(doctor ? doctor.agendaEnabled !== false : agendaSlotsLeft > 0)
+  const [agendaEnabled, setAgendaEnabled] = useState<boolean>(doctor ? doctor.agendaEnabled !== false : false)
   const [allConvenios, setAllConvenios] = useState(false)
 
   const toggleConv = (id: string) => {

@@ -1,0 +1,1 @@
+ALTER TABLE public.doctors ALTER COLUMN agenda_enabled SET DEFAULT false;
