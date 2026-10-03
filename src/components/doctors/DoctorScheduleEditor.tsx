@@ -1,4 +1,4 @@
-import { useState, useMemo, useCallback } from 'react'
+import { useState, useMemo, useCallback, useEffect, useRef } from 'react'
 import { DayScheduleBlock } from './DayScheduleBlock'
 import { ScheduleSlotPreview } from './ScheduleSlotPreview'
 import type { DayScheduleConfig } from '@/types/schedule-config.types'
@@ -20,6 +20,7 @@ interface Props {
   blockedDates?: string[]
   onSave: (days: DayScheduleConfig[], defaultDuration: number, defaultInterval: number) => void
   onBlockedDatesChange?: (dates: string[]) => void
+  onChange?: (days: DayScheduleConfig[], defaultDuration: number, defaultInterval: number) => void
 }
 
 function createDefaultDays(duration: number, interval: number): DayScheduleConfig[] {
@@ -47,7 +48,7 @@ function ensureAllDays(initial: DayScheduleConfig[], duration: number, interval:
   })
 }
 
-export function DoctorScheduleEditor({ initialDays, defaultDuration = 30, defaultInterval = 10, rooms = [], blockedDates = [], onSave, onBlockedDatesChange }: Props) {
+export function DoctorScheduleEditor({ initialDays, defaultDuration = 30, defaultInterval = 10, rooms = [], blockedDates = [], onSave, onBlockedDatesChange, onChange }: Props) {
   const [globalDuration, setGlobalDuration] = useState(defaultDuration)
   const [globalInterval, setGlobalInterval] = useState(defaultInterval)
   const [days, setDays] = useState<DayScheduleConfig[]>(() =>
@@ -58,6 +59,10 @@ export function DoctorScheduleEditor({ initialDays, defaultDuration = 30, defaul
   const [selectedDay, setSelectedDay] = useState(1)
   const [newBlockedDate, setNewBlockedDate] = useState('')
   const [showBlockedDates, setShowBlockedDates] = useState(blockedDates.length > 0)
+
+  const onChangeRef = useRef(onChange)
+  onChangeRef.current = onChange
+  useEffect(() => { onChangeRef.current?.(days, globalDuration, globalInterval) }, [days, globalDuration, globalInterval])
 
   const updateDay = useCallback((dayOfWeek: number, updates: Partial<DayScheduleConfig>) => {
     setDays(prev => prev.map(d => d.dayOfWeek === dayOfWeek ? { ...d, ...updates } : d))

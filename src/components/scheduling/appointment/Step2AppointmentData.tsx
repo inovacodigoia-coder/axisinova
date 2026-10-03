@@ -41,6 +41,18 @@ export function Step2AppointmentData({ patient, formData, onChange, prefilledDoc
   const activeProcedures = useMemo(() => procedures.filter(p => p.isActive), [procedures])
 
   const selectedDoctor = doctors.find(d => d.id === formData.doctorId)
+  const typesFor = (doc?: typeof doctors[0]): AppointmentType[] => {
+    if (!doc) return []
+    const wds: any[] = (doc.scheduleConfig?.workDays || []).filter((w: any) => w.isActive)
+    const set = new Set<string>()
+    wds.forEach(w => (w.attendanceTypes?.length ? w.attendanceTypes : ['consultation']).forEach((t: string) => set.add(t)))
+    return (['consultation', 'exam', 'procedure'] as AppointmentType[]).filter(t => set.has(t))
+  }
+  const allowedTypes = typesFor(selectedDoctor)
+  useEffect(() => {
+    if (selectedDoctor && allowedTypes.length && !allowedTypes.includes(formData.type)) onChange({ type: allowedTypes[0], examId: '' })
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [formData.doctorId, allowedTypes.join()])
   const slotsResult = useAvailableSlots(selectedDoctor, formData.date, appointments)
 
   const age = differenceInYears(new Date(), new Date(patient.birthDate))
@@ -95,15 +107,33 @@ export function Step2AppointmentData({ patient, formData, onChange, prefilledDoc
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div className="lg:col-span-2 space-y-4">
+          {/* Doctor */}
+          <div>
+            <label className="text-sm font-medium text-foreground">Médico/Profissional *</label>
+            <select value={formData.doctorId} onChange={e => { const id = e.target.value; const allowed = typesFor(doctors.find(d => d.id === id)); onChange({ doctorId: id, convenioId: '', time: '', ...(allowed.includes(formData.type) ? {} : { type: allowed[0] || 'consultation', examId: '' }) }) }}
+              disabled={!!prefilledDoctor}
+              className="mt-1 w-full rounded-lg border border-input bg-background px-3 py-2.5 text-sm disabled:opacity-60">
+              <option value="">Selecione...</option>
+              {activeDoctors.map(d => (
+                <option key={d.id} value={d.id}>{d.fullName} · {getSpecialtyName(d)}</option>
+              ))}
+            </select>
+          </div>
+
           {/* Type */}
           <div>
             <label className="text-sm font-medium text-foreground mb-2 block">Tipo de Atendimento *</label>
+            {!formData.doctorId ? (
+              <p className="text-xs text-muted-foreground">Selecione o médico para ver os tipos liberados.</p>
+            ) : allowedTypes.length === 0 ? (
+              <p className="text-xs text-destructive">Este médico não tem tipo de atendimento configurado na agenda.</p>
+            ) : (
             <div className="flex gap-2">
               {([
                 { value: 'consultation' as AppointmentType, label: '📋 Consulta', count: null },
                 { value: 'exam' as AppointmentType, label: '🔬 Exame', count: activeExams.length },
                 { value: 'procedure' as AppointmentType, label: '⚕️ Procedimento', count: activeProcedures.length },
-              ]).map(t => (
+              ] ).filter(t => allowedTypes.includes(t.value)).map(t => (
                 <button key={t.value} type="button"
                   onClick={() => onChange({ type: t.value, examId: '' })}
                   disabled={t.count !== null && t.count === 0}
@@ -117,22 +147,11 @@ export function Step2AppointmentData({ patient, formData, onChange, prefilledDoc
                 </button>
               ))}
             </div>
-          </div>
-
-          {/* Doctor */}
-          <div>
-            <label className="text-sm font-medium text-foreground">Médico/Profissional *</label>
-            <select value={formData.doctorId} onChange={e => onChange({ doctorId: e.target.value, convenioId: '', time: '' })}
-              disabled={!!prefilledDoctor}
-              className="mt-1 w-full rounded-lg border border-input bg-background px-3 py-2.5 text-sm disabled:opacity-60">
-              <option value="">Selecione...</option>
-              {activeDoctors.map(d => (
-                <option key={d.id} value={d.id}>{d.fullName} · {getSpecialtyName(d)}</option>
-              ))}
-            </select>
+            )}
           </div>
 
           {/* Convenio */}
+          <fieldset disabled={!formData.doctorId} className={!formData.doctorId ? 'opacity-50 space-y-4' : 'space-y-4'}>
           <ConvenioSelector doctorId={formData.doctorId} value={formData.convenioId} onChange={v => onChange({ convenioId: v })} />
 
           {/* Date & Time */}
@@ -200,6 +219,7 @@ export function Step2AppointmentData({ patient, formData, onChange, prefilledDoc
             </div>
           )}
 
+          </fieldset>
           {/* Observations */}
           <div>
             <label className="text-sm font-medium text-foreground">Observações</label>
