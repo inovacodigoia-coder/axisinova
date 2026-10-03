@@ -2898,6 +2898,10 @@ export type Database = {
           usuarios_limite: number | null
           valor_mensal: number | null
           website: string | null
+          whatsapp_habilitado: boolean
+          whatsapp_habilitado_em: string | null
+          whatsapp_habilitado_por: string | null
+          whatsapp_numeros_autorizados: number
         }
         Insert: {
           apoio_enabled?: boolean
@@ -2936,6 +2940,10 @@ export type Database = {
           usuarios_limite?: number | null
           valor_mensal?: number | null
           website?: string | null
+          whatsapp_habilitado?: boolean
+          whatsapp_habilitado_em?: string | null
+          whatsapp_habilitado_por?: string | null
+          whatsapp_numeros_autorizados?: number
         }
         Update: {
           apoio_enabled?: boolean
@@ -2974,6 +2982,10 @@ export type Database = {
           usuarios_limite?: number | null
           valor_mensal?: number | null
           website?: string | null
+          whatsapp_habilitado?: boolean
+          whatsapp_habilitado_em?: string | null
+          whatsapp_habilitado_por?: string | null
+          whatsapp_numeros_autorizados?: number
         }
         Relationships: []
       }
@@ -7616,6 +7628,318 @@ export type Database = {
         }
         Relationships: []
       }
+      whatsapp_auditoria: {
+        Row: {
+          acao: string
+          antes: Json | null
+          company_id: string | null
+          criado_em: string
+          depois: Json | null
+          id: string
+          usuario_id: string | null
+        }
+        Insert: {
+          acao: string
+          antes?: Json | null
+          company_id?: string | null
+          criado_em?: string
+          depois?: Json | null
+          id?: string
+          usuario_id?: string | null
+        }
+        Update: {
+          acao?: string
+          antes?: Json | null
+          company_id?: string | null
+          criado_em?: string
+          depois?: Json | null
+          id?: string
+          usuario_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "whatsapp_auditoria_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      whatsapp_config_empresa: {
+        Row: {
+          company_id: string
+          proximo_modelo: number
+        }
+        Insert: {
+          company_id: string
+          proximo_modelo?: number
+        }
+        Update: {
+          company_id?: string
+          proximo_modelo?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "whatsapp_config_empresa_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: true
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      whatsapp_fila_envios: {
+        Row: {
+          agendada_para: string
+          agendamento_id: string | null
+          atualizado_em: string
+          company_id: string
+          criado_em: string
+          criado_por: string | null
+          enviada_em: string | null
+          erro: string | null
+          id: string
+          instancia_id: string | null
+          message_id_uazapi: string | null
+          modelo_posicao: number | null
+          paciente_nome: string | null
+          status: string
+          telefone_destino: string
+          texto_final: string
+          tipo: string
+        }
+        Insert: {
+          agendada_para?: string
+          agendamento_id?: string | null
+          atualizado_em?: string
+          company_id: string
+          criado_em?: string
+          criado_por?: string | null
+          enviada_em?: string | null
+          erro?: string | null
+          id?: string
+          instancia_id?: string | null
+          message_id_uazapi?: string | null
+          modelo_posicao?: number | null
+          paciente_nome?: string | null
+          status?: string
+          telefone_destino: string
+          texto_final: string
+          tipo: string
+        }
+        Update: {
+          agendada_para?: string
+          agendamento_id?: string | null
+          atualizado_em?: string
+          company_id?: string
+          criado_em?: string
+          criado_por?: string | null
+          enviada_em?: string | null
+          erro?: string | null
+          id?: string
+          instancia_id?: string | null
+          message_id_uazapi?: string | null
+          modelo_posicao?: number | null
+          paciente_nome?: string | null
+          status?: string
+          telefone_destino?: string
+          texto_final?: string
+          tipo?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "whatsapp_fila_envios_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "whatsapp_fila_envios_instancia_id_fkey"
+            columns: ["instancia_id"]
+            isOneToOne: false
+            referencedRelation: "whatsapp_instancias"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      whatsapp_instancia_segredos: {
+        Row: {
+          atualizado_em: string
+          instancia_id: string
+          token_instancia_cifrado: string
+        }
+        Insert: {
+          atualizado_em?: string
+          instancia_id: string
+          token_instancia_cifrado: string
+        }
+        Update: {
+          atualizado_em?: string
+          instancia_id?: string
+          token_instancia_cifrado?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "whatsapp_instancia_segredos_instancia_id_fkey"
+            columns: ["instancia_id"]
+            isOneToOne: true
+            referencedRelation: "whatsapp_instancias"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      whatsapp_instancias: {
+        Row: {
+          apelido: string | null
+          ativo_no_rodizio: boolean
+          atualizado_em: string
+          company_id: string
+          conectado_em: string | null
+          criado_em: string
+          foto_perfil_url: string | null
+          id: string
+          limite_diario: number | null
+          nome_instancia: string
+          nome_perfil: string | null
+          numero_conectado: string | null
+          proximo_envio_apos: string | null
+          status: string
+          status_atualizado_em: string | null
+          ultimo_envio_em: string | null
+          ultimo_motivo_desconexao: string | null
+        }
+        Insert: {
+          apelido?: string | null
+          ativo_no_rodizio?: boolean
+          atualizado_em?: string
+          company_id: string
+          conectado_em?: string | null
+          criado_em?: string
+          foto_perfil_url?: string | null
+          id?: string
+          limite_diario?: number | null
+          nome_instancia: string
+          nome_perfil?: string | null
+          numero_conectado?: string | null
+          proximo_envio_apos?: string | null
+          status?: string
+          status_atualizado_em?: string | null
+          ultimo_envio_em?: string | null
+          ultimo_motivo_desconexao?: string | null
+        }
+        Update: {
+          apelido?: string | null
+          ativo_no_rodizio?: boolean
+          atualizado_em?: string
+          company_id?: string
+          conectado_em?: string | null
+          criado_em?: string
+          foto_perfil_url?: string | null
+          id?: string
+          limite_diario?: number | null
+          nome_instancia?: string
+          nome_perfil?: string | null
+          numero_conectado?: string | null
+          proximo_envio_apos?: string | null
+          status?: string
+          status_atualizado_em?: string | null
+          ultimo_envio_em?: string | null
+          ultimo_motivo_desconexao?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "whatsapp_instancias_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      whatsapp_modelos_mensagem: {
+        Row: {
+          ativo: boolean
+          company_id: string
+          id: string
+          posicao: number
+          texto: string
+          tipo: string
+        }
+        Insert: {
+          ativo?: boolean
+          company_id: string
+          id?: string
+          posicao: number
+          texto: string
+          tipo?: string
+        }
+        Update: {
+          ativo?: boolean
+          company_id?: string
+          id?: string
+          posicao?: number
+          texto?: string
+          tipo?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "whatsapp_modelos_mensagem_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      whatsapp_solicitacoes_numero: {
+        Row: {
+          company_id: string
+          criado_em: string
+          decidido_em: string | null
+          decidido_por: string | null
+          id: string
+          motivo_recusa: string | null
+          observacao_empresa: string | null
+          solicitado_por: string | null
+          status: string
+          valor: number
+        }
+        Insert: {
+          company_id: string
+          criado_em?: string
+          decidido_em?: string | null
+          decidido_por?: string | null
+          id?: string
+          motivo_recusa?: string | null
+          observacao_empresa?: string | null
+          solicitado_por?: string | null
+          status?: string
+          valor?: number
+        }
+        Update: {
+          company_id?: string
+          criado_em?: string
+          decidido_em?: string | null
+          decidido_por?: string | null
+          id?: string
+          motivo_recusa?: string | null
+          observacao_empresa?: string | null
+          solicitado_por?: string | null
+          status?: string
+          valor?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "whatsapp_solicitacoes_numero_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       apoio_pedido_exame_v: {
@@ -7706,6 +8030,78 @@ export type Database = {
             columns: ["patient_id"]
             isOneToOne: false
             referencedRelation: "patients"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      whatsapp_fila_envios_v: {
+        Row: {
+          agendada_para: string | null
+          agendamento_id: string | null
+          atualizado_em: string | null
+          company_id: string | null
+          criado_em: string | null
+          criado_por: string | null
+          enviada_em: string | null
+          erro: string | null
+          id: string | null
+          instancia_id: string | null
+          modelo_posicao: number | null
+          paciente_nome: string | null
+          status: string | null
+          telefone_mascarado: string | null
+          texto_resumo: string | null
+          tipo: string | null
+        }
+        Insert: {
+          agendada_para?: string | null
+          agendamento_id?: string | null
+          atualizado_em?: string | null
+          company_id?: string | null
+          criado_em?: string | null
+          criado_por?: string | null
+          enviada_em?: string | null
+          erro?: string | null
+          id?: string | null
+          instancia_id?: string | null
+          modelo_posicao?: number | null
+          paciente_nome?: string | null
+          status?: string | null
+          telefone_mascarado?: never
+          texto_resumo?: never
+          tipo?: string | null
+        }
+        Update: {
+          agendada_para?: string | null
+          agendamento_id?: string | null
+          atualizado_em?: string | null
+          company_id?: string | null
+          criado_em?: string | null
+          criado_por?: string | null
+          enviada_em?: string | null
+          erro?: string | null
+          id?: string | null
+          instancia_id?: string | null
+          modelo_posicao?: number | null
+          paciente_nome?: string | null
+          status?: string | null
+          telefone_mascarado?: never
+          texto_resumo?: never
+          tipo?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "whatsapp_fila_envios_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "whatsapp_fila_envios_instancia_id_fkey"
+            columns: ["instancia_id"]
+            isOneToOne: false
+            referencedRelation: "whatsapp_instancias"
             referencedColumns: ["id"]
           },
         ]
@@ -8855,6 +9251,21 @@ export type Database = {
       triagem__semear: { Args: { _company: string }; Returns: undefined }
       triagem_semear_padroes: { Args: never; Returns: undefined }
       triagem_tem_permissao: { Args: { _perm: string }; Returns: boolean }
+      whatsapp_criar_modelos_padrao: {
+        Args: { _company: string }
+        Returns: undefined
+      }
+      whatsapp_decidir_solicitacao: {
+        Args: { _aprovar: boolean; _id: string; _motivo?: string }
+        Returns: undefined
+      }
+      whatsapp_definir_valor: { Args: { _valor: number }; Returns: undefined }
+      whatsapp_liberar: {
+        Args: { _company: string; _habilitado: boolean; _numeros: number }
+        Returns: undefined
+      }
+      whatsapp_tem_permissao: { Args: { _perm: string }; Returns: boolean }
+      whatsapp_valor_numero: { Args: never; Returns: number }
     }
     Enums: {
       apoio_status:

@@ -4,3 +4,4 @@
 - Nutrição: pacientes vêm dos leitos ocupados (inpatient_beds.current_request_id → admission_requests); dieta em nutricao_paciente, conferido/servido só via RPC nutricao_marcar (permissões em permissions.nutrition, checadas por nutricao_tem_permissao). Why: lista sempre igual à Internação, sem cadastro duplicado.
 - Internação/Regulação: ações aprovar/recusar/confirmar chegada/alta checadas no banco por `internacao_tem_permissao('approve')`, fechado por padrão (admin total). Why: igual à Nutrição, sem acesso por fora da tela.
 - Fila do Médico: vem de `triage_entries` status in_doctor (setor em destination_sector_id), ordem cor → espera. Why: fila real da Triagem, não demonstração.
+- WhatsApp: liberação/cota/solicitações só via RPCs whatsapp_* (Super Admin checado no banco); tokens e fila base sem acesso do navegador, que lê só whatsapp_fila_envios_v mascarada. Why: LGPD e nenhuma credencial uazapi exposta.

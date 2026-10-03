@@ -11,6 +11,7 @@ import { supabase } from '@/integrations/supabase/client'
 import { usePartnerApiEntitlement, setPartnerApiEntitlement } from '@/stores/partnerApiEntitlementStore'
 import { CompanyEquipmentsTab } from '@/components/superadmin/CompanyEquipmentsTab'
 import { CompanyPartnersPanel } from '@/components/superadmin/CompanyPartnersPanel'
+import { CompanyWhatsappPanel } from '@/components/superadmin/CompanyWhatsappPanel'
 import type { Company, PlanType, CompanyStatus } from '@/types/company.types'
 
 const ADDON_PRICE_DOCTOR = 79
@@ -405,6 +406,8 @@ export default function CompanyDetailPage() {
               )}
 
               <ApoioEntitlementToggle companyId={companyId || ''} />
+
+              {companyId && <CompanyWhatsappPanel companyId={companyId} />}
 
             </div>
           </div>

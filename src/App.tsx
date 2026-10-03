@@ -30,6 +30,7 @@ const CompaniesManagementPage = lazy(() => import("./pages/superadmin/companies/
 const CompanyDetailPage = lazy(() => import("./pages/superadmin/CompanyDetailPage"));
 const SuperAdminUsersPage = lazy(() => import("./pages/superadmin/SuperAdminUsersPage"));
 const PlansManagerPage = lazy(() => import("./pages/superadmin/PlansManagerPage"));
+const WhatsappRequestsPage = lazy(() => import("./pages/superadmin/WhatsappRequestsPage"));
 const AuditLogPage = lazy(() => import("./pages/superadmin/AuditLogPage"));
 const LoginAuditPage = lazy(() => import("./pages/superadmin/LoginAuditPage"));
 const SystemSettingsPage = lazy(() => import("./pages/superadmin/SystemSettingsPage"));
@@ -105,6 +106,7 @@ const App = () => (
                         <Route path="empresas/:companyId" element={<CompanyDetailPage />} />
                         <Route path="usuarios" element={<SuperAdminUsersPage />} />
                         <Route path="planos" element={<PlansManagerPage />} />
+                        <Route path="whatsapp" element={<WhatsappRequestsPage />} />
                         <Route path="auditoria" element={<AuditLogPage />} />
                         <Route path="auditoria-login" element={<LoginAuditPage />} />
                         <Route path="configuracoes" element={<SystemSettingsPage />} />
