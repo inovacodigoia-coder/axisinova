@@ -526,6 +526,13 @@
       "when": 1791152560344,
       "tag": "0074_appointments_scheduling_fields",
       "breakpoints": true
+    },
+    {
+      "idx": 75,
+      "version": "7",
+      "when": 1791154277147,
+      "tag": "0075_whatsapp_modelos_tipo_minusculo",
+      "breakpoints": true
     }
   ]
 }
