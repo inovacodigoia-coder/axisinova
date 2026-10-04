@@ -24,7 +24,7 @@ interface Solic { status: string; motivo_recusa: string | null; criado_em: strin
 const MSG: Record<string, string> = {
   WHATSAPP_NAO_LIBERADO: 'A conexão de WhatsApp precisa ser liberada pela equipe Axis Inova.',
   COTA_NUMEROS_ESGOTADA: 'Todos os números autorizados já estão em uso. Solicite um novo número.',
-  TOKEN_INSTANCIA_INVALIDO: 'A chave deste número não é mais aceita pelo servidor. Fale com a equipe Axis Inova.',
+  TOKEN_INSTANCIA_INVALIDO: 'A chave deste número não é mais aceita pelo servidor. Exclua este número e adicione outro.',
 }
 
 /** Chama a função do servidor. A tela nunca fala com a uazapi direto. */
