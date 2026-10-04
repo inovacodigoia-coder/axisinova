@@ -9,6 +9,8 @@ import { DependencyAlert } from '@/components/scheduling/empty-states/Dependency
 import { RestrictionAlertSystem } from '@/components/doctors/RestrictionAlertSystem'
 import type { SchedulingPatient, AppointmentType } from '@/types/scheduling.types'
 import { differenceInYears, format } from 'date-fns'
+import { CalendarDays } from 'lucide-react'
+import { DoctorAgendaFloating } from './DoctorAgendaFloating'
 
 interface FormData {
   type: AppointmentType
@@ -43,6 +45,7 @@ export function Step2AppointmentData({ patient, formData, onChange, prefilledDoc
   const activeProcedures = useMemo(() => procedures.filter(p => p.isActive), [procedures])
 
   const selectedDoctor = doctors.find(d => d.id === formData.doctorId)
+  const [showAgenda, setShowAgenda] = useState(false)
   // Tipos permitidos: se houver data, vale apenas o dia da semana daquela data;
   // sem data, vale a união de todos os dias ativos da agenda.
   const typesFor = (doc?: typeof doctors[0], date?: string): AppointmentType[] => {
@@ -118,7 +121,19 @@ export function Step2AppointmentData({ patient, formData, onChange, prefilledDoc
         <div className="lg:col-span-2 space-y-4">
           {/* Doctor */}
           <div>
-            <label className="text-sm font-medium text-foreground">Médico/Profissional *</label>
+            <div className="flex items-center gap-2">
+              <label className="text-sm font-medium text-foreground">Médico/Profissional *</label>
+              {selectedDoctor && (
+                <button type="button" onClick={() => setShowAgenda(v => !v)} title="Ver agenda do médico"
+                  className="rounded-md p-1 text-primary hover:bg-primary/10" aria-label="Ver agenda do médico">
+                  <CalendarDays className="h-4 w-4" />
+                </button>
+              )}
+            </div>
+            {showAgenda && selectedDoctor && (
+              <DoctorAgendaFloating key={selectedDoctor.id} doctor={selectedDoctor} appointments={appointments}
+                initialDate={formData.date || undefined} onClose={() => setShowAgenda(false)} />
+            )}
             <select value={formData.doctorId} onChange={e => { const id = e.target.value; const allowed = typesFor(doctors.find(d => d.id === id), formData.date || undefined); onChange({ doctorId: id, convenioId: '', time: '', ...(allowed.includes(formData.type) ? {} : { type: allowed[0] || 'consultation', examId: '' }) }) }}
               disabled={!!prefilledDoctor}
               className="mt-1 w-full rounded-lg border border-input bg-background px-3 py-2.5 text-sm disabled:opacity-60">
