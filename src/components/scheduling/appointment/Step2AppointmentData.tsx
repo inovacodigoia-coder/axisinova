@@ -299,6 +299,43 @@ export function Step2AppointmentData({ patient, formData, onChange, prefilledDoc
           onContinue={() => setShowRestrictions(false)}
         />
       )}
+
+      {/* Alerta de atenção do exame selecionado */}
+      {examAlert && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+          <div className="w-full max-w-md rounded-2xl bg-background p-6 shadow-xl space-y-4">
+            <div className="flex items-center gap-3">
+              <span className="flex h-10 w-10 items-center justify-center rounded-full bg-[hsl(var(--warning))]/15 text-xl">⚠️</span>
+              <div>
+                <h4 className="text-base font-bold text-foreground">Atenção</h4>
+                <p className="text-xs text-muted-foreground">{examAlert.name}</p>
+              </div>
+            </div>
+            {examAlert.instructions && (
+              <div className="rounded-xl border border-[hsl(var(--warning))]/30 bg-[hsl(var(--warning))]/5 p-3">
+                <p className="text-xs font-semibold text-foreground mb-1">Instrução de preparo</p>
+                <p className="text-sm text-foreground whitespace-pre-line">{examAlert.instructions}</p>
+              </div>
+            )}
+            {examAlert.requiresAuth && (
+              <div className="rounded-xl border border-destructive/30 bg-destructive/5 p-3">
+                <p className="text-xs font-semibold text-foreground mb-1">Autorização</p>
+                <p className="text-sm text-foreground">Este exame requer autorização prévia.</p>
+              </div>
+            )}
+            <div className="flex justify-end gap-2 pt-1">
+              <button type="button" onClick={() => { setExamAlert(null); onChange({ examId: '' }) }}
+                className="rounded-lg border border-input px-4 py-2 text-sm font-medium text-foreground hover:bg-muted">
+                Fechar
+              </button>
+              <button type="button" onClick={() => setExamAlert(null)}
+                className="rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90">
+                Continuar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
