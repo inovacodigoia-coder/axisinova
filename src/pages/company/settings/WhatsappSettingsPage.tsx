@@ -435,3 +435,126 @@ function QrDialog({ inst, onClose }: { inst: Inst; onClose: () => void }) {
     </Dialog>
   )
 }
+
+const TEXTO_PADRAO = 'Olá! Este é um teste de envio do sistema Axis Inova. Se você recebeu esta mensagem, a conexão do WhatsApp está funcionando.'
+const MSG_TESTE: Record<string, string> = {
+  INSTANCIA_DESCONECTADA: 'O número escolhido não está conectado. Conecte-o e tente de novo.',
+  NUMERO_INVALIDO: 'Número de destino inválido. Confira o DDD e o número.',
+  LIMITE_DE_TESTES: 'Limite de 5 testes por minuto atingido. Aguarde um pouco.',
+  RESULTADO_INCERTO: 'Não sabemos se a mensagem saiu. Confira o celular de destino antes de tentar de novo.',
+}
+
+function mascaraFone(v: string) {
+  let d = v.replace(/\D/g, '')
+  if (d.startsWith('55') && d.length > 11) d = d.slice(2)
+  d = d.slice(0, 11)
+  if (d.length <= 2) return d.length ? `(${d}` : ''
+  if (d.length <= 6) return `(${d.slice(0, 2)}) ${d.slice(2)}`
+  const corte = d.length === 11 ? 7 : 6
+  return `(${d.slice(0, 2)}) ${d.slice(2, corte)}-${d.slice(corte)}`
+}
+function normalizar(v: string) {
+  let d = v.replace(/\D/g, '')
+  if (!d.startsWith('55') || d.length <= 11) d = '55' + d
+  return /^55[1-9]{2}\d{8,9}$/.test(d) ? d : null
+}
+
+interface Hist { id: string; criado_em: string; telefone_mascarado: string; instancia_id: string | null; status: string; texto_resumo: string }
+
+function TesteEnvio({ insts, companyId, onEnviado }: { insts: Inst[]; companyId: string | null | undefined; onEnviado: () => void }) {
+  const conectados = insts.filter(i => i.status === 'connected')
+  const [via, setVia] = useState('rodizio')
+  const [fone, setFone] = useState('')
+  const [texto, setTexto] = useState(TEXTO_PADRAO)
+  const [confirmar, setConfirmar] = useState<string | null>(null)
+  const [enviando, setEnviando] = useState(false)
+  const [hist, setHist] = useState<Hist[]>([])
+  const desab = conectados.length === 0
+
+  const carregarHist = useCallback(async () => {
+    if (!companyId) return
+    const { data } = await supabase.from('whatsapp_fila_envios_v' as any)
+      .select('id, criado_em, telefone_mascarado, instancia_id, status, texto_resumo')
+      .eq('company_id', companyId).eq('tipo', 'teste').order('criado_em', { ascending: false }).limit(10)
+    setHist((data as any) ?? [])
+  }, [companyId])
+  useEffect(() => { void carregarHist() }, [carregarHist])
+
+  const pedir = () => {
+    if (!texto.trim() || texto.length > 500) { toast.error('A mensagem deve ter de 1 a 500 caracteres.'); return }
+    const n = normalizar(fone)
+    if (!n) { toast.error(MSG_TESTE.NUMERO_INVALIDO); return }
+    setConfirmar(n)
+  }
+  const enviar = async () => {
+    if (!confirmar || enviando) return
+    setEnviando(true)
+    const r = await chamar({ acao: 'enviar_teste', numero_destino: confirmar, texto, ...(via !== 'rodizio' ? { instancia_id: via } : {}) })
+    setEnviando(false); setConfirmar(null)
+    if (r.ok) toast.success(`Mensagem enviada pelo WhatsApp (número: ${r.dados?.instancia_apelido}). Confirme o recebimento no celular de destino.`, { duration: 8000 })
+    else if (r.codigo && MSG_TESTE[r.codigo]) toast.error(MSG_TESTE[r.codigo])
+    else avisarErro(r)
+    void carregarHist(); onEnviado()
+  }
+  const apelido = (id: string | null) => insts.find(i => i.id === id)?.apelido ?? '—'
+  const badge: Record<string, string> = { enviada: 'bg-success/15 text-success', falha: 'bg-destructive/15 text-destructive' }
+
+  return (
+    <div className="rounded-2xl border border-border bg-card p-4 sm:p-6 space-y-4">
+      <div>
+        <h3 className="text-base font-semibold text-foreground">Teste de envio</h3>
+        {desab && <p className="text-sm text-muted-foreground">Conecte um número para testar o envio.</p>}
+      </div>
+      <fieldset disabled={desab} className={`grid gap-3 ${desab ? 'opacity-60' : ''}`}>
+        <label className="grid gap-1 text-sm">Enviar por
+          <select value={via} onChange={e => setVia(e.target.value)} className="h-11 rounded-md border border-input bg-background px-3 text-sm">
+            <option value="rodizio">Rodízio automático</option>
+            {conectados.map(i => <option key={i.id} value={i.id}>{i.apelido} — {formatarNumero(i.numero_conectado)}</option>)}
+          </select>
+        </label>
+        <label className="grid gap-1 text-sm">Número de destino
+          <Input inputMode="tel" className="h-11" placeholder="(84) 99999-9999" value={fone} onChange={e => setFone(mascaraFone(e.target.value))} />
+        </label>
+        <label className="grid gap-1 text-sm">Mensagem
+          <Textarea rows={4} maxLength={500} value={texto} onChange={e => setTexto(e.target.value)} />
+          <span className="text-right text-xs text-muted-foreground">{texto.length}/500</span>
+        </label>
+        <Button onClick={pedir} disabled={enviando || !fone} className="h-11 gradient-bg text-primary-foreground">
+          {enviando ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <MessageCircle className="mr-2 h-4 w-4" />} Enviar mensagem de teste
+        </Button>
+      </fieldset>
+
+      <div className="space-y-2">
+        <h4 className="text-sm font-semibold text-foreground">Últimos testes</h4>
+        {hist.length === 0 ? <p className="text-sm text-muted-foreground">Nenhum teste enviado ainda.</p> : (
+          <ul className="divide-y divide-border rounded-xl border border-border">
+            {hist.map(h => (
+              <li key={h.id} className="flex flex-col gap-1 p-3 text-sm sm:flex-row sm:items-center sm:gap-3">
+                <span className="text-muted-foreground">{new Date(h.criado_em).toLocaleString('pt-BR')}</span>
+                <span className="font-mono">{h.telefone_mascarado}</span>
+                <span>por {apelido(h.instancia_id)}</span>
+                <span className={`w-fit rounded-full px-2 py-0.5 text-xs font-medium ${badge[h.status] ?? 'bg-muted text-muted-foreground'}`}>{h.status === 'enviada' ? 'Enviada' : h.status === 'falha' ? 'Falha' : h.status}</span>
+                <span className="truncate text-muted-foreground sm:flex-1">{h.texto_resumo}</span>
+              </li>
+            ))}
+          </ul>
+        )}
+      </div>
+
+      <AlertDialog open={!!confirmar} onOpenChange={(v) => { if (!v && !enviando) setConfirmar(null) }}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Enviar teste?</AlertDialogTitle>
+            <AlertDialogDescription>A mensagem será enviada de verdade para <strong>{confirmar && formatarNumero(confirmar)}</strong>.</AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={enviando}>Cancelar</AlertDialogCancel>
+            <AlertDialogAction disabled={enviando} onClick={(e) => { e.preventDefault(); void enviar() }}>
+              {enviando && <Loader2 className="mr-2 h-4 w-4 animate-spin" />} Enviar
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </div>
+  )
+}
