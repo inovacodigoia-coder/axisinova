@@ -292,8 +292,63 @@ Deno.serve(async (req) => {
       await audit(companyId, 'excluir_numero', { apelido: inst.apelido, nome_instancia: inst.nome_instancia }, null)
       return resp(200, { ok: true })
     }
-    case 'enviar_teste':
-      return erro(501, 'NAO_IMPLEMENTADO', 'Envio de teste chega na Etapa 4.')
+    case 'enviar_teste': {
+      const texto = String(body?.texto ?? '')
+      if (texto.trim().length < 1 || texto.length > 500) return erro(400, 'DADOS_INVALIDOS', 'A mensagem deve ter de 1 a 500 caracteres.')
+      let num = String(body?.numero_destino ?? '').replace(/\D/g, '')
+      if (!num.startsWith('55') || num.length <= 11) num = '55' + num
+      if (!/^55[1-9]{2}\d{8,9}$/.test(num)) return erro(400, 'NUMERO_INVALIDO', 'Número de destino inválido. Use DDD + número.')
+
+      // limite: 5 testes por minuto por empresa
+      const desde = new Date(Date.now() - 60_000).toISOString()
+      const { count: recentes } = await db.from('whatsapp_fila_envios').select('id', { count: 'exact', head: true })
+        .eq('company_id', companyId).eq('tipo', 'teste').gte('criado_em', desde)
+      if ((recentes ?? 0) >= 5) return erro(429, 'LIMITE_DE_TESTES', 'Limite de 5 testes por minuto atingido. Aguarde um pouco e tente de novo.')
+
+      let inst: any
+      if (body?.instancia_id) {
+        inst = await instDaEmpresa()
+        if (!inst) return erro(404, 'NAO_ENCONTRADA', 'Número não encontrado.')
+      } else {
+        const { data } = await db.from('whatsapp_instancias').select('*').eq('company_id', companyId)
+          .eq('status', 'connected').eq('ativo_no_rodizio', true)
+          .order('ultimo_envio_em', { ascending: true, nullsFirst: true }).limit(1)
+        inst = data?.[0]
+        if (!inst) return erro(409, 'INSTANCIA_DESCONECTADA', 'Nenhum número conectado no rodízio.')
+      }
+      const tk = await tokenDe(inst.id)
+      if (!tk) return erro(404, 'NAO_CONFIGURADA', 'Este número não está configurado no servidor.')
+      const st = await uaz('GET', '/instance/status', { token: tk })
+      if (st.status === 401) return erroUaz(401, null)
+      if (st.status < 200 || st.status >= 300) return erroUaz(st.status, st.retryAfter)
+      const m = mapStatus(st.json)
+      if (m.status !== 'connected') {
+        await db.from('whatsapp_instancias').update({ status: m.status, status_atualizado_em: new Date().toISOString() }).eq('id', inst.id)
+        return erro(409, 'INSTANCIA_DESCONECTADA', `O número "${inst.apelido}" não está conectado.`)
+      }
+
+      const r = await uaz('POST', '/send/text', { token: tk }, { number: num, text: texto })
+      const agora = new Date().toISOString()
+      const registrar = (status: string, msgId: string | null, err: string | null) =>
+        db.from('whatsapp_fila_envios').insert({
+          company_id: companyId, tipo: 'teste', telefone_destino: num, texto_final: texto, instancia_id: inst.id,
+          status, agendada_para: agora, enviada_em: status === 'enviada' ? agora : null,
+          message_id_uazapi: msgId, erro: err, criado_por: userId,
+        })
+      if (r.status === 0 || r.status === 504) {
+        await registrar('falha', null, 'resultado incerto (sem resposta)')
+        return resp(200, { ok: false, codigo: 'RESULTADO_INCERTO', mensagem: 'Não sabemos se a mensagem saiu. Confira o celular de destino antes de tentar de novo.', dados: { instancia_apelido: inst.apelido } })
+      }
+      if (r.status < 200 || r.status >= 300) {
+        await registrar('falha', null, `HTTP ${r.status}`)
+        return erroUaz(r.status, r.retryAfter)
+      }
+      const id = r.json?.messageid ?? r.json?.id ?? r.json?.key?.id ?? null
+      const msgId = id == null ? null : String(id)
+      await registrar('enviada', msgId, null)
+      await db.from('whatsapp_instancias').update({ ultimo_envio_em: agora }).eq('id', inst.id)
+      return resp(200, { ok: true, dados: { status: 'enviada', message_id: msgId, instancia_apelido: inst.apelido, numero: num } })
+    }
     default:
       return erro(400, 'ACAO_INVALIDA', 'Ação desconhecida.')
   }
