@@ -215,7 +215,19 @@ export function Step2AppointmentData({ patient, formData, onChange, prefilledDoc
                   variant="warning"
                 />
               ) : (
-                <select value={formData.examId} onChange={e => onChange({ examId: e.target.value })}
+                <select value={formData.examId} onChange={e => {
+                  const id = e.target.value
+                  onChange({ examId: id })
+                  const item: any = examItems.find(x => x.id === id)
+                  if (!item) return
+                  const instructions = String(
+                    item.preparationInstructions ?? item.preOperativeInstructions ?? ''
+                  ).trim()
+                  const requiresAuth = !!item.requiresAuthorization
+                  if (instructions || requiresAuth) {
+                    setExamAlert({ name: item.name, instructions: instructions || undefined, requiresAuth })
+                  }
+                }}
                   className="mt-1 w-full rounded-lg border border-input bg-background px-3 py-2.5 text-sm">
                   <option value="">Selecione...</option>
                   {examItems.map(ex => (
