@@ -8,9 +8,9 @@ export const VARIAVEIS_MODELO = [
 ] as const
 
 export const MODELOS_PADRAO: Record<number, string> = {
-  1: 'Olá, {paciente}! Tudo bem? Passando para confirmar sua {tipo} com {medico} em {data_hora}. Responda SIM para confirmar ou NÃO caso precise remarcar.',
-  2: 'Oi, {paciente}! Sua {tipo} com {medico} está agendada para {data_hora}. Pode confirmar sua presença respondendo SIM?',
-  3: '{paciente}, tudo certo para {data_hora}? Temos {tipo} marcada com {medico}. Responda SIM para confirmar ou NÃO para remarcarmos.',
+  1: 'Olá, {primeiro_nome}! Tudo bem? Passando para confirmar seu agendamento: {tipo} com {medico} em {data_hora}. Responda SIM para confirmar ou NÃO caso precise remarcar.',
+  2: 'Oi, {paciente}! Você tem um agendamento de {tipo} com {medico} em {data_hora}. Pode confirmar sua presença respondendo SIM?',
+  3: '{primeiro_nome}, tudo certo para {data_hora}? Está agendado: {tipo} com {medico}. Responda SIM para confirmar ou NÃO para remarcarmos.',
 }
 
 const DIAS = ['domingo', 'segunda', 'terça', 'quarta', 'quinta', 'sexta', 'sábado']
@@ -36,7 +36,7 @@ export interface DadosModelo {
 
 export function renderModelo(texto: string, d: DadosModelo): string {
   const pac = (d.paciente ?? '').trim()
-  let tipo = (d.tipo ?? '').trim()
+  let tipo = (d.tipo ?? '').trim().toLowerCase()
   if (tipo && d.primeiraVez) tipo += ' (1ª vez)'
   const dh = d.dataHora ? formatarDataHora(new Date(d.dataHora)) : ''
   let r = texto ?? ''

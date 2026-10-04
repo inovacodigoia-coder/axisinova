@@ -6,12 +6,12 @@ export const CASOS = [
   {
     texto: MODELOS_PADRAO[1],
     dados: { paciente: 'Danielle Beatriz', tipo: 'Consulta', primeiraVez: true, medico: 'Dra. Juliana Prado', dataHora: '2026-10-06T13:40:00Z' },
-    esperado: 'Olá, Danielle Beatriz! Tudo bem? Passando para confirmar sua Consulta (1ª vez) com Dra. Juliana Prado em terça, 06/10/2026 às 10:40. Responda SIM para confirmar ou NÃO caso precise remarcar.',
+    esperado: 'Olá, Danielle! Tudo bem? Passando para confirmar seu agendamento: consulta (1ª vez) com Dra. Juliana Prado em terça, 06/10/2026 às 10:40. Responda SIM para confirmar ou NÃO caso precise remarcar.',
   },
   {
     texto: 'Oi {primeiro_nome}, seu {tipo} é {data_hora}.',
     dados: { paciente: '  Carlos Alberto Souza ', tipo: 'Exame', primeiraVez: false, medico: null, dataHora: '2026-10-11T02:05:00Z' },
-    esperado: 'Oi Carlos, seu Exame é sábado, 10/10/2026 às 23:05.',
+    esperado: 'Oi Carlos, seu exame é sábado, 10/10/2026 às 23:05.',
   },
   {
     texto: '{paciente}, consulta com {medico} . Até {data_hora}!  {pacient}',
