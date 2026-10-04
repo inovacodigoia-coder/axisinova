@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { ArrowLeft, Lock, MessageCircle, Plus, RefreshCw, Link2, Unlink, Clock, Loader2 } from 'lucide-react'
+import { ArrowLeft, Lock, MessageCircle, Plus, RefreshCw, Link2, Unlink, Clock, Loader2, Trash2 } from 'lucide-react'
 import { toast } from 'sonner'
 import { supabase } from '@/integrations/supabase/client'
 import { useAuth } from '@/context/AuthContext'
@@ -172,6 +172,7 @@ function NumeroCard({ inst, onChange, onConectar }: { inst: Inst; onChange: () =
   const [limite, setLimite] = useState(inst.limite_diario?.toString() ?? '')
   const [travado, setTravado] = useState(false)
   const [confirmar, setConfirmar] = useState(false)
+  const [confirmarExcluir, setConfirmarExcluir] = useState(false)
   const [salvando, setSalvando] = useState(false)
   const st = STATUS[inst.status] ?? STATUS.nao_configurada
 
