@@ -37,7 +37,8 @@ export function Step2AppointmentData({ patient, formData, onChange, prefilledDoc
   const [showRestrictions, setShowRestrictions] = useState(false)
 
   const activeDoctors = useMemo(() => doctors.filter(d => d.isActive && !d.isBlocked && d.agendaEnabled !== false), [doctors])
-  const activeExams = useMemo(() => exams.filter(e => e.isActive), [exams])
+  // No agendamento só entram exames do tipo CLÍNICA; exames de LABORATÓRIO ficam de fora.
+  const activeExams = useMemo(() => exams.filter(e => e.isActive && e.type === 'clinical'), [exams])
   const activeProcedures = useMemo(() => procedures.filter(p => p.isActive), [procedures])
 
   const selectedDoctor = doctors.find(d => d.id === formData.doctorId)
