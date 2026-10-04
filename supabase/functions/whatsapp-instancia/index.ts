@@ -51,7 +51,8 @@ async function uaz(method: string, path: string, headers: Record<string, string>
 function erroUaz(status: number, retryAfter: string | null) {
   if (status === 429 || status === 503)
     return erro(503, 'SERVIDOR_OCUPADO', `Servidor do WhatsApp ocupado. Tente de novo${retryAfter ? ` em ${retryAfter} s` : ' em instantes'}.`)
-  if (status === 401) return erro(401, 'TOKEN_INSTANCIA_INVALIDO', 'A chave deste número não vale mais. Remova e crie o número de novo.')
+  // 401 da uazapi é sobre a chave do número, não sobre o login: responde 200 com ok:false para a tela tratar.
+  if (status === 401) return erro(200, 'TOKEN_INSTANCIA_INVALIDO', 'A chave deste número não vale mais. Remova e crie o número de novo.')
   if (status === 403) return erro(403, 'UAZAPI_RECUSOU', 'O servidor do WhatsApp recusou a operação.')
   if (status === 404) return erro(404, 'NAO_CONFIGURADA', 'Este número não existe mais no servidor do WhatsApp.')
   if (status === 409) return erro(409, 'EM_ANDAMENTO', 'Já existe uma conexão em andamento para este número.')
