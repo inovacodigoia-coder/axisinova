@@ -519,6 +519,13 @@
       "when": 1791090396513,
       "tag": "0073_whatsapp_modelos_select_perm",
       "breakpoints": true
+    },
+    {
+      "idx": 74,
+      "version": "7",
+      "when": 1791152560344,
+      "tag": "0074_appointments_scheduling_fields",
+      "breakpoints": true
     }
   ]
 }
