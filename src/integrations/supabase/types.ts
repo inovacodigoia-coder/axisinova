@@ -2250,46 +2250,85 @@ export type Database = {
       }
       appointments: {
         Row: {
+          appointment_type: string
+          cancelled_reason: string | null
           company_id: string
+          convenio_id: string | null
+          convenio_name: string | null
           created_at: string
+          created_by: string | null
           date: string
           doctor: string
+          doctor_id: string | null
           duration: number
+          exam_id: string | null
+          exam_name: string | null
           id: string
           notes: string | null
+          patient_id: string | null
           patient_name: string
+          patient_phone1: string | null
+          patient_phone2: string | null
+          sched_status: string
           status: Database["public"]["Enums"]["appointment_status"]
           time: string
           type: string
           updated_at: string
+          visit_type: string
         }
         Insert: {
+          appointment_type?: string
+          cancelled_reason?: string | null
           company_id: string
+          convenio_id?: string | null
+          convenio_name?: string | null
           created_at?: string
+          created_by?: string | null
           date: string
           doctor: string
+          doctor_id?: string | null
           duration?: number
+          exam_id?: string | null
+          exam_name?: string | null
           id?: string
           notes?: string | null
+          patient_id?: string | null
           patient_name: string
+          patient_phone1?: string | null
+          patient_phone2?: string | null
+          sched_status?: string
           status?: Database["public"]["Enums"]["appointment_status"]
           time: string
           type?: string
           updated_at?: string
+          visit_type?: string
         }
         Update: {
+          appointment_type?: string
+          cancelled_reason?: string | null
           company_id?: string
+          convenio_id?: string | null
+          convenio_name?: string | null
           created_at?: string
+          created_by?: string | null
           date?: string
           doctor?: string
+          doctor_id?: string | null
           duration?: number
+          exam_id?: string | null
+          exam_name?: string | null
           id?: string
           notes?: string | null
+          patient_id?: string | null
           patient_name?: string
+          patient_phone1?: string | null
+          patient_phone2?: string | null
+          sched_status?: string
           status?: Database["public"]["Enums"]["appointment_status"]
           time?: string
           type?: string
           updated_at?: string
+          visit_type?: string
         }
         Relationships: [
           {
