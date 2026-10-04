@@ -35,6 +35,7 @@ export function Step2AppointmentData({ patient, formData, onChange, prefilledDoc
   const { checkRestrictions } = useRestrictionAlerts()
   const today = new Date().toISOString().split('T')[0]
   const [showRestrictions, setShowRestrictions] = useState(false)
+  const [examAlert, setExamAlert] = useState<{ name: string; instructions?: string; requiresAuth: boolean } | null>(null)
 
   const activeDoctors = useMemo(() => doctors.filter(d => d.isActive && !d.isBlocked && d.agendaEnabled !== false), [doctors])
   // No agendamento só entram exames do tipo CLÍNICA; exames de LABORATÓRIO ficam de fora.
