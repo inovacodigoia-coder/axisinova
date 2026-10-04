@@ -129,40 +129,6 @@ export function Step2AppointmentData({ patient, formData, onChange, prefilledDoc
             </select>
           </div>
 
-          {/* Type */}
-          <div>
-            <label className="text-sm font-medium text-foreground mb-2 block">Tipo de Atendimento *</label>
-            {!formData.doctorId ? (
-              <p className="text-xs text-muted-foreground">Selecione o médico para ver os tipos liberados.</p>
-            ) : allowedTypes.length === 0 ? (
-              <p className="text-xs text-destructive">{formData.date ? 'Este médico não atende nesta data. Selecione outro dia.' : 'Este médico não tem tipo de atendimento configurado na agenda.'}</p>
-            ) : (
-            <div className="flex gap-2">
-              {([
-                { value: 'consultation' as AppointmentType, label: '📋 Consulta', count: null },
-                { value: 'exam' as AppointmentType, label: '🔬 Exame', count: activeExams.length },
-                { value: 'procedure' as AppointmentType, label: '⚕️ Procedimento', count: activeProcedures.length },
-              ] ).filter(t => allowedTypes.includes(t.value)).map(t => (
-                <button key={t.value} type="button"
-                  onClick={() => onChange({ type: t.value, examId: '' })}
-                  disabled={t.count !== null && t.count === 0}
-                  title={t.count === 0 ? `Nenhum ${t.value === 'exam' ? 'exame' : 'procedimento'} cadastrado. Vá em Cadastros.` : undefined}
-                  className={`flex-1 rounded-xl border-2 px-4 py-3 text-sm font-medium transition-all disabled:opacity-40 disabled:cursor-not-allowed ${formData.type === t.value
-                    ? 'border-primary bg-primary/5 text-primary shadow-sm'
-                    : 'border-input hover:border-primary/30'
-                    }`}>
-                  {t.label}
-                  {t.count !== null && <span className="ml-1 text-[10px]">({t.count})</span>}
-                </button>
-              ))}
-            </div>
-            )}
-          </div>
-
-          {/* Convenio */}
-          <fieldset disabled={!formData.doctorId} className={!formData.doctorId ? 'opacity-50 space-y-4' : 'space-y-4'}>
-          <ConvenioSelector doctorId={formData.doctorId} value={formData.convenioId} onChange={v => onChange({ convenioId: v })} />
-
           {/* Date & Time */}
           <div className="grid grid-cols-2 gap-3">
             <div>
@@ -201,6 +167,41 @@ export function Step2AppointmentData({ patient, formData, onChange, prefilledDoc
               </select>
             </div>
           </div>
+
+          {/* Type */}
+          <div>
+            <label className="text-sm font-medium text-foreground mb-2 block">Tipo de Atendimento *</label>
+            {!formData.doctorId ? (
+              <p className="text-xs text-muted-foreground">Selecione o médico para ver os tipos liberados.</p>
+            ) : allowedTypes.length === 0 ? (
+              <p className="text-xs text-destructive">{formData.date ? 'Este médico não atende nesta data. Selecione outro dia.' : 'Este médico não tem tipo de atendimento configurado na agenda.'}</p>
+            ) : (
+            <div className="flex gap-2">
+              {([
+                { value: 'consultation' as AppointmentType, label: '📋 Consulta', count: null },
+                { value: 'exam' as AppointmentType, label: '🔬 Exame', count: activeExams.length },
+                { value: 'procedure' as AppointmentType, label: '⚕️ Procedimento', count: activeProcedures.length },
+              ] ).filter(t => allowedTypes.includes(t.value)).map(t => (
+                <button key={t.value} type="button"
+                  onClick={() => onChange({ type: t.value, examId: '' })}
+                  disabled={t.count !== null && t.count === 0}
+                  title={t.count === 0 ? `Nenhum ${t.value === 'exam' ? 'exame' : 'procedimento'} cadastrado. Vá em Cadastros.` : undefined}
+                  className={`flex-1 rounded-xl border-2 px-4 py-3 text-sm font-medium transition-all disabled:opacity-40 disabled:cursor-not-allowed ${formData.type === t.value
+                    ? 'border-primary bg-primary/5 text-primary shadow-sm'
+                    : 'border-input hover:border-primary/30'
+                    }`}>
+                  {t.label}
+                  {t.count !== null && <span className="ml-1 text-[10px]">({t.count})</span>}
+                </button>
+              ))}
+            </div>
+            )}
+          </div>
+
+          {/* Convenio */}
+          <fieldset disabled={!formData.doctorId} className={!formData.doctorId ? 'opacity-50 space-y-4' : 'space-y-4'}>
+          <ConvenioSelector doctorId={formData.doctorId} value={formData.convenioId} onChange={v => onChange({ convenioId: v })} />
+
 
           {/* Exam selector */}
           {formData.type !== 'consultation' && (
