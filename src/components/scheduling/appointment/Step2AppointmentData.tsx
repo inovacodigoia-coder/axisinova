@@ -35,6 +35,7 @@ export function Step2AppointmentData({ patient, formData, onChange, prefilledDoc
   const { checkRestrictions } = useRestrictionAlerts()
   const today = new Date().toISOString().split('T')[0]
   const [showRestrictions, setShowRestrictions] = useState(false)
+  const [examAlert, setExamAlert] = useState<{ name: string; instructions?: string; requiresAuth: boolean } | null>(null)
 
   const activeDoctors = useMemo(() => doctors.filter(d => d.isActive && !d.isBlocked && d.agendaEnabled !== false), [doctors])
   // No agendamento só entram exames do tipo CLÍNICA; exames de LABORATÓRIO ficam de fora.
@@ -214,7 +215,19 @@ export function Step2AppointmentData({ patient, formData, onChange, prefilledDoc
                   variant="warning"
                 />
               ) : (
-                <select value={formData.examId} onChange={e => onChange({ examId: e.target.value })}
+                <select value={formData.examId} onChange={e => {
+                  const id = e.target.value
+                  onChange({ examId: id })
+                  const item: any = examItems.find(x => x.id === id)
+                  if (!item) return
+                  const instructions = String(
+                    item.preparationInstructions ?? item.preOperativeInstructions ?? ''
+                  ).trim()
+                  const requiresAuth = !!item.requiresAuthorization
+                  if (instructions || requiresAuth) {
+                    setExamAlert({ name: item.name, instructions: instructions || undefined, requiresAuth })
+                  }
+                }}
                   className="mt-1 w-full rounded-lg border border-input bg-background px-3 py-2.5 text-sm">
                   <option value="">Selecione...</option>
                   {examItems.map(ex => (
@@ -285,6 +298,43 @@ export function Step2AppointmentData({ patient, formData, onChange, prefilledDoc
           onClose={() => setShowRestrictions(false)}
           onContinue={() => setShowRestrictions(false)}
         />
+      )}
+
+      {/* Alerta de atenção do exame selecionado */}
+      {examAlert && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+          <div className="w-full max-w-md rounded-2xl bg-background p-6 shadow-xl space-y-4">
+            <div className="flex items-center gap-3">
+              <span className="flex h-10 w-10 items-center justify-center rounded-full bg-[hsl(var(--warning))]/15 text-xl">⚠️</span>
+              <div>
+                <h4 className="text-base font-bold text-foreground">Atenção</h4>
+                <p className="text-xs text-muted-foreground">{examAlert.name}</p>
+              </div>
+            </div>
+            {examAlert.instructions && (
+              <div className="rounded-xl border border-[hsl(var(--warning))]/30 bg-[hsl(var(--warning))]/5 p-3">
+                <p className="text-xs font-semibold text-foreground mb-1">Instrução de preparo</p>
+                <p className="text-sm text-foreground whitespace-pre-line">{examAlert.instructions}</p>
+              </div>
+            )}
+            {examAlert.requiresAuth && (
+              <div className="rounded-xl border border-destructive/30 bg-destructive/5 p-3">
+                <p className="text-xs font-semibold text-foreground mb-1">Autorização</p>
+                <p className="text-sm text-foreground">Este exame requer autorização prévia.</p>
+              </div>
+            )}
+            <div className="flex justify-end gap-2 pt-1">
+              <button type="button" onClick={() => { setExamAlert(null); onChange({ examId: '' }) }}
+                className="rounded-lg border border-input px-4 py-2 text-sm font-medium text-foreground hover:bg-muted">
+                Fechar
+              </button>
+              <button type="button" onClick={() => setExamAlert(null)}
+                className="rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90">
+                Continuar
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   )
