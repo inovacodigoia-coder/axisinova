@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { ArrowLeft, Lock, MessageCircle, Plus, RefreshCw, Link2, Unlink, Clock, Loader2 } from 'lucide-react'
+import { ArrowLeft, Lock, MessageCircle, Plus, RefreshCw, Link2, Unlink, Clock, Loader2, Trash2 } from 'lucide-react'
 import { toast } from 'sonner'
 import { supabase } from '@/integrations/supabase/client'
 import { useAuth } from '@/context/AuthContext'
@@ -24,7 +24,7 @@ interface Solic { status: string; motivo_recusa: string | null; criado_em: strin
 const MSG: Record<string, string> = {
   WHATSAPP_NAO_LIBERADO: 'A conexão de WhatsApp precisa ser liberada pela equipe Axis Inova.',
   COTA_NUMEROS_ESGOTADA: 'Todos os números autorizados já estão em uso. Solicite um novo número.',
-  TOKEN_INSTANCIA_INVALIDO: 'A chave deste número não é mais aceita pelo servidor. Fale com a equipe Axis Inova.',
+  TOKEN_INSTANCIA_INVALIDO: 'A chave deste número não é mais aceita pelo servidor. Exclua este número e adicione outro.',
 }
 
 /** Chama a função do servidor. A tela nunca fala com a uazapi direto. */
@@ -172,6 +172,7 @@ function NumeroCard({ inst, onChange, onConectar }: { inst: Inst; onChange: () =
   const [limite, setLimite] = useState(inst.limite_diario?.toString() ?? '')
   const [travado, setTravado] = useState(false)
   const [confirmar, setConfirmar] = useState(false)
+  const [confirmarExcluir, setConfirmarExcluir] = useState(false)
   const [salvando, setSalvando] = useState(false)
   const st = STATUS[inst.status] ?? STATUS.nao_configurada
 
@@ -207,6 +208,13 @@ function NumeroCard({ inst, onChange, onConectar }: { inst: Inst; onChange: () =
     setSalvando(false)
     if (!r.ok) { avisarErro(r); return }
     toast.success('Número desconectado.'); onChange()
+  }
+  const excluir = async () => {
+    setConfirmarExcluir(false); setSalvando(true)
+    const r = await chamar({ acao: 'excluir_numero', instancia_id: inst.id })
+    setSalvando(false)
+    if (!r.ok) { avisarErro(r); return }
+    toast.success('Número excluído. Você já pode adicionar outro.'); onChange()
   }
 
   return (
@@ -257,7 +265,25 @@ function NumeroCard({ inst, onChange, onConectar }: { inst: Inst; onChange: () =
           : <Button className="h-11 gradient-bg text-primary-foreground" onClick={onConectar} disabled={salvando}>
               <Link2 className="mr-2 h-4 w-4" /> Conectar número
             </Button>}
+        <Button variant="outline" className="h-11 text-destructive" onClick={() => setConfirmarExcluir(true)} disabled={salvando}>
+          <Trash2 className="mr-2 h-4 w-4" /> Excluir número
+        </Button>
       </div>
+
+      <AlertDialog open={confirmarExcluir} onOpenChange={setConfirmarExcluir}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Excluir este número?</AlertDialogTitle>
+            <AlertDialogDescription>
+              O número "{inst.apelido ?? 'sem apelido'}" será removido do servidor e do sistema. Esta ação não pode ser desfeita. Você poderá adicionar outro número em seguida.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction onClick={excluir} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">Excluir número</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       <AlertDialog open={confirmar} onOpenChange={setConfirmar}>
         <AlertDialogContent>

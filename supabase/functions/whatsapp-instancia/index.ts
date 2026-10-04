@@ -279,6 +279,19 @@ Deno.serve(async (req) => {
       await audit(companyId, 'atualizar_numero', antes, { ...upd, instancia_id: inst.id })
       return resp(200, { ok: true })
     }
+    case 'excluir_numero': {
+      const inst = await instDaEmpresa()
+      if (!inst) return erro(404, 'NAO_ENCONTRADA', 'Número não encontrado.')
+      const tk = await tokenDe(inst.id)
+      if (tk) {
+        const r = await uaz('DELETE', '/instance', { token: tk })
+        if (!(r.status >= 200 && r.status < 300) && r.status !== 404 && r.status !== 401) return erroUaz(r.status, r.retryAfter)
+      }
+      await db.from('whatsapp_instancia_segredos').delete().eq('instancia_id', inst.id)
+      await db.from('whatsapp_instancias').delete().eq('id', inst.id)
+      await audit(companyId, 'excluir_numero', { apelido: inst.apelido, nome_instancia: inst.nome_instancia }, null)
+      return resp(200, { ok: true })
+    }
     case 'enviar_teste':
       return erro(501, 'NAO_IMPLEMENTADO', 'Envio de teste chega na Etapa 4.')
     default:
