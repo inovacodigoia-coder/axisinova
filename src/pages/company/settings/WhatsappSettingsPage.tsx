@@ -265,7 +265,25 @@ function NumeroCard({ inst, onChange, onConectar }: { inst: Inst; onChange: () =
           : <Button className="h-11 gradient-bg text-primary-foreground" onClick={onConectar} disabled={salvando}>
               <Link2 className="mr-2 h-4 w-4" /> Conectar número
             </Button>}
+        <Button variant="outline" className="h-11 text-destructive" onClick={() => setConfirmarExcluir(true)} disabled={salvando}>
+          <Trash2 className="mr-2 h-4 w-4" /> Excluir número
+        </Button>
       </div>
+
+      <AlertDialog open={confirmarExcluir} onOpenChange={setConfirmarExcluir}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Excluir este número?</AlertDialogTitle>
+            <AlertDialogDescription>
+              O número "{inst.apelido ?? 'sem apelido'}" será removido do servidor e do sistema. Esta ação não pode ser desfeita. Você poderá adicionar outro número em seguida.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction onClick={excluir} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">Excluir número</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       <AlertDialog open={confirmar} onOpenChange={setConfirmar}>
         <AlertDialogContent>
