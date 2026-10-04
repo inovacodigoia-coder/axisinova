@@ -505,6 +505,20 @@
       "when": 1790998054123,
       "tag": "0071_whatsapp_etapa1",
       "breakpoints": true
+    },
+    {
+      "idx": 72,
+      "version": "7",
+      "when": 1791090378341,
+      "tag": "0072_whatsapp_modelos_etapa5",
+      "breakpoints": true
+    },
+    {
+      "idx": 73,
+      "version": "7",
+      "when": 1791090396513,
+      "tag": "0073_whatsapp_modelos_select_perm",
+      "breakpoints": true
     }
   ]
 }

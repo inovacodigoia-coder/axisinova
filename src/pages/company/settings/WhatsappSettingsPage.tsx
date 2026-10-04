@@ -13,6 +13,7 @@ import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription,
   AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
 } from '@/components/ui/alert-dialog'
+import { MensagensTab } from '@/components/whatsapp/MensagensTab'
 
 interface Inst {
   id: string; apelido: string | null; status: string; numero_conectado: string | null; nome_perfil: string | null
@@ -70,6 +71,16 @@ export default function WhatsappSettingsPage() {
   const [qrInst, setQrInst] = useState<Inst | null>(null)
 
   const companyId = user?.companyId ?? null
+  const [aba, setAba] = useState<'numeros' | 'mensagens'>('numeros')
+  const [msgDirty, setMsgDirty] = useState(false)
+  const trocarAba = (a: 'numeros' | 'mensagens') => {
+    if (aba === 'mensagens' && a !== aba && msgDirty && !window.confirm('Há alterações não salvas nas mensagens. Sair mesmo assim?')) return
+    setAba(a)
+  }
+  const voltar = () => {
+    if (msgDirty && !window.confirm('Há alterações não salvas nas mensagens. Sair mesmo assim?')) return
+    navigate('/app/configuracoes')
+  }
 
   const load = useCallback(async () => {
     if (!companyId) return
@@ -98,7 +109,7 @@ export default function WhatsappSettingsPage() {
   return (
     <div className="space-y-6 max-w-4xl">
       <div className="flex items-start gap-3">
-        <Button variant="ghost" size="icon" className="h-11 w-11" onClick={() => navigate('/app/configuracoes')} aria-label="Voltar">
+        <Button variant="ghost" size="icon" className="h-11 w-11" onClick={voltar} aria-label="Voltar">
           <ArrowLeft className="h-5 w-5" />
         </Button>
         <div>
@@ -131,11 +142,18 @@ export default function WhatsappSettingsPage() {
           </div>
 
           <div className="flex gap-1 overflow-x-auto border-b border-border">
-            <button className="h-11 border-b-2 border-primary px-4 text-sm font-semibold text-foreground">Números</button>
-            <button disabled className="h-11 px-4 text-sm text-muted-foreground opacity-60">Mensagens <span className="text-[10px]">em breve</span></button>
+            {(['numeros', 'mensagens'] as const).map(a => (
+              <button key={a} onClick={() => trocarAba(a)}
+                className={`h-11 px-4 text-sm ${aba === a ? 'border-b-2 border-primary font-semibold text-foreground' : 'text-muted-foreground'}`}>
+                {a === 'numeros' ? 'Números' : 'Mensagens'}
+              </button>
+            ))}
             <button disabled className="h-11 px-4 text-sm text-muted-foreground opacity-60">Fila de envios <span className="text-[10px]">em breve</span></button>
           </div>
 
+          {aba === 'mensagens' && companyId && <MensagensTab companyId={companyId} onDirtyChange={setMsgDirty} />}
+
+          {aba === 'numeros' && <>
           {pendente && (
             <div className="flex items-center gap-2 rounded-xl border border-warning/40 bg-warning/10 p-3 text-sm text-foreground">
               <Clock className="h-4 w-4 text-warning" /> Solicitação de novo número aguardando aprovação
@@ -158,6 +176,7 @@ export default function WhatsappSettingsPage() {
           </div>
 
           {insts.length > 0 && <TesteEnvio insts={insts} companyId={companyId} onEnviado={load} />}
+          </>}
         </>
       )}
 
