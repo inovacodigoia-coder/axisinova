@@ -156,6 +156,8 @@ export default function WhatsappSettingsPage() {
           <div className="grid gap-4">
             {insts.map(i => <NumeroCard key={i.id} inst={i} onChange={load} onConectar={() => setQrInst(i)} />)}
           </div>
+
+          {insts.length > 0 && <TesteEnvio insts={insts} companyId={companyId} onEnviado={load} />}
         </>
       )}
 
