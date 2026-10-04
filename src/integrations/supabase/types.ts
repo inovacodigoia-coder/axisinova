@@ -9264,6 +9264,22 @@ export type Database = {
         Args: { _company: string; _habilitado: boolean; _numeros: number }
         Returns: undefined
       }
+      whatsapp_modelo_padrao: { Args: { p_posicao: number }; Returns: string }
+      whatsapp_modelo_salvar: {
+        Args: { p_ativo: boolean; p_id: string; p_texto: string }
+        Returns: undefined
+      }
+      whatsapp_render_modelo: {
+        Args: {
+          p_data_hora: string
+          p_medico: string
+          p_paciente: string
+          p_primeira_vez: boolean
+          p_texto: string
+          p_tipo: string
+        }
+        Returns: string
+      }
       whatsapp_tem_permissao: { Args: { _perm: string }; Returns: boolean }
       whatsapp_valor_numero: { Args: never; Returns: number }
     }
