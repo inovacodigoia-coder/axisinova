@@ -209,6 +209,13 @@ function NumeroCard({ inst, onChange, onConectar }: { inst: Inst; onChange: () =
     if (!r.ok) { avisarErro(r); return }
     toast.success('Número desconectado.'); onChange()
   }
+  const excluir = async () => {
+    setConfirmarExcluir(false); setSalvando(true)
+    const r = await chamar({ acao: 'excluir_numero', instancia_id: inst.id })
+    setSalvando(false)
+    if (!r.ok) { avisarErro(r); return }
+    toast.success('Número excluído. Você já pode adicionar outro.'); onChange()
+  }
 
   return (
     <div className="rounded-2xl border border-border bg-card p-4 sm:p-5 space-y-4">
