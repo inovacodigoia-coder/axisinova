@@ -8042,6 +8042,21 @@ export type Database = {
         }
         Relationships: []
       }
+      whatsapp_worker_tokens: {
+        Row: {
+          criado_em: string
+          token: string
+        }
+        Insert: {
+          criado_em?: string
+          token: string
+        }
+        Update: {
+          criado_em?: string
+          token?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       apoio_pedido_exame_v: {
@@ -9420,6 +9435,14 @@ export type Database = {
       }
       whatsapp_tem_permissao: { Args: { _perm: string }; Returns: boolean }
       whatsapp_valor_numero: { Args: never; Returns: number }
+      whatsapp_worker_consumir_token: {
+        Args: { p_token: string }
+        Returns: boolean
+      }
+      whatsapp_worker_disparar: {
+        Args: { p_apikey: string; p_url: string }
+        Returns: number
+      }
     }
     Enums: {
       apoio_status:

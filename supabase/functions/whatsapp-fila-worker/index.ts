@@ -29,10 +29,13 @@ type Reserva = { fila_id: string; instancia_id: string; telefone_destino: string
 Deno.serve(async (req) => {
   const h = req.headers.get('x-worker-secret') ?? ''
   const db = createClient(Deno.env.get('SUPABASE_URL')!, Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!)
-  // O segredo fica no cofre do banco (o mesmo que o agendador usa); WHATSAPP_WORKER_SECRET, se existir, tem prioridade.
-  let esperado = SEGREDO
-  if (!esperado) { const { data } = await db.rpc('whatsapp_worker_segredo'); esperado = (data as string) ?? '' }
-  if (!esperado || !h || !igualTempoConstante(h, esperado)) return json(401, { ok: false })
+  // Aceita WHATSAPP_WORKER_SECRET (se cadastrado) ou um token de uso único gerado pelo agendador no banco.
+  let autorizado = !!SEGREDO && !!h && igualTempoConstante(h, SEGREDO)
+  if (!autorizado && /^[0-9a-f]{64}$/.test(h)) {
+    const { data } = await db.rpc('whatsapp_worker_consumir_token', { p_token: h })
+    autorizado = data === true
+  }
+  if (!autorizado) return json(401, { ok: false })
 
   const inicio = Date.now()
   const c = { reservadas: 0, enviadas: 0, falhas: 0, devolvidas: 0 }
