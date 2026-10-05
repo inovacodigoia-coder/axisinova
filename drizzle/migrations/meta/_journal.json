@@ -554,6 +554,13 @@
       "when": 1791161367489,
       "tag": "0078_whatsapp_worker_6b",
       "breakpoints": true
+    },
+    {
+      "idx": 79,
+      "version": "7",
+      "when": 1791161387192,
+      "tag": "0079_whatsapp_janela_salvar_fix",
+      "breakpoints": true
     }
   ]
 }
