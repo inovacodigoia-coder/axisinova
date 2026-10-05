@@ -89,7 +89,7 @@ export function Step3Confirmation({ patient, formData, onConfirm, loading }: Pro
 
             <div className="rounded-lg bg-muted p-3 text-xs text-muted-foreground">
               <p className="italic">
-                "Olá {patient.fullName.split(' ')[0]}! Confirmamos seu agendamento para {format(aptDate, 'dd/MM/yyyy')} às {formData.time} com {doctor?.fullName}. Responda SIM para confirmar."
+                A mensagem segue os modelos configurados em Configurações &gt; WhatsApp, alternando entre eles.
               </p>
             </div>
           </>

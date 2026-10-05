@@ -7738,6 +7738,7 @@ export type Database = {
           criado_por: string | null
           enviada_em: string | null
           erro: string | null
+          horas_antes: number | null
           id: string
           instancia_id: string | null
           message_id_uazapi: string | null
@@ -7757,6 +7758,7 @@ export type Database = {
           criado_por?: string | null
           enviada_em?: string | null
           erro?: string | null
+          horas_antes?: number | null
           id?: string
           instancia_id?: string | null
           message_id_uazapi?: string | null
@@ -7776,6 +7778,7 @@ export type Database = {
           criado_por?: string | null
           enviada_em?: string | null
           erro?: string | null
+          horas_antes?: number | null
           id?: string
           instancia_id?: string | null
           message_id_uazapi?: string | null
@@ -9290,6 +9293,10 @@ export type Database = {
       triagem__semear: { Args: { _company: string }; Returns: undefined }
       triagem_semear_padroes: { Args: never; Returns: undefined }
       triagem_tem_permissao: { Args: { _perm: string }; Returns: boolean }
+      whatsapp_cancelar_envios_agendamento: {
+        Args: { p_agendamento_id: string }
+        Returns: Json
+      }
       whatsapp_criar_modelos_padrao: {
         Args: { _company: string }
         Returns: undefined
@@ -9299,6 +9306,14 @@ export type Database = {
         Returns: undefined
       }
       whatsapp_definir_valor: { Args: { _valor: number }; Returns: undefined }
+      whatsapp_enfileirar_confirmacao: {
+        Args: {
+          p_agendamento_id: string
+          p_data_envio: string
+          p_horas_antes: number
+        }
+        Returns: Json
+      }
       whatsapp_liberar: {
         Args: { _company: string; _habilitado: boolean; _numeros: number }
         Returns: undefined
@@ -9307,6 +9322,11 @@ export type Database = {
       whatsapp_modelo_salvar: {
         Args: { p_ativo: boolean; p_id: string; p_texto: string }
         Returns: undefined
+      }
+      whatsapp_normalizar_celular: { Args: { p: string }; Returns: string }
+      whatsapp_reenfileirar_confirmacao: {
+        Args: { p_agendamento_id: string }
+        Returns: Json
       }
       whatsapp_render_modelo: {
         Args: {
