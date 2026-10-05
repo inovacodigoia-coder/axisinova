@@ -1,60 +1,95 @@
-import { useState, useMemo } from 'react'
+import { useEffect, useMemo, useState, useCallback } from 'react'
 import { useScheduling } from '@/context/SchedulingContext'
 import { usePaginatedList } from '@/hooks/usePaginatedList'
-import type { ConfirmationDispatch } from '@/types/scheduling.types'
+import { supabase } from '@/integrations/supabase/client'
 import { toast } from 'sonner'
-import { Check, Send, AlertTriangle } from 'lucide-react'
-import { differenceInHours } from 'date-fns'
+import { Check, AlertTriangle, Clock, Send, XCircle, RefreshCw } from 'lucide-react'
+
+type Linha = {
+  id: string
+  agendamento_id: string | null
+  paciente_nome: string | null
+  telefone_mascarado: string | null
+  modelo_posicao: number | null
+  texto_resumo: string | null
+  status: string
+  agendada_para: string | null
+  enviada_em: string | null
+  erro: string | null
+}
+
+const STATUS: Record<string, { label: string; cls: string; icon: any }> = {
+  agendada: { label: 'Agendada', cls: 'bg-yellow-100 text-yellow-700', icon: Clock },
+  enviando: { label: 'Enviando', cls: 'bg-blue-100 text-blue-700', icon: Send },
+  enviada: { label: 'Enviada', cls: 'bg-blue-100 text-blue-700', icon: Send },
+  entregue: { label: 'Entregue', cls: 'bg-blue-100 text-blue-700', icon: Send },
+  lida: { label: 'Lida', cls: 'bg-blue-100 text-blue-700', icon: Send },
+  falha: { label: 'Falhou', cls: 'bg-red-100 text-red-700', icon: AlertTriangle },
+  cancelada: { label: 'Cancelada', cls: 'bg-muted text-muted-foreground', icon: XCircle },
+}
+const ENVIADAS = ['enviada', 'entregue', 'lida']
+
+const fmt = (iso?: string | null) => iso
+  ? new Date(iso).toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo', day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' })
+  : ''
 
 export default function ConfirmationsPage() {
-  const { confirmations, updateConfirmation } = useScheduling()
-  const [statusFilter, setStatusFilter] = useState('all')
-  const [selected, setSelected] = useState<Set<string>>(new Set())
+  const { appointments, updateAppointment, isDemo } = useScheduling()
+  const [linhas, setLinhas] = useState<Linha[]>([])
+  const [loading, setLoading] = useState(true)
+  const [statusFilter, setStatusFilter] = useState('ativas')
+
+  const load = useCallback(async () => {
+    setLoading(true)
+    const { data, error } = await supabase.from('whatsapp_fila_envios_v' as any)
+      .select('id, agendamento_id, paciente_nome, telefone_mascarado, modelo_posicao, texto_resumo, status, agendada_para, enviada_em, erro')
+      .eq('tipo', 'confirmacao_agendamento')
+      .order('agendada_para', { ascending: false })
+      .limit(500)
+    if (error) { console.error('[Confirmações]', error); toast.error('Não foi possível carregar as confirmações.') }
+    setLinhas((data as any) || [])
+    setLoading(false)
+  }, [])
+
+  useEffect(() => { if (!isDemo) load(); else setLoading(false) }, [load, isDemo])
+
+  const aptById = useMemo(() => new Map(appointments.map(a => [a.id, a])), [appointments])
 
   const filtered = useMemo(() => {
-    if (statusFilter === 'all') return confirmations
-    return confirmations.filter(c => c.status === statusFilter)
-  }, [confirmations, statusFilter])
+    if (statusFilter === 'all') return linhas
+    if (statusFilter === 'ativas') return linhas.filter(l => l.status !== 'cancelada')
+    if (statusFilter === 'enviada') return linhas.filter(l => ENVIADAS.includes(l.status))
+    return linhas.filter(l => l.status === statusFilter)
+  }, [linhas, statusFilter])
 
   const { visibleItems, totalItems, hasMore, showMore, showAll, remainingCount } = usePaginatedList(filtered, 10)
 
   const counts = {
-    pending: confirmations.filter(c => c.status === 'pending').length,
-    confirmed: confirmations.filter(c => c.status === 'confirmed').length,
-    failed: confirmations.filter(c => c.status === 'failed').length,
+    agendada: linhas.filter(l => l.status === 'agendada').length,
+    enviada: linhas.filter(l => ENVIADAS.includes(l.status)).length,
+    falha: linhas.filter(l => l.status === 'falha').length,
   }
 
-  const handleUpdateStatus = (id: string, status: ConfirmationDispatch['status']) => {
-    const updates: Partial<ConfirmationDispatch> = { status }
-    if (status === 'sent') updates.sentAt = new Date().toISOString().split('T')[0]
-    if (status === 'confirmed') updates.confirmedAt = new Date().toISOString().split('T')[0]
-    updateConfirmation(id, updates)
-    toast.success('Status atualizado!')
-  }
+  const header = (
+    <div className="flex items-start justify-between gap-3">
+      <div>
+        <h1 className="text-2xl font-bold text-foreground">Central de Confirmações</h1>
+        <p className="text-sm text-muted-foreground">Confirmações de agendamento por WhatsApp</p>
+      </div>
+      <button onClick={load} className="flex items-center gap-1 rounded-lg border border-input px-3 py-1.5 text-xs font-medium hover:bg-muted">
+        <RefreshCw className={`h-3 w-3 ${loading ? 'animate-spin' : ''}`} /> Atualizar
+      </button>
+    </div>
+  )
 
-  const toggleSelect = (id: string) => {
-    setSelected(prev => { const s = new Set(prev); s.has(id) ? s.delete(id) : s.add(id); return s })
-  }
-
-  const batchMarkSent = () => {
-    selected.forEach(id => {
-      updateConfirmation(id, { status: 'sent', sentAt: new Date().toISOString().split('T')[0] })
-    })
-    toast.success(`${selected.size} marcados como enviados`)
-    setSelected(new Set())
-  }
-
-  if (confirmations.length === 0) {
+  if (!loading && linhas.length === 0) {
     return (
       <div className="space-y-6">
-        <div>
-          <h1 className="text-2xl font-bold text-foreground">Central de Confirmações</h1>
-          <p className="text-sm text-muted-foreground">Gerencie os disparos de confirmação de agendamentos</p>
-        </div>
+        {header}
         <div className="flex flex-col items-center justify-center py-16 text-center space-y-3">
           <span className="text-4xl">📞</span>
-          <h3 className="text-lg font-bold text-foreground">Nenhuma confirmação pendente</h3>
-          <p className="text-sm text-muted-foreground">para o período selecionado</p>
+          <h3 className="text-lg font-bold text-foreground">Nenhuma confirmação programada</h3>
+          <p className="text-sm text-muted-foreground">Ao salvar um agendamento com "Enviar confirmação automática" ligado, ele aparece aqui.</p>
         </div>
       </div>
     )
@@ -62,85 +97,59 @@ export default function ConfirmationsPage() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold text-foreground">Central de Confirmações</h1>
-        <p className="text-sm text-muted-foreground">Gerencie os disparos de confirmação de agendamentos</p>
-      </div>
+      {header}
 
       <div className="flex flex-wrap items-center gap-3">
         <select value={statusFilter} onChange={e => setStatusFilter(e.target.value)}
           className="h-10 rounded-lg border border-input bg-background px-3 text-sm">
-          <option value="all">Todos</option>
-          <option value="pending">Pendentes</option>
-          <option value="sent">Enviados</option>
-          <option value="confirmed">Confirmados</option>
-          <option value="failed">Falharam</option>
+          <option value="ativas">Todas (sem canceladas)</option>
+          <option value="agendada">Agendadas</option>
+          <option value="enviada">Enviadas</option>
+          <option value="falha">Falharam</option>
+          <option value="cancelada">Canceladas</option>
+          <option value="all">Todas</option>
         </select>
         <div className="flex items-center gap-2 text-sm">
-          <span className="rounded-full bg-yellow-100 px-3 py-1 text-yellow-700 font-medium">{counts.pending} pendentes</span>
-          <span className="rounded-full bg-green-100 px-3 py-1 text-green-700 font-medium">{counts.confirmed} confirmados</span>
-          <span className="rounded-full bg-red-100 px-3 py-1 text-red-700 font-medium">{counts.failed} falharam</span>
+          <span className="rounded-full bg-yellow-100 px-3 py-1 text-yellow-700 font-medium">{counts.agendada} agendadas</span>
+          <span className="rounded-full bg-blue-100 px-3 py-1 text-blue-700 font-medium">{counts.enviada} enviadas</span>
+          <span className="rounded-full bg-red-100 px-3 py-1 text-red-700 font-medium">{counts.falha} falharam</span>
         </div>
       </div>
 
-      {selected.size > 0 && (
-        <div className="rounded-lg gradient-bg p-3 flex items-center justify-between">
-          <span className="text-sm text-white font-medium">{selected.size} selecionados</span>
-          <button onClick={batchMarkSent} className="rounded-lg bg-white/20 px-3 py-1.5 text-xs font-medium text-white hover:bg-white/30 transition-colors">
-            Marcar como Enviados
-          </button>
-        </div>
-      )}
-
       <div className="space-y-3">
-        {visibleItems.map(conf => {
-          const hoursUntil = differenceInHours(new Date(conf.appointmentDate + 'T' + conf.appointmentTime), new Date())
-          const isUrgent = hoursUntil < 24 && hoursUntil > 0
-
+        {visibleItems.map(l => {
+          const apt = l.agendamento_id ? aptById.get(l.agendamento_id) : undefined
+          const st = STATUS[l.status] || STATUS.agendada
+          const Icon = st.icon
+          const confirmado = apt?.status === 'confirmed'
           return (
-            <div key={conf.id} className="rounded-xl border border-border bg-card p-4 hover:shadow-md transition-shadow">
-              <div className="flex items-start gap-3">
-                <input type="checkbox" checked={selected.has(conf.id)} onChange={() => toggleSelect(conf.id)}
-                  className="mt-1 h-4 w-4 rounded border-input accent-primary" />
-
-                <div className="flex-1">
-                  <div className="flex items-center gap-2">
-                    <span className="text-sm font-semibold text-foreground">📅 {conf.appointmentDate.split('-').reverse().join('/')} às {conf.appointmentTime}</span>
-                    <span className="text-sm text-muted-foreground">{conf.doctorName}</span>
-                    {isUrgent && <span className="rounded-full bg-destructive px-2 py-0.5 text-[10px] font-bold text-white animate-pulse">URGENTE</span>}
-                    <span className="rounded-full bg-muted px-2 py-0.5 text-[10px] font-medium text-muted-foreground ml-auto">{conf.method}</span>
-                  </div>
-                  <p className="text-sm font-medium text-foreground mt-1">👤 {conf.patientName}</p>
-                  <p className="text-xs text-muted-foreground">📞 {conf.patientPhone1}{conf.patientPhone2 ? ` · ${conf.patientPhone2}` : ''}</p>
-
-                  <div className="flex gap-2 mt-3">
-                    {conf.status === 'pending' && (
-                      <>
-                        <button onClick={() => handleUpdateStatus(conf.id, 'sent')}
-                          className="flex items-center gap-1 rounded-lg border border-blue-200 bg-blue-50 px-3 py-1.5 text-xs font-medium text-blue-700 hover:bg-blue-100 transition-colors">
-                          <Send className="h-3 w-3" /> Marcar como Enviado
-                        </button>
-                        <button onClick={() => handleUpdateStatus(conf.id, 'confirmed')}
-                          className="flex items-center gap-1 rounded-lg border border-green-200 bg-green-50 px-3 py-1.5 text-xs font-medium text-green-700 hover:bg-green-100 transition-colors">
-                          <Check className="h-3 w-3" /> Paciente Confirmou
-                        </button>
-                      </>
-                    )}
-                    {conf.status === 'sent' && (
-                      <button onClick={() => handleUpdateStatus(conf.id, 'confirmed')}
-                        className="flex items-center gap-1 rounded-lg border border-green-200 bg-green-50 px-3 py-1.5 text-xs font-medium text-green-700 hover:bg-green-100 transition-colors">
-                        <Check className="h-3 w-3" /> Paciente Confirmou
-                      </button>
-                    )}
-                    {conf.status === 'confirmed' && (
-                      <span className="flex items-center gap-1 text-xs text-green-600 font-medium"><Check className="h-3 w-3" /> Confirmado{conf.confirmedAt ? ` em ${conf.confirmedAt.split('-').reverse().join('/')}` : ''}</span>
-                    )}
-                    {conf.status === 'failed' && (
-                      <span className="flex items-center gap-1 text-xs text-destructive font-medium"><AlertTriangle className="h-3 w-3" /> Falhou no envio</span>
-                    )}
-                  </div>
-                </div>
+            <div key={l.id} className="rounded-xl border border-border bg-card p-4 hover:shadow-md transition-shadow">
+              <div className="flex items-center gap-2 flex-wrap">
+                {apt && <span className="text-sm font-semibold text-foreground">📅 {apt.date.split('-').reverse().join('/')} às {apt.time}</span>}
+                {apt && <span className="text-sm text-muted-foreground">{apt.doctorName}</span>}
+                <span className={`ml-auto flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-medium ${st.cls}`}>
+                  <Icon className="h-3 w-3" /> {st.label}
+                </span>
               </div>
+              <p className="text-sm font-medium text-foreground mt-1">👤 {l.paciente_nome}</p>
+              <p className="text-xs text-muted-foreground">📞 {l.telefone_mascarado}{l.modelo_posicao ? ` · Modelo ${l.modelo_posicao}` : ''}</p>
+              {l.texto_resumo && <p className="mt-2 rounded-lg bg-muted p-2 text-xs text-muted-foreground italic">{l.texto_resumo}</p>}
+              <p className="mt-2 text-xs text-muted-foreground">
+                {ENVIADAS.includes(l.status) ? `Enviada em ${fmt(l.enviada_em)}` : l.status === 'agendada' ? `Envio previsto: ${fmt(l.agendada_para)}` : ''}
+                {l.status === 'falha' && l.erro ? `Motivo: ${l.erro}` : ''}
+              </p>
+              {apt && l.status !== 'cancelada' && (
+                <div className="flex gap-2 mt-3">
+                  {confirmado ? (
+                    <span className="flex items-center gap-1 text-xs text-green-600 font-medium"><Check className="h-3 w-3" /> Paciente confirmou</span>
+                  ) : (
+                    <button onClick={() => { updateAppointment(apt.id, { status: 'confirmed' as any }); toast.success('Presença confirmada.') }}
+                      className="flex items-center gap-1 rounded-lg border border-green-200 bg-green-50 px-3 py-1.5 text-xs font-medium text-green-700 hover:bg-green-100">
+                      <Check className="h-3 w-3" /> Paciente Confirmou
+                    </button>
+                  )}
+                </div>
+              )}
             </div>
           )
         })}
@@ -150,14 +159,8 @@ export default function ConfirmationsPage() {
         <div className="flex items-center justify-between px-1">
           <span className="text-sm text-muted-foreground">Exibindo {visibleItems.length} de {totalItems}</span>
           <div className="flex gap-2">
-            <button onClick={showMore} className="rounded-lg border border-input px-3 py-1.5 text-xs font-medium hover:bg-muted transition-colors">
-              Mostrar mais {Math.min(10, remainingCount)}
-            </button>
-            {remainingCount > 10 && (
-              <button onClick={showAll} className="rounded-lg px-3 py-1.5 text-xs font-medium text-muted-foreground hover:text-foreground">
-                Ver todos ({totalItems})
-              </button>
-            )}
+            <button onClick={showMore} className="rounded-lg border border-input px-3 py-1.5 text-xs font-medium hover:bg-muted">Mostrar mais {Math.min(10, remainingCount)}</button>
+            {remainingCount > 10 && <button onClick={showAll} className="rounded-lg px-3 py-1.5 text-xs font-medium text-muted-foreground hover:text-foreground">Ver todos ({totalItems})</button>}
           </div>
         </div>
       )}
