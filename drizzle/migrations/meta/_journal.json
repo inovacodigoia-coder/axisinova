@@ -575,6 +575,27 @@
       "when": 1791161927591,
       "tag": "0081_whatsapp_worker_codigo_hash",
       "breakpoints": true
+    },
+    {
+      "idx": 82,
+      "version": "7",
+      "when": 1791162511681,
+      "tag": "0082_whatsapp_tick_sem_tokens_antigos",
+      "breakpoints": true
+    },
+    {
+      "idx": 83,
+      "version": "7",
+      "when": 1791162563109,
+      "tag": "0083_whatsapp_tick_alinhar_cabecalho",
+      "breakpoints": true
+    },
+    {
+      "idx": 84,
+      "version": "7",
+      "when": 1791162642009,
+      "tag": "0084_whatsapp_tick_coluna_interruptor",
+      "breakpoints": true
     }
   ]
 }
