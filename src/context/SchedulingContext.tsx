@@ -220,18 +220,10 @@ export function SchedulingProvider({ children }: { children: ReactNode }) {
       if (encerrou) {
         await supabase.rpc('whatsapp_cancelar_envios_agendamento' as any, { p_agendamento_id: id } as any)
       } else if (remarcou) {
-        await supabase.rpc('whatsapp_cancelar_envios_agendamento' as any, { p_agendamento_id: id } as any)
-        const { data: ult } = await supabase
-          .from('whatsapp_fila_envios_v' as any)
-          .select('horas_antes, criado_em')
-          .eq('agendamento_id', id)
-          .eq('status', 'cancelada')
-          .order('criado_em', { ascending: false })
-          .limit(1)
-        const horas = (ult as any)?.[0]?.horas_antes
-        if (horas === 24 || horas === 48) {
-          await enfileirarConfirmacao(id, data.date || before!.date, horas)
-        }
+        const { data: r } = await supabase.rpc('whatsapp_reenfileirar_confirmacao' as any, { p_agendamento_id: id } as any)
+        const cod = (r as any)?.codigo
+        if (cod === 'ENFILEIRADA') toast.success('Confirmação por WhatsApp reprogramada.')
+        else if (cod && AVISOS[cod]) toast.warning(AVISOS[cod].replace('Agendamento salvo.', 'Agendamento alterado.'))
       }
     })
   }, [isDemo])

@@ -9324,6 +9324,10 @@ export type Database = {
         Returns: undefined
       }
       whatsapp_normalizar_celular: { Args: { p: string }; Returns: string }
+      whatsapp_reenfileirar_confirmacao: {
+        Args: { p_agendamento_id: string }
+        Returns: Json
+      }
       whatsapp_render_modelo: {
         Args: {
           p_data_hora: string
