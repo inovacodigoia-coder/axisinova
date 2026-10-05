@@ -5,3 +5,4 @@
 - Internação/Regulação: ações aprovar/recusar/confirmar chegada/alta checadas no banco por `internacao_tem_permissao('approve')`, fechado por padrão (admin total). Why: igual à Nutrição, sem acesso por fora da tela.
 - Fila do Médico: vem de `triage_entries` status in_doctor (setor em destination_sector_id), ordem cor → espera. Why: fila real da Triagem, não demonstração.
 - WhatsApp: liberação/cota/solicitações só via RPCs whatsapp_* (Super Admin checado no banco); tokens e fila base sem acesso do navegador, que lê só whatsapp_fila_envios_v mascarada. Why: LGPD e nenhuma credencial uazapi exposta.
+- WhatsApp fila de confirmação: só via RPCs whatsapp_enfileirar_confirmacao / whatsapp_cancelar_envios_agendamento / whatsapp_reenfileirar_confirmacao, chamadas a partir do SchedulingContext (salvar, mudar status, remarcar). Why: company_id e telefone ficam no servidor; um único ponto cobre todas as telas.
