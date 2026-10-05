@@ -9,6 +9,7 @@ import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription,
   AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
 } from '@/components/ui/alert-dialog'
+import { WhatsappEnvioGlobal } from '@/components/superadmin/WhatsappEnvioGlobal'
 
 type Status = 'pendente' | 'aprovada' | 'recusada' | 'todas'
 interface Row {
@@ -73,6 +74,8 @@ export default function WhatsappRequestsPage() {
         <h1 className="text-2xl font-bold text-foreground">Solicitações de número WhatsApp</h1>
         <p className="text-sm text-muted-foreground">O pagamento não é processado no sistema: confirme o recebimento antes de aprovar.</p>
       </div>
+
+      <WhatsappEnvioGlobal />
 
       <div className="flex flex-wrap items-end gap-3 rounded-xl border border-border bg-card p-4">
         <label className="text-xs text-muted-foreground">

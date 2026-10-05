@@ -14,6 +14,7 @@ import {
   AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
 } from '@/components/ui/alert-dialog'
 import { MensagensTab } from '@/components/whatsapp/MensagensTab'
+import { JanelaEnvio } from '@/components/whatsapp/JanelaEnvio'
 
 interface Inst {
   id: string; apelido: string | null; status: string; numero_conectado: string | null; nome_perfil: string | null
@@ -175,6 +176,7 @@ export default function WhatsappSettingsPage() {
             {insts.map(i => <NumeroCard key={i.id} inst={i} onChange={load} onConectar={() => setQrInst(i)} />)}
           </div>
 
+          {insts.length > 0 && <JanelaEnvio />}
           {insts.length > 0 && <TesteEnvio insts={insts} companyId={companyId} onEnviado={load} />}
           </>}
         </>
@@ -274,6 +276,11 @@ function NumeroCard({ inst, onChange, onConectar }: { inst: Inst; onChange: () =
             onBlur={salvarLimite} disabled={salvando} className="h-9 w-28" />
         </label>
       </div>
+      {(inst.limite_diario == null || inst.limite_diario > 100) && (
+        <p className="rounded-lg border border-warning/40 bg-warning/10 px-3 py-2 text-xs text-foreground">
+          Atenção: manter o limite em até 100 mensagens por dia por número reduz o risco de bloqueio pelo WhatsApp.
+        </p>
+      )}
 
       <div className="flex flex-wrap gap-2">
         <Button variant="outline" className="h-11" onClick={atualizarStatus} disabled={travado}>

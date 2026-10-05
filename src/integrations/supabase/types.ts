@@ -7708,14 +7708,20 @@ export type Database = {
       whatsapp_config_empresa: {
         Row: {
           company_id: string
+          janela_fim: string
+          janela_inicio: string
           proximo_modelo: number
         }
         Insert: {
           company_id: string
+          janela_fim?: string
+          janela_inicio?: string
           proximo_modelo?: number
         }
         Update: {
           company_id?: string
+          janela_fim?: string
+          janela_inicio?: string
           proximo_modelo?: number
         }
         Relationships: [
@@ -7727,6 +7733,27 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      whatsapp_config_global: {
+        Row: {
+          alterado_em: string | null
+          alterado_por: string | null
+          envio_automatico_ativo: boolean
+          id: boolean
+        }
+        Insert: {
+          alterado_em?: string | null
+          alterado_por?: string | null
+          envio_automatico_ativo?: boolean
+          id?: boolean
+        }
+        Update: {
+          alterado_em?: string | null
+          alterado_por?: string | null
+          envio_automatico_ativo?: boolean
+          id?: boolean
+        }
+        Relationships: []
       }
       whatsapp_fila_envios: {
         Row: {
@@ -7981,6 +8008,54 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      whatsapp_worker_execucoes: {
+        Row: {
+          devolvidas: number
+          duracao_ms: number | null
+          enviadas: number
+          erro: string | null
+          falhas: number
+          id: string
+          iniciado_em: string
+          reservadas: number
+        }
+        Insert: {
+          devolvidas?: number
+          duracao_ms?: number | null
+          enviadas?: number
+          erro?: string | null
+          falhas?: number
+          id?: string
+          iniciado_em?: string
+          reservadas?: number
+        }
+        Update: {
+          devolvidas?: number
+          duracao_ms?: number | null
+          enviadas?: number
+          erro?: string | null
+          falhas?: number
+          id?: string
+          iniciado_em?: string
+          reservadas?: number
+        }
+        Relationships: []
+      }
+      whatsapp_worker_tokens: {
+        Row: {
+          criado_em: string
+          token: string
+        }
+        Insert: {
+          criado_em?: string
+          token: string
+        }
+        Update: {
+          criado_em?: string
+          token?: string
+        }
+        Relationships: []
       }
     }
     Views: {
@@ -9314,6 +9389,16 @@ export type Database = {
         }
         Returns: Json
       }
+      whatsapp_envio_global_definir: {
+        Args: { p_ativo: boolean }
+        Returns: Json
+      }
+      whatsapp_envio_global_status: { Args: never; Returns: Json }
+      whatsapp_janela_obter: { Args: never; Returns: Json }
+      whatsapp_janela_salvar: {
+        Args: { p_fim: string; p_inicio: string }
+        Returns: Json
+      }
       whatsapp_liberar: {
         Args: { _company: string; _habilitado: boolean; _numeros: number }
         Returns: undefined
@@ -9339,8 +9424,25 @@ export type Database = {
         }
         Returns: string
       }
+      whatsapp_reservar_envios: {
+        Args: never
+        Returns: {
+          fila_id: string
+          instancia_id: string
+          telefone_destino: string
+          texto_final: string
+        }[]
+      }
       whatsapp_tem_permissao: { Args: { _perm: string }; Returns: boolean }
       whatsapp_valor_numero: { Args: never; Returns: number }
+      whatsapp_worker_consumir_token: {
+        Args: { p_token: string }
+        Returns: boolean
+      }
+      whatsapp_worker_disparar: {
+        Args: { p_apikey: string; p_url: string }
+        Returns: number
+      }
     }
     Enums: {
       apoio_status:

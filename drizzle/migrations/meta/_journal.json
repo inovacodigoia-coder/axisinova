@@ -547,6 +547,27 @@
       "when": 1791158847114,
       "tag": "0077_whatsapp_reenfileirar_confirmacao",
       "breakpoints": true
+    },
+    {
+      "idx": 78,
+      "version": "7",
+      "when": 1791161367489,
+      "tag": "0078_whatsapp_worker_6b",
+      "breakpoints": true
+    },
+    {
+      "idx": 79,
+      "version": "7",
+      "when": 1791161387192,
+      "tag": "0079_whatsapp_janela_salvar_fix",
+      "breakpoints": true
+    },
+    {
+      "idx": 80,
+      "version": "7",
+      "when": 1791161532835,
+      "tag": "0080_whatsapp_worker_tokens",
+      "breakpoints": true
     }
   ]
 }
