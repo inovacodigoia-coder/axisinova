@@ -8009,6 +8009,27 @@ export type Database = {
           },
         ]
       }
+      whatsapp_worker_codigos: {
+        Row: {
+          criado_em: string
+          expira_em: string
+          hash: string
+          usado_em: string | null
+        }
+        Insert: {
+          criado_em?: string
+          expira_em?: string
+          hash: string
+          usado_em?: string | null
+        }
+        Update: {
+          criado_em?: string
+          expira_em?: string
+          hash?: string
+          usado_em?: string | null
+        }
+        Relationships: []
+      }
       whatsapp_worker_execucoes: {
         Row: {
           devolvidas: number
@@ -9442,6 +9463,10 @@ export type Database = {
       whatsapp_worker_disparar: {
         Args: { p_apikey: string; p_url: string }
         Returns: number
+      }
+      whatsapp_worker_tick: {
+        Args: { p_apikey: string; p_url: string }
+        Returns: string
       }
     }
     Enums: {
