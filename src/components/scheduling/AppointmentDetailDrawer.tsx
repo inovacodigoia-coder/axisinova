@@ -8,6 +8,7 @@ import { GradientButton } from '@/components/ui/GradientButton'
 import { toast } from 'sonner'
 import { cn } from '@/lib/utils'
 import { motion } from 'framer-motion'
+import { formatDateTime } from '@/utils/formatters'
 
 interface Props {
   appointment: SchedulingAppointment | null
@@ -72,18 +73,18 @@ export function AppointmentDetailDrawer({ appointment: apt, onClose, onStatusCha
             <div className="space-y-1 text-xs">
               <div className="flex items-center gap-2">
                 <div className="h-2 w-2 rounded-full bg-primary" />
-                <span>Agendado em {apt.createdAt.split('-').reverse().join('/')}</span>
+                <span>Agendado em {formatDateTime(apt.createdAt)}</span>
               </div>
               {apt.confirmationSentAt && (
                 <div className="flex items-center gap-2">
                   <div className="h-2 w-2 rounded-full bg-blue-400" />
-                  <span>Confirmação enviada em {apt.confirmationSentAt.split('-').reverse().join('/')}</span>
+                  <span>Confirmação enviada em {formatDateTime(apt.confirmationSentAt)}</span>
                 </div>
               )}
               {apt.confirmedAt && (
                 <div className="flex items-center gap-2">
                   <div className="h-2 w-2 rounded-full bg-green-500" />
-                  <span>Paciente confirmou em {apt.confirmedAt.split('-').reverse().join('/')}{apt.confirmedBy ? ` (${apt.confirmedBy})` : ''}</span>
+                  <span>Paciente confirmou em {formatDateTime(apt.confirmedAt)}{apt.confirmedBy ? ` (${apt.confirmedBy})` : ''}</span>
                 </div>
               )}
             </div>
