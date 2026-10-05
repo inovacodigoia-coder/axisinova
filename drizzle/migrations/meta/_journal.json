@@ -533,6 +533,13 @@
       "when": 1791154277147,
       "tag": "0075_whatsapp_modelos_tipo_minusculo",
       "breakpoints": true
+    },
+    {
+      "idx": 76,
+      "version": "7",
+      "when": 1791158746445,
+      "tag": "0076_whatsapp_enfileirar_confirmacao",
+      "breakpoints": true
     }
   ]
 }
