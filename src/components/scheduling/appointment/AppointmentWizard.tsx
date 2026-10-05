@@ -13,7 +13,7 @@ import { motion } from 'framer-motion'
 interface Props {
   open: boolean
   onClose: () => void
-  onSave: (data: any) => void
+  onSave: (data: any) => void | boolean | Promise<boolean | void>
   prefilledDoctor?: string
   prefilledDate?: string
   prefilledTime?: string
@@ -68,17 +68,20 @@ export function AppointmentWizard({ open, onClose, onSave, prefilledDoctor, pref
   const canGoStep3 = formData.doctorId && formData.convenioId && formData.date && formData.time &&
     (formData.type === 'consultation' || formData.examId)
 
-  const handleConfirm = (confirmMethod: '24h' | '48h' | null) => {
+  const handleConfirm = async (confirmMethod: '24h' | '48h' | null) => {
+    if (loading) return
     setLoading(true)
-    setTimeout(() => {
-      onSave({ patient, ...formData, confirmMethod })
+    try {
+      const ok = await onSave({ patient, ...formData, confirmMethod })
+      if (ok === false) return
       toast.success('Agendamento realizado com sucesso!')
-      setLoading(false)
       onClose()
       setStep(1)
       setPatient(null)
       setFormData({ type: 'consultation', doctorId: '', convenioId: '', date: '', time: '', examId: '', observations: '' })
-    }, 800)
+    } finally {
+      setLoading(false)
+    }
   }
 
   const steps = [

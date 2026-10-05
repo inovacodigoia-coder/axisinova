@@ -89,7 +89,8 @@ export default function SchedulingPage() {
       createdAt: new Date().toISOString().split('T')[0],
       updatedAt: new Date().toISOString().split('T')[0],
     }
-    addAppointment(newApt)
+    const horas = data.confirmMethod === '48h' ? 48 : data.confirmMethod === '24h' ? 24 : null
+    return addAppointment(newApt, { confirmHoras: horas })
   }
 
   const handleStatusChange = (id: string, status: SchedulingAppointment['status'], reason?: string) => {

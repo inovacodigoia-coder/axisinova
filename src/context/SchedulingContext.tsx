@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useCallback, useEffect, type ReactNode } from 'react'
+import { createContext, useContext, useState, useCallback, useEffect, useRef, type ReactNode } from 'react'
 import type { SchedulingPatient, SchedulingAppointment, ConfirmationDispatch } from '@/types/scheduling.types'
 import { MOCK_PATIENTS, MOCK_APPOINTMENTS, MOCK_CONFIRMATIONS } from '@/mocks/scheduling.mock'
 import { useAuth } from '@/context/AuthContext'
@@ -13,7 +13,7 @@ interface SchedulingContextValue {
   confirmations: ConfirmationDispatch[]
   isDemo: boolean
   addPatient: (p: SchedulingPatient) => void
-  addAppointment: (a: SchedulingAppointment) => Promise<boolean>
+  addAppointment: (a: SchedulingAppointment, opts?: { confirmHoras?: 24 | 48 | null }) => Promise<boolean>
   updateAppointment: (id: string, data: Partial<SchedulingAppointment>) => void
   updateConfirmation: (id: string, data: Partial<ConfirmationDispatch>) => void
   addConfirmation: (c: ConfirmationDispatch) => void
@@ -24,6 +24,37 @@ const SchedulingContext = createContext<SchedulingContextValue | null>(null)
 const isUuid = (v?: string | null) => !!v && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(v)
 const TYPE_LABEL: Record<string, string> = { consultation: 'Consulta', exam: 'Exame', procedure: 'Procedimento' }
 const legacyStatus = (s: string) => (s === 'cancelled' ? 'cancelled' : s === 'waiting' ? 'waiting' : 'confirmed')
+const ENCERRA_FILA = ['cancelled', 'absent', 'in_progress', 'completed', 'rescheduled']
+
+const AVISOS: Record<string, string> = {
+  NENHUM_NUMERO_CONECTADO: 'Agendamento salvo. A confirmação foi programada, mas não há número de WhatsApp conectado. Ela será enviada quando um número estiver conectado.',
+  PACIENTE_SEM_TELEFONE_VALIDO: 'Agendamento salvo. Não foi possível programar a confirmação: o paciente não tem um celular válido cadastrado.',
+  WHATSAPP_NAO_LIBERADO: 'Agendamento salvo. Confirmação não programada: WhatsApp não liberado para a empresa.',
+  SEM_NUMERO_CADASTRADO: 'Agendamento salvo. Confirmação não programada: nenhum número de WhatsApp cadastrado.',
+  SEM_MODELO_ATIVO: 'Agendamento salvo. Confirmação não programada: nenhum modelo de mensagem ativo.',
+  AGENDAMENTO_NO_PASSADO: 'Agendamento salvo. Confirmação não programada: o horário já passou.',
+}
+
+/** Data de envio = dia do agendamento menos 1 ou 2 dias (igual à tela). */
+function dataEnvio(date: string, horas: 24 | 48) {
+  const d = new Date(date + 'T12:00:00')
+  d.setDate(d.getDate() - horas / 24)
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
+}
+
+async function enfileirarConfirmacao(id: string, date: string, horas: 24 | 48) {
+  try {
+    const { data, error } = await supabase.rpc('whatsapp_enfileirar_confirmacao' as any, {
+      p_agendamento_id: id, p_horas_antes: horas, p_data_envio: dataEnvio(date, horas),
+    } as any)
+    if (error) { console.error('[WhatsApp] enfileirar:', error); toast.warning('Agendamento salvo. Não foi possível programar a confirmação por WhatsApp.'); return }
+    const r = data as any
+    if (r?.codigo === 'ENFILEIRADA' || r?.codigo === 'JA_ENFILEIRADA') toast.success('Confirmação por WhatsApp programada.')
+    else toast.warning(AVISOS[r?.codigo] || `Agendamento salvo. ${r?.mensagem || 'Confirmação não programada.'}`)
+  } catch (e) {
+    console.error('[WhatsApp] enfileirar:', e)
+  }
+}
 
 function dbToSchedulingPatient(row: any): SchedulingPatient {
   const convenios = Array.isArray(row.convenios) ? row.convenios : []
@@ -82,6 +113,8 @@ export function SchedulingProvider({ children }: { children: ReactNode }) {
   const [patients, setPatients] = useState<SchedulingPatient[]>(isDemo ? MOCK_PATIENTS : [])
   const [appointments, setAppointments] = useState<SchedulingAppointment[]>(isDemo ? MOCK_APPOINTMENTS : [])
   const [confirmations, setConfirmations] = useState<ConfirmationDispatch[]>(isDemo ? MOCK_CONFIRMATIONS : [])
+  const appointmentsRef = useRef(appointments)
+  appointmentsRef.current = appointments
 
   // Empresas reais: carrega pacientes e agendamentos do banco
   useEffect(() => {
@@ -118,7 +151,7 @@ export function SchedulingProvider({ children }: { children: ReactNode }) {
 
   const addPatient = useCallback((p: SchedulingPatient) => setPatients(prev => [...prev, p]), [])
 
-  const addAppointment = useCallback(async (a: SchedulingAppointment) => {
+  const addAppointment = useCallback(async (a: SchedulingAppointment, opts?: { confirmHoras?: 24 | 48 | null }) => {
     if (isDemo || !dbCompanyId) {
       setAppointments(prev => [...prev, a])
       return true
@@ -155,10 +188,14 @@ export function SchedulingProvider({ children }: { children: ReactNode }) {
       return false
     }
     setAppointments(prev => [...prev, dbToAppointment(data)])
+    if (opts?.confirmHoras) {
+      await enfileirarConfirmacao((data as any).id, a.date, opts.confirmHoras)
+    }
     return true
   }, [isDemo, dbCompanyId])
 
   const updateAppointment = useCallback((id: string, data: Partial<SchedulingAppointment>) => {
+    const before = appointmentsRef.current.find(a => a.id === id)
     setAppointments(prev => prev.map(a => a.id === id ? { ...a, ...data } : a))
     if (isDemo || !isUuid(id)) return
     const patch: Record<string, any> = { updated_at: new Date().toISOString() }
@@ -166,11 +203,35 @@ export function SchedulingProvider({ children }: { children: ReactNode }) {
     if (data.cancelledReason !== undefined) patch.cancelled_reason = data.cancelledReason || null
     if (data.date) patch.date = data.date
     if (data.time) patch.time = data.time
+    if (data.doctorId) { patch.doctor_id = isUuid(data.doctorId) ? data.doctorId : null }
+    if (data.doctorName) patch.doctor = data.doctorName
     if (data.observations !== undefined) patch.notes = data.observations || null
-    supabase.from('appointments').update(patch as any).eq('id', id).then(({ error }) => {
+    supabase.from('appointments').update(patch as any).eq('id', id).then(async ({ error }) => {
       if (error) {
         console.error('[SchedulingContext] erro ao atualizar agendamento:', error)
         toast.error('Não foi possível salvar a alteração do agendamento.')
+        return
+      }
+      const encerrou = data.status && ENCERRA_FILA.includes(data.status)
+      const remarcou = !encerrou && before && (
+        (data.date && data.date !== before.date) ||
+        (data.time && data.time !== before.time) ||
+        (data.doctorId && data.doctorId !== before.doctorId))
+      if (encerrou) {
+        await supabase.rpc('whatsapp_cancelar_envios_agendamento' as any, { p_agendamento_id: id } as any)
+      } else if (remarcou) {
+        await supabase.rpc('whatsapp_cancelar_envios_agendamento' as any, { p_agendamento_id: id } as any)
+        const { data: ult } = await supabase
+          .from('whatsapp_fila_envios_v' as any)
+          .select('horas_antes, criado_em')
+          .eq('agendamento_id', id)
+          .eq('status', 'cancelada')
+          .order('criado_em', { ascending: false })
+          .limit(1)
+        const horas = (ult as any)?.[0]?.horas_antes
+        if (horas === 24 || horas === 48) {
+          await enfileirarConfirmacao(id, data.date || before!.date, horas)
+        }
       }
     })
   }, [isDemo])
