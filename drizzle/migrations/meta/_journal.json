@@ -589,6 +589,13 @@
       "when": 1791162563109,
       "tag": "0083_whatsapp_tick_alinhar_cabecalho",
       "breakpoints": true
+    },
+    {
+      "idx": 84,
+      "version": "7",
+      "when": 1791162642009,
+      "tag": "0084_whatsapp_tick_coluna_interruptor",
+      "breakpoints": true
     }
   ]
 }
