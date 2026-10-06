@@ -7833,6 +7833,27 @@ export type Database = {
           },
         ]
       }
+      whatsapp_fila_eventos: {
+        Row: {
+          company_id: string
+          criado_em: string
+          fila_id: string
+          id: number
+        }
+        Insert: {
+          company_id: string
+          criado_em?: string
+          fila_id: string
+          id?: number
+        }
+        Update: {
+          company_id?: string
+          criado_em?: string
+          fila_id?: string
+          id?: number
+        }
+        Relationships: []
+      }
       whatsapp_instancia_segredos: {
         Row: {
           atualizado_em: string
@@ -9415,6 +9436,18 @@ export type Database = {
         Returns: Json
       }
       whatsapp_envio_global_status: { Args: never; Returns: Json }
+      whatsapp_fila_cancelar: { Args: { p_id: string }; Returns: string }
+      whatsapp_fila_numeros: {
+        Args: never
+        Returns: {
+          apelido: string
+          enviadas_hoje: number
+          instancia_id: string
+          limite_diario: number
+        }[]
+      }
+      whatsapp_fila_reenviar: { Args: { p_id: string }; Returns: string }
+      whatsapp_fila_texto: { Args: { p_id: string }; Returns: string }
       whatsapp_janela_obter: { Args: never; Returns: Json }
       whatsapp_janela_salvar: {
         Args: { p_fim: string; p_inicio: string }
