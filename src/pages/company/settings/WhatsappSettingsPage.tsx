@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { ArrowLeft, Lock, MessageCircle, Plus, RefreshCw, Link2, Unlink, Clock, Loader2, Trash2 } from 'lucide-react'
 import { toast } from 'sonner'
 import { supabase } from '@/integrations/supabase/client'
+import { FilaEnviosTab } from '@/components/whatsapp/FilaEnviosTab'
 import { useAuth } from '@/context/AuthContext'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -72,9 +73,12 @@ export default function WhatsappSettingsPage() {
   const [qrInst, setQrInst] = useState<Inst | null>(null)
 
   const companyId = user?.companyId ?? null
-  const [aba, setAba] = useState<'numeros' | 'mensagens'>('numeros')
+  type Aba = 'numeros' | 'mensagens' | 'fila'
+  const [aba, setAba] = useState<Aba>('numeros')
+  const [podeConfig, setPodeConfig] = useState(false)
+  const [podeFila, setPodeFila] = useState(false)
   const [msgDirty, setMsgDirty] = useState(false)
-  const trocarAba = (a: 'numeros' | 'mensagens') => {
+  const trocarAba = (a: Aba) => {
     if (aba === 'mensagens' && a !== aba && msgDirty && !window.confirm('Há alterações não salvas nas mensagens. Sair mesmo assim?')) return
     setAba(a)
   }
@@ -85,8 +89,13 @@ export default function WhatsappSettingsPage() {
 
   const load = useCallback(async () => {
     if (!companyId) return
-    const { data: perm } = await supabase.rpc('whatsapp_tem_permissao' as any, { _perm: 'configuracoes.whatsapp' })
-    if (!perm) { setEstado('sem_permissao'); return }
+    const [{ data: perm }, { data: permFila }] = await Promise.all([
+      supabase.rpc('whatsapp_tem_permissao' as any, { _perm: 'configuracoes.whatsapp' }),
+      supabase.rpc('whatsapp_tem_permissao' as any, { _perm: 'whatsapp.fila' }),
+    ])
+    setPodeConfig(!!perm); setPodeFila(!!permFila)
+    if (!perm && !permFila) { setEstado('sem_permissao'); return }
+    if (!perm) setAba('fila')
     const [{ data: c }, { data: i }, { data: s }] = await Promise.all([
       supabase.from('companies').select('whatsapp_habilitado, whatsapp_numeros_autorizados').eq('id', companyId).maybeSingle(),
       supabase.from('whatsapp_instancias').select('*').eq('company_id', companyId).order('criado_em'),
@@ -135,26 +144,26 @@ export default function WhatsappSettingsPage() {
 
       {estado === 'ok' && (
         <>
-          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          {podeConfig && <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <p className="text-sm font-medium text-foreground"><strong>{insts.length}</strong> de <strong>{autorizados}</strong> números em uso</p>
             <Button onClick={onAdicionar} disabled={pendente && !temCota} className="h-11 gradient-bg text-primary-foreground">
               <Plus className="mr-2 h-4 w-4" /> Adicionar número
             </Button>
-          </div>
+          </div>}
 
           <div className="flex gap-1 overflow-x-auto border-b border-border">
-            {(['numeros', 'mensagens'] as const).map(a => (
+            {([...(podeConfig ? ['numeros', 'mensagens'] : []), ...(podeFila ? ['fila'] : [])] as Aba[]).map(a => (
               <button key={a} onClick={() => trocarAba(a)}
-                className={`h-11 px-4 text-sm ${aba === a ? 'border-b-2 border-primary font-semibold text-foreground' : 'text-muted-foreground'}`}>
-                {a === 'numeros' ? 'Números' : 'Mensagens'}
+                className={`h-11 shrink-0 px-4 text-sm ${aba === a ? 'border-b-2 border-primary font-semibold text-foreground' : 'text-muted-foreground'}`}>
+                {a === 'numeros' ? 'Números' : a === 'mensagens' ? 'Mensagens' : 'Fila de envios'}
               </button>
             ))}
-            <button disabled className="h-11 px-4 text-sm text-muted-foreground opacity-60">Fila de envios <span className="text-[10px]">em breve</span></button>
           </div>
 
-          {aba === 'mensagens' && companyId && <MensagensTab companyId={companyId} onDirtyChange={setMsgDirty} />}
+          {aba === 'fila' && podeFila && companyId && <FilaEnviosTab companyId={companyId} />}
+          {aba === 'mensagens' && podeConfig && companyId && <MensagensTab companyId={companyId} onDirtyChange={setMsgDirty} />}
 
-          {aba === 'numeros' && <>
+          {aba === 'numeros' && podeConfig && <>
           {pendente && (
             <div className="flex items-center gap-2 rounded-xl border border-warning/40 bg-warning/10 p-3 text-sm text-foreground">
               <Clock className="h-4 w-4 text-warning" /> Solicitação de novo número aguardando aprovação
