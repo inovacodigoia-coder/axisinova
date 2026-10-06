@@ -7708,18 +7708,27 @@ export type Database = {
       whatsapp_config_empresa: {
         Row: {
           company_id: string
+          envio_automatico_ativo: boolean
+          envio_automatico_em: string | null
+          envio_automatico_por: string | null
           janela_fim: string
           janela_inicio: string
           proximo_modelo: number
         }
         Insert: {
           company_id: string
+          envio_automatico_ativo?: boolean
+          envio_automatico_em?: string | null
+          envio_automatico_por?: string | null
           janela_fim?: string
           janela_inicio?: string
           proximo_modelo?: number
         }
         Update: {
           company_id?: string
+          envio_automatico_ativo?: boolean
+          envio_automatico_em?: string | null
+          envio_automatico_por?: string | null
           janela_fim?: string
           janela_inicio?: string
           proximo_modelo?: number
@@ -9431,6 +9440,8 @@ export type Database = {
         }
         Returns: Json
       }
+      whatsapp_envio_auto_obter: { Args: never; Returns: boolean }
+      whatsapp_envio_auto_salvar: { Args: { p_ativo: boolean }; Returns: Json }
       whatsapp_envio_global_definir: {
         Args: { p_ativo: boolean }
         Returns: Json
@@ -9445,6 +9456,10 @@ export type Database = {
           instancia_id: string
           limite_diario: number
         }[]
+      }
+      whatsapp_fila_reagendar: {
+        Args: { p_id: string; p_quando: string }
+        Returns: string
       }
       whatsapp_fila_reenviar: { Args: { p_id: string }; Returns: string }
       whatsapp_fila_texto: { Args: { p_id: string }; Returns: string }

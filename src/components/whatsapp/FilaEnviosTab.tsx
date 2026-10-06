@@ -53,6 +53,8 @@ export function FilaEnviosTab({ companyId }: { companyId: string }) {
   const [atualizado, setAtualizado] = useState<Date | null>(null)
   const [, tick] = useState(0)
   const [texto, setTexto] = useState<{ nome: string; t: string } | null>(null)
+  const [edit, setEdit] = useState<{ l: Linha; data: string; hora: string } | null>(null)
+  const [salvandoEdit, setSalvandoEdit] = useState(false)
   const recarregar = useRef<() => void>(() => {})
 
   const intervalo = useMemo(() => {
@@ -119,6 +121,22 @@ export function FilaEnviosTab({ companyId }: { companyId: string }) {
     const { data, error } = await supabase.rpc('whatsapp_fila_reenviar' as any, { p_id: l.id })
     if (error || data !== 'OK') toast.error(data === 'JA_EXISTE_ATIVA' ? 'Já existe outra mensagem ativa para este agendamento.' : 'Não foi possível reenviar.')
     else { toast.success('Mensagem voltou para a fila.'); void carregar(true) }
+  }
+  const abrirEdicao = (l: Linha) => {
+    const d = l.agendada_para ? new Date(l.agendada_para) : new Date()
+    const p = new Intl.DateTimeFormat('en-CA', { timeZone: TZ, year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', hour12: false }).formatToParts(d)
+    const g = (t: string) => p.find(x => x.type === t)?.value ?? ''
+    setEdit({ l, data: `${g('year')}-${g('month')}-${g('day')}`, hora: `${g('hour') === '24' ? '00' : g('hour')}:${g('minute')}` })
+  }
+  const salvarEdicao = async () => {
+    if (!edit?.data || !edit.hora) { toast.error('Informe data e hora.'); return }
+    const quando = new Date(`${edit.data}T${edit.hora}:00-03:00`)
+    if (quando.getTime() < Date.now() - 60000) { toast.error('Escolha um horário a partir de agora.'); return }
+    setSalvandoEdit(true)
+    const { data, error } = await supabase.rpc('whatsapp_fila_reagendar' as any, { p_id: edit.l.id, p_quando: quando.toISOString() })
+    setSalvandoEdit(false)
+    if (error || data !== 'OK') { toast.error(data === 'NAO_EDITAVEL' ? 'Essa mensagem já saiu da fila e não pode mais ser alterada.' : data === 'NO_PASSADO' ? 'Escolha um horário a partir de agora.' : 'Não foi possível alterar.'); return }
+    toast.success('Horário de envio alterado.'); setEdit(null); void carregar(true)
   }
   const verTexto = async (l: Linha) => {
     const { data, error } = await supabase.rpc('whatsapp_fila_texto' as any, { p_id: l.id })
@@ -211,7 +229,9 @@ export function FilaEnviosTab({ companyId }: { companyId: string }) {
                 </div>
                 <p className="text-sm text-muted-foreground">{l.telefone_mascarado}</p>
                 <div className="text-sm text-muted-foreground">
-                  {sub === 'proximas' && fmt(l.agendada_para)}
+                  {sub === 'proximas' && (l.status === 'agendada'
+                    ? <button className="underline decoration-dotted underline-offset-2 hover:text-primary" title="Alterar data e hora do envio" onClick={() => abrirEdicao(l)}>{fmt(l.agendada_para)}</button>
+                    : fmt(l.agendada_para))}
                   {sub === 'enviadas' && <>{fmt(l.enviada_em)} · {apelido(l.instancia_id)}</>}
                   {sub === 'falhas' && <span className="text-destructive">{erroLegivel(l.erro)}</span>}
                 </div>
@@ -239,6 +259,30 @@ export function FilaEnviosTab({ companyId }: { companyId: string }) {
       <p className="text-xs text-muted-foreground">
         Enviada = saiu pelo WhatsApp; Entregue = chegou ao celular; Lida = paciente abriu. Lida pode não aparecer se o paciente desativou a confirmação de leitura.
       </p>
+
+      {edit && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-foreground/40 p-4" onClick={() => setEdit(null)}>
+          <div className="w-full max-w-sm space-y-4 rounded-2xl bg-card p-4 shadow-xl" onClick={e => e.stopPropagation()}>
+            <div className="flex items-center justify-between">
+              <p className="font-semibold text-foreground">Alterar envio para {edit.l.paciente_nome}</p>
+              <Button size="icon" variant="ghost" onClick={() => setEdit(null)} aria-label="Fechar"><X className="h-4 w-4" /></Button>
+            </div>
+            <div className="grid grid-cols-2 gap-2">
+              <label className="space-y-1 text-xs text-muted-foreground">Data
+                <input type="date" value={edit.data} onChange={e => setEdit({ ...edit, data: e.target.value })} className={`${sel} w-full`} />
+              </label>
+              <label className="space-y-1 text-xs text-muted-foreground">Hora
+                <input type="time" value={edit.hora} onChange={e => setEdit({ ...edit, hora: e.target.value })} className={`${sel} w-full`} />
+              </label>
+            </div>
+            <p className="text-xs text-muted-foreground">A mensagem só sai dentro do horário de envio da empresa e com o envio automático ligado.</p>
+            <div className="flex justify-end gap-2">
+              <Button variant="outline" onClick={() => setEdit(null)}>Cancelar</Button>
+              <Button disabled={salvandoEdit} onClick={() => void salvarEdicao()}>Salvar</Button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {texto && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-foreground/40 p-4" onClick={() => setTexto(null)}>

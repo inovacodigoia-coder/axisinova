@@ -16,6 +16,7 @@ import {
 } from '@/components/ui/alert-dialog'
 import { MensagensTab } from '@/components/whatsapp/MensagensTab'
 import { JanelaEnvio } from '@/components/whatsapp/JanelaEnvio'
+import { EnvioAutomaticoEmpresa } from '@/components/whatsapp/EnvioAutomaticoEmpresa'
 
 interface Inst {
   id: string; apelido: string | null; status: string; numero_conectado: string | null; nome_perfil: string | null
@@ -185,6 +186,7 @@ export default function WhatsappSettingsPage() {
             {insts.map(i => <NumeroCard key={i.id} inst={i} onChange={load} onConectar={() => setQrInst(i)} />)}
           </div>
 
+          {insts.length > 0 && <EnvioAutomaticoEmpresa />}
           {insts.length > 0 && <JanelaEnvio />}
           {insts.length > 0 && <TesteEnvio insts={insts} companyId={companyId} onEnviado={load} />}
           </>}
