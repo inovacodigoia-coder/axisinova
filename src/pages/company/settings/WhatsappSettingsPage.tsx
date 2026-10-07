@@ -112,6 +112,19 @@ export default function WhatsappSettingsPage() {
 
   useEffect(() => { void load() }, [load])
 
+  // Badges ao vivo: mudanças em whatsapp_instancias chegam pelo Realtime (sem polling)
+  useEffect(() => {
+    if (!companyId) return
+    const ch = supabase.channel(`wa-inst-${companyId}`)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'whatsapp_instancias', filter: `company_id=eq.${companyId}` }, (p: any) => {
+        if (p.eventType === 'DELETE') setInsts(prev => prev.filter(i => i.id !== p.old?.id))
+        else if (p.eventType === 'INSERT') setInsts(prev => prev.some(i => i.id === p.new.id) ? prev : [...prev, p.new as Inst])
+        else setInsts(prev => prev.map(i => i.id === p.new.id ? { ...i, ...(p.new as Inst) } : i))
+      })
+      .subscribe()
+    return () => { void supabase.removeChannel(ch) }
+  }, [companyId])
+
   const pendente = solic?.status === 'pendente'
   const temCota = insts.length < autorizados
 
@@ -304,6 +317,15 @@ function NumeroCard({ inst, onChange, onConectar }: { inst: Inst; onChange: () =
           : <Button className="h-11 gradient-bg text-primary-foreground" onClick={onConectar} disabled={salvando}>
               <Link2 className="mr-2 h-4 w-4" /> Conectar número
             </Button>}
+        <Button variant="outline" className="h-11" disabled={salvando} onClick={async () => {
+          setSalvando(true)
+          const r = await chamar({ acao: 'reconfigurar_webhook', instancia_id: inst.id })
+          setSalvando(false)
+          if (!r.ok) { avisarErro(r); return }
+          toast.success('Atualização automática de status configurada.')
+        }}>
+          <RefreshCw className="mr-2 h-4 w-4" /> Reconfigurar atualização automática
+        </Button>
         <Button variant="outline" className="h-11 text-destructive" onClick={() => setConfirmarExcluir(true)} disabled={salvando}>
           <Trash2 className="mr-2 h-4 w-4" /> Excluir número
         </Button>

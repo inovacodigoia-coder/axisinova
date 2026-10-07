@@ -610,6 +610,13 @@
       "when": 1791326372878,
       "tag": "0086_whatsapp_envio_por_empresa",
       "breakpoints": true
+    },
+    {
+      "idx": 87,
+      "version": "7",
+      "when": 1791333430882,
+      "tag": "0087_migration",
+      "breakpoints": true
     }
   ]
 }

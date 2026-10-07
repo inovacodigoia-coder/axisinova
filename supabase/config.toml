@@ -1,3 +1,5 @@
 project_id = "taicjeqqizmsnlibwbbn"
 [functions.whatsapp-fila-worker]
 verify_jwt = false
+[functions.whatsapp-webhook]
+verify_jwt = false
