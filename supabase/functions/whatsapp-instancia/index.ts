@@ -14,6 +14,7 @@ const erro = (status: number, codigo: string, mensagem: string) => resp(status, 
 
 // ---------- cifra AES-GCM do token da instância ----------
 import { cifrar, decifrar } from '../_shared/whatsappCripto.ts'
+import { enviarConfirmacao, idMensagem, type Formato } from '../_shared/whatsappMenu.ts'
 
 // ---------- chamada à uazapi (uma tentativa, sem repetição) ----------
 async function uaz(method: string, path: string, headers: Record<string, string>, body?: unknown) {
@@ -327,8 +328,25 @@ Deno.serve(async (req) => {
       return resp(200, { ok: true })
     }
     case 'enviar_teste': {
-      const texto = String(body?.texto ?? '')
-      if (texto.trim().length < 1 || texto.length > 500) return erro(400, 'DADOS_INVALIDOS', 'A mensagem deve ter de 1 a 500 caracteres.')
+      const tipoTeste = ['botoes', 'texto_numerado'].includes(body?.tipo_teste) ? body.tipo_teste as 'botoes' | 'texto_numerado' : 'texto'
+      let texto = String(body?.texto ?? '')
+      if (tipoTeste === 'texto') {
+        if (texto.trim().length < 1 || texto.length > 500) return erro(400, 'DADOS_INVALIDOS', 'A mensagem deve ter de 1 a 500 caracteres.')
+      } else {
+        // exemplo fictício no formato dos modelos, com cabeçalho do usuário logado
+        const { data: mod } = await db.from('whatsapp_modelos_mensagem').select('texto').eq('company_id', companyId)
+          .eq('tipo', 'confirmacao_agendamento').eq('ativo', true).order('posicao').limit(1).maybeSingle()
+        const { data: pf } = await db.from('profiles').select('full_name').eq('id', userId).maybeSingle()
+        const hoje = new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Fortaleza' }).format(new Date())
+        const amanha = new Date(new Date(`${hoje}T09:00:00-03:00`).getTime() + 86_400_000).toISOString()
+        const { data: corpo } = await db.rpc('whatsapp_render_modelo', {
+          p_texto: mod?.texto ?? 'Olá, {primeiro_nome}! Tudo bem? Passando para confirmar seu agendamento: {tipo} com {medico} em {data_hora}. Tudo certo?',
+          p_paciente: 'Maria Exemplo', p_tipo: 'consulta', p_primeira_vez: false, p_medico: 'Dra. Juliana Prado',
+          p_data_hora: amanha, p_responsavel: pf?.full_name ?? null,
+        })
+        const { data: comCab } = await db.rpc('whatsapp_cabecalho', { p_responsavel: pf?.full_name ?? '', p_corpo: `${corpo} (mensagem de teste do sistema)` })
+        texto = String(comCab ?? corpo)
+      }
       let num = String(body?.numero_destino ?? '').replace(/\D/g, '')
       if (!num.startsWith('55') || num.length <= 11) num = '55' + num
       if (!/^55[1-9]{2}\d{8,9}$/.test(num)) return erro(400, 'NUMERO_INVALIDO', 'Número de destino inválido. Use DDD + número.')
@@ -361,13 +379,25 @@ Deno.serve(async (req) => {
         return erro(409, 'INSTANCIA_DESCONECTADA', `O número "${inst.apelido}" não está conectado.`)
       }
 
-      const r = await uaz('POST', '/send/text', { token: tk }, { number: num, text: texto })
+      let r: { status: number; json: any; retryAfter: string | null }
+      let formato: Formato = 'texto', motivo: string | null = null, codigo: string | null = null
+      const filaId = crypto.randomUUID()
+      if (tipoTeste === 'texto') {
+        r = await uaz('POST', '/send/text', { token: tk }, { number: num, text: texto })
+      } else {
+        const { data: g } = await db.rpc('whatsapp_gerar_codigo_resposta')
+        codigo = String(g)
+        const e = await enviarConfirmacao({ base: BASE, token: tk, numero: num, texto, codigo, trackId: filaId, formato: tipoTeste, timeoutMs: 30_000 })
+        r = { status: e.status, json: e.body, retryAfter: e.retryAfter }
+        formato = e.formato; motivo = e.motivoPlanoB
+      }
       const agora = new Date().toISOString()
       const registrar = (status: string, msgId: string | null, err: string | null) =>
         db.from('whatsapp_fila_envios').insert({
-          company_id: companyId, tipo: 'teste', telefone_destino: num, texto_final: texto, instancia_id: inst.id,
+          id: filaId, company_id: companyId, tipo: 'teste', telefone_destino: num, texto_final: texto, instancia_id: inst.id,
           status, agendada_para: agora, enviada_em: status === 'enviada' ? agora : null,
           message_id_uazapi: msgId, erro: err, criado_por: userId,
+          formato_envio: formato, codigo_resposta: codigo, motivo_plano_b: motivo,
         })
       if (r.status === 0 || r.status === 504) {
         await registrar('falha', null, 'resultado incerto (sem resposta)')
@@ -377,11 +407,10 @@ Deno.serve(async (req) => {
         await registrar('falha', null, `HTTP ${r.status}`)
         return erroUaz(r.status, r.retryAfter)
       }
-      const id = r.json?.messageid ?? r.json?.id ?? r.json?.key?.id ?? null
-      const msgId = id == null ? null : String(id)
+      const msgId = idMensagem(r.json)
       await registrar('enviada', msgId, null)
       await db.from('whatsapp_instancias').update({ ultimo_envio_em: agora }).eq('id', inst.id)
-      return resp(200, { ok: true, dados: { status: 'enviada', message_id: msgId, instancia_apelido: inst.apelido, numero: num } })
+      return resp(200, { ok: true, dados: { status: 'enviada', message_id: msgId, instancia_apelido: inst.apelido, numero: num, formato, plano_b: motivo } })
     }
     default:
       return erro(400, 'ACAO_INVALIDA', 'Ação desconhecida.')
