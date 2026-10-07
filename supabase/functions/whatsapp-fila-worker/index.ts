@@ -4,6 +4,7 @@
 // Regras: reserva atômica no banco, uma tentativa só, nunca repete; nunca registra token nem texto.
 import { createClient } from 'npm:@supabase/supabase-js@2'
 import { decifrar } from '../_shared/whatsappCripto.ts'
+import { enviarConfirmacao, idMensagem, type Formato } from '../_shared/whatsappMenu.ts'
 
 const BASE = (Deno.env.get('UAZAPI_BASE_URL') ?? '').replace(/\/+$/, '')
 const SEGREDO = Deno.env.get('WHATSAPP_WORKER_SECRET') ?? ''
@@ -72,30 +73,47 @@ Deno.serve(async (req) => {
         continue
       }
 
+      const { data: linha } = await db.from('whatsapp_fila_envios').select('tipo, company_id, codigo_resposta').eq('id', r.fila_id).maybeSingle()
       let status = 0, body: any = null, retryAfter: string | null = null
-      try {
-        const ctl = new AbortController()
-        const t = setTimeout(() => ctl.abort(), 15_000)
-        const resp = await fetch(`${BASE}/send/text`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json', Accept: 'application/json', token },
-          body: JSON.stringify({ number: r.telefone_destino, text: r.texto_final }),
-          signal: ctl.signal,
+      let formato: Formato = 'texto', motivoPlanoB: string | null = null
+      if (linha?.tipo === 'confirmacao_agendamento') {
+        const { data: cfg } = await db.from('whatsapp_config_empresa').select('formato_confirmacao').eq('company_id', linha.company_id).maybeSingle()
+        let codigo = linha.codigo_resposta as string | null
+        if (!codigo) {
+          const { data: g } = await db.rpc('whatsapp_gerar_codigo_resposta')
+          codigo = String(g)
+          await fila({ codigo_resposta: codigo })
+        }
+        const res = await enviarConfirmacao({
+          base: BASE, token, numero: r.telefone_destino, texto: r.texto_final, codigo, trackId: r.fila_id,
+          formato: cfg?.formato_confirmacao === 'texto_numerado' ? 'texto_numerado' : 'botoes',
         })
-        clearTimeout(t)
-        status = resp.status
-        retryAfter = resp.headers.get('Retry-After')
-        try { body = await resp.json() } catch { /* sem corpo */ }
-      } catch {
-        status = 0 // timeout ou rede
+        ;({ status, body, retryAfter, formato, motivoPlanoB } = res)
+      } else {
+        try {
+          const ctl = new AbortController()
+          const t = setTimeout(() => ctl.abort(), 15_000)
+          const resp = await fetch(`${BASE}/send/text`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', Accept: 'application/json', token },
+            body: JSON.stringify({ number: r.telefone_destino, text: r.texto_final }),
+            signal: ctl.signal,
+          })
+          clearTimeout(t)
+          status = resp.status
+          retryAfter = resp.headers.get('Retry-After')
+          try { body = await resp.json() } catch { /* sem corpo */ }
+        } catch {
+          status = 0 // timeout ou rede
+        }
       }
+      if (motivoPlanoB) await fila({ motivo_plano_b: motivoPlanoB })
 
       const msgTxt = String(body?.error ?? body?.message ?? '').toLowerCase()
       const desconectado = status === 401 || /disconnect|not connected|desconect|no session|not logged/.test(msgTxt)
 
       if (status >= 200 && status < 300) {
-        const id = body?.messageid ?? body?.id ?? body?.key?.id ?? null
-        await fila({ status: 'enviada', enviada_em: agora, message_id_uazapi: id == null ? null : String(id), erro: null })
+        await fila({ status: 'enviada', enviada_em: agora, message_id_uazapi: idMensagem(body), erro: null, formato_envio: formato })
         await instancia({ ultimo_envio_em: agora, proximo_envio_apos: emMin(intervaloAleatorioMin()) })
         c.enviadas++
       } else if (desconectado) {
