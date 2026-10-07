@@ -7711,6 +7711,7 @@ export type Database = {
           envio_automatico_ativo: boolean
           envio_automatico_em: string | null
           envio_automatico_por: string | null
+          formato_confirmacao: string
           janela_fim: string
           janela_inicio: string
           proximo_modelo: number
@@ -7720,6 +7721,7 @@ export type Database = {
           envio_automatico_ativo?: boolean
           envio_automatico_em?: string | null
           envio_automatico_por?: string | null
+          formato_confirmacao?: string
           janela_fim?: string
           janela_inicio?: string
           proximo_modelo?: number
@@ -7729,6 +7731,7 @@ export type Database = {
           envio_automatico_ativo?: boolean
           envio_automatico_em?: string | null
           envio_automatico_por?: string | null
+          formato_confirmacao?: string
           janela_fim?: string
           janela_inicio?: string
           proximo_modelo?: number
@@ -7769,17 +7772,21 @@ export type Database = {
           agendada_para: string
           agendamento_id: string | null
           atualizado_em: string
+          codigo_resposta: string | null
           company_id: string
           criado_em: string
           criado_por: string | null
           enviada_em: string | null
           erro: string | null
+          formato_envio: string | null
           horas_antes: number | null
           id: string
           instancia_id: string | null
           message_id_uazapi: string | null
           modelo_posicao: number | null
+          motivo_plano_b: string | null
           paciente_nome: string | null
+          responsavel_nome: string | null
           status: string
           telefone_destino: string
           texto_final: string
@@ -7789,17 +7796,21 @@ export type Database = {
           agendada_para?: string
           agendamento_id?: string | null
           atualizado_em?: string
+          codigo_resposta?: string | null
           company_id: string
           criado_em?: string
           criado_por?: string | null
           enviada_em?: string | null
           erro?: string | null
+          formato_envio?: string | null
           horas_antes?: number | null
           id?: string
           instancia_id?: string | null
           message_id_uazapi?: string | null
           modelo_posicao?: number | null
+          motivo_plano_b?: string | null
           paciente_nome?: string | null
+          responsavel_nome?: string | null
           status?: string
           telefone_destino: string
           texto_final: string
@@ -7809,17 +7820,21 @@ export type Database = {
           agendada_para?: string
           agendamento_id?: string | null
           atualizado_em?: string
+          codigo_resposta?: string | null
           company_id?: string
           criado_em?: string
           criado_por?: string | null
           enviada_em?: string | null
           erro?: string | null
+          formato_envio?: string | null
           horas_antes?: number | null
           id?: string
           instancia_id?: string | null
           message_id_uazapi?: string | null
           modelo_posicao?: number | null
+          motivo_plano_b?: string | null
           paciente_nome?: string | null
+          responsavel_nome?: string | null
           status?: string
           telefone_destino?: string
           texto_final?: string
@@ -8212,10 +8227,13 @@ export type Database = {
           criado_por: string | null
           enviada_em: string | null
           erro: string | null
+          formato_envio: string | null
           id: string | null
           instancia_id: string | null
           modelo_posicao: number | null
+          motivo_plano_b: string | null
           paciente_nome: string | null
+          responsavel_nome: string | null
           status: string | null
           telefone_mascarado: string | null
           texto_resumo: string | null
@@ -8230,10 +8248,13 @@ export type Database = {
           criado_por?: string | null
           enviada_em?: string | null
           erro?: string | null
+          formato_envio?: string | null
           id?: string | null
           instancia_id?: string | null
           modelo_posicao?: number | null
+          motivo_plano_b?: string | null
           paciente_nome?: string | null
+          responsavel_nome?: string | null
           status?: string | null
           telefone_mascarado?: never
           texto_resumo?: never
@@ -8248,10 +8269,13 @@ export type Database = {
           criado_por?: string | null
           enviada_em?: string | null
           erro?: string | null
+          formato_envio?: string | null
           id?: string | null
           instancia_id?: string | null
           modelo_posicao?: number | null
+          motivo_plano_b?: string | null
           paciente_nome?: string | null
+          responsavel_nome?: string | null
           status?: string | null
           telefone_mascarado?: never
           texto_resumo?: never
@@ -9419,6 +9443,10 @@ export type Database = {
       triagem__semear: { Args: { _company: string }; Returns: undefined }
       triagem_semear_padroes: { Args: never; Returns: undefined }
       triagem_tem_permissao: { Args: { _perm: string }; Returns: boolean }
+      whatsapp_cabecalho: {
+        Args: { p_corpo: string; p_responsavel: string }
+        Returns: string
+      }
       whatsapp_cancelar_envios_agendamento: {
         Args: { p_agendamento_id: string }
         Returns: Json
@@ -9463,6 +9491,11 @@ export type Database = {
       }
       whatsapp_fila_reenviar: { Args: { p_id: string }; Returns: string }
       whatsapp_fila_texto: { Args: { p_id: string }; Returns: string }
+      whatsapp_formato_salvar: {
+        Args: { p_formato: string }
+        Returns: undefined
+      }
+      whatsapp_gerar_codigo_resposta: { Args: never; Returns: string }
       whatsapp_janela_obter: { Args: never; Returns: Json }
       whatsapp_janela_salvar: {
         Args: { p_fim: string; p_inicio: string }
@@ -9472,27 +9505,45 @@ export type Database = {
         Args: { _company: string; _habilitado: boolean; _numeros: number }
         Returns: undefined
       }
+      whatsapp_limpar_nome: { Args: { p: string }; Returns: string }
       whatsapp_modelo_padrao: { Args: { p_posicao: number }; Returns: string }
       whatsapp_modelo_salvar: {
         Args: { p_ativo: boolean; p_id: string; p_texto: string }
         Returns: undefined
+      }
+      whatsapp_nome_responsavel: {
+        Args: { p_company: string; p_user: string }
+        Returns: string
       }
       whatsapp_normalizar_celular: { Args: { p: string }; Returns: string }
       whatsapp_reenfileirar_confirmacao: {
         Args: { p_agendamento_id: string }
         Returns: Json
       }
-      whatsapp_render_modelo: {
-        Args: {
-          p_data_hora: string
-          p_medico: string
-          p_paciente: string
-          p_primeira_vez: boolean
-          p_texto: string
-          p_tipo: string
-        }
-        Returns: string
-      }
+      whatsapp_render_modelo:
+        | {
+            Args: {
+              p_data_hora: string
+              p_medico: string
+              p_paciente: string
+              p_primeira_vez: boolean
+              p_texto: string
+              p_tipo: string
+            }
+            Returns: string
+          }
+        | {
+            Args: {
+              p_data_hora: string
+              p_medico: string
+              p_paciente: string
+              p_primeira_vez: boolean
+              p_responsavel: string
+              p_texto: string
+              p_tipo: string
+            }
+            Returns: string
+          }
       whatsapp_reservar_envios: {
         Args: never
         Returns: {

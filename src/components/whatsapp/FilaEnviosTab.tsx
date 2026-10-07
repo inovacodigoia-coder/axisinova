@@ -9,7 +9,9 @@ type Linha = {
   id: string; tipo: string; paciente_nome: string | null; telefone_mascarado: string | null
   modelo_posicao: number | null; instancia_id: string | null; status: string
   agendada_para: string | null; enviada_em: string | null; erro: string | null; criado_em: string
+  formato_envio?: string | null; motivo_plano_b?: string | null
 }
+const FORMATO: Record<string, string> = { botoes: 'Botões', texto_numerado: 'Texto numerado', texto: 'Texto' }
 type Numero = { instancia_id: string; apelido: string | null; enviadas_hoje: number; limite_diario: number | null }
 type Sub = 'proximas' | 'enviadas' | 'falhas'
 
@@ -67,7 +69,7 @@ export function FilaEnviosTab({ companyId }: { companyId: string }) {
     if (!silencioso) setLoading(true)
     const col = sub === 'proximas' ? 'agendada_para' : sub === 'enviadas' ? 'enviada_em' : 'atualizado_em'
     let q = supabase.from('whatsapp_fila_envios_v' as any)
-      .select('id, tipo, paciente_nome, telefone_mascarado, modelo_posicao, instancia_id, status, agendada_para, enviada_em, erro, criado_em', { count: 'exact' })
+      .select('id, tipo, paciente_nome, telefone_mascarado, modelo_posicao, instancia_id, status, agendada_para, enviada_em, erro, criado_em, formato_envio, motivo_plano_b', { count: 'exact' })
       .in('status', SUB_STATUS[sub])
     if (sub !== 'proximas') {
       if (intervalo.from) q = q.gte(col, intervalo.from)
@@ -141,7 +143,7 @@ export function FilaEnviosTab({ companyId }: { companyId: string }) {
   const verTexto = async (l: Linha) => {
     const { data, error } = await supabase.rpc('whatsapp_fila_texto' as any, { p_id: l.id })
     if (error || !data) { toast.error('Não foi possível abrir a mensagem.'); return }
-    setTexto({ nome: l.paciente_nome ?? '', t: data as string })
+    setTexto({ nome: `${l.paciente_nome ?? ''}${l.formato_envio ? ` · ${FORMATO[l.formato_envio]}` : ''}`, t: (data as string) + (l.motivo_plano_b ? `\n\n[Plano B: ${l.motivo_plano_b}]` : '') })
   }
 
   const seg = atualizado ? Math.floor((Date.now() - atualizado.getTime()) / 1000) : null
@@ -225,7 +227,7 @@ export function FilaEnviosTab({ companyId }: { companyId: string }) {
               <div key={l.id} className="grid grid-cols-1 gap-2 rounded-xl border border-border bg-card p-3 md:grid-cols-[1.5fr_1fr_1fr_1fr_auto] md:items-center md:gap-3">
                 <div>
                   <p className="text-sm font-medium text-foreground">{l.paciente_nome ?? '—'}</p>
-                  <p className="text-xs text-muted-foreground">{l.tipo === 'teste' ? 'Teste' : 'Confirmação'}{l.modelo_posicao ? ` · Modelo ${l.modelo_posicao}` : ''}</p>
+                  <p className="text-xs text-muted-foreground">{l.tipo === 'teste' ? 'Teste' : 'Confirmação'}{l.modelo_posicao ? ` · Modelo ${l.modelo_posicao}` : ''}{l.formato_envio && <span className="ml-1 rounded-full border border-border px-1.5 py-px text-[10px]">{FORMATO[l.formato_envio]}</span>}</p>
                 </div>
                 <p className="text-sm text-muted-foreground">{l.telefone_mascarado}</p>
                 <div className="text-sm text-muted-foreground">
@@ -233,7 +235,7 @@ export function FilaEnviosTab({ companyId }: { companyId: string }) {
                     ? <button className="underline decoration-dotted underline-offset-2 hover:text-primary" title="Alterar data e hora do envio" onClick={() => abrirEdicao(l)}>{fmt(l.agendada_para)}</button>
                     : fmt(l.agendada_para))}
                   {sub === 'enviadas' && <>{fmt(l.enviada_em)} · {apelido(l.instancia_id)}</>}
-                  {sub === 'falhas' && <span className="text-destructive">{erroLegivel(l.erro)}</span>}
+                  {sub === 'falhas' && <span className="text-destructive">{erroLegivel(l.erro)}{l.motivo_plano_b && <span className="block text-[11px] text-muted-foreground">Plano B: {l.motivo_plano_b}</span>}</span>}
                 </div>
                 <span className={`w-fit rounded-full px-2 py-0.5 text-[11px] font-medium ${b.c}`}>{b.l}</span>
                 <div className="flex gap-2">

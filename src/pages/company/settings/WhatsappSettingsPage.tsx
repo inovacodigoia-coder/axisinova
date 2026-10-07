@@ -518,13 +518,15 @@ function normalizar(v: string) {
   return /^55[1-9]{2}\d{8,9}$/.test(d) ? d : null
 }
 
-interface Hist { id: string; criado_em: string; telefone_mascarado: string; instancia_id: string | null; status: string; texto_resumo: string }
+interface Hist { id: string; criado_em: string; telefone_mascarado: string; instancia_id: string | null; status: string; texto_resumo: string; formato_envio: string | null }
+const FORMATO_ROTULO: Record<string, string> = { botoes: 'Botões', texto_numerado: 'Texto numerado', texto: 'Texto' }
 
 function TesteEnvio({ insts, companyId, onEnviado }: { insts: Inst[]; companyId: string | null | undefined; onEnviado: () => void }) {
   const conectados = insts.filter(i => i.status === 'connected')
   const [via, setVia] = useState('rodizio')
   const [fone, setFone] = useState('')
   const [texto, setTexto] = useState(TEXTO_PADRAO)
+  const [tipoTeste, setTipoTeste] = useState<'texto' | 'botoes' | 'texto_numerado'>('texto')
   const [confirmar, setConfirmar] = useState<string | null>(null)
   const [enviando, setEnviando] = useState(false)
   const [hist, setHist] = useState<Hist[]>([])
@@ -533,14 +535,14 @@ function TesteEnvio({ insts, companyId, onEnviado }: { insts: Inst[]; companyId:
   const carregarHist = useCallback(async () => {
     if (!companyId) return
     const { data } = await supabase.from('whatsapp_fila_envios_v' as any)
-      .select('id, criado_em, telefone_mascarado, instancia_id, status, texto_resumo')
+      .select('id, criado_em, telefone_mascarado, instancia_id, status, texto_resumo, formato_envio')
       .eq('company_id', companyId).eq('tipo', 'teste').order('criado_em', { ascending: false }).limit(10)
     setHist((data as any) ?? [])
   }, [companyId])
   useEffect(() => { void carregarHist() }, [carregarHist])
 
   const pedir = () => {
-    if (!texto.trim() || texto.length > 500) { toast.error('A mensagem deve ter de 1 a 500 caracteres.'); return }
+    if (tipoTeste === 'texto' && (!texto.trim() || texto.length > 500)) { toast.error('A mensagem deve ter de 1 a 500 caracteres.'); return }
     const n = normalizar(fone)
     if (!n) { toast.error(MSG_TESTE.NUMERO_INVALIDO); return }
     setConfirmar(n)
@@ -548,9 +550,9 @@ function TesteEnvio({ insts, companyId, onEnviado }: { insts: Inst[]; companyId:
   const enviar = async () => {
     if (!confirmar || enviando) return
     setEnviando(true)
-    const r = await chamar({ acao: 'enviar_teste', numero_destino: confirmar, texto, ...(via !== 'rodizio' ? { instancia_id: via } : {}) })
+    const r = await chamar({ acao: 'enviar_teste', numero_destino: confirmar, texto, tipo_teste: tipoTeste, ...(via !== 'rodizio' ? { instancia_id: via } : {}) })
     setEnviando(false); setConfirmar(null)
-    if (r.ok) toast.success(`Mensagem enviada pelo WhatsApp (número: ${r.dados?.instancia_apelido}). Confirme o recebimento no celular de destino.`, { duration: 8000 })
+    if (r.ok) toast.success(`Mensagem enviada pelo WhatsApp (número: ${r.dados?.instancia_apelido}, formato: ${FORMATO_ROTULO[r.dados?.formato] ?? 'Texto'}).${r.dados?.plano_b ? ' Os botões foram recusados e ela saiu em texto numerado.' : ''} Confirme o recebimento no celular de destino.`, { duration: 8000 })
     else if (r.codigo && MSG_TESTE[r.codigo]) toast.error(MSG_TESTE[r.codigo])
     else avisarErro(r)
     void carregarHist(); onEnviado()
@@ -574,10 +576,21 @@ function TesteEnvio({ insts, companyId, onEnviado }: { insts: Inst[]; companyId:
         <label className="grid gap-1 text-sm">Número de destino
           <Input inputMode="tel" className="h-11" placeholder="(84) 99999-9999" value={fone} onChange={e => setFone(mascaraFone(e.target.value))} />
         </label>
-        <label className="grid gap-1 text-sm">Mensagem
-          <Textarea rows={4} maxLength={500} value={texto} onChange={e => setTexto(e.target.value)} />
-          <span className="text-right text-xs text-muted-foreground">{texto.length}/500</span>
+        <label className="grid gap-1 text-sm">Tipo de teste
+          <select value={tipoTeste} onChange={e => setTipoTeste(e.target.value as any)} className="h-11 rounded-md border border-input bg-background px-3 text-sm">
+            <option value="texto">Texto simples</option>
+            <option value="botoes">Confirmação com botões</option>
+            <option value="texto_numerado">Confirmação em texto numerado</option>
+          </select>
         </label>
+        {tipoTeste === 'texto' ? (
+          <label className="grid gap-1 text-sm">Mensagem
+            <Textarea rows={4} maxLength={500} value={texto} onChange={e => setTexto(e.target.value)} />
+            <span className="text-right text-xs text-muted-foreground">{texto.length}/500</span>
+          </label>
+        ) : (
+          <p className="rounded-lg bg-muted p-3 text-xs text-muted-foreground">Envia uma confirmação de exemplo (paciente "Maria Exemplo", consulta com Dra. Juliana Prado amanhã às 09:00), com seu nome no cabeçalho e marcada como mensagem de teste. Nenhum agendamento é afetado.</p>
+        )}
         <Button onClick={pedir} disabled={enviando || !fone} className="h-11 gradient-bg text-primary-foreground">
           {enviando ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <MessageCircle className="mr-2 h-4 w-4" />} Enviar mensagem de teste
         </Button>
@@ -593,6 +606,7 @@ function TesteEnvio({ insts, companyId, onEnviado }: { insts: Inst[]; companyId:
                 <span className="font-mono">{h.telefone_mascarado}</span>
                 <span>por {apelido(h.instancia_id)}</span>
                 <span className={`w-fit rounded-full px-2 py-0.5 text-xs font-medium ${badge[h.status] ?? 'bg-muted text-muted-foreground'}`}>{h.status === 'enviada' ? 'Enviada' : h.status === 'falha' ? 'Falha' : h.status}</span>
+                <span className="w-fit rounded-full border border-border px-2 py-0.5 text-xs text-muted-foreground">{FORMATO_ROTULO[h.formato_envio ?? 'texto'] ?? 'Texto'}</span>
                 <span className="truncate text-muted-foreground sm:flex-1">{h.texto_resumo}</span>
               </li>
             ))}
