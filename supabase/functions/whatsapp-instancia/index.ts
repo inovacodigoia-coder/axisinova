@@ -95,6 +95,41 @@ Deno.serve(async (req) => {
     }
     return false
   }
+  const configurarWebhook = async (tk: string) => {
+    const seg = Deno.env.get('WHATSAPP_WEBHOOK_SECRET') ?? ''
+    if (!seg) return false
+    const r = await uaz('POST', '/webhook', { token: tk }, {
+      enabled: true, url: `${url}/functions/v1/whatsapp-webhook?s=${encodeURIComponent(seg)}`,
+      events: ['connection', 'messages_update'], excludeMessages: ['wasSentByApi'],
+      addUrlEvents: false, addUrlTypesMessages: false,
+    })
+    return r.status >= 200 && r.status < 300
+  }
+
+  // ---------- Super Admin: verificar webhook de uma instância ----------
+  if (acao === 'verificar_webhook') {
+    if (!superAdmin) return erro(403, 'SEM_PERMISSAO', 'Apenas o Super Admin.')
+    const id = String(body?.instancia_id ?? '')
+    if (!/^[0-9a-f-]{36}$/i.test(id)) return erro(400, 'DADOS_INVALIDOS', 'Número inválido.')
+    const tk = await tokenDe(id)
+    if (!tk) return erro(404, 'NAO_CONFIGURADA', 'Este número não está configurado no servidor.')
+    const [cfg, errs] = await Promise.all([uaz('GET', '/webhook', { token: tk }), uaz('GET', '/webhook/errors', { token: tk })])
+    if (cfg.status === 401) return erroUaz(401, null)
+    const cfgs = Array.isArray(cfg.json) ? cfg.json : cfg.json ? [cfg.json] : []
+    // nunca devolve a URL completa (tem o segredo)
+    const config = cfgs.map((c: any) => ({
+      enabled: !!c?.enabled, events: c?.events ?? [],
+      aponta_para_axis: typeof c?.url === 'string' && c.url.includes('/functions/v1/whatsapp-webhook'),
+    }))
+    const lista = Array.isArray(errs.json) ? errs.json : Array.isArray(errs.json?.errors) ? errs.json.errors : []
+    const erros = lista.slice(-20).map((e: any) => ({
+      quando: e?.timestamp ?? e?.time ?? e?.created_at ?? null,
+      evento: e?.event ?? e?.EventType ?? null,
+      status: e?.status ?? e?.statusCode ?? null,
+      erro: String(e?.error ?? e?.message ?? '').replace(/s=[^&\s"]+/g, 's=***').slice(0, 300),
+    }))
+    return resp(200, { ok: true, dados: { config, erros, erros_http: errs.status } })
+  }
 
   // ---------- ações do Super Admin (não dependem da empresa do perfil) ----------
   if (acao === 'desconectar_empresa' || acao === 'remover_numero') {
@@ -179,7 +214,8 @@ Deno.serve(async (req) => {
         .select('id, apelido, nome_instancia, status').single()
       if (error || !nova) return erro(500, 'ERRO_INTERNO', 'Não foi possível gravar o número.')
       await db.from('whatsapp_instancia_segredos').insert({ instancia_id: nova.id, token_instancia_cifrado: await cifrar(token) })
-      await audit(companyId, 'criar_numero', null, { apelido, nome_instancia: nome })
+      const webhookOk = await configurarWebhook(token)
+      await audit(companyId, 'criar_numero', null, { apelido, nome_instancia: nome, webhook: webhookOk })
       // Alerta ao Super Admin quando o servidor passar de 80 instâncias
       try {
         const all = await uaz('GET', '/instance/all', { admintoken: ADMIN })
