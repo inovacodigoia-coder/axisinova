@@ -10,7 +10,14 @@ type Linha = {
   modelo_posicao: number | null; instancia_id: string | null; status: string
   agendada_para: string | null; enviada_em: string | null; erro: string | null; criado_em: string
   formato_envio?: string | null; motivo_plano_b?: string | null
+  resposta_acao?: string | null; respondida_em?: string | null
 }
+const RESP: Record<string, { l: string; c: string }> = {
+  confirmar: { l: 'Confirmou', c: 'bg-success/15 text-success' },
+  remarcar: { l: 'Pediu remarcar', c: 'bg-warning/15 text-warning' },
+  cancelar: { l: 'Pediu cancelar', c: 'bg-destructive/10 text-destructive' },
+}
+const TIPO: Record<string, string> = { teste: 'Teste', confirmacao_agendamento: 'Confirmação', resposta_automatica: 'Resposta automática' }
 const FORMATO: Record<string, string> = { botoes: 'Botões', texto_numerado: 'Texto numerado', texto: 'Texto' }
 type Numero = { instancia_id: string; apelido: string | null; enviadas_hoje: number; limite_diario: number | null }
 type Sub = 'proximas' | 'enviadas' | 'falhas'
@@ -69,7 +76,7 @@ export function FilaEnviosTab({ companyId }: { companyId: string }) {
     if (!silencioso) setLoading(true)
     const col = sub === 'proximas' ? 'agendada_para' : sub === 'enviadas' ? 'enviada_em' : 'atualizado_em'
     let q = supabase.from('whatsapp_fila_envios_v' as any)
-      .select('id, tipo, paciente_nome, telefone_mascarado, modelo_posicao, instancia_id, status, agendada_para, enviada_em, erro, criado_em, formato_envio, motivo_plano_b', { count: 'exact' })
+      .select('id, tipo, paciente_nome, telefone_mascarado, modelo_posicao, instancia_id, status, agendada_para, enviada_em, erro, criado_em, formato_envio, motivo_plano_b, resposta_acao, respondida_em', { count: 'exact' })
       .in('status', SUB_STATUS[sub])
     if (sub !== 'proximas') {
       if (intervalo.from) q = q.gte(col, intervalo.from)
@@ -201,7 +208,7 @@ export function FilaEnviosTab({ companyId }: { companyId: string }) {
           {numeros.map(n => <option key={n.instancia_id} value={n.instancia_id}>{n.apelido}</option>)}
         </select>
         <select value={tipo} onChange={e => setTipo(e.target.value)} className={sel}>
-          <option value="">Todos os tipos</option><option value="confirmacao_agendamento">Confirmação</option><option value="teste">Teste</option>
+          <option value="">Todos os tipos</option><option value="confirmacao_agendamento">Confirmação</option><option value="teste">Teste</option><option value="resposta_automatica">Resposta automática</option>
         </select>
         <input value={busca} onChange={e => setBusca(e.target.value)} placeholder="Buscar paciente" className={`${sel} flex-1 min-w-[160px]`} />
       </div>
@@ -227,7 +234,7 @@ export function FilaEnviosTab({ companyId }: { companyId: string }) {
               <div key={l.id} className="grid grid-cols-1 gap-2 rounded-xl border border-border bg-card p-3 md:grid-cols-[1.5fr_1fr_1fr_1fr_auto] md:items-center md:gap-3">
                 <div>
                   <p className="text-sm font-medium text-foreground">{l.paciente_nome ?? '—'}</p>
-                  <p className="text-xs text-muted-foreground">{l.tipo === 'teste' ? 'Teste' : 'Confirmação'}{l.modelo_posicao ? ` · Modelo ${l.modelo_posicao}` : ''}{l.formato_envio && <span className="ml-1 rounded-full border border-border px-1.5 py-px text-[10px]">{FORMATO[l.formato_envio]}</span>}</p>
+                  <p className="text-xs text-muted-foreground">{TIPO[l.tipo] ?? l.tipo}{l.modelo_posicao ? ` · Modelo ${l.modelo_posicao}` : ''}{l.formato_envio && <span className="ml-1 rounded-full border border-border px-1.5 py-px text-[10px]">{FORMATO[l.formato_envio]}</span>}</p>
                 </div>
                 <p className="text-sm text-muted-foreground">{l.telefone_mascarado}</p>
                 <div className="text-sm text-muted-foreground">
@@ -237,7 +244,14 @@ export function FilaEnviosTab({ companyId }: { companyId: string }) {
                   {sub === 'enviadas' && <>{fmt(l.enviada_em)} · {apelido(l.instancia_id)}</>}
                   {sub === 'falhas' && <span className="text-destructive">{erroLegivel(l.erro)}{l.motivo_plano_b && <span className="block text-[11px] text-muted-foreground">Plano B: {l.motivo_plano_b}</span>}</span>}
                 </div>
-                <span className={`w-fit rounded-full px-2 py-0.5 text-[11px] font-medium ${b.c}`}>{b.l}</span>
+                <div className="flex flex-wrap items-center gap-1">
+                  <span className={`w-fit rounded-full px-2 py-0.5 text-[11px] font-medium ${b.c}`}>{b.l}</span>
+                  {l.resposta_acao && RESP[l.resposta_acao] && (
+                    <span className={`w-fit rounded-full px-2 py-0.5 text-[11px] font-medium ${RESP[l.resposta_acao].c}`} title="Resposta do paciente">
+                      {RESP[l.resposta_acao].l}{l.respondida_em ? ` · ${fmt(l.respondida_em)}` : ''}
+                    </span>
+                  )}
+                </div>
                 <div className="flex gap-2">
                   <Button size="sm" variant="ghost" onClick={() => verTexto(l)}><MessageSquare className="mr-1 h-3.5 w-3.5" />Ver mensagem</Button>
                   {sub === 'proximas' && l.status === 'agendada' && <Button size="sm" variant="outline" onClick={() => cancelar(l)}>Cancelar</Button>}

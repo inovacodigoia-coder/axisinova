@@ -16,6 +16,8 @@ type Linha = {
   agendada_para: string | null
   enviada_em: string | null
   erro: string | null
+  resposta_acao: string | null
+  respondida_em: string | null
 }
 
 const STATUS: Record<string, { label: string; cls: string; icon: any }> = {
@@ -42,7 +44,7 @@ export default function ConfirmationsPage() {
   const load = useCallback(async () => {
     setLoading(true)
     const { data, error } = await supabase.from('whatsapp_fila_envios_v' as any)
-      .select('id, agendamento_id, paciente_nome, telefone_mascarado, modelo_posicao, texto_resumo, status, agendada_para, enviada_em, erro')
+      .select('id, agendamento_id, paciente_nome, telefone_mascarado, modelo_posicao, texto_resumo, status, agendada_para, enviada_em, erro, resposta_acao, respondida_em')
       .eq('tipo', 'confirmacao_agendamento')
       .order('agendada_para', { ascending: false })
       .limit(500)
@@ -58,9 +60,12 @@ export default function ConfirmationsPage() {
   const filtered = useMemo(() => {
     if (statusFilter === 'all') return linhas
     if (statusFilter === 'ativas') return linhas.filter(l => l.status !== 'cancelada')
+    if (statusFilter === 'pede_remarcar') return linhas.filter(l => l.agendamento_id && aptById.get(l.agendamento_id)?.pedidoPaciente === 'remarcar')
+    if (statusFilter === 'pede_cancelar') return linhas.filter(l => l.agendamento_id && aptById.get(l.agendamento_id)?.pedidoPaciente === 'cancelar')
+    if (statusFilter === 'confirmou') return linhas.filter(l => l.resposta_acao === 'confirmar')
     if (statusFilter === 'enviada') return linhas.filter(l => ENVIADAS.includes(l.status))
     return linhas.filter(l => l.status === statusFilter)
-  }, [linhas, statusFilter])
+  }, [linhas, statusFilter, aptById])
 
   const { visibleItems, totalItems, hasMore, showMore, showAll, remainingCount } = usePaginatedList(filtered, 10)
 
@@ -106,6 +111,9 @@ export default function ConfirmationsPage() {
           <option value="agendada">Agendadas</option>
           <option value="enviada">Enviadas</option>
           <option value="falha">Falharam</option>
+          <option value="confirmou">Confirmaram pelo WhatsApp</option>
+          <option value="pede_remarcar">Pediram remarcar</option>
+          <option value="pede_cancelar">Pediram cancelar</option>
           <option value="cancelada">Canceladas</option>
           <option value="all">Todas</option>
         </select>
@@ -138,6 +146,11 @@ export default function ConfirmationsPage() {
                 {ENVIADAS.includes(l.status) ? `Enviada em ${fmt(l.enviada_em)}` : l.status === 'agendada' ? `Envio previsto: ${fmt(l.agendada_para)}` : ''}
                 {l.status === 'falha' && l.erro ? `Motivo: ${l.erro}` : ''}
               </p>
+              {apt?.pedidoPaciente && (
+                <p className={`mt-2 inline-block rounded-full px-2 py-0.5 text-[11px] font-medium ${apt.pedidoPaciente === 'remarcar' ? 'bg-warning/15 text-warning' : 'bg-destructive/10 text-destructive'}`}>
+                  Paciente pediu para {apt.pedidoPaciente}{apt.pedidoPacienteEm ? ` em ${fmt(apt.pedidoPacienteEm)}` : ''}
+                </p>
+              )}
               {apt && l.status !== 'cancelada' && (
                 <div className="flex gap-2 mt-3">
                   {confirmado ? (
