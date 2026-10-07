@@ -1,12 +1,12 @@
 import { describe, it, expect } from 'vitest'
-import { renderModelo, MODELOS_PADRAO, variaveisDesconhecidas } from './whatsappModelo'
+import { renderModelo, MODELOS_PADRAO, variaveisDesconhecidas, comCabecalho } from './whatsappModelo'
 
 // Os mesmos 3 casos foram conferidos contra public.whatsapp_render_modelo no banco.
 export const CASOS = [
   {
     texto: MODELOS_PADRAO[1],
     dados: { paciente: 'Danielle Beatriz', tipo: 'Consulta', primeiraVez: true, medico: 'Dra. Juliana Prado', dataHora: '2026-10-06T13:40:00Z' },
-    esperado: 'Olá, Danielle! Tudo bem? Passando para confirmar seu agendamento: consulta (1ª vez) com Dra. Juliana Prado em terça, 06/10/2026 às 10:40. Responda SIM para confirmar ou NÃO caso precise remarcar.',
+    esperado: 'Olá, Danielle! Tudo bem? Passando para confirmar seu agendamento: consulta (1ª vez) com Dra. Juliana Prado em terça, 06/10/2026 às 10:40. Tudo certo?',
   },
   {
     texto: 'Oi {primeiro_nome}, seu {tipo} é {data_hora}.',
@@ -18,9 +18,15 @@ export const CASOS = [
     dados: { paciente: 'Ana', tipo: 'Consulta', primeiraVez: false, medico: '', dataHora: '2026-10-05T12:00:00Z' },
     esperado: 'Ana, consulta com. Até segunda, 05/10/2026 às 09:00! {pacient}',
   },
+  {
+    texto: 'Agendado por {responsavel}.',
+    dados: { paciente: 'Ana', tipo: 'Consulta', primeiraVez: false, medico: '', dataHora: null, responsavel: ' *Alex_sandro* ~Souza ' },
+    esperado: 'Agendado por Alexsandro Souza.',
+  },
 ]
 
 describe('renderModelo', () => {
   CASOS.forEach((c, i) => it(`caso ${i + 1}`, () => expect(renderModelo(c.texto, c.dados)).toBe(c.esperado)))
+  it('cabeçalho', () => expect(comCabecalho('Alex*', 'Oi')).toBe('*Alex*:\nOi'))
   it('detecta variável errada', () => expect(variaveisDesconhecidas('Oi {pacient} {tipo}')).toEqual(['{pacient}']))
 })
