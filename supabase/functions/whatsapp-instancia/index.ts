@@ -231,6 +231,20 @@ Deno.serve(async (req) => {
       } catch { /* alerta é opcional */ }
       return resp(200, { ok: true, dados: nova })
     }
+    case 'reconfigurar_webhook': {
+      const alvo = body?.instancia_id
+        ? [await instDaEmpresa()].filter(Boolean)
+        : ((await db.from('whatsapp_instancias').select('*').eq('company_id', companyId)).data ?? [])
+      if (!alvo.length) return erro(404, 'NAO_ENCONTRADA', 'Número não encontrado.')
+      let falhas = 0
+      for (const i of alvo as any[]) {
+        const tk = await tokenDe(i.id)
+        if (!tk || !(await configurarWebhook(tk))) falhas++
+      }
+      await audit(companyId, 'reconfigurar_webhook', null, { total: alvo.length, falhas })
+      return resp(200, { ok: falhas === 0, codigo: falhas ? 'WEBHOOK_PARCIAL' : undefined,
+        mensagem: falhas ? `${falhas} número(s) não aceitaram a configuração automática.` : undefined, dados: { total: alvo.length, falhas } })
+    }
     case 'conectar': {
       const inst = await instDaEmpresa()
       if (!inst) return erro(404, 'NAO_ENCONTRADA', 'Número não encontrado.')
