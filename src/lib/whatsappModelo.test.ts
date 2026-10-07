@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { renderModelo, MODELOS_PADRAO, variaveisDesconhecidas, comCabecalho } from './whatsappModelo'
+import { renderModelo, MODELOS_PADRAO, RESPOSTAS_PADRAO, variaveisDesconhecidas, comCabecalho } from './whatsappModelo'
 
 // Os mesmos 3 casos foram conferidos contra public.whatsapp_render_modelo no banco.
 export const CASOS = [
@@ -22,6 +22,16 @@ export const CASOS = [
     texto: 'Agendado por {responsavel}.',
     dados: { paciente: 'Ana', tipo: 'Consulta', primeiraVez: false, medico: '', dataHora: null, responsavel: ' *Alex_sandro* ~Souza ' },
     esperado: 'Agendado por Alexsandro Souza.',
+  },
+  {
+    texto: RESPOSTAS_PADRAO.resposta_confirmar,
+    dados: { paciente: 'Ana', tipo: 'Consulta', primeiraVez: false, medico: '', dataHora: '2026-10-07T13:00:00Z' },
+    esperado: 'Seu agendamento foi confirmado com sucesso.\nAgradecemos a sua confiança e ficamos à disposição caso precise alterar o horário ou obter mais informações.\n\nTenha um excelente dia! Até QUARTA! 💚🙏',
+  },
+  {
+    texto: 'Até {dia_semana}, {primeiro_nome}.',
+    dados: { paciente: 'Bia Lima', tipo: 'Exame', primeiraVez: false, medico: '', dataHora: '2026-10-11T02:05:00Z' },
+    esperado: 'Até SÁBADO, Bia.',
   },
 ]
 
