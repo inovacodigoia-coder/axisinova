@@ -147,10 +147,11 @@ export function SchedulingProvider({ children }: { children: ReactNode }) {
       else setAppointments((aRes.data || []).map(dbToAppointment))
     }
     load()
+    const t = setInterval(load, 60000)
     const { data: sub } = supabase.auth.onAuthStateChange((event) => {
       if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') load()
     })
-    return () => { cancelled = true; sub.subscription.unsubscribe() }
+    return () => { cancelled = true; clearInterval(t); sub.subscription.unsubscribe() }
   }, [isDemo, dbCompanyId])
 
   const addPatient = useCallback((p: SchedulingPatient) => setPatients(prev => [...prev, p]), [])

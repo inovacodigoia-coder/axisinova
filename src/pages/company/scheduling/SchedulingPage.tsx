@@ -1,4 +1,5 @@
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useEffect } from 'react'
+import { useSearchParams } from 'react-router-dom'
 import { Plus } from 'lucide-react'
 import { GradientButton } from '@/components/ui/GradientButton'
 import { AgendaFilters, type ViewMode } from '@/components/scheduling/CalendarView/AgendaFilters'
@@ -26,6 +27,16 @@ export default function SchedulingPage() {
   const [viewMode, setViewMode] = useState<ViewMode>('day')
   const [wizardOpen, setWizardOpen] = useState(false)
   const [selectedApt, setSelectedApt] = useState<SchedulingAppointment | null>(null)
+  const [searchParams, setSearchParams] = useSearchParams()
+  const aptParam = searchParams.get('agendamento')
+  useEffect(() => {
+    if (!aptParam) return
+    const a = appointments.find(x => x.id === aptParam)
+    if (!a) return
+    setSelectedDate(new Date(a.date + 'T12:00:00'))
+    setSelectedApt(a)
+    setSearchParams(p => { p.delete('agendamento'); return p }, { replace: true })
+  }, [aptParam, appointments, setSearchParams])
   const [prefilledDoctor, setPrefilledDoctor] = useState('')
   const [prefilledDate, setPrefilledDate] = useState('')
   const [prefilledTime, setPrefilledTime] = useState('')
