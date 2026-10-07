@@ -5,26 +5,33 @@ import { Switch } from '@/components/ui/switch'
 import { Textarea } from '@/components/ui/textarea'
 import { toast } from 'sonner'
 import { AlertTriangle, Info, Loader2, RotateCcw } from 'lucide-react'
-import { VARIAVEIS_MODELO, MODELOS_PADRAO, renderModelo, variaveisDesconhecidas, limparTexto } from '@/lib/whatsappModelo'
+import { VARIAVEIS_MODELO, MODELOS_PADRAO, renderModelo, variaveisDesconhecidas, limparTexto, comCabecalho, textoNumerado } from '@/lib/whatsappModelo'
+import { useAuth } from '@/context/AuthContext'
 
 interface Modelo { id: string; posicao: number; texto: string; ativo: boolean }
 
-const EXEMPLO = { paciente: 'Danielle Beatriz', tipo: 'Consulta', primeiraVez: true, medico: 'Dra. Juliana Prado', dataHora: '2026-10-06T13:40:00Z' }
+type Formato = 'botoes' | 'texto_numerado'
+const EXEMPLO_BASE = { paciente: 'Danielle Beatriz', tipo: 'Consulta', primeiraVez: true, medico: 'Dra. Juliana Prado', dataHora: '2026-10-06T13:40:00Z' }
 
 export function MensagensTab({ companyId, onDirtyChange }: { companyId: string; onDirtyChange: (d: boolean) => void }) {
   const [modelos, setModelos] = useState<Modelo[] | null>(null)
   const [proximo, setProximo] = useState<number | null>(null)
   const [rascunho, setRascunho] = useState<Record<string, { texto: string; ativo: boolean }>>({})
+  const [formato, setFormato] = useState<Formato>('botoes')
+  const [salvandoFmt, setSalvandoFmt] = useState(false)
+  const { user } = useAuth() as any
+  const responsavel: string = user?.name ?? user?.full_name ?? user?.user_metadata?.full_name ?? 'Seu nome'
 
   const load = useCallback(async () => {
     const [{ data: m }, { data: c }] = await Promise.all([
       supabase.from('whatsapp_modelos_mensagem').select('id, posicao, texto, ativo')
         .eq('company_id', companyId).eq('tipo', 'confirmacao_agendamento').order('posicao'),
-      supabase.from('whatsapp_config_empresa').select('proximo_modelo').eq('company_id', companyId).maybeSingle(),
+      supabase.from('whatsapp_config_empresa').select('proximo_modelo, formato_confirmacao').eq('company_id', companyId).maybeSingle(),
     ])
     const lista = (m ?? []) as Modelo[]
     setModelos(lista)
     setProximo((c as any)?.proximo_modelo ?? null)
+    setFormato((c as any)?.formato_confirmacao === 'texto_numerado' ? 'texto_numerado' : 'botoes')
     setRascunho(Object.fromEntries(lista.map(x => [x.id, { texto: x.texto, ativo: x.ativo }])))
   }, [companyId])
 
@@ -54,8 +61,25 @@ export function MensagensTab({ companyId, onDirtyChange }: { companyId: string; 
           <p className="mt-1 text-muted-foreground">Próxima da sequência: <strong className="text-foreground">{proxPos ? `Mensagem ${proxPos}` : '—'}</strong></p>
         </div>
       </div>
+      <div className="rounded-2xl border border-border bg-card p-5 space-y-3">
+        <h3 className="text-sm font-bold text-foreground">Formato da confirmação</h3>
+        <div className="flex flex-wrap gap-2">
+          {([['botoes', 'Botões'], ['texto_numerado', 'Texto numerado']] as const).map(([v, l]) => (
+            <Button key={v} type="button" variant={formato === v ? 'default' : 'outline'} className="h-10" disabled={salvandoFmt}
+              onClick={async () => {
+                if (formato === v) return
+                setSalvandoFmt(true)
+                const { error } = await supabase.rpc('whatsapp_formato_salvar' as any, { p_formato: v })
+                setSalvandoFmt(false)
+                if (error) { toast.error(error.message); return }
+                setFormato(v); toast.success(`Formato alterado para ${l}`)
+              }}>{l}</Button>
+          ))}
+        </div>
+        <p className="text-xs text-muted-foreground">Botões: o paciente toca em CONFIRMAR, REMARCAR ou CANCELAR. Texto numerado: o paciente responde 1, 2 ou 3. Use texto numerado se os botões não aparecerem no celular do paciente.</p>
+      </div>
       {modelos.map(m => (
-        <ModeloCard key={m.id} modelo={m} valor={rascunho[m.id]}
+        <ModeloCard key={m.id} modelo={m} valor={rascunho[m.id]} formato={formato} responsavel={responsavel}
           ultimoAtivo={rascunho[m.id]?.ativo && ativosRascunho === 1}
           onChange={v => setRascunho(r => ({ ...r, [m.id]: v }))}
           onSalvo={load} />
@@ -64,7 +88,8 @@ export function MensagensTab({ companyId, onDirtyChange }: { companyId: string; 
   )
 }
 
-function ModeloCard({ modelo, valor, ultimoAtivo, onChange, onSalvo }: {
+function ModeloCard({ modelo, valor, ultimoAtivo, onChange, onSalvo, formato, responsavel }: {
+  formato: Formato; responsavel: string
   modelo: Modelo; valor: { texto: string; ativo: boolean }; ultimoAtivo: boolean
   onChange: (v: { texto: string; ativo: boolean }) => void; onSalvo: () => void
 }) {
@@ -140,8 +165,20 @@ function ModeloCard({ modelo, valor, ultimoAtivo, onChange, onSalvo }: {
         <p className="mb-2 text-[11px] font-medium text-muted-foreground">Pré-visualização</p>
         {/* Texto puro: React escapa o conteúdo; nada é interpretado como HTML. */}
         <div className="ml-auto max-w-[85%] whitespace-pre-wrap break-words rounded-xl rounded-tr-sm bg-success/15 px-3 py-2 text-sm text-foreground shadow-sm">
-          {renderModelo(valor.texto, EXEMPLO)}
+          {(() => {
+            const corpo = comCabecalho(responsavel, renderModelo(valor.texto, { ...EXEMPLO_BASE, responsavel }))
+            const final = formato === 'texto_numerado' ? textoNumerado(corpo) : corpo
+            const [cab, ...resto] = final.split('\n')
+            return cab.startsWith('*') && cab.endsWith('*:') ? <><strong>{cab.slice(1, -2)}</strong>:{'\n'}{resto.join('\n')}</> : final
+          })()}
         </div>
+        {formato === 'botoes' && (
+          <div className="ml-auto mt-1 grid max-w-[85%] gap-1">
+            {['CONFIRMAR', 'REMARCAR', 'CANCELAR'].map(b => (
+              <div key={b} className="rounded-lg bg-card px-3 py-1.5 text-center text-sm font-medium text-primary shadow-sm">{b}</div>
+            ))}
+          </div>
+        )}
       </div>
 
       <div className="flex justify-end gap-2">
