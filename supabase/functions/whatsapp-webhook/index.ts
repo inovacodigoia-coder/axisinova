@@ -76,6 +76,85 @@ async function processarMensagem(instId: string, p: any) {
   }
 }
 
+// ---------- Respostas do paciente às confirmações (Etapa 9B) ----------
+const PALAVRAS: Record<string, 'confirmar' | 'remarcar' | 'cancelar'> = {
+  '1': 'confirmar', '2': 'remarcar', '3': 'cancelar',
+  confirmar: 'confirmar', confirmo: 'confirmar', sim: 'confirmar', remarcar: 'remarcar', cancelar: 'cancelar',
+}
+const normalizar = (t: string) => t.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim().replace(/[.!?,;:\s]+$/, '')
+const digitos = (jid: unknown) => typeof jid === 'string' && !jid.endsWith('@lid') ? jid.split('@')[0].split(':')[0].replace(/\D/g, '') : ''
+
+async function diagnosticar(instId: string, p: any, m: any, tipoResp: string, textoLen: number) {
+  try {
+    const chaves = Object.keys(m ?? {}).sort()
+    const mt = String(m?.messageType ?? '').slice(0, 60)
+    const formato = `${tipoResp}|${mt}|${chaves.join(',')}`.slice(0, 1000)
+    await db.from('whatsapp_webhook_diagnostico').delete().lt('criado_em', new Date(Date.now() - 7 * 864e5).toISOString())
+    await db.from('whatsapp_webhook_diagnostico').upsert({
+      instancia_id: instId, formato, chaves: [...Object.keys(p ?? {}).sort().map((k) => `raiz.${k}`), ...chaves],
+      message_type: mt || null, button_or_listid: String(m?.buttonOrListid ?? '').slice(0, 100) || null, tamanho_texto: textoLen,
+    }, { onConflict: 'formato', ignoreDuplicates: true })
+  } catch { /* diagnóstico nunca bloqueia */ }
+}
+
+async function processarRecebida(instId: string, p: any) {
+  const m = p?.message ?? {}
+  if (m.fromMe === true || m.wasSentByApi === true || m.isGroup === true) return
+  const chat = String(m.chatid ?? '')
+  if (chat.endsWith('@g.us') || chat.endsWith('@newsletter') || chat.endsWith('@broadcast')) return
+  const msgId = String(m.messageid ?? m.id ?? '')
+  if (!msgId || msgId.length > 200) return
+
+  let acao: 'confirmar' | 'remarcar' | 'cancelar' | null = null
+  let tipoResp: 'botao' | 'numero' | 'palavra' | null = null
+  let codigo: string | null = null
+  const bid = String(m.buttonOrListid ?? '').trim()
+  const b = /^(confirmar|remarcar|cancelar):([A-Za-z0-9]{6,12})$/i.exec(bid)
+  const texto = typeof m.text === 'string' ? m.text : ''
+  if (b) { acao = b[1].toLowerCase() as any; codigo = b[2].toUpperCase(); tipoResp = 'botao' }
+  else if (!bid && texto && texto.length <= 30) {
+    const n = normalizar(texto)
+    if (PALAVRAS[n]) { acao = PALAVRAS[n]; tipoResp = /^[123]$/.test(n) ? 'numero' : 'palavra' }
+  }
+  if (!acao || !tipoResp) return // qualquer outra mensagem é descartada sem gravar
+
+  await diagnosticar(instId, p, m, tipoResp, texto.length)
+  const tel = digitos(m.sender_pn) || digitos(chat) || digitos(m.sender)
+  if (!tel) return
+  const quoted = typeof m.quoted === 'string' ? m.quoted : ''
+  const { data: r, error } = await db.rpc('whatsapp_resposta_processar', {
+    p_instancia: instId, p_message_id: msgId, p_telefone: tel, p_tipo_resposta: tipoResp, p_acao: acao, p_codigo: codigo, p_quoted: quoted || null,
+  })
+  if (error) { console.error('webhook: falha ao registrar resposta', error.message); return }
+  if (!(r as any)?.enviar) return
+  const { fila_id, telefone, texto: resposta } = r as any
+  const agora = () => new Date().toISOString()
+  try {
+    const { data: seg } = await db.from('whatsapp_instancia_segredos').select('token_instancia_cifrado').eq('instancia_id', instId).maybeSingle()
+    const token = seg ? await decifrar(seg.token_instancia_cifrado as string) : ''
+    const base = (Deno.env.get('UAZAPI_BASE_URL') ?? '').replace(/\/+$/, '')
+    if (!token || !base) throw new Error('SEM_CREDENCIAL')
+    const delay = 3000 + Math.floor(Math.random() * 5001)
+    const resp = await fetch(`${base}/send/text`, {
+      method: 'POST', headers: { 'Content-Type': 'application/json', Accept: 'application/json', token },
+      body: JSON.stringify({ number: telefone, text: resposta, delay, track_source: 'axis_resposta', track_id: fila_id }),
+      signal: AbortSignal.timeout(30_000),
+    })
+    let body: any = null
+    try { body = await resp.json() } catch { /* sem corpo */ }
+    if (resp.ok) {
+      const id = body?.messageid ?? body?.id ?? body?.key?.id ?? null
+      await db.from('whatsapp_fila_envios').update({ status: 'enviada', enviada_em: agora(), message_id_uazapi: id == null ? null : String(id), atualizado_em: agora() }).eq('id', fila_id)
+      await db.from('whatsapp_instancias').update({ ultimo_envio_em: agora() }).eq('id', instId)
+    } else {
+      await db.from('whatsapp_fila_envios').update({ status: 'falha', erro: `HTTP ${resp.status}: ${String(body?.error ?? body?.message ?? '').slice(0, 200)}`, atualizado_em: agora() }).eq('id', fila_id)
+    }
+  } catch (e) {
+    // sem nova tentativa automática
+    await db.from('whatsapp_fila_envios').update({ status: 'falha', erro: e instanceof Error && e.message === 'SEM_CREDENCIAL' ? 'SEM_CREDENCIAL' : 'RESULTADO_INCERTO', atualizado_em: agora() }).eq('id', fila_id)
+  }
+}
+
 async function processar(p: any) {
   try {
     const token = String(p?.token ?? p?.instance?.token ?? '')
@@ -85,6 +164,7 @@ async function processar(p: any) {
     const tipo = String(p?.EventType ?? p?.type ?? p?.event_type ?? '').toLowerCase()
     if (tipo === 'connection') await processarConexao(instId, p)
     else if (tipo === 'messages_update') await processarMensagem(instId, p)
+    else if (tipo === 'messages') await processarRecebida(instId, p)
   } catch (e) {
     console.error('webhook: erro ao processar', e instanceof Error ? e.message : 'desconhecido')
   }
