@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from 'react'
 import { MessageCircle } from 'lucide-react'
 import { toast } from 'sonner'
 import { supabase } from '@/integrations/supabase/client'
+import { WhatsappWebhookCheck } from './WhatsappWebhookCheck'
 import { Switch } from '@/components/ui/switch'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
@@ -86,6 +87,8 @@ export function CompanyWhatsappPanel({ companyId }: { companyId: string }) {
       <p className="text-xs text-muted-foreground">
         Ao liberar pela primeira vez, a empresa recebe 1 número e os 3 modelos de mensagem padrão. Cada número a mais vem de uma solicitação aprovada.
       </p>
+      <WhatsappWebhookCheck companyId={companyId} />
+
 
       <AlertDialog open={confirmOff} onOpenChange={setConfirmOff}>
         <AlertDialogContent>
