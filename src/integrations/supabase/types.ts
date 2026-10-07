@@ -2265,10 +2265,13 @@ export type Database = {
           exam_name: string | null
           id: string
           notes: string | null
+          paciente_confirmou_em: string | null
           patient_id: string | null
           patient_name: string
           patient_phone1: string | null
           patient_phone2: string | null
+          pedido_paciente: string | null
+          pedido_paciente_em: string | null
           sched_status: string
           status: Database["public"]["Enums"]["appointment_status"]
           time: string
@@ -2292,10 +2295,13 @@ export type Database = {
           exam_name?: string | null
           id?: string
           notes?: string | null
+          paciente_confirmou_em?: string | null
           patient_id?: string | null
           patient_name: string
           patient_phone1?: string | null
           patient_phone2?: string | null
+          pedido_paciente?: string | null
+          pedido_paciente_em?: string | null
           sched_status?: string
           status?: Database["public"]["Enums"]["appointment_status"]
           time: string
@@ -2319,10 +2325,13 @@ export type Database = {
           exam_name?: string | null
           id?: string
           notes?: string | null
+          paciente_confirmou_em?: string | null
           patient_id?: string | null
           patient_name?: string
           patient_phone1?: string | null
           patient_phone2?: string | null
+          pedido_paciente?: string | null
+          pedido_paciente_em?: string | null
           sched_status?: string
           status?: Database["public"]["Enums"]["appointment_status"]
           time?: string
@@ -7786,7 +7795,10 @@ export type Database = {
           modelo_posicao: number | null
           motivo_plano_b: string | null
           paciente_nome: string | null
+          respondida_em: string | null
           responsavel_nome: string | null
+          resposta_acao: string | null
+          respostas_automaticas: number
           status: string
           telefone_destino: string
           texto_final: string
@@ -7810,7 +7822,10 @@ export type Database = {
           modelo_posicao?: number | null
           motivo_plano_b?: string | null
           paciente_nome?: string | null
+          respondida_em?: string | null
           responsavel_nome?: string | null
+          resposta_acao?: string | null
+          respostas_automaticas?: number
           status?: string
           telefone_destino: string
           texto_final: string
@@ -7834,7 +7849,10 @@ export type Database = {
           modelo_posicao?: number | null
           motivo_plano_b?: string | null
           paciente_nome?: string | null
+          respondida_em?: string | null
           responsavel_nome?: string | null
+          resposta_acao?: string | null
+          respostas_automaticas?: number
           status?: string
           telefone_destino?: string
           texto_final?: string
@@ -8007,6 +8025,74 @@ export type Database = {
           },
         ]
       }
+      whatsapp_respostas_recebidas: {
+        Row: {
+          acao: string
+          agendamento_id: string | null
+          company_id: string
+          criado_em: string
+          fila_id: string | null
+          id: string
+          instancia_id: string | null
+          message_id_uazapi: string
+          resultado: string
+          tipo_resposta: string
+        }
+        Insert: {
+          acao: string
+          agendamento_id?: string | null
+          company_id: string
+          criado_em?: string
+          fila_id?: string | null
+          id?: string
+          instancia_id?: string | null
+          message_id_uazapi: string
+          resultado?: string
+          tipo_resposta: string
+        }
+        Update: {
+          acao?: string
+          agendamento_id?: string | null
+          company_id?: string
+          criado_em?: string
+          fila_id?: string | null
+          id?: string
+          instancia_id?: string | null
+          message_id_uazapi?: string
+          resultado?: string
+          tipo_resposta?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "whatsapp_respostas_recebidas_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "whatsapp_respostas_recebidas_fila_id_fkey"
+            columns: ["fila_id"]
+            isOneToOne: false
+            referencedRelation: "whatsapp_fila_envios"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "whatsapp_respostas_recebidas_fila_id_fkey"
+            columns: ["fila_id"]
+            isOneToOne: false
+            referencedRelation: "whatsapp_fila_envios_v"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "whatsapp_respostas_recebidas_instancia_id_fkey"
+            columns: ["instancia_id"]
+            isOneToOne: false
+            referencedRelation: "whatsapp_instancias"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       whatsapp_solicitacoes_numero: {
         Row: {
           company_id: string
@@ -8050,6 +8136,47 @@ export type Database = {
             columns: ["company_id"]
             isOneToOne: false
             referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      whatsapp_webhook_diagnostico: {
+        Row: {
+          button_or_listid: string | null
+          chaves: string[]
+          criado_em: string
+          formato: string
+          id: string
+          instancia_id: string | null
+          message_type: string | null
+          tamanho_texto: number | null
+        }
+        Insert: {
+          button_or_listid?: string | null
+          chaves?: string[]
+          criado_em?: string
+          formato: string
+          id?: string
+          instancia_id?: string | null
+          message_type?: string | null
+          tamanho_texto?: number | null
+        }
+        Update: {
+          button_or_listid?: string | null
+          chaves?: string[]
+          criado_em?: string
+          formato?: string
+          id?: string
+          instancia_id?: string | null
+          message_type?: string | null
+          tamanho_texto?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "whatsapp_webhook_diagnostico_instancia_id_fkey"
+            columns: ["instancia_id"]
+            isOneToOne: false
+            referencedRelation: "whatsapp_instancias"
             referencedColumns: ["id"]
           },
         ]
@@ -8233,7 +8360,9 @@ export type Database = {
           modelo_posicao: number | null
           motivo_plano_b: string | null
           paciente_nome: string | null
+          respondida_em: string | null
           responsavel_nome: string | null
+          resposta_acao: string | null
           status: string | null
           telefone_mascarado: string | null
           texto_resumo: string | null
@@ -8254,7 +8383,9 @@ export type Database = {
           modelo_posicao?: number | null
           motivo_plano_b?: string | null
           paciente_nome?: string | null
+          respondida_em?: string | null
           responsavel_nome?: string | null
+          resposta_acao?: string | null
           status?: string | null
           telefone_mascarado?: never
           texto_resumo?: never
@@ -8275,7 +8406,9 @@ export type Database = {
           modelo_posicao?: number | null
           motivo_plano_b?: string | null
           paciente_nome?: string | null
+          respondida_em?: string | null
           responsavel_nome?: string | null
+          resposta_acao?: string | null
           status?: string | null
           telefone_mascarado?: never
           texto_resumo?: never
@@ -9460,6 +9593,10 @@ export type Database = {
         Returns: undefined
       }
       whatsapp_definir_valor: { Args: { _valor: number }; Returns: undefined }
+      whatsapp_destinatarios_agenda: {
+        Args: { p_company: string }
+        Returns: string[]
+      }
       whatsapp_enfileirar_confirmacao: {
         Args: {
           p_agendamento_id: string
@@ -9553,6 +9690,20 @@ export type Database = {
           texto_final: string
         }[]
       }
+      whatsapp_resposta_padrao: { Args: { p_tipo: string }; Returns: string }
+      whatsapp_resposta_processar: {
+        Args: {
+          p_acao: string
+          p_codigo: string
+          p_instancia: string
+          p_message_id: string
+          p_quoted: string
+          p_telefone: string
+          p_tipo_resposta: string
+        }
+        Returns: Json
+      }
+      whatsapp_tel_canonico: { Args: { p: string }; Returns: string }
       whatsapp_tem_permissao: { Args: { _perm: string }; Returns: boolean }
       whatsapp_valor_numero: { Args: never; Returns: number }
       whatsapp_worker_consumir_token: {

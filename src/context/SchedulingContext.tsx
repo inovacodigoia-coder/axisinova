@@ -98,6 +98,10 @@ function dbToAppointment(r: any): SchedulingAppointment {
     visitType: r.visit_type || 'first_visit',
     observations: r.notes || undefined,
     cancelledReason: r.cancelled_reason || undefined,
+    confirmedAt: r.paciente_confirmou_em || undefined,
+    confirmedBy: r.paciente_confirmou_em ? 'WhatsApp' : undefined,
+    pedidoPaciente: r.pedido_paciente || undefined,
+    pedidoPacienteEm: r.pedido_paciente_em || undefined,
     createdBy: r.created_by || '',
     createdAt: r.created_at || '',
     updatedAt: r.updated_at || '',
@@ -143,10 +147,11 @@ export function SchedulingProvider({ children }: { children: ReactNode }) {
       else setAppointments((aRes.data || []).map(dbToAppointment))
     }
     load()
+    const t = setInterval(load, 60000)
     const { data: sub } = supabase.auth.onAuthStateChange((event) => {
       if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') load()
     })
-    return () => { cancelled = true; sub.subscription.unsubscribe() }
+    return () => { cancelled = true; clearInterval(t); sub.subscription.unsubscribe() }
   }, [isDemo, dbCompanyId])
 
   const addPatient = useCallback((p: SchedulingPatient) => setPatients(prev => [...prev, p]), [])
@@ -196,7 +201,9 @@ export function SchedulingProvider({ children }: { children: ReactNode }) {
 
   const updateAppointment = useCallback((id: string, data: Partial<SchedulingAppointment>) => {
     const before = appointmentsRef.current.find(a => a.id === id)
-    setAppointments(prev => prev.map(a => a.id === id ? { ...a, ...data } : a))
+    const limpaPedido = (data.status && ['cancelled', 'absent', 'completed', 'rescheduled', 'in_progress'].includes(data.status))
+      || (data.date && data.date !== before?.date) || (data.time && data.time !== before?.time) || (data.doctorId && data.doctorId !== before?.doctorId)
+    setAppointments(prev => prev.map(a => a.id === id ? { ...a, ...data, ...(limpaPedido ? { pedidoPaciente: undefined, pedidoPacienteEm: undefined } : {}) } : a))
     if (isDemo || !isUuid(id)) return
     const patch: Record<string, any> = { updated_at: new Date().toISOString() }
     if (data.status) { patch.sched_status = data.status; patch.status = legacyStatus(data.status) }

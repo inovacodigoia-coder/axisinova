@@ -53,6 +53,8 @@ export interface SchedulingAppointment {
   confirmationMethod?: '24h' | '48h'
   confirmedAt?: string
   confirmedBy?: string
+  pedidoPaciente?: 'remarcar' | 'cancelar'
+  pedidoPacienteEm?: string
   cancelledReason?: string
   absentRegisteredAt?: string
   createdBy: string

@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button'
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 
 interface Inst { id: string; apelido: string | null; status: string }
-interface Res { config: { enabled: boolean; events: string[]; aponta_para_axis: boolean }[]; erros: { quando: string | null; evento: string | null; status: number | null; erro: string }[]; erros_http: number }
+interface Res { config: { enabled: boolean; events: string[]; aponta_para_axis: boolean }[]; erros: { quando: string | null; evento: string | null; status: number | null; erro: string }[]; erros_http: number; diagnostico?: { formato: string; chaves: string[]; message_type: string | null; button_or_listid: string | null; tamanho_texto: number | null; criado_em: string }[] }
 
 /** Super Admin: lista números da empresa e mostra os últimos erros do webhook de cada um. */
 export function WhatsappWebhookCheck({ companyId }: { companyId: string }) {
@@ -61,6 +61,18 @@ export function WhatsappWebhookCheck({ companyId }: { companyId: string }) {
                   {res.erros.map((e, k) => (
                     <li key={k} className="rounded border border-border px-2 py-1 text-xs text-foreground">
                       {e.quando ? new Date(e.quando).toLocaleString('pt-BR') : '—'} · {e.evento ?? '—'} · {e.status ?? '—'} — {e.erro || 'sem detalhe'}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+              <div>
+                <p className="font-medium text-foreground">Formato das respostas recebidas (7 dias)</p>
+                {!res.diagnostico?.length && <p className="text-muted-foreground">Nenhuma resposta de paciente recebida ainda.</p>}
+                <ul className="mt-1 max-h-64 space-y-1 overflow-auto">
+                  {res.diagnostico?.map((d, k) => (
+                    <li key={k} className="rounded border border-border px-2 py-1 text-xs text-foreground break-words">
+                      {new Date(d.criado_em).toLocaleString('pt-BR')} · tipo {d.message_type ?? '—'} · botão {d.button_or_listid ?? '—'} · texto {d.tamanho_texto ?? 0} car.
+                      <span className="block text-muted-foreground">Campos: {d.chaves.join(', ')}</span>
                     </li>
                   ))}
                 </ul>

@@ -5,6 +5,7 @@ export const VARIAVEIS_MODELO = [
   { chave: '{tipo}', desc: 'tipo do atendimento' },
   { chave: '{medico}', desc: 'nome do médico com título' },
   { chave: '{data_hora}', desc: 'data e hora do agendamento' },
+  { chave: '{dia_semana}', desc: 'dia da semana (ex.: QUARTA)' },
   { chave: '{responsavel}', desc: 'quem fez o agendamento' },
 ] as const
 
@@ -12,6 +13,20 @@ export const MODELOS_PADRAO: Record<number, string> = {
   1: 'Olá, {primeiro_nome}! Tudo bem? Passando para confirmar seu agendamento: {tipo} com {medico} em {data_hora}. Tudo certo?',
   2: 'Oi, {paciente}! Você tem um agendamento de {tipo} com {medico} em {data_hora}. Pode confirmar sua presença?',
   3: '{primeiro_nome}, tudo certo para {data_hora}? Está agendado: {tipo} com {medico}. Confirma para nós?',
+}
+
+export const RESPOSTAS_PADRAO: Record<string, string> = {
+  resposta_confirmar: 'Seu agendamento foi confirmado com sucesso.\nAgradecemos a sua confiança e ficamos à disposição caso precise alterar o horário ou obter mais informações.\n\nTenha um excelente dia! Até {dia_semana}! 💚🙏',
+  resposta_remarcar: 'Recebemos seu pedido de remarcação. Nossa equipe entrará em contato em breve para combinar um novo horário. 💚',
+  resposta_cancelar: 'Recebemos seu pedido de cancelamento. Nossa equipe vai confirmar com você em breve. 🙏',
+}
+
+const DIAS_MAIUSC = ['DOMINGO', 'SEGUNDA', 'TERÇA', 'QUARTA', 'QUINTA', 'SEXTA', 'SÁBADO']
+
+/** Dia da semana em maiúsculas, sem "-feira", fuso America/Fortaleza. */
+export function diaSemana(d: Date): string {
+  const wd = new Intl.DateTimeFormat('en-GB', { timeZone: 'America/Fortaleza', weekday: 'short' }).format(d)
+  return DIAS_MAIUSC[['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].indexOf(wd)] ?? ''
 }
 
 const DIAS = ['domingo', 'segunda', 'terça', 'quarta', 'quinta', 'sexta', 'sábado']
@@ -47,6 +62,7 @@ export function renderModelo(texto: string, d: DadosModelo): string {
   r = r.split('{tipo}').join(tipo)
   r = r.split('{medico}').join((d.medico ?? '').trim())
   r = r.split('{data_hora}').join(dh)
+  r = r.split('{dia_semana}').join(d.dataHora ? diaSemana(new Date(d.dataHora)) : '')
   r = r.split('{responsavel}').join(limparNome(d.responsavel))
   r = r.replace(/[ \t]{2,}/g, ' ')
   r = r.replace(/ +([,.!?;:])/g, '$1')

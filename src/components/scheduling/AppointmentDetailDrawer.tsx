@@ -87,6 +87,12 @@ export function AppointmentDetailDrawer({ appointment: apt, onClose, onStatusCha
                   <span>Paciente confirmou em {formatDateTime(apt.confirmedAt)}{apt.confirmedBy ? ` (${apt.confirmedBy})` : ''}</span>
                 </div>
               )}
+              {apt.pedidoPaciente && apt.pedidoPacienteEm && (
+                <div className="flex items-center gap-2">
+                  <div className={`h-2 w-2 rounded-full ${apt.pedidoPaciente === 'remarcar' ? 'bg-warning' : 'bg-destructive'}`} />
+                  <span>Paciente pediu para {apt.pedidoPaciente} em {formatDateTime(apt.pedidoPacienteEm)}</span>
+                </div>
+              )}
             </div>
           </div>
 

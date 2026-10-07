@@ -101,7 +101,7 @@ Deno.serve(async (req) => {
     if (!seg) return false
     const r = await uaz('POST', '/webhook', { token: tk }, {
       enabled: true, url: `${url}/functions/v1/whatsapp-webhook?s=${encodeURIComponent(seg)}`,
-      events: ['connection', 'messages_update'], excludeMessages: ['wasSentByApi'],
+      events: ['connection', 'messages_update', 'messages'], excludeMessages: ['wasSentByApi', 'fromMeYes'],
       addUrlEvents: false, addUrlTypesMessages: false,
     })
     return r.status >= 200 && r.status < 300
@@ -129,7 +129,10 @@ Deno.serve(async (req) => {
       status: e?.status ?? e?.statusCode ?? null,
       erro: String(e?.error ?? e?.message ?? '').replace(/s=[^&\s"]+/g, 's=***').slice(0, 300),
     }))
-    return resp(200, { ok: true, dados: { config, erros, erros_http: errs.status } })
+    const { data: diag } = await db.from('whatsapp_webhook_diagnostico')
+      .select('formato, chaves, message_type, button_or_listid, tamanho_texto, criado_em')
+      .eq('instancia_id', id).order('criado_em', { ascending: false }).limit(10)
+    return resp(200, { ok: true, dados: { config, erros, erros_http: errs.status, diagnostico: diag ?? [] } })
   }
 
   // ---------- ações do Super Admin (não dependem da empresa do perfil) ----------

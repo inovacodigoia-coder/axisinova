@@ -50,6 +50,8 @@ export function AppointmentCard({ appointment: apt, onClick, compact }: Props) {
             {apt.confirmationSentAt && !apt.confirmedAt && <Phone className="h-3 w-3 text-blue-400 ml-auto" />}
           </div>
           <p className="font-semibold text-foreground truncate mt-0.5">{apt.patientName}</p>
+          {apt.pedidoPaciente === 'remarcar' && <span className="mt-0.5 inline-block rounded-full bg-warning/15 px-1.5 text-[9px] font-semibold text-warning">Pediu remarcar</span>}
+          {apt.pedidoPaciente === 'cancelar' && <span className="mt-0.5 inline-block rounded-full bg-destructive/10 px-1.5 text-[9px] font-semibold text-destructive">Pediu cancelar</span>}
           <p className="text-muted-foreground truncate">{apt.convenioName}</p>
           {apt.duration > 20 && (
             <p className="text-muted-foreground/70 mt-0.5">
