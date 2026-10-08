@@ -5,7 +5,16 @@ import { Button } from '@/components/ui/button'
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 
 interface Inst { id: string; apelido: string | null; status: string }
-interface Res { config: { enabled: boolean; events: string[]; aponta_para_axis: boolean }[]; erros: { quando: string | null; evento: string | null; status: number | null; erro: string }[]; erros_http: number; diagnostico?: { formato: string; chaves: string[]; message_type: string | null; button_or_listid: string | null; tamanho_texto: number | null; criado_em: string }[] }
+interface Res { config: { enabled: boolean; events: string[]; aponta_para_axis: boolean }[]; erros: { quando: string | null; evento: string | null; status: number | null; erro: string }[]; erros_http: number; diagnostico?: { formato: string; chaves: string[]; message_type: string | null; button_or_listid: string | null; tamanho_texto: number | null; criado_em: string; motivo: string | null }[] }
+
+const MOTIVOS: Record<string, string> = {
+  processada: 'Resposta reconhecida e processada',
+  proprio_numero: 'Toque feito no WhatsApp da clínica — ignorado',
+  grupo: 'Mensagem de grupo — ignorada',
+  sem_acao: 'Texto curto sem resposta reconhecida — ignorado',
+  formato_desconhecido: 'Formato do botão não reconhecido — ignorado',
+  sem_telefone: 'Telefone do paciente não identificado — ignorado',
+}
 
 /** Super Admin: lista números da empresa e mostra os últimos erros do webhook de cada um. */
 export function WhatsappWebhookCheck({ companyId }: { companyId: string }) {
@@ -66,11 +75,15 @@ export function WhatsappWebhookCheck({ companyId }: { companyId: string }) {
                 </ul>
               </div>
               <div>
-                <p className="font-medium text-foreground">Formato das respostas recebidas (7 dias)</p>
+                <p className="font-medium text-foreground">Respostas recebidas (7 dias)</p>
+                {!res.events_messages_ok && res.config.length > 0 && !res.config.some(c => c.events.includes('messages')) && (
+                  <p className="text-destructive">Este número não recebe respostas: use "Reconfigurar atualização automática".</p>
+                )}
                 {!res.diagnostico?.length && <p className="text-muted-foreground">Nenhuma resposta de paciente recebida ainda.</p>}
                 <ul className="mt-1 max-h-64 space-y-1 overflow-auto">
                   {res.diagnostico?.map((d, k) => (
                     <li key={k} className="rounded border border-border px-2 py-1 text-xs text-foreground break-words">
+                      <span className="block font-medium">{d.motivo ? (MOTIVOS[d.motivo] ?? d.motivo) : 'Resposta reconhecida'}</span>
                       {new Date(d.criado_em).toLocaleString('pt-BR')} · tipo {d.message_type ?? '—'} · botão {d.button_or_listid ?? '—'} · texto {d.tamanho_texto ?? 0} car.
                       <span className="block text-muted-foreground">Campos: {d.chaves.join(', ')}</span>
                     </li>
