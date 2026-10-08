@@ -130,8 +130,8 @@ Deno.serve(async (req) => {
       erro: String(e?.error ?? e?.message ?? '').replace(/s=[^&\s"]+/g, 's=***').slice(0, 300),
     }))
     const { data: diag } = await db.from('whatsapp_webhook_diagnostico')
-      .select('formato, chaves, message_type, button_or_listid, tamanho_texto, criado_em')
-      .eq('instancia_id', id).order('criado_em', { ascending: false }).limit(10)
+      .select('formato, chaves, message_type, button_or_listid, tamanho_texto, criado_em, motivo')
+      .eq('instancia_id', id).order('criado_em', { ascending: false }).limit(20)
     return resp(200, { ok: true, dados: { config, erros, erros_http: errs.status, diagnostico: diag ?? [] } })
   }
 
