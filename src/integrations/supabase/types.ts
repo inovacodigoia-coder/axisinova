@@ -8149,6 +8149,7 @@ export type Database = {
           id: string
           instancia_id: string | null
           message_type: string | null
+          motivo: string | null
           tamanho_texto: number | null
         }
         Insert: {
@@ -8159,6 +8160,7 @@ export type Database = {
           id?: string
           instancia_id?: string | null
           message_type?: string | null
+          motivo?: string | null
           tamanho_texto?: number | null
         }
         Update: {
@@ -8169,6 +8171,7 @@ export type Database = {
           id?: string
           instancia_id?: string | null
           message_type?: string | null
+          motivo?: string | null
           tamanho_texto?: number | null
         }
         Relationships: [

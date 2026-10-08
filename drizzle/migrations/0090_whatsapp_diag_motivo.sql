@@ -1,0 +1,2 @@
+ALTER TABLE public.whatsapp_webhook_diagnostico ADD COLUMN IF NOT EXISTS motivo text;
+COMMENT ON COLUMN public.whatsapp_webhook_diagnostico.motivo IS 'Motivo do processamento/descarte (sem conteúdo nem telefone): processada, proprio_numero, grupo, sem_acao, formato_desconhecido, sem_telefone';
