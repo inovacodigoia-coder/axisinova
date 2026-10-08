@@ -84,43 +84,67 @@ const PALAVRAS: Record<string, 'confirmar' | 'remarcar' | 'cancelar'> = {
 const normalizar = (t: string) => t.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim().replace(/[.!?,;:\s]+$/, '')
 const digitos = (jid: unknown) => typeof jid === 'string' && !jid.endsWith('@lid') ? jid.split('@')[0].split(':')[0].replace(/\D/g, '') : ''
 
-async function diagnosticar(instId: string, p: any, m: any, tipoResp: string, textoLen: number) {
+type Motivo = 'processada' | 'proprio_numero' | 'grupo' | 'sem_acao' | 'formato_desconhecido' | 'sem_telefone'
+
+async function diagnosticar(instId: string, p: any, m: any, tipoResp: string, textoLen: number, motivo: Motivo, bid: string) {
   try {
     const chaves = Object.keys(m ?? {}).sort()
     const mt = String(m?.messageType ?? '').slice(0, 60)
-    const formato = `${tipoResp}|${mt}|${chaves.join(',')}`.slice(0, 1000)
+    // formato inclui motivo e hora para que cada ocorrência relevante apareça (sem conteúdo nem telefone)
+    const minuto = new Date().toISOString().slice(0, 16)
+    const formato = `${motivo}|${tipoResp}|${mt}|${minuto}|${chaves.join(',')}`.slice(0, 1000)
     await db.from('whatsapp_webhook_diagnostico').delete().lt('criado_em', new Date(Date.now() - 7 * 864e5).toISOString())
     await db.from('whatsapp_webhook_diagnostico').upsert({
       instancia_id: instId, formato, chaves: [...Object.keys(p ?? {}).sort().map((k) => `raiz.${k}`), ...chaves],
-      message_type: mt || null, button_or_listid: String(m?.buttonOrListid ?? '').slice(0, 100) || null, tamanho_texto: textoLen,
+      message_type: mt || null,
+      // só o prefixo da ação (nunca o código completo)
+      button_or_listid: bid ? bid.split(':')[0].slice(0, 30) : null,
+      tamanho_texto: textoLen, motivo,
     }, { onConflict: 'formato', ignoreDuplicates: true })
   } catch { /* diagnóstico nunca bloqueia */ }
 }
 
+const str = (v: unknown) => (typeof v === 'string' ? v : '')
+
+/** Lê o id do botão em todos os campos conhecidos da uazapi/WhatsApp. */
+function idDoBotao(m: any): string {
+  const c = m?.content ?? {}
+  return (str(m?.buttonOrListid) || str(c?.selectedButtonId) || str(c?.buttonId) || str(c?.selectedId)
+    || str(c?.singleSelectReply?.selectedRowId) || str(m?.vote)).trim()
+}
+function textoDe(m: any): string {
+  const c = m?.content
+  return str(m?.text) || (typeof c === 'string' ? c : str(c?.text) || str(c?.selectedDisplayText) || str(c?.Conversation))
+}
+
 async function processarRecebida(instId: string, p: any) {
   const m = p?.message ?? {}
-  if (m.fromMe === true || m.wasSentByApi === true || m.isGroup === true) return
   const chat = String(m.chatid ?? '')
-  if (chat.endsWith('@g.us') || chat.endsWith('@newsletter') || chat.endsWith('@broadcast')) return
+  const bid = idDoBotao(m)
+  const texto = textoDe(m)
+  // só diagnostica o que parece resposta de confirmação (botão ou texto curto), nunca conversas comuns
+  const pareceResposta = !!bid || (texto.length > 0 && texto.length <= 30)
+  const descartar = async (motivo: Motivo) => { if (pareceResposta) await diagnosticar(instId, p, m, '-', texto.length, motivo, bid) }
+
+  if (m.fromMe === true || m.wasSentByApi === true) return descartar('proprio_numero')
+  if (m.isGroup === true || chat.endsWith('@g.us') || chat.endsWith('@newsletter') || chat.endsWith('@broadcast')) return descartar('grupo')
   const msgId = String(m.messageid ?? m.id ?? '')
-  if (!msgId || msgId.length > 200) return
+  if (!msgId || msgId.length > 200) return descartar('formato_desconhecido')
 
   let acao: 'confirmar' | 'remarcar' | 'cancelar' | null = null
   let tipoResp: 'botao' | 'numero' | 'palavra' | null = null
   let codigo: string | null = null
-  const bid = String(m.buttonOrListid ?? '').trim()
   const b = /^(confirmar|remarcar|cancelar):([A-Za-z0-9]{6,12})$/i.exec(bid)
-  const texto = typeof m.text === 'string' ? m.text : ''
   if (b) { acao = b[1].toLowerCase() as any; codigo = b[2].toUpperCase(); tipoResp = 'botao' }
-  else if (!bid && texto && texto.length <= 30) {
+  else if (texto && texto.length <= 30) {
     const n = normalizar(texto)
-    if (PALAVRAS[n]) { acao = PALAVRAS[n]; tipoResp = /^[123]$/.test(n) ? 'numero' : 'palavra' }
+    if (PALAVRAS[n]) { acao = PALAVRAS[n]; tipoResp = bid ? 'botao' : /^[123]$/.test(n) ? 'numero' : 'palavra' }
   }
-  if (!acao || !tipoResp) return // qualquer outra mensagem é descartada sem gravar
+  if (!acao || !tipoResp) return descartar(bid ? 'formato_desconhecido' : 'sem_acao')
 
-  await diagnosticar(instId, p, m, tipoResp, texto.length)
   const tel = digitos(m.sender_pn) || digitos(chat) || digitos(m.sender)
-  if (!tel) return
+  if (!tel) { await diagnosticar(instId, p, m, tipoResp, texto.length, 'sem_telefone', bid); return }
+  await diagnosticar(instId, p, m, tipoResp, texto.length, 'processada', bid)
   const quoted = typeof m.quoted === 'string' ? m.quoted : ''
   const { data: r, error } = await db.rpc('whatsapp_resposta_processar', {
     p_instancia: instId, p_message_id: msgId, p_telefone: tel, p_tipo_resposta: tipoResp, p_acao: acao, p_codigo: codigo, p_quoted: quoted || null,
