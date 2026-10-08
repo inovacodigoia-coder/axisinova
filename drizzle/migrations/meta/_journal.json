@@ -645,6 +645,13 @@
       "when": 1791434569342,
       "tag": "0091_whatsapp_resposta_cabecalho_paciente",
       "breakpoints": true
+    },
+    {
+      "idx": 92,
+      "version": "7",
+      "when": 1791436032097,
+      "tag": "0092_whatsapp_confirmation_responsible_header",
+      "breakpoints": true
     }
   ]
 }
