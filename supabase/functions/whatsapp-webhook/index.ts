@@ -185,10 +185,12 @@ async function processar(p: any) {
     if (!token) return
     const instId = await instanciaDoToken(token)
     if (!instId) { console.warn('webhook: token desconhecido'); return }
-    const tipo = String(p?.EventType ?? p?.type ?? p?.event_type ?? '').toLowerCase()
+    const tipo = String(p?.EventType ?? p?.type ?? p?.event_type ?? p?.event ?? '').toLowerCase()
+    // só o tipo do evento (sem conteúdo nem telefone), para diagnóstico
+    console.log('webhook: evento', tipo || '(vazio)', p?.message ? 'com_message' : 'sem_message')
     if (tipo === 'connection') await processarConexao(instId, p)
-    else if (tipo === 'messages_update') await processarMensagem(instId, p)
-    else if (tipo === 'messages') await processarRecebida(instId, p)
+    else if (tipo === 'messages_update' || tipo === 'message_update') await processarMensagem(instId, p)
+    else if (tipo === 'messages' || tipo === 'message' || tipo === 'messages_upsert') await processarRecebida(instId, p)
   } catch (e) {
     console.error('webhook: erro ao processar', e instanceof Error ? e.message : 'desconhecido')
   }
