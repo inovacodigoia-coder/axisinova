@@ -26,7 +26,7 @@ export const CASOS = [
   {
     texto: RESPOSTAS_PADRAO.resposta_confirmar,
     dados: { paciente: 'Ana', tipo: 'Consulta', primeiraVez: false, medico: '', dataHora: '2026-10-07T13:00:00Z' },
-    esperado: 'Seu agendamento foi confirmado com sucesso.\nAgradecemos a sua confiança e ficamos à disposição caso precise alterar o horário ou obter mais informações.\n\nTenha um excelente dia! Até QUARTA! 💚🙏',
+    esperado: 'Ana seu agendamento foi confirmado com sucesso.\n\nAgradecemos a sua confiança e ficamos à disposição caso precise alterar o horário ou obter mais informações.\n\nTenha um excelente dia! Até QUARTA! 💚🙏',
   },
   {
     texto: 'Até {dia_semana}, {primeiro_nome}.',
@@ -38,5 +38,9 @@ export const CASOS = [
 describe('renderModelo', () => {
   CASOS.forEach((c, i) => it(`caso ${i + 1}`, () => expect(renderModelo(c.texto, c.dados)).toBe(c.esperado)))
   it('cabeçalho', () => expect(comCabecalho('Alex*', 'Oi')).toBe('*Alex*:\nOi'))
+  it('agradece ao paciente com cabeçalho do responsável', () => {
+    const corpo = renderModelo(RESPOSTAS_PADRAO.resposta_confirmar, { paciente: 'Alex Souza', dataHora: '2026-10-09T12:00:00Z' })
+    expect(comCabecalho('Alexsandro de Souza', `\n${corpo}`)).toBe('*Alexsandro de Souza*:\n\nAlex seu agendamento foi confirmado com sucesso.\n\nAgradecemos a sua confiança e ficamos à disposição caso precise alterar o horário ou obter mais informações.\n\nTenha um excelente dia! Até SEXTA! 💚🙏')
+  })
   it('detecta variável errada', () => expect(variaveisDesconhecidas('Oi {pacient} {tipo}')).toEqual(['{pacient}']))
 })

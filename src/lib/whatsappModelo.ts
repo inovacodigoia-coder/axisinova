@@ -16,7 +16,7 @@ export const MODELOS_PADRAO: Record<number, string> = {
 }
 
 export const RESPOSTAS_PADRAO: Record<string, string> = {
-  resposta_confirmar: 'Seu agendamento foi confirmado com sucesso.\nAgradecemos a sua confiança e ficamos à disposição caso precise alterar o horário ou obter mais informações.\n\nTenha um excelente dia! Até {dia_semana}! 💚🙏',
+  resposta_confirmar: '{primeiro_nome} seu agendamento foi confirmado com sucesso.\n\nAgradecemos a sua confiança e ficamos à disposição caso precise alterar o horário ou obter mais informações.\n\nTenha um excelente dia! Até {dia_semana}! 💚🙏',
   resposta_remarcar: 'Recebemos seu pedido de remarcação. Nossa equipe entrará em contato em breve para combinar um novo horário. 💚',
   resposta_cancelar: 'Recebemos seu pedido de cancelamento. Nossa equipe vai confirmar com você em breve. 🙏',
 }
