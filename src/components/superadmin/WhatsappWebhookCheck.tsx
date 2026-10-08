@@ -76,7 +76,7 @@ export function WhatsappWebhookCheck({ companyId }: { companyId: string }) {
               </div>
               <div>
                 <p className="font-medium text-foreground">Respostas recebidas (7 dias)</p>
-                {!res.events_messages_ok && res.config.length > 0 && !res.config.some(c => c.events.includes('messages')) && (
+                {res.config.length > 0 && !res.config.some(c => c.events.includes('messages')) && (
                   <p className="text-destructive">Este número não recebe respostas: use "Reconfigurar atualização automática".</p>
                 )}
                 {!res.diagnostico?.length && <p className="text-muted-foreground">Nenhuma resposta de paciente recebida ainda.</p>}
