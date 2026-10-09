@@ -70,7 +70,7 @@ export default function ConfirmationsPage() {
     if (statusFilter === 'ativas') return linhas.filter(l => l.status !== 'cancelada')
     if (statusFilter === 'pede_remarcar') return linhas.filter(l => l.agendamento_id && aptById.get(l.agendamento_id)?.pedidoPaciente === 'remarcar')
     if (statusFilter === 'pede_cancelar') return linhas.filter(l => l.agendamento_id && aptById.get(l.agendamento_id)?.pedidoPaciente === 'cancelar')
-    if (statusFilter === 'confirmou') return linhas.filter(l => l.resposta_acao === 'confirmar')
+    if (statusFilter === 'confirmou') return linhas.filter(l => l.resposta_acao === 'confirmar' || (l.agendamento_id && aptById.get(l.agendamento_id)?.status === 'confirmed'))
     if (statusFilter === 'enviada') return linhas.filter(l => ENVIADAS.includes(l.status))
     return linhas.filter(l => l.status === statusFilter)
   }, [linhas, statusFilter, aptById])
