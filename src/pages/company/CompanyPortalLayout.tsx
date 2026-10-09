@@ -58,6 +58,7 @@ import InpatientPage from './beds/InpatientPage'
 import NutritionPage from './nutrition/NutritionPage'
 import SchedulingPage from './scheduling/SchedulingPage'
 import ConfirmationsPage from './scheduling/ConfirmationsPage'
+import InovachatPage from './inovachat/InovachatPage'
 import AbsenteesPage from './scheduling/AbsenteesPage'
 import PatientHistoryPage from './scheduling/PatientHistoryPage'
 import MedicalDashboardPage from './medical/MedicalDashboardPage'
@@ -248,6 +249,7 @@ function PortalContent() {
               <Route path="agendamento" element={<SchedulingPage />} />
               <Route path="agendamento/legado" element={<SchedulePage />} />
               <Route path="confirmacoes" element={<ConfirmationsPage />} />
+              <Route path="inovachat" element={<InovachatPage />} />
               <Route path="faltosos" element={<AbsenteesPage />} />
               <Route path="historico-paciente" element={<PatientHistoryPage />} />
               <Route path="recepcao" element={<ReceptionLayout />} />

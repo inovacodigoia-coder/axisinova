@@ -128,6 +128,12 @@ export const WHATSAPP_PERMISSIONS: { code: string; label: string; description: s
   { code: 'whatsapp.fila', label: 'Ver fila do WhatsApp', description: 'Visualizar a fila e o histórico de envios' },
 ]
 
+/** Permissões do InovaChat (gravadas em permissions.inovachat; checadas no banco por inovachat_tem_permissao; administrador tem todas) */
+export const INOVACHAT_PERMISSIONS: { code: string; label: string; description: string }[] = [
+  { code: 'inovachat.visualizar', label: 'Ver o InovaChat', description: 'Ver as conversas da fila e as suas' },
+  { code: 'inovachat.gerenciar', label: 'Gerenciar o InovaChat', description: 'Ver todas as conversas e vincular contato a paciente' },
+]
+
 /** Permissões do módulo Triagem Lab (gravadas em permissions.triagem como códigos; checadas no banco por triagem_tem_permissao) */
 export const TRIAGEM_PERMISSIONS: { code: string; label: string; description: string }[] = [
   { code: 'triagem.config', label: 'Configurar unidades, rotas e critérios', description: 'Papéis das unidades, condições de transporte, rotas e motivos de coleta' },

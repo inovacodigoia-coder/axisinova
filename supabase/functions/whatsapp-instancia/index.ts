@@ -101,7 +101,7 @@ Deno.serve(async (req) => {
     if (!seg) return false
     const r = await uaz('POST', '/webhook', { token: tk }, {
       enabled: true, url: `${url}/functions/v1/whatsapp-webhook?s=${encodeURIComponent(seg)}`,
-      events: ['connection', 'messages_update', 'messages'], excludeMessages: ['wasSentByApi', 'fromMeYes'],
+      events: ['connection', 'messages_update', 'messages'], excludeMessages: ['wasSentByApi'],
       addUrlEvents: false, addUrlTypesMessages: false,
     })
     return r.status >= 200 && r.status < 300

@@ -10,3 +10,5 @@
 - WhatsApp webhook: status de números/mensagens chega pela Edge Function pública whatsapp-webhook (segredo ?s= em WHATSAPP_WEBHOOK_SECRET + token do payload igual a uma instância), responde 200 e processa em segundo plano, nunca regride status. Why: badges e fila ao vivo sem polling e sem confiar em owner/instanceName.
 - WhatsApp confirmação: envio com botões montado só em supabase/functions/_shared/whatsappMenu.ts (worker e teste usam o mesmo); plano B em texto numerado só após recusa 400/422, nunca após timeout/5xx. Why: botões da uazapi podem ser descontinuados e nada pode sair em duplicidade.
 - WhatsApp respostas do paciente: decididas só em whatsapp_resposta_processar (service role, chamada pelo whatsapp-webhook), que também grava a resposta automática na fila; texto livre nunca é gravado. Why: uma transação valida empresa/telefone/código e evita resposta duplicada.
+
+- InovaChat: gravação só via inovachat_registrar (service role), chamada pelo whatsapp-webhook e por trigger em whatsapp_fila_envios para mensagens do sistema; navegador recebe ao vivo só inovachat_sinais (sem texto/telefone). Why: um ponto idempotente e LGPD no canal ao vivo.

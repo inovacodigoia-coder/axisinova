@@ -9,8 +9,9 @@ import {
   TrendingUp, Users, Settings, Database, Monitor, Building2,
   LogOut, ChevronLeft, ChevronRight, X, Stethoscope, TicketCheck, ShieldCheck, Ruler, Layout, Beaker as BeakerIcon, TestTube,
   PieChart, Warehouse, Package as PackageIcon, UserPlus, FileSearch, Menu, Handshake, Droplet, Truck, KanbanSquare, Bot,
-  Activity, CalendarDays, BedDouble, Utensils
+  Activity, CalendarDays, BedDouble, Utensils, MessagesSquare
 } from 'lucide-react'
+import { useInovachatAcesso, useInovachatNaoLidas } from '@/hooks/useInovachat'
 import { cn } from '@/lib/utils'
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
 import type { SystemModule } from '@/types/permissions.types'
@@ -19,7 +20,7 @@ const ICON_MAP: Record<string, any> = {
   Calendar, UserCheck, FileText, DollarSign, FlaskConical, BarChart3,
   TrendingUp, Users, Settings, Database, Monitor, Building2, Stethoscope, Home, TicketCheck, Ruler, Layout, Beaker: BeakerIcon, TestTube,
   PieChart, Warehouse, Package: PackageIcon, UserPlus, FileSearch, Handshake, Droplet, Truck, KanbanSquare, Bot,
-  Activity, CalendarDays, BedDouble, Utensils
+  Activity, CalendarDays, BedDouble, Utensils, MessagesSquare
 }
 
 
@@ -39,6 +40,7 @@ export const NAV_SECTIONS: NavSection[] = [
   {
     title: 'ATENDIMENTO',
     items: [
+      { label: 'InovaChat', icon: 'MessagesSquare', path: '/app/inovachat', module: null },
       { label: 'Agenda', icon: 'Calendar', path: '/app/agendamento', module: 'scheduling' },
       { label: 'Confirmações', icon: 'UserCheck', path: '/app/confirmacoes', module: 'scheduling' },
       { label: 'Faltosos', icon: 'Monitor', path: '/app/faltosos', module: 'scheduling' },
@@ -192,10 +194,13 @@ export function CompanySidebar({ mobileOpen, onMobileClose, collapsed = false, o
   const [logoUrl, setLogoUrl] = useState<string | null>(null)
 
   const { orders } = useAttendanceCadastro()
+  const inovachat = useInovachatAcesso()
+  const inovachatNaoLidas = useInovachatNaoLidas(!!inovachat?.ver)
 
   const visibleSections = NAV_SECTIONS.map(section => ({
     ...section,
     items: section.items.filter(item => {
+      if (item.path === '/app/inovachat') return !!inovachat?.ver
       const profileAllows = !item.module || canAccess(item.module, 'view')
       const sectorOverride = activeSector?.moduleOverrides?.[item.path]
       return sectorOverride !== undefined ? sectorOverride : profileAllows
@@ -317,7 +322,7 @@ export function CompanySidebar({ mobileOpen, onMobileClose, collapsed = false, o
                 const active = location.pathname.startsWith(item.path)
                 const Icon = ICON_MAP[item.icon] || Home
 
-                const badge = item.path === '/app/lab/coleta' ? waitingCollectionCount : item.path === '/app/lab/analise' ? analiseCount : null
+                const badge = item.path === '/app/lab/coleta' ? waitingCollectionCount : item.path === '/app/lab/analise' ? analiseCount : item.path === '/app/inovachat' ? (inovachatNaoLidas || null) : null
 
                 const link = (
                   <NavLink
