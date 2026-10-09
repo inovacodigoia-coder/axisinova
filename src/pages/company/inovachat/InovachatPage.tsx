@@ -12,6 +12,7 @@ import { Skeleton } from '@/components/ui/skeleton'
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog'
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog'
 import { cn } from '@/lib/utils'
+import inovachatWallpaper from '@/assets/inovachat-wallpaper.jpg'
 
 interface Contato { id: string; telefone: string; nome_exibicao: string | null; paciente_id: string | null; vinculo_status: string; criado_em: string }
 interface Conversa {
@@ -319,7 +320,7 @@ export default function InovachatPage() {
             </header>
             <div className="flex min-h-0 flex-1">
               <div className="flex min-w-0 flex-1 flex-col">
-                <div className="flex-1 space-y-1 overflow-y-auto bg-muted/30 px-3 py-4 sm:px-6">
+                <div className="inovachat-wallpaper flex-1 space-y-1 overflow-y-auto px-3 py-4 sm:px-6" style={{ backgroundImage: `url(${inovachatWallpaper})` }}>
                   {msgs === null ? <div className="space-y-3">{[0, 1, 2].map(i => <Skeleton key={i} className={cn('h-12 w-2/3', i % 2 && 'ml-auto')} />)}</div>
                     : msgs.length === 0 ? <p className="text-center text-sm text-muted-foreground">Sem mensagens.</p>
                     : msgs.map((m, i) => {

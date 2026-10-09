@@ -59,9 +59,13 @@
     --axis-success: 145 63% 42%;
     --axis-error: 0 72% 51%;
     --axis-warning: 43 74% 49%;
+    --chat-wallpaper-background: 45 35% 96%;
+    --chat-wallpaper-blend: normal;
   }
 
   .dark {
+    --chat-wallpaper-background: 217 20% 12%;
+    --chat-wallpaper-blend: multiply;
     --background: 222.2 84% 4.9%;
     --foreground: 210 40% 98%;
     --card: 222.2 84% 4.9%;
@@ -107,6 +111,13 @@
 }
 
 @layer utilities {
+  .inovachat-wallpaper {
+    background-color: hsl(var(--chat-wallpaper-background));
+    background-size: 480px 480px;
+    background-repeat: repeat;
+    background-blend-mode: var(--chat-wallpaper-blend);
+  }
+
   .gradient-text {
     background: linear-gradient(135deg, #00B2D9, hsl(var(--axis-secondary)));
     -webkit-background-clip: text;
