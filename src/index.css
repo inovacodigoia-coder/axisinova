@@ -389,3 +389,54 @@ a[href*="lovable.app"],
 .label-barcode svg rect {
   shape-rendering: crispEdges;
 }
+
+/* InovaChat: scoped palette, independent from company branding. */
+:root {
+  --chat-white: 0 0% 100%;
+  --chat-gray: 210 16% 92%;
+  --chat-green: 145 48% 88%;
+  --chat-blue: 205 75% 90%;
+  --chat-rose: 345 60% 93%;
+  --chat-dark: 210 15% 18%;
+  --chat-ink: 220 26% 14%;
+  --chat-light-ink: 0 0% 98%;
+}
+.chat-color-scope {
+  --chat-background: hsl(var(--muted) / 0.3);
+  --chat-received: hsl(var(--card));
+  --chat-sent: hsl(var(--primary) / 0.15);
+  --chat-received-ink: hsl(var(--foreground));
+  --chat-sent-ink: hsl(var(--foreground));
+}
+[data-chat-background="white"] { --chat-background: hsl(var(--chat-white)); }
+[data-chat-background="gray"] { --chat-background: hsl(var(--chat-gray)); }
+[data-chat-background="green"] { --chat-background: hsl(var(--chat-green)); }
+[data-chat-background="blue"] { --chat-background: hsl(var(--chat-blue)); }
+[data-chat-background="rose"] { --chat-background: hsl(var(--chat-rose)); }
+[data-chat-background="dark"] { --chat-background: hsl(var(--chat-dark)); }
+[data-chat-received]:not([data-chat-received="default"]) { --chat-received-ink: hsl(var(--chat-ink)); }
+[data-chat-sent]:not([data-chat-sent="default"]) { --chat-sent-ink: hsl(var(--chat-ink)); }
+[data-chat-received="white"] { --chat-received: hsl(var(--chat-white)); }
+[data-chat-received="gray"] { --chat-received: hsl(var(--chat-gray)); }
+[data-chat-received="green"] { --chat-received: hsl(var(--chat-green)); }
+[data-chat-received="blue"] { --chat-received: hsl(var(--chat-blue)); }
+[data-chat-received="rose"] { --chat-received: hsl(var(--chat-rose)); }
+[data-chat-received="dark"] { --chat-received: hsl(var(--chat-dark)); --chat-received-ink: hsl(var(--chat-light-ink)); }
+[data-chat-sent="white"] { --chat-sent: hsl(var(--chat-white)); }
+[data-chat-sent="gray"] { --chat-sent: hsl(var(--chat-gray)); }
+[data-chat-sent="green"] { --chat-sent: hsl(var(--chat-green)); }
+[data-chat-sent="blue"] { --chat-sent: hsl(var(--chat-blue)); }
+[data-chat-sent="rose"] { --chat-sent: hsl(var(--chat-rose)); }
+[data-chat-sent="dark"] { --chat-sent: hsl(var(--chat-dark)); --chat-sent-ink: hsl(var(--chat-light-ink)); }
+.chat-conversation-background { background-color: var(--chat-background); }
+.chat-bubble-received { background-color: var(--chat-received); color: var(--chat-received-ink); }
+.chat-bubble-sent { background-color: var(--chat-sent); color: var(--chat-sent-ink); }
+.chat-color-swatch { color: hsl(var(--chat-ink)); }
+.chat-color-swatch[data-chat-swatch="default"] { background-color: hsl(var(--muted)); color: hsl(var(--foreground)); }
+.chat-color-swatch[data-chat-swatch="white"] { background-color: hsl(var(--chat-white)); }
+.chat-color-swatch[data-chat-swatch="gray"] { background-color: hsl(var(--chat-gray)); }
+.chat-color-swatch[data-chat-swatch="green"] { background-color: hsl(var(--chat-green)); }
+.chat-color-swatch[data-chat-swatch="blue"] { background-color: hsl(var(--chat-blue)); }
+.chat-color-swatch[data-chat-swatch="rose"] { background-color: hsl(var(--chat-rose)); }
+.chat-color-swatch[data-chat-swatch="dark"] { background-color: hsl(var(--chat-dark)); color: hsl(var(--chat-light-ink)); }
+.chat-color-swatch:hover { filter: brightness(0.95); }
