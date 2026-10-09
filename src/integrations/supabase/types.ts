@@ -9747,6 +9747,7 @@ export type Database = {
         Args: { _company: string; _habilitado: boolean; _retencao: number }
         Returns: undefined
       }
+      inovachat_meu_acesso: { Args: never; Returns: Json }
       inovachat_pode_ver: {
         Args: { _company: string; _resp: string; _status: string }
         Returns: boolean
