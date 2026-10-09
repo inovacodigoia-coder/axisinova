@@ -13,3 +13,4 @@
 
 - InovaChat: gravação só via inovachat_registrar (service role), chamada pelo whatsapp-webhook e por trigger em whatsapp_fila_envios para mensagens do sistema; navegador recebe ao vivo só inovachat_sinais (sem texto/telefone). Why: um ponto idempotente e LGPD no canal ao vivo.
 - InovaChat atendimento: envio só pela Edge Function inovachat-enviar (valida/assume via inovachat_preparar_envio com o login do usuário; grava via inovachat_gravar_envio só service role); assumir/transferir/finalizar/reabrir só por RPCs inovachat_*; eventos internos são linhas origem 'evento' em whatsapp_mensagens. Why: toda regra no servidor e assumir atômico.
+- InovaChat color selections are view-local state applied through scoped CSS tokens; do not persist them in browser storage or modify message data. Why: presentation changes remain isolated from operational settings and other users.
