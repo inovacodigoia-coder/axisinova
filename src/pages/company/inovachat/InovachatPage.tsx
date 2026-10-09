@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Navigate, useSearchParams } from 'react-router-dom'
-import { ArrowLeft, Check, CheckCheck, FileText, Image as ImageIcon, Link2, MessagesSquare, Mic, RefreshCw, Search, Smile, Unlink, Video, X, AlertTriangle, Send, Zap, Settings, ArrowRightLeft, CheckCircle2, RotateCcw, UserCheck, Loader2, Plus, Pencil, Trash2 } from 'lucide-react'
+import { ArrowLeft, Check, CheckCheck, FileText, Image as ImageIcon, Link2, MessagesSquare, Mic, RefreshCw, Search, Smile, Unlink, Video, X, AlertTriangle, Send, Zap, Settings, ArrowRightLeft, CheckCircle2, RotateCcw, UserCheck, Loader2, Plus, Pencil, Trash2, Palette } from 'lucide-react'
 import { toast } from 'sonner'
 import { supabase } from '@/integrations/supabase/client'
 import { useInovachatAcesso, useInovachatSinais } from '@/hooks/useInovachat'
@@ -12,6 +12,7 @@ import { Skeleton } from '@/components/ui/skeleton'
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog'
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog'
 import { cn } from '@/lib/utils'
+import { ChatColorsDialog, DEFAULT_CHAT_COLORS, type ChatColors } from '@/components/inovachat/ChatColorsDialog'
 
 interface Contato { id: string; telefone: string; nome_exibicao: string | null; paciente_id: string | null; vinculo_status: string; criado_em: string }
 interface Conversa {
@@ -69,6 +70,8 @@ export default function InovachatPage() {
   const [selId, setSelId] = useState<string | null>(null)
   const [msgs, setMsgs] = useState<Mensagem[] | null>(null)
   const [gestao, setGestao] = useState(false)
+  const [coresOpen, setCoresOpen] = useState(false)
+  const [cores, setCores] = useState<ChatColors>(DEFAULT_CHAT_COLORS)
   const [transferir, setTransferir] = useState(false)
   const [confFinalizar, setConfFinalizar] = useState(false)
   const [empresa, setEmpresa] = useState('')
@@ -210,13 +213,15 @@ export default function InovachatPage() {
   const podeAssumir = !!sel && sel.status !== 'finalizada' && !souResp && (acesso.gerenciar || (acesso.responder && sel.status === 'na_fila'))
 
   return (
-    <div className="flex h-[calc(100vh-8rem)] min-h-[480px] overflow-hidden rounded-xl border border-border bg-card">
+    <div data-chat-background={cores.background} data-chat-received={cores.received} data-chat-sent={cores.sent}
+      className="chat-color-scope flex h-[calc(100vh-8rem)] min-h-[480px] overflow-hidden rounded-xl border border-border bg-card">
       {/* Lista */}
       <aside className={cn('flex w-full flex-col border-r border-border md:w-[340px] md:shrink-0', sel && 'hidden md:flex')}>
         <div className="space-y-2 border-b border-border p-3">
           <div className="flex items-center gap-2">
             <MessagesSquare className="h-5 w-5 text-primary" />
             <h1 className="flex-1 font-semibold text-foreground">InovaChat</h1>
+            <Button variant="ghost" size="icon" className="h-10 w-10" onClick={() => setCoresOpen(true)} aria-label="Cores da conversa" title="Cores da conversa"><Palette className="h-5 w-5" /></Button>
             {acesso.gerenciar && (
               <Button variant="ghost" size="icon" className="h-10 w-10" onClick={() => setGestao(true)} aria-label="Respostas rápidas" title="Respostas rápidas">
                 <Settings className="h-5 w-5" />
@@ -309,6 +314,7 @@ export default function InovachatPage() {
                 </p>
               </div>
               <div className="flex flex-wrap gap-1">
+                <Button variant="ghost" size="icon" className="h-10 w-10" onClick={() => setCoresOpen(true)} aria-label="Personalizar cores" title="Cores da conversa"><Palette className="h-5 w-5" /></Button>
                 {podeAssumir && <Button size="sm" variant="outline" className="h-10" onClick={() => void acao('inovachat_assumir', { p_conversa: sel.id }, 'Conversa assumida.')}><UserCheck className="mr-1 h-4 w-4" />Assumir conversa</Button>}
                 {podeTransferir && <Button size="sm" variant="outline" className="h-10" onClick={() => setTransferir(true)}><ArrowRightLeft className="mr-1 h-4 w-4" />Transferir</Button>}
                 {sel.status !== 'finalizada' && (acesso.gerenciar || (souResp && acesso.responder)) &&
@@ -319,7 +325,7 @@ export default function InovachatPage() {
             </header>
             <div className="flex min-h-0 flex-1">
               <div className="flex min-w-0 flex-1 flex-col">
-                <div className="flex-1 space-y-1 overflow-y-auto bg-muted/30 px-3 py-4 sm:px-6">
+                <div className="chat-conversation-background flex-1 space-y-1 overflow-y-auto px-3 py-4 sm:px-6">
                   {msgs === null ? <div className="space-y-3">{[0, 1, 2].map(i => <Skeleton key={i} className={cn('h-12 w-2/3', i % 2 && 'ml-auto')} />)}</div>
                     : msgs.length === 0 ? <p className="text-center text-sm text-muted-foreground">Sem mensagens.</p>
                     : msgs.map((m, i) => {
@@ -360,6 +366,7 @@ export default function InovachatPage() {
         </AlertDialogContent>
       </AlertDialog>
       <RespostasRapidasDialog open={gestao} onClose={() => { setGestao(false); void carregarRapidas() }} setores={setores} />
+      {coresOpen && <ChatColorsDialog colors={cores} onApply={setCores} onClose={() => setCoresOpen(false)} />}
     </div>
   )
 
@@ -392,10 +399,10 @@ function Bolha({ m, onTentar }: { m: Mensagem; onTentar: () => void }) {
   return (
     <div className={cn('flex flex-col', saida ? 'items-end' : 'items-start')}>
       {saida && m.enviada_por_nome && <span className="mb-0.5 px-1 text-[10px] font-medium text-secondary">{m.enviada_por_nome}</span>}
-      <div className={cn('max-w-[85%] rounded-lg px-3 py-2 text-sm shadow-sm sm:max-w-[70%]', saida ? 'bg-primary/15 text-foreground' : 'bg-card text-foreground', falha && 'border border-destructive/50')}>
-        {midia && <p className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground"><midia.icon className="h-4 w-4" />{midia.label}</p>}
+      <div className={cn('max-w-[85%] rounded-lg px-3 py-2 text-sm shadow-sm sm:max-w-[70%]', saida ? 'chat-bubble-sent' : 'chat-bubble-received', falha && 'border border-destructive/50')}>
+        {midia && <p className="flex items-center gap-1.5 text-xs font-medium opacity-80"><midia.icon className="h-4 w-4" />{midia.label}</p>}
         {m.texto && <p className="whitespace-pre-wrap break-words">{m.texto}</p>}
-        <p className="mt-0.5 flex items-center justify-end gap-1 text-[10px] text-muted-foreground">
+        <p className="mt-0.5 flex items-center justify-end gap-1 text-[10px] opacity-80">
           {hora(m.criado_em)}
           {saida && (m.status === 'lida' ? <CheckCheck className="h-3.5 w-3.5 text-primary" /> : m.status === 'entregue' ? <CheckCheck className="h-3.5 w-3.5" /> : falha ? <AlertTriangle className="h-3.5 w-3.5 text-destructive" /> : <Check className="h-3.5 w-3.5" />)}
         </p>
