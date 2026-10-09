@@ -59,13 +59,17 @@
     --axis-success: 145 63% 42%;
     --axis-error: 0 72% 51%;
     --axis-warning: 43 74% 49%;
-    --chat-wallpaper-background: 45 35% 96%;
+    --chat-wallpaper-background: 200 17% 93%;
     --chat-wallpaper-blend: normal;
+    --chat-bubble-in: 199 66% 89%;
+    --chat-bubble-out: 0 0% 100%;
   }
 
   .dark {
     --chat-wallpaper-background: 217 20% 12%;
     --chat-wallpaper-blend: multiply;
+    --chat-bubble-in: 217 28% 22%;
+    --chat-bubble-out: 217 26% 17%;
     --background: 222.2 84% 4.9%;
     --foreground: 210 40% 98%;
     --card: 222.2 84% 4.9%;
@@ -116,6 +120,14 @@
     background-size: 480px 480px;
     background-repeat: repeat;
     background-blend-mode: var(--chat-wallpaper-blend);
+  }
+
+  .inovachat-bubble-in {
+    background-color: hsl(var(--chat-bubble-in));
+  }
+
+  .inovachat-bubble-out {
+    background-color: hsl(var(--chat-bubble-out));
   }
 
   .gradient-text {

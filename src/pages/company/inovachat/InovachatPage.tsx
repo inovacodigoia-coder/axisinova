@@ -393,7 +393,7 @@ function Bolha({ m, onTentar }: { m: Mensagem; onTentar: () => void }) {
   return (
     <div className={cn('flex flex-col', saida ? 'items-end' : 'items-start')}>
       {saida && m.enviada_por_nome && <span className="mb-0.5 px-1 text-[10px] font-medium text-secondary">{m.enviada_por_nome}</span>}
-      <div className={cn('max-w-[85%] rounded-lg px-3 py-2 text-sm shadow-sm sm:max-w-[70%]', saida ? 'bg-primary/15 text-foreground' : 'bg-card text-foreground', falha && 'border border-destructive/50')}>
+      <div className={cn('max-w-[85%] rounded-lg px-3 py-2 text-sm shadow-sm sm:max-w-[70%]', saida ? 'inovachat-bubble-out text-foreground' : 'inovachat-bubble-in text-foreground', falha && 'border border-destructive/50')}>
         {midia && <p className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground"><midia.icon className="h-4 w-4" />{midia.label}</p>}
         {m.texto && <p className="whitespace-pre-wrap break-words">{m.texto}</p>}
         <p className="mt-0.5 flex items-center justify-end gap-1 text-[10px] text-muted-foreground">
