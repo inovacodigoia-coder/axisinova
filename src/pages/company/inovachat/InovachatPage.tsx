@@ -1,25 +1,29 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { Navigate } from 'react-router-dom'
-import { ArrowLeft, Check, CheckCheck, FileText, Image as ImageIcon, Link2, MessagesSquare, Mic, RefreshCw, Search, Smile, Unlink, Video, X, AlertTriangle } from 'lucide-react'
+import { Navigate, useSearchParams } from 'react-router-dom'
+import { ArrowLeft, Check, CheckCheck, FileText, Image as ImageIcon, Link2, MessagesSquare, Mic, RefreshCw, Search, Smile, Unlink, Video, X, AlertTriangle, Send, Zap, Settings, ArrowRightLeft, CheckCircle2, RotateCcw, UserCheck, Loader2, Plus, Pencil, Trash2 } from 'lucide-react'
 import { toast } from 'sonner'
 import { supabase } from '@/integrations/supabase/client'
 import { useInovachatAcesso, useInovachatSinais } from '@/hooks/useInovachat'
 import { Input } from '@/components/ui/input'
+import { Textarea } from '@/components/ui/textarea'
 import { Button } from '@/components/ui/button'
+import { Switch } from '@/components/ui/switch'
 import { Skeleton } from '@/components/ui/skeleton'
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
+import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog'
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog'
 import { cn } from '@/lib/utils'
 
 interface Contato { id: string; telefone: string; nome_exibicao: string | null; paciente_id: string | null; vinculo_status: string; criado_em: string }
 interface Conversa {
-  id: string; status: 'na_fila' | 'em_atendimento' | 'finalizada'; responsavel_id: string | null; instancia_id: string
+  id: string; status: 'na_fila' | 'em_atendimento' | 'finalizada'; responsavel_id: string | null; instancia_id: string; setor_id: string | null
   ultima_mensagem_em: string | null; ultima_mensagem_resumo: string | null; nao_lidas: number; criada_em: string
   contato: Contato | null
 }
 interface Mensagem {
-  id: string; direcao: 'entrada' | 'saida'; origem: string; tipo: string; texto: string | null
-  enviada_por_nome: string | null; status: string | null; criado_em: string
+  id: string; direcao: 'entrada' | 'saida' | 'interna'; origem: string; tipo: string; texto: string | null
+  enviada_por_nome: string | null; status: string | null; criado_em: string; evento_tipo: string | null; erro: string | null
 }
+interface RespostaRapida { id: string; titulo: string; atalho: string; texto: string; setor_id: string | null; ativo: boolean }
 
 export const formatarTelefone = (t: string) => {
   const d = (t || '').replace(/\D/g, '')
@@ -47,24 +51,35 @@ const MIDIA: Record<string, { label: string; icon: any }> = {
 }
 const STATUS_CONV: Record<string, string> = { na_fila: 'Na fila', em_atendimento: 'Em atendimento', finalizada: 'Finalizada' }
 const nomeContato = (c: Contato | null) => c?.nome_exibicao || (c ? formatarTelefone(c.telefone) : 'Contato')
+const VARIAVEIS = ['nome_contato', 'atendente', 'empresa']
+type Aba = 'minhas' | 'fila' | 'todas' | 'finalizadas'
 
 export default function InovachatPage() {
   const acesso = useInovachatAcesso()
+  const [params, setParams] = useSearchParams()
   const [conversas, setConversas] = useState<Conversa[] | null>(null)
   const [erro, setErro] = useState(false)
-  const [instancias, setInstancias] = useState<Record<string, string>>({})
+  const [instancias, setInstancias] = useState<Record<string, { apelido: string; status: string }>>({})
+  const [setores, setSetores] = useState<Record<string, string>>({})
   const [nomes, setNomes] = useState<Record<string, string>>({})
-  const [aba, setAba] = useState<'abertas' | 'finalizadas'>('abertas')
-  const [sub, setSub] = useState<'em_atendimento' | 'na_fila'>('na_fila')
+  const [aba, setAba] = useState<Aba>('fila')
   const [busca, setBusca] = useState('')
   const [filtroNum, setFiltroNum] = useState('')
+  const [filtroSetor, setFiltroSetor] = useState('')
   const [selId, setSelId] = useState<string | null>(null)
   const [msgs, setMsgs] = useState<Mensagem[] | null>(null)
+  const [gestao, setGestao] = useState(false)
+  const [transferir, setTransferir] = useState(false)
+  const [confFinalizar, setConfFinalizar] = useState(false)
+  const [empresa, setEmpresa] = useState('')
+  const [rapidas, setRapidas] = useState<RespostaRapida[]>([])
+  const [meusSetores, setMeusSetores] = useState<string[]>([])
   const fimRef = useRef<HTMLDivElement>(null)
+  const eu = acesso?.usuario_id ?? null
 
   const carregar = useCallback(async () => {
     const { data, error } = await supabase.from('whatsapp_conversas')
-      .select('id, status, responsavel_id, instancia_id, ultima_mensagem_em, ultima_mensagem_resumo, nao_lidas, criada_em, contato:whatsapp_contatos(id, telefone, nome_exibicao, paciente_id, vinculo_status, criado_em)')
+      .select('id, status, responsavel_id, instancia_id, setor_id, ultima_mensagem_em, ultima_mensagem_resumo, nao_lidas, criada_em, contato:whatsapp_contatos(id, telefone, nome_exibicao, paciente_id, vinculo_status, criado_em)')
       .order('ultima_mensagem_em', { ascending: false, nullsFirst: false }).limit(500)
     if (error) { setErro(true); return }
     setErro(false)
@@ -72,24 +87,45 @@ export default function InovachatPage() {
     setConversas(lista)
     const resp = [...new Set(lista.map(c => c.responsavel_id).filter(Boolean))] as string[]
     if (resp.length) {
-      const { data: ps } = await supabase.from('profiles').select('id, full_name').in('id', resp)
-      setNomes(Object.fromEntries((ps ?? []).map((p: any) => [p.id, p.full_name ?? 'Usuário'])))
+      const { data: ps } = await supabase.rpc('inovachat_nomes' as any, { p_ids: resp })
+      setNomes(prev => ({ ...prev, ...Object.fromEntries(((ps as any[]) ?? []).map(p => [p.id, p.nome])) }))
     }
   }, [])
 
   const carregarMsgs = useCallback(async (id: string) => {
     const { data } = await supabase.from('whatsapp_mensagens')
-      .select('id, direcao, origem, tipo, texto, enviada_por_nome, status, criado_em')
+      .select('id, direcao, origem, tipo, texto, enviada_por_nome, status, criado_em, evento_tipo, erro')
       .eq('conversa_id', id).order('criado_em', { ascending: true }).limit(1000)
     setMsgs((data ?? []) as Mensagem[])
   }, [])
 
+  const carregarRapidas = useCallback(async () => {
+    const { data } = await supabase.from('whatsapp_respostas_rapidas' as any).select('id, titulo, atalho, texto, setor_id, ativo').order('atalho')
+    setRapidas((data ?? []) as any)
+  }, [])
+
+  const carregarInstancias = useCallback(() => {
+    void supabase.from('whatsapp_instancias').select('id, apelido, status').then(({ data }) =>
+      setInstancias(Object.fromEntries((data ?? []).map((i: any) => [i.id, { apelido: i.apelido ?? 'Número', status: i.status }]))))
+  }, [])
+
   useEffect(() => {
     if (!acesso?.ver) return
-    void carregar()
-    void supabase.from('whatsapp_instancias').select('id, apelido').then(({ data }) =>
-      setInstancias(Object.fromEntries((data ?? []).map((i: any) => [i.id, i.apelido ?? 'Número']))))
-  }, [acesso, carregar])
+    void carregar(); carregarInstancias(); void carregarRapidas()
+    void supabase.from('company_sectors').select('id, name').order('name').then(({ data }) =>
+      setSetores(Object.fromEntries((data ?? []).map((s: any) => [s.id, s.name]))))
+    void supabase.from('companies').select('name, nome_fantasia').maybeSingle().then(({ data }) =>
+      setEmpresa((data as any)?.nome_fantasia || (data as any)?.name || ''))
+    if (eu) void supabase.from('sector_users').select('sector_id').eq('user_id', eu).then(({ data }) =>
+      setMeusSetores((data ?? []).map((s: any) => s.sector_id)))
+    if (eu) void supabase.rpc('inovachat_nomes' as any, { p_ids: [eu] }).then(({ data }) =>
+      setNomes(prev => ({ ...prev, ...Object.fromEntries(((data as any[]) ?? []).map(p => [p.id, p.nome])) })))
+    if (acesso.gerenciar) setAba('todas')
+    const ch = supabase.channel(`inovachat-inst-${Math.random().toString(36).slice(2)}`)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'whatsapp_instancias' }, () => carregarInstancias())
+      .subscribe()
+    return () => { void supabase.removeChannel(ch) }
+  }, [acesso, eu, carregar, carregarInstancias, carregarRapidas])
 
   const selRef = useRef<string | null>(null)
   selRef.current = selId
@@ -102,33 +138,76 @@ export default function InovachatPage() {
   }, [carregar, carregarMsgs])
   useInovachatSinais(!!acesso?.ver, onSinal)
 
-  const abrir = async (c: Conversa) => {
-    setSelId(c.id); setMsgs(null)
-    void carregarMsgs(c.id)
-    const { error } = await supabase.rpc('inovachat_abrir', { p_conversa: c.id })
-    if (!error) setConversas(prev => prev?.map(x => x.id === c.id ? { ...x, nao_lidas: 0 } : x) ?? prev)
-  }
+  const abrirId = useCallback(async (id: string) => {
+    setSelId(id); setMsgs(null)
+    void carregarMsgs(id)
+    const { error } = await supabase.rpc('inovachat_abrir', { p_conversa: id })
+    if (!error) setConversas(prev => prev?.map(x => x.id === id ? { ...x, nao_lidas: 0 } : x) ?? prev)
+  }, [carregarMsgs])
+
+  // abrir pelo link do sino (?c=)
+  useEffect(() => {
+    const c = params.get('c')
+    if (c && acesso?.ver && conversas) {
+      void abrirId(c)
+      const conv = conversas.find(x => x.id === c)
+      if (conv) setAba(conv.status === 'finalizada' ? 'finalizadas' : conv.responsavel_id === eu ? 'minhas' : conv.status === 'na_fila' ? 'fila' : acesso.gerenciar ? 'todas' : 'minhas')
+      params.delete('c'); setParams(params, { replace: true })
+    }
+  }, [params, acesso, conversas, abrirId, eu, setParams])
 
   useEffect(() => { fimRef.current?.scrollIntoView({ block: 'end' }) }, [msgs])
+
+  const naAba = useCallback((c: Conversa, a: Aba) => {
+    if (a === 'finalizadas') return c.status === 'finalizada'
+    if (c.status === 'finalizada') return false
+    if (a === 'minhas') return c.responsavel_id === eu
+    if (a === 'fila') return c.status === 'na_fila' && (!c.setor_id || meusSetores.includes(c.setor_id) || !!acesso?.gerenciar)
+    return true
+  }, [eu, meusSetores, acesso])
 
   const filtradas = useMemo(() => {
     const q = busca.trim().toLowerCase()
     const qd = q.replace(/\D/g, '')
     return (conversas ?? []).filter(c => {
-      if (aba === 'finalizadas' ? c.status !== 'finalizada' : c.status !== sub) return false
+      if (!naAba(c, aba)) return false
       if (filtroNum && c.instancia_id !== filtroNum) return false
+      if (filtroSetor && (filtroSetor === '_sem' ? c.setor_id : c.setor_id !== filtroSetor)) return false
       if (!q) return true
       return (c.contato?.nome_exibicao ?? '').toLowerCase().includes(q)
         || (qd.length >= 3 && (c.contato?.telefone ?? '').includes(qd))
         || (c.ultima_mensagem_resumo ?? '').toLowerCase().includes(q)
     })
-  }, [conversas, aba, sub, busca, filtroNum])
+  }, [conversas, aba, busca, filtroNum, filtroSetor, naAba])
 
-  const contagem = (s: string) => (conversas ?? []).filter(c => c.status === s && (!filtroNum || c.instancia_id === filtroNum)).length
+  const contagem = (a: Aba) => (conversas ?? []).filter(c => naAba(c, a) && (!filtroNum || c.instancia_id === filtroNum)).length
   const sel = conversas?.find(c => c.id === selId) ?? null
+
+  const acao = async (fn: string, args: Record<string, unknown>, ok: string) => {
+    const { error } = await supabase.rpc(fn as any, args as any)
+    if (error) { toast.error(error.message); return false }
+    toast.success(ok); void carregar(); if (selId) void carregarMsgs(selId); return true
+  }
 
   if (acesso === null) return <div className="p-6"><Skeleton className="h-[70vh] w-full" /></div>
   if (!acesso.ver) return <Navigate to="/app/dashboard" replace />
+
+  const abas: { k: Aba; label: string }[] = [
+    { k: 'minhas', label: 'Minhas' }, { k: 'fila', label: 'Fila' },
+    ...(acesso.gerenciar ? [{ k: 'todas' as Aba, label: 'Todas' }] : []), { k: 'finalizadas', label: 'Finalizadas' },
+  ]
+
+  // motivo para não poder responder
+  let motivo: string | null = null
+  if (sel) {
+    if (!acesso.responder) motivo = 'Seu perfil não pode responder conversas.'
+    else if (sel.status === 'finalizada') motivo = acesso.gerenciar ? 'Conversa finalizada. Reabra para responder.' : 'Conversa finalizada.'
+    else if (instancias[sel.instancia_id] && instancias[sel.instancia_id].status !== 'connected') motivo = 'Número desconectado: reconecte em Configurações > WhatsApp.'
+    else if (sel.responsavel_id && sel.responsavel_id !== eu && !acesso.gerenciar) motivo = `Conversa em atendimento por ${nomes[sel.responsavel_id] ?? 'outro atendente'}. Peça a transferência.`
+  }
+  const souResp = !!sel && sel.responsavel_id === eu
+  const podeTransferir = !!sel && sel.status !== 'finalizada' && (acesso.gerenciar || (souResp && acesso.responder))
+  const podeAssumir = !!sel && sel.status !== 'finalizada' && !souResp && (acesso.gerenciar || (acesso.responder && sel.status === 'na_fila'))
 
   return (
     <div className="flex h-[calc(100vh-8rem)] min-h-[480px] overflow-hidden rounded-xl border border-border bg-card">
@@ -137,34 +216,39 @@ export default function InovachatPage() {
         <div className="space-y-2 border-b border-border p-3">
           <div className="flex items-center gap-2">
             <MessagesSquare className="h-5 w-5 text-primary" />
-            <h1 className="font-semibold text-foreground">InovaChat</h1>
+            <h1 className="flex-1 font-semibold text-foreground">InovaChat</h1>
+            {acesso.gerenciar && (
+              <Button variant="ghost" size="icon" className="h-10 w-10" onClick={() => setGestao(true)} aria-label="Respostas rápidas" title="Respostas rápidas">
+                <Settings className="h-5 w-5" />
+              </Button>
+            )}
           </div>
           <div className="relative">
             <Search className="absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
             <Input value={busca} onChange={e => setBusca(e.target.value)} placeholder="Buscar nome, telefone ou texto" className="h-11 pl-8" />
           </div>
-          <div className="grid grid-cols-2 gap-1 rounded-lg bg-muted p-1">
-            {(['abertas', 'finalizadas'] as const).map(a => (
-              <button key={a} onClick={() => setAba(a)} className={cn('min-h-[40px] rounded-md text-sm font-medium', aba === a ? 'bg-card text-foreground shadow-sm' : 'text-muted-foreground')}>
-                {a === 'abertas' ? 'Abertas' : 'Finalizadas'}
+          <div className={cn('grid gap-1 rounded-lg bg-muted p-1', abas.length === 4 ? 'grid-cols-4' : 'grid-cols-3')}>
+            {abas.map(a => (
+              <button key={a.k} onClick={() => setAba(a.k)} className={cn('min-h-[40px] rounded-md px-1 text-xs font-medium', aba === a.k ? 'bg-card text-foreground shadow-sm' : 'text-muted-foreground')}>
+                {a.label}{a.k !== 'finalizadas' && ` (${contagem(a.k)})`}
               </button>
             ))}
           </div>
-          {aba === 'abertas' && (
-            <div className="flex gap-1">
-              {(['em_atendimento', 'na_fila'] as const).map(s => (
-                <button key={s} onClick={() => setSub(s)} className={cn('min-h-[40px] flex-1 rounded-md border px-2 text-xs font-medium', sub === s ? 'border-primary bg-primary/10 text-primary' : 'border-border text-muted-foreground')}>
-                  {STATUS_CONV[s]} ({contagem(s)})
-                </button>
-              ))}
-            </div>
-          )}
-          {Object.keys(instancias).length > 1 && (
-            <select value={filtroNum} onChange={e => setFiltroNum(e.target.value)} className="h-11 w-full rounded-md border border-input bg-background px-2 text-sm">
-              <option value="">Todos os números</option>
-              {Object.entries(instancias).map(([id, n]) => <option key={id} value={id}>{n}</option>)}
-            </select>
-          )}
+          <div className="flex gap-2">
+            {Object.keys(setores).length > 0 && (
+              <select value={filtroSetor} onChange={e => setFiltroSetor(e.target.value)} className="h-10 min-w-0 flex-1 rounded-md border border-input bg-background px-2 text-sm">
+                <option value="">Todos os setores</option>
+                <option value="_sem">Sem setor</option>
+                {Object.entries(setores).map(([id, n]) => <option key={id} value={id}>{n}</option>)}
+              </select>
+            )}
+            {Object.keys(instancias).length > 1 && (
+              <select value={filtroNum} onChange={e => setFiltroNum(e.target.value)} className="h-10 min-w-0 flex-1 rounded-md border border-input bg-background px-2 text-sm">
+                <option value="">Todos os números</option>
+                {Object.entries(instancias).map(([id, n]) => <option key={id} value={id}>{n.apelido}</option>)}
+              </select>
+            )}
+          </div>
         </div>
         <div className="flex-1 overflow-y-auto">
           {erro ? (
@@ -177,10 +261,10 @@ export default function InovachatPage() {
           ) : filtradas.length === 0 ? (
             <div className="p-8 text-center text-sm text-muted-foreground">
               <MessagesSquare className="mx-auto mb-2 h-8 w-8 opacity-40" />
-              Nenhuma conversa aqui por enquanto. Quando um paciente mandar mensagem, ela aparece nesta lista.
+              Nenhuma conversa aqui por enquanto.
             </div>
           ) : filtradas.map(c => (
-            <button key={c.id} onClick={() => void abrir(c)}
+            <button key={c.id} onClick={() => void abrirId(c.id)}
               className={cn('flex w-full items-start gap-3 border-b border-border/60 px-3 py-3 text-left hover:bg-muted/60', c.id === selId && 'bg-muted')}>
               <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full gradient-bg text-sm font-semibold text-primary-foreground">
                 {iniciais(nomeContato(c.contato))}
@@ -195,8 +279,9 @@ export default function InovachatPage() {
                   {c.nao_lidas > 0 && <span className="rounded-full bg-primary px-1.5 text-[10px] font-bold text-primary-foreground">{c.nao_lidas}</span>}
                 </div>
                 <div className="mt-1 flex flex-wrap gap-1">
-                  <span className="rounded bg-secondary/10 px-1.5 py-0.5 text-[10px] text-secondary">{instancias[c.instancia_id] ?? 'Número'}</span>
-                  {c.responsavel_id && <span className="rounded bg-muted px-1.5 py-0.5 text-[10px] text-muted-foreground">{nomes[c.responsavel_id] ?? 'Responsável'}</span>}
+                  <span className="rounded bg-secondary/10 px-1.5 py-0.5 text-[10px] text-secondary">{instancias[c.instancia_id]?.apelido ?? 'Número'}</span>
+                  {c.setor_id && <span className="rounded bg-primary/10 px-1.5 py-0.5 text-[10px] text-primary">{setores[c.setor_id] ?? 'Setor'}</span>}
+                  {c.responsavel_id && <span className="rounded bg-muted px-1.5 py-0.5 text-[10px] text-muted-foreground">{c.responsavel_id === eu ? 'Você' : nomes[c.responsavel_id] ?? 'Responsável'}</span>}
                 </div>
               </div>
             </button>
@@ -213,12 +298,23 @@ export default function InovachatPage() {
           </div>
         ) : (
           <>
-            <header className="flex items-center gap-3 border-b border-border px-3 py-2">
+            <header className="flex flex-wrap items-center gap-2 border-b border-border px-3 py-2">
               <Button variant="ghost" size="icon" className="h-11 w-11 md:hidden" onClick={() => setSelId(null)} aria-label="Voltar"><ArrowLeft className="h-5 w-5" /></Button>
               <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full gradient-bg text-sm font-semibold text-primary-foreground">{iniciais(nomeContato(sel.contato))}</div>
               <div className="min-w-0 flex-1">
                 <p className="truncate text-sm font-semibold text-foreground">{nomeContato(sel.contato)}</p>
-                <p className="truncate text-xs text-muted-foreground">{formatarTelefone(sel.contato?.telefone ?? '')} · {instancias[sel.instancia_id] ?? 'Número'} · {STATUS_CONV[sel.status]}</p>
+                <p className="truncate text-xs text-muted-foreground">
+                  {formatarTelefone(sel.contato?.telefone ?? '')} · {STATUS_CONV[sel.status]} · {sel.setor_id ? setores[sel.setor_id] ?? 'Setor' : 'Sem setor'}
+                  {sel.responsavel_id && ` · ${sel.responsavel_id === eu ? 'Você' : nomes[sel.responsavel_id] ?? 'Responsável'}`}
+                </p>
+              </div>
+              <div className="flex flex-wrap gap-1">
+                {podeAssumir && <Button size="sm" variant="outline" className="h-10" onClick={() => void acao('inovachat_assumir', { p_conversa: sel.id }, 'Conversa assumida.')}><UserCheck className="mr-1 h-4 w-4" />Assumir conversa</Button>}
+                {podeTransferir && <Button size="sm" variant="outline" className="h-10" onClick={() => setTransferir(true)}><ArrowRightLeft className="mr-1 h-4 w-4" />Transferir</Button>}
+                {sel.status !== 'finalizada' && (acesso.gerenciar || (souResp && acesso.responder)) &&
+                  <Button size="sm" variant="outline" className="h-10" onClick={() => setConfFinalizar(true)}><CheckCircle2 className="mr-1 h-4 w-4" />Finalizar</Button>}
+                {sel.status === 'finalizada' && acesso.gerenciar &&
+                  <Button size="sm" variant="outline" className="h-10" onClick={() => void acao('inovachat_reabrir', { p_conversa: sel.id }, 'Conversa reaberta na fila.')}><RotateCcw className="mr-1 h-4 w-4" />Reabrir</Button>}
               </div>
             </header>
             <div className="flex min-h-0 flex-1">
@@ -228,37 +324,311 @@ export default function InovachatPage() {
                     : msgs.length === 0 ? <p className="text-center text-sm text-muted-foreground">Sem mensagens.</p>
                     : msgs.map((m, i) => {
                       const novoDia = i === 0 || diaChave(msgs[i - 1].criado_em) !== diaChave(m.criado_em)
-                      const saida = m.direcao === 'saida'
-                      const midia = m.tipo !== 'texto' ? MIDIA[m.tipo] ?? MIDIA.outro : null
                       return (
                         <div key={m.id}>
                           {novoDia && <div className="my-3 flex justify-center"><span className="rounded-full bg-card px-3 py-1 text-[11px] text-muted-foreground shadow-sm">{rotuloDia(m.criado_em)}</span></div>}
-                          <div className={cn('flex flex-col', saida ? 'items-end' : 'items-start')}>
-                            {saida && m.enviada_por_nome && <span className="mb-0.5 px-1 text-[10px] font-medium text-secondary">{m.enviada_por_nome}</span>}
-                            <div className={cn('max-w-[85%] rounded-lg px-3 py-2 text-sm shadow-sm sm:max-w-[70%]', saida ? 'bg-primary/15 text-foreground' : 'bg-card text-foreground')}>
-                              {midia && <p className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground"><midia.icon className="h-4 w-4" />{midia.label}</p>}
-                              {m.texto && <p className="whitespace-pre-wrap break-words">{m.texto}</p>}
-                              <p className="mt-0.5 flex items-center justify-end gap-1 text-[10px] text-muted-foreground">
-                                {hora(m.criado_em)}
-                                {saida && (m.status === 'lida' ? <CheckCheck className="h-3.5 w-3.5 text-primary" /> : m.status === 'entregue' ? <CheckCheck className="h-3.5 w-3.5" /> : m.status === 'falha' ? <AlertTriangle className="h-3.5 w-3.5 text-destructive" /> : <Check className="h-3.5 w-3.5" />)}
-                              </p>
-                            </div>
-                          </div>
+                          <Bolha m={m} onTentar={() => void reenviar(m)} />
                         </div>
                       )
                     })}
                   <div ref={fimRef} />
                 </div>
-                <div className="border-t border-border p-3">
-                  <Input disabled placeholder="Responder chega na próxima etapa" className="h-11" />
-                </div>
+                <Composer key={sel.id} conversa={sel} motivo={motivo} rapidas={rapidas}
+                  vars={{ nome_contato: (sel.contato?.nome_exibicao ?? '').split(/\s+/)[0] || '', atendente: eu ? nomes[eu] ?? '' : '', empresa }}
+                  onEnviado={() => { void carregar(); void carregarMsgs(sel.id) }} />
               </div>
-              <PainelContato contato={sel.contato} numero={instancias[sel.instancia_id] ?? 'Número'} podeGerenciar={acesso.gerenciar} onMudou={() => void carregar()} />
+              <PainelContato contato={sel.contato} numero={instancias[sel.instancia_id]?.apelido ?? 'Número'} podeGerenciar={acesso.gerenciar} onMudou={() => void carregar()} />
             </div>
           </>
         )}
       </section>
+
+      {sel && <TransferirDialog open={transferir} onClose={() => setTransferir(false)} setores={setores}
+        onConfirmar={async (u, s, nota) => {
+          if (await acao('inovachat_transferir', { p_conversa: sel.id, p_usuario: u, p_setor: s, p_nota: nota }, 'Conversa transferida.')) setTransferir(false)
+        }} />}
+      <AlertDialog open={confFinalizar} onOpenChange={setConfFinalizar}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Finalizar conversa?</AlertDialogTitle>
+            <AlertDialogDescription>A conversa vai para Finalizadas. Nenhuma mensagem é enviada ao paciente. Se ele escrever de novo, ela volta para a fila.</AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Voltar</AlertDialogCancel>
+            <AlertDialogAction onClick={() => sel && void acao('inovachat_finalizar', { p_conversa: sel.id }, 'Conversa finalizada.')}>Finalizar</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+      <RespostasRapidasDialog open={gestao} onClose={() => { setGestao(false); void carregarRapidas() }} setores={setores} />
     </div>
+  )
+
+  async function reenviar(m: Mensagem) {
+    if (!sel || !m.texto) return
+    const { data, error } = await supabase.functions.invoke('inovachat-enviar', { body: { conversa_id: sel.id, texto: m.texto, substituir_id: m.id } })
+    const r = (data ?? {}) as any
+    if (error && !r.mensagem) toast.error('Não foi possível enviar.')
+    else if (!r.ok) toast.error(r.mensagem ?? 'Não foi possível enviar.')
+    void carregar(); void carregarMsgs(sel.id)
+  }
+}
+
+function Bolha({ m, onTentar }: { m: Mensagem; onTentar: () => void }) {
+  if (m.origem === 'evento') {
+    const nota = m.evento_tipo === 'nota'
+    return (
+      <div className="my-2 flex justify-center">
+        <div className={cn('max-w-[85%] rounded-md px-3 py-1.5 text-center text-[11px]', nota ? 'border border-warning/40 bg-warning/10 text-foreground' : 'text-muted-foreground')}>
+          {nota && <p className="font-semibold">Nota interna{m.enviada_por_nome ? ` · ${m.enviada_por_nome}` : ''}</p>}
+          <p className="whitespace-pre-wrap break-words">{m.texto}</p>
+          <p className="text-[10px] opacity-70">{hora(m.criado_em)}</p>
+        </div>
+      </div>
+    )
+  }
+  const saida = m.direcao === 'saida'
+  const midia = m.tipo !== 'texto' ? MIDIA[m.tipo] ?? MIDIA.outro : null
+  const falha = m.status === 'falha'
+  return (
+    <div className={cn('flex flex-col', saida ? 'items-end' : 'items-start')}>
+      {saida && m.enviada_por_nome && <span className="mb-0.5 px-1 text-[10px] font-medium text-secondary">{m.enviada_por_nome}</span>}
+      <div className={cn('max-w-[85%] rounded-lg px-3 py-2 text-sm shadow-sm sm:max-w-[70%]', saida ? 'bg-primary/15 text-foreground' : 'bg-card text-foreground', falha && 'border border-destructive/50')}>
+        {midia && <p className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground"><midia.icon className="h-4 w-4" />{midia.label}</p>}
+        {m.texto && <p className="whitespace-pre-wrap break-words">{m.texto}</p>}
+        <p className="mt-0.5 flex items-center justify-end gap-1 text-[10px] text-muted-foreground">
+          {hora(m.criado_em)}
+          {saida && (m.status === 'lida' ? <CheckCheck className="h-3.5 w-3.5 text-primary" /> : m.status === 'entregue' ? <CheckCheck className="h-3.5 w-3.5" /> : falha ? <AlertTriangle className="h-3.5 w-3.5 text-destructive" /> : <Check className="h-3.5 w-3.5" />)}
+        </p>
+      </div>
+      {falha && m.origem === 'usuario' && (
+        <div className="mt-0.5 flex items-center gap-2 px-1 text-[11px] text-destructive">
+          <span>{m.erro ?? 'Falha no envio'}</span>
+          <button className="font-semibold underline" onClick={onTentar}>Tentar de novo</button>
+        </div>
+      )}
+    </div>
+  )
+}
+
+const resolver = (t: string, v: Record<string, string>) => t.replace(/\{(\w+)\}/g, (all, k) => (k in v ? v[k] : all))
+
+function Composer({ conversa, motivo, rapidas, vars, onEnviado }: {
+  conversa: Conversa; motivo: string | null; rapidas: RespostaRapida[]; vars: Record<string, string>; onEnviado: () => void
+}) {
+  const [texto, setTexto] = useState('')
+  const [enviando, setEnviando] = useState(false)
+  const [lista, setLista] = useState(false)
+  const [qRap, setQRap] = useState('')
+  const ref = useRef<HTMLTextAreaElement>(null)
+  const disponiveis = rapidas.filter(r => r.ativo && (!r.setor_id || r.setor_id === conversa.setor_id))
+  const filtroR = disponiveis.filter(r => {
+    const q = qRap.toLowerCase()
+    return !q || r.atalho.toLowerCase().includes(q) || r.titulo.toLowerCase().includes(q)
+  })
+
+  const escolher = (r: RespostaRapida) => {
+    setTexto(resolver(r.texto, vars)); setLista(false); setQRap('')
+    setTimeout(() => ref.current?.focus(), 0)
+  }
+  const mudar = (v: string) => {
+    setTexto(v)
+    if (v.startsWith('/') && !v.includes('\n') && !v.includes(' ')) { setLista(true); setQRap(v.slice(1)) }
+    else if (lista && !v.startsWith('/')) setLista(false)
+  }
+  const enviar = async () => {
+    const t = texto.trim()
+    if (!t || enviando || motivo) return
+    if (t.length > 4000) { toast.error('Limite de 4000 caracteres.'); return }
+    setEnviando(true)
+    const { data, error } = await supabase.functions.invoke('inovachat-enviar', { body: { conversa_id: conversa.id, texto: t } })
+    setEnviando(false)
+    const r = (data ?? {}) as any
+    if (r.ok) { setTexto(''); onEnviado(); return }
+    let msg = r.mensagem as string | undefined
+    if (!msg && error) { try { msg = (await (error as any).context?.json?.())?.mensagem } catch { /* */ } }
+    toast.error(msg ?? 'Não foi possível enviar.')
+    if (r.mensagem_id) { setTexto(''); onEnviado() } // ficou registrada com falha e "Tentar de novo"
+    else onEnviado()
+  }
+
+  if (motivo) {
+    return <div className="border-t border-border p-3"><div className="flex min-h-11 items-center rounded-md border border-dashed border-border bg-muted/40 px-3 text-sm text-muted-foreground">{motivo}</div></div>
+  }
+  return (
+    <div className="relative border-t border-border p-3">
+      {lista && (
+        <div className="absolute bottom-full left-3 right-3 mb-1 max-h-64 overflow-y-auto rounded-lg border border-border bg-popover p-1 shadow-lg">
+          <Input autoFocus={!texto.startsWith('/')} value={qRap} onChange={e => setQRap(e.target.value)} placeholder="Buscar resposta rápida" className="mb-1 h-9" />
+          {filtroR.length === 0 ? <p className="p-2 text-xs text-muted-foreground">Nenhuma resposta rápida.</p> : filtroR.map(r => (
+            <button key={r.id} onClick={() => escolher(r)} className="w-full rounded-md px-2 py-2 text-left hover:bg-muted">
+              <p className="text-sm font-medium text-foreground">{r.titulo} <span className="text-xs text-primary">{r.atalho}</span></p>
+              <p className="truncate text-xs text-muted-foreground">{resolver(r.texto, vars)}</p>
+            </button>
+          ))}
+        </div>
+      )}
+      <div className="flex items-end gap-2">
+        <Button type="button" variant="ghost" size="icon" className="h-11 w-11 shrink-0" onClick={() => { setLista(v => !v); setQRap('') }} aria-label="Respostas rápidas" title="Respostas rápidas">
+          <Zap className="h-5 w-5 text-primary" />
+        </Button>
+        <Textarea ref={ref} value={texto} onChange={e => mudar(e.target.value)} maxLength={4000} rows={1}
+          placeholder="Digite uma mensagem ( / para respostas rápidas)" className="min-h-[44px] max-h-40 resize-none"
+          onKeyDown={e => {
+            if (e.key === 'Escape') setLista(false)
+            if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); if (lista && filtroR[0] && texto.startsWith('/')) escolher(filtroR[0]); else void enviar() }
+          }} />
+        <Button type="button" onClick={() => void enviar()} disabled={enviando || !texto.trim()} className="h-11 w-11 shrink-0 gradient-bg p-0 text-primary-foreground" aria-label="Enviar">
+          {enviando ? <Loader2 className="h-5 w-5 animate-spin" /> : <Send className="h-5 w-5" />}
+        </Button>
+      </div>
+      {texto.length > 3500 && <p className="mt-1 text-right text-[11px] text-muted-foreground">{texto.length}/4000</p>}
+    </div>
+  )
+}
+
+function TransferirDialog({ open, onClose, setores, onConfirmar }: {
+  open: boolean; onClose: () => void; setores: Record<string, string>; onConfirmar: (u: string | null, s: string | null, nota: string) => Promise<void>
+}) {
+  const [modo, setModo] = useState<'usuario' | 'setor'>('usuario')
+  const [atendentes, setAtendentes] = useState<{ id: string; nome: string }[]>([])
+  const [q, setQ] = useState('')
+  const [escolha, setEscolha] = useState<string>('')
+  const [nota, setNota] = useState('')
+  const [salvando, setSalvando] = useState(false)
+  useEffect(() => {
+    if (!open) return
+    setEscolha(''); setNota(''); setQ('')
+    void supabase.rpc('inovachat_atendentes' as any).then(({ data }) => setAtendentes((data as any[]) ?? []))
+  }, [open])
+  const itens = modo === 'usuario'
+    ? atendentes.filter(a => !q || a.nome.toLowerCase().includes(q.toLowerCase())).map(a => ({ id: a.id, nome: a.nome }))
+    : Object.entries(setores).filter(([, n]) => !q || n.toLowerCase().includes(q.toLowerCase())).map(([id, nome]) => ({ id, nome }))
+  return (
+    <Dialog open={open} onOpenChange={v => { if (!v) onClose() }}>
+      <DialogContent className="max-w-md">
+        <DialogHeader><DialogTitle>Transferir conversa</DialogTitle></DialogHeader>
+        <div className="grid grid-cols-2 gap-1 rounded-lg bg-muted p-1">
+          {(['usuario', 'setor'] as const).map(m => (
+            <button key={m} onClick={() => { setModo(m); setEscolha('') }} className={cn('min-h-[40px] rounded-md text-sm font-medium', modo === m ? 'bg-card text-foreground shadow-sm' : 'text-muted-foreground')}>
+              {m === 'usuario' ? 'Para um atendente' : 'Para um setor'}
+            </button>
+          ))}
+        </div>
+        <Input value={q} onChange={e => setQ(e.target.value)} placeholder="Buscar" className="h-11" />
+        <div className="max-h-56 space-y-1 overflow-y-auto">
+          {itens.length === 0 ? <p className="text-sm text-muted-foreground">Nada encontrado.</p> : itens.map(i => (
+            <button key={i.id} onClick={() => setEscolha(i.id)} className={cn('min-h-[44px] w-full rounded-md border px-3 text-left text-sm', escolha === i.id ? 'border-primary bg-primary/10 text-primary' : 'border-border hover:bg-muted')}>
+              {i.nome}
+            </button>
+          ))}
+        </div>
+        <Textarea value={nota} onChange={e => setNota(e.target.value)} maxLength={1000} placeholder="Nota interna (opcional, só a equipe vê)" />
+        <DialogFooter>
+          <Button variant="outline" onClick={onClose}>Cancelar</Button>
+          <Button disabled={!escolha || salvando} onClick={async () => {
+            setSalvando(true)
+            await onConfirmar(modo === 'usuario' ? escolha : null, modo === 'setor' ? escolha : null, nota)
+            setSalvando(false)
+          }}>Transferir</Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  )
+}
+
+function RespostasRapidasDialog({ open, onClose, setores }: { open: boolean; onClose: () => void; setores: Record<string, string> }) {
+  const [lista, setLista] = useState<RespostaRapida[]>([])
+  const [edit, setEdit] = useState<Partial<RespostaRapida> | null>(null)
+  const [excluir, setExcluir] = useState<RespostaRapida | null>(null)
+  const carregar = useCallback(async () => {
+    const { data } = await supabase.from('whatsapp_respostas_rapidas' as any).select('id, titulo, atalho, texto, setor_id, ativo').order('atalho')
+    setLista((data ?? []) as any)
+  }, [])
+  useEffect(() => { if (open) void carregar() }, [open, carregar])
+
+  const salvar = async () => {
+    if (!edit) return
+    const titulo = (edit.titulo ?? '').trim(), atalho = (edit.atalho ?? '').trim().toLowerCase(), texto = (edit.texto ?? '').trim()
+    if (!titulo) return toast.error('Informe o título.')
+    if (!/^\/[^\s/]{1,30}$/.test(atalho)) return toast.error('O atalho começa com "/" e não tem espaço (ex.: /ola).')
+    if (!texto || texto.length > 1000) return toast.error('Texto de 1 a 1000 caracteres.')
+    const desconhecidas = [...texto.matchAll(/\{(\w+)\}/g)].map(m => m[1]).filter(v => !VARIAVEIS.includes(v))
+    if (desconhecidas.length) return toast.error(`Variável desconhecida: {${desconhecidas[0]}}`)
+    const linha = { titulo, atalho, texto, setor_id: edit.setor_id || null, ativo: edit.ativo ?? true }
+    const { data: c } = await supabase.from('profiles').select('company_id').eq('id', (await supabase.auth.getUser()).data.user?.id ?? '').maybeSingle()
+    const { error } = edit.id
+      ? await supabase.from('whatsapp_respostas_rapidas' as any).update({ ...linha, atualizado_em: new Date().toISOString() }).eq('id', edit.id)
+      : await supabase.from('whatsapp_respostas_rapidas' as any).insert({ ...linha, company_id: (c as any)?.company_id, criado_por: (await supabase.auth.getUser()).data.user?.id })
+    if (error) return toast.error(error.code === '23505' ? 'Já existe uma resposta com esse atalho.' : 'Não foi possível salvar.')
+    toast.success('Resposta rápida salva.'); setEdit(null); void carregar()
+  }
+  const alternar = async (r: RespostaRapida, v: boolean) => {
+    const { error } = await supabase.from('whatsapp_respostas_rapidas' as any).update({ ativo: v }).eq('id', r.id)
+    if (error) toast.error('Não foi possível alterar.'); else void carregar()
+  }
+  const apagar = async () => {
+    if (!excluir) return
+    const { error } = await supabase.from('whatsapp_respostas_rapidas' as any).delete().eq('id', excluir.id)
+    setExcluir(null)
+    if (error) toast.error('Não foi possível excluir.'); else { toast.success('Resposta excluída.'); void carregar() }
+  }
+
+  return (
+    <Dialog open={open} onOpenChange={v => { if (!v) onClose() }}>
+      <DialogContent className="max-w-lg">
+        <DialogHeader>
+          <DialogTitle>Respostas rápidas</DialogTitle>
+          <DialogDescription>Variáveis: {'{nome_contato}'}, {'{atendente}'}, {'{empresa}'}.</DialogDescription>
+        </DialogHeader>
+        {edit ? (
+          <div className="space-y-2">
+            <Input value={edit.titulo ?? ''} onChange={e => setEdit({ ...edit, titulo: e.target.value })} placeholder="Título" maxLength={80} className="h-11" />
+            <Input value={edit.atalho ?? ''} onChange={e => setEdit({ ...edit, atalho: e.target.value })} placeholder="/atalho" maxLength={31} className="h-11" />
+            <Textarea value={edit.texto ?? ''} onChange={e => setEdit({ ...edit, texto: e.target.value })} placeholder="Texto" maxLength={1000} rows={4} />
+            <div className="flex flex-wrap gap-1">
+              {VARIAVEIS.map(v => <button key={v} type="button" onClick={() => setEdit({ ...edit, texto: `${edit.texto ?? ''}{${v}}` })} className="rounded border border-border px-2 py-1 text-xs text-primary">{`{${v}}`}</button>)}
+            </div>
+            <select value={edit.setor_id ?? ''} onChange={e => setEdit({ ...edit, setor_id: e.target.value || null })} className="h-11 w-full rounded-md border border-input bg-background px-2 text-sm">
+              <option value="">Todos os setores</option>
+              {Object.entries(setores).map(([id, n]) => <option key={id} value={id}>{n}</option>)}
+            </select>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setEdit(null)}>Voltar</Button>
+              <Button onClick={() => void salvar()}>Salvar</Button>
+            </DialogFooter>
+          </div>
+        ) : (
+          <div className="space-y-2">
+            <Button variant="outline" className="h-11 w-full" onClick={() => setEdit({ ativo: true, atalho: '/' })}><Plus className="mr-2 h-4 w-4" />Nova resposta</Button>
+            <div className="max-h-80 space-y-1 overflow-y-auto">
+              {lista.length === 0 ? <p className="text-sm text-muted-foreground">Nenhuma resposta rápida.</p> : lista.map(r => (
+                <div key={r.id} className="flex items-center gap-2 rounded-md border border-border p-2">
+                  <div className="min-w-0 flex-1">
+                    <p className="text-sm font-medium text-foreground">{r.titulo} <span className="text-xs text-primary">{r.atalho}</span>{r.setor_id && <span className="ml-1 text-[10px] text-muted-foreground">· {setores[r.setor_id]}</span>}</p>
+                    <p className="truncate text-xs text-muted-foreground">{r.texto}</p>
+                  </div>
+                  <Switch checked={r.ativo} onCheckedChange={v => void alternar(r, v)} aria-label="Ativa" />
+                  <Button variant="ghost" size="icon" className="h-9 w-9" onClick={() => setEdit(r)} aria-label="Editar"><Pencil className="h-4 w-4" /></Button>
+                  <Button variant="ghost" size="icon" className="h-9 w-9" onClick={() => setExcluir(r)} aria-label="Excluir"><Trash2 className="h-4 w-4 text-destructive" /></Button>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+        <AlertDialog open={!!excluir} onOpenChange={v => { if (!v) setExcluir(null) }}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Excluir resposta rápida?</AlertDialogTitle>
+              <AlertDialogDescription>"{excluir?.titulo}" será removida para toda a equipe.</AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Voltar</AlertDialogCancel>
+              <AlertDialogAction onClick={() => void apagar()}>Excluir</AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+      </DialogContent>
+    </Dialog>
   )
 }
 
