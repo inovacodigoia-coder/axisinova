@@ -636,3 +636,18 @@ function TesteEnvio({ insts, companyId, onEnviado }: { insts: Inst[]; companyId:
     </div>
   )
 }
+
+function SetorSelect({ value, disabled, onChange }: { value: string; disabled?: boolean; onChange: (v: string) => void }) {
+  const [setores, setSetores] = useState<{ id: string; name: string }[]>([])
+  useEffect(() => {
+    void supabase.from('company_sectors').select('id, name').eq('is_active', true).order('name')
+      .then(({ data }) => setSetores((data ?? []) as any))
+  }, [])
+  return (
+    <select value={value} disabled={disabled} onChange={e => onChange(e.target.value)}
+      className="h-9 max-w-[60%] rounded-md border border-input bg-background px-2 text-sm">
+      <option value="">Sem setor (todos da fila)</option>
+      {setores.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
+    </select>
+  )
+}
