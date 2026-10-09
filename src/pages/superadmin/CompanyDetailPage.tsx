@@ -12,6 +12,7 @@ import { usePartnerApiEntitlement, setPartnerApiEntitlement } from '@/stores/par
 import { CompanyEquipmentsTab } from '@/components/superadmin/CompanyEquipmentsTab'
 import { CompanyPartnersPanel } from '@/components/superadmin/CompanyPartnersPanel'
 import { CompanyWhatsappPanel } from '@/components/superadmin/CompanyWhatsappPanel'
+import { CompanyInovachatPanel } from '@/components/superadmin/CompanyInovachatPanel'
 import type { Company, PlanType, CompanyStatus } from '@/types/company.types'
 
 const ADDON_PRICE_DOCTOR = 79
@@ -408,6 +409,7 @@ export default function CompanyDetailPage() {
               <ApoioEntitlementToggle companyId={companyId || ''} />
 
               {companyId && <CompanyWhatsappPanel companyId={companyId} />}
+              {companyId && <CompanyInovachatPanel companyId={companyId} />}
 
             </div>
           </div>
