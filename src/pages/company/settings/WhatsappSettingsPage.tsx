@@ -299,6 +299,11 @@ function NumeroCard({ inst, onChange, onConectar }: { inst: Inst; onChange: () =
           <Input type="number" min={1} step={1} placeholder="Sem limite" value={limite} onChange={e => setLimite(e.target.value)}
             onBlur={salvarLimite} disabled={salvando} className="h-9 w-28" />
         </label>
+        <label className="flex min-h-11 items-center justify-between gap-3 rounded-xl border border-border px-3 sm:col-span-2">
+          <span className="text-sm text-foreground">Setor de entrada das conversas</span>
+          <SetorSelect value={(inst as any).setor_entrada_id ?? ''} disabled={salvando}
+            onChange={v => void atualizar({ setor_entrada_id: v || null })} />
+        </label>
       </div>
       {(inst.limite_diario == null || inst.limite_diario > 100) && (
         <p className="rounded-lg border border-warning/40 bg-warning/10 px-3 py-2 text-xs text-foreground">
