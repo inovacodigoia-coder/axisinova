@@ -62,6 +62,8 @@ async function processarMensagem(instId: string, p: any) {
   for (const id of new Set(ids)) {
     // id pode vir com prefixo "numero:" — tenta exato e sufixo
     const cands = [id, id.includes(':') ? id.split(':').pop()! : null].filter(Boolean) as string[]
+    // InovaChat: status das mensagens enviadas pelo celular (as do sistema seguem pela fila)
+    if (novo !== 'enviada') await db.rpc('inovachat_status', { p_instancia: instId, p_ids: cands, p_status: novo })
     const { data: linhas } = await db.from('whatsapp_fila_envios').select('id, status')
       .eq('instancia_id', instId).in('message_id_uazapi', cands)
     for (const l of linhas ?? []) {
@@ -117,6 +119,41 @@ function textoDe(m: any): string {
   return str(m?.text) || (typeof c === 'string' ? c : str(c?.text) || str(c?.selectedDisplayText) || str(c?.Conversation))
 }
 
+// ---------- InovaChat (Etapa 10A): grava a conversa quando a empresa tem o módulo ligado ----------
+function tipoMidia(m: any): string {
+  const mt = String(m?.mediaType ?? m?.messageType ?? '').toLowerCase()
+  if (/audio|ptt/.test(mt)) return 'audio'
+  if (/sticker/.test(mt)) return 'figurinha'
+  if (/image/.test(mt)) return 'imagem'
+  if (/video/.test(mt)) return 'video'
+  if (/document/.test(mt)) return 'documento'
+  if (!mt || /conversation|text|button|list|template|interactive/.test(mt)) return 'texto'
+  return 'outro'
+}
+async function inovachatGravar(instId: string, p: any, m: any, texto: string, msgId: string) {
+  try {
+    const chat = String(m.chatid ?? '')
+    const deMim = m.fromMe === true
+    const tel = deMim
+      ? (digitos(chat) || digitos(p?.chat?.wa_chatid) || digitos(p?.chat?.phone))
+      : (digitos(m.sender_pn) || digitos(chat) || digitos(m.sender) || digitos(p?.chat?.wa_chatid))
+    if (!tel) { await db.rpc('inovachat_ignorar', { p_instancia: instId, p_motivo: 'sem_telefone' }); return }
+    const tipo = tipoMidia(m)
+    const ts = Number(m.messageTimestamp ?? 0)
+    const quando = ts > 0 ? new Date(ts < 1e12 ? ts * 1000 : ts).toISOString() : new Date().toISOString()
+    const { data, error } = await db.rpc('inovachat_registrar', {
+      p_instancia: instId, p_message_id: msgId, p_telefone: tel,
+      p_nome: deMim ? null : (str(m.senderName) || str(p?.chat?.wa_name) || null),
+      p_direcao: deMim ? 'saida' : 'entrada', p_origem: deMim ? 'usuario' : 'paciente', p_tipo: tipo,
+      p_texto: tipo === 'texto' ? (texto || null) : (str(m?.content?.caption) || null),
+      p_citada: typeof m.quoted === 'string' ? m.quoted : null,
+      p_enviada_por_nome: deMim ? 'Enviado pelo celular' : null, p_status: deMim ? 'enviada' : null, p_criado_em: quando,
+    })
+    if (error) console.error('inovachat: falha ao gravar', error.message)
+    else if (data !== 'gravada' && data !== 'duplicada' && data !== 'desligado') await db.rpc('inovachat_ignorar', { p_instancia: instId, p_motivo: String(data) })
+  } catch { /* nunca bloqueia a resposta da confirmação */ }
+}
+
 async function processarRecebida(instId: string, p: any) {
   const m = p?.message ?? {}
   const chat = String(m.chatid ?? '')
@@ -126,8 +163,14 @@ async function processarRecebida(instId: string, p: any) {
   const pareceResposta = !!bid || (texto.length > 0 && texto.length <= 30)
   const descartar = async (motivo: Motivo) => { if (pareceResposta) await diagnosticar(instId, p, m, '-', texto.length, motivo, bid) }
 
+  const grupo = m.isGroup === true || p?.chat?.wa_isGroup === true || chat.endsWith('@g.us') || chat.endsWith('@newsletter') || chat.endsWith('@broadcast')
+  const msgIdIC = String(m.messageid ?? m.id ?? '')
+  if (grupo) { await db.rpc('inovachat_ignorar', { p_instancia: instId, p_motivo: 'grupo' }); }
+  // mensagens enviadas pelo próprio sistema (API) já são gravadas pela fila
+  else if (m.wasSentByApi !== true && msgIdIC && msgIdIC.length <= 200) await inovachatGravar(instId, p, m, texto, msgIdIC)
+
   if (m.fromMe === true || m.wasSentByApi === true) return descartar('proprio_numero')
-  if (m.isGroup === true || chat.endsWith('@g.us') || chat.endsWith('@newsletter') || chat.endsWith('@broadcast')) return descartar('grupo')
+  if (grupo) return descartar('grupo')
   const msgId = String(m.messageid ?? m.id ?? '')
   if (!msgId || msgId.length > 200) return descartar('formato_desconhecido')
 
