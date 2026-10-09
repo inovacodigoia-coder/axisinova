@@ -2924,6 +2924,10 @@ export type Database = {
           email: string | null
           estado: string | null
           id: string
+          inovachat_habilitado: boolean
+          inovachat_habilitado_em: string | null
+          inovachat_habilitado_por: string | null
+          inovachat_retencao_meses: number
           logradouro: string | null
           medicos_ativos: number | null
           medicos_limite: number | null
@@ -2966,6 +2970,10 @@ export type Database = {
           email?: string | null
           estado?: string | null
           id?: string
+          inovachat_habilitado?: boolean
+          inovachat_habilitado_em?: string | null
+          inovachat_habilitado_por?: string | null
+          inovachat_retencao_meses?: number
           logradouro?: string | null
           medicos_ativos?: number | null
           medicos_limite?: number | null
@@ -3008,6 +3016,10 @@ export type Database = {
           email?: string | null
           estado?: string | null
           id?: string
+          inovachat_habilitado?: boolean
+          inovachat_habilitado_em?: string | null
+          inovachat_habilitado_por?: string | null
+          inovachat_retencao_meses?: number
           logradouro?: string | null
           medicos_ativos?: number | null
           medicos_limite?: number | null
@@ -4022,6 +4034,56 @@ export type Database = {
           name?: string
         }
         Relationships: []
+      }
+      inovachat_ignoradas: {
+        Row: {
+          company_id: string
+          criado_em: string
+          id: number
+          instancia_id: string | null
+          motivo: string
+        }
+        Insert: {
+          company_id: string
+          criado_em?: string
+          id?: number
+          instancia_id?: string | null
+          motivo: string
+        }
+        Update: {
+          company_id?: string
+          criado_em?: string
+          id?: number
+          instancia_id?: string | null
+          motivo?: string
+        }
+        Relationships: []
+      }
+      inovachat_sinais: {
+        Row: {
+          company_id: string
+          conversa_id: string
+          em: string
+        }
+        Insert: {
+          company_id: string
+          conversa_id: string
+          em?: string
+        }
+        Update: {
+          company_id?: string
+          conversa_id?: string
+          em?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "inovachat_sinais_conversa_id_fkey"
+            columns: ["conversa_id"]
+            isOneToOne: true
+            referencedRelation: "whatsapp_conversas"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       inpatient_bed_log: {
         Row: {
@@ -7776,6 +7838,157 @@ export type Database = {
         }
         Relationships: []
       }
+      whatsapp_contatos: {
+        Row: {
+          atualizado_em: string
+          company_id: string
+          criado_em: string
+          id: string
+          nome_exibicao: string | null
+          paciente_id: string | null
+          telefone: string
+          vinculo_status: string
+        }
+        Insert: {
+          atualizado_em?: string
+          company_id: string
+          criado_em?: string
+          id?: string
+          nome_exibicao?: string | null
+          paciente_id?: string | null
+          telefone: string
+          vinculo_status?: string
+        }
+        Update: {
+          atualizado_em?: string
+          company_id?: string
+          criado_em?: string
+          id?: string
+          nome_exibicao?: string | null
+          paciente_id?: string | null
+          telefone?: string
+          vinculo_status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "whatsapp_contatos_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "whatsapp_contatos_paciente_id_fkey"
+            columns: ["paciente_id"]
+            isOneToOne: false
+            referencedRelation: "patients"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      whatsapp_conversa_acessos: {
+        Row: {
+          acessado_em: string
+          company_id: string
+          conversa_id: string
+          id: string
+          usuario_id: string
+        }
+        Insert: {
+          acessado_em?: string
+          company_id: string
+          conversa_id: string
+          id?: string
+          usuario_id: string
+        }
+        Update: {
+          acessado_em?: string
+          company_id?: string
+          conversa_id?: string
+          id?: string
+          usuario_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "whatsapp_conversa_acessos_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "whatsapp_conversa_acessos_conversa_id_fkey"
+            columns: ["conversa_id"]
+            isOneToOne: false
+            referencedRelation: "whatsapp_conversas"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      whatsapp_conversas: {
+        Row: {
+          company_id: string
+          contato_id: string
+          criada_em: string
+          finalizada_em: string | null
+          id: string
+          instancia_id: string
+          nao_lidas: number
+          responsavel_id: string | null
+          status: string
+          ultima_mensagem_em: string | null
+          ultima_mensagem_resumo: string | null
+        }
+        Insert: {
+          company_id: string
+          contato_id: string
+          criada_em?: string
+          finalizada_em?: string | null
+          id?: string
+          instancia_id: string
+          nao_lidas?: number
+          responsavel_id?: string | null
+          status?: string
+          ultima_mensagem_em?: string | null
+          ultima_mensagem_resumo?: string | null
+        }
+        Update: {
+          company_id?: string
+          contato_id?: string
+          criada_em?: string
+          finalizada_em?: string | null
+          id?: string
+          instancia_id?: string
+          nao_lidas?: number
+          responsavel_id?: string | null
+          status?: string
+          ultima_mensagem_em?: string | null
+          ultima_mensagem_resumo?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "whatsapp_conversas_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "whatsapp_conversas_contato_id_fkey"
+            columns: ["contato_id"]
+            isOneToOne: false
+            referencedRelation: "whatsapp_contatos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "whatsapp_conversas_instancia_id_fkey"
+            columns: ["instancia_id"]
+            isOneToOne: false
+            referencedRelation: "whatsapp_instancias"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       whatsapp_fila_envios: {
         Row: {
           agendada_para: string
@@ -7986,6 +8199,69 @@ export type Database = {
             columns: ["company_id"]
             isOneToOne: false
             referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      whatsapp_mensagens: {
+        Row: {
+          citada_message_id: string | null
+          company_id: string
+          conversa_id: string
+          criado_em: string
+          direcao: string
+          enviada_por_nome: string | null
+          enviada_por_usuario_id: string | null
+          id: string
+          message_id_uazapi: string
+          origem: string
+          status: string | null
+          texto: string | null
+          tipo: string
+        }
+        Insert: {
+          citada_message_id?: string | null
+          company_id: string
+          conversa_id: string
+          criado_em?: string
+          direcao: string
+          enviada_por_nome?: string | null
+          enviada_por_usuario_id?: string | null
+          id?: string
+          message_id_uazapi: string
+          origem: string
+          status?: string | null
+          texto?: string | null
+          tipo?: string
+        }
+        Update: {
+          citada_message_id?: string | null
+          company_id?: string
+          conversa_id?: string
+          criado_em?: string
+          direcao?: string
+          enviada_por_nome?: string | null
+          enviada_por_usuario_id?: string | null
+          id?: string
+          message_id_uazapi?: string
+          origem?: string
+          status?: string | null
+          texto?: string | null
+          tipo?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "whatsapp_mensagens_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "whatsapp_mensagens_conversa_id_fkey"
+            columns: ["conversa_id"]
+            isOneToOne: false
+            referencedRelation: "whatsapp_conversas"
             referencedColumns: ["id"]
           },
         ]
@@ -9459,6 +9735,47 @@ export type Database = {
       }
       initialize_company_access_defaults: {
         Args: { _company_id: string }
+        Returns: undefined
+      }
+      inovachat_abrir: { Args: { p_conversa: string }; Returns: undefined }
+      inovachat_ativo: { Args: { _company: string }; Returns: boolean }
+      inovachat_ignorar: {
+        Args: { p_instancia: string; p_motivo: string }
+        Returns: undefined
+      }
+      inovachat_liberar: {
+        Args: { _company: string; _habilitado: boolean; _retencao: number }
+        Returns: undefined
+      }
+      inovachat_pode_ver: {
+        Args: { _company: string; _resp: string; _status: string }
+        Returns: boolean
+      }
+      inovachat_registrar: {
+        Args: {
+          p_citada: string
+          p_criado_em: string
+          p_direcao: string
+          p_enviada_por_nome: string
+          p_instancia: string
+          p_message_id: string
+          p_nome: string
+          p_origem: string
+          p_status: string
+          p_telefone: string
+          p_texto: string
+          p_tipo: string
+        }
+        Returns: string
+      }
+      inovachat_resumo_24h: { Args: { _company: string }; Returns: Json }
+      inovachat_status: {
+        Args: { p_ids: string[]; p_instancia: string; p_status: string }
+        Returns: undefined
+      }
+      inovachat_tem_permissao: { Args: { _perm: string }; Returns: boolean }
+      inovachat_vincular: {
+        Args: { p_contato: string; p_paciente: string }
         Returns: undefined
       }
       inpatient_discharge: { Args: { _bed_id: string }; Returns: undefined }
