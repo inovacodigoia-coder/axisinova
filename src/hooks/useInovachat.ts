@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from 'react'
 import { supabase } from '@/integrations/supabase/client'
 
-export interface InovachatAcesso { ver: boolean; gerenciar: boolean }
+export interface InovachatAcesso { ver: boolean; responder: boolean; gerenciar: boolean; usuario_id?: string }
 
 /** Acesso ao InovaChat (empresa liberada + permissão), checado no banco. */
 export function useInovachatAcesso() {
@@ -9,7 +9,7 @@ export function useInovachatAcesso() {
   useEffect(() => {
     let vivo = true
     void supabase.rpc('inovachat_meu_acesso').then(({ data }) => {
-      if (vivo) setAcesso((data as unknown as InovachatAcesso) ?? { ver: false, gerenciar: false })
+      if (vivo) setAcesso((data as unknown as InovachatAcesso) ?? { ver: false, responder: false, gerenciar: false })
     })
     return () => { vivo = false }
   }, [])

@@ -130,8 +130,9 @@ export const WHATSAPP_PERMISSIONS: { code: string; label: string; description: s
 
 /** Permissões do InovaChat (gravadas em permissions.inovachat; checadas no banco por inovachat_tem_permissao; administrador tem todas) */
 export const INOVACHAT_PERMISSIONS: { code: string; label: string; description: string }[] = [
-  { code: 'inovachat.visualizar', label: 'Ver o InovaChat', description: 'Ver as conversas da fila e as suas' },
-  { code: 'inovachat.gerenciar', label: 'Gerenciar o InovaChat', description: 'Ver todas as conversas e vincular contato a paciente' },
+  { code: 'inovachat.visualizar', label: 'Ver o InovaChat', description: 'Ver as conversas da fila do seu setor e as suas' },
+  { code: 'inovachat.responder', label: 'Responder no InovaChat', description: 'Enviar mensagens e assumir, transferir e finalizar as próprias conversas' },
+  { code: 'inovachat.gerenciar', label: 'Gerenciar o InovaChat', description: 'Ver todas, atribuir, reabrir, vincular paciente e gerenciar respostas rápidas' },
 ]
 
 /** Permissões do módulo Triagem Lab (gravadas em permissions.triagem como códigos; checadas no banco por triagem_tem_permissao) */
