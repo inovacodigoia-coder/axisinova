@@ -54,6 +54,14 @@ export default function ConfirmationsPage() {
   }, [])
 
   useEffect(() => { if (!isDemo) load(); else setLoading(false) }, [load, isDemo])
+  // Mantém a Central em sincronia com a Agenda e a fila (respostas do paciente chegam pelo servidor)
+  useEffect(() => {
+    if (isDemo) return
+    const t = setInterval(() => { load() }, 30000)
+    const onFocus = () => load()
+    window.addEventListener('focus', onFocus)
+    return () => { clearInterval(t); window.removeEventListener('focus', onFocus) }
+  }, [load, isDemo])
 
   const aptById = useMemo(() => new Map(appointments.map(a => [a.id, a])), [appointments])
 
@@ -129,14 +137,25 @@ export default function ConfirmationsPage() {
           const apt = l.agendamento_id ? aptById.get(l.agendamento_id) : undefined
           const st = STATUS[l.status] || STATUS.agendada
           const Icon = st.icon
-          const confirmado = apt?.status === 'confirmed'
+          const confirmado = apt?.status === 'confirmed' || l.resposta_acao === 'confirmar'
+          const cancelado = apt?.status === 'cancelled'
           return (
             <div key={l.id} className="rounded-xl border border-border bg-card p-4 hover:shadow-md transition-shadow">
               <div className="flex items-center gap-2 flex-wrap">
                 {apt && <span className="text-sm font-semibold text-foreground">📅 {apt.date.split('-').reverse().join('/')} às {apt.time}</span>}
                 {apt && <span className="text-sm text-muted-foreground">{apt.doctorName}</span>}
-                <span className={`ml-auto flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-medium ${st.cls}`}>
-                  <Icon className="h-3 w-3" /> {st.label}
+                <span className="ml-auto flex items-center gap-1">
+                  {confirmado && (
+                    <span className="flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-medium bg-green-100 text-green-700">
+                      <Check className="h-3 w-3" /> Confirmado{l.resposta_acao === 'confirmar' ? ' pelo WhatsApp' : ' na Agenda'}
+                    </span>
+                  )}
+                  {cancelado && (
+                    <span className="rounded-full px-2 py-0.5 text-[11px] font-medium bg-destructive/10 text-destructive">Agendamento cancelado</span>
+                  )}
+                  <span className={`flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-medium ${st.cls}`}>
+                    <Icon className="h-3 w-3" /> {st.label}
+                  </span>
                 </span>
               </div>
               <p className="text-sm font-medium text-foreground mt-1">👤 {l.paciente_nome}</p>
