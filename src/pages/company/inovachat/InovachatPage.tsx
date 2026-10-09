@@ -12,7 +12,6 @@ import { Skeleton } from '@/components/ui/skeleton'
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog'
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog'
 import { cn } from '@/lib/utils'
-import inovachatWallpaper from '@/assets/inovachat-wallpaper.jpg'
 
 interface Contato { id: string; telefone: string; nome_exibicao: string | null; paciente_id: string | null; vinculo_status: string; criado_em: string }
 interface Conversa {
@@ -320,7 +319,7 @@ export default function InovachatPage() {
             </header>
             <div className="flex min-h-0 flex-1">
               <div className="flex min-w-0 flex-1 flex-col">
-                <div className="inovachat-wallpaper flex-1 space-y-1 overflow-y-auto px-3 py-4 sm:px-6" style={{ backgroundImage: `url(${inovachatWallpaper})` }}>
+                <div className="flex-1 space-y-1 overflow-y-auto bg-muted/30 px-3 py-4 sm:px-6">
                   {msgs === null ? <div className="space-y-3">{[0, 1, 2].map(i => <Skeleton key={i} className={cn('h-12 w-2/3', i % 2 && 'ml-auto')} />)}</div>
                     : msgs.length === 0 ? <p className="text-center text-sm text-muted-foreground">Sem mensagens.</p>
                     : msgs.map((m, i) => {
@@ -393,7 +392,7 @@ function Bolha({ m, onTentar }: { m: Mensagem; onTentar: () => void }) {
   return (
     <div className={cn('flex flex-col', saida ? 'items-end' : 'items-start')}>
       {saida && m.enviada_por_nome && <span className="mb-0.5 px-1 text-[10px] font-medium text-secondary">{m.enviada_por_nome}</span>}
-      <div className={cn('max-w-[85%] rounded-lg px-3 py-2 text-sm shadow-sm sm:max-w-[70%]', saida ? 'inovachat-bubble-out text-foreground' : 'inovachat-bubble-in text-foreground', falha && 'border border-destructive/50')}>
+      <div className={cn('max-w-[85%] rounded-lg px-3 py-2 text-sm shadow-sm sm:max-w-[70%]', saida ? 'bg-primary/15 text-foreground' : 'bg-card text-foreground', falha && 'border border-destructive/50')}>
         {midia && <p className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground"><midia.icon className="h-4 w-4" />{midia.label}</p>}
         {m.texto && <p className="whitespace-pre-wrap break-words">{m.texto}</p>}
         <p className="mt-0.5 flex items-center justify-end gap-1 text-[10px] text-muted-foreground">
