@@ -310,6 +310,15 @@ Deno.serve(async (req) => {
         if (l !== null && !(Number.isInteger(l) && l >= 1)) return erro(400, 'DADOS_INVALIDOS', 'Limite diário deve ser 1 ou mais, ou vazio.')
         upd.limite_diario = l
       }
+      if (body.setor_entrada_id !== undefined) {
+        const s = body.setor_entrada_id
+        if (s === null || s === '') upd.setor_entrada_id = null
+        else {
+          const { data: sec } = await db.from('company_sectors').select('id').eq('id', String(s)).eq('company_id', companyId).maybeSingle()
+          if (!sec) return erro(400, 'DADOS_INVALIDOS', 'Setor não encontrado.')
+          upd.setor_entrada_id = sec.id
+        }
+      }
       if (!Object.keys(upd).length) return erro(400, 'DADOS_INVALIDOS', 'Nada para atualizar.')
       upd.atualizado_em = new Date().toISOString()
       await db.from('whatsapp_instancias').update(upd).eq('id', inst.id)
