@@ -171,6 +171,9 @@ async function inovachatGravar(instId: string, p: any, m: any, texto: string, ms
       const suportado = tipo !== 'outro' && (!mime || !!extDoMime(mime))
       const status = !suportado ? 'nao_suportado' : (tam && tam > MAX_RECEBIDA ? 'grande_demais' : 'pendente')
       await db.rpc('inovachat_midia_marcar', { p_instancia: instId, p_message_id: msgId, p_mime: mime || null, p_tamanho: tam, p_nome: nome, p_duracao: seg, p_status: status })
+      // acorda o baixador na hora (sem polling); o agendador de hora em hora só repete as que falharam
+      if (status === 'pendente') await db.rpc('inovachat_midia_tick', {
+        p_url: `${Deno.env.get('SUPABASE_URL')}/functions/v1/inovachat-midia-worker`, p_apikey: Deno.env.get('SUPABASE_ANON_KEY') ?? '' })
     }
     if (data !== 'gravada' && data !== 'duplicada' && data !== 'desligado') await db.rpc('inovachat_ignorar', { p_instancia: instId, p_motivo: String(data) })
     return data === 'gravada' ? tel : undefined
