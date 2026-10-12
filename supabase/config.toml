@@ -3,3 +3,7 @@ project_id = "taicjeqqizmsnlibwbbn"
 verify_jwt = false
 [functions.whatsapp-webhook]
 verify_jwt = false
+[functions.inovachat-midia-worker]
+verify_jwt = false
+[functions.inovachat-retencao]
+verify_jwt = false

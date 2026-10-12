@@ -1,0 +1,1 @@
+GRANT EXECUTE ON FUNCTION public.inovachat_midia_tick(text,text), public.inovachat_retencao_tick(text,text), public.inovachat_retencao_corte(uuid) TO service_role;

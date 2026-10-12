@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from 'react'
 import { supabase } from '@/integrations/supabase/client'
 
-export interface InovachatAcesso { ver: boolean; responder: boolean; gerenciar: boolean; usuario_id?: string }
+export interface InovachatAcesso { ver: boolean; responder: boolean; gerenciar: boolean; admin?: boolean; usuario_id?: string }
 
 /** Acesso ao InovaChat (empresa liberada + permissão), checado no banco. */
 export function useInovachatAcesso() {

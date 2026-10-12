@@ -13,16 +13,22 @@ import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogD
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog'
 import { cn } from '@/lib/utils'
 import { ChatColorsDialog, DEFAULT_CHAT_COLORS, type ChatColors } from '@/components/inovachat/ChatColorsDialog'
+import { MidiaBolha } from '@/components/inovachat/MidiaBolha'
+import { AnexoBotoes } from '@/components/inovachat/AnexoBotoes'
+import { HorarioDialog } from '@/components/inovachat/HorarioDialog'
+import { ExcluirContatoDialog } from '@/components/inovachat/ExcluirContatoDialog'
+import { Clock } from 'lucide-react'
 
 interface Contato { id: string; telefone: string; nome_exibicao: string | null; paciente_id: string | null; vinculo_status: string; criado_em: string }
 interface Conversa {
   id: string; status: 'na_fila' | 'em_atendimento' | 'finalizada'; responsavel_id: string | null; instancia_id: string; setor_id: string | null
-  ultima_mensagem_em: string | null; ultima_mensagem_resumo: string | null; nao_lidas: number; criada_em: string
+  ultima_mensagem_em: string | null; ultima_mensagem_resumo: string | null; nao_lidas: number; criada_em: string; fora_horario?: boolean
   contato: Contato | null
 }
 interface Mensagem {
   id: string; direcao: 'entrada' | 'saida' | 'interna'; origem: string; tipo: string; texto: string | null
   enviada_por_nome: string | null; status: string | null; criado_em: string; evento_tipo: string | null; erro: string | null
+  midia_status: string | null; midia_nome: string | null; midia_tamanho: number | null; duracao_seg: number | null; midia_mime: string | null
 }
 interface RespostaRapida { id: string; titulo: string; atalho: string; texto: string; setor_id: string | null; ativo: boolean }
 
@@ -71,6 +77,7 @@ export default function InovachatPage() {
   const [msgs, setMsgs] = useState<Mensagem[] | null>(null)
   const [gestao, setGestao] = useState(false)
   const [coresOpen, setCoresOpen] = useState(false)
+  const [horarioOpen, setHorarioOpen] = useState(false)
   const [cores, setCores] = useState<ChatColors>(DEFAULT_CHAT_COLORS)
   const [transferir, setTransferir] = useState(false)
   const [confFinalizar, setConfFinalizar] = useState(false)
@@ -82,7 +89,7 @@ export default function InovachatPage() {
 
   const carregar = useCallback(async () => {
     const { data, error } = await supabase.from('whatsapp_conversas')
-      .select('id, status, responsavel_id, instancia_id, setor_id, ultima_mensagem_em, ultima_mensagem_resumo, nao_lidas, criada_em, contato:whatsapp_contatos(id, telefone, nome_exibicao, paciente_id, vinculo_status, criado_em)')
+      .select('id, status, responsavel_id, instancia_id, setor_id, ultima_mensagem_em, ultima_mensagem_resumo, nao_lidas, criada_em, fora_horario, contato:whatsapp_contatos(id, telefone, nome_exibicao, paciente_id, vinculo_status, criado_em)')
       .order('ultima_mensagem_em', { ascending: false, nullsFirst: false }).limit(500)
     if (error) { setErro(true); return }
     setErro(false)
@@ -97,7 +104,7 @@ export default function InovachatPage() {
 
   const carregarMsgs = useCallback(async (id: string) => {
     const { data } = await supabase.from('whatsapp_mensagens')
-      .select('id, direcao, origem, tipo, texto, enviada_por_nome, status, criado_em, evento_tipo, erro')
+      .select('id, direcao, origem, tipo, texto, enviada_por_nome, status, criado_em, evento_tipo, erro, midia_status, midia_nome, midia_tamanho, duracao_seg, midia_mime')
       .eq('conversa_id', id).order('criado_em', { ascending: true }).limit(1000)
     setMsgs((data ?? []) as Mensagem[])
   }, [])
@@ -223,6 +230,9 @@ export default function InovachatPage() {
             <h1 className="flex-1 font-semibold text-foreground">InovaChat</h1>
             <Button variant="ghost" size="icon" className="h-10 w-10" onClick={() => setCoresOpen(true)} aria-label="Cores da conversa" title="Cores da conversa"><Palette className="h-5 w-5" /></Button>
             {acesso.gerenciar && (
+              <Button variant="ghost" size="icon" className="h-10 w-10" onClick={() => setHorarioOpen(true)} aria-label="Horário de atendimento" title="Horário de atendimento"><Clock className="h-5 w-5" /></Button>
+            )}
+            {acesso.gerenciar && (
               <Button variant="ghost" size="icon" className="h-10 w-10" onClick={() => setGestao(true)} aria-label="Respostas rápidas" title="Respostas rápidas">
                 <Settings className="h-5 w-5" />
               </Button>
@@ -285,6 +295,7 @@ export default function InovachatPage() {
                 </div>
                 <div className="mt-1 flex flex-wrap gap-1">
                   <span className="rounded bg-secondary/10 px-1.5 py-0.5 text-[10px] text-secondary">{instancias[c.instancia_id]?.apelido ?? 'Número'}</span>
+                  {c.fora_horario && c.status !== 'finalizada' && <span className="rounded bg-warning/15 px-1.5 py-0.5 text-[10px] text-foreground">Fora do horário</span>}
                   {c.setor_id && <span className="rounded bg-primary/10 px-1.5 py-0.5 text-[10px] text-primary">{setores[c.setor_id] ?? 'Setor'}</span>}
                   {c.responsavel_id && <span className="rounded bg-muted px-1.5 py-0.5 text-[10px] text-muted-foreground">{c.responsavel_id === eu ? 'Você' : nomes[c.responsavel_id] ?? 'Responsável'}</span>}
                 </div>
@@ -343,7 +354,7 @@ export default function InovachatPage() {
                   vars={{ nome_contato: (sel.contato?.nome_exibicao ?? '').split(/\s+/)[0] || '', atendente: eu ? nomes[eu] ?? '' : '', empresa }}
                   onEnviado={() => { void carregar(); void carregarMsgs(sel.id) }} />
               </div>
-              <PainelContato contato={sel.contato} numero={instancias[sel.instancia_id]?.apelido ?? 'Número'} podeGerenciar={acesso.gerenciar} onMudou={() => void carregar()} />
+              <PainelContato contato={sel.contato} numero={instancias[sel.instancia_id]?.apelido ?? 'Número'} podeGerenciar={acesso.gerenciar} podeExcluir={!!acesso.admin} onMudou={() => void carregar()} onExcluido={() => { setSelId(null); void carregar() }} />
             </div>
           </>
         )}
@@ -366,13 +377,17 @@ export default function InovachatPage() {
         </AlertDialogContent>
       </AlertDialog>
       <RespostasRapidasDialog open={gestao} onClose={() => { setGestao(false); void carregarRapidas() }} setores={setores} />
+      <HorarioDialog open={horarioOpen} onClose={() => setHorarioOpen(false)} setores={setores} empresa={empresa} />
       {coresOpen && <ChatColorsDialog colors={cores} onApply={setCores} onClose={() => setCoresOpen(false)} />}
     </div>
   )
 
   async function reenviar(m: Mensagem) {
-    if (!sel || !m.texto) return
-    const { data, error } = await supabase.functions.invoke('inovachat-enviar', { body: { conversa_id: sel.id, texto: m.texto, substituir_id: m.id } })
+    if (!sel) return
+    const ehMidia = m.tipo !== 'texto' && m.midia_status === 'baixada'
+    if (!ehMidia && !m.texto) return
+    const { data, error } = await supabase.functions.invoke('inovachat-enviar', { body: ehMidia
+      ? { conversa_id: sel.id, substituir_id: m.id, midia_retry: true } : { conversa_id: sel.id, texto: m.texto, substituir_id: m.id } })
     const r = (data ?? {}) as any
     if (error && !r.mensagem) toast.error('Não foi possível enviar.')
     else if (!r.ok) toast.error(r.mensagem ?? 'Não foi possível enviar.')
@@ -400,7 +415,7 @@ function Bolha({ m, onTentar }: { m: Mensagem; onTentar: () => void }) {
     <div className={cn('flex flex-col', saida ? 'items-end' : 'items-start')}>
       {saida && m.enviada_por_nome && <span className="mb-0.5 px-1 text-[10px] font-medium text-secondary">{m.enviada_por_nome}</span>}
       <div className={cn('max-w-[85%] rounded-lg px-3 py-2 text-sm shadow-sm sm:max-w-[70%]', saida ? 'chat-bubble-sent' : 'chat-bubble-received', falha && 'border border-destructive/50')}>
-        {midia && <p className="flex items-center gap-1.5 text-xs font-medium opacity-80"><midia.icon className="h-4 w-4" />{midia.label}</p>}
+        {midia && <MidiaBolha m={m} />}
         {m.texto && <p className="whitespace-pre-wrap break-words">{m.texto}</p>}
         <p className="mt-0.5 flex items-center justify-end gap-1 text-[10px] opacity-80">
           {hora(m.criado_em)}
@@ -427,6 +442,7 @@ function Composer({ conversa, motivo, rapidas, vars, onEnviado }: {
   const [lista, setLista] = useState(false)
   const [qRap, setQRap] = useState('')
   const ref = useRef<HTMLTextAreaElement>(null)
+  const [gravando, setGravando] = useState(false)
   const disponiveis = rapidas.filter(r => r.ativo && (!r.setor_id || r.setor_id === conversa.setor_id))
   const filtroR = disponiveis.filter(r => {
     const q = qRap.toLowerCase()
@@ -478,6 +494,8 @@ function Composer({ conversa, motivo, rapidas, vars, onEnviado }: {
         <Button type="button" variant="ghost" size="icon" className="h-11 w-11 shrink-0" onClick={() => { setLista(v => !v); setQRap('') }} aria-label="Respostas rápidas" title="Respostas rápidas">
           <Zap className="h-5 w-5 text-primary" />
         </Button>
+        <AnexoBotoes conversaId={conversa.id} onEnviado={onEnviado} onGravando={setGravando} />
+        {!gravando && <>
         <Textarea ref={ref} value={texto} onChange={e => mudar(e.target.value)} maxLength={4000} rows={1}
           placeholder="Digite uma mensagem ( / para respostas rápidas)" className="min-h-[44px] max-h-40 resize-none"
           onKeyDown={e => {
@@ -487,6 +505,7 @@ function Composer({ conversa, motivo, rapidas, vars, onEnviado }: {
         <Button type="button" onClick={() => void enviar()} disabled={enviando || !texto.trim()} className="h-11 w-11 shrink-0 gradient-bg p-0 text-primary-foreground" aria-label="Enviar">
           {enviando ? <Loader2 className="h-5 w-5 animate-spin" /> : <Send className="h-5 w-5" />}
         </Button>
+        </>}
       </div>
       {texto.length > 3500 && <p className="mt-1 text-right text-[11px] text-muted-foreground">{texto.length}/4000</p>}
     </div>
@@ -639,7 +658,8 @@ function RespostasRapidasDialog({ open, onClose, setores }: { open: boolean; onC
   )
 }
 
-function PainelContato({ contato, numero, podeGerenciar, onMudou }: { contato: Contato | null; numero: string; podeGerenciar: boolean; onMudou: () => void }) {
+function PainelContato({ contato, numero, podeGerenciar, podeExcluir, onMudou, onExcluido }: { contato: Contato | null; numero: string; podeGerenciar: boolean; podeExcluir: boolean; onMudou: () => void; onExcluido: () => void }) {
+  const [excluir, setExcluir] = useState(false)
   const [pac, setPac] = useState<{ name: string; cpf: string | null; convenios: any } | null>(null)
   const [ags, setAgs] = useState<{ id: string; date: string; time: string; doctor: string | null; exam_name: string | null }[]>([])
   const [vincular, setVincular] = useState(false)
@@ -691,6 +711,8 @@ function PainelContato({ contato, numero, podeGerenciar, onMudou }: { contato: C
         )}
       </div>
       <p className="text-xs text-muted-foreground">Primeira conversa: {new Date(contato.criado_em).toLocaleDateString('pt-BR', { timeZone: 'America/Sao_Paulo' })}</p>
+      {podeExcluir && <Button size="sm" variant="ghost" className="min-h-[44px] w-full text-destructive" onClick={() => setExcluir(true)}><Trash2 className="mr-2 h-4 w-4" />Excluir dados deste contato</Button>}
+      <ExcluirContatoDialog open={excluir} onClose={() => setExcluir(false)} contatoId={contato.id} onFeito={() => { setExcluir(false); onExcluido() }} />
       <VincularDialog open={vincular} onClose={() => setVincular(false)} contatoId={contato.id} onFeito={() => { setVincular(false); onMudou() }} />
     </aside>
   )
