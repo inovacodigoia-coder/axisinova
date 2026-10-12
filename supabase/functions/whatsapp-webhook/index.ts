@@ -2,6 +2,7 @@
 // Responde 200 na hora e processa em segundo plano. Nunca loga o payload.
 import { createClient } from 'npm:@supabase/supabase-js@2'
 import { decifrar } from '../_shared/whatsappCripto.ts'
+import { MAX_RECEBIDA, extDoMime } from '../_shared/inovachatMidia.ts'
 
 const SEGREDO = Deno.env.get('WHATSAPP_WEBHOOK_SECRET') ?? ''
 const db = createClient(Deno.env.get('SUPABASE_URL')!, Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!)
@@ -122,6 +123,10 @@ function textoDe(m: any): string {
 // ---------- InovaChat (Etapa 10A): grava a conversa quando a empresa tem o módulo ligado ----------
 function tipoMidia(m: any): string {
   const mt = String(m?.mediaType ?? m?.messageType ?? '').toLowerCase()
+  if (/reaction|edited|protocol/.test(mt)) return 'ignorar'
+  if (/location/.test(mt)) return 'localizacao'
+  if (/contact/.test(mt)) return 'contato'
+  if (/poll/.test(mt)) return 'enquete'
   if (/audio|ptt/.test(mt)) return 'audio'
   if (/sticker/.test(mt)) return 'figurinha'
   if (/image/.test(mt)) return 'imagem'
@@ -130,6 +135,9 @@ function tipoMidia(m: any): string {
   if (!mt || /conversation|text|button|list|template|interactive/.test(mt)) return 'texto'
   return 'outro'
 }
+const MARCADOR: Record<string, string> = { localizacao: 'Localização recebida', contato: 'Contato recebido', enquete: 'Enquete recebida' }
+const MIDIAS = new Set(['audio', 'figurinha', 'imagem', 'video', 'documento', 'outro'])
+
 async function inovachatGravar(instId: string, p: any, m: any, texto: string, msgId: string) {
   try {
     const chat = String(m.chatid ?? '')
@@ -138,20 +146,62 @@ async function inovachatGravar(instId: string, p: any, m: any, texto: string, ms
       ? (digitos(chat) || digitos(p?.chat?.wa_chatid) || digitos(p?.chat?.phone))
       : (digitos(m.sender_pn) || digitos(chat) || digitos(m.sender) || digitos(p?.chat?.wa_chatid))
     if (!tel) { await db.rpc('inovachat_ignorar', { p_instancia: instId, p_motivo: 'sem_telefone' }); return }
-    const tipo = tipoMidia(m)
+    let tipo = tipoMidia(m)
+    if (tipo === 'ignorar') return // reações e edições
+    let txt: string | null
+    if (MARCADOR[tipo]) { txt = MARCADOR[tipo]; tipo = 'texto' }
+    else txt = tipo === 'texto' ? (texto || null) : (str(m?.content?.caption) || str(m?.caption) || null)
     const ts = Number(m.messageTimestamp ?? 0)
     const quando = ts > 0 ? new Date(ts < 1e12 ? ts * 1000 : ts).toISOString() : new Date().toISOString()
     const { data, error } = await db.rpc('inovachat_registrar', {
       p_instancia: instId, p_message_id: msgId, p_telefone: tel,
       p_nome: deMim ? null : (str(m.senderName) || str(p?.chat?.wa_name) || null),
       p_direcao: deMim ? 'saida' : 'entrada', p_origem: deMim ? 'usuario' : 'paciente', p_tipo: tipo,
-      p_texto: tipo === 'texto' ? (texto || null) : (str(m?.content?.caption) || null),
+      p_texto: txt,
       p_citada: typeof m.quoted === 'string' ? m.quoted : null,
       p_enviada_por_nome: deMim ? 'Enviado pelo celular' : null, p_status: deMim ? 'enviada' : null, p_criado_em: quando,
     })
-    if (error) console.error('inovachat: falha ao gravar', error.message)
-    else if (data !== 'gravada' && data !== 'duplicada' && data !== 'desligado') await db.rpc('inovachat_ignorar', { p_instancia: instId, p_motivo: String(data) })
+    if (error) { console.error('inovachat: falha ao gravar', error.message); return }
+    if (data === 'gravada' && MIDIAS.has(tipo)) {
+      const c = typeof m?.content === 'object' && m.content ? m.content : {}
+      const mime = String(c.mimetype ?? c.mimeType ?? m.mimetype ?? '').split(';')[0].trim().toLowerCase()
+      const tam = Number(c.fileLength ?? c.fileSize ?? m.fileLength ?? 0) || null
+      const seg = Number(c.seconds ?? c.duration ?? 0) || null
+      const nome = str(c.fileName) || str(c.title) || str(m.fileName) || null
+      const suportado = tipo !== 'outro' && (!mime || !!extDoMime(mime))
+      const status = !suportado ? 'nao_suportado' : (tam && tam > MAX_RECEBIDA ? 'grande_demais' : 'pendente')
+      await db.rpc('inovachat_midia_marcar', { p_instancia: instId, p_message_id: msgId, p_mime: mime || null, p_tamanho: tam, p_nome: nome, p_duracao: seg, p_status: status })
+    }
+    if (data !== 'gravada' && data !== 'duplicada' && data !== 'desligado') await db.rpc('inovachat_ignorar', { p_instancia: instId, p_motivo: String(data) })
+    return data === 'gravada' ? tel : undefined
   } catch { /* nunca bloqueia a resposta da confirmação */ }
+}
+
+// ---------- Fora do horário (Etapa 10C): no máximo 1 por contato a cada 12h, decidido no banco ----------
+async function foraDoHorario(instId: string, tel: string, ehConfirmacao: boolean) {
+  try {
+    const { data } = await db.rpc('inovachat_fora_horario_avaliar', { p_instancia: instId, p_telefone: tel, p_eh_confirmacao: ehConfirmacao })
+    const r = data as any
+    if (!r?.enviar) return
+    const { data: seg } = await db.from('whatsapp_instancia_segredos').select('token_instancia_cifrado').eq('instancia_id', instId).maybeSingle()
+    const base = (Deno.env.get('UAZAPI_BASE_URL') ?? '').replace(/\/+$/, '')
+    if (!seg?.token_instancia_cifrado || !base) return
+    const token = await decifrar(seg.token_instancia_cifrado as string)
+    const delay = 3000 + Math.floor(Math.random() * 5001)
+    const resp = await fetch(`${base}/send/text`, {
+      method: 'POST', headers: { 'Content-Type': 'application/json', Accept: 'application/json', token },
+      body: JSON.stringify({ number: r.telefone, text: r.texto, delay, track_source: 'axis_fora_horario' }),
+      signal: AbortSignal.timeout(30_000),
+    })
+    let b: any = null
+    try { b = await resp.json() } catch { /* */ }
+    const id = b?.messageid ?? b?.id ?? b?.key?.id
+    await db.rpc('inovachat_registrar', {
+      p_instancia: instId, p_message_id: id ? String(id) : `local-${crypto.randomUUID()}`, p_telefone: r.telefone, p_nome: null,
+      p_direcao: 'saida', p_origem: 'sistema', p_tipo: 'texto', p_texto: r.texto, p_citada: null,
+      p_enviada_por_nome: 'Fora do horário', p_status: resp.ok ? 'enviada' : 'falha', p_criado_em: new Date().toISOString(),
+    })
+  } catch { /* sem nova tentativa automática */ }
 }
 
 async function processarRecebida(instId: string, p: any) {
@@ -167,7 +217,13 @@ async function processarRecebida(instId: string, p: any) {
   const msgIdIC = String(m.messageid ?? m.id ?? '')
   if (grupo) { await db.rpc('inovachat_ignorar', { p_instancia: instId, p_motivo: 'grupo' }); }
   // mensagens enviadas pelo próprio sistema (API) já são gravadas pela fila
-  else if (m.wasSentByApi !== true && msgIdIC && msgIdIC.length <= 200) await inovachatGravar(instId, p, m, texto, msgIdIC)
+  else if (m.wasSentByApi !== true && msgIdIC && msgIdIC.length <= 200) {
+    const telIC = await inovachatGravar(instId, p, m, texto, msgIdIC)
+    if (telIC && m.fromMe !== true) {
+      const ehConf = /^(confirmar|remarcar|cancelar):/i.test(bid) || (texto.length > 0 && texto.length <= 30 && !!PALAVRAS[normalizar(texto)])
+      await foraDoHorario(instId, telIC, ehConf)
+    }
+  }
 
   if (m.fromMe === true || m.wasSentByApi === true) return descartar('proprio_numero')
   if (grupo) return descartar('grupo')
