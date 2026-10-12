@@ -4035,6 +4035,79 @@ export type Database = {
         }
         Relationships: []
       }
+      inovachat_fora_horario_cfg: {
+        Row: {
+          ativo: boolean
+          atualizado_em: string
+          atualizado_por: string | null
+          company_id: string
+          texto: string
+        }
+        Insert: {
+          ativo?: boolean
+          atualizado_em?: string
+          atualizado_por?: string | null
+          company_id: string
+          texto?: string
+        }
+        Update: {
+          ativo?: boolean
+          atualizado_em?: string
+          atualizado_por?: string | null
+          company_id?: string
+          texto?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "inovachat_fora_horario_cfg_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: true
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      inovachat_horario: {
+        Row: {
+          ativo: boolean
+          atualizado_em: string
+          atualizado_por: string | null
+          company_id: string
+          dias: Json
+          feriados: Json
+          id: string
+          setor_id: string | null
+        }
+        Insert: {
+          ativo?: boolean
+          atualizado_em?: string
+          atualizado_por?: string | null
+          company_id: string
+          dias?: Json
+          feriados?: Json
+          id?: string
+          setor_id?: string | null
+        }
+        Update: {
+          ativo?: boolean
+          atualizado_em?: string
+          atualizado_por?: string | null
+          company_id?: string
+          dias?: Json
+          feriados?: Json
+          id?: string
+          setor_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "inovachat_horario_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       inovachat_ignoradas: {
         Row: {
           company_id: string
@@ -7823,18 +7896,21 @@ export type Database = {
           alterado_por: string | null
           envio_automatico_ativo: boolean
           id: boolean
+          retencao_modo: string
         }
         Insert: {
           alterado_em?: string | null
           alterado_por?: string | null
           envio_automatico_ativo?: boolean
           id?: boolean
+          retencao_modo?: string
         }
         Update: {
           alterado_em?: string | null
           alterado_por?: string | null
           envio_automatico_ativo?: boolean
           id?: boolean
+          retencao_modo?: string
         }
         Relationships: []
       }
@@ -7847,6 +7923,7 @@ export type Database = {
           nome_exibicao: string | null
           paciente_id: string | null
           telefone: string
+          ultima_fora_horario_em: string | null
           vinculo_status: string
         }
         Insert: {
@@ -7857,6 +7934,7 @@ export type Database = {
           nome_exibicao?: string | null
           paciente_id?: string | null
           telefone: string
+          ultima_fora_horario_em?: string | null
           vinculo_status?: string
         }
         Update: {
@@ -7867,6 +7945,7 @@ export type Database = {
           nome_exibicao?: string | null
           paciente_id?: string | null
           telefone?: string
+          ultima_fora_horario_em?: string | null
           vinculo_status?: string
         }
         Relationships: [
@@ -7931,6 +8010,7 @@ export type Database = {
           contato_id: string
           criada_em: string
           finalizada_em: string | null
+          fora_horario: boolean
           id: string
           instancia_id: string
           nao_lidas: number
@@ -7945,6 +8025,7 @@ export type Database = {
           contato_id: string
           criada_em?: string
           finalizada_em?: string | null
+          fora_horario?: boolean
           id?: string
           instancia_id: string
           nao_lidas?: number
@@ -7959,6 +8040,7 @@ export type Database = {
           contato_id?: string
           criada_em?: string
           finalizada_em?: string | null
+          fora_horario?: boolean
           id?: string
           instancia_id?: string
           nao_lidas?: number
@@ -8230,12 +8312,21 @@ export type Database = {
           conversa_id: string
           criado_em: string
           direcao: string
+          duracao_seg: number | null
           enviada_por_nome: string | null
           enviada_por_usuario_id: string | null
           erro: string | null
           evento_tipo: string | null
           id: string
           message_id_uazapi: string
+          midia_erro: string | null
+          midia_mime: string | null
+          midia_nome: string | null
+          midia_path: string | null
+          midia_reservada_em: string | null
+          midia_status: string | null
+          midia_tamanho: number | null
+          midia_tentativas: number
           origem: string
           status: string | null
           texto: string | null
@@ -8247,12 +8338,21 @@ export type Database = {
           conversa_id: string
           criado_em?: string
           direcao: string
+          duracao_seg?: number | null
           enviada_por_nome?: string | null
           enviada_por_usuario_id?: string | null
           erro?: string | null
           evento_tipo?: string | null
           id?: string
           message_id_uazapi: string
+          midia_erro?: string | null
+          midia_mime?: string | null
+          midia_nome?: string | null
+          midia_path?: string | null
+          midia_reservada_em?: string | null
+          midia_status?: string | null
+          midia_tamanho?: number | null
+          midia_tentativas?: number
           origem: string
           status?: string | null
           texto?: string | null
@@ -8264,12 +8364,21 @@ export type Database = {
           conversa_id?: string
           criado_em?: string
           direcao?: string
+          duracao_seg?: number | null
           enviada_por_nome?: string | null
           enviada_por_usuario_id?: string | null
           erro?: string | null
           evento_tipo?: string | null
           id?: string
           message_id_uazapi?: string
+          midia_erro?: string | null
+          midia_mime?: string | null
+          midia_nome?: string | null
+          midia_path?: string | null
+          midia_reservada_em?: string | null
+          midia_status?: string | null
+          midia_tamanho?: number | null
+          midia_tentativas?: number
           origem?: string
           status?: string | null
           texto?: string | null
@@ -8445,6 +8554,59 @@ export type Database = {
             columns: ["instancia_id"]
             isOneToOne: false
             referencedRelation: "whatsapp_instancias"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      whatsapp_retencao_execucoes: {
+        Row: {
+          acessos: number
+          company_id: string | null
+          contatos: number
+          conversas: number
+          erro: string | null
+          executada_em: string
+          fila: number
+          id: string
+          manual: boolean
+          mensagens: number
+          midias: number
+          modo: string
+        }
+        Insert: {
+          acessos?: number
+          company_id?: string | null
+          contatos?: number
+          conversas?: number
+          erro?: string | null
+          executada_em?: string
+          fila?: number
+          id?: string
+          manual?: boolean
+          mensagens?: number
+          midias?: number
+          modo: string
+        }
+        Update: {
+          acessos?: number
+          company_id?: string | null
+          contatos?: number
+          conversas?: number
+          erro?: string | null
+          executada_em?: string
+          fila?: number
+          id?: string
+          manual?: boolean
+          mensagens?: number
+          midias?: number
+          modo?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "whatsapp_retencao_execucoes_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
             referencedColumns: ["id"]
           },
         ]
@@ -9824,6 +9986,7 @@ export type Database = {
           contato_id: string
           criada_em: string
           finalizada_em: string | null
+          fora_horario: boolean
           id: string
           instancia_id: string
           nao_lidas: number
@@ -9855,7 +10018,28 @@ export type Database = {
         Args: { _conv: string; _texto: string; _tipo?: string; _user?: string }
         Returns: undefined
       }
+      inovachat_excluir_contato_executar: {
+        Args: { p_contato: string; p_midias: number; p_usuario: string }
+        Returns: Json
+      }
+      inovachat_excluir_contato_preparar: {
+        Args: { p_contato: string; p_telefone: string }
+        Returns: Json
+      }
       inovachat_finalizar: { Args: { p_conversa: string }; Returns: undefined }
+      inovachat_fora_horario_avaliar: {
+        Args: {
+          p_eh_confirmacao: boolean
+          p_instancia: string
+          p_telefone: string
+        }
+        Returns: Json
+      }
+      inovachat_fora_horario_padrao: { Args: never; Returns: string }
+      inovachat_fora_horario_salvar: {
+        Args: { p_ativo: boolean; p_texto: string }
+        Returns: undefined
+      }
       inovachat_gravar_envio: {
         Args: {
           p_conversa: string
@@ -9869,6 +10053,43 @@ export type Database = {
         }
         Returns: string
       }
+      inovachat_gravar_envio_midia: {
+        Args: {
+          p_arquivo: string
+          p_conversa: string
+          p_duracao: number
+          p_erro: string
+          p_message_id: string
+          p_mime: string
+          p_nome: string
+          p_path: string
+          p_status: string
+          p_substituir: string
+          p_tamanho: number
+          p_texto: string
+          p_tipo: string
+          p_usuario: string
+        }
+        Returns: string
+      }
+      inovachat_horario_aberto: {
+        Args: { _company: string; _setor: string; _ts: string }
+        Returns: boolean
+      }
+      inovachat_horario_salvar: {
+        Args: {
+          p_ativo: boolean
+          p_dias: Json
+          p_feriados: Json
+          p_setor: string
+        }
+        Returns: undefined
+      }
+      inovachat_horario_texto: { Args: { _dias: Json }; Returns: string }
+      inovachat_horario_vigente: {
+        Args: { _company: string; _setor: string }
+        Returns: Json
+      }
       inovachat_ignorar: {
         Args: { p_instancia: string; p_motivo: string }
         Returns: undefined
@@ -9878,6 +10099,37 @@ export type Database = {
         Returns: undefined
       }
       inovachat_meu_acesso: { Args: never; Returns: Json }
+      inovachat_midia_acesso: { Args: { p_mensagem: string }; Returns: Json }
+      inovachat_midia_marcar: {
+        Args: {
+          p_duracao: number
+          p_instancia: string
+          p_message_id: string
+          p_mime: string
+          p_nome: string
+          p_status: string
+          p_tamanho: number
+        }
+        Returns: undefined
+      }
+      inovachat_midia_reservar: {
+        Args: { p_limite?: number }
+        Returns: {
+          company_id: string
+          conversa_id: string
+          id: string
+          instancia_id: string
+          message_id_uazapi: string
+          midia_mime: string
+          midia_nome: string
+          tentativas: number
+          tipo: string
+        }[]
+      }
+      inovachat_midia_tick: {
+        Args: { p_apikey: string; p_url: string }
+        Returns: string
+      }
       inovachat_nome_usuario: { Args: { _user: string }; Returns: string }
       inovachat_nomes: {
         Args: { p_ids: string[] }
@@ -9886,6 +10138,7 @@ export type Database = {
           nome: string
         }[]
       }
+      inovachat_pode_enviar: { Args: { p_conversa: string }; Returns: string }
       inovachat_pode_ver:
         | {
             Args: { _company: string; _resp: string; _status: string }
@@ -9934,6 +10187,25 @@ export type Database = {
         Returns: undefined
       }
       inovachat_resumo_24h: { Args: { _company: string }; Returns: Json }
+      inovachat_retencao_apagar_msgs: {
+        Args: { p_company: string; p_ids: string[] }
+        Returns: number
+      }
+      inovachat_retencao_contar: { Args: { p_company: string }; Returns: Json }
+      inovachat_retencao_corte: { Args: { _company: string }; Returns: string }
+      inovachat_retencao_limpar: { Args: { p_company: string }; Returns: Json }
+      inovachat_retencao_midias: {
+        Args: { p_company: string; p_limite?: number }
+        Returns: {
+          id: string
+          path: string
+        }[]
+      }
+      inovachat_retencao_tick: {
+        Args: { p_apikey: string; p_url: string }
+        Returns: string
+      }
+      inovachat_sinal: { Args: { _conv: string }; Returns: undefined }
       inovachat_status: {
         Args: { p_ids: string[]; p_instancia: string; p_status: string }
         Returns: undefined
@@ -10201,6 +10473,11 @@ export type Database = {
         }
         Returns: Json
       }
+      whatsapp_retencao_definir_modo: {
+        Args: { p_confirmacao: string; p_modo: string }
+        Returns: undefined
+      }
+      whatsapp_retencao_modo: { Args: never; Returns: string }
       whatsapp_tel_canonico: { Args: { p: string }; Returns: string }
       whatsapp_tem_permissao: { Args: { _perm: string }; Returns: boolean }
       whatsapp_valor_numero: { Args: never; Returns: number }
