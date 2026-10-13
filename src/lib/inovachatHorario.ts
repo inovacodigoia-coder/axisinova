@@ -25,6 +25,6 @@ export function horarioTexto(dias: DiaHorario[]): string {
 }
 
 export function renderForaHorario(texto: string, v: { nome_contato: string; empresa: string; horario: string }) {
-  return texto.replaceAll('{nome_contato}', v.nome_contato).replaceAll('{empresa}', v.empresa)
-    .replaceAll('{horario_atendimento}', v.horario).replace(/,\s*([!.?])/g, '$1')
+  return texto.split('{nome_contato}').join(v.nome_contato).split('{empresa}').join(v.empresa)
+    .split('{horario_atendimento}').join(v.horario).replace(/,\s*([!.?])/g, '$1')
 }
