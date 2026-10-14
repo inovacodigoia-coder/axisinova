@@ -17,7 +17,7 @@ const RESP: Record<string, { l: string; c: string }> = {
   remarcar: { l: 'Pediu remarcar', c: 'bg-warning/15 text-warning' },
   cancelar: { l: 'Pediu cancelar', c: 'bg-destructive/10 text-destructive' },
 }
-const TIPO: Record<string, string> = { teste: 'Teste', confirmacao_agendamento: 'Confirmação', resposta_automatica: 'Resposta automática' }
+const TIPO: Record<string, string> = { teste: 'Teste', confirmacao_agendamento: 'Confirmação', resposta_automatica: 'Resposta automática', ciclo_inclusao_agenda: 'Inclusão na agenda', ciclo_pre_atendimento: 'Pré-atendimento', ciclo_pos_atendimento: 'Pós-atendimento' }
 const FORMATO: Record<string, string> = { botoes: 'Botões', texto_numerado: 'Texto numerado', texto: 'Texto' }
 type Numero = { instancia_id: string; apelido: string | null; enviadas_hoje: number; limite_diario: number | null }
 type Sub = 'proximas' | 'enviadas' | 'falhas'
@@ -25,7 +25,7 @@ type Sub = 'proximas' | 'enviadas' | 'falhas'
 const SUB_STATUS: Record<Sub, string[]> = {
   proximas: ['agendada', 'enviando'],
   enviadas: ['enviada', 'entregue', 'lida'],
-  falhas: ['falha'],
+  falhas: ['falha', 'cancelada'],
 }
 const BADGE: Record<string, { l: string; c: string }> = {
   agendada: { l: 'Agendada', c: 'bg-warning/15 text-warning' },
@@ -42,6 +42,9 @@ const inicioHoje = () => { const d = new Date(new Date().toLocaleString('en-US',
 
 function erroLegivel(e: string | null) {
   if (!e) return 'Erro não informado'
+  if (e === 'OPTOUT') return 'Paciente pediu para não receber'
+  if (e === 'LIMITE_FREQUENCIA') return 'Limite de mensagens por paciente'
+  if (e === 'AGENDAMENTO_NAO_ATIVO') return 'Agendamento cancelado, com falta ou já passou'
   if (/timeout|tempo/i.test(e)) return 'O servidor do WhatsApp não respondeu a tempo (a mensagem pode ter saído).'
   if (/desconect|disconnect/i.test(e)) return 'O número estava desconectado.'
   if (/invalid|inv[aá]lid|not.*exist|n[aã]o existe/i.test(e)) return 'O telefone do paciente não tem WhatsApp ou é inválido.'
@@ -183,7 +186,7 @@ export function FilaEnviosTab({ companyId }: { companyId: string }) {
           {(['proximas', 'enviadas', 'falhas'] as Sub[]).map(s => (
             <button key={s} onClick={() => setSub(s)}
               className={`h-9 rounded-md px-3 text-sm ${sub === s ? 'bg-background font-semibold text-foreground shadow-sm' : 'text-muted-foreground'}`}>
-              {s === 'proximas' ? 'Próximas' : s === 'enviadas' ? 'Enviadas' : 'Falhas'}
+              {s === 'proximas' ? 'Próximas' : s === 'enviadas' ? 'Enviadas' : 'Falhas e canceladas'}
             </button>
           ))}
         </div>
@@ -208,7 +211,7 @@ export function FilaEnviosTab({ companyId }: { companyId: string }) {
           {numeros.map(n => <option key={n.instancia_id} value={n.instancia_id}>{n.apelido}</option>)}
         </select>
         <select value={tipo} onChange={e => setTipo(e.target.value)} className={sel}>
-          <option value="">Todos os tipos</option><option value="confirmacao_agendamento">Confirmação</option><option value="teste">Teste</option><option value="resposta_automatica">Resposta automática</option>
+          <option value="">Todos os tipos</option><option value="confirmacao_agendamento">Confirmação</option><option value="teste">Teste</option><option value="resposta_automatica">Resposta automática</option><option value="ciclo_inclusao_agenda">Inclusão na agenda</option><option value="ciclo_pre_atendimento">Pré-atendimento</option><option value="ciclo_pos_atendimento">Pós-atendimento</option>
         </select>
         <input value={busca} onChange={e => setBusca(e.target.value)} placeholder="Buscar paciente" className={`${sel} flex-1 min-w-[160px]`} />
       </div>
@@ -242,7 +245,7 @@ export function FilaEnviosTab({ companyId }: { companyId: string }) {
                     ? <button className="underline decoration-dotted underline-offset-2 hover:text-primary" title="Alterar data e hora do envio" onClick={() => abrirEdicao(l)}>{fmt(l.agendada_para)}</button>
                     : fmt(l.agendada_para))}
                   {sub === 'enviadas' && <>{fmt(l.enviada_em)} · {apelido(l.instancia_id)}</>}
-                  {sub === 'falhas' && <span className="text-destructive">{erroLegivel(l.erro)}{l.motivo_plano_b && <span className="block text-[11px] text-muted-foreground">Plano B: {l.motivo_plano_b}</span>}</span>}
+                  {sub === 'falhas' && <span className={l.status === 'cancelada' ? 'text-muted-foreground' : 'text-destructive'}>{l.status === 'cancelada' ? `Cancelada${l.erro ? ' · ' + erroLegivel(l.erro) : ''}` : erroLegivel(l.erro)}{l.motivo_plano_b && <span className="block text-[11px] text-muted-foreground">Plano B: {l.motivo_plano_b}</span>}</span>}
                 </div>
                 <div className="flex flex-wrap items-center gap-1">
                   <span className={`w-fit rounded-full px-2 py-0.5 text-[11px] font-medium ${b.c}`}>{b.l}</span>
@@ -255,7 +258,7 @@ export function FilaEnviosTab({ companyId }: { companyId: string }) {
                 <div className="flex gap-2">
                   <Button size="sm" variant="ghost" onClick={() => verTexto(l)}><MessageSquare className="mr-1 h-3.5 w-3.5" />Ver mensagem</Button>
                   {sub === 'proximas' && l.status === 'agendada' && <Button size="sm" variant="outline" onClick={() => cancelar(l)}>Cancelar</Button>}
-                  {sub === 'falhas' && <Button size="sm" variant="outline" onClick={() => reenviar(l)}>Reenviar</Button>}
+                  {sub === 'falhas' && l.status === 'falha' && <Button size="sm" variant="outline" onClick={() => reenviar(l)}>Reenviar</Button>}
                 </div>
               </div>
             )

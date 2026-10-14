@@ -56,6 +56,17 @@ async function enfileirarConfirmacao(id: string, date: string, horas: 24 | 48) {
   }
 }
 
+/** Etapa 11A: mensagens de ciclo. Falha nunca desfaz o agendamento. */
+async function enfileirarCiclo(id: string, evento: 'criado' | 'remarcado' | 'finalizado') {
+  try {
+    const { data, error } = await supabase.rpc('whatsapp_enfileirar_ciclo' as any, { p_agendamento_id: id, p_evento: evento } as any)
+    if (error) { console.error('[WhatsApp] ciclo:', error); return }
+    if ((data as any)?.ok === false) console.warn('[WhatsApp] ciclo:', (data as any)?.codigo)
+  } catch (e) {
+    console.error('[WhatsApp] ciclo:', e)
+  }
+}
+
 function dbToSchedulingPatient(row: any): SchedulingPatient {
   const convenios = Array.isArray(row.convenios) ? row.convenios : []
   const firstConv = convenios[0] || null
@@ -196,6 +207,7 @@ export function SchedulingProvider({ children }: { children: ReactNode }) {
     if (opts?.confirmHoras) {
       await enfileirarConfirmacao((data as any).id, a.date, opts.confirmHoras)
     }
+    await enfileirarCiclo((data as any).id, 'criado')
     return true
   }, [isDemo, dbCompanyId])
 
@@ -226,11 +238,13 @@ export function SchedulingProvider({ children }: { children: ReactNode }) {
         (data.doctorId && data.doctorId !== before.doctorId))
       if (encerrou) {
         await supabase.rpc('whatsapp_cancelar_envios_agendamento' as any, { p_agendamento_id: id } as any)
+        if (data.status === 'completed') await enfileirarCiclo(id, 'finalizado')
       } else if (remarcou) {
         const { data: r } = await supabase.rpc('whatsapp_reenfileirar_confirmacao' as any, { p_agendamento_id: id } as any)
         const cod = (r as any)?.codigo
         if (cod === 'ENFILEIRADA') toast.success('Confirmação por WhatsApp reprogramada.')
         else if (cod && AVISOS[cod]) toast.warning(AVISOS[cod].replace('Agendamento salvo.', 'Agendamento alterado.'))
+        await enfileirarCiclo(id, 'remarcado')
       }
     })
   }, [isDemo])

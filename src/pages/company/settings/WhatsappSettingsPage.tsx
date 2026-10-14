@@ -15,6 +15,7 @@ import {
   AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
 } from '@/components/ui/alert-dialog'
 import { MensagensTab } from '@/components/whatsapp/MensagensTab'
+import { AutomacoesTab } from '@/components/whatsapp/AutomacoesTab'
 import { JanelaEnvio } from '@/components/whatsapp/JanelaEnvio'
 import { EnvioAutomaticoEmpresa } from '@/components/whatsapp/EnvioAutomaticoEmpresa'
 
@@ -74,7 +75,7 @@ export default function WhatsappSettingsPage() {
   const [qrInst, setQrInst] = useState<Inst | null>(null)
 
   const companyId = user?.companyId ?? null
-  type Aba = 'numeros' | 'mensagens' | 'fila'
+  type Aba = 'numeros' | 'mensagens' | 'automacoes' | 'fila'
   const [aba, setAba] = useState<Aba>('numeros')
   const [podeConfig, setPodeConfig] = useState(false)
   const [podeFila, setPodeFila] = useState(false)
@@ -166,15 +167,16 @@ export default function WhatsappSettingsPage() {
           </div>}
 
           <div className="flex gap-1 overflow-x-auto border-b border-border">
-            {([...(podeConfig ? ['numeros', 'mensagens'] : []), ...(podeFila ? ['fila'] : [])] as Aba[]).map(a => (
+            {([...(podeConfig ? ['numeros', 'mensagens', 'automacoes'] : []), ...(podeFila ? ['fila'] : [])] as Aba[]).map(a => (
               <button key={a} onClick={() => trocarAba(a)}
                 className={`h-11 shrink-0 px-4 text-sm ${aba === a ? 'border-b-2 border-primary font-semibold text-foreground' : 'text-muted-foreground'}`}>
-                {a === 'numeros' ? 'Números' : a === 'mensagens' ? 'Mensagens' : 'Fila de envios'}
+                {a === 'numeros' ? 'Números' : a === 'mensagens' ? 'Mensagens' : a === 'automacoes' ? 'Automações' : 'Fila de envios'}
               </button>
             ))}
           </div>
 
           {aba === 'fila' && podeFila && companyId && <FilaEnviosTab companyId={companyId} />}
+          {aba === 'automacoes' && podeConfig && companyId && <AutomacoesTab companyId={companyId} />}
           {aba === 'mensagens' && podeConfig && companyId && <MensagensTab companyId={companyId} onDirtyChange={setMsgDirty} />}
 
           {aba === 'numeros' && podeConfig && <>

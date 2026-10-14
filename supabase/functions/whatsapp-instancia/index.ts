@@ -342,7 +342,20 @@ Deno.serve(async (req) => {
     case 'enviar_teste': {
       const tipoTeste = ['botoes', 'texto_numerado'].includes(body?.tipo_teste) ? body.tipo_teste as 'botoes' | 'texto_numerado' : 'texto'
       let texto = String(body?.texto ?? '')
-      if (tipoTeste === 'texto') {
+      if (body?.tipo_teste === 'regra') {
+        // teste de regra de automação (Etapa 11A): dados fictícios, cabeçalho do usuário logado
+        if (texto.trim().length < 1 || texto.length > 1000) return erro(400, 'DADOS_INVALIDOS', 'O texto deve ter de 1 a 1000 caracteres.')
+        const { data: pf } = await db.from('profiles').select('full_name').eq('id', userId).maybeSingle()
+        const hoje = new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Fortaleza' }).format(new Date())
+        const amanha = new Date(new Date(`${hoje}T09:00:00-03:00`).getTime() + 86_400_000).toISOString()
+        const { data: corpo } = await db.rpc('whatsapp_render_modelo', {
+          p_texto: texto, p_paciente: 'Maria Exemplo', p_tipo: 'consulta', p_primeira_vez: false, p_medico: 'Dra. Juliana Prado',
+          p_data_hora: amanha, p_responsavel: pf?.full_name ?? null,
+        })
+        const aviso = body?.incluir_aviso_saida === true ? '\n\nPara não receber mais mensagens automáticas, responda SAIR.' : ''
+        const { data: comCab } = await db.rpc('whatsapp_cabecalho', { p_responsavel: pf?.full_name ?? '', p_corpo: `${corpo}${aviso} (mensagem de teste do sistema)` })
+        texto = String(comCab ?? corpo)
+      } else if (tipoTeste === 'texto') {
         if (texto.trim().length < 1 || texto.length > 500) return erro(400, 'DADOS_INVALIDOS', 'A mensagem deve ter de 1 a 500 caracteres.')
       } else {
         // exemplo fictício no formato dos modelos, com cabeçalho do usuário logado

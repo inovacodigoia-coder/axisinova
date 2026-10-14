@@ -7849,8 +7849,120 @@ export type Database = {
           },
         ]
       }
+      whatsapp_automacoes: {
+        Row: {
+          ativo: boolean
+          atualizado_em: string
+          atualizado_por: string | null
+          company_id: string
+          criado_em: string
+          deslocamento_minutos: number
+          filtro_medicos: string[] | null
+          filtro_tipos_atendimento: string[] | null
+          horario_fixo: string | null
+          id: string
+          incluir_aviso_saida: boolean
+          nome: string
+          ordem: number
+          padrao: boolean
+          texto: string
+          tipo: string
+        }
+        Insert: {
+          ativo?: boolean
+          atualizado_em?: string
+          atualizado_por?: string | null
+          company_id: string
+          criado_em?: string
+          deslocamento_minutos?: number
+          filtro_medicos?: string[] | null
+          filtro_tipos_atendimento?: string[] | null
+          horario_fixo?: string | null
+          id?: string
+          incluir_aviso_saida?: boolean
+          nome: string
+          ordem?: number
+          padrao?: boolean
+          texto: string
+          tipo: string
+        }
+        Update: {
+          ativo?: boolean
+          atualizado_em?: string
+          atualizado_por?: string | null
+          company_id?: string
+          criado_em?: string
+          deslocamento_minutos?: number
+          filtro_medicos?: string[] | null
+          filtro_tipos_atendimento?: string[] | null
+          horario_fixo?: string | null
+          id?: string
+          incluir_aviso_saida?: boolean
+          nome?: string
+          ordem?: number
+          padrao?: boolean
+          texto?: string
+          tipo?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "whatsapp_automacoes_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      whatsapp_automacoes_auditoria: {
+        Row: {
+          acao: string
+          automacao_id: string | null
+          company_id: string
+          criado_em: string
+          dados_anteriores: Json | null
+          dados_novos: Json | null
+          id: string
+          texto_anterior: string | null
+          usuario_id: string | null
+        }
+        Insert: {
+          acao: string
+          automacao_id?: string | null
+          company_id: string
+          criado_em?: string
+          dados_anteriores?: Json | null
+          dados_novos?: Json | null
+          id?: string
+          texto_anterior?: string | null
+          usuario_id?: string | null
+        }
+        Update: {
+          acao?: string
+          automacao_id?: string | null
+          company_id?: string
+          criado_em?: string
+          dados_anteriores?: Json | null
+          dados_novos?: Json | null
+          id?: string
+          texto_anterior?: string | null
+          usuario_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "whatsapp_automacoes_auditoria_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       whatsapp_config_empresa: {
         Row: {
+          ciclo_limite_dia: number
+          ciclo_limite_semana: number
+          ciclo_pausado: boolean
           company_id: string
           envio_automatico_ativo: boolean
           envio_automatico_em: string | null
@@ -7861,6 +7973,9 @@ export type Database = {
           proximo_modelo: number
         }
         Insert: {
+          ciclo_limite_dia?: number
+          ciclo_limite_semana?: number
+          ciclo_pausado?: boolean
           company_id: string
           envio_automatico_ativo?: boolean
           envio_automatico_em?: string | null
@@ -7871,6 +7986,9 @@ export type Database = {
           proximo_modelo?: number
         }
         Update: {
+          ciclo_limite_dia?: number
+          ciclo_limite_semana?: number
+          ciclo_pausado?: boolean
           company_id?: string
           envio_automatico_ativo?: boolean
           envio_automatico_em?: string | null
@@ -8086,6 +8204,8 @@ export type Database = {
           agendada_para: string
           agendamento_id: string | null
           atualizado_em: string
+          automacao_id: string | null
+          ciclo_adiamentos: number
           codigo_resposta: string | null
           company_id: string
           criado_em: string
@@ -8113,6 +8233,8 @@ export type Database = {
           agendada_para?: string
           agendamento_id?: string | null
           atualizado_em?: string
+          automacao_id?: string | null
+          ciclo_adiamentos?: number
           codigo_resposta?: string | null
           company_id: string
           criado_em?: string
@@ -8140,6 +8262,8 @@ export type Database = {
           agendada_para?: string
           agendamento_id?: string | null
           atualizado_em?: string
+          automacao_id?: string | null
+          ciclo_adiamentos?: number
           codigo_resposta?: string | null
           company_id?: string
           criado_em?: string
@@ -8429,6 +8553,41 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "whatsapp_modelos_mensagem_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      whatsapp_optout: {
+        Row: {
+          company_id: string
+          criado_em: string
+          criado_por: string | null
+          id: string
+          origem: string
+          telefone: string
+        }
+        Insert: {
+          company_id: string
+          criado_em?: string
+          criado_por?: string | null
+          id?: string
+          origem: string
+          telefone: string
+        }
+        Update: {
+          company_id?: string
+          criado_em?: string
+          criado_por?: string | null
+          id?: string
+          origem?: string
+          telefone?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "whatsapp_optout_company_id_fkey"
             columns: ["company_id"]
             isOneToOne: false
             referencedRelation: "companies"
@@ -8948,6 +9107,38 @@ export type Database = {
             columns: ["instancia_id"]
             isOneToOne: false
             referencedRelation: "whatsapp_instancias"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      whatsapp_optout_v: {
+        Row: {
+          company_id: string | null
+          criado_em: string | null
+          id: string | null
+          origem: string | null
+          telefone_mascarado: string | null
+        }
+        Insert: {
+          company_id?: string | null
+          criado_em?: string | null
+          id?: string | null
+          origem?: string | null
+          telefone_mascarado?: never
+        }
+        Update: {
+          company_id?: string | null
+          criado_em?: string | null
+          id?: string | null
+          origem?: string | null
+          telefone_mascarado?: never
+        }
+        Relationships: [
+          {
+            foreignKeyName: "whatsapp_optout_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
             referencedColumns: ["id"]
           },
         ]
@@ -10138,6 +10329,11 @@ export type Database = {
           nome: string
         }[]
       }
+      inovachat_optout_definir: {
+        Args: { p_bloquear: boolean; p_contato: string }
+        Returns: string
+      }
+      inovachat_optout_estado: { Args: { p_contato: string }; Returns: Json }
       inovachat_pode_enviar: { Args: { p_conversa: string }; Returns: string }
       inovachat_pode_ver:
         | {
@@ -10346,12 +10542,30 @@ export type Database = {
       triagem__semear: { Args: { _company: string }; Returns: undefined }
       triagem_semear_padroes: { Args: never; Returns: undefined }
       triagem_tem_permissao: { Args: { _perm: string }; Returns: boolean }
+      whatsapp__ciclo_um: {
+        Args: { p_ag: string; p_base: string; p_tipo: string }
+        Returns: string
+      }
+      whatsapp_automacao_padrao: { Args: { p_tipo: string }; Returns: Json }
+      whatsapp_automacao_restaurar: { Args: { p_id: string }; Returns: string }
+      whatsapp_automacoes_criar_padrao: {
+        Args: { p_company: string }
+        Returns: undefined
+      }
       whatsapp_cabecalho: {
         Args: { p_corpo: string; p_responsavel: string }
         Returns: string
       }
       whatsapp_cancelar_envios_agendamento: {
         Args: { p_agendamento_id: string }
+        Returns: Json
+      }
+      whatsapp_ciclo_config: {
+        Args: {
+          p_limite_dia?: number
+          p_limite_semana?: number
+          p_pausado?: boolean
+        }
         Returns: Json
       }
       whatsapp_criar_modelos_padrao: {
@@ -10366,6 +10580,10 @@ export type Database = {
       whatsapp_destinatarios_agenda: {
         Args: { p_company: string }
         Returns: string[]
+      }
+      whatsapp_enfileirar_ciclo: {
+        Args: { p_agendamento_id: string; p_evento: string }
+        Returns: Json
       }
       whatsapp_enfileirar_confirmacao: {
         Args: {
@@ -10423,6 +10641,14 @@ export type Database = {
         Returns: string
       }
       whatsapp_normalizar_celular: { Args: { p: string }; Returns: string }
+      whatsapp_optout_processar: {
+        Args: { p_acao: string; p_instancia: string; p_telefone: string }
+        Returns: Json
+      }
+      whatsapp_optout_tem: {
+        Args: { p_company: string; p_tel: string }
+        Returns: boolean
+      }
       whatsapp_reenfileirar_confirmacao: {
         Args: { p_agendamento_id: string }
         Returns: Json

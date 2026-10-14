@@ -223,7 +223,7 @@ async function processarRecebida(instId: string, p: any) {
   else if (m.wasSentByApi !== true && msgIdIC && msgIdIC.length <= 200) {
     const telIC = await inovachatGravar(instId, p, m, texto, msgIdIC)
     if (telIC && m.fromMe !== true) {
-      const ehConf = /^(confirmar|remarcar|cancelar):/i.test(bid) || (texto.length > 0 && texto.length <= 30 && !!PALAVRAS[normalizar(texto)])
+      const ehConf = /^(confirmar|remarcar|cancelar):/i.test(bid) || (texto.length > 0 && texto.length <= 30 && (!!PALAVRAS[normalizar(texto)] || ['sair', 'parar', 'voltar'].includes(normalizar(texto))))
       await foraDoHorario(instId, telIC, ehConf)
     }
   }
@@ -232,6 +232,20 @@ async function processarRecebida(instId: string, p: any) {
   if (grupo) return descartar('grupo')
   const msgId = String(m.messageid ?? m.id ?? '')
   if (!msgId || msgId.length > 200) return descartar('formato_desconhecido')
+
+  // Etapa 11A: SAIR / PARAR / VOLTAR (palavra exata, sem botão) — só mensagens automáticas de ciclo
+  if (!bid && texto && texto.length <= 12) {
+    const n0 = normalizar(texto)
+    const optAcao = n0 === 'sair' || n0 === 'parar' ? 'sair' : n0 === 'voltar' ? 'voltar' : null
+    if (optAcao) {
+      const telO = digitos(m.sender_pn) || digitos(chat) || digitos(m.sender)
+      if (!telO) return
+      const { data: o, error: oe } = await db.rpc('whatsapp_optout_processar', { p_instancia: instId, p_telefone: telO, p_acao: optAcao })
+      if (oe) { console.error('webhook: falha no opt-out', oe.message); return }
+      if ((o as any)?.enviar) await enviarResposta(instId, (o as any).fila_id, (o as any).telefone, (o as any).texto)
+      return
+    }
+  }
 
   let acao: 'confirmar' | 'remarcar' | 'cancelar' | null = null
   let tipoResp: 'botao' | 'numero' | 'palavra' | null = null
@@ -254,6 +268,10 @@ async function processarRecebida(instId: string, p: any) {
   if (error) { console.error('webhook: falha ao registrar resposta', error.message); return }
   if (!(r as any)?.enviar) return
   const { fila_id, telefone, texto: resposta } = r as any
+  await enviarResposta(instId, fila_id, telefone, resposta)
+}
+
+async function enviarResposta(instId: string, fila_id: string, telefone: string, resposta: string) {
   const agora = () => new Date().toISOString()
   try {
     const { data: seg } = await db.from('whatsapp_instancia_segredos').select('token_instancia_cifrado').eq('instancia_id', instId).maybeSingle()

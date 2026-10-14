@@ -663,6 +663,20 @@ function PainelContato({ contato, numero, podeGerenciar, podeExcluir, onMudou, o
   const [pac, setPac] = useState<{ name: string; cpf: string | null; convenios: any } | null>(null)
   const [ags, setAgs] = useState<{ id: string; date: string; time: string; doctor: string | null; exam_name: string | null }[]>([])
   const [vincular, setVincular] = useState(false)
+  const [optout, setOptout] = useState<boolean | null>(null)
+  const carregarOptout = useCallback(async () => {
+    if (!contato?.id) return
+    const { data } = await supabase.rpc('inovachat_optout_estado' as any, { p_contato: contato.id })
+    setOptout((data as any)?.ok ? !!(data as any).optout : null)
+  }, [contato?.id])
+  useEffect(() => { setOptout(null); void carregarOptout() }, [carregarOptout])
+  const definirOptout = async (bloquear: boolean) => {
+    if (!contato) return
+    const { data, error } = await supabase.rpc('inovachat_optout_definir' as any, { p_contato: contato.id, p_bloquear: bloquear })
+    if (error || data !== 'OK') { toast.error('Não foi possível alterar.'); return }
+    toast.success(bloquear ? 'Contato não receberá mensagens automáticas.' : 'Mensagens automáticas reativadas.')
+    void carregarOptout()
+  }
 
   useEffect(() => {
     setPac(null); setAgs([])
@@ -710,6 +724,15 @@ function PainelContato({ contato, numero, podeGerenciar, podeExcluir, onMudou, o
           </>
         )}
       </div>
+      {optout === true && (
+        <div className="space-y-2 rounded-lg border border-warning/40 bg-warning/10 p-3">
+          <p className="text-xs font-medium text-foreground">Não quer receber mensagens automáticas</p>
+          {podeGerenciar && <Button size="sm" variant="outline" className="min-h-[44px] w-full" onClick={() => void definirOptout(false)}>Reativar</Button>}
+        </div>
+      )}
+      {optout === false && podeGerenciar && (
+        <Button size="sm" variant="ghost" className="min-h-[44px] w-full" onClick={() => void definirOptout(true)}>Marcar para não receber</Button>
+      )}
       <p className="text-xs text-muted-foreground">Primeira conversa: {new Date(contato.criado_em).toLocaleDateString('pt-BR', { timeZone: 'America/Sao_Paulo' })}</p>
       {podeExcluir && <Button size="sm" variant="ghost" className="min-h-[44px] w-full text-destructive" onClick={() => setExcluir(true)}><Trash2 className="mr-2 h-4 w-4" />Excluir dados deste contato</Button>}
       <ExcluirContatoDialog open={excluir} onClose={() => setExcluir(false)} contatoId={contato.id} onFeito={() => { setExcluir(false); onExcluido() }} />

@@ -93,3 +93,47 @@ export function comCabecalho(responsavel: string | null | undefined, corpo: stri
 export function textoNumerado(t: string): string {
   return `${t}\n\nResponda com o número:\n1 - CONFIRMAR\n2 - REMARCAR\n3 - CANCELAR`
 }
+
+// ---------- Etapa 11A: automações de ciclo (espelho de whatsapp_automacao_padrao / whatsapp__ciclo_um) ----------
+export type TipoAutomacao = 'inclusao_agenda' | 'pre_atendimento' | 'pos_atendimento'
+export const AVISO_SAIR = '\n\nPara não receber mais mensagens automáticas, responda SAIR.'
+export const AUTOMACOES_PADRAO: Record<TipoAutomacao, { nome: string; deslocamento: number; horario: string | null; filtro: string[] | null; aviso: boolean; texto: string }> = {
+  inclusao_agenda: { nome: 'Inclusão na agenda', deslocamento: 5, horario: null, filtro: null, aviso: false,
+    texto: 'Olá, {primeiro_nome}! Seu agendamento foi realizado: {tipo} com {medico} em {data_hora}. Qualquer alteração, fale com a nossa equipe.' },
+  pre_atendimento: { nome: 'Pré-atendimento', deslocamento: 1440, horario: '18:00', filtro: ['Exame', 'Procedimento'], aviso: false,
+    texto: 'Olá, {primeiro_nome}! Lembrete do seu atendimento: {tipo} com {medico} em {data_hora}. Orientações: [escreva aqui as orientações de preparo].' },
+  pos_atendimento: { nome: 'Pós-atendimento', deslocamento: 120, horario: null, filtro: null, aviso: true,
+    texto: 'Olá, {primeiro_nome}! Foi um prazer atender você hoje. Se precisar de algo, estamos à disposição. Cuide-se! 💚' },
+}
+export const TIPO_AUTOMACAO_LABEL: Record<TipoAutomacao, string> = {
+  inclusao_agenda: 'Inclusão na agenda', pre_atendimento: 'Pré-atendimento', pos_atendimento: 'Pós-atendimento',
+}
+
+/** Corpo final de uma mensagem de ciclo (sem cabeçalho), igual ao banco. */
+export function textoCiclo(texto: string, d: DadosModelo, incluirAviso: boolean): string {
+  return renderModelo(texto, d) + (incluirAviso ? AVISO_SAIR : '')
+}
+
+export const temMarcadorOrientacao = (t: string) => t.toLowerCase().includes('[escreva aqui')
+
+function fmtDur(min: number) {
+  if (min % 1440 === 0 && min > 0) { const d = min / 1440; return d === 1 ? '1 dia' : `${d} dias` }
+  if (min % 60 === 0 && min > 0) { const h = min / 60; return h === 1 ? '1 hora' : `${h} horas` }
+  return min === 1 ? '1 minuto' : `${min} minutos`
+}
+
+/** Descrição humana de quando a regra envia. */
+export function descreverQuando(tipo: TipoAutomacao, min: number, horario?: string | null): string {
+  const hr = horario ? String(horario).slice(0, 5) : null
+  if (tipo === 'pre_atendimento') {
+    if (hr) {
+      const dias = Math.round(min / 1440)
+      const dia = dias <= 0 ? 'no dia do atendimento' : dias === 1 ? 'no dia anterior ao atendimento' : `${dias} dias antes do atendimento`
+      return `${dia}, às ${hr}`
+    }
+    return min === 0 ? 'no horário do atendimento' : `${fmtDur(min)} antes do atendimento`
+  }
+  const base = tipo === 'pos_atendimento' ? 'de finalizar o atendimento' : 'de criar o agendamento'
+  const q = min === 0 ? `logo depois ${base}` : `${fmtDur(min)} depois ${base}`
+  return hr ? `${q}, às ${hr}` : q
+}
