@@ -25,7 +25,7 @@ type Sub = 'proximas' | 'enviadas' | 'falhas'
 const SUB_STATUS: Record<Sub, string[]> = {
   proximas: ['agendada', 'enviando'],
   enviadas: ['enviada', 'entregue', 'lida'],
-  falhas: ['falha'],
+  falhas: ['falha', 'cancelada'],
 }
 const BADGE: Record<string, { l: string; c: string }> = {
   agendada: { l: 'Agendada', c: 'bg-warning/15 text-warning' },
@@ -245,7 +245,7 @@ export function FilaEnviosTab({ companyId }: { companyId: string }) {
                     ? <button className="underline decoration-dotted underline-offset-2 hover:text-primary" title="Alterar data e hora do envio" onClick={() => abrirEdicao(l)}>{fmt(l.agendada_para)}</button>
                     : fmt(l.agendada_para))}
                   {sub === 'enviadas' && <>{fmt(l.enviada_em)} · {apelido(l.instancia_id)}</>}
-                  {sub === 'falhas' && <span className="text-destructive">{erroLegivel(l.erro)}{l.motivo_plano_b && <span className="block text-[11px] text-muted-foreground">Plano B: {l.motivo_plano_b}</span>}</span>}
+                  {sub === 'falhas' && <span className={l.status === 'cancelada' ? 'text-muted-foreground' : 'text-destructive'}>{l.status === 'cancelada' ? `Cancelada${l.erro ? ' · ' + erroLegivel(l.erro) : ''}` : erroLegivel(l.erro)}{l.motivo_plano_b && <span className="block text-[11px] text-muted-foreground">Plano B: {l.motivo_plano_b}</span>}</span>}
                 </div>
                 <div className="flex flex-wrap items-center gap-1">
                   <span className={`w-fit rounded-full px-2 py-0.5 text-[11px] font-medium ${b.c}`}>{b.l}</span>
@@ -258,7 +258,7 @@ export function FilaEnviosTab({ companyId }: { companyId: string }) {
                 <div className="flex gap-2">
                   <Button size="sm" variant="ghost" onClick={() => verTexto(l)}><MessageSquare className="mr-1 h-3.5 w-3.5" />Ver mensagem</Button>
                   {sub === 'proximas' && l.status === 'agendada' && <Button size="sm" variant="outline" onClick={() => cancelar(l)}>Cancelar</Button>}
-                  {sub === 'falhas' && <Button size="sm" variant="outline" onClick={() => reenviar(l)}>Reenviar</Button>}
+                  {sub === 'falhas' && l.status === 'falha' && <Button size="sm" variant="outline" onClick={() => reenviar(l)}>Reenviar</Button>}
                 </div>
               </div>
             )
