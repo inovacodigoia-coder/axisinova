@@ -186,7 +186,7 @@ export function FilaEnviosTab({ companyId }: { companyId: string }) {
           {(['proximas', 'enviadas', 'falhas'] as Sub[]).map(s => (
             <button key={s} onClick={() => setSub(s)}
               className={`h-9 rounded-md px-3 text-sm ${sub === s ? 'bg-background font-semibold text-foreground shadow-sm' : 'text-muted-foreground'}`}>
-              {s === 'proximas' ? 'Próximas' : s === 'enviadas' ? 'Enviadas' : 'Falhas'}
+              {s === 'proximas' ? 'Próximas' : s === 'enviadas' ? 'Enviadas' : 'Falhas e canceladas'}
             </button>
           ))}
         </div>
