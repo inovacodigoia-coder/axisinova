@@ -75,7 +75,7 @@ export default function WhatsappSettingsPage() {
   const [qrInst, setQrInst] = useState<Inst | null>(null)
 
   const companyId = user?.companyId ?? null
-  type Aba = 'numeros' | 'mensagens' | 'fila'
+  type Aba = 'numeros' | 'mensagens' | 'automacoes' | 'fila'
   const [aba, setAba] = useState<Aba>('numeros')
   const [podeConfig, setPodeConfig] = useState(false)
   const [podeFila, setPodeFila] = useState(false)
