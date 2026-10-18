@@ -11,7 +11,7 @@ describe('botão de saída de automações', () => {
   it('substitui apenas o aviso final do snapshot pelo botão', () => {
     const snapshot = separarAvisoSaida('Olá, Maria!' + AVISO_SAIR)
     expect(snapshot).toEqual({ texto: 'Olá, Maria!', incluirBotao: true })
-    expect(montarMenuSaida(envio.numero, snapshot.texto, envio.trackId).choices).toEqual(['PARAR MENSAGENS|automacao:sair'])
+    expect(montarMenuSaida(envio.numero, snapshot.texto, envio.trackId).choices).toEqual(['NÃO QUERO MAIS RECEBER|automacao:sair'])
     expect(separarAvisoSaida('SAIR é uma opção.').incluirBotao).toBe(false)
     expect(separarAvisoSaida('Olá!').texto).toBe('Olá!')
   })
