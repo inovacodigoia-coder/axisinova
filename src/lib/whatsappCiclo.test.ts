@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { acaoOptout, AVISO_SAIR, montarMenuSaida, separarAvisoSaida } from '../../supabase/functions/_shared/whatsappCiclo'
 import { enviarCiclo } from '../../supabase/functions/_shared/whatsappMenu'
