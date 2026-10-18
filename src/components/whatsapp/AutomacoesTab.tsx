@@ -13,6 +13,7 @@ import { useAuth } from '@/context/AuthContext'
 import {
   VARIAVEIS_MODELO, AUTOMACOES_PADRAO, TIPO_AUTOMACAO_LABEL, type TipoAutomacao, textoCiclo, comCabecalho,
   variaveisDesconhecidas, descreverQuando, temMarcadorOrientacao, limparTexto,
+  separarAvisoSaida, BOTAO_SAIR,
 } from '@/lib/whatsappModelo'
 
 interface Regra {
@@ -119,7 +120,7 @@ export function AutomacoesTab({ companyId }: { companyId: string }) {
                   {(r.filtro_tipos_atendimento ?? []).map(x => <span key={x} className="rounded-full bg-muted px-2 py-0.5 text-[11px] text-foreground">{x}</span>)}
                   {(r.filtro_medicos ?? []).map(x => <span key={x} className="rounded-full bg-muted px-2 py-0.5 text-[11px] text-foreground">{nomeMedico(x)}</span>)}
                   {!r.filtro_tipos_atendimento?.length && !r.filtro_medicos?.length && <span className="text-[11px] text-muted-foreground">Todos os atendimentos</span>}
-                  {r.incluir_aviso_saida && <span className="rounded-full border border-border px-2 py-0.5 text-[11px] text-muted-foreground">Aviso SAIR</span>}
+                  {r.incluir_aviso_saida && <span className="rounded-full border border-border px-2 py-0.5 text-[11px] text-muted-foreground">Botão para parar</span>}
                 </div>
                 {temMarcadorOrientacao(r.texto) && <p className="flex items-center gap-1 text-xs text-warning"><AlertTriangle className="h-3.5 w-3.5" />Edite as orientações antes de ativar.</p>}
               </div>
@@ -186,7 +187,7 @@ function Editor({ alvo, companyId, medicos, onClose, onSalvo }: {
 
   const minutos = paraMin(Number(valor), unid)
   const desconhecidas = useMemo(() => variaveisDesconhecidas(texto), [texto])
-  const preview = useMemo(() => comCabecalho(responsavel, textoCiclo(texto, EXEMPLO, aviso)), [texto, aviso, responsavel])
+  const preview = useMemo(() => comCabecalho(responsavel, separarAvisoSaida(textoCiclo(texto, EXEMPLO, aviso)).texto), [texto, aviso, responsavel])
   const marcador = temMarcadorOrientacao(texto)
 
   const salvar = async () => {
@@ -303,8 +304,8 @@ function Editor({ alvo, companyId, medicos, onClose, onSalvo }: {
               {marcador && <p className="text-xs text-warning">Edite as orientações antes de ativar.</p>}
             </div>
             <div className="flex items-center justify-between">
-              <span className="text-sm text-foreground">Incluir aviso para parar de receber</span>
-              <Switch checked={aviso} onCheckedChange={setAviso} />
+              <span className="text-sm text-foreground">Incluir botão para parar de receber</span>
+              <Switch aria-label="Incluir botão para parar de receber" checked={aviso} onCheckedChange={setAviso} />
             </div>
             <div className="flex items-center justify-between">
               <span className="text-sm text-foreground">Regra ativa</span>
@@ -314,6 +315,7 @@ function Editor({ alvo, companyId, medicos, onClose, onSalvo }: {
               <p className="text-xs text-muted-foreground">Pré-visualização (dados de exemplo)</p>
               <div className="mt-1 rounded-xl bg-muted p-3">
                 <div className="ml-auto max-w-[90%] whitespace-pre-wrap rounded-lg bg-background p-3 text-sm text-foreground shadow-sm">{preview}</div>
+                {aviso && <Button type="button" variant="outline" tabIndex={-1} aria-disabled="true" className="mt-1 h-10 w-full cursor-default bg-background text-primary shadow-sm">{BOTAO_SAIR}</Button>}
               </div>
             </div>
             <div className="flex flex-wrap gap-2">

@@ -4,7 +4,8 @@
 // Regras: reserva atômica no banco, uma tentativa só, nunca repete; nunca registra token nem texto.
 import { createClient } from 'npm:@supabase/supabase-js@2'
 import { decifrar } from '../_shared/whatsappCripto.ts'
-import { enviarConfirmacao, idMensagem, type Formato } from '../_shared/whatsappMenu.ts'
+import { enviarConfirmacao, enviarCiclo, idMensagem, type Formato } from '../_shared/whatsappMenu.ts'
+import { separarAvisoSaida } from '../_shared/whatsappCiclo.ts'
 
 const BASE = (Deno.env.get('UAZAPI_BASE_URL') ?? '').replace(/\/+$/, '')
 const SEGREDO = Deno.env.get('WHATSAPP_WORKER_SECRET') ?? ''
@@ -88,6 +89,11 @@ Deno.serve(async (req) => {
           base: BASE, token, numero: r.telefone_destino, texto: r.texto_final, codigo, trackId: r.fila_id,
           formato: cfg?.formato_confirmacao === 'texto_numerado' ? 'texto_numerado' : 'botoes',
         })
+        ;({ status, body, retryAfter, formato, motivoPlanoB } = res)
+      } else if (linha?.tipo?.startsWith('ciclo_')) {
+        const saida = separarAvisoSaida(r.texto_final)
+        const res = await enviarCiclo({ base: BASE, token, numero: r.telefone_destino, texto: saida.texto,
+          trackId: r.fila_id, incluirBotao: saida.incluirBotao })
         ;({ status, body, retryAfter, formato, motivoPlanoB } = res)
       } else {
         try {

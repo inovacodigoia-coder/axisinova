@@ -96,7 +96,9 @@ export function textoNumerado(t: string): string {
 
 // ---------- Etapa 11A: automações de ciclo (espelho de whatsapp_automacao_padrao / whatsapp__ciclo_um) ----------
 export type TipoAutomacao = 'inclusao_agenda' | 'pre_atendimento' | 'pos_atendimento'
-export const AVISO_SAIR = '\n\nPara não receber mais mensagens automáticas, responda SAIR.'
+import { AVISO_SAIR } from '../../supabase/functions/_shared/whatsappCiclo'
+export { BOTAO_SAIR, separarAvisoSaida } from '../../supabase/functions/_shared/whatsappCiclo'
+export { AVISO_SAIR }
 export const AUTOMACOES_PADRAO: Record<TipoAutomacao, { nome: string; deslocamento: number; horario: string | null; filtro: string[] | null; aviso: boolean; texto: string }> = {
   inclusao_agenda: { nome: 'Inclusão na agenda', deslocamento: 5, horario: null, filtro: null, aviso: false,
     texto: 'Olá, {primeiro_nome}! Seu agendamento foi realizado: {tipo} com {medico} em {data_hora}. Qualquer alteração, fale com a nossa equipe.' },

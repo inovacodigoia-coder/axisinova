@@ -3,6 +3,7 @@
 import { createClient } from 'npm:@supabase/supabase-js@2'
 import { decifrar } from '../_shared/whatsappCripto.ts'
 import { MAX_RECEBIDA, extDoMime } from '../_shared/inovachatMidia.ts'
+import { acaoOptout } from '../_shared/whatsappCiclo.ts'
 
 const SEGREDO = Deno.env.get('WHATSAPP_WEBHOOK_SECRET') ?? ''
 const db = createClient(Deno.env.get('SUPABASE_URL')!, Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!)
@@ -223,7 +224,7 @@ async function processarRecebida(instId: string, p: any) {
   else if (m.wasSentByApi !== true && msgIdIC && msgIdIC.length <= 200) {
     const telIC = await inovachatGravar(instId, p, m, texto, msgIdIC)
     if (telIC && m.fromMe !== true) {
-      const ehConf = /^(confirmar|remarcar|cancelar):/i.test(bid) || (texto.length > 0 && texto.length <= 30 && (!!PALAVRAS[normalizar(texto)] || ['sair', 'parar', 'voltar'].includes(normalizar(texto))))
+      const ehConf = !!acaoOptout(bid, normalizar(texto)) || /^(confirmar|remarcar|cancelar):/i.test(bid) || (texto.length > 0 && texto.length <= 30 && !!PALAVRAS[normalizar(texto)])
       await foraDoHorario(instId, telIC, ehConf)
     }
   }
@@ -233,10 +234,9 @@ async function processarRecebida(instId: string, p: any) {
   const msgId = String(m.messageid ?? m.id ?? '')
   if (!msgId || msgId.length > 200) return descartar('formato_desconhecido')
 
-  // Etapa 11A: SAIR / PARAR / VOLTAR (palavra exata, sem botão) — só mensagens automáticas de ciclo
-  if (!bid && texto && texto.length <= 12) {
-    const n0 = normalizar(texto)
-    const optAcao = n0 === 'sair' || n0 === 'parar' ? 'sair' : n0 === 'voltar' ? 'voltar' : null
+  // Botão ou palavra exata: a mesma RPC bloqueia somente automações de ciclo.
+  {
+    const optAcao = acaoOptout(bid, normalizar(texto))
     if (optAcao) {
       const telO = digitos(m.sender_pn) || digitos(chat) || digitos(m.sender)
       if (!telO) return

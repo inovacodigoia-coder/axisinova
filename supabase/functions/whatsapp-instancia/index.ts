@@ -14,7 +14,8 @@ const erro = (status: number, codigo: string, mensagem: string) => resp(status, 
 
 // ---------- cifra AES-GCM do token da instância ----------
 import { cifrar, decifrar } from '../_shared/whatsappCripto.ts'
-import { enviarConfirmacao, idMensagem, type Formato } from '../_shared/whatsappMenu.ts'
+import { enviarConfirmacao, enviarCiclo, idMensagem, type Formato } from '../_shared/whatsappMenu.ts'
+import { AVISO_SAIR } from '../_shared/whatsappCiclo.ts'
 
 // ---------- chamada à uazapi (uma tentativa, sem repetição) ----------
 async function uaz(method: string, path: string, headers: Record<string, string>, body?: unknown) {
@@ -352,8 +353,7 @@ Deno.serve(async (req) => {
           p_texto: texto, p_paciente: 'Maria Exemplo', p_tipo: 'consulta', p_primeira_vez: false, p_medico: 'Dra. Juliana Prado',
           p_data_hora: amanha, p_responsavel: pf?.full_name ?? null,
         })
-        const aviso = body?.incluir_aviso_saida === true ? '\n\nPara não receber mais mensagens automáticas, responda SAIR.' : ''
-        const { data: comCab } = await db.rpc('whatsapp_cabecalho', { p_responsavel: pf?.full_name ?? '', p_corpo: `${corpo}${aviso} (mensagem de teste do sistema)` })
+        const { data: comCab } = await db.rpc('whatsapp_cabecalho', { p_responsavel: pf?.full_name ?? '', p_corpo: `${corpo} (mensagem de teste do sistema)` })
         texto = String(comCab ?? corpo)
       } else if (tipoTeste === 'texto') {
         if (texto.trim().length < 1 || texto.length > 500) return erro(400, 'DADOS_INVALIDOS', 'A mensagem deve ter de 1 a 500 caracteres.')
@@ -407,7 +407,13 @@ Deno.serve(async (req) => {
       let r: { status: number; json: any; retryAfter: string | null }
       let formato: Formato = 'texto', motivo: string | null = null, codigo: string | null = null
       const filaId = crypto.randomUUID()
-      if (tipoTeste === 'texto') {
+      if (body?.tipo_teste === 'regra') {
+        const e = await enviarCiclo({ base: BASE, token: tk, numero: num, texto, trackId: filaId,
+          incluirBotao: body?.incluir_aviso_saida === true, timeoutMs: 30_000 })
+        r = { status: e.status, json: e.body, retryAfter: e.retryAfter }
+        formato = e.formato; motivo = e.motivoPlanoB
+        if (body?.incluir_aviso_saida === true) texto += AVISO_SAIR
+      } else if (tipoTeste === 'texto') {
         r = await uaz('POST', '/send/text', { token: tk }, { number: num, text: texto })
       } else {
         const { data: g } = await db.rpc('whatsapp_gerar_codigo_resposta')

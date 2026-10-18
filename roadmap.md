@@ -10,3 +10,8 @@
 - [x] Exibir sexo em português, nascimento em dia/mês/ano e máscaras de CPF, RG, telefone e endereço.
 - [x] T01 Triagem Lab: cadastros e permissões
 - [ ] T02 malote / T03 tela de triagem (próximos prompts)
+
+# Botão de saída nas automações WhatsApp
+- [x] Substituir aviso por botão na prévia, envio automático e teste da regra.
+- [x] Processar o botão pela mesma regra SAIR e validar sem envio real (23 testes passaram).
+- [ ] Validar na tela logada e no celular: sessão disponível redirecionou ao login; envio real depende de autorização.
