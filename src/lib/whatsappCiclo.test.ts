@@ -1,8 +1,9 @@
-// @vitest-environment node
-import { afterEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { acaoOptout, AVISO_SAIR, montarMenuSaida, separarAvisoSaida } from '../../supabase/functions/_shared/whatsappCiclo'
 import { enviarCiclo } from '../../supabase/functions/_shared/whatsappMenu'
 
+// jsdom não oferece AbortSignal.timeout; transporte usa o recurso nativo no servidor.
+beforeEach(() => vi.stubGlobal('AbortSignal', { timeout: () => new AbortController().signal }))
 afterEach(() => vi.unstubAllGlobals())
 const envio = { base: 'https://provider.invalid', token: 'fixture', numero: '5584999990000', texto: 'Olá, Maria!', trackId: 'fixture', incluirBotao: true }
 
