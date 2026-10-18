@@ -1,5 +1,6 @@
 // Montagem ÚNICA da confirmação com botões (uazapi POST /send/menu).
 // A uazapi avisa que botões podem ser descontinuados: para trocar por list/poll, mude só montarMenuConfirmacao.
+import { AVISO_SAIR, montarMenuSaida } from './whatsappCiclo.ts'
 export type Formato = 'botoes' | 'texto_numerado' | 'texto'
 
 export function montarMenuConfirmacao(numero: string, texto: string, codigo: string, trackId: string) {
@@ -60,4 +61,21 @@ export async function enviarConfirmacao(o: {
 export const idMensagem = (body: any) => {
   const id = body?.messageid ?? body?.id ?? body?.key?.id ?? null
   return id == null ? null : String(id)
+}
+
+/** Mesmo contrato da confirmação; fallback só após recusa explícita, nunca resultado incerto. */
+export async function enviarCiclo(o: {
+  base: string; token: string; numero: string; texto: string; trackId: string; incluirBotao: boolean; timeoutMs?: number
+}): Promise<Resultado & { formato: Formato; motivoPlanoB: string | null }> {
+  const t = o.timeoutMs ?? 15_000
+  const enviarTexto = (texto: string) => post(o.base, o.token, '/send/text', {
+    number: o.numero, text: texto, track_source: 'axis_ciclo', track_id: o.trackId,
+  }, t)
+  if (!o.incluirBotao) return { ...await enviarTexto(o.texto), formato: 'texto', motivoPlanoB: null }
+  const r = await post(o.base, o.token, '/send/menu', montarMenuSaida(o.numero, o.texto, o.trackId), t)
+  if ((r.status === 400 || r.status === 422) && !desconectado(r)) {
+    const motivo = `Menu recusado (HTTP ${r.status}): ${String(r.body?.error ?? r.body?.message ?? 'sem detalhe').slice(0, 200)}`
+    return { ...await enviarTexto(o.texto + AVISO_SAIR), formato: 'texto', motivoPlanoB: motivo }
+  }
+  return { ...r, formato: 'botoes', motivoPlanoB: null }
 }
