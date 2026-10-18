@@ -1,6 +1,6 @@
 // O rodapé no snapshot SQL preserva a opção da regra no momento do enfileiramento.
 export const AVISO_SAIR = '\n\nPara não receber mais mensagens automáticas, responda SAIR.'
-export const BOTAO_SAIR = 'PARAR MENSAGENS'
+export const BOTAO_SAIR = 'NÃO QUERO MAIS RECEBER'
 export const ID_BOTAO_SAIR = 'automacao:sair'
 
 export function separarAvisoSaida(texto: string) {
