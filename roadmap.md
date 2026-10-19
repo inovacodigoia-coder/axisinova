@@ -1,5 +1,9 @@
 # Verificação dos alertas
 
+# Frequência e SAIR por categoria WhatsApp
+- [ ] Derivar categoria e aplicar frequência/SAIR somente a relacionamento, inclusive ação manual.
+- [ ] Atualizar selo e indicação dos limites; testar dois serviços no mesmo dia e adiamento do segundo pós-atendimento para 09:00.
+
 - [x] Verificar permissões atuais da numeração: authenticated e service_role autorizados; alerta registrado como falso positivo, sem ampliar acesso.
 - [x] Verificar impressão: documento real com 140 resultados e 80 observações preservou todos os marcadores no PDF; alerta de corte registrado como falso positivo, sem alterar impressão.
 
