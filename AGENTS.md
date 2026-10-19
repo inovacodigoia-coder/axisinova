@@ -14,3 +14,4 @@
 - Cycle automation categories are derived centrally by whatsapp_automacao_categoria; enqueue, reservation and patient/manual opt-out use this function, and frequency counts only relationship rows. Why: new automation types inherit a category without duplicating server rules or blocking appointment notices.
 - Subdirectories have their own AGENTS.md (e.g. supabase/functions/); read it before changing files there.
 - Cycle automation stop buttons use shared whatsappCiclo helpers and the exact trailing SQL opt-out footer as the queued setting snapshot; webhook buttons call the existing opt-out RPC. Why: preserve queued preferences and confirmation eligibility without duplicating server rules.
+- SQL behavior tests use isolated PGlite fixtures and run with `bunx vitest run --config vitest.sql.config.ts`, separately from browser tests. Why: exercise deployed PostgreSQL functions without touching operational records or sending messages.

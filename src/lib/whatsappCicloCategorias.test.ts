@@ -67,7 +67,7 @@ beforeEach(async () => {
   for (const name of names) {
     const def = (await db.query<{ def: string }>('SELECT pg_get_functiondef(oid) AS def FROM pg_proc WHERE proname=$1', [name])).rows[0]?.def
     if (!def) throw new Error(`Função ausente: ${name}`)
-    await db.exec(def.replaceAll('now()', 'public.fixture_now()'))
+    await db.exec(def.replace(/now\(\)/g, 'public.fixture_now()'))
   }
   await db.exec(`
     INSERT INTO companies VALUES ('${company}',true,'Fixture',NULL);
