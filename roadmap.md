@@ -23,6 +23,6 @@
 # Etapa 11B — automações de relacionamento
 - [x] Links, 6 tipos novos (desligados), validade/"Prazo vencido", prioridade, aniversário diário, NPS com respostas/comentário/sino, aba Satisfação, última nota no InovaChat, respostas rápidas.
 - [x] 11 testes SQL + 4 de texto (sem envio real).
-- [ ] Comentário do NPS ainda não entra na limpeza por retenção da empresa.
-- [ ] "Abrir conversa" na Satisfação abre o InovaChat, não a conversa exata.
+- [ ] Integrar anonimização NPS à retenção antes de limpar fila, contar simulação/execução e apagar NPS na exclusão LGPD com auditoria.
+- [ ] Abrir conversa específica na Satisfação e sino com resolução segura no servidor e aviso sem conversa.
 - [ ] Validar na tela logada e no celular.
