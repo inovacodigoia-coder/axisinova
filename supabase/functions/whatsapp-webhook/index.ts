@@ -252,6 +252,16 @@ async function processarRecebida(instId: string, p: any) {
     const telN = digitos(m.sender_pn) || digitos(chat) || digitos(m.sender)
     if (telN) {
       const ehPalavra = texto.length <= 30 && !!PALAVRAS[normalizar(texto)] && !/^\d+$/.test(normalizar(texto))
+      // Teste reconhecido pelo snapshot, sem gravar nota ou notificar gestores.
+      const { data: teste, error: te } = await db.rpc('whatsapp_nps_teste_processar', {
+        p_instancia: instId, p_telefone: telN, p_texto: texto,
+        p_quoted: typeof m.quoted === 'string' && m.quoted ? m.quoted : null,
+      })
+      if (te) { console.error('webhook: falha no teste NPS', te.message); return }
+      if ((teste as any)?.tratada) {
+        if ((teste as any).enviar) await enviarResposta(instId, (teste as any).fila_id, (teste as any).telefone, (teste as any).texto)
+        return
+      }
       const { data: nps, error: ne } = await db.rpc('whatsapp_nps_processar', {
         p_instancia: instId, p_telefone: telN, p_texto: texto,
         p_quoted: typeof m.quoted === 'string' && m.quoted ? m.quoted : null, p_pode_comentar: !ehPalavra,

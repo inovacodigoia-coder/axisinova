@@ -6,6 +6,7 @@ import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 
 const base = readFileSync('drizzle/migrations/0100_whatsapp_relacionamento_11b.sql', 'utf8')
 const fix = readFileSync('drizzle/migrations/0101_whatsapp_nps_processar_registro_vazio.sql', 'utf8')
+const testeNps = readFileSync('drizzle/migrations/0103_whatsapp_nps_teste_resposta.sql', 'utf8')
 const mig = base
 const C = '00000000-0000-4000-8000-000000000001'
 const C2 = '00000000-0000-4000-8000-0000000000c2'
@@ -16,7 +17,7 @@ const TEL = '5584999990000'
 let db: PGlite
 
 function fn(name: string) {
-  const src = fix.includes(`FUNCTION public.${name}(`) ? fix : mig
+  const src = testeNps.includes(`FUNCTION public.${name}(`) ? testeNps : fix.includes(`FUNCTION public.${name}(`) ? fix : mig
   const start = src.indexOf(`CREATE OR REPLACE FUNCTION public.${name}(`)
   if (start < 0) throw new Error(`Função ausente: ${name}`)
   const corpo = src.indexOf('AS $$', start)
@@ -59,14 +60,14 @@ beforeEach(async () => {
     CREATE TABLE whatsapp_fila_envios(id uuid PRIMARY KEY DEFAULT gen_random_uuid(), company_id uuid, tipo text, agendamento_id uuid, paciente_id uuid, telefone_destino text, texto_final text,
       ciclo_adiamentos int DEFAULT 0, status text, instancia_id uuid, agendada_para timestamptz, enviada_em timestamptz, atualizado_em timestamptz DEFAULT now(),
       criado_em timestamptz DEFAULT now(), paciente_nome text, criado_por uuid, responsavel_nome text, automacao_id uuid, formato_envio text, erro text,
-      expira_em timestamptz, message_id_uazapi text, resposta_acao text, respondida_em timestamptz);
+      expira_em timestamptz, message_id_uazapi text, resposta_acao text, respondida_em timestamptz, nps_teste_respostas jsonb);
     CREATE TABLE whatsapp_optout(company_id uuid, telefone text);
     CREATE FUNCTION whatsapp_optout_tem(uuid,text) RETURNS boolean LANGUAGE sql AS $$ SELECT EXISTS(SELECT 1 FROM whatsapp_optout WHERE company_id=$1 AND telefone=$2) $$;
   `)
   const tbl = mig.slice(mig.indexOf('CREATE TABLE IF NOT EXISTS public.whatsapp_nps_respostas'))
   await db.exec(tbl.slice(0, tbl.indexOf(');') + 2).replace('REFERENCES public.companies(id) ON DELETE CASCADE', ''))
   const nomes = ['whatsapp_automacao_categoria', 'whatsapp_automacao_prioridade', 'whatsapp_automacao_link_faltando', 'whatsapp_render_links', 'whatsapp_automacao_padrao',
-    'whatsapp_automacoes_trg', 'whatsapp__regra_aplicavel', 'whatsapp__ciclo_um', 'whatsapp_reservar_envios', 'whatsapp_aniversario_rodar', 'whatsapp__nps_avisar', 'whatsapp_nps_processar']
+    'whatsapp_automacoes_trg', 'whatsapp__regra_aplicavel', 'whatsapp__ciclo_um', 'whatsapp_reservar_envios', 'whatsapp_aniversario_rodar', 'whatsapp__nps_avisar', 'whatsapp_nps_processar', 'whatsapp_nps_teste_processar']
   await clock('2026-10-19 10:00:00-03')
   for (const n of nomes) await db.exec(fn(n).replace(/now\(\)/g, 'public.fixture_now()'))
   await db.exec(`
@@ -86,6 +87,39 @@ const regra = (tipo: string, extra = '') => db.exec(`INSERT INTO whatsapp_automa
   SELECT '${C}','${tipo}',true,(whatsapp_automacao_padrao('${tipo}')->>'deslocamento')::int,(whatsapp_automacao_padrao('${tipo}')->>'horario')::time,whatsapp_automacao_padrao('${tipo}')->>'texto'${extra ? ',' + extra.split('=')[1] : ''};`)
 
 describe('Etapa 11B — regras SQL', () => {
+  const respostaTeste = async (nota: string, citado: string | null = null, telefone = TEL) =>
+    (await q('SELECT whatsapp_nps_teste_processar($1,$2,$3,$4) r', [INST, telefone, nota, citado]))[0].r
+  const criarTeste = () => db.exec(`INSERT INTO whatsapp_fila_envios(company_id,tipo,telefone_destino,status,enviada_em,instancia_id,message_id_uazapi,nps_teste_respostas)
+    VALUES ('${C}','teste','${TEL}','lida',fixture_now(),'${INST}','TESTE1','{"promotor":"Obrigado {primeiro_nome}, nota alta","neutro":"Obrigado pela nota neutra","detrator":"Obrigado pela avaliação baixa"}')`)
+
+  it.each([['9', 'nota alta'], ['7', 'nota neutra'], ['5', 'avaliação baixa']])('teste NPS nota %s agradece sem estatística ou aviso', async (nota, trecho) => {
+    await criarTeste()
+    const r = await respostaTeste(nota)
+    expect(r.enviar).toBe(true)
+    expect(r.texto).toContain(trecho)
+    expect((await q('SELECT count(*)::int n FROM whatsapp_nps_respostas'))[0].n).toBe(0)
+    expect((await q('SELECT count(*)::int n FROM user_notifications'))[0].n).toBe(0)
+    expect((await respostaTeste(nota, 'TESTE1')).enviar).toBe(false)
+    expect((await q("SELECT count(*)::int n FROM whatsapp_fila_envios WHERE tipo='resposta_automatica'"))[0].n).toBe(1)
+  })
+
+  it('teste NPS não responde para outro telefone, outra empresa ou após 72 horas', async () => {
+    await criarTeste()
+    expect((await respostaTeste('9','TESTE1','5584999991234')).tratada).toBe(false)
+    await db.exec(`UPDATE whatsapp_fila_envios SET company_id='${C2}'`)
+    expect((await respostaTeste('9','TESTE1')).tratada).toBe(false)
+    await db.exec(`UPDATE whatsapp_fila_envios SET company_id='${C}',enviada_em=fixture_now()-interval '73 hours'`)
+    expect((await respostaTeste('9','TESTE1')).tratada).toBe(false)
+  })
+
+  it('confirmação mais recente mantém os números 1/2/3 fora do teste NPS', async () => {
+    await criarTeste()
+    await db.exec(`INSERT INTO whatsapp_fila_envios(company_id,tipo,telefone_destino,status,enviada_em,instancia_id,message_id_uazapi)
+      VALUES ('${C}','confirmacao_agendamento','${TEL}','enviada',fixture_now()+interval '1 minute','${INST}','CONF1')`)
+    for (const nota of ['1','2','3']) expect((await respostaTeste(nota)).tratada).toBe(false)
+    expect((await respostaTeste('9','TESTE1')).enviar).toBe(true)
+  })
+
   it('não ativa regra que usa link vazio; com link, ativa', async () => {
     await expect(regra('avaliacao_google')).rejects.toThrow(/Preencha o link do Google/)
     await db.exec(`UPDATE whatsapp_config_empresa SET link_google='https://g.page/r/x' WHERE company_id='${C}'`)
