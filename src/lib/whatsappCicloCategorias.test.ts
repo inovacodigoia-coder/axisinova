@@ -95,18 +95,20 @@ describe('categorias de ciclo — regras SQL', () => {
     expect(await enqueue('pre_atendimento')).toBe('ENFILEIRADA')
     await clock('2026-10-19 17:05:00-03')
     expect(await reserve()).toHaveLength(1)
+    await db.exec("UPDATE whatsapp_fila_envios SET status='enviada',enviada_em=fixture_now() WHERE status='enviando';")
     await releaseInstance()
     await clock('2026-10-19 18:00:00-03')
     expect(await reserve()).toHaveLength(1)
     expect((await db.query('SELECT tipo,status,ciclo_adiamentos FROM whatsapp_fila_envios ORDER BY tipo')).rows).toEqual([
-      { tipo: 'ciclo_inclusao_agenda', status: 'enviando', ciclo_adiamentos: 0 },
+      { tipo: 'ciclo_inclusao_agenda', status: 'enviada', ciclo_adiamentos: 0 },
       { tipo: 'ciclo_pre_atendimento', status: 'enviando', ciclo_adiamentos: 0 },
     ])
+    await db.exec("UPDATE whatsapp_fila_envios SET status='enviada',enviada_em=fixture_now() WHERE status='enviando';")
+    await clock('2026-10-19 17:59:00-03')
     await db.exec("UPDATE appointments SET sched_status='completed';")
     expect(await enqueue('pos_atendimento')).toBe('ENFILEIRADA')
     await releaseInstance()
     await clock('2026-10-19 19:59:00-03')
-    await db.exec("UPDATE whatsapp_fila_envios SET agendada_para=fixture_now() WHERE tipo='ciclo_pos_atendimento';")
     expect(await reserve()).toHaveLength(1)
   })
   it('dois pós-atendimentos do mesmo telefone: segundo adiado para amanhã às 09:00', async () => {
