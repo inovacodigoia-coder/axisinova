@@ -19,3 +19,10 @@
 - [x] Substituir aviso por botão na prévia, envio automático e teste da regra.
 - [x] Processar o botão pela mesma regra SAIR e validar sem envio real (23 testes passaram).
 - [ ] Validar na tela logada e no celular: sessão disponível redirecionou ao login; envio real depende de autorização.
+
+# Etapa 11B — automações de relacionamento
+- [x] Links, 6 tipos novos (desligados), validade/"Prazo vencido", prioridade, aniversário diário, NPS com respostas/comentário/sino, aba Satisfação, última nota no InovaChat, respostas rápidas.
+- [x] 11 testes SQL + 4 de texto (sem envio real).
+- [ ] Comentário do NPS ainda não entra na limpeza por retenção da empresa.
+- [ ] "Abrir conversa" na Satisfação abre o InovaChat, não a conversa exata.
+- [ ] Validar na tela logada e no celular.
