@@ -7857,14 +7857,23 @@ export type Database = {
           company_id: string
           criado_em: string
           deslocamento_minutos: number
+          expira_apos_horas: number | null
+          filtro_apenas_adultos: boolean | null
           filtro_medicos: string[] | null
+          filtro_primeira_vez: boolean | null
           filtro_tipos_atendimento: string[] | null
           horario_fixo: string | null
           id: string
           incluir_aviso_saida: boolean
+          intervalo_minimo_dias: number | null
+          meses_sem_atendimento_max: number | null
           nome: string
           ordem: number
           padrao: boolean
+          prioridade: number | null
+          resposta_detrator: string | null
+          resposta_neutro: string | null
+          resposta_promotor: string | null
           texto: string
           tipo: string
         }
@@ -7875,14 +7884,23 @@ export type Database = {
           company_id: string
           criado_em?: string
           deslocamento_minutos?: number
+          expira_apos_horas?: number | null
+          filtro_apenas_adultos?: boolean | null
           filtro_medicos?: string[] | null
+          filtro_primeira_vez?: boolean | null
           filtro_tipos_atendimento?: string[] | null
           horario_fixo?: string | null
           id?: string
           incluir_aviso_saida?: boolean
+          intervalo_minimo_dias?: number | null
+          meses_sem_atendimento_max?: number | null
           nome: string
           ordem?: number
           padrao?: boolean
+          prioridade?: number | null
+          resposta_detrator?: string | null
+          resposta_neutro?: string | null
+          resposta_promotor?: string | null
           texto: string
           tipo: string
         }
@@ -7893,14 +7911,23 @@ export type Database = {
           company_id?: string
           criado_em?: string
           deslocamento_minutos?: number
+          expira_apos_horas?: number | null
+          filtro_apenas_adultos?: boolean | null
           filtro_medicos?: string[] | null
+          filtro_primeira_vez?: boolean | null
           filtro_tipos_atendimento?: string[] | null
           horario_fixo?: string | null
           id?: string
           incluir_aviso_saida?: boolean
+          intervalo_minimo_dias?: number | null
+          meses_sem_atendimento_max?: number | null
           nome?: string
           ordem?: number
           padrao?: boolean
+          prioridade?: number | null
+          resposta_detrator?: string | null
+          resposta_neutro?: string | null
+          resposta_promotor?: string | null
           texto?: string
           tipo?: string
         }
@@ -7970,6 +7997,10 @@ export type Database = {
           formato_confirmacao: string
           janela_fim: string
           janela_inicio: string
+          link_cadastro: string | null
+          link_google: string | null
+          link_indicacao: string | null
+          link_questionario: string | null
           proximo_modelo: number
         }
         Insert: {
@@ -7983,6 +8014,10 @@ export type Database = {
           formato_confirmacao?: string
           janela_fim?: string
           janela_inicio?: string
+          link_cadastro?: string | null
+          link_google?: string | null
+          link_indicacao?: string | null
+          link_questionario?: string | null
           proximo_modelo?: number
         }
         Update: {
@@ -7996,6 +8031,10 @@ export type Database = {
           formato_confirmacao?: string
           janela_fim?: string
           janela_inicio?: string
+          link_cadastro?: string | null
+          link_google?: string | null
+          link_indicacao?: string | null
+          link_questionario?: string | null
           proximo_modelo?: number
         }
         Relationships: [
@@ -8212,6 +8251,7 @@ export type Database = {
           criado_por: string | null
           enviada_em: string | null
           erro: string | null
+          expira_em: string | null
           formato_envio: string | null
           horas_antes: number | null
           id: string
@@ -8219,6 +8259,7 @@ export type Database = {
           message_id_uazapi: string | null
           modelo_posicao: number | null
           motivo_plano_b: string | null
+          paciente_id: string | null
           paciente_nome: string | null
           respondida_em: string | null
           responsavel_nome: string | null
@@ -8241,6 +8282,7 @@ export type Database = {
           criado_por?: string | null
           enviada_em?: string | null
           erro?: string | null
+          expira_em?: string | null
           formato_envio?: string | null
           horas_antes?: number | null
           id?: string
@@ -8248,6 +8290,7 @@ export type Database = {
           message_id_uazapi?: string | null
           modelo_posicao?: number | null
           motivo_plano_b?: string | null
+          paciente_id?: string | null
           paciente_nome?: string | null
           respondida_em?: string | null
           responsavel_nome?: string | null
@@ -8270,6 +8313,7 @@ export type Database = {
           criado_por?: string | null
           enviada_em?: string | null
           erro?: string | null
+          expira_em?: string | null
           formato_envio?: string | null
           horas_antes?: number | null
           id?: string
@@ -8277,6 +8321,7 @@ export type Database = {
           message_id_uazapi?: string | null
           modelo_posicao?: number | null
           motivo_plano_b?: string | null
+          paciente_id?: string | null
           paciente_nome?: string | null
           respondida_em?: string | null
           responsavel_nome?: string | null
@@ -8556,6 +8601,79 @@ export type Database = {
             columns: ["company_id"]
             isOneToOne: false
             referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      whatsapp_nps_respostas: {
+        Row: {
+          agendamento_id: string | null
+          categoria: string
+          comentario: string | null
+          comentario_em: string | null
+          company_id: string
+          fila_id: string
+          id: string
+          medico_id: string | null
+          medico_nome: string | null
+          nota: number
+          paciente_id: string | null
+          paciente_nome: string | null
+          respondida_em: string
+          tipo_atendimento: string | null
+        }
+        Insert: {
+          agendamento_id?: string | null
+          categoria: string
+          comentario?: string | null
+          comentario_em?: string | null
+          company_id: string
+          fila_id: string
+          id?: string
+          medico_id?: string | null
+          medico_nome?: string | null
+          nota: number
+          paciente_id?: string | null
+          paciente_nome?: string | null
+          respondida_em?: string
+          tipo_atendimento?: string | null
+        }
+        Update: {
+          agendamento_id?: string | null
+          categoria?: string
+          comentario?: string | null
+          comentario_em?: string | null
+          company_id?: string
+          fila_id?: string
+          id?: string
+          medico_id?: string | null
+          medico_nome?: string | null
+          nota?: number
+          paciente_id?: string | null
+          paciente_nome?: string | null
+          respondida_em?: string
+          tipo_atendimento?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "whatsapp_nps_respostas_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "whatsapp_nps_respostas_fila_id_fkey"
+            columns: ["fila_id"]
+            isOneToOne: true
+            referencedRelation: "whatsapp_fila_envios"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "whatsapp_nps_respostas_fila_id_fkey"
+            columns: ["fila_id"]
+            isOneToOne: true
+            referencedRelation: "whatsapp_fila_envios_v"
             referencedColumns: ["id"]
           },
         ]
@@ -10329,6 +10447,7 @@ export type Database = {
           nome: string
         }[]
       }
+      inovachat_nps_ultima: { Args: { p_contato: string }; Returns: Json }
       inovachat_optout_definir: {
         Args: { p_bloquear: boolean; p_contato: string }
         Returns: string
@@ -10546,11 +10665,39 @@ export type Database = {
         Args: { p_ag: string; p_base: string; p_tipo: string }
         Returns: string
       }
+      whatsapp__nps_avisar: {
+        Args: {
+          p_company: string
+          p_msg: string
+          p_tel: string
+          p_titulo: string
+        }
+        Returns: undefined
+      }
+      whatsapp__regra_aplicavel: {
+        Args: {
+          p_company: string
+          p_medico: string
+          p_primeira: boolean
+          p_tipo: string
+          p_tipo_at: string
+        }
+        Returns: string
+      }
+      whatsapp_aniversario_rodar: { Args: { p_hoje?: string }; Returns: number }
       whatsapp_automacao_categoria: {
         Args: { p_tipo: string }
         Returns: string
       }
+      whatsapp_automacao_link_faltando: {
+        Args: { p_company: string; p_texto: string }
+        Returns: string
+      }
       whatsapp_automacao_padrao: { Args: { p_tipo: string }; Returns: Json }
+      whatsapp_automacao_prioridade: {
+        Args: { p_tipo: string }
+        Returns: number
+      }
       whatsapp_automacao_restaurar: { Args: { p_id: string }; Returns: string }
       whatsapp_automacoes_criar_padrao: {
         Args: { p_company: string }
@@ -10635,6 +10782,7 @@ export type Database = {
         Returns: undefined
       }
       whatsapp_limpar_nome: { Args: { p: string }; Returns: string }
+      whatsapp_links_config: { Args: { p_links?: Json }; Returns: Json }
       whatsapp_modelo_padrao: { Args: { p_posicao: number }; Returns: string }
       whatsapp_modelo_salvar: {
         Args: { p_ativo: boolean; p_id: string; p_texto: string }
@@ -10645,6 +10793,16 @@ export type Database = {
         Returns: string
       }
       whatsapp_normalizar_celular: { Args: { p: string }; Returns: string }
+      whatsapp_nps_processar: {
+        Args: {
+          p_instancia: string
+          p_pode_comentar?: boolean
+          p_quoted: string
+          p_telefone: string
+          p_texto: string
+        }
+        Returns: Json
+      }
       whatsapp_optout_processar: {
         Args: { p_acao: string; p_instancia: string; p_telefone: string }
         Returns: Json
@@ -10656,6 +10814,10 @@ export type Database = {
       whatsapp_reenfileirar_confirmacao: {
         Args: { p_agendamento_id: string }
         Returns: Json
+      }
+      whatsapp_render_links: {
+        Args: { p_company: string; p_texto: string }
+        Returns: string
       }
       whatsapp_render_modelo:
         | {
