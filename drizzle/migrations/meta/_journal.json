@@ -722,6 +722,13 @@
       "when": 1792375896132,
       "tag": "0102_nps_retencao_navegacao",
       "breakpoints": true
+    },
+    {
+      "idx": 103,
+      "version": "7",
+      "when": 1792377512384,
+      "tag": "0103_whatsapp_nps_teste_resposta",
+      "breakpoints": true
     }
   ]
 }
