@@ -59,12 +59,12 @@ export function RetencaoPanel({ companyId }: { companyId: string }) {
       {execs.length > 0 && (
         <div className="overflow-x-auto">
           <table className="w-full text-xs">
-            <thead><tr className="text-left text-muted-foreground"><th className="py-1">Quando</th><th>Modo</th><th>Msgs</th><th>Mídias</th><th>Conversas</th><th>Contatos</th><th>Fila</th><th>Acessos</th><th>Erro</th></tr></thead>
+            <thead><tr className="text-left text-muted-foreground"><th className="py-1">Quando</th><th>Modo</th><th>Msgs</th><th>Mídias</th><th>Conversas</th><th>Contatos</th><th>Fila</th><th>Acessos</th><th>NPS anonimizadas</th><th>Erro</th></tr></thead>
             <tbody>{execs.map(e => (
               <tr key={e.id} className="border-t border-border">
                 <td className="py-1">{new Date(e.executada_em).toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo' })}</td>
                 <td>{e.modo === 'real' ? 'Real' : 'Simulação'}{e.manual ? ' (manual)' : ''}</td>
-                <td>{e.mensagens}</td><td>{e.midias}</td><td>{e.conversas}</td><td>{e.contatos}</td><td>{e.fila}</td><td>{e.acessos}</td>
+                <td>{e.mensagens}</td><td>{e.midias}</td><td>{e.conversas}</td><td>{e.contatos}</td><td>{e.fila}</td><td>{e.acessos}</td><td>{e.nps_anonimizadas ?? 0}</td>
                 <td className="max-w-[160px] truncate text-destructive" title={e.erro ?? ''}>{e.erro ?? ''}</td>
               </tr>))}
             </tbody>
