@@ -97,7 +97,7 @@ export function SatisfacaoTab({ companyId }: { companyId: string }) {
               </div>
               <div className="flex shrink-0 items-center gap-2">
                 <span className={`flex h-9 w-9 items-center justify-center rounded-full text-sm font-bold ${COR[r.categoria]}`}>{r.nota}</span>
-                {chat && <Button variant="outline" size="sm" className="h-9" onClick={() => nav('/app/inovachat')}><MessageCircle className="mr-1 h-4 w-4" />Abrir conversa</Button>}
+                {chat && <Button variant="outline" size="sm" className="h-9" onClick={() => nav(`/app/inovachat?nps=${r.id}`)}><MessageCircle className="mr-1 h-4 w-4" />Abrir conversa</Button>}
               </div>
             </div>
           ))}

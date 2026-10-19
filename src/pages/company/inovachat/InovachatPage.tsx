@@ -155,15 +155,50 @@ export default function InovachatPage() {
     if (!error) setConversas(prev => prev?.map(x => x.id === id ? { ...x, nao_lidas: 0 } : x) ?? prev)
   }, [carregarMsgs])
 
-  // abrir pelo link do sino (?c=)
+  // Resolve origin and fetch the destination through server permissions and RLS.
   useEffect(() => {
-    const c = params.get('c')
-    if (c && acesso?.ver && conversas) {
-      void abrirId(c)
-      const conv = conversas.find(x => x.id === c)
-      if (conv) setAba(conv.status === 'finalizada' ? 'finalizadas' : conv.responsavel_id === eu ? 'minhas' : conv.status === 'na_fila' ? 'fila' : acesso.gerenciar ? 'todas' : 'minhas')
-      params.delete('c'); setParams(params, { replace: true })
-    }
+    if (!acesso?.ver || !conversas) return
+    const nps = params.get('nps')
+    const id = params.get('c')
+    const semConversa = params.get('sem_conversa')
+    if (!nps && !id && !semConversa) return
+    let ativo = true
+    void (async () => {
+      const next = new URLSearchParams(params)
+      next.delete('nps'); next.delete('sem_conversa')
+      if (nps) {
+        const { data, error } = await supabase.rpc('whatsapp_nps_conversa', { p_nps: nps })
+        if (!ativo) return
+        const r = data as { conversa_id?: string } | null
+        if (error) { setSelId(null); toast.error(error.message) }
+        else if (r?.conversa_id) next.set('c', r.conversa_id)
+        else { setSelId(null); toast.info('Sem conversa gravada para este paciente') }
+        setParams(next, { replace: true })
+        return
+      }
+      if (semConversa) {
+        setSelId(null); toast.info('Sem conversa gravada para este paciente')
+        setParams(next, { replace: true }); return
+      }
+      if (!id) return
+      let conv = conversas.find(x => x.id === id)
+      if (!conv) {
+        const { data } = await supabase.from('whatsapp_conversas')
+          .select('id, status, responsavel_id, instancia_id, setor_id, ultima_mensagem_em, ultima_mensagem_resumo, nao_lidas, criada_em, fora_horario, contato:whatsapp_contatos(id, telefone, nome_exibicao, paciente_id, vinculo_status, criado_em)')
+          .eq('id', id).maybeSingle()
+        if (!ativo) return
+        conv = data ? data as unknown as Conversa : undefined
+      }
+      if (!ativo) return
+      next.delete('c')
+      setParams(next, { replace: true })
+      if (!conv) { setSelId(null); toast.error('Conversa indisponível ou sem permissão de acesso.'); return }
+      const encontrada = conv
+      setConversas(prev => prev?.some(x => x.id === id) ? prev : [...(prev ?? []), encontrada])
+      void abrirId(id)
+      setAba(conv.status === 'finalizada' ? 'finalizadas' : conv.responsavel_id === eu ? 'minhas' : conv.status === 'na_fila' ? 'fila' : acesso.gerenciar ? 'todas' : 'minhas')
+    })()
+    return () => { ativo = false }
   }, [params, acesso, conversas, abrirId, eu, setParams])
 
   useEffect(() => { fimRef.current?.scrollIntoView({ block: 'end' }) }, [msgs])

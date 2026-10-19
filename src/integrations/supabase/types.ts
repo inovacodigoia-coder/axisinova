@@ -8662,20 +8662,6 @@ export type Database = {
             referencedRelation: "companies"
             referencedColumns: ["id"]
           },
-          {
-            foreignKeyName: "whatsapp_nps_respostas_fila_id_fkey"
-            columns: ["fila_id"]
-            isOneToOne: true
-            referencedRelation: "whatsapp_fila_envios"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "whatsapp_nps_respostas_fila_id_fkey"
-            columns: ["fila_id"]
-            isOneToOne: true
-            referencedRelation: "whatsapp_fila_envios_v"
-            referencedColumns: ["id"]
-          },
         ]
       }
       whatsapp_optout: {
@@ -8849,6 +8835,7 @@ export type Database = {
           mensagens: number
           midias: number
           modo: string
+          nps_anonimizadas: number
         }
         Insert: {
           acessos?: number
@@ -8863,6 +8850,7 @@ export type Database = {
           mensagens?: number
           midias?: number
           modo: string
+          nps_anonimizadas?: number
         }
         Update: {
           acessos?: number
@@ -8877,6 +8865,7 @@ export type Database = {
           mensagens?: number
           midias?: number
           modo?: string
+          nps_anonimizadas?: number
         }
         Relationships: [
           {
@@ -10793,6 +10782,7 @@ export type Database = {
         Returns: string
       }
       whatsapp_normalizar_celular: { Args: { p: string }; Returns: string }
+      whatsapp_nps_conversa: { Args: { p_nps: string }; Returns: Json }
       whatsapp_nps_processar: {
         Args: {
           p_instancia: string
