@@ -349,8 +349,9 @@ Deno.serve(async (req) => {
         const { data: pf } = await db.from('profiles').select('full_name').eq('id', userId).maybeSingle()
         const hoje = new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Fortaleza' }).format(new Date())
         const amanha = new Date(new Date(`${hoje}T09:00:00-03:00`).getTime() + 86_400_000).toISOString()
+        const { data: comLinks } = await db.rpc('whatsapp_render_links', { p_texto: texto, p_company: companyId })
         const { data: corpo } = await db.rpc('whatsapp_render_modelo', {
-          p_texto: texto, p_paciente: 'Maria Exemplo', p_tipo: 'consulta', p_primeira_vez: false, p_medico: 'Dra. Juliana Prado',
+          p_texto: String(comLinks ?? texto), p_paciente: 'Maria Exemplo', p_tipo: 'consulta', p_primeira_vez: false, p_medico: 'Dra. Juliana Prado',
           p_data_hora: amanha, p_responsavel: pf?.full_name ?? null,
         })
         const { data: comCab } = await db.rpc('whatsapp_cabecalho', { p_responsavel: pf?.full_name ?? '', p_corpo: `${corpo} (mensagem de teste do sistema)` })

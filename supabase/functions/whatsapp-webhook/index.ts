@@ -247,6 +247,25 @@ async function processarRecebida(instId: string, p: any) {
     }
   }
 
+  // Etapa 11B: nota (0 a 10) ou comentário do NPS. A RPC devolve tratada=false quando a resposta é de confirmação.
+  if (texto && texto.length <= 2000 && !/^(confirmar|remarcar|cancelar):/i.test(bid)) {
+    const telN = digitos(m.sender_pn) || digitos(chat) || digitos(m.sender)
+    if (telN) {
+      const ehPalavra = texto.length <= 30 && !!PALAVRAS[normalizar(texto)] && !/^\d+$/.test(normalizar(texto))
+      const { data: nps, error: ne } = await db.rpc('whatsapp_nps_processar', {
+        p_instancia: instId, p_telefone: telN, p_texto: texto,
+        p_quoted: typeof m.quoted === 'string' && m.quoted ? m.quoted : null, p_pode_comentar: !ehPalavra,
+      })
+      if (ne) console.error('webhook: falha no NPS', ne.message)
+      else if ((nps as any)?.tratada) {
+        if ((nps as any).enviar) await enviarResposta(instId, (nps as any).fila_id, (nps as any).telefone, (nps as any).texto)
+        return
+      }
+    }
+  }
+
+
+
   let acao: 'confirmar' | 'remarcar' | 'cancelar' | null = null
   let tipoResp: 'botao' | 'numero' | 'palavra' | null = null
   let codigo: string | null = null
