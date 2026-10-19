@@ -10546,6 +10546,10 @@ export type Database = {
         Args: { p_ag: string; p_base: string; p_tipo: string }
         Returns: string
       }
+      whatsapp_automacao_categoria: {
+        Args: { p_tipo: string }
+        Returns: string
+      }
       whatsapp_automacao_padrao: { Args: { p_tipo: string }; Returns: Json }
       whatsapp_automacao_restaurar: { Args: { p_id: string }; Returns: string }
       whatsapp_automacoes_criar_padrao: {

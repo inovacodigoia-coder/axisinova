@@ -694,6 +694,13 @@
       "when": 1792018804449,
       "tag": "0098_whatsapp_automacoes_ciclo_11a",
       "breakpoints": true
+    },
+    {
+      "idx": 99,
+      "version": "7",
+      "when": 1792371867567,
+      "tag": "0099_whatsapp_ciclo_categorias_frequencia_optout",
+      "breakpoints": true
     }
   ]
 }
