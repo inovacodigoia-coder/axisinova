@@ -1,7 +1,8 @@
 # Verificação dos alertas
 
 # Respostas automáticas à nota
-- [ ] Corrigir agradecimento no teste NPS sem registrar nota real; verificar correlação, repetição e isolamento sem envio real.
+- [x] Corrigir agradecimento no teste NPS sem registrar nota real; correlação, repetição e isolamento verificados (42 testes passaram, sem envio real).
+- [ ] Confirmar chegada no celular com um novo teste iniciado pelo usuário; nenhum envio real autorizado nesta correção.
 
 # Frequência e SAIR por categoria WhatsApp
 - [x] Derivar categoria e aplicar frequência/SAIR somente a relacionamento, inclusive ação manual.
