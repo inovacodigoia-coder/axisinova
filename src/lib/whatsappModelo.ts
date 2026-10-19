@@ -94,21 +94,91 @@ export function textoNumerado(t: string): string {
   return `${t}\n\nResponda com o número:\n1 - CONFIRMAR\n2 - REMARCAR\n3 - CANCELAR`
 }
 
-// ---------- Etapa 11A: automações de ciclo (espelho de whatsapp_automacao_padrao / whatsapp__ciclo_um) ----------
+// ---------- Etapa 11A/11B: automações de ciclo (espelho de whatsapp_automacao_padrao / whatsapp__ciclo_um) ----------
 export type TipoAutomacao = 'inclusao_agenda' | 'pre_atendimento' | 'pos_atendimento'
+  | 'nps' | 'avaliacao_google' | 'aniversario' | 'indicacao' | 'atualizacao_cadastral' | 'questionario'
 import { AVISO_SAIR } from '../../supabase/functions/_shared/whatsappCiclo'
 export { BOTAO_SAIR, separarAvisoSaida } from '../../supabase/functions/_shared/whatsappCiclo'
 export { AVISO_SAIR }
-export const AUTOMACOES_PADRAO: Record<TipoAutomacao, { nome: string; deslocamento: number; horario: string | null; filtro: string[] | null; aviso: boolean; texto: string }> = {
+export interface PadraoAutomacao {
+  nome: string; deslocamento: number; horario: string | null; filtro: string[] | null; aviso: boolean; texto: string
+  primeiraVez?: boolean; promotor?: string; neutro?: string; detrator?: string
+}
+export const AUTOMACOES_PADRAO: Record<TipoAutomacao, PadraoAutomacao> = {
   inclusao_agenda: { nome: 'Inclusão na agenda', deslocamento: 5, horario: null, filtro: null, aviso: false,
     texto: 'Olá, {primeiro_nome}! Seu agendamento foi realizado: {tipo} com {medico} em {data_hora}. Qualquer alteração, fale com a nossa equipe.' },
   pre_atendimento: { nome: 'Pré-atendimento', deslocamento: 1440, horario: '18:00', filtro: ['Exame', 'Procedimento'], aviso: false,
     texto: 'Olá, {primeiro_nome}! Lembrete do seu atendimento: {tipo} com {medico} em {data_hora}. Orientações: [escreva aqui as orientações de preparo].' },
   pos_atendimento: { nome: 'Pós-atendimento', deslocamento: 120, horario: null, filtro: null, aviso: true,
     texto: 'Olá, {primeiro_nome}! Foi um prazer atender você hoje. Se precisar de algo, estamos à disposição. Cuide-se! 💚' },
+  nps: { nome: 'Pesquisa de satisfação (NPS)', deslocamento: 1440, horario: null, filtro: null, aviso: true,
+    texto: 'Olá, {primeiro_nome}! Sua opinião é muito importante para nós. Em uma escala de 0 a 10, o quanto você recomendaria {empresa} a amigos ou familiares? Responda apenas com o número.',
+    promotor: 'Muito obrigado pela nota, {primeiro_nome}! Ficamos muito felizes. Se puder, deixe sua avaliação no Google: {link_google}',
+    neutro: 'Obrigado pela sua resposta, {primeiro_nome}! Vamos continuar trabalhando para melhorar.',
+    detrator: 'Obrigado por nos contar, {primeiro_nome}. Sentimos muito que sua experiência não tenha sido a melhor. Se quiser, responda aqui com o que podemos melhorar.' },
+  avaliacao_google: { nome: 'Avaliação no Google', deslocamento: 1440, horario: null, filtro: null, aviso: true,
+    texto: 'Olá, {primeiro_nome}! Ficamos felizes em atender você. Se puder, deixe sua avaliação no Google, isso ajuda muito: {link_google}' },
+  aniversario: { nome: 'Aniversário', deslocamento: 0, horario: '09:00', filtro: null, aviso: true,
+    texto: 'Feliz aniversário, {primeiro_nome}! 🎉 A equipe {empresa} deseja muita saúde e alegria hoje e sempre.' },
+  indicacao: { nome: 'Indicação', deslocamento: 2880, horario: null, filtro: null, aviso: true,
+    texto: 'Olá, {primeiro_nome}! Gostou do nosso atendimento? Indique {empresa} para um amigo ou familiar: {link_indicacao}. Ele será muito bem recebido! 💚' },
+  atualizacao_cadastral: { nome: 'Atualização cadastral', deslocamento: 60, horario: null, filtro: null, aviso: true, primeiraVez: true,
+    texto: 'Olá, {primeiro_nome}! Para manter seu cadastro sempre atualizado, acesse: {link_cadastro}. Leva menos de 2 minutos.' },
+  questionario: { nome: 'Questionário', deslocamento: 60, horario: null, filtro: null, aviso: true,
+    texto: 'Olá, {primeiro_nome}! Pedimos 2 minutos para responder este questionário: {link_questionario}. Sua resposta nos ajuda a cuidar melhor de você.' },
 }
 export const TIPO_AUTOMACAO_LABEL: Record<TipoAutomacao, string> = {
   inclusao_agenda: 'Inclusão na agenda', pre_atendimento: 'Pré-atendimento', pos_atendimento: 'Pós-atendimento',
+  nps: 'Pesquisa de satisfação (NPS)', avaliacao_google: 'Avaliação no Google', aniversario: 'Aniversário',
+  indicacao: 'Indicação', atualizacao_cadastral: 'Atualização cadastral', questionario: 'Questionário',
+}
+/** Tipos disparados ao finalizar o atendimento. */
+export const TIPOS_POS: TipoAutomacao[] = ['pos_atendimento', 'nps', 'avaliacao_google', 'indicacao', 'atualizacao_cadastral', 'questionario']
+
+// ---------- Etapa 11B: links e {empresa} (espelho de whatsapp_render_links / whatsapp_automacao_link_faltando) ----------
+export type ChaveLink = 'link_google' | 'link_indicacao' | 'link_cadastro' | 'link_questionario'
+export const CHAVES_LINK: ChaveLink[] = ['link_google', 'link_indicacao', 'link_cadastro', 'link_questionario']
+export type Links = Partial<Record<ChaveLink, string | null>>
+export const VARIAVEIS_RELACIONAMENTO = [
+  { chave: '{empresa}', desc: 'nome da empresa' },
+  { chave: '{link_google}', desc: 'link de avaliação no Google' },
+  { chave: '{link_indicacao}', desc: 'link de indicação' },
+  { chave: '{link_cadastro}', desc: 'link de atualização cadastral' },
+  { chave: '{link_questionario}', desc: 'link do questionário' },
+] as const
+
+export function renderLinks(texto: string, empresa: string | null | undefined, links: Links): string {
+  let r = (texto ?? '').split('{empresa}').join(empresa ?? '')
+  for (const k of CHAVES_LINK) {
+    const v = (links[k] ?? '').trim()
+    r = v ? r.split(`{${k}}`).join(v) : r.replace(new RegExp(`\\s*[^.!?]*\\{${k}\\}[^.!?]*[.!?]?`, 'g'), '')
+  }
+  return r
+}
+export function linkFaltando(texto: string, links: Links): ChaveLink | null {
+  return CHAVES_LINK.find(k => (texto ?? '').includes(`{${k}}`) && !(links[k] ?? '').trim()) ?? null
+}
+export function validarLink(v: string): string | null {
+  const t = v.trim()
+  if (!t) return null
+  if (t.length > 500) return 'Máximo de 500 caracteres.'
+  if (!/^https:\/\//.test(t)) return 'O link precisa começar com https://'
+  return null
+}
+export function ehDominioGoogle(v: string): boolean {
+  try {
+    const h = new URL(v.trim()).hostname.toLowerCase()
+    return /(^|\.)google\.[a-z.]+$/.test(h) || h === 'g.page' || h.endsWith('.g.page') || h === 'goo.gl' || h === 'maps.app.goo.gl'
+  } catch { return false }
+}
+export function categoriaNps(nota: number): 'promotor' | 'neutro' | 'detrator' {
+  return nota >= 9 ? 'promotor' : nota >= 7 ? 'neutro' : 'detrator'
+}
+/** NPS = % promotores − % detratores, arredondado, de −100 a 100. */
+export function calcularNps(notas: number[]): number | null {
+  if (!notas.length) return null
+  const p = notas.filter(n => n >= 9).length, d = notas.filter(n => n <= 6).length
+  return Math.round(((p - d) / notas.length) * 100)
 }
 
 /** Corpo final de uma mensagem de ciclo (sem cabeçalho), igual ao banco. */
@@ -127,6 +197,7 @@ function fmtDur(min: number) {
 /** Descrição humana de quando a regra envia. */
 export function descreverQuando(tipo: TipoAutomacao, min: number, horario?: string | null): string {
   const hr = horario ? String(horario).slice(0, 5) : null
+  if (tipo === 'aniversario') return `no dia do aniversário, às ${hr ?? '09:00'}`
   if (tipo === 'pre_atendimento') {
     if (hr) {
       const dias = Math.round(min / 1440)
@@ -135,7 +206,7 @@ export function descreverQuando(tipo: TipoAutomacao, min: number, horario?: stri
     }
     return min === 0 ? 'no horário do atendimento' : `${fmtDur(min)} antes do atendimento`
   }
-  const base = tipo === 'pos_atendimento' ? 'de finalizar o atendimento' : 'de criar o agendamento'
+  const base = TIPOS_POS.includes(tipo) ? 'de finalizar o atendimento' : 'de criar o agendamento'
   const q = min === 0 ? `logo depois ${base}` : `${fmtDur(min)} depois ${base}`
   return hr ? `${q}, às ${hr}` : q
 }

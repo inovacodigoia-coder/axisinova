@@ -13,21 +13,34 @@ import { useAuth } from '@/context/AuthContext'
 import {
   VARIAVEIS_MODELO, AUTOMACOES_PADRAO, TIPO_AUTOMACAO_LABEL, type TipoAutomacao, textoCiclo, comCabecalho,
   variaveisDesconhecidas, descreverQuando, temMarcadorOrientacao, limparTexto,
-  separarAvisoSaida, BOTAO_SAIR,
+  separarAvisoSaida, BOTAO_SAIR, VARIAVEIS_RELACIONAMENTO, renderLinks, linkFaltando, validarLink, ehDominioGoogle,
+  CHAVES_LINK, type ChaveLink, type Links, TIPOS_POS,
 } from '@/lib/whatsappModelo'
 
 interface Regra {
   id: string; tipo: TipoAutomacao; nome: string; ativo: boolean; deslocamento_minutos: number; horario_fixo: string | null
   filtro_tipos_atendimento: string[] | null; filtro_medicos: string[] | null; texto: string; incluir_aviso_saida: boolean
   ordem: number; padrao: boolean
+  filtro_primeira_vez: boolean | null; filtro_apenas_adultos: boolean | null; meses_sem_atendimento_max: number | null
+  intervalo_minimo_dias: number | null; resposta_promotor: string | null; resposta_neutro: string | null; resposta_detrator: string | null
 }
 type Unidade = 'minutos' | 'horas' | 'dias'
-const TIPOS: TipoAutomacao[] = ['inclusao_agenda', 'pre_atendimento', 'pos_atendimento']
+const TIPOS: TipoAutomacao[] = ['inclusao_agenda', 'pre_atendimento', 'pos_atendimento', 'nps', 'avaliacao_google', 'aniversario', 'indicacao', 'atualizacao_cadastral', 'questionario']
+const LINK_LABEL: Record<ChaveLink, string> = {
+  link_google: 'Avaliação no Google', link_indicacao: 'Indicação', link_cadastro: 'Atualização cadastral', link_questionario: 'Questionário',
+}
+const RELAC = (t: TipoAutomacao) => !['inclusao_agenda', 'pre_atendimento'].includes(t)
 const TIPOS_ATEND = ['Consulta', 'Retorno', 'Exame', 'Procedimento']
 const DESCR: Record<TipoAutomacao, string> = {
   inclusao_agenda: 'Avisa o paciente logo depois que o agendamento é criado.',
   pre_atendimento: 'Lembrete com orientações antes do atendimento.',
   pos_atendimento: 'Mensagem de cuidado depois que o atendimento é finalizado.',
+  nps: 'Pergunta a nota de 0 a 10 e responde conforme a nota. Notas baixas avisam os gestores no sino.',
+  avaliacao_google: 'Convida o paciente a avaliar a clínica no Google.',
+  aniversario: 'Parabéns no dia do aniversário, para pacientes atendidos recentemente.',
+  indicacao: 'Convida o paciente a indicar a clínica.',
+  atualizacao_cadastral: 'Envia o link para o paciente atualizar o cadastro.',
+  questionario: 'Envia o link de um questionário.',
 }
 const EXEMPLO = { paciente: 'Maria Exemplo', tipo: 'Exame', primeiraVez: false, medico: 'Dra. Juliana Prado', dataHora: '2026-10-21T12:30:00Z' }
 
@@ -37,7 +50,8 @@ function emUnidade(min: number): { v: number; u: Unidade } {
   return { v: min, u: 'minutos' }
 }
 const paraMin = (v: number, u: Unidade) => Math.round(v * (u === 'dias' ? 1440 : u === 'horas' ? 60 : 1))
-const msgErro = (e: any) => /Edite as orientações/.test(e?.message ?? '') ? 'Edite as orientações antes de ativar.' : 'Não foi possível salvar.'
+const msgErro = (e: any) => /Edite as orientações|Preencha o link/.test(e?.message ?? '') ? String(e.message) : 'Não foi possível salvar.'
+const msgLink = (k: ChaveLink) => `Preencha o link de ${LINK_LABEL[k]} na seção Links antes de ativar.`
 
 export function AutomacoesTab({ companyId }: { companyId: string }) {
   const [regras, setRegras] = useState<Regra[] | null>(null)
@@ -46,13 +60,25 @@ export function AutomacoesTab({ companyId }: { companyId: string }) {
   const [editar, setEditar] = useState<Regra | 'novo' | null>(null)
   const [confPausa, setConfPausa] = useState<boolean | null>(null)
   const [lim, setLim] = useState({ dia: '1', semana: '3' })
+  const [links, setLinks] = useState<Links>({})
+  const [linksEd, setLinksEd] = useState<Record<ChaveLink, string>>({ link_google: '', link_indicacao: '', link_cadastro: '', link_questionario: '' })
+  const [empresa, setEmpresa] = useState('')
 
   const load = useCallback(async () => {
-    const [{ data: r }, { data: m }, { data: c }] = await Promise.all([
+    const [{ data: r }, { data: m }, { data: c }, { data: l }, { data: e }] = await Promise.all([
       supabase.from('whatsapp_automacoes' as any).select('*').eq('company_id', companyId).order('tipo').order('ordem').order('criado_em'),
       supabase.from('doctors').select('id, name').eq('company_id', companyId).order('name'),
       supabase.rpc('whatsapp_ciclo_config' as any, {}),
+      supabase.rpc('whatsapp_links_config' as any, {}),
+      supabase.from('companies').select('name, nome_fantasia').eq('id', companyId).maybeSingle(),
     ])
+    const ll = l as any
+    if (ll?.ok) {
+      const v: Links = {}; const ed: any = {}
+      for (const k of CHAVES_LINK) { v[k] = ll[k] ?? null; ed[k] = ll[k] ?? '' }
+      setLinks(v); setLinksEd(ed)
+    }
+    setEmpresa(((e as any)?.nome_fantasia || (e as any)?.name || '').trim())
     setRegras(((r ?? []) as unknown) as Regra[])
     setMedicos(((m ?? []) as any[]).map(x => ({ id: x.id, name: x.name })))
     const cc = c as any
@@ -62,6 +88,8 @@ export function AutomacoesTab({ companyId }: { companyId: string }) {
 
   const alternar = async (r: Regra, ativo: boolean) => {
     if (ativo && temMarcadorOrientacao(r.texto)) { toast.error('Edite as orientações antes de ativar.'); return }
+    const falta = ativo ? linkFaltando(r.texto, links) : null
+    if (falta) { toast.error(msgLink(falta)); return }
     const { error } = await supabase.from('whatsapp_automacoes' as any).update({ ativo } as any).eq('id', r.id)
     if (error) toast.error(msgErro(error)); else { toast.success(ativo ? 'Regra ativada.' : 'Regra desativada.'); void load() }
   }
@@ -70,6 +98,18 @@ export function AutomacoesTab({ companyId }: { companyId: string }) {
     if (error || !(data as any)?.ok) { toast.error('Não foi possível salvar.'); return }
     setCfg(data as any); toast.success('Configuração salva.')
   }
+  const salvarLinks = async () => {
+    for (const k of CHAVES_LINK) { const er = validarLink(linksEd[k]); if (er) { toast.error(`${LINK_LABEL[k]}: ${er}`); return } }
+    const { data, error } = await supabase.rpc('whatsapp_links_config' as any, { p_links: linksEd } as any)
+    const d = data as any
+    if (error || !d?.ok) {
+      toast.error(d?.codigo === 'LINK_EM_USO' ? `O link de ${LINK_LABEL[d.campo as ChaveLink]} é usado por uma regra ativa. Desative a regra antes de apagar o link.`
+        : d?.codigo === 'LINK_INVALIDO' ? 'O link precisa começar com https://' : 'Não foi possível salvar os links.')
+      return
+    }
+    toast.success('Links salvos.'); void load()
+  }
+  const npsAtivo = regras?.some(r => r.tipo === 'nps' && r.ativo) ?? false
   const nomeMedico = (id: string) => medicos.find(m => m.id === id)?.name ?? 'Médico'
 
   if (!regras || !cfg) return <div className="flex justify-center py-10"><Loader2 className="h-6 w-6 animate-spin text-muted-foreground" /></div>
@@ -101,6 +141,30 @@ export function AutomacoesTab({ companyId }: { companyId: string }) {
         </div>
       </div>
 
+      <div className="space-y-3 rounded-xl border border-border bg-card p-4">
+        <div>
+          <p className="font-semibold text-foreground">Links</p>
+          <p className="text-xs text-muted-foreground">Usados nas mensagens pelas variáveis {'{link_google}'}, {'{link_indicacao}'}, {'{link_cadastro}'} e {'{link_questionario}'}. Uma regra que usa um link só pode ser ativada com o link preenchido.</p>
+        </div>
+        {CHAVES_LINK.map(k => {
+          const v = linksEd[k]; const er = validarLink(v)
+          return (
+            <div key={k}>
+              <label className="text-xs text-muted-foreground">{LINK_LABEL[k]}</label>
+              <div className="mt-1 flex gap-2">
+                <Input value={v} maxLength={500} placeholder="https://" onChange={e => setLinksEd(x => ({ ...x, [k]: e.target.value }))} className="h-10" />
+                <Button variant="outline" className="h-10 shrink-0" disabled={!v.trim() || !!er} onClick={() => window.open(v.trim(), '_blank', 'noopener,noreferrer')}>Testar link</Button>
+              </div>
+              {er && <p className="mt-1 text-xs text-destructive">{er}</p>}
+              {!er && k === 'link_google' && v.trim() && !ehDominioGoogle(v) && <p className="mt-1 text-xs text-warning">Este endereço não parece ser do Google. Confira antes de salvar.</p>}
+            </div>
+          )
+        })}
+        <div className="flex justify-end">
+          <Button variant="outline" className="h-10" disabled={CHAVES_LINK.every(k => (links[k] ?? '') === linksEd[k].trim())} onClick={() => void salvarLinks()}>Salvar links</Button>
+        </div>
+      </div>
+
       <div className="flex justify-end">
         <Button onClick={() => setEditar('novo')} className="h-11 gradient-bg text-primary-foreground"><Plus className="mr-2 h-4 w-4" />Nova regra</Button>
       </div>
@@ -119,10 +183,15 @@ export function AutomacoesTab({ companyId }: { companyId: string }) {
                 <div className="flex flex-wrap gap-1">
                   {(r.filtro_tipos_atendimento ?? []).map(x => <span key={x} className="rounded-full bg-muted px-2 py-0.5 text-[11px] text-foreground">{x}</span>)}
                   {(r.filtro_medicos ?? []).map(x => <span key={x} className="rounded-full bg-muted px-2 py-0.5 text-[11px] text-foreground">{nomeMedico(x)}</span>)}
-                  {!r.filtro_tipos_atendimento?.length && !r.filtro_medicos?.length && <span className="text-[11px] text-muted-foreground">Todos os atendimentos</span>}
+                  {r.filtro_primeira_vez && <span className="rounded-full bg-muted px-2 py-0.5 text-[11px] text-foreground">Só 1ª vez</span>}
+                  {r.tipo !== 'aniversario' && !r.filtro_tipos_atendimento?.length && !r.filtro_medicos?.length && <span className="text-[11px] text-muted-foreground">Todos os atendimentos</span>}
                   {r.incluir_aviso_saida && <span className="rounded-full border border-border px-2 py-0.5 text-[11px] text-muted-foreground">Botão para parar</span>}
                 </div>
                 {temMarcadorOrientacao(r.texto) && <p className="flex items-center gap-1 text-xs text-warning"><AlertTriangle className="h-3.5 w-3.5" />Edite as orientações antes de ativar.</p>}
+                {linkFaltando(r.texto, links) && <p className="flex items-center gap-1 text-xs text-warning"><AlertTriangle className="h-3.5 w-3.5" />Falta o link de {LINK_LABEL[linkFaltando(r.texto, links)!]} para ativar.</p>}
+                {r.tipo === 'avaliacao_google' && <p className={`text-xs ${npsAtivo ? 'text-warning' : 'text-muted-foreground'}`}>Quando a pesquisa de satisfação (NPS) estiver ativa para o mesmo atendimento, esta mensagem não é enviada: o convite ao Google vai só para quem dá nota 9 ou 10.</p>}
+                {r.tipo === 'nps' && <p className="text-xs text-muted-foreground">No máximo 1 pesquisa a cada {r.intervalo_minimo_dias ?? 90} dias por paciente.</p>}
+                {r.tipo === 'aniversario' && <p className="text-xs text-muted-foreground">{r.filtro_apenas_adultos !== false ? 'Só maiores de 18 anos, ' : ''}atendidos nos últimos {r.meses_sem_atendimento_max ?? 24} meses.</p>}
               </div>
               <div className="flex shrink-0 items-center gap-3">
                 <span className="text-xs text-muted-foreground">{r.ativo ? 'Ativa' : 'Desativada'}</span>
@@ -135,7 +204,7 @@ export function AutomacoesTab({ companyId }: { companyId: string }) {
         </section>
       ))}
 
-      <Editor alvo={editar} companyId={companyId} medicos={medicos} onClose={() => setEditar(null)} onSalvo={() => { setEditar(null); void load() }} />
+      <Editor alvo={editar} companyId={companyId} medicos={medicos} links={links} empresa={empresa} onClose={() => setEditar(null)} onSalvo={() => { setEditar(null); void load() }} />
 
       <AlertDialog open={confPausa !== null} onOpenChange={o => !o && setConfPausa(null)}>
         <AlertDialogContent>
@@ -156,8 +225,8 @@ export function AutomacoesTab({ companyId }: { companyId: string }) {
   )
 }
 
-function Editor({ alvo, companyId, medicos, onClose, onSalvo }: {
-  alvo: Regra | 'novo' | null; companyId: string; medicos: { id: string; name: string }[]; onClose: () => void; onSalvo: () => void
+function Editor({ alvo, companyId, medicos, links, empresa, onClose, onSalvo }: {
+  alvo: Regra | 'novo' | null; companyId: string; medicos: { id: string; name: string }[]; links: Links; empresa: string; onClose: () => void; onSalvo: () => void
 }) {
   const { user } = useAuth() as any
   const responsavel: string = user?.name ?? user?.full_name ?? 'Seu nome'
@@ -169,6 +238,9 @@ function Editor({ alvo, companyId, medicos, onClose, onSalvo }: {
   const [texto, setTexto] = useState(''); const [aviso, setAviso] = useState(false); const [ativo, setAtivo] = useState(false)
   const [salvando, setSalvando] = useState(false); const [excluir, setExcluir] = useState(false)
   const [foneTeste, setFoneTeste] = useState(''); const [enviando, setEnviando] = useState(false)
+  const [primeiraVez, setPrimeiraVez] = useState(false); const [adultos, setAdultos] = useState(true); const [meses, setMeses] = useState('24')
+  const [intervalo, setIntervalo] = useState('90')
+  const [resp, setResp] = useState({ promotor: '', neutro: '', detrator: '' })
   const regra = alvo && alvo !== 'novo' ? alvo : null
 
   const preencher = useCallback((t: TipoAutomacao, r?: Regra | null) => {
@@ -179,6 +251,9 @@ function Editor({ alvo, companyId, medicos, onClose, onSalvo }: {
     setHorario(String((r ? r.horario_fixo : p.horario) ?? '').slice(0, 5))
     setFTipos(r ? r.filtro_tipos_atendimento ?? [] : p.filtro ?? []); setFMed(r?.filtro_medicos ?? [])
     setTexto(r?.texto ?? p.texto); setAviso(r ? r.incluir_aviso_saida : p.aviso); setAtivo(r?.ativo ?? false)
+    setPrimeiraVez(r ? !!r.filtro_primeira_vez : !!p.primeiraVez); setAdultos(r ? r.filtro_apenas_adultos !== false : true)
+    setMeses(String(r?.meses_sem_atendimento_max ?? 24)); setIntervalo(String(r?.intervalo_minimo_dias ?? 90))
+    setResp({ promotor: r?.resposta_promotor ?? p.promotor ?? '', neutro: r?.resposta_neutro ?? p.neutro ?? '', detrator: r?.resposta_detrator ?? p.detrator ?? '' })
   }, [])
   useEffect(() => {
     if (alvo && alvo !== 'novo') preencher(alvo.tipo, alvo)
@@ -186,8 +261,12 @@ function Editor({ alvo, companyId, medicos, onClose, onSalvo }: {
   }, [alvo, preencher])
 
   const minutos = paraMin(Number(valor), unid)
-  const desconhecidas = useMemo(() => variaveisDesconhecidas(texto), [texto])
-  const preview = useMemo(() => comCabecalho(responsavel, separarAvisoSaida(textoCiclo(texto, EXEMPLO, aviso)).texto), [texto, aviso, responsavel])
+  const relac = tipo ? RELAC(tipo) : false
+  const extras = useMemo(() => new Set<string>(VARIAVEIS_RELACIONAMENTO.map(v => v.chave)), [])
+  const desconhecidas = useMemo(() => variaveisDesconhecidas(texto).filter(v => !(relac && extras.has(v))), [texto, relac, extras])
+  const cab = tipo === 'aniversario' ? empresa : responsavel
+  const preview = useMemo(() => comCabecalho(cab, separarAvisoSaida(textoCiclo(relac ? renderLinks(texto, empresa, links) : texto, EXEMPLO, aviso)).texto), [texto, aviso, cab, relac, empresa, links])
+  const falta = linkFaltando(texto, links)
   const marcador = temMarcadorOrientacao(texto)
 
   const salvar = async () => {
@@ -197,10 +276,18 @@ function Editor({ alvo, companyId, medicos, onClose, onSalvo }: {
     if (!nome.trim()) { toast.error('Informe o nome da regra.'); return }
     if (!Number.isFinite(minutos) || minutos < 0 || minutos > 43200) { toast.error('O prazo deve ser de 0 a 30 dias.'); return }
     if (ativo && temMarcadorOrientacao(t)) { toast.error('Edite as orientações antes de ativar.'); return }
+    if (ativo && falta) { toast.error(msgLink(falta)); return }
+    const m = Number(meses), iv = Number(intervalo)
+    if (tipo === 'aniversario' && !(m >= 1 && m <= 120)) { toast.error('Meses desde o último atendimento: de 1 a 120.'); return }
+    if (tipo === 'nps' && !(iv >= 1 && iv <= 730)) { toast.error('Intervalo entre pesquisas: de 1 a 730 dias.'); return }
+    if (tipo === 'nps' && Object.values(resp).some(x => !x.trim() || x.length > 1000)) { toast.error('Preencha as três respostas (até 1000 caracteres).'); return }
     const dados: any = {
       nome: nome.trim().slice(0, 80), ativo, deslocamento_minutos: minutos, horario_fixo: horario || null,
       filtro_tipos_atendimento: fTipos.length ? fTipos : null, filtro_medicos: fMed.length ? fMed : null,
       texto: t, incluir_aviso_saida: aviso,
+      ...(tipo === 'aniversario' ? { filtro_apenas_adultos: adultos, meses_sem_atendimento_max: m, horario_fixo: horario || '09:00', deslocamento_minutos: 0, filtro_tipos_atendimento: null, filtro_medicos: null } : {}),
+      ...(tipo && TIPOS_POS.includes(tipo) && tipo !== 'pos_atendimento' ? { filtro_primeira_vez: primeiraVez || null } : {}),
+      ...(tipo === 'nps' ? { intervalo_minimo_dias: iv, resposta_promotor: limparTexto(resp.promotor), resposta_neutro: limparTexto(resp.neutro), resposta_detrator: limparTexto(resp.detrator) } : {}),
     }
     setSalvando(true)
     const { error } = regra
@@ -256,6 +343,22 @@ function Editor({ alvo, companyId, medicos, onClose, onSalvo }: {
             <label className="block text-sm text-foreground">Nome
               <Input value={nome} maxLength={80} onChange={e => setNome(e.target.value)} className="mt-1 h-11" />
             </label>
+            {tipo === 'aniversario' ? (
+              <div className="space-y-3">
+                <div className="flex items-center gap-2">
+                  <span className="text-sm text-foreground">Horário de envio</span>
+                  <Input type="time" value={horario || '09:00'} onChange={e => setHorario(e.target.value)} className="h-11 w-32" />
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-sm text-foreground">Apenas maiores de 18 anos</span>
+                  <Switch checked={adultos} onCheckedChange={setAdultos} />
+                </div>
+                <label className="block text-sm text-foreground">Atendido nos últimos (meses)
+                  <Input type="number" min={1} max={120} value={meses} onChange={e => setMeses(e.target.value)} className="mt-1 h-11 w-28" />
+                </label>
+                <p className="text-xs text-muted-foreground">Uma vez por ano. Se não sair até 23:59 do dia, é cancelada.</p>
+              </div>
+            ) : <>
             <div>
               <p className="text-sm text-foreground">Quando enviar</p>
               <div className="mt-1 flex items-center gap-2">
@@ -263,7 +366,7 @@ function Editor({ alvo, companyId, medicos, onClose, onSalvo }: {
                 <select value={unid} onChange={e => setUnid(e.target.value as Unidade)} className="h-11 rounded-md border border-input bg-background px-3 text-sm">
                   <option value="minutos">minutos</option><option value="horas">horas</option><option value="dias">dias</option>
                 </select>
-                <span className="text-sm text-muted-foreground">{tipo === 'pre_atendimento' ? 'antes do atendimento' : tipo === 'pos_atendimento' ? 'depois de finalizar' : 'depois de criar'}</span>
+                <span className="text-sm text-muted-foreground">{tipo === 'pre_atendimento' ? 'antes do atendimento' : TIPOS_POS.includes(tipo) ? 'depois de finalizar' : 'depois de criar'}</span>
               </div>
               <div className="mt-2 flex items-center gap-2">
                 <span className="text-sm text-muted-foreground">Horário fixo (opcional)</span>
@@ -291,10 +394,22 @@ function Editor({ alvo, companyId, medicos, onClose, onSalvo }: {
                 {medicos.length === 0 && <p className="text-xs text-muted-foreground">Nenhum médico cadastrado.</p>}
               </div>
             </div>
+            {TIPOS_POS.includes(tipo) && tipo !== 'pos_atendimento' && (
+              <div className="flex items-center justify-between">
+                <span className="text-sm text-foreground">Só para pacientes de 1ª vez</span>
+                <Switch checked={primeiraVez} onCheckedChange={setPrimeiraVez} />
+              </div>
+            )}
+            {tipo === 'nps' && (
+              <label className="block text-sm text-foreground">Intervalo mínimo entre pesquisas (dias)
+                <Input type="number" min={1} max={730} value={intervalo} onChange={e => setIntervalo(e.target.value)} className="mt-1 h-11 w-28" />
+              </label>
+            )}
+            </>}
             <div>
               <p className="text-sm text-foreground">Texto</p>
               <div className="mt-1 flex flex-wrap gap-1">
-                {VARIAVEIS_MODELO.map(v => (
+                {[...VARIAVEIS_MODELO, ...(relac ? VARIAVEIS_RELACIONAMENTO : [])].map(v => (
                   <button key={v.chave} title={v.desc} onClick={() => inserirVar(v.chave)} className="rounded-full bg-muted px-2 py-1 text-[11px] text-foreground">{v.chave}</button>
                 ))}
               </div>
@@ -302,14 +417,26 @@ function Editor({ alvo, companyId, medicos, onClose, onSalvo }: {
               <p className="text-right text-[11px] text-muted-foreground">{texto.length}/1000</p>
               {desconhecidas.length > 0 && <p className="text-xs text-warning">Variável desconhecida: {desconhecidas.join(', ')} (será enviada como está).</p>}
               {marcador && <p className="text-xs text-warning">Edite as orientações antes de ativar.</p>}
+              {falta && <p className="text-xs text-warning">Preencha o link de {LINK_LABEL[falta]} na seção Links antes de ativar.</p>}
             </div>
+            {tipo === 'nps' && (
+              <div className="space-y-2 rounded-xl border border-border p-3">
+                <p className="text-sm font-medium text-foreground">Respostas automáticas à nota</p>
+                <p className="text-xs text-muted-foreground">Saem logo após a nota, sem contar no limite. A frase com {'{link_google}'} some quando não há link do Google.</p>
+                {([['promotor', 'Nota 9 ou 10'], ['neutro', 'Nota 7 ou 8'], ['detrator', 'Nota de 0 a 6']] as const).map(([k, l]) => (
+                  <label key={k} className="block text-xs text-muted-foreground">{l}
+                    <Textarea rows={3} maxLength={1000} value={resp[k]} onChange={e => setResp(x => ({ ...x, [k]: e.target.value }))} className="mt-1 text-sm text-foreground" />
+                  </label>
+                ))}
+              </div>
+            )}
             <div className="flex items-center justify-between">
               <span className="text-sm text-foreground">Incluir botão para parar de receber</span>
               <Switch aria-label="Incluir botão para parar de receber" checked={aviso} onCheckedChange={setAviso} />
             </div>
             <div className="flex items-center justify-between">
               <span className="text-sm text-foreground">Regra ativa</span>
-              <Switch checked={ativo} onCheckedChange={v => { if (v && marcador) { toast.error('Edite as orientações antes de ativar.'); return } setAtivo(v) }} />
+              <Switch checked={ativo} onCheckedChange={v => { if (v && marcador) { toast.error('Edite as orientações antes de ativar.'); return } if (v && falta) { toast.error(msgLink(falta)); return } setAtivo(v) }} />
             </div>
             <div>
               <p className="text-xs text-muted-foreground">Pré-visualização (dados de exemplo)</p>
@@ -325,7 +452,7 @@ function Editor({ alvo, companyId, medicos, onClose, onSalvo }: {
             </div>
             <div className="space-y-2 rounded-xl border border-border p-3">
               <p className="text-sm font-medium text-foreground">Enviar teste desta regra</p>
-              <p className="text-xs text-muted-foreground">Usa dados fictícios (Maria Exemplo) e o texto atual, mesmo sem salvar.</p>
+              <p className="text-xs text-muted-foreground">Usa dados fictícios (Maria Exemplo) e o texto atual, mesmo sem salvar.{tipo === 'nps' ? ' Responder ao teste não registra nota.' : ''}</p>
               <div className="flex gap-2">
                 <Input inputMode="tel" placeholder="(84) 99999-9999" value={foneTeste} onChange={e => setFoneTeste(e.target.value)} className="h-11" />
                 <Button variant="outline" className="h-11" disabled={enviando} onClick={() => void testar()}>{enviando ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}</Button>
