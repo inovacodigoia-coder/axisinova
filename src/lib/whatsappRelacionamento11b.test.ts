@@ -4,7 +4,9 @@ import { readFileSync } from 'node:fs'
 import { PGlite } from '@electric-sql/pglite'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 
-const mig = readFileSync('drizzle/migrations/0100_whatsapp_relacionamento_11b.sql', 'utf8')
+const base = readFileSync('drizzle/migrations/0100_whatsapp_relacionamento_11b.sql', 'utf8')
+const fix = readFileSync('drizzle/migrations/0101_whatsapp_nps_processar_registro_vazio.sql', 'utf8')
+const mig = base
 const C = '00000000-0000-4000-8000-000000000001'
 const C2 = '00000000-0000-4000-8000-0000000000c2'
 const AG = '00000000-0000-4000-8000-000000000002'
@@ -14,11 +16,12 @@ const TEL = '5584999990000'
 let db: PGlite
 
 function fn(name: string) {
-  const start = mig.indexOf(`CREATE OR REPLACE FUNCTION public.${name}(`)
+  const src = fix.includes(`FUNCTION public.${name}(`) ? fix : mig
+  const start = src.indexOf(`CREATE OR REPLACE FUNCTION public.${name}(`)
   if (start < 0) throw new Error(`Função ausente: ${name}`)
-  const corpo = mig.indexOf('AS $$', start)
-  const fim = mig.indexOf('$$;', corpo + 5)
-  return mig.slice(start, fim + 3)
+  const corpo = src.indexOf('AS $$', start)
+  const fim = src.indexOf('$$;', corpo + 5)
+  return src.slice(start, fim + 3)
 }
 const clock = (t: string) => db.exec(`CREATE OR REPLACE FUNCTION public.fixture_now() RETURNS timestamptz LANGUAGE sql AS $$ SELECT '${t}'::timestamptz $$;`)
 const q = async (sql: string, p: unknown[] = []) => (await db.query<any>(sql, p)).rows
