@@ -15,3 +15,4 @@
 - Subdirectories have their own AGENTS.md (e.g. supabase/functions/); read it before changing files there.
 - Cycle automation stop buttons use shared whatsappCiclo helpers and the exact trailing SQL opt-out footer as the queued setting snapshot; webhook buttons call the existing opt-out RPC. Why: preserve queued preferences and confirmation eligibility without duplicating server rules.
 - SQL behavior tests use isolated PGlite fixtures and run with `bunx vitest run --config vitest.sql.config.ts`, separately from browser tests. Why: exercise deployed PostgreSQL functions without touching operational records or sending messages.
+- WhatsApp NPS: nota/comentário decididos só em whatsapp_nps_processar (service role, chamada pelo whatsapp-webhook antes da confirmação; tratada=false devolve ao fluxo 9B); links e {empresa} só via whatsapp_render_links, espelhado em renderLinks. Why: nenhuma resposta dupla e "1" de confirmação continua confirmando.

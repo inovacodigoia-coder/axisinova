@@ -708,6 +708,13 @@
       "when": 1792373715178,
       "tag": "0100_whatsapp_relacionamento_11b",
       "breakpoints": true
+    },
+    {
+      "idx": 101,
+      "version": "7",
+      "when": 1792374336096,
+      "tag": "0101_whatsapp_nps_processar_registro_vazio",
+      "breakpoints": true
     }
   ]
 }
