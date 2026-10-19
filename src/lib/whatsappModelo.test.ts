@@ -73,3 +73,23 @@ describe('automações de ciclo', () => {
     expect(temMarcadorOrientacao(AUTOMACOES_PADRAO.pos_atendimento.texto)).toBe(false)
   })
 })
+
+// Etapa 11B — espelho de whatsapp_render_links
+import { renderLinks, linkFaltando, calcularNps, categoriaNps } from './whatsappModelo'
+describe('relacionamento 11B', () => {
+  it('troca empresa e links', () => {
+    expect(renderLinks(AUTOMACOES_PADRAO.indicacao.texto, 'Clínica Sol', { link_indicacao: 'https://x.com/i' }))
+      .toBe('Olá, {primeiro_nome}! Gostou do nosso atendimento? Indique Clínica Sol para um amigo ou familiar: https://x.com/i. Ele será muito bem recebido! 💚')
+  })
+  it('sem link do Google, a frase some do agradecimento ao promotor', () => {
+    expect(renderLinks(AUTOMACOES_PADRAO.nps.promotor!, 'X', {})).toBe('Muito obrigado pela nota, {primeiro_nome}! Ficamos muito felizes.')
+  })
+  it('detecta link faltando', () => {
+    expect(linkFaltando(AUTOMACOES_PADRAO.avaliacao_google.texto, {})).toBe('link_google')
+    expect(linkFaltando(AUTOMACOES_PADRAO.aniversario.texto, {})).toBeNull()
+  })
+  it('NPS e categorias', () => {
+    expect(calcularNps([10, 9, 8, 5])).toBe(25)
+    expect([categoriaNps(9), categoriaNps(7), categoriaNps(6)]).toEqual(['promotor', 'neutro', 'detrator'])
+  })
+})
