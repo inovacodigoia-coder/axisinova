@@ -670,6 +670,12 @@ function PainelContato({ contato, numero, podeGerenciar, podeExcluir, onMudou, o
     setOptout((data as any)?.ok ? !!(data as any).optout : null)
   }, [contato?.id])
   useEffect(() => { setOptout(null); void carregarOptout() }, [carregarOptout])
+  const [nps, setNps] = useState<{ nota: number; respondida_em: string } | null>(null)
+  useEffect(() => {
+    setNps(null)
+    if (!contato?.id) return
+    void supabase.rpc('inovachat_nps_ultima' as any, { p_contato: contato.id }).then(({ data }) => setNps((data as any) ?? null))
+  }, [contato?.id])
   const definirOptout = async (bloquear: boolean) => {
     if (!contato) return
     const { data, error } = await supabase.rpc('inovachat_optout_definir' as any, { p_contato: contato.id, p_bloquear: bloquear })
@@ -724,6 +730,9 @@ function PainelContato({ contato, numero, podeGerenciar, podeExcluir, onMudou, o
           </>
         )}
       </div>
+      {nps && (
+        <p className="text-xs text-muted-foreground">Última nota de satisfação: <strong className="text-foreground">{nps.nota}</strong> ({new Date(nps.respondida_em).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', timeZone: 'America/Fortaleza' })})</p>
+      )}
       {optout === true && (
         <div className="space-y-2 rounded-lg border border-warning/40 bg-warning/10 p-3">
           <p className="text-xs font-medium text-foreground">Não quer receber mensagens de relacionamento</p>

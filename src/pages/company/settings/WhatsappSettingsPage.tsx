@@ -15,6 +15,7 @@ import {
   AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
 } from '@/components/ui/alert-dialog'
 import { MensagensTab } from '@/components/whatsapp/MensagensTab'
+import { SatisfacaoTab } from '@/components/whatsapp/SatisfacaoTab'
 import { AutomacoesTab } from '@/components/whatsapp/AutomacoesTab'
 import { JanelaEnvio } from '@/components/whatsapp/JanelaEnvio'
 import { EnvioAutomaticoEmpresa } from '@/components/whatsapp/EnvioAutomaticoEmpresa'
@@ -75,10 +76,11 @@ export default function WhatsappSettingsPage() {
   const [qrInst, setQrInst] = useState<Inst | null>(null)
 
   const companyId = user?.companyId ?? null
-  type Aba = 'numeros' | 'mensagens' | 'automacoes' | 'fila'
+  type Aba = 'numeros' | 'mensagens' | 'automacoes' | 'fila' | 'satisfacao'
   const [aba, setAba] = useState<Aba>('numeros')
   const [podeConfig, setPodeConfig] = useState(false)
   const [podeFila, setPodeFila] = useState(false)
+  const [podeSatis, setPodeSatis] = useState(false)
   const [msgDirty, setMsgDirty] = useState(false)
   const trocarAba = (a: Aba) => {
     if (aba === 'mensagens' && a !== aba && msgDirty && !window.confirm('Há alterações não salvas nas mensagens. Sair mesmo assim?')) return
@@ -91,13 +93,16 @@ export default function WhatsappSettingsPage() {
 
   const load = useCallback(async () => {
     if (!companyId) return
-    const [{ data: perm }, { data: permFila }] = await Promise.all([
+    const [{ data: perm }, { data: permFila }, { data: permGer }] = await Promise.all([
       supabase.rpc('whatsapp_tem_permissao' as any, { _perm: 'configuracoes.whatsapp' }),
       supabase.rpc('whatsapp_tem_permissao' as any, { _perm: 'whatsapp.fila' }),
+      supabase.rpc('inovachat_tem_permissao' as any, { _perm: 'inovachat.gerenciar' }),
     ])
-    setPodeConfig(!!perm); setPodeFila(!!permFila)
-    if (!perm && !permFila) { setEstado('sem_permissao'); return }
-    if (!perm) setAba('fila')
+    setPodeConfig(!!perm); setPodeFila(!!permFila); setPodeSatis(!!perm || !!permGer)
+    if (!perm && !permFila && !permGer) { setEstado('sem_permissao'); return }
+    const pedida = new URLSearchParams(window.location.search).get('aba')
+    if (pedida === 'satisfacao' && (perm || permGer)) setAba('satisfacao')
+    else if (!perm) setAba(permFila ? 'fila' : 'satisfacao')
     const [{ data: c }, { data: i }, { data: s }] = await Promise.all([
       supabase.from('companies').select('whatsapp_habilitado, whatsapp_numeros_autorizados').eq('id', companyId).maybeSingle(),
       supabase.from('whatsapp_instancias').select('*').eq('company_id', companyId).order('criado_em'),
@@ -167,15 +172,16 @@ export default function WhatsappSettingsPage() {
           </div>}
 
           <div className="flex gap-1 overflow-x-auto border-b border-border">
-            {([...(podeConfig ? ['numeros', 'mensagens', 'automacoes'] : []), ...(podeFila ? ['fila'] : [])] as Aba[]).map(a => (
+            {([...(podeConfig ? ['numeros', 'mensagens', 'automacoes'] : []), ...(podeFila ? ['fila'] : []), ...(podeSatis ? ['satisfacao'] : [])] as Aba[]).map(a => (
               <button key={a} onClick={() => trocarAba(a)}
                 className={`h-11 shrink-0 px-4 text-sm ${aba === a ? 'border-b-2 border-primary font-semibold text-foreground' : 'text-muted-foreground'}`}>
-                {a === 'numeros' ? 'Números' : a === 'mensagens' ? 'Mensagens' : a === 'automacoes' ? 'Automações' : 'Fila de envios'}
+                {a === 'numeros' ? 'Números' : a === 'mensagens' ? 'Mensagens' : a === 'automacoes' ? 'Automações' : a === 'fila' ? 'Fila de envios' : 'Satisfação'}
               </button>
             ))}
           </div>
 
           {aba === 'fila' && podeFila && companyId && <FilaEnviosTab companyId={companyId} />}
+          {aba === 'satisfacao' && podeSatis && companyId && <SatisfacaoTab companyId={companyId} />}
           {aba === 'automacoes' && podeConfig && companyId && <AutomacoesTab companyId={companyId} />}
           {aba === 'mensagens' && podeConfig && companyId && <MensagensTab companyId={companyId} onDirtyChange={setMsgDirty} />}
 
