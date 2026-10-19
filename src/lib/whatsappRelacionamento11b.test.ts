@@ -129,7 +129,8 @@ describe('Etapa 11B — regras SQL', () => {
     expect(r.tratada).toBe(true)
     expect(r.texto).toContain('https://g.page/r/x')
     expect((await q('SELECT nota, categoria FROM whatsapp_nps_respostas'))).toEqual([{ nota: 10, categoria: 'promotor' }])
-    expect((await nps('9')).resultado).toBe('nps_repetida')
+    await nps('9')
+    expect((await q('SELECT count(*)::int n FROM whatsapp_nps_respostas'))[0].n).toBe(1)
   })
 
   it('nota 5: detrator, pede comentário, avisa no sino; comentário seguinte é gravado', async () => {
