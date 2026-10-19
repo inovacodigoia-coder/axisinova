@@ -17,7 +17,7 @@ const RESP: Record<string, { l: string; c: string }> = {
   remarcar: { l: 'Pediu remarcar', c: 'bg-warning/15 text-warning' },
   cancelar: { l: 'Pediu cancelar', c: 'bg-destructive/10 text-destructive' },
 }
-const TIPO: Record<string, string> = { teste: 'Teste', confirmacao_agendamento: 'Confirmação', resposta_automatica: 'Resposta automática', ciclo_inclusao_agenda: 'Inclusão na agenda', ciclo_pre_atendimento: 'Pré-atendimento', ciclo_pos_atendimento: 'Pós-atendimento' }
+const TIPO: Record<string, string> = { teste: 'Teste', confirmacao_agendamento: 'Confirmação', resposta_automatica: 'Resposta automática', ciclo_inclusao_agenda: 'Inclusão na agenda', ciclo_pre_atendimento: 'Pré-atendimento', ciclo_pos_atendimento: 'Pós-atendimento', ciclo_nps: 'Pesquisa de satisfação', ciclo_avaliacao_google: 'Avaliação no Google', ciclo_aniversario: 'Aniversário', ciclo_indicacao: 'Indicação', ciclo_atualizacao_cadastral: 'Atualização cadastral', ciclo_questionario: 'Questionário' }
 const FORMATO: Record<string, string> = { botoes: 'Botões', texto_numerado: 'Texto numerado', texto: 'Texto' }
 type Numero = { instancia_id: string; apelido: string | null; enviadas_hoje: number; limite_diario: number | null }
 type Sub = 'proximas' | 'enviadas' | 'falhas'
@@ -43,6 +43,7 @@ const inicioHoje = () => { const d = new Date(new Date().toLocaleString('en-US',
 function erroLegivel(e: string | null) {
   if (!e) return 'Erro não informado'
   if (e === 'OPTOUT') return 'Paciente pediu para não receber'
+  if (e === 'EXPIRADA') return 'Prazo vencido'
   if (e === 'LIMITE_FREQUENCIA') return 'Limite de mensagens por paciente'
   if (e === 'AGENDAMENTO_NAO_ATIVO') return 'Agendamento cancelado, com falta ou já passou'
   if (/timeout|tempo/i.test(e)) return 'O servidor do WhatsApp não respondeu a tempo (a mensagem pode ter saído).'
@@ -211,7 +212,7 @@ export function FilaEnviosTab({ companyId }: { companyId: string }) {
           {numeros.map(n => <option key={n.instancia_id} value={n.instancia_id}>{n.apelido}</option>)}
         </select>
         <select value={tipo} onChange={e => setTipo(e.target.value)} className={sel}>
-          <option value="">Todos os tipos</option><option value="confirmacao_agendamento">Confirmação</option><option value="teste">Teste</option><option value="resposta_automatica">Resposta automática</option><option value="ciclo_inclusao_agenda">Inclusão na agenda</option><option value="ciclo_pre_atendimento">Pré-atendimento</option><option value="ciclo_pos_atendimento">Pós-atendimento</option>
+          <option value="">Todos os tipos</option><option value="confirmacao_agendamento">Confirmação</option><option value="teste">Teste</option><option value="resposta_automatica">Resposta automática</option><option value="ciclo_inclusao_agenda">Inclusão na agenda</option><option value="ciclo_pre_atendimento">Pré-atendimento</option><option value="ciclo_pos_atendimento">Pós-atendimento</option><option value="ciclo_nps">Pesquisa de satisfação</option><option value="ciclo_avaliacao_google">Avaliação no Google</option><option value="ciclo_aniversario">Aniversário</option><option value="ciclo_indicacao">Indicação</option><option value="ciclo_atualizacao_cadastral">Atualização cadastral</option><option value="ciclo_questionario">Questionário</option>
         </select>
         <input value={busca} onChange={e => setBusca(e.target.value)} placeholder="Buscar paciente" className={`${sel} flex-1 min-w-[160px]`} />
       </div>
