@@ -85,7 +85,7 @@ export function AutomacoesTab({ companyId }: { companyId: string }) {
           <Switch checked={cfg.pausado} onCheckedChange={v => setConfPausa(v)} />
         </div>
         <div className="flex flex-wrap items-end gap-3 border-t border-border pt-3">
-          <label className="text-xs text-muted-foreground">Máximo por paciente por dia
+          <label className="text-xs text-muted-foreground">Relacionamento: máximo por telefone por dia
             <Input type="number" min={1} max={10} value={lim.dia} onChange={e => setLim(l => ({ ...l, dia: e.target.value }))} className="mt-1 h-10 w-24" />
           </label>
           <label className="text-xs text-muted-foreground">Máximo em 7 dias
@@ -97,7 +97,7 @@ export function AutomacoesTab({ companyId }: { companyId: string }) {
               if (!(d >= 1 && d <= 10) || !(s >= 1 && s <= 30)) { toast.error('Use de 1 a 10 por dia e de 1 a 30 em 7 dias.'); return }
               void salvarCfg({ p_limite_dia: d, p_limite_semana: s })
             }}>Salvar limites</Button>
-          <p className="w-full text-[11px] text-muted-foreground">Confirmações de agendamento, respostas automáticas, InovaChat e testes não contam no limite.</p>
+          <p className="w-full text-[11px] text-muted-foreground">Somente mensagens de relacionamento contam. Inclusão na agenda, pré-atendimento, confirmações, respostas automáticas, InovaChat e testes não contam no limite.</p>
         </div>
       </div>
 

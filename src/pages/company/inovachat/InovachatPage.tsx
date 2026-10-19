@@ -726,7 +726,7 @@ function PainelContato({ contato, numero, podeGerenciar, podeExcluir, onMudou, o
       </div>
       {optout === true && (
         <div className="space-y-2 rounded-lg border border-warning/40 bg-warning/10 p-3">
-          <p className="text-xs font-medium text-foreground">Não quer receber mensagens automáticas</p>
+          <p className="text-xs font-medium text-foreground">Não quer receber mensagens de relacionamento</p>
           {podeGerenciar && <Button size="sm" variant="outline" className="min-h-[44px] w-full" onClick={() => void definirOptout(false)}>Reativar</Button>}
         </div>
       )}
