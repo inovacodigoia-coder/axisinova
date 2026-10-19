@@ -1,5 +1,8 @@
 # Verificação dos alertas
 
+# Respostas automáticas à nota
+- [ ] Corrigir agradecimento no teste NPS sem registrar nota real; verificar correlação, repetição e isolamento sem envio real.
+
 # Frequência e SAIR por categoria WhatsApp
 - [x] Derivar categoria e aplicar frequência/SAIR somente a relacionamento, inclusive ação manual.
 - [x] Atualizar selo e indicação dos limites; testar dois serviços no mesmo dia e adiamento do segundo pós-atendimento para 09:00 (15 testes SQL + 23 regressões passaram, sem envio real).
