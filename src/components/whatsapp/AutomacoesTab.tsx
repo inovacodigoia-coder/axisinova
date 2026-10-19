@@ -311,9 +311,11 @@ function Editor({ alvo, companyId, medicos, links, empresa, onClose, onSalvo }: 
   const testar = async () => {
     const num = foneTeste.replace(/\D/g, '')
     if (num.length < 10) { toast.error('Digite DDD + número.'); return }
+    if (tipo === 'nps' && Object.values(resp).some(x => !x.trim() || x.length > 1000)) { toast.error('Preencha as três respostas (até 1000 caracteres).'); return }
     setEnviando(true)
     const { data, error } = await supabase.functions.invoke('whatsapp-instancia', {
-      body: { acao: 'enviar_teste', tipo_teste: 'regra', texto: limparTexto(texto), incluir_aviso_saida: aviso, numero_destino: num },
+      body: { acao: 'enviar_teste', tipo_teste: 'regra', texto: limparTexto(texto), incluir_aviso_saida: aviso, numero_destino: num,
+        ...(tipo === 'nps' ? { nps_teste_respostas: { promotor: limparTexto(resp.promotor), neutro: limparTexto(resp.neutro), detrator: limparTexto(resp.detrator) } } : {}) },
     })
     setEnviando(false)
     const d = data as any

@@ -343,6 +343,15 @@ Deno.serve(async (req) => {
     case 'enviar_teste': {
       const tipoTeste = ['botoes', 'texto_numerado'].includes(body?.tipo_teste) ? body.tipo_teste as 'botoes' | 'texto_numerado' : 'texto'
       let texto = String(body?.texto ?? '')
+      let npsTeste: Record<string, string> | null = null
+      if (body?.nps_teste_respostas !== undefined) {
+        const respostas = body.nps_teste_respostas
+        if (body?.tipo_teste !== 'regra' || !respostas || typeof respostas !== 'object' || Array.isArray(respostas)
+          || ['promotor', 'neutro', 'detrator'].some(k => typeof respostas[k] !== 'string' || !respostas[k].trim() || respostas[k].length > 1000)) {
+          return erro(400, 'DADOS_INVALIDOS', 'Preencha as três respostas do NPS (até 1000 caracteres).')
+        }
+        npsTeste = { promotor: respostas.promotor.trim(), neutro: respostas.neutro.trim(), detrator: respostas.detrator.trim() }
+      }
       if (body?.tipo_teste === 'regra') {
         // teste de regra de automação (Etapa 11A): dados fictícios, cabeçalho do usuário logado
         if (texto.trim().length < 1 || texto.length > 1000) return erro(400, 'DADOS_INVALIDOS', 'O texto deve ter de 1 a 1000 caracteres.')
@@ -430,6 +439,7 @@ Deno.serve(async (req) => {
           status, agendada_para: agora, enviada_em: status === 'enviada' ? agora : null,
           message_id_uazapi: msgId, erro: err, criado_por: userId,
           formato_envio: formato, codigo_resposta: codigo, motivo_plano_b: motivo,
+          nps_teste_respostas: npsTeste,
         })
       if (r.status === 0 || r.status === 504) {
         await registrar('falha', null, 'resultado incerto (sem resposta)')

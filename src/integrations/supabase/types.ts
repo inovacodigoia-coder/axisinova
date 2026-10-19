@@ -8259,6 +8259,7 @@ export type Database = {
           message_id_uazapi: string | null
           modelo_posicao: number | null
           motivo_plano_b: string | null
+          nps_teste_respostas: Json | null
           paciente_id: string | null
           paciente_nome: string | null
           respondida_em: string | null
@@ -8290,6 +8291,7 @@ export type Database = {
           message_id_uazapi?: string | null
           modelo_posicao?: number | null
           motivo_plano_b?: string | null
+          nps_teste_respostas?: Json | null
           paciente_id?: string | null
           paciente_nome?: string | null
           respondida_em?: string | null
@@ -8321,6 +8323,7 @@ export type Database = {
           message_id_uazapi?: string | null
           modelo_posicao?: number | null
           motivo_plano_b?: string | null
+          nps_teste_respostas?: Json | null
           paciente_id?: string | null
           paciente_nome?: string | null
           respondida_em?: string | null
@@ -10787,6 +10790,15 @@ export type Database = {
         Args: {
           p_instancia: string
           p_pode_comentar?: boolean
+          p_quoted: string
+          p_telefone: string
+          p_texto: string
+        }
+        Returns: Json
+      }
+      whatsapp_nps_teste_processar: {
+        Args: {
+          p_instancia: string
           p_quoted: string
           p_telefone: string
           p_texto: string
