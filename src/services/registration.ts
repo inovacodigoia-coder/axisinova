@@ -6,8 +6,8 @@ interface RegistrationData {
   nomeFantasia: string
   cnpj: string
   segmento: string
-  telefone: string
-  emailComercial: string
+  telefone?: string
+  emailComercial?: string
   website?: string
   // Address
   cep: string
@@ -31,7 +31,7 @@ export async function checkCnpjExists(cnpj: string): Promise<boolean> {
 
   if (error) {
     console.error('CNPJ check error:', error)
-    return false
+    throw new Error('Não foi possível verificar o CNPJ agora. Tente novamente.')
   }
   return data === true
 }
@@ -55,8 +55,8 @@ export async function registerCompany(data: RegistrationData) {
       cnpj: data.cnpj,
       nome_fantasia: data.nomeFantasia,
       segmento: data.segmento,
-      telefone: data.telefone,
-      email: data.emailComercial,
+      telefone: data.telefone?.trim() || null,
+      email: data.emailComercial?.trim() || null,
       website: data.website || null,
       plano: data.plano || 'Pro',
       status: 'active',
@@ -73,7 +73,7 @@ export async function registerCompany(data: RegistrationData) {
   if (companyError) {
     console.error('Company creation error:', companyError)
     // Common duplicate key code is 23505
-    if (companyError.code === '23505' || companyError.message?.includes('unique') || companyError.message?.includes('cnpj')) {
+    if (companyError.code === '23505' && companyError.message?.includes('companies_cnpj_unique')) {
       throw new Error('Este CNPJ já está cadastrado no sistema.')
     }
     throw new Error('Erro ao criar empresa: ' + companyError.message)

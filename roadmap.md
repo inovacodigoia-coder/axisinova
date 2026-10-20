@@ -1,5 +1,10 @@
 # Verificação dos alertas
 
+# Cadastro /cadastro
+- [x] Corrigir origem MATRIZ duplicada na criação da empresa e restringir aviso de CNPJ duplicado à chave correta; falha na consulta não libera cadastro.
+- [x] Preservar campos ao voltar entre etapas; telefone e e-mail comerciais opcionais (ausentes como null).
+- [x] 8 testes passaram; navegação Empresa → Endereço → Administrador → voltar e avançar preservou os dados, com contatos comerciais vazios. Nenhuma empresa real criada.
+
 # Etapa 12B — CRM
 - [x] Configuração Manual/Automático, temperatura com trava e alertas, evolução apenas para frente (desligada por padrão).
 - [x] Lembretes e ações de retorno; Resultados agregados e etiqueta atualizada no InovaChat.
