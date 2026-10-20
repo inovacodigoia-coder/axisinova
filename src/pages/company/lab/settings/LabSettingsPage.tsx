@@ -1120,11 +1120,26 @@ function WorkbenchesSection() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between flex-wrap gap-2">
         <h3 className="text-lg font-bold">Bancadas Técnicas</h3>
-        <Button size="sm" onClick={() => handleOpenDialog()} className="gradient-bg text-white gap-2">
-          <Plus className="h-4 w-4" /> Nova Bancada
-        </Button>
+        <div className="flex items-center gap-2">
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept=".xlsx,.xls,.csv"
+            className="hidden"
+            onChange={handleImportar}
+          />
+          <Button size="sm" variant="outline" onClick={handleExportar} className="gap-2">
+            <Download className="h-4 w-4" /> Exportar
+          </Button>
+          <Button size="sm" variant="outline" onClick={() => fileInputRef.current?.click()} disabled={importando} className="gap-2">
+            {importando ? <Loader2 className="h-4 w-4 animate-spin" /> : <UploadCloud className="h-4 w-4" />} Importar Planilha
+          </Button>
+          <Button size="sm" onClick={() => handleOpenDialog()} className="gradient-bg text-white gap-2">
+            <Plus className="h-4 w-4" /> Nova Bancada
+          </Button>
+        </div>
       </div>
 
       {isLoading ? (
