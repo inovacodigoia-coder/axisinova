@@ -22,7 +22,7 @@ export const ORIGENS: { value: string; label: string }[] = [
 export const origemLabel = (o: string) => ORIGENS.find(x => x.value === o)?.label ?? o
 
 export const TEMPERATURAS: { value: Temperatura; label: string; cls: string }[] = [
-  { value: 'frio', label: 'Frio', cls: 'text-info' },
+  { value: 'frio', label: 'Frio', cls: 'text-primary' },
   { value: 'morno', label: 'Morno', cls: 'text-warning' },
   { value: 'quente', label: 'Quente', cls: 'text-destructive' },
 ]
