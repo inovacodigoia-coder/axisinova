@@ -3241,9 +3241,90 @@ export type Database = {
           },
         ]
       }
+      crm_alertas_dia: {
+        Row: {
+          company_id: string
+          dia: string
+          lead_id: string
+          tipo: string
+          usuario_id: string
+        }
+        Insert: {
+          company_id: string
+          dia: string
+          lead_id: string
+          tipo: string
+          usuario_id: string
+        }
+        Update: {
+          company_id?: string
+          dia?: string
+          lead_id?: string
+          tipo?: string
+          usuario_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "crm_alertas_dia_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "crm_alertas_dia_lead_id_fkey"
+            columns: ["lead_id"]
+            isOneToOne: false
+            referencedRelation: "crm_leads"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      crm_config: {
+        Row: {
+          alerta_lead_quente: boolean
+          alterado_em: string
+          company_id: string
+          evolucao_automatica: boolean
+          frio_apos_dias: number
+          palavras_quentes: string[]
+          temperatura_modo: string
+          travar_manual_dias: number
+        }
+        Insert: {
+          alerta_lead_quente?: boolean
+          alterado_em?: string
+          company_id: string
+          evolucao_automatica?: boolean
+          frio_apos_dias?: number
+          palavras_quentes?: string[]
+          temperatura_modo?: string
+          travar_manual_dias?: number
+        }
+        Update: {
+          alerta_lead_quente?: boolean
+          alterado_em?: string
+          company_id?: string
+          evolucao_automatica?: boolean
+          frio_apos_dias?: number
+          palavras_quentes?: string[]
+          temperatura_modo?: string
+          travar_manual_dias?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "crm_config_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: true
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       crm_etapas: {
         Row: {
           ativa: boolean
+          automacao: string | null
           company_id: string
           cor: string
           criado_em: string
@@ -3255,6 +3336,7 @@ export type Database = {
         }
         Insert: {
           ativa?: boolean
+          automacao?: string | null
           company_id: string
           cor?: string
           criado_em?: string
@@ -3266,6 +3348,7 @@ export type Database = {
         }
         Update: {
           ativa?: boolean
+          automacao?: string | null
           company_id?: string
           cor?: string
           criado_em?: string
@@ -3287,37 +3370,46 @@ export type Database = {
       }
       crm_lead_eventos: {
         Row: {
+          automacao: string | null
           company_id: string
           criado_em: string
           de: string | null
+          etapa_id: string | null
           id: string
           lead_id: string
           origem: string
           para: string | null
+          regra: string | null
           texto: string | null
           tipo: string
           usuario_id: string | null
         }
         Insert: {
+          automacao?: string | null
           company_id: string
           criado_em?: string
           de?: string | null
+          etapa_id?: string | null
           id?: string
           lead_id: string
           origem?: string
           para?: string | null
+          regra?: string | null
           texto?: string | null
           tipo: string
           usuario_id?: string | null
         }
         Update: {
+          automacao?: string | null
           company_id?: string
           criado_em?: string
           de?: string | null
+          etapa_id?: string | null
           id?: string
           lead_id?: string
           origem?: string
           para?: string | null
+          regra?: string | null
           texto?: string | null
           tipo?: string
           usuario_id?: string | null
@@ -3374,6 +3466,7 @@ export type Database = {
           atualizado_em: string
           company_id: string
           contato_id: string
+          convertido_em: string | null
           criado_em: string
           criado_por: string | null
           etapa_atualizada_em: string
@@ -3386,16 +3479,20 @@ export type Database = {
           nome: string
           origem: string
           paciente_id: string | null
+          primeira_resposta_em: string | null
           proximo_contato_em: string | null
           responsavel_id: string | null
           temperatura: string
           temperatura_origem: string
+          temperatura_regra: string | null
+          temperatura_travada_ate: string | null
           valor_estimado: number | null
         }
         Insert: {
           atualizado_em?: string
           company_id: string
           contato_id: string
+          convertido_em?: string | null
           criado_em?: string
           criado_por?: string | null
           etapa_atualizada_em?: string
@@ -3408,16 +3505,20 @@ export type Database = {
           nome: string
           origem?: string
           paciente_id?: string | null
+          primeira_resposta_em?: string | null
           proximo_contato_em?: string | null
           responsavel_id?: string | null
           temperatura?: string
           temperatura_origem?: string
+          temperatura_regra?: string | null
+          temperatura_travada_ate?: string | null
           valor_estimado?: number | null
         }
         Update: {
           atualizado_em?: string
           company_id?: string
           contato_id?: string
+          convertido_em?: string | null
           criado_em?: string
           criado_por?: string | null
           etapa_atualizada_em?: string
@@ -3430,10 +3531,13 @@ export type Database = {
           nome?: string
           origem?: string
           paciente_id?: string | null
+          primeira_resposta_em?: string | null
           proximo_contato_em?: string | null
           responsavel_id?: string | null
           temperatura?: string
           temperatura_origem?: string
+          temperatura_regra?: string | null
+          temperatura_travada_ate?: string | null
           valor_estimado?: number | null
         }
         Relationships: [
@@ -10585,6 +10689,7 @@ export type Database = {
           atualizado_em: string
           company_id: string
           contato_id: string
+          convertido_em: string | null
           criado_em: string
           criado_por: string | null
           etapa_atualizada_em: string
@@ -10597,10 +10702,13 @@ export type Database = {
           nome: string
           origem: string
           paciente_id: string | null
+          primeira_resposta_em: string | null
           proximo_contato_em: string | null
           responsavel_id: string | null
           temperatura: string
           temperatura_origem: string
+          temperatura_regra: string | null
+          temperatura_travada_ate: string | null
           valor_estimado: number | null
         }
         SetofOptions: {
@@ -10629,6 +10737,18 @@ export type Database = {
       crm__validar_funil: { Args: { _company: string }; Returns: undefined }
       crm_ativo: { Args: { _company: string }; Returns: boolean }
       crm_buscar_paciente: { Args: { p_q: string }; Returns: Json }
+      crm_config_salvar: { Args: { p: Json }; Returns: undefined }
+      crm_etapa_12b_salvar: {
+        Args: {
+          p_automacao?: string
+          p_cor: string
+          p_id: string
+          p_inicial: boolean
+          p_nome: string
+          p_tipo: string
+        }
+        Returns: string
+      }
       crm_etapa_desativar: {
         Args: { p_destino?: string; p_id: string }
         Returns: number
@@ -10644,6 +10764,10 @@ export type Database = {
         Returns: string
       }
       crm_etapas_ordenar: { Args: { p_ids: string[] }; Returns: undefined }
+      crm_evoluir: {
+        Args: { p_evento: string; p_lead: string }
+        Returns: undefined
+      }
       crm_funil_restaurar: { Args: never; Returns: undefined }
       crm_lead_conversa: { Args: { p_lead: string }; Returns: Json }
       crm_lead_criar: { Args: { p: Json }; Returns: string }
@@ -10677,14 +10801,46 @@ export type Database = {
         Args: { p_ativo: boolean; p_id: string; p_nome: string }
         Returns: string
       }
+      crm_normalizar: { Args: { t: string }; Returns: string }
+      crm_notificar: {
+        Args: {
+          l: Database["public"]["Tables"]["crm_leads"]["Row"]
+          p_tipo: string
+        }
+        Returns: number
+      }
       crm_padrao: { Args: { _company: string }; Returns: undefined }
+      crm_palavra_quente: {
+        Args: { palavras: string[]; t: string }
+        Returns: string
+      }
       crm_pode_ver: { Args: { _company: string }; Returns: boolean }
       crm_quadro: { Args: never; Returns: Json }
+      crm_retorno: {
+        Args: { p_data?: string; p_dias?: number; p_lead: string }
+        Returns: undefined
+      }
+      crm_retornos_rodar: { Args: never; Returns: number }
+      crm_silencio_rodar: { Args: never; Returns: number }
       crm_tag_salvar: {
         Args: { p_ativa: boolean; p_cor: string; p_id: string; p_nome: string }
         Returns: string
       }
       crm_tem_permissao: { Args: { _perm: string }; Returns: boolean }
+      crm_temperatura_aplicar: {
+        Args: {
+          p_forcar?: boolean
+          p_lead: string
+          p_regra: string
+          p_temp: string
+        }
+        Returns: undefined
+      }
+      crm_usuario_tem: {
+        Args: { c: string; p: string; u: string }
+        Returns: boolean
+      }
+      crm_voltar_automatico: { Args: { p_lead: string }; Returns: undefined }
       data_pascoa: { Args: { _ano: number }; Returns: string }
       device_public_info: {
         Args: { _kind: string; _slug: string }
