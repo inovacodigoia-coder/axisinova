@@ -45,6 +45,7 @@ export function StepCompanyData() {
           error={errors.razaoSocial?.message as string}
           shake={!!errors.razaoSocial}
           {...register('razaoSocial')}
+          value={watch('razaoSocial') || ''}
         />
         <InputField
           label="Nome Fantasia"
@@ -52,6 +53,7 @@ export function StepCompanyData() {
           error={errors.nomeFantasia?.message as string}
           shake={!!errors.nomeFantasia}
           {...register('nomeFantasia')}
+          value={watch('nomeFantasia') || ''}
         />
         <div className="grid gap-5 sm:grid-cols-2">
           <InputField
@@ -71,11 +73,13 @@ export function StepCompanyData() {
             error={errors.segmento?.message as string}
             shake={!!errors.segmento}
             {...register('segmento')}
+            value={watch('segmento') || ''}
           />
         </div>
         <div className="grid gap-5 sm:grid-cols-2">
           <InputField
             label="Telefone Comercial"
+            optional
             placeholder="(XX) XXXXX-XXXX"
             value={watch('telefone') || ''}
             onChange={(e) => setValue('telefone', maskPhone(e.target.value), { shouldValidate: true })}
@@ -84,11 +88,13 @@ export function StepCompanyData() {
           />
           <InputField
             label="E-mail Comercial"
+            optional
             type="email"
             placeholder="email@suaclinica.com.br"
             error={errors.emailComercial?.message as string}
             shake={!!errors.emailComercial}
             {...register('emailComercial')}
+            value={watch('emailComercial') || ''}
           />
         </div>
         <InputField
@@ -96,6 +102,7 @@ export function StepCompanyData() {
           optional
           placeholder="https://suaclinica.com.br"
           {...register('website')}
+          value={watch('website') || ''}
         />
       </div>
     </div>

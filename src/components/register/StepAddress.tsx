@@ -33,7 +33,7 @@ export function StepAddress() {
   // Auto-search when 8 digits typed
   const cleanCep = cepValue.replace(/\D/g, '');
   useEffect(() => {
-    if (cleanCep.length === 8) {
+    if (cleanCep.length === 8 && !watch('logradouro')) {
       handleCepSearch();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -70,6 +70,7 @@ export function StepAddress() {
           error={errors.logradouro?.message as string}
           shake={!!errors.logradouro}
           {...register('logradouro')}
+          value={watch('logradouro') || ''}
         />
 
         <div className="grid gap-5 sm:grid-cols-2">
@@ -79,12 +80,14 @@ export function StepAddress() {
             error={errors.numero?.message as string}
             shake={!!errors.numero}
             {...register('numero')}
+            value={watch('numero') || ''}
           />
           <InputField
             label="Complemento"
             optional
             placeholder="Sala, andar..."
             {...register('complemento')}
+            value={watch('complemento') || ''}
           />
         </div>
 
@@ -93,6 +96,7 @@ export function StepAddress() {
           error={errors.bairro?.message as string}
           shake={!!errors.bairro}
           {...register('bairro')}
+          value={watch('bairro') || ''}
         />
 
         <div className="grid gap-5 sm:grid-cols-2">
@@ -101,6 +105,7 @@ export function StepAddress() {
             locked={cidadeLocked}
             error={errors.cidade?.message as string}
             {...register('cidade')}
+            value={watch('cidade') || ''}
           />
           <SelectField
             label="Estado"
@@ -109,6 +114,7 @@ export function StepAddress() {
             error={errors.estado?.message as string}
             shake={!!errors.estado}
             {...register('estado')}
+            value={watch('estado') || ''}
           />
         </div>
       </div>

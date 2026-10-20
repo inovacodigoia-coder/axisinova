@@ -44,13 +44,13 @@ function validateCpf(cpf: string) {
   return r === +d[10];
 }
 
-const step1Schema = z.object({
+export const step1Schema = z.object({
   razaoSocial: z.string().min(3, 'Razão social é obrigatória').max(200),
   nomeFantasia: z.string().min(2, 'Nome fantasia é obrigatório').max(200),
   cnpj: z.string().length(18, 'CNPJ inválido').refine((v) => validateCnpj(v), 'CNPJ inválido'),
   segmento: z.string().min(1, 'Selecione o segmento'),
-  telefone: z.string().min(14, 'Telefone inválido'),
-  emailComercial: z.string().email('E-mail inválido'),
+  telefone: z.string().refine(v => !v.trim() || /^\d{10,11}$/.test(v.replace(/\D/g, '')), 'Telefone inválido').optional(),
+  emailComercial: z.union([z.string().trim().email('E-mail inválido'), z.literal('')]).optional(),
   website: z.string().optional(),
 });
 
@@ -99,7 +99,8 @@ export default function RegisterPage() {
   const methods = useForm<FormData>({
     resolver: zodResolver(schemas[step - 1] as any),
     mode: 'onChange',
-    defaultValues: { plano: 'Pro' },
+    shouldUnregister: false,
+    defaultValues: { plano: 'Pro', razaoSocial: '', nomeFantasia: '', cnpj: '', segmento: '', telefone: '', emailComercial: '', website: '', cep: '', logradouro: '', numero: '', complemento: '', bairro: '', cidade: '', estado: '', nomeCompleto: '', cpf: '', emailAdmin: '', senha: '', confirmarSenha: '' },
   });
 
   const handleNext = async () => {

@@ -60,6 +60,7 @@ export function StepAdminUser({ onSubmit, isSubmitting }: StepAdminUserProps) {
           error={errors.nomeCompleto?.message as string}
           shake={!!errors.nomeCompleto}
           {...register('nomeCompleto')}
+          value={watch('nomeCompleto') || ''}
         />
 
         <InputField
@@ -80,6 +81,7 @@ export function StepAdminUser({ onSubmit, isSubmitting }: StepAdminUserProps) {
           error={errors.emailAdmin?.message as string}
           shake={!!errors.emailAdmin}
           {...register('emailAdmin')}
+          value={watch('emailAdmin') || ''}
         />
 
         {/* Password */}
@@ -91,6 +93,7 @@ export function StepAdminUser({ onSubmit, isSubmitting }: StepAdminUserProps) {
             error={errors.senha?.message as string}
             shake={!!errors.senha}
             {...register('senha')}
+            value={watch('senha') || ''}
           />
           {senha && (
             <div className="mt-2">
@@ -123,6 +126,7 @@ export function StepAdminUser({ onSubmit, isSubmitting }: StepAdminUserProps) {
           isValid={!!passwordsMatch}
           shake={!!errors.confirmarSenha}
           {...register('confirmarSenha')}
+          value={watch('confirmarSenha') || ''}
         />
 
         {/* Plan selection */}
