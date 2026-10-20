@@ -10816,6 +10816,15 @@ export type Database = {
       }
       crm_pode_ver: { Args: { _company: string }; Returns: boolean }
       crm_quadro: { Args: never; Returns: Json }
+      crm_resultados: {
+        Args: {
+          p_ate: string
+          p_desde: string
+          p_origem?: string
+          p_responsavel?: string
+        }
+        Returns: Json
+      }
       crm_retorno: {
         Args: { p_data?: string; p_dias?: number; p_lead: string }
         Returns: undefined
