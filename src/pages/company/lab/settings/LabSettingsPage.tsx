@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { Card } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -33,7 +33,9 @@ import {
   Info,
   Loader2,
   FileText,
-  X
+  X,
+  Download,
+  UploadCloud
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { toast } from 'sonner'
@@ -946,6 +948,91 @@ function WorkbenchesSection() {
   const [ativa, setAtiva] = useState(true)
   const [apoios, setApoios] = useState<{ id: string; nome: string; ativo: boolean }[]>([])
   const [saving, setSaving] = useState(false)
+  const [importando, setImportando] = useState(false)
+  const fileInputRef = useRef<HTMLInputElement>(null)
+
+  const WB_COLS = ['Nome', 'Tipo', 'Laboratório de apoio', 'Quebra no laudo', 'Ordem', 'Descrição', 'Ativa']
+
+  const quebraLabel = (p: string) => p === 'sequential' ? 'Sequencial (agrupa)' : p === 'dedicated_page' ? 'Página dedicada' : 'Padrão'
+  const quebraValor = (s: string) => {
+    const v = (s || '').toLowerCase()
+    if (v.startsWith('sequ')) return 'sequential'
+    if (v.includes('dedicada')) return 'dedicated_page'
+    return 'default'
+  }
+
+  const handleExportar = async () => {
+    const XLSX = await import('xlsx')
+    const rows = (workbenches || []).map((b: any) => ({
+      'Nome': b.name,
+      'Tipo': b.tipo === 'apoio' ? 'Apoio' : 'Interna',
+      'Laboratório de apoio': b.tipo === 'apoio' ? apoioNome(b.apoioId) : '',
+      'Quebra no laudo': quebraLabel(b.reportBreakPolicy),
+      'Ordem': b.reportOrder ?? 0,
+      'Descrição': b.description || '',
+      'Ativa': b.isActive === false ? 'Não' : 'Sim',
+    }))
+    const ws = XLSX.utils.json_to_sheet(rows.length ? rows : [Object.fromEntries(WB_COLS.map(c => [c, '']))])
+    ws['!cols'] = [{ wch: 24 }, { wch: 10 }, { wch: 24 }, { wch: 20 }, { wch: 8 }, { wch: 40 }, { wch: 8 }]
+    const wb = XLSX.utils.book_new()
+    XLSX.utils.book_append_sheet(wb, ws, 'Bancadas')
+    XLSX.writeFile(wb, 'bancadas-tecnicas.xlsx')
+    toast.success('Planilha de bancadas exportada')
+  }
+
+  const handleImportar = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    e.target.value = ''
+    if (!file) return
+    setImportando(true)
+    try {
+      const XLSX = await import('xlsx')
+      const wb = XLSX.read(await file.arrayBuffer())
+      const rows = XLSX.utils.sheet_to_json<Record<string, unknown>>(wb.Sheets[wb.SheetNames[0]])
+      if (!rows.length) { toast.error('Planilha vazia'); return }
+
+      const norm = (v: unknown) => String(v ?? '').trim()
+      const existentes = new Set((workbenches || []).map((b: any) => norm(b.name).toLowerCase()))
+      let criadas = 0, ignoradas = 0
+      const erros: string[] = []
+
+      for (let i = 0; i < rows.length; i++) {
+        const r = rows[i]
+        const nome = norm(r['Nome'])
+        if (!nome) { erros.push(`Linha ${i + 2}: nome vazio`); continue }
+        if (existentes.has(nome.toLowerCase())) { ignoradas++; continue }
+        const tipo = norm(r['Tipo']).toLowerCase().startsWith('apo') ? 'apoio' : 'interna'
+        let apoioId: string | null = null
+        if (tipo === 'apoio') {
+          const nomeApoio = norm(r['Laboratório de apoio']).toLowerCase()
+          const ap = apoios.find(a => a.nome.toLowerCase() === nomeApoio)
+          if (!ap) { erros.push(`Linha ${i + 2} (${nome}): laboratório de apoio não encontrado`); continue }
+          apoioId = ap.id
+        }
+        const ordem = Number(r['Ordem'])
+        await addWorkbench({
+          name: nome,
+          description: norm(r['Descrição']),
+          reportBreakPolicy: quebraValor(norm(r['Quebra no laudo'])),
+          reportOrder: Number.isFinite(ordem) ? ordem : 0,
+          isActive: norm(r['Ativa']).toLowerCase() !== 'não' && norm(r['Ativa']).toLowerCase() !== 'nao',
+          tipo,
+          apoioId,
+        } as any)
+        existentes.add(nome.toLowerCase())
+        criadas++
+      }
+
+      if (criadas) toast.success(`${criadas} bancada(s) importada(s)`)
+      if (ignoradas) toast.info(`${ignoradas} já existente(s) ignorada(s)`)
+      erros.slice(0, 3).forEach(m => toast.error(m))
+      if (!criadas && !ignoradas && !erros.length) toast.info('Nada para importar')
+    } catch (err: any) {
+      toast.error(`Falha ao importar: ${err?.message || 'arquivo inválido'}`)
+    } finally {
+      setImportando(false)
+    }
+  }
 
   useEffect(() => {
     supabase.from('apoio_laboratorio').select('id, nome, ativo').order('nome')
@@ -1033,11 +1120,26 @@ function WorkbenchesSection() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between flex-wrap gap-2">
         <h3 className="text-lg font-bold">Bancadas Técnicas</h3>
-        <Button size="sm" onClick={() => handleOpenDialog()} className="gradient-bg text-white gap-2">
-          <Plus className="h-4 w-4" /> Nova Bancada
-        </Button>
+        <div className="flex items-center gap-2">
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept=".xlsx,.xls,.csv"
+            className="hidden"
+            onChange={handleImportar}
+          />
+          <Button size="sm" variant="outline" onClick={handleExportar} className="gap-2">
+            <Download className="h-4 w-4" /> Exportar
+          </Button>
+          <Button size="sm" variant="outline" onClick={() => fileInputRef.current?.click()} disabled={importando} className="gap-2">
+            {importando ? <Loader2 className="h-4 w-4 animate-spin" /> : <UploadCloud className="h-4 w-4" />} Importar Planilha
+          </Button>
+          <Button size="sm" onClick={() => handleOpenDialog()} className="gradient-bg text-white gap-2">
+            <Plus className="h-4 w-4" /> Nova Bancada
+          </Button>
+        </div>
       </div>
 
       {isLoading ? (
