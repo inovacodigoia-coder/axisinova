@@ -18,6 +18,9 @@ import { AnexoBotoes } from '@/components/inovachat/AnexoBotoes'
 import { HorarioDialog } from '@/components/inovachat/HorarioDialog'
 import { ExcluirContatoDialog } from '@/components/inovachat/ExcluirContatoDialog'
 import { Clock } from 'lucide-react'
+import { useCrmAcesso } from '@/hooks/useCrm'
+import { CrmLeadAcoes, rotuloLead, useLeadsAbertos, type LeadAberto } from '@/components/crm/CrmLeadChip'
+import type { CrmAcesso } from '@/lib/crm'
 
 interface Contato { id: string; telefone: string; nome_exibicao: string | null; paciente_id: string | null; vinculo_status: string; criado_em: string }
 interface Conversa {
@@ -63,6 +66,8 @@ type Aba = 'minhas' | 'fila' | 'todas' | 'finalizadas'
 
 export default function InovachatPage() {
   const acesso = useInovachatAcesso()
+  const crm = useCrmAcesso()
+  const { mapa: leadsAbertos, recarregar: recarregarLeads } = useLeadsAbertos(crm)
   const [params, setParams] = useSearchParams()
   const [conversas, setConversas] = useState<Conversa[] | null>(null)
   const [erro, setErro] = useState(false)
@@ -331,6 +336,7 @@ export default function InovachatPage() {
                 <div className="mt-1 flex flex-wrap gap-1">
                   <span className="rounded bg-secondary/10 px-1.5 py-0.5 text-[10px] text-secondary">{instancias[c.instancia_id]?.apelido ?? 'Número'}</span>
                   {c.fora_horario && c.status !== 'finalizada' && <span className="rounded bg-warning/15 px-1.5 py-0.5 text-[10px] text-foreground">Fora do horário</span>}
+                  {c.contato && leadsAbertos[c.contato.id] && <span className="rounded bg-secondary/10 px-1.5 py-0.5 text-[10px] text-secondary">{rotuloLead(leadsAbertos[c.contato.id])}</span>}
                   {c.setor_id && <span className="rounded bg-primary/10 px-1.5 py-0.5 text-[10px] text-primary">{setores[c.setor_id] ?? 'Setor'}</span>}
                   {c.responsavel_id && <span className="rounded bg-muted px-1.5 py-0.5 text-[10px] text-muted-foreground">{c.responsavel_id === eu ? 'Você' : nomes[c.responsavel_id] ?? 'Responsável'}</span>}
                 </div>
@@ -360,6 +366,8 @@ export default function InovachatPage() {
                 </p>
               </div>
               <div className="flex flex-wrap gap-1">
+                {sel.contato && <CrmLeadAcoes acesso={crm} lead={leadsAbertos[sel.contato.id]} contatoId={sel.contato.id} nome={nomeContato(sel.contato)}
+                  temPaciente={!!sel.contato.paciente_id} onMudou={() => void recarregarLeads()} />}
                 <Button variant="ghost" size="icon" className="h-10 w-10" onClick={() => setCoresOpen(true)} aria-label="Personalizar cores" title="Cores da conversa"><Palette className="h-5 w-5" /></Button>
                 {podeAssumir && <Button size="sm" variant="outline" className="h-10" onClick={() => void acao('inovachat_assumir', { p_conversa: sel.id }, 'Conversa assumida.')}><UserCheck className="mr-1 h-4 w-4" />Assumir conversa</Button>}
                 {podeTransferir && <Button size="sm" variant="outline" className="h-10" onClick={() => setTransferir(true)}><ArrowRightLeft className="mr-1 h-4 w-4" />Transferir</Button>}
@@ -389,7 +397,7 @@ export default function InovachatPage() {
                   vars={{ nome_contato: (sel.contato?.nome_exibicao ?? '').split(/\s+/)[0] || '', atendente: eu ? nomes[eu] ?? '' : '', empresa }}
                   onEnviado={() => { void carregar(); void carregarMsgs(sel.id) }} />
               </div>
-              <PainelContato contato={sel.contato} numero={instancias[sel.instancia_id]?.apelido ?? 'Número'} podeGerenciar={acesso.gerenciar} podeExcluir={!!acesso.admin} onMudou={() => void carregar()} onExcluido={() => { setSelId(null); void carregar() }} />
+              <PainelContato contato={sel.contato} numero={instancias[sel.instancia_id]?.apelido ?? 'Número'} podeGerenciar={acesso.gerenciar} podeExcluir={!!acesso.admin} crm={crm} lead={sel.contato ? leadsAbertos[sel.contato.id] : undefined} onCrm={() => void recarregarLeads()} onMudou={() => void carregar()} onExcluido={() => { setSelId(null); void carregar() }} />
             </div>
           </>
         )}
@@ -693,7 +701,7 @@ function RespostasRapidasDialog({ open, onClose, setores }: { open: boolean; onC
   )
 }
 
-function PainelContato({ contato, numero, podeGerenciar, podeExcluir, onMudou, onExcluido }: { contato: Contato | null; numero: string; podeGerenciar: boolean; podeExcluir: boolean; onMudou: () => void; onExcluido: () => void }) {
+function PainelContato({ contato, numero, podeGerenciar, podeExcluir, crm, lead, onCrm, onMudou, onExcluido }: { contato: Contato | null; numero: string; podeGerenciar: boolean; podeExcluir: boolean; crm: CrmAcesso | null; lead?: LeadAberto; onCrm: () => void; onMudou: () => void; onExcluido: () => void }) {
   const [excluir, setExcluir] = useState(false)
   const [pac, setPac] = useState<{ name: string; cpf: string | null; convenios: any } | null>(null)
   const [ags, setAgs] = useState<{ id: string; date: string; time: string; doctor: string | null; exam_name: string | null }[]>([])
@@ -743,6 +751,9 @@ function PainelContato({ contato, numero, podeGerenciar, podeExcluir, onMudou, o
         <p className="mt-2 font-semibold text-foreground">{nomeContato(contato)}</p>
         <p className="text-xs text-muted-foreground">{formatarTelefone(contato.telefone)}</p>
         <p className="text-xs text-muted-foreground">via {numero}</p>
+        {crm && (crm.ver || crm.criar) && <div className="mt-2 flex justify-center">
+          <CrmLeadAcoes acesso={crm} lead={lead} contatoId={contato.id} nome={pac?.name ?? nomeContato(contato)} temPaciente={!!contato.paciente_id} onMudou={onCrm} />
+        </div>}
       </div>
       <div className="rounded-lg border border-border p-3 space-y-2">
         <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Paciente</p>
