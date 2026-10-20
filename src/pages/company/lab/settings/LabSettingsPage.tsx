@@ -33,7 +33,9 @@ import {
   Info,
   Loader2,
   FileText,
-  X
+  X,
+  Download,
+  UploadCloud
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { toast } from 'sonner'
