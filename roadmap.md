@@ -30,3 +30,5 @@
 - [x] Integrar anonimização NPS à retenção antes de limpar fila, contar simulação/execução e apagar NPS na exclusão LGPD com auditoria (lotes de 500 e estatísticas preservadas).
 - [x] Abrir conversa específica na Satisfação e sino com resolução segura no servidor e aviso sem conversa; 37 testes SQL passaram, função de retenção publicada.
 - [ ] Validar na tela logada e no celular: sem sessão disponível; gerar sessão exige autorização, envio real não autorizado.
+- [x] Etapa 12A CRM: funil, leads, configuração, integração InovaChat, exclusão LGPD; 8 testes SQL do CRM passaram.
+- [ ] CRM: "Cadastrar paciente" pré-preenchido — o cadastro atual não aceita dados de entrada; hoje abre o cadastro vazio e depois vincula.
