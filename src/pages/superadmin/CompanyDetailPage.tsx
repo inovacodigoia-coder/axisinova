@@ -13,6 +13,7 @@ import { CompanyEquipmentsTab } from '@/components/superadmin/CompanyEquipmentsT
 import { CompanyPartnersPanel } from '@/components/superadmin/CompanyPartnersPanel'
 import { CompanyWhatsappPanel } from '@/components/superadmin/CompanyWhatsappPanel'
 import { CompanyInovachatPanel } from '@/components/superadmin/CompanyInovachatPanel'
+import { CompanyCrmPanel } from '@/components/superadmin/CompanyCrmPanel'
 import type { Company, PlanType, CompanyStatus } from '@/types/company.types'
 
 const ADDON_PRICE_DOCTOR = 79
@@ -410,6 +411,7 @@ export default function CompanyDetailPage() {
 
               {companyId && <CompanyWhatsappPanel companyId={companyId} />}
               {companyId && <CompanyInovachatPanel companyId={companyId} />}
+              {companyId && <CompanyCrmPanel companyId={companyId} />}
 
             </div>
           </div>

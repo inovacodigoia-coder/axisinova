@@ -135,6 +135,13 @@ export const INOVACHAT_PERMISSIONS: { code: string; label: string; description: 
   { code: 'inovachat.gerenciar', label: 'Gerenciar o InovaChat', description: 'Ver todas, atribuir, reabrir, vincular paciente e gerenciar respostas rápidas' },
 ]
 
+/** Permissões do CRM (gravadas em permissions.crm; checadas no banco por crm_tem_permissao; administrador tem todas) */
+export const CRM_PERMISSIONS: { code: string; label: string; description: string }[] = [
+  { code: 'crm.visualizar', label: 'Ver o CRM', description: 'Ver o quadro e os leads da empresa' },
+  { code: 'crm.operar', label: 'Operar o CRM', description: 'Criar leads, mover cards e editar os leads de que é responsável' },
+  { code: 'crm.gerenciar', label: 'Gerenciar o CRM', description: 'Tudo, mais configurar etapas, tags e motivos e excluir leads' },
+]
+
 /** Permissões do módulo Triagem Lab (gravadas em permissions.triagem como códigos; checadas no banco por triagem_tem_permissao) */
 export const TRIAGEM_PERMISSIONS: { code: string; label: string; description: string }[] = [
   { code: 'triagem.config', label: 'Configurar unidades, rotas e critérios', description: 'Papéis das unidades, condições de transporte, rotas e motivos de coleta' },
