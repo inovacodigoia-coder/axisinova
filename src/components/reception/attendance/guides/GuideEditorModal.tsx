@@ -84,6 +84,7 @@ export function GuideEditorModal({ open, onClose, mode, guide, onSave, guides, g
         name: e.name,
         material: e.defaultMaterial || 'Soro',
         methodology: e.methodology || '',
+        workbenchId: e.workbenchId || null,
         isCobrado: true,
         isColeta: false,
         status: 'pending',
