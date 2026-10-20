@@ -55,7 +55,7 @@ beforeEach(async () => {
     CREATE TABLE appointments(id uuid PRIMARY KEY DEFAULT gen_random_uuid(), company_id uuid, patient_id uuid, sched_status text DEFAULT 'scheduled');
     CREATE TABLE user_notifications(id uuid PRIMARY KEY DEFAULT gen_random_uuid(),company_id uuid,user_id uuid,category text,priority text,title text,message text,action_route text);
   `)
-  for (const file of ['0105_crm_12b_temperatura_evolucao_retornos.sql','0106_crm_12b_resultados_quadro.sql']) await db.exec(readFileSync('drizzle/migrations/'+file,'utf8').replace(/SELECT cron.schedule[^;]+;/g,''))
+  for (const file of ['0105_crm_12b_temperatura_evolucao_retornos.sql','0106_crm_12b_resultados_quadro.sql']) await db.exec(readFileSync('drizzle/migrations/'+file,'utf8').replace(/^SELECT cron\.schedule.*$/gm,''))
   await db.exec(`CREATE OR REPLACE FUNCTION crm_usuario_tem(u uuid,c uuid,p text) RETURNS boolean LANGUAGE sql AS $$ SELECT EXISTS(SELECT 1 FROM profiles WHERE id=u AND company_id=c) AND EXISTS(SELECT 1 FROM perms WHERE user_id=u AND perm=p) $$;`)
   await db.exec(`
     CREATE OR REPLACE FUNCTION public.crm_tem_permissao(_perm text) RETURNS boolean LANGUAGE sql AS $$ SELECT EXISTS (SELECT 1 FROM perms WHERE user_id=auth.uid() AND perm=_perm) $$;
