@@ -137,7 +137,7 @@ describe('CRM 12B — regras PostgreSQL isoladas', () => {
   const id=await lead(); await automatico(); await rows('UPDATE patients SET phone=$1 WHERE id=$2',['5584999990000',PAC]); await rows('INSERT INTO patients(id,company_id,name,phone) VALUES(gen_random_uuid(),$1,$2,$3)',[C,'Outro paciente','5584999990000']); await rows('INSERT INTO appointments(company_id,patient_id) VALUES($1,$2)',[C,PAC]); expect((await state(id)).paciente_id).toBeNull(); expect((await state(id)).etapa_id).toBe(await etapa('Novo'))
  })
  it('falha CRM não impede gravação de mensagem ou agendamento', async () => {
-  const id=await lead(); await automatico(); await db.exec("CREATE OR REPLACE FUNCTION crm_evoluir(uuid,text) RETURNS void LANGUAGE plpgsql AS $$ BEGIN RAISE EXCEPTION 'falha simulada'; END $$;")
+  const id=await lead(); await automatico(); await db.exec("CREATE OR REPLACE FUNCTION crm_evoluir(p_lead uuid,p_evento text) RETURNS void LANGUAGE plpgsql AS $$ BEGIN RAISE EXCEPTION 'falha simulada'; END $$;")
   await message(id,'oi','saida','usuario','enviada'); await rows('UPDATE crm_leads SET paciente_id=$1 WHERE id=$2',[PAC,id]); await rows('INSERT INTO appointments(company_id,patient_id) VALUES($1,$2)',[C,PAC]); expect((await rows('SELECT count(*)::int n FROM appointments'))[0].n).toBe(1); expect((await rows('SELECT count(*)::int n FROM whatsapp_mensagens'))[0].n).toBe(1)
  })
  it('retornos deduplicam por dia, adiamentos 1/3/7 e conclusão registram eventos', async () => {
