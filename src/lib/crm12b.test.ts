@@ -81,6 +81,17 @@ const state = async (id: string) => (await rows('SELECT * FROM crm_leads WHERE i
 const results = async () => (await rows("SELECT crm_resultados(current_date-30,current_date) r"))[0].r
 
 describe('CRM 12B — regras PostgreSQL isoladas', () => {
+ it('evolução desligada preserva etapa; configuração única rejeita destinos duplicados', async () => {
+  const id=await lead(); await message(id,'resposta','saida','usuario','enviada'); expect((await state(id)).etapa_id).toBe(await etapa('Novo'))
+  await como(GESTOR)
+  const target=await etapa('Novo')
+  expect(await erro("SELECT crm_etapa_12b_salvar($1,'Novo','#00D4FF','aberta',true,'primeira_resposta')",[target])).toContain('crm_etapa_automacao_unica')
+ })
+ it('trava impede etapa agendamento, Manual impede regra de perda', async () => {
+  const id=await lead(); await automatico(); await rows('SELECT crm_lead_editar($1,$2)',[id,JSON.stringify({temperatura:'frio'})]); await rows('SELECT crm_lead_mover($1,$2)',[id,await etapa('Agendado')]); expect((await state(id)).temperatura).toBe('frio')
+  await rows("UPDATE crm_config SET temperatura_modo='manual' WHERE company_id=$1",[C]); await rows('SELECT crm_lead_editar($1,$2)',[id,JSON.stringify({temperatura:'quente'})]); const m=(await rows("SELECT id FROM crm_motivos_perda WHERE company_id=$1 AND nome='Preço'",[C]))[0].id
+  await rows('SELECT crm_lead_mover($1,$2,$3)',[id,await etapa('Perdido'),m]); expect((await state(id)).temperatura).toBe('quente')
+ })
  it('inicia Manual, evolução desligada, prazos 7 e 5 e lista editável', async () => {
   const c=(await rows('SELECT * FROM crm_config WHERE company_id=$1',[C]))[0]
   expect(c).toMatchObject({temperatura_modo:'manual',evolucao_automatica:false,travar_manual_dias:7,frio_apos_dias:5})
