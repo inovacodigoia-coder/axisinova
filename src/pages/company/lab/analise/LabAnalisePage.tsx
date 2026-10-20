@@ -49,6 +49,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '
 import { Calendar } from '@/components/ui/calendar';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
+import { matchesExamWorkbench, resolveExamWorkbench } from '@/lib/labExamWorkbench';
 
 /** Converte string de data para Date no fuso local (evita deslocamento de 1 dia em datas "YYYY-MM-DD"). */
 function parseLocalDate(value?: string | Date | null): Date | null {
@@ -99,7 +100,7 @@ export default function LabAnalisePage() {
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState('analise');
   const { orders, refresh: refreshOrders } = useAttendanceCadastro();
-  const { workbenches } = useRegisters();
+  const { workbenches, exams: catalogExams } = useRegisters();
   const { availableOrigins: establishments } = useCompanyContext();
   
   const [loading, setLoading] = useState(true);
@@ -164,6 +165,7 @@ export default function LabAnalisePage() {
       const exams = (order.labGuides || []).flatMap(guide => 
         (guide.exams || []).map((e: any) => ({
           ...e,
+          workbenchId: resolveExamWorkbench(e, catalogExams),
           // ID do catálogo (compartilhado entre pedidos) preservado separadamente
           examId: e.examId || e.id,
           // ID único por instância (pedido + exame) para evitar colisão de estado entre pacientes
@@ -229,9 +231,7 @@ export default function LabAnalisePage() {
       // Filtro de Bancada: Deve filtrar exames individuais, mas a lista principal
       // é agrupada por paciente. O filtro de bancada afeta quais exames aparecem
       // dentro do grupo do paciente.
-      const matchesWorkbench = selectedWorkbenches.length === 0 || 
-                               selectedWorkbenches.includes(exam.bancadaId || '') ||
-                               selectedWorkbenches.includes(exam.workbenchId || exam.workbench || '');
+      const matchesWorkbench = matchesExamWorkbench(exam, selectedWorkbenches);
       
       // Filtro de Origem
       const apoioModo = apoioModos[`${exam.orderId}:${exam.examId}`];
@@ -280,7 +280,7 @@ export default function LabAnalisePage() {
 
       return matchesSearch && matchesProtocol && matchesWorkbench && matchesOrigin && matchesPeriod;
     });
-  }, [orders, search, protocolSearch, selectedWorkbenches, selectedEstablishments, selectedStatuses, period, dateFrom, dateTo]);
+  }, [orders, catalogExams, apoioModos, search, protocolSearch, selectedWorkbenches, selectedEstablishments, selectedStatuses, period, dateFrom, dateTo]);
 
   // Agrupamento por protocolo para a lista lateral
   const groupedExams = useMemo(() => {

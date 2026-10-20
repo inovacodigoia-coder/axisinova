@@ -1,6 +1,7 @@
 import { useState, useMemo, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { buildExamParams, catalogKey, findCatalogExam, evaluateFormula, normalizeText, resolveReference } from '@/utils/examParameters';
+import { matchesExamWorkbench } from '@/lib/labExamWorkbench';
 
 import { resolveCompanyId } from '@/utils/companyId';
 import { useAuth } from '@/context/AuthContext';
@@ -194,8 +195,7 @@ export function ResultEntryModal({
     const groups: Record<string, any> = {};
     filteredExams.forEach(exam => {
       // Aplicar filtro de bancada também no modal para garantir consistência
-      const matchesWorkbench = filters.workbenches.length === 0 || 
-                               filters.workbenches.includes(exam.workbenchId || exam.workbench || '');
+      const matchesWorkbench = matchesExamWorkbench(exam, filters.workbenches);
       
       if (!matchesWorkbench) return;
 

@@ -1,5 +1,10 @@
 # Verificação dos alertas
 
+# Exames adicionados ao editar guia
+- [x] Corrigir bancada ausente em exames adicionados à guia: usar catálogo como reserva e filtro compartilhado, preservando coleta e resultados existentes.
+- [x] 11 testes passaram; Ácido Úrico do pedido 8-00 confirmado recebido no banco, sem alterações nos registros reais.
+- [ ] Validar a digitação na tela logada: sessão disponível redirecionou para /login; depende de novo login do usuário.
+
 # Cadastro /cadastro
 - [x] Corrigir origem MATRIZ duplicada na criação da empresa e restringir aviso de CNPJ duplicado à chave correta; falha na consulta não libera cadastro.
 - [x] Preservar campos ao voltar entre etapas; telefone e e-mail comerciais opcionais (ausentes como null).
