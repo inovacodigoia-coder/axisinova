@@ -1,5 +1,9 @@
 # Verificação dos alertas
 
+# Exames adicionados ao editar guia
+- [ ] Corrigir a inclusão na digitação após recebimento, preservando coleta e resultados existentes.
+- [ ] Executar testes e verificar a tela com a sessão disponível, sem alterar registros clínicos reais.
+
 # Cadastro /cadastro
 - [x] Corrigir origem MATRIZ duplicada na criação da empresa e restringir aviso de CNPJ duplicado à chave correta; falha na consulta não libera cadastro.
 - [x] Preservar campos ao voltar entre etapas; telefone e e-mail comerciais opcionais (ausentes como null).
