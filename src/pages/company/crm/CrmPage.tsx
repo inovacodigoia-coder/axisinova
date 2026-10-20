@@ -15,6 +15,8 @@ import { LeadFormDialog, selCls } from '@/components/crm/LeadFormDialog'
 import { LeadDrawer } from '@/components/crm/LeadDrawer'
 import { MotivoPerdaDialog } from '@/components/crm/MotivoPerdaDialog'
 import { CrmConfigDialog } from '@/components/crm/CrmConfigDialog'
+import { CrmResults } from '@/components/crm/CrmResults'
+import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs'
 
 const TempIcon = ({ t, className }: { t: string; className?: string }) => {
   const I = t === 'frio' ? Snowflake : t === 'quente' ? Flame : ThermometerSun
@@ -25,13 +27,13 @@ export default function CrmPage() {
   const acesso = useCrmAcesso()
   const [params, setParams] = useSearchParams()
   const [leads, setLeads] = useState<CrmLead[] | null>(null)
-  const [resumo, setResumo] = useState({ abertos: 0, criados_30d: 0, convertidos_30d: 0 })
+  const [resumo, setResumo] = useState({ abertos: 0, criados_30d: 0, convertidos_30d: 0, retornos_hoje: 0 })
   const [usuarios, setUsuarios] = useState<CrmUsuario[]>([])
   const [etapas, setEtapas] = useState<CrmEtapa[]>([])
   const [tags, setTags] = useState<CrmTag[]>([])
   const [motivos, setMotivos] = useState<CrmMotivo[]>([])
   const [modo, setModo] = useState<'kanban' | 'lista'>('kanban')
-  const [fl, setFl] = useState({ meus: false, resp: '', temp: '', tag: '', origem: '', desde: '', ate: '', q: '' })
+  const [fl, setFl] = useState({ meus: false, retornos: false, resp: '', temp: '', tag: '', origem: '', desde: '', ate: '', q: '' })
   const [novo, setNovo] = useState(false)
   const [config, setConfig] = useState(false)
   const [selId, setSelId] = useState<string | null>(null)
@@ -56,6 +58,7 @@ export default function CrmPage() {
   useEffect(() => { const l = params.get('lead'); if (l) { setSelId(l); params.delete('lead'); setParams(params, { replace: true }) } }, [params, setParams])
 
   const filtrados = useMemo(() => (leads ?? []).filter(l => {
+    if (fl.retornos && (l.fechado_em || !l.proximo_contato_em || new Date(l.proximo_contato_em).toLocaleDateString('en-CA', { timeZone: 'America/Fortaleza' }) > new Date().toLocaleDateString('en-CA', { timeZone: 'America/Fortaleza' }))) return false
     if (fl.meus && l.responsavel_id !== acesso?.usuario_id) return false
     if (fl.resp && l.responsavel_id !== fl.resp) return false
     if (fl.temp && l.temperatura !== fl.temp) return false
@@ -96,6 +99,7 @@ export default function CrmPage() {
           <p className="min-w-0 flex-1 truncate text-sm font-semibold text-foreground">{l.nome}</p>
           {l.nao_lida && <span className="mt-1 h-2 w-2 shrink-0 rounded-full bg-primary" title="Mensagem não lida" />}
           <TempIcon t={l.temperatura} />
+          {l.temperatura_origem === 'automatica' && <span className="rounded bg-muted px-1 text-[10px] text-muted-foreground" title={l.temperatura_regra ?? 'Temperatura automática'}>auto</span>}
           <DropdownMenu>
             <DropdownMenuTrigger asChild onClick={e => e.stopPropagation()}>
               <button className="-mr-1 -mt-1 rounded p-1 text-muted-foreground hover:bg-muted md:hidden" aria-label="Mover para"><MoreVertical className="h-4 w-4" /></button>
@@ -145,6 +149,9 @@ export default function CrmPage() {
         {acesso.criar && <Button onClick={() => setNovo(true)} className="gradient-bg text-primary-foreground"><Plus className="mr-1 h-4 w-4" />Novo lead</Button>}
       </div>
 
+      <Tabs defaultValue="quadro"><TabsList><TabsTrigger value="quadro">Quadro</TabsTrigger><TabsTrigger value="resultados">Resultados</TabsTrigger></TabsList>
+      <TabsContent value="resultados"><CrmResults usuarios={usuarios} revision={leads} /></TabsContent>
+      <TabsContent value="quadro" className="space-y-4">
       <div className="grid grid-cols-3 gap-3">
         {[['Leads abertos', resumo.abertos], ['Criados (30 dias)', resumo.criados_30d], ['Viraram paciente (30 dias)', resumo.convertidos_30d]].map(([r, v]) => (
           <div key={r as string} className="rounded-xl border border-border bg-card p-3"><p className="text-xs text-muted-foreground">{r}</p><p className="text-xl font-bold text-foreground">{v}</p></div>
@@ -155,6 +162,7 @@ export default function CrmPage() {
         <div className="relative min-w-[200px] flex-1"><Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
           <Input className="pl-9" placeholder="Buscar por nome ou telefone" value={fl.q} onChange={e => setFl({ ...fl, q: e.target.value })} /></div>
         <Button variant={fl.meus ? 'secondary' : 'outline'} size="sm" className="h-10" onClick={() => setFl({ ...fl, meus: !fl.meus })}>Meus leads</Button>
+        <Button variant={fl.retornos ? 'secondary' : 'outline'} size="sm" className="h-10" onClick={() => setFl({ ...fl, retornos: !fl.retornos })}><CalendarClock className="mr-1 h-4 w-4" />Retorno vencido ou hoje · {resumo.retornos_hoje ?? 0}</Button>
         <select className={cn(selCls, 'w-auto')} value={fl.resp} onChange={e => setFl({ ...fl, resp: e.target.value })}><option value="">Responsável</option>{usuarios.map(u => <option key={u.id} value={u.id}>{u.nome}</option>)}</select>
         <select className={cn(selCls, 'w-auto')} value={fl.temp} onChange={e => setFl({ ...fl, temp: e.target.value })}><option value="">Temperatura</option>{TEMPERATURAS.map(t => <option key={t.value} value={t.value}>{t.label}</option>)}</select>
         <select className={cn(selCls, 'w-auto')} value={fl.tag} onChange={e => setFl({ ...fl, tag: e.target.value })}><option value="">Tag</option>{tags.map(t => <option key={t.id} value={t.id}>{t.nome}</option>)}</select>
@@ -209,6 +217,7 @@ export default function CrmPage() {
         </div>
       )}
 
+      </TabsContent></Tabs>
       <LeadFormDialog open={novo} onClose={() => setNovo(false)} usuarios={usuarios} euId={acesso.usuario_id}
         onCriado={id => { setNovo(false); void carregar().then(() => setSelId(id)) }} />
       <LeadDrawer lead={sel} etapas={etapas} tags={tags} motivos={motivos} usuarios={usuarios} podeGerenciar={acesso.gerenciar}

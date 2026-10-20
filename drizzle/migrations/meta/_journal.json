@@ -736,6 +736,20 @@
       "when": 1792459252527,
       "tag": "0104_crm_12a",
       "breakpoints": true
+    },
+    {
+      "idx": 105,
+      "version": "7",
+      "when": 1792497725768,
+      "tag": "0105_crm_12b_temperatura_evolucao_retornos",
+      "breakpoints": true
+    },
+    {
+      "idx": 106,
+      "version": "7",
+      "when": 1792497760452,
+      "tag": "0106_crm_12b_resultados_quadro",
+      "breakpoints": true
     }
   ]
 }

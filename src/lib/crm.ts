@@ -2,7 +2,7 @@
 export type Temperatura = 'frio' | 'morno' | 'quente'
 export type TipoEtapa = 'aberta' | 'ganho' | 'perdido'
 
-export interface CrmEtapa { id: string; nome: string; cor: string; ordem: number; tipo: TipoEtapa; inicial: boolean; ativa: boolean }
+export interface CrmEtapa { id: string; nome: string; cor: string; ordem: number; tipo: TipoEtapa; inicial: boolean; ativa: boolean; automacao?: string | null }
 export interface CrmTag { id: string; nome: string; cor: string; ativa: boolean }
 export interface CrmMotivo { id: string; nome: string; ativo: boolean }
 export interface CrmUsuario { id: string; nome: string }
@@ -12,6 +12,7 @@ export interface CrmLead {
   valor_estimado: number | null; proximo_contato_em: string | null; motivo_perda_id: string | null; motivo_perda_texto: string | null
   criado_em: string; etapa_atualizada_em: string; fechado_em: string | null; telefone: string; tags: string[]
   nao_lida: boolean; pode_editar: boolean
+  temperatura_origem?: string; temperatura_regra?: string | null; temperatura_travada_ate?: string | null
 }
 export interface CrmAcesso { ver: boolean; operar: boolean; gerenciar: boolean; criar: boolean; usuario_id?: string }
 
@@ -56,3 +57,5 @@ export const isoParaLocal = (iso: string | null) => {
   const d = new Date(iso); const p = (n: number) => String(n).padStart(2, '0')
   return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}T${p(d.getHours())}:${p(d.getMinutes())}`
 }
+
+export interface CrmConfig { temperatura_modo: "manual" | "automatico"; travar_manual_dias: number; frio_apos_dias: number; palavras_quentes: string[]; evolucao_automatica: boolean; alerta_lead_quente: boolean }

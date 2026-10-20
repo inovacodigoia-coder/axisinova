@@ -10,6 +10,7 @@ import { Label } from '@/components/ui/label'
 import { Switch } from '@/components/ui/switch'
 import { CORES, type CrmEtapa, type CrmLead, type CrmMotivo, type CrmTag, type TipoEtapa } from '@/lib/crm'
 import { selCls } from './LeadFormDialog'
+import { CrmAutomationSettings } from './CrmAutomationSettings'
 
 const TIPOS: Record<TipoEtapa, string> = { aberta: 'Aberta', ganho: 'Ganho', perdido: 'Perdido' }
 
@@ -52,7 +53,8 @@ export function CrmConfigDialog({ open, onClose, etapas, tags, motivos, leads, o
       <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-2xl">
         <DialogHeader><DialogTitle>Configurar CRM</DialogTitle><DialogDescription>Etapas do funil, tags e motivos de perda.</DialogDescription></DialogHeader>
         <Tabs defaultValue="etapas">
-          <TabsList className="grid w-full grid-cols-3"><TabsTrigger value="etapas">Etapas</TabsTrigger><TabsTrigger value="tags">Tags</TabsTrigger><TabsTrigger value="motivos">Motivos de perda</TabsTrigger></TabsList>
+          <TabsList className="flex h-auto w-full flex-wrap justify-start"><TabsTrigger value="etapas">Etapas</TabsTrigger><TabsTrigger value="tags">Tags</TabsTrigger><TabsTrigger value="motivos">Motivos de perda</TabsTrigger><TabsTrigger value="automacoes">Temperatura e automações</TabsTrigger></TabsList>
+          <TabsContent value="automacoes"><CrmAutomationSettings onMudou={onMudou} /></TabsContent>
 
           <TabsContent value="etapas" className="space-y-2">
             <p className="text-xs text-muted-foreground">Arraste para reordenar. Sempre há uma etapa inicial, uma de ganho e uma de perda.</p>
@@ -106,11 +108,12 @@ export function CrmConfigDialog({ open, onClose, etapas, tags, motivos, leads, o
               <div className="space-y-1"><Label>Tipo</Label><select className={selCls} value={edit.tipo} onChange={e => setEdit({ ...edit, tipo: e.target.value as TipoEtapa })}>
                 {Object.entries(TIPOS).map(([k, v]) => <option key={k} value={k}>{v}</option>)}</select></div>
               {edit.tipo === 'aberta' && <label className="flex items-center gap-2 text-sm"><Switch checked={!!edit.inicial} onCheckedChange={v => setEdit({ ...edit, inicial: v })} />Etapa inicial (novos leads entram aqui)</label>}
+              <div className="space-y-1"><Label>Mover o card para esta etapa quando</Label><select className={selCls} value={edit.automacao ?? ''} disabled={edit.tipo === 'perdido'} onChange={e => setEdit({ ...edit, automacao: e.target.value || null })}><option value="">Nenhum</option><option value="primeira_resposta">O atendente responder pela primeira vez</option><option value="agendamento_criado">For criado um agendamento para o paciente</option><option value="atendimento_finalizado">O atendimento for finalizado</option></select></div>
             </div>}
             <DialogFooter><Button variant="outline" onClick={() => setEdit(null)}>Cancelar</Button>
               <Button disabled={!edit?.nome?.trim()} onClick={async () => {
                 if (!edit) return
-                if (await rpc('crm_etapa_salvar', { p_id: edit.id ?? null, p_nome: edit.nome, p_cor: edit.cor, p_tipo: edit.tipo, p_inicial: edit.tipo === 'aberta' && !!edit.inicial }, 'Etapa salva.')) { setEdit(null); onMudou() }
+                if (await rpc('crm_etapa_12b_salvar', { p_id: edit.id ?? null, p_nome: edit.nome, p_cor: edit.cor, p_tipo: edit.tipo, p_inicial: edit.tipo === 'aberta' && !!edit.inicial, p_automacao: edit.tipo === 'perdido' ? null : edit.automacao ?? null }, 'Etapa salva.')) { setEdit(null); onMudou() }
               }}>Salvar</Button></DialogFooter>
           </DialogContent>
         </Dialog>

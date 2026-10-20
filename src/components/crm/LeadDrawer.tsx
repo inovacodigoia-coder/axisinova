@@ -38,6 +38,7 @@ function Corpo({ lead, etapas, tags, motivos, usuarios, podeGerenciar, onClose, 
   const etapa = etapas.find(e => e.id === lead.etapa_id)
   const [f, setF] = useState({ nome: lead.nome, interesse: lead.interesse ?? '', origem: lead.origem, valor: lead.valor_estimado?.toString() ?? '',
     responsavel: lead.responsavel_id ?? '', temperatura: lead.temperatura, proximo: isoParaLocal(lead.proximo_contato_em), tags: lead.tags })
+  useEffect(() => { setF({ nome: lead.nome, interesse: lead.interesse ?? '', origem: lead.origem, valor: lead.valor_estimado?.toString() ?? '', responsavel: lead.responsavel_id ?? '', temperatura: lead.temperatura, proximo: isoParaLocal(lead.proximo_contato_em), tags: lead.tags }) }, [lead])
   const [salvando, setSalvando] = useState(false)
   const [perda, setPerda] = useState(false)
   const [excluir, setExcluir] = useState(false)
@@ -93,6 +94,7 @@ function Corpo({ lead, etapas, tags, motivos, usuarios, podeGerenciar, onClose, 
       <SheetHeader>
         <SheetTitle className="flex flex-wrap items-center gap-2">
           {lead.nome}
+          {lead.temperatura_origem === 'automatica' && <span className="rounded bg-muted px-1.5 py-0.5 text-xs text-muted-foreground" title={lead.temperatura_regra ?? 'Temperatura automática'}>auto</span>}
           {etapa && <span className="rounded-full px-2 py-0.5 text-xs text-primary-foreground" style={{ background: etapa.cor }}>{etapa.nome}</span>}
         </SheetTitle>
         {!ed && <p className="text-xs text-muted-foreground">Somente leitura: apenas o responsável ou o gestor do CRM edita este lead.</p>}
@@ -101,6 +103,8 @@ function Corpo({ lead, etapas, tags, motivos, usuarios, podeGerenciar, onClose, 
         <TabsList className="grid w-full grid-cols-3"><TabsTrigger value="resumo">Resumo</TabsTrigger><TabsTrigger value="conversa">Conversa</TabsTrigger><TabsTrigger value="historico">Histórico</TabsTrigger></TabsList>
 
         <TabsContent value="resumo" className="space-y-4">
+          {lead.temperatura_travada_ate && new Date(lead.temperatura_travada_ate) > new Date() && <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground"><span>Ajuste manual vale até {fmtDataHora(lead.temperatura_travada_ate)}</span>{ed && <Button size="sm" variant="outline" onClick={() => void rpc('crm_voltar_automatico', { p_lead: lead.id }, 'Trava manual removida.')}>Voltar ao automático</Button>}</div>}
+          {ed && !lead.fechado_em && <div className="flex flex-wrap gap-2"><Button size="sm" variant="outline" disabled={!lead.proximo_contato_em} onClick={() => void rpc('crm_retorno', { p_lead: lead.id }, 'Retorno concluído.')}>Concluir retorno</Button>{[1,3,7].map(d => <Button key={d} size="sm" variant="outline" onClick={() => void rpc('crm_retorno', { p_lead: lead.id, p_dias: d }, 'Retorno adiado.')}>Adiar {d} dia{d > 1 ? 's' : ''}</Button>)}<Button size="sm" variant="outline" onClick={() => document.getElementById('lead-proximo-contato')?.focus()}>Escolher data</Button></div>}
           <fieldset disabled={!ed} className="grid gap-3 sm:grid-cols-2">
             <div className="sm:col-span-2 space-y-1"><Label>Nome</Label><Input value={f.nome} maxLength={120} onChange={e => setF({ ...f, nome: e.target.value })} /></div>
             <div className="sm:col-span-2 space-y-1"><Label>Interesse</Label><Input value={f.interesse} maxLength={120} onChange={e => setF({ ...f, interesse: e.target.value })} /></div>
@@ -108,7 +112,7 @@ function Corpo({ lead, etapas, tags, motivos, usuarios, podeGerenciar, onClose, 
             <div className="space-y-1"><Label>Temperatura</Label><select className={selCls} value={f.temperatura} onChange={e => setF({ ...f, temperatura: e.target.value as any })}>{TEMPERATURAS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}</select></div>
             <div className="space-y-1"><Label>Responsável</Label><select className={selCls} value={f.responsavel} onChange={e => setF({ ...f, responsavel: e.target.value })}><option value="">Sem responsável</option>{usuarios.map(u => <option key={u.id} value={u.id}>{u.nome}</option>)}</select></div>
             <div className="space-y-1"><Label>Valor estimado (R$)</Label><Input inputMode="decimal" value={f.valor} onChange={e => setF({ ...f, valor: e.target.value.replace(/[^\d,.]/g, '') })} /></div>
-            <div className="sm:col-span-2 space-y-1"><Label>Próximo contato</Label><Input type="datetime-local" value={f.proximo} onChange={e => setF({ ...f, proximo: e.target.value })} /></div>
+            <div className="sm:col-span-2 space-y-1"><Label htmlFor="lead-proximo-contato">Próximo contato</Label><Input id="lead-proximo-contato" type="datetime-local" value={f.proximo} onChange={e => setF({ ...f, proximo: e.target.value })} /></div>
             <div className="sm:col-span-2 space-y-1"><Label>Tags</Label>
               <div className="flex flex-wrap gap-2">{tags.filter(t => t.ativa || f.tags.includes(t.id)).map(t => {
                 const on = f.tags.includes(t.id)
@@ -188,7 +192,7 @@ function Corpo({ lead, etapas, tags, motivos, usuarios, podeGerenciar, onClose, 
                       : e.tipo === 'tag' ? (e.para ? `: adicionada ${e.para}` : `: removida ${e.de}`)
                       : e.de || e.para ? `: ${e.de ?? '—'} → ${e.para ?? '—'}` : ''}</p>
                   {e.texto && <p className="whitespace-pre-wrap text-sm text-muted-foreground">{e.texto}</p>}
-                  <p className="text-[11px] text-muted-foreground">{e.usuario ?? 'Sistema'} · {fmtDataHora(e.criado_em)}</p>
+                  <p className="text-[11px] text-muted-foreground">{e.origem === 'sistema' ? 'Sistema' : e.usuario ?? 'Usuário'} · {fmtDataHora(e.criado_em)}</p>
                 </li>
               ))}
             </ol>
