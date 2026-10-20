@@ -1,5 +1,10 @@
 # Verificação dos alertas
 
+# Etapa 12B — CRM
+- [ ] Configuração Manual/Automático, temperatura com trava e alertas, evolução apenas para frente.
+- [ ] Lembretes e ações de retorno; Resultados agregados e etiqueta atualizada no InovaChat.
+- [ ] Testes isolados de regras, permissões, idempotência e falhas sem bloquear os fluxos originais; validar tela logada com sessão autorizada.
+
 # Respostas automáticas à nota
 - [x] Corrigir agradecimento no teste NPS sem registrar nota real; correlação, repetição e isolamento verificados (42 testes passaram, sem envio real).
 - [ ] Confirmar chegada no celular com um novo teste iniciado pelo usuário; nenhum envio real autorizado nesta correção.
