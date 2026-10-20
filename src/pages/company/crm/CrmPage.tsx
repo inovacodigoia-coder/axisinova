@@ -158,6 +158,7 @@ export default function CrmPage() {
         ))}
       </div>
 
+      <Button variant={fl.retornos ? 'secondary' : 'outline'} size="sm" onClick={() => setFl({ ...fl, retornos: !fl.retornos })}><CalendarClock className="mr-1 h-4 w-4" />Retornos hoje: {resumo.retornos_hoje ?? 0}</Button>
       <div className="flex flex-wrap items-center gap-2">
         <div className="relative min-w-[200px] flex-1"><Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
           <Input className="pl-9" placeholder="Buscar por nome ou telefone" value={fl.q} onChange={e => setFl({ ...fl, q: e.target.value })} /></div>
