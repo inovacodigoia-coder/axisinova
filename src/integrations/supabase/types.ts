@@ -2921,6 +2921,9 @@ export type Database = {
           cnpj: string | null
           complemento: string | null
           created_at: string
+          crm_habilitado: boolean
+          crm_habilitado_em: string | null
+          crm_habilitado_por: string | null
           email: string | null
           estado: string | null
           id: string
@@ -2967,6 +2970,9 @@ export type Database = {
           cnpj?: string | null
           complemento?: string | null
           created_at?: string
+          crm_habilitado?: boolean
+          crm_habilitado_em?: string | null
+          crm_habilitado_por?: string | null
           email?: string | null
           estado?: string | null
           id?: string
@@ -3013,6 +3019,9 @@ export type Database = {
           cnpj?: string | null
           complemento?: string | null
           created_at?: string
+          crm_habilitado?: boolean
+          crm_habilitado_em?: string | null
+          crm_habilitado_por?: string | null
           email?: string | null
           estado?: string | null
           id?: string
@@ -3225,6 +3234,323 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "convenios_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      crm_etapas: {
+        Row: {
+          ativa: boolean
+          company_id: string
+          cor: string
+          criado_em: string
+          id: string
+          inicial: boolean
+          nome: string
+          ordem: number
+          tipo: string
+        }
+        Insert: {
+          ativa?: boolean
+          company_id: string
+          cor?: string
+          criado_em?: string
+          id?: string
+          inicial?: boolean
+          nome: string
+          ordem?: number
+          tipo?: string
+        }
+        Update: {
+          ativa?: boolean
+          company_id?: string
+          cor?: string
+          criado_em?: string
+          id?: string
+          inicial?: boolean
+          nome?: string
+          ordem?: number
+          tipo?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "crm_etapas_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      crm_lead_eventos: {
+        Row: {
+          company_id: string
+          criado_em: string
+          de: string | null
+          id: string
+          lead_id: string
+          origem: string
+          para: string | null
+          texto: string | null
+          tipo: string
+          usuario_id: string | null
+        }
+        Insert: {
+          company_id: string
+          criado_em?: string
+          de?: string | null
+          id?: string
+          lead_id: string
+          origem?: string
+          para?: string | null
+          texto?: string | null
+          tipo: string
+          usuario_id?: string | null
+        }
+        Update: {
+          company_id?: string
+          criado_em?: string
+          de?: string | null
+          id?: string
+          lead_id?: string
+          origem?: string
+          para?: string | null
+          texto?: string | null
+          tipo?: string
+          usuario_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "crm_lead_eventos_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "crm_lead_eventos_lead_id_fkey"
+            columns: ["lead_id"]
+            isOneToOne: false
+            referencedRelation: "crm_leads"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      crm_lead_tags: {
+        Row: {
+          lead_id: string
+          tag_id: string
+        }
+        Insert: {
+          lead_id: string
+          tag_id: string
+        }
+        Update: {
+          lead_id?: string
+          tag_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "crm_lead_tags_lead_id_fkey"
+            columns: ["lead_id"]
+            isOneToOne: false
+            referencedRelation: "crm_leads"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "crm_lead_tags_tag_id_fkey"
+            columns: ["tag_id"]
+            isOneToOne: false
+            referencedRelation: "crm_tags"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      crm_leads: {
+        Row: {
+          atualizado_em: string
+          company_id: string
+          contato_id: string
+          criado_em: string
+          criado_por: string | null
+          etapa_atualizada_em: string
+          etapa_id: string
+          fechado_em: string | null
+          id: string
+          interesse: string | null
+          motivo_perda_id: string | null
+          motivo_perda_texto: string | null
+          nome: string
+          origem: string
+          paciente_id: string | null
+          proximo_contato_em: string | null
+          responsavel_id: string | null
+          temperatura: string
+          temperatura_origem: string
+          valor_estimado: number | null
+        }
+        Insert: {
+          atualizado_em?: string
+          company_id: string
+          contato_id: string
+          criado_em?: string
+          criado_por?: string | null
+          etapa_atualizada_em?: string
+          etapa_id: string
+          fechado_em?: string | null
+          id?: string
+          interesse?: string | null
+          motivo_perda_id?: string | null
+          motivo_perda_texto?: string | null
+          nome: string
+          origem?: string
+          paciente_id?: string | null
+          proximo_contato_em?: string | null
+          responsavel_id?: string | null
+          temperatura?: string
+          temperatura_origem?: string
+          valor_estimado?: number | null
+        }
+        Update: {
+          atualizado_em?: string
+          company_id?: string
+          contato_id?: string
+          criado_em?: string
+          criado_por?: string | null
+          etapa_atualizada_em?: string
+          etapa_id?: string
+          fechado_em?: string | null
+          id?: string
+          interesse?: string | null
+          motivo_perda_id?: string | null
+          motivo_perda_texto?: string | null
+          nome?: string
+          origem?: string
+          paciente_id?: string | null
+          proximo_contato_em?: string | null
+          responsavel_id?: string | null
+          temperatura?: string
+          temperatura_origem?: string
+          valor_estimado?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "crm_leads_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "crm_leads_contato_id_fkey"
+            columns: ["contato_id"]
+            isOneToOne: false
+            referencedRelation: "whatsapp_contatos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "crm_leads_etapa_id_fkey"
+            columns: ["etapa_id"]
+            isOneToOne: false
+            referencedRelation: "crm_etapas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "crm_leads_motivo_perda_id_fkey"
+            columns: ["motivo_perda_id"]
+            isOneToOne: false
+            referencedRelation: "crm_motivos_perda"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "crm_leads_paciente_id_fkey"
+            columns: ["paciente_id"]
+            isOneToOne: false
+            referencedRelation: "patients"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      crm_motivos_perda: {
+        Row: {
+          ativo: boolean
+          company_id: string
+          id: string
+          nome: string
+        }
+        Insert: {
+          ativo?: boolean
+          company_id: string
+          id?: string
+          nome: string
+        }
+        Update: {
+          ativo?: boolean
+          company_id?: string
+          id?: string
+          nome?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "crm_motivos_perda_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      crm_sinais: {
+        Row: {
+          company_id: string
+          em: string
+        }
+        Insert: {
+          company_id: string
+          em?: string
+        }
+        Update: {
+          company_id?: string
+          em?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "crm_sinais_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: true
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      crm_tags: {
+        Row: {
+          ativa: boolean
+          company_id: string
+          cor: string
+          id: string
+          nome: string
+        }
+        Insert: {
+          ativa?: boolean
+          company_id: string
+          cor?: string
+          id?: string
+          nome: string
+        }
+        Update: {
+          ativa?: boolean
+          company_id?: string
+          cor?: string
+          id?: string
+          nome?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "crm_tags_company_id_fkey"
             columns: ["company_id"]
             isOneToOne: false
             referencedRelation: "companies"
@@ -10241,6 +10567,124 @@ export type Database = {
         }
         Returns: number
       }
+      crm__evento: {
+        Args: {
+          _company: string
+          _de: string
+          _lead: string
+          _para: string
+          _texto?: string
+          _tipo: string
+        }
+        Returns: undefined
+      }
+      crm__gestor: { Args: never; Returns: string }
+      crm__lead_editavel: {
+        Args: { _lead: string }
+        Returns: {
+          atualizado_em: string
+          company_id: string
+          contato_id: string
+          criado_em: string
+          criado_por: string | null
+          etapa_atualizada_em: string
+          etapa_id: string
+          fechado_em: string | null
+          id: string
+          interesse: string | null
+          motivo_perda_id: string | null
+          motivo_perda_texto: string | null
+          nome: string
+          origem: string
+          paciente_id: string | null
+          proximo_contato_em: string | null
+          responsavel_id: string | null
+          temperatura: string
+          temperatura_origem: string
+          valor_estimado: number | null
+        }
+        SetofOptions: {
+          from: "*"
+          to: "crm_leads"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      crm__pode_editar: {
+        Args: { l: Database["public"]["Tables"]["crm_leads"]["Row"] }
+        Returns: boolean
+      }
+      crm__resp_valido: {
+        Args: { _company: string; _user: string }
+        Returns: boolean
+      }
+      crm__sinal: { Args: { _company: string }; Returns: undefined }
+      crm__tags_definir: {
+        Args: {
+          _tags: string[]
+          l: Database["public"]["Tables"]["crm_leads"]["Row"]
+        }
+        Returns: undefined
+      }
+      crm__validar_funil: { Args: { _company: string }; Returns: undefined }
+      crm_ativo: { Args: { _company: string }; Returns: boolean }
+      crm_buscar_paciente: { Args: { p_q: string }; Returns: Json }
+      crm_etapa_desativar: {
+        Args: { p_destino?: string; p_id: string }
+        Returns: number
+      }
+      crm_etapa_salvar: {
+        Args: {
+          p_cor: string
+          p_id: string
+          p_inicial: boolean
+          p_nome: string
+          p_tipo: string
+        }
+        Returns: string
+      }
+      crm_etapas_ordenar: { Args: { p_ids: string[] }; Returns: undefined }
+      crm_funil_restaurar: { Args: never; Returns: undefined }
+      crm_lead_conversa: { Args: { p_lead: string }; Returns: Json }
+      crm_lead_criar: { Args: { p: Json }; Returns: string }
+      crm_lead_editar: { Args: { p: Json; p_lead: string }; Returns: undefined }
+      crm_lead_excluir: { Args: { p_lead: string }; Returns: undefined }
+      crm_lead_historico: { Args: { p_lead: string }; Returns: Json }
+      crm_lead_mover: {
+        Args: {
+          p_etapa: string
+          p_lead: string
+          p_motivo?: string
+          p_motivo_texto?: string
+        }
+        Returns: undefined
+      }
+      crm_lead_nota: {
+        Args: { p_lead: string; p_texto: string }
+        Returns: undefined
+      }
+      crm_lead_reabrir: { Args: { p_lead: string }; Returns: undefined }
+      crm_lead_vincular_paciente: {
+        Args: { p_lead: string; p_paciente: string }
+        Returns: undefined
+      }
+      crm_liberar: {
+        Args: { _company: string; _habilitado: boolean }
+        Returns: undefined
+      }
+      crm_meu_acesso: { Args: never; Returns: Json }
+      crm_motivo_salvar: {
+        Args: { p_ativo: boolean; p_id: string; p_nome: string }
+        Returns: string
+      }
+      crm_padrao: { Args: { _company: string }; Returns: undefined }
+      crm_pode_ver: { Args: { _company: string }; Returns: boolean }
+      crm_quadro: { Args: never; Returns: Json }
+      crm_tag_salvar: {
+        Args: { p_ativa: boolean; p_cor: string; p_id: string; p_nome: string }
+        Returns: string
+      }
+      crm_tem_permissao: { Args: { _perm: string }; Returns: boolean }
       data_pascoa: { Args: { _ano: number }; Returns: string }
       device_public_info: {
         Args: { _kind: string; _slug: string }
