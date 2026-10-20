@@ -747,6 +747,8 @@ function UnitsSection() {
   const [isDialogOpen, setIsDialogOpen] = useState(false)
   const [unitName, setUnitName] = useState('')
   const [saving, setSaving] = useState(false)
+  const [importando, setImportando] = useState(false)
+  const fileInputRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
     fetchUnits()
@@ -767,6 +769,73 @@ function UnitsSection() {
       toast.error('Erro ao carregar unidades de medida')
     } finally {
       setLoading(false)
+    }
+  }
+
+  const handleExportar = async () => {
+    try {
+      const XLSX = await import('xlsx')
+      const rows = units.map((u: any) => ({
+        'Nome': u.name,
+        'Ativa': u.active === false ? 'Não' : 'Sim',
+      }))
+      const ws = XLSX.utils.json_to_sheet(rows.length ? rows : [{ 'Nome': '', 'Ativa': '' }])
+      ws['!cols'] = [{ wch: 24 }, { wch: 8 }]
+      const wb = XLSX.utils.book_new()
+      XLSX.utils.book_append_sheet(wb, ws, 'Unidades')
+      XLSX.writeFile(wb, 'unidades-de-medida.xlsx')
+      toast.success('Planilha de unidades de medida exportada')
+    } catch (err: any) {
+      toast.error(`Falha ao exportar: ${err?.message || 'erro inesperado'}`)
+    }
+  }
+
+  const handleImportar = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    e.target.value = ''
+    if (!file) return
+    setImportando(true)
+    try {
+      const XLSX = await import('xlsx')
+      const wb = XLSX.read(await file.arrayBuffer())
+      const rows = XLSX.utils.sheet_to_json<Record<string, unknown>>(wb.Sheets[wb.SheetNames[0]])
+      if (!rows.length) { toast.error('Planilha vazia'); return }
+
+      const norm = (v: unknown) => String(v ?? '').trim()
+      const existentes = new Set(units.map((u: any) => norm(u.name).toLowerCase()))
+      let criadas = 0, ignoradas = 0
+      const erros: string[] = []
+
+      const { data: userData } = await supabase.auth.getUser()
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('company_id')
+        .eq('id', userData.user?.id)
+        .single()
+
+      for (let i = 0; i < rows.length; i++) {
+        const r = rows[i]
+        const nome = norm(r['Nome'])
+        if (!nome) { erros.push(`Linha ${i + 2}: nome vazio`); continue }
+        if (existentes.has(nome.toLowerCase())) { ignoradas++; continue }
+        const ativa = norm(r['Ativa']).toLowerCase() !== 'não' && norm(r['Ativa']).toLowerCase() !== 'nao'
+        const { error } = await supabase
+          .from('measurement_units')
+          .insert({ name: nome, company_id: profile?.company_id, active: ativa })
+        if (error) { erros.push(`Linha ${i + 2} (${nome}): ${error.message}`); continue }
+        existentes.add(nome.toLowerCase())
+        criadas++
+      }
+
+      if (criadas) toast.success(`${criadas} unidade(s) importada(s)`)
+      if (ignoradas) toast.info(`${ignoradas} já existente(s) ignorada(s)`)
+      erros.slice(0, 3).forEach(m => toast.error(m))
+      if (!criadas && !ignoradas && !erros.length) toast.info('Nada para importar')
+      if (criadas) fetchUnits()
+    } catch (err: any) {
+      toast.error(`Falha ao importar: ${err?.message || 'arquivo inválido'}`)
+    } finally {
+      setImportando(false)
     }
   }
 
