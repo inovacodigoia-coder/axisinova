@@ -546,7 +546,8 @@ export function ResultEntryModal({
 
   const persistExams = async (
     exams: any[],
-    status: 'draft' | 'digitized' | 'released'
+    status: 'draft' | 'digitized' | 'released',
+    opts?: { sync?: boolean }
   ) => {
     const cid = resolveCompanyId(user?.companyId);
     if (!cid || exams.length === 0) return;
@@ -573,7 +574,9 @@ export function ResultEntryModal({
         payload.typed_by = user?.id || null;
         payload.typed_at = nowIso;
       }
-      if (status === 'released') {
+      if (opts?.sync) {
+        payload.retificado_em = nowIso;
+      } else if (status === 'released') {
         payload.released_by = user?.id || null;
         payload.released_at = nowIso;
       }
@@ -1082,6 +1085,22 @@ export function ResultEntryModal({
       toast.success("Exame concluído e resultado salvo!");
     } catch {
       toast.error("Erro ao salvar o resultado do exame.");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  /** Sincroniza correção de exame já liberado: regrava valores no laudo (mantém a liberação original). */
+  const handleSyncLaudo = async (examId: string) => {
+    const exam = filteredExams.find(e => e.id === examId);
+    if (!exam) return;
+    setSaving(true);
+    try {
+      await persistExams([exam], 'released', { sync: true });
+      setCorrectionUnlocked(prev => ({ ...prev, [examId]: false }));
+      toast.success('Laudo sincronizado! A impressão já sai com a correção.');
+    } catch {
+      toast.error('Não foi possível sincronizar o laudo.');
     } finally {
       setSaving(false);
     }
@@ -1833,6 +1852,18 @@ export function ResultEntryModal({
                                    )}
                                    
                                   
+                                  {isReleased && (
+                                    <Button
+                                      size="sm"
+                                      variant="outline"
+                                      disabled={saving}
+                                      onClick={(e) => { e.stopPropagation(); handleSyncLaudo(exam.id); }}
+                                      title="Atualiza o laudo liberado com as correções feitas"
+                                      className="h-6 gap-1 px-2 text-[10px] font-black uppercase text-primary border-primary/30"
+                                    >
+                                      <RefreshCw className="h-3 w-3" /> Sincronizar laudo
+                                    </Button>
+                                  )}
                                   {/* Ações do Exame */}
                                   <DropdownMenu>
                                     <DropdownMenuTrigger asChild>
