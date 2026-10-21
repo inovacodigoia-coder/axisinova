@@ -27,6 +27,7 @@ export default function CompanyDetailPage() {
   const [activeTab, setActiveTab] = useState('overview')
   const [company, setCompany] = useState<Company | null>(null)
   const [companyUsers, setCompanyUsers] = useState<any[]>([])
+  const [userEmails, setUserEmails] = useState<Record<string, string | null>>({})
   const [loading, setLoading] = useState(true)
   const partnerApi = usePartnerApiEntitlement(companyId)
 
