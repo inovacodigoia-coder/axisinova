@@ -407,10 +407,9 @@ export function AttendanceDetailsModal({ open, onClose, onOrderDeleted, order, p
       // Nome e registro profissional de quem liberou os exames
       const ids = Array.from(new Set(data.map((r: any) => r.released_by).filter(Boolean))) as string[]
       if (ids.length > 0) {
-        const { data: profs } = await supabase
-          .from('profiles')
-          .select('id, full_name, council_type, council_uf, council_number')
-          .in('id', ids)
+        // Via função segura: a RLS de profiles só deixa ler o próprio perfil,
+        // então a leitura direta voltava vazia e o "Aprovado por" saía em branco.
+        const { data: profs } = await supabase.rpc('lab_aprovador_info' as any, { _ids: ids })
         if (!active || !profs) return
         const pm: Record<string, { name: string; register: string }> = {}
         profs.forEach((p: any) => {
@@ -515,6 +514,13 @@ export function AttendanceDetailsModal({ open, onClose, onOrderDeleted, order, p
     })
     const approver = approverId ? approvers[approverId] : undefined
 
+    // Data/hora da coleta: primeira coleta registrada entre os exames escolhidos
+    let collectionTime: string | null = null
+    base.forEach((exam: any) => {
+      const c = exam.collectedAt
+      if (c && (!collectionTime || new Date(c) < new Date(collectionTime))) collectionTime = c
+    })
+
     // Médico solicitante: pedido -> guia -> exame
     const guideWithDoctor: any = (guidesState || []).find((g: any) => g.doctorName)
     const examWithDoctor: any = base.find((e: any) => e.doctorName)
@@ -533,6 +539,7 @@ export function AttendanceDetailsModal({ open, onClose, onOrderDeleted, order, p
       approvedAt,
       approvedBy: approver?.name || undefined,
       approvedRegister: approver?.register || undefined,
+      collectionTime: collectionTime || (labOrder as any).collectionTime || null,
       exams: base.map(buildReportExam),
       // If we have labGuides, filter them too
       labGuides: labOrder.labGuides?.map(guide => ({
