@@ -539,6 +539,7 @@ export function AttendanceDetailsModal({ open, onClose, onOrderDeleted, order, p
       approvedAt,
       approvedBy: approver?.name || undefined,
       approvedRegister: approver?.register || undefined,
+      collectionTime: collectionTime || (labOrder as any).collectionTime || null,
       exams: base.map(buildReportExam),
       // If we have labGuides, filter them too
       labGuides: labOrder.labGuides?.map(guide => ({
