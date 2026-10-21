@@ -27,6 +27,7 @@ export default function CompanyDetailPage() {
   const [activeTab, setActiveTab] = useState('overview')
   const [company, setCompany] = useState<Company | null>(null)
   const [companyUsers, setCompanyUsers] = useState<any[]>([])
+  const [userEmails, setUserEmails] = useState<Record<string, string | null>>({})
   const [loading, setLoading] = useState(true)
   const partnerApi = usePartnerApiEntitlement(companyId)
 
@@ -85,8 +86,31 @@ export default function CompanyDetailPage() {
 
       if (userError) {
         console.error('Error fetching company users:', userError)
+        setCompanyUsers([])
       } else {
         setCompanyUsers(userData || [])
+
+        // E-mails reais (auth.users) — a tabela profiles não guarda e-mail.
+        // Mesma resolução em lote da página Usuários do Sistema (get-user-email).
+        const ids = (userData || []).map((p: any) => p.id as string)
+        if (ids.length > 0) {
+          const CHUNK = 200
+          const chunks: string[][] = []
+          for (let i = 0; i < ids.length; i += CHUNK) chunks.push(ids.slice(i, i + CHUNK))
+          const results = await Promise.all(
+            chunks.map(async (chunk) => {
+              try {
+                const { data: mail } = await supabase.functions.invoke('get-user-email', {
+                  body: { user_ids: chunk },
+                })
+                return (mail?.emails ?? {}) as Record<string, string | null>
+              } catch {
+                return {} as Record<string, string | null>
+              }
+            })
+          )
+          setUserEmails(Object.assign({}, ...results))
+        }
       }
 
       setLoading(false)
@@ -117,7 +141,7 @@ export default function CompanyDetailPage() {
   const users = companyUsers.length > 0 ? companyUsers.map(u => ({
     id: u.id,
     name: u.full_name || 'Sem nome',
-    email: u.email || '—',
+    email: userEmails[u.id] ?? u.email ?? '—',
     role: u.role || 'user',
     isActive: true, // Profiles table doesn't have an isActive, assuming true if exists
     lastAccess: u.updated_at ? new Date(u.updated_at).toLocaleDateString('pt-BR') : '—',
