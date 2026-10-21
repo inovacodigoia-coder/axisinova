@@ -11148,6 +11148,16 @@ export type Database = {
       inpatient_mark_clean: { Args: { _bed_id: string }; Returns: undefined }
       internacao_tem_permissao: { Args: { _acao: string }; Returns: boolean }
       is_company_manager: { Args: { _user_id: string }; Returns: boolean }
+      lab_aprovador_info: {
+        Args: { _ids: string[] }
+        Returns: {
+          council_number: string
+          council_type: string
+          council_uf: string
+          full_name: string
+          id: string
+        }[]
+      }
       lab_coleta_corrigir_horario: {
         Args: {
           _exame_ids: string[]
