@@ -141,7 +141,7 @@ export default function CompanyDetailPage() {
   const users = companyUsers.length > 0 ? companyUsers.map(u => ({
     id: u.id,
     name: u.full_name || 'Sem nome',
-    email: u.email || '—',
+    email: userEmails[u.id] ?? u.email ?? '—',
     role: u.role || 'user',
     isActive: true, // Profiles table doesn't have an isActive, assuming true if exists
     lastAccess: u.updated_at ? new Date(u.updated_at).toLocaleDateString('pt-BR') : '—',
