@@ -99,7 +99,12 @@ export default function LoginPage() {
       setError(null)
       setEmailError(null)
 
-      const result = await login(email, password)
+      let result: Awaited<ReturnType<typeof login>>
+      try {
+        result = await login(email, password)
+      } catch {
+        result = { success: false, error: 'Não foi possível conectar ao servidor. Tente novamente.' }
+      }
 
       if (!result.success) {
         setFailCount((c) => c + 1)
