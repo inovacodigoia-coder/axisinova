@@ -15,11 +15,19 @@ export function lockoutMessage(retryAfterSeconds?: number): string {
   return `Muitas tentativas. Tente novamente em ${minutes} minuto${minutes > 1 ? 's' : ''}.`
 }
 
+/** Resolves with null if the promise takes longer than `ms` (never hangs the login). */
+export function withTimeout<T>(p: Promise<T>, ms: number): Promise<T | null> {
+  return new Promise((resolve) => {
+    const t = setTimeout(() => resolve(null), ms)
+    p.then((v) => { clearTimeout(t); resolve(v) }, () => { clearTimeout(t); resolve(null) })
+  })
+}
+
 async function callGuard(payload: Record<string, unknown>): Promise<LockState | null> {
   try {
-    const { data, error } = await supabase.functions.invoke('auth-guard', { body: payload })
-    if (error) return null
-    return (data ?? null) as LockState | null
+    const res = await withTimeout(supabase.functions.invoke('auth-guard', { body: payload }), 6000)
+    if (!res || res.error) return null
+    return (res.data ?? null) as LockState | null
   } catch {
     return null
   }

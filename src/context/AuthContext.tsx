@@ -2,7 +2,7 @@ import { createContext, useCallback, useContext, useEffect, useState, type React
 import type { AuthUser, UserRole } from '@/types/auth.types'
 import { getRedirectByRole } from '@/mocks/users.mock'
 import { supabase } from '@/integrations/supabase/client'
-import { checkLockout, recordLoginAttempt, lockoutMessage, GENERIC_LOGIN_ERROR } from '@/services/authGuard'
+import { checkLockout, recordLoginAttempt, lockoutMessage, GENERIC_LOGIN_ERROR, withTimeout } from '@/services/authGuard'
 
 const TOKEN_KEY = 'axis_inova_token'
 const USER_KEY = 'axis_inova_user'
@@ -61,79 +61,95 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const login = useCallback(async (email: string, password: string): Promise<LoginResult> => {
     const identifier = email.trim().toLowerCase()
+    const NET_ERROR = 'Não foi possível conectar ao servidor. Verifique a internet e tente novamente.'
 
-    // 1. Server-side lockout check (never trusts client-side counters)
-    const lockState = await checkLockout(identifier)
-    if (lockState?.locked) {
-      return { success: false, error: lockoutMessage(lockState.retry_after_seconds), lockedFor: lockState.retry_after_seconds }
-    }
-
-    // 2. Backend auth
-    const { data: authData } = await supabase.auth.signInWithPassword({
-      email,
-      password,
-    })
-
-    if (authData.user) {
-      // Fetch profile to get company info
-      const { data: profile } = await supabase
-        .from('profiles')
-        .select('full_name, role, company_id, is_active, must_change_password, is_admin')
-        .eq('id', authData.user.id)
-        .single()
-
-      if (profile && !profile.is_active) {
-        await recordLoginAttempt(identifier, false)
-        await supabase.auth.signOut()
-        return { success: false, error: GENERIC_LOGIN_ERROR }
+    try {
+      // 1. Server-side lockout check (never trusts client-side counters; times out instead of hanging)
+      const lockState = await checkLockout(identifier)
+      if (lockState?.locked) {
+        return { success: false, error: lockoutMessage(lockState.retry_after_seconds), lockedFor: lockState.retry_after_seconds }
       }
 
-      // Successful login clears the failure counter server-side
-      await recordLoginAttempt(identifier, true)
-
-      // Get company name if linked
-      let companyName: string | null = null
-      if (profile?.company_id) {
-        const { data: company } = await supabase
-          .from('companies')
-          .select('name, nome_fantasia')
-          .eq('id', profile.company_id)
-          .single()
-        companyName = (company as any)?.nome_fantasia || company?.name || null
+      // 2. Backend auth
+      const authRes = await withTimeout(supabase.auth.signInWithPassword({ email: identifier, password }), 20000)
+      if (!authRes) return { success: false, error: NET_ERROR }
+      const { data: authData, error: authError } = authRes
+      if (authError && authError.status !== 400) {
+        console.error('login error', authError.status, authError.message)
+        if (!authError.status || authError.status >= 500) return { success: false, error: NET_ERROR }
       }
 
-      const authUser: AuthUser = {
-        id: authData.user.id,
-        name: profile?.full_name || authData.user.email || '',
-        email: authData.user.email || '',
-        role: (profile?.role as UserRole) || 'company_admin',
-        companyId: profile?.company_id || null,
-        companyName,
-        isActive: profile?.is_active ?? true,
-        mustChangePassword: (profile as any)?.must_change_password === true,
-        isAdmin: (profile as any)?.is_admin === true,
-        lastLogin: new Date().toISOString(),
+      if (authData.user) {
+        const profRes = await withTimeout(
+          Promise.resolve(supabase
+            .from('profiles')
+            .select('full_name, role, company_id, is_active, must_change_password, is_admin')
+            .eq('id', authData.user.id)
+            .single()),
+          15000,
+        )
+        if (!profRes) {
+          await supabase.auth.signOut().catch(() => {})
+          return { success: false, error: NET_ERROR }
+        }
+        const profile = profRes.data
+
+        if (profile && !profile.is_active) {
+          void recordLoginAttempt(identifier, false)
+          await supabase.auth.signOut()
+          return { success: false, error: GENERIC_LOGIN_ERROR }
+        }
+
+        // Successful login clears the failure counter server-side (does not block entry)
+        void recordLoginAttempt(identifier, true)
+
+        let companyName: string | null = null
+        if (profile?.company_id) {
+          const compRes = await withTimeout(
+            Promise.resolve(supabase.from('companies').select('name, nome_fantasia').eq('id', profile.company_id).single()),
+            10000,
+          )
+          const company = compRes?.data as any
+          companyName = company?.nome_fantasia || company?.name || null
+        }
+
+        const authUser: AuthUser = {
+          id: authData.user.id,
+          name: profile?.full_name || authData.user.email || '',
+          email: authData.user.email || '',
+          role: (profile?.role as UserRole) || 'company_admin',
+          companyId: profile?.company_id || null,
+          companyName,
+          isActive: profile?.is_active ?? true,
+          mustChangePassword: (profile as any)?.must_change_password === true,
+          isAdmin: (profile as any)?.is_admin === true,
+          lastLogin: new Date().toISOString(),
+        }
+
+        const newToken = authData.session?.access_token || `supabase_token_${Date.now()}`
+        try {
+          localStorage.setItem(TOKEN_KEY, newToken)
+          localStorage.setItem(USER_KEY, JSON.stringify(authUser))
+        } catch { /* storage cheio/bloqueado: segue só na memória */ }
+        setUser(authUser)
+        setToken(newToken)
+        setIsAuthenticated(true)
+
+        const redirectTo = authUser.mustChangePassword ? '/primeiro-acesso' : getRedirectByRole(authUser.role)
+        return { success: true, redirectTo }
       }
 
-      const newToken = authData.session?.access_token || `supabase_token_${Date.now()}`
-      localStorage.setItem(TOKEN_KEY, newToken)
-      localStorage.setItem(USER_KEY, JSON.stringify(authUser))
-      setUser(authUser)
-      setToken(newToken)
-      setIsAuthenticated(true)
+      // Failed attempt: record server-side and apply lockout rules.
+      const postState = await recordLoginAttempt(identifier, false)
+      if (postState?.locked) {
+        return { success: false, error: lockoutMessage(postState.retry_after_seconds), lockedFor: postState.retry_after_seconds }
+      }
 
-      const redirectTo = authUser.mustChangePassword ? '/primeiro-acesso' : getRedirectByRole(authUser.role)
-      return { success: true, redirectTo }
+      return { success: false, error: GENERIC_LOGIN_ERROR }
+    } catch (err) {
+      console.error('login failed', err)
+      return { success: false, error: NET_ERROR }
     }
-
-    // Failed attempt: record server-side and apply lockout rules.
-    const postState = await recordLoginAttempt(identifier, false)
-    if (postState?.locked) {
-      return { success: false, error: lockoutMessage(postState.retry_after_seconds), lockedFor: postState.retry_after_seconds }
-    }
-
-    // Generic message for both unknown user and wrong password (prevents enumeration).
-    return { success: false, error: GENERIC_LOGIN_ERROR }
   }, [])
 
   const logout = useCallback(() => {
