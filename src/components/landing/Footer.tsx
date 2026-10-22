@@ -20,8 +20,8 @@ const footerLinks = {
     { label: 'Design System', href: '/design-system' },
   ],
   Contato: [
-    { label: 'contato@axisinova.com.br', href: 'mailto:contato@axisinova.com.br' },
-    { label: '(11) 99999-0000', href: 'tel:+5511999990000' },
+    { label: 'comercial@inovacodigoia.com.br', href: 'mailto:comercial@inovacodigoia.com.br' },
+    { label: '(84) 99450-5536', href: 'tel:+5584994505536' },
   ],
 };
 
@@ -62,11 +62,7 @@ export function Footer() {
         </div>
 
         <div className="mt-12 border-t border-white/10 pt-6 text-center text-sm text-white/40">
-          '''Do not make any visual modifications. The phrases I write are commands to understand what I want, not to be written down. Understand their content well, then execute what is required.'''
-                                        
-                                            
-                                            
-                                            I have approved the plan
+          {'\n'}
         </div>
       </div>
     </footer>
