@@ -59,7 +59,7 @@ beforeEach(async () => {
     CREATE TABLE whatsapp_automacoes_auditoria(company_id uuid, automacao_id uuid, acao text, texto_anterior text, dados_anteriores jsonb, usuario_id uuid);
     CREATE TABLE whatsapp_fila_envios(id uuid PRIMARY KEY DEFAULT gen_random_uuid(), company_id uuid, tipo text, agendamento_id uuid, paciente_id uuid, telefone_destino text, texto_final text,
       ciclo_adiamentos int DEFAULT 0, status text, instancia_id uuid, agendada_para timestamptz, enviada_em timestamptz, atualizado_em timestamptz DEFAULT now(),
-      criado_em timestamptz DEFAULT now(), paciente_nome text, criado_por uuid, responsavel_nome text, automacao_id uuid, formato_envio text, erro text,
+      criado_em timestamptz DEFAULT public.fixture_now(), paciente_nome text, criado_por uuid, responsavel_nome text, automacao_id uuid, formato_envio text, erro text,
       expira_em timestamptz, message_id_uazapi text, resposta_acao text, respondida_em timestamptz, nps_teste_respostas jsonb);
     CREATE TABLE whatsapp_optout(company_id uuid, telefone text);
     CREATE FUNCTION whatsapp_optout_tem(uuid,text) RETURNS boolean LANGUAGE sql AS $$ SELECT EXISTS(SELECT 1 FROM whatsapp_optout WHERE company_id=$1 AND telefone=$2) $$;
