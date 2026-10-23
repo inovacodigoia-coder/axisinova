@@ -133,7 +133,7 @@ describe('Etapa 11B — regras SQL', () => {
     const [l] = await q("SELECT agendada_para, expira_em FROM whatsapp_fila_envios WHERE tipo='ciclo_nps'")
     expect(new Date(l.agendada_para).toISOString()).toBe('2026-10-20T13:00:00.000Z')
     expect(new Date(l.expira_em).toISOString()).toBe('2026-10-23T13:00:00.000Z')
-    await db.exec("UPDATE whatsapp_fila_envios SET agendamento_id=NULL")
+    await db.exec("UPDATE whatsapp_fila_envios SET agendamento_id=NULL, criado_em=fixture_now()")
     await clock('2026-12-01 10:00:00-03')
     expect(await um('nps')).toBe('NPS_RECENTE')
     await clock('2027-01-20 10:00:00-03')

@@ -764,6 +764,13 @@
       "when": 1792589352929,
       "tag": "0108_lab_aprovador_info",
       "breakpoints": true
+    },
+    {
+      "idx": 109,
+      "version": "7",
+      "when": 1792715214135,
+      "tag": "0109_seguranca_funcoes_whatsapp_inovachat_crm",
+      "breakpoints": true
     }
   ]
 }
