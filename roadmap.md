@@ -1,7 +1,7 @@
 # Verificação dos alertas
 
 # Retenção completa WhatsApp / InovaChat / CRM
-- [ ] Ampliar job existente: anonimização de leads fechados, respostas antes da fila, ignoradas e auditoria; preservar leads abertos e opt-out.
+- [ ] Ampliar job existente: anonimização de leads fechados, respostas antes da fila, ignoradas e auditoria; preservar leads abertos e opt-out. Bloqueio: crm_leads.contato_id obrigatório precisa aceitar NULL; ferramenta proíbe DROP NOT NULL com permissões atuais. Não substituir por contato fictício ou deixar vínculo identificável.
 - [ ] Excluir respostas na exclusão do titular, registrar e mostrar novas contagens.
 - [ ] Testar isoladamente e verificar modo Simulação preservado, sem exclusões reais.
 
