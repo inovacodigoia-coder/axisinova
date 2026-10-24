@@ -61,7 +61,8 @@ const MIDIA: Record<string, { label: string; icon: any }> = {
   figurinha: { label: 'Figurinha recebida', icon: Smile }, outro: { label: 'Conteúdo recebido', icon: FileText },
 }
 const STATUS_CONV: Record<string, string> = { na_fila: 'Na fila', em_atendimento: 'Em atendimento', finalizada: 'Finalizada' }
-const nomeContato = (c: Contato | null) => nomePrincipalContato(c, c ? formatarTelefone(c.telefone) : 'Contato')
+const nomeContato = (c: Contato | null) => c?.nome_exibicao || (c ? formatarTelefone(c.telefone) : 'Contato')
+const nomeTitulo = (c: Contato | null) => nomePrincipalContato(c, nomeContato(c))
 const VARIAVEIS = ['nome_contato', 'atendente', 'empresa']
 type Aba = 'minhas' | 'fila' | 'todas' | 'finalizadas'
 
@@ -323,11 +324,11 @@ export default function InovachatPage() {
             <button key={c.id} onClick={() => void abrirId(c.id)}
               className={cn('flex w-full items-start gap-3 border-b border-border/60 px-3 py-3 text-left hover:bg-muted/60', c.id === selId && 'bg-muted')}>
               <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full gradient-bg text-sm font-semibold text-primary-foreground">
-                {iniciais(nomeContato(c.contato))}
+                {iniciais(nomeTitulo(c.contato))}
               </div>
               <div className="min-w-0 flex-1">
                 <div className="flex items-center justify-between gap-2">
-                  <p className="truncate text-sm font-medium text-foreground">{nomeContato(c.contato)}</p>
+                  <p className="truncate text-sm font-medium text-foreground">{nomeTitulo(c.contato)}</p>
                   <span className={cn('shrink-0 text-[11px]', c.nao_lidas ? 'text-primary font-semibold' : 'text-muted-foreground')}>{horarioLista(c.ultima_mensagem_em)}</span>
                 </div>
                 {perfilSecundarioContato(c.contato) && <p className="truncate text-xs text-muted-foreground">{perfilSecundarioContato(c.contato)}</p>}
@@ -359,9 +360,9 @@ export default function InovachatPage() {
           <>
             <header className="flex flex-wrap items-center gap-2 border-b border-border px-3 py-2">
               <Button variant="ghost" size="icon" className="h-11 w-11 md:hidden" onClick={() => setSelId(null)} aria-label="Voltar"><ArrowLeft className="h-5 w-5" /></Button>
-              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full gradient-bg text-sm font-semibold text-primary-foreground">{iniciais(nomeContato(sel.contato))}</div>
+              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full gradient-bg text-sm font-semibold text-primary-foreground">{iniciais(nomeTitulo(sel.contato))}</div>
               <div className="min-w-0 flex-1">
-                <p className="truncate text-sm font-semibold text-foreground">{nomeContato(sel.contato)}</p>
+                <p className="truncate text-sm font-semibold text-foreground">{nomeTitulo(sel.contato)}</p>
                 {perfilSecundarioContato(sel.contato) && <p className="truncate text-xs text-muted-foreground">{perfilSecundarioContato(sel.contato)}</p>}
                 <p className="truncate text-xs text-muted-foreground">
                   {formatarTelefone(sel.contato?.telefone ?? '')} · {STATUS_CONV[sel.status]} · {sel.setor_id ? setores[sel.setor_id] ?? 'Setor' : 'Sem setor'}

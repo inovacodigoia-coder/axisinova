@@ -19,6 +19,7 @@ import { SatisfacaoTab } from '@/components/whatsapp/SatisfacaoTab'
 import { AutomacoesTab } from '@/components/whatsapp/AutomacoesTab'
 import { JanelaEnvio } from '@/components/whatsapp/JanelaEnvio'
 import { EnvioAutomaticoEmpresa } from '@/components/whatsapp/EnvioAutomaticoEmpresa'
+import { consultarValorNumero } from '@/lib/whatsappNumeroValor'
 
 interface Inst {
   id: string; apelido: string | null; status: string; numero_conectado: string | null; nome_perfil: string | null
@@ -426,12 +427,10 @@ function SolicitarDialog({ open, onOpenChange, companyId, pendente, onEnviado }:
     if (!open) return
     let ativo = true
     setValor(null); setErroValor(false)
-    void supabase.rpc('whatsapp_valor_numero').then(({ data, error }) => {
+    void consultarValorNumero().then(n => {
       if (!ativo) return
-      const n = data === null ? NaN : Number(data)
-      if (error || !Number.isFinite(n) || n < 0) { setErroValor(true); return }
       setValor(n)
-    })
+    }).catch(() => { if (ativo) setErroValor(true) })
     return () => { ativo = false }
   }, [open])
   const enviar = async () => {
