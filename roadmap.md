@@ -1,11 +1,12 @@
 # Verificação dos alertas
 
 # Pacote de ajustes WhatsApp / InovaChat / CRM
-- [ ] Exclusão de número com permissão e empresa verificadas, apelido obrigatório, sucesso remoto antes da exclusão local e auditoria mascarada.
-- [ ] Preço da solicitação lido da configuração do Super Admin.
-- [ ] Nome do paciente prioritário no InovaChat e notificações, perfil WhatsApp secundário.
-- [ ] Evolução automática ligada apenas para empresas novas; configurações existentes preservadas.
-- [ ] Testes isolados e verificação das telas sem envios nem exclusões reais.
+- [x] Exclusão de número com permissão e empresa verificadas, apelido obrigatório, sucesso remoto antes da exclusão local e auditoria mascarada.
+- [x] Preço da solicitação lido da configuração do Super Admin.
+- [x] Nome do paciente prioritário no InovaChat e notificações, perfil WhatsApp secundário.
+- [x] Evolução automática ligada apenas para empresas novas; labsaude confirmada FALSE antes/depois e demais configurações existentes preservadas.
+- [x] 45 testes isolados passaram sem envios nem exclusões reais; preview sem erros.
+- [ ] Conferir telas com login ativo: sessão disponível redirecionou para /login; depende de novo login do usuário.
 
 # Exames adicionados ao editar guia
 - [x] Corrigir bancada ausente em exames adicionados à guia: usar catálogo como reserva e filtro compartilhado, preservando coleta e resultados existentes.

@@ -19,6 +19,8 @@ interface NotificationItemProps {
 
 export function NotificationItem({ notification: n, onRead, onArchive, onAction }: NotificationItemProps) {
   const isUnread = n.status === 'unread'
+  const [mensagem, perfilWhatsapp] = n.actionRoute?.startsWith('/app/inovachat?c=')
+    ? n.message.split('\nno WhatsApp: ', 2) : [n.message]
 
   return (
     <div
@@ -45,7 +47,8 @@ export function NotificationItem({ notification: n, onRead, onArchive, onAction 
             <X className="h-3 w-3 text-muted-foreground" />
           </button>
         </div>
-        <p className="text-xs text-muted-foreground mt-0.5 line-clamp-2">{n.message}</p>
+        <p className="text-xs text-muted-foreground mt-0.5 line-clamp-2">{mensagem}</p>
+        {perfilWhatsapp && <p className="mt-0.5 truncate text-[11px] text-muted-foreground">no WhatsApp: {perfilWhatsapp}</p>}
         <div className="flex items-center gap-2 mt-1">
           <span className="text-[10px] text-muted-foreground/60">{formatRelativeTime(n.createdAt)}</span>
           {n.actionLabel && (
