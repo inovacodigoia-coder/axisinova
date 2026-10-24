@@ -21,8 +21,9 @@ import { Clock } from 'lucide-react'
 import { useCrmAcesso } from '@/hooks/useCrm'
 import { CrmLeadAcoes, rotuloLead, useLeadsAbertos, type LeadAberto } from '@/components/crm/CrmLeadChip'
 import type { CrmAcesso } from '@/lib/crm'
+import { nomePrincipalContato, perfilSecundarioContato } from '@/lib/inovachatNome'
 
-interface Contato { id: string; telefone: string; nome_exibicao: string | null; paciente_id: string | null; vinculo_status: string; criado_em: string }
+interface Contato { id: string; telefone: string; nome_exibicao: string | null; paciente_id: string | null; paciente?: { name: string | null } | null; vinculo_status: string; criado_em: string }
 interface Conversa {
   id: string; status: 'na_fila' | 'em_atendimento' | 'finalizada'; responsavel_id: string | null; instancia_id: string; setor_id: string | null
   ultima_mensagem_em: string | null; ultima_mensagem_resumo: string | null; nao_lidas: number; criada_em: string; fora_horario?: boolean
@@ -60,7 +61,7 @@ const MIDIA: Record<string, { label: string; icon: any }> = {
   figurinha: { label: 'Figurinha recebida', icon: Smile }, outro: { label: 'Conteúdo recebido', icon: FileText },
 }
 const STATUS_CONV: Record<string, string> = { na_fila: 'Na fila', em_atendimento: 'Em atendimento', finalizada: 'Finalizada' }
-const nomeContato = (c: Contato | null) => c?.nome_exibicao || (c ? formatarTelefone(c.telefone) : 'Contato')
+const nomeContato = (c: Contato | null) => nomePrincipalContato(c, c ? formatarTelefone(c.telefone) : 'Contato')
 const VARIAVEIS = ['nome_contato', 'atendente', 'empresa']
 type Aba = 'minhas' | 'fila' | 'todas' | 'finalizadas'
 
@@ -94,7 +95,7 @@ export default function InovachatPage() {
 
   const carregar = useCallback(async () => {
     const { data, error } = await supabase.from('whatsapp_conversas')
-      .select('id, status, responsavel_id, instancia_id, setor_id, ultima_mensagem_em, ultima_mensagem_resumo, nao_lidas, criada_em, fora_horario, contato:whatsapp_contatos(id, telefone, nome_exibicao, paciente_id, vinculo_status, criado_em)')
+      .select('id, status, responsavel_id, instancia_id, setor_id, ultima_mensagem_em, ultima_mensagem_resumo, nao_lidas, criada_em, fora_horario, contato:whatsapp_contatos(id, telefone, nome_exibicao, paciente_id, vinculo_status, criado_em, paciente:patients!whatsapp_contatos_paciente_id_fkey(name))')
       .order('ultima_mensagem_em', { ascending: false, nullsFirst: false }).limit(500)
     if (error) { setErro(true); return }
     setErro(false)
@@ -189,7 +190,7 @@ export default function InovachatPage() {
       let conv = conversas.find(x => x.id === id)
       if (!conv) {
         const { data } = await supabase.from('whatsapp_conversas')
-          .select('id, status, responsavel_id, instancia_id, setor_id, ultima_mensagem_em, ultima_mensagem_resumo, nao_lidas, criada_em, fora_horario, contato:whatsapp_contatos(id, telefone, nome_exibicao, paciente_id, vinculo_status, criado_em)')
+          .select('id, status, responsavel_id, instancia_id, setor_id, ultima_mensagem_em, ultima_mensagem_resumo, nao_lidas, criada_em, fora_horario, contato:whatsapp_contatos(id, telefone, nome_exibicao, paciente_id, vinculo_status, criado_em, paciente:patients!whatsapp_contatos_paciente_id_fkey(name))')
           .eq('id', id).maybeSingle()
         if (!ativo) return
         conv = data ? data as unknown as Conversa : undefined
@@ -329,6 +330,7 @@ export default function InovachatPage() {
                   <p className="truncate text-sm font-medium text-foreground">{nomeContato(c.contato)}</p>
                   <span className={cn('shrink-0 text-[11px]', c.nao_lidas ? 'text-primary font-semibold' : 'text-muted-foreground')}>{horarioLista(c.ultima_mensagem_em)}</span>
                 </div>
+                {perfilSecundarioContato(c.contato) && <p className="truncate text-xs text-muted-foreground">{perfilSecundarioContato(c.contato)}</p>}
                 <div className="flex items-center justify-between gap-2">
                   <p className="truncate text-xs text-muted-foreground">{c.ultima_mensagem_resumo ?? ''}</p>
                   {c.nao_lidas > 0 && <span className="rounded-full bg-primary px-1.5 text-[10px] font-bold text-primary-foreground">{c.nao_lidas}</span>}
@@ -360,6 +362,7 @@ export default function InovachatPage() {
               <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full gradient-bg text-sm font-semibold text-primary-foreground">{iniciais(nomeContato(sel.contato))}</div>
               <div className="min-w-0 flex-1">
                 <p className="truncate text-sm font-semibold text-foreground">{nomeContato(sel.contato)}</p>
+                {perfilSecundarioContato(sel.contato) && <p className="truncate text-xs text-muted-foreground">{perfilSecundarioContato(sel.contato)}</p>}
                 <p className="truncate text-xs text-muted-foreground">
                   {formatarTelefone(sel.contato?.telefone ?? '')} · {STATUS_CONV[sel.status]} · {sel.setor_id ? setores[sel.setor_id] ?? 'Setor' : 'Sem setor'}
                   {sel.responsavel_id && ` · ${sel.responsavel_id === eu ? 'Você' : nomes[sel.responsavel_id] ?? 'Responsável'}`}
