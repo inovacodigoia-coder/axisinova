@@ -16,6 +16,7 @@ const erro = (status: number, codigo: string, mensagem: string) => resp(status, 
 import { cifrar, decifrar } from '../_shared/whatsappCripto.ts'
 import { enviarConfirmacao, enviarCiclo, idMensagem, type Formato } from '../_shared/whatsappMenu.ts'
 import { AVISO_SAIR } from '../_shared/whatsappCiclo.ts'
+import { podeRemoverNumero, removerNumeroRemoto } from './removerNumero.ts'
 
 // ---------- chamada à uazapi (uma tentativa, sem repetição) ----------
 async function uaz(method: string, path: string, headers: Record<string, string>, body?: unknown) {
@@ -137,7 +138,7 @@ Deno.serve(async (req) => {
   }
 
   // ---------- ações do Super Admin (não dependem da empresa do perfil) ----------
-  if (acao === 'desconectar_empresa' || acao === 'remover_numero') {
+  if (acao === 'desconectar_empresa') {
     if (!superAdmin) return erro(403, 'SEM_PERMISSAO', 'Apenas o Super Admin.')
     if (acao === 'desconectar_empresa') {
       const company = String(body?.company_id ?? '')
@@ -149,18 +150,36 @@ Deno.serve(async (req) => {
       return resp(200, { ok: falhas === 0, codigo: falhas ? 'DESCONEXAO_PARCIAL' : undefined,
         mensagem: falhas ? `${falhas} número(s) não puderam ser desconectados.` : undefined, dados: { total: insts?.length ?? 0, falhas } })
     }
-    const id = String(body?.instancia_id ?? '')
-    const { data: inst } = await db.from('whatsapp_instancias').select('*').eq('id', id).maybeSingle()
+  }
+
+  // Os dois nomes de ação compartilham o mesmo controle; empresa nunca vem do corpo.
+  if (acao === 'remover_numero' || acao === 'excluir_numero') {
+    const id = body?.instancia_id
+    if (typeof id !== 'string' || !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id))
+      return erro(400, 'DADOS_INVALIDOS', 'Número inválido.')
+    const { data: perm } = superAdmin ? { data: true } : await userDb.rpc('whatsapp_tem_permissao', { _perm: 'configuracoes.whatsapp' })
+    if (!superAdmin && (!perm || !perfil?.company_id)) return erro(403, 'SEM_PERMISSAO', 'Seu perfil não pode configurar o WhatsApp.')
+    let consulta = db.from('whatsapp_instancias').select('*').eq('id', id)
+    if (!superAdmin) consulta = consulta.eq('company_id', perfil?.company_id)
+    const { data: inst } = await consulta.maybeSingle()
     if (!inst) return erro(404, 'NAO_ENCONTRADA', 'Número não encontrado.')
-    const tk = await tokenDe(id)
-    if (tk) {
-      const r = await uaz('DELETE', '/instance', { token: tk })
-      if (!(r.status >= 200 && r.status < 300) && r.status !== 404 && r.status !== 401) return erroUaz(r.status, r.retryAfter)
+    if (!podeRemoverNumero(superAdmin, !!perm, perfil?.company_id, inst.company_id)) return erro(403, 'SEM_PERMISSAO', 'Seu perfil não pode excluir este número.')
+    if (typeof body?.apelido_confirmacao !== 'string' || body.apelido_confirmacao !== inst.apelido)
+      return erro(400, 'APELIDO_DIVERGENTE', 'Digite exatamente o apelido do número para confirmar.')
+    try {
+      const tk = await tokenDe(id)
+      if (!tk) return erro(409, 'NAO_CONFIGURADA', 'Não foi possível confirmar a exclusão no servidor. O número foi mantido no sistema.')
+      const falha = await removerNumeroRemoto(inst.status === 'connected',
+        (metodo, caminho) => uaz(metodo, caminho, { token: tk }, metodo === 'POST' ? {} : undefined),
+        async () => {
+          const { error } = await db.rpc('whatsapp_remover_instancia_local', { p_id: id, p_usuario: userId, p_apelido: body.apelido_confirmacao })
+          if (error) throw error
+        })
+      if (falha) return erroUaz(falha.status, falha.retryAfter)
+      return resp(200, { ok: true })
+    } catch {
+      return erro(500, 'ERRO_INTERNO', 'Não foi possível concluir a exclusão no sistema. Tente novamente.')
     }
-    await db.from('whatsapp_instancia_segredos').delete().eq('instancia_id', id)
-    await db.from('whatsapp_instancias').delete().eq('id', id)
-    await audit(inst.company_id, 'remover_numero', { apelido: inst.apelido, nome_instancia: inst.nome_instancia }, null)
-    return resp(200, { ok: true })
   }
 
   // ---------- ações da empresa ----------
@@ -325,19 +344,6 @@ Deno.serve(async (req) => {
       await db.from('whatsapp_instancias').update(upd).eq('id', inst.id)
       const antes = Object.fromEntries(Object.keys(upd).filter((k) => k !== 'atualizado_em').map((k) => [k, inst[k]]))
       await audit(companyId, 'atualizar_numero', antes, { ...upd, instancia_id: inst.id })
-      return resp(200, { ok: true })
-    }
-    case 'excluir_numero': {
-      const inst = await instDaEmpresa()
-      if (!inst) return erro(404, 'NAO_ENCONTRADA', 'Número não encontrado.')
-      const tk = await tokenDe(inst.id)
-      if (tk) {
-        const r = await uaz('DELETE', '/instance', { token: tk })
-        if (!(r.status >= 200 && r.status < 300) && r.status !== 404 && r.status !== 401) return erroUaz(r.status, r.retryAfter)
-      }
-      await db.from('whatsapp_instancia_segredos').delete().eq('instancia_id', inst.id)
-      await db.from('whatsapp_instancias').delete().eq('id', inst.id)
-      await audit(companyId, 'excluir_numero', { apelido: inst.apelido, nome_instancia: inst.nome_instancia }, null)
       return resp(200, { ok: true })
     }
     case 'enviar_teste': {

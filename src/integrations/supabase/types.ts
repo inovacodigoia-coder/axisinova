@@ -2921,6 +2921,7 @@ export type Database = {
           cnpj: string | null
           complemento: string | null
           created_at: string
+          crm_evolucao_padrao: boolean
           crm_habilitado: boolean
           crm_habilitado_em: string | null
           crm_habilitado_por: string | null
@@ -2970,6 +2971,7 @@ export type Database = {
           cnpj?: string | null
           complemento?: string | null
           created_at?: string
+          crm_evolucao_padrao?: boolean
           crm_habilitado?: boolean
           crm_habilitado_em?: string | null
           crm_habilitado_por?: string | null
@@ -3019,6 +3021,7 @@ export type Database = {
           cnpj?: string | null
           complemento?: string | null
           created_at?: string
+          crm_evolucao_padrao?: boolean
           crm_habilitado?: boolean
           crm_habilitado_em?: string | null
           crm_habilitado_por?: string | null
@@ -11435,6 +11438,10 @@ export type Database = {
       whatsapp_reenfileirar_confirmacao: {
         Args: { p_agendamento_id: string }
         Returns: Json
+      }
+      whatsapp_remover_instancia_local: {
+        Args: { p_apelido: string; p_id: string; p_usuario: string }
+        Returns: undefined
       }
       whatsapp_render_links: {
         Args: { p_company: string; p_texto: string }

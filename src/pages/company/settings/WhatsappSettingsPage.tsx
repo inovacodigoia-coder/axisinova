@@ -19,6 +19,7 @@ import { SatisfacaoTab } from '@/components/whatsapp/SatisfacaoTab'
 import { AutomacoesTab } from '@/components/whatsapp/AutomacoesTab'
 import { JanelaEnvio } from '@/components/whatsapp/JanelaEnvio'
 import { EnvioAutomaticoEmpresa } from '@/components/whatsapp/EnvioAutomaticoEmpresa'
+import { consultarValorNumero } from '@/lib/whatsappNumeroValor'
 
 interface Inst {
   id: string; apelido: string | null; status: string; numero_conectado: string | null; nome_perfil: string | null
@@ -228,6 +229,7 @@ function NumeroCard({ inst, onChange, onConectar }: { inst: Inst; onChange: () =
   const [travado, setTravado] = useState(false)
   const [confirmar, setConfirmar] = useState(false)
   const [confirmarExcluir, setConfirmarExcluir] = useState(false)
+  const [apelidoConfirmacao, setApelidoConfirmacao] = useState('')
   const [salvando, setSalvando] = useState(false)
   const st = STATUS[inst.status] ?? STATUS.nao_configurada
 
@@ -265,10 +267,12 @@ function NumeroCard({ inst, onChange, onConectar }: { inst: Inst; onChange: () =
     toast.success('Número desconectado.'); onChange()
   }
   const excluir = async () => {
-    setConfirmarExcluir(false); setSalvando(true)
-    const r = await chamar({ acao: 'excluir_numero', instancia_id: inst.id })
+    if (!inst.apelido || apelidoConfirmacao !== inst.apelido) return
+    setSalvando(true)
+    const r = await chamar({ acao: 'remover_numero', instancia_id: inst.id, apelido_confirmacao: apelidoConfirmacao })
     setSalvando(false)
     if (!r.ok) { avisarErro(r); return }
+    setConfirmarExcluir(false); setApelidoConfirmacao('')
     toast.success('Número excluído. Você já pode adicionar outro.'); onChange()
   }
 
@@ -344,17 +348,21 @@ function NumeroCard({ inst, onChange, onConectar }: { inst: Inst; onChange: () =
         </Button>
       </div>
 
-      <AlertDialog open={confirmarExcluir} onOpenChange={setConfirmarExcluir}>
+      <AlertDialog open={confirmarExcluir} onOpenChange={v => { if (!salvando) { setConfirmarExcluir(v); setApelidoConfirmacao('') } }}>
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Excluir este número?</AlertDialogTitle>
             <AlertDialogDescription>
-              O número "{inst.apelido ?? 'sem apelido'}" será removido do servidor e do sistema. Esta ação não pode ser desfeita. Você poderá adicionar outro número em seguida.
+              Excluir apaga este número do sistema e libera a vaga para conectar outro chip. Isso não pode ser desfeito.
             </AlertDialogDescription>
           </AlertDialogHeader>
+          <label className="space-y-2 text-sm text-foreground">
+            <span>Digite o apelido: <strong>{inst.apelido}</strong></span>
+            <Input value={apelidoConfirmacao} onChange={e => setApelidoConfirmacao(e.target.value)} aria-label="Digite o apelido para excluir" disabled={salvando} autoComplete="off" />
+          </label>
           <AlertDialogFooter>
-            <AlertDialogCancel>Cancelar</AlertDialogCancel>
-            <AlertDialogAction onClick={excluir} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">Excluir número</AlertDialogAction>
+            <AlertDialogCancel disabled={salvando}>Cancelar</AlertDialogCancel>
+            <Button variant="destructive" onClick={() => void excluir()} disabled={salvando || !inst.apelido || apelidoConfirmacao !== inst.apelido}>Excluir número</Button>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
@@ -412,9 +420,21 @@ function SolicitarDialog({ open, onOpenChange, companyId, pendente, onEnviado }:
 }) {
   const [obs, setObs] = useState('')
   const [salvando, setSalvando] = useState(false)
+  const [valor, setValor] = useState<number | null>(null)
+  const [erroValor, setErroValor] = useState(false)
   const { user } = useAuth()
+  useEffect(() => {
+    if (!open) return
+    let ativo = true
+    setValor(null); setErroValor(false)
+    void consultarValorNumero().then(n => {
+      if (!ativo) return
+      setValor(n)
+    }).catch(() => { if (ativo) setErroValor(true) })
+    return () => { ativo = false }
+  }, [open])
   const enviar = async () => {
-    if (!companyId) return
+    if (!companyId || valor === null) return
     setSalvando(true)
     const { error } = await supabase.from('whatsapp_solicitacoes_numero')
       .insert({ company_id: companyId, observacao_empresa: obs.trim() || null, solicitado_por: user?.id } as any)
@@ -428,12 +448,14 @@ function SolicitarDialog({ open, onOpenChange, companyId, pendente, onEnviado }:
       <DialogContent>
         <DialogHeader>
           <DialogTitle>Solicitar novo número</DialogTitle>
-          <DialogDescription>Cada número adicional custa R$ 100,00 e precisa ser autorizado pela equipe Axis Inova.</DialogDescription>
+          <DialogDescription>{valor !== null
+            ? `Cada número adicional custa ${valor.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })} e precisa ser autorizado pela equipe Axis Inova.`
+            : erroValor ? 'Não foi possível consultar o valor. Feche e abra a janela para tentar novamente.' : 'Consultando valor do número adicional…'}</DialogDescription>
         </DialogHeader>
         <Textarea value={obs} onChange={e => setObs(e.target.value)} placeholder="Observação (opcional)" maxLength={500} />
         <DialogFooter>
           <Button variant="outline" className="h-11" onClick={() => onOpenChange(false)}>Cancelar</Button>
-          <Button className="h-11 gradient-bg text-primary-foreground" onClick={enviar} disabled={salvando || pendente}>Enviar solicitação</Button>
+          <Button className="h-11 gradient-bg text-primary-foreground" onClick={enviar} disabled={salvando || pendente || valor === null}>Enviar solicitação</Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>
