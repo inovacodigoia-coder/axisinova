@@ -1,5 +1,10 @@
 # Verificação dos alertas
 
+# Retenção completa WhatsApp / InovaChat / CRM
+- [ ] Ampliar job existente: anonimização de leads fechados, respostas antes da fila, ignoradas e auditoria; preservar leads abertos e opt-out.
+- [ ] Excluir respostas na exclusão do titular, registrar e mostrar novas contagens.
+- [ ] Testar isoladamente e verificar modo Simulação preservado, sem exclusões reais.
+
 # Pacote de ajustes WhatsApp / InovaChat / CRM
 - [x] Exclusão de número com permissão e empresa verificadas, apelido obrigatório, sucesso remoto antes da exclusão local e auditoria mascarada.
 - [x] Preço da solicitação lido da configuração do Super Admin.
