@@ -3,7 +3,6 @@ import type { PermissionsMap, SystemModule, PermissionAction } from '@/types/per
 import { SYSTEM_MODULES, ALL_ACTIONS, ACTION_LABELS, RESULT_ENTRY_PERMISSIONS, APOIO_PERMISSIONS, TRIAGEM_PERMISSIONS, WHATSAPP_PERMISSIONS, INOVACHAT_PERMISSIONS, CRM_PERMISSIONS } from '@/types/permissions.types'
 import { Progress } from '@/components/ui/progress'
 import { FINANCEIRO_PERMISSIONS } from '@/lib/financeiro'
-import { Button } from '@/components/ui/button'
 
 interface PermissionsMatrixProps {
   permissions: PermissionsMap

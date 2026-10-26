@@ -23,6 +23,8 @@ beforeEach(async()=>{
  CREATE TABLE storage.objects(bucket_id text,name text);
  INSERT INTO companies VALUES('${C}'),('${C2}'); INSERT INTO profiles VALUES('${U}','${C}',true),('${U2}','${C2}',true); INSERT INTO patients VALUES('${P}','${C}'); SET test.uid='${U}';`)
  await db.exec(readFileSync('drizzle/migrations/0112_financeiro_etapa1_base.sql','utf8'))
+ await db.exec(readFileSync('drizzle/migrations/0113_financeiro_lgpd_guarda_fiscal.sql','utf8'))
+ await db.exec(readFileSync('drizzle/migrations/0114_financeiro_validacao_parametros.sql','utf8'))
  await db.exec(`UPDATE companies SET financeiro_habilitado=true WHERE id='${C}'; SELECT financeiro__padroes('${C}');`)
 })
 afterEach(async()=>{await db.close()})
@@ -54,3 +56,5 @@ it('outra empresa não acessa registros por RLS nem RPC e storage',async()=>{con
 it('anon sem tabela/EXECUTE e autenticado sem escrita direta',async()=>{expect((await one(`SELECT has_table_privilege('anon','financeiro_lancamentos','SELECT') AS a,has_table_privilege('authenticated','financeiro_lancamentos','INSERT') AS b,has_function_privilege('anon','financeiro_baixar(uuid,jsonb)','EXECUTE') AS c,has_function_privilege('authenticated','financeiro__padroes(uuid)','EXECUTE') AS d`))).toEqual({a:false,b:false,c:false,d:false});await db.exec('SET ROLE anon');await expect(db.exec(`SELECT financeiro_meu_acesso()`)).rejects.toThrow('permission denied')})
 it('subcategorias máximo 2 níveis e empresa protegida',async()=>{const {data}=await setup();const {id}=await one(`SELECT financeiro_configurar('categoria','{"nome":"Sub","tipo":"receita","pai_id":"${data.categoria_id}"}') AS id`);await expect(db.exec(`SELECT financeiro_configurar('categoria','{"nome":"Subsub","tipo":"receita","pai_id":"${id}"}')`)).rejects.toThrow('dois níveis')})
 it('valores positivos e moeda BRL no servidor',async()=>{const {data}=await setup();await expect(db.exec(`SELECT financeiro_lancar('${JSON.stringify({...data,valor:0})}')`)).rejects.toThrow('inválidos');await expect(db.exec(`SELECT financeiro_lancar('${JSON.stringify({...data,moeda:'USD'})}')`)).rejects.toThrow('inválidos')})
+it('parâmetros nulos não geram lançamentos',async()=>{const {data}=await setup();await expect(db.exec(`SELECT financeiro_lancar('${JSON.stringify(data)}',NULL,'recorrente')`)).rejects.toThrow('Quantidade');await expect(db.exec(`SELECT financeiro_lancar('${JSON.stringify(data)}',1,NULL)`)).rejects.toThrow('Quantidade');expect(await rows('SELECT * FROM financeiro_lancamentos')).toHaveLength(1)})
+it('exclusão explícita do paciente limpa nome sem perder valores',async()=>{await setup();await db.exec(`UPDATE financeiro_lancamentos SET pagador='Pessoa Teste';DELETE FROM patients WHERE id='${P}'`);const l=await one('SELECT paciente_id,pagador,valor FROM financeiro_lancamentos');expect(l.paciente_id).toBeNull();expect(l.pagador).toBeNull();expect(Number(l.valor)).toBe(100)})

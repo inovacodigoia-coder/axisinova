@@ -11,6 +11,7 @@ import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Badge } from '@/components/ui/badge'
 import { Download, Plus, Pencil, Eye, RefreshCw, Lock, Paperclip, Undo2, Ban } from 'lucide-react'
 import { toast } from 'sonner'
+import { VinculoPessoa } from '@/components/financeiro/VinculoPessoa'
 import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, Legend } from 'recharts'
 type Conta = Database['public']['Tables']['financeiro_contas']['Row']
 type Categoria = Database['public']['Tables']['financeiro_categorias']['Row']
@@ -64,7 +65,7 @@ export default function FinanceiroPage() {
       const [c,k,l,b,s] = await Promise.all([all<Conta>('financeiro_contas'),all<Categoria>('financeiro_categorias'),all<Lancamento>('financeiro_lancamentos'),all<Baixa>('financeiro_baixas'),supabase.rpc('financeiro_saldos',{_ate:hojeFinanceiro()})])
       if (s.error) throw s.error
       setContas(c); setCats(k); setLanc(l); setBaixas(b); setSaldos(s.data || [])
-    } catch(e) { setError(e instanceof Error ? e.message : 'Não foi possível carregar o financeiro') }
+    } catch(e) { setContas([]); setCats([]); setLanc([]); setBaixas([]); setSaldos([]); setError(e instanceof Error ? e.message : (e as {message?:string}).message || 'Não foi possível carregar o financeiro') }
     finally { setLoading(false) }
   }, [acesso?.ver])
   useEffect(() => { void load() },[load])
