@@ -1,5 +1,12 @@
 # Verificação dos alertas
 
+# Chat Interno entre Equipe — Etapa 1
+- [ ] Banco: conversas (direta única por par, grupo, canal por setor sincronizado), participantes, mensagens (texto 4000, anexo 10 MB, resposta, exclusão lógica, sistema), RLS por participante+empresa, funções SECURITY DEFINER com REVOKE/GRANT, módulo chat_interno ligado por padrão, retenção 24 meses no job existente (Simulação).
+- [ ] Bucket privado chat-interno-anexos com políticas por participante.
+- [ ] Tela /app/chat-interno (duas colunas, busca, nova conversa, painel de grupo), item no menu com badge, tempo real + digitando + presença, som/toast com silenciar.
+- [ ] Painel do Super Admin para ligar/desligar por empresa.
+- [ ] Testes SQL isolados: isolamento entre empresas, não participante, anon, conversa direta única, não lidas, módulo desligado.
+
 # Retenção completa WhatsApp / InovaChat / CRM
 - [ ] Ampliar job existente: anonimização de leads fechados, respostas antes da fila, ignoradas e auditoria; preservar leads abertos e opt-out. Bloqueio: crm_leads.contato_id obrigatório precisa aceitar NULL; ferramenta proíbe DROP NOT NULL com permissões atuais. Não substituir por contato fictício ou deixar vínculo identificável.
 - [ ] Excluir respostas na exclusão do titular, registrar e mostrar novas contagens.
