@@ -335,7 +335,7 @@ export function PermissionsMatrix({ permissions, onChange }: PermissionsMatrixPr
       <div className="flex items-center gap-3">
         <fieldset className="border border-border rounded-lg p-4 space-y-3">
           <legend className="text-sm font-semibold">Financeiro</legend>
-          {FINANCEIRO_PERMISSIONS.map(p => <label key={p.code} className="flex gap-2 text-sm"><input type="checkbox" checked={((perms as unknown as Record<string, string[]>).financeiro || []).includes(p.code)} onChange={() => setPerms(prev => { const cur = (prev as unknown as Record<string, string[]>).financeiro || []; return { ...prev, financeiro: cur.includes(p.code) ? cur.filter(x => x !== p.code) : [...cur, p.code] } })} />{p.label}</label>)}
+          {FINANCEIRO_PERMISSIONS.map(p => <label key={p.code} className="flex gap-2 text-sm"><input type="checkbox" checked={(perms.financeiro || []).includes(p.code)} onChange={() => setPerms(prev => { const cur = prev.financeiro || []; return { ...prev, financeiro: cur.includes(p.code) ? cur.filter(x => x !== p.code) : [...cur, p.code] } })} />{p.label}</label>)}
         </fieldset>
         <Progress value={(activePerms / totalPerms) * 100} className="flex-1 h-2" />
         <span className="text-xs text-muted-foreground whitespace-nowrap">{activePerms} de {totalPerms} permissões</span>

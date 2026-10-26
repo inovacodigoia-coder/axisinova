@@ -14,7 +14,6 @@ export type SystemModule =
   | 'lab_technical'
   | 'lab_registers'
   | 'finance'
-  | 'financeiro'
   | 'inventory'
   | 'pharmacy'
   | 'serotheque'
@@ -33,7 +32,7 @@ export type SystemModule =
 export type PermissionAction = 'view' | 'create' | 'edit' | 'delete' | 'export' | 'approve'
 
 export type FinanceiroPermission = 'financeiro.ver' | 'financeiro.lancar' | 'financeiro.baixar' | 'financeiro.cancelar' | 'financeiro.configurar'
-export type PermissionsMap = Partial<Record<Exclude<SystemModule, 'financeiro'>, PermissionAction[]>> & { financeiro?: FinanceiroPermission[] }
+export type PermissionsMap = Partial<Record<SystemModule, PermissionAction[]>> & { financeiro?: FinanceiroPermission[] }
 
 export interface Profile {
   id: string
