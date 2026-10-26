@@ -14,6 +14,7 @@ import {
 import { useInovachatAcesso, useInovachatNaoLidas } from '@/hooks/useInovachat'
 import { useChatInternoAcesso, useChatInternoNaoLidas } from '@/hooks/useChatInterno'
 import { useCrmAcesso } from '@/hooks/useCrm'
+import { useFinanceiroAcesso } from '@/hooks/useFinanceiro'
 import { cn } from '@/lib/utils'
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
 import type { SystemModule } from '@/types/permissions.types'
@@ -115,9 +116,7 @@ export const NAV_SECTIONS: NavSection[] = [
   {
     title: 'FINANCEIRO LABORATÓRIO',
     items: [
-      { label: 'Dashboard Fin.', icon: 'Layout', path: '/app/financeiro', module: 'finance' },
-      { label: 'Contas a Receber', icon: 'DollarSign', path: '/app/financeiro/receber', module: 'finance' },
-      { label: 'Contas a Pagar', icon: 'DollarSign', path: '/app/financeiro/pagar', module: 'finance' },
+      { label: 'Financeiro', icon: 'DollarSign', path: '/app/financeiro', module: null },
       { label: 'Faturamento TISS', icon: 'FileText', path: '/app/financeiro/faturamento', module: 'finance' },
       { label: 'Tabelas de Preços', icon: 'Database', path: '/app/financeiro/tabelas', module: 'finance' },
       { label: 'Centros de Custo', icon: 'PieChart', path: '/app/financeiro/centros-custo', module: 'finance' },
@@ -200,6 +199,7 @@ export function CompanySidebar({ mobileOpen, onMobileClose, collapsed = false, o
   const { orders } = useAttendanceCadastro()
   const inovachat = useInovachatAcesso()
   const crmAcesso = useCrmAcesso()
+  const financeiro = useFinanceiroAcesso()
   const inovachatNaoLidas = useInovachatNaoLidas(!!inovachat?.ver)
   const chatInterno = useChatInternoAcesso()
   const chatInternoNaoLidas = useChatInternoNaoLidas(!!chatInterno?.ver)
@@ -210,6 +210,7 @@ export function CompanySidebar({ mobileOpen, onMobileClose, collapsed = false, o
       if (item.path === '/app/inovachat') return !!inovachat?.ver
       if (item.path === '/app/crm') return !!crmAcesso?.ver
       if (item.path === '/app/chat-interno') return !!chatInterno?.ver
+      if (item.path === '/app/financeiro') return !!financeiro?.ver
       const profileAllows = !item.module || canAccess(item.module, 'view')
       const sectorOverride = activeSector?.moduleOverrides?.[item.path]
       return sectorOverride !== undefined ? sectorOverride : profileAllows

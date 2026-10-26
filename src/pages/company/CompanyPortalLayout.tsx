@@ -114,6 +114,7 @@ import ConnectAgentsPage from './ConnectAgentsPage'
 import DirectCadastroPage from './reception/DirectCadastroPage'
 
 import LabFinanceDashboardPage from './financeiro/LabFinanceDashboardPage'
+import FinanceiroPage from './financeiro/FinanceiroPage'
 import LabAccountsReceivablePage from './financeiro/LabAccountsReceivablePage'
 import LabAccountsPayablePage from './financeiro/LabAccountsPayablePage'
 import LabPriceTablesPage from './financeiro/LabPriceTablesPage'
@@ -346,9 +347,9 @@ function PortalContent() {
               <Route path="orcamentos/:id/editar" element={<LabBudgetFormPage />} />
 
               {/* Lab Financial Module */}
-              <Route path="financeiro" element={<LabFinanceDashboardPage />} />
-              <Route path="financeiro/receber" element={<LabAccountsReceivablePage />} />
-              <Route path="financeiro/pagar" element={<LabAccountsPayablePage />} />
+              <Route path="financeiro" element={<FinanceiroPage />} />
+              <Route path="financeiro/receber" element={<FinanceiroPage />} />
+              <Route path="financeiro/pagar" element={<FinanceiroPage />} />
               <Route path="financeiro/tabelas" element={<LabPriceTablesPage />} />
               <Route path="financeiro/faturamento" element={<LabBillingTissPage />} />
               <Route path="financeiro/centros-custo" element={<LabCostCentersPage />} />
