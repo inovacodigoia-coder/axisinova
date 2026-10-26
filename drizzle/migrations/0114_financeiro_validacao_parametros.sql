@@ -1,0 +1,22 @@
+CREATE OR REPLACE FUNCTION public.financeiro_lancar(_dados jsonb,_quantidade integer DEFAULT 1,_modo text DEFAULT 'unico',_id uuid DEFAULT NULL) RETURNS uuid[] LANGUAGE plpgsql SECURITY DEFINER SET search_path=public AS $$
+DECLARE c uuid:=get_user_company_id(auth.uid()); v numeric(14,2):=(_dados->>'valor')::numeric; cat financeiro_categorias; ct financeiro_contas; l financeiro_lancamentos; r uuid; ids uuid[]:='{}'; grupo uuid:=gen_random_uuid(); i integer; cents bigint; part numeric(14,2); comp date:=(_dados->>'competencia')::date; venc date:=(_dados->>'vencimento')::date; BEGIN
+IF NOT financeiro_tem_permissao('lancar') OR NOT financeiro_tem_permissao('ver') THEN RAISE EXCEPTION 'Sem permissão financeira'; END IF;
+IF v IS NULL OR v<=0 OR nullif(btrim(_dados->>'descricao'),'') IS NULL OR comp IS NULL OR venc IS NULL OR coalesce(_dados->>'moeda','BRL')<>'BRL' THEN RAISE EXCEPTION 'Valor, descrição, datas ou moeda inválidos'; END IF;
+IF coalesce(_modo,'') NOT IN ('unico','parcelado','recorrente') OR coalesce(_quantidade,0)<1 OR _quantidade>120 OR (_modo='recorrente' AND _quantidade>12) OR (_modo='unico' AND _quantidade<>1) THEN RAISE EXCEPTION 'Quantidade inválida (recorrência até 12 meses)'; END IF;
+SELECT * INTO cat FROM financeiro_categorias WHERE id=(_dados->>'categoria_id')::uuid AND company_id=c AND ativa; SELECT * INTO ct FROM financeiro_contas WHERE id=(_dados->>'conta_id')::uuid AND company_id=c AND ativa;
+IF cat.id IS NULL OR ct.id IS NULL OR cat.tipo IS DISTINCT FROM _dados->>'tipo' THEN RAISE EXCEPTION 'Categoria ou conta inválida'; END IF;
+IF nullif(_dados->>'paciente_id','') IS NOT NULL AND NOT EXISTS(SELECT 1 FROM patients WHERE id=(_dados->>'paciente_id')::uuid AND company_id=c) THEN RAISE EXCEPTION 'Paciente de outra empresa'; END IF;
+IF nullif(_dados->>'profissional_id','') IS NOT NULL AND NOT EXISTS(SELECT 1 FROM doctors WHERE id=(_dados->>'profissional_id')::uuid AND company_id=c) THEN RAISE EXCEPTION 'Profissional de outra empresa'; END IF;
+IF nullif(_dados->>'comprovante_path','') IS NOT NULL AND split_part(_dados->>'comprovante_path','/',1)<>c::text THEN RAISE EXCEPTION 'Comprovante de outra empresa'; END IF;
+IF _id IS NOT NULL THEN
+SELECT * INTO l FROM financeiro_lancamentos WHERE id=_id AND company_id=c FOR UPDATE;
+IF l.id IS NULL OR l.status<>'aberto' OR EXISTS(SELECT 1 FROM financeiro_baixas WHERE lancamento_id=_id) OR _quantidade<>1 THEN RAISE EXCEPTION 'Lançamento com baixa ou cancelado não pode ser editado'; END IF;
+UPDATE financeiro_lancamentos SET descricao=btrim(_dados->>'descricao'),tipo=cat.tipo,valor=v,categoria_id=cat.id,conta_id=ct.id,pagador=nullif(_dados->>'pagador',''),paciente_id=nullif(_dados->>'paciente_id','')::uuid,profissional_id=nullif(_dados->>'profissional_id','')::uuid,competencia=comp,vencimento=venc,forma_prevista=_dados->>'forma_prevista',observacoes=_dados->>'observacoes',comprovante_path=nullif(_dados->>'comprovante_path',''),origem_tipo=_dados->>'origem_tipo',origem_id=_dados->>'origem_id' WHERE id=_id;
+PERFORM financeiro__auditar(c,'financeiro_lancamentos',_id,'edicao',jsonb_build_object('valor',l.valor,'status',l.status),jsonb_build_object('valor',v)); RETURN ARRAY[_id]; END IF;
+cents:=(v*100)::bigint; IF _modo='parcelado' AND cents<_quantidade THEN RAISE EXCEPTION 'Valor insuficiente para parcelas'; END IF;
+FOR i IN 1.._quantidade LOOP
+part:=CASE WHEN _modo='parcelado' THEN (cents/_quantidade+CASE WHEN i<=cents%_quantidade THEN 1 ELSE 0 END)::numeric/100 ELSE v END;
+INSERT INTO financeiro_lancamentos(company_id,descricao,tipo,valor,categoria_id,conta_id,pagador,paciente_id,profissional_id,competencia,vencimento,forma_prevista,observacoes,comprovante_path,origem_tipo,origem_id,grupo_id,parcela,parcelas,criado_por)
+VALUES(c,btrim(_dados->>'descricao'),cat.tipo,part,cat.id,ct.id,nullif(_dados->>'pagador',''),nullif(_dados->>'paciente_id','')::uuid,nullif(_dados->>'profissional_id','')::uuid,(comp+make_interval(months=>i-1))::date,(venc+make_interval(months=>i-1))::date,_dados->>'forma_prevista',_dados->>'observacoes',nullif(_dados->>'comprovante_path',''),_dados->>'origem_tipo',_dados->>'origem_id',grupo,i,_quantidade,auth.uid()) RETURNING id INTO r;
+ids:=array_append(ids,r); PERFORM financeiro__auditar(c,'financeiro_lancamentos',r,'criacao',NULL,jsonb_build_object('valor',part,'grupo',grupo,'parcela',i)); END LOOP; RETURN ids; END $$;
+REVOKE ALL ON FUNCTION public.financeiro_lancar(jsonb,integer,text,uuid) FROM PUBLIC,anon; GRANT EXECUTE ON FUNCTION public.financeiro_lancar(jsonb,integer,text,uuid) TO authenticated;
