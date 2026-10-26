@@ -1,11 +1,12 @@
 # Verificação dos alertas
 
 # Chat Interno entre Equipe — Etapa 1
-- [ ] Banco: conversas (direta única por par, grupo, canal por setor sincronizado), participantes, mensagens (texto 4000, anexo 10 MB, resposta, exclusão lógica, sistema), RLS por participante+empresa, funções SECURITY DEFINER com REVOKE/GRANT, módulo chat_interno ligado por padrão, retenção 24 meses no job existente (Simulação).
-- [ ] Bucket privado chat-interno-anexos com políticas por participante.
-- [ ] Tela /app/chat-interno (duas colunas, busca, nova conversa, painel de grupo), item no menu com badge, tempo real + digitando + presença, som/toast com silenciar.
-- [ ] Painel do Super Admin para ligar/desligar por empresa.
-- [ ] Testes SQL isolados: isolamento entre empresas, não participante, anon, conversa direta única, não lidas, módulo desligado.
+- [x] Banco: conversas (direta única por par, grupo, canal por setor sincronizado), participantes, mensagens (texto 4000, anexo 10 MB, resposta, exclusão lógica, sistema), RLS por participante+empresa, funções SECURITY DEFINER com REVOKE/GRANT, módulo chat_interno ligado por padrão, retenção 24 meses no job existente (Simulação).
+- [x] Bucket privado chat-interno-anexos com políticas por participante.
+- [x] Tela /app/chat-interno (duas colunas, busca, nova conversa, painel de grupo), item no menu com badge, tempo real + digitando + presença, som/toast com silenciar.
+- [x] Painel do Super Admin para ligar/desligar por empresa; contagens do chat na tela de retenção.
+- [x] 10 testes SQL isolados passaram (suíte completa 90/90); typecheck e build OK.
+- [ ] Validar a tela logada (conversa, anexo, tempo real): depende de login ativo do usuário no preview.
 
 # Retenção completa WhatsApp / InovaChat / CRM
 - [ ] Ampliar job existente: anonimização de leads fechados, respostas antes da fila, ignoradas e auditoria; preservar leads abertos e opt-out. Bloqueio: crm_leads.contato_id obrigatório precisa aceitar NULL; ferramenta proíbe DROP NOT NULL com permissões atuais. Não substituir por contato fictício ou deixar vínculo identificável.
