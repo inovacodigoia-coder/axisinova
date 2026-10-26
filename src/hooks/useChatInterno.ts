@@ -13,7 +13,7 @@ export function useChatInternoAcesso() {
   useEffect(() => {
     let vivo = true
     void supabase.rpc('chat_interno_meu_acesso').then(({ data }) => {
-      if (vivo) setAcesso((data as ChatInternoAcesso) ?? { ver: false, admin: false, usuario_id: null })
+      if (vivo) setAcesso((data as unknown as ChatInternoAcesso) ?? { ver: false, admin: false, usuario_id: null })
     })
     return () => { vivo = false }
   }, [])

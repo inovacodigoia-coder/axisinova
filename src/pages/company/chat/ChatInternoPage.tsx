@@ -127,7 +127,7 @@ export default function ChatInternoPage() {
       : { data: [] as any[] }
     const nomePorId = new Map((perfis ?? []).map(p => [p.id, p.full_name || 'Colega']))
     const porId = new Map((data ?? []).map(m => [m.id, m]))
-    setMensagens((data ?? []).map(m => {
+    setMensagens((data ?? []).map((m): Mensagem => {
       const resp = m.resposta_id ? porId.get(m.resposta_id) : null
       return {
         ...m,
