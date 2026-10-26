@@ -1,4 +1,5 @@
-export const FINANCEIRO_PERMISSIONS = [
+import type { FinanceiroPermission } from '@/types/permissions.types'
+export const FINANCEIRO_PERMISSIONS: {code: FinanceiroPermission; label: string}[] = [
   { code: 'financeiro.ver', label: 'Ver' },
   { code: 'financeiro.lancar', label: 'Lançar' },
   { code: 'financeiro.baixar', label: 'Baixar' },
