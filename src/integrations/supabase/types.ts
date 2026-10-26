@@ -2878,6 +2878,151 @@ export type Database = {
           },
         ]
       }
+      chat_interno_conversa: {
+        Row: {
+          company_id: string
+          criado_em: string
+          criado_por: string | null
+          id: string
+          nome: string | null
+          par_chave: string | null
+          setor_id: string | null
+          tipo: string
+          ultima_mensagem_em: string | null
+        }
+        Insert: {
+          company_id: string
+          criado_em?: string
+          criado_por?: string | null
+          id?: string
+          nome?: string | null
+          par_chave?: string | null
+          setor_id?: string | null
+          tipo: string
+          ultima_mensagem_em?: string | null
+        }
+        Update: {
+          company_id?: string
+          criado_em?: string
+          criado_por?: string | null
+          id?: string
+          nome?: string | null
+          par_chave?: string | null
+          setor_id?: string | null
+          tipo?: string
+          ultima_mensagem_em?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "chat_interno_conversa_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      chat_interno_mensagem: {
+        Row: {
+          anexo_nome: string | null
+          anexo_path: string | null
+          anexo_tamanho: number | null
+          anexo_tipo: string | null
+          apagada: boolean
+          autor_id: string | null
+          company_id: string
+          conteudo: string | null
+          conversa_id: string
+          criado_em: string
+          id: string
+          resposta_id: string | null
+          tipo: string
+        }
+        Insert: {
+          anexo_nome?: string | null
+          anexo_path?: string | null
+          anexo_tamanho?: number | null
+          anexo_tipo?: string | null
+          apagada?: boolean
+          autor_id?: string | null
+          company_id: string
+          conteudo?: string | null
+          conversa_id: string
+          criado_em?: string
+          id?: string
+          resposta_id?: string | null
+          tipo?: string
+        }
+        Update: {
+          anexo_nome?: string | null
+          anexo_path?: string | null
+          anexo_tamanho?: number | null
+          anexo_tipo?: string | null
+          apagada?: boolean
+          autor_id?: string | null
+          company_id?: string
+          conteudo?: string | null
+          conversa_id?: string
+          criado_em?: string
+          id?: string
+          resposta_id?: string | null
+          tipo?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "chat_interno_mensagem_conversa_id_fkey"
+            columns: ["conversa_id"]
+            isOneToOne: false
+            referencedRelation: "chat_interno_conversa"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "chat_interno_mensagem_resposta_id_fkey"
+            columns: ["resposta_id"]
+            isOneToOne: false
+            referencedRelation: "chat_interno_mensagem"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      chat_interno_participante: {
+        Row: {
+          company_id: string
+          conversa_id: string
+          entrou_em: string
+          id: string
+          silenciada: boolean
+          ultima_leitura_em: string
+          usuario_id: string
+        }
+        Insert: {
+          company_id: string
+          conversa_id: string
+          entrou_em?: string
+          id?: string
+          silenciada?: boolean
+          ultima_leitura_em?: string
+          usuario_id: string
+        }
+        Update: {
+          company_id?: string
+          conversa_id?: string
+          entrou_em?: string
+          id?: string
+          silenciada?: boolean
+          ultima_leitura_em?: string
+          usuario_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "chat_interno_participante_conversa_id_fkey"
+            columns: ["conversa_id"]
+            isOneToOne: false
+            referencedRelation: "chat_interno_conversa"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       collection_posts: {
         Row: {
           company_id: string
@@ -2917,6 +3062,8 @@ export type Database = {
           armazenamento_usado_gb: number | null
           bairro: string | null
           cep: string | null
+          chat_interno_habilitado: boolean
+          chat_interno_retencao_meses: number
           cidade: string | null
           cnpj: string | null
           complemento: string | null
@@ -2967,6 +3114,8 @@ export type Database = {
           armazenamento_usado_gb?: number | null
           bairro?: string | null
           cep?: string | null
+          chat_interno_habilitado?: boolean
+          chat_interno_retencao_meses?: number
           cidade?: string | null
           cnpj?: string | null
           complemento?: string | null
@@ -3017,6 +3166,8 @@ export type Database = {
           armazenamento_usado_gb?: number | null
           bairro?: string | null
           cep?: string | null
+          chat_interno_habilitado?: boolean
+          chat_interno_retencao_meses?: number
           cidade?: string | null
           cnpj?: string | null
           complemento?: string | null
@@ -9260,6 +9411,8 @@ export type Database = {
       whatsapp_retencao_execucoes: {
         Row: {
           acessos: number
+          chat_anexos: number
+          chat_mensagens: number
           company_id: string | null
           contatos: number
           conversas: number
@@ -9275,6 +9428,8 @@ export type Database = {
         }
         Insert: {
           acessos?: number
+          chat_anexos?: number
+          chat_mensagens?: number
           company_id?: string | null
           contatos?: number
           conversas?: number
@@ -9290,6 +9445,8 @@ export type Database = {
         }
         Update: {
           acessos?: number
+          chat_anexos?: number
+          chat_mensagens?: number
           company_id?: string | null
           contatos?: number
           conversas?: number
@@ -10663,6 +10820,74 @@ export type Database = {
       can_edit_support_board: { Args: { _board_id: string }; Returns: boolean }
       can_view_support_board: { Args: { _board_id: string }; Returns: boolean }
       carregar_feriados_nacionais: { Args: { _ano: number }; Returns: number }
+      chat_interno__sistema: {
+        Args: { p_company: string; p_conversa: string; p_texto: string }
+        Returns: undefined
+      }
+      chat_interno_apagar_mensagem: {
+        Args: { p_mensagem: string }
+        Returns: undefined
+      }
+      chat_interno_ativo: { Args: { p_company: string }; Returns: boolean }
+      chat_interno_conversa_direta: {
+        Args: { p_outro: string }
+        Returns: string
+      }
+      chat_interno_criar_grupo: {
+        Args: { p_nome: string; p_participantes: string[] }
+        Returns: string
+      }
+      chat_interno_enviar: {
+        Args: {
+          p_anexo?: Json
+          p_conteudo?: string
+          p_conversa: string
+          p_resposta?: string
+        }
+        Returns: string
+      }
+      chat_interno_grupo_adicionar: {
+        Args: { p_conversa: string; p_usuario: string }
+        Returns: undefined
+      }
+      chat_interno_grupo_remover: {
+        Args: { p_conversa: string; p_usuario: string }
+        Returns: undefined
+      }
+      chat_interno_liberar: {
+        Args: { p_company: string; p_habilitado: boolean; p_retencao?: number }
+        Returns: undefined
+      }
+      chat_interno_marcar_lida: {
+        Args: { p_conversa: string }
+        Returns: undefined
+      }
+      chat_interno_meu_acesso: { Args: never; Returns: Json }
+      chat_interno_nao_lidas: { Args: never; Returns: number }
+      chat_interno_participa: {
+        Args: { p_conversa: string; p_usuario: string }
+        Returns: boolean
+      }
+      chat_interno_retencao_anexos: {
+        Args: { p_company: string; p_limite: number }
+        Returns: {
+          id: string
+          path: string
+        }[]
+      }
+      chat_interno_retencao_apagar_anexos: {
+        Args: { p_company: string; p_ids: string[] }
+        Returns: number
+      }
+      chat_interno_retencao_corte: {
+        Args: { p_company: string }
+        Returns: string
+      }
+      chat_interno_sair: { Args: { p_conversa: string }; Returns: undefined }
+      chat_interno_silenciar: {
+        Args: { p_conversa: string; p_silenciar: boolean }
+        Returns: undefined
+      }
       company_cnpj_exists: { Args: { _cnpj: string }; Returns: boolean }
       company_id_by_cnpj: { Args: { _cnpj: string }; Returns: string }
       contar_dias_prazo: {
