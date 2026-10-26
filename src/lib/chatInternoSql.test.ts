@@ -147,7 +147,7 @@ describe('Chat Interno — PostgreSQL isolado', () => {
 
   it('retenção: corte de 24 meses por padrão, configurável, e contagem entra no job', async () => {
     const corte = await uma(`SELECT chat_interno_retencao_corte('${C}') AS c`)
-    const meses = (Date.now() - new Date(c.c).getTime()) / (30.44 * 24 * 3600 * 1000)
+    const meses = (Date.now() - new Date(corte.c).getTime()) / (30.44 * 24 * 3600 * 1000)
     expect(meses).toBeGreaterThan(23)
     expect(meses).toBeLessThan(25)
     await como(U1)
@@ -165,8 +165,8 @@ describe('Chat Interno — PostgreSQL isolado', () => {
       has_function_privilege('authenticated','chat_interno_enviar(uuid,text,uuid,jsonb)','EXECUTE') AS env_auth,
       has_function_privilege('authenticated','chat_interno__sistema(uuid,uuid,text)','EXECUTE') AS sis_auth,
       has_function_privilege('authenticated','chat_interno_setor_sync_trg()','EXECUTE') AS trg_auth,
-      has_function_privilege('authenticated','chat_interno_mensagem','INSERT') AS ins_auth,
-      has_function_privilege('anon','chat_interno_mensagem','SELECT') AS sel_anon`)
+      has_table_privilege('authenticated','chat_interno_mensagem','INSERT') AS ins_auth,
+      has_table_privilege('anon','chat_interno_mensagem','SELECT') AS sel_anon`)
     expect(p).toEqual({ env_anon: false, env_auth: true, sis_auth: false, trg_auth: false, ins_auth: false, sel_anon: false })
   })
 })
