@@ -29,10 +29,10 @@ Deno.serve(async (req) => {
   if (!manual && modoCfg === 'desligada') return resp(200, { ok: true, modo: 'desligada' })
   const modo: 'simulacao' | 'real' = manual ? 'simulacao' : (modoCfg === 'real' ? 'real' : 'simulacao')
 
-  const { data: emps } = await db.from('companies').select('id').or('whatsapp_habilitado.eq.true,inovachat_habilitado.eq.true')
+  const { data: emps } = await db.from('companies').select('id').or('whatsapp_habilitado.eq.true,inovachat_habilitado.eq.true,chat_interno_habilitado.eq.true')
   const resultado: unknown[] = []
   for (const e of emps ?? []) {
-    const linha: Record<string, unknown> = { company_id: e.id, modo, manual, mensagens: 0, midias: 0, conversas: 0, contatos: 0, fila: 0, acessos: 0, nps_anonimizadas: 0, erro: null }
+    const linha: Record<string, unknown> = { company_id: e.id, modo, manual, mensagens: 0, midias: 0, conversas: 0, contatos: 0, fila: 0, acessos: 0, nps_anonimizadas: 0, chat_mensagens: 0, chat_anexos: 0, erro: null }
     try {
       if (modo === 'simulacao') {
         const { data: c, error } = await db.rpc('inovachat_retencao_contar', { p_company: e.id })
@@ -56,12 +56,26 @@ Deno.serve(async (req) => {
         const { data: l, error: le } = await db.rpc('inovachat_retencao_limpar', { p_company: e.id })
         if (le) erros.push(le.message.slice(0, 200))
         else { Object.assign(linha, l); linha.mensagens = Number((l as any)?.mensagens ?? 0) + Number(linha.midias) }
+        // Chat Interno: anexos vencidos (arquivo no bucket + registro), mesmo esquema de lotes
+        const { data: anexos } = await db.rpc('chat_interno_retencao_anexos', { p_company: e.id, p_limite: 500 })
+        const listaChat = (anexos ?? []) as { id: string; path: string }[]
+        const okChat: string[] = []
+        for (let i = 0; i < listaChat.length; i += 100) {
+          const lote = listaChat.slice(i, i + 100)
+          const { error } = await db.storage.from('chat-interno-anexos').remove(lote.map((x) => x.path))
+          if (error) erros.push(`anexos chat: ${error.message}`.slice(0, 200))
+          else okChat.push(...lote.map((x) => x.id))
+        }
+        if (okChat.length) {
+          const { data: n } = await db.rpc('chat_interno_retencao_apagar_anexos', { p_company: e.id, p_ids: okChat })
+          linha.chat_anexos = Number(n ?? 0)
+        }
         if (erros.length) linha.erro = erros.join('; ')
       }
     } catch (x) {
       linha.erro = (x instanceof Error ? x.message : 'erro').slice(0, 300)
     }
-    const total = ['mensagens', 'midias', 'conversas', 'contatos', 'fila', 'acessos', 'nps_anonimizadas'].reduce((s, k) => s + Number(linha[k] ?? 0), 0)
+    const total = ['mensagens', 'midias', 'conversas', 'contatos', 'fila', 'acessos', 'nps_anonimizadas', 'chat_mensagens', 'chat_anexos'].reduce((s, k) => s + Number(linha[k] ?? 0), 0)
     if (total > 0 || linha.erro || manual) await db.from('whatsapp_retencao_execucoes').insert(linha)
     resultado.push(linha)
   }

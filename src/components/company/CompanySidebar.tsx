@@ -12,6 +12,7 @@ import {
   Activity, CalendarDays, BedDouble, Utensils, MessagesSquare
 } from 'lucide-react'
 import { useInovachatAcesso, useInovachatNaoLidas } from '@/hooks/useInovachat'
+import { useChatInternoAcesso, useChatInternoNaoLidas } from '@/hooks/useChatInterno'
 import { useCrmAcesso } from '@/hooks/useCrm'
 import { cn } from '@/lib/utils'
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
@@ -43,6 +44,7 @@ export const NAV_SECTIONS: NavSection[] = [
     items: [
       { label: 'InovaChat', icon: 'MessagesSquare', path: '/app/inovachat', module: null },
       { label: 'CRM', icon: 'KanbanSquare', path: '/app/crm', module: null },
+      { label: 'Chat Interno', icon: 'MessagesSquare', path: '/app/chat-interno', module: null },
       { label: 'Agenda', icon: 'Calendar', path: '/app/agendamento', module: 'scheduling' },
       { label: 'Confirmações', icon: 'UserCheck', path: '/app/confirmacoes', module: 'scheduling' },
       { label: 'Faltosos', icon: 'Monitor', path: '/app/faltosos', module: 'scheduling' },
@@ -199,12 +201,15 @@ export function CompanySidebar({ mobileOpen, onMobileClose, collapsed = false, o
   const inovachat = useInovachatAcesso()
   const crmAcesso = useCrmAcesso()
   const inovachatNaoLidas = useInovachatNaoLidas(!!inovachat?.ver)
+  const chatInterno = useChatInternoAcesso()
+  const chatInternoNaoLidas = useChatInternoNaoLidas(!!chatInterno?.ver)
 
   const visibleSections = NAV_SECTIONS.map(section => ({
     ...section,
     items: section.items.filter(item => {
       if (item.path === '/app/inovachat') return !!inovachat?.ver
       if (item.path === '/app/crm') return !!crmAcesso?.ver
+      if (item.path === '/app/chat-interno') return !!chatInterno?.ver
       const profileAllows = !item.module || canAccess(item.module, 'view')
       const sectorOverride = activeSector?.moduleOverrides?.[item.path]
       return sectorOverride !== undefined ? sectorOverride : profileAllows
@@ -326,7 +331,7 @@ export function CompanySidebar({ mobileOpen, onMobileClose, collapsed = false, o
                 const active = location.pathname.startsWith(item.path)
                 const Icon = ICON_MAP[item.icon] || Home
 
-                const badge = item.path === '/app/lab/coleta' ? waitingCollectionCount : item.path === '/app/lab/analise' ? analiseCount : item.path === '/app/inovachat' ? (inovachatNaoLidas || null) : null
+                const badge = item.path === '/app/lab/coleta' ? waitingCollectionCount : item.path === '/app/lab/analise' ? analiseCount : item.path === '/app/inovachat' ? (inovachatNaoLidas || null) : item.path === '/app/chat-interno' ? (chatInternoNaoLidas || null) : null
 
                 const link = (
                   <NavLink
