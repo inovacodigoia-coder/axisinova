@@ -1,5 +1,11 @@
 # Verificação dos alertas
 
+# Financeiro — Etapa 1
+- [ ] Levantar financeiro existente e reaproveitar rotas, permissões e auditoria sem alterar TISS/guias.
+- [ ] Contas, categorias, lançamentos, parcelas/recorrência, baixas/estorno/cancelamento, saldo/fluxo, RLS e comprovantes privados.
+- [ ] Abas, filtros, CSV, perfis e ativação pelo Super Admin (existentes desligadas).
+- [ ] Testes isolados, validação e relatório; preservação fiscal e desvinculação LGPD.
+
 # Chat Interno entre Equipe — Etapa 1
 - [x] Banco: conversas (direta única por par, grupo, canal por setor sincronizado), participantes, mensagens (texto 4000, anexo 10 MB, resposta, exclusão lógica, sistema), RLS por participante+empresa, funções SECURITY DEFINER com REVOKE/GRANT, módulo chat_interno ligado por padrão, retenção 24 meses no job existente (Simulação).
 - [x] Bucket privado chat-interno-anexos com políticas por participante.
