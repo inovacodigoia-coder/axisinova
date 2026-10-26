@@ -1,10 +1,11 @@
 # Verificação dos alertas
 
 # Financeiro — Etapa 1
-- [ ] Levantar financeiro existente e reaproveitar rotas, permissões e auditoria sem alterar TISS/guias.
-- [ ] Contas, categorias, lançamentos, parcelas/recorrência, baixas/estorno/cancelamento, saldo/fluxo, RLS e comprovantes privados.
-- [ ] Abas, filtros, CSV, perfis e ativação pelo Super Admin (existentes desligadas).
-- [ ] Testes isolados, validação e relatório; preservação fiscal e desvinculação LGPD.
+- [x] Levantamento: telas AP/AR/resumo mock; reaproveitadas rotas /app/financeiro e auditoria; TISS/guias/orçamentos/pagamentos intactos.
+- [x] Contas, categorias, lançamentos, parcelas/recorrência, baixas/estorno/cancelamento, saldo/fluxo, RLS e comprovantes privados; migrations 0112–0114.
+- [x] Abas, filtros, CSV, perfis e ativação pelo Super Admin; 8 empresas atuais desligadas, labsaude FALSE, nenhum lançamento operacional criado.
+- [x] 17 testes financeiros SQL isolados; suíte SQL anterior completa 105/105 antes dos 2 testes adicionais; guarda fiscal fora da retenção e desvinculação LGPD (RPC + trigger defensivo).
+- [ ] Validar fluxo completo na tela com login autorizado e empresa de teste com Financeiro ativo: navegador disponível está sem sessão e redireciona para /login; não gerar sessão nem ativar empresa existente sem autorização.
 
 # Chat Interno entre Equipe — Etapa 1
 - [x] Banco: conversas (direta única por par, grupo, canal por setor sincronizado), participantes, mensagens (texto 4000, anexo 10 MB, resposta, exclusão lógica, sistema), RLS por participante+empresa, funções SECURITY DEFINER com REVOKE/GRANT, módulo chat_interno ligado por padrão, retenção 24 meses no job existente (Simulação).
