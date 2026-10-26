@@ -14,6 +14,7 @@ export type SystemModule =
   | 'lab_technical'
   | 'lab_registers'
   | 'finance'
+  | 'financeiro'
   | 'inventory'
   | 'pharmacy'
   | 'serotheque'
