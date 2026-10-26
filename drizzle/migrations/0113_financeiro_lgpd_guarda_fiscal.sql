@@ -1,0 +1,4 @@
+CREATE FUNCTION public.financeiro_paciente_exclusao_trg() RETURNS trigger LANGUAGE plpgsql SECURITY DEFINER SET search_path=public AS $$ DECLARE n integer; BEGIN UPDATE public.financeiro_lancamentos SET paciente_id=NULL,pagador=NULL WHERE paciente_id=OLD.id AND company_id=OLD.company_id; GET DIAGNOSTICS n=ROW_COUNT; IF n>0 THEN PERFORM public.financeiro__auditar(OLD.company_id,'financeiro_lancamentos',OLD.id,'lgpd_desvincular',NULL,jsonb_build_object('quantidade',n)); END IF; RETURN OLD; END $$;
+REVOKE ALL ON FUNCTION public.financeiro_paciente_exclusao_trg() FROM PUBLIC,anon,authenticated;
+CREATE TRIGGER financeiro_paciente_exclusao BEFORE DELETE ON public.patients FOR EACH ROW EXECUTE FUNCTION public.financeiro_paciente_exclusao_trg();
+COMMENT ON FUNCTION public.financeiro_paciente_exclusao_trg() IS 'Proteção aditiva: caso ocorra exclusão autorizada de paciente, remove só vínculo e nome do pagador, nunca valores. Não cria nem autoriza exclusão de paciente.';

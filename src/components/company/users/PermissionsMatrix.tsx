@@ -2,6 +2,7 @@ import { useState, useEffect, useMemo } from 'react'
 import type { PermissionsMap, SystemModule, PermissionAction } from '@/types/permissions.types'
 import { SYSTEM_MODULES, ALL_ACTIONS, ACTION_LABELS, RESULT_ENTRY_PERMISSIONS, APOIO_PERMISSIONS, TRIAGEM_PERMISSIONS, WHATSAPP_PERMISSIONS, INOVACHAT_PERMISSIONS, CRM_PERMISSIONS } from '@/types/permissions.types'
 import { Progress } from '@/components/ui/progress'
+import { FINANCEIRO_PERMISSIONS } from '@/lib/financeiro'
 
 interface PermissionsMatrixProps {
   permissions: PermissionsMap
@@ -332,6 +333,10 @@ export function PermissionsMatrix({ permissions, onChange }: PermissionsMatrixPr
 
 
       <div className="flex items-center gap-3">
+        <fieldset className="border border-border rounded-lg p-4 space-y-3">
+          <legend className="text-sm font-semibold">Financeiro</legend>
+          {FINANCEIRO_PERMISSIONS.map(p => <label key={p.code} className="flex gap-2 text-sm"><input type="checkbox" checked={(perms.financeiro || []).includes(p.code)} onChange={() => setPerms(prev => { const cur = prev.financeiro || []; return { ...prev, financeiro: cur.includes(p.code) ? cur.filter(x => x !== p.code) : [...cur, p.code] } })} />{p.label}</label>)}
+        </fieldset>
         <Progress value={(activePerms / totalPerms) * 100} className="flex-1 h-2" />
         <span className="text-xs text-muted-foreground whitespace-nowrap">{activePerms} de {totalPerms} permissões</span>
       </div>
