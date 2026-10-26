@@ -785,6 +785,13 @@
       "when": 1792979528484,
       "tag": "0111_chat_interno_etapa1",
       "breakpoints": true
+    },
+    {
+      "idx": 112,
+      "version": "7",
+      "when": 1792984456577,
+      "tag": "0112_financeiro_etapa1_base",
+      "breakpoints": true
     }
   ]
 }

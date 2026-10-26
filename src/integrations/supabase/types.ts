@@ -3074,6 +3074,7 @@ export type Database = {
           crm_habilitado_por: string | null
           email: string | null
           estado: string | null
+          financeiro_habilitado: boolean
           id: string
           inovachat_habilitado: boolean
           inovachat_habilitado_em: string | null
@@ -3126,6 +3127,7 @@ export type Database = {
           crm_habilitado_por?: string | null
           email?: string | null
           estado?: string | null
+          financeiro_habilitado?: boolean
           id?: string
           inovachat_habilitado?: boolean
           inovachat_habilitado_em?: string | null
@@ -3178,6 +3180,7 @@ export type Database = {
           crm_habilitado_por?: string | null
           email?: string | null
           estado?: string | null
+          financeiro_habilitado?: boolean
           id?: string
           inovachat_habilitado?: boolean
           inovachat_habilitado_em?: string | null
@@ -4550,6 +4553,285 @@ export type Database = {
             columns: ["company_id"]
             isOneToOne: false
             referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      financeiro_baixas: {
+        Row: {
+          company_id: string
+          conta_id: string
+          criado_em: string
+          criado_por: string
+          data: string
+          desconto: number
+          estornado_em: string | null
+          estornado_por: string | null
+          estorno_motivo: string | null
+          forma: string
+          id: string
+          juros: number
+          lancamento_id: string
+          multa: number
+          valor: number
+        }
+        Insert: {
+          company_id: string
+          conta_id: string
+          criado_em?: string
+          criado_por: string
+          data: string
+          desconto?: number
+          estornado_em?: string | null
+          estornado_por?: string | null
+          estorno_motivo?: string | null
+          forma: string
+          id?: string
+          juros?: number
+          lancamento_id: string
+          multa?: number
+          valor: number
+        }
+        Update: {
+          company_id?: string
+          conta_id?: string
+          criado_em?: string
+          criado_por?: string
+          data?: string
+          desconto?: number
+          estornado_em?: string | null
+          estornado_por?: string | null
+          estorno_motivo?: string | null
+          forma?: string
+          id?: string
+          juros?: number
+          lancamento_id?: string
+          multa?: number
+          valor?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "financeiro_baixas_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "financeiro_baixas_conta_id_fkey"
+            columns: ["conta_id"]
+            isOneToOne: false
+            referencedRelation: "financeiro_contas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "financeiro_baixas_lancamento_id_fkey"
+            columns: ["lancamento_id"]
+            isOneToOne: false
+            referencedRelation: "financeiro_lancamentos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      financeiro_categorias: {
+        Row: {
+          ativa: boolean
+          company_id: string
+          id: string
+          nome: string
+          pai_id: string | null
+          tipo: string
+        }
+        Insert: {
+          ativa?: boolean
+          company_id: string
+          id?: string
+          nome: string
+          pai_id?: string | null
+          tipo: string
+        }
+        Update: {
+          ativa?: boolean
+          company_id?: string
+          id?: string
+          nome?: string
+          pai_id?: string | null
+          tipo?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "financeiro_categorias_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "financeiro_categorias_pai_id_fkey"
+            columns: ["pai_id"]
+            isOneToOne: false
+            referencedRelation: "financeiro_categorias"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      financeiro_contas: {
+        Row: {
+          ativa: boolean
+          company_id: string
+          criado_em: string
+          data_inicial: string
+          id: string
+          nome: string
+          saldo_inicial: number
+          tipo: string
+        }
+        Insert: {
+          ativa?: boolean
+          company_id: string
+          criado_em?: string
+          data_inicial: string
+          id?: string
+          nome: string
+          saldo_inicial?: number
+          tipo: string
+        }
+        Update: {
+          ativa?: boolean
+          company_id?: string
+          criado_em?: string
+          data_inicial?: string
+          id?: string
+          nome?: string
+          saldo_inicial?: number
+          tipo?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "financeiro_contas_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      financeiro_lancamentos: {
+        Row: {
+          cancelado_motivo: string | null
+          categoria_id: string
+          company_id: string
+          competencia: string
+          comprovante_path: string | null
+          conta_id: string
+          criado_em: string
+          criado_por: string
+          descricao: string
+          forma_prevista: string | null
+          grupo_id: string | null
+          id: string
+          moeda: string
+          observacoes: string | null
+          origem_id: string | null
+          origem_tipo: string | null
+          paciente_id: string | null
+          pagador: string | null
+          parcela: number | null
+          parcelas: number | null
+          profissional_id: string | null
+          status: string
+          tipo: string
+          valor: number
+          vencimento: string
+        }
+        Insert: {
+          cancelado_motivo?: string | null
+          categoria_id: string
+          company_id: string
+          competencia: string
+          comprovante_path?: string | null
+          conta_id: string
+          criado_em?: string
+          criado_por: string
+          descricao: string
+          forma_prevista?: string | null
+          grupo_id?: string | null
+          id?: string
+          moeda?: string
+          observacoes?: string | null
+          origem_id?: string | null
+          origem_tipo?: string | null
+          paciente_id?: string | null
+          pagador?: string | null
+          parcela?: number | null
+          parcelas?: number | null
+          profissional_id?: string | null
+          status?: string
+          tipo: string
+          valor: number
+          vencimento: string
+        }
+        Update: {
+          cancelado_motivo?: string | null
+          categoria_id?: string
+          company_id?: string
+          competencia?: string
+          comprovante_path?: string | null
+          conta_id?: string
+          criado_em?: string
+          criado_por?: string
+          descricao?: string
+          forma_prevista?: string | null
+          grupo_id?: string | null
+          id?: string
+          moeda?: string
+          observacoes?: string | null
+          origem_id?: string | null
+          origem_tipo?: string | null
+          paciente_id?: string | null
+          pagador?: string | null
+          parcela?: number | null
+          parcelas?: number | null
+          profissional_id?: string | null
+          status?: string
+          tipo?: string
+          valor?: number
+          vencimento?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "financeiro_lancamentos_categoria_id_fkey"
+            columns: ["categoria_id"]
+            isOneToOne: false
+            referencedRelation: "financeiro_categorias"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "financeiro_lancamentos_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "financeiro_lancamentos_conta_id_fkey"
+            columns: ["conta_id"]
+            isOneToOne: false
+            referencedRelation: "financeiro_contas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "financeiro_lancamentos_paciente_id_fkey"
+            columns: ["paciente_id"]
+            isOneToOne: false
+            referencedRelation: "patients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "financeiro_lancamentos_profissional_id_fkey"
+            columns: ["profissional_id"]
+            isOneToOne: false
+            referencedRelation: "doctors"
             referencedColumns: ["id"]
           },
         ]
@@ -11104,6 +11386,61 @@ export type Database = {
         Args: { _bancada_id?: string; _exam_id: string }
         Returns: Json
       }
+      financeiro__auditar: {
+        Args: {
+          _acao: string
+          _antes: Json
+          _company: string
+          _depois: Json
+          _id: string
+          _tabela: string
+        }
+        Returns: undefined
+      }
+      financeiro__padroes: { Args: { _company: string }; Returns: undefined }
+      financeiro_baixar: {
+        Args: { _dados: Json; _lancamento: string }
+        Returns: string
+      }
+      financeiro_cancelar: {
+        Args: { _lancamento: string; _motivo: string }
+        Returns: undefined
+      }
+      financeiro_configurar: {
+        Args: { _dados: Json; _entidade: string; _id?: string }
+        Returns: string
+      }
+      financeiro_estornar: {
+        Args: { _baixa: string; _motivo: string }
+        Returns: undefined
+      }
+      financeiro_lancar: {
+        Args: {
+          _dados: Json
+          _id?: string
+          _modo?: string
+          _quantidade?: number
+        }
+        Returns: string[]
+      }
+      financeiro_lgpd_desvincular: {
+        Args: { _paciente: string }
+        Returns: number
+      }
+      financeiro_liberar: {
+        Args: { _company: string; _habilitado: boolean }
+        Returns: undefined
+      }
+      financeiro_meu_acesso: { Args: never; Returns: Json }
+      financeiro_saldos: {
+        Args: { _ate?: string }
+        Returns: {
+          id: string
+          nome: string
+          saldo: number
+        }[]
+      }
+      financeiro_tem_permissao: { Args: { _acao: string }; Returns: boolean }
       generate_external_access_code: { Args: never; Returns: string }
       get_user_company_id: { Args: { _user_id: string }; Returns: string }
       has_role: {
