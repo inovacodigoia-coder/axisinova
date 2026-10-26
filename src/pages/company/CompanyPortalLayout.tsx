@@ -58,6 +58,7 @@ import InpatientPage from './beds/InpatientPage'
 import NutritionPage from './nutrition/NutritionPage'
 import SchedulingPage from './scheduling/SchedulingPage'
 import ConfirmationsPage from './scheduling/ConfirmationsPage'
+import ChatInternoPage from './chat/ChatInternoPage'
 import InovachatPage from './inovachat/InovachatPage'
 import CrmPage from './crm/CrmPage'
 import AbsenteesPage from './scheduling/AbsenteesPage'
@@ -252,6 +253,7 @@ function PortalContent() {
               <Route path="confirmacoes" element={<ConfirmationsPage />} />
               <Route path="inovachat" element={<InovachatPage />} />
               <Route path="crm" element={<CrmPage />} />
+              <Route path="chat-interno" element={<ChatInternoPage />} />
               <Route path="faltosos" element={<AbsenteesPage />} />
               <Route path="historico-paciente" element={<PatientHistoryPage />} />
               <Route path="recepcao" element={<ReceptionLayout />} />
