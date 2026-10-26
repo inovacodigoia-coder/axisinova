@@ -131,6 +131,7 @@ export default function ChatInternoPage() {
       const resp = m.resposta_id ? porId.get(m.resposta_id) : null
       return {
         ...m,
+        tipo: m.tipo as Mensagem['tipo'],
         autor_nome: m.autor_id ? (nomePorId.get(m.autor_id) ?? 'Colega') : 'Sistema',
         resposta_preview: resp ? (resp.apagada ? 'mensagem apagada' : (resp.conteudo ?? resp.anexo_nome ?? '')) : null,
       }
