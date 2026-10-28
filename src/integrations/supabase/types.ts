@@ -2359,6 +2359,7 @@ export type Database = {
           bed: string | null
           card_expiry: string | null
           card_number: string | null
+          coleta_programada_para: string | null
           company_id: string
           convenio_id: string | null
           convenio_name: string | null
@@ -2411,6 +2412,7 @@ export type Database = {
           bed?: string | null
           card_expiry?: string | null
           card_number?: string | null
+          coleta_programada_para?: string | null
           company_id: string
           convenio_id?: string | null
           convenio_name?: string | null
@@ -2463,6 +2465,7 @@ export type Database = {
           bed?: string | null
           card_expiry?: string | null
           card_number?: string | null
+          coleta_programada_para?: string | null
           company_id?: string
           convenio_id?: string | null
           convenio_name?: string | null
@@ -11170,6 +11173,7 @@ export type Database = {
         Args: { p_conversa: string; p_silenciar: boolean }
         Returns: undefined
       }
+      coleta_tem_permissao: { Args: { _perm: string }; Returns: boolean }
       company_cnpj_exists: { Args: { _cnpj: string }; Returns: boolean }
       company_id_by_cnpj: { Args: { _cnpj: string }; Returns: string }
       contar_dias_prazo: {
@@ -11728,6 +11732,15 @@ export type Database = {
           _exame_ids: string[]
           _justificativa: string
           _novo: string
+          _pedido: string
+        }
+        Returns: number
+      }
+      lab_coleta_programar: {
+        Args: {
+          _data: string
+          _exame_ids: string[]
+          _justificativa: string
           _pedido: string
         }
         Returns: number

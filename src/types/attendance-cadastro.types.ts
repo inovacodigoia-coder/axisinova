@@ -39,6 +39,8 @@ export interface AttendanceOrder {
   hash?: string
   examMode?: 'clinic' | 'lab'
   deliveryDate?: string
+  /** Coleta programada para data futura (lab_coleta_programar) */
+  coletaProgramadaPara?: string | null
   labGuides?: any[]
   isFasting?: boolean
   weight?: string

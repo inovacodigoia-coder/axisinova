@@ -806,6 +806,13 @@
       "when": 1792984984192,
       "tag": "0114_financeiro_validacao_parametros",
       "breakpoints": true
+    },
+    {
+      "idx": 115,
+      "version": "7",
+      "when": 1793195471402,
+      "tag": "0115_migration",
+      "breakpoints": true
     }
   ]
 }

@@ -213,6 +213,8 @@ export default function LabAnalisePage() {
         );
 
         if (!examIsCollected && !alreadyWorked) return;
+        // Coleta programada para data futura não gera pendência até a data chegar
+        if ((exam?.coletaProgramada && exam?.collectedAt && new Date(exam.collectedAt).getTime() > Date.now()) && !alreadyWorked) return;
 
         // Se o status do pedido estiver permitido e bater com o filtro selecionado
         if (allowedOrderStatuses.includes(orderStatus) && matchesStatus) {
