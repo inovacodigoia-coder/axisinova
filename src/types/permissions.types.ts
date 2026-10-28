@@ -156,6 +156,11 @@ export const TRIAGEM_PERMISSIONS: { code: string; label: string; description: st
   { code: 'triagem.relatorios.ver', label: 'Ver relatórios da triagem', description: 'Indicadores de rejeição, trânsito e temperatura' },
 ]
 
+/** Permissões de coleta (permissions.coleta; checadas no banco por coleta_tem_permissao) */
+export const COLETA_PERMISSIONS: { code: string; label: string; description: string }[] = [
+  { code: 'coleta.programar', label: 'Programar coleta para data futura', description: 'Definir no Detalhes do Atendimento uma data futura de coleta, com justificativa' },
+]
+
 export const ACTION_LABELS: Record<PermissionAction, string> = {
   view: 'Ver',
   create: 'Criar',
