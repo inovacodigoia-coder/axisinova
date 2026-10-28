@@ -1006,8 +1006,8 @@ export function AttendanceDetailsModal({ open, onClose, onOrderDeleted, order, p
                                       <div className="flex flex-col items-center gap-0.5">
                                         <div className={cn("w-2.5 h-2.5 rounded-full", examIsCollected ? "bg-emerald-500" : "bg-slate-300")} />
                                         {examIsCollected && exam.collectedAt && (
-                                          <button type="button" title="Corrigir horário da coleta (com justificativa)"
-                                            className="text-[9px] text-muted-foreground underline decoration-dotted hover:text-primary"
+                                          <button type="button" title={new Date(exam.collectedAt).getTime() > Date.now() ? "Coleta programada (data futura)" : "Corrigir horário da coleta (com justificativa)"}
+                                            className={cn("text-[9px] underline decoration-dotted hover:text-primary", new Date(exam.collectedAt).getTime() > Date.now() ? "text-scheduled font-bold" : "text-muted-foreground")}
                                             onClick={() => setCorrigirColeta({ examId: exam.examId || exam.id, nome: exam.name, atual: exam.collectedAt })}>
                                             {format(new Date(exam.collectedAt), 'dd/MM HH:mm')}
                                           </button>

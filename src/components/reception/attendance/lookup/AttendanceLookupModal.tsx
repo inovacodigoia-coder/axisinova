@@ -500,6 +500,7 @@ function OrderRowModern({
   const [open, setOpen] = useState(false)
   const date = new Date(order.registeredAt)
   const deliveryDate = order.deliveryDate ? new Date(order.deliveryDate) : null
+  const programada = !!order.coletaProgramadaPara && new Date(order.coletaProgramadaPara).getTime() > Date.now()
 
   return (
     <div 
@@ -510,6 +511,11 @@ function OrderRowModern({
       <div className="grid grid-cols-[120px_100px_1fr_100px_120px_120px_100px_140px] gap-4 px-6 py-3 items-center text-xs">
         <div className="font-mono text-primary font-bold hover:underline flex items-center gap-1.5" onClick={(e) => { e.stopPropagation(); onDetails(); }}>
           {order.orderNumber}
+          {programada && (
+            <span title={`Coleta programada para ${new Date(order.coletaProgramadaPara!).toLocaleDateString('pt-BR')}`} className="inline-flex items-center justify-center rounded-md bg-scheduled/10 text-scheduled p-1">
+              <Clock className="h-3.5 w-3.5" />
+            </span>
+          )}
           {partnerName && (
             <span
               title={`Recebido via parceiro: ${partnerName}`}
@@ -519,8 +525,8 @@ function OrderRowModern({
             </span>
           )}
         </div>
-        <div className="text-muted-foreground">
-          {date.toLocaleDateString('pt-BR')}
+        <div className={programada ? "text-scheduled font-bold" : "text-muted-foreground"}>
+          {(order.coletaProgramadaPara ? new Date(order.coletaProgramadaPara) : date).toLocaleDateString('pt-BR')}
         </div>
         <div className="font-semibold text-foreground truncate uppercase">{patient?.fullName || order.patientName}</div>
         <div className="text-muted-foreground">{patient?.birthDate ? new Date(patient.birthDate).toLocaleDateString('pt-BR') : '-'}</div>

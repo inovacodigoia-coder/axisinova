@@ -105,6 +105,7 @@ export default function LabMapaPage() {
       ;(order.labGuides || []).forEach((guide: any, gi: number) => {
         ;(guide?.exams || []).forEach((exam: any, ei: number) => {
           if (exam?.status === 'cancelled') return
+          if (exam?.coletaProgramada && exam?.collectedAt && new Date(exam.collectedAt).getTime() > Date.now()) return // coleta programada futura
           const key = workMapItemKey(order.id, gi, ei)
           if (!isGuiaRemessaRecebida(key)) return // guia_remessa_recebida = false
           if (included.has(key)) return // incluido_em_mapa = true
