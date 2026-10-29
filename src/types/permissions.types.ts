@@ -31,7 +31,7 @@ export type SystemModule =
 
 export type PermissionAction = 'view' | 'create' | 'edit' | 'delete' | 'export' | 'approve'
 
-export type FinanceiroPermission = 'financeiro.ver' | 'financeiro.lancar' | 'financeiro.baixar' | 'financeiro.cancelar' | 'financeiro.configurar'
+export type FinanceiroPermission = 'financeiro.ver' | 'financeiro.lancar' | 'financeiro.baixar' | 'financeiro.cancelar' | 'financeiro.configurar' | 'financeiro.caixa.operar' | 'financeiro.caixa.ver_todos' | 'financeiro.caixa.reabrir' | 'financeiro.caixa.configurar'
 export type PermissionsMap = Partial<Record<SystemModule, PermissionAction[]>> & { financeiro?: FinanceiroPermission[] }
 
 export interface Profile {
