@@ -4636,6 +4636,239 @@ export type Database = {
           },
         ]
       }
+      financeiro_caixa_movimentos: {
+        Row: {
+          avulso: boolean
+          baixa_ids: string[]
+          chave: string
+          company_id: string
+          criado_em: string
+          descricao: string
+          estornado_em: string | null
+          estornado_por: string | null
+          estorno_motivo: string | null
+          formas: Json
+          id: string
+          lancamento_id: string | null
+          payload: Json
+          sessao_id: string
+          tipo: string
+          transferencia_id: string | null
+          valor: number
+        }
+        Insert: {
+          avulso?: boolean
+          baixa_ids?: string[]
+          chave: string
+          company_id: string
+          criado_em?: string
+          descricao: string
+          estornado_em?: string | null
+          estornado_por?: string | null
+          estorno_motivo?: string | null
+          formas: Json
+          id?: string
+          lancamento_id?: string | null
+          payload: Json
+          sessao_id: string
+          tipo: string
+          transferencia_id?: string | null
+          valor: number
+        }
+        Update: {
+          avulso?: boolean
+          baixa_ids?: string[]
+          chave?: string
+          company_id?: string
+          criado_em?: string
+          descricao?: string
+          estornado_em?: string | null
+          estornado_por?: string | null
+          estorno_motivo?: string | null
+          formas?: Json
+          id?: string
+          lancamento_id?: string | null
+          payload?: Json
+          sessao_id?: string
+          tipo?: string
+          transferencia_id?: string | null
+          valor?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "financeiro_caixa_movimentos_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "financeiro_caixa_movimentos_lancamento_id_fkey"
+            columns: ["lancamento_id"]
+            isOneToOne: false
+            referencedRelation: "financeiro_lancamentos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "financeiro_caixa_movimentos_sessao_id_fkey"
+            columns: ["sessao_id"]
+            isOneToOne: false
+            referencedRelation: "financeiro_caixa_sessoes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "financeiro_caixa_movimentos_transferencia_id_fkey"
+            columns: ["transferencia_id"]
+            isOneToOne: false
+            referencedRelation: "financeiro_transferencias"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      financeiro_caixa_recibos: {
+        Row: {
+          company_id: string
+          emitido_em: string
+          id: string
+          impressoes: number
+          movimento_id: string
+          numero: number
+          paciente_id: string | null
+          pagador: string | null
+        }
+        Insert: {
+          company_id: string
+          emitido_em?: string
+          id?: string
+          impressoes?: number
+          movimento_id: string
+          numero: number
+          paciente_id?: string | null
+          pagador?: string | null
+        }
+        Update: {
+          company_id?: string
+          emitido_em?: string
+          id?: string
+          impressoes?: number
+          movimento_id?: string
+          numero?: number
+          paciente_id?: string | null
+          pagador?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "financeiro_caixa_recibos_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "financeiro_caixa_recibos_movimento_id_fkey"
+            columns: ["movimento_id"]
+            isOneToOne: true
+            referencedRelation: "financeiro_caixa_movimentos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      financeiro_caixa_sessoes: {
+        Row: {
+          aberto_em: string
+          caixa_id: string
+          company_id: string
+          contado: number | null
+          diferenca: number | null
+          esperado: Json | null
+          fechado_em: string | null
+          fundo: number
+          id: string
+          justificativa: string | null
+          operador_id: string
+        }
+        Insert: {
+          aberto_em?: string
+          caixa_id: string
+          company_id: string
+          contado?: number | null
+          diferenca?: number | null
+          esperado?: Json | null
+          fechado_em?: string | null
+          fundo: number
+          id?: string
+          justificativa?: string | null
+          operador_id: string
+        }
+        Update: {
+          aberto_em?: string
+          caixa_id?: string
+          company_id?: string
+          contado?: number | null
+          diferenca?: number | null
+          esperado?: Json | null
+          fechado_em?: string | null
+          fundo?: number
+          id?: string
+          justificativa?: string | null
+          operador_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "financeiro_caixa_sessoes_caixa_id_fkey"
+            columns: ["caixa_id"]
+            isOneToOne: false
+            referencedRelation: "financeiro_caixas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "financeiro_caixa_sessoes_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      financeiro_caixas: {
+        Row: {
+          ativo: boolean
+          company_id: string
+          conta_id: string
+          id: string
+          nome: string
+        }
+        Insert: {
+          ativo?: boolean
+          company_id: string
+          conta_id: string
+          id?: string
+          nome: string
+        }
+        Update: {
+          ativo?: boolean
+          company_id?: string
+          conta_id?: string
+          id?: string
+          nome?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "financeiro_caixas_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "financeiro_caixas_conta_id_fkey"
+            columns: ["conta_id"]
+            isOneToOne: false
+            referencedRelation: "financeiro_contas"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       financeiro_categorias: {
         Row: {
           ativa: boolean
@@ -4835,6 +5068,96 @@ export type Database = {
             columns: ["profissional_id"]
             isOneToOne: false
             referencedRelation: "doctors"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      financeiro_recibo_contadores: {
+        Row: {
+          company_id: string
+          ultimo: number
+        }
+        Insert: {
+          company_id: string
+          ultimo?: number
+        }
+        Update: {
+          company_id?: string
+          ultimo?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "financeiro_recibo_contadores_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: true
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      financeiro_transferencias: {
+        Row: {
+          chave: string
+          company_id: string
+          data: string
+          destino_id: string
+          estornado_em: string | null
+          estornado_por: string | null
+          estorno_motivo: string | null
+          id: string
+          motivo: string
+          origem_id: string
+          usuario_id: string
+          valor: number
+        }
+        Insert: {
+          chave: string
+          company_id: string
+          data: string
+          destino_id: string
+          estornado_em?: string | null
+          estornado_por?: string | null
+          estorno_motivo?: string | null
+          id?: string
+          motivo: string
+          origem_id: string
+          usuario_id: string
+          valor: number
+        }
+        Update: {
+          chave?: string
+          company_id?: string
+          data?: string
+          destino_id?: string
+          estornado_em?: string | null
+          estornado_por?: string | null
+          estorno_motivo?: string | null
+          id?: string
+          motivo?: string
+          origem_id?: string
+          usuario_id?: string
+          valor?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "financeiro_transferencias_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "financeiro_transferencias_destino_id_fkey"
+            columns: ["destino_id"]
+            isOneToOne: false
+            referencedRelation: "financeiro_contas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "financeiro_transferencias_origem_id_fkey"
+            columns: ["origem_id"]
+            isOneToOne: false
+            referencedRelation: "financeiro_contas"
             referencedColumns: ["id"]
           },
         ]
@@ -11406,6 +11729,39 @@ export type Database = {
         Args: { _dados: Json; _lancamento: string }
         Returns: string
       }
+      financeiro_caixa_abrir: {
+        Args: { _caixa: string; _fundo: number }
+        Returns: string
+      }
+      financeiro_caixa_acesso: { Args: never; Returns: Json }
+      financeiro_caixa_buscar_receber: {
+        Args: { _busca: string }
+        Returns: Json
+      }
+      financeiro_caixa_catalogos: { Args: never; Returns: Json }
+      financeiro_caixa_configurar: {
+        Args: { _ativo?: boolean; _conta: string; _id?: string; _nome: string }
+        Returns: string
+      }
+      financeiro_caixa_estornar: {
+        Args: { _motivo: string; _movimento: string }
+        Returns: undefined
+      }
+      financeiro_caixa_fechar: {
+        Args: { _contado: number; _motivo?: string; _sessao: string }
+        Returns: undefined
+      }
+      financeiro_caixa_movimentar: {
+        Args: { _chave: string; _dados: Json; _sessao: string; _tipo: string }
+        Returns: string
+      }
+      financeiro_caixa_reabrir: {
+        Args: { _motivo: string; _sessao: string }
+        Returns: undefined
+      }
+      financeiro_caixa_recibo: { Args: { _movimento: string }; Returns: Json }
+      financeiro_caixa_totais: { Args: { _sessao: string }; Returns: Json }
+      financeiro_caixa_visivel: { Args: { _sessao: string }; Returns: boolean }
       financeiro_cancelar: {
         Args: { _lancamento: string; _motivo: string }
         Returns: undefined
@@ -11445,6 +11801,21 @@ export type Database = {
         }[]
       }
       financeiro_tem_permissao: { Args: { _acao: string }; Returns: boolean }
+      financeiro_transferencia_estornar: {
+        Args: { _motivo: string; _transferencia: string }
+        Returns: undefined
+      }
+      financeiro_transferir: {
+        Args: {
+          _chave: string
+          _data: string
+          _destino: string
+          _motivo: string
+          _origem: string
+          _valor: number
+        }
+        Returns: string
+      }
       generate_external_access_code: { Args: never; Returns: string }
       get_user_company_id: { Args: { _user_id: string }; Returns: string }
       has_role: {
