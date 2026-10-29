@@ -1,0 +1,12 @@
+import { createPortal } from 'react-dom'
+import { dinheiro } from '@/lib/financeiro'
+import { dataCaixa, valorPorExtenso, type ReciboCaixa } from '@/lib/caixa'
+export interface FechamentoCaixa { empresa:string; caixa:string; operador:string; aberto_em:string; fechado_em:string|null; fundo:number; contado:number|null; diferenca:number|null; justificativa:string|null; totais:Record<string,number>; sangrias:number; suprimentos:number }
+export function CaixaImpressao({recibo,fechamento}:{recibo?:ReciboCaixa|null;fechamento?:FechamentoCaixa|null}) {
+ if(!recibo && !fechamento)return null
+ return createPortal(<article id="caixa-print-root" className="hidden">
+ {recibo && <><header><h1>{recibo.empresa.nome}</h1><p>{recibo.empresa.razao_social}</p><p>CNPJ: {recibo.empresa.cnpj}</p><p>{recibo.empresa.endereco} · {recibo.empresa.telefone}</p></header><h2>Recibo nº {String(recibo.numero).padStart(6,'0')} · {recibo.via}</h2>{recibo.estornado && <h2>ESTORNADO</h2>}<p>Recebemos de: {recibo.pagador || 'Pagador não identificado'}</p><h2>{dinheiro(Number(recibo.valor))}</h2><p>{valorPorExtenso(Number(recibo.valor))}</p><table><tbody>{recibo.formas.map((f,i)=><tr key={i}><td>{f.forma}</td><td>{dinheiro(Number(f.valor))}</td></tr>)}</tbody></table><p>Operador: {recibo.operador}</p><p>{dataCaixa(recibo.data)}</p></>}
+ {fechamento && <><h1>{fechamento.empresa}</h1><h2>Fechamento · {fechamento.caixa}</h2><p>Operador: {fechamento.operador}</p><p>Abertura: {dataCaixa(fechamento.aberto_em)}</p><p>Fechamento: {fechamento.fechado_em?dataCaixa(fechamento.fechado_em):'Em aberto'}</p><p>Fundo de troco: {dinheiro(fechamento.fundo)}</p><table><thead><tr><th>Forma</th><th>Esperado</th><th>Conferido</th></tr></thead><tbody>{Object.entries(fechamento.totais).map(([forma,valor])=><tr key={forma}><td>{forma}</td><td>{dinheiro(Number(valor))}</td><td>{dinheiro(forma==='dinheiro'?Number(fechamento.contado):Number(valor))}</td></tr>)}</tbody></table><p>Sangrias: {dinheiro(fechamento.sangrias)} · Suprimentos: {dinheiro(fechchamentoSuprimentos(fechamento))}</p><h2>Diferença: {dinheiro(Number(fechamento.diferenca))}</h2><p>{fechamento.justificativa}</p></>}
+ </article>,document.body)
+}
+function fechchamentoSuprimentos(f:FechamentoCaixa){return f.suprimentos}
