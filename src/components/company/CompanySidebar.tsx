@@ -15,6 +15,7 @@ import { useInovachatAcesso, useInovachatNaoLidas } from '@/hooks/useInovachat'
 import { useChatInternoAcesso, useChatInternoNaoLidas } from '@/hooks/useChatInterno'
 import { useCrmAcesso } from '@/hooks/useCrm'
 import { useFinanceiroAcesso } from '@/hooks/useFinanceiro'
+import { useCaixaAcesso } from '@/hooks/useCaixa'
 import { cn } from '@/lib/utils'
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
 import type { SystemModule } from '@/types/permissions.types'
@@ -117,6 +118,7 @@ export const NAV_SECTIONS: NavSection[] = [
     title: 'FINANCEIRO LABORATÓRIO',
     items: [
       { label: 'Financeiro', icon: 'DollarSign', path: '/app/financeiro', module: null },
+      { label: 'Caixa do operador', icon: 'Warehouse', path: '/app/financeiro/caixa', module: null },
       { label: 'Faturamento TISS', icon: 'FileText', path: '/app/financeiro/faturamento', module: 'finance' },
       { label: 'Tabelas de Preços', icon: 'Database', path: '/app/financeiro/tabelas', module: 'finance' },
       { label: 'Centros de Custo', icon: 'PieChart', path: '/app/financeiro/centros-custo', module: 'finance' },
@@ -200,6 +202,7 @@ export function CompanySidebar({ mobileOpen, onMobileClose, collapsed = false, o
   const inovachat = useInovachatAcesso()
   const crmAcesso = useCrmAcesso()
   const financeiro = useFinanceiroAcesso()
+  const caixaAcesso = useCaixaAcesso()
   const inovachatNaoLidas = useInovachatNaoLidas(!!inovachat?.ver)
   const chatInterno = useChatInternoAcesso()
   const chatInternoNaoLidas = useChatInternoNaoLidas(!!chatInterno?.ver)
@@ -211,6 +214,7 @@ export function CompanySidebar({ mobileOpen, onMobileClose, collapsed = false, o
       if (item.path === '/app/crm') return !!crmAcesso?.ver
       if (item.path === '/app/chat-interno') return !!chatInterno?.ver
       if (item.path === '/app/financeiro') return !!financeiro?.ver
+      if (item.path === '/app/financeiro/caixa') return !!(caixaAcesso?.operar || caixaAcesso?.ver_todos || caixaAcesso?.configurar)
       const profileAllows = !item.module || canAccess(item.module, 'view')
       const sectorOverride = activeSector?.moduleOverrides?.[item.path]
       return sectorOverride !== undefined ? sectorOverride : profileAllows

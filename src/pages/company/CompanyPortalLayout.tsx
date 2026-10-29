@@ -115,6 +115,7 @@ import DirectCadastroPage from './reception/DirectCadastroPage'
 
 import LabFinanceDashboardPage from './financeiro/LabFinanceDashboardPage'
 import FinanceiroPage from './financeiro/FinanceiroPage'
+import CaixaPage from './financeiro/CaixaPage'
 import LabAccountsReceivablePage from './financeiro/LabAccountsReceivablePage'
 import LabAccountsPayablePage from './financeiro/LabAccountsPayablePage'
 import LabPriceTablesPage from './financeiro/LabPriceTablesPage'
@@ -348,6 +349,7 @@ function PortalContent() {
 
               {/* Lab Financial Module */}
               <Route path="financeiro" element={<FinanceiroPage />} />
+              <Route path="financeiro/caixa" element={<CaixaPage />} />
               <Route path="financeiro/receber" element={<FinanceiroPage />} />
               <Route path="financeiro/pagar" element={<FinanceiroPage />} />
               <Route path="financeiro/tabelas" element={<LabPriceTablesPage />} />

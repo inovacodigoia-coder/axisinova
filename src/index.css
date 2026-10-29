@@ -346,6 +346,22 @@ a[href*="lovable.app"],
 
 #lab-report-print-root { display: none; }
 
+:root { --fiscal-paper: 0 0% 100%; --fiscal-ink: 0 0% 0%; }
+@media print {
+  body.printing-caixa > *:not(#caixa-print-root) { display: none !important; }
+  body.printing-caixa #caixa-print-root {
+    display: block !important; position: static !important; width: 100%;
+    padding: 12mm; color: hsl(var(--fiscal-ink)); background: hsl(var(--fiscal-paper));
+    font-size: 11pt;
+  }
+  #caixa-print-root h1 { font-size: 16pt; font-weight: 700; margin-bottom: 4mm; }
+  #caixa-print-root h2 { font-size: 13pt; font-weight: 600; margin: 5mm 0; }
+  #caixa-print-root p { margin: 3mm 0; }
+  #caixa-print-root table { width: 100%; border-collapse: collapse; margin: 5mm 0; }
+  #caixa-print-root th, #caixa-print-root td { text-align: left; padding: 3mm; border-bottom: 1px solid currentColor; }
+  #caixa-print-root tr { break-inside: avoid; }
+}
+
 /* ====== Scrollbar grossa e visível na digitação de resultados ====== */
 .result-entry-scroll [data-radix-scroll-area-scrollbar] {
   width: 25px !important;

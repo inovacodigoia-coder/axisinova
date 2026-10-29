@@ -813,6 +813,20 @@
       "when": 1793195471402,
       "tag": "0115_migration",
       "breakpoints": true
+    },
+    {
+      "idx": 116,
+      "version": "7",
+      "when": 1793248915728,
+      "tag": "0116_financeiro_caixa_operador",
+      "breakpoints": true
+    },
+    {
+      "idx": 117,
+      "version": "7",
+      "when": 1793249219911,
+      "tag": "0117_caixa_proteger_integracao_financeira",
+      "breakpoints": true
     }
   ]
 }

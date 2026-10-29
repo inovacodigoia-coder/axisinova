@@ -5,6 +5,10 @@ export const FINANCEIRO_PERMISSIONS: {code: FinanceiroPermission; label: string}
   { code: 'financeiro.baixar', label: 'Baixar' },
   { code: 'financeiro.cancelar', label: 'Cancelar / estornar' },
   { code: 'financeiro.configurar', label: 'Configurar' },
+  { code: 'financeiro.caixa.operar', label: 'Caixa: operar a própria sessão' },
+  { code: 'financeiro.caixa.ver_todos', label: 'Caixa: ver todas as sessões' },
+  { code: 'financeiro.caixa.reabrir', label: 'Caixa: reabrir com motivo' },
+  { code: 'financeiro.caixa.configurar', label: 'Caixa: configurar caixas' },
 ]
 export const FORMAS = ['dinheiro', 'pix', 'debito', 'credito', 'boleto', 'transferencia', 'convenio', 'outro']
 export const dinheiro = (valor: number) => valor.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })

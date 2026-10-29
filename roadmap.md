@@ -1,5 +1,11 @@
 # Verificação dos alertas
 
+# Caixa do operador — Financeiro Etapa 2
+- [x] Levantar pagamentos/recibos existentes e integrar sessões, movimentos e transferências sem alterar TISS/guias/orçamentos (0116–0117).
+- [x] Implementar Caixa, recibos e fechamento imprimíveis, histórico/CSV e permissões independentes sob a chave Financeiro.
+- [x] Testar segurança, idempotência, saldos, numeração e fechamento: 130 testes SQL + 3 unitários; empresas atuais desligadas; relatório criado.
+- [ ] Validar fluxo autenticado em dados descartáveis: sessão injetada redirecionou para /login; depende de login autorizado e empresa de teste com Financeiro ativo. Não ativar empresas existentes nem gerar sessão sem autorização.
+
 # Financeiro — Etapa 1
 - [x] Levantamento: telas AP/AR/resumo mock; reaproveitadas rotas /app/financeiro e auditoria; TISS/guias/orçamentos/pagamentos intactos.
 - [x] Contas, categorias, lançamentos, parcelas/recorrência, baixas/estorno/cancelamento, saldo/fluxo, RLS e comprovantes privados; migrations 0112–0114.
