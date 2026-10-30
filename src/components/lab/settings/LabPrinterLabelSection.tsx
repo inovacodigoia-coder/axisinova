@@ -11,6 +11,7 @@ import { servidorImpressaoAtivo, imprimirEtiquetas, TIPOS_DOCUMENTO } from '@/li
 import { gerarPdfEtiquetas } from '@/lib/labelPdf'
 import { useLabelConfig } from '@/hooks/useLabelConfig'
 import { useLabSettings } from '@/hooks/useLabSettings'
+import { generateSampleHash } from '@/utils/orderHash'
 import { NutricaoLabelConfigCard } from './NutricaoLabelConfigCard'
 import {
   BARCODE_MAX_MM,
@@ -156,6 +157,7 @@ export function LabPrinterLabelSection() {
 
       const r = await imprimirEtiquetas(TIPOS_DOCUMENTO.etiquetaCliente, [{
         codigoAmostra: TEST_LABEL.sampleCode,
+        codigoAlfanumerico: generateSampleHash(TEST_LABEL.sampleCode) || undefined,
         painel: TEST_LABEL.workbench,
         dataHora: new Date().toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', year: '2-digit', hour: '2-digit', minute: '2-digit' }),
         codigoExterno: TEST_LABEL.orderNumber,

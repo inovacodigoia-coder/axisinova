@@ -7,6 +7,7 @@ import { SampleLabel } from '@/components/lab/print/SampleLabel'
 import { ServidorImpressaoStatus } from '@/components/print/ServidorImpressaoStatus'
 import { servidorImpressaoAtivo, imprimirEtiquetas, TIPOS_DOCUMENTO, DadosEtiqueta } from '@/lib/impressaoLocal'
 import { useLabelConfig } from '@/hooks/useLabelConfig'
+import { generateSampleHash } from '@/utils/orderHash'
 
 
 /** Formata a data de nascimento sem sofrer deslocamento de fuso horario. */
@@ -95,6 +96,7 @@ export function SampleLabelsPrintModal({
         // Envia TODAS as etiquetas do pedido em uma única chamada (um trabalho só).
         const lista: DadosEtiqueta[] = labels.map((l, i) => ({
           codigoAmostra: l.sampleId,
+          codigoAlfanumerico: generateSampleHash(l.sampleId) || undefined,
           painel: l.workbench || undefined,
           dataHora: new Date().toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', year: '2-digit', hour: '2-digit', minute: '2-digit' }),
           codigoExterno: orderNumber || undefined,
