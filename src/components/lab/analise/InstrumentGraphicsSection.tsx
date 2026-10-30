@@ -65,6 +65,34 @@ export const InstrumentGraphicsSection = ({ protocol, orderId, equipmentId, expa
   const [loading, setLoading] = useState(false);
   const [preview, setPreview] = useState<Graphic | null>(null);
   const [zoom, setZoom] = useState(1);
+  const [area, setArea] = useState<HTMLDivElement | null>(null);
+
+  // Zoom pela rodinha do mouse, suave (proporcional ao giro) e mantendo o ponto sob o cursor.
+  useEffect(() => {
+    if (!area) return;
+    const onWheel = (e: WheelEvent) => {
+      e.preventDefault();
+      const dy = e.deltaY * (e.deltaMode === 1 ? 16 : e.deltaMode === 2 ? 100 : 1);
+      const rect = area.getBoundingClientRect();
+      const px = e.clientX - rect.left;
+      const py = e.clientY - rect.top;
+      setZoom((z) => {
+        const next = Math.min(ZOOM_MAX, Math.max(ZOOM_MIN, z * Math.exp(-dy * 0.0007)));
+        const k = next / z;
+        if (k !== 1) {
+          const sx = (area.scrollLeft + px) * k - px;
+          const sy = (area.scrollTop + py) * k - py;
+          requestAnimationFrame(() => {
+            area.scrollLeft = sx;
+            area.scrollTop = sy;
+          });
+        }
+        return next;
+      });
+    };
+    area.addEventListener('wheel', onWheel, { passive: false });
+    return () => area.removeEventListener('wheel', onWheel);
+  }, [area]);
 
   useEffect(() => {
     setGraphics([]);
@@ -171,7 +199,7 @@ export const InstrumentGraphicsSection = ({ protocol, orderId, equipmentId, expa
               </div>
             </div>
 
-            <div className="min-h-0 flex-1 overflow-auto bg-slate-950 p-3">
+            <div ref={setArea} className="min-h-0 flex-1 overflow-auto bg-slate-950 p-3">
               {preview && (
                 <img
                   src={dataUrl(preview)}
