@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
-import { Search, Check, Loader2, Plus } from 'lucide-react'
+import { Search, Check, Loader2, Plus, Pencil, Trash2 } from 'lucide-react'
+import { useAuth } from '@/context/AuthContext'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -42,6 +43,12 @@ const TYPE_LABEL: Record<ExternalAccessType, string> = {
 export function NewAccessModal({ open, onOpenChange, defaultType, companyId, onCreate, onCreated }: Props) {
   const [type, setType] = useState<ExternalAccessType>(defaultType)
   const [name, setName] = useState('')
+  const { user } = useAuth()
+  const isAdmin = user?.role === 'company_admin' || user?.role === 'super_admin' || user?.isAdmin === true
+  const [editingId, setEditingId] = useState<string | null>(null)
+  const [editName, setEditName] = useState('')
+  const [editCode, setEditCode] = useState('')
+  const [savingOrigin, setSavingOrigin] = useState(false)
   const [showNewOrigin, setShowNewOrigin] = useState(false)
   const [newOriginName, setNewOriginName] = useState('')
   const [newOriginCode, setNewOriginCode] = useState('')
@@ -115,6 +122,45 @@ export function NewAccessModal({ open, onOpenChange, defaultType, companyId, onC
     setSelectedId(id)
     const opt = options.find((o) => o.id === id)
     if (opt && !name.trim()) setName(opt.label)
+  }
+
+  const saveOriginEdit = async () => {
+    if (!editingId || !isAdmin) return
+    setSavingOrigin(true)
+    try {
+      const nome = editName.trim().toUpperCase()
+      const codigo = editCode.trim() || null
+      const { data: o, error } = await (supabase as any).from('origins')
+        .update({ name: nome, internal_code: codigo }).eq('id', editingId)
+        .select('id, establishment_id').single()
+      if (error || !o) throw new Error(error?.message || 'Falha ao salvar')
+      if (o.establishment_id) {
+        await (supabase as any).from('establishments').update({ name: nome, internal_code: codigo }).eq('id', o.establishment_id)
+      }
+      setOptions((prev) => prev.map((x) => (x.id === editingId ? { ...x, label: nome, sub: codigo || undefined } : x)))
+      setEditingId(null)
+      toast.success('Origem atualizada')
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : 'Falha ao salvar origem')
+    } finally {
+      setSavingOrigin(false)
+    }
+  }
+
+  const deleteOrigin = async (id: string, label: string) => {
+    if (!isAdmin) return
+    if (!window.confirm(`Excluir a origem "${label}"? Isso não pode ser desfeito.`)) return
+    const { error } = await (supabase as any).from('origins').delete().eq('id', id)
+    if (error) {
+      toast.error(/foreign|violates|referenc/i.test(error.message)
+        ? 'Esta origem já tem atendimentos ou acessos ligados e não pode ser excluída.'
+        : error.message)
+      return
+    }
+    setOptions((prev) => prev.filter((x) => x.id !== id))
+    setSelectedPartnerOrigins((prev) => prev.filter((x) => x !== id))
+    if (selectedId === id) setSelectedId(null)
+    toast.success('Origem excluída')
   }
 
   const createOrigin = async () => {
@@ -225,19 +271,47 @@ export function NewAccessModal({ open, onOpenChange, defaultType, companyId, onC
               ) : (
                 visibleOptions.map((o) => {
                   const active = type === 'parceiro' ? selectedPartnerOrigins.includes(o.id) : selectedId === o.id
+                  const isOrigin = type === 'parceiro' || type === 'local'
+                  if (isOrigin && editingId === o.id) {
+                    return (
+                      <div key={o.id} className="space-y-2 bg-muted/40 p-2">
+                        <div className="grid gap-2 sm:grid-cols-3">
+                          <Input className="sm:col-span-2" value={editName} onChange={(e) => setEditName(e.target.value)} placeholder="Nome" />
+                          <Input value={editCode} onChange={(e) => setEditCode(e.target.value)} placeholder="Código" />
+                        </div>
+                        <div className="flex justify-end gap-2">
+                          <Button type="button" size="sm" variant="ghost" onClick={() => setEditingId(null)}>Cancelar</Button>
+                          <Button type="button" size="sm" disabled={editName.trim().length < 2 || savingOrigin} onClick={saveOriginEdit}>Salvar</Button>
+                        </div>
+                      </div>
+                    )
+                  }
                   return (
-                    <button
-                      type="button"
-                      key={o.id}
-                      onClick={() => selectOption(o.id)}
-                      className={cn('flex w-full items-center justify-between gap-2 px-3 py-2 text-left text-sm hover:bg-muted', active && 'bg-primary/10')}
-                    >
-                      <span className="min-w-0">
-                        <span className="block truncate font-medium">{o.label}</span>
-                        {o.sub && <span className="block truncate text-xs text-muted-foreground">{o.sub}</span>}
-                      </span>
-                      {active && <Check className="h-4 w-4 shrink-0 text-primary" />}
-                    </button>
+                    <div key={o.id} className={cn('flex items-center gap-1 pr-2 hover:bg-muted', active && 'bg-primary/10')}>
+                      <button
+                        type="button"
+                        onClick={() => selectOption(o.id)}
+                        className="flex min-w-0 flex-1 items-center justify-between gap-2 px-3 py-2 text-left text-sm"
+                      >
+                        <span className="min-w-0">
+                          <span className="block truncate font-medium">{o.label}</span>
+                          {o.sub && <span className="block truncate text-xs text-muted-foreground">{o.sub}</span>}
+                        </span>
+                        {active && <Check className="h-4 w-4 shrink-0 text-primary" />}
+                      </button>
+                      {isOrigin && isAdmin && (
+                        <>
+                          <Button type="button" size="icon" variant="ghost" className="h-7 w-7" aria-label={`Editar ${o.label}`}
+                            onClick={() => { setEditingId(o.id); setEditName(o.label); setEditCode(o.sub || '') }}>
+                            <Pencil className="h-3.5 w-3.5" />
+                          </Button>
+                          <Button type="button" size="icon" variant="ghost" className="h-7 w-7 text-destructive" aria-label={`Excluir ${o.label}`}
+                            onClick={() => deleteOrigin(o.id, o.label)}>
+                            <Trash2 className="h-3.5 w-3.5" />
+                          </Button>
+                        </>
+                      )}
+                    </div>
                   )
                 })
               )}
