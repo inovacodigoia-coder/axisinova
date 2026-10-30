@@ -54,7 +54,7 @@ const horarioGrafico = (iso: string) => {
   });
 };
 
-const ZOOM_MIN = 1;
+const ZOOM_MIN = 0.1;
 const ZOOM_MAX = 4;
 // Zoom de 1% em 1% (100%, 101%, 102%...)
 const ZOOM_STEP = 0.01;
@@ -65,7 +65,7 @@ export const InstrumentGraphicsSection = ({ protocol, orderId, equipmentId, expa
   const [graphics, setGraphics] = useState<Graphic[]>([]);
   const [loading, setLoading] = useState(false);
   const [preview, setPreview] = useState<Graphic | null>(null);
-  const [zoom, setZoom] = useState(1);
+  const [zoom, setZoom] = useState(ZOOM_MIN);
   const [area, setArea] = useState<HTMLDivElement | null>(null);
 
   // Zoom pela rodinha do mouse: 1% por giro, mantendo o ponto sob o cursor.
@@ -139,7 +139,7 @@ export const InstrumentGraphicsSection = ({ protocol, orderId, equipmentId, expa
   if (graphics.length === 0) return expanded ? <p className="text-xs text-muted-foreground">Nenhum histograma recebido deste equipamento para este pedido.</p> : null;
 
   const abrir = (g: Graphic) => {
-    setZoom(1);
+    setZoom(ZOOM_MIN);
     setPreview(g);
   };
 
