@@ -56,7 +56,8 @@ const horarioGrafico = (iso: string) => {
 
 const ZOOM_MIN = 1;
 const ZOOM_MAX = 4;
-const ZOOM_STEP = 0.5;
+// Zoom de 1% em 1% (100%, 101%, 102%...)
+const ZOOM_STEP = 0.01;
 
 export const InstrumentGraphicsSection = ({ protocol, orderId, equipmentId, expanded = false }: { protocol?: string | null; orderId?: string | null; equipmentId?: string; expanded?: boolean }) => {
   const { user } = useAuth();
@@ -67,17 +68,17 @@ export const InstrumentGraphicsSection = ({ protocol, orderId, equipmentId, expa
   const [zoom, setZoom] = useState(1);
   const [area, setArea] = useState<HTMLDivElement | null>(null);
 
-  // Zoom pela rodinha do mouse, suave (proporcional ao giro) e mantendo o ponto sob o cursor.
+  // Zoom pela rodinha do mouse: 1% por giro, mantendo o ponto sob o cursor.
   useEffect(() => {
     if (!area) return;
     const onWheel = (e: WheelEvent) => {
       e.preventDefault();
-      const dy = e.deltaY * (e.deltaMode === 1 ? 16 : e.deltaMode === 2 ? 100 : 1);
       const rect = area.getBoundingClientRect();
       const px = e.clientX - rect.left;
       const py = e.clientY - rect.top;
+      const dir = e.deltaY < 0 ? 1 : -1;
       setZoom((z) => {
-        const next = Math.min(ZOOM_MAX, Math.max(ZOOM_MIN, z * Math.exp(-dy * 0.0007)));
+        const next = Math.min(ZOOM_MAX, Math.max(ZOOM_MIN, Math.round((z + dir * ZOOM_STEP) * 100) / 100));
         const k = next / z;
         if (k !== 1) {
           const sx = (area.scrollLeft + px) * k - px;
@@ -236,6 +237,20 @@ export const InstrumentGraphicsSection = ({ protocol, orderId, equipmentId, expa
                 <span className="ml-2 w-12 text-[11px] font-bold tabular-nums text-muted-foreground">
                   {Math.round(zoom * 100)}%
                 </span>
+              </div>
+              {/* Barra de progresso do zoom: 100% = vazio, 400% = cheio */}
+              <div
+                className="h-1.5 min-w-[120px] flex-1 overflow-hidden rounded-full bg-muted"
+                role="progressbar"
+                aria-label="Nível de zoom"
+                aria-valuemin={ZOOM_MIN * 100}
+                aria-valuemax={ZOOM_MAX * 100}
+                aria-valuenow={Math.round(zoom * 100)}
+              >
+                <div
+                  className="h-full rounded-full bg-primary transition-[width] duration-150"
+                  style={{ width: `${((zoom - ZOOM_MIN) / (ZOOM_MAX - ZOOM_MIN)) * 100}%` }}
+                />
               </div>
               <DialogClose asChild>
                 <Button variant="outline" className="h-9 gap-2 border-slate-300 text-xs font-black uppercase tracking-wide">
