@@ -155,6 +155,7 @@ export const InstrumentGraphicsSection = ({ protocol, orderId, equipmentId, expa
           <DialogOverlay className="z-[200] bg-black/80" />
           <DialogContent
             className="z-[210] flex max-h-[92vh] w-[96vw] max-w-[1500px] flex-col gap-0 overflow-hidden p-0 sm:rounded-lg"
+            aria-describedby={undefined}
             onOpenAutoFocus={(e) => e.preventDefault()}
           >
             <div className="flex items-start justify-between gap-3 border-b border-border bg-background px-4 py-3 pr-12">
