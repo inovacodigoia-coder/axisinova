@@ -35,6 +35,7 @@ it('abre o gráfico ampliado com botão Fechar ao clicar na miniatura', async ()
   const imagemAmpliada = document.querySelectorAll('[role="dialog"] img')
   expect(imagemAmpliada).toHaveLength(1)
   expect(imagemAmpliada[0].getAttribute('src')).toBe('data:image/png;base64,AAAA')
+  expect(imagemAmpliada[0].getAttribute('alt')).toBe(ROW.label)
   expect(screen.getByRole('heading', { name: /sub scattergram/i })).toBeInTheDocument()
 
   fireEvent.click(fechar)
