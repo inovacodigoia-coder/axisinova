@@ -58,6 +58,8 @@ export interface DadosEtiqueta {
   painel?: string;
   dataHora?: string;
   codigoExterno?: string;
+  /** Código único do tubo exibido na prévia; opcional para servidores anteriores à 1.0.27. */
+  codigoAlfanumerico?: string;
   paciente?: string;
   nascimento?: string;
   tipoAmostra?: string;
