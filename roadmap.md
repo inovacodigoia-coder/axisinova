@@ -86,3 +86,7 @@
 - [ ] Validar na tela logada e no celular: sem sessão disponível; gerar sessão exige autorização, envio real não autorizado.
 - [x] Etapa 12A CRM: funil, leads, configuração, integração InovaChat, exclusão LGPD; 8 testes SQL do CRM passaram.
 - [ ] CRM: "Cadastrar paciente" pré-preenchido — o cadastro atual não aceita dados de entrada; hoje abre o cadastro vazio e depois vincula.
+
+# Gráficos do equipamento na digitação de resultados
+- [x] Clique na miniatura abre o gráfico quase em tela cheia, com botão Fechar, zoom (100%–400%) e data de recebimento; antes o preview abria atrás da tela de digitação.
+- [ ] Validar na tela logada: sem sessão autorizada, o preview redireciona ao login.
