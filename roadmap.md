@@ -1,5 +1,9 @@
 # Verificação dos alertas
 
+# Código de barras por tubo
+- [ ] Enviar codigoAlfanumerico da prévia por tubo nas etiquetas cliente/lote/colhedor, preservando codigoAmostra e codigoExterno.
+- [ ] Testar envio por tubo e compatibilidade sem o campo, sem impressão real.
+
 # Caixa do operador — Financeiro Etapa 2
 - [x] Levantar pagamentos/recibos existentes e integrar sessões, movimentos e transferências sem alterar TISS/guias/orçamentos (0116–0117).
 - [x] Implementar Caixa, recibos e fechamento imprimíveis, histórico/CSV e permissões independentes sob a chave Financeiro.
