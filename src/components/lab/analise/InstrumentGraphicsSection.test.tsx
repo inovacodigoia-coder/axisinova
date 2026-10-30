@@ -2,24 +2,21 @@ import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/re
 import { afterEach, expect, it, vi } from 'vitest'
 import { InstrumentGraphicsSection } from './InstrumentGraphicsSection'
 
-const ROW = {
-  id: 'g1',
-  label: 'SUB SCATTERGRAM',
-  item_code: 'SS-FS',
-  image_format: 'PNG',
-  image_base64: 'AAAA',
-  equipment_id: 'CELLME',
-  created_at: '2026-10-30T18:48:00.000Z',
-}
-
-const { query } = vi.hoisted(() => {
+const { query, ROW } = vi.hoisted(() => {
+  const row = {
+    id: 'g1',
+    label: 'SUB SCATTERGRAM',
+    item_code: 'SS-FS',
+    image_format: 'PNG',
+    image_base64: 'AAAA',
+    equipment_id: 'CELLME',
+    created_at: '2026-10-30T18:48:00.000Z',
+  }
   const q: any = {}
   for (const m of ['select', 'eq', 'order', 'limit']) q[m] = () => q
-  q.then = (res: any) => Promise.resolve({ data: [globalThis.__GRAPHIC_ROW__] }).then(res)
-  return { query: q }
+  q.then = (res: any) => Promise.resolve({ data: [row] }).then(res)
+  return { query: q, ROW: row }
 })
-
-;(globalThis as any).__GRAPHIC_ROW__ = ROW
 
 vi.mock('@/integrations/supabase/client', () => ({ supabase: { from: () => query } }))
 vi.mock('@/context/AuthContext', () => ({
