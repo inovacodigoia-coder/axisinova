@@ -19,7 +19,7 @@ it('envia o código da prévia de cada tubo, não o número compartilhado do ped
       { sampleId: '296-00-3-2', labelIndex: 3, material: 'URINA', tube: 'URINA', workbench: 'UROANÁLISE' },
     ]}
   />)
-  fireEvent.click(screen.getByRole('button', { name: 'Imprimir', exact: true }))
+  fireEvent.click(screen.getByRole('button', { name: /^Imprimir$/ }))
   await waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(2))
   const enviados = JSON.parse(fetchMock.mock.calls[1][1].body)
   expect(enviados.tipo).toBe('etiqueta_cliente')

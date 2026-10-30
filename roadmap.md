@@ -1,8 +1,8 @@
 # Verificação dos alertas
 
 # Código de barras por tubo
-- [ ] Enviar codigoAlfanumerico da prévia por tubo nas etiquetas cliente/lote/colhedor, preservando codigoAmostra e codigoExterno.
-- [ ] Testar envio por tubo e compatibilidade sem o campo, sem impressão real.
+- [x] Enviar codigoAlfanumerico da prévia por tubo nos fluxos existentes (pedido e etiqueta de teste), preservando codigoAmostra e codigoExterno; interface comum aceita cliente/lote/colhedor, sem fluxos próprios de lote/colhedor no projeto.
+- [x] Cinco testes verificam os três tipos, códigos distintos do pedido 296-00, clique Imprimir do modal e compatibilidade sem o campo; sem impressão real. Impressão física depende do AisAxius 1.0.27+ no computador do cliente.
 
 # Caixa do operador — Financeiro Etapa 2
 - [x] Levantar pagamentos/recibos existentes e integrar sessões, movimentos e transferências sem alterar TISS/guias/orçamentos (0116–0117).
