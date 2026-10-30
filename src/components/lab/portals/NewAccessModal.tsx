@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
-import { Search, Check, Loader2 } from 'lucide-react'
+import { Search, Check, Loader2, Plus } from 'lucide-react'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -42,6 +42,10 @@ const TYPE_LABEL: Record<ExternalAccessType, string> = {
 export function NewAccessModal({ open, onOpenChange, defaultType, companyId, onCreate, onCreated }: Props) {
   const [type, setType] = useState<ExternalAccessType>(defaultType)
   const [name, setName] = useState('')
+  const [showNewOrigin, setShowNewOrigin] = useState(false)
+  const [newOriginName, setNewOriginName] = useState('')
+  const [newOriginCode, setNewOriginCode] = useState('')
+  const [creatingOrigin, setCreatingOrigin] = useState(false)
   const [email, setEmail] = useState('')
   const [responsibleName, setResponsibleName] = useState('')
   const [cnpj, setCnpj] = useState('')
@@ -111,6 +115,38 @@ export function NewAccessModal({ open, onOpenChange, defaultType, companyId, onC
     setSelectedId(id)
     const opt = options.find((o) => o.id === id)
     if (opt && !name.trim()) setName(opt.label)
+  }
+
+  const createOrigin = async () => {
+    if (!companyId || newOriginName.trim().length < 2) return
+    setCreatingOrigin(true)
+    try {
+      const nome = newOriginName.trim().toUpperCase()
+      const codigo = newOriginCode.trim() || null
+      // Cria a unidade; o banco gera a origem correspondente automaticamente.
+      const { data: est, error: estErr } = await (supabase as any)
+        .from('establishments').insert([{ company_id: companyId, name: nome, internal_code: codigo }])
+        .select('id').single()
+      if (estErr || !est) throw new Error(estErr?.message || 'Falha ao criar unidade')
+      const { data: matriz } = await (supabase as any)
+        .from('origins').select('id').eq('company_id', companyId).eq('papel_laboratorio', true)
+        .order('created_at').limit(1).maybeSingle()
+      const { data: origem, error: oErr } = await (supabase as any)
+        .from('origins')
+        .update({ papel_coleta: true, laboratorio_destino_id: matriz?.id ?? null })
+        .eq('establishment_id', est.id).select('id, name, internal_code').single()
+      if (oErr || !origem) throw new Error(oErr?.message || 'Falha ao criar origem')
+      setOptions((prev) => [...prev, { id: origem.id, label: origem.name, sub: origem.internal_code || undefined }])
+      selectOption(origem.id)
+      if (type === 'local') setSelectedId(origem.id)
+      if (!name.trim()) setName(origem.name)
+      setShowNewOrigin(false); setNewOriginName(''); setNewOriginCode('')
+      toast.success('Origem criada')
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : 'Falha ao criar origem')
+    } finally {
+      setCreatingOrigin(false)
+    }
   }
 
   const handleSave = async () => {
@@ -208,6 +244,27 @@ export function NewAccessModal({ open, onOpenChange, defaultType, companyId, onC
             </div>
             {type === 'parceiro' && selectedPartnerOrigins.length > 0 && (
               <Badge variant="secondary">{selectedPartnerOrigins.length} origem(ns) selecionada(s)</Badge>
+            )}
+            {(type === 'parceiro' || type === 'local') && (
+              showNewOrigin ? (
+                <div className="space-y-2 rounded-md border bg-muted/40 p-3">
+                  <p className="text-xs font-semibold">Nova origem (ponto de coleta)</p>
+                  <div className="grid gap-2 sm:grid-cols-3">
+                    <Input className="sm:col-span-2" placeholder="Nome do ponto de coleta" value={newOriginName} onChange={(e) => setNewOriginName(e.target.value)} />
+                    <Input placeholder="Código" value={newOriginCode} onChange={(e) => setNewOriginCode(e.target.value)} />
+                  </div>
+                  <div className="flex justify-end gap-2">
+                    <Button type="button" size="sm" variant="ghost" onClick={() => { setShowNewOrigin(false); setNewOriginName(''); setNewOriginCode('') }}>Cancelar</Button>
+                    <Button type="button" size="sm" disabled={newOriginName.trim().length < 2 || creatingOrigin} onClick={createOrigin}>
+                      {creatingOrigin ? 'Criando...' : 'Criar origem'}
+                    </Button>
+                  </div>
+                </div>
+              ) : (
+                <Button type="button" size="sm" variant="outline" className="gap-1" onClick={() => setShowNewOrigin(true)}>
+                  <Plus className="h-4 w-4" /> Nova origem
+                </Button>
+              )
             )}
             {!linkValid && <p className="text-xs text-muted-foreground">O vínculo é obrigatório para gerar o acesso.</p>}
           </div>
