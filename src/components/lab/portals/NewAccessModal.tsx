@@ -42,6 +42,10 @@ const TYPE_LABEL: Record<ExternalAccessType, string> = {
 export function NewAccessModal({ open, onOpenChange, defaultType, companyId, onCreate, onCreated }: Props) {
   const [type, setType] = useState<ExternalAccessType>(defaultType)
   const [name, setName] = useState('')
+  const [showNewOrigin, setShowNewOrigin] = useState(false)
+  const [newOriginName, setNewOriginName] = useState('')
+  const [newOriginCode, setNewOriginCode] = useState('')
+  const [creatingOrigin, setCreatingOrigin] = useState(false)
   const [email, setEmail] = useState('')
   const [responsibleName, setResponsibleName] = useState('')
   const [cnpj, setCnpj] = useState('')
