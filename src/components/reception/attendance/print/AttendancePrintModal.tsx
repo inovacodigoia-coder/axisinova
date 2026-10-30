@@ -73,7 +73,10 @@ export function AttendancePrintModal({ open, onClose, document: doc, autoPrint, 
                 ? 58
                 : 80
           const tipo = isTermica ? TIPOS_DOCUMENTO.comprovanteCliente : TIPOS_DOCUMENTO.controleInterno
-          const pdf = await gerarPdfElementos(nodes, widthMm)
+          const folha = selectedConfig.paperSize === 'a4' || selectedConfig.paperSize === 'a5'
+            ? { formato: selectedConfig.paperSize, orientacao: selectedConfig.orientation === 'landscape' ? 'landscape' as const : 'portrait' as const, margemMm: 10 }
+            : undefined
+          const pdf = await gerarPdfElementos(nodes, widthMm, folha)
           const r = await imprimirDireto(tipo, pdf)
           toast.success(r.mensagem || 'Enviado para a impressora.')
           return
@@ -101,10 +104,11 @@ export function AttendancePrintModal({ open, onClose, document: doc, autoPrint, 
 
   const vias = propVias || (['patient', 'establishment'] as ('patient' | 'establishment')[])
 
+  const orientacao = selectedConfig.orientation === 'landscape' ? 'landscape' : 'portrait'
   const pageSize = selectedConfig.paperSize === 'a4'
-    ? 'A4 portrait'
+    ? `A4 ${orientacao}`
     : selectedConfig.paperSize === 'a5'
-      ? 'A5 portrait'
+      ? `A5 ${orientacao}`
       : selectedConfig.paperSize === '58mm'
         ? '58mm auto'
         : '80mm auto'

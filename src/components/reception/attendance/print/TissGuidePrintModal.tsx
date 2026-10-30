@@ -63,7 +63,7 @@ export function TissGuidePrintModal({ open, onClose, order, guide, patient }: Ti
           window.document.querySelectorAll<HTMLElement>('#tiss-guide-root > div'),
         )
         if (nodes.length) {
-          const pdf = await gerarPdfElementos(nodes, 190)
+          const pdf = await gerarPdfElementos(nodes, 190, { formato: 'a4', orientacao: 'portrait', margemMm: 8 })
           const r = await imprimirDireto(TIPOS_DOCUMENTO.guiaSaSpdt, pdf)
           toast.success(r.mensagem || 'Guia enviada para a impressora.')
           return
