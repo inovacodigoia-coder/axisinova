@@ -1,4 +1,4 @@
-import { createContext, useCallback, useContext, useEffect, useState, type ReactNode } from 'react'
+import { createContext, useCallback, useContext, useEffect, useRef, useState, type ReactNode } from 'react'
 import type { AuthUser, UserRole } from '@/types/auth.types'
 import { getRedirectByRole } from '@/mocks/users.mock'
 import { supabase } from '@/integrations/supabase/client'
@@ -58,6 +58,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
     setIsLoading(false)
   }, [])
+
+  // Keep the cached company name in sync with the database (e.g. after editing Dados da Empresa)
+  const restoredRef = useRef(false)
+  useEffect(() => {
+    if (!isAuthenticated || restoredRef.current) return
+    restoredRef.current = true
+    void refreshUserRef.current?.()
+  }, [isAuthenticated])
+  const refreshUserRef = useRef<(() => Promise<void>) | null>(null)
 
   const login = useCallback(async (email: string, password: string): Promise<LoginResult> => {
     const identifier = email.trim().toLowerCase()
@@ -173,6 +182,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       .select('full_name, role, company_id, is_active, must_change_password, is_admin')
       .eq('id', authUser.id)
       .single()
+    let companyName: string | null | undefined
+    if (profile?.company_id) {
+      const { data: comp } = await supabase.from('companies').select('name, nome_fantasia').eq('id', profile.company_id).maybeSingle()
+      if (comp) companyName = (comp as any).nome_fantasia || (comp as any).name || null
+    }
     setUser((prev) => {
       if (!prev) return prev
       const updated: AuthUser = {
@@ -180,6 +194,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         name: profile?.full_name || prev.name,
         role: (profile?.role as UserRole) || prev.role,
         companyId: profile?.company_id ?? prev.companyId,
+        companyName: companyName !== undefined ? companyName : prev.companyName,
         isActive: profile?.is_active ?? prev.isActive,
         mustChangePassword: (profile as any)?.must_change_password === true,
         isAdmin: (profile as any)?.is_admin === true,
@@ -189,6 +204,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     })
   }, [])
 
+  refreshUserRef.current = refreshUser
   const forgotPassword = useCallback(async (_email: string) => {
     await new Promise((r) => setTimeout(r, 1500))
   }, [])
