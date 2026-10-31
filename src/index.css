@@ -60,6 +60,8 @@
     --axis-success: 145 63% 42%;
     --axis-error: 0 72% 51%;
     --axis-warning: 43 74% 49%;
+    --document-paper: white;
+    --document-ink: black;
   }
 
   .dark {
