@@ -1,4 +1,4 @@
-import { createContext, useCallback, useContext, useEffect, useState, type ReactNode } from 'react'
+import { createContext, useCallback, useContext, useEffect, useRef, useState, type ReactNode } from 'react'
 import type { AuthUser, UserRole } from '@/types/auth.types'
 import { getRedirectByRole } from '@/mocks/users.mock'
 import { supabase } from '@/integrations/supabase/client'
@@ -194,6 +194,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         name: profile?.full_name || prev.name,
         role: (profile?.role as UserRole) || prev.role,
         companyId: profile?.company_id ?? prev.companyId,
+  refreshUserRef.current = refreshUser
         companyName: companyName !== undefined ? companyName : prev.companyName,
         isActive: profile?.is_active ?? prev.isActive,
         mustChangePassword: (profile as any)?.must_change_password === true,
