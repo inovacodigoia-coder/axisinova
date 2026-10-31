@@ -15,7 +15,7 @@ export function effectiveTemplates(rows: DocumentTemplate[]) {
   return rows.filter(r => !r.is_system_default || !replaced.has(r.id))
 }
 export function sanitizeDocument(html: string) {
-  const clean = DOMPurify.sanitize(html, { ALLOWED_TAGS: ['p','h1','h2','h3','strong','b','em','i','u','ul','ol','li','br','span'], ALLOWED_ATTR: ['style'] })
+  const clean = DOMPurify.sanitize(html, { ALLOWED_TAGS: ['p','h1','h2','h3','strong','b','em','i','u','ul','ol','li','br','span'], ALLOWED_ATTR: ['style'], ALLOW_DATA_ATTR: false, ALLOW_ARIA_ATTR: false })
   const doc = new DOMParser().parseFromString(clean, 'text/html')
   doc.querySelectorAll('[style]').forEach(el => {
     const declarations = (el.getAttribute('style') || '').split(';').map(s => s.trim()).filter(s => /^(text-align: (left|right|center|justify)|font-size: (8|9|10|11|12|14|16|18|20|24|28|32)pt)$/.test(s))
@@ -42,7 +42,7 @@ export function documentValues(order: Record<string,any>, patient: Record<string
   const responsible = patient.responsible || {}; const address = patient.address_data || {}
   const exams = (order.lab_guides || []).flatMap((g: any) => g.exams || [])
   return {
-    paciente_nome:patient.name || order.patient_name || '', paciente_data_nascimento:date(birth), paciente_idade:age === '' ? '' : `${age} anos`, paciente_sexo:({male:'Masculino',female:'Feminino',M:'Masculino',F:'Feminino'} as Record<string,string>)[patient.gender] || patient.gender || '', paciente_cpf:patient.cpf || '', paciente_rg:patient.rg || '', paciente_telefone:patient.phone || '', paciente_endereco:patient.address || [address.street,address.number,address.district,address.city,address.state].filter(Boolean).join(', '), responsavel_nome:responsible.name || responsible.fullName || '', responsavel_cpf:responsible.cpf || '',
+    paciente_nome:patient.name || order.patient_name || '', paciente_data_nascimento:date(birth), paciente_idade:age === '' ? '' : `${age} anos`, paciente_sexo:({male:'Masculino',female:'Feminino',M:'Masculino',F:'Feminino',other:'Outro',not_informed:''} as Record<string,string>)[patient.gender] || '', paciente_cpf:patient.cpf || '', paciente_rg:patient.rg || '', paciente_telefone:patient.phone || '', paciente_endereco:[address.street,address.number,address.complement,address.neighborhood,address.city,address.state].filter(Boolean).join(', ') || patient.address || '', responsavel_nome:responsible.name || responsible.fullName || '', responsavel_cpf:responsible.cpf || '',
     atendimento_codigo:order.order_number || order.protocol || '', atendimento_data:date(order.created_at), atendimento_hora:time(order.created_at), atendimento_hora_inicio:time(order.started_at), atendimento_hora_fim:time(order.finished_at), convenio:order.convenio_name || '', medico_solicitante:order.requesting_doctor || order.doctor_name || '', unidade_origem:order.origin_name || '', lista_exames:exams.map((e:any) => [e.code,e.name].filter(Boolean).join(' — ')).join('; '),
     empresa_nome:company.nome_fantasia || company.name || '', empresa_cnpj:company.cnpj || '', empresa_cidade:company.cidade || '', empresa_uf:company.estado || '', responsavel_tecnico_nome:settings.signature_name || settings.responsible_name || '', responsavel_tecnico_registro:settings.signature_register || settings.responsible_register || '', data_extenso:emission, dia_semana:weekday, data_impressao:date(now.toISOString()), hora_impressao:time(now.toISOString()), local_data_extenso:`${company.cidade || '______'}, ${weekday}, ${emission}`,
   }

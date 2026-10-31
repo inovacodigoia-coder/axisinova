@@ -265,7 +265,7 @@ export function AttendancePrintSelectionModal({ open, onClose, onConfirm, order,
   return (
     <>
     {pendingPrint && order && <DocumentPrintDialog templates={activeTemplates} attendanceId={order.id} onDone={finishDocuments} onCancel={() => setPendingPrint(null)} />}
-    <Dialog open={open} onOpenChange={(o) => !o && onClose()}>
+    <Dialog open={open && !pendingPrint} onOpenChange={(o) => !o && onClose()}>
       <DialogContent className="max-w-[620px] p-0 overflow-hidden border-none shadow-2xl [&>button]:hidden">
         <div className="bg-white">
           {/* Header */}

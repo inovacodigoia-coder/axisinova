@@ -27,6 +27,8 @@ export function DocumentPrintDialog({templates,attendanceId,onDone,onCancel}:{te
     if(busy||!values||!selected.length)return
     setBusy(true)
     try{
+      const {data:allowed,error:permissionError}=await supabase.rpc('documento_pode_imprimir');
+      if(permissionError || !allowed) throw new Error('Sem permissão para imprimir documentos deste atendimento');
       const active=await servidorImpressaoAtivo()
       for(const t of templates.filter(t=>selected.includes(t.id))){
         setCurrent(t);await new Promise(resolve=>setTimeout(resolve,120))
@@ -35,12 +37,13 @@ export function DocumentPrintDialog({templates,attendanceId,onDone,onCancel}:{te
         await document.fonts.ready
         if(active){const format=formats[t.id];const pdf=await gerarPdfElementos([node],format==='A5'?128:190,{formato:format==='A5'?'a5':'a4',orientacao:'portrait',margemMm:10});await imprimirDireto(TIPOS_DOCUMENTO.termoConsentimento,pdf);await record(t)}
         else{
-          const win=window.open('','_blank');if(!win)throw new Error('Permita abrir a janela de impressão no navegador')
+          const frame=document.createElement('iframe');frame.className='document-print-frame';document.body.appendChild(frame);
+          const win=frame.contentWindow;if(!win){frame.remove();throw new Error('Não foi possível abrir a impressão no navegador')}
           win.document.write('<!doctype html><html><head><title>Documento do atendimento</title></head><body></body></html>');win.document.close()
           document.querySelectorAll('style,link[rel="stylesheet"]').forEach(el=>win.document.head.appendChild(el.cloneNode(true)))
           const style=win.document.createElement('style');style.textContent=`@page {size:${formats[t.id]} portrait;margin:10mm} body{margin:0;background:var(--document-paper)} .template-paper{width:100%;min-height:0;padding:0;margin:0;box-shadow:none}`;win.document.head.appendChild(style)
           win.document.body.appendChild(node.cloneNode(true))
-          await new Promise<void>(resolve=>{let ended=false;const done=()=>{if(ended)return;ended=true;win.close();resolve()};win.addEventListener('afterprint',done,{once:true});win.setTimeout(()=>win.print(),350)})
+          await new Promise<void>(resolve=>{let ended=false;const done=()=>{if(ended)return;ended=true;frame.remove();resolve()};win.addEventListener('afterprint',done,{once:true});win.setTimeout(()=>win.print(),350)})
           await record(t)
         }
       }
