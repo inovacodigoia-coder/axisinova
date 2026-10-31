@@ -155,8 +155,9 @@ export default function LabMapaPage() {
       .filter(r => (plan === ALL ? true : r.convenio === plan))
       .filter(r => (priority === ALL ? true : r.priority === priority))
       .filter(r => (post === ALL ? true : r.collectionPost === post))
+      .filter(r => dentroDoPeriodo(r.date, dateFrom, dateTo))
       .slice(0, limit)
-  }, [allRows, examTerm, selectedExams, sector, convenio, plan, priority, post, quantity, applied])
+  }, [allRows, examTerm, selectedExams, sector, convenio, plan, priority, post, dateFrom, dateTo, quantity, applied])
 
   const examOptions = useMemo(() => {
     const m = new Map<string, { exam: string; name: string; count: number }>()
@@ -202,6 +203,9 @@ export default function LabMapaPage() {
 
       // Limpar filtros e resetar estado após geração
       setExamTerm('')
+      setSelectedExams([])
+      setDateFrom('')
+      setDateTo('')
       setSector(ALL)
       setConvenio(ALL)
       setPlan(ALL)
@@ -336,6 +340,16 @@ export default function LabMapaPage() {
                   {(availableOrigins || []).map((o: any) => <SelectItem key={o.id} value={o.name}>{o.name}</SelectItem>)}
                 </SelectContent>
               </Select>
+            </div>
+
+            <div className="space-y-1">
+              <Label className="text-[11px] font-semibold uppercase">Coleta de</Label>
+              <Input type="date" value={dateFrom} max={dateTo || undefined} onChange={e => { setDateFrom(e.target.value); setPage(1) }} />
+            </div>
+
+            <div className="space-y-1">
+              <Label className="text-[11px] font-semibold uppercase">Coleta até</Label>
+              <Input type="date" value={dateTo} min={dateFrom || undefined} onChange={e => { setDateTo(e.target.value); setPage(1) }} />
             </div>
 
             <div className="space-y-1">
