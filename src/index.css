@@ -348,7 +348,7 @@ a[href*="lovable.app"],
 
 :root { --fiscal-paper: 0 0% 100%; --fiscal-ink: 0 0% 0%; }
 .receipt-combined-sheet { display: grid; grid-template-rows: 1fr 1fr; background: hsl(var(--fiscal-paper)); color: hsl(var(--fiscal-ink)); }
-.receipt-half { position: relative; min-height: 0; }
+.receipt-half { position: relative; min-height: 0; overflow: hidden; }
 .receipt-half + .receipt-half { border-top: 2px dashed currentColor; }
 .receipt-half-content { position: absolute; top: 6px; left: 0; transform-origin: top left; }
 .attendance-consent { width: 190mm; padding: 8mm; background: hsl(var(--fiscal-paper)); color: hsl(var(--fiscal-ink)); font-size: 11pt; line-height: 1.5; }
