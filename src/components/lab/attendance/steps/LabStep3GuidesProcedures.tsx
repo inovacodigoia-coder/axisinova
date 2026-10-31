@@ -1,5 +1,6 @@
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo, useEffect, useRef } from 'react';
 import { materialPorNome } from '@/lib/tubos'
+import { indiceExameNaGuia } from '@/lib/guiaExames'
 import { Card } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -113,6 +114,9 @@ export function LabStep3GuidesProcedures({ state, update }: Props) {
   // Modal states for adding/editing exam
   const [showExamModal, setShowExamModal] = useState(false);
   const [editingExamIndex, setEditingExamIndex] = useState<number | null>(null);
+  const [adding, setAdding] = useState(false);
+  const addingRef = useRef(false);
+  const [dupIndex, setDupIndex] = useState<number | null>(null);
   const [examSearch, setExamSearch] = useState('');
   const [selectedExam, setSelectedExam] = useState<any>(null);
   const [examMaterial, setExamMaterial] = useState('');
@@ -278,11 +282,44 @@ export function LabStep3GuidesProcedures({ state, update }: Props) {
   const nomeEnvio = state.apoioNomeEnvio ?? abreviarNome(nomePaciente);
   const errosApoio = temApoio ? validarApoio(state) : [];
 
+  const aumentarQuantidadeRepetido = () => {
+    const idx = dupIndex;
+    setDupIndex(null);
+    if (idx === null) return;
+    const newGuides = guides.map(g => g.id === activeGuideId
+      ? { ...g, exams: g.exams.map((e: any, i: number) => i === idx ? { ...e, quantity: (Number(e.quantity) || 1) + 1 } : e) }
+      : g);
+    setGuides(newGuides);
+    update({ guides: newGuides });
+    setShowExamModal(false);
+    toast.success("Quantidade do exame aumentada");
+  };
+
   const handleAddOrUpdateExam = async () => {
+    if (addingRef.current) return;
     if (!selectedExam) {
       toast.error("Selecione um exame");
       return;
     }
+    const repetido = indiceExameNaGuia(activeGuide?.exams || [], selectedExam, editingExamIndex);
+    if (repetido >= 0) {
+      if (editingExamIndex !== null) { toast.error("Exame já incluído nesta guia"); return; }
+      setDupIndex(repetido);
+      return;
+    }
+    addingRef.current = true;
+    setAdding(true);
+    try {
+      await adicionarOuAtualizar();
+    } finally {
+      addingRef.current = false;
+      setAdding(false);
+    }
+  };
+
+  const adicionarOuAtualizar = async () => {
+    if (!selectedExam) return;
+
 
     const convenio = activeConvenios.find(c => c.name === activeGuide?.plan);
     const examPrice = convenio?.examPrices?.find(p => p.examId === selectedExam.id)?.price;
@@ -954,10 +991,26 @@ export function LabStep3GuidesProcedures({ state, update }: Props) {
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setShowExamModal(false)}>Cancelar</Button>
-            <Button onClick={handleAddOrUpdateExam} className="gradient-bg text-white">
-              {editingExamIndex !== null ? "Salvar Alterações" : "Adicionar Exame"}
+            <Button variant="outline" disabled={adding} onClick={() => setShowExamModal(false)}>Cancelar</Button>
+            <Button onClick={() => handleAddOrUpdateExam()} disabled={adding} className="gradient-bg text-white">
+              {adding ? "Adicionando…" : editingExamIndex !== null ? "Salvar Alterações" : "Adicionar Exame"}
             </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Alerta de exame já incluído na guia */}
+      <Dialog open={dupIndex !== null} onOpenChange={(o) => { if (!o) setDupIndex(null) }}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Exame já incluído nesta guia</DialogTitle>
+          </DialogHeader>
+          <p className="text-sm text-muted-foreground">
+            O exame <strong>{selectedExam?.name}</strong> já está nesta guia. Deseja adicionar novamente? A quantidade do exame existente será aumentada em 1, sem criar uma linha repetida.
+          </p>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setDupIndex(null)}>Não adicionar</Button>
+            <Button onClick={aumentarQuantidadeRepetido}>Sim, adicionar novamente</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

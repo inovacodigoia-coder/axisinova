@@ -25,6 +25,7 @@ import { SampleLabelsSelectModal } from './print/SampleLabelsSelectModal'
 import { LabStep1PatientReview } from '@/components/lab/attendance/steps/LabStep1PatientReview'
 import { LabStep2ExamData } from '@/components/lab/attendance/steps/LabStep2ExamData'
 import { validarApoio, aplicarNomeEnvio } from '@/lib/apoioAtendimento'
+import { examesRepetidosNasGuias } from '@/lib/guiaExames'
 import { LabStep3GuidesProcedures } from '@/components/lab/attendance/steps/LabStep3GuidesProcedures'
 import { QueueAllocationModal } from './queue-allocation/QueueAllocationModal'
 import { LabStep4Payment } from '@/components/lab/attendance/steps/LabStep4Payment'
@@ -440,6 +441,11 @@ export function AttendanceCadastroModal({
       return
     }
     if (isLabFlow) {
+      const repetidos = examesRepetidosNasGuias(state.guides)
+      if (repetidos.length > 0) {
+        toast.error(`Exame repetido na guia: ${repetidos.join(', ')}. Remova a linha repetida ou aumente a quantidade antes de criar o pedido.`)
+        return
+      }
       const errosApoio = validarApoio(state)
       if (errosApoio.length > 0) { toast.error(errosApoio[0]); return }
     }
