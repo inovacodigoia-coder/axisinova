@@ -12,6 +12,7 @@ import { ChevronDown, Filter, ClipboardList, Plus, FileCheck2, List, ListChecks 
 import { Checkbox } from '@/components/ui/checkbox'
 import { cn } from '@/lib/utils'
 import { toast } from 'sonner'
+import { dentroDoPeriodo } from '@/lib/workMapFilters'
 import { useAuth } from '@/context/AuthContext'
 import { useRegisters } from '@/context/RegistersContext'
 import { useCompanyContext } from '@/context/CompanyContext'
@@ -42,6 +43,7 @@ interface MapRow {
   convenio: string
   priority: string
   collectionPost: string
+  date: string
 }
 
 export default function LabMapaPage() {
@@ -62,6 +64,8 @@ export default function LabMapaPage() {
   const [plan, setPlan] = useState(ALL)
   const [priority, setPriority] = useState(ALL)
   const [post, setPost] = useState(ALL)
+  const [dateFrom, setDateFrom] = useState('')
+  const [dateTo, setDateTo] = useState('')
   const [quantity, setQuantity] = useState('1000')
   const [perPage, setPerPage] = useState('')
   const [page, setPage] = useState(1)
@@ -131,6 +135,7 @@ export default function LabMapaPage() {
             convenio: guide?.plan || order.convenioName || 'PARTICULAR',
             priority: exam.isUrgent || guide?.isUrgent || (order as any).isUrgent ? 'Urgente' : 'Normal',
             collectionPost: order.originName || '—',
+            date: exam.collectedAt || order.registeredAt || '',
           })
         })
       })
