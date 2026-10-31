@@ -2,7 +2,7 @@ import { useMemo, useState } from 'react';
 import {
   Users, Building2, Stethoscope, User, History,
   Plus, Search, MoreHorizontal, Eye, Trash2, KeyRound,
-  CheckCircle2, PauseCircle, Copy, Loader2
+  CheckCircle2, PauseCircle, Copy, Loader2, Pencil
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
@@ -24,6 +24,7 @@ import {
 } from '@/hooks/useExternalAccesses';
 import { NewAccessModal } from '@/components/lab/portals/NewAccessModal';
 import { AccessCredentialsModal } from '@/components/lab/portals/AccessCredentialsModal';
+import { EditAccessOriginsDialog } from '@/components/lab/portals/EditAccessOriginsDialog';
 
 export default function ExternalPortalsPage() {
   const [searchTerm, setSearchTerm] = useState('');
@@ -32,9 +33,10 @@ export default function ExternalPortalsPage() {
   const [credentialsFor, setCredentialsFor] = useState<ExternalAccessRecord | null>(null);
   const [credentialsIsNew, setCredentialsIsNew] = useState(false);
   const [revealed, setRevealed] = useState<Record<string, boolean>>({});
+  const [editOriginsFor, setEditOriginsFor] = useState<ExternalAccessRecord | null>(null);
 
   const {
-    accesses, loading, companyId,
+    accesses, loading, companyId, updateAccess,
     createAccess, regenerateCredentials, setPassword, deleteAccess, toggleStatus,
   } = useExternalAccesses();
 
@@ -202,6 +204,11 @@ export default function ExternalPortalsPage() {
                         <DropdownMenuItem onClick={() => openCredentials(item)}>
                           <KeyRound className="mr-2 h-4 w-4" /> Ver Acesso
                         </DropdownMenuItem>
+                        {(item.type === 'parceiro' || item.type === 'local') && (
+                          <DropdownMenuItem onClick={() => setEditOriginsFor(item)}>
+                            <Pencil className="mr-2 h-4 w-4" /> Editar origens
+                          </DropdownMenuItem>
+                        )}
                         <DropdownMenuItem onClick={() => handleStatusToggle(item)}>
                           {item.status === 'active' ? (
                             <><PauseCircle className="mr-2 h-4 w-4" /> Desativar</>
@@ -272,6 +279,13 @@ export default function ExternalPortalsPage() {
           <TabsContent value="logs">{renderTable('logs')}</TabsContent>
         </div>
       </Tabs>
+
+      <EditAccessOriginsDialog
+        access={editOriginsFor}
+        companyId={companyId}
+        onOpenChange={(o) => { if (!o) setEditOriginsFor(null); }}
+        onSave={(id, patch) => updateAccess(id, patch as never)}
+      />
 
       <NewAccessModal
         open={newOpen}
