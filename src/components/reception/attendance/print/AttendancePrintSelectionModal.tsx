@@ -329,6 +329,18 @@ export function AttendancePrintSelectionModal({ open, onClose, onConfirm, order,
               ))}
             </div>
 
+            {(() => {
+              const rec = options.find(o => o.id === 'comprovante');
+              const ctl = options.find(o => o.id === 'controle_interno');
+              if (!rec?.enabled || !ctl?.enabled || rec.selectedFormat !== 'A4' || ctl.selectedFormat !== 'A4') return null;
+              return (
+                <div role="alert" className="mt-3 flex items-start gap-2 rounded-md border border-amber-300 bg-amber-50 px-3 py-2 text-[11px] font-medium text-amber-800">
+                  <AlertTriangle className="h-3.5 w-3.5 mt-0.5 shrink-0" />
+                  Comprovante e Controle Interno sairão juntos em uma única folha A4, um abaixo do outro com linha tracejada. Não é possível imprimi-los em folhas separadas.
+                </div>
+              );
+            })()}
+
             {/* Confirmar coleta */}
             {materials.length > 0 && (
               <div className="mt-3 border-t border-slate-100 pt-3">

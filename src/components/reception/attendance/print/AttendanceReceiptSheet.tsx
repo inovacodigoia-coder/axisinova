@@ -29,7 +29,7 @@ function ReceiptHalf({ document, config, via }: {
 
 export function AttendanceReceiptSheet({ document, config }: { document: AttendanceControlDocument; config: PrinterConfig }) {
   const [width, height] = medidasFolha(config.paperSize === 'a5' ? 'a5' : 'a4', config.orientation)
-  return <div className="receipt-combined-sheet" style={{ width: `${width - 20}mm`, height: `${height - 20}mm` }}>
+  return <div className="receipt-combined-sheet" style={{ width: `${width - 20}mm`, height: `${height - 26}mm`, overflow: 'hidden', breakInside: 'avoid', pageBreakInside: 'avoid' }}>
     <ReceiptHalf document={document} config={config} via="patient" />
     <ReceiptHalf document={document} config={config} via="establishment" />
   </div>
