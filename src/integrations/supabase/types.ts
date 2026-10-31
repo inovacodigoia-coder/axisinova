@@ -11441,6 +11441,13 @@ export type Database = {
         Returns: undefined
       }
       chat_interno_ativo: { Args: { p_company: string }; Returns: boolean }
+      chat_interno_colegas: {
+        Args: never
+        Returns: {
+          id: string
+          nome: string
+        }[]
+      }
       chat_interno_conversa_direta: {
         Args: { p_outro: string }
         Returns: string
