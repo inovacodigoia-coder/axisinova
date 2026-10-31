@@ -1,5 +1,11 @@
 # Verificação dos alertas
 
+# Declarações e Termos
+- [ ] Preparar e aprovar plano para modelos configuráveis, padrões, variáveis e impressão.
+- [ ] Criar cadastro seguro por empresa, editor rico e pré-visualização com cabeçalho compartilhado do laudo.
+- [ ] Integrar seleção de modelos ativos, formatos A4/A5 e registro de impressão aos fluxos de atendimento.
+- [ ] Testar regras e isolamento com dados descartáveis; verificar apresentação e documentos sem imprimir em impressora real.
+
 # Filtro de data no Mapa de Trabalho
 - [x] Acrescentar "Coleta de" e "Coleta até" na área de Filtros, combináveis com os demais campos; dia comparado no fuso de São Paulo e geração do mapa limpa exame, seleção e datas.
 - [x] Cinco testes do utilitário de período (fuso, pontas inclusivas, item sem data) e conferência logado: 71 → 39 só 31/10, bancada 44, bancada + data 28, de=31/12/2026 → 0.
