@@ -40,6 +40,7 @@ import ProceduresPage from './registers/ProceduresPage'
 import PatientsListPage from './registers/patients/PatientsListPage'
 import PatientFormPage from './registers/patients/PatientFormPage'
 import CompanySettingsPage from './settings/CompanySettingsPage'
+import DocumentTemplatesPage from './settings/DocumentTemplatesPage'
 import VisualSettingsPage from './settings/VisualSettingsPage'
 
 import RoomsSettingsPage from './settings/RoomsSettingsPage'
@@ -293,6 +294,7 @@ function PortalContent() {
                 <Route path="pacientes/:patientId/editar" element={<PatientFormPage />} />
               </Route>
               <Route path="configuracoes" element={<CompanySettingsPage />} />
+              <Route path="configuracoes/documentos" element={<DocumentTemplatesPage />} />
               <Route path="configuracoes/dados" element={<CompanyDataSettingsPage />} />
               <Route path="configuracoes/visual" element={<VisualSettingsPage />} />
               

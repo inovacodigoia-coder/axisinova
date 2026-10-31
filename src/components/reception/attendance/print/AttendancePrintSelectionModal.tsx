@@ -9,6 +9,9 @@ import { tuboDoExame, tuboInfo } from '@/lib/tubos';
 import type { AttendanceOrder } from '@/types/attendance-cadastro.types';
 import { canSetCollectionDone } from '@/utils/orderStatusFlow';
 import { ServidorImpressaoStatus } from '@/components/print/ServidorImpressaoStatus';
+import { useDocumentTemplates } from '@/hooks/useDocumentTemplates';
+import { DocumentPrintDialog } from '@/components/documents/DocumentPrintDialog';
+import { useNavigate } from 'react-router-dom';
 
 interface PrintOption {
   id: string;
@@ -40,6 +43,26 @@ interface Props {
 export const tubeTypeForMaterial = (examOrMaterial: any): string => tuboDoExame(examOrMaterial);
 
 export function AttendancePrintSelectionModal({ open, onClose, onConfirm, order, selectedExams, selectedTubes, multiSelect }: Props) {
+  const { templates, loading: templatesLoading, error: templatesError } = useDocumentTemplates();
+  const navigate = useNavigate();
+  const [pendingPrint, setPendingPrint] = useState<any>(null);
+  const [noTemplates, setNoTemplates] = useState(false);
+  const activeTemplates = templates.filter(t => t.is_active);
+  const dispatchPrint = (result: any) => {
+    if (result.action !== 'confirm' && result.options?.some((o: any) => o.id === 'termo_consentimento' && o.enabled)) {
+      if (templatesLoading || templatesError) { toast({ title: 'Modelos indisponíveis', description: templatesError || 'Aguarde o carregamento dos modelos.', variant: 'destructive' }); return; }
+      if (!activeTemplates.length) { setNoTemplates(true); return; }
+      setPendingPrint(result); return;
+    }
+    onConfirm(result);
+  };
+  const finishDocuments = () => {
+    const result = pendingPrint;
+    setPendingPrint(null);
+    const options = result.options.map((o: any) => o.id === 'termo_consentimento' ? { ...o, enabled: false } : o);
+    const queue = result.queue?.filter((j: any) => j.id !== 'termo_consentimento');
+    onConfirm({ ...result, options, queue, action: result.action === 'print-batch' && queue?.length ? 'print-batch' : options.some((o: any) => o.enabled) ? result.action : 'confirm' });
+  };
   const { toast } = useToast();
   const { updateOrder } = useAttendanceCadastro();
   const [options, setOptions] = useState<PrintOption[]>([
@@ -189,7 +212,7 @@ export function AttendancePrintSelectionModal({ open, onClose, onConfirm, order,
       setIsSaving(false);
     }
 
-    onConfirm({
+    dispatchPrint({
       action: 'print',
       optionId: opt.id,
       options: options.map(o => ({ ...o, enabled: o.id === opt.id })),
@@ -221,7 +244,7 @@ export function AttendancePrintSelectionModal({ open, onClose, onConfirm, order,
     }
     const enabled = options.filter(o => o.enabled);
     if (multiSelect && enabled.length > 0) {
-      onConfirm({
+      dispatchPrint({
         action: 'print-batch',
         options,
         queue: enabled.map(o => ({ id: o.id, format: o.selectedFormat })),
@@ -240,7 +263,9 @@ export function AttendancePrintSelectionModal({ open, onClose, onConfirm, order,
   };
 
   return (
-    <Dialog open={open} onOpenChange={(o) => !o && onClose()}>
+    <>
+    {pendingPrint && order && <DocumentPrintDialog templates={activeTemplates} attendanceId={order.id} onDone={finishDocuments} onCancel={() => setPendingPrint(null)} />}
+    <Dialog open={open && !pendingPrint} onOpenChange={(o) => !o && onClose()}>
       <DialogContent className="max-w-[620px] p-0 overflow-hidden border-none shadow-2xl [&>button]:hidden">
         <div className="bg-white">
           {/* Header */}
@@ -252,6 +277,7 @@ export function AttendancePrintSelectionModal({ open, onClose, onConfirm, order,
           </div>
 
           <div className="px-5 py-4 max-h-[62vh] overflow-y-auto">
+            {noTemplates && <div role="alert" className="mb-3 border border-border rounded p-3 text-sm text-foreground"><p>Nenhum modelo cadastrado</p><Button variant="link" onClick={() => { onClose(); navigate('/app/configuracoes/documentos'); }}>Configurações</Button></div>}
             {/* Options */}
             <div className="divide-y divide-slate-100">
               {options.map((opt) => (
@@ -430,6 +456,7 @@ export function AttendancePrintSelectionModal({ open, onClose, onConfirm, order,
         </div>
       </DialogContent>
     </Dialog>
+    </>
   );
 }
 
