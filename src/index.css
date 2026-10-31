@@ -487,3 +487,8 @@ a[href*="lovable.app"],
 @media print { .template-paper { box-shadow:none; break-after:page; } .template-paper:last-child { break-after:auto; } .template-body p { orphans:3; widows:3; } }
 
 .document-print-frame { position:fixed; left:-10000px; top:0; width:794px; height:1123px; border:0; }
+
+.template-paper-a5 > div:first-child > div:first-child, .template-paper-a5 > div:first-child > div:last-child { width:20mm; height:12mm; flex-shrink:0; }
+.template-paper-a5 > div:first-child > div:nth-child(2) { min-width:0; padding-left:3mm; padding-right:3mm; }
+.template-paper-a5 > div:first-child h1 { font-size:10pt; }
+.template-paper-a5 > div:first-child p { font-size:7pt; }
