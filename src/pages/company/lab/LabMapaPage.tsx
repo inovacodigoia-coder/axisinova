@@ -8,7 +8,8 @@ import { Skeleton } from '@/components/ui/skeleton'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { EmptyState } from '@/components/feedback/EmptyState'
-import { ChevronDown, Filter, ClipboardList, Plus, FileCheck2, List } from 'lucide-react'
+import { ChevronDown, Filter, ClipboardList, Plus, FileCheck2, List, ListChecks } from 'lucide-react'
+import { Checkbox } from '@/components/ui/checkbox'
 import { cn } from '@/lib/utils'
 import { toast } from 'sonner'
 import { useAuth } from '@/context/AuthContext'
@@ -52,6 +53,10 @@ export default function LabMapaPage() {
 
   const [filtersOpen, setFiltersOpen] = useState(true)
   const [examTerm, setExamTerm] = useState('')
+  const [selectedExams, setSelectedExams] = useState<string[]>([])
+  const [examPickerOpen, setExamPickerOpen] = useState(false)
+  const [examPickerDraft, setExamPickerDraft] = useState<string[]>([])
+  const [examPickerSearch, setExamPickerSearch] = useState('')
   const [sector, setSector] = useState(ALL)
   const [convenio, setConvenio] = useState(ALL)
   const [plan, setPlan] = useState(ALL)
@@ -139,13 +144,30 @@ export default function LabMapaPage() {
     const limit = Math.max(1, Number(quantity) || 1000)
     return allRows
       .filter(r => (term ? `${r.exam} ${r.examCode}`.toLowerCase().includes(term) : true))
+      .filter(r => (selectedExams.length ? selectedExams.includes(r.exam) : true))
       .filter(r => (sector === ALL ? true : r.sector === sector))
       .filter(r => (convenio === ALL ? true : r.convenio === convenio))
       .filter(r => (plan === ALL ? true : r.convenio === plan))
       .filter(r => (priority === ALL ? true : r.priority === priority))
       .filter(r => (post === ALL ? true : r.collectionPost === post))
       .slice(0, limit)
-  }, [allRows, examTerm, sector, convenio, plan, priority, post, quantity, applied])
+  }, [allRows, examTerm, selectedExams, sector, convenio, plan, priority, post, quantity, applied])
+
+  const examOptions = useMemo(() => {
+    const m = new Map<string, { exam: string; name: string; count: number }>()
+    allRows.forEach(r => {
+      const cur = m.get(r.exam)
+      if (cur) cur.count++
+      else m.set(r.exam, { exam: r.exam, name: r.examCode, count: 1 })
+    })
+    return Array.from(m.values()).sort((a, b) => a.exam.localeCompare(b.exam))
+  }, [allRows])
+
+  const openExamPicker = () => {
+    setExamPickerDraft(selectedExams)
+    setExamPickerSearch('')
+    setExamPickerOpen(true)
+  }
 
   const pageSize = Number(perPage) > 0 ? Number(perPage) : filteredRows.length || 1
   const totalPages = Math.max(1, Math.ceil(filteredRows.length / pageSize))
@@ -232,7 +254,23 @@ export default function LabMapaPage() {
           <div className="grid grid-cols-1 gap-3 bg-warning/5 p-4 sm:grid-cols-2 lg:grid-cols-4">
             <div className="space-y-1">
               <Label className="text-[11px] font-semibold uppercase">Exame</Label>
-              <Input value={examTerm} onChange={e => setExamTerm(e.target.value)} placeholder="Código ou nome (ex: TSH)" />
+              <div className="flex gap-2">
+                <Input value={examTerm} onChange={e => setExamTerm(e.target.value)} placeholder="Código ou nome (ex: TSH)" />
+                <Button
+                  type="button"
+                  variant={selectedExams.length ? 'default' : 'outline'}
+                  size="icon"
+                  className="relative shrink-0"
+                  title="Selecionar exames do mapa"
+                  aria-label="Selecionar exames do mapa"
+                  onClick={openExamPicker}
+                >
+                  <ListChecks className="h-4 w-4" />
+                  {selectedExams.length > 0 && (
+                    <span className="absolute -right-1.5 -top-1.5 rounded-full bg-destructive px-1.5 text-[10px] font-bold text-destructive-foreground">{selectedExams.length}</span>
+                  )}
+                </Button>
+              </div>
             </div>
 
             <div className="space-y-1">
@@ -399,6 +437,50 @@ export default function LabMapaPage() {
               }}
             >
               Adicionar
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={examPickerOpen} onOpenChange={setExamPickerOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader><DialogTitle>Selecionar exames do mapa</DialogTitle></DialogHeader>
+          <Input value={examPickerSearch} onChange={e => setExamPickerSearch(e.target.value)} placeholder="Buscar exame..." />
+          <div className="flex items-center justify-between text-xs text-muted-foreground">
+            <span>{examPickerDraft.length} selecionado(s)</span>
+            <div className="flex gap-3">
+              <button type="button" className="hover:underline" onClick={() => setExamPickerDraft(examOptions.map(o => o.exam))}>Marcar todos</button>
+              <button type="button" className="hover:underline" onClick={() => setExamPickerDraft([])}>Limpar</button>
+            </div>
+          </div>
+          <div className="max-h-80 space-y-1 overflow-y-auto rounded-md border p-2">
+            {examOptions
+              .filter(o => `${o.exam} ${o.name}`.toLowerCase().includes(examPickerSearch.trim().toLowerCase()))
+              .map(o => {
+                const checked = examPickerDraft.includes(o.exam)
+                return (
+                  <label key={o.exam} className="flex cursor-pointer items-center gap-2 rounded px-2 py-1.5 hover:bg-muted">
+                    <Checkbox
+                      checked={checked}
+                      onCheckedChange={v => setExamPickerDraft(d => (v ? [...d, o.exam] : d.filter(x => x !== o.exam)))}
+                    />
+                    <span className="flex-1 text-sm font-medium">{o.exam}</span>
+                    <span className="text-xs text-muted-foreground">{o.count}</span>
+                  </label>
+                )
+              })}
+            {examOptions.length === 0 && <p className="p-2 text-sm text-muted-foreground">Nenhum exame disponível.</p>}
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setExamPickerOpen(false)}>Cancelar</Button>
+            <Button
+              onClick={() => {
+                setSelectedExams(examPickerDraft)
+                setPage(1)
+                setExamPickerOpen(false)
+              }}
+            >
+              Aplicar
             </Button>
           </DialogFooter>
         </DialogContent>
