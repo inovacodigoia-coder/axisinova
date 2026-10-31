@@ -46,6 +46,7 @@ import { ensurePatientPortalAccess, buildPortalUrl } from '@/hooks/useExternalAc
 import { dbToPatient } from '@/utils/patient.adapter'
 import TrocaBancadaPontualDialog from '@/components/lab/attendance/TrocaBancadaPontualDialog'
 import { useApoioPermissions } from '@/hooks/useApoio'
+import { MudarOrigemDialog } from './MudarOrigemDialog'
 
 import {
   AlertDialog,
@@ -87,6 +88,8 @@ export function AttendanceDetailsModal({ open, onClose, onOrderDeleted, order, p
   const [labelsPrintOpen, setLabelsPrintOpen] = useState(false)
   const [isDeleting, setIsDeleting] = useState(false)
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
+  const [mudarOrigemOpen, setMudarOrigemOpen] = useState(false)
+  const [origemAtual, setOrigemAtual] = useState<{ id?: string; name?: string }>({ id: order.originId, name: order.originName })
   const { settings, isLoading: settingsLoading } = useLabSettings()
   const companySequenceId = useCompanySequenceId()
   const sampleCodeFor = (tubeIndex: number) => buildSampleCode(order.orderNumber, tubeIndex, companySequenceId)
@@ -614,12 +617,15 @@ export function AttendanceDetailsModal({ open, onClose, onOrderDeleted, order, p
                     </DropdownMenuItem>
                     <DropdownMenuSub>
                       <DropdownMenuSubTrigger className="flex items-center gap-2">
-                        <Droplets className="h-4 w-4" />
-                        <span>Pulse</span>
+                        <MapPin className="h-4 w-4" />
+                        <span>Origem</span>
                       </DropdownMenuSubTrigger>
                       <DropdownMenuSubContent>
-                        <DropdownMenuItem>Status da Amostra</DropdownMenuItem>
-                        <DropdownMenuItem>Rastreabilidade</DropdownMenuItem>
+                        {order.status === 'completed' ? (
+                          <DropdownMenuItem onClick={() => setMudarOrigemOpen(true)}>Mudar origem do paciente</DropdownMenuItem>
+                        ) : (
+                          <div className="px-3 py-2 text-xs text-muted-foreground max-w-[220px]">Disponível apenas para atendimentos Concluídos.</div>
+                        )}
                       </DropdownMenuSubContent>
                     </DropdownMenuSub>
                     <DropdownMenuItem className="flex items-center gap-2">
@@ -1545,6 +1551,15 @@ export function AttendanceDetailsModal({ open, onClose, onOrderDeleted, order, p
 
 
 
+      <MudarOrigemDialog
+        open={mudarOrigemOpen}
+        onOpenChange={setMudarOrigemOpen}
+        orderId={order.id}
+        companyId={authUser?.companyId}
+        currentOriginId={origemAtual.id}
+        currentOriginName={origemAtual.name}
+        onChanged={(o) => setOrigemAtual(o)}
+      />
       <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>

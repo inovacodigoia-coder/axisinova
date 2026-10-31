@@ -11278,6 +11278,10 @@ export type Database = {
         Args: { _apoio: string; _cod: string }
         Returns: boolean
       }
+      atendimento_mudar_origem: {
+        Args: { _order_id: string; _origin_id: string }
+        Returns: Json
+      }
       auditoria_lista: {
         Args: {
           _ate?: string
