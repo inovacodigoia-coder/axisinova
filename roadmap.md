@@ -1,10 +1,11 @@
 # Verificação dos alertas
 
 # Declarações e Termos
-- [ ] Preparar e aprovar plano para modelos configuráveis, padrões, variáveis e impressão.
-- [ ] Criar cadastro seguro por empresa, editor rico e pré-visualização com cabeçalho compartilhado do laudo.
-- [ ] Integrar seleção de modelos ativos, formatos A4/A5 e registro de impressão aos fluxos de atendimento.
-- [ ] Testar regras e isolamento com dados descartáveis; verificar apresentação e documentos sem imprimir em impressora real.
+- [x] Criar modelos configuráveis, padrões, variáveis e impressão conforme o pedido.
+- [x] Criar cadastro seguro por empresa, editor rico e pré-visualização com cabeçalho compartilhado do laudo; CRUD validado com modelo descartável removido.
+- [x] Integrar seleção de modelos ativos, formatos A4/A5 e registro de impressão aos fluxos de atendimento; confirmação do servidor antes de registrar/avançar.
+- [x] 37 testes de regras, seleção, falhas e isolamento passaram; PDFs fictícios A4/A5 conferidos e cabeçalho A5 corrigido.
+- [ ] Validar impressão física e confirmação do servidor local do cliente: indisponível no ambiente de testes; nenhum documento real enviado. Horários de início/fim não existem no cadastro atual e saem como linhas em branco.
 
 # Filtro de data no Mapa de Trabalho
 - [x] Acrescentar "Coleta de" e "Coleta até" na área de Filtros, combináveis com os demais campos; dia comparado no fuso de São Paulo e geração do mapa limpa exame, seleção e datas.
