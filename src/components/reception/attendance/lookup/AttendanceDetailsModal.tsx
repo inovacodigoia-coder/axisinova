@@ -588,6 +588,7 @@ export function AttendanceDetailsModal({ open, onClose, onOrderDeleted, order, p
                   size="icon" 
                   variant="ghost" 
                   className="h-6 w-6 text-white hover:bg-white/20"
+                  aria-label="Imprimir documentos do atendimento"
                   onClick={() => setPrintSelectionOpen(true)}
                 >
                   <Printer className="h-3.5 w-3.5" />
