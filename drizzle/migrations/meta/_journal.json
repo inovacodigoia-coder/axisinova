@@ -834,6 +834,13 @@
       "when": 1793406270767,
       "tag": "0118_atendimento_mudar_origem",
       "breakpoints": true
+    },
+    {
+      "idx": 119,
+      "version": "7",
+      "when": 1793407184409,
+      "tag": "0119_chat_interno_colegas",
+      "breakpoints": true
     }
   ]
 }
