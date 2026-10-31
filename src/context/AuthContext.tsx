@@ -173,6 +173,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       .select('full_name, role, company_id, is_active, must_change_password, is_admin')
       .eq('id', authUser.id)
       .single()
+    let companyName: string | null | undefined
+    if (profile?.company_id) {
+      const { data: comp } = await supabase.from('companies').select('name, nome_fantasia').eq('id', profile.company_id).maybeSingle()
+      if (comp) companyName = (comp as any).nome_fantasia || (comp as any).name || null
+    }
     setUser((prev) => {
       if (!prev) return prev
       const updated: AuthUser = {
@@ -180,6 +185,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         name: profile?.full_name || prev.name,
         role: (profile?.role as UserRole) || prev.role,
         companyId: profile?.company_id ?? prev.companyId,
+        companyName: companyName !== undefined ? companyName : prev.companyName,
         isActive: profile?.is_active ?? prev.isActive,
         mustChangePassword: (profile as any)?.must_change_password === true,
         isAdmin: (profile as any)?.is_admin === true,
