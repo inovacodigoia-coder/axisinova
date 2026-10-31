@@ -130,13 +130,8 @@ export function NewAccessModal({ open, onOpenChange, defaultType, companyId, onC
     try {
       const nome = editName.trim().toUpperCase()
       const codigo = editCode.trim() || null
-      const { data: o, error } = await (supabase as any).from('origins')
-        .update({ name: nome, internal_code: codigo }).eq('id', editingId)
-        .select('id, establishment_id').single()
-      if (error || !o) throw new Error(error?.message || 'Falha ao salvar')
-      if (o.establishment_id) {
-        await (supabase as any).from('establishments').update({ name: nome, internal_code: codigo }).eq('id', o.establishment_id)
-      }
+      const { error } = await supabase.rpc('portal_origem_editar', { p_origem_id: editingId, p_nome: nome, p_codigo: codigo || '' })
+      if (error) throw new Error(error.message)
       setOptions((prev) => prev.map((x) => (x.id === editingId ? { ...x, label: nome, sub: codigo || undefined } : x)))
       setEditingId(null)
       toast.success('Origem atualizada')

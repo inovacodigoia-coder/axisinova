@@ -25,8 +25,13 @@ import {
 import { NewAccessModal } from '@/components/lab/portals/NewAccessModal';
 import { AccessCredentialsModal } from '@/components/lab/portals/AccessCredentialsModal';
 import { EditAccessOriginsDialog } from '@/components/lab/portals/EditAccessOriginsDialog';
+import { ManagePortalOriginsDialog } from '@/components/lab/portals/ManagePortalOriginsDialog';
+import { useAuth } from '@/context/AuthContext';
 
 export default function ExternalPortalsPage() {
+  const { user } = useAuth();
+  const canEditOrigins = user?.role === 'company_admin' || user?.role === 'super_admin' || user?.isAdmin === true;
+  const [manageOpen, setManageOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [activeTab, setActiveTab] = useState<ExternalAccessType | 'logs'>('parceiro');
   const [newOpen, setNewOpen] = useState(false);
@@ -204,9 +209,9 @@ export default function ExternalPortalsPage() {
                         <DropdownMenuItem onClick={() => openCredentials(item)}>
                           <KeyRound className="mr-2 h-4 w-4" /> Ver Acesso
                         </DropdownMenuItem>
-                        {(item.type === 'parceiro' || item.type === 'local') && (
+                        {canEditOrigins && (
                           <DropdownMenuItem onClick={() => setEditOriginsFor(item)}>
-                            <Pencil className="mr-2 h-4 w-4" /> Editar origens
+                            <Pencil className="mr-2 h-4 w-4" /> Editar acesso
                           </DropdownMenuItem>
                         )}
                         <DropdownMenuItem onClick={() => handleStatusToggle(item)}>
@@ -238,9 +243,12 @@ export default function ExternalPortalsPage() {
           <h1 className="text-2xl font-bold tracking-tight">Portais Externos</h1>
           <p className="text-muted-foreground">Gerencie os acessos de parceiros, locais, médicos e pacientes.</p>
         </div>
+        <div className="flex flex-wrap gap-2 shrink-0">
+        <Button variant="outline" className="gap-2" onClick={() => setManageOpen(true)}><Building2 className="h-4 w-4" /> Todos os portais</Button>
         <Button className="gradient-bg border-none gap-2" onClick={() => setNewOpen(true)}>
           <Plus className="h-4 w-4" /> Novo Acesso
         </Button>
+        </div>
       </div>
 
       <div className="flex items-center gap-2 max-w-sm">
@@ -280,11 +288,12 @@ export default function ExternalPortalsPage() {
         </div>
       </Tabs>
 
+      <ManagePortalOriginsDialog open={manageOpen} onOpenChange={setManageOpen} companyId={companyId} accesses={accesses} canEdit={canEditOrigins} onEditAccess={setEditOriginsFor} />
       <EditAccessOriginsDialog
         access={editOriginsFor}
         companyId={companyId}
         onOpenChange={(o) => { if (!o) setEditOriginsFor(null); }}
-        onSave={(id, patch) => updateAccess(id, patch as never)}
+        onSave={updateAccess}
       />
 
       <NewAccessModal
