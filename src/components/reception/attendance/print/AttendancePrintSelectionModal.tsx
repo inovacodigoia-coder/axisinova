@@ -236,7 +236,7 @@ export function AttendancePrintSelectionModal({ open, onClose, onConfirm, order,
       });
       return;
     }
-    onConfirm({ action: 'confirm', options, extras, printerSettings });
+    onConfirm({ action: 'confirm', options, extras, printerSettings, collectedMaterials: collectedTypes, confirmCollection: collectedTypes.length > 0 });
   };
 
   return (

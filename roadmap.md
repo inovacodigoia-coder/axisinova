@@ -1,8 +1,9 @@
 # Verificação dos alertas
 
 # Impressão após criar pedido
-- [ ] Enviar automaticamente todos os documentos selecionados pelo servidor ativo, incluindo termo e etiquetas; preservar confirmação da coleta.
-- [ ] Juntar Comprovante e Controle Interno em duas metades de uma folha com linha tracejada; testar sem impressão física.
+- [x] Enviar automaticamente todos os documentos selecionados pelo servidor ativo, incluindo termo e etiquetas; preservar confirmação da coleta. 12 testes passaram sem impressões reais.
+- [x] Juntar Comprovante e Controle Interno em duas metades de uma folha com linha tracejada; PDF fictício inspecionado nas duas páginas, sem cortes; reforçada a linha divisória pouco visível.
+- [ ] Validar após criar pedido na tela autenticada e na impressora física: sessão disponível redirecionou para /login; servidor local do cliente indisponível no ambiente de testes. Termo usa texto padrão e aguarda modelo oficial da clínica.
 
 # Código de barras por tubo
 - [x] Enviar codigoAlfanumerico da prévia por tubo nos fluxos existentes (pedido e etiqueta de teste), preservando codigoAmostra e codigoExterno; interface comum aceita cliente/lote/colhedor, sem fluxos próprios de lote/colhedor no projeto.
