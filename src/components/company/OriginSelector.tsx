@@ -117,7 +117,7 @@ export function OriginSelector() {
       </button>
 
       <Dialog open={isOpen} onOpenChange={setIsOpen}>
-        <DialogContent className="sm:max-w-[500px] h-[80vh] sm:h-auto flex flex-col p-0 overflow-hidden">
+        <DialogContent className="w-[min(92vw,520px)] max-w-[520px] h-[min(85vh,520px)] flex flex-col p-0 overflow-hidden">
           <DialogHeader className="p-4 border-b">
             <DialogTitle className="text-lg font-semibold flex items-center justify-between">
               <span>Seleção de Origem</span>
@@ -147,7 +147,7 @@ export function OriginSelector() {
               />
             </div>
 
-            <div className="flex-1 overflow-y-auto space-y-2 pr-1 custom-scrollbar min-h-[300px]">
+            <div className="flex-1 overflow-y-auto space-y-2 pr-1 custom-scrollbar min-h-0">
               {filteredOrigins.length === 0 ? (
                 <div className="py-10 text-center space-y-4">
                   <div className="mx-auto w-12 h-12 rounded-full bg-muted flex items-center justify-center">
