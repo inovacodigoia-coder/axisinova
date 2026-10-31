@@ -1,8 +1,9 @@
 # Verificação dos alertas
 
 # Edição de Portais Externos
-- [ ] Incluir edição do nome do acesso e botão com lista de todos os portais e origens, permitindo editar nome/código da origem somente para administradores.
-- [ ] Verificar salvamento, isolamento por empresa e apresentação das janelas; não alterar registros reais.
+- [x] Incluir edição do nome do acesso e botão com lista de todos os portais e origens, permitindo editar nome/código da origem somente para administradores; unidade vinculada sincronizada de forma atômica.
+- [x] Seis testes verificam salvamento, preservação de vínculos, código duplicado, bloqueio sem login e isolamento por empresa; nenhuma alteração em cadastros reais.
+- [ ] Verificar apresentação e salvamento na tela autenticada: sessão injetada redirecionou ao login, depende de login ativo no preview; nenhuma sessão gerada.
 
 # Impressão após criar pedido
 - [x] Enviar automaticamente todos os documentos selecionados pelo servidor ativo, incluindo termo e etiquetas; preservar confirmação da coleta. 12 testes passaram sem impressões reais.

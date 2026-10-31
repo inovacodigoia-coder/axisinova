@@ -15,6 +15,6 @@ it('salva o novo nome do acesso preservando suas origens selecionadas', async ()
   render(<EditAccessOriginsDialog access={access} companyId="company" onOpenChange={vi.fn()} onSave={onSave} />);
   await screen.findByText('UBS');
   fireEvent.change(screen.getByLabelText('Nome exibido *'), {target:{value:'UBS Novo nome'}});
-  fireEvent.click(screen.getByRole('button',{name:'Salvar',exact:true}));
+  fireEvent.click(screen.getByRole('button',{name:/^Salvar$/}));
   await waitFor(() => expect(onSave).toHaveBeenCalledWith('a1',{name:'UBS Novo nome',partner_origin_ids:['o1']}));
 });
