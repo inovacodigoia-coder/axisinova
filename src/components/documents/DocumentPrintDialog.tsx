@@ -9,7 +9,7 @@ import { useAuth } from '@/context/AuthContext'
 import { supabase } from '@/integrations/supabase/client'
 import { documentValues, type DocumentTemplate } from '@/lib/documentTemplates'
 import { TemplateDocument } from './TemplateDocument'
-import { gerarPdfElementos } from '@/lib/labelPdf'
+import { generateDocumentPdf } from '@/lib/documentPdf'
 import { imprimirDireto, servidorImpressaoAtivo, TIPOS_DOCUMENTO } from '@/lib/impressaoLocal'
 export function DocumentPrintDialog({templates,attendanceId,onDone,onCancel}:{templates:DocumentTemplate[];attendanceId:string;onDone:()=>void;onCancel:()=>void}) {
   const {user}=useAuth(); const {settings,isLoading:settingsLoading}=useLabSettings()
@@ -35,7 +35,7 @@ export function DocumentPrintDialog({templates,attendanceId,onDone,onCancel}:{te
         const node=root.current?.querySelector<HTMLElement>('article');if(!node)throw new Error('Documento não disponível')
         await Promise.all(Array.from(node.querySelectorAll('img')).map(img=>img.complete?Promise.resolve():new Promise<void>(resolve=>{img.onload=()=>resolve();img.onerror=()=>resolve()})))
         await document.fonts.ready
-        if(active){const format=formats[t.id];const pdf=await gerarPdfElementos([node],format==='A5'?128:190,{formato:format==='A5'?'a5':'a4',orientacao:'portrait',margemMm:10});await imprimirDireto(TIPOS_DOCUMENTO.termoConsentimento,pdf);await record(t)}
+        if(active){const pdf=await generateDocumentPdf(node,formats[t.id]);await imprimirDireto(TIPOS_DOCUMENTO.termoConsentimento,pdf);await record(t)}
         else{
           const frame=document.createElement('iframe');frame.className='document-print-frame';document.body.appendChild(frame);
           const win=frame.contentWindow;if(!win){frame.remove();throw new Error('Não foi possível abrir a impressão no navegador')}
