@@ -11839,6 +11839,7 @@ export type Database = {
         Args: { _dados: Json; _id: string }
         Returns: string
       }
+      documento_pode_imprimir: { Args: never; Returns: boolean }
       dose_administer: {
         Args: { _dose_id: string; _notes?: string }
         Returns: undefined

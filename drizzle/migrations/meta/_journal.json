@@ -855,6 +855,13 @@
       "when": 1793479306452,
       "tag": "0121_documentos_modelos_impressao",
       "breakpoints": true
+    },
+    {
+      "idx": 122,
+      "version": "7",
+      "when": 1793479515127,
+      "tag": "0122_documentos_validacao_permissao",
+      "breakpoints": true
     }
   ]
 }
