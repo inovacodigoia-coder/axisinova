@@ -3896,6 +3896,124 @@ export type Database = {
           },
         ]
       }
+      document_print_logs: {
+        Row: {
+          attendance_id: string
+          company_id: string
+          format: string
+          id: string
+          printed_at: string
+          printed_by: string
+          template_id: string | null
+          template_name: string
+        }
+        Insert: {
+          attendance_id: string
+          company_id: string
+          format: string
+          id?: string
+          printed_at?: string
+          printed_by: string
+          template_id?: string | null
+          template_name: string
+        }
+        Update: {
+          attendance_id?: string
+          company_id?: string
+          format?: string
+          id?: string
+          printed_at?: string
+          printed_by?: string
+          template_id?: string | null
+          template_name?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "document_print_logs_attendance_id_fkey"
+            columns: ["attendance_id"]
+            isOneToOne: false
+            referencedRelation: "attendance_orders"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "document_print_logs_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "document_print_logs_template_id_fkey"
+            columns: ["template_id"]
+            isOneToOne: false
+            referencedRelation: "document_templates"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      document_templates: {
+        Row: {
+          body_html: string
+          company_id: string | null
+          created_at: string
+          created_by: string | null
+          default_format: string
+          id: string
+          is_active: boolean
+          is_system_default: boolean
+          name: string
+          signature_mode: string
+          source_template_id: string | null
+          type: string
+          updated_at: string
+        }
+        Insert: {
+          body_html: string
+          company_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          default_format?: string
+          id?: string
+          is_active?: boolean
+          is_system_default?: boolean
+          name: string
+          signature_mode?: string
+          source_template_id?: string | null
+          type?: string
+          updated_at?: string
+        }
+        Update: {
+          body_html?: string
+          company_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          default_format?: string
+          id?: string
+          is_active?: boolean
+          is_system_default?: boolean
+          name?: string
+          signature_mode?: string
+          source_template_id?: string | null
+          type?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "document_templates_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "document_templates_source_template_id_fkey"
+            columns: ["source_template_id"]
+            isOneToOne: false
+            referencedRelation: "document_templates"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       establishments: {
         Row: {
           city: string | null
@@ -11711,6 +11829,15 @@ export type Database = {
           _username: string
         }
         Returns: boolean
+      }
+      documento_impressao_registrar: {
+        Args: { _atendimento: string; _formato: string; _modelo: string }
+        Returns: undefined
+      }
+      documento_modelo_excluir: { Args: { _id: string }; Returns: undefined }
+      documento_modelo_salvar: {
+        Args: { _dados: Json; _id: string }
+        Returns: string
       }
       dose_administer: {
         Args: { _dose_id: string; _notes?: string }
