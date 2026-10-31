@@ -59,6 +59,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setIsLoading(false)
   }, [])
 
+  // Keep the cached company name in sync with the database (e.g. after editing Dados da Empresa)
+  const restoredRef = useRef(false)
+  useEffect(() => {
+    if (!isAuthenticated || restoredRef.current) return
+    restoredRef.current = true
+    void refreshUserRef.current?.()
+  }, [isAuthenticated])
+  const refreshUserRef = useRef<(() => Promise<void>) | null>(null)
+
   const login = useCallback(async (email: string, password: string): Promise<LoginResult> => {
     const identifier = email.trim().toLowerCase()
     const NET_ERROR = 'Não foi possível conectar ao servidor. Verifique a internet e tente novamente.'
