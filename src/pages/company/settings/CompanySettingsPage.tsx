@@ -1,9 +1,10 @@
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { supabase } from '@/integrations/supabase/client'
-import { Building2, Palette, DoorOpen, Bell, Printer, Volume2, MapPin, Settings2, Beaker, Shield, MessageCircle } from 'lucide-react'
+import { Building2, Palette, DoorOpen, Bell, Printer, Volume2, MapPin, Settings2, Beaker, Shield, MessageCircle, FileText } from 'lucide-react'
 
 const CARDS = [
+  { key: 'documents', label: 'Declarações e Termos', desc: 'Modelos de documentos e assinaturas', icon: FileText, path: '/app/configuracoes/documentos' },
   { key: 'dados', label: 'Dados da Empresa', desc: 'Razão social, CNPJ, contato', icon: Building2, path: '/app/configuracoes/dados' },
   { key: 'visual', label: 'Visual', desc: 'Cores, logo e personalização', icon: Palette, path: '/app/configuracoes/visual' },
   { key: 'rooms', label: 'Salas e Setores', desc: 'Consultórios e salas de exame', icon: DoorOpen, path: '/app/configuracoes/salas' },
