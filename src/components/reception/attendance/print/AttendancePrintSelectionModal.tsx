@@ -206,10 +206,11 @@ export function AttendancePrintSelectionModal({ open, onClose, onConfirm, order,
 
   // Botão do rodapé: apenas confirma a coleta (se marcada) e fecha
   const handleConfirm = async () => {
+    let collectedTypes: string[] = [];
     if (willCollect && order) {
       setIsSaving(true);
       try {
-        const collectedTypes = await persistCollection();
+        collectedTypes = await persistCollection();
         toast({ title: 'Coleta confirmada', description: `${collectedTypes.length} material(is) marcado(s) como coletado(s).` });
       } catch {
         toast({ title: 'Erro', description: 'Não foi possível confirmar a coleta.', variant: 'destructive' });
@@ -230,10 +231,12 @@ export function AttendancePrintSelectionModal({ open, onClose, onConfirm, order,
         emptyFields,
         selectedExams,
         selectedTubes,
+        collectedMaterials: collectedTypes,
+        confirmCollection: collectedTypes.length > 0,
       });
       return;
     }
-    onConfirm({ action: 'confirm', options, extras, printerSettings });
+    onConfirm({ action: 'confirm', options, extras, printerSettings, collectedMaterials: collectedTypes, confirmCollection: collectedTypes.length > 0 });
   };
 
   return (

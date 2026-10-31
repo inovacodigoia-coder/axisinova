@@ -38,6 +38,7 @@ import type { AttendanceOrder, AttendanceServiceType, AttendancePaymentType, Att
 import type { Patient } from '@/types/patient.types'
 import type { AttendanceControlDocument, PaymentRecord } from '@/types/payment-print.types'
 import { PAYMENT_METHOD_LABELS } from '@/types/payment-print.types'
+import { prepararFilaImpressao } from '@/lib/attendancePrintQueue'
 
 interface AttendanceCadastroModalProps {
   open: boolean
@@ -180,6 +181,7 @@ export function AttendanceCadastroModal({
   const [printOverride, setPrintOverride] = useState<any>(undefined)
   const [printVias, setPrintVias] = useState<('patient' | 'establishment')[] | undefined>(undefined)
   const [printQueue, setPrintQueue] = useState<{ id: string; format: string }[]>([])
+  const [printDocumentType, setPrintDocumentType] = useState<string>('comprovante')
   const [savingPatient, setSavingPatient] = useState(false)
   const [isFinalizing, setIsFinalizing] = useState(false)
   const finalizingRef = useRef(false)
@@ -222,6 +224,7 @@ export function AttendanceCadastroModal({
       return
     }
     const [next, ...rest] = queue
+    setPrintDocumentType(next.id)
     setPrintQueue(rest)
     setShowPrintSelection(false)
     if (next.id === 'etiquetas') {
@@ -805,6 +808,9 @@ export function AttendanceCadastroModal({
           autoPrint
           overrideConfig={printOverride}
           vias={printVias}
+          documentType={printDocumentType}
+          combinedSheet={printDocumentType === 'comprovante_controle'}
+          onPrinted={() => { setShowPrint(false); runPrintQueue(printQueue) }}
         />
       )}
       {showAllocation && createdOrder && (
@@ -848,7 +854,7 @@ export function AttendanceCadastroModal({
               }) : prev)
             }
             if (opts?.action === 'print-batch') {
-              runPrintQueue(opts.queue || [])
+              runPrintQueue(prepararFilaImpressao(opts.queue || []))
               return
             }
             if (opts?.action === 'print') {
@@ -868,6 +874,7 @@ export function AttendanceCadastroModal({
           order={createdOrder}
           autoPrint
           birthDate={state.patient?.birthDate}
+          onPrinted={() => { setShowLabelsSelect(false); runPrintQueue(printQueue) }}
           onClose={() => { setShowLabelsSelect(false); runPrintQueue(printQueue) }}
         />
       )}
