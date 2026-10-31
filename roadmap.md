@@ -1,5 +1,9 @@
 # Verificação dos alertas
 
+# Filtro de data no Mapa de Trabalho
+- [x] Acrescentar "Coleta de" e "Coleta até" na área de Filtros, combináveis com os demais campos; dia comparado no fuso de São Paulo e geração do mapa limpa exame, seleção e datas.
+- [x] Cinco testes do utilitário de período (fuso, pontas inclusivas, item sem data) e conferência logado: 71 → 39 só 31/10, bancada 44, bancada + data 28, de=31/12/2026 → 0.
+
 # Edição de Portais Externos
 - [x] Incluir edição do nome do acesso e botão com lista de todos os portais e origens, permitindo editar nome/código da origem somente para administradores; unidade vinculada sincronizada de forma atômica.
 - [x] Seis testes verificam salvamento, preservação de vínculos, código duplicado, bloqueio sem login e isolamento por empresa; nenhuma alteração em cadastros reais.

@@ -12,6 +12,7 @@ import { ChevronDown, Filter, ClipboardList, Plus, FileCheck2, List, ListChecks 
 import { Checkbox } from '@/components/ui/checkbox'
 import { cn } from '@/lib/utils'
 import { toast } from 'sonner'
+import { dentroDoPeriodo } from '@/lib/workMapFilters'
 import { useAuth } from '@/context/AuthContext'
 import { useRegisters } from '@/context/RegistersContext'
 import { useCompanyContext } from '@/context/CompanyContext'
@@ -42,6 +43,7 @@ interface MapRow {
   convenio: string
   priority: string
   collectionPost: string
+  date: string
 }
 
 export default function LabMapaPage() {
@@ -62,6 +64,8 @@ export default function LabMapaPage() {
   const [plan, setPlan] = useState(ALL)
   const [priority, setPriority] = useState(ALL)
   const [post, setPost] = useState(ALL)
+  const [dateFrom, setDateFrom] = useState('')
+  const [dateTo, setDateTo] = useState('')
   const [quantity, setQuantity] = useState('1000')
   const [perPage, setPerPage] = useState('')
   const [page, setPage] = useState(1)
@@ -131,6 +135,7 @@ export default function LabMapaPage() {
             convenio: guide?.plan || order.convenioName || 'PARTICULAR',
             priority: exam.isUrgent || guide?.isUrgent || (order as any).isUrgent ? 'Urgente' : 'Normal',
             collectionPost: order.originName || '—',
+            date: exam.collectedAt || order.registeredAt || '',
           })
         })
       })
@@ -150,8 +155,9 @@ export default function LabMapaPage() {
       .filter(r => (plan === ALL ? true : r.convenio === plan))
       .filter(r => (priority === ALL ? true : r.priority === priority))
       .filter(r => (post === ALL ? true : r.collectionPost === post))
+      .filter(r => dentroDoPeriodo(r.date, dateFrom, dateTo))
       .slice(0, limit)
-  }, [allRows, examTerm, selectedExams, sector, convenio, plan, priority, post, quantity, applied])
+  }, [allRows, examTerm, selectedExams, sector, convenio, plan, priority, post, dateFrom, dateTo, quantity, applied])
 
   const examOptions = useMemo(() => {
     const m = new Map<string, { exam: string; name: string; count: number }>()
@@ -197,6 +203,9 @@ export default function LabMapaPage() {
 
       // Limpar filtros e resetar estado após geração
       setExamTerm('')
+      setSelectedExams([])
+      setDateFrom('')
+      setDateTo('')
       setSector(ALL)
       setConvenio(ALL)
       setPlan(ALL)
@@ -331,6 +340,16 @@ export default function LabMapaPage() {
                   {(availableOrigins || []).map((o: any) => <SelectItem key={o.id} value={o.name}>{o.name}</SelectItem>)}
                 </SelectContent>
               </Select>
+            </div>
+
+            <div className="space-y-1">
+              <Label className="text-[11px] font-semibold uppercase">Coleta de</Label>
+              <Input type="date" value={dateFrom} max={dateTo || undefined} onChange={e => { setDateFrom(e.target.value); setPage(1) }} />
+            </div>
+
+            <div className="space-y-1">
+              <Label className="text-[11px] font-semibold uppercase">Coleta até</Label>
+              <Input type="date" value={dateTo} min={dateFrom || undefined} onChange={e => { setDateTo(e.target.value); setPage(1) }} />
             </div>
 
             <div className="space-y-1">
