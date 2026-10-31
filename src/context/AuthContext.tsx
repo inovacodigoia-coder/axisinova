@@ -194,7 +194,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         name: profile?.full_name || prev.name,
         role: (profile?.role as UserRole) || prev.role,
         companyId: profile?.company_id ?? prev.companyId,
-  refreshUserRef.current = refreshUser
         companyName: companyName !== undefined ? companyName : prev.companyName,
         isActive: profile?.is_active ?? prev.isActive,
         mustChangePassword: (profile as any)?.must_change_password === true,
@@ -205,6 +204,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     })
   }, [])
 
+  refreshUserRef.current = refreshUser
   const forgotPassword = useCallback(async (_email: string) => {
     await new Promise((r) => setTimeout(r, 1500))
   }, [])
