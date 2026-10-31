@@ -23,13 +23,13 @@ export function DocumentPrintDialog({templates,attendanceId,onDone,onCancel}:{te
     if(live)setValues(documentValues(order,patient.data || {},company.data || {},settings || {}))
   }catch(e){if(live){setFailed(true);toast.error(e instanceof Error?e.message:'Falha ao carregar documento')}}})();return()=>{live=false}},[attendanceId,user?.companyId,settings])
   const record=async(t:DocumentTemplate)=>{const {error}=await supabase.rpc('documento_impressao_registrar',{_modelo:t.id,_atendimento:attendanceId,_formato:formats[t.id]});if(error)throw new Error(`Impressão solicitada, mas o registro falhou: ${error.message}`)}
-  const run=async()=>{
+  const run=async(forceBrowser=false)=>{
     if(busy||!values||!selected.length)return
     setBusy(true)
     try{
       const {data:allowed,error:permissionError}=await supabase.rpc('documento_pode_imprimir');
       if(permissionError || !allowed) throw new Error('Sem permissão para imprimir documentos deste atendimento');
-      const active=await servidorImpressaoAtivo()
+      const active=!forceBrowser && await servidorImpressaoAtivo()
       for(const t of templates.filter(t=>selected.includes(t.id))){
         setCurrent(t);await new Promise(resolve=>setTimeout(resolve,120))
         const node=root.current?.querySelector<HTMLElement>('article');if(!node)throw new Error('Documento não disponível')
@@ -41,7 +41,7 @@ export function DocumentPrintDialog({templates,attendanceId,onDone,onCancel}:{te
           const win=frame.contentWindow;if(!win){frame.remove();throw new Error('Não foi possível abrir a impressão no navegador')}
           win.document.write('<!doctype html><html><head><title>Documento do atendimento</title></head><body></body></html>');win.document.close()
           document.querySelectorAll('style,link[rel="stylesheet"]').forEach(el=>win.document.head.appendChild(el.cloneNode(true)))
-          const style=win.document.createElement('style');style.textContent=`@page {size:${formats[t.id]} portrait;margin:10mm} body{margin:0;background:var(--document-paper)} .template-paper{width:100%;min-height:0;padding:0;margin:0;box-shadow:none}`;win.document.head.appendChild(style)
+          const style=win.document.createElement('style');style.textContent=`@page {size:${formats[t.id]} portrait;margin:10mm} body{margin:0;background:var(--document-paper)} .template-paper{width:100%;margin:0;box-shadow:none}`;win.document.head.appendChild(style)
           win.document.body.appendChild(node.cloneNode(true))
           await new Promise<void>(resolve=>{let ended=false;const done=()=>{if(ended)return;ended=true;frame.remove();resolve()};win.addEventListener('afterprint',done,{once:true});win.setTimeout(()=>win.print(),350)})
           await record(t)
@@ -56,6 +56,6 @@ export function DocumentPrintDialog({templates,attendanceId,onDone,onCancel}:{te
     {templates.map(t=><div key={t.id} className="flex items-center gap-3 border-b border-border py-2"><Checkbox aria-label={t.name} checked={selected.includes(t.id)} disabled={busy} onCheckedChange={v=>setSelected(prev=>v===true?[...prev,t.id]:prev.filter(id=>id!==t.id))}/><span className="flex-1 text-sm">{t.name}</span><select aria-label={`Formato de ${t.name}`} disabled={busy} value={formats[t.id]} className="border border-input rounded bg-background px-2 py-1" onChange={e=>setFormats({...formats,[t.id]:e.target.value})}><option>A4</option><option>A5</option></select></div>)}
     {!values&&!failed&&<Loader2 className="animate-spin"/>}{failed&&<p role="alert" className="text-destructive">Não foi possível carregar os dados do documento.</p>}
     {values&&<div className="overflow-x-auto bg-muted p-3" ref={root}>{(current||templates.find(t=>selected.includes(t.id)))&&<TemplateDocument template={current||templates.find(t=>selected.includes(t.id))||templates[0]} values={values} header={header} format={formats[(current||templates.find(t=>selected.includes(t.id))||templates[0]).id]}/>}</div>}
-    <div className="flex justify-end gap-2"><Button variant="outline" disabled={busy} onClick={onCancel}>Cancelar</Button><Button disabled={busy||!values||!selected.length||settingsLoading} onClick={run}>{busy?<Loader2 className="h-4 w-4 animate-spin mr-2"/>:<Printer className="h-4 w-4 mr-2"/>}{busy?'Imprimindo…':'Imprimir'}</Button></div>
+    <div className="flex flex-wrap justify-end gap-2"><Button variant="outline" disabled={busy} onClick={onCancel}>Cancelar</Button><Button variant="outline" disabled={busy||!values||!selected.length||settingsLoading} onClick={()=>run(true)}>Imprimir pelo navegador</Button><Button disabled={busy||!values||!selected.length||settingsLoading} onClick={()=>run()}>{busy?<Loader2 className="h-4 w-4 animate-spin mr-2"/>:<Printer className="h-4 w-4 mr-2"/>}{busy?'Imprimindo…':'Imprimir'}</Button></div>
   </DialogContent></Dialog>
 }
