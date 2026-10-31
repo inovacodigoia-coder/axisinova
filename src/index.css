@@ -485,3 +485,5 @@ a[href*="lovable.app"],
 .document-editor .tiptap p { margin-bottom:12px; }
 .document-variable { color:hsl(var(--primary)); background:hsl(var(--primary)/.1); border-radius:3px; padding:1px 3px; }
 @media print { .template-paper { box-shadow:none; break-after:page; } .template-paper:last-child { break-after:auto; } .template-body p { orphans:3; widows:3; } }
+
+.document-print-frame { position:fixed; left:-10000px; top:0; width:794px; height:1123px; border:0; }
