@@ -12193,6 +12193,10 @@ export type Database = {
         Args: { p_action?: string; p_code: string; p_success: boolean }
         Returns: undefined
       }
+      portal_origem_editar: {
+        Args: { p_codigo: string; p_nome: string; p_origem_id: string }
+        Returns: undefined
+      }
       prescription_create: {
         Args: {
           _doctor_name: string

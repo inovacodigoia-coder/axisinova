@@ -841,6 +841,13 @@
       "when": 1793407184409,
       "tag": "0119_chat_interno_colegas",
       "breakpoints": true
+    },
+    {
+      "idx": 120,
+      "version": "7",
+      "when": 1793445174664,
+      "tag": "0120_portais_editar_nome_codigo_origem",
+      "breakpoints": true
     }
   ]
 }
