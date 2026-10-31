@@ -601,6 +601,16 @@ export default function ExternalPortalPage() {
           </Card>
         ))}
 
+        {withFilters && filtered.length > 0 && (
+          <div className="flex items-center justify-between text-sm text-muted-foreground">
+            <span>{filtered.length} pedido(s) · Página {curPage} de {totalPages}</span>
+            <div className="flex gap-2">
+              <Button size="sm" variant="outline" disabled={curPage <= 1} onClick={() => setPage(curPage - 1)}>Anterior</Button>
+              <Button size="sm" variant="outline" disabled={curPage >= totalPages} onClick={() => setPage(curPage + 1)}>Próxima</Button>
+            </div>
+          </div>
+        )}
+
         {laudoError && (
           <div className="flex items-start gap-2 text-sm text-destructive bg-destructive/10 rounded-md p-3">
             <AlertCircle className="h-4 w-4 mt-0.5 shrink-0" />
