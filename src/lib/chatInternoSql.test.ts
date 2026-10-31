@@ -47,6 +47,7 @@ beforeEach(async () => {
       ('${ADM}','${C}','Dora Admin','company_admin');
   `)
   await db.exec(readFileSync('drizzle/migrations/0111_chat_interno_etapa1.sql', 'utf8'))
+  await db.exec(readFileSync('drizzle/migrations/0119_chat_interno_colegas.sql', 'utf8'))
 })
 afterEach(async () => { await db.close() })
 const rows = async (sql: string) => (await db.query<Record<string, any>>(sql)).rows
@@ -67,6 +68,25 @@ describe('Chat Interno — PostgreSQL isolado', () => {
     await como(U1)
     await expect(db.exec(`SELECT chat_interno_conversa_direta('${U3}')`)).rejects.toThrow('outra empresa')
     expect(await rows('SELECT * FROM chat_interno_conversa')).toHaveLength(0)
+  })
+
+  it('qualquer usuário lista os colegas ativos da própria empresa (sem si mesmo nem outras empresas)', async () => {
+    await como(U1)
+    const lista = await rows('SELECT id, nome FROM chat_interno_colegas()')
+    expect(lista.map(c => c.nome)).toEqual(['Bruno', 'Dora Admin'])
+    expect(lista.some(c => c.id === U1)).toBe(false)
+    expect(lista.some(c => c.id === U3)).toBe(false)
+  })
+
+  it('colegas: usuário inativo some da lista e módulo desligado não lista ninguém', async () => {
+    await db.exec(`UPDATE profiles SET is_active=false WHERE id='${U2}'`)
+    await como(U1)
+    expect(await rows('SELECT id FROM chat_interno_colegas()')).toHaveLength(1)
+    await db.exec(`UPDATE profiles SET is_active=true WHERE id='${U2}'`)
+    await como(U1, true)
+    await db.exec(`SELECT chat_interno_liberar('${C}', false)`)
+    await como(U1)
+    expect(await rows('SELECT id FROM chat_interno_colegas()')).toHaveLength(0)
   })
 
   it('enviar mensagem gera não lida para o outro e marcar lida zera', async () => {

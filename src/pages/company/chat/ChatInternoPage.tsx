@@ -231,11 +231,11 @@ export default function ChatInternoPage() {
   }
 
   const abrirNova = async () => {
-    const companyId = user?.companyId
-    if (!companyId) return
-    const { data } = await supabase.from('profiles').select('id, full_name')
-      .eq('company_id', companyId).eq('is_active', true).neq('id', meuId).order('full_name')
-    setColegas((data ?? []).map(p => ({ id: p.id, nome: p.full_name || 'Colega' })))
+    // Lista vem do servidor (RLS de profiles só libera admins): qualquer
+    // usuário com o módulo ligado vê os colegas ativos da própria empresa.
+    const { data, error } = await supabase.rpc('chat_interno_colegas')
+    if (error) { toast.error('Não foi possível carregar os colegas.'); return }
+    setColegas(((data ?? []) as { id: string; nome: string }[]).map(p => ({ id: p.id, nome: p.nome || 'Colega' })))
     setGrupoNome(''); setGrupoSel(new Set()); setNovaAberta(true)
   }
 
