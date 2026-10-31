@@ -8,6 +8,7 @@ import { Badge } from '@/components/ui/badge'
 import { Loader2, Lock, FileText, AlertCircle, Download, X, Printer } from 'lucide-react'
 import { format, parseISO, isValid } from 'date-fns'
 import LaudoDocument from '@/components/lab/LaudoDocument'
+import { dataLocalSaoPaulo } from '@/lib/workMapFilters'
 
 interface PortalExam {
   id: string
@@ -288,6 +289,10 @@ export default function ExternalPortalPage() {
   const [laudos, setLaudos] = useState<PortalLaudo[] | null>(null)
   const [laudoLoading, setLaudoLoading] = useState<string | null>(null)
   const [laudoError, setLaudoError] = useState<string | null>(null)
+  const [search, setSearch] = useState('')
+  const [filterDate, setFilterDate] = useState(() => dataLocalSaoPaulo(new Date().toISOString()))
+  const [pageSize, setPageSize] = useState(10)
+  const [page, setPage] = useState(1)
 
   const fetchLaudo = async (examId: string): Promise<PortalLaudo | null> => {
     const { data: res, error: err } = await supabase.rpc('portal_fetch_laudo', {
@@ -438,7 +443,19 @@ export default function ExternalPortalPage() {
     )
   }
 
-  const orders = data.orders || []
+  const allOrders = data.orders || []
+  const withFilters = ['parceiro', 'local', 'medico'].includes(data.access?.type || '')
+  const term = search.trim().toLowerCase()
+  const filtered = withFilters
+    ? allOrders.filter(
+        (o) =>
+          (!filterDate || dataLocalSaoPaulo(o.created_at) === filterDate) &&
+          (!term || (o.patient_name || '').toLowerCase().includes(term)),
+      )
+    : allOrders
+  const totalPages = withFilters ? Math.max(1, Math.ceil(filtered.length / pageSize)) : 1
+  const curPage = Math.min(page, totalPages)
+  const orders = withFilters ? filtered.slice((curPage - 1) * pageSize, curPage * pageSize) : filtered
 
   return (
     <div className="min-h-screen flex flex-col bg-muted/30">
@@ -450,10 +467,43 @@ export default function ExternalPortalPage() {
       </header>
 
       <main className="flex-1 w-full max-w-3xl mx-auto px-4 py-6 space-y-4">
+        {withFilters && (
+          <Card>
+            <CardContent className="py-3 grid gap-2 sm:grid-cols-[1fr_auto_auto] items-end">
+              <div className="space-y-1">
+                <label className="text-xs font-medium text-muted-foreground">Paciente</label>
+                <Input
+                  placeholder="Buscar pelo nome do paciente"
+                  value={search}
+                  onChange={(e) => { setSearch(e.target.value); setPage(1) }}
+                />
+              </div>
+              <div className="space-y-1">
+                <label className="text-xs font-medium text-muted-foreground">Data</label>
+                <Input
+                  type="date"
+                  value={filterDate}
+                  onChange={(e) => { setFilterDate(e.target.value); setPage(1) }}
+                />
+              </div>
+              <div className="space-y-1">
+                <label className="text-xs font-medium text-muted-foreground">Por página</label>
+                <select
+                  className="h-10 rounded-md border border-input bg-background px-2 text-sm"
+                  value={pageSize}
+                  onChange={(e) => { setPageSize(Number(e.target.value)); setPage(1) }}
+                >
+                  {[10, 20, 30, 40, 50].map((n) => <option key={n} value={n}>{n}</option>)}
+                </select>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
         {orders.length === 0 && (
           <Card>
             <CardContent className="py-10 text-center text-muted-foreground text-sm">
-              Nenhum pedido encontrado para este acesso.
+              {withFilters ? 'Nenhum paciente encontrado para os filtros escolhidos.' : 'Nenhum pedido encontrado para este acesso.'}
             </CardContent>
           </Card>
         )}
@@ -550,6 +600,16 @@ export default function ExternalPortalPage() {
             </CardContent>
           </Card>
         ))}
+
+        {withFilters && filtered.length > 0 && (
+          <div className="flex items-center justify-between text-sm text-muted-foreground">
+            <span>{filtered.length} pedido(s) · Página {curPage} de {totalPages}</span>
+            <div className="flex gap-2">
+              <Button size="sm" variant="outline" disabled={curPage <= 1} onClick={() => setPage(curPage - 1)}>Anterior</Button>
+              <Button size="sm" variant="outline" disabled={curPage >= totalPages} onClick={() => setPage(curPage + 1)}>Próxima</Button>
+            </div>
+          </div>
+        )}
 
         {laudoError && (
           <div className="flex items-start gap-2 text-sm text-destructive bg-destructive/10 rounded-md p-3">
