@@ -347,6 +347,17 @@ a[href*="lovable.app"],
 #lab-report-print-root { display: none; }
 
 :root { --fiscal-paper: 0 0% 100%; --fiscal-ink: 0 0% 0%; }
+.receipt-combined-sheet { display: grid; grid-template-rows: 1fr 1fr; background: hsl(var(--fiscal-paper)); color: hsl(var(--fiscal-ink)); }
+.receipt-half { position: relative; min-height: 0; }
+.receipt-half + .receipt-half { border-top: 1px dashed currentColor; }
+.receipt-half-content { position: absolute; top: 6px; left: 0; transform-origin: top left; }
+.attendance-consent { width: 190mm; padding: 8mm; background: hsl(var(--fiscal-paper)); color: hsl(var(--fiscal-ink)); font-size: 11pt; line-height: 1.5; }
+.attendance-consent header { text-align: center; border-bottom: 1px solid currentColor; padding-bottom: 4mm; }
+.attendance-consent h1 { text-align: center; font-weight: 700; font-size: 14pt; margin: 7mm 0; }
+.attendance-consent h2, .attendance-consent h3 { font-weight: 700; }
+.attendance-consent p, .attendance-consent ul { margin: 4mm 0; }
+.attendance-consent li { margin-left: 5mm; list-style: disc; }
+.consent-signature { border-top: 1px solid currentColor; margin: 16mm 8mm 4mm; text-align: center; padding-top: 2mm; }
 @media print {
   body.printing-caixa > *:not(#caixa-print-root) { display: none !important; }
   body.printing-caixa #caixa-print-root {

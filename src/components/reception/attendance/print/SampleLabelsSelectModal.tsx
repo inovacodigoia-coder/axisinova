@@ -18,9 +18,10 @@ interface Props {
   birthDate?: string
   /** Imprime direto todas as amostras coletadas, sem tela de selecao. */
   autoPrint?: boolean
+  onPrinted?: () => void
 }
 
-export function SampleLabelsSelectModal({ open, onClose, order, birthDate, autoPrint }: Props) {
+export function SampleLabelsSelectModal({ open, onClose, order, birthDate, autoPrint, onPrinted }: Props) {
   const companySequenceId = useCompanySequenceId()
   const { settings } = useLabSettings()
   const { user } = useAuth()
@@ -128,6 +129,7 @@ export function SampleLabelsSelectModal({ open, onClose, order, birthDate, autoP
       <SampleLabelsPrintModal
         open={printOpen}
         autoPrint={autoPrint}
+        onPrinted={onPrinted}
         onClose={() => { setPrintOpen(false); if (autoPrint) onClose() }}
         orderNumber={order?.orderNumber || ''}
         patientName={order?.patientName || ''}

@@ -43,6 +43,7 @@ interface Props {
   labels: SampleLabelData[]
   autoPrint?: boolean
   labName?: string
+  onPrinted?: () => void
 }
 
 export function SampleLabelsPrintModal({
@@ -57,6 +58,7 @@ export function SampleLabelsPrintModal({
   labels,
   autoPrint,
   labName,
+  onPrinted,
 }: Props) {
   const [enviando, setEnviando] = useState(false)
   const { config } = useLabelConfig()
@@ -112,6 +114,7 @@ export function SampleLabelsPrintModal({
         }))
         const r = await imprimirEtiquetas(TIPOS_DOCUMENTO.etiquetaCliente, lista)
         toast.success(r.mensagem || `${r.etiquetas} etiqueta(s) enviada(s) para impressão.`)
+        onPrinted?.()
         return
       }
       if (!ativo) {

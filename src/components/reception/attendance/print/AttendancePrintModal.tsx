@@ -9,6 +9,8 @@ import { ServidorImpressaoStatus } from '@/components/print/ServidorImpressaoSta
 import { servidorImpressaoAtivo, imprimirDireto, TIPOS_DOCUMENTO } from '@/lib/impressaoLocal'
 import { gerarPdfElementos } from '@/lib/labelPdf'
 import type { AttendanceControlDocument, PrinterConfig } from '@/types/payment-print.types'
+import { AttendanceReceiptSheet } from './AttendanceReceiptSheet'
+import { AttendanceConsent } from './AttendanceConsent'
 
 interface Props {
   open: boolean
@@ -18,9 +20,12 @@ interface Props {
   testMode?: boolean
   overrideConfig?: PrinterConfig
   vias?: ('patient' | 'establishment')[]
+  documentType?: string
+  combinedSheet?: boolean
+  onPrinted?: () => void
 }
 
-export function AttendancePrintModal({ open, onClose, document: doc, autoPrint, testMode, overrideConfig, vias: propVias }: Props) {
+export function AttendancePrintModal({ open, onClose, document: doc, autoPrint, testMode, overrideConfig, vias: propVias, documentType, combinedSheet, onPrinted }: Props) {
   const { printers, getDefault } = usePrinterConfig()
   const defaultConfig = useMemo(() => overrideConfig || getDefault(), [overrideConfig, getDefault])
   const [selectedPrinterId, setSelectedPrinterId] = useState<string>(defaultConfig.id)
@@ -72,13 +77,17 @@ export function AttendancePrintModal({ open, onClose, document: doc, autoPrint, 
               : selectedConfig.paperSize === '58mm'
                 ? 58
                 : 80
-          const tipo = isTermica ? TIPOS_DOCUMENTO.comprovanteCliente : TIPOS_DOCUMENTO.controleInterno
+          const tipo = documentType === 'termo_consentimento' ? TIPOS_DOCUMENTO.termoConsentimento
+            : documentType === 'controle_interno' ? TIPOS_DOCUMENTO.controleInterno
+            : documentType === 'comprovante' || combinedSheet ? TIPOS_DOCUMENTO.comprovanteCliente
+            : isTermica ? TIPOS_DOCUMENTO.comprovanteCliente : TIPOS_DOCUMENTO.controleInterno
           const folha = selectedConfig.paperSize === 'a4' || selectedConfig.paperSize === 'a5'
             ? { formato: selectedConfig.paperSize, orientacao: selectedConfig.orientation === 'landscape' ? 'landscape' as const : 'portrait' as const, margemMm: 10 }
             : undefined
           const pdf = await gerarPdfElementos(nodes, widthMm, folha)
           const r = await imprimirDireto(tipo, pdf)
           toast.success(r.mensagem || 'Enviado para a impressora.')
+          onPrinted?.()
           return
         }
       }
@@ -182,7 +191,11 @@ export function AttendancePrintModal({ open, onClose, document: doc, autoPrint, 
           <style>{`@media print { @page { size: ${pageSize}; margin: ${pageMargin}; } }`}</style>
           <div id="receipt-print-root" className="print-receipt flex flex-col gap-0 items-center">
 
-            {sheets.map(({ copyIdx, via }, idx) => (
+            {combinedSheet || documentType === 'termo_consentimento' ? Array.from({ length: copies }, (_, idx) => (
+              <div key={idx} className={idx < copies - 1 ? 'print:break-after-page' : ''}>
+                {combinedSheet ? <AttendanceReceiptSheet document={doc} config={selectedConfig} /> : <AttendanceConsent document={doc} />}
+              </div>
+            )) : sheets.map(({ copyIdx, via }, idx) => (
               <div
                 key={`${copyIdx}-${via}`}
                 className={idx < sheets.length - 1 ? 'print:break-after-page print:mb-0' : 'print:mb-0'}
