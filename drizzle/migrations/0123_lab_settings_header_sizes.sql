@@ -1,0 +1,1 @@
+ALTER TABLE public.lab_settings ADD COLUMN IF NOT EXISTS report_header_style jsonb NOT NULL DEFAULT '{}'::jsonb;

@@ -6637,6 +6637,7 @@ export type Database = {
           phone: string | null
           prazo_contagem_padrao: string
           report_footer_text: string | null
+          report_header_style: Json
           report_header_subtitle: string | null
           report_header_title: string | null
           report_institutional_warning: string | null
@@ -6686,6 +6687,7 @@ export type Database = {
           phone?: string | null
           prazo_contagem_padrao?: string
           report_footer_text?: string | null
+          report_header_style?: Json
           report_header_subtitle?: string | null
           report_header_title?: string | null
           report_institutional_warning?: string | null
@@ -6735,6 +6737,7 @@ export type Database = {
           phone?: string | null
           prazo_contagem_padrao?: string
           report_footer_text?: string | null
+          report_header_style?: Json
           report_header_subtitle?: string | null
           report_header_title?: string | null
           report_institutional_warning?: string | null

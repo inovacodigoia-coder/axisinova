@@ -496,6 +496,7 @@ export default function PDFPreviewModal({
                       secondaryLogo={labSettings?.report_logo_secondary_url || undefined}
                       laboratoryName={labSettings?.report_header_title || labSettings?.lab_name || undefined}
                       laboratorySubtitle={labSettings?.report_header_subtitle || undefined}
+                      headerStyle={(labSettings as any)?.report_header_style}
                       institutionalWarning={labSettings?.report_institutional_warning || undefined}
                       footerText={labSettings?.report_footer_text || undefined}
                       technicalResponsible={{

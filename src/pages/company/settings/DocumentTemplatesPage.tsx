@@ -21,7 +21,7 @@ export default function DocumentTemplatesPage(){
   const {user}=useAuth(); const navigate=useNavigate(); const {settings}=useLabSettings(); const {templates,loading,error,refresh}=useDocumentTemplates()
   const [edit,setEdit]=useState<DocumentTemplate|null>(null);const [preview,setPreview]=useState<DocumentTemplate|null>(null); const [busy,setBusy]=useState(false); const [remove,setRemove]=useState<{template:DocumentTemplate;restore:boolean}|null>(null)
   const canEdit=user?.role==='company_admin'||user?.role==='super_admin'
-  const header={companyLogo:settings?.report_logo_primary_url || undefined,secondaryLogo:settings?.report_logo_secondary_url || undefined,laboratoryName:settings?.report_header_title || user?.companyName || 'LABORATÓRIO',laboratorySubtitle:settings?.report_header_subtitle || undefined}
+  const header={companyLogo:settings?.report_logo_primary_url || undefined,secondaryLogo:settings?.report_logo_secondary_url || undefined,laboratoryName:settings?.report_header_title || user?.companyName || 'LABORATÓRIO',laboratorySubtitle:settings?.report_header_subtitle || undefined,headerStyle:(settings as any)?.report_header_style}
   const save=async(t:DocumentTemplate)=>{
     validateDocument(t.body_html)
     if(t.name.trim().length<2 || t.name.length>120) throw new Error('Informe um nome de 2 a 120 caracteres')
