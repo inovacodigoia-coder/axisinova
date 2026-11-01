@@ -335,16 +335,20 @@ function openReportExample(settings: any) {
   const esc = (s: string) => String(s || '').replace(/[<>&]/g, (c) => ({ '<': '&lt;', '>': '&gt;', '&': '&amp;' }[c] as string))
   const logoL = settings?.report_logo_primary_url
   const logoR = settings?.report_logo_secondary_url
+  const hs = settings?.report_header_style || {}
+  const px = (v: any, d: number) => (typeof v === 'number' && v > 0 ? v : d)
   const html = `<!doctype html><html lang="pt-BR"><head><meta charset="utf-8" />
 <title>Laudo de exemplo</title>
 <style>
   body{font-family:Georgia,serif;color:#27272a;margin:0;padding:32px;background:#f4f4f5}
   .page{background:#fff;max-width:794px;margin:0 auto;padding:40px;box-shadow:0 1px 6px rgba(0,0,0,.1);position:relative}
   .head{display:flex;align-items:center;justify-content:space-between;gap:16px;border-bottom:2px solid #27272a;padding-bottom:12px}
-  .head img{max-height:64px;max-width:140px;object-fit:contain}
+  .head img{width:auto;object-fit:contain}
+  .head img.l{height:${px(hs.logoPrimaryHeight,56)}px}
+  .head img.r{height:${px(hs.logoSecondaryHeight,56)}px}
   .head .ttl{text-align:center;flex:1}
-  .head h1{font-size:18px;margin:0;text-transform:uppercase}
-  .head p{font-size:11px;margin:4px 0 0;color:#52525b}
+  .head h1{font-size:${px(hs.titleSize,16)}px;margin:0;text-transform:uppercase}
+  .head p{font-size:${px(hs.subtitleSize,10)}px;margin:4px 0 0;color:#52525b}
   .ph{height:64px;width:140px;border:1px dashed #d4d4d8;border-radius:4px;display:flex;align-items:center;justify-content:center;font-size:9px;color:#a1a1aa}
   .info{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;font-size:11px;margin-top:16px}
   .warn{margin-top:16px;padding:10px;border:1px solid #e4e4e7;background:#fafafa;font-size:11px;white-space:pre-wrap}
@@ -358,10 +362,10 @@ function openReportExample(settings: any) {
 </style></head><body><div class="page">
 ${settings?.report_watermark_enabled !== false ? `<div class="wm">${esc(settings?.report_watermark_text || '[ CÓPIA NÃO AUTENTICADA ]')}</div>` : ''}
 <div class="head">
-  ${logoL ? `<img src="${logoL}" alt="Logo principal" />` : '<div class="ph">LOGO ESQUERDA</div>'}
+  ${logoL ? `<img class="l" src="${logoL}" alt="Logo principal" />` : '<div class="ph">LOGO ESQUERDA</div>'}
   <div class="ttl"><h1>${esc(settings?.report_header_title || 'LABORATÓRIO MUNICIPAL CENTRAL')}</h1>
   ${settings?.report_header_subtitle ? `<p>${esc(settings.report_header_subtitle)}</p>` : ''}</div>
-  ${logoR ? `<img src="${logoR}" alt="Logo secundário" />` : '<div class="ph">LOGO DIREITA</div>'}
+  ${logoR ? `<img class="r" src="${logoR}" alt="Logo secundário" />` : '<div class="ph">LOGO DIREITA</div>'}
 </div>
 <h2 style="font-size:15px;margin:16px 0 0;text-transform:uppercase">MARIA DA SILVA SANTOS</h2>
 <div class="info">
@@ -384,6 +388,23 @@ ${settings?.report_institutional_warning ? `<div class="warn">${esc(settings.rep
   if (!w) { toast.error('Permita pop-ups para visualizar o laudo.'); return }
   w.document.write(html)
   w.document.close()
+}
+
+function SizeControl({ settings, setSettings, field, def, min, max, step = 1 }: { settings: any, setSettings: (s: any) => void, field: string, def: number, min: number, max: number, step?: number }) {
+  const style = settings?.report_header_style || {}
+  const cur = typeof style[field] === 'number' && style[field] > 0 ? style[field] : def
+  const update = (v: number) => {
+    const val = Math.min(max, Math.max(min, Math.round(v)))
+    setSettings((prev: any) => ({ ...(prev || {}), report_header_style: { ...((prev || {}).report_header_style || {}), [field]: val } }))
+  }
+  return (
+    <div className="flex items-center gap-1 shrink-0">
+      <Button type="button" variant="outline" size="icon" className="h-7 w-7" onClick={() => update(cur - step)} disabled={cur <= min} title="Diminuir">−</Button>
+      <Input type="number" value={cur} min={min} max={max} onChange={(e) => update(Number(e.target.value) || def)} className="h-7 w-16 text-center text-xs px-1" />
+      <span className="text-[10px] text-muted-foreground">px</span>
+      <Button type="button" variant="outline" size="icon" className="h-7 w-7" onClick={() => update(cur + step)} disabled={cur >= max} title="Aumentar">+</Button>
+    </div>
+  )
 }
 
 function ReportLayoutSection({ settings, setSettings }: { settings: any, setSettings: (s: any) => void }) {
@@ -431,7 +452,7 @@ function ReportLayoutSection({ settings, setSettings }: { settings: any, setSett
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <div className="space-y-2">
-          <Label>Título do cabeçalho</Label>
+          <div className="flex items-center justify-between gap-2"><Label>Título do cabeçalho</Label><SizeControl settings={settings} setSettings={setSettings} field="titleSize" def={16} min={8} max={40} step={1} /></div>
           <Input 
             value={settings?.report_header_title || ''} 
             onChange={(e) => setSettings({ ...settings, report_header_title: e.target.value })}
@@ -440,7 +461,7 @@ function ReportLayoutSection({ settings, setSettings }: { settings: any, setSett
           <p className="text-[10px] text-muted-foreground">Fallback: nome do laboratório.</p>
         </div>
         <div className="space-y-2">
-          <Label>Subtítulo (opcional)</Label>
+          <div className="flex items-center justify-between gap-2"><Label>Subtítulo (opcional)</Label><SizeControl settings={settings} setSettings={setSettings} field="subtitleSize" def={10} min={6} max={28} step={1} /></div>
           <Input 
             value={settings?.report_header_subtitle || ''}
             onChange={(e) => setSettings({ ...settings, report_header_subtitle: e.target.value })}
@@ -451,7 +472,7 @@ function ReportLayoutSection({ settings, setSettings }: { settings: any, setSett
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <div className="space-y-3">
-          <Label>Logo principal (esquerda)</Label>
+          <div className="flex items-center justify-between gap-2"><Label>Logo principal (esquerda)</Label><SizeControl settings={settings} setSettings={setSettings} field="logoPrimaryHeight" def={56} min={20} max={200} step={4} /></div>
           <div className="flex items-center gap-4 p-4 border rounded-xl bg-muted/20">
             <div className="h-16 w-16 bg-card border rounded flex items-center justify-center overflow-hidden shrink-0">
               {settings?.report_logo_primary_url ? (
@@ -481,7 +502,7 @@ function ReportLayoutSection({ settings, setSettings }: { settings: any, setSett
         </div>
         
         <div className="space-y-3">
-          <Label>Logo secundário (direita, opcional)</Label>
+          <div className="flex items-center justify-between gap-2"><Label>Logo secundário (direita, opcional)</Label><SizeControl settings={settings} setSettings={setSettings} field="logoSecondaryHeight" def={56} min={20} max={200} step={4} /></div>
           <div className="flex items-center gap-4 p-4 border rounded-xl bg-muted/20">
             <div className="h-16 w-16 bg-card border rounded flex items-center justify-center overflow-hidden shrink-0">
               {settings?.report_logo_secondary_url ? (
