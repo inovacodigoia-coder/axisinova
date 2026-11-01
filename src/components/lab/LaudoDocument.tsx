@@ -11,6 +11,7 @@ interface LaudoDocumentProps {
   secondaryLogo?: string;
   laboratoryName?: string;
   laboratorySubtitle?: string;
+  headerStyle?: import("./LabReportHeader").LabReportHeaderStyle | null;
   institutionalWarning?: string;
   footerText?: string;
   technicalResponsible?: {
@@ -276,6 +277,7 @@ export default function LaudoDocument({
   secondaryLogo,
   laboratoryName = 'LABORATÓRIO MUNICIPAL CENTRAL',
   laboratorySubtitle,
+  headerStyle,
   institutionalWarning,
   footerText,
   technicalResponsible,
@@ -398,7 +400,7 @@ export default function LaudoDocument({
           )}
 
           {/* Cabeçalho */}
-          <LabReportHeader companyLogo={companyLogo} secondaryLogo={secondaryLogo} laboratoryName={laboratoryName} laboratorySubtitle={laboratorySubtitle} />
+          <LabReportHeader companyLogo={companyLogo} secondaryLogo={secondaryLogo} laboratoryName={laboratoryName} laboratorySubtitle={laboratorySubtitle} headerStyle={headerStyle} />
 
           {/* Identificação do paciente (repetida em todas as folhas) */}
           <h2 className="text-[17px] font-semibold uppercase tracking-wide mb-2">{order.patientName || 'NOME DO PACIENTE'}</h2>

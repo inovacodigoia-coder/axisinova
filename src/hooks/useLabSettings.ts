@@ -16,6 +16,7 @@ export interface LabSettingsData {
   address_state?: string | null
   report_header_title?: string | null
   report_header_subtitle?: string | null
+  report_header_style?: { titleSize?: number; subtitleSize?: number; logoPrimaryHeight?: number; logoSecondaryHeight?: number } | null
   report_logo_primary_url?: string | null
   report_logo_secondary_url?: string | null
   report_institutional_warning?: string | null
