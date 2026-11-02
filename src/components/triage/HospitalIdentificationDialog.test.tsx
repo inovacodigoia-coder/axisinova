@@ -1,12 +1,26 @@
-import { afterEach, describe, it, expect, vi } from 'vitest'
+import { afterEach, beforeEach, describe, it, expect, vi } from 'vitest'
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { HospitalIdentificationDialog } from './HospitalIdentificationDialog'
-const { rpc, print }=vi.hoisted(()=>({rpc:vi.fn(),print:vi.fn()}))
+const { rpc, print, active }=vi.hoisted(()=>({rpc:vi.fn(),print:vi.fn(),active:vi.fn()}))
+vi.mock('@/lib/impressaoLocal',()=>({AISAXIUS_URL:'http://localhost:8089',servidorImpressaoAtivo:active}))
 vi.mock('@/integrations/supabase/client',()=>({supabase:{rpc,from:()=>({select:()=>({eq:()=>({order:()=>Promise.resolve({data:[]})})})})}}))
 vi.mock('@/lib/hospitalLabels',()=>({defaultHospitalLabel:{},hospitalLabelPdf:()=>new Blob(),dispatchHospitalPdf:print}))
 const data={episodeId:'episode',patientName:'Paciente teste',companions:[],maxCompanions:1,canRegister:true,locationRequired:false,labelConfig:{},gender:'F',birthDate:'2000-01-01'}
 afterEach(()=>{cleanup();vi.clearAllMocks()})
+beforeEach(()=>{active.mockResolvedValue(true)})
 describe('fluxo de identificação hospitalar',()=>{
+  it('sem conexão não prepara trabalho nem envia; verificar conexão não reimprime',async()=>{
+    rpc.mockResolvedValue({data,error:null});active.mockResolvedValueOnce(false)
+    render(<HospitalIdentificationDialog context="triage" contextId="entry" onClose={()=>{}} />)
+    fireEvent.click(await screen.findByRole('radio',{name:/Etiqueta do paciente/}))
+    fireEvent.click(screen.getByRole('button',{name:'Imprimir'}))
+    await waitFor(()=>expect(active).toHaveBeenCalledTimes(1))
+    await waitFor(()=>expect((screen.getByRole('button',{name:'Imprimir'}) as HTMLButtonElement).disabled).toBe(true))
+    expect(rpc).not.toHaveBeenCalledWith('hospital_identificacao_preparar',expect.anything());expect(print).not.toHaveBeenCalled()
+    fireEvent.click(screen.getByRole('button',{name:'Verificar conexão'}))
+    await waitFor(()=>expect((screen.getByRole('button',{name:'Imprimir'}) as HTMLButtonElement).disabled).toBe(false))
+    expect(print).not.toHaveBeenCalled();expect(active).toHaveBeenCalledTimes(2)
+  })
   it('seleção obrigatória impede impressão antes de escolher',async()=>{rpc.mockResolvedValue({data,error:null});render(<HospitalIdentificationDialog context="triage" contextId="entry" onClose={()=>{}} />);await screen.findByRole('radio',{name:/Etiqueta do paciente/});expect((screen.getByRole('button',{name:'Imprimir'}) as HTMLButtonElement).disabled).toBe(true);fireEvent.click(screen.getByRole('radio',{name:/Etiqueta do paciente/}));expect((screen.getByRole('button',{name:'Imprimir'}) as HTMLButtonElement).disabled).toBe(false)})
   it('falha ao salvar acompanhante é visível e impede impressão sem registro',async()=>{rpc.mockImplementation((name:string)=>Promise.resolve(name==='hospital_acompanhante_adicionar'?{error:{message:'Falha no cadastro'}}:{data,error:null}));render(<HospitalIdentificationDialog context="triage" contextId="entry" onClose={()=>{}} />);fireEvent.click(await screen.findByRole('radio',{name:/Etiqueta de acompanhante/}));fireEvent.change(screen.getByLabelText('Nome do novo acompanhante'),{target:{value:'Maria'}});fireEvent.click(screen.getByRole('button',{name:'Salvar acompanhante'}));await screen.findByText('Falha no cadastro');expect(print).not.toHaveBeenCalled();expect((screen.getByRole('button',{name:'Imprimir'}) as HTMLButtonElement).disabled).toBe(true)})
   it('acompanhante salvo é recarregado e impressão finaliza após confirmação',async()=>{let added=false;rpc.mockImplementation((name:string)=>{if(name==='hospital_acompanhante_adicionar'){added=true;return Promise.resolve({data:'companion',error:null})}if(name==='hospital_identificacao_preparar')return Promise.resolve({data:{...data,companions:[{id:'companion',nome:'Maria'}],printId:'job'},error:null});return Promise.resolve({data:{...data,companions:added?[{id:'companion',nome:'Maria'}]:[]},error:null})});print.mockResolvedValue('confirmado');const close=vi.fn();render(<HospitalIdentificationDialog context="triage" contextId="entry" onClose={close} />);fireEvent.click(await screen.findByRole('radio',{name:/Etiqueta de acompanhante/}));fireEvent.change(screen.getByLabelText('Nome do novo acompanhante'),{target:{value:'Maria'}});fireEvent.click(screen.getByRole('button',{name:'Salvar acompanhante'}));await screen.findByText('Limite de acompanhantes atingido. Apenas reimpressão está disponível.');fireEvent.click(screen.getByRole('button',{name:'Imprimir'}));await waitFor(()=>expect(close).toHaveBeenCalled());expect(rpc).toHaveBeenCalledWith('hospital_identificacao_finalizar',{_print:'job',_status:'confirmado'});expect(print).toHaveBeenCalledTimes(1)})

@@ -101,14 +101,15 @@ export async function imprimirEtiquetas(
 
 /** Verifica se o app está aberto na bandeja do Windows, antes de tentar imprimir. */
 export async function servidorImpressaoAtivo(): Promise<boolean> {
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 2000);
   try {
-    const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 2000);
     const resp = await fetch(`${AISAXIUS_URL}/api/ping`, { signal: controller.signal });
-    clearTimeout(timeout);
     return resp.ok;
   } catch {
     return false;
+  } finally {
+    clearTimeout(timeout);
   }
 }
 
@@ -134,11 +135,16 @@ export async function imprimirDireto(
 ): Promise<{ ok: true; mensagem: string }> {
   const pdfBase64 = await blobParaBase64(pdfBlob);
 
-  const resp = await fetch(`${AISAXIUS_URL}/print`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ tipo, pdfBase64 }),
-  });
+  let resp: Response;
+  try {
+    resp = await fetch(`${AISAXIUS_URL}/print`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ tipo, pdfBase64 }),
+    });
+  } catch {
+    throw new Error("A conexão com o AisAxius falhou durante o envio. Confira a fila da impressora antes de tentar novamente: não foi possível confirmar se o documento chegou.");
+  }
 
   const data = await resp.json();
 
