@@ -890,6 +890,27 @@
       "when": 1793591808695,
       "tag": "0126_hospital_local_texto",
       "breakpoints": true
+    },
+    {
+      "idx": 127,
+      "version": "7",
+      "when": 1793594191056,
+      "tag": "0127_bi_hospitalar_modulo",
+      "breakpoints": true
+    },
+    {
+      "idx": 128,
+      "version": "7",
+      "when": 1793594264706,
+      "tag": "0128_bi_hospitalar_gatilhos",
+      "breakpoints": true
+    },
+    {
+      "idx": 129,
+      "version": "7",
+      "when": 1793594347991,
+      "tag": "0129_bi_hospitalar_permissoes_codigos",
+      "breakpoints": true
     }
   ]
 }

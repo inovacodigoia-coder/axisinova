@@ -76,6 +76,7 @@ import GlosasPage from './billing/GlosasPage'
 import CorrectionQueuePage from './billing/CorrectionQueuePage'
 import ResultsListPage from './results/ResultsListPage'
 import BIDashboardPage from './bi/BIDashboardPage'
+import BiHospitalarPage from './bi/BiHospitalarPage'
 import ProductionReportPage from './bi/ProductionReportPage'
 import FinancialReportPage from './bi/FinancialReportPage'
 import SchedulingReportPage from './bi/SchedulingReportPage'
@@ -321,6 +322,7 @@ function PortalContent() {
               <Route path="bi/convenios" element={<ConvenioReportPage />} />
               <Route path="bi/medicos" element={<DoctorPerformancePage />} />
               <Route path="bi/atendimento" element={<QueueBIPage />} />
+              <Route path="bi-hospitalar" element={<BiHospitalarPage />} />
               {/* Queue System */}
               <Route path="filas" element={<Navigate to="/app/filas/admin/unidades" replace />} />
               <Route path="filas/tv" element={<TVSelectorPage />} />

@@ -10,6 +10,7 @@ import { NoAppointmentsTodayState } from '@/components/reception/empty-states/No
 import { Users, Clock, Building2, Ticket as TicketIcon, PhoneCall, CheckCircle2, RefreshCw } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { toast } from 'sonner'
+import { BiEvasaoButton } from '@/components/bi/BiEvasaoDialog'
 
 interface UnitRow { id: string; name: string }
 interface TicketRow {
@@ -241,6 +242,9 @@ export default function ReceptionPage() {
                           className="flex-1 text-[11px] py-1 px-2 rounded bg-white font-semibold hover:opacity-80 flex items-center justify-center gap-1">
                           <CheckCircle2 className="h-3 w-3" /> Finalizar
                         </button>
+                      )}
+                      {(t as any).hospital_episode_id && t.status !== 'finalized' && (
+                        <BiEvasaoButton episodioId={(t as any).hospital_episode_id} pacienteNome={t.patient_name} />
                       )}
                     </div>
                   </div>
