@@ -126,6 +126,7 @@ import LabCostCentersPage from './financeiro/LabCostCentersPage'
 import LabFinancialIndicatorsPage from './financeiro/LabFinancialIndicatorsPage'
 import LabStockDashboardPage from './estoque/LabStockDashboardPage'
 import LabStockItemsPage from './estoque/LabStockItemsPage'
+import AlmoxarifadoPage from './estoque/AlmoxarifadoPage'
 import LabStockLotsPage from './estoque/LabStockLotsPage'
 import LabStockMovementsPage from './estoque/LabStockMovementsPage'
 import LabStockSuppliersPage from './estoque/LabStockSuppliersPage'
@@ -249,6 +250,7 @@ function PortalContent() {
         {/* Main content */}
         <main className="flex-1 p-4 sm:p-6">
           <BreadcrumbNav />
+          {['/app/triagem', '/app/postos-coleta', '/app/internacao', '/app/nutricao', '/app/medico'].includes(location.pathname) && <div className="flex justify-end mb-3"><Button variant="outline" onClick={() => navigate('/app/estoque/solicitacoes')}>Solicitar materiais / estoque do setor</Button></div>}
           <PageTransition key={location.pathname}>
             <Routes>
               <Route path="dashboard" element={<CompanyDashboard />} />
@@ -362,10 +364,11 @@ function PortalContent() {
               <Route path="financeiro/indicadores" element={<LabFinancialIndicatorsPage />} />
 
               {/* Stock Module */}
-              <Route path="estoque" element={<LabStockDashboardPage />} />
-              <Route path="estoque/itens" element={<LabStockItemsPage />} />
+              <Route path="estoque" element={<AlmoxarifadoPage />} />
+              <Route path="estoque/solicitacoes" element={<AlmoxarifadoPage />} />
+              <Route path="estoque/itens" element={<AlmoxarifadoPage initialView="itens" />} />
               <Route path="estoque/lotes" element={<LabStockLotsPage />} />
-              <Route path="estoque/movimentacoes" element={<LabStockMovementsPage />} />
+              <Route path="estoque/movimentacoes" element={<AlmoxarifadoPage initialView="movimentos" />} />
               <Route path="portais" element={<ExternalPortalsPage />} />
               <Route path="portais/parceiros" element={<PartnersHubPage />} />
               <Route path="portais/parceiros/pedidos" element={<PartnersHubPage />} />
@@ -388,9 +391,10 @@ function PortalContent() {
               {/* Pharmacy Module */}
               <Route path="farmacia" element={<LabPharmacyDashboardPage />} />
               <Route path="farmacia/medicamentos" element={<LabPharmacyMedsPage />} />
+              <Route path="farmacia/solicitacoes" element={<AlmoxarifadoPage pharmacy />} />
               <Route path="farmacia/prescricoes" element={<LabPharmacyPrescriptionsPage />} />
               <Route path="farmacia/dispensacao" element={<LabPharmacyPrescriptionsPage />} /> {/* Link to queue */}
-              <Route path="farmacia/estoque" element={<LabPharmacyStockPage />} />
+              <Route path="farmacia/estoque" element={<AlmoxarifadoPage pharmacy initialView="itens" />} />
               <Route path="farmacia/relatorios" element={<LabPharmacyReportsPage />} />
 
               {/* Soroteca Module */}

@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { Link } from 'react-router-dom'
 import { Pill, Search, Plus, Pencil, History } from 'lucide-react'
 import { toast } from 'sonner'
 import { Card, CardContent } from '@/components/ui/card'
@@ -54,6 +55,7 @@ export default function LabPharmacyMedsPage() {
         </div>
         {perm.criar && <Button className="gap-2" onClick={() => setEdit({ id: null, f: { ...vazio } })}><Plus className="h-4 w-4" />Novo medicamento</Button>}
       </div>
+      <div className="flex flex-wrap gap-2"><Button variant="outline" asChild><Link to="/app/farmacia/solicitacoes">Solicitar ao almoxarifado</Link></Button><Button variant="outline" asChild><Link to="/demonstracao/almoxarifado">Ver demonstração de abastecimento</Link></Button></div>
       <Card><CardContent className="p-4">
         <div className="relative max-w-md">
           <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />

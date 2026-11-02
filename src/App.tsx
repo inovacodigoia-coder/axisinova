@@ -48,6 +48,7 @@ const DesignSystemPage = lazy(() => import("./pages/DesignSystemPage"));
 const DocsPage = lazy(() => import("./pages/DocsPage"));
 const ExternalPortalPage = lazy(() => import("./pages/portal/ExternalPortalPage"));
 const OAuthConsent = lazy(() => import("./pages/OAuthConsent"));
+const AlmoxarifadoDemo = lazy(() => import("./pages/company/estoque/AlmoxarifadoPage"));
 
 const queryClient = new QueryClient();
 
@@ -69,6 +70,7 @@ const App = () => (
                       <Route path="/" element={<LandingPage />} />
                       <Route path="/verde" element={<GreenScreenPage />} />
                       <Route path="/design-system" element={<DesignSystemPage />} />
+                      <Route path="/demonstracao/almoxarifado" element={<AlmoxarifadoDemo demoOnly />} />
                       <Route path="/cadastro" element={<RegisterPage />} />
                       <Route path="/login" element={<LoginPage />} />
                       <Route path="/forgot-password" element={<ForgotPasswordPage />} />

@@ -132,6 +132,7 @@ export const NAV_SECTIONS: NavSection[] = [
     items: [
       { label: 'Dashboard Estoque', icon: 'Warehouse', path: '/app/estoque', module: 'inventory' },
       { label: 'Itens de Estoque', icon: 'Package', path: '/app/estoque/itens', module: 'inventory' },
+      { label: 'Solicitações dos setores', icon: 'Package', path: '/app/estoque/solicitacoes', module: null },
       { label: 'Gestão de Lotes', icon: 'Database', path: '/app/estoque/lotes', module: 'inventory' },
       { label: 'Movimentações', icon: 'RefreshCw', path: '/app/estoque/movimentacoes', module: 'inventory' },
       { label: 'Fornecedores', icon: 'Building2', path: '/app/estoque/fornecedores', module: 'inventory' },
@@ -146,6 +147,7 @@ export const NAV_SECTIONS: NavSection[] = [
       { label: 'Prescrições', icon: 'ClipboardList', path: '/app/farmacia/prescricoes', module: 'pharmacy' },
       { label: 'Medicamentos', icon: 'Pill', path: '/app/farmacia/medicamentos', module: 'pharmacy' },
       { label: 'Estoque Farmácia', icon: 'Warehouse', path: '/app/farmacia/estoque', module: 'pharmacy' },
+      { label: 'Solicitar ao almoxarifado', icon: 'Package', path: '/app/farmacia/solicitacoes', module: 'pharmacy' },
       { label: 'Relatórios Farmácia', icon: 'BarChart3', path: '/app/farmacia/relatorios', module: 'pharmacy' },
     ],
   },
