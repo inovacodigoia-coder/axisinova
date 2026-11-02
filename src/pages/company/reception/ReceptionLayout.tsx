@@ -57,6 +57,7 @@ function mapDbTicket(row: any): Ticket {
 export default function ReceptionLayout() {
   const { stats } = useQueue()
   const { user } = useAuth()
+  const { settings: labSettings } = useLabSettings()
   const { state, dispatch, getUnitQueues, getUnitGuiches, getUnitTVs, getUnitTickets, loadCompanyData } = useQueueSystem()
   const isDemoCompany = user?.companyId === DEMO_COMPANY_ID
 
