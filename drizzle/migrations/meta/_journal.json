@@ -925,6 +925,13 @@
       "when": 1793594854224,
       "tag": "0131_bi_hospitalar_imutabilidade_generica",
       "breakpoints": true
+    },
+    {
+      "idx": 132,
+      "version": "7",
+      "when": 1793594898575,
+      "tag": "0132_bi_hospitalar_imutabilidade_aninhada",
+      "breakpoints": true
     }
   ]
 }
