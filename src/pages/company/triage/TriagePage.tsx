@@ -24,7 +24,7 @@ import { HospitalIdentificationDialog } from '@/components/triage/HospitalIdenti
 export default function TriagePage() {
   const {
     waiting, classified, tickets, settings, loading, tick,
-    createEntry, classify, reclassify, sendToDoctor, registerPrint, updateSettings, reload,
+    createEntry, classify, reclassify, sendToDoctor, updateSettings, reload,
   } = useTriage()
   const { imprimir, imprimindo } = useImpressaoLocal()
 
@@ -34,7 +34,6 @@ export default function TriagePage() {
   const [configOpen, setConfigOpen] = useState(false)
   const [printTarget, setPrintTarget] = useState<TriageEntry | null>(null)
   const [selectionTarget, setSelectionTarget] = useState<TriageEntry | null>(null)
-  const [reprint, setReprint] = useState<{ entry: TriageEntry; reason: string; notes: string } | null>(null)
   const wristbandRef = useRef<HTMLDivElement>(null)
   const [sendTarget, setSendTarget] = useState<TriageEntry | null>(null)
   const [sendSector, setSendSector] = useState('')
@@ -80,7 +79,7 @@ export default function TriagePage() {
     }
   }
 
-  const doPrint = async (entry: TriageEntry, isReprint: boolean, reason?: string) => {
+  const doPrint = async (entry: TriageEntry) => {
     setPrintTarget(entry)
     // aguarda a pulseira ser renderizada fora da tela antes de gerar o PDF
     await new Promise((r) => setTimeout(r, 250))
@@ -229,7 +228,7 @@ export default function TriagePage() {
           }
         }}
       />
-      {selectionTarget && <HospitalIdentificationDialog context="triage" contextId={selectionTarget.id} onClose={() => setSelectionTarget(null)} onWristband={() => doPrint(selectionTarget, !!selectionTarget.wristband_printed_at)} onDone={reload} />}
+      {selectionTarget && <HospitalIdentificationDialog context="triage" contextId={selectionTarget.id} onClose={() => setSelectionTarget(null)} onWristband={() => doPrint(selectionTarget)} wristbandReprint={!!selectionTarget.wristband_printed_at} onDone={reload} />}
 
       {/* Chamada direta */}
       <Dialog open={directOpen} onOpenChange={setDirectOpen}>
@@ -297,48 +296,6 @@ export default function TriagePage() {
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setConfigOpen(false)}>Fechar</Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      {/* Motivo da reimpressão */}
-      <Dialog open={!!reprint} onOpenChange={(v) => !v && setReprint(null)}>
-        <DialogContent>
-          <DialogHeader><DialogTitle>Reimpressão de pulseira</DialogTitle></DialogHeader>
-          <div className="space-y-3">
-            <p className="text-xs text-muted-foreground">
-              Esta pulseira já foi impressa. Registre o motivo da reimpressão.
-            </p>
-            <Select value={reprint?.reason} onValueChange={(v) => setReprint((p) => p && { ...p, reason: v })}>
-              <SelectTrigger><SelectValue /></SelectTrigger>
-              <SelectContent>
-                {REPRINT_REASONS.map((r) => <SelectItem key={r} value={r}>{r}</SelectItem>)}
-              </SelectContent>
-            </Select>
-            <Input
-              placeholder="Observação (obrigatória para outro motivo)"
-              value={reprint?.notes || ''}
-              onChange={(e) => setReprint((p) => p && { ...p, notes: e.target.value })}
-            />
-          </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setReprint(null)}>Cancelar</Button>
-            <Button
-              className="gradient-bg text-white"
-              onClick={async () => {
-                if (!reprint) return
-                if (reprint.reason.startsWith('Outro') && !reprint.notes.trim()) {
-                  toast.error('Descreva o motivo da reimpressão')
-                  return
-                }
-                const entry = reprint.entry
-                const reason = [reprint.reason, reprint.notes].filter(Boolean).join(' — ')
-                setReprint(null)
-                await doPrint(entry, true, reason)
-              }}
-            >
-              Reimprimir
-            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

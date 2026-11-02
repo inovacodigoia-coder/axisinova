@@ -39,7 +39,8 @@ export function hospitalLabelPdf(type: HospitalPrintType, data: HospitalPrintDat
   let birth = 'Não informado'; let age = 'Não informada'
   if (data.birthDate) {
     const b = new Date(data.birthDate + 'T12:00:00Z'); birth = data.birthDate.split('-').reverse().join('/')
-    const today = emitted.toLocaleDateString('en-CA', { timeZone: 'America/Sao_Paulo' }).split('-').map(Number)
+    const parts = new Intl.DateTimeFormat('en', { timeZone: 'America/Sao_Paulo', year: 'numeric', month: 'numeric', day: 'numeric' }).formatToParts(emitted)
+    const today = ['year', 'month', 'day'].map(key => Number(parts.find(p => p.type === key)?.value))
     if (today.length === 3) age = String(today[0] - b.getUTCFullYear() - (today[1] < b.getUTCMonth() + 1 || (today[1] === b.getUTCMonth() + 1 && today[2] < b.getUTCDate()) ? 1 : 0)) + ' anos'
   }
   const gender = ({ M: 'Masculino', F: 'Feminino', male: 'Masculino', female: 'Feminino', masculino: 'Masculino', feminino: 'Feminino' } as Record<string, string>)[data.gender || ''] || data.gender || 'Não informado'
