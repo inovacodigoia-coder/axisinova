@@ -19,20 +19,23 @@ import { WristbandLabel } from '@/components/triage/WristbandLabel'
 import { gerarPdfEtiquetas } from '@/lib/labelPdf'
 import { useImpressaoLocal } from '@/hooks/useImpressaoLocal'
 import { supabase } from '@/integrations/supabase/client'
+import { HospitalIdentificationDialog } from '@/components/triage/HospitalIdentificationDialog'
+import { useHospitalPrintPermission } from '@/hooks/useHospitalPrintPermission'
 
 export default function TriagePage() {
   const {
     waiting, classified, tickets, settings, loading, tick,
-    createEntry, classify, reclassify, sendToDoctor, registerPrint, updateSettings, reload,
+    createEntry, classify, reclassify, sendToDoctor, updateSettings, reload,
   } = useTriage()
   const { imprimir, imprimindo } = useImpressaoLocal()
+  const canPrint = useHospitalPrintPermission('triage')
 
   const [classifying, setClassifying] = useState<TriageEntry | null>(null)
   const [directOpen, setDirectOpen] = useState(false)
   const [direct, setDirect] = useState({ name: '', cpf: '', protocol: '' })
   const [configOpen, setConfigOpen] = useState(false)
   const [printTarget, setPrintTarget] = useState<TriageEntry | null>(null)
-  const [reprint, setReprint] = useState<{ entry: TriageEntry; reason: string; notes: string } | null>(null)
+  const [selectionTarget, setSelectionTarget] = useState<TriageEntry | null>(null)
   const wristbandRef = useRef<HTMLDivElement>(null)
   const [sendTarget, setSendTarget] = useState<TriageEntry | null>(null)
   const [sendSector, setSendSector] = useState('')
@@ -78,14 +81,15 @@ export default function TriagePage() {
     }
   }
 
-  const doPrint = async (entry: TriageEntry, isReprint: boolean, reason?: string) => {
+  const doPrint = async (entry: TriageEntry) => {
     setPrintTarget(entry)
     // aguarda a pulseira ser renderizada fora da tela antes de gerar o PDF
     await new Promise((r) => setTimeout(r, 250))
     const el = wristbandRef.current
     if (!el) {
       toast.error('Não foi possível montar a pulseira')
-      return
+      setPrintTarget(null)
+      return false
     }
     try {
       const blob = await gerarPdfEtiquetas(
@@ -94,20 +98,17 @@ export default function TriagePage() {
         settings?.wristband_width_mm || 25,
       )
       const ok = await imprimir('pulseira_triagem', blob)
-      if (ok) await registerPrint(entry.id, isReprint, reason)
+      return ok
     } catch (e) {
       toast.error('Falha ao gerar a pulseira')
+      return false
     } finally {
       setPrintTarget(null)
     }
   }
 
   const handlePrintClick = (entry: TriageEntry) => {
-    if (entry.wristband_printed_at) {
-      setReprint({ entry, reason: REPRINT_REASONS[0], notes: '' })
-      return
-    }
-    doPrint(entry, false)
+    setSelectionTarget(entry)
   }
 
   return (
@@ -190,8 +191,8 @@ export default function TriagePage() {
                   {e.status === 'in_doctor' && <Badge variant="outline">Na fila do médico</Badge>}
                 </div>
                 <div className="flex flex-wrap gap-2">
-                  <Button size="sm" variant="outline" className="gap-1" onClick={() => handlePrintClick(e)} disabled={imprimindo}>
-                    <Printer className="h-3.5 w-3.5" /> {e.wristband_printed_at ? 'Reimprimir' : 'Pulseira'}
+                  <Button size="sm" variant="outline" className="gap-1" onClick={() => handlePrintClick(e)} disabled={imprimindo || !canPrint}>
+                    <Printer className="h-3.5 w-3.5" /> Imprimir
                   </Button>
                   {e.status !== 'in_doctor' && (
                     <Button size="sm" className="gradient-bg text-white" onClick={() => { setSendSector(''); setSendTarget(e) }}>
@@ -229,6 +230,7 @@ export default function TriagePage() {
           }
         }}
       />
+      {selectionTarget && <HospitalIdentificationDialog context="triage" contextId={selectionTarget.id} onClose={() => setSelectionTarget(null)} onWristband={() => doPrint(selectionTarget)} wristbandReprint={!!selectionTarget.wristband_printed_at} onDone={reload} />}
 
       {/* Chamada direta */}
       <Dialog open={directOpen} onOpenChange={setDirectOpen}>
@@ -296,48 +298,6 @@ export default function TriagePage() {
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setConfigOpen(false)}>Fechar</Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      {/* Motivo da reimpressão */}
-      <Dialog open={!!reprint} onOpenChange={(v) => !v && setReprint(null)}>
-        <DialogContent>
-          <DialogHeader><DialogTitle>Reimpressão de pulseira</DialogTitle></DialogHeader>
-          <div className="space-y-3">
-            <p className="text-xs text-muted-foreground">
-              Esta pulseira já foi impressa. Registre o motivo da reimpressão.
-            </p>
-            <Select value={reprint?.reason} onValueChange={(v) => setReprint((p) => p && { ...p, reason: v })}>
-              <SelectTrigger><SelectValue /></SelectTrigger>
-              <SelectContent>
-                {REPRINT_REASONS.map((r) => <SelectItem key={r} value={r}>{r}</SelectItem>)}
-              </SelectContent>
-            </Select>
-            <Input
-              placeholder="Observação (obrigatória para outro motivo)"
-              value={reprint?.notes || ''}
-              onChange={(e) => setReprint((p) => p && { ...p, notes: e.target.value })}
-            />
-          </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setReprint(null)}>Cancelar</Button>
-            <Button
-              className="gradient-bg text-white"
-              onClick={async () => {
-                if (!reprint) return
-                if (reprint.reason.startsWith('Outro') && !reprint.notes.trim()) {
-                  toast.error('Descreva o motivo da reimpressão')
-                  return
-                }
-                const entry = reprint.entry
-                const reason = [reprint.reason, reprint.notes].filter(Boolean).join(' — ')
-                setReprint(null)
-                await doPrint(entry, true, reason)
-              }}
-            >
-              Reimprimir
-            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
