@@ -1,8 +1,11 @@
 # Verificação dos alertas
 
 # BI Hospitalar — Etapa 2A: materiais por paciente
-- [ ] Inspecionar custo, saldo por setor e vínculo de atendimento nos três painéis; confirmar autorização dos testes e unidades fracionadas antes de implementar.
-- [ ] Planejar custo com histórico, registro/estorno imutável, baixa no setor, consumo congelado e eventos no BI, permissões no banco e testes isolados.
+- [x] Base inspecionada e plano aprovado: custo novo, saldos/BI reutilizados; frações configuradas por material e atendimento exclusivo de teste autorizado.
+- [x] Custo/histórico (0136), permissões materiais.registrar/estornar, consumo congelado e estorno negativo/idempotente com saldo e evento em transação; funções e campos confirmados no banco.
+- [x] Formulário compartilhado nos Postos, Internação e atendimento médico; edição de custo/fração no Almoxarifado e novas permissões na matriz.
+- [x] 38 testes SQL + 1 de aprazamento passaram; contextos ativos, frações, custo ausente/congelado, saldo, estorno, idempotência e segurança; build OK.
+- [ ] Teste autenticado e visual dos três painéis na Labsaude: sessão injetada redireciona ao login; depende de login válido/autorizado. Authenticated path: UNVERIFIED. Nenhum paciente ou saldo real alterado. Sem sessão/anon bloqueados em testes isolados; convidados não são permitidos.
 
 # Ativação restrita — Financeiro, Caixa e solicitações
 - [x] Financeiro/Caixa e Almoxarifado ativos somente na Labsaude; novas empresas inativas, navegação oculta nas demais.

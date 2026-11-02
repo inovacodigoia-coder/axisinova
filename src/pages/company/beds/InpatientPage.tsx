@@ -21,6 +21,7 @@ import { AdmissionRequestDialog } from '@/components/inpatient/AdmissionRequestD
 import { EmptyState } from '@/components/feedback/EmptyState'
 import { HospitalIdentificationDialog } from '@/components/triage/HospitalIdentificationDialog'
 import { useHospitalPrintPermission } from '@/hooks/useHospitalPrintPermission'
+import { PatientMaterials } from '@/components/beds/PatientMaterials'
 
 const db = supabase as any
 const fmt = (d?: string | null) => d ? new Date(d).toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' }) : '—'
@@ -166,6 +167,7 @@ function InpBedSheet({ ip, bed, request, onClose }: { ip: IP; bed: InpBed | null
             )
           )}
           {live.status === 'cleaning' && <Button onClick={() => rpc('inpatient_mark_clean', { _bed_id: live.id }, 'Leito liberado').then(ip.reload)}><Sparkles className="h-4 w-4 mr-1" />Higienização concluída</Button>}
+          {request && <PatientMaterials context="admission" contextId={request.id} active={live.status === 'occupied' && request.status === 'admitted'} />}
           <section className="space-y-1">
             <h3 className="font-semibold text-sm">Histórico do leito</h3>
             {logs.map(l => <p key={l.id} className="text-xs text-muted-foreground">{fmt(l.changed_at)} · {l.note || `${l.from_status} → ${l.to_status}`}</p>)}

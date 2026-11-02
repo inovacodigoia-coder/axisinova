@@ -33,6 +33,10 @@ export type PermissionAction = 'view' | 'create' | 'edit' | 'delete' | 'export' 
 
 export type FinanceiroPermission = 'financeiro.ver' | 'financeiro.lancar' | 'financeiro.baixar' | 'financeiro.cancelar' | 'financeiro.configurar' | 'financeiro.caixa.operar' | 'financeiro.caixa.ver_todos' | 'financeiro.caixa.reabrir' | 'financeiro.caixa.configurar'
 export type PermissionsMap = Partial<Record<SystemModule, PermissionAction[]>> & { financeiro?: FinanceiroPermission[] }
+export const MATERIAIS_PERMISSIONS = [
+  { code: 'materiais.registrar', label: 'Registrar uso no paciente' },
+  { code: 'materiais.estornar', label: 'Estornar' },
+]
 
 export interface Profile {
   id: string
