@@ -1,6 +1,7 @@
 # Verificação dos alertas
 
 # Correção da identificação hospitalar
+- [ ] Diagnosticar Failed to fetch no envio local e impedir tentativas sem conexão com o AisAxius, com orientação e nova verificação; preservar confirmação e não reenviar automaticamente.
 - [x] Corrigir incompatibilidade entre local textual e UUID (0126); 23 testes SQL no esquema compatível com produção e 8 testes de fluxo/envio aprovados, sem impressões reais.
 - [x] Expor pulseira e etiquetas em Configuração de Impressora; etiquetas também na Configuração da Triagem, preservando os ajustes atuais da pulseira e o vínculo físico no AisAxius.
 - [ ] Conferir seleção na tela autenticada sem enviar impressão real: sessão disponível redirecionou para /login; depende de login ativo/autorizado. Impressora física indisponível.
