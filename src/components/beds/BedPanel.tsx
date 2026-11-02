@@ -1,3 +1,5 @@
+import { useMedicamentos, medicamentoLabel } from '@/hooks/useMedicamentos'
+import { MedicamentoSelect } from '@/components/farmacia/MedicamentoSelect'
 import { useCallback, useEffect, useState } from 'react'
 import { supabase } from '@/integrations/supabase/client'
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet'
@@ -28,10 +30,11 @@ export function doseState(scheduled: string, administered: string | null): 'done
 
 interface Props { bed: Bed | null; occupancy: Occupancy | null; sectors: Sector[]; onClose: () => void }
 
-const emptyItem = () => ({ medication: '', dose: '', route: 'VO', interval_hours: '0', doses_count: '1', first_dose_at: '' })
+const emptyItem = () => ({ medicamento_id: '', medication: '', dose: '', route: 'VO', interval_hours: '0', doses_count: '1', first_dose_at: '' })
 
 export function BedPanel({ bed, occupancy, sectors, onClose }: Props) {
   const canPrint = useHospitalPrintPermission('post')
+  const { itens: meds } = useMedicamentos(true)
   const [prescriptions, setPrescriptions] = useState<any[]>([])
   const [doses, setDoses] = useState<any[]>([])
   const [items, setItems] = useState<any[]>([])
@@ -86,7 +89,7 @@ export function BedPanel({ bed, occupancy, sectors, onClose }: Props) {
   const activeRef = referrals.find(r => r.status === 'waiting' || r.status === 'in_progress')
 
   const submitRx = async () => {
-    const valid = rxItems.filter(i => i.medication.trim() && i.dose.trim())
+    const valid = rxItems.filter(i => i.medicamento_id && i.dose.trim())
     if (!valid.length) return
     const res = await rpc('prescription_create', {
       _occupancy_id: occupancy!.id, _doctor_name: doctor || null, _notes: rxNotes || null, _urgent: urgent,
@@ -143,7 +146,7 @@ export function BedPanel({ bed, occupancy, sectors, onClose }: Props) {
                   </div>
                   {rxItems.map((it, i) => (
                     <div key={i} className="grid grid-cols-12 gap-2 items-end">
-                      <div className="col-span-4"><Label className="text-xs">Medicamento</Label><Input value={it.medication} onChange={e => setRxItems(a => a.map((x, j) => j === i ? { ...x, medication: e.target.value } : x))} /></div>
+                      <div className="col-span-4"><Label className="text-xs">Medicamento</Label><MedicamentoSelect itens={meds} value={it.medicamento_id} onChange={(id, m) => setRxItems(a => a.map((x, j) => j === i ? { ...x, medicamento_id: id, medication: medicamentoLabel(m) } : x))} /></div>
                       <div className="col-span-2"><Label className="text-xs">Dose</Label><Input value={it.dose} onChange={e => setRxItems(a => a.map((x, j) => j === i ? { ...x, dose: e.target.value } : x))} /></div>
                       <div className="col-span-1"><Label className="text-xs">Via</Label><Input value={it.route} onChange={e => setRxItems(a => a.map((x, j) => j === i ? { ...x, route: e.target.value } : x))} /></div>
                       <div className="col-span-1"><Label className="text-xs">A cada (h)</Label><Input type="number" min={0} value={it.interval_hours} onChange={e => setRxItems(a => a.map((x, j) => j === i ? { ...x, interval_hours: e.target.value } : x))} /></div>
