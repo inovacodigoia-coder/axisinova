@@ -1,5 +1,10 @@
 # Verificação dos alertas
 
+# Correção da identificação hospitalar
+- [ ] Corrigir incompatibilidade entre local de atendimento textual e UUID, com testes no esquema real.
+- [ ] Expor pulseira e etiquetas do paciente/acompanhante nas configurações de impressão e layout.
+- [ ] Conferir seleção na tela autenticada sem enviar impressão real.
+
 # Triagem — etiquetas do paciente e acompanhante
 - [x] Confirmar fontes do atendimento/local e apresentar plano conforme decisões: local de atendimento, campos aprovados, uma etiqueta por vez.
 - [x] Reutilizar seleção de impressão e preservar pulseira; etiquetas configuráveis no padrão Nutrição; PDFs fictícios conferidos com nomes e setores completos.
