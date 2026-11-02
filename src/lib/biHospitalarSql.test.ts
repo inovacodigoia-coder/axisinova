@@ -48,6 +48,7 @@ describe('BI Gestão Hospitalar — Etapa 1: módulo, jornada, consumo e segment
     await db.exec(readFileSync('drizzle/migrations/0127_bi_hospitalar_modulo.sql', 'utf8'))
     await db.exec(readFileSync('drizzle/migrations/0128_bi_hospitalar_gatilhos.sql', 'utf8'))
     await db.exec(readFileSync('drizzle/migrations/0129_bi_hospitalar_permissoes_codigos.sql', 'utf8'))
+    await db.exec(readFileSync('drizzle/migrations/0130_bi_hospitalar_episodio_retroativo.sql', 'utf8'))
   }, 30000)
   afterAll(async () => { await db.close() })
 
