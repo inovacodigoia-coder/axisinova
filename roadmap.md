@@ -1,5 +1,10 @@
 # Verificação dos alertas
 
+# Ativação restrita — Financeiro, Caixa e solicitações
+- [ ] Financeiro/Caixa e solicitações ativos somente na Labsaude; ocultar nas demais empresas.
+- [ ] Solicitações desmarcadas nos setores de todas as empresas, exceto TI – Administração; preservar demais opções.
+- [ ] Testar bloqueios e conferir configurações gravadas.
+
 # Labsaude — teste operacional de almoxarifado e farmácia
 - [x] Gravados e relidos na Labsaude: 10 itens TESTE, 5 solicitações (3 aprovadas e 2 recusadas), Farmácia com saldos 2/3/40/60; medicamentos fictícios inativos, sem alterar registros existentes. Solicitante/decisor sintético do sistema, sem sessão em nome de usuário.
 - [x] 24 testes SQL isolados passaram: carga idempotente, aprovação, recusa, transferência, saldos, isolamento e proteção clínica; saldo total 1000 e zero movimentos nas recusas confirmados no banco.
