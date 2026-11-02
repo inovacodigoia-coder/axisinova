@@ -883,6 +883,13 @@
       "when": 1793589997527,
       "tag": "0125_hospital_etiquetas_configuracao_guardas",
       "breakpoints": true
+    },
+    {
+      "idx": 126,
+      "version": "7",
+      "when": 1793591808695,
+      "tag": "0126_hospital_local_texto",
+      "breakpoints": true
     }
   ]
 }
