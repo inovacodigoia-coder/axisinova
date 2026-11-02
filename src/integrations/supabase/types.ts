@@ -75,6 +75,7 @@ export type Database = {
           ended_at: string | null
           ended_by: string | null
           has_companion: boolean
+          hospital_episode_id: string | null
           id: string
           notes: string | null
           origin_bed_id: string | null
@@ -106,6 +107,7 @@ export type Database = {
           ended_at?: string | null
           ended_by?: string | null
           has_companion?: boolean
+          hospital_episode_id?: string | null
           id?: string
           notes?: string | null
           origin_bed_id?: string | null
@@ -137,6 +139,7 @@ export type Database = {
           ended_at?: string | null
           ended_by?: string | null
           has_companion?: boolean
+          hospital_episode_id?: string | null
           id?: string
           notes?: string | null
           origin_bed_id?: string | null
@@ -2645,6 +2648,7 @@ export type Database = {
           away: boolean
           bed_id: string
           company_id: string
+          hospital_episode_id: string | null
           id: string
           manchester_color: string | null
           patient_id: string | null
@@ -2661,6 +2665,7 @@ export type Database = {
           away?: boolean
           bed_id: string
           company_id: string
+          hospital_episode_id?: string | null
           id?: string
           manchester_color?: string | null
           patient_id?: string | null
@@ -2677,6 +2682,7 @@ export type Database = {
           away?: boolean
           bed_id?: string
           company_id?: string
+          hospital_episode_id?: string | null
           id?: string
           manchester_color?: string | null
           patient_id?: string | null
@@ -3084,6 +3090,7 @@ export type Database = {
           inovachat_habilitado_por: string | null
           inovachat_retencao_meses: number
           logradouro: string | null
+          max_acompanhantes: number
           medicos_ativos: number | null
           medicos_limite: number | null
           name: string
@@ -3137,6 +3144,7 @@ export type Database = {
           inovachat_habilitado_por?: string | null
           inovachat_retencao_meses?: number
           logradouro?: string | null
+          max_acompanhantes?: number
           medicos_ativos?: number | null
           medicos_limite?: number | null
           name: string
@@ -3190,6 +3198,7 @@ export type Database = {
           inovachat_habilitado_por?: string | null
           inovachat_retencao_meses?: number
           logradouro?: string | null
+          max_acompanhantes?: number
           medicos_ativos?: number | null
           medicos_limite?: number | null
           name?: string
@@ -5280,6 +5289,104 @@ export type Database = {
           },
         ]
       }
+      hospital_acompanhantes: {
+        Row: {
+          company_id: string
+          created_at: string
+          created_by: string
+          episode_id: string
+          id: string
+          nome: string
+        }
+        Insert: {
+          company_id: string
+          created_at?: string
+          created_by: string
+          episode_id: string
+          id?: string
+          nome: string
+        }
+        Update: {
+          company_id?: string
+          created_at?: string
+          created_by?: string
+          episode_id?: string
+          id?: string
+          nome?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "hospital_acompanhantes_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      hospital_identificacao_prints: {
+        Row: {
+          companion_id: string | null
+          company_id: string
+          context: string
+          context_id: string
+          created_at: string
+          details: string | null
+          episode_id: string
+          id: string
+          is_reprint: boolean
+          patient_id: string | null
+          printed_by: string
+          status: string
+          tipo: string
+        }
+        Insert: {
+          companion_id?: string | null
+          company_id: string
+          context: string
+          context_id: string
+          created_at?: string
+          details?: string | null
+          episode_id: string
+          id?: string
+          is_reprint: boolean
+          patient_id?: string | null
+          printed_by: string
+          status?: string
+          tipo: string
+        }
+        Update: {
+          companion_id?: string | null
+          company_id?: string
+          context?: string
+          context_id?: string
+          created_at?: string
+          details?: string | null
+          episode_id?: string
+          id?: string
+          is_reprint?: boolean
+          patient_id?: string | null
+          printed_by?: string
+          status?: string
+          tipo?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "hospital_identificacao_prints_companion_id_fkey"
+            columns: ["companion_id"]
+            isOneToOne: false
+            referencedRelation: "hospital_acompanhantes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "hospital_identificacao_prints_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       hospital_sectors: {
         Row: {
           company_id: string
@@ -6617,6 +6724,7 @@ export type Database = {
           company_id: string
           created_at: string | null
           email: string | null
+          hospital_label_config: Json
           id: string
           lab_name: string | null
           label_auto_fit: boolean
@@ -6667,6 +6775,7 @@ export type Database = {
           company_id: string
           created_at?: string | null
           email?: string | null
+          hospital_label_config?: Json
           id?: string
           lab_name?: string | null
           label_auto_fit?: boolean
@@ -6717,6 +6826,7 @@ export type Database = {
           company_id?: string
           created_at?: string | null
           email?: string | null
+          hospital_label_config?: Json
           id?: string
           lab_name?: string | null
           label_auto_fit?: boolean
@@ -8744,7 +8854,9 @@ export type Database = {
           doctor_started_at: string | null
           doctor_started_by: string | null
           flowchart: string | null
+          hospital_episode_id: string | null
           id: string
+          location_sector_id: string | null
           order_id: string | null
           patient_birth_date: string | null
           patient_cpf: string | null
@@ -8775,7 +8887,9 @@ export type Database = {
           doctor_started_at?: string | null
           doctor_started_by?: string | null
           flowchart?: string | null
+          hospital_episode_id?: string | null
           id?: string
+          location_sector_id?: string | null
           order_id?: string | null
           patient_birth_date?: string | null
           patient_cpf?: string | null
@@ -8806,7 +8920,9 @@ export type Database = {
           doctor_started_at?: string | null
           doctor_started_by?: string | null
           flowchart?: string | null
+          hospital_episode_id?: string | null
           id?: string
+          location_sector_id?: string | null
           order_id?: string | null
           patient_birth_date?: string | null
           patient_cpf?: string | null
@@ -11966,6 +12082,36 @@ export type Database = {
           _user_id: string
         }
         Returns: boolean
+      }
+      hospital_acompanhante_adicionar: {
+        Args: { _context: string; _id: string; _nome: string }
+        Returns: string
+      }
+      hospital_identificacao_contexto: {
+        Args: { _context: string; _id: string }
+        Returns: Json
+      }
+      hospital_identificacao_finalizar: {
+        Args: { _details?: string; _print: string; _status: string }
+        Returns: undefined
+      }
+      hospital_identificacao_local: {
+        Args: { _id: string; _sector: string }
+        Returns: undefined
+      }
+      hospital_identificacao_permitida: {
+        Args: { _action?: string; _context: string }
+        Returns: boolean
+      }
+      hospital_identificacao_preparar: {
+        Args: {
+          _companion?: string
+          _context: string
+          _details?: string
+          _id: string
+          _tipo: string
+        }
+        Returns: Json
       }
       initialize_company_access_defaults: {
         Args: { _company_id: string }

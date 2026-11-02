@@ -1,0 +1,92 @@
+ALTER TABLE public.companies ADD COLUMN max_acompanhantes integer NOT NULL DEFAULT 1 CHECK (max_acompanhantes >= 1);
+ALTER TABLE public.lab_settings ADD COLUMN hospital_label_config jsonb NOT NULL DEFAULT '{}';
+ALTER TABLE public.triage_entries ADD COLUMN hospital_episode_id uuid, ADD COLUMN location_sector_id uuid;
+ALTER TABLE public.bed_occupancies ADD COLUMN hospital_episode_id uuid;
+ALTER TABLE public.admission_requests ADD COLUMN hospital_episode_id uuid;
+UPDATE public.triage_entries SET hospital_episode_id=id;
+UPDATE public.bed_occupancies o SET hospital_episode_id=coalesce((SELECT t.hospital_episode_id FROM public.triage_entries t WHERE t.id=o.triage_entry_id AND t.company_id=o.company_id),o.id);
+UPDATE public.admission_requests r SET hospital_episode_id=coalesce((SELECT o.hospital_episode_id FROM public.bed_occupancies o WHERE o.id=r.origin_occupancy_id AND o.company_id=r.company_id),r.id);
+WITH RECURSIVE chain AS (SELECT r.id,r.company_id,r.hospital_episode_id FROM public.admission_requests r WHERE r.origin_inpatient_bed_id IS NULL UNION ALL SELECT child.id,child.company_id,parent.hospital_episode_id FROM chain parent JOIN public.admission_requests pr ON pr.id=parent.id JOIN public.admission_requests child ON child.origin_inpatient_bed_id=pr.bed_id AND child.company_id=parent.company_id AND child.requested_at>pr.requested_at WHERE NOT EXISTS(SELECT 1 FROM public.admission_requests newer WHERE newer.company_id=pr.company_id AND newer.bed_id=pr.bed_id AND newer.admitted_at>pr.admitted_at AND newer.admitted_at<=child.requested_at)) UPDATE public.admission_requests r SET hospital_episode_id=c.hospital_episode_id FROM chain c WHERE r.id=c.id;
+CREATE OR REPLACE FUNCTION public.hospital_episode_assign() RETURNS trigger LANGUAGE plpgsql SECURITY DEFINER SET search_path=public AS $$ DECLARE ep uuid; BEGIN
+ IF TG_TABLE_NAME='triage_entries' THEN ep:=NEW.id;
+ ELSIF TG_TABLE_NAME='bed_occupancies' THEN IF NEW.triage_entry_id IS NOT NULL THEN SELECT hospital_episode_id INTO ep FROM triage_entries WHERE id=NEW.triage_entry_id AND company_id=NEW.company_id; IF ep IS NULL THEN RAISE EXCEPTION 'Triagem inválida'; END IF; END IF;
+ ELSE IF NEW.origin_occupancy_id IS NOT NULL THEN SELECT hospital_episode_id INTO ep FROM bed_occupancies WHERE id=NEW.origin_occupancy_id AND company_id=NEW.company_id; IF ep IS NULL THEN RAISE EXCEPTION 'Ocupação inválida'; END IF;
+ ELSIF NEW.origin_inpatient_bed_id IS NOT NULL THEN SELECT r.hospital_episode_id INTO ep FROM inpatient_beds b JOIN admission_requests r ON r.id=b.current_request_id AND r.company_id=b.company_id WHERE b.id=NEW.origin_inpatient_bed_id AND b.company_id=NEW.company_id; IF ep IS NULL THEN RAISE EXCEPTION 'Internação de origem inválida'; END IF; END IF; END IF;
+ NEW.hospital_episode_id:=coalesce(ep,NEW.id); RETURN NEW; END $$;
+REVOKE ALL ON FUNCTION public.hospital_episode_assign() FROM PUBLIC,anon,authenticated;
+CREATE TRIGGER hospital_episode_triage BEFORE INSERT ON public.triage_entries FOR EACH ROW EXECUTE FUNCTION public.hospital_episode_assign();
+CREATE TRIGGER hospital_episode_post BEFORE INSERT ON public.bed_occupancies FOR EACH ROW EXECUTE FUNCTION public.hospital_episode_assign();
+CREATE TRIGGER hospital_episode_admission BEFORE INSERT ON public.admission_requests FOR EACH ROW EXECUTE FUNCTION public.hospital_episode_assign();
+CREATE OR REPLACE FUNCTION public.hospital_identificacao_permitida(_context text,_action text DEFAULT 'print') RETURNS boolean LANGUAGE sql STABLE SECURITY DEFINER SET search_path=public AS $$
+ SELECT auth.uid() IS NOT NULL AND (_context IN ('triage','post','admission')) AND (public.is_company_manager(auth.uid()) OR EXISTS(SELECT 1 FROM sector_users su JOIN company_sectors cs ON cs.id=su.sector_id AND cs.company_id=public.get_user_company_id(auth.uid()) AND cs.is_active JOIN access_profiles ap ON ap.id=ANY(cs.allowed_profile_ids::text[]) AND ap.company_id=cs.company_id AND ap.is_active WHERE su.user_id=auth.uid() AND (coalesce(ap.permissions->CASE WHEN _context='admission' THEN 'inpatient' ELSE 'reception' END,'[]'::jsonb) ? CASE WHEN _action='print' THEN 'export' ELSE 'create' END OR (_action<>'print' AND coalesce(ap.permissions->CASE WHEN _context='admission' THEN 'inpatient' ELSE 'reception' END,'[]'::jsonb) ? 'edit')))); $$;
+REVOKE ALL ON FUNCTION public.hospital_identificacao_permitida(text,text) FROM PUBLIC,anon;
+GRANT EXECUTE ON FUNCTION public.hospital_identificacao_permitida(text,text) TO authenticated;
+CREATE TABLE public.hospital_acompanhantes(id uuid PRIMARY KEY DEFAULT gen_random_uuid(),company_id uuid NOT NULL REFERENCES public.companies(id),episode_id uuid NOT NULL,nome text NOT NULL CHECK(length(trim(nome))>0),created_by uuid NOT NULL,created_at timestamptz NOT NULL DEFAULT now(),UNIQUE(company_id,episode_id,nome));
+GRANT SELECT ON public.hospital_acompanhantes TO authenticated;
+GRANT ALL ON public.hospital_acompanhantes TO service_role;
+ALTER TABLE public.hospital_acompanhantes ENABLE ROW LEVEL SECURITY;
+CREATE POLICY hospital_acompanhantes_select ON public.hospital_acompanhantes FOR SELECT TO authenticated USING(company_id=public.get_user_company_id(auth.uid()) AND (hospital_identificacao_permitida('triage') OR hospital_identificacao_permitida('admission')));
+CREATE TABLE public.hospital_identificacao_prints(id uuid PRIMARY KEY DEFAULT gen_random_uuid(),company_id uuid NOT NULL REFERENCES public.companies(id),episode_id uuid NOT NULL,context text NOT NULL,context_id uuid NOT NULL,patient_id uuid,companion_id uuid REFERENCES public.hospital_acompanhantes(id),tipo text NOT NULL CHECK(tipo IN ('pulseira_triagem','etiqueta_paciente','etiqueta_acompanhante')),printed_by uuid NOT NULL,created_at timestamptz NOT NULL DEFAULT now(),is_reprint boolean NOT NULL,status text NOT NULL DEFAULT 'preparado' CHECK(status IN ('preparado','confirmado','navegador','falha')),details text);
+GRANT SELECT ON public.hospital_identificacao_prints TO authenticated;
+GRANT ALL ON public.hospital_identificacao_prints TO service_role;
+ALTER TABLE public.hospital_identificacao_prints ENABLE ROW LEVEL SECURITY;
+CREATE POLICY hospital_identificacao_prints_select ON public.hospital_identificacao_prints FOR SELECT TO authenticated USING(company_id=public.get_user_company_id(auth.uid()) AND (hospital_identificacao_permitida('triage') OR hospital_identificacao_permitida('admission')));
+CREATE INDEX hospital_identificacao_print_episode ON public.hospital_identificacao_prints(company_id,episode_id,tipo,companion_id);
+CREATE OR REPLACE FUNCTION public.hospital_identificacao_contexto(_context text,_id uuid) RETURNS jsonb LANGUAGE plpgsql SECURITY DEFINER SET search_path=public AS $$ DECLARE cid uuid:=get_user_company_id(auth.uid()); ep uuid; pname text; pid uuid; dob date; sex text; risk text; bedname text; sectorname text; t triage_entries; aid uuid; result jsonb; BEGIN
+ IF NOT hospital_identificacao_permitida(_context) THEN RAISE EXCEPTION 'Sem permissão de impressão'; END IF;
+ IF _context='triage' THEN SELECT * INTO t FROM triage_entries WHERE id=_id AND company_id=cid; ep:=t.hospital_episode_id; pname:=t.patient_name;pid:=t.patient_id;dob:=t.patient_birth_date; SELECT name INTO sectorname FROM company_sectors WHERE id=t.location_sector_id AND company_id=cid; bedname:=sectorname;
+ ELSIF _context='post' THEN SELECT hospital_episode_id,patient_name,patient_id INTO ep,pname,pid FROM bed_occupancies WHERE id=_id AND company_id=cid;
+ ELSE SELECT hospital_episode_id,patient_name,patient_id INTO ep,pname,pid FROM admission_requests WHERE id=_id AND company_id=cid; END IF;
+ IF ep IS NULL THEN RAISE EXCEPTION 'Atendimento indisponível'; END IF;
+ SELECT * INTO t FROM triage_entries WHERE hospital_episode_id=ep AND company_id=cid ORDER BY created_at LIMIT 1;
+ risk:=t.color;
+ IF pid IS NOT NULL THEN SELECT name,birth_date,gender INTO pname,dob,sex FROM patients WHERE id=pid AND company_id=cid; END IF;
+ SELECT b.name,u.name INTO bedname,sectorname FROM inpatient_beds b JOIN inpatient_units u ON u.id=b.unit_id AND u.company_id=b.company_id JOIN admission_requests r ON r.id=b.current_request_id AND r.company_id=b.company_id WHERE r.hospital_episode_id=ep AND b.company_id=cid AND b.status='occupied' LIMIT 1;
+ IF bedname IS NULL THEN SELECT b.name,p.name INTO bedname,sectorname FROM bed_occupancies o JOIN beds b ON b.id=o.bed_id AND b.company_id=o.company_id JOIN collection_posts p ON p.id=b.post_id AND p.company_id=b.company_id WHERE o.hospital_episode_id=ep AND o.company_id=cid AND o.status='active' ORDER BY o.allocated_at DESC LIMIT 1; END IF;
+ IF bedname IS NULL THEN SELECT name INTO sectorname FROM company_sectors WHERE id=t.location_sector_id AND company_id=cid; bedname:=sectorname; END IF;
+ RETURN jsonb_build_object('episodeId',ep,'patientId',pid,'patientName',coalesce(pname,t.patient_name),'birthDate',coalesce(dob,t.patient_birth_date),'gender',sex,'risk',risk,'bed',bedname,'sector',sectorname,'locationRequired',bedname IS NULL,'maxCompanions',(SELECT max_acompanhantes FROM companies WHERE id=cid),'canRegister',hospital_identificacao_permitida(_context,'create'),'companions',coalesce((SELECT jsonb_agg(jsonb_build_object('id',a.id,'nome',a.nome,'createdAt',a.created_at) ORDER BY a.created_at) FROM hospital_acompanhantes a WHERE a.company_id=cid AND a.episode_id=ep),'[]'::jsonb),'labelConfig',coalesce((SELECT hospital_label_config FROM lab_settings WHERE company_id=cid LIMIT 1),'{}'::jsonb)); END $$;
+REVOKE ALL ON FUNCTION public.hospital_identificacao_contexto(text,uuid) FROM PUBLIC,anon;
+GRANT EXECUTE ON FUNCTION public.hospital_identificacao_contexto(text,uuid) TO authenticated;
+CREATE OR REPLACE FUNCTION public.hospital_acompanhante_adicionar(_context text,_id uuid,_nome text) RETURNS uuid LANGUAGE plpgsql SECURITY DEFINER SET search_path=public AS $$ DECLARE ctx jsonb; cid uuid:=get_user_company_id(auth.uid()); ep uuid; rid uuid; mx integer; BEGIN
+ IF NOT hospital_identificacao_permitida(_context,'create') THEN RAISE EXCEPTION 'Sem permissão para cadastrar acompanhante'; END IF;
+ ctx:=hospital_identificacao_contexto(_context,_id); ep:=(ctx->>'episodeId')::uuid;
+ PERFORM pg_advisory_xact_lock(hashtextextended(cid::text||ep::text,0));
+ IF nullif(trim(_nome),'') IS NULL THEN RAISE EXCEPTION 'Informe o nome do acompanhante'; END IF;
+ SELECT id INTO rid FROM hospital_acompanhantes WHERE company_id=cid AND episode_id=ep AND lower(nome)=lower(trim(_nome)); IF rid IS NOT NULL THEN RETURN rid; END IF;
+ SELECT max_acompanhantes INTO mx FROM companies WHERE id=cid FOR SHARE;
+ IF (SELECT count(*) FROM hospital_acompanhantes WHERE company_id=cid AND episode_id=ep)>=mx THEN RAISE EXCEPTION 'Limite de acompanhantes atingido. Apenas reimpressão está disponível.'; END IF;
+ INSERT INTO hospital_acompanhantes(company_id,episode_id,nome,created_by) VALUES(cid,ep,trim(_nome),auth.uid()) RETURNING id INTO rid; RETURN rid; END $$;
+REVOKE ALL ON FUNCTION public.hospital_acompanhante_adicionar(text,uuid,text) FROM PUBLIC,anon;
+GRANT EXECUTE ON FUNCTION public.hospital_acompanhante_adicionar(text,uuid,text) TO authenticated;
+CREATE OR REPLACE FUNCTION public.hospital_identificacao_local(_id uuid,_sector uuid) RETURNS void LANGUAGE plpgsql SECURITY DEFINER SET search_path=public AS $$ BEGIN
+ IF NOT hospital_identificacao_permitida('triage','create') THEN RAISE EXCEPTION 'Sem permissão para alterar local'; END IF;
+ IF NOT EXISTS(SELECT 1 FROM company_sectors WHERE id=_sector AND company_id=get_user_company_id(auth.uid()) AND is_active) THEN RAISE EXCEPTION 'Local inválido'; END IF;
+ UPDATE triage_entries SET location_sector_id=_sector WHERE id=_id AND company_id=get_user_company_id(auth.uid()); IF NOT FOUND THEN RAISE EXCEPTION 'Atendimento indisponível'; END IF; END $$;
+REVOKE ALL ON FUNCTION public.hospital_identificacao_local(uuid,uuid) FROM PUBLIC,anon;
+GRANT EXECUTE ON FUNCTION public.hospital_identificacao_local(uuid,uuid) TO authenticated;
+CREATE OR REPLACE FUNCTION public.hospital_identificacao_preparar(_context text,_id uuid,_tipo text,_companion uuid DEFAULT NULL,_details text DEFAULT NULL) RETURNS jsonb LANGUAGE plpgsql SECURITY DEFINER SET search_path=public AS $$ DECLARE ctx jsonb; cid uuid:=get_user_company_id(auth.uid()); ep uuid; rid uuid; again boolean; BEGIN
+ ctx:=hospital_identificacao_contexto(_context,_id);ep:=(ctx->>'episodeId')::uuid;
+ IF _tipo NOT IN ('pulseira_triagem','etiqueta_paciente','etiqueta_acompanhante') OR (_tipo='pulseira_triagem' AND _context<>'triage') THEN RAISE EXCEPTION 'Tipo de impressão inválido'; END IF;
+ IF _tipo<>'pulseira_triagem' AND (ctx->>'locationRequired')::boolean THEN RAISE EXCEPTION 'Selecione o local de atendimento'; END IF;
+ IF _tipo='etiqueta_acompanhante' AND NOT EXISTS(SELECT 1 FROM hospital_acompanhantes WHERE id=_companion AND company_id=cid AND episode_id=ep) THEN RAISE EXCEPTION 'Acompanhante não cadastrado neste atendimento'; END IF;
+ IF _tipo<>'etiqueta_acompanhante' AND _companion IS NOT NULL THEN RAISE EXCEPTION 'Acompanhante inválido para este tipo'; END IF;
+ PERFORM pg_advisory_xact_lock(hashtextextended(cid::text||ep::text||_tipo,0));
+ SELECT EXISTS(SELECT 1 FROM hospital_identificacao_prints WHERE company_id=cid AND episode_id=ep AND tipo=_tipo AND companion_id IS NOT DISTINCT FROM _companion AND status IN ('confirmado','navegador')) INTO again;
+ IF _tipo='pulseira_triagem' THEN again:=again OR EXISTS(SELECT 1 FROM triage_entries WHERE id=_id AND wristband_printed_at IS NOT NULL AND company_id=cid); END IF;
+ INSERT INTO hospital_identificacao_prints(company_id,episode_id,context,context_id,patient_id,companion_id,tipo,printed_by,is_reprint,details) VALUES(cid,ep,_context,_id,(ctx->>'patientId')::uuid,_companion,_tipo,auth.uid(),again,_details) RETURNING id INTO rid;
+ RETURN ctx||jsonb_build_object('printId',rid,'isReprint',again,'emittedAt',now()); END $$;
+REVOKE ALL ON FUNCTION public.hospital_identificacao_preparar(text,uuid,text,uuid,text) FROM PUBLIC,anon;
+GRANT EXECUTE ON FUNCTION public.hospital_identificacao_preparar(text,uuid,text,uuid,text) TO authenticated;
+CREATE OR REPLACE FUNCTION public.hospital_identificacao_finalizar(_print uuid,_status text,_details text DEFAULT NULL) RETURNS void LANGUAGE plpgsql SECURITY DEFINER SET search_path=public AS $$ DECLARE p hospital_identificacao_prints; BEGIN
+ SELECT * INTO p FROM hospital_identificacao_prints WHERE id=_print AND company_id=get_user_company_id(auth.uid()) AND printed_by=auth.uid() FOR UPDATE;
+ IF NOT FOUND OR NOT hospital_identificacao_permitida(p.context) THEN RAISE EXCEPTION 'Impressão indisponível'; END IF;
+ IF _status NOT IN ('confirmado','navegador','falha') THEN RAISE EXCEPTION 'Estado inválido'; END IF;
+ IF p.status<>'preparado' THEN IF p.status=_status THEN RETURN; END IF; RAISE EXCEPTION 'Impressão já finalizada'; END IF;
+ UPDATE hospital_identificacao_prints SET status=_status,details=coalesce(_details,details) WHERE id=p.id;
+ IF p.tipo='pulseira_triagem' AND _status='confirmado' THEN INSERT INTO triage_wristband_prints(company_id,entry_id,is_reprint,reason,printed_by) VALUES(p.company_id,p.context_id,p.is_reprint,p.details,auth.uid()); UPDATE triage_entries SET wristband_printed_at=now() WHERE id=p.context_id AND company_id=p.company_id; END IF; END $$;
+REVOKE ALL ON FUNCTION public.hospital_identificacao_finalizar(uuid,text,text) FROM PUBLIC,anon;
+GRANT EXECUTE ON FUNCTION public.hospital_identificacao_finalizar(uuid,text,text) TO authenticated;
+CREATE OR REPLACE FUNCTION public.hospital_config_limite_guard() RETURNS trigger LANGUAGE plpgsql SECURITY DEFINER SET search_path=public AS $$ BEGIN
+ IF NEW.max_acompanhantes IS DISTINCT FROM OLD.max_acompanhantes AND NOT is_company_manager(auth.uid()) AND coalesce(auth.role(),'')<>'service_role' THEN RAISE EXCEPTION 'Somente administradores podem alterar o limite'; END IF; RETURN NEW; END $$;
+REVOKE ALL ON FUNCTION public.hospital_config_limite_guard() FROM PUBLIC,anon,authenticated;
+CREATE TRIGGER hospital_config_limite_guard BEFORE UPDATE ON public.companies FOR EACH ROW EXECUTE FUNCTION public.hospital_config_limite_guard();
