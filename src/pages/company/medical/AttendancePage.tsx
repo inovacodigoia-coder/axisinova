@@ -14,6 +14,7 @@ import type { AttendanceRecord, VitalSigns, PrescriptionItem, ExamRequest, CID10
 import { AlertTriangle, Clock, Save, CheckCircle, ChevronDown, ChevronUp, Plus, X, Search, Printer } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { toast } from 'sonner'
+import { PatientMaterials } from '@/components/beds/PatientMaterials'
 
 const PHYSICAL_EXAM_TEMPLATES: Record<string, string> = {
   'Cardiorrespiratório': 'Cardiorrespiratório: Ritmo cardíaco regular, em 2 tempos, bulhas normofonéticas, sem sopros. Murmúrio vesicular presente bilateralmente, sem ruídos adventícios. ',
@@ -648,6 +649,7 @@ export default function AttendancePage() {
             </div>
           </Section>
 
+          <PatientMaterials context="medical" contextId={appointment?.id} />
           {/* Exam Requests - with real catalog */}
           <Section id="exams" title="Solicitação de Exames" icon="🔬">
             <div className="space-y-3">

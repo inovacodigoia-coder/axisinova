@@ -16,6 +16,7 @@ import { AdmissionRequestDialog } from '@/components/inpatient/AdmissionRequestD
 import { rpc, type Bed, type Occupancy, type Sector } from '@/hooks/useCollectionPosts'
 import { HospitalIdentificationDialog } from '@/components/triage/HospitalIdentificationDialog'
 import { useHospitalPrintPermission } from '@/hooks/useHospitalPrintPermission'
+import { PatientMaterials } from './PatientMaterials'
 
 const db = supabase as any
 const fmt = (d?: string | null) => d ? new Date(d).toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' }) : '—'
@@ -196,6 +197,7 @@ export function BedPanel({ bed, occupancy, sectors, onClose }: Props) {
               })}
             </section>
 
+            <PatientMaterials context="post" contextId={occupancy.id} active={occupancy.status === 'active' && !occupancy.away} />
             <section className="space-y-2">
               <h3 className="font-semibold flex items-center gap-2"><Send className="h-4 w-4" /> Encaminhamentos</h3>
               {activeRef ? (

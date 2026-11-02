@@ -1,5 +1,5 @@
 export type InventoryCategory = 'material' | 'equipamento' | 'acessorio' | 'medicamento'
-export interface StockItem { id: string; nome: string; categoria: InventoryCategory; unidade: string; medicamento_id?: string | null }
+export interface StockItem { id: string; nome: string; categoria: InventoryCategory; unidade: string; medicamento_id?: string | null; custo_unitario?: number | null; permite_fracao?: boolean }
 export interface StockSector { id: string; nome: string }
 export interface StockBalance { item_id: string; local: string; quantidade: number; setor_id?: string | null }
 export interface RequestLine { item_id: string; quantidade: number }
