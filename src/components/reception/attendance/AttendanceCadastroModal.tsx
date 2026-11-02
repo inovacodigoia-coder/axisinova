@@ -40,6 +40,8 @@ import type { Patient } from '@/types/patient.types'
 import type { AttendanceControlDocument, PaymentRecord } from '@/types/payment-print.types'
 import { PAYMENT_METHOD_LABELS } from '@/types/payment-print.types'
 import { prepararFilaImpressao } from '@/lib/attendancePrintQueue'
+import { useLabSettings } from '@/hooks/useLabSettings'
+import { companyHeaderFromSettings } from '@/lib/attendanceDocHeader'
 
 interface AttendanceCadastroModalProps {
   open: boolean
@@ -121,6 +123,7 @@ export function AttendanceCadastroModal({
   const { activeOrigin } = useCompanyContext()
   const { createOrder } = useAttendanceCadastro()
   const { getDefault } = usePrinterConfig()
+  const { settings: labSettings } = useLabSettings()
   const [step, setStep] = useState(initialPatient ? 1 : 0)
   const [showReview, setShowReview] = useState(false)
   const [showExitConfirm, setShowExitConfirm] = useState(false)
@@ -414,16 +417,13 @@ export function AttendanceCadastroModal({
       receiptNumber: payment?.receiptNumber,
       attachments: order.attachments.map(a => ({ name: a.documentType, type: 'document' })),
       registeredByName: order.registeredByName,
-      companyName: 'CLÍNICA AXIS INOVA',
-      companyAddress: 'Rua das Flores, 123 · Natal/RN',
-      companyCNPJ: '00.000.000/0001-00',
-      companyPhone: '(84) 3333-0000',
+      ...companyHeaderFromSettings(labSettings),
       locatorCode: portalAccess?.access_code,
       password: portalAccess?.access_password,
       passwordKind: portalAccess?.password_kind,
       portalUrl: portalAccess ? buildPortalUrl(portalAccess.access_code) : undefined,
     }
-  }, [state.patient, unitName, guicheName, portalAccess])
+  }, [state.patient, unitName, guicheName, portalAccess, labSettings])
 
   const handleFinalize = async () => {
     if (finalizingRef.current || createdOrder) return
