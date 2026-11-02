@@ -13,6 +13,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { BedDouble, Plus, Sparkles, CheckCircle2, XCircle, ArrowRightLeft, LogOut, Hospital } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { rpc } from '@/hooks/useCollectionPosts'
+import { BiEvasaoButton } from '@/components/bi/BiEvasaoDialog'
 import { useHospitals } from '@/hooks/useHospitals'
 import { useInpatient, INP_STATUS_LABEL, type InpBed, type AdmissionRequest } from '@/hooks/useInpatient'
 import { useInpatientPermissions } from '@/hooks/useInpatientPermissions'
