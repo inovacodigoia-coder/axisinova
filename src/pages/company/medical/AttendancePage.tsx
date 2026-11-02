@@ -244,7 +244,7 @@ export default function AttendancePage() {
     setShowExamDropdown(false)
   }
 
-  const handleFinalize = () => {
+  const handleFinalize = async () => {
     if (!chiefComplaint.trim()) {
       toast.error('Queixa principal é obrigatória')
       return

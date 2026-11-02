@@ -168,6 +168,14 @@ export const BI_HOSPITALAR_PERMISSIONS: { code: string; label: string; descripti
   { code: 'bi_hospitalar.configurar', label: 'Configurar', description: 'Configurar o módulo e ver a auditoria de acesso' },
 ]
 
+/** Cadastro de medicamentos (permissions.farmacia; checadas no banco por farmacia_tem_permissao; administrador tem todas) */
+export const FARMACIA_PERMISSIONS: { code: string; label: string; description: string }[] = [
+  { code: 'farmacia.medicamentos.ver', label: 'Ver medicamentos e custos', description: 'Ver o histórico de custo do cadastro' },
+  { code: 'farmacia.medicamentos.criar', label: 'Cadastrar medicamento', description: 'Incluir novo medicamento' },
+  { code: 'farmacia.medicamentos.editar', label: 'Editar medicamento', description: 'Alterar dados e custo' },
+  { code: 'farmacia.medicamentos.inativar', label: 'Inativar/ativar', description: 'Inativar medicamento (não pode ser excluído)' },
+]
+
 export const ACTION_LABELS: Record<PermissionAction, string> = {
   view: 'Ver',
   create: 'Criar',

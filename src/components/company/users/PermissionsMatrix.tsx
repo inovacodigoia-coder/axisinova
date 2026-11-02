@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo } from 'react'
 import type { PermissionsMap, SystemModule, PermissionAction } from '@/types/permissions.types'
-import { SYSTEM_MODULES, ALL_ACTIONS, ACTION_LABELS, RESULT_ENTRY_PERMISSIONS, APOIO_PERMISSIONS, TRIAGEM_PERMISSIONS, WHATSAPP_PERMISSIONS, INOVACHAT_PERMISSIONS, CRM_PERMISSIONS, COLETA_PERMISSIONS, BI_HOSPITALAR_PERMISSIONS } from '@/types/permissions.types'
+import { SYSTEM_MODULES, ALL_ACTIONS, ACTION_LABELS, RESULT_ENTRY_PERMISSIONS, APOIO_PERMISSIONS, TRIAGEM_PERMISSIONS, WHATSAPP_PERMISSIONS, INOVACHAT_PERMISSIONS, CRM_PERMISSIONS, COLETA_PERMISSIONS, BI_HOSPITALAR_PERMISSIONS, FARMACIA_PERMISSIONS } from '@/types/permissions.types'
 import { Progress } from '@/components/ui/progress'
 import { FINANCEIRO_PERMISSIONS } from '@/lib/financeiro'
 import { useBiHospitalarHabilitada } from '@/hooks/useBiHospitalar'
@@ -363,6 +363,31 @@ export function PermissionsMatrix({ permissions, onChange }: PermissionsMatrixPr
 
 
 
+
+      <div className="rounded-lg border border-border p-4 space-y-3">
+        <div>
+          <p className="text-xs font-semibold text-foreground uppercase tracking-wide">Farmácia — Medicamentos</p>
+          <p className="text-[11px] text-muted-foreground">Todas desmarcadas por padrão; checadas também no banco. O administrador da empresa já tem todas.</p>
+        </div>
+        <div className="grid gap-2 sm:grid-cols-2">
+          {FARMACIA_PERMISSIONS.map(p => {
+            const cur = ((perms as any).farmacia || []) as string[]
+            return (
+              <label key={p.code} className="flex items-start gap-2 rounded-md border border-border bg-muted/20 px-3 py-2 cursor-pointer">
+                <input type="checkbox" className="accent-primary mt-0.5" checked={cur.includes(p.code)}
+                  onChange={() => setPerms(prev => {
+                    const c = ((prev as any).farmacia || []) as string[]
+                    return { ...prev, farmacia: (c.includes(p.code) ? c.filter(x => x !== p.code) : [...c, p.code]) as any }
+                  })} />
+                <span>
+                  <span className="block text-xs font-medium text-foreground">{p.label}</span>
+                  <span className="block text-[10px] text-muted-foreground">{p.description}</span>
+                </span>
+              </label>
+            )
+          })}
+        </div>
+      </div>
 
       {biHospitalarHabilitada && (
         <div className="rounded-lg border border-border p-4 space-y-3">
