@@ -12,6 +12,7 @@ interface PermissionsMatrixProps {
 
 export function PermissionsMatrix({ permissions, onChange }: PermissionsMatrixProps) {
   const [perms, setPerms] = useState<PermissionsMap>(permissions)
+  const biHospitalarHabilitada = useBiHospitalarHabilitada()
 
   useEffect(() => { onChange(perms) }, [perms])
 
@@ -362,6 +363,38 @@ export function PermissionsMatrix({ permissions, onChange }: PermissionsMatrixPr
 
 
 
+
+      {biHospitalarHabilitada && (
+        <div className="rounded-lg border border-border p-4 space-y-3">
+          <div>
+            <p className="text-xs font-semibold text-foreground uppercase tracking-wide">BI Gestão Hospitalar</p>
+            <p className="text-[11px] text-muted-foreground">Sem a permissão "Ver", o usuário não acessa o módulo nem chamando o banco diretamente. O administrador da empresa já tem todas.</p>
+          </div>
+          <div className="grid gap-2 sm:grid-cols-3">
+            {BI_HOSPITALAR_PERMISSIONS.map(p => {
+              const cur = ((perms as any).bi_hospitalar || []) as string[]
+              return (
+                <label key={p.code} className="flex items-start gap-2 rounded-md border border-border bg-muted/20 px-3 py-2 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    className="accent-primary mt-0.5"
+                    checked={cur.includes(p.code)}
+                    onChange={() => setPerms(prev => {
+                      const c = ((prev as any).bi_hospitalar || []) as string[]
+                      const next = c.includes(p.code) ? c.filter(x => x !== p.code) : [...c, p.code]
+                      return { ...prev, bi_hospitalar: next as any }
+                    })}
+                  />
+                  <span>
+                    <span className="block text-xs font-medium text-foreground">{p.label}</span>
+                    <span className="block text-[10px] text-muted-foreground">{p.description}</span>
+                  </span>
+                </label>
+              )
+            })}
+          </div>
+        </div>
+      )}
 
       <div className="flex items-center gap-3">
         <fieldset className="border border-border rounded-lg p-4 space-y-3">
