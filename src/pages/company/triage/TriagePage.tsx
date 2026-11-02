@@ -19,6 +19,7 @@ import { WristbandLabel } from '@/components/triage/WristbandLabel'
 import { gerarPdfEtiquetas } from '@/lib/labelPdf'
 import { useImpressaoLocal } from '@/hooks/useImpressaoLocal'
 import { supabase } from '@/integrations/supabase/client'
+import { HospitalIdentificationDialog } from '@/components/triage/HospitalIdentificationDialog'
 
 export default function TriagePage() {
   const {
@@ -32,6 +33,7 @@ export default function TriagePage() {
   const [direct, setDirect] = useState({ name: '', cpf: '', protocol: '' })
   const [configOpen, setConfigOpen] = useState(false)
   const [printTarget, setPrintTarget] = useState<TriageEntry | null>(null)
+  const [selectionTarget, setSelectionTarget] = useState<TriageEntry | null>(null)
   const [reprint, setReprint] = useState<{ entry: TriageEntry; reason: string; notes: string } | null>(null)
   const wristbandRef = useRef<HTMLDivElement>(null)
   const [sendTarget, setSendTarget] = useState<TriageEntry | null>(null)
@@ -85,7 +87,8 @@ export default function TriagePage() {
     const el = wristbandRef.current
     if (!el) {
       toast.error('Não foi possível montar a pulseira')
-      return
+      setPrintTarget(null)
+      return false
     }
     try {
       const blob = await gerarPdfEtiquetas(
@@ -94,20 +97,17 @@ export default function TriagePage() {
         settings?.wristband_width_mm || 25,
       )
       const ok = await imprimir('pulseira_triagem', blob)
-      if (ok) await registerPrint(entry.id, isReprint, reason)
+      return ok
     } catch (e) {
       toast.error('Falha ao gerar a pulseira')
+      return false
     } finally {
       setPrintTarget(null)
     }
   }
 
   const handlePrintClick = (entry: TriageEntry) => {
-    if (entry.wristband_printed_at) {
-      setReprint({ entry, reason: REPRINT_REASONS[0], notes: '' })
-      return
-    }
-    doPrint(entry, false)
+    setSelectionTarget(entry)
   }
 
   return (
@@ -191,7 +191,7 @@ export default function TriagePage() {
                 </div>
                 <div className="flex flex-wrap gap-2">
                   <Button size="sm" variant="outline" className="gap-1" onClick={() => handlePrintClick(e)} disabled={imprimindo}>
-                    <Printer className="h-3.5 w-3.5" /> {e.wristband_printed_at ? 'Reimprimir' : 'Pulseira'}
+                    <Printer className="h-3.5 w-3.5" /> Imprimir
                   </Button>
                   {e.status !== 'in_doctor' && (
                     <Button size="sm" className="gradient-bg text-white" onClick={() => { setSendSector(''); setSendTarget(e) }}>
@@ -229,6 +229,7 @@ export default function TriagePage() {
           }
         }}
       />
+      {selectionTarget && <HospitalIdentificationDialog context="triage" contextId={selectionTarget.id} onClose={() => setSelectionTarget(null)} onWristband={() => doPrint(selectionTarget, !!selectionTarget.wristband_printed_at)} onDone={reload} />}
 
       {/* Chamada direta */}
       <Dialog open={directOpen} onOpenChange={setDirectOpen}>

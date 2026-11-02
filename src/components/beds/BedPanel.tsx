@@ -12,6 +12,7 @@ import { Plus, Trash2, Pill, Send, LogOut, Clock, CheckCircle2, AlertTriangle } 
 import { MANCHESTER_COLORS, type ManchesterColor } from '@/data/manchester'
 import { AdmissionRequestDialog } from '@/components/inpatient/AdmissionRequestDialog'
 import { rpc, type Bed, type Occupancy, type Sector } from '@/hooks/useCollectionPosts'
+import { HospitalIdentificationDialog } from '@/components/triage/HospitalIdentificationDialog'
 
 const db = supabase as any
 const fmt = (d?: string | null) => d ? new Date(d).toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' }) : '—'
@@ -44,6 +45,7 @@ export function BedPanel({ bed, occupancy, sectors, onClose }: Props) {
   const [refNotes, setRefNotes] = useState('')
   const [, setTick] = useState(0)
   const [showAdm, setShowAdm] = useState(false)
+  const [printCompanion, setPrintCompanion] = useState(false)
   const [admReq, setAdmReq] = useState<any | null>(null)
 
   const load = useCallback(async () => {
@@ -127,6 +129,7 @@ export function BedPanel({ bed, occupancy, sectors, onClose }: Props) {
 
             <section className="space-y-2">
               <div className="flex items-center justify-between">
+                <Button variant="outline" size="sm" onClick={() => setPrintCompanion(true)}>Imprimir etiqueta de acompanhante</Button>
                 <h3 className="font-semibold flex items-center gap-2"><Pill className="h-4 w-4" /> Prescrições e aprazamento</h3>
                 <Button size="sm" variant="outline" onClick={() => setShowRx(s => !s)}><Plus className="h-4 w-4 mr-1" />Prescrever</Button>
               </div>
@@ -223,6 +226,7 @@ export function BedPanel({ bed, occupancy, sectors, onClose }: Props) {
           </div>
         )}
       </SheetContent>
+      {printCompanion && occupancy && <HospitalIdentificationDialog companionOnly context="post" contextId={occupancy.id} onClose={() => setPrintCompanion(false)} />}
     </Sheet>
   )
 }

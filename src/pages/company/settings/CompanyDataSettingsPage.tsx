@@ -3,6 +3,8 @@ import { Save, Loader2 } from 'lucide-react'
 import { toast } from 'sonner'
 import { supabase } from '@/integrations/supabase/client'
 import { useAuth } from '@/context/AuthContext'
+import { Button } from '@/components/ui/button'
+import { validCompanionLimit } from '@/lib/hospitalLabels'
 
 type Form = { name: string; nome_fantasia: string; cnpj: string; telefone: string; email: string; website: string }
 const empty: Form = { name: '', nome_fantasia: '', cnpj: '', telefone: '', email: '', website: '' }
@@ -22,13 +24,14 @@ export default function CompanyDataSettingsPage() {
   const [form, setForm] = useState<Form>(empty)
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
+  const [maxCompanions, setMaxCompanions] = useState(1)
 
   useEffect(() => {
     if (!companyId) { setLoading(false); return }
-    supabase.from('companies').select('name, nome_fantasia, cnpj, telefone, email, website').eq('id', companyId).single()
+    supabase.from('companies').select('name, nome_fantasia, cnpj, telefone, email, website, max_acompanhantes').eq('id', companyId).single()
       .then(({ data, error }) => {
         if (error) toast.error('Não foi possível carregar os dados da empresa')
-        else if (data) setForm(Object.fromEntries(Object.keys(empty).map(k => [k, (data as any)[k] ?? ''])) as Form)
+        else if (data) { setForm(Object.fromEntries(Object.keys(empty).map(k => [k, (data as any)[k] ?? ''])) as Form); setMaxCompanions(data.max_acompanhantes) }
         setLoading(false)
       })
   }, [companyId])
@@ -36,9 +39,10 @@ export default function CompanyDataSettingsPage() {
   const save = async () => {
     if (!companyId) return
     if (!form.name.trim()) { toast.error('Informe a Razão Social'); return }
+    if (!validCompanionLimit(maxCompanions)) { toast.error('Quantidade de acompanhantes deve ser um número inteiro a partir de 1'); return }
     setSaving(true)
     const payload = Object.fromEntries(Object.entries(form).map(([k, v]) => [k, v.trim() || null]))
-    const { error } = await supabase.from('companies').update(payload as any).eq('id', companyId)
+    const { error } = await supabase.from('companies').update({ ...payload, max_acompanhantes: maxCompanions } as any).eq('id', companyId)
     setSaving(false)
     if (error) { toast.error('Não foi possível salvar: ' + error.message); return }
     toast.success('Dados salvos. Atualizando o nome no topo...')
@@ -66,11 +70,12 @@ export default function CompanyDataSettingsPage() {
                 </div>
               ))}
             </div>
+            <div><label htmlFor="max-companions" className="text-sm font-medium">Quantidade máxima de acompanhantes por paciente</label><input id="max-companions" type="number" min={1} step={1} value={maxCompanions} disabled={!canEdit} onChange={e => setMaxCompanions(Number(e.target.value))} className="mt-1 w-full rounded-lg border border-input bg-background px-3 py-2 text-sm" /></div>
             {canEdit ? (
               <div className="flex justify-end pt-4">
-                <button onClick={save} disabled={saving} className="gradient-bg rounded-lg px-6 py-2 text-sm font-semibold text-primary-foreground flex items-center gap-2 disabled:opacity-60">
+                <Button onClick={save} disabled={saving} className="gradient-bg px-6 text-primary-foreground gap-2">
                   {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />} Salvar
-                </button>
+                </Button>
               </div>
             ) : <p className="text-xs text-muted-foreground">Somente administradores podem alterar estes dados.</p>}
           </>

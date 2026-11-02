@@ -13,6 +13,7 @@ import { useLabelConfig } from '@/hooks/useLabelConfig'
 import { useLabSettings } from '@/hooks/useLabSettings'
 import { generateSampleHash } from '@/utils/orderHash'
 import { NutricaoLabelConfigCard } from './NutricaoLabelConfigCard'
+import { HospitalLabelConfigSection } from './HospitalLabelConfigSection'
 import {
   BARCODE_MAX_MM,
   BARCODE_MIN_MM,
@@ -179,6 +180,7 @@ export function LabPrinterLabelSection() {
   return (
     <div className="space-y-8">
       <NutricaoLabelConfigCard />
+      <HospitalLabelConfigSection />
       <div className="flex items-center justify-between gap-3 flex-wrap">
         <h3 className="text-lg font-bold">Configuração de Impressora / Etiqueta</h3>
         <div className="flex items-center gap-2">
