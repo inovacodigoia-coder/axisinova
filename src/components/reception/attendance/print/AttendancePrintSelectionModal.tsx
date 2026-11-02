@@ -284,7 +284,7 @@ export function AttendancePrintSelectionModal({ open, onClose, onConfirm, order,
             {noTemplates && <div role="alert" className="mb-3 border border-border rounded p-3 text-sm text-foreground"><p>Nenhum modelo cadastrado</p><Button variant="link" onClick={() => { onClose(); navigate('/app/configuracoes/documentos'); }}>Configurações</Button></div>}
             {/* Options */}
             <div className="divide-y divide-slate-100">
-              {options.filter(opt => multiSelect || opt.enabled).map((opt) => (
+              {options.map((opt) => (
                 <div
                   key={opt.id}
                   className={cn(
