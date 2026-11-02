@@ -17,6 +17,7 @@ import { useCrmAcesso } from '@/hooks/useCrm'
 import { useFinanceiroAcesso } from '@/hooks/useFinanceiro'
 import { useCaixaAcesso } from '@/hooks/useCaixa'
 import { useBiHospitalarAcesso } from '@/hooks/useBiHospitalar'
+import { rolloutNavigationAllowed } from '@/lib/rolloutNavigation'
 import { cn } from '@/lib/utils'
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
 import type { SystemModule } from '@/types/permissions.types'
@@ -201,6 +202,15 @@ export function CompanySidebar({ mobileOpen, onMobileClose, collapsed = false, o
   const [sidebarBg, setSidebarBg] = useState<string | undefined>(undefined)
   const [brandName, setBrandName] = useState<string | null>(null)
   const [logoUrl, setLogoUrl] = useState<string | null>(null)
+  const [almoxEnabled, setAlmoxEnabled] = useState(false)
+  useEffect(() => {
+    let active = true
+    setAlmoxEnabled(false)
+    void supabase.rpc('almox_modulo_liberado').then(({ data, error }) => {
+      if (active) setAlmoxEnabled(!error && data === true)
+    })
+    return () => { active = false }
+  }, [user?.id, user?.companyId])
 
   const { orders } = useAttendanceCadastro()
   const inovachat = useInovachatAcesso()
@@ -215,6 +225,7 @@ export function CompanySidebar({ mobileOpen, onMobileClose, collapsed = false, o
   const visibleSections = NAV_SECTIONS.map(section => ({
     ...section,
     items: section.items.filter(item => {
+      if (!rolloutNavigationAllowed(item.path, almoxEnabled, activeSector?.moduleOverrides)) return false
       if (item.path === '/app/inovachat') return !!inovachat?.ver
       if (item.path === '/app/crm') return !!crmAcesso?.ver
       if (item.path === '/app/chat-interno') return !!chatInterno?.ver
