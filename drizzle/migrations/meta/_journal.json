@@ -897,6 +897,13 @@
       "when": 1793594191056,
       "tag": "0127_bi_hospitalar_modulo",
       "breakpoints": true
+    },
+    {
+      "idx": 128,
+      "version": "7",
+      "when": 1793594264706,
+      "tag": "0128_bi_hospitalar_gatilhos",
+      "breakpoints": true
     }
   ]
 }

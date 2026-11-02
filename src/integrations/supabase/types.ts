@@ -2378,6 +2378,7 @@ export type Database = {
           has_fever: boolean
           hash: string | null
           height: string | null
+          hospital_episode_id: string | null
           hospital_id: string | null
           hospital_name: string | null
           hospital_sector_id: string | null
@@ -2431,6 +2432,7 @@ export type Database = {
           has_fever?: boolean
           hash?: string | null
           height?: string | null
+          hospital_episode_id?: string | null
           hospital_id?: string | null
           hospital_name?: string | null
           hospital_sector_id?: string | null
@@ -2484,6 +2486,7 @@ export type Database = {
           has_fever?: boolean
           hash?: string | null
           height?: string | null
+          hospital_episode_id?: string | null
           hospital_id?: string | null
           hospital_name?: string | null
           hospital_sector_id?: string | null
@@ -8345,6 +8348,7 @@ export type Database = {
           generated_at: string
           guiche_id: string | null
           guiche_name: string | null
+          hospital_episode_id: string | null
           id: string
           number: number
           patient_name: string | null
@@ -8367,6 +8371,7 @@ export type Database = {
           generated_at?: string
           guiche_id?: string | null
           guiche_name?: string | null
+          hospital_episode_id?: string | null
           id?: string
           number: number
           patient_name?: string | null
@@ -8389,6 +8394,7 @@ export type Database = {
           generated_at?: string
           guiche_id?: string | null
           guiche_name?: string | null
+          hospital_episode_id?: string | null
           id?: string
           number?: number
           patient_name?: string | null
@@ -10757,6 +10763,21 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      bi_jornada_segmentos: {
+        Row: {
+          attendance_order_id: string | null
+          company_id: string | null
+          duracao_minutos: number | null
+          em_andamento: boolean | null
+          fase: string | null
+          fim: string | null
+          hospital_episode_id: string | null
+          inicio: string | null
+          patient_id: string | null
+          setor: string | null
+        }
+        Relationships: []
       }
       whatsapp_fila_envios_v: {
         Row: {
