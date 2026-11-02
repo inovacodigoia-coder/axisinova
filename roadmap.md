@@ -1,5 +1,9 @@
 # Verificação dos alertas
 
+# BI Hospitalar — Etapa 2A: materiais por paciente
+- [ ] Inspecionar custo, saldo por setor e vínculo de atendimento nos três painéis; confirmar autorização dos testes e unidades fracionadas antes de implementar.
+- [ ] Planejar custo com histórico, registro/estorno imutável, baixa no setor, consumo congelado e eventos no BI, permissões no banco e testes isolados.
+
 # Ativação restrita — Financeiro, Caixa e solicitações
 - [x] Financeiro/Caixa e Almoxarifado ativos somente na Labsaude; novas empresas inativas, navegação oculta nas demais.
 - [x] Solicitações desmarcadas em todos os setores, exceto TI – Administração; demais opções preservadas e padrão aplicado a novos setores.
