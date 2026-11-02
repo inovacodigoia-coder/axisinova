@@ -2887,6 +2887,183 @@ export type Database = {
           },
         ]
       }
+      bi_acesso_log: {
+        Row: {
+          acao: string
+          company_id: string
+          created_at: string
+          detalhes: Json
+          id: string
+          usuario_id: string | null
+        }
+        Insert: {
+          acao: string
+          company_id: string
+          created_at?: string
+          detalhes?: Json
+          id?: string
+          usuario_id?: string | null
+        }
+        Update: {
+          acao?: string
+          company_id?: string
+          created_at?: string
+          detalhes?: Json
+          id?: string
+          usuario_id?: string | null
+        }
+        Relationships: []
+      }
+      bi_consumo_itens: {
+        Row: {
+          administrado_em: string | null
+          attendance_order_id: string | null
+          company_id: string
+          created_at: string
+          detalhes: Json
+          dose: string | null
+          hospital_episode_id: string | null
+          id: string
+          item_codigo: string | null
+          item_nome: string
+          origem_id: string | null
+          origem_tabela: string | null
+          patient_id: string | null
+          quantidade: number | null
+          sem_valor_cadastrado: boolean
+          tipo: string
+          valor_unitario: number | null
+        }
+        Insert: {
+          administrado_em?: string | null
+          attendance_order_id?: string | null
+          company_id: string
+          created_at?: string
+          detalhes?: Json
+          dose?: string | null
+          hospital_episode_id?: string | null
+          id?: string
+          item_codigo?: string | null
+          item_nome: string
+          origem_id?: string | null
+          origem_tabela?: string | null
+          patient_id?: string | null
+          quantidade?: number | null
+          sem_valor_cadastrado?: boolean
+          tipo: string
+          valor_unitario?: number | null
+        }
+        Update: {
+          administrado_em?: string | null
+          attendance_order_id?: string | null
+          company_id?: string
+          created_at?: string
+          detalhes?: Json
+          dose?: string | null
+          hospital_episode_id?: string | null
+          id?: string
+          item_codigo?: string | null
+          item_nome?: string
+          origem_id?: string | null
+          origem_tabela?: string | null
+          patient_id?: string | null
+          quantidade?: number | null
+          sem_valor_cadastrado?: boolean
+          tipo?: string
+          valor_unitario?: number | null
+        }
+        Relationships: []
+      }
+      bi_jornada_erros: {
+        Row: {
+          company_id: string | null
+          created_at: string
+          erro: string | null
+          id: string
+          origem_id: string | null
+          origem_tabela: string | null
+          tipo_evento: string | null
+        }
+        Insert: {
+          company_id?: string | null
+          created_at?: string
+          erro?: string | null
+          id?: string
+          origem_id?: string | null
+          origem_tabela?: string | null
+          tipo_evento?: string | null
+        }
+        Update: {
+          company_id?: string | null
+          created_at?: string
+          erro?: string | null
+          id?: string
+          origem_id?: string | null
+          origem_tabela?: string | null
+          tipo_evento?: string | null
+        }
+        Relationships: []
+      }
+      bi_jornada_eventos: {
+        Row: {
+          ajuste_de: string | null
+          attendance_order_id: string | null
+          company_id: string
+          created_at: string
+          detalhes: Json
+          fase: string | null
+          hospital_episode_id: string | null
+          id: string
+          justificativa: string | null
+          local: string | null
+          ocorrido_em: string
+          origem_id: string | null
+          origem_tabela: string | null
+          patient_id: string | null
+          setor: string | null
+          tipo_evento: string
+          usuario_id: string | null
+        }
+        Insert: {
+          ajuste_de?: string | null
+          attendance_order_id?: string | null
+          company_id: string
+          created_at?: string
+          detalhes?: Json
+          fase?: string | null
+          hospital_episode_id?: string | null
+          id?: string
+          justificativa?: string | null
+          local?: string | null
+          ocorrido_em?: string
+          origem_id?: string | null
+          origem_tabela?: string | null
+          patient_id?: string | null
+          setor?: string | null
+          tipo_evento: string
+          usuario_id?: string | null
+        }
+        Update: {
+          ajuste_de?: string | null
+          attendance_order_id?: string | null
+          company_id?: string
+          created_at?: string
+          detalhes?: Json
+          fase?: string | null
+          hospital_episode_id?: string | null
+          id?: string
+          justificativa?: string | null
+          local?: string | null
+          ocorrido_em?: string
+          origem_id?: string | null
+          origem_tabela?: string | null
+          patient_id?: string | null
+          setor?: string | null
+          tipo_evento?: string
+          usuario_id?: string | null
+        }
+        Relationships: []
+      }
       chat_interno_conversa: {
         Row: {
           company_id: string
@@ -3070,6 +3247,9 @@ export type Database = {
           armazenamento_limite_gb: number | null
           armazenamento_usado_gb: number | null
           bairro: string | null
+          bi_hospitalar_habilitado: boolean
+          bi_hospitalar_habilitado_em: string | null
+          bi_hospitalar_habilitado_por: string | null
           cep: string | null
           chat_interno_habilitado: boolean
           chat_interno_retencao_meses: number
@@ -3124,6 +3304,9 @@ export type Database = {
           armazenamento_limite_gb?: number | null
           armazenamento_usado_gb?: number | null
           bairro?: string | null
+          bi_hospitalar_habilitado?: boolean
+          bi_hospitalar_habilitado_em?: string | null
+          bi_hospitalar_habilitado_por?: string | null
           cep?: string | null
           chat_interno_habilitado?: boolean
           chat_interno_retencao_meses?: number
@@ -3178,6 +3361,9 @@ export type Database = {
           armazenamento_limite_gb?: number | null
           armazenamento_usado_gb?: number | null
           bairro?: string | null
+          bi_hospitalar_habilitado?: boolean
+          bi_hospitalar_habilitado_em?: string | null
+          bi_hospitalar_habilitado_por?: string | null
           cep?: string | null
           chat_interno_habilitado?: boolean
           chat_interno_retencao_meses?: number
@@ -11658,6 +11844,37 @@ export type Database = {
       }
       bed_release: {
         Args: { _bed_id: string; _reason: string }
+        Returns: undefined
+      }
+      bi_evento: {
+        Args: {
+          _company: string
+          _detalhes?: Json
+          _episodio: string
+          _fase: string
+          _local: string
+          _origem_id: string
+          _origem_tabela: string
+          _paciente: string
+          _pedido: string
+          _setor: string
+          _tipo: string
+          _usuario: string
+        }
+        Returns: undefined
+      }
+      bi_hospitalar_liberar: {
+        Args: { _company: string; _habilitado: boolean }
+        Returns: undefined
+      }
+      bi_hospitalar_tem_permissao: { Args: { _acao: string }; Returns: boolean }
+      bi_meu_acesso: { Args: never; Returns: Json }
+      bi_registrar_acesso: {
+        Args: { _acao: string; _detalhes?: Json }
+        Returns: undefined
+      }
+      bi_registrar_evasao: {
+        Args: { _episodio: string; _motivo: string }
         Returns: undefined
       }
       calcular_prazo: {
