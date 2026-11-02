@@ -4,6 +4,8 @@ import { Card } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
+import { Textarea } from '@/components/ui/textarea'
+import { subtitleLines } from '@/components/lab/LabReportHeader'
 import { Switch } from '@/components/ui/switch'
 import { Badge } from '@/components/ui/badge'
 import { 
@@ -348,7 +350,7 @@ function openReportExample(settings: any) {
   .head img.r{height:${px(hs.logoSecondaryHeight,56)}px}
   .head .ttl{text-align:center;flex:1}
   .head h1{font-size:${px(hs.titleSize,16)}px;margin:0;text-transform:uppercase}
-  .head p{font-size:${px(hs.subtitleSize,10)}px;margin:4px 0 0;color:#52525b}
+  .head p{font-size:${px(hs.subtitleSize,10)}px;margin:4px 0 0;color:#52525b;text-align:center}
   .ph{height:64px;width:140px;border:1px dashed #d4d4d8;border-radius:4px;display:flex;align-items:center;justify-content:center;font-size:9px;color:#a1a1aa}
   .info{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;font-size:11px;margin-top:16px}
   .warn{margin-top:16px;padding:10px;border:1px solid #e4e4e7;background:#fafafa;font-size:11px;white-space:pre-wrap}
@@ -364,7 +366,7 @@ ${settings?.report_watermark_enabled !== false ? `<div class="wm">${esc(settings
 <div class="head">
   ${logoL ? `<img class="l" src="${logoL}" alt="Logo principal" />` : '<div class="ph">LOGO ESQUERDA</div>'}
   <div class="ttl"><h1>${esc(settings?.report_header_title || 'LABORATÓRIO MUNICIPAL CENTRAL')}</h1>
-  ${settings?.report_header_subtitle ? `<p>${esc(settings.report_header_subtitle)}</p>` : ''}</div>
+  ${subtitleLines(settings?.report_header_subtitle).length ? `<p>${subtitleLines(settings?.report_header_subtitle).map(esc).join('<br />')}</p>` : ''}</div>
   ${logoR ? `<img class="r" src="${logoR}" alt="Logo secundário" />` : '<div class="ph">LOGO DIREITA</div>'}
 </div>
 <h2 style="font-size:15px;margin:16px 0 0;text-transform:uppercase">MARIA DA SILVA SANTOS</h2>
@@ -462,11 +464,15 @@ function ReportLayoutSection({ settings, setSettings }: { settings: any, setSett
         </div>
         <div className="space-y-2">
           <div className="flex items-center justify-between gap-2"><Label>Subtítulo (opcional)</Label><SizeControl settings={settings} setSettings={setSettings} field="subtitleSize" def={10} min={6} max={28} step={1} /></div>
-          <Input 
+          <Textarea
+            rows={3}
             value={settings?.report_header_subtitle || ''}
             onChange={(e) => setSettings({ ...settings, report_header_subtitle: e.target.value })}
-            placeholder="Ex: Secretaria Municipal de Saúde" 
+            onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) e.preventDefault() }}
+            placeholder="Ex: Secretaria Municipal de Saúde"
+            className="resize-y text-sm leading-snug"
           />
+          <p className="text-[10px] text-muted-foreground">Shift+Enter para nova linha. Cada linha aparece abaixo da outra, centralizada.</p>
         </div>
       </div>
 
