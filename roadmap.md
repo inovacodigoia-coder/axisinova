@@ -1,5 +1,12 @@
 # Verificação dos alertas
 
+# Triagem — etiquetas do paciente e acompanhante
+- [ ] Confirmar fontes do atendimento/local e apresentar plano conforme decisões: local de atendimento, campos aprovados, uma etiqueta por vez.
+- [ ] Reutilizar seleção de impressão e preservar pulseira; etiquetas configuráveis no padrão Nutrição.
+- [ ] Cadastro compartilhado por atendimento, limite por hospital e registros de impressão com permissões no servidor.
+- [ ] Integrar Triagem, painel dos Postos de Coleta e Internação; testar regras, isolamento e fluxo com dados descartáveis.
+- [ ] Validar impressora Zebra do cliente: equipamento e servidor local indisponíveis neste ambiente.
+
 # Declarações e Termos
 - [x] Criar modelos configuráveis, padrões, variáveis e impressão conforme o pedido.
 - [x] Criar cadastro seguro por empresa, editor rico e pré-visualização com cabeçalho compartilhado do laudo; CRUD validado com modelo descartável removido.
