@@ -242,6 +242,9 @@ export default function ReceptionPage() {
                           <CheckCircle2 className="h-3 w-3" /> Finalizar
                         </button>
                       )}
+                      {(t as any).hospital_episode_id && t.status !== 'finalized' && (
+                        <BiEvasaoButton episodioId={(t as any).hospital_episode_id} pacienteNome={t.patient_name} />
+                      )}
                     </div>
                   </div>
                 )
