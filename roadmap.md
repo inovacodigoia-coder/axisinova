@@ -1,5 +1,10 @@
 # Verificação dos alertas
 
+# Labsaude — teste operacional de almoxarifado e farmácia
+- [x] Gravados e relidos na Labsaude: 10 itens TESTE, 5 solicitações (3 aprovadas e 2 recusadas), Farmácia com saldos 2/3/40/60; medicamentos fictícios inativos, sem alterar registros existentes. Solicitante/decisor sintético do sistema, sem sessão em nome de usuário.
+- [x] 24 testes SQL isolados passaram: carga idempotente, aprovação, recusa, transferência, saldos, isolamento e proteção clínica; saldo total 1000 e zero movimentos nas recusas confirmados no banco.
+- [ ] Conferir telas e ações com sessão autorizada: sessão injetada redireciona ao login; nenhum login gerado em nome de usuário.
+
 # Almoxarifado — solicitações e transferência por setor
 - [x] Cadastro e saldo do almoxarifado, solicitações de todos os setores e decisão atômica com histórico e permissões no banco (0134).
 - [x] Acesso compartilhado por setor; medicamentos aprovados ligados ao cadastro e ao saldo da Farmácia.
