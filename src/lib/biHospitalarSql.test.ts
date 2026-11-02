@@ -130,7 +130,7 @@ describe('BI Gestão Hospitalar — Etapa 1: módulo, jornada, consumo e segment
     expect(r.rows[0].sem).toBe(true)
   })
   it('eventos e consumos são imutáveis', async () => {
-    await expect(db.query(`update bi_jornada_eventos set setor='X' where company_id='${cid}' limit 1`)).rejects.toThrow(/imutáveis/)
+    await expect(db.query(`update bi_jornada_eventos set setor='X' where company_id='${cid}'`)).rejects.toThrow(/imutáveis/)
     await expect(db.query(`delete from bi_jornada_eventos where company_id='${cid}'`)).rejects.toThrow(/imutáveis/)
     await expect(db.query(`update bi_consumo_itens set valor_unitario=1 where origem_id='${exame}'`)).rejects.toThrow(/imutáveis/)
   })
