@@ -21,6 +21,7 @@ import { useImpressaoLocal } from '@/hooks/useImpressaoLocal'
 import { supabase } from '@/integrations/supabase/client'
 import { HospitalIdentificationDialog } from '@/components/triage/HospitalIdentificationDialog'
 import { useHospitalPrintPermission } from '@/hooks/useHospitalPrintPermission'
+import { HospitalLabelConfigSection } from '@/components/lab/settings/HospitalLabelConfigSection'
 
 export default function TriagePage() {
   const {
@@ -261,7 +262,7 @@ export default function TriagePage() {
 
       {/* Configuração do hospital */}
       <Dialog open={configOpen} onOpenChange={setConfigOpen}>
-        <DialogContent>
+        <DialogContent className="sm:max-w-2xl max-h-[90vh] overflow-y-auto">
           <DialogHeader><DialogTitle>Configuração da triagem</DialogTitle></DialogHeader>
           <div className="space-y-4">
             <div>
@@ -296,6 +297,7 @@ export default function TriagePage() {
               </div>
             </div>
           </div>
+          <HospitalLabelConfigSection />
           <DialogFooter>
             <Button variant="outline" onClick={() => setConfigOpen(false)}>Fechar</Button>
           </DialogFooter>

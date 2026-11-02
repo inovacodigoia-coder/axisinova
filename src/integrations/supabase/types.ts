@@ -8857,6 +8857,7 @@ export type Database = {
           hospital_episode_id: string | null
           id: string
           location_sector_id: string | null
+          location_sector_key: string | null
           order_id: string | null
           patient_birth_date: string | null
           patient_cpf: string | null
@@ -8890,6 +8891,7 @@ export type Database = {
           hospital_episode_id?: string | null
           id?: string
           location_sector_id?: string | null
+          location_sector_key?: string | null
           order_id?: string | null
           patient_birth_date?: string | null
           patient_cpf?: string | null
@@ -8923,6 +8925,7 @@ export type Database = {
           hospital_episode_id?: string | null
           id?: string
           location_sector_id?: string | null
+          location_sector_key?: string | null
           order_id?: string | null
           patient_birth_date?: string | null
           patient_cpf?: string | null
@@ -12101,6 +12104,10 @@ export type Database = {
         Returns: undefined
       }
       hospital_identificacao_local: {
+        Args: { _id: string; _sector: string }
+        Returns: undefined
+      }
+      hospital_identificacao_local_definir: {
         Args: { _id: string; _sector: string }
         Returns: undefined
       }

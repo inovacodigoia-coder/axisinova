@@ -33,7 +33,7 @@ export function HospitalIdentificationDialog({ context, contextId, onClose, onWr
     locked.current = true; setBusy(true); setError(''); let job: string | undefined; let delivered = false
     try {
       if (type === 'pulseira_triagem' && wristbandReprint && reprintReason.startsWith('Outro') && !reason.trim()) throw new Error('Descreva o motivo da reimpressão')
-      if (type !== 'pulseira_triagem' && data.locationRequired) { if (!sector || context !== 'triage') throw new Error('Local atual do paciente indisponível'); await rpc('hospital_identificacao_local', { _id: contextId, _sector: sector }) }
+      if (type !== 'pulseira_triagem' && data.locationRequired) { if (!sector || context !== 'triage') throw new Error('Local atual do paciente indisponível'); await rpc('hospital_identificacao_local_definir', { _id: contextId, _sector: sector }) }
       const prepared: HospitalPrintData = await rpc('hospital_identificacao_preparar', { _context: context, _id: contextId, _tipo: type, _companion: type === 'etiqueta_acompanhante' ? companion : null, _details: type === 'pulseira_triagem' && wristbandReprint ? [reprintReason, reason].filter(Boolean).join(' — ') : null }); job = prepared.printId
       if (!job) throw new Error('Não foi possível registrar a impressão')
       let state: 'confirmado' | 'navegador'
