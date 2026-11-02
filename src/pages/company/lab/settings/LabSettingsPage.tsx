@@ -348,7 +348,7 @@ function openReportExample(settings: any) {
   .head img.r{height:${px(hs.logoSecondaryHeight,56)}px}
   .head .ttl{text-align:center;flex:1}
   .head h1{font-size:${px(hs.titleSize,16)}px;margin:0;text-transform:uppercase}
-  .head p{font-size:${px(hs.subtitleSize,10)}px;margin:4px 0 0;color:#52525b}
+  .head p{font-size:${px(hs.subtitleSize,10)}px;margin:4px 0 0;color:#52525b;text-align:center}
   .ph{height:64px;width:140px;border:1px dashed #d4d4d8;border-radius:4px;display:flex;align-items:center;justify-content:center;font-size:9px;color:#a1a1aa}
   .info{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;font-size:11px;margin-top:16px}
   .warn{margin-top:16px;padding:10px;border:1px solid #e4e4e7;background:#fafafa;font-size:11px;white-space:pre-wrap}
