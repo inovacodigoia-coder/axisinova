@@ -189,6 +189,44 @@ export type Database = {
           },
         ]
       }
+      almox_custo_historico: {
+        Row: {
+          company_id: string
+          id: string
+          item_id: string
+          ocorrido_em: string
+          usuario_id: string | null
+          valor_anterior: number | null
+          valor_novo: number | null
+        }
+        Insert: {
+          company_id: string
+          id?: string
+          item_id: string
+          ocorrido_em?: string
+          usuario_id?: string | null
+          valor_anterior?: number | null
+          valor_novo?: number | null
+        }
+        Update: {
+          company_id?: string
+          id?: string
+          item_id?: string
+          ocorrido_em?: string
+          usuario_id?: string | null
+          valor_anterior?: number | null
+          valor_novo?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "almox_custo_historico_item_id_fkey"
+            columns: ["item_id"]
+            isOneToOne: false
+            referencedRelation: "almox_itens"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       almox_itens: {
         Row: {
           ativo: boolean
@@ -196,10 +234,12 @@ export type Database = {
           company_id: string
           created_at: string
           created_by: string | null
+          custo_unitario: number | null
           dados_medicamento: Json
           id: string
           medicamento_id: string | null
           nome: string
+          permite_fracao: boolean
           unidade: string
         }
         Insert: {
@@ -208,10 +248,12 @@ export type Database = {
           company_id: string
           created_at?: string
           created_by?: string | null
+          custo_unitario?: number | null
           dados_medicamento?: Json
           id?: string
           medicamento_id?: string | null
           nome: string
+          permite_fracao?: boolean
           unidade?: string
         }
         Update: {
@@ -220,10 +262,12 @@ export type Database = {
           company_id?: string
           created_at?: string
           created_by?: string | null
+          custo_unitario?: number | null
           dados_medicamento?: Json
           id?: string
           medicamento_id?: string | null
           nome?: string
+          permite_fracao?: boolean
           unidade?: string
         }
         Relationships: [
@@ -3161,18 +3205,24 @@ export type Database = {
           administrado_em: string | null
           attendance_order_id: string | null
           company_id: string
+          contexto_id: string | null
+          contexto_tipo: string | null
           created_at: string
           detalhes: Json
           dose: string | null
+          estorno_de: string | null
           hospital_episode_id: string | null
           id: string
+          idempotencia: string | null
           item_codigo: string | null
           item_nome: string
+          material_item_id: string | null
           origem_id: string | null
           origem_tabela: string | null
           patient_id: string | null
           quantidade: number | null
           sem_valor_cadastrado: boolean
+          setor_id: string | null
           tipo: string
           valor_unitario: number | null
         }
@@ -3180,18 +3230,24 @@ export type Database = {
           administrado_em?: string | null
           attendance_order_id?: string | null
           company_id: string
+          contexto_id?: string | null
+          contexto_tipo?: string | null
           created_at?: string
           detalhes?: Json
           dose?: string | null
+          estorno_de?: string | null
           hospital_episode_id?: string | null
           id?: string
+          idempotencia?: string | null
           item_codigo?: string | null
           item_nome: string
+          material_item_id?: string | null
           origem_id?: string | null
           origem_tabela?: string | null
           patient_id?: string | null
           quantidade?: number | null
           sem_valor_cadastrado?: boolean
+          setor_id?: string | null
           tipo: string
           valor_unitario?: number | null
         }
@@ -3199,22 +3255,50 @@ export type Database = {
           administrado_em?: string | null
           attendance_order_id?: string | null
           company_id?: string
+          contexto_id?: string | null
+          contexto_tipo?: string | null
           created_at?: string
           detalhes?: Json
           dose?: string | null
+          estorno_de?: string | null
           hospital_episode_id?: string | null
           id?: string
+          idempotencia?: string | null
           item_codigo?: string | null
           item_nome?: string
+          material_item_id?: string | null
           origem_id?: string | null
           origem_tabela?: string | null
           patient_id?: string | null
           quantidade?: number | null
           sem_valor_cadastrado?: boolean
+          setor_id?: string | null
           tipo?: string
           valor_unitario?: number | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "bi_consumo_itens_estorno_de_fkey"
+            columns: ["estorno_de"]
+            isOneToOne: false
+            referencedRelation: "bi_consumo_itens"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "bi_consumo_itens_material_item_id_fkey"
+            columns: ["material_item_id"]
+            isOneToOne: false
+            referencedRelation: "almox_itens"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "bi_consumo_itens_setor_id_fkey"
+            columns: ["setor_id"]
+            isOneToOne: false
+            referencedRelation: "company_sectors"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       bi_jornada_erros: {
         Row: {
@@ -11326,6 +11410,10 @@ export type Database = {
         }
         Returns: string
       }
+      almox_material_configurar: {
+        Args: { _custo: number; _fracao: boolean; _item: string }
+        Returns: undefined
+      }
       almox_modulo_liberado: { Args: never; Returns: boolean }
       almox_permissao: { Args: { _acao: string }; Returns: boolean }
       almox_setor_acesso: { Args: { _setor: string }; Returns: boolean }
@@ -13076,6 +13164,32 @@ export type Database = {
         }[]
       }
       lab_norm: { Args: { t: string }; Returns: string }
+      materiais_contexto_resolver: {
+        Args: { _id: string; _tipo: string }
+        Returns: Json
+      }
+      materiais_estornar: {
+        Args: { _chave: string; _motivo: string; _uso: string }
+        Returns: string
+      }
+      materiais_painel: {
+        Args: { _id: string; _setor?: string; _tipo: string }
+        Returns: Json
+      }
+      materiais_registrar: {
+        Args: {
+          _chave: string
+          _id: string
+          _item: string
+          _observacao: string
+          _quantidade: number
+          _setor: string
+          _tipo: string
+        }
+        Returns: string
+      }
+      materiais_setor_validar: { Args: { _setor: string }; Returns: undefined }
+      materiais_tem_permissao: { Args: { _acao: string }; Returns: boolean }
       next_attendance_order_number: {
         Args: { _company_id: string; _origin_code: string; _origin_id: string }
         Returns: string

@@ -953,6 +953,13 @@
       "when": 1793600063559,
       "tag": "0135_almoxarifado_company_enablement",
       "breakpoints": true
+    },
+    {
+      "idx": 136,
+      "version": "7",
+      "when": 1793612720227,
+      "tag": "0136_materiais_consumo_paciente",
+      "breakpoints": true
     }
   ]
 }
