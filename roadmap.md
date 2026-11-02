@@ -127,10 +127,11 @@
 - [ ] Validar na tela logada: sem sessão autorizada, o preview redireciona ao login.
 
 # BI de Gestão Hospitalar — Etapa 1 de 3
-- [ ] Investigar banco/código e responder os 6 pontos de validação do pedido (identificador de atendimento, mapeamento evento→tabela, custo medicação/preço exame, chegada sem totem, evasão, padrão de setores).
-- [ ] Habilitação do módulo por empresa (Super Admin, desabilitado por padrão), Setores, Perfis (Ver/Exportar/Configurar) com trava no banco.
-- [ ] Tabela de eventos da jornada (imutável, RLS por empresa) + gatilhos/ponto único de gravação nos fluxos existentes.
-- [ ] Itens consumidos com valor congelado (medicação/exame, "sem valor cadastrado" quando ausente).
-- [ ] View/função de segmentos de tempo por setor (aberto = em andamento).
-- [ ] Menu "BI Gestão Hospitalar" + tela-base; auditoria de acesso (LGPD).
-- [ ] Testes SQL isolados e validação autenticada.
+- [x] Investigação e 6 pontos de validação respondidos; decisões: episódio estendido ao totem/recepção, evasão manual com motivo, chegada = primeiro que ocorrer. Farmácia/estoque são fictícios: medicação gravada "sem valor cadastrado".
+- [x] Habilitação por empresa (bi_hospitalar_habilitado, desabilitado por padrão; painel Super Admin), Setores via module_overrides, Perfis com bi_hospitalar.ver/exportar/configurar e trava no banco (0127, 0129).
+- [x] bi_jornada_eventos imutável + gatilhos em senha, pedido, triagem, leitos, encaminhamentos, medicação, exames e internação; falha de evento registrada em bi_jornada_erros sem bloquear a operação (0128, 0130-0132).
+- [x] bi_consumo_itens com valor congelado (exame pelo código interno + preço do convênio; medicação sem valor) e view bi_jornada_segmentos com segmento em andamento.
+- [x] Menu "BI Gestão Hospitalar", rota /app/bi-hospitalar com tela-base, auditoria bi_acesso_log e botão "Registrar evasão" na Recepção e na Internação.
+- [x] 16 testes SQL isolados passaram (módulo, permissões, jornada completa, valor congelado, segmentos, isolamento, evasão); typecheck e build OK.
+- [ ] Validar na tela autenticada com paciente de teste descartável: depende de login ativo/autorizado no preview.
+- [ ] Etapa 2 (Relatório por Paciente) e Etapa 3 (dashboards, metas, gargalos, IA): aguardando os próximos pedidos.
