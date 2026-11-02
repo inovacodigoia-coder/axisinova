@@ -1,8 +1,9 @@
 import { useState, useEffect, useMemo } from 'react'
 import type { PermissionsMap, SystemModule, PermissionAction } from '@/types/permissions.types'
-import { SYSTEM_MODULES, ALL_ACTIONS, ACTION_LABELS, RESULT_ENTRY_PERMISSIONS, APOIO_PERMISSIONS, TRIAGEM_PERMISSIONS, WHATSAPP_PERMISSIONS, INOVACHAT_PERMISSIONS, CRM_PERMISSIONS, COLETA_PERMISSIONS } from '@/types/permissions.types'
+import { SYSTEM_MODULES, ALL_ACTIONS, ACTION_LABELS, RESULT_ENTRY_PERMISSIONS, APOIO_PERMISSIONS, TRIAGEM_PERMISSIONS, WHATSAPP_PERMISSIONS, INOVACHAT_PERMISSIONS, CRM_PERMISSIONS, COLETA_PERMISSIONS, BI_HOSPITALAR_PERMISSIONS } from '@/types/permissions.types'
 import { Progress } from '@/components/ui/progress'
 import { FINANCEIRO_PERMISSIONS } from '@/lib/financeiro'
+import { useBiHospitalarHabilitada } from '@/hooks/useBiHospitalar'
 
 interface PermissionsMatrixProps {
   permissions: PermissionsMap

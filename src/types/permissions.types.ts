@@ -161,6 +161,13 @@ export const COLETA_PERMISSIONS: { code: string; label: string; description: str
   { code: 'coleta.programar', label: 'Programar coleta para data futura', description: 'Definir no Detalhes do Atendimento uma data futura de coleta, com justificativa' },
 ]
 
+/** Permissões do BI de Gestão Hospitalar (permissions.bi_hospitalar; checadas no banco por bi_hospitalar_tem_permissao; administrador tem todas) */
+export const BI_HOSPITALAR_PERMISSIONS: { code: string; label: string; description: string }[] = [
+  { code: 'bi_hospitalar.ver', label: 'Ver o BI Gestão Hospitalar', description: 'Acessar a tela e os dados da jornada do paciente' },
+  { code: 'bi_hospitalar.exportar', label: 'Exportar', description: 'Exportar relatórios e dados do BI hospitalar' },
+  { code: 'bi_hospitalar.configurar', label: 'Configurar', description: 'Configurar o módulo e ver a auditoria de acesso' },
+]
+
 export const ACTION_LABELS: Record<PermissionAction, string> = {
   view: 'Ver',
   create: 'Criar',
