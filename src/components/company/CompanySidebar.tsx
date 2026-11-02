@@ -87,6 +87,7 @@ export const NAV_SECTIONS: NavSection[] = [
       { label: 'Atendimento (BI)', icon: 'TicketCheck', path: '/app/bi/atendimento', module: 'bi' },
       { label: 'Convênios (BI)', icon: 'Database', path: '/app/bi/convenios', module: 'bi' },
       { label: 'Performance', icon: 'Stethoscope', path: '/app/bi/medicos', module: 'bi' },
+      { label: 'BI Gestão Hospitalar', icon: 'Hospital', path: '/app/bi-hospitalar', module: null },
     ],
   },
   {
