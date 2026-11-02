@@ -1,10 +1,11 @@
 # Verificação dos alertas
 
 # Triagem — etiquetas do paciente e acompanhante
-- [ ] Confirmar fontes do atendimento/local e apresentar plano conforme decisões: local de atendimento, campos aprovados, uma etiqueta por vez.
-- [ ] Reutilizar seleção de impressão e preservar pulseira; etiquetas configuráveis no padrão Nutrição.
-- [ ] Cadastro compartilhado por atendimento, limite por hospital e registros de impressão com permissões no servidor.
-- [ ] Integrar Triagem, painel dos Postos de Coleta e Internação; testar regras, isolamento e fluxo com dados descartáveis.
+- [x] Confirmar fontes do atendimento/local e apresentar plano conforme decisões: local de atendimento, campos aprovados, uma etiqueta por vez.
+- [x] Reutilizar seleção de impressão e preservar pulseira; etiquetas configuráveis no padrão Nutrição; PDFs fictícios conferidos com nomes e setores completos.
+- [x] Cadastro compartilhado por episódio hospitalar, limite por empresa e registros de impressão com permissões no servidor; banco confirmado (0124–0125).
+- [x] Integrar Triagem, painel dos Postos de Coleta e Internação; testes isolados de regras, permissões, fluxo e envio sem impressões reais.
+- [ ] Conferir fluxo autenticado completo: sessão disponível redirecionou a /login; depende de login ativo/autorizado. Nenhuma sessão gerada ou cadastro real alterado pela validação.
 - [ ] Validar impressora Zebra do cliente: equipamento e servidor local indisponíveis neste ambiente.
 
 # Declarações e Termos
