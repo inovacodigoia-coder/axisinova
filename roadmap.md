@@ -1,5 +1,9 @@
 # Verificação dos alertas
 
+# Labsaude — teste operacional de almoxarifado e farmácia
+- [ ] Preparar pelo menos 10 itens identificados como teste, 5 solicitações (3 aprovadas e 2 recusadas) e medicamentos com saldo baixo/normal fora da demonstração, sem alterar registros existentes.
+- [ ] Executar testes de aprovação, recusa, transferência, saldos e isolamento; conferir dados gravados e telas com sessão autorizada.
+
 # Almoxarifado — solicitações e transferência por setor
 - [x] Cadastro e saldo do almoxarifado, solicitações de todos os setores e decisão atômica com histórico e permissões no banco (0134).
 - [x] Acesso compartilhado por setor; medicamentos aprovados ligados ao cadastro e ao saldo da Farmácia.
