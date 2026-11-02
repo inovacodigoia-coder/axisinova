@@ -1,5 +1,6 @@
 import { useState, Suspense, lazy } from 'react'
-import { Routes, Route, Navigate, useLocation } from 'react-router-dom'
+import { Routes, Route, Navigate, useLocation, Link } from 'react-router-dom'
+import { Button } from '@/components/ui/button'
 import { QueueProvider } from '@/context/QueueContext'
 import { QueueSystemProvider } from '@/context/QueueSystemContext'
 import { NotificationContextProvider, useNotificationContext } from '@/context/NotificationContext'
@@ -250,7 +251,7 @@ function PortalContent() {
         {/* Main content */}
         <main className="flex-1 p-4 sm:p-6">
           <BreadcrumbNav />
-          {['/app/triagem', '/app/postos-coleta', '/app/internacao', '/app/nutricao', '/app/medico'].includes(location.pathname) && <div className="flex justify-end mb-3"><Button variant="outline" onClick={() => navigate('/app/estoque/solicitacoes')}>Solicitar materiais / estoque do setor</Button></div>}
+          {['/app/triagem', '/app/postos-coleta', '/app/internacao', '/app/nutricao', '/app/medico'].includes(location.pathname) && <div className="flex justify-end mb-3"><Button variant="outline" asChild><Link to="/app/estoque/solicitacoes">Solicitar materiais / estoque do setor</Link></Button></div>}
           <PageTransition key={location.pathname}>
             <Routes>
               <Route path="dashboard" element={<CompanyDashboard />} />
