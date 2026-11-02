@@ -286,7 +286,7 @@ export function AttendancePrintSelectionModal({ open, onClose, onConfirm, order,
             {/* Options */}
             {!multiSelect && <PrintTypeSelection options={options.map(opt => ({ id: opt.id, label: opt.label, icon: Printer }))} selected={options.find(opt => opt.enabled)?.id || null} onSelect={toggleOption} disabled={isSaving} />}
             <div className="divide-y divide-slate-100">
-              {options.map((opt) => (
+              {options.filter(opt => multiSelect || opt.enabled).map((opt) => (
                 <div
                   key={opt.id}
                   className={cn(
@@ -296,7 +296,7 @@ export function AttendancePrintSelectionModal({ open, onClose, onConfirm, order,
                 >
                   <div className="flex items-center justify-between gap-3">
                     <div className="flex items-center gap-2.5 min-w-0">
-                      <div
+                      {multiSelect && <div
                         onClick={() => toggleOption(opt.id)}
                         className={cn(
                           "w-4 h-4 rounded border flex items-center justify-center cursor-pointer transition-all shrink-0",
@@ -306,7 +306,7 @@ export function AttendancePrintSelectionModal({ open, onClose, onConfirm, order,
                         )}
                       >
                         {opt.enabled && <CheckCircle2 className="h-2.5 w-2.5 text-white" />}
-                      </div>
+                      </div>}
                       <span className={cn(
                         "text-[13px] font-medium truncate transition-colors",
                         opt.id === 'etiquetas' && labelsBlocked ? "text-red-600" : opt.enabled ? "text-slate-900" : "text-slate-400"
