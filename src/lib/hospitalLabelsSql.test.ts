@@ -19,12 +19,13 @@ describe('identificação hospitalar: segurança, limite e vínculo',()=>{
       CREATE TABLE inpatient_beds(id uuid,company_id uuid,name text,unit_id uuid,current_request_id uuid,status text);
       CREATE TABLE inpatient_units(id uuid,company_id uuid,name text);CREATE TABLE beds(id uuid,company_id uuid,name text,post_id uuid);
       CREATE TABLE collection_posts(id uuid,company_id uuid,name text);
-      CREATE TABLE sector_users(user_id uuid,sector_id uuid);CREATE TABLE company_sectors(id uuid,company_id uuid,name text,is_active boolean,allowed_profile_ids text[]);
+      CREATE TABLE sector_users(user_id uuid,sector_id text);CREATE TABLE company_sectors(id text,company_id uuid,name text,is_active boolean,allowed_profile_ids text[]);
       CREATE TABLE access_profiles(id text,company_id uuid,is_active boolean,permissions jsonb);
       CREATE TABLE triage_wristband_prints(company_id uuid,entry_id uuid,is_reprint boolean,reason text,printed_by uuid);
       INSERT INTO companies VALUES('${cid}'),('${other}'); SET test.uid='${uid}'; SET test.admin='true';`)
     await db.exec(readFileSync('drizzle/migrations/0124_hospital_identificacao_acompanhantes.sql','utf8'))
     await db.exec(readFileSync('drizzle/migrations/0125_hospital_etiquetas_configuracao_guardas.sql','utf8'))
+    await db.exec(readFileSync('drizzle/migrations/0126_hospital_local_texto.sql','utf8'))
     await db.exec(`INSERT INTO company_sectors VALUES('${sector}','${cid}','Pronto Atendimento Adulto',true,ARRAY['p']);
       INSERT INTO triage_entries(id,company_id,patient_name,color) VALUES('${tri}','${cid}','Paciente Teste','yellow'),('00000000-0000-0000-0000-000000000013','${other}','Outro','blue');
       INSERT INTO bed_occupancies(id,company_id,triage_entry_id,patient_name,bed_id,status) VALUES('${occ}','${cid}','${tri}','Paciente Teste','${bed}','active');
@@ -41,6 +42,8 @@ describe('identificação hospitalar: segurança, limite e vínculo',()=>{
   it('novo cadastro bloqueado no limite 1',async()=>await expect(add('Outro Teste')).rejects.toThrow(/Limite/))
   it('triagem posto e internação compartilham o mesmo cadastro',async()=>{for(const [context,id] of [['triage',tri],['post',occ],['admission',adm]]){const data=(await ctx(context,id)).rows[0].ctx;expect(data.episodeId).toBe(tri);expect(data.companions).toHaveLength(1);expect(data.companions[0].id).toBe(companion)}})
   it('local sem leito vem do setor cadastrado',async()=>{await db.query('select hospital_identificacao_local($1,$2)',[tri,sector]);expect((await ctx()).rows[0].ctx.bed).toBe('Pronto Atendimento Adulto')})
+  it('local aceita identificador textual real sem exigir UUID',async()=>{await db.exec(`INSERT INTO company_sectors VALUES('setor-pronto-atendimento','${cid}','Recepção Hospitalar',true,ARRAY['p'])`);await db.query('select hospital_identificacao_local_definir($1,$2)',[tri,'setor-pronto-atendimento']);expect((await ctx()).rows[0].ctx.bed).toBe('Recepção Hospitalar')})
+  it('local textual de outra empresa permanece bloqueado',async()=>{await db.exec(`INSERT INTO company_sectors VALUES('setor-outra-empresa','${other}','Privado',true,ARRAY['p'])`);await expect(db.query('select hospital_identificacao_local_definir($1,$2)',[tri,'setor-outra-empresa'])).rejects.toThrow('Local inválido')})
   it('leito atual na internação supera origem da triagem',async()=>{await db.exec(`insert into inpatient_units values('${sector}','${cid}','Clínica Médica');insert into inpatient_beds values('${bed}','${cid}','Leito 01','${sector}','${adm}','occupied')`);const d=(await ctx()).rows[0].ctx;expect(d.bed).toBe('Leito 01');expect(d.sector).toBe('Clínica Médica')})
   it('reimpressões ilimitadas registradas após confirmação',async()=>{for(let i=0;i<3;i++){const job=(await prepare()).rows[0].job;expect(job.isReprint).toBe(i>0);await db.query('select hospital_identificacao_finalizar($1,$2)',[job.printId,'confirmado'])}expect((await db.query('select count(*)::int n from hospital_identificacao_prints where status=$1',['confirmado'])).rows).toEqual([{n:3}])})
   it('limite maior permite apenas quantidade configurada',async()=>{await db.query('update companies set max_acompanhantes=2 where id=$1',[cid]);await add('José Teste');await expect(add('Terceiro Teste')).rejects.toThrow(/Limite/)})

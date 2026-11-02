@@ -8,6 +8,8 @@ import { usePrinterConfig } from '@/hooks/usePrinterConfig'
 import { AttendancePrintModal } from '@/components/reception/attendance/print/AttendancePrintModal'
 import type { PrinterConfig, AttendanceControlDocument } from '@/types/payment-print.types'
 import { ServidorImpressaoStatus } from '@/components/print/ServidorImpressaoStatus'
+import { HospitalLabelConfigSection } from '@/components/lab/settings/HospitalLabelConfigSection'
+import { WristbandConfigSection } from '@/components/triage/WristbandConfigSection'
 
 function buildTestDocument(): AttendanceControlDocument {
   const now = new Date()
@@ -60,6 +62,12 @@ export default function PrinterSettingsPage() {
         </button>
       </div>
 
+      <section className="space-y-5 border-y border-border py-6">
+        <h2 className="text-lg font-bold">Identificação hospitalar — pulseira e etiquetas</h2>
+        <p className="text-sm text-muted-foreground">Impressora: definida no AisAxius deste computador. Tipos: pulseira_triagem, etiqueta_paciente e etiqueta_acompanhante.</p>
+        <WristbandConfigSection />
+        <HospitalLabelConfigSection />
+      </section>
       <div className="space-y-3">
         {printers.length === 0 && (
           <div className="rounded-lg border border-dashed border-border p-10 text-center text-muted-foreground text-sm">
