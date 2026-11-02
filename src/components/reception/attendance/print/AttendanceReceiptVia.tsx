@@ -2,6 +2,7 @@ import { passwordHint } from '@/hooks/useExternalAccesses'
 import { QRCodeSVG } from 'qrcode.react'
 import type { AttendanceControlDocument, PrinterConfig } from '@/types/payment-print.types'
 import { format, parseISO, isValid } from 'date-fns'
+import { birthWithAge } from '@/lib/attendanceDocHeader'
 
 interface Props {
   document: AttendanceControlDocument
@@ -38,7 +39,7 @@ export function AttendanceReceiptVia({ document: doc, config, via }: Props) {
     <div className={`via mx-auto ${widthClass} bg-white text-black p-4 text-[9pt] leading-tight font-sans print:m-0 print:border-none print:shadow-none print:w-full`}>
       {/* 1. Laboratório Info */}
       <div className="text-center border-b border-black pb-2 mb-2">
-        {config.showLogo && doc.companyLogo && (
+        {config.showLogo !== false && doc.companyLogo && (
           <img src={doc.companyLogo} alt="logo" className="h-10 mx-auto mb-1" />
         )}
         <div className="font-bold uppercase text-[11pt]">{doc.companyName}</div>
@@ -63,7 +64,7 @@ export function AttendanceReceiptVia({ document: doc, config, via }: Props) {
       <div className="grid grid-cols-2 gap-x-2 text-[8pt] border-b border-black pb-2 mb-2">
         <div><strong>Pedido:</strong> {doc.orderNumber}</div>
         <div><strong>Atend.:</strong> {doc.orderDate} {doc.orderTime}</div>
-        <div><strong>Nasc.:</strong> {doc.patientBirthDate} ({doc.patientAge})</div>
+        <div><strong>Nasc.:</strong> {birthWithAge(doc.patientBirthDate)}</div>
         <div><strong>Sexo:</strong> {doc.patientGender}</div>
       </div>
 

@@ -24,6 +24,8 @@ import { useAttendanceCadastro } from '@/hooks/useAttendanceCadastro'
 import type { AttendanceOrder } from '@/types/attendance-cadastro.types'
 import type { AttendanceControlDocument } from '@/types/payment-print.types'
 import type { Patient } from '@/types/patient.types'
+import { useLabSettings } from '@/hooks/useLabSettings'
+import { companyHeaderFromSettings } from '@/lib/attendanceDocHeader'
 import type { Ticket, TicketStatus } from '@/types/queue-system.types'
 
 const DEMO_COMPANY_ID = 'comp_001'
@@ -55,6 +57,7 @@ function mapDbTicket(row: any): Ticket {
 export default function ReceptionLayout() {
   const { stats } = useQueue()
   const { user } = useAuth()
+  const { settings: labSettings } = useLabSettings()
   const { state, dispatch, getUnitQueues, getUnitGuiches, getUnitTVs, getUnitTickets, loadCompanyData } = useQueueSystem()
   const isDemoCompany = user?.companyId === DEMO_COMPANY_ID
 
@@ -121,8 +124,8 @@ export default function ReceptionLayout() {
       authorizationCode: order.authorizationCode, authorizationExpiry: order.authorizationExpiry,
       attachments: order.attachments.map(a => ({ name: a.documentType, type: 'document' })),
       registeredByName: order.registeredByName,
-      companyName: 'CLÍNICA AXIS INOVA', companyAddress: 'Rua das Flores, 123 · Natal/RN',
-      companyCNPJ: '00.000.000/0001-00', companyPhone: '(84) 3333-0000',
+      patientBirthDate: order.patientBirthDate,
+      ...companyHeaderFromSettings(labSettings),
     }
   }
 

@@ -9,6 +9,7 @@ import { supabase } from '@/integrations/supabase/client'
 import { useAttendanceCadastro } from '@/hooks/useAttendanceCadastro'
 import { usePatients } from '@/hooks/usePatients'
 import { useLabSettings } from '@/hooks/useLabSettings'
+import { companyHeaderFromSettings } from '@/lib/attendanceDocHeader'
 import { useCompanySequenceId } from '@/hooks/useCompanySequenceId'
 import { tubosDosExames, useMateriaisTubos } from '@/lib/tubos'
 import { buildSampleCode, generateSampleHash } from '@/utils/orderHash'
@@ -93,11 +94,7 @@ function buildDoc(order: AttendanceOrder, patient: Patient | undefined, unitName
     authorizationExpiry: order.authorizationExpiry,
     attachments: order.attachments.map(a => ({ name: a.documentType, type: 'document' })),
     registeredByName: order.registeredByName,
-    companyName: settings?.lab_name || 'AXIS INOVA',
-    companyAddress: settings?.address_street ? `${settings.address_street}, ${settings.address_number} · ${settings.address_city}/${settings.address_state}` : 'Rua das Flores, 123 · Natal/RN',
-    companyCNPJ: settings?.cnpj || '00.000.000/0001-00',
-    companyPhone: settings?.phone || '(84) 3333-0000',
-    companyLogo: settings?.report_logo_primary_url || undefined,
+    ...companyHeaderFromSettings(settings),
   }
 }
 

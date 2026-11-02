@@ -1,12 +1,13 @@
+import { formatBirthBR } from '@/lib/attendanceDocHeader'
 import type { AttendanceControlDocument } from '@/types/payment-print.types'
 
 export function AttendanceConsent({ document: doc }: { document: AttendanceControlDocument }) {
   return <article className="attendance-consent">
-    <header><h2>{doc.companyName}</h2><p>{doc.companyAddress}</p><p>{doc.companyPhone}</p></header>
+    <header>{doc.companyLogo && <img src={doc.companyLogo} alt="logo" style={{ height: 40, margin: '0 auto' }} />}<h2>{doc.companyName}</h2><p>{doc.companyAddress}</p><p>{doc.companyPhone}</p></header>
     <h1>TERMO DE CONSENTIMENTO</h1>
     <p><strong>Paciente:</strong> {doc.patientName}</p>
     <p><strong>Pedido:</strong> {doc.orderNumber} · <strong>Data:</strong> {doc.orderDate} {doc.orderTime}</p>
-    <p><strong>Nascimento:</strong> {doc.patientBirthDate} · <strong>CPF:</strong> {doc.patientCPF}</p>
+    <p><strong>Nascimento:</strong> {formatBirthBR(doc.patientBirthDate) || '—'} · <strong>CPF:</strong> {doc.patientCPF}</p>
     <h3>Exames solicitados</h3>
     <ul>{doc.exams.map((exam, index) => <li key={`${exam.code}-${index}`}>{exam.name}</li>)}</ul>
     <p>Autorizo a coleta das amostras necessárias e a realização dos exames relacionados neste pedido.</p>
