@@ -19,6 +19,7 @@ import { useInpatientPermissions } from '@/hooks/useInpatientPermissions'
 import { AdmissionRequestDialog } from '@/components/inpatient/AdmissionRequestDialog'
 import { EmptyState } from '@/components/feedback/EmptyState'
 import { HospitalIdentificationDialog } from '@/components/triage/HospitalIdentificationDialog'
+import { useHospitalPrintPermission } from '@/hooks/useHospitalPrintPermission'
 
 const db = supabase as any
 const fmt = (d?: string | null) => d ? new Date(d).toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' }) : '—'
@@ -106,6 +107,7 @@ function MapTab({ ip }: { ip: IP }) {
 }
 
 function InpBedSheet({ ip, bed, request, onClose }: { ip: IP; bed: InpBed | null; request: AdmissionRequest | null; onClose: () => void }) {
+  const canPrint = useHospitalPrintPermission('admission')
   const { canRegulate } = useInpatientPermissions()
   const [logs, setLogs] = useState<any[]>([])
   const [transfer, setTransfer] = useState(false)
@@ -126,7 +128,7 @@ function InpBedSheet({ ip, bed, request, onClose }: { ip: IP; bed: InpBed | null
           {request && (
             <div className="rounded-lg border p-3 text-sm space-y-1">
               <p className="font-semibold">{request.patient_name}</p>
-              {live.status === 'occupied' && <Button variant="outline" size="sm" onClick={() => setPrintCompanion(true)}>Imprimir etiqueta de acompanhante</Button>}
+              {live.status === 'occupied' && canPrint && <Button variant="outline" size="sm" onClick={() => setPrintCompanion(true)}>Imprimir etiqueta de acompanhante</Button>}
               <p>Motivo: {request.reason}</p>
               <p className="text-muted-foreground">Origem: {request.origin_label} · {request.urgency === 'urgente' ? 'Urgente' : 'Eletiva'}{request.doctor_name && ` · Dr(a). ${request.doctor_name}`}</p>
               {request.admitted_at && <p className="text-muted-foreground">Internado em {fmt(request.admitted_at)}</p>}

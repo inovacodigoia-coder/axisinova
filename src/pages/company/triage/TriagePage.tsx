@@ -20,6 +20,7 @@ import { gerarPdfEtiquetas } from '@/lib/labelPdf'
 import { useImpressaoLocal } from '@/hooks/useImpressaoLocal'
 import { supabase } from '@/integrations/supabase/client'
 import { HospitalIdentificationDialog } from '@/components/triage/HospitalIdentificationDialog'
+import { useHospitalPrintPermission } from '@/hooks/useHospitalPrintPermission'
 
 export default function TriagePage() {
   const {
@@ -27,6 +28,7 @@ export default function TriagePage() {
     createEntry, classify, reclassify, sendToDoctor, updateSettings, reload,
   } = useTriage()
   const { imprimir, imprimindo } = useImpressaoLocal()
+  const canPrint = useHospitalPrintPermission('triage')
 
   const [classifying, setClassifying] = useState<TriageEntry | null>(null)
   const [directOpen, setDirectOpen] = useState(false)
@@ -189,7 +191,7 @@ export default function TriagePage() {
                   {e.status === 'in_doctor' && <Badge variant="outline">Na fila do médico</Badge>}
                 </div>
                 <div className="flex flex-wrap gap-2">
-                  <Button size="sm" variant="outline" className="gap-1" onClick={() => handlePrintClick(e)} disabled={imprimindo}>
+                  <Button size="sm" variant="outline" className="gap-1" onClick={() => handlePrintClick(e)} disabled={imprimindo || !canPrint}>
                     <Printer className="h-3.5 w-3.5" /> Imprimir
                   </Button>
                   {e.status !== 'in_doctor' && (

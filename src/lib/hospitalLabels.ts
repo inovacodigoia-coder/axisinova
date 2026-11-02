@@ -16,10 +16,8 @@ export function validCompanionLimit(value: number) { return Number.isInteger(val
 export function missingPrintType(error: unknown): boolean {
   return error instanceof Error && /(?:tipo|impressora).*(?:não configurad|nao configurad|não cadastrad|nao cadastrad)/i.test(error.message)
 }
-export async function dispatchHospitalPdf(type: HospitalPrintType, blob: Blob, configured: boolean): Promise<'confirmado' | 'navegador'> {
-  if (configured) {
-    try { await imprimirDireto(type, blob); return 'confirmado' } catch (error) { if (!missingPrintType(error)) throw error }
-  }
+export async function dispatchHospitalPdf(type: HospitalPrintType, blob: Blob): Promise<'confirmado' | 'navegador'> {
+  try { await imprimirDireto(type, blob); return 'confirmado' } catch (error) { if (!missingPrintType(error)) throw error }
   const url = URL.createObjectURL(blob)
   const frame = document.createElement('iframe')
   frame.hidden = true; frame.src = url

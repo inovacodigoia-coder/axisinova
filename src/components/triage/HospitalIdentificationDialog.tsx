@@ -30,7 +30,7 @@ export function HospitalIdentificationDialog({ context, contextId, onClose, onWr
   const add = async () => { if (!name.trim() || locked.current) return; locked.current = true; setBusy(true); setError(''); try { const id = await rpc('hospital_acompanhante_adicionar', { _context: context, _id: contextId, _nome: name.trim() }); await reload(); setCompanion(id); setName('') } catch (e) { setError(e instanceof Error ? e.message : 'Falha ao salvar acompanhante') } finally { locked.current = false; setBusy(false) } }
   const print = async () => {
     if (!type || !data || locked.current) return
-    locked.current = true; setBusy(true); setError(''); let job: string | undefined
+    locked.current = true; setBusy(true); setError(''); let job: string | undefined; let delivered = false
     try {
       if (type === 'pulseira_triagem' && wristbandReprint && reprintReason.startsWith('Outro') && !reason.trim()) throw new Error('Descreva o motivo da reimpressão')
       if (type !== 'pulseira_triagem' && data.locationRequired) { if (!sector || context !== 'triage') throw new Error('Local atual do paciente indisponível'); await rpc('hospital_identificacao_local', { _id: contextId, _sector: sector }) }
@@ -38,11 +38,12 @@ export function HospitalIdentificationDialog({ context, contextId, onClose, onWr
       if (!job) throw new Error('Não foi possível registrar a impressão')
       let state: 'confirmado' | 'navegador'
       if (type === 'pulseira_triagem') { if (!onWristband || !await onWristband()) throw new Error('Pulseira não enviada à impressora'); state = 'confirmado' }
-      else { const config = prepared.labelConfig?.[type]; const blob = hospitalLabelPdf(type, prepared, config || defaultHospitalLabel, prepared.companions.find(c => c.id === companion)?.nome); state = await dispatchHospitalPdf(type, blob, !!config) }
+      else { const config = prepared.labelConfig?.[type]; const blob = hospitalLabelPdf(type, prepared, config || defaultHospitalLabel, prepared.companions.find(c => c.id === companion)?.nome); state = await dispatchHospitalPdf(type, blob) }
+      delivered = true
       await rpc('hospital_identificacao_finalizar', { _print: job, _status: state }); job = undefined
       toast.success(state === 'navegador' ? 'Janela de impressão aberta; confirme no navegador.' : 'Impressão enviada à impressora.')
       onDone?.(); onClose()
-    } catch (e) { const message = e instanceof Error ? e.message : 'Falha na impressão'; if (job) { try { await rpc('hospital_identificacao_finalizar', { _print: job, _status: 'falha', _details: message }) } catch { setError(message + ' — não foi possível atualizar o registro de impressão'); return } } setError(message) } finally { locked.current = false; setBusy(false) }
+    } catch (e) { const message = e instanceof Error ? e.message : 'Falha na impressão'; if (delivered) { setError('A impressão já foi enviada, mas não foi possível finalizar o registro. Não repita o envio automaticamente.'); return } if (job) { try { await rpc('hospital_identificacao_finalizar', { _print: job, _status: 'falha', _details: message }) } catch { setError(message + ' — não foi possível atualizar o registro de impressão'); return } } setError(message) } finally { locked.current = false; setBusy(false) }
   }
   const options = [{ id: 'pulseira_triagem', label: 'Pulseira do paciente', description: 'Identificação da classificação de risco', icon: Activity }, { id: 'etiqueta_paciente', label: 'Etiqueta do paciente', description: 'Dados do paciente e do atendimento', icon: Tag }, { id: 'etiqueta_acompanhante', label: 'Etiqueta de acompanhante', description: 'Identificação vinculada ao paciente', icon: Users }].filter(o => companionOnly ? o.id === 'etiqueta_acompanhante' : context === 'triage' || o.id !== 'pulseira_triagem')
   return <Dialog open onOpenChange={open => { if (!open && !busy) onClose() }}><DialogContent className="sm:max-w-xl max-h-[90vh] overflow-y-auto"><DialogHeader><DialogTitle>Escolha o Tipo de Impressão</DialogTitle></DialogHeader>
