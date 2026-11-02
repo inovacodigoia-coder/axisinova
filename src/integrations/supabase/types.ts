@@ -12087,6 +12087,11 @@ export type Database = {
         Args: { _context: string; _id: string; _nome: string }
         Returns: string
       }
+      hospital_config_permitida: { Args: never; Returns: boolean }
+      hospital_etiquetas_configurar: {
+        Args: { _config: Json }
+        Returns: undefined
+      }
       hospital_identificacao_contexto: {
         Args: { _context: string; _id: string }
         Returns: Json

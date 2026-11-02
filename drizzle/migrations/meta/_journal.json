@@ -876,6 +876,13 @@
       "when": 1793589867578,
       "tag": "0124_hospital_identificacao_acompanhantes",
       "breakpoints": true
+    },
+    {
+      "idx": 125,
+      "version": "7",
+      "when": 1793589997527,
+      "tag": "0125_hospital_etiquetas_configuracao_guardas",
+      "breakpoints": true
     }
   ]
 }
