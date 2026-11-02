@@ -364,7 +364,7 @@ ${settings?.report_watermark_enabled !== false ? `<div class="wm">${esc(settings
 <div class="head">
   ${logoL ? `<img class="l" src="${logoL}" alt="Logo principal" />` : '<div class="ph">LOGO ESQUERDA</div>'}
   <div class="ttl"><h1>${esc(settings?.report_header_title || 'LABORATÓRIO MUNICIPAL CENTRAL')}</h1>
-  ${settings?.report_header_subtitle ? `<p>${esc(settings.report_header_subtitle)}</p>` : ''}</div>
+  ${subtitleLines(settings?.report_header_subtitle).length ? `<p>${subtitleLines(settings?.report_header_subtitle).map(esc).join('<br />')}</p>` : ''}</div>
   ${logoR ? `<img class="r" src="${logoR}" alt="Logo secundário" />` : '<div class="ph">LOGO DIREITA</div>'}
 </div>
 <h2 style="font-size:15px;margin:16px 0 0;text-transform:uppercase">MARIA DA SILVA SANTOS</h2>
@@ -462,11 +462,15 @@ function ReportLayoutSection({ settings, setSettings }: { settings: any, setSett
         </div>
         <div className="space-y-2">
           <div className="flex items-center justify-between gap-2"><Label>Subtítulo (opcional)</Label><SizeControl settings={settings} setSettings={setSettings} field="subtitleSize" def={10} min={6} max={28} step={1} /></div>
-          <Input 
+          <Textarea
+            rows={3}
             value={settings?.report_header_subtitle || ''}
             onChange={(e) => setSettings({ ...settings, report_header_subtitle: e.target.value })}
-            placeholder="Ex: Secretaria Municipal de Saúde" 
+            onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) e.preventDefault() }}
+            placeholder="Ex: Secretaria Municipal de Saúde"
+            className="resize-y text-sm leading-snug"
           />
+          <p className="text-[10px] text-muted-foreground">Shift+Enter para nova linha. Cada linha aparece abaixo da outra, centralizada.</p>
         </div>
       </div>
 
