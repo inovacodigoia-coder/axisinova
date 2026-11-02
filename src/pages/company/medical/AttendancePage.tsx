@@ -6,7 +6,8 @@ import { useMedical } from '@/context/MedicalContext'
 import { useAuth } from '@/context/AuthContext'
 import { useQueue } from '@/context/QueueContext'
 import { useCID10Search } from '@/hooks/useCID10Search'
-import { MOCK_MEDICATIONS_LIST } from '@/mocks/medical.mock'
+import { useMedicamentos, medicamentoLabel } from '@/hooks/useMedicamentos'
+import { supabase } from '@/integrations/supabase/client'
 import { NoExamsCatalogState } from '@/components/medical/empty-states/NoExamsCatalogState'
 import { NoAttendanceHistoryState } from '@/components/medical/empty-states/NoAttendanceHistoryState'
 import type { AttendanceRecord, VitalSigns, PrescriptionItem, ExamRequest, CID10, Diagnosis } from '@/types/medical.types'
@@ -61,6 +62,7 @@ export default function AttendancePage() {
   const [diagnosis, setDiagnosis] = useState<Diagnosis | null>(existingRecord?.diagnosis ?? null)
   const [cidSearch, setCidSearch] = useState('')
   const cidResults = useCID10Search(cidSearch)
+  const { itens: meds } = useMedicamentos(true)
   const [prescription, setPrescription] = useState<PrescriptionItem[]>(existingRecord?.prescription ?? [])
   const [examRequests, setExamRequests] = useState<ExamRequest[]>(existingRecord?.examRequests ?? [])
   const [certificateDays, setCertificateDays] = useState<number>(existingRecord?.certificateDays ?? 0)
@@ -242,7 +244,7 @@ export default function AttendancePage() {
     setShowExamDropdown(false)
   }
 
-  const handleFinalize = () => {
+  const handleFinalize = async () => {
     if (!chiefComplaint.trim()) {
       toast.error('Queixa principal é obrigatória')
       return
@@ -275,6 +277,15 @@ export default function AttendancePage() {
       updatedAt: new Date().toISOString(),
     }
 
+    const rxValidos = prescription.filter(p => (p as any).medicamentoId)
+    if (prescription.length !== rxValidos.length) { toast.error('Selecione cada medicamento da prescrição a partir do cadastro'); setSaving(false); return }
+    if (rxValidos.length > 0) {
+      const { error } = await (supabase as any).rpc('prescription_create_atendimento', {
+        _appointment_ref: appointment!.id, _patient_name: patient?.fullName ?? null, _doctor_name: doctor?.name ?? null, _notes: notes || null,
+        _items: rxValidos.map(p => ({ medicamento_id: (p as any).medicamentoId, dose: p.dosage, route: p.route, doses_count: p.quantity || 1 })),
+      })
+      if (error) { toast.error('Prescrição não enviada à Farmácia: ' + error.message); setSaving(false); return }
+    }
     updateAttendanceRecord(finalRecord)
     updateAppointment(appointment!.id, { status: 'completed' })
 
@@ -615,7 +626,10 @@ export default function AttendancePage() {
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-2 flex-1">
                       <div className="col-span-2">
                         <label className="text-[10px] text-muted-foreground">Medicamento</label>
-                        <input value={item.medication} onChange={e => updatePrescriptionItem(item.id, 'medication', e.target.value)} list="meds-list" className="w-full rounded border border-input bg-background px-2 py-1.5 text-sm outline-none focus:ring-1 focus:ring-ring" placeholder="Nome do medicamento" />
+                        <select value={(item as any).medicamentoId || ''} onChange={e => { const m = meds.find(x => x.id === e.target.value); if (m) setPrescription(p => p.map(x => x.id === item.id ? { ...x, medication: medicamentoLabel(m), medicamentoId: m.id } as any : x)) }} className="w-full rounded border border-input bg-background px-2 py-1.5 text-sm outline-none focus:ring-1 focus:ring-ring">
+                          <option value="">{meds.length ? 'Selecione o medicamento' : 'Nenhum medicamento cadastrado'}</option>
+                          {meds.map(m => <option key={m.id} value={m.id}>{m.codigo} · {medicamentoLabel(m)}</option>)}
+                        </select>
                       </div>
                       <div><label className="text-[10px] text-muted-foreground">Dosagem</label><input value={item.dosage} onChange={e => updatePrescriptionItem(item.id, 'dosage', e.target.value)} className="w-full rounded border border-input bg-background px-2 py-1.5 text-sm outline-none" placeholder="500mg" /></div>
                       <div><label className="text-[10px] text-muted-foreground">Via</label><select value={item.route} onChange={e => updatePrescriptionItem(item.id, 'route', e.target.value)} className="w-full rounded border border-input bg-background px-2 py-1.5 text-sm">{['Oral', 'EV', 'IM', 'SC', 'Tópica', 'Inalatória', 'Sublingual'].map(o => <option key={o}>{o}</option>)}</select></div>
@@ -628,7 +642,6 @@ export default function AttendancePage() {
                   <input value={item.instructions || ''} onChange={e => updatePrescriptionItem(item.id, 'instructions', e.target.value)} className="w-full rounded border border-input bg-background px-2 py-1.5 text-xs outline-none" placeholder="Instruções adicionais..." />
                 </div>
               ))}
-              <datalist id="meds-list">{MOCK_MEDICATIONS_LIST.map(m => <option key={m} value={m} />)}</datalist>
               <button onClick={addPrescriptionItem} className="flex items-center gap-1 px-3 py-2 text-sm font-medium rounded-lg border border-dashed border-border hover:bg-muted transition-colors w-full justify-center">
                 <Plus className="h-4 w-4" /> Adicionar Medicamento
               </button>

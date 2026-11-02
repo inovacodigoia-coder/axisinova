@@ -9,7 +9,8 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { supabase } from '@/integrations/supabase/client'
 import { useAuth } from '@/context/AuthContext'
-import { rpc } from '@/hooks/useCollectionPosts'
+import { toast } from 'sonner'
+import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 
 const db = supabase as any
 
@@ -19,10 +20,27 @@ export default function LabPharmacyPrescriptionsPage() {
   const [searchTerm, setSearchTerm] = useState('')
   const [status, setStatus] = useState('pending')
   const [rows, setRows] = useState<any[]>([])
+  const [disp, setDisp] = useState<any | null>(null)
+  const [qtd, setQtd] = useState<Record<string, string>>({})
+  const [solicitante, setSolicitante] = useState('')
+  const [retirado, setRetirado] = useState('')
+  const [setor, setSetor] = useState('')
+  const [enviando, setEnviando] = useState(false)
+  const abrir = (r: any) => { setDisp(r); setQtd({}); setSolicitante(''); setRetirado(''); setSetor(r.setor_solicitante || '') }
+  const confirmar = async () => {
+    setEnviando(true)
+    const itens = (disp.prescriptions?.prescription_items || []).map((i: any) => ({ item_id: i.id, quantidade: (qtd[i.id] || '').replace(',', '.') }))
+    const { error } = await db.rpc('farmacia_dispensar', { _dispensation_id: disp.id, _itens: itens, _solicitante: solicitante, _retirado_por: retirado, _setor: setor || null })
+    setEnviando(false)
+    if (error) return toast.error(error.message)
+    toast.success('Dispensado'); setDisp(null); load()
+  }
+  const itensDisp: any[] = disp?.prescriptions?.prescription_items || []
+  const podeConfirmar = !!solicitante.trim() && !!retirado.trim() && itensDisp.every(i => Number((qtd[i.id] || '').replace(',', '.')) > 0)
 
   const load = useCallback(async () => {
     if (!companyId) return
-    let q = db.from('pharmacy_dispensations').select('*, prescriptions(patient_name, doctor_name, created_at, bed_id, beds(name), prescription_items(medication, dose, route))')
+    let q = db.from('pharmacy_dispensations').select('*, prescriptions(patient_name, doctor_name, created_at, bed_id, beds(name), origem, prescription_items(id, medication, dose, route, quantidade_dispensada))')
       .eq('company_id', companyId).order('created_at', { ascending: false }).limit(200)
     if (status !== 'todos') q = q.eq('status', status)
     const { data } = await q
@@ -89,13 +107,13 @@ export default function LabPharmacyPrescriptionsPage() {
               return (
                 <TableRow key={r.id}>
                   <TableCell><div className="flex items-center gap-2"><User className="h-4 w-4 text-muted-foreground" /><span className="font-medium">{p.patient_name}</span></div></TableCell>
-                  <TableCell className="text-sm">{p.beds?.name || '—'}</TableCell>
+                  <TableCell className="text-sm">{p.beds?.name || (p.origem === 'atendimento' ? 'Atendimento médico' : '—')}</TableCell>
                   <TableCell className="text-sm">{p.doctor_name || '—'}</TableCell>
                   <TableCell className="text-sm text-muted-foreground">{new Date(r.created_at).toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })}</TableCell>
-                  <TableCell className="text-sm">{(p.prescription_items || []).map((i: any) => `${i.medication} ${i.dose} (${i.route})`).join('; ')}</TableCell>
+                  <TableCell className="text-sm">{(p.prescription_items || []).map((i: any) => `${i.medication} ${i.dose || ''} (${i.route})${i.quantidade_dispensada ? ` · entregue ${i.quantidade_dispensada}` : ''}`).join('; ')}</TableCell>
                   <TableCell>{badge(r)}</TableCell>
                   <TableCell className="text-right">
-                    {r.status === 'pending' && <Button size="sm" className="gap-1" onClick={() => rpc('pharmacy_dispense', { _dispensation_id: r.id }, 'Dispensado').then(load)}><Pill className="h-3.5 w-3.5" />Dispensar</Button>}
+                    {r.status === 'pending' && <Button size="sm" className="gap-1" onClick={() => abrir(r)}><Pill className="h-3.5 w-3.5" />Dispensar</Button>}
                   </TableCell>
                 </TableRow>
               )
@@ -103,6 +121,26 @@ export default function LabPharmacyPrescriptionsPage() {
           </TableBody>
         </Table>
       </Card>
+      <Dialog open={!!disp} onOpenChange={o => !o && setDisp(null)}>
+        <DialogContent>
+          <DialogHeader><DialogTitle>Dispensar — {disp?.prescriptions?.patient_name}</DialogTitle></DialogHeader>
+          <div className="space-y-3">
+            {itensDisp.map(i => (
+              <div key={i.id} className="flex items-center gap-3">
+                <span className="flex-1 text-sm">{i.medication} {i.dose}</span>
+                <Input className="w-28" inputMode="decimal" placeholder="Qtd entregue" value={qtd[i.id] || ''} onChange={e => setQtd(q => ({ ...q, [i.id]: e.target.value }))} />
+              </div>
+            ))}
+            <div className="space-y-1.5"><Label>Setor solicitante</Label><Input value={setor} onChange={e => setSetor(e.target.value)} /></div>
+            <div className="space-y-1.5"><Label>Quem solicitou (técnico/profissional) *</Label><Input value={solicitante} onChange={e => setSolicitante(e.target.value)} /></div>
+            <div className="space-y-1.5"><Label>Quem retirou o material *</Label><Input value={retirado} onChange={e => setRetirado(e.target.value)} /></div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setDisp(null)}>Cancelar</Button>
+            <Button onClick={confirmar} disabled={!podeConfirmar || enviando}>Confirmar dispensação</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }
