@@ -46,6 +46,8 @@ interface MapRow {
   date: string
 }
 
+const semAcento = (v: string) => v.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase()
+
 export default function LabMapaPage() {
   const navigate = useNavigate()
   const { user } = useAuth()
@@ -145,10 +147,10 @@ export default function LabMapaPage() {
   }, [orders, applied])
 
   const filteredRows = useMemo(() => {
-    const term = examTerm.trim().toLowerCase()
+    const term = semAcento(examTerm.trim())
     const limit = Math.max(1, Number(quantity) || 1000)
     return allRows
-      .filter(r => (term ? `${r.exam} ${r.examCode}`.toLowerCase().includes(term) : true))
+      .filter(r => (term ? semAcento(`${r.exam} ${r.examCode}`).includes(term) : true))
       .filter(r => (selectedExams.length ? selectedExams.includes(r.exam) : true))
       .filter(r => (sector === ALL ? true : r.sector === sector))
       .filter(r => (convenio === ALL ? true : r.convenio === convenio))
@@ -474,7 +476,7 @@ export default function LabMapaPage() {
           </div>
           <div className="max-h-80 space-y-1 overflow-y-auto rounded-md border p-2">
             {examOptions
-              .filter(o => `${o.exam} ${o.name}`.toLowerCase().includes(examPickerSearch.trim().toLowerCase()))
+              .filter(o => semAcento(`${o.exam} ${o.name}`).includes(semAcento(examPickerSearch.trim())))
               .map(o => {
                 const checked = examPickerDraft.includes(o.exam)
                 return (
@@ -483,7 +485,7 @@ export default function LabMapaPage() {
                       checked={checked}
                       onCheckedChange={v => setExamPickerDraft(d => (v ? [...d, o.exam] : d.filter(x => x !== o.exam)))}
                     />
-                    <span className="flex-1 text-sm font-medium">{o.exam}</span>
+                    <span className="flex-1 text-sm font-medium">{o.exam}{o.name && o.name !== o.exam && !o.name.endsWith(o.exam) ? <span className="ml-2 text-xs font-normal text-muted-foreground">{o.name}</span> : null}</span>
                     <span className="text-xs text-muted-foreground">{o.count}</span>
                   </label>
                 )
