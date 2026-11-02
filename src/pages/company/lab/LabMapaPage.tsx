@@ -151,7 +151,7 @@ export default function LabMapaPage() {
     const limit = Math.max(1, Number(quantity) || 1000)
     return allRows
       .filter(r => (term ? semAcento(`${r.exam} ${r.examCode}`).includes(term) : true))
-      .filter(r => (selectedExams.length ? selectedExams.includes(r.exam) : true))
+      .filter(r => (selectedExams.length ? selectedExams.some(x => x === r.exam || semAcento(r.examCode).includes(semAcento(x))) : true))
       .filter(r => (sector === ALL ? true : r.sector === sector))
       .filter(r => (convenio === ALL ? true : r.convenio === convenio))
       .filter(r => (plan === ALL ? true : r.convenio === plan))
@@ -168,8 +168,17 @@ export default function LabMapaPage() {
       if (cur) cur.count++
       else m.set(r.exam, { exam: r.exam, name: r.examCode, count: 1 })
     })
+    // Exames do catálogo aparecem mesmo sem pendência (contagem 0)
+    const vistos = new Set(Array.from(m.values()).map(o => semAcento(o.name)))
+    ;(exams || []).forEach((e: any) => {
+      if (!e?.name) return
+      const n = semAcento(e.name)
+      if (Array.from(vistos).some(v => v.includes(n))) return
+      vistos.add(n)
+      m.set(e.name, { exam: e.name, name: `${e.internalCode || ''} ${e.name}`.trim(), count: 0 })
+    })
     return Array.from(m.values()).sort((a, b) => a.exam.localeCompare(b.exam))
-  }, [allRows])
+  }, [allRows, exams])
 
   const openExamPicker = () => {
     setExamPickerDraft(selectedExams)
