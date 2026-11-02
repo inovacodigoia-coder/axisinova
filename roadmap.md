@@ -4,7 +4,7 @@
 - [x] Cadastro e saldo do almoxarifado, solicitações de todos os setores e decisão atômica com histórico e permissões no banco (0134).
 - [x] Acesso compartilhado por setor; medicamentos aprovados ligados ao cadastro e ao saldo da Farmácia.
 - [x] Demonstração separada e interativa em /demonstracao/almoxarifado com 5–10 materiais por setor, aprovados/recusados e 10 medicamentos aprovados na Farmácia; nada fictício no cadastro clínico real.
-- [x] 8 testes SQL + 6 testes de demonstração; fluxo na tela: solicitar, aprovar, recusar, conferir 10 medicamentos; sem erros e sem excesso de largura no celular.
+- [x] 9 testes SQL + 6 testes de demonstração; fluxo na tela: solicitar, aprovar, recusar, conferir 10 medicamentos; sem erros e sem excesso de largura no celular.
 - [ ] Conferir fluxo operacional autenticado: sessão injetada redireciona a /login; depende de login ativo/autorizado. Nenhum estoque real alterado.
 
 # BI Gestão Hospitalar — Etapa 1.1: cadastro real de medicamentos com custo
