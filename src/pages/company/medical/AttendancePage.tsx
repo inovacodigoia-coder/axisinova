@@ -281,7 +281,7 @@ export default function AttendancePage() {
     if (prescription.length !== rxValidos.length) { toast.error('Selecione cada medicamento da prescrição a partir do cadastro'); setSaving(false); return }
     if (rxValidos.length > 0) {
       const { error } = await (supabase as any).rpc('prescription_create_atendimento', {
-        _appointment_ref: appointment!.id, _patient_name: patient?.name ?? null, _doctor_name: doctor?.name ?? null, _notes: notes || null,
+        _appointment_ref: appointment!.id, _patient_name: patient?.fullName ?? null, _doctor_name: doctor?.name ?? null, _notes: notes || null,
         _items: rxValidos.map(p => ({ medicamento_id: (p as any).medicamentoId, dose: p.dosage, route: p.route, doses_count: p.quantity || 1 })),
       })
       if (error) { toast.error('Prescrição não enviada à Farmácia: ' + error.message); setSaving(false); return }
