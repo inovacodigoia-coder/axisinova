@@ -101,4 +101,28 @@ describe('Materiais por paciente — regras transacionais',()=>{
     await expect(use(item)).rejects.toThrow('ativo')
     await db.exec("update bed_occupancies set status='active'")
   })
+  it('Internação resolve apenas solicitação admitida e leito ocupado',async()=>{
+    const request='00000000-0000-0000-0000-000000000020',item=await create()
+    await db.exec(`INSERT INTO admission_requests VALUES('${request}','${cid}','${pid}','Teste Internação','${ep}','admitted'); INSERT INTO inpatient_beds VALUES('${request}','${cid}','${request}','occupied')`)
+    const result=await db.query<{id:string}>("select materiais_registrar('admission',$1,'triagem',$2,1,'',$3) id",[request,item,crypto.randomUUID()])
+    expect((await db.query<{e:string}>('select hospital_episode_id e from bi_consumo_itens where id=$1',[result.rows[0].id])).rows[0].e).toBe(ep)
+    await db.exec("UPDATE inpatient_beds SET status='free'")
+    await expect(db.query("select materiais_painel('admission',$1,'triagem')",[request])).rejects.toThrow('ativo')
+  })
+  it('Painel Médico exige agendamento ativo e um único episódio hospitalar',async()=>{
+    const appointment='00000000-0000-0000-0000-000000000030'
+    await db.exec(`INSERT INTO appointments VALUES('${appointment}','${cid}','${pid}','in_progress')`)
+    expect((await db.query<{c:{episode_id:string}}>("select materiais_painel('medical',$1,'triagem') c",[appointment])).rows[0].c.episode_id).toBe(ep)
+    await db.exec(`INSERT INTO triage_entries(id,company_id,patient_id,patient_name,hospital_episode_id,status) VALUES('00000000-0000-0000-0000-000000000031','${cid}','${pid}','Ambíguo','00000000-0000-0000-0000-000000000031','in_doctor')`)
+    await expect(db.query("select materiais_painel('medical',$1,'triagem')",[appointment])).rejects.toThrow('única')
+    await db.exec("UPDATE appointments SET sched_status='completed'")
+    await expect(db.query("select materiais_painel('medical',$1,'triagem')",[appointment])).rejects.toThrow('não está ativo')
+  })
+  it('histórico e movimentos não aceitam edição; navegador não escreve consumo',async()=>{
+    const item=await create()
+    await expect(db.query('update almox_custo_historico set valor_novo=1 where item_id=$1',[item])).rejects.toThrow('imutável')
+    await expect(db.query('delete from almox_movimentos where item_id=$1',[item])).rejects.toThrow('imutável')
+    expect((await db.query<{ok:boolean}>("select has_table_privilege('authenticated','bi_consumo_itens','INSERT') ok")).rows[0].ok).toBe(false)
+    expect((await db.query<{ok:boolean}>("select has_function_privilege('anon','materiais_registrar(text,uuid,text,uuid,numeric,text,uuid)','EXECUTE') ok")).rows[0].ok).toBe(false)
+  })
 })
