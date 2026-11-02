@@ -10,6 +10,7 @@ import { NoAppointmentsTodayState } from '@/components/reception/empty-states/No
 import { Users, Clock, Building2, Ticket as TicketIcon, PhoneCall, CheckCircle2, RefreshCw } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { toast } from 'sonner'
+import { BiEvasaoButton } from '@/components/bi/BiEvasaoDialog'
 
 interface UnitRow { id: string; name: string }
 interface TicketRow {
