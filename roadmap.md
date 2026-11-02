@@ -1,5 +1,13 @@
 # Verificação dos alertas
 
+# BI Gestão Hospitalar — Etapa 1.1: cadastro real de medicamentos com custo
+- [ ] Investigar onde a lista demo de medicamentos é usada (prescrição no leito, painel médico, fila da Farmácia, aprazamento) e responder os 4 pontos de validação do pedido.
+- [ ] Cadastro de medicamentos por empresa (código interno automático, nome, princípio ativo, apresentação, forma, unidade, custo opcional, ativo/inativo) com histórico de custo.
+- [ ] Substituir lista demo pelo cadastro real na prescrição e na fila da Farmácia; só ativos em nova prescrição.
+- [ ] Valor congelado na dispensação (custo vigente × quantidade) em bi_consumo_itens; medicação sem custo segue "sem valor cadastrado".
+- [ ] Permissões farmacia.medicamentos (ver/criar/editar/inativar) desmarcadas por padrão, com trava no banco; medicamento usado não pode ser excluído, só inativado.
+- [ ] Testes SQL isolados + typecheck/build; validação na tela depende de login ativo/autorizado.
+
 # Correção da identificação hospitalar
 - [x] Failed to fetch identificado no POST local /print (preparo no banco respondeu 200); verificar conexão antes do trabalho, orientar abertura do AisAxius e permitir nova verificação sem reenvio. 11 testes passaram, build OK; conexão física continua dependente do computador do cliente.
 - [x] Corrigir incompatibilidade entre local textual e UUID (0126); 23 testes SQL no esquema compatível com produção e 8 testes de fluxo/envio aprovados, sem impressões reais.
