@@ -71,4 +71,12 @@ describe('Almoxarifado — transferências seguras', () => {
     await expect(request(item,0)).rejects.toThrow('Quantidade inválida')
     await expect(db.query("select almox_solicitar('triagem','setor',$1)",[JSON.stringify([{item_id:item,quantidade:1},{item_id:item,quantidade:1}])])).rejects.toThrow('unique')
   })
+  it('falha em uma linha desfaz todas as transferências do pedido',async()=>{
+    const a=await create(), b=await create()
+    const result=await db.query<{id:string}>("select almox_solicitar('triagem','setor',$1) id",[JSON.stringify([{item_id:a,quantidade:2},{item_id:b,quantidade:11}])])
+    await expect(db.query('select almox_decidir($1,true)',[result.rows[0].id])).rejects.toThrow('Saldo insuficiente')
+    const q=await db.query<{q:string}>('select quantidade q from almox_saldos where item_id in ($1,$2)',[a,b])
+    expect(q.rows).toEqual([{q:'10'},{q:'10'}])
+    expect((await db.query<{n:number}>('select count(*)::int n from almox_movimentos where solicitacao_id=$1',[result.rows[0].id])).rows[0].n).toBe(0)
+  })
 })
