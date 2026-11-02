@@ -911,6 +911,27 @@
       "when": 1793594347991,
       "tag": "0129_bi_hospitalar_permissoes_codigos",
       "breakpoints": true
+    },
+    {
+      "idx": 130,
+      "version": "7",
+      "when": 1793594811056,
+      "tag": "0130_bi_hospitalar_episodio_retroativo",
+      "breakpoints": true
+    },
+    {
+      "idx": 131,
+      "version": "7",
+      "when": 1793594854224,
+      "tag": "0131_bi_hospitalar_imutabilidade_generica",
+      "breakpoints": true
+    },
+    {
+      "idx": 132,
+      "version": "7",
+      "when": 1793594898575,
+      "tag": "0132_bi_hospitalar_imutabilidade_aninhada",
+      "breakpoints": true
     }
   ]
 }
