@@ -1,5 +1,11 @@
 # Verificação dos alertas
 
+# Almoxarifado — solicitações e transferência por setor
+- [ ] Cadastro e saldo do almoxarifado, solicitações de todos os setores e decisão atômica com histórico e permissões no banco.
+- [ ] Acesso compartilhado por setor; medicamentos aprovados ligados ao cadastro e ao saldo da Farmácia.
+- [ ] Demonstração separada e interativa com 5–10 materiais por setor, aprovados/recusados e 10 medicamentos aprovados na Farmácia.
+- [ ] Testes de saldo, recusa, repetição, isolamento e conferência da demonstração na tela.
+
 # BI Gestão Hospitalar — Etapa 1.1: cadastro real de medicamentos com custo
 - [x] Investigar onde a lista demo de medicamentos é usada (prescrição no leito, painel médico, fila da Farmácia, aprazamento) e responder os 4 pontos de validação do pedido.
 - [x] Cadastro de medicamentos por empresa (código interno automático, nome, princípio ativo, apresentação, forma, unidade, custo opcional, ativo/inativo) com histórico de custo.
