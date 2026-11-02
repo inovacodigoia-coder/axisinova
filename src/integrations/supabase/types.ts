@@ -11884,6 +11884,7 @@ export type Database = {
         }
         Returns: undefined
       }
+      bi_hospitalar_habilitada: { Args: never; Returns: boolean }
       bi_hospitalar_liberar: {
         Args: { _company: string; _habilitado: boolean }
         Returns: undefined

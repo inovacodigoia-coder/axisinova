@@ -904,6 +904,13 @@
       "when": 1793594264706,
       "tag": "0128_bi_hospitalar_gatilhos",
       "breakpoints": true
+    },
+    {
+      "idx": 129,
+      "version": "7",
+      "when": 1793594347991,
+      "tag": "0129_bi_hospitalar_permissoes_codigos",
+      "breakpoints": true
     }
   ]
 }
