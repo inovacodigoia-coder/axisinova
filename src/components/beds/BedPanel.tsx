@@ -89,10 +89,11 @@ export function BedPanel({ bed, occupancy, sectors, onClose }: Props) {
   const activeRef = referrals.find(r => r.status === 'waiting' || r.status === 'in_progress')
 
   const submitRx = async () => {
+    if (!occupancy) return
     const valid = rxItems.filter(i => i.medicamento_id && i.dose.trim())
     if (!valid.length) return
     const res = await rpc('prescription_create', {
-      _occupancy_id: occupancy!.id, _doctor_name: doctor || null, _notes: rxNotes || null, _urgent: urgent,
+      _occupancy_id: occupancy.id, _doctor_name: doctor || null, _notes: rxNotes || null, _urgent: urgent,
       _items: valid.map(i => ({ ...i, first_dose_at: i.first_dose_at ? new Date(i.first_dose_at).toISOString() : null })),
     }, 'Prescrição enviada à farmácia')
     if (res) { setShowRx(false); setRxItems([emptyItem()]); setRxNotes(''); setUrgent(false); load() }
@@ -133,7 +134,7 @@ export function BedPanel({ bed, occupancy, sectors, onClose }: Props) {
             </section>
 
             <section className="space-y-2">
-              <div className="flex items-center justify-between">
+              <div className="flex flex-wrap items-center justify-between gap-2">
                 {canPrint && <Button variant="outline" size="sm" onClick={() => setPrintCompanion(true)}>Imprimir etiqueta de acompanhante</Button>}
                 <h3 className="font-semibold flex items-center gap-2"><Pill className="h-4 w-4" /> Prescrições e aprazamento</h3>
                 <Button size="sm" variant="outline" onClick={() => setShowRx(s => !s)}><Plus className="h-4 w-4 mr-1" />Prescrever</Button>
@@ -145,14 +146,14 @@ export function BedPanel({ bed, occupancy, sectors, onClose }: Props) {
                     <label className="flex items-end gap-2 pb-2 text-sm"><Checkbox checked={urgent} onCheckedChange={v => setUrgent(!!v)} />Urgente</label>
                   </div>
                   {rxItems.map((it, i) => (
-                    <div key={i} className="grid grid-cols-12 gap-2 items-end">
-                      <div className="col-span-4"><Label className="text-xs">Medicamento</Label><MedicamentoSelect itens={meds} value={it.medicamento_id} onChange={(id, m) => setRxItems(a => a.map((x, j) => j === i ? { ...x, medicamento_id: id, medication: medicamentoLabel(m) } : x))} /></div>
-                      <div className="col-span-2"><Label className="text-xs">Dose</Label><Input value={it.dose} onChange={e => setRxItems(a => a.map((x, j) => j === i ? { ...x, dose: e.target.value } : x))} /></div>
-                      <div className="col-span-1"><Label className="text-xs">Via</Label><Input value={it.route} onChange={e => setRxItems(a => a.map((x, j) => j === i ? { ...x, route: e.target.value } : x))} /></div>
-                      <div className="col-span-1"><Label className="text-xs">A cada (h)</Label><Input type="number" min={0} value={it.interval_hours} onChange={e => setRxItems(a => a.map((x, j) => j === i ? { ...x, interval_hours: e.target.value } : x))} /></div>
-                      <div className="col-span-1"><Label className="text-xs">Doses</Label><Input type="number" min={1} value={it.doses_count} onChange={e => setRxItems(a => a.map((x, j) => j === i ? { ...x, doses_count: e.target.value } : x))} /></div>
-                      <div className="col-span-2"><Label className="text-xs">1ª dose</Label><Input type="datetime-local" value={it.first_dose_at} onChange={e => setRxItems(a => a.map((x, j) => j === i ? { ...x, first_dose_at: e.target.value } : x))} /></div>
-                      <Button size="icon" variant="ghost" className="col-span-1" onClick={() => setRxItems(a => a.length > 1 ? a.filter((_, j) => j !== i) : a)}><Trash2 className="h-4 w-4" /></Button>
+                    <div key={i} className="grid grid-cols-2 sm:grid-cols-6 gap-3 items-end border-b border-border pb-3">
+                      <div className="col-span-2 sm:col-span-4 min-w-0"><Label className="text-xs">Medicamento</Label><MedicamentoSelect itens={meds} value={it.medicamento_id} onChange={(id, m) => setRxItems(a => a.map((x, j) => j === i ? { ...x, medicamento_id: id, medication: medicamentoLabel(m) } : x))} /></div>
+                      <div className="col-span-2 min-w-0"><Label htmlFor={`rx-dose-${i}`} className="text-xs">Dose</Label><Input id={`rx-dose-${i}`} value={it.dose} onChange={e => setRxItems(a => a.map((x, j) => j === i ? { ...x, dose: e.target.value } : x))} /></div>
+                      <div className="col-span-2 min-w-0"><Label htmlFor={`rx-route-${i}`} className="text-xs">Via</Label><Input id={`rx-route-${i}`} value={it.route} onChange={e => setRxItems(a => a.map((x, j) => j === i ? { ...x, route: e.target.value } : x))} /></div>
+                      <div className="min-w-0"><Label htmlFor={`rx-interval-${i}`} className="text-xs">A cada (h)</Label><Input id={`rx-interval-${i}`} className="px-2" type="number" min={0} value={it.interval_hours} onChange={e => setRxItems(a => a.map((x, j) => j === i ? { ...x, interval_hours: e.target.value } : x))} /></div>
+                      <div className="min-w-0"><Label htmlFor={`rx-count-${i}`} className="text-xs">Doses</Label><Input id={`rx-count-${i}`} className="px-2" type="number" min={1} value={it.doses_count} onChange={e => setRxItems(a => a.map((x, j) => j === i ? { ...x, doses_count: e.target.value } : x))} /></div>
+                      <div className="col-span-2 min-w-0"><Label htmlFor={`rx-first-${i}`} className="text-xs">1ª dose</Label><Input id={`rx-first-${i}`} className="min-w-0 px-2" type="datetime-local" value={it.first_dose_at} onChange={e => setRxItems(a => a.map((x, j) => j === i ? { ...x, first_dose_at: e.target.value } : x))} /></div>
+                      <Button size="icon" variant="ghost" aria-label={`Remover medicamento ${i + 1}`} title="Remover medicamento" onClick={() => setRxItems(a => a.length > 1 ? a.filter((_, j) => j !== i) : a)}><Trash2 className="h-4 w-4" /></Button>
                     </div>
                   ))}
                   <Button size="sm" variant="ghost" onClick={() => setRxItems(a => [...a, emptyItem()])}><Plus className="h-4 w-4 mr-1" />Medicamento</Button>
