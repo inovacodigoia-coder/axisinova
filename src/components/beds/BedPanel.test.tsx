@@ -3,6 +3,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest'
 import { BedPanel } from './BedPanel'
 
 vi.mock('@/hooks/useMedicamentos', () => ({ useMedicamentos: () => ({ itens: [] }), medicamentoLabel: () => '' }))
+vi.mock('./PatientMaterials', () => ({ PatientMaterials: () => null }))
 vi.mock('@/hooks/useHospitalPrintPermission', () => ({ useHospitalPrintPermission: () => false }))
 vi.mock('@/components/inpatient/AdmissionRequestDialog', () => ({ AdmissionRequestDialog: () => null }))
 vi.mock('@/components/triage/HospitalIdentificationDialog', () => ({ HospitalIdentificationDialog: () => null }))
