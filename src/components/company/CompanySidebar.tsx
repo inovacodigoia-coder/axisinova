@@ -9,13 +9,14 @@ import {
   TrendingUp, Users, Settings, Database, Monitor, Building2,
   LogOut, ChevronLeft, ChevronRight, X, Stethoscope, TicketCheck, ShieldCheck, Ruler, Layout, Beaker as BeakerIcon, TestTube,
   PieChart, Warehouse, Package as PackageIcon, UserPlus, FileSearch, Menu, Handshake, Droplet, Truck, KanbanSquare, Bot,
-  Activity, CalendarDays, BedDouble, Utensils, MessagesSquare
+  Activity, CalendarDays, BedDouble, Utensils, MessagesSquare, Hospital
 } from 'lucide-react'
 import { useInovachatAcesso, useInovachatNaoLidas } from '@/hooks/useInovachat'
 import { useChatInternoAcesso, useChatInternoNaoLidas } from '@/hooks/useChatInterno'
 import { useCrmAcesso } from '@/hooks/useCrm'
 import { useFinanceiroAcesso } from '@/hooks/useFinanceiro'
 import { useCaixaAcesso } from '@/hooks/useCaixa'
+import { useBiHospitalarAcesso } from '@/hooks/useBiHospitalar'
 import { cn } from '@/lib/utils'
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
 import type { SystemModule } from '@/types/permissions.types'
@@ -24,7 +25,7 @@ const ICON_MAP: Record<string, any> = {
   Calendar, UserCheck, FileText, DollarSign, FlaskConical, BarChart3,
   TrendingUp, Users, Settings, Database, Monitor, Building2, Stethoscope, Home, TicketCheck, Ruler, Layout, Beaker: BeakerIcon, TestTube,
   PieChart, Warehouse, Package: PackageIcon, UserPlus, FileSearch, Handshake, Droplet, Truck, KanbanSquare, Bot,
-  Activity, CalendarDays, BedDouble, Utensils, MessagesSquare
+  Activity, CalendarDays, BedDouble, Utensils, MessagesSquare, Hospital
 }
 
 
@@ -206,6 +207,7 @@ export function CompanySidebar({ mobileOpen, onMobileClose, collapsed = false, o
   const caixaAcesso = useCaixaAcesso()
   const inovachatNaoLidas = useInovachatNaoLidas(!!inovachat?.ver)
   const chatInterno = useChatInternoAcesso()
+  const biHospitalar = useBiHospitalarAcesso()
   const chatInternoNaoLidas = useChatInternoNaoLidas(!!chatInterno?.ver)
 
   const visibleSections = NAV_SECTIONS.map(section => ({
@@ -216,6 +218,7 @@ export function CompanySidebar({ mobileOpen, onMobileClose, collapsed = false, o
       if (item.path === '/app/chat-interno') return !!chatInterno?.ver
       if (item.path === '/app/financeiro') return !!financeiro?.ver
       if (item.path === '/app/financeiro/caixa') return !!(caixaAcesso?.operar || caixaAcesso?.ver_todos || caixaAcesso?.configurar)
+      if (item.path === '/app/bi-hospitalar') return !!biHospitalar?.ver
       const profileAllows = !item.module || canAccess(item.module, 'view')
       const sectorOverride = activeSector?.moduleOverrides?.[item.path]
       return sectorOverride !== undefined ? sectorOverride : profileAllows
