@@ -85,6 +85,12 @@ export default function LabMapaViewPage() {
 
   const { orders, loading } = useAttendanceCadastro()
 
+  // Setor de Uroanálise abre direto no modelo Sumário de Urina
+  useEffect(() => {
+    const setor = (map?.sector || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase()
+    if (/uroanalise|urina/.test(setor)) setView('urina')
+  }, [map?.sector])
+
 
   const [view, setView] = useState<ViewMode>('completo')
   const [catalogList, setCatalogList] = useState<any[]>([])

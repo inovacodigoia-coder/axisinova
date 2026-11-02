@@ -79,7 +79,7 @@ export default function LabCatalogPage() {
 
   const filteredExams = useMemo(() => {
     return exams.filter(e => {
-      const matchesSearch = e.name.toLowerCase().includes(search.toLowerCase()) || 
+      const matchesSearch = e.name.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().includes(search.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase()) || 
         e.code.toLowerCase().includes(search.toLowerCase());
       
       const matchesWorkbench = selectedWorkbench === 'all' || e.workbenchId === selectedWorkbench;
