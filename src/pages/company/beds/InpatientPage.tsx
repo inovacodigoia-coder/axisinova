@@ -129,6 +129,7 @@ function InpBedSheet({ ip, bed, request, onClose }: { ip: IP; bed: InpBed | null
             <div className="rounded-lg border p-3 text-sm space-y-1">
               <p className="font-semibold">{request.patient_name}</p>
               {live.status === 'occupied' && canPrint && <Button variant="outline" size="sm" onClick={() => setPrintCompanion(true)}>Imprimir etiqueta de acompanhante</Button>}
+              {request.status === 'admitted' && <BiEvasaoButton episodioId={(request as any).hospital_episode_id} pacienteNome={request.patient_name} />}
               <p>Motivo: {request.reason}</p>
               <p className="text-muted-foreground">Origem: {request.origin_label} · {request.urgency === 'urgente' ? 'Urgente' : 'Eletiva'}{request.doctor_name && ` · Dr(a). ${request.doctor_name}`}</p>
               {request.admitted_at && <p className="text-muted-foreground">Internado em {fmt(request.admitted_at)}</p>}
