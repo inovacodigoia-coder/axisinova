@@ -189,6 +189,245 @@ export type Database = {
           },
         ]
       }
+      almox_itens: {
+        Row: {
+          ativo: boolean
+          categoria: string
+          company_id: string
+          created_at: string
+          created_by: string | null
+          dados_medicamento: Json
+          id: string
+          medicamento_id: string | null
+          nome: string
+          unidade: string
+        }
+        Insert: {
+          ativo?: boolean
+          categoria: string
+          company_id: string
+          created_at?: string
+          created_by?: string | null
+          dados_medicamento?: Json
+          id?: string
+          medicamento_id?: string | null
+          nome: string
+          unidade?: string
+        }
+        Update: {
+          ativo?: boolean
+          categoria?: string
+          company_id?: string
+          created_at?: string
+          created_by?: string | null
+          dados_medicamento?: Json
+          id?: string
+          medicamento_id?: string | null
+          nome?: string
+          unidade?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "almox_itens_medicamento_id_fkey"
+            columns: ["medicamento_id"]
+            isOneToOne: false
+            referencedRelation: "farmacia_medicamentos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      almox_movimentos: {
+        Row: {
+          ator: string
+          company_id: string
+          created_at: string
+          destino: string
+          id: string
+          item_id: string
+          origem: string
+          quantidade: number
+          setor_id: string | null
+          solicitacao_id: string | null
+        }
+        Insert: {
+          ator: string
+          company_id: string
+          created_at?: string
+          destino: string
+          id?: string
+          item_id: string
+          origem: string
+          quantidade: number
+          setor_id?: string | null
+          solicitacao_id?: string | null
+        }
+        Update: {
+          ator?: string
+          company_id?: string
+          created_at?: string
+          destino?: string
+          id?: string
+          item_id?: string
+          origem?: string
+          quantidade?: number
+          setor_id?: string | null
+          solicitacao_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "almox_movimentos_item_id_fkey"
+            columns: ["item_id"]
+            isOneToOne: false
+            referencedRelation: "almox_itens"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "almox_movimentos_setor_id_fkey"
+            columns: ["setor_id"]
+            isOneToOne: false
+            referencedRelation: "company_sectors"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "almox_movimentos_solicitacao_id_fkey"
+            columns: ["solicitacao_id"]
+            isOneToOne: false
+            referencedRelation: "almox_solicitacoes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      almox_saldos: {
+        Row: {
+          company_id: string
+          id: string
+          item_id: string
+          local: string
+          quantidade: number
+          setor_id: string | null
+        }
+        Insert: {
+          company_id: string
+          id?: string
+          item_id: string
+          local: string
+          quantidade?: number
+          setor_id?: string | null
+        }
+        Update: {
+          company_id?: string
+          id?: string
+          item_id?: string
+          local?: string
+          quantidade?: number
+          setor_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "almox_saldos_item_id_fkey"
+            columns: ["item_id"]
+            isOneToOne: false
+            referencedRelation: "almox_itens"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "almox_saldos_setor_id_fkey"
+            columns: ["setor_id"]
+            isOneToOne: false
+            referencedRelation: "company_sectors"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      almox_solicitacao_itens: {
+        Row: {
+          company_id: string
+          id: string
+          item_id: string
+          quantidade: number
+          solicitacao_id: string
+        }
+        Insert: {
+          company_id: string
+          id?: string
+          item_id: string
+          quantidade: number
+          solicitacao_id: string
+        }
+        Update: {
+          company_id?: string
+          id?: string
+          item_id?: string
+          quantidade?: number
+          solicitacao_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "almox_solicitacao_itens_item_id_fkey"
+            columns: ["item_id"]
+            isOneToOne: false
+            referencedRelation: "almox_itens"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "almox_solicitacao_itens_solicitacao_id_fkey"
+            columns: ["solicitacao_id"]
+            isOneToOne: false
+            referencedRelation: "almox_solicitacoes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      almox_solicitacoes: {
+        Row: {
+          company_id: string
+          created_at: string
+          decidido_em: string | null
+          decidido_por: string | null
+          destino: string
+          id: string
+          motivo: string | null
+          observacao: string | null
+          setor_id: string
+          solicitado_por: string
+          status: string
+        }
+        Insert: {
+          company_id: string
+          created_at?: string
+          decidido_em?: string | null
+          decidido_por?: string | null
+          destino?: string
+          id?: string
+          motivo?: string | null
+          observacao?: string | null
+          setor_id: string
+          solicitado_por: string
+          status?: string
+        }
+        Update: {
+          company_id?: string
+          created_at?: string
+          decidido_em?: string | null
+          decidido_por?: string | null
+          destino?: string
+          id?: string
+          motivo?: string | null
+          observacao?: string | null
+          setor_id?: string
+          solicitado_por?: string
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "almox_solicitacoes_setor_id_fkey"
+            columns: ["setor_id"]
+            isOneToOne: false
+            referencedRelation: "company_sectors"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       api_partners: {
         Row: {
           api_authorized: boolean
@@ -11063,6 +11302,37 @@ export type Database = {
       admission_set_companion: {
         Args: { _request_id: string; _value: boolean }
         Returns: undefined
+      }
+      almox_contexto: { Args: never; Returns: Json }
+      almox_decidir: {
+        Args: { _aprovar: boolean; _id: string; _motivo?: string }
+        Returns: undefined
+      }
+      almox_entrada: {
+        Args: { _item: string; _quantidade: number }
+        Returns: undefined
+      }
+      almox_item_criar: {
+        Args: {
+          _categoria: string
+          _dados?: Json
+          _medicamento?: string
+          _nome: string
+          _quantidade: number
+          _unidade: string
+        }
+        Returns: string
+      }
+      almox_permissao: { Args: { _acao: string }; Returns: boolean }
+      almox_setor_acesso: { Args: { _setor: string }; Returns: boolean }
+      almox_solicitar: {
+        Args: {
+          _destino: string
+          _itens: Json
+          _observacao?: string
+          _setor: string
+        }
+        Returns: string
       }
       apoio__mascarar: { Args: { _t: string }; Returns: string }
       apoio_acao_adiar: { Args: { _id: string }; Returns: undefined }
