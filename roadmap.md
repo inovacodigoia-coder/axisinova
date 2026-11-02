@@ -125,3 +125,12 @@
 # Gráficos do equipamento na digitação de resultados
 - [x] Clique na miniatura abre o gráfico quase em tela cheia, com botão Fechar, zoom (100%–400%) e data de recebimento; antes o preview abria atrás da tela de digitação.
 - [ ] Validar na tela logada: sem sessão autorizada, o preview redireciona ao login.
+
+# BI de Gestão Hospitalar — Etapa 1 de 3
+- [ ] Investigar banco/código e responder os 6 pontos de validação do pedido (identificador de atendimento, mapeamento evento→tabela, custo medicação/preço exame, chegada sem totem, evasão, padrão de setores).
+- [ ] Habilitação do módulo por empresa (Super Admin, desabilitado por padrão), Setores, Perfis (Ver/Exportar/Configurar) com trava no banco.
+- [ ] Tabela de eventos da jornada (imutável, RLS por empresa) + gatilhos/ponto único de gravação nos fluxos existentes.
+- [ ] Itens consumidos com valor congelado (medicação/exame, "sem valor cadastrado" quando ausente).
+- [ ] View/função de segmentos de tempo por setor (aberto = em andamento).
+- [ ] Menu "BI Gestão Hospitalar" + tela-base; auditoria de acesso (LGPD).
+- [ ] Testes SQL isolados e validação autenticada.
