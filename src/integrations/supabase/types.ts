@@ -4832,6 +4832,92 @@ export type Database = {
           },
         ]
       }
+      farmacia_medicamento_custos: {
+        Row: {
+          alterado_em: string
+          alterado_por: string | null
+          company_id: string
+          custo_anterior: number | null
+          custo_novo: number | null
+          id: string
+          medicamento_id: string
+        }
+        Insert: {
+          alterado_em?: string
+          alterado_por?: string | null
+          company_id: string
+          custo_anterior?: number | null
+          custo_novo?: number | null
+          id?: string
+          medicamento_id: string
+        }
+        Update: {
+          alterado_em?: string
+          alterado_por?: string | null
+          company_id?: string
+          custo_anterior?: number | null
+          custo_novo?: number | null
+          id?: string
+          medicamento_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "farmacia_medicamento_custos_medicamento_id_fkey"
+            columns: ["medicamento_id"]
+            isOneToOne: false
+            referencedRelation: "farmacia_medicamentos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      farmacia_medicamentos: {
+        Row: {
+          apresentacao: string | null
+          ativo: boolean
+          codigo: number
+          company_id: string
+          created_at: string
+          created_by: string | null
+          custo: number | null
+          forma: string | null
+          id: string
+          nome: string
+          principio_ativo: string | null
+          unidade: string
+          updated_at: string
+        }
+        Insert: {
+          apresentacao?: string | null
+          ativo?: boolean
+          codigo: number
+          company_id: string
+          created_at?: string
+          created_by?: string | null
+          custo?: number | null
+          forma?: string | null
+          id?: string
+          nome: string
+          principio_ativo?: string | null
+          unidade?: string
+          updated_at?: string
+        }
+        Update: {
+          apresentacao?: string | null
+          ativo?: boolean
+          codigo?: number
+          company_id?: string
+          created_at?: string
+          created_by?: string | null
+          custo?: number | null
+          forma?: string | null
+          id?: string
+          nome?: string
+          principio_ativo?: string | null
+          unidade?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       feriado: {
         Row: {
           abrangencia: string
@@ -7874,6 +7960,9 @@ export type Database = {
           dispensed_by: string | null
           id: string
           prescription_id: string
+          retirado_por: string | null
+          setor_solicitante: string | null
+          solicitante: string | null
           status: string
           urgent: boolean
         }
@@ -7884,6 +7973,9 @@ export type Database = {
           dispensed_by?: string | null
           id?: string
           prescription_id: string
+          retirado_por?: string | null
+          setor_solicitante?: string | null
+          solicitante?: string | null
           status?: string
           urgent?: boolean
         }
@@ -7894,6 +7986,9 @@ export type Database = {
           dispensed_by?: string | null
           id?: string
           prescription_id?: string
+          retirado_por?: string | null
+          setor_solicitante?: string | null
+          solicitante?: string | null
           status?: string
           urgent?: boolean
         }
@@ -7916,8 +8011,10 @@ export type Database = {
           first_dose_at: string
           id: string
           interval_hours: number
+          medicamento_id: string | null
           medication: string
           prescription_id: string
+          quantidade_dispensada: number | null
           route: string
         }
         Insert: {
@@ -7928,8 +8025,10 @@ export type Database = {
           first_dose_at?: string
           id?: string
           interval_hours?: number
+          medicamento_id?: string | null
           medication: string
           prescription_id: string
+          quantidade_dispensada?: number | null
           route?: string
         }
         Update: {
@@ -7940,11 +8039,20 @@ export type Database = {
           first_dose_at?: string
           id?: string
           interval_hours?: number
+          medicamento_id?: string | null
           medication?: string
           prescription_id?: string
+          quantidade_dispensada?: number | null
           route?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "prescription_items_medicamento_id_fkey"
+            columns: ["medicamento_id"]
+            isOneToOne: false
+            referencedRelation: "farmacia_medicamentos"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "prescription_items_prescription_id_fkey"
             columns: ["prescription_id"]
@@ -7956,38 +8064,44 @@ export type Database = {
       }
       prescriptions: {
         Row: {
-          bed_id: string
+          appointment_ref: string | null
+          bed_id: string | null
           company_id: string
           created_at: string
           created_by: string | null
           doctor_name: string | null
           id: string
           notes: string | null
-          occupancy_id: string
+          occupancy_id: string | null
+          origem: string
           patient_name: string
           status: string
         }
         Insert: {
-          bed_id: string
+          appointment_ref?: string | null
+          bed_id?: string | null
           company_id: string
           created_at?: string
           created_by?: string | null
           doctor_name?: string | null
           id?: string
           notes?: string | null
-          occupancy_id: string
+          occupancy_id?: string | null
+          origem?: string
           patient_name: string
           status?: string
         }
         Update: {
-          bed_id?: string
+          appointment_ref?: string | null
+          bed_id?: string | null
           company_id?: string
           created_at?: string
           created_by?: string | null
           doctor_name?: string | null
           id?: string
           notes?: string | null
-          occupancy_id?: string
+          occupancy_id?: string | null
+          origem?: string
           patient_name?: string
           status?: string
         }
@@ -12213,6 +12327,25 @@ export type Database = {
         Args: { _bancada_id?: string; _exam_id: string }
         Returns: Json
       }
+      farmacia_dispensar: {
+        Args: {
+          _dispensation_id: string
+          _itens: Json
+          _retirado_por: string
+          _setor?: string
+          _solicitante: string
+        }
+        Returns: undefined
+      }
+      farmacia_medicamento_ativo: {
+        Args: { _ativo: boolean; _id: string }
+        Returns: undefined
+      }
+      farmacia_medicamento_salvar: {
+        Args: { _dados: Json; _id: string }
+        Returns: string
+      }
+      farmacia_tem_permissao: { Args: { _acao: string }; Returns: boolean }
       financeiro__auditar: {
         Args: {
           _acao: string
@@ -12732,6 +12865,16 @@ export type Database = {
           _notes: string
           _occupancy_id: string
           _urgent?: boolean
+        }
+        Returns: string
+      }
+      prescription_create_atendimento: {
+        Args: {
+          _appointment_ref: string
+          _doctor_name: string
+          _items: Json
+          _notes: string
+          _patient_name: string
         }
         Returns: string
       }
