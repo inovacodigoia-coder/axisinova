@@ -1,5 +1,11 @@
 # Verificação dos alertas
 
+# Ativação restrita — Financeiro, Caixa e solicitações
+- [x] Financeiro/Caixa e Almoxarifado ativos somente na Labsaude; novas empresas inativas, navegação oculta nas demais.
+- [x] Solicitações desmarcadas em todos os setores, exceto TI – Administração; demais opções preservadas e padrão aplicado a novos setores.
+- [x] Quatro testes passaram; nove empresas conferidas, apenas Labsaude ativa e zero setores com marcação incorreta; build OK.
+- [ ] Conferir navegação autenticada: depende de sessão válida, a disponível redireciona ao login. Restrição por setor é de navegação/configuração, mantendo RPCs com autorização por empresa e usuário.
+
 # Labsaude — teste operacional de almoxarifado e farmácia
 - [x] Gravados e relidos na Labsaude: 10 itens TESTE, 5 solicitações (3 aprovadas e 2 recusadas), Farmácia com saldos 2/3/40/60; medicamentos fictícios inativos, sem alterar registros existentes. Solicitante/decisor sintético do sistema, sem sessão em nome de usuário.
 - [x] 24 testes SQL isolados passaram: carga idempotente, aprovação, recusa, transferência, saldos, isolamento e proteção clínica; saldo total 1000 e zero movimentos nas recusas confirmados no banco.

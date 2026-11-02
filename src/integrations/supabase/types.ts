@@ -3483,6 +3483,7 @@ export type Database = {
       }
       companies: {
         Row: {
+          almoxarifado_habilitado: boolean
           apoio_enabled: boolean
           apoio_released_at: string | null
           apoio_released_by: string | null
@@ -3540,6 +3541,7 @@ export type Database = {
           whatsapp_numeros_autorizados: number
         }
         Insert: {
+          almoxarifado_habilitado?: boolean
           apoio_enabled?: boolean
           apoio_released_at?: string | null
           apoio_released_by?: string | null
@@ -3597,6 +3599,7 @@ export type Database = {
           whatsapp_numeros_autorizados?: number
         }
         Update: {
+          almoxarifado_habilitado?: boolean
           apoio_enabled?: boolean
           apoio_released_at?: string | null
           apoio_released_by?: string | null
@@ -11323,6 +11326,7 @@ export type Database = {
         }
         Returns: string
       }
+      almox_modulo_liberado: { Args: never; Returns: boolean }
       almox_permissao: { Args: { _acao: string }; Returns: boolean }
       almox_setor_acesso: { Args: { _setor: string }; Returns: boolean }
       almox_solicitar: {
