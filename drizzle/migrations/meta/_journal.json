@@ -946,6 +946,13 @@
       "when": 1793597845144,
       "tag": "0134_almoxarifado_solicitacoes_setores",
       "breakpoints": true
+    },
+    {
+      "idx": 135,
+      "version": "7",
+      "when": 1793600063559,
+      "tag": "0135_almoxarifado_company_enablement",
+      "breakpoints": true
     }
   ]
 }
