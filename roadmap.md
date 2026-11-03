@@ -1,5 +1,10 @@
 # Verificação dos alertas
 
+# Declaração — assinatura em branco
+- [x] Rodapé sem o nome, o cargo e o registro do responsável técnico pré-impressos: só a linha de assinatura, para o profissional do plantão assinar e carimbar; nome do paciente e do responsável legal continuam saindo.
+- [x] Dois testes novos e quatro já existentes de impressão passaram; typecheck e build OK.
+- [ ] Conferir a impressão real na Labsaude e publicar para chegar ao endereço oficial: nenhuma impressão executada aqui.
+
 # BI Hospitalar — Etapa 2A: materiais por paciente
 - [x] Base inspecionada e plano aprovado: custo novo, saldos/BI reutilizados; frações configuradas por material e atendimento exclusivo de teste autorizado.
 - [x] Custo/histórico (0136), permissões materiais.registrar/estornar, consumo congelado e estorno negativo/idempotente com saldo e evento em transação; funções e campos confirmados no banco.
