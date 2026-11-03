@@ -38,6 +38,19 @@ export const MATERIAIS_PERMISSIONS = [
   { code: 'materiais.estornar', label: 'Estornar' },
 ]
 
+export const ATENDIMENTO_DETALHES_PERMISSIONS = [
+  { code: 'atendimento.editar', label: 'Editar' },
+  { code: 'atendimento.auditoria', label: 'Auditoria' },
+  { code: 'atendimento.origem', label: 'Mudar origem' },
+  { code: 'atendimento.historico_impressoes', label: 'Histórico de Impressões' },
+  { code: 'atendimento.laudo_versao', label: 'Laudo por Versão' },
+  { code: 'atendimento.integracao', label: 'Integração Atendimento' },
+  { code: 'atendimento.laudo_evolutivo', label: 'Laudo Evolutivo' },
+  { code: 'atendimento.mais_informacoes', label: 'Mais Informações' },
+  { code: 'atendimento.excluir', label: 'Excluir Pedido' },
+] as const
+export type AtendimentoDetalhesPermission = typeof ATENDIMENTO_DETALHES_PERMISSIONS[number]['code']
+
 export interface Profile {
   id: string
   code: number
