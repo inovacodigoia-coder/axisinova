@@ -981,6 +981,13 @@
       "when": 1793708867436,
       "tag": "0139_user_unlock_keep_audit",
       "breakpoints": true
+    },
+    {
+      "idx": 140,
+      "version": "7",
+      "when": 1793709241970,
+      "tag": "0140_atendimento_origem_permissao",
+      "breakpoints": true
     }
   ]
 }

@@ -12202,6 +12202,10 @@ export type Database = {
         Args: { _apoio: string; _cod: string }
         Returns: boolean
       }
+      atendimento_detalhes_tem_permissao: {
+        Args: { _perm: string }
+        Returns: boolean
+      }
       atendimento_mudar_origem: {
         Args: { _order_id: string; _origin_id: string }
         Returns: Json
