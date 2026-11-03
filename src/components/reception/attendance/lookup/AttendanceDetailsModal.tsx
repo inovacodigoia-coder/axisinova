@@ -475,7 +475,11 @@ export function AttendanceDetailsModal({ open, onClose, onOrderDeleted, order, p
   const buildReportExam = (e: any) => {
     const res = getExamResult(e)
     const metodoApoio = metodosApoio[e.examId || e.id]
+    const ap = res?.releasedBy ? approvers[res.releasedBy] : undefined
     return {
+      approvedBy: ap?.name || undefined,
+      approvedRegister: ap?.register || undefined,
+      approvedAt: res?.releasedAt || undefined,
       examId: e.examId || e.id,
       code: e.code,
       name: e.name,

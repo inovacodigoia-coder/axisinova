@@ -42,6 +42,20 @@ const parseLocalDate = (value?: string) => {
 const fmtDate = (v?: string) => parseLocalDate(v)?.toLocaleDateString('pt-BR') || '—';
 const fmtTime = (v?: string) => (v ? new Date(v).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }) : '—');
 
+/** Bioquímicos que liberaram os exames da folha (cada exame guarda quem o liberou). */
+export const approversOf = (exams: any[]) => {
+  const map = new Map<string, { name: string; register: string; at?: string; exams: string[] }>();
+  (exams || []).forEach((e: any) => {
+    const name = String(e?.approvedBy || '').trim();
+    if (!name) return;
+    const cur = map.get(name) || { name, register: String(e.approvedRegister || '').trim(), at: e.approvedAt || undefined, exams: [] };
+    if (e.approvedAt && (!cur.at || new Date(e.approvedAt) > new Date(cur.at))) cur.at = e.approvedAt;
+    cur.exams.push(e.name || e.code || '');
+    map.set(name, cur);
+  });
+  return Array.from(map.values());
+};
+
 function InfoRow({ label, value }: { label: string; value?: React.ReactNode }) {
   return (
     <div className="flex gap-2">
