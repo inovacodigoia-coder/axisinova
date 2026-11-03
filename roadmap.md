@@ -174,3 +174,8 @@
 - [x] 16 testes SQL isolados passaram (módulo, permissões, jornada completa, valor congelado, segmentos, isolamento, evasão); typecheck e build OK.
 - [ ] Validar na tela autenticada com paciente de teste descartável: depende de login ativo/autorizado no preview.
 - [ ] Etapa 2 (Relatório por Paciente) e Etapa 3 (dashboards, metas, gargalos, IA): aguardando os próximos pedidos.
+
+# Sumário de Urina — grafia no Mapa de Trabalho
+- [x] Conferidos os 3 pontos: UROBILINOGÊNIO:, LEUCÓCITOS: e Biurato de amônia já saem assim na folha (o PDF modelo traz UROBINOGÊNIO, LEUCÓCITOS sem dois-pontos e "amonia").
+- [x] Folha movida para src/components/lab/MapaSumarioUrina.tsx com teste que trava a grafia; typecheck e build OK.
+- [ ] Conferir na tela a folha impressa do mapa 1005: o acesso de teste disponível não passa do login.
