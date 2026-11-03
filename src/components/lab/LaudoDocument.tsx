@@ -432,25 +432,40 @@ export default function LaudoDocument({
                   <span className="text-zinc-500">Data da coleta:</span>{' '}
                   <span className="font-medium">{fmtDateTime((order as any).collectionTime)}</span>
                 </p>
-                <p>
-                  <span className="text-zinc-500">Aprovado por:</span>{' '}
-                  <span className="font-medium">
-                    {approvedName}
-                    {approvedRegister ? ` — ${approvedRegister}` : ''}
-                  </span>
-                </p>
+                {approversOf(page.exams).length <= 1 && (
+                  <p>
+                    <span className="text-zinc-500">Aprovado por:</span>{' '}
+                    <span className="font-medium">
+                      {approversOf(page.exams)[0]?.name || approvedName}
+                      {(approversOf(page.exams)[0] ? approversOf(page.exams)[0].register : approvedRegister) ? ` — ${approversOf(page.exams)[0] ? approversOf(page.exams)[0].register : approvedRegister}` : ''}
+                    </span>
+                  </p>
+                )}
               </div>
-              <div className="space-y-1">
-                <p>
-                  <span className="text-zinc-500">Data de aprovação:</span>{' '}
-                  <span className="font-medium">{fmtDate((order as any).approvedAt)}</span>
-                </p>
-                <p>
-                  <span className="text-zinc-500">Horário de aprovação:</span>{' '}
-                  <span className="font-medium">{fmtTime((order as any).approvedAt)}</span>
-                </p>
-              </div>
+              {approversOf(page.exams).length <= 1 && (
+                <div className="space-y-1">
+                  <p>
+                    <span className="text-zinc-500">Data de aprovação:</span>{' '}
+                    <span className="font-medium">{fmtDate(approversOf(page.exams)[0]?.at || (order as any).approvedAt)}</span>
+                  </p>
+                  <p>
+                    <span className="text-zinc-500">Horário de aprovação:</span>{' '}
+                    <span className="font-medium">{fmtTime(approversOf(page.exams)[0]?.at || (order as any).approvedAt)}</span>
+                  </p>
+                </div>
+              )}
             </div>
+            {approversOf(page.exams).length > 1 && (
+              <div className="-mt-6 mb-8 space-y-1 text-[9.5px]">
+                {approversOf(page.exams).map((a) => (
+                  <p key={a.name}>
+                    <span className="text-zinc-500">Aprovado por:</span>{' '}
+                    <span className="font-medium">{a.name}{a.register ? ` — ${a.register}` : ''}</span>
+                    <span className="text-zinc-500"> · {fmtDate(a.at)} {fmtTime(a.at)} · {a.exams.join(', ')}</span>
+                  </p>
+                ))}
+              </div>
+            )}
 
             <div className="flex flex-col items-center justify-center mb-6">
               <div className="h-14 mb-1">
