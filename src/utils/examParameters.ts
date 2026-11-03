@@ -434,6 +434,8 @@ export function evaluateFormula(
 
 
   if (missing) return ''
+  // Multiplicação escrita como "x" ou "×" no cadastro (ex.: 28.7 x [HbA1c])
+  expr = expr.replace(/(^|[\s\d)])[x×](?=[\s\d(])/gi, '$1*')
   if (!/^[0-9+\-*/().\s]+$/.test(expr)) return ''
 
   try {

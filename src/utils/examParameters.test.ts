@@ -98,3 +98,15 @@ describe('evaluateFormula', () => {
     expect(result).toBe('1,1')
   })
 })
+
+describe('fórmula com "x" como multiplicação (HbA1c → eAG)', () => {
+  it('calcula 28.7 x HbA1c - 46.7', async () => {
+    const { evaluateFormula } = await import('./examParameters')
+    const params: any[] = [
+      { id: 'a', name: 'Hemoglobina glicada (HbA1c)', isCalculated: false },
+      { id: 'b', name: 'Glicemia média estimada (eAG)', isCalculated: true },
+    ]
+    const r = evaluateFormula('(28.7 x [Hemoglobina glicada (HbA1c)]) - 46.7', params, (id) => (id === 'a' ? '6,5' : ''))
+    expect(r).toBe('139,85')
+  })
+})
