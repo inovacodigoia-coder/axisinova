@@ -11,6 +11,7 @@ import { calculateAge, formatDateTime } from '@/utils/formatters'
 import { EmptyState } from '@/components/feedback/EmptyState'
 import { buildExamParams, findCatalogExam, type ResolvedParam } from '@/utils/examParameters'
 import { differenceInYears } from 'date-fns'
+import { MapaSumarioUrina } from '@/components/lab/MapaSumarioUrina'
 
 type ViewMode = 'completo' | 'exame' | 'grade' | 'urina'
 
@@ -360,7 +361,7 @@ export default function LabMapaViewPage() {
             {(() => {
               const isUrina = (e: MapExam) => /urina|eas|sum[aá]rio/i.test(`${e.nome} ${e.sigla} ${e.material}`)
               const lista = patients.filter(p => p.exams.some(e => e.inMap && isUrina(e)))
-              return (lista.length ? lista : patients).map(p => <SumarioUrina key={p.id} p={p} />)
+              return (lista.length ? lista : patients).map(p => <MapaSumarioUrina key={p.id} paciente={p.paciente} codigo={p.codigo} />)
             })()}
           </div>
         ) : view === 'exame' ? (
