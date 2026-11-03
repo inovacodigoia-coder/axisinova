@@ -915,6 +915,7 @@ export function ResultEntryModal({
           const laudoAtivo = activeLaudoFor(e);
           const workbenchName = workbenchNames[workbenchId] || e.workbench || '';
           return {
+            _ref: examRefOf(e),
             examId: e.id,
             code: e.code,
             name: catalogExam?.name || e.name,
@@ -951,38 +952,46 @@ export function ResultEntryModal({
         return;
       }
 
-      // A aprovação pertence à liberação persistida, nunca à sessão que visualiza.
+      // A aprovação pertence à liberação persistida de CADA exame, nunca à sessão que visualiza.
       let approvedBy = '';
       let approvedRegister = '';
       let releasedAt: string | null = null;
       const cid = resolveCompanyId(user?.companyId);
       const orderId = patient.exams?.[0]?.orderId || patient.id;
       if (cid && orderId) {
+        const refs = exams.map((x: any) => x._ref);
         const { data: releases, error } = await supabase
           .from('lab_exam_results')
-          .select('released_by, released_at')
+          .select('exam_ref, released_by, released_at')
           .eq('company_id', cid)
           .eq('order_id', orderId)
           .eq('status', 'released')
-          .in('exam_ref', patient.exams.filter((e: any) => examStatuses[e.id] === 'released').map(examRefOf))
-          .order('released_at', { ascending: false, nullsFirst: false })
-          .limit(1);
+          .in('exam_ref', refs);
         if (error) throw error;
-        const release = releases?.[0];
-        releasedAt = release?.released_at || null;
-        if (release?.released_by) {
-          const { data: prof, error: profileError } = await supabase
-            .from('profiles')
-            .select('full_name, council_type, council_uf, council_number')
-            .eq('id', release.released_by)
-            .maybeSingle();
-          if (profileError) throw profileError;
-          approvedBy = prof?.full_name || '';
-          approvedRegister = [
-            [prof?.council_type, prof?.council_uf].filter(Boolean).join('/'),
-            prof?.council_number,
-          ].filter(Boolean).join(' ').trim();
+        const ids = Array.from(new Set((releases || []).map((r: any) => r.released_by).filter(Boolean)));
+        const pm: Record<string, { name: string; register: string }> = {};
+        if (ids.length) {
+          const { data: profs } = await supabase.rpc('lab_aprovador_info' as any, { _ids: ids });
+          ((profs as any[]) || []).forEach((pr: any) => {
+            pm[pr.id] = {
+              name: pr.full_name || '',
+              register: [[pr.council_type, pr.council_uf].filter(Boolean).join('-'), pr.council_number].filter(Boolean).join(' ').trim(),
+            };
+          });
         }
+        const byRef = new Map((releases || []).map((r: any) => [r.exam_ref, r]));
+        exams.forEach((x: any) => {
+          const r: any = byRef.get(x._ref);
+          if (!r) return;
+          x.approvedBy = pm[r.released_by]?.name || undefined;
+          x.approvedRegister = pm[r.released_by]?.register || undefined;
+          x.approvedAt = r.released_at || undefined;
+          if (r.released_at && (!releasedAt || new Date(r.released_at) > new Date(releasedAt))) {
+            releasedAt = r.released_at;
+            approvedBy = x.approvedBy || '';
+            approvedRegister = x.approvedRegister || '';
+          }
+        });
       }
 
       setLaudoOrder({

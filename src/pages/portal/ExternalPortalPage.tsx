@@ -145,6 +145,8 @@ function PortalLaudoModal({ laudos, onClose }: { laudos: PortalLaudo[]; onClose:
     doctorName: first.doctorName,
     doctorCRM: first.doctorCRM,
     exams: laudos.map((l) => ({
+      approvedBy: l.approvedBy,
+      approvedAt: l.approvedAt,
       examId: l.exam.id,
       name: l.exam.name,
       material: l.exam.material,
