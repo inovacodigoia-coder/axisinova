@@ -4,7 +4,7 @@ import { SYSTEM_MODULES, ALL_ACTIONS, ACTION_LABELS, RESULT_ENTRY_PERMISSIONS, A
 import { Progress } from '@/components/ui/progress'
 import { FINANCEIRO_PERMISSIONS } from '@/lib/financeiro'
 import { useBiHospitalarHabilitada } from '@/hooks/useBiHospitalar'
-import { MATERIAIS_PERMISSIONS } from '@/types/permissions.types'
+import { MATERIAIS_PERMISSIONS, ATENDIMENTO_DETALHES_PERMISSIONS } from '@/types/permissions.types'
 import { Checkbox } from '@/components/ui/checkbox'
 
 interface PermissionsMatrixProps {
@@ -390,6 +390,8 @@ export function PermissionsMatrix({ permissions, onChange }: PermissionsMatrixPr
           })}
         </div>
       </div>
+
+      <div className="border-t border-border py-4 space-y-3"><p className="text-xs font-semibold text-foreground">Detalhes do Atendimento</p><p className="text-[11px] text-muted-foreground">Ações do menu do pedido no modal Detalhes Atendimento. Administradores têm todas.</p><div className="grid gap-3 sm:grid-cols-3">{ATENDIMENTO_DETALHES_PERMISSIONS.map(p=><label key={p.code} className="flex items-center gap-2 text-sm"><Checkbox checked={(((perms as any).atendimento_detalhes || []) as string[]).includes(p.code)} onCheckedChange={v=>setPerms(prev=>{const current=((prev as any).atendimento_detalhes||[]) as string[];return {...prev,atendimento_detalhes:v===true?[...current.filter(c=>c!==p.code),p.code]:current.filter(c=>c!==p.code)}})} />{p.label}</label>)}</div></div>
 
       <div className="border-t border-border py-4 space-y-3"><p className="text-xs font-semibold text-foreground">Materiais</p><div className="grid gap-3 sm:grid-cols-2">{MATERIAIS_PERMISSIONS.map(p=><label key={p.code} className="flex items-center gap-2 text-sm"><Checkbox checked={(((perms as any).materiais || []) as string[]).includes(p.code)} onCheckedChange={v=>setPerms(prev=>{const current=((prev as any).materiais||[]) as string[];return {...prev,materiais:v===true?[...current.filter(c=>c!==p.code),p.code]:current.filter(c=>c!==p.code)}})} />{p.label}</label>)}</div></div>
       {biHospitalarHabilitada && (

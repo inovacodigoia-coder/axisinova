@@ -1,3 +1,4 @@
+import { useAtendimentoDetalhesPermissions } from '@/hooks/useAtendimentoDetalhesPermissions'
 import { formatCPF, formatPhone, formatAge, formatGender, formatAddress } from "@/utils/formatters"
 import { fmtDiaMes } from '@/lib/apoioAtendimento'
 import { useState, useMemo, useEffect } from 'react'
@@ -74,6 +75,8 @@ export function AttendanceDetailsModal({ open, onClose, onOrderDeleted, order, p
   const { user: authUser } = useAuth()
   const cadTubos = useMateriaisTubos(authUser?.companyId)
   const isAdmin = isSuperAdmin || isCompanyAdmin
+  const pode = useAtendimentoDetalhesPermissions()
+  const algumaAcao = (['atendimento.editar','atendimento.auditoria','atendimento.origem','atendimento.historico_impressoes','atendimento.laudo_versao','atendimento.integracao','atendimento.laudo_evolutivo','atendimento.mais_informacoes','atendimento.excluir'] as const).some(c => pode(c))
   const [clientModalMode, setClientModalMode] = useState<ClientInfoMode | null>(null)
   const [currentPatient, setCurrentPatient] = useState<Patient | undefined>(patient)
   const [printSelectionOpen, setPrintSelectionOpen] = useState(false)
@@ -317,6 +320,7 @@ export function AttendanceDetailsModal({ open, onClose, onOrderDeleted, order, p
 
 
   const handleDeleteOrder = async () => {
+    if (!pode('atendimento.excluir')) return;
     try {
       setIsDeleting(true);
       
@@ -605,21 +609,26 @@ export function AttendanceDetailsModal({ open, onClose, onOrderDeleted, order, p
                     </Button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="end" className="w-56">
-                    {!isAdmin && (
+                    {!algumaAcao && (
                       <div className="px-3 py-3 text-xs text-muted-foreground">
-                        <p className="font-semibold text-amber-600">Bloqueado temporariamente</p>
-                        <p className="mt-1">Estas ações estão disponíveis apenas para administradores.</p>
+                        <p className="font-semibold text-amber-600">Sem ações liberadas</p>
+                        <p className="mt-1">Peça ao administrador para liberar estas ações no seu Perfil de Acesso.</p>
                       </div>
                     )}
-                    {isAdmin && (<>
+                    {algumaAcao && (<>
+{pode('atendimento.editar') && (
                     <DropdownMenuItem className="flex items-center gap-2">
                       <Pencil className="h-4 w-4" />
                       <span>Editar</span>
                     </DropdownMenuItem>
+                    )}
+{pode('atendimento.auditoria') && (
                     <DropdownMenuItem className="flex items-center gap-2">
                       <BarChart3 className="h-4 w-4" />
                       <span>Auditoria</span>
                     </DropdownMenuItem>
+                    )}
+{pode('atendimento.origem') && (
                     <DropdownMenuSub>
                       <DropdownMenuSubTrigger className="flex items-center gap-2">
                         <MapPin className="h-4 w-4" />
@@ -633,14 +642,20 @@ export function AttendanceDetailsModal({ open, onClose, onOrderDeleted, order, p
                         )}
                       </DropdownMenuSubContent>
                     </DropdownMenuSub>
+                    )}
+{pode('atendimento.historico_impressoes') && (
                     <DropdownMenuItem className="flex items-center gap-2">
                       <History className="h-4 w-4" />
                       <span>Histórico de Impressões</span>
                     </DropdownMenuItem>
+                    )}
+{pode('atendimento.laudo_versao') && (
                     <DropdownMenuItem className="flex items-center gap-2">
                       <FileText className="h-4 w-4" />
                       <span>Laudo por Versão</span>
                     </DropdownMenuItem>
+                    )}
+{pode('atendimento.integracao') && (
                     <DropdownMenuSub>
                       <DropdownMenuSubTrigger className="flex items-center gap-2">
                         <RefreshCw className="h-4 w-4" />
@@ -651,22 +666,27 @@ export function AttendanceDetailsModal({ open, onClose, onOrderDeleted, order, p
                         <DropdownMenuItem>Logs de Integração</DropdownMenuItem>
                       </DropdownMenuSubContent>
                     </DropdownMenuSub>
+                    )}
+{pode('atendimento.laudo_evolutivo') && (
                     <DropdownMenuItem className="flex items-center gap-2">
                       <Database className="h-4 w-4" />
                       <span>Laudo Evolutivo</span>
                     </DropdownMenuItem>
+                    )}
+{pode('atendimento.mais_informacoes') && (
                     <DropdownMenuItem className="flex items-center gap-2">
                       <Info className="h-4 w-4" />
                       <span>Mais Informações</span>
                     </DropdownMenuItem>
-                    <DropdownMenuSeparator />
+                    )}
+                    {pode('atendimento.excluir') && (<><DropdownMenuSeparator />
                     <DropdownMenuItem 
                       className="flex items-center gap-2 text-red-600 focus:text-red-600"
                       onClick={() => setDeleteDialogOpen(true)}
                     >
                       <Trash2 className="h-4 w-4" />
                       <span>Excluir Pedido</span>
-                    </DropdownMenuItem>
+                    </DropdownMenuItem></>)}
                     </>)}
                   </DropdownMenuContent>
                 </DropdownMenu>
@@ -867,7 +887,7 @@ export function AttendanceDetailsModal({ open, onClose, onOrderDeleted, order, p
 
 
 
-                    {isAdmin && (
+                    {pode('atendimento.excluir') && (
                     <div 
                       className="flex flex-col items-center gap-1 group cursor-pointer ml-auto"
                       onClick={() => setDeleteDialogOpen(true)}
