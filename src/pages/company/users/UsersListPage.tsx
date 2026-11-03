@@ -194,6 +194,24 @@ function EditUserModal({ profile, extraRoles = [], onClose, onSaved }: { profile
   const [manualPwd, setManualPwd] = useState('')
   const [manualPwd2, setManualPwd2] = useState('')
   const [settingPwd, setSettingPwd] = useState(false)
+  const [lockInfo, setLockInfo] = useState<{ locked: boolean; expires_at?: string } | null>(null)
+  const [unlocking, setUnlocking] = useState(false)
+
+  const loadLock = async (id: string) => {
+    const { data, error } = await (supabase.rpc as any)('auth_user_lockout_status', { _user_id: id })
+    setLockInfo(error ? null : (data as any))
+  }
+  useEffect(() => { setLockInfo(null); if (profile) void loadLock(profile.id) }, [profile])
+
+  const handleUnlock = async () => {
+    if (!profile) return
+    setUnlocking(true)
+    const { error } = await (supabase.rpc as any)('auth_user_unlock', { _user_id: profile.id })
+    setUnlocking(false)
+    if (error) { toast.error('Não foi possível desbloquear o usuário'); return }
+    toast.success('Usuário desbloqueado. Ele já pode entrar novamente.')
+    void loadLock(profile.id)
+  }
 
   useEffect(() => {
     if (profile) {
@@ -298,8 +316,22 @@ function EditUserModal({ profile, extraRoles = [], onClose, onSaved }: { profile
       <DialogContent className="w-[95vw] max-w-[95vw] sm:max-w-2xl max-h-[92vh] overflow-y-auto p-4 sm:p-6">
         <DialogHeader>
           <DialogTitle className="text-lg sm:text-xl font-bold flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 pr-6">
-            Editar Usuário
+            <span className="flex items-center gap-2 flex-wrap">
+              Editar Usuário
+              {lockInfo?.locked ? (
+                <span className="text-xs font-semibold rounded-full px-2 py-0.5 bg-destructive/10 text-destructive border border-destructive/30">
+                  Bloqueado{lockInfo.expires_at ? ` até ${new Date(lockInfo.expires_at).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit', timeZone: 'America/Sao_Paulo' })}` : ''}
+                </span>
+              ) : lockInfo ? (
+                <span className="text-xs font-semibold rounded-full px-2 py-0.5 bg-primary/10 text-primary border border-primary/30">Liberado</span>
+              ) : null}
+            </span>
             <div className="flex flex-wrap gap-2">
+              {lockInfo?.locked && (
+                <Button variant="destructive" size="sm" className="text-xs h-8" onClick={handleUnlock} disabled={unlocking}>
+                  {unlocking ? 'Desbloqueando...' : 'Desbloquear usuário'}
+                </Button>
+              )}
               <Button 
                 variant="outline" 
                 size="sm" 

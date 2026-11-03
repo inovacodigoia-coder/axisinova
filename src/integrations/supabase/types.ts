@@ -11340,6 +11340,7 @@ export type Database = {
       }
     }
     Functions: {
+      _auth_user_lock_guard: { Args: { _user_id: string }; Returns: string }
       _bed_log: {
         Args: {
           _bed: string
@@ -12243,6 +12244,8 @@ export type Database = {
         Returns: Json
       }
       auth_release_lockout: { Args: { _lockout_id: string }; Returns: boolean }
+      auth_user_lockout_status: { Args: { _user_id: string }; Returns: Json }
+      auth_user_unlock: { Args: { _user_id: string }; Returns: boolean }
       bancada_aplicar_item: {
         Args: {
           _bancada: string
