@@ -452,7 +452,8 @@ Deno.serve(async (req) => {
   }
 
   let resultId = existingResult?.id as string | undefined
-  const resultPayload = {
+  const reopened = decision.kind === 'overwritten' && decision.reopened
+  const resultPayload: Record<string, unknown> = {
     company_id: companyId,
     order_id: order.id,
     protocol: order.protocol,
@@ -465,6 +466,14 @@ Deno.serve(async (req) => {
     status: 'digitized',
     typed_at: nowIso,
     laudo_id: laudoId,
+  }
+  if (reopened) {
+    // Reteste: o exame volta a "não liberado" e o pedido de reteste é consumido
+    resultPayload.released_by = null
+    resultPayload.released_at = null
+    resultPayload.retest_requested = false
+    resultPayload.retest_requested_by = null
+    resultPayload.retest_requested_at = null
   }
 
   if (resultId) {
