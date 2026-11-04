@@ -35,7 +35,8 @@ import {
   Settings,
   ChevronLeft,
   ChevronRight,
-  Info
+  Info,
+  FlaskConical
 } from 'lucide-react';
 import { useApoioCancelamento } from '@/components/apoio/useApoioCancelamento';
 import PDFPreviewModal from '@/components/lab/PDFPreviewModal';
