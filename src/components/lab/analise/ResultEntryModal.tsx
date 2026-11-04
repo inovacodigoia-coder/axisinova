@@ -115,6 +115,12 @@ export function ResultEntryModal({
   const [examStatuses, setExamStatuses] = useState<Record<string, string>>({});
   const [portalBlocks, setPortalBlocks] = useState<Record<string, string[]>>({});
   const [examActions, setExamActions] = useState<Record<string, { type: string; reason?: string; details?: string; applied?: boolean }>>({});
+  // Reteste junto ao aparelho (persistido no banco) e indicador de atualização pelo aparelho
+  const [retestRequested, setRetestRequested] = useState<Record<string, boolean>>({});
+  const [resultIdByExam, setResultIdByExam] = useState<Record<string, string>>({});
+  const [instrumentAt, setInstrumentAt] = useState<Record<string, string>>({});
+  const [instrumentPrevious, setInstrumentPrevious] = useState<Record<string, { value: string; at: string }>>({});
+  const [retestSaving, setRetestSaving] = useState<string | null>(null);
   const [cancelModal, setCancelModal] = useState<{ isOpen: boolean; exam: any } | null>(null);
   const { cancelarNoApoio, dialog: apoioCancelDialog } = useApoioCancelamento();
   const [cancelReason, setCancelReason] = useState("");
@@ -751,6 +757,30 @@ export function ResultEntryModal({
           });
         }
       });
+      // Histórico de valores substituídos pelo aparelho (para o indicador "atualizado pelo aparelho")
+      const nextPrevious: Record<string, { value: string; at: string }> = {};
+      const resultIdList = Object.values(nextResultIds).filter(Boolean);
+      if (resultIdList.length) {
+        const { data: hist } = await supabase
+          .from('lab_result_value_history')
+          .select('result_id, parameter_key, value, created_at')
+          .in('result_id', resultIdList)
+          .order('created_at', { ascending: false });
+        if (active && hist) {
+          const refById = new Map(Object.entries(nextResultIds).map(([ref, id]) => [id, ref]));
+          hist.forEach((h: any) => {
+            const ref = refById.get(String(h.result_id));
+            if (!ref) return;
+            const key = `${ref}_${String(h.parameter_key)}`;
+            if (!nextPrevious[key]) nextPrevious[key] = { value: String(h.value ?? ''), at: String(h.created_at) };
+          });
+        }
+      }
+      if (!active) return;
+      setInstrumentPrevious(nextPrevious);
+      setInstrumentAt(nextInstrumentAt);
+      setRetestRequested(nextRetest);
+      setResultIdByExam(nextResultIds);
       setExternalResultValues(nextExternalValues);
       setInstrumentKeys(nextInstrumentKeys);
       setResults(prev => {
