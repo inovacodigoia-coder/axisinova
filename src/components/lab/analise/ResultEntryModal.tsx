@@ -1204,6 +1204,31 @@ export function ResultEntryModal({
 
 
 
+  // Reteste junto ao aparelho: exame liberado volta a aceitar UM resultado novo do equipamento
+  const handleRetesteAparelho = async (examId: string, solicitar: boolean) => {
+    const resultId = resultIdByExam[examId];
+    if (!resultId) {
+      toast.error("Resultado do exame não encontrado para pedir reteste.");
+      return;
+    }
+    setRetestSaving(examId);
+    try {
+      const { error } = await supabase.rpc(solicitar ? 'lab_solicitar_reteste' : 'lab_cancelar_reteste', { _result_id: resultId });
+      if (error) throw error;
+      setRetestRequested(prev => ({ ...prev, [examId]: solicitar }));
+      if (solicitar) {
+        toast.success("Reteste solicitado — o próximo resultado do aparelho reabre este exame.");
+      } else {
+        toast.info("Pedido de reteste cancelado.");
+      }
+    } catch (err: any) {
+      console.error('Erro no reteste do aparelho', err);
+      toast.error(err?.message || "Não foi possível registrar o reteste.");
+    } finally {
+      setRetestSaving(null);
+    }
+  };
+
   const handleExamAction = (examId: string, actionType: string) => {
     if (actionType === 'cancelar') {
       // Se já estiver cancelado, permite reverter (limpar o status de cancelamento)
@@ -1937,6 +1962,16 @@ export function ResultEntryModal({
                                         <RefreshCw className="h-3.5 w-3.5" />
                                         {examActions[exam.id]?.type === 'reteste' ? "Remover Reteste" : "Solicitar Reteste"}
                                       </DropdownMenuItem>
+                                      {isReleased && (
+                                        <DropdownMenuItem
+                                          onClick={(e) => { e.stopPropagation(); void handleRetesteAparelho(exam.id, !retestRequested[exam.id]); }}
+                                          disabled={retestSaving === exam.id}
+                                          className="text-xs font-bold uppercase text-sky-700 gap-2"
+                                        >
+                                          <FlaskConical className="h-3.5 w-3.5" />
+                                          {retestRequested[exam.id] ? "Cancelar reteste (aparelho)" : "Solicitar reteste (aparelho)"}
+                                        </DropdownMenuItem>
+                                      )}
                                       <DropdownMenuItem onClick={(e) => { e.stopPropagation(); handleExamAction(exam.id, 'recoleta'); }} className="text-xs font-bold uppercase text-orange-600 gap-2">
                                         <Syringe className="h-3.5 w-3.5" />
                                         {examActions[exam.id]?.type === 'recoleta' ? "Remover Recoleta" : "Solicitar Recoleta"}
