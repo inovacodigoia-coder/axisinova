@@ -89,6 +89,10 @@ const EQUIPMENT_LAYOUTS: Record<string, { label: string; graphs: string[] }> = {
   p8000: { label: 'Yumizen P8000', graphs: GRAPH_AREAS },
   count_380: { label: 'Count 380', graphs: ['WBC (# versus fL)', 'RBC (# versus fL)', 'PLT (# versus fL)'] },
   count380: { label: 'Count 380', graphs: ['WBC (# versus fL)', 'RBC (# versus fL)', 'PLT (# versus fL)'] },
+  // VIDA Count 860: diferencial em 5 partes — usa a tela completa (leucograma com diferencial + gráficos de dispersão)
+  vidacount860: { label: 'VIDA Count 860', graphs: ['DIFF (dispersão)', 'BASO (dispersão)', 'RBC (# versus fL)', 'PLT (# versus fL)'] },
+  vida_count_860: { label: 'VIDA Count 860', graphs: ['DIFF (dispersão)', 'BASO (dispersão)', 'RBC (# versus fL)', 'PLT (# versus fL)'] },
+  count_860: { label: 'VIDA Count 860', graphs: ['DIFF (dispersão)', 'BASO (dispersão)', 'RBC (# versus fL)', 'PLT (# versus fL)'] },
 }
 
 const maskDecimal = (raw: string) => raw.replace(/\./g, ',').replace(/[^\d,]/g, '').replace(/(,.*),/g, '$1')
