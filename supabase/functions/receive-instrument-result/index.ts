@@ -1,6 +1,7 @@
 import { createClient } from 'npm:@supabase/supabase-js@2'
 import { corsHeaders } from 'npm:@supabase/supabase-js@2/cors'
 import { authenticateIntegration } from '../_shared/integrationAuth.ts'
+import { decideInstrumentResult } from '../_shared/resultOverwrite.ts'
 
 const json = (body: unknown, status = 200) =>
   new Response(JSON.stringify(body), {
@@ -378,21 +379,52 @@ Deno.serve(async (req) => {
 
   const orderExam = orderExamByCatalogId.get(String(matchedExam.id))
 
-  // ---- 7. Grava o resultado (pendente de liberação) ----
+  // ---- 7. Decide o que fazer com o resultado novo (sobrescreve / recusa / ignora) ----
   const examRef = `${order.id}:${matchedExam.id}`
   const nowIso = new Date().toISOString()
 
   const { data: existingResult } = await supabase
     .from('lab_exam_results')
-    .select('id, status')
+    .select('id, status, retest_requested')
     .eq('company_id', companyId)
     .eq('exam_ref', examRef)
     .maybeSingle()
 
-  if (existingResult?.status === 'released') {
-    const msg = `Exame "${matchedExam.name}" já foi liberado — resultado do equipamento não foi gravado`
+  const { data: currentValue } = existingResult
+    ? await supabase
+        .from('lab_result_values')
+        .select('id, value, unit, source, instrument_code, flag, result_datetime, updated_at')
+        .eq('result_id', existingResult.id)
+        .eq('parameter_key', matchedParamId)
+        .maybeSingle()
+    : { data: null }
+
+  const decision = decideInstrumentResult({
+    examStatus: String(existingResult?.status ?? ''),
+    retestRequested: existingResult?.retest_requested === true,
+    current: currentValue
+      ? {
+          value: currentValue.value,
+          source: currentValue.source,
+          result_datetime: currentValue.result_datetime,
+          updated_at: currentValue.updated_at,
+        }
+      : null,
+    incomingResultDatetime: p.result_datetime ? String(p.result_datetime) : null,
+  })
+
+  if (decision.kind === 'refused_released') {
+    const msg = `Exame "${matchedExam.name}" já foi liberado; solicite reteste para aceitar novo resultado.`
     await logEvent('ignored', msg)
-    return fail(msg, 409)
+    return json({ success: false, error: 'exame_liberado', message: msg }, 409)
+  }
+
+  if (decision.kind === 'ignored_older') {
+    const msg =
+      `Resultado ignorado: o result_datetime enviado é mais antigo que o valor atual de "${matchedParamName}" ` +
+      `(origem: ${currentValue?.source === 'manual' ? 'digitado' : 'aparelho'})`
+    await logEvent('ignored', msg)
+    return ok({ status: 'ignored_older', message: msg, protocol: order.protocol, exam: matchedExam.name, parameter: matchedParamName })
   }
 
   // ---- Laudo do exame: usa o indicado pelo equipamento ou o de Ordem 1 ----
@@ -420,7 +452,8 @@ Deno.serve(async (req) => {
   }
 
   let resultId = existingResult?.id as string | undefined
-  const resultPayload = {
+  const reopened = decision.kind === 'overwritten' && decision.reopened
+  const resultPayload: Record<string, unknown> = {
     company_id: companyId,
     order_id: order.id,
     protocol: order.protocol,
@@ -433,6 +466,14 @@ Deno.serve(async (req) => {
     status: 'digitized',
     typed_at: nowIso,
     laudo_id: laudoId,
+  }
+  if (reopened) {
+    // Reteste: o exame volta a "não liberado" e o pedido de reteste é consumido
+    resultPayload.released_by = null
+    resultPayload.released_at = null
+    resultPayload.retest_requested = false
+    resultPayload.retest_requested_by = null
+    resultPayload.retest_requested_at = null
   }
 
   if (resultId) {
@@ -466,14 +507,26 @@ Deno.serve(async (req) => {
     result_datetime: p.result_datetime || nowIso,
   }
 
-  const { data: existingValue } = await supabase
-    .from('lab_result_values')
-    .select('id')
-    .eq('result_id', resultId!)
-    .eq('parameter_key', matchedParamId)
-    .maybeSingle()
+  // Histórico/auditoria: o valor substituído fica guardado com o motivo
+  if (decision.kind === 'overwritten' && currentValue) {
+    const { error: histError } = await supabase.from('lab_result_value_history').insert({
+      company_id: companyId,
+      result_id: resultId!,
+      parameter_key: matchedParamId,
+      parameter_name: matchedParamName,
+      value: currentValue.value,
+      unit: currentValue.unit,
+      source: currentValue.source,
+      instrument_code: currentValue.instrument_code,
+      flag: currentValue.flag,
+      result_datetime: currentValue.result_datetime,
+      reason: reopened ? 'reteste' : 'novo resultado do aparelho',
+      replaced_by: 'instrument',
+    })
+    if (histError) console.error('[receive-instrument-result] falha ao guardar histórico', histError.message)
+  }
 
-  let parameterResultId = existingValue?.id as string | undefined
+  let parameterResultId = currentValue?.id as string | undefined
   let valueError: { message: string } | null = null
 
   if (parameterResultId) {
@@ -503,6 +556,8 @@ Deno.serve(async (req) => {
   await logEvent('processed')
 
   return ok({
+    status: decision.kind === 'overwritten' ? 'overwritten' : 'created',
+    ...(decision.kind === 'overwritten' ? { previous_value: currentValue?.value ?? null, reopened } : {}),
     result_id: resultId!,
     parameter_result_id: parameterResultId,
     parameter_key: matchedParamId,

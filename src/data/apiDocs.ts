@@ -383,11 +383,21 @@ export const API_GROUPS: ApiGroup[] = [
   "reference_range": null,
   "result_datetime": "2026-08-25T00:16:29-03:00"
 }`,
-        responseExample: `// 200 sucesso
-{ "success": true, "result_id": "...", "parameter_result_id": "...", "parameter_key": "2", "protocol": "129-00", "exam": "Hemograma", "parameter": "Hemoglobina" }
+        responseExample: `// 200 gravado (primeiro resultado do parâmetro)
+{ "success": true, "status": "created", "result_id": "...", "parameter_result_id": "...", "parameter_key": "2", "protocol": "129-00", "exam": "Hemograma", "parameter": "Hemoglobina" }
 
-// 200 evento repetido (não duplica o resultado)
+// 200 substituiu um valor anterior (exame não liberado, ou liberado com reteste solicitado).
+// O valor anterior fica no histórico do exame; reopened: true indica que o exame voltou a "não liberado".
+{ "success": true, "status": "overwritten", "previous_value": "7.09", "reopened": false, "result_id": "...", "parameter_result_id": "..." }
+
+// 200 o resultado enviado é mais antigo que o valor atual (pelo result_datetime) — nada foi alterado
+{ "success": true, "status": "ignored_older", "message": "Resultado ignorado: o result_datetime enviado é mais antigo que o valor atual..." }
+
+// 200 evento repetido (mesma idempotency_key — não duplica nem sobrescreve)
 { "success": true, "duplicate": true, "message": "Evento já processado anteriormente" }
+
+// 409 exame liberado sem reteste solicitado (recusa definitiva: não repetir automaticamente)
+{ "success": false, "error": "exame_liberado", "message": "Exame já liberado; solicite reteste para aceitar novo resultado." }
 
 // 422 rejeição com motivo explícito (fica gravada no Log de Integração)
 { "success": false, "error": "Nenhum pedido encontrado com sample_barcode=17RGQ3RM6" }
@@ -474,7 +484,7 @@ export const API_GROUPS: ApiGroup[] = [
         path: '/list-orders-for-integration',
         summary: 'Pedidos coletados/cancelados (pull do middleware)',
         description:
-          'Lista pedidos cuja amostra foi coletada (ou que foram cancelados) após o horário informado em "since". Pedidos ainda não coletados não aparecem. Recomendado chamar a cada 1-2 minutos. Cada exame traz também o estado de liberação: status = "pending" (sem resultado), "resulted" (digitado, não liberado) ou "released" (liberado). Quando released, vêm released_at (ISO-8601 UTC) e released_by = "manual" (digitado/liberado por uma pessoa no LIS) ou "instrument" (valor recebido pela integração do equipamento). Apenas exames de bancada INTERNA são enviados; exames de bancada de laboratório de apoio não aparecem. Quando um exame já enviado sai da bancada interna (troca pontual ou troca no cadastro), ele volta na lista com status = "cancelled" no nível do exame (dentro de samples[].exams[]): retire-o da fila do equipamento.',
+          'Lista pedidos cuja amostra foi coletada (ou que foram cancelados) após o horário informado em "since". Pedidos ainda não coletados não aparecem. Recomendado chamar a cada 1-2 minutos. Cada exame traz também o estado de liberação: status = "pending" (sem resultado), "resulted" (digitado, não liberado), "released" (liberado) ou "retest_requested" (reteste solicitado no LIS — reabra o exame na fila do aparelho e envie o resultado novo; vem com retest_requested_at em ISO-8601 UTC). Quando released, vêm released_at (ISO-8601 UTC) e released_by = "manual" (digitado/liberado por uma pessoa no LIS) ou "instrument" (valor recebido pela integração do equipamento). Apenas exames de bancada INTERNA são enviados; exames de bancada de laboratório de apoio não aparecem. Quando um exame já enviado sai da bancada interna (troca pontual ou troca no cadastro), ele volta na lista com status = "cancelled" no nível do exame (dentro de samples[].exams[]): retire-o da fila do equipamento.',
         scope: 'company',
         auth: 'Authorization: Bearer <access_token> (OAuth2) ou X-API-Key (legado)',
         params: [
@@ -501,6 +511,7 @@ export const API_GROUPS: ApiGroup[] = [
           "exams": [
             { "code": "URE", "status": "released", "released_at": "2026-09-19T14:32:10.000Z", "released_by": "manual" },
             { "code": "CREA", "status": "pending" },
+            { "code": "GLI", "status": "retest_requested", "retest_requested_at": "2026-11-04T14:30:00.000Z" },
             { "code": "FE", "status": "cancelled" }
           ]
         }

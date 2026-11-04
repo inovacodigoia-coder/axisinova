@@ -151,12 +151,12 @@ Deno.serve(async (req) => {
 
   // ---- 5b. Estado dos exames (digitado/liberado) por pedido ----
   // Chave: `${order_id}:${exam_catalog_id}` e também `${order_id}:${exam_code}`
-  const examStateMap = new Map<string, { status: string; released_at: string | null; released_by: string }>()
+  const examStateMap = new Map<string, { status: string; released_at: string | null; released_by: string; retest_requested_at: string | null }>()
   const orderIds = (orders || []).map((o: any) => o.id)
   if (orderIds.length) {
     const { data: results } = await supabase
       .from('lab_exam_results')
-      .select('id, order_id, exam_catalog_id, exam_code, status, released_at')
+      .select('id, order_id, exam_catalog_id, exam_code, status, released_at, retest_requested, retest_requested_at')
       .eq('company_id', companyId)
       .in('order_id', orderIds)
 
@@ -174,10 +174,13 @@ Deno.serve(async (req) => {
 
     for (const r of results || []) {
       const released = String(r.status) === 'released'
+      // Reteste solicitado: o servidor do laboratório reabre o exame na fila do aparelho
+      const retest = r.retest_requested === true
       const entry = {
-        status: released ? 'released' : String(r.status) === 'cancelled' ? 'pending' : 'resulted',
+        status: retest ? 'retest_requested' : released ? 'released' : String(r.status) === 'cancelled' ? 'pending' : 'resulted',
         released_at: released ? (r.released_at ? new Date(r.released_at).toISOString() : null) : null,
         released_by: instrumentResults.has(String(r.id)) ? 'instrument' : 'manual',
+        retest_requested_at: retest && r.retest_requested_at ? new Date(r.retest_requested_at).toISOString() : null,
       }
       if (r.exam_catalog_id) examStateMap.set(`${r.order_id}:${String(r.exam_catalog_id)}`, entry)
       if (r.exam_code) examStateMap.set(`${r.order_id}:${String(r.exam_code).toUpperCase()}`, entry)
@@ -268,6 +271,9 @@ Deno.serve(async (req) => {
         exams: bucket.exams.filter((e) => e.collected).map((e) => {
           if (e.cancelled) return { code: e.code, status: 'cancelled' }
           if (!e.state) return { code: e.code, status: 'pending' }
+          if (e.state.status === 'retest_requested') {
+            return { code: e.code, status: 'retest_requested', retest_requested_at: e.state.retest_requested_at }
+          }
           if (e.state.status !== 'released') return { code: e.code, status: e.state.status }
           return {
             code: e.code,

@@ -6809,6 +6809,9 @@ export type Database = {
           protocol: string | null
           released_at: string | null
           released_by: string | null
+          retest_requested: boolean
+          retest_requested_at: string | null
+          retest_requested_by: string | null
           retificado_em: string | null
           status: string
           typed_at: string | null
@@ -6833,6 +6836,9 @@ export type Database = {
           protocol?: string | null
           released_at?: string | null
           released_by?: string | null
+          retest_requested?: boolean
+          retest_requested_at?: string | null
+          retest_requested_by?: string | null
           retificado_em?: string | null
           status?: string
           typed_at?: string | null
@@ -6857,6 +6863,9 @@ export type Database = {
           protocol?: string | null
           released_at?: string | null
           released_by?: string | null
+          retest_requested?: boolean
+          retest_requested_at?: string | null
+          retest_requested_by?: string | null
           retificado_em?: string | null
           status?: string
           typed_at?: string | null
@@ -7233,6 +7242,72 @@ export type Database = {
             columns: ["order_id"]
             isOneToOne: false
             referencedRelation: "attendance_orders"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      lab_result_value_history: {
+        Row: {
+          company_id: string
+          created_at: string
+          flag: string | null
+          id: string
+          instrument_code: string | null
+          parameter_key: string
+          parameter_name: string | null
+          reason: string
+          replaced_by: string
+          result_datetime: string | null
+          result_id: string
+          source: string | null
+          unit: string | null
+          value: string | null
+        }
+        Insert: {
+          company_id: string
+          created_at?: string
+          flag?: string | null
+          id?: string
+          instrument_code?: string | null
+          parameter_key: string
+          parameter_name?: string | null
+          reason: string
+          replaced_by?: string
+          result_datetime?: string | null
+          result_id: string
+          source?: string | null
+          unit?: string | null
+          value?: string | null
+        }
+        Update: {
+          company_id?: string
+          created_at?: string
+          flag?: string | null
+          id?: string
+          instrument_code?: string | null
+          parameter_key?: string
+          parameter_name?: string | null
+          reason?: string
+          replaced_by?: string
+          result_datetime?: string | null
+          result_id?: string
+          source?: string | null
+          unit?: string | null
+          value?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "lab_result_value_history_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "lab_result_value_history_result_id_fkey"
+            columns: ["result_id"]
+            isOneToOne: false
+            referencedRelation: "lab_exam_results"
             referencedColumns: ["id"]
           },
         ]
@@ -13139,6 +13214,7 @@ export type Database = {
           id: string
         }[]
       }
+      lab_cancelar_reteste: { Args: { _result_id: string }; Returns: undefined }
       lab_coleta_corrigir_horario: {
         Args: {
           _exame_ids: string[]
@@ -13171,6 +13247,10 @@ export type Database = {
         }[]
       }
       lab_norm: { Args: { t: string }; Returns: string }
+      lab_solicitar_reteste: {
+        Args: { _result_id: string }
+        Returns: undefined
+      }
       materiais_contexto_resolver: {
         Args: { _id: string; _tipo: string }
         Returns: Json

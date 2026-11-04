@@ -179,3 +179,11 @@
 - [x] Conferidos os 3 pontos: UROBILINOGÊNIO:, LEUCÓCITOS: e Biurato de amônia já saem assim na folha (o PDF modelo traz UROBINOGÊNIO, LEUCÓCITOS sem dois-pontos e "amonia").
 - [x] Folha movida para src/components/lab/MapaSumarioUrina.tsx com teste que trava a grafia; typecheck e build OK.
 - [ ] Conferir na tela a folha impressa do mapa 1005: o acesso de teste disponível não passa do login.
+
+# Resultado novo do aparelho — sobrescrever/reteste (pedido Inova CodigoIA)
+- [x] Banco: histórico de valores substituídos, estado de reteste no exame, RPCs solicitar/cancelar reteste.
+- [x] receive-instrument-result: sobrescreve não liberado; 409 exame_liberado sem reteste; reteste reabre; ignored_older por result_datetime; idempotência mantida.
+- [x] list-orders-for-integration: expor status retest_requested.
+- [x] Tela de digitação: botão Solicitar reteste (aparelho) em exame liberado + indicador "atualizado pelo aparelho às HH:MM" com valor anterior.
+- [x] Testes: decisão pura (7 casos de aceite) + SQL PGlite dos RPCs; typecheck e build.
+- [x] Atualizar /docs (apiDocs.ts) com o novo contrato.

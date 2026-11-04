@@ -35,7 +35,8 @@ import {
   Settings,
   ChevronLeft,
   ChevronRight,
-  Info
+  Info,
+  FlaskConical
 } from 'lucide-react';
 import { useApoioCancelamento } from '@/components/apoio/useApoioCancelamento';
 import PDFPreviewModal from '@/components/lab/PDFPreviewModal';
@@ -115,6 +116,12 @@ export function ResultEntryModal({
   const [examStatuses, setExamStatuses] = useState<Record<string, string>>({});
   const [portalBlocks, setPortalBlocks] = useState<Record<string, string[]>>({});
   const [examActions, setExamActions] = useState<Record<string, { type: string; reason?: string; details?: string; applied?: boolean }>>({});
+  // Reteste junto ao aparelho (persistido no banco) e indicador de atualização pelo aparelho
+  const [retestRequested, setRetestRequested] = useState<Record<string, boolean>>({});
+  const [resultIdByExam, setResultIdByExam] = useState<Record<string, string>>({});
+  const [instrumentAt, setInstrumentAt] = useState<Record<string, string>>({});
+  const [instrumentPrevious, setInstrumentPrevious] = useState<Record<string, { value: string; at: string }>>({});
+  const [retestSaving, setRetestSaving] = useState<string | null>(null);
   const [cancelModal, setCancelModal] = useState<{ isOpen: boolean; exam: any } | null>(null);
   const { cancelarNoApoio, dialog: apoioCancelDialog } = useApoioCancelamento();
   const [cancelReason, setCancelReason] = useState("");
@@ -678,7 +685,7 @@ export function ResultEntryModal({
       for (let i = 0; i < refs.length; i += CHUNK) {
         const { data, error } = await supabase
           .from('lab_exam_results')
-          .select('id, order_id, exam_ref, exam_code, exam_name, status, notes, portal_blocked_types, laudo_id, lab_result_values(parameter_key, value, source)')
+          .select('id, order_id, exam_ref, exam_code, exam_name, status, notes, portal_blocked_types, laudo_id, retest_requested, lab_result_values(parameter_key, value, source, result_datetime)')
           .eq('company_id', cid)
           .in('exam_ref', refs.slice(i, i + CHUNK));
         if (error) {
@@ -695,7 +702,7 @@ export function ResultEntryModal({
       for (let i = 0; i < orderIds.length; i += CHUNK) {
         const { data, error } = await supabase
           .from('lab_exam_results')
-          .select('id, order_id, exam_ref, exam_code, exam_name, status, notes, portal_blocked_types, laudo_id, lab_result_values(parameter_key, value, source)')
+          .select('id, order_id, exam_ref, exam_code, exam_name, status, notes, portal_blocked_types, laudo_id, retest_requested, lab_result_values(parameter_key, value, source, result_datetime)')
           .eq('company_id', cid)
           .in('order_id', orderIds.slice(i, i + CHUNK));
         if (error) continue;
@@ -715,9 +722,14 @@ export function ResultEntryModal({
       const nextExternalValues: Record<string, string> = {};
       const nextInstrumentKeys = new Set<string>();
       const nextLaudos: Record<string, string> = {};
+      const nextRetest: Record<string, boolean> = {};
+      const nextResultIds: Record<string, string> = {};
+      const nextInstrumentAt: Record<string, string> = {};
       rows.forEach((row: any) => {
         // exam_ref já é a chave única da instância (pedido:exame)
         const examId = String(row.exam_ref);
+        nextResultIds[examId] = String(row.id);
+        if (row.retest_requested === true) nextRetest[examId] = true;
         // Laudo indicado pelo equipamento (laudo_code) abre automaticamente na digitação
         if (row.laudo_id) nextLaudos[examId] = String(row.laudo_id);
         if (Array.isArray(row.portal_blocked_types) && row.portal_blocked_types.length > 0) {
@@ -732,7 +744,10 @@ export function ResultEntryModal({
           if (v.value !== null && v.value !== undefined && String(v.value) !== '') {
             nextResults[key] = String(v.value);
           }
-          if (v.source === 'instrument') nextInstrumentKeys.add(key);
+          if (v.source === 'instrument') {
+            nextInstrumentKeys.add(key);
+            if (v.result_datetime) nextInstrumentAt[key] = String(v.result_datetime);
+          }
         });
         const externalValue = (row.lab_result_values || []).find(
           (v: any) => v.value !== null && v.value !== undefined && String(v.value).trim() !== '',
@@ -743,6 +758,30 @@ export function ResultEntryModal({
           });
         }
       });
+      // Histórico de valores substituídos pelo aparelho (para o indicador "atualizado pelo aparelho")
+      const nextPrevious: Record<string, { value: string; at: string }> = {};
+      const resultIdList = Object.values(nextResultIds).filter(Boolean);
+      if (resultIdList.length) {
+        const { data: hist } = await supabase
+          .from('lab_result_value_history')
+          .select('result_id, parameter_key, value, created_at')
+          .in('result_id', resultIdList)
+          .order('created_at', { ascending: false });
+        if (active && hist) {
+          const refById = new Map(Object.entries(nextResultIds).map(([ref, id]) => [id, ref]));
+          hist.forEach((h: any) => {
+            const ref = refById.get(String(h.result_id));
+            if (!ref) return;
+            const key = `${ref}_${String(h.parameter_key)}`;
+            if (!nextPrevious[key]) nextPrevious[key] = { value: String(h.value ?? ''), at: String(h.created_at) };
+          });
+        }
+      }
+      if (!active) return;
+      setInstrumentPrevious(nextPrevious);
+      setInstrumentAt(nextInstrumentAt);
+      setRetestRequested(nextRetest);
+      setResultIdByExam(nextResultIds);
       setExternalResultValues(nextExternalValues);
       setInstrumentKeys(nextInstrumentKeys);
       setResults(prev => {
@@ -1165,6 +1204,31 @@ export function ResultEntryModal({
   };
 
 
+
+  // Reteste junto ao aparelho: exame liberado volta a aceitar UM resultado novo do equipamento
+  const handleRetesteAparelho = async (examId: string, solicitar: boolean) => {
+    const resultId = resultIdByExam[examId];
+    if (!resultId) {
+      toast.error("Resultado do exame não encontrado para pedir reteste.");
+      return;
+    }
+    setRetestSaving(examId);
+    try {
+      const { error } = await supabase.rpc(solicitar ? 'lab_solicitar_reteste' : 'lab_cancelar_reteste', { _result_id: resultId });
+      if (error) throw error;
+      setRetestRequested(prev => ({ ...prev, [examId]: solicitar }));
+      if (solicitar) {
+        toast.success("Reteste solicitado — o próximo resultado do aparelho reabre este exame.");
+      } else {
+        toast.info("Pedido de reteste cancelado.");
+      }
+    } catch (err: any) {
+      console.error('Erro no reteste do aparelho', err);
+      toast.error(err?.message || "Não foi possível registrar o reteste.");
+    } finally {
+      setRetestSaving(null);
+    }
+  };
 
   const handleExamAction = (examId: string, actionType: string) => {
     if (actionType === 'cancelar') {
@@ -1899,6 +1963,16 @@ export function ResultEntryModal({
                                         <RefreshCw className="h-3.5 w-3.5" />
                                         {examActions[exam.id]?.type === 'reteste' ? "Remover Reteste" : "Solicitar Reteste"}
                                       </DropdownMenuItem>
+                                      {isReleased && (
+                                        <DropdownMenuItem
+                                          onClick={(e) => { e.stopPropagation(); void handleRetesteAparelho(exam.id, !retestRequested[exam.id]); }}
+                                          disabled={retestSaving === exam.id}
+                                          className="text-xs font-bold uppercase text-sky-700 gap-2"
+                                        >
+                                          <FlaskConical className="h-3.5 w-3.5" />
+                                          {retestRequested[exam.id] ? "Cancelar reteste (aparelho)" : "Solicitar reteste (aparelho)"}
+                                        </DropdownMenuItem>
+                                      )}
                                       <DropdownMenuItem onClick={(e) => { e.stopPropagation(); handleExamAction(exam.id, 'recoleta'); }} className="text-xs font-bold uppercase text-orange-600 gap-2">
                                         <Syringe className="h-3.5 w-3.5" />
                                         {examActions[exam.id]?.type === 'recoleta' ? "Remover Recoleta" : "Solicitar Recoleta"}
@@ -1907,13 +1981,18 @@ export function ResultEntryModal({
                                   </DropdownMenu>
 
                                   {examActions[exam.id] && (
-                                    <Badge className={cn(
+                                     <Badge className={cn(
                                       "h-4 text-[7px] font-black uppercase",
                                       examActions[exam.id].type === 'cancelado' ? "bg-rose-100 text-rose-700" :
                                       examActions[exam.id].type === 'reteste' ? "bg-amber-100 text-amber-700" :
                                       "bg-orange-100 text-orange-700"
                                     )}>
                                       {examActions[exam.id].type}
+                                    </Badge>
+                                  )}
+                                  {retestRequested[exam.id] && (
+                                    <Badge className="h-4 text-[7px] font-black uppercase bg-sky-100 text-sky-700">
+                                      Reteste solicitado ao aparelho
                                     </Badge>
                                   )}
                               </div>
@@ -2063,7 +2142,17 @@ export function ResultEntryModal({
                                       <span className="px-1 py-[1px] rounded bg-primary/10 text-primary text-[8px] font-black">CALC</span>
                                     )}
                                   </label>
-                                  <span className="text-[9px] font-bold text-slate-400 uppercase italic">
+                                  <span className="text-[9px] font-bold text-slate-400 uppercase italic flex items-center gap-1">
+                                    {instrumentAt[`${exam.id}_${param.id}`] && (
+                                      <span
+                                        className="not-italic normal-case text-sky-600"
+                                        title={instrumentPrevious[`${exam.id}_${param.id}`]
+                                          ? `Valor anterior: ${instrumentPrevious[`${exam.id}_${param.id}`].value} (substituído em ${format(new Date(instrumentPrevious[`${exam.id}_${param.id}`].at), 'dd/MM/yyyy HH:mm')})`
+                                          : 'Valor recebido do aparelho'}
+                                      >
+                                        · aparelho {format(new Date(instrumentAt[`${exam.id}_${param.id}`]), 'HH:mm')}
+                                      </span>
+                                    )}
                                     {param.unit}
                                   </span>
                                 </div>
