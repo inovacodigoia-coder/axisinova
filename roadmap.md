@@ -181,9 +181,9 @@
 - [ ] Conferir na tela a folha impressa do mapa 1005: o acesso de teste disponível não passa do login.
 
 # Resultado novo do aparelho — sobrescrever/reteste (pedido Inova CodigoIA)
-- [ ] Banco: histórico de valores substituídos, estado de reteste no exame, RPCs solicitar/cancelar reteste.
-- [ ] receive-instrument-result: sobrescreve não liberado; 409 exame_liberado sem reteste; reteste reabre; ignored_older por result_datetime; idempotência mantida.
-- [ ] list-orders-for-integration: expor status retest_requested.
-- [ ] Tela de digitação: botão Solicitar reteste (aparelho) em exame liberado + indicador "atualizado pelo aparelho às HH:MM" com valor anterior.
-- [ ] Testes: decisão pura (7 casos de aceite) + SQL PGlite dos RPCs; typecheck e build.
-- [ ] Atualizar /docs (apiDocs.ts) com o novo contrato.
+- [x] Banco: histórico de valores substituídos, estado de reteste no exame, RPCs solicitar/cancelar reteste.
+- [x] receive-instrument-result: sobrescreve não liberado; 409 exame_liberado sem reteste; reteste reabre; ignored_older por result_datetime; idempotência mantida.
+- [x] list-orders-for-integration: expor status retest_requested.
+- [x] Tela de digitação: botão Solicitar reteste (aparelho) em exame liberado + indicador "atualizado pelo aparelho às HH:MM" com valor anterior.
+- [x] Testes: decisão pura (7 casos de aceite) + SQL PGlite dos RPCs; typecheck e build.
+- [x] Atualizar /docs (apiDocs.ts) com o novo contrato.
