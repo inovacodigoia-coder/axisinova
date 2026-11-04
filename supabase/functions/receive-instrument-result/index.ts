@@ -1,6 +1,7 @@
 import { createClient } from 'npm:@supabase/supabase-js@2'
 import { corsHeaders } from 'npm:@supabase/supabase-js@2/cors'
 import { authenticateIntegration } from '../_shared/integrationAuth.ts'
+import { decideInstrumentResult } from '../_shared/resultOverwrite.ts'
 
 const json = (body: unknown, status = 200) =>
   new Response(JSON.stringify(body), {
