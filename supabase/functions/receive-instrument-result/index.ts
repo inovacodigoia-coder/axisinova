@@ -379,21 +379,52 @@ Deno.serve(async (req) => {
 
   const orderExam = orderExamByCatalogId.get(String(matchedExam.id))
 
-  // ---- 7. Grava o resultado (pendente de liberação) ----
+  // ---- 7. Decide o que fazer com o resultado novo (sobrescreve / recusa / ignora) ----
   const examRef = `${order.id}:${matchedExam.id}`
   const nowIso = new Date().toISOString()
 
   const { data: existingResult } = await supabase
     .from('lab_exam_results')
-    .select('id, status')
+    .select('id, status, retest_requested')
     .eq('company_id', companyId)
     .eq('exam_ref', examRef)
     .maybeSingle()
 
-  if (existingResult?.status === 'released') {
-    const msg = `Exame "${matchedExam.name}" já foi liberado — resultado do equipamento não foi gravado`
+  const { data: currentValue } = existingResult
+    ? await supabase
+        .from('lab_result_values')
+        .select('id, value, unit, source, instrument_code, flag, result_datetime, updated_at')
+        .eq('result_id', existingResult.id)
+        .eq('parameter_key', matchedParamId)
+        .maybeSingle()
+    : { data: null }
+
+  const decision = decideInstrumentResult({
+    examStatus: String(existingResult?.status ?? ''),
+    retestRequested: existingResult?.retest_requested === true,
+    current: currentValue
+      ? {
+          value: currentValue.value,
+          source: currentValue.source,
+          result_datetime: currentValue.result_datetime,
+          updated_at: currentValue.updated_at,
+        }
+      : null,
+    incomingResultDatetime: p.result_datetime ? String(p.result_datetime) : null,
+  })
+
+  if (decision.kind === 'refused_released') {
+    const msg = `Exame "${matchedExam.name}" já foi liberado; solicite reteste para aceitar novo resultado.`
     await logEvent('ignored', msg)
-    return fail(msg, 409)
+    return json({ success: false, error: 'exame_liberado', message: msg }, 409)
+  }
+
+  if (decision.kind === 'ignored_older') {
+    const msg =
+      `Resultado ignorado: o result_datetime enviado é mais antigo que o valor atual de "${matchedParamName}" ` +
+      `(origem: ${currentValue?.source === 'manual' ? 'digitado' : 'aparelho'})`
+    await logEvent('ignored', msg)
+    return ok({ status: 'ignored_older', message: msg, protocol: order.protocol, exam: matchedExam.name, parameter: matchedParamName })
   }
 
   // ---- Laudo do exame: usa o indicado pelo equipamento ou o de Ordem 1 ----
