@@ -271,6 +271,9 @@ Deno.serve(async (req) => {
         exams: bucket.exams.filter((e) => e.collected).map((e) => {
           if (e.cancelled) return { code: e.code, status: 'cancelled' }
           if (!e.state) return { code: e.code, status: 'pending' }
+          if (e.state.status === 'retest_requested') {
+            return { code: e.code, status: 'retest_requested', retest_requested_at: e.state.retest_requested_at }
+          }
           if (e.state.status !== 'released') return { code: e.code, status: e.state.status }
           return {
             code: e.code,
