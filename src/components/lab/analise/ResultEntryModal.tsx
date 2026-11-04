@@ -715,9 +715,14 @@ export function ResultEntryModal({
       const nextExternalValues: Record<string, string> = {};
       const nextInstrumentKeys = new Set<string>();
       const nextLaudos: Record<string, string> = {};
+      const nextRetest: Record<string, boolean> = {};
+      const nextResultIds: Record<string, string> = {};
+      const nextInstrumentAt: Record<string, string> = {};
       rows.forEach((row: any) => {
         // exam_ref já é a chave única da instância (pedido:exame)
         const examId = String(row.exam_ref);
+        nextResultIds[examId] = String(row.id);
+        if (row.retest_requested === true) nextRetest[examId] = true;
         // Laudo indicado pelo equipamento (laudo_code) abre automaticamente na digitação
         if (row.laudo_id) nextLaudos[examId] = String(row.laudo_id);
         if (Array.isArray(row.portal_blocked_types) && row.portal_blocked_types.length > 0) {
@@ -732,7 +737,10 @@ export function ResultEntryModal({
           if (v.value !== null && v.value !== undefined && String(v.value) !== '') {
             nextResults[key] = String(v.value);
           }
-          if (v.source === 'instrument') nextInstrumentKeys.add(key);
+          if (v.source === 'instrument') {
+            nextInstrumentKeys.add(key);
+            if (v.result_datetime) nextInstrumentAt[key] = String(v.result_datetime);
+          }
         });
         const externalValue = (row.lab_result_values || []).find(
           (v: any) => v.value !== null && v.value !== undefined && String(v.value).trim() !== '',
