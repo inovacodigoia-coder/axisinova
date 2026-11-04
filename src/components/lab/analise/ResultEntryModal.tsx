@@ -678,7 +678,7 @@ export function ResultEntryModal({
       for (let i = 0; i < refs.length; i += CHUNK) {
         const { data, error } = await supabase
           .from('lab_exam_results')
-          .select('id, order_id, exam_ref, exam_code, exam_name, status, notes, portal_blocked_types, laudo_id, lab_result_values(parameter_key, value, source)')
+          .select('id, order_id, exam_ref, exam_code, exam_name, status, notes, portal_blocked_types, laudo_id, retest_requested, lab_result_values(parameter_key, value, source, result_datetime)')
           .eq('company_id', cid)
           .in('exam_ref', refs.slice(i, i + CHUNK));
         if (error) {
@@ -695,7 +695,7 @@ export function ResultEntryModal({
       for (let i = 0; i < orderIds.length; i += CHUNK) {
         const { data, error } = await supabase
           .from('lab_exam_results')
-          .select('id, order_id, exam_ref, exam_code, exam_name, status, notes, portal_blocked_types, laudo_id, lab_result_values(parameter_key, value, source)')
+          .select('id, order_id, exam_ref, exam_code, exam_name, status, notes, portal_blocked_types, laudo_id, retest_requested, lab_result_values(parameter_key, value, source, result_datetime)')
           .eq('company_id', cid)
           .in('order_id', orderIds.slice(i, i + CHUNK));
         if (error) continue;
