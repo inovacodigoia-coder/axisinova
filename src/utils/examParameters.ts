@@ -379,6 +379,12 @@ export function findCatalogExam(
   return bestScore >= 0.5 ? best : undefined
 }
 
+/** Fórmula do tipo [X (%)] * [Leucócitos ...] / 100 (absoluto do leucograma). */
+export function isLeukocyteAbsoluteFormula(formula?: string) {
+  const f = normalizeText(formula)
+  return /\bleucocitos\b/.test(f) && /\b100\b/.test(f) && /[%]/.test(formula || '') && /\//.test(formula || '')
+}
+
 const toNum = (v: any) => {
   const n = parseFloat(String(v ?? '').replace(/\s/g, '').replace(',', '.'))
   return isNaN(n) ? null : n
@@ -442,6 +448,8 @@ export function evaluateFormula(
     // eslint-disable-next-line no-new-func
     const result = Function(`"use strict"; return (${expr});`)()
     if (typeof result !== 'number' || !isFinite(result)) return ''
+    // Absolutos do leucograma (% × leucócitos ÷ 100) são contagem de células: inteiro
+    if (isLeukocyteAbsoluteFormula(formula)) return String(Math.round(result))
     return String(Math.round(result * 100) / 100).replace('.', ',')
   } catch {
     return ''
