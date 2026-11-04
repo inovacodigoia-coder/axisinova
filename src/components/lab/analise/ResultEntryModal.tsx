@@ -1980,13 +1980,18 @@ export function ResultEntryModal({
                                   </DropdownMenu>
 
                                   {examActions[exam.id] && (
-                                    <Badge className={cn(
+                                     <Badge className={cn(
                                       "h-4 text-[7px] font-black uppercase",
                                       examActions[exam.id].type === 'cancelado' ? "bg-rose-100 text-rose-700" :
                                       examActions[exam.id].type === 'reteste' ? "bg-amber-100 text-amber-700" :
                                       "bg-orange-100 text-orange-700"
                                     )}>
                                       {examActions[exam.id].type}
+                                    </Badge>
+                                  )}
+                                  {retestRequested[exam.id] && (
+                                    <Badge className="h-4 text-[7px] font-black uppercase bg-sky-100 text-sky-700">
+                                      Reteste solicitado ao aparelho
                                     </Badge>
                                   )}
                               </div>
@@ -2136,7 +2141,17 @@ export function ResultEntryModal({
                                       <span className="px-1 py-[1px] rounded bg-primary/10 text-primary text-[8px] font-black">CALC</span>
                                     )}
                                   </label>
-                                  <span className="text-[9px] font-bold text-slate-400 uppercase italic">
+                                  <span className="text-[9px] font-bold text-slate-400 uppercase italic flex items-center gap-1">
+                                    {instrumentAt[`${exam.id}_${param.id}`] && (
+                                      <span
+                                        className="not-italic normal-case text-sky-600"
+                                        title={instrumentPrevious[`${exam.id}_${param.id}`]
+                                          ? `Valor anterior: ${instrumentPrevious[`${exam.id}_${param.id}`].value} (substituído em ${format(new Date(instrumentPrevious[`${exam.id}_${param.id}`].at), 'dd/MM/yyyy HH:mm')})`
+                                          : 'Valor recebido do aparelho'}
+                                      >
+                                        · aparelho {format(new Date(instrumentAt[`${exam.id}_${param.id}`]), 'HH:mm')}
+                                      </span>
+                                    )}
                                     {param.unit}
                                   </span>
                                 </div>
