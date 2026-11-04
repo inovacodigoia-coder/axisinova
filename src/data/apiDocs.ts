@@ -383,11 +383,21 @@ export const API_GROUPS: ApiGroup[] = [
   "reference_range": null,
   "result_datetime": "2026-08-25T00:16:29-03:00"
 }`,
-        responseExample: `// 200 sucesso
-{ "success": true, "result_id": "...", "parameter_result_id": "...", "parameter_key": "2", "protocol": "129-00", "exam": "Hemograma", "parameter": "Hemoglobina" }
+        responseExample: `// 200 gravado (primeiro resultado do parâmetro)
+{ "success": true, "status": "created", "result_id": "...", "parameter_result_id": "...", "parameter_key": "2", "protocol": "129-00", "exam": "Hemograma", "parameter": "Hemoglobina" }
 
-// 200 evento repetido (não duplica o resultado)
+// 200 substituiu um valor anterior (exame não liberado, ou liberado com reteste solicitado).
+// O valor anterior fica no histórico do exame; reopened: true indica que o exame voltou a "não liberado".
+{ "success": true, "status": "overwritten", "previous_value": "7.09", "reopened": false, "result_id": "...", "parameter_result_id": "..." }
+
+// 200 o resultado enviado é mais antigo que o valor atual (pelo result_datetime) — nada foi alterado
+{ "success": true, "status": "ignored_older", "message": "Resultado ignorado: o result_datetime enviado é mais antigo que o valor atual..." }
+
+// 200 evento repetido (mesma idempotency_key — não duplica nem sobrescreve)
 { "success": true, "duplicate": true, "message": "Evento já processado anteriormente" }
+
+// 409 exame liberado sem reteste solicitado (recusa definitiva: não repetir automaticamente)
+{ "success": false, "error": "exame_liberado", "message": "Exame já liberado; solicite reteste para aceitar novo resultado." }
 
 // 422 rejeição com motivo explícito (fica gravada no Log de Integração)
 { "success": false, "error": "Nenhum pedido encontrado com sample_barcode=17RGQ3RM6" }
