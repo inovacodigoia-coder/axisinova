@@ -507,14 +507,26 @@ Deno.serve(async (req) => {
     result_datetime: p.result_datetime || nowIso,
   }
 
-  const { data: existingValue } = await supabase
-    .from('lab_result_values')
-    .select('id')
-    .eq('result_id', resultId!)
-    .eq('parameter_key', matchedParamId)
-    .maybeSingle()
+  // Histórico/auditoria: o valor substituído fica guardado com o motivo
+  if (decision.kind === 'overwritten' && currentValue) {
+    const { error: histError } = await supabase.from('lab_result_value_history').insert({
+      company_id: companyId,
+      result_id: resultId!,
+      parameter_key: matchedParamId,
+      parameter_name: matchedParamName,
+      value: currentValue.value,
+      unit: currentValue.unit,
+      source: currentValue.source,
+      instrument_code: currentValue.instrument_code,
+      flag: currentValue.flag,
+      result_datetime: currentValue.result_datetime,
+      reason: reopened ? 'reteste' : 'novo resultado do aparelho',
+      replaced_by: 'instrument',
+    })
+    if (histError) console.error('[receive-instrument-result] falha ao guardar histórico', histError.message)
+  }
 
-  let parameterResultId = existingValue?.id as string | undefined
+  let parameterResultId = currentValue?.id as string | undefined
   let valueError: { message: string } | null = null
 
   if (parameterResultId) {
