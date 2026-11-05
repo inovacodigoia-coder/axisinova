@@ -1,9 +1,10 @@
 # Verificação dos alertas
 
 # Catálogo SIGTAP e relatório simples
-- [ ] Campo opcional SIGTAP no catálogo, persistência e importação/exportação mantendo zeros iniciais.
-- [ ] Relatório simples por exame com sigla, nome, TUSS/SIGTAP preenchidos e quantidade; impressão/PDF e planilha.
-- [ ] Testar códigos opcionais e contagem; verificar apresentação e fluxo autenticado se houver sessão válida.
+- [x] Campo opcional SIGTAP no catálogo e banco confirmado; importação/exportação com TUSS separado, zeros iniciais preservados e planilhas antigas sem apagar códigos.
+- [x] Relatório simples por exame com sigla, nome, TUSS/SIGTAP preenchidos e quantidade; documento compartilhado na prévia/impressão/PDF, CSV/XLS/XLSX; período Brasília e filtros origem/bancada/convênio.
+- [x] Nove testes de códigos/planilha/contagem passaram; documento monocromático conferido no navegador com dados fictícios isolados; build OK.
+- [ ] Fluxo real autenticado de salvar/importar/abrir relatório: sessão disponível redireciona ao login, sem gerar sessão em nome de usuário; nenhum exame real alterado.
 
 # Auditoria — Detalhes Atendimento
 - [x] Botão conectado à auditoria: registros do pedido com usuário, data/hora de Brasília, antes/depois, busca e paginação.
