@@ -1,0 +1,1 @@
+- Exam billing codes are optional text values; spreadsheet imports omit missing columns and clear explicitly empty cells. Why: preserve leading zeros and compatibility with older catalogs.
