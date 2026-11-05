@@ -48,6 +48,7 @@ import { dbToPatient } from '@/utils/patient.adapter'
 import TrocaBancadaPontualDialog from '@/components/lab/attendance/TrocaBancadaPontualDialog'
 import { useApoioPermissions } from '@/hooks/useApoio'
 import { MudarOrigemDialog } from './MudarOrigemDialog'
+import { AttendanceAuditDialog } from './AttendanceAuditDialog'
 
 import {
   AlertDialog,
@@ -92,6 +93,7 @@ export function AttendanceDetailsModal({ open, onClose, onOrderDeleted, order, p
   const [isDeleting, setIsDeleting] = useState(false)
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
   const [mudarOrigemOpen, setMudarOrigemOpen] = useState(false)
+  const [auditOpen, setAuditOpen] = useState(false)
   const [origemAtual, setOrigemAtual] = useState<{ id?: string; name?: string }>({ id: order.originId, name: order.originName })
   const { settings, isLoading: settingsLoading } = useLabSettings()
   const companySequenceId = useCompanySequenceId()
@@ -623,7 +625,7 @@ export function AttendanceDetailsModal({ open, onClose, onOrderDeleted, order, p
                     </DropdownMenuItem>
                     )}
 {pode('atendimento.auditoria') && (
-                    <DropdownMenuItem className="flex items-center gap-2">
+                    <DropdownMenuItem className="flex items-center gap-2" onSelect={() => setAuditOpen(true)}>
                       <BarChart3 className="h-4 w-4" />
                       <span>Auditoria</span>
                     </DropdownMenuItem>
@@ -1701,6 +1703,7 @@ export function AttendanceDetailsModal({ open, onClose, onOrderDeleted, order, p
         />
       )}
       {corrigirColeta && order?.id && <CorrigirHorarioColetaDialog pedidoId={order.id} examId={corrigirColeta.examId} examNome={corrigirColeta.nome} atual={corrigirColeta.atual} onClose={() => setCorrigirColeta(null)} />}
+      {open && auditOpen && pode('atendimento.auditoria') && <AttendanceAuditDialog orderId={order.id} orderNumber={order.orderNumber} onClose={() => setAuditOpen(false)} />}
       </ScrollArea>
     </DialogContent>
   </Dialog>

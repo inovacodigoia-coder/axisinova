@@ -12277,6 +12277,19 @@ export type Database = {
         Args: { _apoio: string; _cod: string }
         Returns: boolean
       }
+      atendimento_auditoria_lista: {
+        Args: { _limite?: number; _offset?: number; _pedido: string }
+        Returns: {
+          acao: string
+          antes: Json
+          created_at: string
+          depois: Json
+          id: string
+          total: number
+          usuario_id: string
+          usuario_nome: string
+        }[]
+      }
       atendimento_detalhes_tem_permissao: {
         Args: { _perm: string }
         Returns: boolean

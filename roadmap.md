@@ -1,5 +1,10 @@
 # Verificação dos alertas
 
+# Auditoria — Detalhes Atendimento
+- [x] Botão conectado à auditoria: registros do pedido com usuário, data/hora de Brasília, antes/depois, busca e paginação.
+- [x] Fontes históricas por UUID/empresa (cadastro, última digitação/liberação, apoio, substituições e documentos); novos registros automáticos de pedido/resultados/parâmetros sem credenciais; 7 testes SQL + 3 de permissões passaram.
+- [ ] Validar abertura com sessão autorizada: acesso injetado redireciona para login, sem gerar sessão em nome de usuário. Histórico antigo não registrado não é recuperável; nenhuma alteração em pedido real.
+
 # Declaração — assinatura em branco
 - [x] Rodapé sem o nome, o cargo e o registro do responsável técnico pré-impressos: só a linha de assinatura, para o profissional do plantão assinar e carimbar; nome do paciente e do responsável legal continuam saindo.
 - [x] Dois testes novos e quatro já existentes de impressão passaram; typecheck e build OK.
