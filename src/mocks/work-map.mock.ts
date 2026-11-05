@@ -171,4 +171,18 @@ export async function deleteWorkMap(code: string) {
   notify()
 }
 
+/** Atualiza os exames de um mapa (remover exames/bancadas). Os removidos voltam para a fila. */
+export async function updateWorkMapItems(code: string, itemKeys: string[], sector?: string) {
+  const payload: any = { item_keys: itemKeys, items_count: itemKeys.length }
+  if (sector) payload.sector = sector
+  const { error } = await supabase.from('lab_work_maps').update(payload).eq('code', code)
+  if (error) {
+    console.error('[work-map] update failed', error)
+    throw error
+  }
+  cache = cache.map(m => (m.code === code ? { ...m, itemKeys, itemsCount: itemKeys.length, sector: sector || m.sector } : m))
+  rebuildIncluded()
+  notify()
+}
+
 export const DEFAULT_PRIORITIES = ['Normal', 'Urgente', 'Emergência']
