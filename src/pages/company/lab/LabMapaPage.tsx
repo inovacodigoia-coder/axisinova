@@ -21,7 +21,6 @@ import {
   DEFAULT_PRIORITIES,
   createWorkMap,
   getIncludedKeys,
-  isGuiaRemessaRecebida,
   loadWorkMaps,
   subscribeWorkMaps,
   workMapItemKey,
@@ -118,7 +117,6 @@ export default function LabMapaPage() {
           if (exam?.status === 'cancelled') return
           if (exam?.coletaProgramada && exam?.collectedAt && new Date(exam.collectedAt).getTime() > Date.now()) return // coleta programada futura
           const key = workMapItemKey(order.id, gi, ei)
-          if (!isGuiaRemessaRecebida(key)) return // guia_remessa_recebida = false
           if (included.has(key)) return // incluido_em_mapa = true
 
           const examKey = (exam.name || '').toLowerCase()
