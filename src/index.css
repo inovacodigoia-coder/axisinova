@@ -347,6 +347,16 @@ a[href*="lovable.app"],
 #receipt-print-portal { display: none; }
 
 #lab-report-print-root { display: none; }
+.lab-simple-report {
+  width: 210mm;
+  padding: 12mm;
+  margin: 0 auto;
+  background: var(--document-paper);
+  color: var(--document-ink);
+  font-family: Arial, sans-serif;
+}
+.lab-simple-report thead { display: table-header-group; }
+.lab-simple-report tr { break-inside: avoid; }
 
 :root { --fiscal-paper: 0 0% 100%; --fiscal-ink: 0 0% 0%; }
 .receipt-combined-sheet { display: grid; grid-template-rows: 1fr 1fr; background: hsl(var(--fiscal-paper)); color: hsl(var(--fiscal-ink)); }

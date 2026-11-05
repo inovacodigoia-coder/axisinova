@@ -15,6 +15,11 @@ import { useAuth } from '@/context/AuthContext'
 import { useLabReportData, type LabReportSections, type ReportRow } from '@/hooks/useLabReportData'
 import { LabReportDocument, type ChartKind, type ReportSectionConfig } from './LabReportDocument'
 import { format, startOfDay, subDays, startOfMonth, endOfMonth, subMonths } from 'date-fns'
+import { useAttendanceCadastro } from '@/hooks/useAttendanceCadastro'
+import { useRegisters } from '@/context/RegistersContext'
+import { useLabSettings } from '@/hooks/useLabSettings'
+import { buildSimpleExamReport, simpleReportColumns } from '@/lib/labSimpleReport'
+import { LabSimpleReportDocument } from './LabSimpleReportDocument'
 
 interface Props {
   open: boolean
@@ -54,6 +59,12 @@ const iso = (d: Date) => format(d, 'yyyy-MM-dd')
 
 export function LabReportModal({ open, onOpenChange }: Props) {
   const { user } = useAuth()
+  const { orders } = useAttendanceCadastro()
+  const { exams: catalog, workbenches } = useRegisters()
+  const { settings } = useLabSettings()
+  const [reportMode, setReportMode] = useState<'custom' | 'simple'>('custom')
+  const [simpleWorkbench, setSimpleWorkbench] = useState('all')
+  const [simpleConvenio, setSimpleConvenio] = useState('all')
   const [from, setFrom] = useState(() => iso(subDays(new Date(), 29)))
   const [to, setTo] = useState(() => iso(new Date()))
   const [selected, setSelected] = useState<Record<string, boolean>>({
@@ -101,9 +112,12 @@ export function LabReportModal({ open, onOpenChange }: Props) {
       ? `${format(fromDate, 'dd/MM/yyyy')} a ${format(toDate, 'dd/MM/yyyy')}`
       : 'Todos os períodos'
   const generatedAt = format(new Date(), "dd/MM/yyyy 'às' HH:mm")
+  const simpleRows = useMemo(() => buildSimpleExamReport(orders, catalog, { from, to, origin, workbench: simpleWorkbench, convenio: simpleConvenio }), [orders, catalog, from, to, origin, simpleWorkbench, simpleConvenio])
+  const convenioOptions = useMemo(() => [...new Set(orders.flatMap(order => ((order as any).labGuides || []).map((guide: any) => guide.convenioName || order.convenioName || 'Particular')))] as string[], [orders])
+  const simpleProps = { brandName: settings?.lab_name || brandName, periodLabel, generatedAt: new Date().toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo' }), origin: origin === 'all' ? 'Todas' : origin, workbench: simpleWorkbench === 'all' ? 'Todas' : workbenches.find(w => w.id === simpleWorkbench)?.name || '', convenio: simpleConvenio === 'all' ? 'Todos' : simpleConvenio, rows: simpleRows }
 
   const handlePrint = () => {
-    if (!sections.length) return toast.error('Selecione ao menos um dado para o relatório.')
+    if (reportMode === 'custom' && !sections.length) return toast.error('Selecione ao menos um dado para o relatório.')
     setPrinting(true)
     document.body.classList.add('printing-lab-report')
     setTimeout(() => {
@@ -115,6 +129,14 @@ export function LabReportModal({ open, onOpenChange }: Props) {
 
   const buildWorkbook = () => {
     const wb = XLSX.utils.book_new()
+    if (reportMode === 'simple') {
+      const columns = simpleReportColumns(simpleRows)
+      const rows = simpleRows.map(row => ({ Sigla: row.abbreviation, Exame: row.name, ...(columns.tuss ? { 'Código TUSS': row.tussCode } : {}), ...(columns.sigtap ? { 'Código SUS (SIGTAP)': row.sigtapCode } : {}), 'Qtd. exames': row.count }))
+      const sheet = XLSX.utils.json_to_sheet(rows)
+      sheet['!cols'] = [{ wch: 12 }, { wch: 50 }, { wch: 20 }, { wch: 22 }, { wch: 15 }]
+      XLSX.utils.book_append_sheet(wb, sheet, 'Resumo de Exames')
+      return wb
+    }
     const header = [
       [brandName],
       ['Relatório Laboratorial Personalizado'],
@@ -145,7 +167,7 @@ export function LabReportModal({ open, onOpenChange }: Props) {
   }
 
   const handleExport = (ext: 'xlsx' | 'xls' | 'csv') => {
-    if (!sections.length) return toast.error('Selecione ao menos um dado para o relatório.')
+    if (reportMode === 'custom' && !sections.length) return toast.error('Selecione ao menos um dado para o relatório.')
     const wb = buildWorkbook()
     const name = `relatorio-lab-${brandName.replace(/\s+/g, '-').toLowerCase()}-${format(new Date(), 'yyyyMMdd-HHmm')}.${ext}`
     XLSX.writeFile(wb, name, { bookType: ext === 'xls' ? 'biff8' : ext })
@@ -167,6 +189,7 @@ export function LabReportModal({ open, onOpenChange }: Props) {
             <div className="border-r">
               <ScrollArea className="h-[70vh]">
                 <div className="p-4 space-y-5">
+                  <div className="space-y-2"><Label>Tipo de relatório</Label><Select value={reportMode} onValueChange={(value: 'custom' | 'simple') => setReportMode(value)}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent className="z-[100]"><SelectItem value="custom">Personalizado</SelectItem><SelectItem value="simple">Relatório simples</SelectItem></SelectContent></Select></div>
                   <div className="space-y-2">
                     <Label className="text-xs font-semibold uppercase text-muted-foreground">Período</Label>
                     <div className="flex flex-wrap gap-1.5">
@@ -213,7 +236,8 @@ export function LabReportModal({ open, onOpenChange }: Props) {
                     <Label className="text-xs font-semibold uppercase text-muted-foreground">
                       Dados do relatório
                     </Label>
-                    {SECTION_DEFS.map(s => (
+                    {reportMode === 'simple' && <div className="space-y-3"><Label>Bancada</Label><Select value={simpleWorkbench} onValueChange={setSimpleWorkbench}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent className="z-[100]"><SelectItem value="all">Todas</SelectItem>{workbenches.map(w => <SelectItem key={w.id} value={w.id}>{w.name}</SelectItem>)}</SelectContent></Select><Label>Convênio</Label><Select value={simpleConvenio} onValueChange={setSimpleConvenio}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent className="z-[100]"><SelectItem value="all">Todos</SelectItem>{convenioOptions.map(name => <SelectItem key={name} value={name}>{name}</SelectItem>)}</SelectContent></Select></div>}
+                    {reportMode === 'custom' && SECTION_DEFS.map(s => (
                       <div key={s.key} className="rounded-lg border border-border p-2.5 space-y-2">
                         <div className="flex items-start gap-2">
                           <Checkbox
@@ -255,14 +279,14 @@ export function LabReportModal({ open, onOpenChange }: Props) {
                 ) : (
                   <div className="origin-top scale-[0.78] lg:scale-[0.85]">
                     <div className="shadow-lg">
-                      <LabReportDocument
+                      {reportMode === 'simple' ? <LabSimpleReportDocument {...simpleProps} /> : <LabReportDocument
                         brandName={brandName}
                         logoUrl={logoUrl}
                         periodLabel={periodLabel}
                         generatedAt={generatedAt}
                         sections={sections}
                         data={data}
-                      />
+                      />}
                     </div>
                   </div>
                 )}
@@ -291,14 +315,14 @@ export function LabReportModal({ open, onOpenChange }: Props) {
       {open &&
         createPortal(
           <div id="lab-report-print-root">
-            <LabReportDocument
+            {reportMode === 'simple' ? <LabSimpleReportDocument {...simpleProps} /> : <LabReportDocument
               brandName={brandName}
               logoUrl={logoUrl}
               periodLabel={periodLabel}
               generatedAt={generatedAt}
               sections={sections}
               data={data}
-            />
+            />}
           </div>,
           document.body
         )}
