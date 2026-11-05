@@ -1,5 +1,10 @@
 # Verificação dos alertas
 
+# Catálogo SIGTAP e relatório simples
+- [ ] Campo opcional SIGTAP no catálogo, persistência e importação/exportação mantendo zeros iniciais.
+- [ ] Relatório simples por exame com sigla, nome, TUSS/SIGTAP preenchidos e quantidade; impressão/PDF e planilha.
+- [ ] Testar códigos opcionais e contagem; verificar apresentação e fluxo autenticado se houver sessão válida.
+
 # Auditoria — Detalhes Atendimento
 - [x] Botão conectado à auditoria: registros do pedido com usuário, data/hora de Brasília, antes/depois, busca e paginação.
 - [x] Fontes históricas por UUID/empresa (cadastro, última digitação/liberação, apoio, substituições e documentos); novos registros automáticos de pedido/resultados/parâmetros sem credenciais; 7 testes SQL + 3 de permissões passaram.
