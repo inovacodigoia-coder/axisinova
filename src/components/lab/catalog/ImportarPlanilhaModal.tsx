@@ -24,6 +24,7 @@ import { cn } from "@/lib/utils";
 import { toast } from 'sonner';
 import { useRegisters } from '@/context/RegistersContext';
 import { importReferenceAge } from '@/utils/importReferenceAge';
+import { importExamBillingCodes } from '@/lib/examBillingCodes';
 
 interface ImportarPlanilhaModalProps {
   isOpen: boolean;
@@ -45,6 +46,8 @@ interface ExamImportData {
   bancada: string;
   prazoEntrega: number;
   unidadeMedida?: string;
+  tussCode?: string;
+  sigtapCode?: string;
   parameters: any[];
   referenceValues: any[];
 }
@@ -107,7 +110,7 @@ export const ImportarPlanilhaModal = ({ isOpen, onClose, existingCodes = [] }: I
           throw new Error('Aba de exames não encontrada.');
         }
 
-        const catalogData = XLSX.utils.sheet_to_json<any>(catalogSheet);
+        const catalogData = XLSX.utils.sheet_to_json<any>(catalogSheet, { raw: false, defval: '' });
         const paramsData = paramsSheet ? XLSX.utils.sheet_to_json<any>(paramsSheet) : [];
         const refsData = refsSheet ? XLSX.utils.sheet_to_json<any>(refsSheet) : [];
         // Validate before any exam is saved, using the same parser for both stores.
@@ -174,6 +177,7 @@ export const ImportarPlanilhaModal = ({ isOpen, onClose, existingCodes = [] }: I
             bancada: workbench,
             prazoEntrega: Number(deadline),
             unidadeMedida: unit,
+            ...importExamBillingCodes(row),
             parameters: examParams,
             referenceValues: examRefs
           });
@@ -293,6 +297,8 @@ export const ImportarPlanilhaModal = ({ isOpen, onClose, existingCodes = [] }: I
         const examPayload: any = {
           name: examData.nome,
           internalCode: examData.codigo,
+          ...(examData.tussCode !== undefined ? { tussCode: examData.tussCode } : {}),
+          ...(examData.sigtapCode !== undefined ? { sigtapCode: examData.sigtapCode } : {}),
           type: 'lab', 
           resultDeadlineDays: examData.prazoEntrega,
           selectedMaterials: examData.materiaisAceitos.split(',').map(m => m.trim()),

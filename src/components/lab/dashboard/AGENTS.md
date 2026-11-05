@@ -1,0 +1,1 @@
+- Simple exam reports aggregate real order guide items by catalog identity, reuse catalog TUSS/SIGTAP codes, filter days in America/Sao_Paulo and share one document for preview/printing. Why: consistent counts and no invented billing codes.

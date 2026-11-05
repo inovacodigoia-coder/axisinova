@@ -11,6 +11,7 @@ import { cn } from '@/lib/utils'
 import { useRegisters } from '@/context/RegistersContext'
 import { toast } from 'sonner'
 import { supabase } from '@/integrations/supabase/client'
+import { exportExamBillingCodes } from '@/lib/examBillingCodes'
 
 import {
   AlertDialog,
@@ -143,6 +144,7 @@ export default function LabCatalogPage() {
       const catalogData = labExams.map(e => ({
         'Nome': e.name,
         'Código': e.internalCode || e.tussCode || '',
+        ...exportExamBillingCodes(e),
         'Materiais': (e.selectedMaterials || []).join(', '),
         'Bancada': workbenches?.find(w => w.id === e.workbenchId)?.name || '',
         'Prazo de Entrega': e.resultDeadlineDays || 0,

@@ -71,7 +71,7 @@ function mapConvenioRow(row: any): Convenio {
 }
 function mapExamRow(row: any): Exam {
   return {
-    id: row.id, companyId: row.company_id, name: row.name, tussCode: row.tuss_code, internalCode: row.internal_code,
+    id: row.id, companyId: row.company_id, name: row.name, tussCode: row.tuss_code, sigtapCode: row.sigtap_code, internalCode: row.internal_code,
     type: row.type || 'clinical',
     measurementUnit: row.measurement_unit,
     specialtyId: row.specialty_id,
@@ -359,6 +359,7 @@ export function RegistersProvider({ children }: { children: ReactNode }) {
       company_id: companyId, 
       name: e.name, 
       tuss_code: e.tussCode || null,
+      sigtap_code: e.sigtapCode?.trim() || null,
       internal_code: e.internalCode || null,
       type: e.type,
       specialty_id: e.specialtyId || null, 
@@ -415,6 +416,7 @@ export function RegistersProvider({ children }: { children: ReactNode }) {
       const { error } = await runWithRetry(async () => await supabase.from('exams').update({
         name: e.name, 
         tuss_code: e.tussCode || null, 
+        ...(e.sigtapCode !== undefined ? { sigtap_code: e.sigtapCode.trim() || null } : {}),
         internal_code: e.internalCode || null, 
         specialty_id: e.specialtyId || null,
         type: e.type,

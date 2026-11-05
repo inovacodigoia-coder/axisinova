@@ -115,6 +115,7 @@ export default function LabCatalogFormPage() {
     internalCode: '',
     type: 'lab' as 'clinical' | 'lab',
     tussCode: '',
+    sigtapCode: '',
     isActive: true,
     preparationInstructions: '',
     estimatedDurationMinutes: 30,
@@ -213,6 +214,7 @@ export default function LabCatalogFormPage() {
           internalCode: existingExam.internalCode || "",
           type: existingExam.type || 'lab',
           tussCode: existingExam.tussCode || "",
+          sigtapCode: existingExam.sigtapCode || "",
           isActive: existingExam.isActive ?? true,
           preparationInstructions: existingExam.preparationInstructions || "",
           estimatedDurationMinutes: existingExam.estimatedDurationMinutes || 30,
@@ -833,13 +835,16 @@ function GeneralInfoSection({
           </div>
         </div>
         <div className="space-y-4">
-          <Label className="text-sm font-bold uppercase tracking-wider text-muted-foreground">Código TUSS</Label>
+          <Label htmlFor="exam-tuss-code" className="text-sm font-bold uppercase tracking-wider text-muted-foreground">Código TUSS</Label>
           <Input 
+            id="exam-tuss-code"
             placeholder="Ex: 40302534" 
             value={data.tussCode}
             onChange={(e) => onChange({ tussCode: e.target.value })}
             className="h-11 rounded-xl"
           />
+          <Label htmlFor="exam-sigtap-code" className="text-sm font-bold uppercase text-muted-foreground">Código SUS (SIGTAP)</Label>
+          <Input id="exam-sigtap-code" inputMode="numeric" value={data.sigtapCode || ''} onChange={e => onChange({ sigtapCode: e.target.value })} className="h-11 rounded-xl" />
         </div>
       </div>
 

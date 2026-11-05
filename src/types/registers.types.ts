@@ -46,6 +46,7 @@ export interface Exam {
   companyId: string
   name: string
   tussCode?: string;
+  sigtapCode?: string;
   internalCode?: string;
   type: 'clinical' | 'lab'
   measurementUnit?: string
