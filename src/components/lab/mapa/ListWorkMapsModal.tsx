@@ -4,7 +4,8 @@ import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { EmptyState } from '@/components/feedback/EmptyState'
-import { Map, Trash2, Calendar, User, Search, Eye } from 'lucide-react'
+import { Map, Trash2, Calendar, User, Search, Eye, Pencil } from 'lucide-react'
+import { EditWorkMapDialog } from './EditWorkMapDialog'
 import { getWorkMaps, loadWorkMaps, deleteWorkMap, WorkMapRecord } from '@/mocks/work-map.mock'
 import { format } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
@@ -23,6 +24,7 @@ export function ListWorkMapsModal({ open, onOpenChange, onRefresh }: ListWorkMap
   const [maps, setMaps] = useState<WorkMapRecord[]>([])
   const [loading, setLoading] = useState(false)
   const [searchTerm, setSearchTerm] = useState('')
+  const [editing, setEditing] = useState<WorkMapRecord | null>(null)
 
   const sortMaps = (list: WorkMapRecord[]) =>
     [...list].sort((a, b) => new Date(b.generatedAt).getTime() - new Date(a.generatedAt).getTime())
@@ -119,6 +121,9 @@ export function ListWorkMapsModal({ open, onOpenChange, onRefresh }: ListWorkMap
                     >
                       <Eye className="h-4 w-4" /> Visualizar
                     </Button>
+                    <Button variant="outline" size="sm" className="gap-2" onClick={() => setEditing(map)}>
+                      <Pencil className="h-4 w-4" /> Editar
+                    </Button>
                     <Button 
                       variant="outline" 
                       size="sm" 
@@ -133,6 +138,11 @@ export function ListWorkMapsModal({ open, onOpenChange, onRefresh }: ListWorkMap
             </div>
           )}
         </div>
+        <EditWorkMapDialog
+          map={editing}
+          onOpenChange={o => { if (!o) setEditing(null) }}
+          onSaved={() => { setMaps(sortMaps(getWorkMaps())); onRefresh?.() }}
+        />
       </DialogContent>
     </Dialog>
   )
