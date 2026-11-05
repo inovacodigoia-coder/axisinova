@@ -1,0 +1,2 @@
+ALTER TABLE public.exams ADD COLUMN IF NOT EXISTS sigtap_code text;
+COMMENT ON COLUMN public.exams.sigtap_code IS 'Código opcional da Tabela Unificada do SUS (SIGTAP), armazenado como texto para preservar zeros iniciais.';

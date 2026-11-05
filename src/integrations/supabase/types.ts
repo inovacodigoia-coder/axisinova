@@ -4894,6 +4894,7 @@ export type Database = {
           selected_materials: Json | null
           show_deadline: boolean | null
           show_duration: boolean | null
+          sigtap_code: string | null
           specialty_id: string | null
           tuss_code: string | null
           type: string | null
@@ -4933,6 +4934,7 @@ export type Database = {
           selected_materials?: Json | null
           show_deadline?: boolean | null
           show_duration?: boolean | null
+          sigtap_code?: string | null
           specialty_id?: string | null
           tuss_code?: string | null
           type?: string | null
@@ -4972,6 +4974,7 @@ export type Database = {
           selected_materials?: Json | null
           show_deadline?: boolean | null
           show_duration?: boolean | null
+          sigtap_code?: string | null
           specialty_id?: string | null
           tuss_code?: string | null
           type?: string | null
