@@ -1,5 +1,10 @@
 # Verificação dos alertas
 
+# Auditoria — Detalhes Atendimento
+- [ ] Corrigir botão inativo e apresentar eventos do pedido com usuário, data/hora e alterações.
+- [ ] Conferir fontes históricas, isolamento/permissão e registro das próximas alterações; testar sem alterar pedidos reais.
+- [ ] Validar abertura com sessão autorizada, sem gerar sessão em nome de usuário.
+
 # Declaração — assinatura em branco
 - [x] Rodapé sem o nome, o cargo e o registro do responsável técnico pré-impressos: só a linha de assinatura, para o profissional do plantão assinar e carimbar; nome do paciente e do responsável legal continuam saindo.
 - [x] Dois testes novos e quatro já existentes de impressão passaram; typecheck e build OK.
