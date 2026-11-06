@@ -87,7 +87,7 @@ const stripAccents = (s: string) => (s || '').normalize('NFD').replace(/[\u0300-
 const inferSection = (paramName: string): string => {
   const n = stripAccents(paramName);
   if (/(plaqueta|vpm|volume plaquetario|pdw|plaquetocrito)/.test(n)) return PLAQUETAS;
-  if (/(leucocit|neutrofil|bastonete|segmentado|eosinofil|basofil|linfocit|monocit|blasto|mielocit|promielocit|metamielocit|celulas jovens)/.test(n))
+  if (/(leucocit|neutrofil|bastonete|segmentado|eosinofil|basofil|linfocit|monocit|\bmid\b|granulocit|blasto|mielocit|promielocit|metamielocit|celulas jovens)/.test(n))
     return SERIE_BRANCA;
   if (/(hemacia|eritrocit|hemoglobina|hematocrito|vcm|hcm|chcm|rdw|reticulocit)/.test(n)) return SERIE_VERMELHA;
   return '';

@@ -259,7 +259,7 @@ export function buildExamParams(catalogExam: any | undefined, fallbackName: stri
       id: String(p.id ?? idx + 1),
       dbId: p.dbId ? String(p.dbId) : undefined,
       name,
-      code: p.code || p.equipment_code || p.equipmentCode || p.codigo || '',
+      code: p.code || p.equipment_code || p.equipmentCode || p.equipCode || p.codigo || '',
       unit: p.unit || examUnit,
       reference: pickReference(ranges, patient),
       ranges,

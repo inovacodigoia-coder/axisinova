@@ -59,4 +59,9 @@ describe('regra única da diferencial', () => {
     expect(p.map(x => x.formula)).toEqual(['', ''])
     expect(p.map(x => x.isCalculated)).toEqual([false,false])
   })
+  it('não libera um hemograma sem leucócitos nem outro exame incompleto', () => {
+    expect(hematologyReady(params, id => id === '3' ? '30' : '')).toBe(false)
+    const other = [{ id: 'a', name: 'Glicose', unit: '', reference: '' }, { id: 'b', name: 'Controle', unit: '', reference: '' }]
+    expect(hematologyReady(other, id => id === 'a' ? '90' : '')).toBe(false)
+  })
 })

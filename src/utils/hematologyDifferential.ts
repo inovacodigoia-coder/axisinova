@@ -66,7 +66,8 @@ export function resolveDifferential(params: ResolvedParam[], values: Record<stri
 
 export function hematologyReady(params: ResolvedParam[], valueOf: (id: string) => string) {
   const hemogram = params.some(p => /leucocit|\bwbc\b/.test(normalizeText(p.name))) && params.some(p => differentialCell(p))
-  return params.length > 0 && (hemogram ? params.some(p => valueOf(p.id).trim() !== '') : params.every(p => valueOf(p.id).trim() !== ''))
+  const required = hemogram ? params.filter(p => !differentialCell(p)) : params
+  return params.length > 0 && required.every(p => valueOf(p.id).trim() !== '')
 }
 
 /** Only presentation changes; unspecified devices retain every row. */
