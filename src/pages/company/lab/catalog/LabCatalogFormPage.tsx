@@ -1419,6 +1419,25 @@ function ParametersSection({
                               value={param.formula}
                               onChange={(e) => updateParameter(param.id, 'formula', e.target.value)}
                             />
+                            {!String(param.formula || '').trim() && (
+                              <p className="text-[10px] font-bold text-amber-600">
+                                ⚠ CALC ligado sem fórmula — nada será calculado enquanto a fórmula estiver vazia.
+                              </p>
+                            )}
+                            <label className="flex items-start gap-2 text-[10px] font-bold text-blue-700 cursor-pointer">
+                              <input
+                                type="checkbox"
+                                className="mt-0.5"
+                                checked={!!param.preferFormula}
+                                onChange={(e) => updateParameter(param.id, 'preferFormula', e.target.checked)}
+                              />
+                              <span>
+                                Preferir a fórmula mesmo quando o aparelho enviar valor.
+                                <span className="block font-normal text-muted-foreground">
+                                  Padrão: o valor recebido do aparelho prevalece e o campo não é recalculado.
+                                </span>
+                              </span>
+                            </label>
                           </div>
                         </td>
                       </tr>

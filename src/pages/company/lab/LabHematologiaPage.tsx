@@ -491,7 +491,7 @@ export default function LabHematologiaPage() {
       }
       if (!param.isCalculated) return
       const key = formKeyOfParam(param)
-      if (instrumentKeys.has(key)) return
+      if (instrumentKeys.has(key) && !param.preferFormula) return
       const computed = evaluateFormula(param.formula, resolvedParams, valueOf)
       if (computed && values[key] !== computed) updates[key] = computed
     })
@@ -507,6 +507,7 @@ export default function LabHematologiaPage() {
     Object.fromEntries(resolvedParams.filter(p => rawInstrumentValues[formKeyOfParam(p)] != null).map(p => [p.id, rawInstrumentValues[formKeyOfParam(p)]])))
   const diffTotal = differential.total
   const diffOver = differential.warning
+  const diffBlock = differential.blockRelease
 
   /** Salva o exame selecionado no mesmo formato da Digitação de Resultados. */
   const persistExam = async (status: 'draft' | 'digitized' | 'released') => {
@@ -587,7 +588,7 @@ export default function LabHematologiaPage() {
     await supabase.from('attendance_orders').update({ status: next }).eq('id', selected.orderId)
   }
 
-  const allFilled = hematologyReady(resolvedParams, pid => { const p = resolvedParams.find(p => p.id === pid); return p ? values[formKeyOfParam(p)] || '' : '' })
+  const allFilled = hematologyReady(resolvedParams, pid => { const p = resolvedParams.find(p => p.id === pid); return p ? values[formKeyOfParam(p)] || '' : '' }) && !differential.blockRelease
 
   const runAction = async (status: 'draft' | 'digitized' | 'released', message: string) => {
     setSaving(true)
@@ -769,9 +770,14 @@ export default function LabHematologiaPage() {
           <span className="text-[11px] font-black uppercase tracking-wide text-rose-600">
             Glóbulos Brancos (Total: {diffTotal.toFixed(2).replace('.', ',')} %)
           </span>
-          {diffOver && (
+          {diffBlock && (
             <span className="flex items-center gap-1 text-[10px] font-bold uppercase text-rose-600">
-              <AlertTriangle className="h-3 w-3 shrink-0" /> A soma da diferencial manual é diferente de 100% — verifique os valores
+              <AlertTriangle className="h-3 w-3 shrink-0" /> A diferencial digitada soma {diffTotal.toFixed(2).replace('.', ',')}% — a liberação fica bloqueada até fechar 100%
+            </span>
+          )}
+          {!diffBlock && diffOver && (
+            <span className="flex items-center gap-1 text-[10px] font-bold uppercase text-amber-600">
+              <AlertTriangle className="h-3 w-3 shrink-0" /> A soma da diferencial recebida é diferente de 100% (arredondamento do aparelho) — verifique os valores
             </span>
           )}
         </div>

@@ -445,7 +445,7 @@ export function ResultEntryModal({
   const getParamValue = useCallback((exam: any, param: any) => {
     const key = `${exam.id}_${param.id}`;
     if (differentialCell(param)) return examStatuses[exam.id] === 'released' ? (results[key] || '') : differentialFor(exam.id, getParams(exam)).values[param.id] || '';
-    if (param?.isCalculated && !instrumentKeys.has(key)) {
+    if (param?.isCalculated && (!instrumentKeys.has(key) || param.preferFormula)) {
       return evaluateFormula(
         param.formula,
         getParams(exam),
@@ -471,7 +471,7 @@ export function ResultEntryModal({
         }
         if (!p.isCalculated) return;
         const key = `${examId}_${p.id}`;
-        if (instrumentKeys.has(key)) return; // valor veio do equipamento — não recalcular
+        if (instrumentKeys.has(key) && !p.preferFormula) return; // valor veio do equipamento — não recalcular, salvo preferência explícita pela fórmula
         const computed = evaluateFormula(
           p.formula,
           params,
@@ -497,7 +497,8 @@ export function ResultEntryModal({
       if (expandedPatients[exam.protocol] && examStatuses[exam.id] !== 'released') {
         // Must have results for ALL parameters to be considered "filled"
         const params = paramsByExam[exam.id] || [{ id: '1' }];
-        const allFilled = hematologyReady(params, (pid) => getParamValue(exam, params.find((p: any) => p.id === pid)));
+        const allFilled = hematologyReady(params, (pid) => getParamValue(exam, params.find((p: any) => p.id === pid)))
+          && !diffInfoFor(params, (pid) => results[`${exam.id}_${pid}`] || '', exam.id)?.blockRelease;
         if (allFilled) count++;
       }
     });
@@ -1991,9 +1992,14 @@ export function ResultEntryModal({
                                     <span className="text-[10px] font-black uppercase tracking-wide text-rose-600">
                                       Glóbulos Brancos (Total: {info.total.toFixed(2).replace('.', ',')} %)
                                     </span>
-                                    {info.warning && (
+                                    {info.blockRelease && (
                                       <p className="mt-0.5 flex items-center gap-1 text-[9px] font-bold uppercase text-rose-600">
-                                        <AlertTriangle className="h-3 w-3 shrink-0" /> A soma da diferencial manual é diferente de 100% — verifique os valores
+                                        <AlertTriangle className="h-3 w-3 shrink-0" /> A diferencial digitada soma {info.total.toFixed(2).replace('.', ',')}% — a liberação fica bloqueada até fechar 100%
+                                      </p>
+                                    )}
+                                    {!info.blockRelease && info.warning && (
+                                      <p className="mt-0.5 flex items-center gap-1 text-[9px] font-bold uppercase text-amber-600">
+                                        <AlertTriangle className="h-3 w-3 shrink-0" /> A soma da diferencial recebida é diferente de 100% (arredondamento do aparelho) — verifique os valores
                                       </p>
                                     )}
                                   </div>
@@ -2007,7 +2013,7 @@ export function ResultEntryModal({
                                 <Button 
                                   onClick={() => handleConcluirExame(exam.id)}
                                   size="sm" 
-                                  disabled={bloqueiosApoio(apoioDe(exam)).length > 0 || !hematologyReady(getParams(exam), pid => getParamValue(exam, getParams(exam).find((p: any) => p.id === pid)))}
+                                  disabled={bloqueiosApoio(apoioDe(exam)).length > 0 || !hematologyReady(getParams(exam), pid => getParamValue(exam, getParams(exam).find((p: any) => p.id === pid))) || !!diffInfoFor(getParams(exam), (pid) => results[`${exam.id}_${pid}`] || '', exam.id)?.blockRelease}
                                   title={bloqueiosApoio(apoioDe(exam)).join(' · ') || undefined}
                                   className="h-7 px-3 text-[9px] font-black uppercase gap-1.5 bg-sky-500 hover:bg-sky-600 text-white shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
                                 >
