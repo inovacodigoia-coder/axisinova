@@ -21,6 +21,8 @@ export interface ResolvedParam {
   /** Modo da referência: simples (faixa) ou completa (texto livre). */
   referenceMode?: 'simples' | 'completa'
   referenceFullText?: string
+  /** CALC ligado: recalcular pela fórmula mesmo quando o aparelho enviar valor. */
+  preferFormula?: boolean
 }
 
 export interface PatientCtx {
@@ -255,8 +257,12 @@ export function buildExamParams(catalogExam: any | undefined, fallbackName: stri
 
   return visible.map((p, idx) => {
     const name = p.name || `Parâmetro ${idx + 1}`
-    const isCalculated = hemogram ? /absoluto/i.test(name) : !!(p.isCalculated || p.is_calculated)
-    const formula = hemogram ? (isCalculated ? defaultFormulaFor(name) : '') : (p.formula && String(p.formula).trim()) || (isCalculated ? defaultFormulaFor(name) : '')
+    // Bastonetes (%) nunca é calculado: só digitação da lâmina. O bloqueio
+    // impede que uma fórmula de complemento ("100 - o resto") volte pelo cadastro.
+    const isBands = hemogram && /baston|bastao|bastoes/i.test(normalizeText(name)) && !/absoluto/i.test(name)
+    // Cálculo só pela fórmula escrita no parâmetro: CALC ligado sem fórmula não calcula nada.
+    const isCalculated = isBands ? false : !!(p.isCalculated || p.is_calculated)
+    const formula = isBands ? '' : (p.formula && String(p.formula).trim()) || ''
     const ranges = p.referenceValues && p.referenceValues.length ? p.referenceValues : examLevelRefs
     return {
       id: String(p.id ?? idx + 1),
@@ -274,26 +280,10 @@ export function buildExamParams(catalogExam: any | undefined, fallbackName: stri
       options: normalizeOptions(p.options ?? p.selection_options ?? p.selectionOptions),
       referenceMode: p.referenceMode === 'completa' ? 'completa' : 'simples',
       referenceFullText: p.referenceFullText || '',
+      preferFormula: !!(p.preferFormula || p.prefer_formula),
     }
   })
 
-}
-
-/**
- * Fórmulas hematológicas padrão usadas quando o parâmetro está marcado como
- * calculado no catálogo mas nenhuma fórmula foi informada.
- */
-export function defaultFormulaFor(name: string): string {
-  const n = normalizeText(name)
-  if (n.startsWith('vcm') || n.includes('volume corpuscular medio')) return '[Hematócrito] / [Hemácias] * 10'
-  if (n.startsWith('hcm') || n.includes('hemoglobina corpuscular media')) return '[Hemoglobina] / [Hemácias] * 10'
-  if (n.startsWith('chcm') || n.includes('conc de hb corpuscular')) return '[Hemoglobina] / [Hematócrito] * 100'
-  // Contagens absolutas do leucograma: (% do parâmetro) * leucócitos / 100
-  if (n.includes('absoluto')) {
-    const base = name.replace(/\(absoluto\)/i, '').trim()
-    return `[${base} (%)] * [Leucócitos totais] / 100`
-  }
-  return ''
 }
 
 

@@ -10,22 +10,38 @@ describe('regra única da diferencial', () => {
   it('mantém bastonete vazio, basófilo 2,2/107 e soma 100; campos vazios não bloqueiam', () => {
     const r = resolveDifferential(params, received, received)
     expect(r.values['2']).toBeUndefined()
-    expect(r.values['7']).toBe('')
+    expect(r.values['7']).toBeUndefined()
     expect(r.values['6']).toBe('2,2')
     expect(r.values['8']).toBe('107')
     expect(r.total).toBe(100)
     expect(hematologyReady(params, id => r.values[id] || '')).toBe(true)
   })
-  it('bastonete manual 5 reduz segmentados de 68 para 63 e soma 100', () => {
+  it('bastonete digitado NÃO reduz o segmentado do aparelho: soma 105 bloqueia a liberação', () => {
     const r = resolveDifferential(params, { ...received, '2': '5' }, received)
-    expect(r.values['1']).toBe('63')
-    expect(r.values['7']).toBe('244')
-    expect(r.total).toBe(100)
-    expect(resolveDifferential(params, { ...r.values, '2': '6' }, received).values['1']).toBe('62')
+    expect(r.values['1']).toBe('68')
+    expect(r.total).toBe(105)
+    expect(r.manual).toBe(true)
+    expect(r.blockRelease).toBe(true)
   })
-  it('absoluto recebido prevalece mesmo quando difere do calculado', () => {
+  it('diferencial manual completa que fecha 100% libera normalmente', () => {
+    const manual = { '0': '4880', '1': '60', '2': '5', '3': '27', '4': '5', '5': '3', '6': '0' }
+    const r = resolveDifferential(params, manual, received)
+    expect(r.total).toBe(100)
+    expect(r.manual).toBe(true)
+    expect(r.blockRelease).toBe(false)
+  })
+  it('soma do aparelho fora de 100 por arredondamento só avisa, sem bloquear', () => {
+    const raw = { ...received, '6': '2,1' }
+    const r = resolveDifferential(params, raw, raw)
+    expect(r.manual).toBe(false)
+    expect(r.warning).toBe(true)
+    expect(r.blockRelease).toBe(false)
+  })
+  it('absoluto recebido prevalece e absoluto ausente não é inventado (só a fórmula do parâmetro calcula)', () => {
     const raw = { ...received, '8': '110' }
     expect(resolveDifferential(params, raw, raw).values['8']).toBe('110')
+    const r = resolveDifferential(params, { '0': '3070', '2': '0,8' }, {})
+    expect(r.values['7']).toBeUndefined()
   })
   it('3 partes não transforma granulócitos/MID em neutrófilos', () => {
     const raw = { '0': '5000', '3': '30', '9': '10', '10': '60' }
@@ -36,15 +52,11 @@ describe('regra única da diferencial', () => {
     expect(r.total).toBe(100)
     expect(hematologyReady(params, id => r.values[id] || '')).toBe(true)
   })
-  it('soma manual menor ou maior que 100 avisa sem corrigir', () => {
-    expect(resolveDifferential(params, { '1': '60', '3': '30' }, {}).warning).toBe(true)
+  it('soma manual menor ou maior que 100 bloqueia a liberação sem corrigir nada', () => {
+    expect(resolveDifferential(params, { '1': '60', '3': '30' }, {}).blockRelease).toBe(true)
     const r = resolveDifferential(params, { '1': '80', '3': '30' }, {})
-    expect(r.warning).toBe(true)
+    expect(r.blockRelease).toBe(true)
     expect(r.values['1']).toBe('80')
-  })
-  it('arredonda absolutos ausentes: 3070 x 0,8 = 25 e 5720 x 1,6 = 92', () => {
-    expect(resolveDifferential(params, { '0': '3070', '2': '0,8' }, {}).values['7']).toBe('25')
-    expect(resolveDifferential(params, { '0': '5.720', '2': '1,6' }, {}).values['7']).toBe('92')
   })
   it('sem tipo conserva todos; 5 esconde MID/Gran; 3 exibe o bloco de 3 partes', () => {
     expect(differentialReportRows(params)).toEqual(params)
@@ -56,8 +68,9 @@ describe('regra única da diferencial', () => {
       { id: 'b', name: 'Neutrófilos bastonetes (%)', isCalculated: true, formula: '100 - [Basófilos (%)]' },
       { id: 'v', name: 'VCM', isCalculated: true },
     ] }, 'Hemograma', {})
+    // Bastonetes (%) tem o cálculo bloqueado; VCM com CALC ligado e fórmula vazia não calcula (sem conta escondida)
     expect(p.map(x => x.formula)).toEqual(['', ''])
-    expect(p.map(x => x.isCalculated)).toEqual([false,false])
+    expect(p.map(x => x.isCalculated)).toEqual([false, true])
   })
   it('não libera um hemograma sem leucócitos nem outro exame incompleto', () => {
     expect(hematologyReady(params, id => id === '3' ? '30' : '')).toBe(false)

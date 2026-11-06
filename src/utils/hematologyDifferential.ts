@@ -27,41 +27,48 @@ export function hematologyNumber(value?: string): number | null {
   const n = Number(s)
   return Number.isFinite(n) ? n : null
 }
-const decimal = (n: number) => String(Math.round(n * 100) / 100).replace('.', ',')
-
-/** Raw instrument values are immutable inputs, separate from the edited differential. */
+/**
+ * Regra única da diferencial (vale para todo aparelho, 3 ou 5 partes):
+ * - O valor recebido do aparelho é imutável e prevalece.
+ * - Nenhum campo da diferencial é calculado aqui: absolutos e índices só são
+ *   calculados pela FÓRMULA do parâmetro (CALC), no motor evaluateFormula.
+ * - Bastonete nunca é derivado de outro campo; segmentado nunca é
+ *   "neutrófilo do aparelho − bastonete" (isso mistura lâmina com aparelho).
+ * - Diferencial manual (lâmina) substitui a diferencial INTEIRA do aparelho:
+ *   se qualquer percentual foi digitado, a soma tem que fechar 100% —
+ *   caso contrário a liberação é bloqueada (blockRelease).
+ * - Soma do aparelho diferente de 100% por arredondamento: só aviso (warning).
+ */
 export function resolveDifferential(params: ResolvedParam[], values: Record<string, string>, instrument: Record<string, string>) {
   const next = { ...values }
-  const pct = (cell: Cell) => params.find(p => differentialCell(p) === cell && !isAbsolute(p))
-  const bands = pct('bands')
-  const segments = pct('segments')
-  const neutrophils = pct('neutrophils')
-  const neutSource = [neutrophils, segments].find(p => p && hematologyNumber(instrument[p.id]) != null)
-  const bandValue = bands ? hematologyNumber(values[bands.id]) : null
-  const hasManualBands = !!bands && bandValue != null && instrument[bands.id] == null
-  if (segments && neutSource && hasManualBands) {
-    const neut = hematologyNumber(instrument[neutSource.id])
-    if (neut != null && bandValue != null) next[segments.id] = decimal(neut - bandValue)
-  } else if (segments && instrument[segments.id] != null) next[segments.id] = instrument[segments.id]
-
-  const wbc = params.find(p => /leucocit|\bwbc\b/.test(normalizeText(p.name)))
-  let totalWbc = wbc ? hematologyNumber(next[wbc.id]) : null
-  if (totalWbc != null && /10\s*\^?\s*3|10³/.test(wbc?.unit || '')) totalWbc *= 1000
-  for (const p of params) {
-    const cell = differentialCell(p)
-    if (!cell || !isAbsolute(p)) continue
-    // Received absolute counts are never balanced or replaced by a calculation.
-    if (instrument[p.id] != null) { next[p.id] = instrument[p.id]; continue }
-    const relative = pct(cell)
-    const percent = relative ? hematologyNumber(next[relative.id]) : null
-    if (totalWbc != null && percent != null && (p.isCalculated || !next[p.id]?.trim())) next[p.id] = String(Math.round(percent * totalWbc / 100))
-    else if (p.isCalculated && percent == null) next[p.id] = ''
+  const sameNumber = (a?: string, b?: string) => {
+    const na = hematologyNumber(a)
+    const nb = hematologyNumber(b)
+    return na != null && nb != null && na === nb
   }
+  // Valores do aparelho são a entrada imutável da diferencial, MAS a contagem
+  // manual (lâmina) substitui a diferencial inteira: um campo digitado com valor
+  // diferente do recebido prevalece sobre o aparelho.
+  for (const p of params) {
+    if (!differentialCell(p)) continue
+    const inst = instrument[p.id]
+    if (inst == null) continue
+    const typed = values[p.id]
+    const untouched = typed == null || typed.trim() === '' || sameNumber(typed, inst)
+    if (untouched) next[p.id] = inst
+  }
+  const segments = params.find(p => differentialCell(p) === 'segments' && !isAbsolute(p))
   const hasSegments = !!segments && hematologyNumber(next[segments.id]) != null
   const relatives = params.filter(p => differentialCell(p) && !isAbsolute(p) && !(hasSegments && differentialCell(p) === 'neutrophils'))
-  const manual = relatives.some(p => next[p.id]?.trim() && instrument[p.id] == null)
+  const manual = relatives.some(p => {
+    const v = next[p.id]?.trim()
+    if (!v) return false
+    const inst = instrument[p.id]
+    return inst == null || !sameNumber(v, inst)
+  })
   const total = relatives.reduce((sum, p) => sum + (hematologyNumber(next[p.id]) ?? 0), 0)
-  return { values: next, total, warning: manual && Math.abs(total - 100) > 0.05, hasManualBands }
+  const off = total > 0 && Math.abs(total - 100) > 0.05
+  return { values: next, total, manual, warning: !manual && off, blockRelease: manual && off }
 }
 
 export function hematologyReady(params: ResolvedParam[], valueOf: (id: string) => string) {
