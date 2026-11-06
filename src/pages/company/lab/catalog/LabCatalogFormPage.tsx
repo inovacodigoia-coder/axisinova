@@ -1535,11 +1535,10 @@ function ReferenceValuesModal({ parameter, onClose, onSave }: { parameter: any, 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-1.5 md:col-span-2">
                   <Label className="text-[10px] font-bold uppercase text-muted-foreground">Descrição (ex: Adulto Masculino)</Label>
-                  <Input 
-                    className="h-9 text-xs" 
-                    value={faixa.description} 
-                    placeholder="Ex: Adulto Masculino" 
-                    onChange={(e) => updateFaixa(faixa.id, 'description', e.target.value)} 
+                  <RefMultilineInput
+                    value={faixa.description}
+                    placeholder="Ex: Adulto Masculino"
+                    onChange={(e) => updateFaixa(faixa.id, 'description', e.target.value)}
                   />
                 </div>
                 
@@ -1561,8 +1560,8 @@ function ReferenceValuesModal({ parameter, onClose, onSave }: { parameter: any, 
                         </SelectContent>
                       </Select>
                     ) : (
-                      <Input
-                        className="h-9 text-xs font-bold"
+                      <RefMultilineInput
+                        className="font-bold"
                         value={faixa.textRange || ''}
                         placeholder="Ex: Não reagente / Ausência de parasitas"
                         onChange={(e) => updateFaixa(faixa.id, 'textRange', e.target.value)}
@@ -1573,20 +1572,20 @@ function ReferenceValuesModal({ parameter, onClose, onSave }: { parameter: any, 
                   <div className="space-y-4 border-t pt-4 md:col-span-2 grid grid-cols-2 gap-4">
                     <div className="space-y-1.5">
                       <Label className="text-[10px] font-bold uppercase text-emerald-600">Valor Mínimo</Label>
-                      <Input 
-                        className="h-9 text-xs font-bold" 
-                        value={faixa.minValue} 
-                        placeholder="0.0" 
-                        onChange={(e) => updateFaixa(faixa.id, 'minValue', e.target.value)} 
+                      <RefMultilineInput
+                        className="font-bold"
+                        value={faixa.minValue}
+                        placeholder="0.0"
+                        onChange={(e) => updateFaixa(faixa.id, 'minValue', e.target.value)}
                       />
                     </div>
                     <div className="space-y-1.5">
                       <Label className="text-[10px] font-bold uppercase text-emerald-600">Valor Máximo</Label>
-                      <Input 
-                        className="h-9 text-xs font-bold" 
-                        value={faixa.maxValue} 
-                        placeholder="0.0" 
-                        onChange={(e) => updateFaixa(faixa.id, 'maxValue', e.target.value)} 
+                      <RefMultilineInput
+                        className="font-bold"
+                        value={faixa.maxValue}
+                        placeholder="0.0"
+                        onChange={(e) => updateFaixa(faixa.id, 'maxValue', e.target.value)}
                       />
                     </div>
                   </div>
@@ -1596,27 +1595,41 @@ function ReferenceValuesModal({ parameter, onClose, onSave }: { parameter: any, 
                   <Label className="text-[10px] font-bold uppercase text-muted-foreground">
                     {isValueUnit(faixa.ageUnit) ? 'Valor Mín (resultado)' : `Idade Mín (${ageUnitLabel(faixa.ageUnit)})`}
                   </Label>
-                  <Input 
-                    type={isValueUnit(faixa.ageUnit) ? 'text' : 'number'} 
-                    step={isValueUnit(faixa.ageUnit) ? undefined : 'any'}
-                    placeholder={isValueUnit(faixa.ageUnit) ? 'Ex: 10 ou <50' : undefined}
-                    className="h-9 text-xs" 
-                    value={faixa.minAge ?? ''} 
-                    onChange={(e) => updateFaixa(faixa.id, 'minAge', isValueUnit(faixa.ageUnit) ? e.target.value : Number(e.target.value))} 
-                  />
+                  {isValueUnit(faixa.ageUnit) ? (
+                    <RefMultilineInput
+                      placeholder="Ex: 10 ou <50"
+                      value={faixa.minAge ?? ''}
+                      onChange={(e) => updateFaixa(faixa.id, 'minAge', e.target.value)}
+                    />
+                  ) : (
+                    <Input
+                      type="number"
+                      step="any"
+                      className="h-9 text-xs"
+                      value={faixa.minAge ?? ''}
+                      onChange={(e) => updateFaixa(faixa.id, 'minAge', Number(e.target.value))}
+                    />
+                  )}
                 </div>
                 <div className="space-y-1.5">
                   <Label className="text-[10px] font-bold uppercase text-muted-foreground">
                     {isValueUnit(faixa.ageUnit) ? 'Valor Máx (resultado)' : `Idade Máx (${ageUnitLabel(faixa.ageUnit)})`}
                   </Label>
-                  <Input 
-                    type={isValueUnit(faixa.ageUnit) ? 'text' : 'number'} 
-                    step={isValueUnit(faixa.ageUnit) ? undefined : 'any'}
-                    placeholder={isValueUnit(faixa.ageUnit) ? 'Ex: 500 ou >=50' : undefined}
-                    className="h-9 text-xs" 
-                    value={faixa.maxAge ?? ''} 
-                    onChange={(e) => updateFaixa(faixa.id, 'maxAge', isValueUnit(faixa.ageUnit) ? e.target.value : Number(e.target.value))} 
-                  />
+                  {isValueUnit(faixa.ageUnit) ? (
+                    <RefMultilineInput
+                      placeholder="Ex: 500 ou >=50"
+                      value={faixa.maxAge ?? ''}
+                      onChange={(e) => updateFaixa(faixa.id, 'maxAge', e.target.value)}
+                    />
+                  ) : (
+                    <Input
+                      type="number"
+                      step="any"
+                      className="h-9 text-xs"
+                      value={faixa.maxAge ?? ''}
+                      onChange={(e) => updateFaixa(faixa.id, 'maxAge', Number(e.target.value))}
+                    />
+                  )}
                 </div>
                 <div className="space-y-1.5 md:col-span-2">
                   <Label className="text-[10px] font-bold uppercase text-muted-foreground">Unidade da idade</Label>
