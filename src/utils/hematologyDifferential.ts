@@ -41,15 +41,31 @@ export function hematologyNumber(value?: string): number | null {
  */
 export function resolveDifferential(params: ResolvedParam[], values: Record<string, string>, instrument: Record<string, string>) {
   const next = { ...values }
-  // Valores do aparelho são a entrada imutável da diferencial.
+  const sameNumber = (a?: string, b?: string) => {
+    const na = hematologyNumber(a)
+    const nb = hematologyNumber(b)
+    return na != null && nb != null && na === nb
+  }
+  // Valores do aparelho são a entrada imutável da diferencial, MAS a contagem
+  // manual (lâmina) substitui a diferencial inteira: um campo digitado com valor
+  // diferente do recebido prevalece sobre o aparelho.
   for (const p of params) {
     if (!differentialCell(p)) continue
-    if (instrument[p.id] != null) next[p.id] = instrument[p.id]
+    const inst = instrument[p.id]
+    if (inst == null) continue
+    const typed = values[p.id]
+    const untouched = typed == null || typed.trim() === '' || sameNumber(typed, inst)
+    if (untouched) next[p.id] = inst
   }
   const segments = params.find(p => differentialCell(p) === 'segments' && !isAbsolute(p))
   const hasSegments = !!segments && hematologyNumber(next[segments.id]) != null
   const relatives = params.filter(p => differentialCell(p) && !isAbsolute(p) && !(hasSegments && differentialCell(p) === 'neutrophils'))
-  const manual = relatives.some(p => next[p.id]?.trim() && instrument[p.id] == null)
+  const manual = relatives.some(p => {
+    const v = next[p.id]?.trim()
+    if (!v) return false
+    const inst = instrument[p.id]
+    return inst == null || !sameNumber(v, inst)
+  })
   const total = relatives.reduce((sum, p) => sum + (hematologyNumber(next[p.id]) ?? 0), 0)
   const off = total > 0 && Math.abs(total - 100) > 0.05
   return { values: next, total, manual, warning: !manual && off, blockRelease: manual && off }
