@@ -205,3 +205,11 @@
 - [x] Tela de digitação: botão Solicitar reteste (aparelho) em exame liberado + indicador "atualizado pelo aparelho às HH:MM" com valor anterior.
 - [x] Testes: decisão pura (7 casos de aceite) + SQL PGlite dos RPCs; typecheck e build.
 - [x] Atualizar /docs (apiDocs.ts) com o novo contrato.
+
+# Hemograma — cálculo só pela fórmula do parâmetro (CALC)
+- [x] Removida toda conta escondida do código (fórmulas padrão em memória, complemento 100−, segmentado = neutrófilo − bastonete, absoluto automático fora da fórmula).
+- [x] Fórmulas padrão gravadas no cadastro (VCM/HCM/CHCM e 6 absolutos) em todas as empresas; Touros com CALC desligado nesses campos (faz lâmina); replicado nos modelos de laudo.
+- [x] CALC ligado sem fórmula: não calcula e mostra aviso no cadastro; opção "preferir fórmula mesmo com valor do aparelho" no cadastro; aparelho prevalece por padrão.
+- [x] Diferencial manual (lâmina) substitui a do aparelho e bloqueia liberação se a soma não fechar 100%; soma do aparelho fora de 100 vira só aviso.
+- [x] Rascunhos/não liberados com bastonete copiado do basófilo limpos (% e absoluto); liberados intactos. 22 testes passaram; typecheck limpo.
+- [ ] Conferir na tela com sessão autorizada: pedido novo do 860 (bastonete vazio, soma 100) e lâmina com 98% (liberação bloqueada). Eritroblastos (NRBC): campo + fórmula de correção opcional ficam a cargo do cadastro (desligada por padrão).
