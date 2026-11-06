@@ -112,7 +112,7 @@ export const ImportarPlanilhaModal = ({ isOpen, onClose, existingCodes = [] }: I
         }
 
         const catalogData = XLSX.utils.sheet_to_json<any>(catalogSheet, { raw: false, defval: '' });
-        const paramsData = paramsSheet ? XLSX.utils.sheet_to_json<any>(paramsSheet, { defval: '' }) : [];
+        const paramsData = paramsSheet ? XLSX.utils.sheet_to_json<any>(paramsSheet) : [];
         const refsData = refsSheet ? XLSX.utils.sheet_to_json<any>(refsSheet) : [];
         // Validate before any exam is saved, using the same parser for both stores.
         refsData.forEach(importReferenceAge);

@@ -1050,7 +1050,12 @@ function ParametersSection({
 
   const handleSaveReference = (referenceData: any) => {
     if (!editingReference) return;
-    updateParameter(editingReference.id, 'referenceValues', referenceData.referenceValues);
+    setParameters(parameters.map(p => p.id === editingReference.id ? {
+      ...p,
+      referenceValues: referenceData.referenceValues,
+      referenceMode: referenceData.referenceMode,
+      referenceFullText: referenceData.referenceFullText,
+    } : p))
   }
 
   const removeParameter = (id: number) => {
@@ -1464,6 +1469,13 @@ function RefMultilineInput({ className, ...props }: React.ComponentProps<typeof 
 function ReferenceValuesModal({ parameter, onClose, onSave }: { parameter: any, onClose: () => void, onSave?: (val: any) => void }) {
   const [faixas, setFaixas] = useState<any[]>([])
   const [useFasting, setUseFasting] = useState(false)
+  const [refMode, setRefMode] = useState<'simples' | 'completa'>('simples')
+  const [fullText, setFullText] = useState('')
+
+  useEffect(() => {
+    setRefMode(parameter?.referenceMode === 'completa' ? 'completa' : 'simples')
+    setFullText(parameter?.referenceFullText || '')
+  }, [parameter])
 
   const isTextual = parameter?.type === 'text' || parameter?.type === 'selection'
 
@@ -1511,6 +1523,39 @@ function ReferenceValuesModal({ parameter, onClose, onSave }: { parameter: any, 
           </div>
           <p className="text-xs text-muted-foreground">Configure múltiplas faixas de referência com condições de idade, sexo, gestante e jejum.</p>
         </DialogHeader>
+
+        <div className="rounded-xl border p-3 space-y-3">
+          <div className="flex items-center justify-between gap-4">
+            <div>
+              <Label className="text-xs font-bold">Tipo de referência</Label>
+              <p className="text-[11px] text-muted-foreground">
+                Simples mostra só a faixa do paciente. Completa mostra o texto inteiro (tabela, notas e fonte) na digitação e no laudo.
+              </p>
+            </div>
+            <div className="flex rounded-lg border p-0.5 shrink-0">
+              {(['simples', 'completa'] as const).map((m) => (
+                <Button key={m} type="button" size="sm" variant={refMode === m ? 'default' : 'ghost'} className="h-7 px-3 text-xs" onClick={() => setRefMode(m)}>
+                  {m === 'simples' ? 'Simples' : 'Completa'}
+                </Button>
+              ))}
+            </div>
+          </div>
+          {refMode === 'completa' && (
+            <div className="space-y-1">
+              <Label className="text-xs font-bold">Referência completa (como sai no laudo)</Label>
+              <Textarea
+                value={fullText}
+                onChange={(e) => setFullText(e.target.value)}
+                rows={10}
+                className="font-mono text-xs whitespace-pre"
+                placeholder={'Idade (anos)   Com Jejum   Sem Jejum\n0 a 9          < 75        < 85'}
+              />
+              <p className="text-[11px] text-muted-foreground">
+                Use espaços para alinhar as colunas. As faixas abaixo continuam valendo para marcar resultado alto ou baixo.
+              </p>
+            </div>
+          )}
+        </div>
 
         <div className="flex items-center justify-between gap-4 rounded-xl border border-dashed p-3 bg-muted/10">
           <div>
@@ -1709,6 +1754,8 @@ function ReferenceValuesModal({ parameter, onClose, onSave }: { parameter: any, 
                   useFasting,
                   isFasting: useFasting ? !!f.isFasting : false,
                 })),
+                referenceMode: refMode === 'completa' && fullText.trim() ? 'completa' : 'simples',
+                referenceFullText: fullText,
               });
             }
             onClose();
