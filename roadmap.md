@@ -1,10 +1,11 @@
 # Verificação dos alertas
 
 # Hemograma — diferencial única
-- [ ] Investigar MID/granulócitos, fórmulas e liberação com campos vazios.
-- [ ] Aplicar regra compartilhada às telas e preservar valores do aparelho; aviso da soma manual.
-- [ ] Tipo de diferencial opcional no equipamento e apresentação no laudo.
-- [ ] Testar casos 3/5 partes e sem tipo; conferir pedido 16-14 sem alterar dados reais.
+- [x] Investigar MID/granulócitos, fórmulas e liberação com campos vazios: 380 sem MID/Granulócitos gravados encontrados; índices VCM/HCM/CHCM tinham fórmulas padrão; conclusão exigia todos os campos.
+- [x] Aplicar regra compartilhada às telas; preservar instrument_value, bloquear fórmulas antigas de complemento e índices derivados; aviso da soma manual; campos da diferencial vazios não bloqueiam conclusão.
+- [x] Tipo de diferencial opcional no equipamento e filtro no laudo compartilhado; sem tipo conserva todos; migração 0144 confirmada e integração publicada.
+- [x] 21 testes passaram e build OK; pedido 16-14 consultado sem alterar dados: está liberado, bastonetes 2,2/107 e basófilos recebidos 2,2/110 (não 107); absolutos recebidos somam 4880.
+- [ ] Fluxo real autenticado (cadastro/salvar/abrir laudo/liberar): sessão injetada voltou ao login; não gerar sessão sem autorização. Caso clínico do 380 depende de resultados MID/Granulócitos enviados com códigos próprios cadastrados.
 
 # Catálogo SIGTAP e relatório simples
 - [x] Campo opcional SIGTAP no catálogo e banco confirmado; importação/exportação com TUSS separado, zeros iniciais preservados e planilhas antigas sem apagar códigos.
