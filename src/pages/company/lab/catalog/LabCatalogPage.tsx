@@ -1,3 +1,4 @@
+import { exportReferenceModeColumns } from '@/lib/examReferenceMode'
 import { useState, useEffect, useMemo } from 'react'
 import { Card } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -209,7 +210,8 @@ export default function LabCatalogPage() {
               'Permite negativo': yn(p.allow_negative),
               'Calculado': yn(p.is_calculated),
               'Oculto': yn(p.is_hidden),
-              'Fórmula do parâmetro': p.formula || ''
+              'Fórmula do parâmetro': p.formula || '',
+              ...exportReferenceModeColumns(jsonParams.find((jp: any) => String(jp.name || '').trim().toLowerCase() === String(p.name || '').trim().toLowerCase()))
             })
           })
         } else if (jsonParams.length > 0) {
@@ -229,7 +231,8 @@ export default function LabCatalogPage() {
               'Permite negativo': yn(p.allowNegative),
               'Calculado': yn(p.isCalculated),
               'Oculto': yn(p.isHidden),
-              'Fórmula do parâmetro': p.formula || ''
+              'Fórmula do parâmetro': p.formula || '',
+              ...exportReferenceModeColumns(p)
             })
           })
         }

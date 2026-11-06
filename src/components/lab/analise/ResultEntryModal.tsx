@@ -1,3 +1,4 @@
+import { displayReference } from '@/lib/examReferenceMode';
 import { useState, useMemo, useEffect, useCallback, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { buildExamParams, catalogKey, findCatalogExam, evaluateFormula, normalizeText, resolveReference } from '@/utils/examParameters';
@@ -584,7 +585,7 @@ export function ResultEntryModal({
           parameter_name: p.name || null,
           value,
           unit: p.unit || null,
-          reference: apoioRefs[`${exam.id}_${p.id}`] || resolveReference(p, value) || null,
+          reference: apoioRefs[`${exam.id}_${p.id}`] || displayReference(p, resolveReference(p, value)) || null,
           status: getResultStatus(value, resolveReference(p, value)).label || null,
           sort_order: idx,
           // Preserva a origem quando o valor veio do equipamento
@@ -950,8 +951,8 @@ export function ResultEntryModal({
             status: examStatuses[e.id] === 'released' ? 'liberado' : 'waiting_approval',
             results: getParams(e).map((p: any) => {
               const value = getParamValue(e, p);
-              const reference = resolveReference(p, value);
-              const st = getResultStatus(value, reference);
+              const reference = displayReference(p, resolveReference(p, value));
+              const st = getResultStatus(value, resolveReference(p, value));
               return {
                 parameterId: String(p.id),
                 parameterCode: p.name,
@@ -2101,8 +2102,10 @@ export function ResultEntryModal({
                         )}>
                           {getParams(exam).map((param: any) => {
                             const value = getParamValue(exam, param);
-                            const reference = apoioRefs[`${exam.id}_${param.id}`] || resolveReference(param, value);
-                            const status = getResultStatus(value, reference);
+                            const simpleRef = apoioRefs[`${exam.id}_${param.id}`] || resolveReference(param, value);
+                            const reference = apoioRefs[`${exam.id}_${param.id}`] ? simpleRef : displayReference(param, simpleRef);
+                            const fullRef = reference !== simpleRef;
+                            const status = getResultStatus(value, simpleRef);
                             
                             return (
                               <div key={param.id} className={cn(
@@ -2199,9 +2202,9 @@ export function ResultEntryModal({
                                       <Pencil className="h-3.5 w-3.5" />
                                     </button>
                                   )}
-                                  <div className="w-32 bg-slate-200/50 rounded px-2 py-1 flex flex-col justify-center">
+                                  <div className={cn("bg-slate-200/50 rounded px-2 py-1 flex flex-col justify-center", fullRef ? "max-w-[460px] min-w-[220px]" : "w-32")}>
                                     <span className="text-[8px] font-black text-slate-400 uppercase leading-tight">Referência</span>
-                                    <span className="text-[10px] font-bold text-slate-600 whitespace-pre-line break-words">{reference || '—'}</span>
+                                    <span className={cn("text-[10px] font-bold text-slate-600 break-words", fullRef ? "font-mono whitespace-pre-wrap max-h-48 overflow-y-auto" : "whitespace-pre-line")}>{reference || '—'}</span>
                                   </div>
                                 </div>
                               </div>

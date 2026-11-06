@@ -158,7 +158,7 @@ function StandardTable({ rows }: { rows: any[] }) {
             <td className="py-[3px] whitespace-nowrap">
               <Flag flag={res.flag} />
             </td>
-            <td className="py-[3px] text-zinc-600 whitespace-pre-line">{res.referenceRange || '—'}</td>
+            <td className={String(res.referenceRange || '').split('\n').length > 3 ? "py-[3px] text-zinc-700 font-mono text-[9px] leading-[1.35] whitespace-pre-wrap" : "py-[3px] text-zinc-600 whitespace-pre-line"}>{res.referenceRange || '—'}</td>
           </tr>
         ))}
       </tbody>
