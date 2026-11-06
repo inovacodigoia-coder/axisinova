@@ -56,6 +56,7 @@ export default function LabCatalogPage() {
   const [selectedWorkbench, setSelectedWorkbench] = useState<string>('all')
   const [importModalOpen, setImportModalOpen] = useState(false)
   const [isExporting, setIsExporting] = useState(false)
+  const [applyingRef, setApplyingRef] = useState(false)
 
   const exams = useMemo(() => {
     if (!registeredExams) return [];
@@ -375,6 +376,7 @@ export default function LabCatalogPage() {
           <h1 className="text-2xl font-bold">Catálogo de Exames</h1>
           <p className="text-sm text-muted-foreground">Gerencie os exames disponíveis no laboratório.</p>
         </div>
+        <div className="flex flex-col items-end gap-2">
         <div className="flex gap-2">
           <Button 
             variant="outline" 
@@ -390,6 +392,24 @@ export default function LabCatalogPage() {
           </Button>
           <Button onClick={() => navigate('novo')} className="gradient-bg text-white gap-2">
             <Plus className="h-4 w-4" /> Novo Exame
+          </Button>
+        </div>
+          <Button
+            variant="outline"
+            disabled={applyingRef}
+            onClick={async () => {
+              if (!window.confirm('Ativar a Referência completa padrão nos exames deste catálogo? Depois você pode editar cada exame sem afetar outras empresas.')) return
+              setApplyingRef(true)
+              const { data, error } = await supabase.rpc('catalogo_referencia_completa_aplicar' as never)
+              setApplyingRef(false)
+              if (error) { toast.error('Não foi possível ativar: ' + error.message); return }
+              toast.success(`Referência completa ativada em ${data ?? 0} exame(s).`)
+              setTimeout(() => window.location.reload(), 800)
+            }}
+            className="gap-2 border-slate-200 text-slate-700"
+          >
+            {applyingRef ? <Loader2 className="h-4 w-4 animate-spin" /> : <Beaker className="h-4 w-4" />}
+            Ativar Referência completa
           </Button>
         </div>
       </div>
