@@ -6559,6 +6559,7 @@ export type Database = {
           company_id: string
           connection_type: string | null
           created_at: string | null
+          differential_type: string | null
           id: string
           is_active: boolean | null
           manufacturer: string | null
@@ -6572,6 +6573,7 @@ export type Database = {
           company_id: string
           connection_type?: string | null
           created_at?: string | null
+          differential_type?: string | null
           id?: string
           is_active?: boolean | null
           manufacturer?: string | null
@@ -6585,6 +6587,7 @@ export type Database = {
           company_id?: string
           connection_type?: string | null
           created_at?: string | null
+          differential_type?: string | null
           id?: string
           is_active?: boolean | null
           manufacturer?: string | null
@@ -7322,6 +7325,7 @@ export type Database = {
           flag: string | null
           id: string
           instrument_code: string | null
+          instrument_value: string | null
           laudo_id: string | null
           parameter_key: string
           parameter_name: string | null
@@ -7341,6 +7345,7 @@ export type Database = {
           flag?: string | null
           id?: string
           instrument_code?: string | null
+          instrument_value?: string | null
           laudo_id?: string | null
           parameter_key: string
           parameter_name?: string | null
@@ -7360,6 +7365,7 @@ export type Database = {
           flag?: string | null
           id?: string
           instrument_code?: string | null
+          instrument_value?: string | null
           laudo_id?: string | null
           parameter_key?: string
           parameter_name?: string | null

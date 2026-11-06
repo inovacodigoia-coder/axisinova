@@ -1009,6 +1009,13 @@
       "when": 1793910236567,
       "tag": "0143_exams_sigtap_code",
       "breakpoints": true
+    },
+    {
+      "idx": 144,
+      "version": "7",
+      "when": 1793981176685,
+      "tag": "0144_hematology_differential_type_and_raw_value",
+      "breakpoints": true
     }
   ]
 }
