@@ -12491,6 +12491,7 @@ export type Database = {
       can_edit_support_board: { Args: { _board_id: string }; Returns: boolean }
       can_view_support_board: { Args: { _board_id: string }; Returns: boolean }
       carregar_feriados_nacionais: { Args: { _ano: number }; Returns: number }
+      catalogo_referencia_completa_aplicar: { Args: never; Returns: number }
       chat_interno__sistema: {
         Args: { p_company: string; p_conversa: string; p_texto: string }
         Returns: undefined
