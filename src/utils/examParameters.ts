@@ -18,6 +18,9 @@ export interface ResolvedParam {
   ranges?: any[]
   /** Contexto do paciente usado para resolver a faixa. */
   patient?: PatientCtx
+  /** Modo da referência: simples (faixa) ou completa (texto livre). */
+  referenceMode?: 'simples' | 'completa'
+  referenceFullText?: string
 }
 
 export interface PatientCtx {
@@ -269,6 +272,8 @@ export function buildExamParams(catalogExam: any | undefined, fallbackName: stri
       section: p.section || p.secao || '',
       type: p.type || 'numerical',
       options: normalizeOptions(p.options ?? p.selection_options ?? p.selectionOptions),
+      referenceMode: p.referenceMode === 'completa' ? 'completa' : 'simples',
+      referenceFullText: p.referenceFullText || '',
     }
   })
 

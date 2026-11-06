@@ -1,3 +1,4 @@
+import { importReferenceModeColumns } from '@/lib/examReferenceMode';
 import React, { useState, useRef, useMemo } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { 
@@ -111,7 +112,7 @@ export const ImportarPlanilhaModal = ({ isOpen, onClose, existingCodes = [] }: I
         }
 
         const catalogData = XLSX.utils.sheet_to_json<any>(catalogSheet, { raw: false, defval: '' });
-        const paramsData = paramsSheet ? XLSX.utils.sheet_to_json<any>(paramsSheet) : [];
+        const paramsData = paramsSheet ? XLSX.utils.sheet_to_json<any>(paramsSheet, { defval: '' }) : [];
         const refsData = refsSheet ? XLSX.utils.sheet_to_json<any>(refsSheet) : [];
         // Validate before any exam is saved, using the same parser for both stores.
         refsData.forEach(importReferenceAge);
@@ -290,6 +291,15 @@ export const ImportarPlanilhaModal = ({ isOpen, onClose, existingCodes = [] }: I
               formula: String(p['Fórmula do parâmetro'] || p['Fórmula'] || ''),
               options: parseParamOptions(p),
               referenceValues: refs,
+              ...(() => {
+                // Planilha antiga sem as colunas: mantém o modo já cadastrado
+                const prev = (exams.find(e => e.internalCode === examData.codigo)?.parameters || [])
+                  .find((ep: any) => String(ep?.name || '').trim().toLowerCase() === paramName.toLowerCase())
+                const cols = importReferenceModeColumns(p)
+                const referenceFullText = cols.referenceFullText ?? prev?.referenceFullText ?? ''
+                const referenceMode = cols.referenceMode ?? prev?.referenceMode ?? 'simples'
+                return { referenceMode, referenceFullText }
+              })(),
             };
           })
           .filter(Boolean) as any[];
