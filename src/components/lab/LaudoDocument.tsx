@@ -156,7 +156,7 @@ function StandardTable({ rows }: { rows: any[] }) {
             <td className="py-[3px] whitespace-nowrap">
               <Flag flag={res.flag} />
             </td>
-            <td className="py-[3px] text-zinc-600">{res.referenceRange || '—'}</td>
+            <td className="py-[3px] text-zinc-600 whitespace-pre-line">{res.referenceRange || '—'}</td>
           </tr>
         ))}
       </tbody>
@@ -186,12 +186,12 @@ function DifferentialTable({ paired }: { paired: PairedRow[] }) {
             <td className="py-[3px] whitespace-nowrap">
               <Flag flag={p.pct?.flag} />
             </td>
-            <td className="py-[3px] text-zinc-600">{p.pct?.referenceRange || '—'}</td>
+            <td className="py-[3px] text-zinc-600 whitespace-pre-line">{p.pct?.referenceRange || '—'}</td>
             <td className="py-[3px] font-mono text-zinc-900 whitespace-nowrap">{p.abs?.value || '—'}</td>
             <td className="py-[3px] whitespace-nowrap">
               <Flag flag={p.abs?.flag} />
             </td>
-            <td className="py-[3px] text-zinc-600">{p.abs?.referenceRange || '—'}</td>
+            <td className="py-[3px] text-zinc-600 whitespace-pre-line">{p.abs?.referenceRange || '—'}</td>
           </tr>
         ))}
       </tbody>
