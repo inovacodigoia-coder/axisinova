@@ -9,6 +9,7 @@ import { SelectGroup, SelectLabel } from '@/components/ui/select'
 import { Card } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
+import { Textarea } from '@/components/ui/textarea'
 import { Label } from '@/components/ui/label'
 import { Switch } from '@/components/ui/switch'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
@@ -1439,6 +1440,24 @@ function ParametersSection({
 
       </Card>
     </TooltipProvider>
+  )
+}
+
+// Campo de texto com quebra de linha via Shift+Enter (Enter sozinho não quebra).
+function RefMultilineInput({ className, ...props }: React.ComponentProps<typeof Textarea>) {
+  return (
+    <div className="space-y-1">
+      <Textarea
+        rows={1}
+        {...props}
+        className={cn('min-h-9 resize-y text-xs leading-snug', className)}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter' && !e.shiftKey) e.preventDefault()
+          props.onKeyDown?.(e)
+        }}
+      />
+      <p className="text-[10px] text-muted-foreground">Shift+Enter para quebrar a linha.</p>
+    </div>
   )
 }
 
