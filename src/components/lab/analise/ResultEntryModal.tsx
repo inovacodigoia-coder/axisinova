@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect, useCallback } from 'react';
+import { useState, useMemo, useEffect, useCallback, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { buildExamParams, catalogKey, findCatalogExam, evaluateFormula, normalizeText, resolveReference } from '@/utils/examParameters';
 import { matchesExamWorkbench } from '@/lib/labExamWorkbench';
@@ -407,45 +407,52 @@ export function ResultEntryModal({
   };
 
   // ===== Diferencial de Glóbulos Brancos (Hemograma) =====
-  // Neutrófilos bastonetes (%) = 100 - (segmentados + linfócitos + monócitos + eosinófilos)
+  // Bastonetes (%) só por digitação manual (lâmina) — nunca derivado do aparelho.
+  // Se digitado e o segmentado veio do aparelho (que mede neutrófilos totais),
+  // Segmentados = Neutrófilos − Bastonetes, para a soma continuar em 100%.
   const diffInfoFor = useCallback((params: any[], valueOf: (id: string) => string) => {
     const findP = (fn: (n: string) => boolean) => params.find((p: any) => fn(normalizeText(p?.name || '')));
     const segmentados = findP((n) => n.includes('segmentad') && !n.includes('absoluto'));
     const linfocitos = findP((n) => n.startsWith('linfocito') && !n.includes('absoluto'));
     const monocitos = findP((n) => n.startsWith('monocito') && !n.includes('absoluto'));
     const eosinofilos = findP((n) => n.startsWith('eosinofilo') && !n.includes('absoluto'));
-    const bastonetes = findP((n) => (n.includes('bastonete') || n.startsWith('basto')) && !n.includes('absoluto'));
+    const basofilos = findP((n) => n.startsWith('basofilo') && !n.includes('absoluto'));
+    const bastonetes = findP((n) => (n.includes('bastonete') || n.startsWith('bastao') || n.startsWith('bastoes')) && !n.includes('absoluto'));
     if (!bastonetes && !segmentados) return null;
     const num = (p: any) => {
       if (!p) return null;
       const n = parseFloat(String(valueOf(p.id) || '').replace(/\s/g, '').replace(',', '.'));
       return isNaN(n) ? null : n;
     };
-    const vals = [segmentados, linfocitos, monocitos, eosinofilos].map(num);
-    const anyFilled = vals.some((v) => v != null);
-    const sum4 = vals.reduce<number>((a, v) => a + (v ?? 0), 0);
+    const vals = [segmentados, linfocitos, monocitos, eosinofilos, basofilos].map(num);
+    const sum5 = vals.reduce<number>((a, v) => a + (v ?? 0), 0);
     const bastVal = bastonetes ? num(bastonetes) : null;
-    const total = sum4 + (bastVal ?? 0);
-    return { bastonetes, anyFilled, sum4, total, over: sum4 > 100 };
+    const total = sum5 + (bastVal ?? 0);
+    return { bastonetes, segmentados, total, over: total > 100.05 };
   }, []);
 
-  const fmtDiffNum = (n: number) => String(Math.round(n * 100) / 100).replace('.', ',');
-
-  // Preenche automaticamente Neutrófilos bastonetes (%) com o que falta para 100%
+  // Neutrófilos do aparelho (antes de descontar bastonetes), por chave do segmentado
+  const instrumentNeutRef = useRef<Record<string, number>>({});
   useEffect(() => {
     const updates: Record<string, string> = {};
     filteredExams.forEach((exam: any) => {
       const params = paramsByExam[exam.id] || [];
       const info = diffInfoFor(params, (pid) => results[`${exam.id}_${pid}`] || '');
-      if (!info?.bastonetes || !info.anyFilled) return;
-      const key = `${exam.id}_${info.bastonetes.id}`;
-      if (instrumentKeys.has(key)) return; // valor veio do equipamento — prevalece
-      const auto = fmtDiffNum(100 - info.sum4);
-      if ((results[key] ?? '') !== auto) updates[key] = auto;
+      if (!info?.segmentados || !info.bastonetes) return;
+      const segKey = `${exam.id}_${info.segmentados.id}`;
+      const bastKey = `${exam.id}_${info.bastonetes.id}`;
+      if (!instrumentKeys.has(segKey) || instrumentKeys.has(bastKey)) return;
+      const toNum = (v: string) => { const n = parseFloat(String(v || '').replace(/\s/g, '').replace(',', '.')); return isNaN(n) ? null : n; };
+      if (instrumentNeutRef.current[segKey] == null) {
+        const n = toNum(results[segKey] || '');
+        if (n == null) return;
+        instrumentNeutRef.current[segKey] = n;
+      }
+      const bast = toNum(results[bastKey] || '') ?? 0;
+      const seg = String(Math.round((instrumentNeutRef.current[segKey] - bast) * 100) / 100).replace('.', ',');
+      if ((results[segKey] ?? '') !== seg) updates[segKey] = seg;
     });
-    if (Object.keys(updates).length > 0) {
-      setResults(prev => ({ ...prev, ...updates }));
-    }
+    if (Object.keys(updates).length > 0) setResults(prev => ({ ...prev, ...updates }));
   }, [results, filteredExams, paramsByExam, instrumentKeys, diffInfoFor]);
 
   // Resolve tokens de fórmula que apontam para OUTROS exames do mesmo pedido (ex.: {BILT} - {BILD})
