@@ -2221,7 +2221,7 @@ export function ResultEntryModal({
                                   )}
                                   <div className="w-32 bg-slate-200/50 rounded px-2 py-1 flex flex-col justify-center">
                                     <span className="text-[8px] font-black text-slate-400 uppercase leading-tight">Referência</span>
-                                    <span className="text-[10px] font-bold text-slate-600 truncate">{reference || '—'}</span>
+                                    <span className="text-[10px] font-bold text-slate-600 whitespace-pre-line break-words">{reference || '—'}</span>
                                   </div>
                                 </div>
                               </div>
