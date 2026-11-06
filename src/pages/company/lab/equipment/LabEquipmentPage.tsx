@@ -15,6 +15,7 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog"
 import { Label } from '@/components/ui/label'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { supabase } from '@/integrations/supabase/client'
 import { useAuth } from '@/context/AuthContext'
 
@@ -33,6 +34,7 @@ export default function LabEquipmentPage() {
     identifier: '',
     type: 'Bioquímico',
     brand: '',
+    differentialType: '',
   })
 
   const fetchEquipment = async () => {
@@ -67,6 +69,7 @@ export default function LabEquipmentPage() {
         identifier: item.serial_number || '',
         type: item.connection_type || 'Bioquímico',
         brand: item.manufacturer || item.model || '',
+        differentialType: item.differential_type || '',
       })
     } else {
       setEditingItem(null)
@@ -75,6 +78,7 @@ export default function LabEquipmentPage() {
         identifier: '',
         type: 'Bioquímico',
         brand: '',
+        differentialType: '',
       })
     }
     setIsModalOpen(true)
@@ -99,6 +103,7 @@ export default function LabEquipmentPage() {
         serial_number: formData.identifier.trim(),
         connection_type: formData.type,
         manufacturer: formData.brand.trim() || null,
+        differential_type: formData.differentialType || null,
       }
 
       if (editingItem) {
@@ -313,6 +318,17 @@ export default function LabEquipmentPage() {
                 />
               </div>
             </div>
+            <p className="text-[11px] text-muted-foreground pt-2">
+              <Label htmlFor="differential-type">Tipo de diferencial</Label>
+            </p>
+            <Select value={formData.differentialType || 'unset'} onValueChange={value => setFormData(prev => ({ ...prev, differentialType: value === 'unset' ? '' : value }))}>
+              <SelectTrigger id="differential-type"><SelectValue /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="unset">Não informado</SelectItem>
+                <SelectItem value="3">3 partes</SelectItem>
+                <SelectItem value="5">5 partes</SelectItem>
+              </SelectContent>
+            </Select>
             <p className="text-[11px] text-muted-foreground pt-2">
               A ativação do equipamento é liberada pela administração do sistema.
             </p>

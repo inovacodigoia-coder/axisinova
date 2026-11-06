@@ -396,7 +396,7 @@ export function AttendanceDetailsModal({ open, onClose, onOrderDeleted, order, p
       // Sempre pelo ID do pedido (protocolo pode se repetir entre pedidos)
       const { data, error } = await supabase
         .from('lab_exam_results')
-        .select('exam_code, exam_name, status, notes, released_at, released_by, lab_result_values(parameter_key, parameter_name, value, unit, reference, status, sort_order)')
+        .select('exam_code, exam_name, status, notes, released_at, released_by, lab_result_values(parameter_key, parameter_name, value, unit, reference, status, sort_order, instrument_code)')
         .eq('order_id', orderId)
       if (!active || error || !data) return
       const map: Record<string, { status: string; notes?: string; values: any[]; releasedAt?: string | null; releasedBy?: string | null }> = {}
@@ -500,6 +500,7 @@ export function AttendanceDetailsModal({ open, onClose, onOrderDeleted, order, p
         parameterId: String(v.parameter_key),
         parameterCode: v.parameter_name,
         parameterName: v.parameter_name,
+        instrumentCode: v.instrument_code,
         value: v.value || '',
         unit: v.unit || '',
         referenceRange: v.reference || '—',
