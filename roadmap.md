@@ -1,5 +1,11 @@
 # Verificação dos alertas
 
+# Hemograma — diferencial única
+- [ ] Investigar MID/granulócitos, fórmulas e liberação com campos vazios.
+- [ ] Aplicar regra compartilhada às telas e preservar valores do aparelho; aviso da soma manual.
+- [ ] Tipo de diferencial opcional no equipamento e apresentação no laudo.
+- [ ] Testar casos 3/5 partes e sem tipo; conferir pedido 16-14 sem alterar dados reais.
+
 # Catálogo SIGTAP e relatório simples
 - [x] Campo opcional SIGTAP no catálogo e banco confirmado; importação/exportação com TUSS separado, zeros iniciais preservados e planilhas antigas sem apagar códigos.
 - [x] Relatório simples por exame com sigla, nome, TUSS/SIGTAP preenchidos e quantidade; documento compartilhado na prévia/impressão/PDF, CSV/XLS/XLSX; período Brasília e filtros origem/bancada/convênio.
