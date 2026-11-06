@@ -492,7 +492,7 @@ export default function LabHematologiaPage() {
   const referenceOf = (key: string) => paramByFormKey[key]?.reference || ''
 
   // ===== Diferencial de Glóbulos Brancos =====
-  // Neutrófilos bastonetes (%) = 100 - (segmentados + linfócitos + monócitos + eosinófilos)
+  // Diferencial: Bastões (%) só por digitação manual — nunca derivado de outro campo
   const numBR = (v?: string) => {
     const n = parseFloat(String(v ?? '').replace(/\s/g, '').replace(',', '.'))
     return isNaN(n) ? null : n
