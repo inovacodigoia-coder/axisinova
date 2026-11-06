@@ -3,6 +3,8 @@ import { LabReportHeader } from './LabReportHeader';
 import { LabAttendanceOrder } from '@/types/lab.types';
 import { cn } from '@/lib/utils';
 import { buildLaudoTagContext, renderLaudoTemplate } from '@/utils/laudoTags';
+import { differentialReportRows } from '@/utils/hematologyDifferential';
+import { supabase } from '@/integrations/supabase/client';
 
 
 interface LaudoDocumentProps {
@@ -85,7 +87,7 @@ const stripAccents = (s: string) => (s || '').normalize('NFD').replace(/[\u0300-
 const inferSection = (paramName: string): string => {
   const n = stripAccents(paramName);
   if (/(plaqueta|vpm|volume plaquetario|pdw|plaquetocrito)/.test(n)) return PLAQUETAS;
-  if (/(leucocit|neutrofil|bastonete|segmentado|eosinofil|basofil|linfocit|monocit|blasto|mielocit|promielocit|metamielocit|celulas jovens)/.test(n))
+  if (/(leucocit|neutrofil|bastonete|segmentado|eosinofil|basofil|linfocit|monocit|\bmid\b|granulocit|blasto|mielocit|promielocit|metamielocit|celulas jovens)/.test(n))
     return SERIE_BRANCA;
   if (/(hemacia|eritrocit|hemoglobina|hematocrito|vcm|hcm|chcm|rdw|reticulocit)/.test(n)) return SERIE_VERMELHA;
   return '';
@@ -199,8 +201,10 @@ function DifferentialTable({ paired }: { paired: PairedRow[] }) {
   );
 }
 
-function ExamBlock({ exam, order }: { exam: any; order?: any }) {
-  const results: any[] = exam.results || [];
+function ExamBlock({ exam, order, equipmentTypes }: { exam: any; order?: any; equipmentTypes: Record<string, string> }) {
+  const codes = Array.from(new Set<string>((exam.results || []).map((r: any) => String(r.instrumentCode || '')).filter(Boolean)));
+  const type = codes.length === 1 ? equipmentTypes[codes[0].toLowerCase()] : undefined;
+  const results: any[] = differentialReportRows(exam.results || [], type);
   const sections: { name: string; rows: any[] }[] = [];
   results.forEach((r) => {
     const name = ((r.section || '').trim() || inferSection(r.parameterName || r.parameterCode || '')).trim();
@@ -314,6 +318,17 @@ export default function LaudoDocument({
         : 'Outro';
 
   const approvedName = order.approvedBy || '—';
+  const [equipmentTypes, setEquipmentTypes] = React.useState<Record<string, string>>({});
+  React.useEffect(() => {
+    let active = true;
+    supabase.from('lab_equipments').select('serial_number, differential_type').then(({ data }) => {
+      if (!active) return;
+      const byCode: Record<string, string> = {};
+      (data || []).forEach(e => { if (e.serial_number && e.differential_type) byCode[e.serial_number.toLowerCase()] = e.differential_type; });
+      setEquipmentTypes(byCode);
+    });
+    return () => { active = false; };
+  }, []);
   const approvedRegister = order.approvedRegister?.trim() || '';
 
   // Uma folha por Bancada Técnica (nunca misturar bancadas na mesma página).
@@ -434,7 +449,7 @@ export default function LaudoDocument({
           {/* Exames da bancada desta folha */}
           <div className="laudo-body mt-6 space-y-7 flex-1">
             {page.exams.map((exam: any, idx: number) => (
-              <ExamBlock key={exam.examId || idx} exam={exam} order={order} />
+              <ExamBlock key={exam.examId || idx} exam={exam} order={order} equipmentTypes={equipmentTypes} />
             ))}
           </div>
 

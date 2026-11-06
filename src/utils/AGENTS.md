@@ -1,0 +1,1 @@
+- Hematology uses hematologyDifferential with instrument_value as immutable input; differential_type affects reports only. Why: all devices share the same manual-band and missing-value rules without redistributing received counts.

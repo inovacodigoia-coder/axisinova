@@ -14,6 +14,7 @@ import { useResultEntryPermissions } from '@/hooks/useResultEntryPermissions'
 import { resolveCompanyId } from '@/utils/companyId'
 import { buildExamParams, evaluateFormula, findCatalogExam, type ResolvedParam } from '@/utils/examParameters'
 import { supabase } from '@/integrations/supabase/client'
+import { differentialCell, resolveDifferential, hematologyReady } from '@/utils/hematologyDifferential'
 import { InstrumentGraphicsSection } from '@/components/lab/analise/InstrumentGraphicsSection'
 
 
@@ -53,7 +54,7 @@ const STATUS_OPTIONS = ['collection_done', 'in_analysis', 'validation', 'release
 
 const HEM_REGEX = /hemograma|hematol|eritrogram|leucogram|reticul|plaquet/i
 
-const WHITE_ROWS = ['Neutrófilos', 'Mielócitos', 'Metamielócitos', 'Bastões', 'Segmentados', 'Linfócitos (T/A)', 'Monócitos', 'Eosinófilos', 'Basófilos']
+const WHITE_ROWS = ['Neutrófilos', 'Mielócitos', 'Metamielócitos', 'Bastões', 'Segmentados', 'Linfócitos (T/A)', 'Monócitos', 'Eosinófilos', 'Basófilos', 'MID', 'Granulócitos']
 const OTHER_ROWS = ['Promielócitos', 'Mieloblastos', 'Blastos', 'ALY', 'LIC', 'Gran. Imaturos']
 const RED_FIELDS = [
   { key: 'hemacias', label: 'Hemácias', unit: '/mm³' },
@@ -255,6 +256,7 @@ export default function LabHematologiaPage() {
   const [flags, setFlags] = useState<string[]>([])
   const [catalogList, setCatalogList] = useState<any[]>([])
   const [examStatus, setExamStatus] = useState<string | null>(null)
+  const [rawInstrumentValues, setRawInstrumentValues] = useState<Record<string, string>>({})
   const [instrumentKeys, setInstrumentKeys] = useState<Set<string>>(new Set())
   const [saving, setSaving] = useState(false)
   const [equipments, setEquipments] = useState<any[]>([])
@@ -292,7 +294,7 @@ export default function LabHematologiaPage() {
     const serial = String(selectedEquipment?.serial_number || '').toLowerCase().replace(/[\s-]/g, '_')
     return EQUIPMENT_LAYOUTS[serial] || null
   }, [selectedEquipment])
-  const hasEquipmentLayout = equipments.length === 0 || !!equipmentLayout
+  const hasEquipmentLayout = true
   const graphAreas = equipmentLayout?.graphs || GRAPH_AREAS
   const isCount380 = equipmentLayout?.label === 'Count 380'
 
@@ -431,6 +433,7 @@ export default function LabHematologiaPage() {
     setFlags([])
     setExamStatus(null)
     setInstrumentKeys(new Set())
+    setRawInstrumentValues({})
     if (!selected) return
     const cid = resolveCompanyId(user?.companyId)
     if (!cid) return
@@ -438,7 +441,7 @@ export default function LabHematologiaPage() {
     ;(async () => {
       const { data: results } = await supabase
         .from('lab_exam_results')
-        .select('id, status, notes, lab_result_values(parameter_key, parameter_name, value, flag, source)')
+        .select('id, status, notes, lab_result_values(parameter_key, parameter_name, value, flag, source, instrument_value)')
         .eq('company_id', cid)
         .eq('exam_ref', selected.id)
       const match = (results || [])[0] as any
@@ -450,18 +453,20 @@ export default function LabHematologiaPage() {
       const next: Record<string, string> = {}
       const nextFlags: string[] = []
       const nextInstrument = new Set<string>()
+      const raw: Record<string, string> = {}
       ;(match.lab_result_values || []).forEach((row: any) => {
         const param = byId[String(row.parameter_key)]
         const key = param ? formKeyOfParam(param) : mapParamToFormKey(String(row.parameter_name || ''))
         if (key && row.value != null && String(row.value) !== '') {
           next[key] = String(row.value)
-          if (row.source === 'instrument') nextInstrument.add(key)
+          if (row.source === 'instrument') { nextInstrument.add(key); raw[key] = String(row.instrument_value ?? row.value) }
         }
         if (row.flag && !nextFlags.includes(row.flag)) nextFlags.push(String(row.flag))
       })
       setValues(next)
       setFlags(nextFlags)
       setInstrumentKeys(nextInstrument)
+      setRawInstrumentValues(raw)
       setObservacao(match.notes || '')
       setExamStatus(match.status || null)
     })()
@@ -471,13 +476,19 @@ export default function LabHematologiaPage() {
 
   // Calcula automaticamente os parâmetros com fórmula do catálogo
   useEffect(() => {
-    if (resolvedParams.length === 0) return
+    if (resolvedParams.length === 0 || examStatus === 'released') return
     const valueOf = (paramId: string) => {
       const param = resolvedParams.find((p) => String(p.id) === String(paramId))
       return param ? (values[formKeyOfParam(param)] || '') : ''
     }
     const updates: Record<string, string> = {}
+    const differential = resolveDifferential(resolvedParams, Object.fromEntries(resolvedParams.map(p => [p.id, values[formKeyOfParam(p)] || ''])), Object.fromEntries(resolvedParams.filter(p => rawInstrumentValues[formKeyOfParam(p)] != null).map(p => [p.id, rawInstrumentValues[formKeyOfParam(p)]]))).values
     resolvedParams.forEach((param) => {
+      if (differentialCell(param)) {
+        const key = formKeyOfParam(param)
+        if ((values[key] || '') !== (differential[param.id] || '')) updates[key] = differential[param.id] || ''
+        return
+      }
       if (!param.isCalculated) return
       const key = formKeyOfParam(param)
       if (instrumentKeys.has(key)) return
@@ -485,22 +496,17 @@ export default function LabHematologiaPage() {
       if (computed && values[key] !== computed) updates[key] = computed
     })
     if (Object.keys(updates).length > 0) setValues((current) => ({ ...current, ...updates }))
-  }, [values, resolvedParams, instrumentKeys])
+  }, [values, resolvedParams, instrumentKeys, rawInstrumentValues, examStatus])
 
   const getValue = (key: string) => values[key] ?? ''
   const setValue = (key: string, value: string) => setValues((current) => ({ ...current, [key]: value }))
   const referenceOf = (key: string) => paramByFormKey[key]?.reference || ''
 
-  // ===== Diferencial de Glóbulos Brancos =====
-  // Diferencial: Bastões (%) só por digitação manual — nunca derivado de outro campo
-  const numBR = (v?: string) => {
-    const n = parseFloat(String(v ?? '').replace(/\s/g, '').replace(',', '.'))
-    return isNaN(n) ? null : n
-  }
-  // Bastões só por digitação manual (lâmina); nunca preenchidos automaticamente.
-  const DIFF_PCT_KEYS = ['segmentados_pct', 'linf_citos_t_a_pct', 'mon_citos_pct', 'eosin_filos_pct', 'bas_filos_pct', 'bast_es_pct']
-  const diffTotal = DIFF_PCT_KEYS.reduce((acc, k) => acc + (numBR(values[k]) ?? 0), 0)
-  const diffOver = diffTotal > 100.05
+  const differential = resolveDifferential(resolvedParams,
+    Object.fromEntries(resolvedParams.map(p => [p.id, values[formKeyOfParam(p)] || ''])),
+    Object.fromEntries(resolvedParams.filter(p => rawInstrumentValues[formKeyOfParam(p)] != null).map(p => [p.id, rawInstrumentValues[formKeyOfParam(p)]])))
+  const diffTotal = differential.total
+  const diffOver = differential.warning
 
   /** Salva o exame selecionado no mesmo formato da Digitação de Resultados. */
   const persistExam = async (status: 'draft' | 'digitized' | 'released') => {
@@ -537,7 +543,8 @@ export default function LabHematologiaPage() {
         result_id: saved.id,
         parameter_key: String(param.id),
         parameter_name: param.name || null,
-        value: values[key] || '',
+        value: differentialCell(param) ? (differential.values[param.id] || '') : (values[key] || ''),
+        instrument_value: rawInstrumentValues[key] ?? null,
         unit: param.unit || null,
         reference: param.reference || null,
         sort_order: idx,
@@ -580,7 +587,7 @@ export default function LabHematologiaPage() {
     await supabase.from('attendance_orders').update({ status: next }).eq('id', selected.orderId)
   }
 
-  const allFilled = resolvedParams.length > 0 && resolvedParams.every((param) => (values[formKeyOfParam(param)] || '').trim() !== '')
+  const allFilled = hematologyReady(resolvedParams, pid => { const p = resolvedParams.find(p => p.id === pid); return p ? values[formKeyOfParam(p)] || '' : '' })
 
   const runAction = async (status: 'draft' | 'digitized' | 'released', message: string) => {
     setSaving(true)
@@ -764,7 +771,7 @@ export default function LabHematologiaPage() {
           </span>
           {diffOver && (
             <span className="flex items-center gap-1 text-[10px] font-bold uppercase text-rose-600">
-              <AlertTriangle className="h-3 w-3 shrink-0" /> A soma do diferencial ultrapassou 100% — verifique os valores
+              <AlertTriangle className="h-3 w-3 shrink-0" /> A soma da diferencial manual é diferente de 100% — verifique os valores
             </span>
           )}
         </div>

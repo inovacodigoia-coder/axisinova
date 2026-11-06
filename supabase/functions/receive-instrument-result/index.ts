@@ -498,6 +498,7 @@ Deno.serve(async (req) => {
     parameter_key: matchedParamId,
     parameter_name: matchedParamName,
     value: String(rawValue),
+    instrument_value: String(rawValue),
     unit: p.unit || matchedParamUnit,
     reference: p.reference_range || null,
     status: statusLabel || null,

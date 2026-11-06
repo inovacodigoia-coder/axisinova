@@ -235,6 +235,7 @@ export function buildExamParams(catalogExam: any | undefined, fallbackName: stri
   const examUnit = catalogExam?.measurement_unit || ''
 
   const visible = params.filter((p) => !p.isHidden && !p.is_hidden)
+  const hemogram = /hemograma|hematol|leucograma|eritrograma/i.test(catalogExam?.name || fallbackName)
 
   if (visible.length === 0) {
     return [
@@ -251,14 +252,14 @@ export function buildExamParams(catalogExam: any | undefined, fallbackName: stri
 
   return visible.map((p, idx) => {
     const name = p.name || `Parâmetro ${idx + 1}`
-    const isCalculated = !!(p.isCalculated || p.is_calculated)
-    const formula = (p.formula && String(p.formula).trim()) || (isCalculated ? defaultFormulaFor(name) : '')
+    const isCalculated = hemogram ? /absoluto/i.test(name) : !!(p.isCalculated || p.is_calculated)
+    const formula = hemogram ? (isCalculated ? defaultFormulaFor(name) : '') : (p.formula && String(p.formula).trim()) || (isCalculated ? defaultFormulaFor(name) : '')
     const ranges = p.referenceValues && p.referenceValues.length ? p.referenceValues : examLevelRefs
     return {
       id: String(p.id ?? idx + 1),
       dbId: p.dbId ? String(p.dbId) : undefined,
       name,
-      code: p.code || p.equipment_code || p.equipmentCode || p.codigo || '',
+      code: p.code || p.equipment_code || p.equipmentCode || p.equipCode || p.codigo || '',
       unit: p.unit || examUnit,
       reference: pickReference(ranges, patient),
       ranges,
