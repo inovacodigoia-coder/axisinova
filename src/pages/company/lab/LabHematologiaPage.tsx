@@ -497,19 +497,10 @@ export default function LabHematologiaPage() {
     const n = parseFloat(String(v ?? '').replace(/\s/g, '').replace(',', '.'))
     return isNaN(n) ? null : n
   }
-  const DIFF_PCT_KEYS = ['segmentados_pct', 'linf_citos_t_a_pct', 'mon_citos_pct', 'eosin_filos_pct']
-  const diffSum = DIFF_PCT_KEYS.reduce((acc, k) => acc + (numBR(values[k]) ?? 0), 0)
-  const diffAnyFilled = DIFF_PCT_KEYS.some((k) => numBR(values[k]) != null)
-  const diffTotal = diffSum + (numBR(values['bast_es_pct']) ?? 0)
-  const diffOver = diffSum > 100
-
-  useEffect(() => {
-    if (isCount380 || !diffAnyFilled) return
-    const auto = String(Math.round((100 - diffSum) * 100) / 100).replace('.', ',')
-    if ((values['bast_es_pct'] ?? '') !== auto) {
-      setValues((current) => ({ ...current, bast_es_pct: auto }))
-    }
-  }, [diffSum, diffAnyFilled, values, isCount380])
+  // Bastões só por digitação manual (lâmina); nunca preenchidos automaticamente.
+  const DIFF_PCT_KEYS = ['segmentados_pct', 'linf_citos_t_a_pct', 'mon_citos_pct', 'eosin_filos_pct', 'bas_filos_pct', 'bast_es_pct']
+  const diffTotal = DIFF_PCT_KEYS.reduce((acc, k) => acc + (numBR(values[k]) ?? 0), 0)
+  const diffOver = diffTotal > 100.05
 
   /** Salva o exame selecionado no mesmo formato da Digitação de Resultados. */
   const persistExam = async (status: 'draft' | 'digitized' | 'released') => {
