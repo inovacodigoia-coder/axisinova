@@ -16,16 +16,32 @@ describe('regra única da diferencial', () => {
     expect(r.total).toBe(100)
     expect(hematologyReady(params, id => r.values[id] || '')).toBe(true)
   })
-  it('bastonete manual 5 reduz segmentados de 68 para 63 e soma 100', () => {
+  it('bastonete digitado NÃO reduz o segmentado do aparelho: soma 105 bloqueia a liberação', () => {
     const r = resolveDifferential(params, { ...received, '2': '5' }, received)
-    expect(r.values['1']).toBe('63')
-    expect(r.values['7']).toBe('244')
-    expect(r.total).toBe(100)
-    expect(resolveDifferential(params, { ...r.values, '2': '6' }, received).values['1']).toBe('62')
+    expect(r.values['1']).toBe('68')
+    expect(r.total).toBe(105)
+    expect(r.manual).toBe(true)
+    expect(r.blockRelease).toBe(true)
   })
-  it('absoluto recebido prevalece mesmo quando difere do calculado', () => {
+  it('diferencial manual completa que fecha 100% libera normalmente', () => {
+    const manual = { '0': '4880', '1': '60', '2': '5', '3': '27', '4': '5', '5': '3', '6': '0' }
+    const r = resolveDifferential(params, manual, received)
+    expect(r.total).toBe(100)
+    expect(r.manual).toBe(true)
+    expect(r.blockRelease).toBe(false)
+  })
+  it('soma do aparelho fora de 100 por arredondamento só avisa, sem bloquear', () => {
+    const raw = { ...received, '6': '2,1' }
+    const r = resolveDifferential(params, raw, raw)
+    expect(r.manual).toBe(false)
+    expect(r.warning).toBe(true)
+    expect(r.blockRelease).toBe(false)
+  })
+  it('absoluto recebido prevalece e absoluto ausente não é inventado (só a fórmula do parâmetro calcula)', () => {
     const raw = { ...received, '8': '110' }
     expect(resolveDifferential(params, raw, raw).values['8']).toBe('110')
+    const r = resolveDifferential(params, { '0': '3070', '2': '0,8' }, {})
+    expect(r.values['7']).toBe('0,8' in r.values ? r.values['7'] : undefined)
   })
   it('3 partes não transforma granulócitos/MID em neutrófilos', () => {
     const raw = { '0': '5000', '3': '30', '9': '10', '10': '60' }

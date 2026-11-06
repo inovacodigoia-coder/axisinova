@@ -113,23 +113,34 @@ describe('fórmula com "x" como multiplicação (HbA1c → eAG)', () => {
 
 describe('absolutos do leucograma saem como célula inteira', () => {
   it('bastonetes: 3070 × 0,8% = 25 e 5720 × 1,6% = 92', async () => {
-    const { evaluateFormula, defaultFormulaFor } = await import('./examParameters')
+    const { evaluateFormula } = await import('./examParameters')
     const params: any[] = [
       { id: 'l', name: 'Leucócitos totais', isCalculated: false },
-      { id: 'b', name: 'Neutrófilos bastonetes (%)', isCalculated: true },
+      { id: 'b', name: 'Neutrófilos bastonetes (%)', isCalculated: false },
       { id: 'a', name: 'Neutrófilos bastonetes (absoluto)', isCalculated: true },
     ]
-    const f = defaultFormulaFor('Neutrófilos bastonetes (absoluto)')
+    // Fórmula padrão agora gravada no cadastro do parâmetro (não mais escondida no código)
+    const f = '[Neutrófilos bastonetes (%)] / 100 * [Leucócitos totais]'
     expect(evaluateFormula(f, params, (id) => ({ l: '3070', b: '0,8' } as any)[id] || '')).toBe('25')
     expect(evaluateFormula(f, params, (id) => ({ l: '5720', b: '1,6' } as any)[id] || '')).toBe('92')
   })
   it('segmentados: 3070 × 55% = 1689 (não 1688,5)', async () => {
-    const { evaluateFormula, defaultFormulaFor } = await import('./examParameters')
+    const { evaluateFormula } = await import('./examParameters')
     const params: any[] = [
       { id: 'l', name: 'Leucócitos totais' },
       { id: 's', name: 'Neutrófilos segmentados (%)' },
     ]
-    const f = defaultFormulaFor('Neutrófilos segmentados (absoluto)')
+    const f = '[Neutrófilos segmentados (%)] / 100 * [Leucócitos totais]'
     expect(evaluateFormula(f, params, (id) => ({ l: '3070', s: '55' } as any)[id] || '')).toBe('1689')
+  })
+  it('CALC ligado sem fórmula não calcula nada (sem conta escondida)', async () => {
+    const { evaluateFormula, buildExamParams } = await import('./examParameters')
+    expect(evaluateFormula('', [], () => '1')).toBe('')
+    const p = buildExamParams({ name: 'Hemograma', parameters: [
+      { id: 'v', name: 'VCM', isCalculated: true },
+      { id: 'a', name: 'Linfócitos (absoluto)', isCalculated: true, formula: '  ' },
+    ] }, 'Hemograma', {})
+    expect(p.map(x => x.isCalculated)).toEqual([true, true])
+    expect(p.map(x => x.formula)).toEqual(['', ''])
   })
 })
