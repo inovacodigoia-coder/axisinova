@@ -1,6 +1,7 @@
 import { useState, useMemo, useEffect, useCallback, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { buildExamParams, catalogKey, findCatalogExam, evaluateFormula, normalizeText, resolveReference } from '@/utils/examParameters';
+import { differentialCell, resolveDifferential, hematologyReady } from '@/utils/hematologyDifferential';
 import { matchesExamWorkbench } from '@/lib/labExamWorkbench';
 
 import { resolveCompanyId } from '@/utils/companyId';
@@ -110,6 +111,8 @@ export function ResultEntryModal({
   const [correctionUnlocked, setCorrectionUnlocked] = useState<Record<string, boolean>>({});
   const [results, setResults] = useState<Record<string, string>>({});
   const [externalResultValues, setExternalResultValues] = useState<Record<string, string>>({});
+  const [instrumentCodes, setInstrumentCodes] = useState<Record<string, string>>({});
+  const [rawInstrumentValues, setRawInstrumentValues] = useState<Record<string, string>>({});
   const [instrumentKeys, setInstrumentKeys] = useState<Set<string>>(new Set());
   const [notes, setNotes] = useState<Record<string, string>>({});
   const [saving, setSaving] = useState(false);
@@ -406,54 +409,15 @@ export function ResultEntryModal({
     }
   };
 
-  // ===== Diferencial de Glóbulos Brancos (Hemograma) =====
-  // Bastonetes (%) só por digitação manual (lâmina) — nunca derivado do aparelho.
-  // Se digitado e o segmentado veio do aparelho (que mede neutrófilos totais),
-  // Segmentados = Neutrófilos − Bastonetes, para a soma continuar em 100%.
-  const diffInfoFor = useCallback((params: any[], valueOf: (id: string) => string) => {
-    const findP = (fn: (n: string) => boolean) => params.find((p: any) => fn(normalizeText(p?.name || '')));
-    const segmentados = findP((n) => n.includes('segmentad') && !n.includes('absoluto'));
-    const linfocitos = findP((n) => n.startsWith('linfocito') && !n.includes('absoluto'));
-    const monocitos = findP((n) => n.startsWith('monocito') && !n.includes('absoluto'));
-    const eosinofilos = findP((n) => n.startsWith('eosinofilo') && !n.includes('absoluto'));
-    const basofilos = findP((n) => n.startsWith('basofilo') && !n.includes('absoluto'));
-    const bastonetes = findP((n) => (n.includes('bastonete') || n.startsWith('bastao') || n.startsWith('bastoes')) && !n.includes('absoluto'));
-    if (!bastonetes && !segmentados) return null;
-    const num = (p: any) => {
-      if (!p) return null;
-      const n = parseFloat(String(valueOf(p.id) || '').replace(/\s/g, '').replace(',', '.'));
-      return isNaN(n) ? null : n;
-    };
-    const vals = [segmentados, linfocitos, monocitos, eosinofilos, basofilos].map(num);
-    const sum5 = vals.reduce<number>((a, v) => a + (v ?? 0), 0);
-    const bastVal = bastonetes ? num(bastonetes) : null;
-    const total = sum5 + (bastVal ?? 0);
-    return { bastonetes, segmentados, total, over: total > 100.05 };
-  }, []);
-
-  // Neutrófilos do aparelho (antes de descontar bastonetes), por chave do segmentado
-  const instrumentNeutRef = useRef<Record<string, number>>({});
-  useEffect(() => {
-    const updates: Record<string, string> = {};
-    filteredExams.forEach((exam: any) => {
-      const params = paramsByExam[exam.id] || [];
-      const info = diffInfoFor(params, (pid) => results[`${exam.id}_${pid}`] || '');
-      if (!info?.segmentados || !info.bastonetes) return;
-      const segKey = `${exam.id}_${info.segmentados.id}`;
-      const bastKey = `${exam.id}_${info.bastonetes.id}`;
-      if (!instrumentKeys.has(segKey) || instrumentKeys.has(bastKey)) return;
-      const toNum = (v: string) => { const n = parseFloat(String(v || '').replace(/\s/g, '').replace(',', '.')); return isNaN(n) ? null : n; };
-      if (instrumentNeutRef.current[segKey] == null) {
-        const n = toNum(results[segKey] || '');
-        if (n == null) return;
-        instrumentNeutRef.current[segKey] = n;
-      }
-      const bast = toNum(results[bastKey] || '') ?? 0;
-      const seg = String(Math.round((instrumentNeutRef.current[segKey] - bast) * 100) / 100).replace('.', ',');
-      if ((results[segKey] ?? '') !== seg) updates[segKey] = seg;
-    });
-    if (Object.keys(updates).length > 0) setResults(prev => ({ ...prev, ...updates }));
-  }, [results, filteredExams, paramsByExam, instrumentKeys, diffInfoFor]);
+  const differentialFor = (examId: string, params: any[]) => resolveDifferential(
+    params,
+    Object.fromEntries(params.map(p => [p.id, results[`${examId}_${p.id}`] || ''])),
+    Object.fromEntries(params.filter(p => rawInstrumentValues[`${examId}_${p.id}`] != null).map(p => [p.id, rawInstrumentValues[`${examId}_${p.id}`]])),
+  );
+  const diffInfoFor = (params: any[], _valueOf: (id: string) => string, examId?: string) => {
+    if (!params.some(p => differentialCell(p))) return null;
+    return differentialFor(examId || '', params);
+  };
 
   // Resolve tokens de fórmula que apontam para OUTROS exames do mesmo pedido (ex.: {BILT} - {BILD})
   const resolveExternalToken = useCallback((sourceExam: any, token: string): string | null => {
@@ -479,6 +443,7 @@ export function ResultEntryModal({
   // EXCETO quando o valor veio do equipamento (source 'instrument') — nesse caso o valor do equipamento prevalece
   const getParamValue = useCallback((exam: any, param: any) => {
     const key = `${exam.id}_${param.id}`;
+    if (differentialCell(param)) return examStatuses[exam.id] === 'released' ? (results[key] || '') : differentialFor(exam.id, getParams(exam)).values[param.id] || '';
     if (param?.isCalculated && !instrumentKeys.has(key)) {
       return evaluateFormula(
         param.formula,
@@ -488,15 +453,21 @@ export function ResultEntryModal({
       );
     }
     return results[key] || '';
-  }, [results, paramsByExam, instrumentKeys, resolveExternalToken]);
+  }, [results, paramsByExam, instrumentKeys, rawInstrumentValues, examStatuses, resolveExternalToken]);
 
   // Persiste automaticamente os calculados no estado para salvar/laudo
   useEffect(() => {
     const updates: Record<string, string> = {};
     Object.entries(paramsByExam).forEach(([examId, params]: any) => {
       const exam = filteredExams.find((item: any) => item.id === examId);
-      if (!exam) return;
+      if (!exam || examStatuses[examId] === 'released') return;
+      const differential = differentialFor(examId, params).values;
       (params as any[]).forEach((p: any) => {
+        if (differentialCell(p)) {
+          const key = `${examId}_${p.id}`;
+          if ((results[key] || '') !== (differential[p.id] || '')) updates[key] = differential[p.id] || '';
+          return;
+        }
         if (!p.isCalculated) return;
         const key = `${examId}_${p.id}`;
         if (instrumentKeys.has(key)) return; // valor veio do equipamento — não recalcular
@@ -512,7 +483,7 @@ export function ResultEntryModal({
     if (Object.keys(updates).length > 0) {
       setResults(prev => ({ ...prev, ...updates }));
     }
-  }, [results, paramsByExam, instrumentKeys, resolveExternalToken]);
+  }, [results, paramsByExam, instrumentKeys, rawInstrumentValues, examStatuses, resolveExternalToken]);
 
 
   const totalExams = filteredExams.length;
@@ -525,9 +496,7 @@ export function ResultEntryModal({
       if (expandedPatients[exam.protocol] && examStatuses[exam.id] !== 'released') {
         // Must have results for ALL parameters to be considered "filled"
         const params = paramsByExam[exam.id] || [{ id: '1' }];
-        const allFilled = params.every((p: any) => 
-          (results[`${exam.id}_${p.id}`] || '').trim() !== ''
-        );
+        const allFilled = hematologyReady(params, (pid) => getParamValue(exam, params.find((p: any) => p.id === pid)));
         if (allFilled) count++;
       }
     });
@@ -607,7 +576,7 @@ export function ResultEntryModal({
       }
 
       const values = params.map((p: any, idx: number) => {
-        const value = results[`${exam.id}_${p.id}`] || '';
+        const value = getParamValue(exam, p);
         return {
           company_id: cid,
           result_id: saved.id,
@@ -620,6 +589,7 @@ export function ResultEntryModal({
           sort_order: idx,
           // Preserva a origem quando o valor veio do equipamento
           source: instrumentKeys.has(`${exam.id}_${p.id}`) ? 'instrument' : 'manual',
+          instrument_value: rawInstrumentValues[`${exam.id}_${p.id}`] ?? null,
         };
       });
 
@@ -692,7 +662,7 @@ export function ResultEntryModal({
       for (let i = 0; i < refs.length; i += CHUNK) {
         const { data, error } = await supabase
           .from('lab_exam_results')
-          .select('id, order_id, exam_ref, exam_code, exam_name, status, notes, portal_blocked_types, laudo_id, retest_requested, lab_result_values(parameter_key, value, source, result_datetime)')
+          .select('id, order_id, exam_ref, exam_code, exam_name, status, notes, portal_blocked_types, laudo_id, retest_requested, lab_result_values(parameter_key, value, source, instrument_value, instrument_code, result_datetime)')
           .eq('company_id', cid)
           .in('exam_ref', refs.slice(i, i + CHUNK));
         if (error) {
@@ -709,7 +679,7 @@ export function ResultEntryModal({
       for (let i = 0; i < orderIds.length; i += CHUNK) {
         const { data, error } = await supabase
           .from('lab_exam_results')
-          .select('id, order_id, exam_ref, exam_code, exam_name, status, notes, portal_blocked_types, laudo_id, retest_requested, lab_result_values(parameter_key, value, source, result_datetime)')
+          .select('id, order_id, exam_ref, exam_code, exam_name, status, notes, portal_blocked_types, laudo_id, retest_requested, lab_result_values(parameter_key, value, source, instrument_value, instrument_code, result_datetime)')
           .eq('company_id', cid)
           .in('order_id', orderIds.slice(i, i + CHUNK));
         if (error) continue;
@@ -727,6 +697,8 @@ export function ResultEntryModal({
       const nextStatuses: Record<string, any> = {};
       const nextBlocks: Record<string, string[]> = {};
       const nextExternalValues: Record<string, string> = {};
+      const nextRawInstrument: Record<string, string> = {};
+      const nextInstrumentCodes: Record<string, string> = {};
       const nextInstrumentKeys = new Set<string>();
       const nextLaudos: Record<string, string> = {};
       const nextRetest: Record<string, boolean> = {};
@@ -752,6 +724,8 @@ export function ResultEntryModal({
             nextResults[key] = String(v.value);
           }
           if (v.source === 'instrument') {
+            nextRawInstrument[key] = String(v.instrument_value ?? v.value ?? '');
+            if (v.instrument_code) nextInstrumentCodes[key] = v.instrument_code;
             nextInstrumentKeys.add(key);
             if (v.result_datetime) nextInstrumentAt[key] = String(v.result_datetime);
           }
@@ -790,6 +764,8 @@ export function ResultEntryModal({
       setRetestRequested(nextRetest);
       setResultIdByExam(nextResultIds);
       setExternalResultValues(nextExternalValues);
+      setRawInstrumentValues(nextRawInstrument);
+      setInstrumentCodes(nextInstrumentCodes);
       setInstrumentKeys(nextInstrumentKeys);
       setResults(prev => {
         const next = { ...prev };
@@ -980,6 +956,7 @@ export function ResultEntryModal({
                 parameterId: String(p.id),
                 parameterCode: p.name,
                 parameterName: p.name,
+                instrumentCode: instrumentCodes[`${e.id}_${p.id}`],
                 section: p.section || '',
                 value,
                 unit: p.unit || '',
@@ -1079,9 +1056,7 @@ export function ResultEntryModal({
           // Only process exams for expanded patients
           if (expandedPatients[exam.protocol] && newStatuses[exam.id] !== 'released') {
             const params = paramsByExam[exam.id] || [{ id: '1' }];
-            const allFilled = params.every((p: any) => 
-              (results[`${exam.id}_${p.id}`] || '').trim() !== ''
-            );
+            const allFilled = hematologyReady(params, (pid) => getParamValue(exam, params.find((p: any) => p.id === pid)));
             
             if (allFilled) {
               newStatuses[exam.id] = 'digitized';
@@ -1590,7 +1565,7 @@ export function ResultEntryModal({
       (patient.exams || []).forEach((exam: any) => {
         if (newStatuses[exam.id] === 'released' || newStatuses[exam.id] === 'cancelled') return;
         const params = paramsByExam[exam.id] || [{ id: '1' }];
-        const allFilled = params.every((p: any) => (results[`${exam.id}_${p.id}`] || '').trim() !== '');
+        const allFilled = hematologyReady(params, (pid) => getParamValue(exam, params.find((p: any) => p.id === pid)));
         if (allFilled) {
           newStatuses[exam.id] = 'digitized';
           toPersist.push(exam);
@@ -1787,7 +1762,7 @@ export function ResultEntryModal({
               const typedCount = patient.exams.filter((e: any) => {
                 if (examStatuses[e.id] === 'released') return true;
                 const params = getParams(e);
-                return params.length > 0 && params.every((p: any) => (results[`${e.id}_${p.id}`] || '').trim() !== '');
+                return hematologyReady(params, pid => getParamValue(e, params.find((p: any) => p.id === pid)));
               }).length;
               const showRelease = releasedCount > 0;
               const showTyping = typedCount > 0 && typedCount > releasedCount;
@@ -2008,16 +1983,16 @@ export function ResultEntryModal({
                                 Coleta: {format(new Date(exam.registeredAt), 'dd/MM/yyyy HH:mm')}
                               </div>
                               {(() => {
-                                const info = diffInfoFor(getParams(exam), (pid) => results[`${exam.id}_${pid}`] || '');
+                                const info = diffInfoFor(getParams(exam), (pid) => results[`${exam.id}_${pid}`] || '', exam.id);
                                 if (!info) return null;
                                 return (
                                   <div className="mt-1">
                                     <span className="text-[10px] font-black uppercase tracking-wide text-rose-600">
                                       Glóbulos Brancos (Total: {info.total.toFixed(2).replace('.', ',')} %)
                                     </span>
-                                    {info.over && (
+                                    {info.warning && (
                                       <p className="mt-0.5 flex items-center gap-1 text-[9px] font-bold uppercase text-rose-600">
-                                        <AlertTriangle className="h-3 w-3 shrink-0" /> A soma do diferencial ultrapassou 100% — verifique os valores
+                                        <AlertTriangle className="h-3 w-3 shrink-0" /> A soma da diferencial manual é diferente de 100% — verifique os valores
                                       </p>
                                     )}
                                   </div>
@@ -2031,9 +2006,7 @@ export function ResultEntryModal({
                                 <Button 
                                   onClick={() => handleConcluirExame(exam.id)}
                                   size="sm" 
-                                  disabled={bloqueiosApoio(apoioDe(exam)).length > 0 || !getParams(exam).every((p: any) => 
-                                    (results[`${exam.id}_${p.id}`] || '').trim() !== ''
-                                  )}
+                                  disabled={bloqueiosApoio(apoioDe(exam)).length > 0 || !hematologyReady(getParams(exam), pid => getParamValue(exam, getParams(exam).find((p: any) => p.id === pid)))}
                                   title={bloqueiosApoio(apoioDe(exam)).join(' · ') || undefined}
                                   className="h-7 px-3 text-[9px] font-black uppercase gap-1.5 bg-sky-500 hover:bg-sky-600 text-white shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
                                 >
@@ -2191,14 +2164,14 @@ export function ResultEntryModal({
                                         status.label === 'Baixo' && "border-amber-400 focus:border-amber-500",
                                         status.label === 'Alto' && "border-rose-400 focus:border-rose-500",
                                         status.label === 'Normal' && "border-emerald-400 focus:border-emerald-500",
-                                        (!isExamEditable(exam.id) || param.isCalculated) && "bg-slate-100 border-slate-200 cursor-not-allowed text-slate-500"
+                                        (!isExamEditable(exam.id) || (param.isCalculated && !differentialCell(param))) && "bg-slate-100 border-slate-200 cursor-not-allowed text-slate-500"
                                       )}
-                                      placeholder={param.isCalculated ? 'Calculado' : 'Resultado'}
+                                      placeholder={param.isCalculated && !differentialCell(param) ? 'Calculado' : 'Resultado'}
                                       value={value}
-                                      readOnly={!!param.isCalculated}
+                                      readOnly={!!param.isCalculated && !differentialCell(param)}
                                       disabled={!isExamEditable(exam.id)}
                                       onChange={(e) => {
-                                        if (param.isCalculated) return;
+                                        if (param.isCalculated && !differentialCell(param)) return;
                                         setResults(prev => ({ ...prev, [`${exam.id}_${param.id}`]: e.target.value }));
                                       }}
                                     />
