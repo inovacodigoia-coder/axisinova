@@ -2,7 +2,7 @@ import { displayReference } from '@/lib/examReferenceMode';
 import { useState, useMemo, useEffect, useCallback, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { buildExamParams, catalogKey, findCatalogExam, evaluateFormula, normalizeText, resolveReference } from '@/utils/examParameters';
-import { differentialCell, resolveDifferential, hematologyReady } from '@/utils/hematologyDifferential';
+import { differentialCell, differentialPercent, resolveDifferential, hematologyReady } from '@/utils/hematologyDifferential';
 import { matchesExamWorkbench } from '@/lib/labExamWorkbench';
 
 import { resolveCompanyId } from '@/utils/companyId';
@@ -444,7 +444,7 @@ export function ResultEntryModal({
   // EXCETO quando o valor veio do equipamento (source 'instrument') — nesse caso o valor do equipamento prevalece
   const getParamValue = useCallback((exam: any, param: any) => {
     const key = `${exam.id}_${param.id}`;
-    if (differentialCell(param)) return examStatuses[exam.id] === 'released' ? (results[key] || '') : differentialFor(exam.id, getParams(exam)).values[param.id] || '';
+    if (differentialPercent(param)) return examStatuses[exam.id] === 'released' ? (results[key] || '') : differentialFor(exam.id, getParams(exam)).values[param.id] || '';
     if (param?.isCalculated && (!instrumentKeys.has(key) || param.preferFormula)) {
       return evaluateFormula(
         param.formula,
@@ -464,7 +464,7 @@ export function ResultEntryModal({
       if (!exam || examStatuses[examId] === 'released') return;
       const differential = differentialFor(examId, params).values;
       (params as any[]).forEach((p: any) => {
-        if (differentialCell(p)) {
+        if (differentialPercent(p)) {
           const key = `${examId}_${p.id}`;
           if ((results[key] || '') !== (differential[p.id] || '')) updates[key] = differential[p.id] || '';
           return;
@@ -2173,14 +2173,14 @@ export function ResultEntryModal({
                                         status.label === 'Baixo' && "border-amber-400 focus:border-amber-500",
                                         status.label === 'Alto' && "border-rose-400 focus:border-rose-500",
                                         status.label === 'Normal' && "border-emerald-400 focus:border-emerald-500",
-                                        (!isExamEditable(exam.id) || (param.isCalculated && !differentialCell(param))) && "bg-slate-100 border-slate-200 cursor-not-allowed text-slate-500"
+                                        (!isExamEditable(exam.id) || (param.isCalculated && !differentialPercent(param))) && "bg-slate-100 border-slate-200 cursor-not-allowed text-slate-500"
                                       )}
-                                      placeholder={param.isCalculated && !differentialCell(param) ? 'Calculado' : 'Resultado'}
+                                      placeholder={param.isCalculated && !differentialPercent(param) ? 'Calculado' : 'Resultado'}
                                       value={value}
-                                      readOnly={!!param.isCalculated && !differentialCell(param)}
+                                      readOnly={!!param.isCalculated && !differentialPercent(param)}
                                       disabled={!isExamEditable(exam.id)}
                                       onChange={(e) => {
-                                        if (param.isCalculated && !differentialCell(param)) return;
+                                        if (param.isCalculated && !differentialPercent(param)) return;
                                         setResults(prev => ({ ...prev, [`${exam.id}_${param.id}`]: e.target.value }));
                                       }}
                                     />

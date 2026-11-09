@@ -19,6 +19,12 @@ export function differentialCell(p: { name?: string; parameterName?: string; cod
 }
 
 export const isAbsolute = (p: { name?: string; parameterName?: string; unit?: string }) => /absolut|\babs\b/.test(normalizeText(p.name || p.parameterName)) || (!!p.unit && !p.unit.includes('%') && /mm|µ|ul/i.test(p.unit))
+/**
+ * Percentual da diferencial (não o absoluto). Só os percentuais passam pela regra
+ * da diferencial; absolutos (/mm³) seguem a fórmula do parâmetro (CALC) como
+ * qualquer outro campo calculado.
+ */
+export const differentialPercent = (p: { name?: string; parameterName?: string; unit?: string }) => !!differentialCell(p) && !isAbsolute(p)
 export function hematologyNumber(value?: string): number | null {
   let s = String(value ?? '').trim().replace(/\s/g, '')
   if (!s) return null
