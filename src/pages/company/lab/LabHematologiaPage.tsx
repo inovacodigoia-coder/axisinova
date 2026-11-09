@@ -14,7 +14,7 @@ import { useResultEntryPermissions } from '@/hooks/useResultEntryPermissions'
 import { resolveCompanyId } from '@/utils/companyId'
 import { buildExamParams, evaluateFormula, findCatalogExam, type ResolvedParam } from '@/utils/examParameters'
 import { supabase } from '@/integrations/supabase/client'
-import { differentialCell, resolveDifferential, hematologyReady } from '@/utils/hematologyDifferential'
+import { differentialPercent, resolveDifferential, hematologyReady } from '@/utils/hematologyDifferential'
 import { InstrumentGraphicsSection } from '@/components/lab/analise/InstrumentGraphicsSection'
 
 
@@ -484,7 +484,7 @@ export default function LabHematologiaPage() {
     const updates: Record<string, string> = {}
     const differential = resolveDifferential(resolvedParams, Object.fromEntries(resolvedParams.map(p => [p.id, values[formKeyOfParam(p)] || ''])), Object.fromEntries(resolvedParams.filter(p => rawInstrumentValues[formKeyOfParam(p)] != null).map(p => [p.id, rawInstrumentValues[formKeyOfParam(p)]]))).values
     resolvedParams.forEach((param) => {
-      if (differentialCell(param)) {
+      if (differentialPercent(param)) {
         const key = formKeyOfParam(param)
         if ((values[key] || '') !== (differential[param.id] || '')) updates[key] = differential[param.id] || ''
         return
@@ -544,7 +544,7 @@ export default function LabHematologiaPage() {
         result_id: saved.id,
         parameter_key: String(param.id),
         parameter_name: param.name || null,
-        value: differentialCell(param) ? (differential.values[param.id] || '') : (values[key] || ''),
+        value: differentialPercent(param) ? (differential.values[param.id] || '') : (values[key] || ''),
         instrument_value: rawInstrumentValues[key] ?? null,
         unit: param.unit || null,
         reference: param.reference || null,
