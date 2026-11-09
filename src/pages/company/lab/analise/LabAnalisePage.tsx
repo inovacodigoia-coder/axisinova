@@ -38,6 +38,7 @@ import { useRegisters } from '@/context/RegistersContext';
 import { useAttendanceCadastro } from '@/hooks/useAttendanceCadastro';
 import { useCompanyContext } from '@/context/CompanyContext';
 import { ResultEntryModal } from '@/components/lab/analise/ResultEntryModal';
+import { OriginFilterDialog } from '@/components/lab/analise/OriginFilterDialog';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -91,6 +92,11 @@ function startOfDay(d: Date): Date {
   return new Date(d.getFullYear(), d.getMonth(), d.getDate());
 }
 
+const ORIGIN_SPECIAL_OPTIONS = [
+  { id: '__apoio_integracao', name: 'Apoio (integração)' },
+  { id: '__apoio_manual', name: 'Apoio (manual)' },
+];
+
 const SUB_TABS = [
   { id: 'mapa', label: 'Mapa de Trabalho', navigateTo: '/app/lab/mapa' },
   { id: 'analise', label: 'Digitação de Resultados' },
@@ -120,6 +126,7 @@ export default function LabAnalisePage() {
   const [dateToInput, setDateToInput] = useState('');
   const [selectedWorkbenches, setSelectedWorkbenches] = useState<string[]>([]);
   const [selectedEstablishments, setSelectedEstablishments] = useState<string[]>([]);
+  const [originDialogOpen, setOriginDialogOpen] = useState(false);
   const [selectedStatuses, setSelectedStatuses] = useState<string[]>([]);
   const [showFilters, setShowFilters] = useState(false);
   const [quickFiltersOpen, setQuickFiltersOpen] = useState(false);
@@ -519,38 +526,26 @@ export default function LabAnalisePage() {
                         {/* Estabelecimento */}
                         <div className="space-y-1.5">
                           <label className="text-[10px] font-bold uppercase text-muted-foreground ml-1">Origem</label>
-                          <DropdownMenu>
-                            <DropdownMenuTrigger asChild>
-                              <Button variant="outline" className="w-full h-9 text-xs justify-between font-medium">
-                                {selectedEstablishments.length === 0 ? 'Todas' : `${selectedEstablishments.length} Origens`}
-                                <ChevronDown className="h-4 w-4 opacity-50" />
-                              </Button>
-                            </DropdownMenuTrigger>
-                            <DropdownMenuContent className="w-56">
-                              {[{ id: '__apoio_integracao', name: 'Apoio (integração)' }, { id: '__apoio_manual', name: 'Apoio (manual)' }].map(est => (
-                                <DropdownMenuCheckboxItem
-                                  key={est.id}
-                                  checked={selectedEstablishments.includes(est.id)}
-                                  onCheckedChange={(checked) => {
-                                    setSelectedEstablishments(prev => checked ? [...prev, est.id] : prev.filter(id => id !== est.id));
-                                  }}
-                                >
-                                  {est.name}
-                                </DropdownMenuCheckboxItem>
-                              ))}
-                              {establishments.map(est => (
-                                <DropdownMenuCheckboxItem
-                                  key={est.id}
-                                  checked={selectedEstablishments.includes(est.id)}
-                                  onCheckedChange={(checked) => {
-                                    setSelectedEstablishments(prev => checked ? [...prev, est.id] : prev.filter(id => id !== est.id));
-                                  }}
-                                >
-                                  {est.name}
-                                </DropdownMenuCheckboxItem>
-                              ))}
-                            </DropdownMenuContent>
-                          </DropdownMenu>
+                          <Button variant="outline" className="w-full h-9 text-xs justify-between font-medium" onClick={() => setOriginDialogOpen(true)}>
+                            <span className="truncate">
+                              {selectedEstablishments.length === 0
+                                ? 'Todas'
+                                : selectedEstablishments.length === 1
+                                  ? (ORIGIN_SPECIAL_OPTIONS.find(o => o.id === selectedEstablishments[0])?.name
+                                    ?? establishments.find(o => o.id === selectedEstablishments[0])?.name
+                                    ?? '1 Origem')
+                                  : `${selectedEstablishments.length} Origens`}
+                            </span>
+                            <ChevronDown className="h-4 w-4 opacity-50 shrink-0" />
+                          </Button>
+                          <OriginFilterDialog
+                            open={originDialogOpen}
+                            onOpenChange={setOriginDialogOpen}
+                            specialOptions={ORIGIN_SPECIAL_OPTIONS}
+                            origins={establishments.map(est => ({ id: est.id, name: est.name }))}
+                            selected={selectedEstablishments}
+                            onApply={setSelectedEstablishments}
+                          />
                         </div>
 
                         {/* Status */}
