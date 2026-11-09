@@ -78,3 +78,22 @@ describe('regra única da diferencial', () => {
     expect(hematologyReady(other, id => id === 'a' ? '90' : '')).toBe(false)
   })
 })
+describe('absolutos seguem a fórmula do cadastro (pedido 504-00, Serrinha)', () => {
+  it('absoluto não é tratado como percentual da diferencial', async () => {
+    const { differentialPercent } = await import('./hematologyDifferential')
+    expect(differentialPercent({ name: 'Neutrófilos segmentados (%)', unit: '%' })).toBe(true)
+    expect(differentialPercent({ name: 'Neutrófilos segmentados (absoluto)', unit: '/mm³' })).toBe(false)
+    expect(differentialPercent({ name: 'Linfócitos (absoluto)', unit: '/mm³' })).toBe(false)
+  })
+  it('leucócitos 8500 e segmentados 58% dão 4930; linfócitos 37% dão 3145', async () => {
+    const { evaluateFormula } = await import('./examParameters')
+    const ps: ResolvedParam[] = [
+      { id: 'l', name: 'Leucócitos totais', unit: '/mm³', reference: '' },
+      { id: 's', name: 'Neutrófilos segmentados (%)', unit: '%', reference: '' },
+      { id: 'y', name: 'Linfócitos (%)', unit: '%', reference: '' },
+    ]
+    const v: Record<string, string> = { l: '8500', s: '58', y: '37' }
+    expect(evaluateFormula('[Neutrófilos segmentados (%)] / 100 * [Leucócitos totais]', ps, id => v[id])).toBe('4930')
+    expect(evaluateFormula('[Linfócitos (%)] / 100 * [Leucócitos totais]', ps, id => v[id])).toBe('3145')
+  })
+})
