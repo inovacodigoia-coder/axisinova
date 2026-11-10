@@ -14,6 +14,7 @@ CREATE INDEX IF NOT EXISTS laudo_impressao_log_pedido ON public.laudo_impressao_
 CREATE INDEX IF NOT EXISTS laudo_impressao_log_empresa ON public.laudo_impressao_log (company_id, created_at DESC);
 ALTER TABLE public.laudo_impressao_log ENABLE ROW LEVEL SECURITY;
 REVOKE ALL ON public.laudo_impressao_log FROM PUBLIC, anon, authenticated;
+GRANT ALL ON public.laudo_impressao_log TO service_role;
 
 CREATE OR REPLACE FUNCTION public.laudo_impressao_registrar(_pedido uuid, _acao text, _exames jsonb)
 RETURNS uuid LANGUAGE plpgsql SECURITY DEFINER SET search_path TO 'public' AS $$
