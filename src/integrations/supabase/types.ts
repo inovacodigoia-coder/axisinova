@@ -7676,6 +7676,54 @@ export type Database = {
           },
         ]
       }
+      laudo_impressao_log: {
+        Row: {
+          acao: string
+          attendance_id: string
+          company_id: string
+          created_at: string
+          exames: Json
+          id: string
+          printed_by: string
+          printed_by_name: string | null
+        }
+        Insert: {
+          acao: string
+          attendance_id: string
+          company_id: string
+          created_at?: string
+          exames?: Json
+          id?: string
+          printed_by: string
+          printed_by_name?: string | null
+        }
+        Update: {
+          acao?: string
+          attendance_id?: string
+          company_id?: string
+          created_at?: string
+          exames?: Json
+          id?: string
+          printed_by?: string
+          printed_by_name?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "laudo_impressao_log_attendance_id_fkey"
+            columns: ["attendance_id"]
+            isOneToOne: false
+            referencedRelation: "attendance_orders"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "laudo_impressao_log_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       login_attempts: {
         Row: {
           attempted_at: string
@@ -13316,6 +13364,22 @@ export type Database = {
       lab_solicitar_reteste: {
         Args: { _result_id: string }
         Returns: undefined
+      }
+      laudo_impressao_lista: {
+        Args: { _pedido: string }
+        Returns: {
+          acao: string
+          created_at: string
+          detalhe: string
+          exames: Json
+          id: string
+          tipo: string
+          usuario_nome: string
+        }[]
+      }
+      laudo_impressao_registrar: {
+        Args: { _acao: string; _exames: Json; _pedido: string }
+        Returns: string
       }
       materiais_contexto_resolver: {
         Args: { _id: string; _tipo: string }

@@ -220,3 +220,4 @@
 - [x] Contador zera ao entrar na conversa; nome de quem enviou para todos os usuários.
 - [x] 10 testes SQL novos + 12 antigos; balão conferido no navegador com respostas simuladas; typecheck OK.
 - [ ] Conferir a tela do Chat Interno com login real: não gerei sessão em nome de usuário.
+- [x] Histórico de Impressões do laudo no Detalhes Atendimento (usuário, exames, data/hora)

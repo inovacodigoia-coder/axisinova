@@ -49,6 +49,7 @@ import TrocaBancadaPontualDialog from '@/components/lab/attendance/TrocaBancadaP
 import { useApoioPermissions } from '@/hooks/useApoio'
 import { MudarOrigemDialog } from './MudarOrigemDialog'
 import { AttendanceAuditDialog } from './AttendanceAuditDialog'
+import { LaudoPrintHistoryDialog } from './LaudoPrintHistoryDialog'
 
 import {
   AlertDialog,
@@ -94,6 +95,7 @@ export function AttendanceDetailsModal({ open, onClose, onOrderDeleted, order, p
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
   const [mudarOrigemOpen, setMudarOrigemOpen] = useState(false)
   const [auditOpen, setAuditOpen] = useState(false)
+  const [printHistoryOpen, setPrintHistoryOpen] = useState(false)
   const [origemAtual, setOrigemAtual] = useState<{ id?: string; name?: string }>({ id: order.originId, name: order.originName })
   const { settings, isLoading: settingsLoading } = useLabSettings()
   const companySequenceId = useCompanySequenceId()
@@ -564,6 +566,16 @@ export function AttendanceDetailsModal({ open, onClose, onOrderDeleted, order, p
     };
   }, [labOrder, orderExams, selectedReleasedExamIds, labResults, approvers, guidesState, currentPatient]);
 
+  // Histórico de impressões: registra usuário, exames e horário (no servidor) a cada ação do laudo
+  const registrarImpressaoLaudo = (acao: 'abrir' | 'imprimir' | 'download') => {
+    const exames = orderExams
+      .filter((exam: any) => selectedReleasedExamIds.has(exam.examId || exam.id))
+      .map((exam: any) => ({ id: String(exam.examId || exam.id || ''), codigo: exam.code || '', nome: exam.name || '' }))
+    if (!order.id || exames.length === 0) return
+    ;(supabase.rpc as any)('laudo_impressao_registrar', { _pedido: order.id, _acao: acao, _exames: exames })
+      .then(({ error }: any) => { if (error) console.error('Falha ao registrar impressão do laudo:', error.message) })
+  }
+
 
   return (
     <Dialog open={open} onOpenChange={(o) => !o && onClose()}>
@@ -647,7 +659,7 @@ export function AttendanceDetailsModal({ open, onClose, onOrderDeleted, order, p
                     </DropdownMenuSub>
                     )}
 {pode('atendimento.historico_impressoes') && (
-                    <DropdownMenuItem className="flex items-center gap-2">
+                    <DropdownMenuItem className="flex items-center gap-2" onSelect={() => setPrintHistoryOpen(true)}>
                       <History className="h-4 w-4" />
                       <span>Histórico de Impressões</span>
                     </DropdownMenuItem>
@@ -823,6 +835,7 @@ export function AttendanceDetailsModal({ open, onClose, onOrderDeleted, order, p
                         disabled={!canPrintReleasedReport}
                         onClick={() => {
                           if (canPrintReleasedReport) {
+                            registrarImpressaoLaudo('abrir');
                             setReportPreviewOpen(true);
                           }
                         }}
@@ -1333,6 +1346,7 @@ export function AttendanceDetailsModal({ open, onClose, onOrderDeleted, order, p
           // Check if "Laudo" was selected to show the specific preview modal
           const laudoOption = result.options.find((o: any) => o.id === 'laudo' && o.enabled);
           if (laudoOption) {
+            registrarImpressaoLaudo('abrir');
             setReportPreviewOpen(true);
             return; // Don't proceed to standard attendance receipts if laudo is the primary focus
           }
@@ -1472,6 +1486,7 @@ export function AttendanceDetailsModal({ open, onClose, onOrderDeleted, order, p
           onClose={() => setReportPreviewOpen(false)}
           order={filteredOrderForReport as any}
           onDownload={() => {}}
+          onLaudoAction={registrarImpressaoLaudo}
           hideEditLaudo
         />
       )}
@@ -1704,6 +1719,7 @@ export function AttendanceDetailsModal({ open, onClose, onOrderDeleted, order, p
         />
       )}
       {corrigirColeta && order?.id && <CorrigirHorarioColetaDialog pedidoId={order.id} examId={corrigirColeta.examId} examNome={corrigirColeta.nome} atual={corrigirColeta.atual} onClose={() => setCorrigirColeta(null)} />}
+      {open && printHistoryOpen && pode('atendimento.historico_impressoes') && <LaudoPrintHistoryDialog orderId={order.id} orderNumber={order.orderNumber} onClose={() => setPrintHistoryOpen(false)} />}
       {open && auditOpen && pode('atendimento.auditoria') && <AttendanceAuditDialog orderId={order.id} orderNumber={order.orderNumber} onClose={() => setAuditOpen(false)} />}
       </ScrollArea>
     </DialogContent>
