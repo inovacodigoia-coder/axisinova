@@ -6,6 +6,7 @@ import { Input } from '@/components/ui/input'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Search, Plus, Filter, LayoutGrid, List, Edit2, Trash2, Beaker, AlertTriangle, ChevronLeft, ChevronRight, Upload, Download, Loader2 } from 'lucide-react'
 import { ImportarPlanilhaModal } from '@/components/lab/catalog/ImportarPlanilhaModal'
+import { ExportCatalogDialog } from '@/components/lab/catalog/ExportCatalogDialog'
 import { Badge } from '@/components/ui/badge'
 import { useNavigate } from 'react-router-dom'
 import { cn } from '@/lib/utils'
@@ -56,6 +57,7 @@ export default function LabCatalogPage() {
   const [selectedWorkbench, setSelectedWorkbench] = useState<string>('all')
   const [importModalOpen, setImportModalOpen] = useState(false)
   const [isExporting, setIsExporting] = useState(false)
+  const [exportModalOpen, setExportModalOpen] = useState(false)
   const [applyingRef, setApplyingRef] = useState(false)
 
   const exams = useMemo(() => {
@@ -117,13 +119,14 @@ export default function LabCatalogPage() {
     }
   }
 
-  const handleExport = async () => {
+  const handleExport = async (selectedIds: string[]) => {
     setIsExporting(true)
     try {
       const XLSX = await import('xlsx')
       
+      const wanted = new Set(selectedIds)
       const labExams = registeredExams.filter(e => 
-        e && (String(e.type).toLowerCase() === 'lab' || String(e.type).toLowerCase() === 'laboratório' || String(e.type).toLowerCase() === 'laboratorio')
+        e && wanted.has(e.id) && (String(e.type).toLowerCase() === 'lab' || String(e.type).toLowerCase() === 'laboratório' || String(e.type).toLowerCase() === 'laboratorio')
       )
 
       if (labExams.length === 0) {
@@ -355,7 +358,8 @@ export default function LabCatalogPage() {
       }
 
       XLSX.writeFile(wb, `Catalogo_Exames_${new Date().toISOString().split('T')[0]}.xlsx`)
-      toast.success('Catálogo exportado com sucesso!')
+      toast.success(`Catálogo exportado com sucesso! (${labExams.length} exame(s))`)
+      setExportModalOpen(false)
     } catch (error) {
       console.error('Erro ao exportar:', error)
       toast.error('Erro ao exportar o catálogo')
@@ -380,7 +384,7 @@ export default function LabCatalogPage() {
         <div className="flex gap-2">
           <Button 
             variant="outline" 
-            onClick={handleExport} 
+            onClick={() => setExportModalOpen(true)} 
             disabled={isExporting}
             className="gap-2 border-slate-200 text-slate-700"
           >
@@ -692,6 +696,15 @@ export default function LabCatalogPage() {
           </div>
         )}
       </div>
+
+      <ExportCatalogDialog
+        open={exportModalOpen}
+        onOpenChange={setExportModalOpen}
+        exams={exams}
+        workbenches={(workbenches || []).map(w => ({ id: w.id, name: w.name }))}
+        exporting={isExporting}
+        onExport={handleExport}
+      />
 
       <AlertDialog open={deleteConfirmOpen} onOpenChange={setDeleteConfirmOpen}>
         <AlertDialogContent>
