@@ -1037,6 +1037,13 @@
       "when": 1794279842578,
       "tag": "0147_laudo_impressao_historico",
       "breakpoints": true
+    },
+    {
+      "idx": 148,
+      "version": "7",
+      "when": 1794315398944,
+      "tag": "0148_portal_prazo_adicional",
+      "breakpoints": true
     }
   ]
 }
