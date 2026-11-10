@@ -671,11 +671,11 @@ export default function LabAnalisePage() {
                               return (
                                 <div key={group.protocol} className="space-y-1.5">
                                   <div className="flex items-center justify-between px-1">
-                                    <div className="flex items-center gap-2">
+                                    <div className="flex items-center gap-2 min-w-0">
                                       <Button 
                                         variant="ghost" 
                                         size="icon" 
-                                        className="h-5 w-5 p-0 hover:bg-primary/10 text-primary transition-all"
+                                        className="h-5 w-5 p-0 shrink-0 hover:bg-primary/10 text-primary transition-all"
                                         onClick={() => toggleGroup(group.protocol)}
                                       >
                                         {isExpanded ? (
@@ -686,15 +686,22 @@ export default function LabAnalisePage() {
                                       </Button>
                                       <input
                                         type="checkbox"
-                                        className="rounded border-gray-300 h-3 w-3"
+                                        className="rounded border-gray-300 h-3 w-3 shrink-0"
                                         checked={selectedProtocols.includes(group.protocol)}
                                         onChange={() => toggleProtocolSelection(group.protocol)}
                                       />
-                                      <span className="text-[10px] font-black font-mono text-muted-foreground">Pedido {group.protocol}</span>
+                                      <span className="text-[10px] font-black font-mono text-muted-foreground shrink-0">Pedido {group.protocol}</span>
+                                      <span
+                                        className="text-xs font-bold uppercase text-foreground truncate cursor-pointer"
+                                        title={group.patientName || 'Paciente sem nome'}
+                                        onClick={() => toggleGroup(group.protocol)}
+                                      >
+                                        {group.patientName || 'Paciente sem nome'}
+                                      </span>
                                       {group.exams.some((e: any) => apoioModos[`${e.orderId}:${e.examId}`]) && <Truck className="h-3 w-3 text-muted-foreground" aria-label="Tem exame de apoio" />}
                                       {group.exams.some((e: any) => apoioModos[`${e.orderId}:${e.examId}`]?.alerta) && <AlertTriangle className="h-3 w-3 text-destructive" aria-label="Exame de apoio com alerta" />}
                                     </div>
-                                    <span className="flex items-center gap-1 text-[10px] text-muted-foreground font-bold">
+                                    <span className="flex items-center gap-1 text-[10px] text-muted-foreground font-bold shrink-0">
                                       <Clock className="h-3 w-3" /> 10m
                                     </span>
                                   </div>
