@@ -41,11 +41,13 @@ export interface ExternalAccessRecord {
   specialty: string | null
   last_access_at: string | null
   created_at: string
+  /** Dias somados ao prazo de cada exame dos pedidos novos (só via RPC). */
+  prazo_dias_adicionais?: number
 }
 
 export type ExternalAccessInput = Omit<
   ExternalAccessRecord,
-  'id' | 'company_id' | 'access_code' | 'access_password' | 'password_kind' | 'last_access_at' | 'created_at'
+  'id' | 'company_id' | 'access_code' | 'access_password' | 'password_kind' | 'last_access_at' | 'created_at' | 'prazo_dias_adicionais'
 >
 
 export function generatePassword(): string {
@@ -183,8 +185,16 @@ export function useExternalAccesses() {
     [],
   )
 
+  const setPrazoAdicional = useCallback(async (ids: string[], dias: number) => {
+    const { data, error: err } = await supabase.rpc('portal_prazo_adicional_definir', { _ids: ids, _dias: dias })
+    if (err) throw new Error(err.message)
+    setAccesses((prev) => prev.map((a) => (ids.includes(a.id) ? { ...a, prazo_dias_adicionais: dias } : a)))
+    return Number(data) || 0
+  }, [])
+
   return {
     accesses,
+    setPrazoAdicional,
     loading,
     error,
     companyId,

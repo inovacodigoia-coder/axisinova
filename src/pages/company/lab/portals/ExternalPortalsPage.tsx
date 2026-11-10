@@ -2,7 +2,7 @@ import { useMemo, useState } from 'react';
 import {
   Users, Building2, Stethoscope, User, History,
   Plus, Search, MoreHorizontal, Eye, Trash2, KeyRound,
-  CheckCircle2, PauseCircle, Copy, Loader2, Pencil
+  CheckCircle2, PauseCircle, Copy, Loader2, Pencil, CalendarPlus
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
@@ -25,6 +25,7 @@ import {
 import { NewAccessModal } from '@/components/lab/portals/NewAccessModal';
 import { AccessCredentialsModal } from '@/components/lab/portals/AccessCredentialsModal';
 import { EditAccessOriginsDialog } from '@/components/lab/portals/EditAccessOriginsDialog';
+import { PrazoAdicionalDialog } from '@/components/lab/portals/PrazoAdicionalDialog';
 import { ManagePortalOriginsDialog } from '@/components/lab/portals/ManagePortalOriginsDialog';
 import { useAuth } from '@/context/AuthContext';
 
@@ -39,10 +40,11 @@ export default function ExternalPortalsPage() {
   const [credentialsIsNew, setCredentialsIsNew] = useState(false);
   const [revealed, setRevealed] = useState<Record<string, boolean>>({});
   const [editOriginsFor, setEditOriginsFor] = useState<ExternalAccessRecord | null>(null);
+  const [prazoFor, setPrazoFor] = useState<ExternalAccessRecord | null>(null);
 
   const {
     accesses, loading, companyId, updateAccess,
-    createAccess, regenerateCredentials, setPassword, deleteAccess, toggleStatus,
+    createAccess, regenerateCredentials, setPassword, deleteAccess, toggleStatus, setPrazoAdicional,
   } = useExternalAccesses();
 
   const filteredList = useMemo(() => {
@@ -142,6 +144,7 @@ export default function ExternalPortalsPage() {
               {type === 'medico' && <TableHead>CRM / Esp.</TableHead>}
               <TableHead>E-mail</TableHead>
               <TableHead>Acesso</TableHead>
+              {type !== 'paciente' && <TableHead>Prazo extra</TableHead>}
               <TableHead>Último Acesso</TableHead>
               <TableHead>Status</TableHead>
               <TableHead className="text-right">Ações</TableHead>
@@ -186,6 +189,13 @@ export default function ExternalPortalsPage() {
                   )}
                   <TableCell>{item.email || '—'}</TableCell>
                   <TableCell>{renderAccessCell(item)}</TableCell>
+                  {type !== 'paciente' && (
+                    <TableCell className="text-sm">
+                      {item.prazo_dias_adicionais
+                        ? <Badge variant="outline">+{item.prazo_dias_adicionais} {item.prazo_dias_adicionais === 1 ? 'dia' : 'dias'}</Badge>
+                        : <span className="text-muted-foreground">—</span>}
+                    </TableCell>
+                  )}
                   <TableCell className="text-muted-foreground text-sm">
                     {item.last_access_at ? new Date(item.last_access_at).toLocaleString('pt-BR') : '—'}
                   </TableCell>
@@ -212,6 +222,11 @@ export default function ExternalPortalsPage() {
                         {canEditOrigins && (
                           <DropdownMenuItem onClick={() => setEditOriginsFor(item)}>
                             <Pencil className="mr-2 h-4 w-4" /> Editar acesso
+                          </DropdownMenuItem>
+                        )}
+                        {canEditOrigins && item.type !== 'paciente' && (
+                          <DropdownMenuItem onClick={() => setPrazoFor(item)}>
+                            <CalendarPlus className="mr-2 h-4 w-4" /> Prazo adicional
                           </DropdownMenuItem>
                         )}
                         <DropdownMenuItem onClick={() => handleStatusToggle(item)}>
@@ -294,6 +309,13 @@ export default function ExternalPortalsPage() {
         companyId={companyId}
         onOpenChange={(o) => { if (!o) setEditOriginsFor(null); }}
         onSave={updateAccess}
+      />
+
+      <PrazoAdicionalDialog
+        access={prazoFor}
+        accesses={accesses}
+        onOpenChange={(o) => { if (!o) setPrazoFor(null); }}
+        onSave={setPrazoAdicional}
       />
 
       <NewAccessModal

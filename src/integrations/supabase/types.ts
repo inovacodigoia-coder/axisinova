@@ -5088,6 +5088,7 @@ export type Database = {
           patient_id: string | null
           permissions: Json
           phone: string | null
+          prazo_dias_adicionais: number
           responsible_name: string | null
           specialty: string | null
           status: string
@@ -5114,6 +5115,7 @@ export type Database = {
           patient_id?: string | null
           permissions?: Json
           phone?: string | null
+          prazo_dias_adicionais?: number
           responsible_name?: string | null
           specialty?: string | null
           status?: string
@@ -5140,6 +5142,7 @@ export type Database = {
           patient_id?: string | null
           permissions?: Json
           phone?: string | null
+          prazo_dias_adicionais?: number
           responsible_name?: string | null
           specialty?: string | null
           status?: string
@@ -13474,6 +13477,18 @@ export type Database = {
       portal_origem_editar: {
         Args: { p_codigo: string; p_nome: string; p_origem_id: string }
         Returns: undefined
+      }
+      portal_prazo_adicional_definir: {
+        Args: { _dias: number; _ids: string[] }
+        Returns: number
+      }
+      portal_prazo_adicional_pedido: {
+        Args: { _company: string; _doctor: string; _origin: string }
+        Returns: number
+      }
+      portal_prazo_somar_item: {
+        Args: { _company: string; _dias: number; _ex: Json }
+        Returns: Json
       }
       prescription_create: {
         Args: {
