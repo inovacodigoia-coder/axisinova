@@ -34,4 +34,4 @@
 - Pharmacy catalog writes use farmacia_* RPCs; prescriptions require active medicines; BI freezes cost × delivered qty at dispensing, not administration. Why: one cost source, no double counting.
 - Warehouse: company gates, sector overrides, guarded atomic RPCs; materials reuse BI consumption for frozen costs/negative reversals and shared patient UI, resolving live episodes server-side. Demo is in memory; test fixtures stay isolated. Why: tenant safety and no duplicate consumption.
 - Laudo print history: only laudo_impressao_* RPCs. Why: immutable trail.
-- Portal extra deadline: RPC setter; order trigger adds to new items. Why: every source, no recalc.
+- Portal extra deadline: RPC setter; order trigger adds to new items. Why: no recalc.
