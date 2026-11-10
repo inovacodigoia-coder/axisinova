@@ -1023,6 +1023,13 @@
       "when": 1793994588290,
       "tag": "0145_catalogo_referencia_completa_aplicar",
       "breakpoints": true
+    },
+    {
+      "idx": 146,
+      "version": "7",
+      "when": 1794273005939,
+      "tag": "0146_chat_interno_portal_externo",
+      "breakpoints": true
     }
   ]
 }
