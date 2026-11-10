@@ -8,6 +8,7 @@ import { Badge } from '@/components/ui/badge'
 import { Loader2, Lock, FileText, AlertCircle, Download, X, Printer } from 'lucide-react'
 import { format, parseISO, isValid } from 'date-fns'
 import LaudoDocument from '@/components/lab/LaudoDocument'
+import PortalChatBubble from '@/components/portal/PortalChatBubble'
 import { dataLocalSaoPaulo } from '@/lib/workMapFilters'
 
 interface PortalExam {
@@ -622,6 +623,8 @@ export default function ExternalPortalPage() {
       </main>
 
       <PortalSoftwareFooter />
+
+      {withFilters && <PortalChatBubble code={codigo} password={password} />}
 
       {laudos && laudos.length > 0 && <PortalLaudoModal laudos={laudos} onClose={() => setLaudos(null)} />}
     </div>
