@@ -79,6 +79,7 @@ export default function ChatInternoPage() {
   const fimRef = useRef<HTMLDivElement>(null)
   const canalRef = useRef<ReturnType<typeof supabase.channel> | null>(null)
   const digitandoTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const ativaIdRef = useRef<string | null>(null)
 
   const carregarConversas = useCallback(async () => {
     if (!meuId) return
@@ -127,10 +128,13 @@ export default function ChatInternoPage() {
   }, [marcarLida])
 
   useEffect(() => { if (meuId) void carregarConversas() }, [meuId, carregarConversas])
-  const ativaIdRef = useRef<string | null>(null)
-  useEffect(() => { ativaIdRef.current = ativa?.id ?? null }, [ativa?.id])
   // Ao entrar na conversa/canal, as não lidas zeram na hora (sem precisar mandar mensagem).
-  useEffect(() => { if (ativa) void carregarMensagens(ativa.id) }, [ativa?.id, carregarMensagens])
+  useEffect(() => {
+    ativaIdRef.current = ativa?.id ?? null
+    if (!ativa) return
+    setConversas(prev => prev.map(c => c.id === ativa.id ? { ...c, nao_lidas: 0 } : c))
+    void carregarMensagens(ativa.id)
+  }, [ativa?.id, carregarMensagens])
   useEffect(() => { fimRef.current?.scrollIntoView({ behavior: 'smooth' }) }, [mensagens.length])
 
   // Tempo real: mensagens novas + digitando + presença na conversa aberta
