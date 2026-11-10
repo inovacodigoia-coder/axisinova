@@ -213,3 +213,10 @@
 - [x] Diferencial manual (lâmina) substitui a do aparelho e bloqueia liberação se a soma não fechar 100%; soma do aparelho fora de 100 vira só aviso.
 - [x] Rascunhos/não liberados com bastonete copiado do basófilo limpos (% e absoluto); liberados intactos. 22 testes passaram; typecheck limpo.
 - [ ] Conferir na tela com sessão autorizada: pedido novo do 860 (bastonete vazio, soma 100) e lâmina com 98% (liberação bloqueada). Eritroblastos (NRBC): campo + fórmula de correção opcional ficam a cargo do cadastro (desligada por padrão).
+
+# Chat Interno — Portal Externo
+- [x] Grupo automático por acesso de Parceiro/Local/Médico com o Nome exibido; todos os usuários da empresa participam; acessos antigos ganham o grupo ao abrir o balão.
+- [x] Balão "Falar com o laboratório" no link de acesso (texto, atualização a cada 5 s aberto / 20 s fechado, senha validada no servidor com bloqueio).
+- [x] Contador zera ao entrar na conversa; nome de quem enviou para todos os usuários.
+- [x] 10 testes SQL novos + 12 antigos; balão conferido no navegador com respostas simuladas; typecheck OK.
+- [ ] Conferir a tela do Chat Interno com login real: não gerei sessão em nome de usuário.
