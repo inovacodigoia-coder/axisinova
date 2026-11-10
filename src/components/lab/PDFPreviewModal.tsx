@@ -30,6 +30,8 @@ interface PDFPreviewModalProps {
   onShare?: () => void;
   hideEditLaudo?: boolean;
   viewOnly?: boolean;
+  /** Avisado quando o usuário imprime ou baixa o laudo (histórico de impressões) */
+  onLaudoAction?: (acao: 'imprimir' | 'download') => void;
 }
 
 export default function PDFPreviewModal({
@@ -41,7 +43,8 @@ export default function PDFPreviewModal({
   onEmail,
   onShare,
   hideEditLaudo = false,
-  viewOnly = false
+  viewOnly = false,
+  onLaudoAction,
 }: PDFPreviewModalProps) {
   const { settings: labSettings } = useLabSettings();
   const { user } = useAuth();
@@ -262,6 +265,7 @@ export default function PDFPreviewModal({
   const handlePrintLaudo = React.useCallback(async () => {
     if (enviandoImpressao) return;
     setEnviandoImpressao(true);
+    onLaudoAction?.('imprimir');
     let usouFallback = false;
     const fallback = async () => {
       if (usouFallback) return;
@@ -298,7 +302,7 @@ export default function PDFPreviewModal({
     } finally {
       setEnviandoImpressao(false);
     }
-  }, [enviandoImpressao, onPrint, printLaudoOnly, temPdfApoio, anexarPdfsApoio]);
+  }, [enviandoImpressao, onPrint, printLaudoOnly, temPdfApoio, anexarPdfsApoio, onLaudoAction]);
 
 
 
@@ -327,13 +331,14 @@ export default function PDFPreviewModal({
       link.remove();
       setTimeout(() => URL.revokeObjectURL(url), 4000);
       toast.success('Laudo baixado em PDF.');
+      onLaudoAction?.('download');
     } catch (e: any) {
       console.error('Erro ao gerar PDF do laudo:', e);
       toast.error(e?.message || 'Não foi possível gerar o PDF do laudo.');
     } finally {
       setBaixandoPdf(false);
     }
-  }, [baixandoPdf, protocol, anexarPdfsApoio]);
+  }, [baixandoPdf, protocol, anexarPdfsApoio, onLaudoAction]);
 
   // Container próprio do portal: impede que cliques/teclas dentro do laudo
   // sejam interpretados como "clique fora" pelo modal que abriu esta janela
