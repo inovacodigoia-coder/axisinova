@@ -1,9 +1,9 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { Loader2, MessageSquarePlus, Paperclip, Reply, Search, Send, Trash2, Users, Volume2, VolumeX, X, LogOut, UserPlus, UserMinus } from 'lucide-react'
+import { Globe, Loader2, MessageSquarePlus, Paperclip, Reply, Search, Send, Trash2, Users, Volume2, VolumeX, X, LogOut, UserPlus, UserMinus } from 'lucide-react'
 import { toast } from 'sonner'
 import { supabase } from '@/integrations/supabase/client'
 import { useAuth } from '@/context/AuthContext'
-import { useChatInternoAcesso } from '@/hooks/useChatInterno'
+import { avisarChatInternoLido, useChatInternoAcesso } from '@/hooks/useChatInterno'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog'
@@ -11,7 +11,7 @@ import { cn } from '@/lib/utils'
 
 interface Conversa {
   id: string
-  tipo: 'direta' | 'grupo' | 'setor'
+  tipo: 'direta' | 'grupo' | 'setor' | 'portal'
   nome: string
   criado_por: string | null
   ultima_mensagem_em: string | null
@@ -23,6 +23,7 @@ interface Conversa {
 interface Mensagem {
   id: string
   autor_id: string | null
+  autor_externo: string | null
   autor_nome: string
   tipo: 'texto' | 'anexo' | 'sistema'
   conteudo: string | null
@@ -78,69 +79,62 @@ export default function ChatInternoPage() {
   const fimRef = useRef<HTMLDivElement>(null)
   const canalRef = useRef<ReturnType<typeof supabase.channel> | null>(null)
   const digitandoTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const ativaIdRef = useRef<string | null>(null)
 
   const carregarConversas = useCallback(async () => {
     if (!meuId) return
-    const { data: parts } = await supabase
-      .from('chat_interno_participante')
-      .select('conversa_id, ultima_leitura_em, silenciada, conversa:chat_interno_conversa(id, tipo, nome, criado_por, ultima_mensagem_em)')
-      .eq('usuario_id', meuId)
-    if (!parts) return
-    const outrasIds = parts
-      .filter(p => (p.conversa as any)?.tipo === 'direta')
-      .map(p => (p.conversa as any).id)
-    const { data: outros } = outrasIds.length
-      ? await supabase.from('chat_interno_participante').select('conversa_id, usuario_id').in('conversa_id', outrasIds).neq('usuario_id', meuId)
-      : { data: [] as any[] }
-    const nomesIds = [...new Set((outros ?? []).map(o => o.usuario_id))]
-    const { data: perfis } = nomesIds.length
-      ? await supabase.from('profiles').select('id, full_name').in('id', nomesIds)
-      : { data: [] as any[] }
-    const nomePorId = new Map((perfis ?? []).map(p => [p.id, p.full_name || 'Colega']))
-    const outroPorConversa = new Map((outros ?? []).map(o => [o.conversa_id, o.usuario_id]))
-    const lista: Conversa[] = await Promise.all(parts.map(async p => {
-      const c = p.conversa as any
-      const outro = outroPorConversa.get(c.id)
-      const { count } = await supabase.from('chat_interno_mensagem')
-        .select('id', { count: 'exact', head: true })
-        .eq('conversa_id', c.id).eq('apagada', false).gt('criado_em', p.ultima_leitura_em).neq('autor_id', meuId)
-      return {
-        id: c.id, tipo: c.tipo, criado_por: c.criado_por,
-        nome: c.tipo === 'direta' ? (nomePorId.get(outro ?? '') ?? 'Conversa') : (c.nome ?? 'Grupo'),
-        ultima_mensagem_em: c.ultima_mensagem_em,
-        nao_lidas: count ?? 0,
-        silenciada: p.silenciada,
-      }
+    // Lista, nome da conversa direta e não lidas vêm prontos do servidor (vale para qualquer usuário).
+    const { data, error } = await supabase.rpc('chat_interno_minhas_conversas')
+    if (error || !data) return
+    const lista: Conversa[] = (data as any[]).map(c => ({
+      id: c.id, tipo: c.tipo, nome: c.nome, criado_por: c.criado_por,
+      ultima_mensagem_em: c.ultima_mensagem_em, nao_lidas: c.nao_lidas ?? 0, silenciada: c.silenciada,
     }))
-    lista.sort((a, b) => (b.ultima_mensagem_em ?? '').localeCompare(a.ultima_mensagem_em ?? ''))
-    setConversas(lista)
+    // A conversa aberta já está sendo lida: não mostra contador nela.
+    setConversas(prev => {
+      const online = new Map(prev.map(c => [c.id, c.online]))
+      return lista.map(c => ({ ...c, online: online.get(c.id), nao_lidas: c.id === ativaIdRef.current ? 0 : c.nao_lidas }))
+    })
     setAtiva(prev => prev ? (lista.find(c => c.id === prev.id) ?? prev) : prev)
   }, [meuId])
 
+  const marcarLida = useCallback(async (conversaId: string) => {
+    setConversas(prev => prev.map(c => c.id === conversaId ? { ...c, nao_lidas: 0 } : c))
+    await supabase.rpc('chat_interno_marcar_lida', { p_conversa: conversaId })
+    avisarChatInternoLido()
+  }, [])
+
   const carregarMensagens = useCallback(async (conversaId: string) => {
     const { data } = await supabase.from('chat_interno_mensagem')
-      .select('id, autor_id, tipo, conteudo, anexo_path, anexo_nome, anexo_tipo, resposta_id, apagada, criado_em')
+      .select('id, autor_id, autor_externo, tipo, conteudo, anexo_path, anexo_nome, anexo_tipo, resposta_id, apagada, criado_em')
       .eq('conversa_id', conversaId).order('criado_em', { ascending: true }).limit(300)
     const autores = [...new Set((data ?? []).map(m => m.autor_id).filter(Boolean))] as string[]
+    // Nomes pelo servidor: qualquer usuário (não só admin) vê quem enviou cada mensagem.
     const { data: perfis } = autores.length
-      ? await supabase.from('profiles').select('id, full_name').in('id', autores)
-      : { data: [] as any[] }
-    const nomePorId = new Map((perfis ?? []).map(p => [p.id, p.full_name || 'Colega']))
+      ? await supabase.rpc('chat_interno_nomes', { p_ids: autores })
+      : { data: [] as { id: string; nome: string }[] }
+    const nomePorId = new Map(((perfis ?? []) as { id: string; nome: string }[]).map(p => [p.id, p.nome]))
     const porId = new Map((data ?? []).map(m => [m.id, m]))
     setMensagens((data ?? []).map((m): Mensagem => {
       const resp = m.resposta_id ? porId.get(m.resposta_id) : null
       return {
         ...m,
         tipo: m.tipo as Mensagem['tipo'],
-        autor_nome: m.autor_id ? (nomePorId.get(m.autor_id) ?? 'Colega') : 'Sistema',
+        autor_nome: m.autor_id ? (nomePorId.get(m.autor_id) ?? 'Colega') : (m.autor_externo ? `${m.autor_externo} (portal)` : 'Sistema'),
         resposta_preview: resp ? (resp.apagada ? 'mensagem apagada' : (resp.conteudo ?? resp.anexo_nome ?? '')) : null,
       }
     }))
-    void supabase.rpc('chat_interno_marcar_lida', { p_conversa: conversaId })
-  }, [])
+    await marcarLida(conversaId)
+  }, [marcarLida])
 
   useEffect(() => { if (meuId) void carregarConversas() }, [meuId, carregarConversas])
-  useEffect(() => { if (ativa) void carregarMensagens(ativa.id) }, [ativa?.id, carregarMensagens])
+  // Ao entrar na conversa/canal, as não lidas zeram na hora (sem precisar mandar mensagem).
+  useEffect(() => {
+    ativaIdRef.current = ativa?.id ?? null
+    if (!ativa) return
+    setConversas(prev => prev.map(c => c.id === ativa.id ? { ...c, nao_lidas: 0 } : c))
+    void carregarMensagens(ativa.id)
+  }, [ativa?.id, carregarMensagens])
   useEffect(() => { fimRef.current?.scrollIntoView({ behavior: 'smooth' }) }, [mensagens.length])
 
   // Tempo real: mensagens novas + digitando + presença na conversa aberta
@@ -150,9 +144,12 @@ export default function ChatInternoPage() {
       .channel(`chat-interno-msgs-${Math.random().toString(36).slice(2)}`)
       .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'chat_interno_mensagem' }, payload => {
         const m = payload.new as any
-        void carregarConversas()
-        if (ativa && m.conversa_id === ativa.id) void carregarMensagens(ativa.id)
-        if (m.autor_id && m.autor_id !== meuId && (!ativa || m.conversa_id !== ativa.id)) {
+        if (ativa && m.conversa_id === ativa.id) {
+          void carregarMensagens(ativa.id).then(() => carregarConversas())
+        } else {
+          void carregarConversas()
+        }
+        if (m.tipo !== 'sistema' && m.autor_id !== meuId && (!ativa || m.conversa_id !== ativa.id)) {
           const conv = conversas.find(c => c.id === m.conversa_id)
           if (conv && !conv.silenciada) { tocarSom(); toast.message(`Nova mensagem em ${conv.nome}`) }
         }
@@ -260,8 +257,8 @@ export default function ChatInternoPage() {
     if (!ativa) return
     const { data } = await supabase.from('chat_interno_participante').select('usuario_id').eq('conversa_id', ativa.id)
     const ids = (data ?? []).map(p => p.usuario_id)
-    const { data: perfis } = ids.length ? await supabase.from('profiles').select('id, full_name').in('id', ids) : { data: [] as any[] }
-    setParticipantes((perfis ?? []).map(p => ({ id: p.id, nome: p.full_name || 'Colega' })))
+    const { data: perfis } = ids.length ? await supabase.rpc('chat_interno_nomes', { p_ids: ids }) : { data: [] as Colega[] }
+    setParticipantes(((perfis ?? []) as Colega[]).map(p => ({ id: p.id, nome: p.nome || 'Colega' })))
     setPainelGrupo(true)
   }
 
@@ -311,11 +308,11 @@ export default function ChatInternoPage() {
             <button key={c.id} onClick={() => setAtiva(c)}
               className={cn('flex w-full items-center gap-3 border-b border-border/50 px-4 py-3 text-left hover:bg-muted/50', ativa?.id === c.id && 'bg-muted')}>
               <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full gradient-bg text-sm font-bold text-white">
-                {c.tipo === 'direta' ? c.nome.charAt(0).toUpperCase() : <Users className="h-4 w-4" />}
+                {c.tipo === 'direta' ? c.nome.charAt(0).toUpperCase() : c.tipo === 'portal' ? <Globe className="h-4 w-4" /> : <Users className="h-4 w-4" />}
               </div>
               <div className="min-w-0 flex-1">
                 <p className="truncate text-sm font-medium">{c.nome}</p>
-                <p className="text-xs text-muted-foreground">{c.tipo === 'direta' ? 'Conversa direta' : c.tipo === 'setor' ? 'Canal do setor' : 'Grupo'}</p>
+                <p className="text-xs text-muted-foreground">{c.tipo === 'direta' ? 'Conversa direta' : c.tipo === 'setor' ? 'Canal do setor' : c.tipo === 'portal' ? 'Portal externo' : 'Grupo'}</p>
               </div>
               {c.silenciada && <VolumeX className="h-3.5 w-3.5 text-muted-foreground" />}
               {c.nao_lidas > 0 && <span className="rounded-full bg-primary px-1.5 py-0.5 text-[10px] font-bold text-primary-foreground">{c.nao_lidas}</span>}
@@ -336,7 +333,7 @@ export default function ChatInternoPage() {
                 <div>
                   <p className="text-sm font-semibold">{ativa.nome}</p>
                   <p className="text-xs text-muted-foreground">
-                    {digitando ? `${digitando} está digitando…` : ativa.tipo === 'direta' ? (ativa.online ? 'online agora' : 'conversa direta') : ativa.tipo === 'setor' ? 'canal do setor' : 'grupo'}
+                    {digitando ? `${digitando} está digitando…` : ativa.tipo === 'direta' ? (ativa.online ? 'online agora' : 'conversa direta') : ativa.tipo === 'setor' ? 'canal do setor' : ativa.tipo === 'portal' ? 'portal externo · todos da equipe veem' : 'grupo'}
                   </p>
                 </div>
               </div>
@@ -359,7 +356,7 @@ export default function ChatInternoPage() {
                     <p className="rounded-full bg-muted px-3 py-1 text-xs text-muted-foreground">{m.conteudo}</p>
                   ) : (
                     <div className={cn('group max-w-[75%] rounded-2xl px-3 py-2 text-sm', m.autor_id === meuId ? 'gradient-bg text-white' : 'bg-muted')}>
-                      {m.autor_id !== meuId && ativa.tipo !== 'direta' && <p className="mb-0.5 text-xs font-semibold opacity-70">{m.autor_nome}</p>}
+                      {m.autor_id !== meuId && <p className="mb-0.5 text-xs font-semibold opacity-70">{m.autor_nome}</p>}
                       {m.resposta_preview && (
                         <p className="mb-1 rounded-lg border-l-2 border-current/40 bg-black/10 px-2 py-1 text-xs opacity-80">{m.resposta_preview}</p>
                       )}

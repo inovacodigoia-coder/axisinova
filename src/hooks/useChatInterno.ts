@@ -21,6 +21,13 @@ export function useChatInternoAcesso() {
 }
 
 /** Total de mensagens não lidas (badge do menu), atualizado em tempo real. */
+/** Evento disparado pela tela do chat ao marcar uma conversa como lida (atualiza o badge na hora). */
+export const CHAT_INTERNO_LIDO_EVENTO = 'chat-interno-lido'
+
+export function avisarChatInternoLido() {
+  window.dispatchEvent(new Event(CHAT_INTERNO_LIDO_EVENTO))
+}
+
 export function useChatInternoNaoLidas(ativo: boolean) {
   const [total, setTotal] = useState(0)
   const recarregar = useCallback(async () => {
@@ -36,7 +43,12 @@ export function useChatInternoNaoLidas(ativo: boolean) {
         void recarregar()
       })
       .subscribe()
-    return () => { void supabase.removeChannel(canal) }
+    const aoLer = () => { void recarregar() }
+    window.addEventListener(CHAT_INTERNO_LIDO_EVENTO, aoLer)
+    return () => {
+      window.removeEventListener(CHAT_INTERNO_LIDO_EVENTO, aoLer)
+      void supabase.removeChannel(canal)
+    }
   }, [ativo, recarregar])
   return total
 }

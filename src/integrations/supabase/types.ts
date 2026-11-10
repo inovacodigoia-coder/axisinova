@@ -3395,6 +3395,8 @@ export type Database = {
           company_id: string
           criado_em: string
           criado_por: string | null
+          external_access_id: string | null
+          externo_leitura_em: string
           id: string
           nome: string | null
           par_chave: string | null
@@ -3406,6 +3408,8 @@ export type Database = {
           company_id: string
           criado_em?: string
           criado_por?: string | null
+          external_access_id?: string | null
+          externo_leitura_em?: string
           id?: string
           nome?: string | null
           par_chave?: string | null
@@ -3417,6 +3421,8 @@ export type Database = {
           company_id?: string
           criado_em?: string
           criado_por?: string | null
+          external_access_id?: string | null
+          externo_leitura_em?: string
           id?: string
           nome?: string | null
           par_chave?: string | null
@@ -3432,6 +3438,13 @@ export type Database = {
             referencedRelation: "companies"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "chat_interno_conversa_external_access_id_fkey"
+            columns: ["external_access_id"]
+            isOneToOne: false
+            referencedRelation: "external_accesses"
+            referencedColumns: ["id"]
+          },
         ]
       }
       chat_interno_mensagem: {
@@ -3441,6 +3454,7 @@ export type Database = {
           anexo_tamanho: number | null
           anexo_tipo: string | null
           apagada: boolean
+          autor_externo: string | null
           autor_id: string | null
           company_id: string
           conteudo: string | null
@@ -3456,6 +3470,7 @@ export type Database = {
           anexo_tamanho?: number | null
           anexo_tipo?: string | null
           apagada?: boolean
+          autor_externo?: string | null
           autor_id?: string | null
           company_id: string
           conteudo?: string | null
@@ -3471,6 +3486,7 @@ export type Database = {
           anexo_tamanho?: number | null
           anexo_tipo?: string | null
           apagada?: boolean
+          autor_externo?: string | null
           autor_id?: string | null
           company_id?: string
           conteudo?: string | null
@@ -12492,6 +12508,14 @@ export type Database = {
       can_view_support_board: { Args: { _board_id: string }; Returns: boolean }
       carregar_feriados_nacionais: { Args: { _ano: number }; Returns: number }
       catalogo_referencia_completa_aplicar: { Args: never; Returns: number }
+      chat_interno__portal_garantir: {
+        Args: { p_access: string }
+        Returns: string
+      }
+      chat_interno__portal_membros: {
+        Args: { p_company: string; p_conversa: string }
+        Returns: undefined
+      }
       chat_interno__sistema: {
         Args: { p_company: string; p_conversa: string; p_texto: string }
         Returns: undefined
@@ -12542,7 +12566,26 @@ export type Database = {
         Returns: undefined
       }
       chat_interno_meu_acesso: { Args: never; Returns: Json }
+      chat_interno_minhas_conversas: {
+        Args: never
+        Returns: {
+          criado_por: string
+          id: string
+          nao_lidas: number
+          nome: string
+          silenciada: boolean
+          tipo: string
+          ultima_mensagem_em: string
+        }[]
+      }
       chat_interno_nao_lidas: { Args: never; Returns: number }
+      chat_interno_nomes: {
+        Args: { p_ids: string[] }
+        Returns: {
+          id: string
+          nome: string
+        }[]
+      }
       chat_interno_participa: {
         Args: { p_conversa: string; p_usuario: string }
         Returns: boolean
@@ -13339,6 +13382,18 @@ export type Database = {
       pharmacy_dispense: {
         Args: { _dispensation_id: string }
         Returns: undefined
+      }
+      portal__chat_validar: {
+        Args: { p_code: string; p_password: string }
+        Returns: Json
+      }
+      portal_chat_abrir: {
+        Args: { p_code: string; p_marcar_lida?: boolean; p_password: string }
+        Returns: Json
+      }
+      portal_chat_enviar: {
+        Args: { p_code: string; p_conteudo: string; p_password: string }
+        Returns: Json
       }
       portal_fetch: {
         Args: { p_code: string; p_password: string }
