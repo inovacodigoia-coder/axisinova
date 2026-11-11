@@ -1051,6 +1051,13 @@
       "when": 1794399340320,
       "tag": "0149_portal_origem_qualquer_status",
       "breakpoints": true
+    },
+    {
+      "idx": 150,
+      "version": "7",
+      "when": 1794400386545,
+      "tag": "0150_portal_status_recoleta",
+      "breakpoints": true
     }
   ]
 }
