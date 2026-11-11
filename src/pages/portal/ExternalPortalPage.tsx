@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
-import { Loader2, Lock, FileText, AlertCircle, Download, X, Printer } from 'lucide-react'
+import { Loader2, Lock, FileText, AlertCircle, Download, X, Printer, RefreshCw } from 'lucide-react'
 import { format, parseISO, isValid } from 'date-fns'
 import LaudoDocument from '@/components/lab/LaudoDocument'
 import PortalChatBubble from '@/components/portal/PortalChatBubble'
@@ -62,6 +62,7 @@ const ORDER_STATUS_LABELS: Record<string, string> = {
 }
 
 const EXAM_STATUS_LABELS: Record<string, string> = {
+  open: 'Aberto',
   pending: 'Aguardando',
   typed: 'Em Análise',
   digitized: 'Em Análise',
@@ -386,6 +387,53 @@ export default function ExternalPortalPage() {
     setLoading(false)
   }
 
+  // Atualização automática: o portal acompanha o que muda no Detalhes Atendimento e na
+  // Digitação de Resultados sem precisar sair e entrar de novo (a cada 30 s com a página
+  // visível, ao voltar para a aba e pelo botão Atualizar).
+  const [refreshing, setRefreshing] = useState(false)
+  const [updatedAt, setUpdatedAt] = useState<Date | null>(null)
+  const refreshingRef = useRef(false)
+  const loggedIn = !!data
+  const refresh = async () => {
+    if (refreshingRef.current) return
+    refreshingRef.current = true
+    setRefreshing(true)
+    try {
+      const { data: res, error: err } = await supabase.rpc('portal_fetch', {
+        p_code: codigo,
+        p_password: password,
+      } as never)
+      if (err || !res) return
+      const payload = res as unknown as PortalPayload
+      if (payload.ok) {
+        setData(payload)
+        setUpdatedAt(new Date())
+      } else if (payload.error && payload.error !== 'locked') {
+        // Acesso desativado ou senha trocada: volta para a tela de senha
+        setData(null)
+        setError(ERROR_MESSAGES[payload.error] || 'Não foi possível acessar.')
+      }
+    } finally {
+      refreshingRef.current = false
+      setRefreshing(false)
+    }
+  }
+  const refreshRef = useRef(refresh)
+  refreshRef.current = refresh
+  useEffect(() => {
+    if (!loggedIn) return
+    setUpdatedAt((d) => d ?? new Date())
+    const tick = () => { if (document.visibilityState === 'visible') refreshRef.current() }
+    const id = window.setInterval(tick, 30000)
+    document.addEventListener('visibilitychange', tick)
+    window.addEventListener('focus', tick)
+    return () => {
+      window.clearInterval(id)
+      document.removeEventListener('visibilitychange', tick)
+      window.removeEventListener('focus', tick)
+    }
+  }, [loggedIn])
+
   if (checking) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-muted/30">
@@ -467,6 +515,12 @@ export default function ExternalPortalPage() {
         <div className="max-w-3xl mx-auto px-4 py-3">
           <PortalBrandHeader branding={data.branding ?? branding} fallback={data.company?.name ?? null} />
           <p className="text-sm text-muted-foreground text-center">{data.access?.name}</p>
+          <div className="mt-1 flex items-center justify-center gap-2 text-[11px] text-muted-foreground">
+            {updatedAt && <span>Atualizado às {format(updatedAt, 'HH:mm:ss')}</span>}
+            <Button size="sm" variant="ghost" className="h-6 px-2 text-[11px]" disabled={refreshing} onClick={() => refresh()}>
+              <RefreshCw className={`h-3 w-3 mr-1 ${refreshing ? 'animate-spin' : ''}`} /> Atualizar
+            </Button>
+          </div>
         </div>
       </header>
 
