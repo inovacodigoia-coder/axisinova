@@ -2,7 +2,7 @@ import { createContext, useCallback, useContext, useEffect, useRef, useState, ty
 import type { AuthUser, UserRole } from '@/types/auth.types'
 import { getRedirectByRole } from '@/mocks/users.mock'
 import { supabase } from '@/integrations/supabase/client'
-import { checkLockout, recordLoginAttempt, lockoutMessage, GENERIC_LOGIN_ERROR, withTimeout } from '@/services/authGuard'
+import { checkLockout, recordLoginAttempt, lockoutMessage, GENERIC_LOGIN_ERROR, withTimeout, retryTransient, isTransientAuthFailure } from '@/services/authGuard'
 
 const TOKEN_KEY = 'axis_inova_token'
 const USER_KEY = 'axis_inova_user'
@@ -13,6 +13,8 @@ interface LoginResult {
   redirectTo?: string
   /** Segundos restantes de bloqueio, quando aplicável */
   lockedFor?: number
+  /** Falha de conexão/servidor — não conta como tentativa de senha */
+  networkError?: boolean
 }
 
 interface AuthContextValue {
@@ -80,26 +82,27 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
 
       // 2. Backend auth
-      const authRes = await withTimeout(supabase.auth.signInWithPassword({ email: identifier, password }), 20000)
-      if (!authRes) return { success: false, error: NET_ERROR }
+      // Falhas passageiras do servidor (500 / sem resposta) são repetidas sozinhas antes de mostrar erro.
+      const authRes = await retryTransient(() => supabase.auth.signInWithPassword({ email: identifier, password }))
+      if (!authRes) return { success: false, error: NET_ERROR, networkError: true }
       const { data: authData, error: authError } = authRes
       if (authError && authError.status !== 400) {
         console.error('login error', authError.status, authError.message)
-        if (!authError.status || authError.status >= 500) return { success: false, error: NET_ERROR }
+        if (isTransientAuthFailure(authRes)) return { success: false, error: NET_ERROR, networkError: true }
       }
 
       if (authData.user) {
-        const profRes = await withTimeout(
-          Promise.resolve(supabase
+        const profRes = await retryTransient(
+          () => Promise.resolve(supabase
             .from('profiles')
             .select('full_name, role, company_id, is_active, must_change_password, is_admin')
             .eq('id', authData.user.id)
-            .single()),
-          15000,
-        )
-        if (!profRes) {
+            .single()) as any,
+          { timeouts: [10000, 10000], delays: [1500] },
+        ) as any
+        if (!profRes || isTransientAuthFailure(profRes)) {
           await supabase.auth.signOut().catch(() => {})
-          return { success: false, error: NET_ERROR }
+          return { success: false, error: NET_ERROR, networkError: true }
         }
         const profile = profRes.data
 
@@ -157,7 +160,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       return { success: false, error: GENERIC_LOGIN_ERROR }
     } catch (err) {
       console.error('login failed', err)
-      return { success: false, error: NET_ERROR }
+      return { success: false, error: NET_ERROR, networkError: true }
     }
   }, [])
 
