@@ -1058,6 +1058,13 @@
       "when": 1794400386545,
       "tag": "0150_portal_status_recoleta",
       "breakpoints": true
+    },
+    {
+      "idx": 151,
+      "version": "7",
+      "when": 1794401039980,
+      "tag": "0151_portal_recoleta_info",
+      "breakpoints": true
     }
   ]
 }
