@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
-import { Loader2, Lock, FileText, AlertCircle, Download, X, Printer, RefreshCw } from 'lucide-react'
+import { Loader2, Lock, FileText, AlertCircle, AlertTriangle, Download, X, Printer, RefreshCw } from 'lucide-react'
 import { format, parseISO, isValid } from 'date-fns'
 import LaudoDocument from '@/components/lab/LaudoDocument'
 import PortalChatBubble from '@/components/portal/PortalChatBubble'
@@ -18,6 +18,7 @@ interface PortalExam {
   status: string
   released_at: string | null
   blocked?: boolean
+  recollection?: { requestedAt?: string | null } | null
 }
 
 interface PortalOrder {
@@ -611,7 +612,12 @@ export default function ExternalPortalPage() {
 
               {order.exams.length > 0 && (
                 <div className="border rounded-md divide-y">
-                  {order.exams.map((exam) => (
+                  {order.exams.map((exam) => {
+                    const recRequestedAt = /^\d{4}-\d{2}-\d{2}/.test(exam.recollection?.requestedAt || '')
+                      ? exam.recollection!.requestedAt
+                      : null
+                    const showRec = withFilters && !exam.blocked && !!exam.recollection
+                    return (
                     <div key={exam.id} className="flex items-start justify-between gap-3 px-3 py-2">
                       <div className="min-w-0">
                         <span className="text-sm">{exam.name || exam.code}</span>
@@ -621,13 +627,26 @@ export default function ExternalPortalPage() {
                           </p>
                         )}
                       </div>
-                      <div className="flex items-center gap-2 shrink-0">
+                      <div className="flex flex-wrap items-center justify-end gap-1.5 shrink-0 max-w-[62%]">
                         {exam.blocked ? (
                           <Badge variant="outline" className="text-[11px] bg-muted text-muted-foreground">
                             Indisponível
                           </Badge>
                         ) : (
                           <>
+                            {showRec && (
+                              <Badge
+                                variant="outline"
+                                className="text-[11px] gap-1 bg-amber-100 text-amber-700 border-amber-200"
+                                title={recRequestedAt ? `Recoleta solicitada em ${fmt(recRequestedAt)}` : 'Recoleta solicitada'}
+                              >
+                                <AlertTriangle className="h-3 w-3 shrink-0" />
+                                Recoleta solicitada
+                                {recRequestedAt && (
+                                  <span className="font-normal opacity-80">· {fmt(recRequestedAt)}</span>
+                                )}
+                              </Badge>
+                            )}
                             <Badge variant="outline" className={`text-[11px] ${statusTone(exam.status)}`}>
                               {EXAM_STATUS_LABELS[exam.status] || exam.status}
                             </Badge>
