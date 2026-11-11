@@ -1,4 +1,5 @@
 import { displayReference } from '@/lib/examReferenceMode';
+import { flagReference, resultFlag } from '@/lib/resultFlag';
 import { useState, useMemo, useEffect, useCallback, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { buildExamParams, catalogKey, findCatalogExam, evaluateFormula, normalizeText, resolveReference } from '@/utils/examParameters';
@@ -587,7 +588,7 @@ export function ResultEntryModal({
           value,
           unit: p.unit || null,
           reference: apoioRefs[`${exam.id}_${p.id}`] || displayReference(p, resolveReference(p, value)) || null,
-          status: getResultStatus(value, resolveReference(p, value)).label || null,
+          status: getResultStatus(value, apoioRefs[`${exam.id}_${p.id}`] || flagReference(p, resolveReference(p, value))).label || null,
           sort_order: idx,
           // Preserva a origem quando o valor veio do equipamento
           source: instrumentKeys.has(`${exam.id}_${p.id}`) ? 'instrument' : 'manual',
@@ -953,7 +954,7 @@ export function ResultEntryModal({
             results: getParams(e).map((p: any) => {
               const value = getParamValue(e, p);
               const reference = displayReference(p, resolveReference(p, value));
-              const st = getResultStatus(value, resolveReference(p, value));
+              const st = getResultStatus(value, flagReference(p, resolveReference(p, value)));
               return {
                 parameterId: String(p.id),
                 parameterCode: p.name,
@@ -1470,55 +1471,11 @@ export function ResultEntryModal({
   }, [filters, workbenchNames, establishmentNames]);
 
   const getResultStatus = (value: string, reference: string) => {
-    if (!value || !reference) return { label: '', color: '', bgColor: 'bg-white' };
-    
-    // Remove separator de milhares e normaliza decimal para ponto
-    const normalizedValue = value.replace(/\./g, '').replace(',', '.');
-    const numValue = parseFloat(normalizedValue);
-    if (isNaN(numValue)) return { label: '', color: '', bgColor: 'bg-white' };
-
-    // Limpa a referência para facilitar o parsing (remove espaços extras)
-    const cleanRef = reference.replace(/\s+/g, ' ').trim();
-
-    // Suporte a faixas como "20 a 60", "20.5 a 60.1", "20,5 a 60,1"
-    const rangeMatch = cleanRef.match(/([\d.,]+)\s+(?:a|at[ée])\s+([\d.,]+)/i);
-    // Suporte a menor que: "< 20", "<= 20", "menor que 20"
-    const lessMatch = cleanRef.match(/(?:<|<=|menor\s+que)\s*([\d.,]+)/i);
-    // Suporte a maior que: "> 20", ">= 20", "maior que 20"
-    const greaterMatch = cleanRef.match(/(?:>|>=|maior\s+que)\s*([\d.,]+)/i);
-
-    const parseRefValue = (val: string) => parseFloat(val.replace(',', '.'));
-
-    if (rangeMatch) {
-      const min = parseRefValue(rangeMatch[1]);
-      const max = parseRefValue(rangeMatch[2]);
-      if (numValue < min) return { label: 'Baixo', color: 'text-amber-600', bgColor: 'bg-amber-400/20' };
-      if (numValue > max) return { label: 'Alto', color: 'text-rose-600', bgColor: 'bg-rose-500/10' };
-      return { label: 'Normal', color: 'text-emerald-600', bgColor: 'bg-emerald-500/10' };
-    }
-    
-    if (lessMatch) {
-      const max = parseRefValue(lessMatch[1]);
-      if (numValue > max) return { label: 'Alto', color: 'text-rose-600', bgColor: 'bg-rose-500/10' };
-      return { label: 'Normal', color: 'text-emerald-600', bgColor: 'bg-emerald-500/10' };
-    }
-
-    if (greaterMatch) {
-      const min = parseRefValue(greaterMatch[1]);
-      if (numValue < min) return { label: 'Baixo', color: 'text-amber-600', bgColor: 'bg-amber-400/20' };
-      return { label: 'Normal', color: 'text-emerald-600', bgColor: 'bg-emerald-500/10' };
-    }
-
-    // Fallback para match genérico de dois números em qualquer formato
-    const parts = cleanRef.match(/([0-9]+(?:[.,][0-9]+)?)/g);
-    if (parts && parts.length >= 2) {
-      const min = parseRefValue(parts[0]);
-      const max = parseRefValue(parts[1]);
-      if (numValue < min) return { label: 'Baixo', color: 'text-amber-600', bgColor: 'bg-amber-400/20' };
-      if (numValue > max) return { label: 'Alto', color: 'text-rose-600', bgColor: 'bg-rose-500/10' };
-    }
-    
-    return { label: 'Normal', color: 'text-emerald-600', bgColor: 'bg-emerald-500/10' };
+    const flag = resultFlag(value, reference);
+    if (flag === 'Baixo') return { label: 'Baixo', color: 'text-amber-600', bgColor: 'bg-amber-400/20' };
+    if (flag === 'Alto') return { label: 'Alto', color: 'text-rose-600', bgColor: 'bg-rose-500/10' };
+    if (flag === 'Normal') return { label: 'Normal', color: 'text-emerald-600', bgColor: 'bg-emerald-500/10' };
+    return { label: '', color: '', bgColor: 'bg-white' };
   };
 
   /* ---------- Navegação paciente a paciente ---------- */
@@ -2111,7 +2068,7 @@ export function ResultEntryModal({
                             const simpleRef = apoioRefs[`${exam.id}_${param.id}`] || resolveReference(param, value);
                             const reference = apoioRefs[`${exam.id}_${param.id}`] ? simpleRef : displayReference(param, simpleRef);
                             const fullRef = reference !== simpleRef;
-                            const status = getResultStatus(value, simpleRef);
+                            const status = getResultStatus(value, apoioRefs[`${exam.id}_${param.id}`] ? simpleRef : flagReference(param, simpleRef));
                             
                             return (
                               <div key={param.id} className={cn(

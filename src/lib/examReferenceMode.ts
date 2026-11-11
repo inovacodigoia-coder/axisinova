@@ -2,8 +2,8 @@
  * Referência do parâmetro em dois modos:
  * - simples: texto da faixa escolhida (idade/sexo/jejum), como sempre foi.
  * - completa: bloco de texto livre (tabelas, notas, fonte) mostrado inteiro
- *   na digitação e no laudo. As faixas continuam sendo usadas para marcar
- *   Alto/Baixo, então o modo completo não muda a sinalização.
+ *   na digitação e no laudo. Alto/Baixo segue a faixa do texto quando ele
+ *   tem uma faixa só (ver resultFlag.ts); com tabela, usa as faixas.
  */
 export type ReferenceMode = 'simples' | 'completa'
 
