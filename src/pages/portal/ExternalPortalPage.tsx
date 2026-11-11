@@ -671,7 +671,8 @@ export default function ExternalPortalPage() {
                         )}
                       </div>
                     </div>
-                  ))}
+                    )
+                  })}
                 </div>
               )}
             </CardContent>
