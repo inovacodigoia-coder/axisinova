@@ -85,7 +85,7 @@ describe('Portal Externo mostra Recoleta solicitada para Parceiro/Local/Médico'
     expect(lipase.recollection).toEqual({ requestedAt: 'ontem' })
   })
 
-  it('exame cancelado não ganha marca', async () => {
+  it('exame cancelado continua Cancelado mesmo com recoleta na guia', async () => {
     await pedido([{ id: 'e1', name: 'Ureia', status: 'cancelled', recollection: rec }])
     const [ureia] = await exames('L1')
     expect(ureia.status).toBe('cancelled')
