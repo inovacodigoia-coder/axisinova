@@ -103,11 +103,12 @@ export default function LoginPage() {
       try {
         result = await login(email, password)
       } catch {
-        result = { success: false, error: 'Não foi possível conectar ao servidor. Tente novamente.' }
+        result = { success: false, error: 'Não foi possível conectar ao servidor. Tente novamente.', networkError: true }
       }
 
       if (!result.success) {
-        setFailCount((c) => c + 1)
+        // Falha de conexão não é senha errada: não conta como tentativa.
+        if (!result.networkError) setFailCount((c) => c + 1)
         setError(result.error || 'Usuário ou senha inválidos')
         setShake(true)
         setTimeout(() => setShake(false), 400)

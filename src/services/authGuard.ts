@@ -40,3 +40,31 @@ export function checkLockout(identifier: string) {
 export function recordLoginAttempt(identifier: string, success: boolean) {
   return callGuard({ action: 'record', identifier, success })
 }
+
+/** Falha passageira do servidor: sem resposta (tempo esgotado), sem status ou status 5xx. */
+export function isTransientAuthFailure(res: { error?: { status?: number } | null } | null): boolean {
+  if (!res) return true
+  const err = res.error
+  if (!err) return false
+  return !err.status || err.status >= 500
+}
+
+/**
+ * Repete automaticamente a chamada quando o servidor falha por um instante
+ * (ex.: "context canceled" 500 ou tempo esgotado). Erro de senha (400) nunca é repetido.
+ */
+export async function retryTransient<T extends { error?: { status?: number } | null }>(
+  attempt: () => Promise<T>,
+  opts: { timeouts?: number[]; delays?: number[]; sleep?: (ms: number) => Promise<void> } = {},
+): Promise<T | null> {
+  const timeouts = opts.timeouts ?? [12000, 10000, 10000]
+  const delays = opts.delays ?? [1500, 3000]
+  const sleep = opts.sleep ?? ((ms: number) => new Promise<void>((r) => setTimeout(r, ms)))
+  let last: T | null = null
+  for (let i = 0; i < timeouts.length; i++) {
+    last = await withTimeout(attempt(), timeouts[i])
+    if (!isTransientAuthFailure(last)) return last
+    if (i < timeouts.length - 1) await sleep(delays[i] ?? delays[delays.length - 1] ?? 1000)
+  }
+  return last
+}
