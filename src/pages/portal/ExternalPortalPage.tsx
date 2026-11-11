@@ -64,6 +64,7 @@ const ORDER_STATUS_LABELS: Record<string, string> = {
 const EXAM_STATUS_LABELS: Record<string, string> = {
   pending: 'Aguardando',
   typed: 'Em Análise',
+  digitized: 'Em Análise',
   in_analysis: 'Em Análise',
   released: 'Liberado',
   cancelled: 'Cancelado',
@@ -276,7 +277,7 @@ function fmt(dateStr?: string | null, withTime = true) {
 function statusTone(status: string) {
   if (status === 'released' || status === 'completed') return 'bg-emerald-100 text-emerald-700 border-emerald-200'
   if (status === 'cancelled') return 'bg-red-100 text-red-700 border-red-200'
-  if (status === 'in_analysis' || status === 'validation' || status === 'typed')
+  if (status === 'in_analysis' || status === 'validation' || status === 'typed' || status === 'digitized')
     return 'bg-amber-100 text-amber-700 border-amber-200'
   return 'bg-slate-100 text-slate-700 border-slate-200'
 }

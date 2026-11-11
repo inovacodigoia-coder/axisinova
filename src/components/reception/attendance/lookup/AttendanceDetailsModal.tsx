@@ -649,10 +649,10 @@ export function AttendanceDetailsModal({ open, onClose, onOrderDeleted, order, p
                         <span>Origem</span>
                       </DropdownMenuSubTrigger>
                       <DropdownMenuSubContent>
-                        {order.status === 'completed' ? (
+                        {!['deleted', 'cancelled'].includes(String(order.status)) ? (
                           <DropdownMenuItem onClick={() => setMudarOrigemOpen(true)}>Mudar origem do paciente</DropdownMenuItem>
                         ) : (
-                          <div className="px-3 py-2 text-xs text-muted-foreground max-w-[220px]">Disponível apenas para atendimentos Concluídos.</div>
+                          <div className="px-3 py-2 text-xs text-muted-foreground max-w-[220px]">Não disponível para atendimento excluído ou cancelado.</div>
                         )}
                       </DropdownMenuSubContent>
                     </DropdownMenuSub>
