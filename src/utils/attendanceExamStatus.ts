@@ -1,7 +1,8 @@
 // Status do exame no modal Detalhes Atendimento.
 // L = liberado, D = digitado, 'aguardando' / 'aberto' = sem resultado em andamento.
-// Recoleta solicitada: o exame volta a "Aguardando" (a digitação da amostra antiga
-// não conta mais) até ser digitado de novo depois da solicitação ou liberado.
+// Recoleta solicitada: o exame volta a "Aberto" (a amostra volta a não coletada e a
+// digitação da amostra antiga não conta mais). Coletado de novo vira "Aguardando";
+// digitado depois da solicitação volta a "D". Liberado continua "L".
 export type AttendanceExamStatus = 'L' | 'D' | 'aguardando' | 'aberto';
 
 export interface ExamResultInfo {
@@ -17,7 +18,7 @@ export function attendanceExamStatus(
 ): AttendanceExamStatus {
   if (result?.status === 'released') return 'L';
   const rec = exam?.recollection;
-  const fallback: AttendanceExamStatus = collected || rec ? 'aguardando' : 'aberto';
+  const fallback: AttendanceExamStatus = collected ? 'aguardando' : 'aberto';
   if (!result) return fallback;
   const hasValue = (result.values || []).some((v) => String(v?.value ?? '').trim() !== '');
   if (!(result.status === 'digitized' || hasValue)) return fallback;
@@ -25,7 +26,7 @@ export function attendanceExamStatus(
     const req = rec.requestedAt ? new Date(rec.requestedAt).getTime() : NaN;
     const typed = result.typedAt ? new Date(result.typedAt).getTime() : NaN;
     // Só volta a "D" se a digitação for posterior à solicitação da recoleta
-    if (!(Number.isFinite(req) && Number.isFinite(typed) && typed > req)) return 'aguardando';
+    if (!(Number.isFinite(req) && Number.isFinite(typed) && typed > req)) return fallback;
   }
   return 'D';
 }
