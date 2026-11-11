@@ -445,7 +445,7 @@ export function AttendanceDetailsModal({ open, onClose, onOrderDeleted, order, p
     null
 
   // L = liberado, D = digitado, vazio = sem digitação
-  // Recoleta solicitada volta o exame para "Aguardando" (ver attendanceExamStatus)
+  // Recoleta solicitada volta o exame para "Aberto" (ver attendanceExamStatus)
   const getExamResultLetter = (exam: any): 'L' | 'D' | null => {
     const st = attendanceExamStatus(exam, getExamResult(exam), false)
     return st === 'L' || st === 'D' ? st : null
@@ -1086,9 +1086,9 @@ export function AttendanceDetailsModal({ open, onClose, onOrderDeleted, order, p
                                         return (
                                           <span className={cn(
                                             "inline-block rounded-full px-2 py-0.5 text-[9px] font-bold uppercase tracking-wide",
-                                            (examIsCollected || exam.recollection) ? "bg-blue-100 text-blue-700" : "bg-slate-100 text-slate-500"
+                                            examIsCollected ? "bg-blue-100 text-blue-700" : "bg-slate-100 text-slate-500"
                                           )} title={exam.recollection ? 'Recoleta solicitada' : undefined}>
-                                            {(examIsCollected || exam.recollection) ? 'Aguardando' : 'Aberto'}
+                                            {examIsCollected ? 'Aguardando' : 'Aberto'}
                                           </span>
                                         );
                                       })()}
