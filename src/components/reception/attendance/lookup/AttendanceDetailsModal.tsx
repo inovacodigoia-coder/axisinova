@@ -1,4 +1,5 @@
 import { useAtendimentoDetalhesPermissions } from '@/hooks/useAtendimentoDetalhesPermissions'
+import { attendanceExamStatus } from '@/utils/attendanceExamStatus'
 import { formatCPF, formatPhone, formatAge, formatGender, formatAddress } from "@/utils/formatters"
 import { fmtDiaMes } from '@/lib/apoioAtendimento'
 import { useState, useMemo, useEffect } from 'react'
@@ -385,7 +386,7 @@ export function AttendanceDetailsModal({ open, onClose, onOrderDeleted, order, p
                       labOrder.collectionStatus === 'collected';
 
   // Resultados digitados/liberados do pedido (mesma fonte da Digitação de Resultados)
-  const [labResults, setLabResults] = useState<Record<string, { status: string; notes?: string; values: any[]; releasedAt?: string | null; releasedBy?: string | null }>>({})
+  const [labResults, setLabResults] = useState<Record<string, { status: string; notes?: string; values: any[]; typedAt?: string | null; releasedAt?: string | null; releasedBy?: string | null }>>({})
   const [approvers, setApprovers] = useState<Record<string, { name: string; register: string }>>({})
 
   useEffect(() => {
@@ -398,14 +399,15 @@ export function AttendanceDetailsModal({ open, onClose, onOrderDeleted, order, p
       // Sempre pelo ID do pedido (protocolo pode se repetir entre pedidos)
       const { data, error } = await supabase
         .from('lab_exam_results')
-        .select('exam_code, exam_name, status, notes, released_at, released_by, lab_result_values(parameter_key, parameter_name, value, unit, reference, status, sort_order, instrument_code)')
+        .select('exam_code, exam_name, status, notes, typed_at, released_at, released_by, lab_result_values(parameter_key, parameter_name, value, unit, reference, status, sort_order, instrument_code)')
         .eq('order_id', orderId)
       if (!active || error || !data) return
-      const map: Record<string, { status: string; notes?: string; values: any[]; releasedAt?: string | null; releasedBy?: string | null }> = {}
+      const map: Record<string, { status: string; notes?: string; values: any[]; typedAt?: string | null; releasedAt?: string | null; releasedBy?: string | null }> = {}
       data.forEach((row: any) => {
         const entry = {
           status: row.status,
           notes: row.notes || '',
+          typedAt: row.typed_at || null,
           releasedAt: row.released_at || null,
           releasedBy: row.released_by || null,
           values: (row.lab_result_values || []).slice().sort((a: any, b: any) => (a.sort_order ?? 0) - (b.sort_order ?? 0)),
@@ -443,13 +445,10 @@ export function AttendanceDetailsModal({ open, onClose, onOrderDeleted, order, p
     null
 
   // L = liberado, D = digitado, vazio = sem digitação
+  // Recoleta solicitada volta o exame para "Aguardando" (ver attendanceExamStatus)
   const getExamResultLetter = (exam: any): 'L' | 'D' | null => {
-    const res = getExamResult(exam)
-    if (!res) return null
-    if (res.status === 'released') return 'L'
-    const hasValue = (res.values || []).some((v: any) => String(v.value || '').trim() !== '')
-    if (res.status === 'digitized' || hasValue) return 'D'
-    return null
+    const st = attendanceExamStatus(exam, getExamResult(exam), false)
+    return st === 'L' || st === 'D' ? st : null
   }
 
   const [metodosApoio, setMetodosApoio] = useState<Record<string, string>>({})
@@ -1087,9 +1086,9 @@ export function AttendanceDetailsModal({ open, onClose, onOrderDeleted, order, p
                                         return (
                                           <span className={cn(
                                             "inline-block rounded-full px-2 py-0.5 text-[9px] font-bold uppercase tracking-wide",
-                                            examIsCollected ? "bg-blue-100 text-blue-700" : "bg-slate-100 text-slate-500"
-                                          )}>
-                                            {examIsCollected ? 'Aguardando' : 'Aberto'}
+                                            (examIsCollected || exam.recollection) ? "bg-blue-100 text-blue-700" : "bg-slate-100 text-slate-500"
+                                          )} title={exam.recollection ? 'Recoleta solicitada' : undefined}>
+                                            {(examIsCollected || exam.recollection) ? 'Aguardando' : 'Aberto'}
                                           </span>
                                         );
                                       })()}
