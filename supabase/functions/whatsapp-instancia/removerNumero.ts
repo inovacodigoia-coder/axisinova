@@ -9,12 +9,16 @@ export async function removerNumeroRemoto(
   chamar: (metodo: string, caminho: string) => Promise<ResultadoRemoto>,
   apagarLocal: () => Promise<void>,
 ): Promise<ResultadoRemoto | null> {
+  const ok = (st: number) => st >= 200 && st < 300
+  // 404 = o número já não existe no servidor do WhatsApp: a exclusão remota está confirmada.
+  const jaNaoExiste = (st: number) => st === 404
   if (conectado) {
     const r = await chamar('POST', '/instance/disconnect')
-    if (r.status < 200 || r.status >= 300) return r
+    if (jaNaoExiste(r.status)) { await apagarLocal(); return null }
+    if (!ok(r.status)) return r
   }
   const r = await chamar('DELETE', '/instance')
-  if (r.status < 200 || r.status >= 300) return r
+  if (!ok(r.status) && !jaNaoExiste(r.status)) return r
   await apagarLocal()
   return null
 }
