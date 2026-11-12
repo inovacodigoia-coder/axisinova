@@ -516,13 +516,13 @@ export function ResultEntryModal({
       if (expandedPatients[exam.protocol] && examStatuses[exam.id] !== 'released') {
         // Must have results for ALL parameters to be considered "filled"
         const params = paramsByExam[exam.id] || [{ id: '1' }];
-        const allFilled = hematologyReady(params, (pid) => getParamValue(exam, params.find((p: any) => p.id === pid)))
+        const allFilled = examReady(exam)
           && !diffInfoFor(params, (pid) => results[`${exam.id}_${pid}`] || '', exam.id)?.blockRelease;
         if (allFilled) count++;
       }
     });
     return count;
-  }, [results, filteredExams, expandedPatients, examStatuses, paramsByExam]);
+  }, [results, manualCalc, filteredExams, expandedPatients, examStatuses, paramsByExam]);
 
 
   // Calculate total required exams only for expanded patients (excluding already released ones)
@@ -608,8 +608,11 @@ export function ResultEntryModal({
           reference: apoioRefs[`${exam.id}_${p.id}`] || displayReference(p, resolveReference(p, value)) || null,
           status: getResultStatus(value, apoioRefs[`${exam.id}_${p.id}`] || flagReference(p, resolveReference(p, value))).label || null,
           sort_order: idx,
-          // Preserva a origem quando o valor veio do equipamento
-          source: instrumentKeys.has(`${exam.id}_${p.id}`) ? 'instrument' : 'manual',
+          // Preserva aparelho ou a escolha manual feita pela caneta (inclusive vazio).
+          source: calculatedResultSource({
+            instrumentReceived: instrumentKeys.has(`${exam.id}_${p.id}`),
+            manualOverride: !!manualCalc[`${exam.id}_${p.id}`],
+          }),
           instrument_value: rawInstrumentValues[`${exam.id}_${p.id}`] ?? null,
         };
       });
@@ -642,7 +645,7 @@ export function ResultEntryModal({
     // Se algum estiver faltando digitação ou ainda for pendente -> Validação
     const isMissingResults = allExams.some(exam => {
       const params = paramsByExam[exam.id] || [{ id: '1' }];
-      return params.some(p => !(results[`${exam.id}_${p.id}`] || '').trim());
+      return params.some(p => !manualCalc[`${exam.id}_${p.id}`] && !(results[`${exam.id}_${p.id}`] || '').trim());
     });
     
     if (isMissingResults || statuses.some(s => s === 'pending' || s === 'collection_done')) {
@@ -714,6 +717,7 @@ export function ResultEntryModal({
       if (!active || rows.length === 0) return;
 
       const nextResults: Record<string, string> = {};
+      const nextManualCalc: Record<string, boolean> = {};
       const nextNotes: Record<string, string> = {};
       const nextStatuses: Record<string, any> = {};
       const nextBlocks: Record<string, string[]> = {};
@@ -741,7 +745,10 @@ export function ResultEntryModal({
         }
         (row.lab_result_values || []).forEach((v: any) => {
           const key = `${examId}_${String(v.parameter_key)}`;
-          if (v.value !== null && v.value !== undefined && String(v.value) !== '') {
+          if (isManualCalculatedSource(v.source)) {
+            nextManualCalc[key] = true;
+            nextResults[key] = String(v.value ?? '');
+          } else if (v.value !== null && v.value !== undefined && String(v.value) !== '') {
             nextResults[key] = String(v.value);
           }
           if (v.source === 'instrument') {
@@ -788,11 +795,12 @@ export function ResultEntryModal({
       setRawInstrumentValues(nextRawInstrument);
       setInstrumentCodes(nextInstrumentCodes);
       setInstrumentKeys(nextInstrumentKeys);
+      setManualCalc(prev => ({ ...prev, ...nextManualCalc }));
       setResults(prev => {
         const next = { ...prev };
         Object.entries(nextResults).forEach(([k, v]) => {
-          // valores do equipamento sempre prevalecem; os demais só preenchem campos vazios
-          if (nextInstrumentKeys.has(k) || !(next[k] || '').trim()) next[k] = v;
+          // Aparelho e edição CALC persistida prevalecem; os demais só preenchem campos vazios.
+          if (nextManualCalc[k] || nextInstrumentKeys.has(k) || !(next[k] || '').trim()) next[k] = v;
         });
         return next;
       });
@@ -1107,7 +1115,9 @@ export function ResultEntryModal({
         const drafts = filteredExams.filter(exam => {
           if (examStatuses[exam.id] === 'released') return false;
           const params = paramsByExam[exam.id] || [{ id: '1' }];
-          return params.some((p: any) => (results[`${exam.id}_${p.id}`] || '').trim() !== '');
+          return params.some((p: any) =>
+            (results[`${exam.id}_${p.id}`] || '').trim() !== '' || manualCalc[`${exam.id}_${p.id}`]
+          );
         });
         await persistExams(drafts, 'draft');
         toast.success("Rascunho salvo com sucesso!");
