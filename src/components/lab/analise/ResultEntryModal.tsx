@@ -1084,8 +1084,7 @@ export function ResultEntryModal({
         filteredExams.forEach(exam => {
           // Only process exams for expanded patients
           if (expandedPatients[exam.protocol] && newStatuses[exam.id] !== 'released') {
-            const params = paramsByExam[exam.id] || [{ id: '1' }];
-            const allFilled = hematologyReady(params, (pid) => getParamValue(exam, params.find((p: any) => p.id === pid)));
+            const allFilled = examReady(exam);
             
             if (allFilled) {
               newStatuses[exam.id] = 'digitized';
@@ -1551,8 +1550,7 @@ export function ResultEntryModal({
       const toPersist: any[] = [];
       (patient.exams || []).forEach((exam: any) => {
         if (newStatuses[exam.id] === 'released' || newStatuses[exam.id] === 'cancelled') return;
-        const params = paramsByExam[exam.id] || [{ id: '1' }];
-        const allFilled = hematologyReady(params, (pid) => getParamValue(exam, params.find((p: any) => p.id === pid)));
+        const allFilled = examReady(exam);
         if (allFilled) {
           newStatuses[exam.id] = 'digitized';
           toPersist.push(exam);
@@ -1597,6 +1595,36 @@ export function ResultEntryModal({
       setSaving(false);
       if (advance) goToPatient(safeIndex + 1);
     }
+  };
+
+  const enableManualCalc = (exam: any, param: any, currentValue: string, unlockCorrection = false) => {
+    const key = `${exam.id}_${param.id}`;
+    if (unlockCorrection) setCorrectionUnlocked(prev => ({ ...prev, [exam.id]: true }));
+    setManualCalc(prev => ({ ...prev, [key]: true }));
+    setResults(prev => ({ ...prev, [key]: prev[key] ?? currentValue }));
+    requestAnimationFrame(() => {
+      const input = document.getElementById(`result-${key}`) as HTMLInputElement | null;
+      input?.focus();
+      input?.select();
+    });
+  };
+
+  const restoreAutomaticCalc = (exam: any, param: any) => {
+    const key = `${exam.id}_${param.id}`;
+    setManualCalc(prev => {
+      const next = { ...prev };
+      delete next[key];
+      return next;
+    });
+    setResults(prev => ({
+      ...prev,
+      [key]: evaluateFormula(
+        param.formula,
+        getParams(exam),
+        (pid) => prev[`${exam.id}_${pid}`] || '',
+        (token) => resolveExternalToken(exam, token),
+      ),
+    }));
   };
 
   if (!isOpen) return null;
@@ -1748,8 +1776,7 @@ export function ResultEntryModal({
               const releasedCount = patient.exams.filter((e: any) => examStatuses[e.id] === 'released').length;
               const typedCount = patient.exams.filter((e: any) => {
                 if (examStatuses[e.id] === 'released') return true;
-                const params = getParams(e);
-                return hematologyReady(params, pid => getParamValue(e, params.find((p: any) => p.id === pid)));
+                return examReady(e);
               }).length;
               const showRelease = releasedCount > 0;
               const showTyping = typedCount > 0 && typedCount > releasedCount;
@@ -1998,7 +2025,7 @@ export function ResultEntryModal({
                                 <Button 
                                   onClick={() => handleConcluirExame(exam.id)}
                                   size="sm" 
-                                  disabled={bloqueiosApoio(apoioDe(exam)).length > 0 || !hematologyReady(getParams(exam), pid => getParamValue(exam, getParams(exam).find((p: any) => p.id === pid))) || !!diffInfoFor(getParams(exam), (pid) => results[`${exam.id}_${pid}`] || '', exam.id)?.blockRelease}
+                                  disabled={bloqueiosApoio(apoioDe(exam)).length > 0 || !examReady(exam) || !!diffInfoFor(getParams(exam), (pid) => results[`${exam.id}_${pid}`] || '', exam.id)?.blockRelease}
                                   title={bloqueiosApoio(apoioDe(exam)).join(' · ') || undefined}
                                   className="h-7 px-3 text-[9px] font-black uppercase gap-1.5 bg-sky-500 hover:bg-sky-600 text-white shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
                                 >

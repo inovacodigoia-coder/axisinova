@@ -9,7 +9,7 @@ import {
 
 const calculated = { isCalculated: true }
 
- describe('edição manual de parâmetros CALC', () => {
+describe('edição manual de parâmetros CALC', () => {
   it('mantém a fórmula como comportamento padrão', () => {
     expect(calculatedResultValue({ param: calculated, storedValue: '', calculate: () => '211,5' })).toBe('211,5')
   })
