@@ -5,6 +5,7 @@ import { normalizeText } from '@/utils/examParameters'
  * Sem a informação o parâmetro continua obrigatório (padrão do cadastro).
  */
 export function isParametroOpcional(param: any): boolean {
+  // Mesma regra de buildExamParams (campo optional do parâmetro resolvido)
   return param?.isMandatory === false || param?.isRequired === false || param?.is_required === false
 }
 

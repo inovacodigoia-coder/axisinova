@@ -23,6 +23,8 @@ export interface ResolvedParam {
   referenceFullText?: string
   /** CALC ligado: recalcular pela fórmula mesmo quando o aparelho enviar valor. */
   preferFormula?: boolean
+  /** Obrig desmarcado no cadastro do exame. */
+  optional?: boolean
 }
 
 export interface PatientCtx {
