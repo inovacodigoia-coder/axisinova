@@ -461,13 +461,13 @@ a[href*="lovable.app"],
 [data-chat-received="green"] { --chat-received: hsl(var(--chat-green)); }
 [data-chat-received="blue"] { --chat-received: hsl(var(--chat-blue)); }
 [data-chat-received="rose"] { --chat-received: hsl(var(--chat-rose)); }
-[data-chat-received="dark"] { --chat-received: hsl(var(--chat-dark)); --chat-received-ink: hsl(var(--chat-light-ink)); }
+[data-chat-received="dark"]:not([data-chat-received="default"]) { --chat-received: hsl(var(--chat-dark)); --chat-received-ink: hsl(var(--chat-light-ink)); }
 [data-chat-sent="white"] { --chat-sent: hsl(var(--chat-white)); }
 [data-chat-sent="gray"] { --chat-sent: hsl(var(--chat-gray)); }
 [data-chat-sent="green"] { --chat-sent: hsl(var(--chat-green)); }
 [data-chat-sent="blue"] { --chat-sent: hsl(var(--chat-blue)); }
 [data-chat-sent="rose"] { --chat-sent: hsl(var(--chat-rose)); }
-[data-chat-sent="dark"] { --chat-sent: hsl(var(--chat-dark)); --chat-sent-ink: hsl(var(--chat-light-ink)); }
+[data-chat-sent="dark"]:not([data-chat-sent="default"]) { --chat-sent: hsl(var(--chat-dark)); --chat-sent-ink: hsl(var(--chat-light-ink)); }
 .chat-conversation-background { background-color: var(--chat-background); }
 .chat-bubble-received { background-color: var(--chat-received); color: var(--chat-received-ink); }
 .chat-bubble-sent { background-color: var(--chat-sent); color: var(--chat-sent-ink); }

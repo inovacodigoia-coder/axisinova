@@ -20,7 +20,9 @@ const FALTA_LABEL: Record<Falta, string> = { orientacoes: 'Orientações ao paci
 const faltas = (e: any, d: { ficticio: boolean; tem_preco: boolean }): Falta[] => {
   const f: Falta[] = []
   if (!String(e.preparation_instructions || '').trim()) f.push('orientacoes')
-  f.push('critico')
+  // Valor crítico: configurado no mapeamento do equipamento (alerta ligado com limite)
+  const mapa: any[] = Array.isArray(e.interfacing_parameters) ? e.interfacing_parameters : []
+  if (!mapa.some((m: any) => m?.criticalAlert && String(m?.criticalLimit ?? '').trim())) f.push('critico')
   if (!d.tem_preco || d.ficticio) f.push('preco')
   if (!String(e.tuss_code || '').trim()) f.push('tuss')
   const mats: string[] = Array.isArray(e.selected_materials) ? e.selected_materials : []
@@ -70,7 +72,7 @@ export function ApoioExamesTab({ moduloLiberado }: { moduloLiberado: boolean }) 
   const load = useCallback(async () => {
     setLoading(true)
     const [ex, wb, ap, li] = await Promise.all([
-      db.from('exams').select('id, internal_code, name, workbench_id, default_material, selected_materials, preparation_instructions, tuss_code').eq('type', 'lab').eq('is_active', true).order('name').limit(5000),
+      db.from('exams').select('id, internal_code, name, workbench_id, default_material, selected_materials, preparation_instructions, tuss_code, interfacing_parameters').eq('type', 'lab').eq('is_active', true).order('name').limit(5000),
       db.from('lab_workbenches').select('id, name'),
       db.from('apoio_laboratorio').select('id, nome').eq('ativo', true).order('nome'),
       db.rpc('apoio_depara_lista'),
