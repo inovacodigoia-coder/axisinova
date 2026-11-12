@@ -8,7 +8,7 @@ import { Skeleton } from '@/components/ui/skeleton'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { EmptyState } from '@/components/feedback/EmptyState'
-import { ChevronDown, Filter, ClipboardList, Plus, FileCheck2, List, ListChecks } from 'lucide-react'
+import { ChevronDown, Filter, ClipboardList, Plus, FileCheck2, List, ListChecks, Users } from 'lucide-react'
 import { Checkbox } from '@/components/ui/checkbox'
 import { cn } from '@/lib/utils'
 import { toast } from 'sonner'
@@ -194,7 +194,7 @@ export default function LabMapaPage() {
     setApplied(a => a + 1)
   }
 
-  const handleGenerate = async () => {
+  const handleGenerate = async (view?: 'personalizado') => {
     if (filteredRows.length === 0) return
     if (!user?.companyId) {
       toast.error('Empresa não identificada.')
@@ -224,7 +224,7 @@ export default function LabMapaPage() {
       setApplied(a => a + 1)
 
       toast.success(`Mapa ${record.code} gerado com ${record.itemsCount} exame(s).`)
-      navigate(`/app/lab/mapa/${record.code}`)
+      navigate(view ? `/app/lab/mapa/${record.code}?view=${view}` : `/app/lab/mapa/${record.code}`)
     } catch {
       toast.error('Não foi possível gerar o mapa de trabalho.')
     }
@@ -248,7 +248,16 @@ export default function LabMapaPage() {
             <List className="mr-2 h-4 w-4" /> Mapas Gerados
           </Button>
           <Button
-            onClick={handleGenerate}
+            variant="outline"
+            onClick={() => handleGenerate('personalizado')}
+            disabled={filteredRows.length === 0}
+            title="Gera o mapa por paciente, com cabeçalho e exames na ordem das bancadas"
+            className="rounded-full bg-white/10 border-white/20 text-white hover:bg-white/20 disabled:opacity-50"
+          >
+            <Users className="mr-2 h-4 w-4" /> Mapa Personalizado
+          </Button>
+          <Button
+            onClick={() => handleGenerate()}
             disabled={filteredRows.length === 0}
             className="rounded-full bg-warning px-6 font-bold text-warning-foreground hover:bg-warning/90 disabled:opacity-50"
           >
