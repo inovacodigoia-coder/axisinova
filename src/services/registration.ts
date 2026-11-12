@@ -46,29 +46,25 @@ export async function registerCompany(data: RegistrationData) {
     throw new Error('Este CNPJ já está cadastrado no sistema. Caso precise de ajuda, entre em contato com o suporte.')
   }
 
-  // 2. Create the company first (company rows are not readable by anonymous visitors,
-  // so the id is resolved afterwards through a narrow RPC)
-  const { error: companyError } = await supabase
-    .from('companies')
-    .insert({
-      name: data.razaoSocial,
-      cnpj: data.cnpj,
-      nome_fantasia: data.nomeFantasia,
-      segmento: data.segmento,
-      telefone: data.telefone?.trim() || null,
-      email: data.emailComercial?.trim() || null,
-      website: data.website || null,
-      plano: data.plano || 'Pro',
-      status: 'active',
-      cep: data.cep,
-      logradouro: data.logradouro,
-      numero: data.numero,
-      complemento: data.complemento || null,
-      bairro: data.bairro,
-      cidade: data.cidade,
-      estado: data.estado,
-      valor_mensal: data.plano === 'Starter' ? 490 : data.plano === 'Enterprise' ? 2490 : 990,
-    })
+  // 2. Create the company through the validated signup function (direct inserts are blocked;
+  //    plan, status, price and enabled modules are decided on the server)
+  const { data: newCompanyId, error: companyError } = await supabase.rpc('empresa_cadastro_publico', {
+    _razao_social: data.razaoSocial,
+    _cnpj: data.cnpj,
+    _nome_fantasia: data.nomeFantasia,
+    _segmento: data.segmento,
+    _telefone: data.telefone?.trim() || null,
+    _email: data.emailComercial?.trim() || null,
+    _website: data.website || null,
+    _plano: data.plano || 'Pro',
+    _cep: data.cep,
+    _logradouro: data.logradouro,
+    _numero: data.numero,
+    _complemento: data.complemento || null,
+    _bairro: data.bairro,
+    _cidade: data.cidade,
+    _estado: data.estado,
+  } as any)
 
   if (companyError) {
     console.error('Company creation error:', companyError)
@@ -79,7 +75,6 @@ export async function registerCompany(data: RegistrationData) {
     throw new Error('Erro ao criar empresa: ' + companyError.message)
   }
 
-  const { data: newCompanyId } = await supabase.rpc('company_id_by_cnpj', { _cnpj: data.cnpj })
   const companyId = newCompanyId as string | null
 
   if (!companyId) {
