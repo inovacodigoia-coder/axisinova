@@ -131,4 +131,16 @@ describe('decideInstrumentResult — regra de resultado novo do aparelho', () =>
     })
     expect(d).toEqual({ kind: 'created' })
   })
+
+  it('liberado sem reteste + campo vazio → recusa (não desfaz a liberação)', () => {
+    const d = decideInstrumentResult({ examStatus: 'released', retestRequested: false, current: null, incomingResultDatetime: '2026-11-04T14:30:00Z', now: NOW })
+    expect(d).toEqual({ kind: 'refused_released' })
+    const vazio = decideInstrumentResult({ examStatus: 'released', retestRequested: false, current: instrumentValue({ value: '' }), incomingResultDatetime: null, now: NOW })
+    expect(vazio).toEqual({ kind: 'refused_released' })
+  })
+
+  it('liberado com reteste + campo vazio → grava e reabre', () => {
+    const d = decideInstrumentResult({ examStatus: 'released', retestRequested: true, current: null, incomingResultDatetime: null, now: NOW })
+    expect(d).toEqual({ kind: 'created', reopened: true })
+  })
 })
