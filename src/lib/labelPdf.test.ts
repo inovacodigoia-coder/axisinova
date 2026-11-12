@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { medidasFolha, cssPagina } from './labelPdf'
+import { medidasFolha, cssPagina, fatiasDaFolha } from './labelPdf'
 
 describe('folha fixa de impressão', () => {
   it('A4 retrato é 210x297 e é o padrão', () => {
@@ -13,7 +13,6 @@ describe('folha fixa de impressão', () => {
   })
 })
 
-import { fatiasDaFolha } from './labelPdf'
 describe('laudo mais alto que A4', () => {
   it('continua na folha seguinte na largura total, sem encolher', () => {
     // A4 sem margem: 210 x 297 → 1000px de largura cabem 1414px por folha
