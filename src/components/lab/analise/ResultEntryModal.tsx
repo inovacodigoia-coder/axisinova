@@ -1,6 +1,7 @@
 import { displayReference } from '@/lib/examReferenceMode';
 import { flagReference, resultFlag } from '@/lib/resultFlag';
 import { calculatedResultSource, calculatedResultValue, isManualCalculatedSource, shouldCalculateAutomatically } from '@/lib/calculatedResultOverride';
+import { defaultResultUpdates, onlyUntouchedDefaults } from '@/lib/parameterDefaultValue';
 import { useState, useMemo, useEffect, useCallback, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { buildExamParams, catalogKey, findCatalogExam, evaluateFormula, normalizeText, resolveReference } from '@/utils/examParameters';
@@ -115,6 +116,10 @@ export function ResultEntryModal({
   const [results, setResults] = useState<Record<string, string>>({});
   // Edição explícita pela caneta: o valor manual (inclusive vazio) prevalece sobre CALC.
   const [manualCalc, setManualCalc] = useState<Record<string, boolean>>({});
+  // Campo "Valor" do cadastro: valores pré-preenchidos ainda intocados (chave -> valor)
+  const [defaultFilled, setDefaultFilled] = useState<Record<string, string>>({});
+  const [savedResultRefs, setSavedResultRefs] = useState<Set<string> | null>(null);
+  const prefilledKeys = useRef<Set<string>>(new Set());
   const [externalResultValues, setExternalResultValues] = useState<Record<string, string>>({});
   const [instrumentCodes, setInstrumentCodes] = useState<Record<string, string>>({});
   const [rawInstrumentValues, setRawInstrumentValues] = useState<Record<string, string>>({});
@@ -387,13 +392,13 @@ export function ResultEntryModal({
     });
     if (Object.keys(novosRes).length) setResults(prev => {
       const n = { ...prev };
-      Object.entries(novosRes).forEach(([k, val]) => { if (!manualCalc[k] && (!(prev[k] || '').trim() || apoioPorExame[k.split('_')[0]]?.versao?.origem === 'integracao')) n[k] = val; });
+      Object.entries(novosRes).forEach(([k, val]) => { if (!manualCalc[k] && (!(prev[k] || '').trim() || (defaultFilled[k] !== undefined && defaultFilled[k] === prev[k]) || apoioPorExame[k.split('_')[0]]?.versao?.origem === 'integracao')) n[k] = val; });
       return n;
     });
     if (Object.keys(novasNotas).length) setNotes(prev => { const n = { ...prev }; Object.entries(novasNotas).forEach(([k, v]) => { if (!(prev[k] || '').trim()) n[k] = v; }); return n; });
     setApoioRefs(refs);
     setApoioExecutor(prev => ({ ...exec, ...prev }));
-  }, [apoioPorExame, paramsByExam, manualCalc]);
+  }, [apoioPorExame, paramsByExam, manualCalc, defaultFilled]);
 
   /** Valida/aplica a regra do apoio antes de concluir ou liberar. Lança erro se o banco recusar. */
   const apoioGate = async (exam: any, status: 'draft' | 'digitized' | 'released') => {
@@ -715,7 +720,9 @@ export function ResultEntryModal({
           }
         });
       }
-      if (!active || rows.length === 0) return;
+      if (!active) return;
+      setSavedResultRefs(new Set(rows.map((r: any) => String(r.exam_ref))));
+      if (rows.length === 0) return;
 
       const nextResults: Record<string, string> = {};
       const nextManualCalc: Record<string, boolean> = {};
@@ -870,6 +877,31 @@ export function ResultEntryModal({
     }
   };
 
+
+  // Campo "Valor" do cadastro: exame ainda sem resultado salvo já abre com o valor.
+  // Espera os resultados salvos carregarem para nunca cobrir um valor gravado.
+  useEffect(() => {
+    if (!isOpen || !savedResultRefs) return;
+    const updates: Record<string, string> = {};
+    filteredExams.forEach((exam: any) => {
+      const params = (paramsByExam[exam.id] || []).filter((p: any) => !prefilledKeys.current.has(`${exam.id}_${p.id}`));
+      Object.assign(updates, defaultResultUpdates({
+        examId: exam.id,
+        params,
+        results,
+        hasSavedResult: savedResultRefs.has(String(exam.id)) || savedResultRefs.has(examRefOf(exam)),
+        released: examStatuses[exam.id] === 'released',
+      }));
+    });
+    if (Object.keys(updates).length === 0) return;
+    Object.keys(updates).forEach(k => prefilledKeys.current.add(k));
+    setDefaultFilled(prev => ({ ...prev, ...updates }));
+    setResults(prev => {
+      const next = { ...prev };
+      Object.entries(updates).forEach(([k, v]) => { if (!(next[k] || '').trim()) next[k] = v; });
+      return next;
+    });
+  }, [isOpen, savedResultRefs, filteredExams, paramsByExam, examStatuses]);
 
   // Pré-seleciona "Ausente" nos parâmetros de seleção que possuem essa opção (ex.: Sumário de Urina)
   useEffect(() => {
@@ -1118,6 +1150,9 @@ export function ResultEntryModal({
         const drafts = filteredExams.filter(exam => {
           if (examStatuses[exam.id] === 'released') return false;
           const params = paramsByExam[exam.id] || [{ id: '1' }];
+          // Só o valor padrão do cadastro, sem nada digitado, não vira rascunho
+          if (!params.some((p: any) => manualCalc[`${exam.id}_${p.id}`])
+            && onlyUntouchedDefaults({ examId: exam.id, params, results, defaults: defaultFilled })) return false;
           return params.some((p: any) =>
             (results[`${exam.id}_${p.id}`] || '').trim() !== '' || manualCalc[`${exam.id}_${p.id}`]
           );
