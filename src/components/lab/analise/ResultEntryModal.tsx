@@ -1,5 +1,6 @@
 import { displayReference } from '@/lib/examReferenceMode';
 import { flagReference, resultFlag } from '@/lib/resultFlag';
+import { calculatedResultSource, calculatedResultValue, isManualCalculatedSource, shouldCalculateAutomatically } from '@/lib/calculatedResultOverride';
 import { useState, useMemo, useEffect, useCallback, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { buildExamParams, catalogKey, findCatalogExam, evaluateFormula, normalizeText, resolveReference } from '@/utils/examParameters';
@@ -112,6 +113,8 @@ export function ResultEntryModal({
   const { canType, canRelease, canCorrect } = useResultEntryPermissions();
   const [correctionUnlocked, setCorrectionUnlocked] = useState<Record<string, boolean>>({});
   const [results, setResults] = useState<Record<string, string>>({});
+  // Edição explícita pela caneta: o valor manual (inclusive vazio) prevalece sobre CALC.
+  const [manualCalc, setManualCalc] = useState<Record<string, boolean>>({});
   const [externalResultValues, setExternalResultValues] = useState<Record<string, string>>({});
   const [instrumentCodes, setInstrumentCodes] = useState<Record<string, string>>({});
   const [rawInstrumentValues, setRawInstrumentValues] = useState<Record<string, string>>({});
@@ -441,21 +444,34 @@ export function ResultEntryModal({
     return externalResultValues[`${orderKey}|${wanted}`] ?? null;
   }, [filteredExams, paramsByExam, results, externalResultValues]);
 
-  // Valor exibido: parâmetros calculados usam a fórmula do catálogo,
-  // EXCETO quando o valor veio do equipamento (source 'instrument') — nesse caso o valor do equipamento prevalece
+  // Valor exibido: CALC usa a fórmula por padrão; aparelho ou edição manual
+  // explícita pela caneta prevalecem. O valor manual pode ser vazio.
   const getParamValue = useCallback((exam: any, param: any) => {
     const key = `${exam.id}_${param.id}`;
     if (differentialPercent(param)) return examStatuses[exam.id] === 'released' ? (results[key] || '') : differentialFor(exam.id, getParams(exam)).values[param.id] || '';
-    if (param?.isCalculated && (!instrumentKeys.has(key) || param.preferFormula)) {
-      return evaluateFormula(
+    return calculatedResultValue({
+      param,
+      storedValue: results[key],
+      instrumentReceived: instrumentKeys.has(key),
+      manualOverride: !!manualCalc[key],
+      calculate: () => evaluateFormula(
         param.formula,
         getParams(exam),
         (pid) => results[`${exam.id}_${pid}`] || '',
         (token) => resolveExternalToken(exam, token),
-      );
-    }
-    return results[key] || '';
-  }, [results, paramsByExam, instrumentKeys, rawInstrumentValues, examStatuses, resolveExternalToken]);
+      ),
+    });
+  }, [results, manualCalc, paramsByExam, instrumentKeys, rawInstrumentValues, examStatuses, resolveExternalToken]);
+
+  // Campo CALC esvaziado pela caneta é uma ausência intencional, não pendência.
+  const examReady = (exam: any) => {
+    const params = getParams(exam);
+    return hematologyReady(
+      params,
+      (pid) => getParamValue(exam, params.find((p: any) => p.id === pid)),
+      (param) => !!manualCalc[`${exam.id}_${param.id}`],
+    );
+  };
 
   // Persiste automaticamente os calculados no estado para salvar/laudo
   useEffect(() => {
@@ -470,9 +486,11 @@ export function ResultEntryModal({
           if ((results[key] || '') !== (differential[p.id] || '')) updates[key] = differential[p.id] || '';
           return;
         }
-        if (!p.isCalculated) return;
         const key = `${examId}_${p.id}`;
-        if (instrumentKeys.has(key) && !p.preferFormula) return; // valor veio do equipamento — não recalcular, salvo preferência explícita pela fórmula
+        if (!shouldCalculateAutomatically(p, {
+          instrumentReceived: instrumentKeys.has(key),
+          manualOverride: !!manualCalc[key],
+        })) return;
         const computed = evaluateFormula(
           p.formula,
           params,
@@ -485,7 +503,7 @@ export function ResultEntryModal({
     if (Object.keys(updates).length > 0) {
       setResults(prev => ({ ...prev, ...updates }));
     }
-  }, [results, paramsByExam, instrumentKeys, rawInstrumentValues, examStatuses, resolveExternalToken]);
+  }, [results, manualCalc, paramsByExam, instrumentKeys, rawInstrumentValues, examStatuses, resolveExternalToken]);
 
 
   const totalExams = filteredExams.length;

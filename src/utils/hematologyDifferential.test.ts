@@ -77,6 +77,14 @@ describe('regra única da diferencial', () => {
     const other = [{ id: 'a', name: 'Glicose', unit: '', reference: '' }, { id: 'b', name: 'Controle', unit: '', reference: '' }]
     expect(hematologyReady(other, id => id === 'a' ? '90' : '')).toBe(false)
   })
+  it('aceita CALC vazio somente quando a caneta o marcou como opcional', () => {
+    const lipidio = [
+      { id: 'ct', name: 'Colesterol total', unit: 'mg/dL', reference: '' },
+      { id: 'ldl', name: 'Colesterol LDL', unit: 'mg/dL', reference: '', isCalculated: true },
+    ]
+    expect(hematologyReady(lipidio, id => id === 'ct' ? '180' : '')).toBe(false)
+    expect(hematologyReady(lipidio, id => id === 'ct' ? '180' : '', p => p.id === 'ldl')).toBe(true)
+  })
 })
 describe('absolutos seguem a fórmula do cadastro (pedido 504-00, Serrinha)', () => {
   it('absoluto não é tratado como percentual da diferencial', async () => {
