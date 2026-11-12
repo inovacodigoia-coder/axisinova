@@ -387,13 +387,13 @@ export function ResultEntryModal({
     });
     if (Object.keys(novosRes).length) setResults(prev => {
       const n = { ...prev };
-      Object.entries(novosRes).forEach(([k, val]) => { if (!(prev[k] || '').trim() || apoioPorExame[k.split('_')[0]]?.versao?.origem === 'integracao') n[k] = val; });
+      Object.entries(novosRes).forEach(([k, val]) => { if (!manualCalc[k] && (!(prev[k] || '').trim() || apoioPorExame[k.split('_')[0]]?.versao?.origem === 'integracao')) n[k] = val; });
       return n;
     });
     if (Object.keys(novasNotas).length) setNotes(prev => { const n = { ...prev }; Object.entries(novasNotas).forEach(([k, v]) => { if (!(prev[k] || '').trim()) n[k] = v; }); return n; });
     setApoioRefs(refs);
     setApoioExecutor(prev => ({ ...exec, ...prev }));
-  }, [apoioPorExame, paramsByExam]);
+  }, [apoioPorExame, paramsByExam, manualCalc]);
 
   /** Valida/aplica a regra do apoio antes de concluir ou liberar. Lança erro se o banco recusar. */
   const apoioGate = async (exam: any, status: 'draft' | 'digitized' | 'released') => {
@@ -466,11 +466,12 @@ export function ResultEntryModal({
   // Campo CALC esvaziado pela caneta é uma ausência intencional, não pendência.
   const examReady = (exam: any) => {
     const params = getParams(exam);
-    return hematologyReady(
+    const ready = hematologyReady(
       params,
       (pid) => getParamValue(exam, params.find((p: any) => p.id === pid)),
       (param) => !!manualCalc[`${exam.id}_${param.id}`],
     );
+    return ready && params.some((param: any) => getParamValue(exam, param).trim() !== '');
   };
 
   // Persiste automaticamente os calculados no estado para salvar/laudo
@@ -752,6 +753,7 @@ export function ResultEntryModal({
             nextResults[key] = String(v.value);
           }
           if (v.source === 'instrument') {
+            nextManualCalc[key] = false;
             nextRawInstrument[key] = String(v.instrument_value ?? v.value ?? '');
             if (v.instrument_code) nextInstrumentCodes[key] = v.instrument_code;
             nextInstrumentKeys.add(key);
