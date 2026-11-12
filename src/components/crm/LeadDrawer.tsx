@@ -36,9 +36,19 @@ function Corpo({ lead, etapas, tags, motivos, usuarios, podeGerenciar, onClose, 
   const navigate = useNavigate()
   const ed = lead.pode_editar
   const etapa = etapas.find(e => e.id === lead.etapa_id)
-  const [f, setF] = useState({ nome: lead.nome, interesse: lead.interesse ?? '', origem: lead.origem, valor: lead.valor_estimado?.toString() ?? '',
-    responsavel: lead.responsavel_id ?? '', temperatura: lead.temperatura, proximo: isoParaLocal(lead.proximo_contato_em), tags: lead.tags })
-  useEffect(() => { setF({ nome: lead.nome, interesse: lead.interesse ?? '', origem: lead.origem, valor: lead.valor_estimado?.toString() ?? '', responsavel: lead.responsavel_id ?? '', temperatura: lead.temperatura, proximo: isoParaLocal(lead.proximo_contato_em), tags: lead.tags }) }, [lead])
+  const doLead = (l: CrmLead) => ({ nome: l.nome, interesse: l.interesse ?? '', origem: l.origem, valor: l.valor_estimado?.toString() ?? '',
+    responsavel: l.responsavel_id ?? '', temperatura: l.temperatura, proximo: isoParaLocal(l.proximo_contato_em), tags: l.tags })
+  const [f, setF] = useState(() => doLead(lead))
+  // Atualiza o formulário com os dados novos do lead só se a pessoa não estiver editando
+  // (o quadro recarrega a cada movimento do CRM e não pode apagar o que foi digitado).
+  const baseRef = useRef(JSON.stringify(doLead(lead)))
+  useEffect(() => {
+    const novo = doLead(lead)
+    const base = baseRef.current
+    baseRef.current = JSON.stringify(novo)
+    setF(prev => (JSON.stringify(prev) === base ? novo : prev))
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [lead])
   const [salvando, setSalvando] = useState(false)
   const [perda, setPerda] = useState(false)
   const [excluir, setExcluir] = useState(false)
