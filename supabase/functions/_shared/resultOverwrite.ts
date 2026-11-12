@@ -7,7 +7,7 @@
 //   (vale também para valor digitado à mão mais recente que o do aparelho)
 
 export type OverwriteDecision =
-  | { kind: 'created' }
+  | { kind: 'created'; reopened?: boolean }
   | { kind: 'overwritten'; reopened: boolean }
   | { kind: 'ignored_older' }
   | { kind: 'refused_released' }
@@ -36,9 +36,9 @@ export function decideInstrumentResult(opts: {
 
   const hasValue =
     !!current && current.value !== null && current.value !== undefined && String(current.value).trim() !== ''
-  if (!hasValue) return { kind: 'created' }
-
+  // Exame liberado nunca muda sem reteste — nem preenchendo um campo que ficou vazio
   if (examStatus === 'released' && !retestRequested) return { kind: 'refused_released' }
+  if (!hasValue) return examStatus === 'released' ? { kind: 'created', reopened: true } : { kind: 'created' }
 
   const incomingTs = ts(opts.incomingResultDatetime) || (opts.now ?? new Date()).getTime()
   const currentTs = ts(current!.result_datetime) || ts(current!.updated_at)
