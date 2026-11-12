@@ -2,3 +2,4 @@
 
 - Personalized work map groups exams per patient by workbench reportOrder via mapaPersonalizado; it is a view of an existing work map (no separate storage). Why: same included items as the other map views.
 - Report rows of parameters with "Obrig" unchecked are hidden when empty, decided only in LaudoDocument via linhasDoLaudo; builders just flag rows optional (buildExamParams, marcarOpcionais, portal_fetch_laudo). Why: one rule for every printed/portal laudo.
+- Long text parameter values (OBS/descriptions) wrap inside the LaudoDocument value cell, spanning the reference column when there is none; detection and page-height estimate via laudoValorTexto. Why: free text must never push the laudo past the A4 width.
