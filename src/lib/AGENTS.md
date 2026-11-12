@@ -1,1 +1,3 @@
 - Exam billing codes are optional text values; spreadsheet imports omit missing columns and clear explicitly empty cells. Why: preserve leading zeros and compatibility with older catalogs.- Exam parameter references have a simple/complete mode stored per parameter (referenceMode, referenceFullText) in exams/exam_laudos parameters JSON; flags follow the complete text when it holds a single range (resultFlag/flagReference), otherwise the age/sex ranges. Why: a report must never flag a value inside the printed range.
+
+- Personalized work map groups exams per patient by workbench reportOrder via mapaPersonalizado; it is a view of an existing work map (no separate storage). Why: same included items as the other map views.
