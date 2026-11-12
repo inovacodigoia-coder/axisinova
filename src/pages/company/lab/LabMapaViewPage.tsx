@@ -323,6 +323,8 @@ export default function LabMapaViewPage() {
         .patient-meta { font-size: 6pt !important; }
         .mp-header, .mp-exam { break-inside: avoid; page-break-inside: avoid; }
         .mp-header, .mp-bancada { break-after: avoid; page-break-after: avoid; }
+        /* Mapa Personalizado: cada paciente começa em uma folha nova */
+        .mp-patient + .mp-patient { break-before: page; page-break-before: always; margin-top: 0 !important; border-top: 0 !important; padding-top: 0 !important; }
       }`}</style>
 
       {/* Navegação */}
