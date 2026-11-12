@@ -2124,6 +2124,9 @@ export function ResultEntryModal({
                             const reference = apoioRefs[`${exam.id}_${param.id}`] ? simpleRef : displayReference(param, simpleRef);
                             const fullRef = reference !== simpleRef;
                             const status = getResultStatus(value, apoioRefs[`${exam.id}_${param.id}`] ? simpleRef : flagReference(param, simpleRef));
+                            const paramKey = `${exam.id}_${param.id}`;
+                            const calculatedField = !!param.isCalculated && !differentialPercent(param);
+                            const calculatedLocked = calculatedField && !manualCalc[paramKey];
                             
                             return (
                               <div key={param.id} className={cn(
@@ -2180,20 +2183,22 @@ export function ResultEntryModal({
                                     </Select>
                                     ) : (
                                     <Input 
+                                      id={`result-${paramKey}`}
                                       className={cn(
                                         "h-10 text-sm font-bold bg-white border-slate-200 focus:border-primary transition-all pr-12",
                                         status.label === 'Baixo' && "border-amber-400 focus:border-amber-500",
                                         status.label === 'Alto' && "border-rose-400 focus:border-rose-500",
                                         status.label === 'Normal' && "border-emerald-400 focus:border-emerald-500",
-                                        (!isExamEditable(exam.id) || (param.isCalculated && !differentialPercent(param))) && "bg-slate-100 border-slate-200 cursor-not-allowed text-slate-500"
+                                        (!isExamEditable(exam.id) || calculatedLocked) && "bg-slate-100 border-slate-200 cursor-not-allowed text-slate-500"
                                       )}
-                                      placeholder={param.isCalculated && !differentialPercent(param) ? 'Calculado' : 'Resultado'}
+                                      placeholder={calculatedLocked ? 'Calculado' : 'Resultado'}
                                       value={value}
-                                      readOnly={!!param.isCalculated && !differentialPercent(param)}
+                                      readOnly={calculatedLocked}
                                       disabled={!isExamEditable(exam.id)}
                                       onChange={(e) => {
-                                        if (param.isCalculated && !differentialPercent(param)) return;
-                                        setResults(prev => ({ ...prev, [`${exam.id}_${param.id}`]: e.target.value }));
+                                        if (calculatedLocked) return;
+                                        if (calculatedField) setManualCalc(prev => ({ ...prev, [paramKey]: true }));
+                                        setResults(prev => ({ ...prev, [paramKey]: e.target.value }));
                                       }}
                                     />
                                     )}
@@ -2209,12 +2214,37 @@ export function ResultEntryModal({
                                       </div>
                                     )}
                                   </div>
+                                  {isExamEditable(exam.id) && calculatedLocked && (
+                                    <button
+                                      type="button"
+                                      title="Editar ou apagar o resultado calculado"
+                                      aria-label={`Editar cálculo ${param.name}`}
+                                      onClick={() => enableManualCalc(exam, param, value)}
+                                      className="h-8 w-8 shrink-0 rounded-md border border-amber-300 bg-amber-50 text-amber-600 flex items-center justify-center hover:bg-amber-100 transition-colors"
+                                    >
+                                      <Pencil className="h-3.5 w-3.5" />
+                                    </button>
+                                  )}
+                                  {isExamEditable(exam.id) && calculatedField && manualCalc[paramKey] && (
+                                    <button
+                                      type="button"
+                                      title="Voltar ao cálculo automático"
+                                      aria-label={`Recalcular ${param.name}`}
+                                      onClick={() => restoreAutomaticCalc(exam, param)}
+                                      className="h-8 w-8 shrink-0 rounded-md border border-primary/30 bg-primary/5 text-primary flex items-center justify-center hover:bg-primary/10 transition-colors"
+                                    >
+                                      <RefreshCw className="h-3.5 w-3.5" />
+                                    </button>
+                                  )}
                                   {showCorrectionPencil(exam.id) && (
                                     <button
                                       type="button"
                                       title="Corrigir resultado"
                                       aria-label="Corrigir resultado"
-                                      onClick={() => setCorrectionUnlocked(prev => ({ ...prev, [exam.id]: true }))}
+                                      onClick={() => {
+                                        if (calculatedField) enableManualCalc(exam, param, value, true);
+                                        else setCorrectionUnlocked(prev => ({ ...prev, [exam.id]: true }));
+                                      }}
                                       className="h-8 w-8 shrink-0 rounded-md border border-amber-300 bg-amber-50 text-amber-600 flex items-center justify-center hover:bg-amber-100 transition-colors"
                                     >
                                       <Pencil className="h-3.5 w-3.5" />
