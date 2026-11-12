@@ -133,14 +133,20 @@ export function QuickPatientForm({ onCreate }: Props) {
       tags: [], importedFrom: 'reception_quick',
       createdAt: new Date().toISOString(), updatedAt: new Date().toISOString(),
     }
-    // Salvar no supabase (best-effort, ignora erro detalhado)
+    // Salva no banco; se falhar, avisa e não segue com um paciente que não existe
     try {
-      await supabase.from('patients').insert({
+      const { error } = await supabase.from('patients').insert({
         id: newId, company_id: companyId, name: f.fullName.trim(),
         birth_date: birthIso, cpf: cpfDigits || null, mother_name: f.motherName || null,
         phone: f.phone1, email: f.email || null, gender: f.gender, status: 'active',
       } as any)
-    } catch (e) { console.warn('quick patient insert', e) }
+      if (error) throw error
+    } catch (e: any) {
+      console.warn('quick patient insert', e)
+      toast.error('Não foi possível cadastrar o paciente: ' + (e?.message || 'tente novamente'))
+      setSaving(false)
+      return
+    }
     toast.success('Paciente cadastrado')
     onCreate(patient)
     setSaving(false)

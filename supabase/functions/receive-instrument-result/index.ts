@@ -216,20 +216,10 @@ Deno.serve(async (req) => {
   const companySeq = (company?.sequence_id ?? null) as number | null
 
   const since = new Date(Date.now() - 90 * 24 * 60 * 60 * 1000).toISOString()
-  const { data: orders } = await supabase
-    .from('attendance_orders')
-    .select('id, protocol, order_number, status, patient_id, patient_name, lab_guides, created_at')
-    .eq('company_id', companyId)
-    .gt('created_at', since)
-    .order('created_at', { ascending: false })
-    .limit(3000)
-
   const barcodeUpper = norm(sampleBarcode)
+  const LIGHT_COLS = 'id, protocol, order_number, status, created_at'
 
-  let order: any = null
-  let cancelledMatch: any = null
-
-  for (const o of orders || []) {
+  const matchesBarcode = (o: any) => {
     const label = String(o.order_number || o.protocol || o.id)
     const candidates = new Set<string>([norm(label), norm(o.protocol), norm(o.order_number)])
     for (let idx = 1; idx <= TUBE_TYPES.length; idx++) {
@@ -237,13 +227,61 @@ Deno.serve(async (req) => {
       candidates.add(norm(code))
       candidates.add(norm(generateSampleHash(code)))
     }
-    if (!candidates.has(barcodeUpper)) continue
+    return candidates.has(barcodeUpper)
+  }
+
+  // 5a. Busca direta pelo número do pedido (código de barras = pedido ou pedido-tubo[-empresa]),
+  //     sem varrer pedidos em memória.
+  const raw = String(sampleBarcode).trim()
+  const directKeys = new Set<string>([raw, raw.toUpperCase()])
+  let semEmpresa = raw
+  if (companySeq && raw.endsWith(`-${companySeq}`)) {
+    semEmpresa = raw.slice(0, -(`-${companySeq}`.length))
+    directKeys.add(semEmpresa)
+  }
+  const semTubo = semEmpresa.replace(/-\d{1,2}$/, '')
+  if (semTubo && semTubo !== semEmpresa) directKeys.add(semTubo)
+  const keys = [...directKeys].filter(Boolean).slice(0, 8)
+
+  const [byNumber, byProtocol] = await Promise.all([
+    supabase.from('attendance_orders').select(LIGHT_COLS).eq('company_id', companyId).in('order_number', keys).limit(20),
+    supabase.from('attendance_orders').select(LIGHT_COLS).eq('company_id', companyId).in('protocol', keys).limit(20),
+  ])
+  let lightOrders: any[] = [...(byNumber.data || []), ...(byProtocol.data || [])]
+    .sort((a, b) => String(b.created_at).localeCompare(String(a.created_at)))
+  if (!lightOrders.some(matchesBarcode)) {
+    // 5b. Código alfanumérico (hash) da etiqueta: varre só colunas leves dos últimos 90 dias.
+    const { data: recent } = await supabase
+      .from('attendance_orders')
+      .select(LIGHT_COLS)
+      .eq('company_id', companyId)
+      .gt('created_at', since)
+      .order('created_at', { ascending: false })
+      .limit(3000)
+    lightOrders = recent || []
+  }
+
+  let order: any = null
+  let cancelledMatch: any = null
+
+  for (const o of lightOrders) {
+    if (!matchesBarcode(o)) continue
     if (CANCELLED_STATUSES.includes(String(o.status))) {
       cancelledMatch = o
       continue
     }
     order = o
     break
+  }
+
+  if (order) {
+    // Carrega os dados completos só do pedido encontrado
+    const { data: full } = await supabase
+      .from('attendance_orders')
+      .select('id, protocol, order_number, status, patient_id, patient_name, lab_guides, created_at')
+      .eq('id', order.id)
+      .maybeSingle()
+    order = full || null
   }
 
   if (!order && cancelledMatch) {
@@ -266,11 +304,6 @@ Deno.serve(async (req) => {
   }
 
   // ---- 6. Exame/parâmetro do pedido pelo test_code ----
-  const { data: catalog } = await supabase
-    .from('exams')
-    .select('id, name, internal_code, tuss_code, parameters, interfacing_config, interfacing_parameters, measurement_unit')
-    .eq('company_id', companyId)
-
   const guides: any[] = Array.isArray(order.lab_guides) ? order.lab_guides : []
   const orderExamIds = new Set<string>()
   const orderExamByCatalogId = new Map<string, any>()
@@ -285,6 +318,17 @@ Deno.serve(async (req) => {
       }
     }
   }
+
+  // Só os exames do pedido (não o catálogo inteiro da empresa)
+  const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
+  const catalogIds = [...orderExamIds].filter((id) => UUID_RE.test(id))
+  const { data: catalog } = catalogIds.length
+    ? await supabase
+        .from('exams')
+        .select('id, name, internal_code, tuss_code, parameters, interfacing_config, interfacing_parameters, measurement_unit')
+        .eq('company_id', companyId)
+        .in('id', catalogIds)
+    : { data: [] as any[] }
 
   let matchedExam: any = null
   let matchedParamId: string | null = null
@@ -452,7 +496,7 @@ Deno.serve(async (req) => {
   }
 
   let resultId = existingResult?.id as string | undefined
-  const reopened = decision.kind === 'overwritten' && decision.reopened
+  const reopened = (decision.kind === 'overwritten' || decision.kind === 'created') && decision.reopened === true
   const resultPayload: Record<string, unknown> = {
     company_id: companyId,
     order_id: order.id,

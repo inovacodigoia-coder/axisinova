@@ -1079,6 +1079,13 @@
       "when": 1794518733017,
       "tag": "0153_empresa_cadastro_publico_rpc",
       "breakpoints": true
+    },
+    {
+      "idx": 154,
+      "version": "7",
+      "when": 1794519327513,
+      "tag": "0154_coleta_programada_prazo_pedido",
+      "breakpoints": true
     }
   ]
 }

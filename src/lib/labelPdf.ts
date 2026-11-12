@@ -45,6 +45,21 @@ export interface FolhaPdf {
   /** Padrão: retrato. */
   orientacao?: FolhaOrientacao
   margemMm?: number
+  /** Conteúdo mais alto que a folha continua na folha seguinte, na largura total (laudos). */
+  dividirPaginas?: boolean
+}
+
+/**
+ * Faixas (em px do canvas) para dividir um conteúdo alto em folhas na largura total.
+ * Uma sobra de até 3% ainda cabe na folha (encolhe um pouco), para não gerar folha quase vazia.
+ */
+export function fatiasDaFolha(canvasW: number, canvasH: number, uw: number, uh: number): { y: number; h: number }[] {
+  if (!canvasW || !canvasH) return []
+  const porFolha = Math.floor((uh / uw) * canvasW)
+  if (canvasH <= porFolha * 1.03) return [{ y: 0, h: canvasH }]
+  const out: { y: number; h: number }[] = []
+  for (let y = 0; y < canvasH; y += porFolha) out.push({ y, h: Math.min(porFolha, canvasH - y) })
+  return out
 }
 
 const FOLHAS: Record<FolhaFormato, [number, number]> = { a4: [210, 297], a5: [148, 210] }
@@ -88,12 +103,28 @@ export async function gerarPdfElementos(
       const m = folha.margemMm ?? 10
       const uw = pw - 2 * m
       const uh = ph - 2 * m
-      let w = uw
-      let h = (canvas.height / canvas.width) * w
-      if (h > uh) { h = uh; w = (canvas.width / canvas.height) * h }
-      if (!pdf) pdf = new jsPDF({ orientation: orientacao, unit: 'mm', format: folha.formato })
-      else pdf.addPage(folha.formato, orientacao)
-      pdf.addImage(img, 'JPEG', m + (uw - w) / 2, m, w, h)
+      const fatias = folha.dividirPaginas ? fatiasDaFolha(canvas.width, canvas.height, uw, uh) : [{ y: 0, h: canvas.height }]
+      for (const fatia of fatias) {
+        let fimg = img
+        if (fatias.length > 1) {
+          const c = document.createElement('canvas')
+          c.width = canvas.width
+          c.height = fatia.h
+          const ctx = c.getContext('2d')
+          if (ctx) {
+            ctx.fillStyle = '#ffffff'
+            ctx.fillRect(0, 0, c.width, c.height)
+            ctx.drawImage(canvas, 0, fatia.y, canvas.width, fatia.h, 0, 0, canvas.width, fatia.h)
+          }
+          fimg = c.toDataURL('image/jpeg', 0.92)
+        }
+        let w = uw
+        let h = (fatia.h / canvas.width) * w
+        if (h > uh) { h = uh; w = (canvas.width / fatia.h) * h }
+        if (!pdf) pdf = new jsPDF({ orientation: orientacao, unit: 'mm', format: folha.formato })
+        else pdf.addPage(folha.formato, orientacao)
+        pdf.addImage(fimg, 'JPEG', m + (uw - w) / 2, m, w, h)
+      }
       continue
     }
 
