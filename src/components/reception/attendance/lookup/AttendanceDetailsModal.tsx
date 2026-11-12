@@ -52,6 +52,7 @@ import { useApoioPermissions } from '@/hooks/useApoio'
 import { MudarOrigemDialog } from './MudarOrigemDialog'
 import { AttendanceAuditDialog } from './AttendanceAuditDialog'
 import { LaudoPrintHistoryDialog } from './LaudoPrintHistoryDialog'
+import { EditarAtendimentoDialog } from './EditarAtendimentoDialog'
 
 import {
   AlertDialog,
@@ -98,6 +99,7 @@ export function AttendanceDetailsModal({ open, onClose, onOrderDeleted, order, p
   const [mudarOrigemOpen, setMudarOrigemOpen] = useState(false)
   const [auditOpen, setAuditOpen] = useState(false)
   const [printHistoryOpen, setPrintHistoryOpen] = useState(false)
+  const [editarOpen, setEditarOpen] = useState(false)
   const [origemAtual, setOrigemAtual] = useState<{ id?: string; name?: string }>({ id: order.originId, name: order.originName })
   const { settings, isLoading: settingsLoading } = useLabSettings()
   const companySequenceId = useCompanySequenceId()
@@ -632,7 +634,7 @@ export function AttendanceDetailsModal({ open, onClose, onOrderDeleted, order, p
                     )}
                     {algumaAcao && (<>
 {pode('atendimento.editar') && (
-                    <DropdownMenuItem className="flex items-center gap-2">
+                    <DropdownMenuItem className="flex items-center gap-2" onSelect={() => setEditarOpen(true)}>
                       <Pencil className="h-4 w-4" />
                       <span>Editar</span>
                     </DropdownMenuItem>
@@ -1720,6 +1722,15 @@ export function AttendanceDetailsModal({ open, onClose, onOrderDeleted, order, p
       )}
       {corrigirColeta && order?.id && <CorrigirHorarioColetaDialog pedidoId={order.id} examId={corrigirColeta.examId} examNome={corrigirColeta.nome} atual={corrigirColeta.atual} onClose={() => setCorrigirColeta(null)} />}
       {open && printHistoryOpen && pode('atendimento.historico_impressoes') && <LaudoPrintHistoryDialog orderId={order.id} orderNumber={order.orderNumber} onClose={() => setPrintHistoryOpen(false)} />}
+      {open && editarOpen && pode('atendimento.editar') && (
+        <EditarAtendimentoDialog
+          orderId={order.id}
+          orderNumber={order.orderNumber}
+          patient={currentPatient}
+          onClose={() => setEditarOpen(false)}
+          onSaved={(row) => { if (Array.isArray(row?.lab_guides)) setGuidesState(row.lab_guides) }}
+        />
+      )}
       {open && auditOpen && pode('atendimento.auditoria') && <AttendanceAuditDialog orderId={order.id} orderNumber={order.orderNumber} onClose={() => setAuditOpen(false)} />}
       </ScrollArea>
     </DialogContent>

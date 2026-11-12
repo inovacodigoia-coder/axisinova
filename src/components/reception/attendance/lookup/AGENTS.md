@@ -1,0 +1,1 @@
+- Attendance edit (Detalhes Atendimento ⋮ → Editar) reuses the Cadastro steps LabStep2ExamData/LabStep3GuidesProcedures over a fresh order row and saves only changed columns via editarAtendimento; exams with typed results cannot be removed. Why: same form as Cadastro and the audit trigger logs exact changes.
