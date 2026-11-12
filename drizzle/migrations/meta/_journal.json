@@ -1065,6 +1065,13 @@
       "when": 1794401039980,
       "tag": "0151_portal_recoleta_info",
       "breakpoints": true
+    },
+    {
+      "idx": 152,
+      "version": "7",
+      "when": 1794504496168,
+      "tag": "0152_portal_laudo_parametro_opcional",
+      "breakpoints": true
     }
   ]
 }
