@@ -141,7 +141,7 @@ function Flag({ flag }: { flag?: string }) {
 
 function StandardTable({ rows }: { rows: any[] }) {
   return (
-    <table className="w-full table-fixed text-[10.5px]">
+    <table className="w-full text-[10.5px]">
       <thead>
         <tr className="text-left text-zinc-500 border-b border-zinc-200 uppercase tracking-wider text-[9px]">
           <th className="pb-1 font-medium w-[42%]">Parâmetro</th>
