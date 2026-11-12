@@ -44,6 +44,7 @@ import {
 } from 'lucide-react';
 import { useApoioCancelamento } from '@/components/apoio/useApoioCancelamento';
 import PDFPreviewModal from '@/components/lab/PDFPreviewModal';
+import { marcarOpcionais } from '@/lib/laudoParametrosOpcionais';
 import { InstrumentGraphicsSection } from '@/components/lab/analise/InstrumentGraphicsSection';
 import { PatientInfoFloating } from '@/components/lab/analise/PatientInfoFloating';
 import { useApoioAnalise, apoioEditavel, bloqueiosApoio, formatarCasas, notaDoApoio, temIntegracao } from '@/components/lab/analise/apoio/apoioAnalise';
@@ -979,7 +980,7 @@ export function ResultEntryModal({
             realizadoPor: e.bancadaTipo === 'apoio' ? (e.apoioNome || workbenchName) : undefined,
             workbenchOrder: orderOfWorkbench(workbenchId, workbenchName || e.workbench),
             status: examStatuses[e.id] === 'released' ? 'liberado' : 'waiting_approval',
-            results: getParams(e).map((p: any) => {
+            results: marcarOpcionais(getParams(e).map((p: any) => {
               const value = getParamValue(e, p);
               const reference = displayReference(p, resolveReference(p, value));
               const st = getResultStatus(value, flagReference(p, resolveReference(p, value)));
@@ -995,7 +996,7 @@ export function ResultEntryModal({
                 flag: st.label === 'Alto' ? 'H' : st.label === 'Baixo' ? 'L' : '',
                 status: st.label === 'Alto' || st.label === 'Baixo' ? 'altered' : 'normal',
               };
-            }),
+            }), catalogExam),
             internalObservations: notes[e.id] || '',
           };
         })

@@ -1,4 +1,5 @@
 import React from 'react';
+import { linhasDoLaudo } from '@/lib/laudoParametrosOpcionais';
 import { LabReportHeader } from './LabReportHeader';
 import { LabAttendanceOrder } from '@/types/lab.types';
 import { cn } from '@/lib/utils';
@@ -204,7 +205,8 @@ function DifferentialTable({ paired }: { paired: PairedRow[] }) {
 function ExamBlock({ exam, order, equipmentTypes }: { exam: any; order?: any; equipmentTypes: Record<string, string> }) {
   const codes = Array.from(new Set<string>((exam.results || []).map((r: any) => String(r.instrumentCode || '')).filter(Boolean)));
   const type = codes.length === 1 ? equipmentTypes[codes[0].toLowerCase()] : undefined;
-  const results: any[] = differentialReportRows(exam.results || [], type);
+  // Parâmetro com Obrig desmarcado e sem resultado não sai no laudo
+  const results: any[] = differentialReportRows(linhasDoLaudo(exam.results || []), type);
   const sections: { name: string; rows: any[] }[] = [];
   results.forEach((r) => {
     const name = ((r.section || '').trim() || inferSection(r.parameterName || r.parameterCode || '')).trim();

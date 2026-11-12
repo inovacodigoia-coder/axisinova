@@ -19,6 +19,7 @@ import { cn } from '@/lib/utils'
 import { AttendancePrintSelectionModal } from '../print/AttendancePrintSelectionModal'
 import { SampleLabelsPrintModal } from '../print/SampleLabelsPrintModal'
 import PDFPreviewModal from '@/components/lab/PDFPreviewModal'
+import { marcarOpcionais } from '@/lib/laudoParametrosOpcionais'
 import { AttendancePrintModal } from '../print/AttendancePrintModal'
 import {
   DropdownMenu,
@@ -497,7 +498,7 @@ export function AttendanceDetailsModal({ open, onClose, onOrderDeleted, order, p
       workbenchOrder: e.workbenchOrder ?? 9999,
       status: res?.status === 'released' ? 'liberado' : 'waiting_approval',
       internalObservations: res?.notes || '',
-      results: (res?.values || []).map((v: any) => ({
+      results: marcarOpcionais((res?.values || []).map((v: any) => ({
         parameterId: String(v.parameter_key),
         parameterCode: v.parameter_name,
         parameterName: v.parameter_name,
@@ -507,7 +508,7 @@ export function AttendanceDetailsModal({ open, onClose, onOrderDeleted, order, p
         referenceRange: v.reference || '—',
         flag: v.status === 'Alto' ? 'H' : v.status === 'Baixo' ? 'L' : '',
         status: v.status === 'Alto' || v.status === 'Baixo' ? 'altered' : 'normal',
-      })),
+      })), findCatalog(e)),
     }
   }
 
