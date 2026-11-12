@@ -992,6 +992,8 @@ export function ResultEntryModal({
                 value,
                 unit: p.unit || '',
                 referenceRange: reference || '—',
+                // Obrig desmarcado: vazio não sai no laudo (linhasDoLaudo)
+                optional: !!p.optional,
                 flag: st.label === 'Alto' ? 'H' : st.label === 'Baixo' ? 'L' : '',
                 status: st.label === 'Alto' || st.label === 'Baixo' ? 'altered' : 'normal',
               };

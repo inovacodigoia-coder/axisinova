@@ -113,6 +113,7 @@ interface PortalLaudo {
       flag: string | null
       section: string | null
       sortOrder: number
+      optional?: boolean | null
     }[]
   }
   settings: {
