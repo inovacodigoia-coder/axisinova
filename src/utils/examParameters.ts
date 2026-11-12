@@ -281,6 +281,8 @@ export function buildExamParams(catalogExam: any | undefined, fallbackName: stri
       referenceMode: p.referenceMode === 'completa' ? 'completa' : 'simples',
       referenceFullText: p.referenceFullText || '',
       preferFormula: !!(p.preferFormula || p.prefer_formula),
+      // Obrig desmarcado no cadastro: sem resultado, o parâmetro não sai no laudo
+      optional: p.isMandatory === false || p.isRequired === false || p.is_required === false,
     }
   })
 
