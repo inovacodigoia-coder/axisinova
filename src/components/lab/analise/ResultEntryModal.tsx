@@ -1,5 +1,6 @@
 import { displayReference } from '@/lib/examReferenceMode';
 import { flagReference, resultFlag } from '@/lib/resultFlag';
+import { calculatedResultSource, calculatedResultValue, isManualCalculatedSource, shouldCalculateAutomatically } from '@/lib/calculatedResultOverride';
 import { useState, useMemo, useEffect, useCallback, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { buildExamParams, catalogKey, findCatalogExam, evaluateFormula, normalizeText, resolveReference } from '@/utils/examParameters';
@@ -112,6 +113,8 @@ export function ResultEntryModal({
   const { canType, canRelease, canCorrect } = useResultEntryPermissions();
   const [correctionUnlocked, setCorrectionUnlocked] = useState<Record<string, boolean>>({});
   const [results, setResults] = useState<Record<string, string>>({});
+  // Edição explícita pela caneta: o valor manual (inclusive vazio) prevalece sobre CALC.
+  const [manualCalc, setManualCalc] = useState<Record<string, boolean>>({});
   const [externalResultValues, setExternalResultValues] = useState<Record<string, string>>({});
   const [instrumentCodes, setInstrumentCodes] = useState<Record<string, string>>({});
   const [rawInstrumentValues, setRawInstrumentValues] = useState<Record<string, string>>({});
@@ -384,13 +387,13 @@ export function ResultEntryModal({
     });
     if (Object.keys(novosRes).length) setResults(prev => {
       const n = { ...prev };
-      Object.entries(novosRes).forEach(([k, val]) => { if (!(prev[k] || '').trim() || apoioPorExame[k.split('_')[0]]?.versao?.origem === 'integracao') n[k] = val; });
+      Object.entries(novosRes).forEach(([k, val]) => { if (!manualCalc[k] && (!(prev[k] || '').trim() || apoioPorExame[k.split('_')[0]]?.versao?.origem === 'integracao')) n[k] = val; });
       return n;
     });
     if (Object.keys(novasNotas).length) setNotes(prev => { const n = { ...prev }; Object.entries(novasNotas).forEach(([k, v]) => { if (!(prev[k] || '').trim()) n[k] = v; }); return n; });
     setApoioRefs(refs);
     setApoioExecutor(prev => ({ ...exec, ...prev }));
-  }, [apoioPorExame, paramsByExam]);
+  }, [apoioPorExame, paramsByExam, manualCalc]);
 
   /** Valida/aplica a regra do apoio antes de concluir ou liberar. Lança erro se o banco recusar. */
   const apoioGate = async (exam: any, status: 'draft' | 'digitized' | 'released') => {
@@ -441,21 +444,35 @@ export function ResultEntryModal({
     return externalResultValues[`${orderKey}|${wanted}`] ?? null;
   }, [filteredExams, paramsByExam, results, externalResultValues]);
 
-  // Valor exibido: parâmetros calculados usam a fórmula do catálogo,
-  // EXCETO quando o valor veio do equipamento (source 'instrument') — nesse caso o valor do equipamento prevalece
+  // Valor exibido: CALC usa a fórmula por padrão; aparelho ou edição manual
+  // explícita pela caneta prevalecem. O valor manual pode ser vazio.
   const getParamValue = useCallback((exam: any, param: any) => {
     const key = `${exam.id}_${param.id}`;
     if (differentialPercent(param)) return examStatuses[exam.id] === 'released' ? (results[key] || '') : differentialFor(exam.id, getParams(exam)).values[param.id] || '';
-    if (param?.isCalculated && (!instrumentKeys.has(key) || param.preferFormula)) {
-      return evaluateFormula(
+    return calculatedResultValue({
+      param,
+      storedValue: results[key],
+      instrumentReceived: instrumentKeys.has(key),
+      manualOverride: !!manualCalc[key],
+      calculate: () => evaluateFormula(
         param.formula,
         getParams(exam),
         (pid) => results[`${exam.id}_${pid}`] || '',
         (token) => resolveExternalToken(exam, token),
-      );
-    }
-    return results[key] || '';
-  }, [results, paramsByExam, instrumentKeys, rawInstrumentValues, examStatuses, resolveExternalToken]);
+      ),
+    });
+  }, [results, manualCalc, paramsByExam, instrumentKeys, rawInstrumentValues, examStatuses, resolveExternalToken]);
+
+  // Campo CALC esvaziado pela caneta é uma ausência intencional, não pendência.
+  const examReady = (exam: any) => {
+    const params = getParams(exam);
+    const ready = hematologyReady(
+      params,
+      (pid) => getParamValue(exam, params.find((p: any) => p.id === pid)),
+      (param) => !!manualCalc[`${exam.id}_${param.id}`],
+    );
+    return ready && params.some((param: any) => getParamValue(exam, param).trim() !== '');
+  };
 
   // Persiste automaticamente os calculados no estado para salvar/laudo
   useEffect(() => {
@@ -470,9 +487,11 @@ export function ResultEntryModal({
           if ((results[key] || '') !== (differential[p.id] || '')) updates[key] = differential[p.id] || '';
           return;
         }
-        if (!p.isCalculated) return;
         const key = `${examId}_${p.id}`;
-        if (instrumentKeys.has(key) && !p.preferFormula) return; // valor veio do equipamento — não recalcular, salvo preferência explícita pela fórmula
+        if (!shouldCalculateAutomatically(p, {
+          instrumentReceived: instrumentKeys.has(key),
+          manualOverride: !!manualCalc[key],
+        })) return;
         const computed = evaluateFormula(
           p.formula,
           params,
@@ -485,7 +504,7 @@ export function ResultEntryModal({
     if (Object.keys(updates).length > 0) {
       setResults(prev => ({ ...prev, ...updates }));
     }
-  }, [results, paramsByExam, instrumentKeys, rawInstrumentValues, examStatuses, resolveExternalToken]);
+  }, [results, manualCalc, paramsByExam, instrumentKeys, rawInstrumentValues, examStatuses, resolveExternalToken]);
 
 
   const totalExams = filteredExams.length;
@@ -498,13 +517,13 @@ export function ResultEntryModal({
       if (expandedPatients[exam.protocol] && examStatuses[exam.id] !== 'released') {
         // Must have results for ALL parameters to be considered "filled"
         const params = paramsByExam[exam.id] || [{ id: '1' }];
-        const allFilled = hematologyReady(params, (pid) => getParamValue(exam, params.find((p: any) => p.id === pid)))
+        const allFilled = examReady(exam)
           && !diffInfoFor(params, (pid) => results[`${exam.id}_${pid}`] || '', exam.id)?.blockRelease;
         if (allFilled) count++;
       }
     });
     return count;
-  }, [results, filteredExams, expandedPatients, examStatuses, paramsByExam]);
+  }, [results, manualCalc, filteredExams, expandedPatients, examStatuses, paramsByExam]);
 
 
   // Calculate total required exams only for expanded patients (excluding already released ones)
@@ -590,8 +609,11 @@ export function ResultEntryModal({
           reference: apoioRefs[`${exam.id}_${p.id}`] || displayReference(p, resolveReference(p, value)) || null,
           status: getResultStatus(value, apoioRefs[`${exam.id}_${p.id}`] || flagReference(p, resolveReference(p, value))).label || null,
           sort_order: idx,
-          // Preserva a origem quando o valor veio do equipamento
-          source: instrumentKeys.has(`${exam.id}_${p.id}`) ? 'instrument' : 'manual',
+          // Preserva aparelho ou a escolha manual feita pela caneta (inclusive vazio).
+          source: calculatedResultSource({
+            instrumentReceived: instrumentKeys.has(`${exam.id}_${p.id}`),
+            manualOverride: !!manualCalc[`${exam.id}_${p.id}`],
+          }),
           instrument_value: rawInstrumentValues[`${exam.id}_${p.id}`] ?? null,
         };
       });
@@ -624,7 +646,7 @@ export function ResultEntryModal({
     // Se algum estiver faltando digitação ou ainda for pendente -> Validação
     const isMissingResults = allExams.some(exam => {
       const params = paramsByExam[exam.id] || [{ id: '1' }];
-      return params.some(p => !(results[`${exam.id}_${p.id}`] || '').trim());
+      return params.some(p => !manualCalc[`${exam.id}_${p.id}`] && !(results[`${exam.id}_${p.id}`] || '').trim());
     });
     
     if (isMissingResults || statuses.some(s => s === 'pending' || s === 'collection_done')) {
@@ -696,6 +718,7 @@ export function ResultEntryModal({
       if (!active || rows.length === 0) return;
 
       const nextResults: Record<string, string> = {};
+      const nextManualCalc: Record<string, boolean> = {};
       const nextNotes: Record<string, string> = {};
       const nextStatuses: Record<string, any> = {};
       const nextBlocks: Record<string, string[]> = {};
@@ -723,10 +746,14 @@ export function ResultEntryModal({
         }
         (row.lab_result_values || []).forEach((v: any) => {
           const key = `${examId}_${String(v.parameter_key)}`;
-          if (v.value !== null && v.value !== undefined && String(v.value) !== '') {
+          if (isManualCalculatedSource(v.source)) {
+            nextManualCalc[key] = true;
+            nextResults[key] = String(v.value ?? '');
+          } else if (v.value !== null && v.value !== undefined && String(v.value) !== '') {
             nextResults[key] = String(v.value);
           }
           if (v.source === 'instrument') {
+            nextManualCalc[key] = false;
             nextRawInstrument[key] = String(v.instrument_value ?? v.value ?? '');
             if (v.instrument_code) nextInstrumentCodes[key] = v.instrument_code;
             nextInstrumentKeys.add(key);
@@ -770,11 +797,12 @@ export function ResultEntryModal({
       setRawInstrumentValues(nextRawInstrument);
       setInstrumentCodes(nextInstrumentCodes);
       setInstrumentKeys(nextInstrumentKeys);
+      setManualCalc(prev => ({ ...prev, ...nextManualCalc }));
       setResults(prev => {
         const next = { ...prev };
         Object.entries(nextResults).forEach(([k, v]) => {
-          // valores do equipamento sempre prevalecem; os demais só preenchem campos vazios
-          if (nextInstrumentKeys.has(k) || !(next[k] || '').trim()) next[k] = v;
+          // Aparelho e edição CALC persistida prevalecem; os demais só preenchem campos vazios.
+          if (nextManualCalc[k] || nextInstrumentKeys.has(k) || !(next[k] || '').trim()) next[k] = v;
         });
         return next;
       });
@@ -1058,8 +1086,7 @@ export function ResultEntryModal({
         filteredExams.forEach(exam => {
           // Only process exams for expanded patients
           if (expandedPatients[exam.protocol] && newStatuses[exam.id] !== 'released') {
-            const params = paramsByExam[exam.id] || [{ id: '1' }];
-            const allFilled = hematologyReady(params, (pid) => getParamValue(exam, params.find((p: any) => p.id === pid)));
+            const allFilled = examReady(exam);
             
             if (allFilled) {
               newStatuses[exam.id] = 'digitized';
@@ -1089,7 +1116,9 @@ export function ResultEntryModal({
         const drafts = filteredExams.filter(exam => {
           if (examStatuses[exam.id] === 'released') return false;
           const params = paramsByExam[exam.id] || [{ id: '1' }];
-          return params.some((p: any) => (results[`${exam.id}_${p.id}`] || '').trim() !== '');
+          return params.some((p: any) =>
+            (results[`${exam.id}_${p.id}`] || '').trim() !== '' || manualCalc[`${exam.id}_${p.id}`]
+          );
         });
         await persistExams(drafts, 'draft');
         toast.success("Rascunho salvo com sucesso!");
@@ -1523,8 +1552,7 @@ export function ResultEntryModal({
       const toPersist: any[] = [];
       (patient.exams || []).forEach((exam: any) => {
         if (newStatuses[exam.id] === 'released' || newStatuses[exam.id] === 'cancelled') return;
-        const params = paramsByExam[exam.id] || [{ id: '1' }];
-        const allFilled = hematologyReady(params, (pid) => getParamValue(exam, params.find((p: any) => p.id === pid)));
+        const allFilled = examReady(exam);
         if (allFilled) {
           newStatuses[exam.id] = 'digitized';
           toPersist.push(exam);
@@ -1569,6 +1597,36 @@ export function ResultEntryModal({
       setSaving(false);
       if (advance) goToPatient(safeIndex + 1);
     }
+  };
+
+  const enableManualCalc = (exam: any, param: any, currentValue: string, unlockCorrection = false) => {
+    const key = `${exam.id}_${param.id}`;
+    if (unlockCorrection) setCorrectionUnlocked(prev => ({ ...prev, [exam.id]: true }));
+    setManualCalc(prev => ({ ...prev, [key]: true }));
+    setResults(prev => ({ ...prev, [key]: prev[key] ?? currentValue }));
+    requestAnimationFrame(() => {
+      const input = document.getElementById(`result-${key}`) as HTMLInputElement | null;
+      input?.focus();
+      input?.select();
+    });
+  };
+
+  const restoreAutomaticCalc = (exam: any, param: any) => {
+    const key = `${exam.id}_${param.id}`;
+    setManualCalc(prev => {
+      const next = { ...prev };
+      delete next[key];
+      return next;
+    });
+    setResults(prev => ({
+      ...prev,
+      [key]: evaluateFormula(
+        param.formula,
+        getParams(exam),
+        (pid) => prev[`${exam.id}_${pid}`] || '',
+        (token) => resolveExternalToken(exam, token),
+      ),
+    }));
   };
 
   if (!isOpen) return null;
@@ -1720,8 +1778,7 @@ export function ResultEntryModal({
               const releasedCount = patient.exams.filter((e: any) => examStatuses[e.id] === 'released').length;
               const typedCount = patient.exams.filter((e: any) => {
                 if (examStatuses[e.id] === 'released') return true;
-                const params = getParams(e);
-                return hematologyReady(params, pid => getParamValue(e, params.find((p: any) => p.id === pid)));
+                return examReady(e);
               }).length;
               const showRelease = releasedCount > 0;
               const showTyping = typedCount > 0 && typedCount > releasedCount;
@@ -1970,7 +2027,7 @@ export function ResultEntryModal({
                                 <Button 
                                   onClick={() => handleConcluirExame(exam.id)}
                                   size="sm" 
-                                  disabled={bloqueiosApoio(apoioDe(exam)).length > 0 || !hematologyReady(getParams(exam), pid => getParamValue(exam, getParams(exam).find((p: any) => p.id === pid))) || !!diffInfoFor(getParams(exam), (pid) => results[`${exam.id}_${pid}`] || '', exam.id)?.blockRelease}
+                                  disabled={bloqueiosApoio(apoioDe(exam)).length > 0 || !examReady(exam) || !!diffInfoFor(getParams(exam), (pid) => results[`${exam.id}_${pid}`] || '', exam.id)?.blockRelease}
                                   title={bloqueiosApoio(apoioDe(exam)).join(' · ') || undefined}
                                   className="h-7 px-3 text-[9px] font-black uppercase gap-1.5 bg-sky-500 hover:bg-sky-600 text-white shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
                                 >
@@ -2069,6 +2126,9 @@ export function ResultEntryModal({
                             const reference = apoioRefs[`${exam.id}_${param.id}`] ? simpleRef : displayReference(param, simpleRef);
                             const fullRef = reference !== simpleRef;
                             const status = getResultStatus(value, apoioRefs[`${exam.id}_${param.id}`] ? simpleRef : flagReference(param, simpleRef));
+                            const paramKey = `${exam.id}_${param.id}`;
+                            const calculatedField = !!param.isCalculated && !differentialPercent(param);
+                            const calculatedLocked = calculatedField && !manualCalc[paramKey];
                             
                             return (
                               <div key={param.id} className={cn(
@@ -2125,20 +2185,22 @@ export function ResultEntryModal({
                                     </Select>
                                     ) : (
                                     <Input 
+                                      id={`result-${paramKey}`}
                                       className={cn(
                                         "h-10 text-sm font-bold bg-white border-slate-200 focus:border-primary transition-all pr-12",
                                         status.label === 'Baixo' && "border-amber-400 focus:border-amber-500",
                                         status.label === 'Alto' && "border-rose-400 focus:border-rose-500",
                                         status.label === 'Normal' && "border-emerald-400 focus:border-emerald-500",
-                                        (!isExamEditable(exam.id) || (param.isCalculated && !differentialPercent(param))) && "bg-slate-100 border-slate-200 cursor-not-allowed text-slate-500"
+                                        (!isExamEditable(exam.id) || calculatedLocked) && "bg-slate-100 border-slate-200 cursor-not-allowed text-slate-500"
                                       )}
-                                      placeholder={param.isCalculated && !differentialPercent(param) ? 'Calculado' : 'Resultado'}
+                                      placeholder={calculatedLocked ? 'Calculado' : 'Resultado'}
                                       value={value}
-                                      readOnly={!!param.isCalculated && !differentialPercent(param)}
+                                      readOnly={calculatedLocked}
                                       disabled={!isExamEditable(exam.id)}
                                       onChange={(e) => {
-                                        if (param.isCalculated && !differentialPercent(param)) return;
-                                        setResults(prev => ({ ...prev, [`${exam.id}_${param.id}`]: e.target.value }));
+                                        if (calculatedLocked) return;
+                                        if (calculatedField) setManualCalc(prev => ({ ...prev, [paramKey]: true }));
+                                        setResults(prev => ({ ...prev, [paramKey]: e.target.value }));
                                       }}
                                     />
                                     )}
@@ -2154,12 +2216,37 @@ export function ResultEntryModal({
                                       </div>
                                     )}
                                   </div>
+                                  {isExamEditable(exam.id) && calculatedLocked && (
+                                    <button
+                                      type="button"
+                                      title="Editar ou apagar o resultado calculado"
+                                      aria-label={`Editar cálculo ${param.name}`}
+                                      onClick={() => enableManualCalc(exam, param, value)}
+                                      className="h-8 w-8 shrink-0 rounded-md border border-amber-300 bg-amber-50 text-amber-600 flex items-center justify-center hover:bg-amber-100 transition-colors"
+                                    >
+                                      <Pencil className="h-3.5 w-3.5" />
+                                    </button>
+                                  )}
+                                  {isExamEditable(exam.id) && calculatedField && manualCalc[paramKey] && (
+                                    <button
+                                      type="button"
+                                      title="Voltar ao cálculo automático"
+                                      aria-label={`Recalcular ${param.name}`}
+                                      onClick={() => restoreAutomaticCalc(exam, param)}
+                                      className="h-8 w-8 shrink-0 rounded-md border border-primary/30 bg-primary/5 text-primary flex items-center justify-center hover:bg-primary/10 transition-colors"
+                                    >
+                                      <RefreshCw className="h-3.5 w-3.5" />
+                                    </button>
+                                  )}
                                   {showCorrectionPencil(exam.id) && (
                                     <button
                                       type="button"
                                       title="Corrigir resultado"
                                       aria-label="Corrigir resultado"
-                                      onClick={() => setCorrectionUnlocked(prev => ({ ...prev, [exam.id]: true }))}
+                                      onClick={() => {
+                                        if (calculatedField) enableManualCalc(exam, param, value, true);
+                                        else setCorrectionUnlocked(prev => ({ ...prev, [exam.id]: true }));
+                                      }}
                                       className="h-8 w-8 shrink-0 rounded-md border border-amber-300 bg-amber-50 text-amber-600 flex items-center justify-center hover:bg-amber-100 transition-colors"
                                     >
                                       <Pencil className="h-3.5 w-3.5" />

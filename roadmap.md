@@ -221,3 +221,8 @@
 - [x] 10 testes SQL novos + 12 antigos; balão conferido no navegador com respostas simuladas; typecheck OK.
 - [ ] Conferir a tela do Chat Interno com login real: não gerei sessão em nome de usuário.
 - [x] Histórico de Impressões do laudo no Detalhes Atendimento (usuário, exames, data/hora)
+
+# Digitação — edição manual de campos CALC
+- [x] Caneta libera o campo calculado para editar ou apagar; o vazio manual não é recalculado e é identificado ao salvar/reabrir; botão restaura o cálculo automático.
+- [x] Campo CALC esvaziado pela caneta é opcional na conclusão; 37 testes de cálculo/referência/diferencial e typecheck passaram, sem alterar laudos reais.
+- [ ] Validar clique, salvamento e reabertura na tela autenticada: preview está signed_out e não foi gerada sessão em nome do usuário.
