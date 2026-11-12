@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
-import { useNavigate, useParams } from 'react-router-dom'
+import { useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import { Card } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { ArrowLeft, FilePlus, Printer, ClipboardList } from 'lucide-react'
@@ -12,14 +12,18 @@ import { EmptyState } from '@/components/feedback/EmptyState'
 import { buildExamParams, findCatalogExam, type ResolvedParam } from '@/utils/examParameters'
 import { differenceInYears } from 'date-fns'
 import { MapaSumarioUrina } from '@/components/lab/MapaSumarioUrina'
+import { MapaPersonalizado, type MapaPersonalizadoPaciente } from '@/components/lab/mapa/MapaPersonalizado'
+import { useRegisters } from '@/context/RegistersContext'
+import { resolveExamWorkbench } from '@/lib/labExamWorkbench'
 
-type ViewMode = 'completo' | 'exame' | 'grade' | 'urina'
+type ViewMode = 'completo' | 'exame' | 'grade' | 'urina' | 'personalizado'
 
 const VIEWS: { id: ViewMode; label: string }[] = [
   { id: 'completo', label: 'Completo' },
   { id: 'exame', label: 'Exame' },
   { id: 'grade', label: 'Grade' },
   { id: 'urina', label: 'Sumário de Urina' },
+  { id: 'personalizado', label: 'Personalizado' },
 ]
 
 interface MapExam {
@@ -29,6 +33,10 @@ interface MapExam {
   examId?: string
   inMap: boolean
   params: ResolvedParam[]
+  workbenchId?: string
+  bancadaNome?: string
+  coletaEm?: string
+  prazo?: string
 }
 
 interface MapPatient {
@@ -43,6 +51,7 @@ interface MapPatient {
   observacoesPaciente?: string
   observacoesClinicas?: string
   exams: MapExam[]
+  order: any
 }
 
 function shortDate(value?: string) {
@@ -85,12 +94,16 @@ export default function LabMapaViewPage() {
   }, [codigo])
 
   const { orders, loading } = useAttendanceCadastro()
+  const { workbenches } = useRegisters() as any
+  const [searchParams] = useSearchParams()
+  const viewParam = searchParams.get('view') as ViewMode | null
 
   // Setor de Uroanálise abre direto no modelo Sumário de Urina
   useEffect(() => {
+    if (viewParam && VIEWS.some(v => v.id === viewParam)) { setView(viewParam); return }
     const setor = (map?.sector || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase()
     if (/uroanalise|urina/.test(setor)) setView('urina')
-  }, [map?.sector])
+  }, [map?.sector, viewParam])
 
 
   const [view, setView] = useState<ViewMode>('completo')
@@ -138,6 +151,10 @@ export default function LabMapaViewPage() {
               gender: order.patientGender,
               age,
             }),
+            workbenchId: resolveExamWorkbench(exam, catalogList.map((c: any) => ({ id: c.id, workbenchId: c.workbench_id }))) || cat?.workbench_id || undefined,
+            bancadaNome: exam.bancadaNome || exam.workbenchName || undefined,
+            coletaEm: exam.collectedAt || undefined,
+            prazo: exam.expectedDeliveryDate || exam.deliveryDate || order.deliveryDate || undefined,
           })
         })
       })
@@ -157,6 +174,7 @@ export default function LabMapaViewPage() {
         observacoesPaciente: (order as any).observations || guide0?.observations || undefined,
         observacoesClinicas: (order as any).clinicalObservations || undefined,
         exams,
+        order,
       })
     })
 
@@ -164,6 +182,41 @@ export default function LabMapaViewPage() {
   }, [orders, map, includedKeys, catalogList])
 
   const paramsFor = (exam: MapExam) => exam.params || []
+
+  const personalizados: MapaPersonalizadoPaciente[] = patients.map(p => {
+    const o = p.order || {}
+    const leito = [o.hospitalSectorName || o.hospital_sector_name, o.bed].filter(Boolean).join(' / ')
+    return {
+      id: p.id,
+      codigo: p.codigo,
+      paciente: p.paciente,
+      convenio: p.convenio,
+      dataNascimento: o.patientBirthDate,
+      idade: p.idade,
+      sexo: p.sexo,
+      atendimento: o.registeredAt,
+      origemCodigo: o.originCode,
+      origemNome: o.originName,
+      medico: o.requestingDoctor || o.doctorName,
+      jejum: o.isFasting,
+      peso: o.weight,
+      altura: o.height,
+      febre: o.hasFever,
+      urgente: o.isUrgent,
+      setorLeito: leito || null,
+      observacoes: o.serviceObservation || p.observacoesPaciente,
+      exames: p.exams.filter(e => e.inMap).map(e => ({
+        sigla: e.sigla,
+        nome: e.nome,
+        material: e.material,
+        workbenchId: e.workbenchId,
+        bancadaNome: e.bancadaNome,
+        coletaEm: e.coletaEm,
+        prazo: e.prazo,
+        params: (e.params || []).map(pr => ({ name: pr.name, unit: pr.unit })),
+      })),
+    }
+  })
 
 
   const title = view === 'exame' ? 'Mapa de Trabalho por Exames' : 'Mapa de Trabalho'
@@ -268,6 +321,8 @@ export default function LabMapaViewPage() {
         .exam-title { font-size: 7pt !important; padding-bottom: 0.2mm !important; margin-top: 0.5mm !important; margin-bottom: 0.3mm !important; }
         .patient-header { font-size: 7pt !important; margin-bottom: 0.3mm !important; }
         .patient-meta { font-size: 6pt !important; }
+        .mp-header, .mp-exam { break-inside: avoid; page-break-inside: avoid; }
+        .mp-header, .mp-bancada { break-after: avoid; page-break-after: avoid; }
       }`}</style>
 
       {/* Navegação */}
@@ -356,6 +411,11 @@ export default function LabMapaViewPage() {
               </div>
             ))}
           </div>
+        ) : view === 'personalizado' ? (
+          <MapaPersonalizado
+            pacientes={personalizados}
+            bancadas={(workbenches || []).map((w: any) => ({ id: w.id, name: w.name, reportOrder: w.reportOrder }))}
+          />
         ) : view === 'urina' ? (
           <div>
             {(() => {
