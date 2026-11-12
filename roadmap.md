@@ -221,3 +221,7 @@
 - [x] 10 testes SQL novos + 12 antigos; balão conferido no navegador com respostas simuladas; typecheck OK.
 - [ ] Conferir a tela do Chat Interno com login real: não gerei sessão em nome de usuário.
 - [x] Histórico de Impressões do laudo no Detalhes Atendimento (usuário, exames, data/hora)
+
+# Digitação — edição manual de campos CALC
+- [ ] Caneta libera o campo calculado para editar ou apagar; o vazio manual não é recalculado e permanece após salvar/reabrir.
+- [ ] Campo CALC esvaziado pela caneta é opcional na conclusão; testar regra, persistência e typecheck sem alterar laudos reais.
