@@ -2,9 +2,10 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { checkCnpjExists, registerCompany } from './registration'
 
 const mocks = vi.hoisted(() => ({ rpc: vi.fn(), insert: vi.fn(), signOut: vi.fn(), signUp: vi.fn() }))
-vi.mock('@/integrations/supabase/client', () => ({ supabase: { rpc: mocks.rpc, from: () => ({ insert: mocks.insert }), auth: { signOut: mocks.signOut, signUp: mocks.signUp } } }))
+// cnpj check → company_cnpj_exists; company creation → empresa_cadastro_publico (mocked by `insert`)
+vi.mock('@/integrations/supabase/client', () => ({ supabase: { rpc: (fn: string, args: any) => fn === 'empresa_cadastro_publico' ? mocks.insert(args) : mocks.rpc(fn, args), from: () => { throw new Error('direct table access not expected') }, auth: { signOut: mocks.signOut, signUp: mocks.signUp } } }))
 const data = { razaoSocial: 'Empresa teste', nomeFantasia: 'Teste', cnpj: '57.500.185/0001-10', segmento: 'laboratorio', cep: '59000-000', logradouro: 'Rua teste', numero: '1', bairro: 'Centro', cidade: 'Natal', estado: 'RN', nomeCompleto: 'Administrador teste', cpf: '529.982.247-25', emailAdmin: 'teste@example.com', senha: 'NotUsed123!', plano: 'Pro' }
-beforeEach(() => { vi.clearAllMocks(); mocks.rpc.mockResolvedValue({ data: false, error: null }); mocks.insert.mockResolvedValue({ error: null }); mocks.signUp.mockResolvedValue({ data: { user: { id: 'test-user' } }, error: null }) })
+beforeEach(() => { vi.clearAllMocks(); mocks.rpc.mockResolvedValue({ data: false, error: null }); mocks.insert.mockResolvedValue({ data: 'test-company', error: null }); mocks.signUp.mockResolvedValue({ data: { user: { id: 'test-user' } }, error: null }) })
 describe('Cadastro — CNPJ e contatos opcionais', () => {
   it('não apresenta falha de consulta como CNPJ disponível', async () => {
     mocks.rpc.mockResolvedValue({ data: null, error: { message: 'unavailable' } })
@@ -24,8 +25,7 @@ describe('Cadastro — CNPJ e contatos opcionais', () => {
     await expect(registerCompany(data)).rejects.toThrow('CNPJ já está cadastrado')
   })
   it('envia telefone e e-mail comerciais ausentes como null', async () => {
-    mocks.rpc.mockResolvedValueOnce({ data: false, error: null }).mockResolvedValueOnce({ data: 'test-company', error: null })
     await registerCompany(data)
-    expect(mocks.insert).toHaveBeenCalledWith(expect.objectContaining({ telefone: null, email: null }))
+    expect(mocks.insert).toHaveBeenCalledWith(expect.objectContaining({ _telefone: null, _email: null }))
   })
 })
