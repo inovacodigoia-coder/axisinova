@@ -274,7 +274,7 @@ export default function PDFPreviewModal({
       else if (temPdfApoio && documentRef.current) {
         // Com PDF do apoio anexo: gera o PDF completo e abre para imprimir
         const pages = Array.from(documentRef.current.querySelectorAll<HTMLElement>('.laudo-page'));
-        const blob = await anexarPdfsApoio(await gerarPdfElementos(pages.length ? pages : [documentRef.current], 210, { formato: 'a4', orientacao: 'portrait', margemMm: 0 }));
+        const blob = await anexarPdfsApoio(await gerarPdfElementos(pages.length ? pages : [documentRef.current], 210, { formato: 'a4', orientacao: 'portrait', margemMm: 0, dividirPaginas: true }));
         window.open(URL.createObjectURL(blob), '_blank');
       }
       else await printLaudoOnly();
@@ -286,7 +286,7 @@ export default function PDFPreviewModal({
           documentRef.current.querySelectorAll<HTMLElement>('.laudo-page'),
         );
         const nodes = pages.length ? pages : [documentRef.current];
-        const pdf = await anexarPdfsApoio(await gerarPdfElementos(nodes, 210, { formato: 'a4', orientacao: 'portrait', margemMm: 0 }));
+        const pdf = await anexarPdfsApoio(await gerarPdfElementos(nodes, 210, { formato: 'a4', orientacao: 'portrait', margemMm: 0, dividirPaginas: true }));
         const r = await imprimirDireto(TIPOS_DOCUMENTO.laudo, pdf);
         toast.success(r.mensagem || 'Laudo enviado para a impressora.');
         return;
@@ -321,7 +321,7 @@ export default function PDFPreviewModal({
         documentRef.current.querySelectorAll<HTMLElement>('.laudo-page'),
       );
       const nodes = pages.length ? pages : [documentRef.current];
-      const blob = await anexarPdfsApoio(await gerarPdfElementos(nodes, 210, { formato: 'a4', orientacao: 'portrait', margemMm: 0 }));
+      const blob = await anexarPdfsApoio(await gerarPdfElementos(nodes, 210, { formato: 'a4', orientacao: 'portrait', margemMm: 0, dividirPaginas: true }));
       const url = URL.createObjectURL(blob);
       const link = window.document.createElement('a');
       link.href = url;
