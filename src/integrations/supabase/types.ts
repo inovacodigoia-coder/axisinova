@@ -12884,6 +12884,26 @@ export type Database = {
         Args: { _company_id: string; _d: string }
         Returns: boolean
       }
+      empresa_cadastro_publico: {
+        Args: {
+          _bairro: string
+          _cep: string
+          _cidade: string
+          _cnpj: string
+          _complemento: string
+          _email: string
+          _estado: string
+          _logradouro: string
+          _nome_fantasia: string
+          _numero: string
+          _plano: string
+          _razao_social: string
+          _segmento: string
+          _telefone: string
+          _website: string
+        }
+        Returns: string
+      }
       exame_destino: {
         Args: { _bancada_id?: string; _exam_id: string }
         Returns: Json

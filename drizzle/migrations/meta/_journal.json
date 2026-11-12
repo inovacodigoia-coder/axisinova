@@ -1072,6 +1072,13 @@
       "when": 1794504496168,
       "tag": "0152_portal_laudo_parametro_opcional",
       "breakpoints": true
+    },
+    {
+      "idx": 153,
+      "version": "7",
+      "when": 1794518733017,
+      "tag": "0153_empresa_cadastro_publico_rpc",
+      "breakpoints": true
     }
   ]
 }
