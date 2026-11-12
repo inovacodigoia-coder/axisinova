@@ -1,5 +1,6 @@
 // Utilitários para resolver os Parâmetros do Exame e suas Faixas de Referência
 // a partir do que está cadastrado no Catálogo de Exames.
+import { defaultResultValue } from '@/lib/parameterDefaultValue'
 
 export interface ResolvedParam {
   id: string
@@ -25,6 +26,8 @@ export interface ResolvedParam {
   preferFormula?: boolean
   /** Obrig desmarcado no cadastro do exame. */
   optional?: boolean
+  /** Campo "Valor" ativo: resultado que já vem preenchido na digitação. */
+  defaultValue?: string
 }
 
 export interface PatientCtx {

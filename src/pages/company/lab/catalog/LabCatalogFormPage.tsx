@@ -1040,6 +1040,8 @@ function ParametersSection({
       allowNegative: false, 
       isCalculated: false,
       isHidden: false,
+      defaultValueEnabled: false,
+      defaultValue: '',
       formula: ''
     }])
   }
@@ -1113,6 +1115,7 @@ function ParametersSection({
                   <th className="px-2 py-3 font-bold text-[10px] uppercase text-muted-foreground text-center">Neg</th>
                   <th className="px-2 py-3 font-bold text-[10px] uppercase text-muted-foreground text-center">Calc</th>
                   <th className="px-2 py-3 font-bold text-[10px] uppercase text-muted-foreground text-center">Oculto</th>
+                  <th className="px-2 py-3 font-bold text-[10px] uppercase text-muted-foreground text-center min-w-[110px]">Valor</th>
                   <th className="px-3 py-3 text-right"></th>
                 </tr>
               </thead>
@@ -1295,6 +1298,33 @@ function ParametersSection({
                           </button>
                         </div>
                       </td>
+                      <td className="px-2 py-2">
+                        <div className="flex items-center justify-center gap-1.5">
+                          <button
+                            type="button"
+                            title="Valor que já vem preenchido na Digitação de Resultados"
+                            onClick={() => updateParameter(param.id, 'defaultValueEnabled', !param.defaultValueEnabled)}
+                            className={cn(
+                              "h-5 w-8 shrink-0 rounded-full transition-all relative flex items-center border border-border/50 shadow-sm",
+                              param.defaultValueEnabled ? "bg-[#00D4FF]" : "bg-muted"
+                            )}
+                          >
+                            <div className={cn(
+                              "h-3 w-3 rounded-full bg-white shadow-sm transition-all absolute",
+                              param.defaultValueEnabled ? "left-[16px]" : "left-[3px]"
+                            )} />
+                          </button>
+                          {param.defaultValueEnabled && (
+                            <Input
+                              value={param.defaultValue ?? ''}
+                              placeholder="Valor"
+                              aria-label={`Valor padrão de ${param.name || 'parâmetro'}`}
+                              onChange={(e) => updateParameter(param.id, 'defaultValue', e.target.value)}
+                              className="h-7 w-20 text-[11px] px-2"
+                            />
+                          )}
+                        </div>
+                      </td>
                       <td className="px-3 py-2 text-right">
                          <div className="flex justify-end">
                             <DropdownMenu>
@@ -1319,7 +1349,7 @@ function ParametersSection({
                     
                     {param.type === 'selection' && (
                       <tr>
-                        <td colSpan={13} className="px-4 py-3 bg-cyan-50/40 border-t border-b border-cyan-100">
+                        <td colSpan={14} className="px-4 py-3 bg-cyan-50/40 border-t border-b border-cyan-100">
                           <div className="space-y-2">
                             <div className="flex items-center gap-2 text-[9px] font-bold uppercase text-cyan-700">
                               <Settings2 className="h-3 w-3" />
@@ -1369,7 +1399,7 @@ function ParametersSection({
 
                     {param.isCalculated && (
                       <tr>
-                        <td colSpan={13} className="px-4 py-3 bg-blue-50/30 border-t border-b border-blue-100">
+                        <td colSpan={14} className="px-4 py-3 bg-blue-50/30 border-t border-b border-blue-100">
                           <div className="space-y-2">
                             <div className="flex items-center gap-2 text-[9px] font-bold uppercase text-blue-600">
                               <Calculator className="h-3 w-3" />
@@ -1446,7 +1476,7 @@ function ParametersSection({
                 ))}
                 {(!parameters || parameters.length === 0) && (
                   <tr>
-                    <td colSpan={13} className="px-4 py-10 text-center text-muted-foreground italic text-xs">
+                    <td colSpan={14} className="px-4 py-10 text-center text-muted-foreground italic text-xs">
                       Nenhum parâmetro cadastrado. Utilize o botão acima para adicionar.
                     </td>
                   </tr>
