@@ -18,6 +18,7 @@ import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { supabase } from '@/integrations/supabase/client'
 import { useAuth } from '@/context/AuthContext'
+import { equipamentoVisivelParaEmpresa } from '@/lib/equipamentoVisivel'
 
 export default function LabEquipmentPage() {
   const { user } = useAuth()
@@ -48,7 +49,7 @@ export default function LabEquipmentPage() {
         .order('name')
       
       if (error) throw error
-      setEquipment(data || [])
+      setEquipment(((data as any[]) || []).filter(equipamentoVisivelParaEmpresa))
     } catch (error: any) {
       console.error('Erro ao buscar equipamentos:', error)
       toast.error('Erro ao carregar equipamentos')
