@@ -1,5 +1,6 @@
 import React from 'react';
 import { linhasDoLaudo } from '@/lib/laudoParametrosOpcionais';
+import { linhasDoValor, semReferencia, valorTextoLongo } from '@/lib/laudoValorTexto';
 import { LabReportHeader } from './LabReportHeader';
 import { LabAttendanceOrder } from '@/types/lab.types';
 import { cn } from '@/lib/utils';
@@ -150,9 +151,20 @@ function StandardTable({ rows }: { rows: any[] }) {
         </tr>
       </thead>
       <tbody>
-        {rows.map((res: any, rIdx: number) => (
+        {rows.map((res: any, rIdx: number) => valorTextoLongo(res.value) ? (
+          // Parâmetro tipo texto: quebra em várias linhas dentro da folha, com margem
           <tr key={rIdx} className="align-top">
-            <td className="py-[3px] text-zinc-800">{res.parameterName || res.parameterCode}</td>
+            <td className="py-[3px] pr-3 text-zinc-800 break-words">{res.parameterName || res.parameterCode}</td>
+            <td colSpan={semReferencia(res.referenceRange) ? 3 : 2} className="py-[3px] pr-6 text-zinc-900 leading-[1.45] whitespace-pre-wrap break-words [overflow-wrap:anywhere]">
+              {String(res.value).trim()} {res.unit && <span className="text-zinc-600">{res.unit}</span>}
+            </td>
+            {!semReferencia(res.referenceRange) && (
+              <td className="py-[3px] text-zinc-600 whitespace-pre-line break-words">{res.referenceRange}</td>
+            )}
+          </tr>
+        ) : (
+          <tr key={rIdx} className="align-top">
+            <td className="py-[3px] pr-3 text-zinc-800 break-words">{res.parameterName || res.parameterCode}</td>
             <td className="py-[3px] font-mono text-zinc-900 whitespace-nowrap">
               {res.value || '—'} {res.unit && <span className="text-zinc-600">{res.unit}</span>}
             </td>
@@ -352,6 +364,8 @@ export default function LaudoDocument({
       if (exam.realizadoPor) h += 12;
       h += Math.max(sections, 1) * 20; // cabeçalhos de seção + header da tabela
       h += rows * 15;
+      // Texto longo quebra em várias linhas
+      (exam.results || []).forEach((r: any) => { h += (linhasDoValor(r?.value) - 1) * 15; });
       if (tpl?.header_html) h += 28;
       if (tpl?.body_html) h += 34;
       if (tpl?.footer_html) h += 26;
