@@ -125,7 +125,8 @@ export function alteracoesDoPedido(row: any, s: EstadoEdicao): Record<string, an
     if (!igual(atual, v)) patch[k] = v
   }
   const guias = s.guides || []
-  if (!igual(row?.lab_guides || [], guias)) {
+  const guiasAntes = (Array.isArray(row?.lab_guides) ? row.lab_guides : []).map(guiaParaEdicao)
+  if (!igual(guiasAntes, guias)) {
     patch.lab_guides = guias
     const g0 = guias[0]
     const convId = g0?.convenioId ?? null
