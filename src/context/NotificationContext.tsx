@@ -4,6 +4,7 @@ import { MOCK_NOTIFICATIONS, SIMULATED_NOTIFICATIONS } from '@/mocks/notificatio
 import { NOTIFICATION_INTERVAL_MS } from '@/utils/constants'
 import { useAuth } from '@/context/AuthContext'
 import { supabase } from '@/integrations/supabase/client'
+import { useSessaoLiberada } from '@/hooks/useSessaoLiberada'
 
 interface NotificationState {
   notifications: AppNotification[]
@@ -103,9 +104,11 @@ export function NotificationContextProvider({ children }: { children: ReactNode 
     return () => clearInterval(interval)
   }, [isDemo])
 
-  // Avisos gravados no banco para o usuário (ex.: retificação de resultado do apoio)
+  // Avisos gravados no banco para o usuário (ex.: retificação de resultado do apoio).
+  // Só depois de liberar a primeira tela: não compete com a entrada.
+  const sessaoLiberada = useSessaoLiberada()
   useEffect(() => {
-    if (!user || isDemo) return
+    if (!user || isDemo || !sessaoLiberada) return
     const vistos = new Set<string>()
     const carregar = async () => {
       const { data } = await supabase.from('user_notifications' as any).select('*').is('read_at', null).order('created_at', { ascending: false }).limit(30)
@@ -119,7 +122,7 @@ export function NotificationContextProvider({ children }: { children: ReactNode 
     carregar()
     const t = setInterval(carregar, 60000)
     return () => clearInterval(t)
-  }, [user, isDemo])
+  }, [user, isDemo, sessaoLiberada])
 
   const activeNotifications = useMemo(
     () => state.notifications.filter(n => n.status !== 'archived'),
