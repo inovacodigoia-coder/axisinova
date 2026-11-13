@@ -122,7 +122,11 @@ function dbToAppointment(r: any): SchedulingAppointment {
   }
 }
 
-export function SchedulingProvider({ children }: { children: ReactNode }) {
+/**
+ * `aguardarSessao`: no portal da empresa, só carrega depois de liberar a primeira tela
+ * (perfil + setor). Fora dele (ex.: Totem) carrega como sempre.
+ */
+export function SchedulingProvider({ children, aguardarSessao = false }: { children: ReactNode; aguardarSessao?: boolean }) {
   const { user } = useAuth()
   const companyId = user?.companyId
   const isDemo = isDemoCompany(companyId)
@@ -135,7 +139,7 @@ export function SchedulingProvider({ children }: { children: ReactNode }) {
   appointmentsRef.current = appointments
 
   // Só depois de liberar a primeira tela (perfil + setor): não compete com a entrada.
-  const sessaoLiberada = useSessaoLiberada()
+  const sessaoLiberada = useSessaoLiberada() || !aguardarSessao
 
   // Empresas reais: carrega pacientes e agendamentos do banco
   useEffect(() => {

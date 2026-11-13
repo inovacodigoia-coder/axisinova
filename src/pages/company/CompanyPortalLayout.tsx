@@ -433,7 +433,7 @@ export default function CompanyPortalLayout() {
       <QueueSystemProvider>
         <NotificationContextProvider>
           <GlobalSearchProvider>
-            <SchedulingProvider>
+            <SchedulingProvider aguardarSessao>
               <RegistersProvider>
                 <MedicalProvider>
                   <BillingProvider>
