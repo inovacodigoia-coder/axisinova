@@ -35,4 +35,3 @@
 - Warehouse: company gates, sector overrides, guarded atomic RPCs; materials reuse BI consumption for frozen costs/negative reversals and shared patient UI, resolving live episodes server-side. Demo is in memory; test fixtures stay isolated. Why: tenant safety and no duplicate consumption.
 - Laudo print history: only laudo_impressao_* RPCs. Why: immutable trail.
 - Portal extra deadline: RPC setter; order trigger adds to new items. Why: no recalc.
-- Login: loginResiliente deadline/retry rules, one profile+company query; auth events only via authEventos; heavy contexts load on demand or after useSessaoLiberada. Why: login never hangs or competes with preloads.
