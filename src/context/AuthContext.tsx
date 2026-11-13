@@ -105,7 +105,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const bloqueioP = checkLockout(identifier)
 
       // 2. Entrada. Erro de rede/5xx repete sozinho (até 2x, espera 2 s); senha errada volta na hora.
-      const entrada = await chamarComPrazo(
+      const entrada = await chamarComPrazo<Awaited<ReturnType<typeof supabase.auth.signInWithPassword>>>(
         () => supabase.auth.signInWithPassword({ email: identifier, password }),
         {
           prazoFinal,
