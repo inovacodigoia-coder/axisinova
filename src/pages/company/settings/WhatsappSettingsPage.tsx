@@ -126,7 +126,7 @@ export default function WhatsappSettingsPage() {
       if (p.eventType === 'DELETE') setInsts(prev => prev.filter(i => i.id !== p.old?.id))
       else if (p.eventType === 'INSERT') setInsts(prev => prev.some(i => i.id === p.new.id) ? prev : [...prev, p.new as Inst])
       else setInsts(prev => prev.map(i => i.id === p.new.id ? { ...i, ...(p.new as Inst) } : i))
-    }), [companyId], { aoRetomar: () => recarregarInstancias.current?.() })
+    }), [companyId], { aoRetomar: () => { void load() } })
 
   const pendente = solic?.status === 'pendente'
   const temCota = insts.length < autorizados
