@@ -7,6 +7,8 @@ import { supabase } from '@/integrations/supabase/client'
 import { buscarEmBlocos } from '@/lib/buscarEmBlocos'
 import { resolveCompanyId } from '@/utils/companyId'
 import { toast } from 'sonner'
+import { aoEntrarOuRenovar } from '@/lib/authEventos'
+import { useSessaoLiberada } from '@/hooks/useSessaoLiberada'
 
 interface SchedulingContextValue {
   patients: SchedulingPatient[]
@@ -132,9 +134,12 @@ export function SchedulingProvider({ children }: { children: ReactNode }) {
   const appointmentsRef = useRef(appointments)
   appointmentsRef.current = appointments
 
+  // Só depois de liberar a primeira tela (perfil + setor): não compete com a entrada.
+  const sessaoLiberada = useSessaoLiberada()
+
   // Empresas reais: carrega pacientes e agendamentos do banco
   useEffect(() => {
-    if (isDemo || !dbCompanyId) return
+    if (isDemo || !dbCompanyId || !sessaoLiberada) return
     let cancelled = false
     const load = async () => {
       const { data: sessionData } = await supabase.auth.getSession()
@@ -165,11 +170,9 @@ export function SchedulingProvider({ children }: { children: ReactNode }) {
     }
     load()
     const t = setInterval(load, 60000)
-    const { data: sub } = supabase.auth.onAuthStateChange((event) => {
-      if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') load()
-    })
-    return () => { cancelled = true; clearInterval(t); sub.subscription.unsubscribe() }
-  }, [isDemo, dbCompanyId])
+    const cancelarAuth = aoEntrarOuRenovar(load)
+    return () => { cancelled = true; clearInterval(t); cancelarAuth() }
+  }, [isDemo, dbCompanyId, sessaoLiberada])
 
   const addPatient = useCallback((p: SchedulingPatient) => setPatients(prev => [...prev, p]), [])
 
