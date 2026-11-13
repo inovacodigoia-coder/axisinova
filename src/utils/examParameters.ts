@@ -1,6 +1,7 @@
 // Utilitários para resolver os Parâmetros do Exame e suas Faixas de Referência
 // a partir do que está cadastrado no Catálogo de Exames.
 import { defaultResultValue } from '@/lib/parameterDefaultValue'
+import { selectionModes } from '@/lib/parameterSelection'
 
 export interface ResolvedParam {
   id: string
@@ -28,6 +29,10 @@ export interface ResolvedParam {
   optional?: boolean
   /** Campo "Valor" ativo: resultado que já vem preenchido na digitação. */
   defaultValue?: string
+  /** Seleção com "Editar": o texto escolhido pode ser alterado na digitação. */
+  editable?: boolean
+  /** Seleção com "Várias": mais de uma opção marcada, separadas por vírgula. */
+  multiple?: boolean
 }
 
 export interface PatientCtx {
@@ -290,6 +295,7 @@ export function buildExamParams(catalogExam: any | undefined, fallbackName: stri
       optional: p.isMandatory === false || p.isRequired === false || p.is_required === false,
       // Campo "Valor" ativo: resultado que já vem preenchido na digitação
       defaultValue: isCalculated ? '' : defaultResultValue(p),
+      ...selectionModes(p),
     }
   })
 
