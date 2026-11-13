@@ -1,4 +1,5 @@
 import { createContext, useContext, useState, useCallback, useEffect, useMemo, type ReactNode } from 'react'
+import { normalizarColetas } from '@/lib/coletasEtiqueta'
 import type { Doctor, Specialty, Convenio, Exam, Procedure, LabWorkbench } from '@/types/registers.types'
 import { DEMO_DOCTORS, DEMO_SPECIALTIES, DEMO_CONVENIOS, DEMO_EXAMS, DEMO_PROCEDURES, isDemoCompany } from '@/mocks/registers.mock'
 import { useAuth } from '@/context/AuthContext'
@@ -103,6 +104,7 @@ function mapExamRow(row: any): Exam {
     interfacingParameters: row.interfacing_parameters || [],
     selectedMaterials: row.selected_materials || [],
     materialTubos: row.material_tubos || {},
+    coletasEtiqueta: Array.isArray(row.coletas_etiqueta) ? row.coletas_etiqueta : [],
     defaultMaterial: row.default_material || '',
   }
 }
@@ -392,6 +394,7 @@ export function RegistersProvider({ children }: { children: ReactNode }) {
       interfacing_parameters: e.interfacingParameters || [],
       selected_materials: e.selectedMaterials || [],
       material_tubos: e.materialTubos || {},
+      coletas_etiqueta: normalizarColetas(e.coletasEtiqueta),
       default_material: e.defaultMaterial || null,
       workbench_id: e.workbenchId || null,
     } as any).select().single())
@@ -449,6 +452,7 @@ export function RegistersProvider({ children }: { children: ReactNode }) {
         interfacing_parameters: e.interfacingParameters || [],
         selected_materials: e.selectedMaterials || [],
         material_tubos: e.materialTubos || {},
+        ...(e.coletasEtiqueta !== undefined ? { coletas_etiqueta: normalizarColetas(e.coletasEtiqueta) } : {}),
         default_material: e.defaultMaterial || null,
         workbench_id: e.workbenchId || null
       } as any).eq('id', e.id))

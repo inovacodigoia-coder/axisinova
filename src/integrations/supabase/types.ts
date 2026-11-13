@@ -4879,6 +4879,7 @@ export type Database = {
         Row: {
           attachment_rules: Json
           authorization_instructions: string | null
+          coletas_etiqueta: Json
           company_id: string
           confirmation_questions: Json | null
           created_at: string
@@ -4919,6 +4920,7 @@ export type Database = {
         Insert: {
           attachment_rules?: Json
           authorization_instructions?: string | null
+          coletas_etiqueta?: Json
           company_id: string
           confirmation_questions?: Json | null
           created_at?: string
@@ -4959,6 +4961,7 @@ export type Database = {
         Update: {
           attachment_rules?: Json
           authorization_instructions?: string | null
+          coletas_etiqueta?: Json
           company_id?: string
           confirmation_questions?: Json | null
           created_at?: string

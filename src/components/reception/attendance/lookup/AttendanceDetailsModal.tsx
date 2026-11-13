@@ -14,7 +14,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import type { AttendanceOrder } from '@/types/attendance-cadastro.types'
 import type { Patient } from '@/types/patient.types'
 import type { LabAttendanceOrder } from '@/types/lab.types'
-import { tuboDoExame, tubosDosExames, useMateriaisTubos, etiquetaTubo } from '@/lib/tubos'
+import { tuboDoExame, etiquetasDosExames, examesDoTubo, useMateriaisTubos, etiquetaTubo, refsEtiqueta, descricaoEtiqueta } from '@/lib/tubos'
 import { cn } from '@/lib/utils'
 import { AttendancePrintSelectionModal } from '../print/AttendancePrintSelectionModal'
 import { SampleLabelsPrintModal } from '../print/SampleLabelsPrintModal'
@@ -208,12 +208,12 @@ export function AttendanceDetailsModal({ open, onClose, onOrderDeleted, order, p
   const tubeTypeForMaterial = (e: any): string => tuboDoExame(e);
 
   // Exames pertencentes a cada tubo/amostra
-  const examsForTube = (tube: any) =>
-    orderExams.filter((e: any) => tubeTypeForMaterial(e) === tube.type);
+  const examsForTube = (tube: any) => examesDoTubo(orderExams, tube);
 
   // Derived tubes list — considera todas as bancadas/materiais do pedido
   const patientTubes = useMemo(() => {
-    return tubosDosExames(orderExams);
+    // Tubos comuns + etiquetas próprias das coletas seguintes (ex.: TOTG 120 min)
+    return etiquetasDosExames(orderExams);
   }, [orderExams, cadTubos]);
 
   // Bancada real do exame (catálogo -> lab_workbenches)
@@ -256,8 +256,9 @@ export function AttendanceDetailsModal({ open, onClose, onOrderDeleted, order, p
 
   const [isCollecting, setIsCollecting] = useState(false);
 
+  // Etiqueta própria de coleta seguinte só imprime: a coleta é marcada pelo tubo comum do exame
   const pendingSelectedTubes = patientTubes.filter((tube, idx) =>
-    selectedTubes.has(sampleCodeFor(idx + 1)) && !tubeIsCollected(tube)
+    !tube.extra && selectedTubes.has(sampleCodeFor(idx + 1)) && !tubeIsCollected(tube)
   );
 
   const handleCollectSelected = async () => {
@@ -290,7 +291,7 @@ export function AttendanceDetailsModal({ open, onClose, onOrderDeleted, order, p
   const [isCancellingSamples, setIsCancellingSamples] = useState(false);
 
   const collectedSelectedTubes = patientTubes.filter((tube, idx) =>
-    selectedTubes.has(sampleCodeFor(idx + 1)) && tubeIsCollected(tube)
+    !tube.extra && selectedTubes.has(sampleCodeFor(idx + 1)) && tubeIsCollected(tube)
   );
 
   const hasCollectedTube = patientTubes.some(tubeIsCollected);
@@ -1260,7 +1261,7 @@ export function AttendanceDetailsModal({ open, onClose, onOrderDeleted, order, p
                               {sampleCodeFor(tubeIdx + 1)}
                             </span>
                           </td>
-                          <td className="px-4 py-3 text-muted-foreground font-bold">{etiquetaTubo(tube).material.toUpperCase()}{etiquetaTubo(tube).tube ? ` (${etiquetaTubo(tube).tube})` : ""}</td>
+                          <td className="px-4 py-3 text-muted-foreground font-bold">{descricaoEtiqueta(tube)}</td>
                           <td className="px-4 py-3 text-muted-foreground uppercase">{tubeWorkbench(tube)}</td>
                           <td className="px-4 py-3 text-muted-foreground uppercase">
                             {tube.type === 'urina' ? 'URINA'
@@ -1467,7 +1468,7 @@ export function AttendanceDetailsModal({ open, onClose, onOrderDeleted, order, p
             labelIndex: idx + 1,
             ...etiquetaTubo(tube),
             workbench: tubeWorkbench(tube),
-            examRefs: examsForTube(tube).map(examRefOf),
+            examRefs: refsEtiqueta(tube, orderExams, examRefOf),
           }))}
         labName={settings?.lab_name || ''}
       />

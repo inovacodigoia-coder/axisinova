@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react'
 import { MateriaisAceitos } from '@/components/lab/catalog/MateriaisAceitos'
+import { ColetasEtiquetaCard } from '@/components/lab/catalog/ColetasEtiquetaCard'
 import { supabase } from '@/integrations/supabase/client'
 import { useExamLaudos, ensureDefaultLaudo } from '@/hooks/useExamLaudos'
 import ExamLaudosSection from '@/components/lab/catalog/ExamLaudosSection'
@@ -150,6 +151,7 @@ export default function LabCatalogFormPage() {
     defaultMaterial: '',
     workbenchId: '',
     referenceValues: [] as any[],
+    coletasEtiqueta: [] as { nome: string }[],
   })
 
   const [parameters, setParameters] = useState<any[]>([])
@@ -243,6 +245,7 @@ export default function LabCatalogFormPage() {
           defaultMaterial: existingExam.defaultMaterial || "",
           workbenchId: existingExam.workbenchId || "",
           referenceValues: existingExam.referenceValues || [],
+          coletasEtiqueta: existingExam.coletasEtiqueta || [],
         })
         setParameters(existingExam.parameters || [])
         setConfirmationQuestions(existingExam.confirmationQuestions || [])
@@ -856,6 +859,11 @@ function GeneralInfoSection({
         onToggle={toggleMaterial}
         onPadrao={handleSetDefault}
         onTubos={(t) => onChange({ materialTubos: t })}
+      />
+
+      <ColetasEtiquetaCard
+        value={data.coletasEtiqueta || []}
+        onChange={(v) => onChange({ coletasEtiqueta: v })}
       />
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-8 pt-4 border-t border-border/50">

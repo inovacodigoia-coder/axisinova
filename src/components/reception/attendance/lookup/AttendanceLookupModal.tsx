@@ -12,7 +12,7 @@ import { usePatients } from '@/hooks/usePatients'
 import { useLabSettings } from '@/hooks/useLabSettings'
 import { companyHeaderFromSettings } from '@/lib/attendanceDocHeader'
 import { useCompanySequenceId } from '@/hooks/useCompanySequenceId'
-import { tubosDosExames, useMateriaisTubos } from '@/lib/tubos'
+import { etiquetasDosExames, useMateriaisTubos } from '@/lib/tubos'
 import { buildSampleCode, generateSampleHash } from '@/utils/orderHash'
 import { AttendancePrintModal } from '../print/AttendancePrintModal'
 import { AttendanceDetailsModal } from './AttendanceDetailsModal'
@@ -42,7 +42,7 @@ const DATE_PRESETS: { value: DatePreset; label: string }[] = [
 /** Códigos e hashes alfanuméricos das amostras (etiquetas) de um pedido */
 function sampleCodesAndHashesForOrder(order: AttendanceOrder, companySequenceId: number | null): string[] {
   const exams = (order.labGuides || []).flatMap((g: any) => g?.exams || [])
-  const list = tubosDosExames(exams)
+  const list = etiquetasDosExames(exams)
   const out: string[] = []
   list.forEach((_: any, idx: number) => {
     // Inclui também o formato sem empresa (etiquetas antigas)

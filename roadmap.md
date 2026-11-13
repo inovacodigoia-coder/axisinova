@@ -240,3 +240,7 @@
 - [x] Prazo de 15 s, 2 repetições silenciosas (2 s) em erro de rede, aviso aos 6 s, uma tentativa por vez, erros separados (senha / servidor / bloqueio / sem acesso).
 - [x] Entrada com uma consulta (perfil + empresa); cadastros, agenda, filas e notificações só depois da primeira tela; escuta única de login adiada.
 - [ ] Conferir uma entrada real de usuário de empresa: não há conta sua no sistema para gerar a sessão sem pedir autorização.
+
+# Catálogo — exame com mais de uma etiqueta (TOTG)
+- [x] Opção "Coletas em tempos diferentes" no Editar Exame (nome de cada coleta, até 6); 1ª no tubo comum, demais com etiqueta própria no Cadastro de Atendimento, Detalhes e busca pelo código; 6 testes + typecheck OK.
+- [ ] Conferir a tela e a impressão logado: sem sessão autorizada nesta conversa. Pedidos já criados antes da configuração não ganham a etiqueta extra.

@@ -1,0 +1,2 @@
+ALTER TABLE public.exams ADD COLUMN IF NOT EXISTS coletas_etiqueta jsonb NOT NULL DEFAULT '[]'::jsonb;
+COMMENT ON COLUMN public.exams.coletas_etiqueta IS 'Coletas em tempos diferentes ([{nome}]). Com 2+ itens: a 1a coleta segue no tubo comum e cada coleta seguinte gera uma etiqueta propria no pedido.';
