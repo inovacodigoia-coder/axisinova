@@ -235,3 +235,8 @@
 ## Limite de 1.000 linhas (retenção 5 anos)
 - [x] Busca em blocos nas listas, filas, relatórios, exportações e funções dos aparelhos; filas por status sem data; aviso "Resultados limitados".
 - [x] Logout por inatividade escalonado (30/45/60 + desvio) e pausa do tempo real em aba oculta > 2 min.
+
+# Estabilidade — Etapa 3: login resiliente e leve
+- [x] Prazo de 15 s, 2 repetições silenciosas (2 s) em erro de rede, aviso aos 6 s, uma tentativa por vez, erros separados (senha / servidor / bloqueio / sem acesso).
+- [x] Entrada com uma consulta (perfil + empresa); cadastros, agenda, filas e notificações só depois da primeira tela; escuta única de login adiada.
+- [ ] Conferir uma entrada real de usuário de empresa: não há conta sua no sistema para gerar a sessão sem pedir autorização.

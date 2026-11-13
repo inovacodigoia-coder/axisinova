@@ -7,6 +7,8 @@ import { supabase } from '@/integrations/supabase/client'
 import { buscarEmBlocos } from '@/lib/buscarEmBlocos'
 import { resolveCompanyId } from '@/utils/companyId'
 import { toast } from 'sonner'
+import { aoEntrarOuRenovar } from '@/lib/authEventos'
+import { useSessaoLiberada } from '@/hooks/useSessaoLiberada'
 
 interface SchedulingContextValue {
   patients: SchedulingPatient[]
@@ -120,7 +122,11 @@ function dbToAppointment(r: any): SchedulingAppointment {
   }
 }
 
-export function SchedulingProvider({ children }: { children: ReactNode }) {
+/**
+ * `aguardarSessao`: no portal da empresa, só carrega depois de liberar a primeira tela
+ * (perfil + setor). Fora dele (ex.: Totem) carrega como sempre.
+ */
+export function SchedulingProvider({ children, aguardarSessao = false }: { children: ReactNode; aguardarSessao?: boolean }) {
   const { user } = useAuth()
   const companyId = user?.companyId
   const isDemo = isDemoCompany(companyId)
@@ -132,9 +138,12 @@ export function SchedulingProvider({ children }: { children: ReactNode }) {
   const appointmentsRef = useRef(appointments)
   appointmentsRef.current = appointments
 
+  // Só depois de liberar a primeira tela (perfil + setor): não compete com a entrada.
+  const sessaoLiberada = useSessaoLiberada() || !aguardarSessao
+
   // Empresas reais: carrega pacientes e agendamentos do banco
   useEffect(() => {
-    if (isDemo || !dbCompanyId) return
+    if (isDemo || !dbCompanyId || !sessaoLiberada) return
     let cancelled = false
     const load = async () => {
       const { data: sessionData } = await supabase.auth.getSession()
@@ -165,11 +174,9 @@ export function SchedulingProvider({ children }: { children: ReactNode }) {
     }
     load()
     const t = setInterval(load, 60000)
-    const { data: sub } = supabase.auth.onAuthStateChange((event) => {
-      if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') load()
-    })
-    return () => { cancelled = true; clearInterval(t); sub.subscription.unsubscribe() }
-  }, [isDemo, dbCompanyId])
+    const cancelarAuth = aoEntrarOuRenovar(load)
+    return () => { cancelled = true; clearInterval(t); cancelarAuth() }
+  }, [isDemo, dbCompanyId, sessaoLiberada])
 
   const addPatient = useCallback((p: SchedulingPatient) => setPatients(prev => [...prev, p]), [])
 

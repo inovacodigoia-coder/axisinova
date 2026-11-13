@@ -2,7 +2,14 @@ import { createContext, useCallback, useContext, useEffect, useRef, useState, ty
 import type { AuthUser, UserRole } from '@/types/auth.types'
 import { getRedirectByRole } from '@/mocks/users.mock'
 import { supabase } from '@/integrations/supabase/client'
-import { checkLockout, recordLoginAttempt, lockoutMessage, GENERIC_LOGIN_ERROR, withTimeout, retryTransient, isTransientAuthFailure } from '@/services/authGuard'
+import { checkLockout, recordLoginAttempt, lockoutMessage, GENERIC_LOGIN_ERROR, withTimeout } from '@/services/authGuard'
+import {
+  LOGIN_PRAZO_MS, MSG_SERVIDOR_LENTO, MSG_CONTA_INATIVA, MSG_SEM_ACESSO,
+  chamarComPrazo, falhaPassageiraAuth, falhaPassageiraConsulta, servidorOcupado, type TipoErroLogin,
+} from '@/lib/loginResiliente'
+
+/** Só o necessário para liberar o acesso: usuário, empresa e perfil, numa única consulta. */
+const PERFIL_LOGIN_COLUNAS = 'full_name, role, company_id, is_active, must_change_password, is_admin, empresa:companies!profiles_company_id_fkey(name, nome_fantasia)'
 
 const TOKEN_KEY = 'axis_inova_token'
 const USER_KEY = 'axis_inova_user'
@@ -15,6 +22,8 @@ interface LoginResult {
   lockedFor?: number
   /** Falha de conexão/servidor — não conta como tentativa de senha */
   networkError?: boolean
+  /** Tipo do erro, para a tela mostrar a mensagem certa */
+  tipoErro?: TipoErroLogin
 }
 
 interface AuthContextValue {
@@ -70,71 +79,103 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [isAuthenticated])
   const refreshUserRef = useRef<(() => Promise<void>) | null>(null)
 
+  // Saída em andamento (botão Sair ou limpeza de uma entrada abandonada). A próxima entrada espera
+  // ela terminar um pouco, para a saída atrasada não apagar o acesso recém-criado.
+  const saidaPendenteRef = useRef<Promise<unknown> | null>(null)
+  const loginEmAndamentoRef = useRef(false)
+  const autenticadoRef = useRef(false)
+  autenticadoRef.current = isAuthenticated
+
+  const sairLocal = useCallback(() => {
+    const p = supabase.auth.signOut({ scope: 'local' }).catch(() => {})
+    saidaPendenteRef.current = p
+    void p.finally(() => { if (saidaPendenteRef.current === p) saidaPendenteRef.current = null })
+  }, [])
+
   const login = useCallback(async (email: string, password: string): Promise<LoginResult> => {
     const identifier = email.trim().toLowerCase()
-    const NET_ERROR = 'Não foi possível conectar ao servidor. Verifique a internet e tente novamente.'
+    const prazoFinal = Date.now() + LOGIN_PRAZO_MS
+    const SERVIDOR: LoginResult = { success: false, error: MSG_SERVIDOR_LENTO, networkError: true, tipoErro: 'servidor' }
+    loginEmAndamentoRef.current = true
 
     try {
-      // 1. Server-side lockout check (never trusts client-side counters; times out instead of hanging)
-      const lockState = await checkLockout(identifier)
-      if (lockState?.locked) {
-        return { success: false, error: lockoutMessage(lockState.retry_after_seconds), lockedFor: lockState.retry_after_seconds }
-      }
+      if (saidaPendenteRef.current) await withTimeout(saidaPendenteRef.current, 3000)
 
-      // 2. Backend auth
-      // Falhas passageiras do servidor (500 / sem resposta) são repetidas sozinhas antes de mostrar erro.
-      const authRes = await retryTransient(() => supabase.auth.signInWithPassword({ email: identifier, password }))
-      if (!authRes) return { success: false, error: NET_ERROR, networkError: true }
-      const { data: authData, error: authError } = authRes
-      if (authError && authError.status !== 400) {
-        console.error('login error', authError.status, authError.message)
-        if (isTransientAuthFailure(authRes)) return { success: false, error: NET_ERROR, networkError: true }
+      // 1. Verificação de bloqueio (servidor) em paralelo com a entrada: não soma o tempo das duas.
+      const bloqueioP = checkLockout(identifier)
+
+      // 2. Entrada. Erro de rede/5xx repete sozinho (até 2x, espera 2 s); senha errada volta na hora.
+      const entrada = await chamarComPrazo<Awaited<ReturnType<typeof supabase.auth.signInWithPassword>>>(
+        () => supabase.auth.signInWithPassword({ email: identifier, password }),
+        {
+          prazoFinal,
+          ehFalhaPassageira: falhaPassageiraAuth,
+          // Resposta que chega depois de desistirmos: não deixa um acesso solto no navegador.
+          aoAbandonar: (p) => {
+            void p.then((r) => {
+              if (r?.data?.session && !loginEmAndamentoRef.current && !autenticadoRef.current) sairLocal()
+            }, () => {})
+          },
+        },
+      )
+      if (entrada.tipo !== 'ok') {
+        console.warn('[login] entrada sem resposta:', entrada.tipo)
+        return SERVIDOR
+      }
+      const { data: authData, error: authError } = entrada.valor
+      if (authError && authError.status !== 400) console.error('login error', authError.status, authError.message)
+      if (servidorOcupado(entrada.valor)) return SERVIDOR
+
+      const lockState = await withTimeout(bloqueioP, Math.max(0, prazoFinal - Date.now()))
+      if (lockState?.locked) {
+        if (authData.session) sairLocal()
+        return { success: false, error: lockoutMessage(lockState.retry_after_seconds), lockedFor: lockState.retry_after_seconds, tipoErro: 'bloqueado' }
       }
 
       if (authData.user) {
-        const profRes = await retryTransient(
+        // 3. Única consulta para liberar o acesso: perfil + empresa.
+        const perfilRes = await chamarComPrazo(
           () => Promise.resolve(supabase
             .from('profiles')
-            .select('full_name, role, company_id, is_active, must_change_password, is_admin')
+            .select(PERFIL_LOGIN_COLUNAS)
             .eq('id', authData.user.id)
-            .single()) as any,
-          { timeouts: [10000, 10000], delays: [1500] },
+            .maybeSingle()) as any,
+          { prazoFinal, ehFalhaPassageira: falhaPassageiraConsulta as any },
         ) as any
-        if (!profRes || isTransientAuthFailure(profRes)) {
-          await supabase.auth.signOut().catch(() => {})
-          return { success: false, error: NET_ERROR, networkError: true }
+        if (perfilRes.tipo !== 'ok') {
+          sairLocal()
+          return SERVIDOR
         }
-        const profile = profRes.data
+        const profile = perfilRes.valor.data as any
+        if (perfilRes.valor.error) console.error('login profile error', perfilRes.valor.status, perfilRes.valor.error?.message)
 
-        if (profile && !profile.is_active) {
+        if (!profile) {
+          sairLocal()
+          return { success: false, error: MSG_SEM_ACESSO, tipoErro: 'sem_acesso' }
+        }
+
+        if (!profile.is_active) {
           void recordLoginAttempt(identifier, false)
-          await supabase.auth.signOut()
-          return { success: false, error: GENERIC_LOGIN_ERROR }
+          sairLocal()
+          return { success: false, error: MSG_CONTA_INATIVA, tipoErro: 'sem_acesso' }
         }
 
         // Successful login clears the failure counter server-side (does not block entry)
         void recordLoginAttempt(identifier, true)
 
-        let companyName: string | null = null
-        if (profile?.company_id) {
-          const compRes = await withTimeout(
-            Promise.resolve(supabase.from('companies').select('name, nome_fantasia').eq('id', profile.company_id).single()),
-            10000,
-          )
-          const company = compRes?.data as any
-          companyName = company?.nome_fantasia || company?.name || null
-        }
+        const empresa = profile.empresa as { name?: string; nome_fantasia?: string } | null
+        const companyName: string | null = empresa?.nome_fantasia || empresa?.name || null
 
         const authUser: AuthUser = {
           id: authData.user.id,
-          name: profile?.full_name || authData.user.email || '',
+          name: profile.full_name || authData.user.email || '',
           email: authData.user.email || '',
-          role: (profile?.role as UserRole) || 'company_admin',
-          companyId: profile?.company_id || null,
+          role: (profile.role as UserRole) || 'company_admin',
+          companyId: profile.company_id || null,
           companyName,
-          isActive: profile?.is_active ?? true,
-          mustChangePassword: (profile as any)?.must_change_password === true,
-          isAdmin: (profile as any)?.is_admin === true,
+          isActive: profile.is_active ?? true,
+          mustChangePassword: profile.must_change_password === true,
+          isAdmin: profile.is_admin === true,
           lastLogin: new Date().toISOString(),
         }
 
@@ -143,6 +184,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           localStorage.setItem(TOKEN_KEY, newToken)
           localStorage.setItem(USER_KEY, JSON.stringify(authUser))
         } catch { /* storage cheio/bloqueado: segue só na memória */ }
+        // Acabou de carregar perfil e empresa: não repete a mesma busca ao autenticar.
+        restoredRef.current = true
         setUser(authUser)
         setToken(newToken)
         setIsAuthenticated(true)
@@ -154,18 +197,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       // Failed attempt: record server-side and apply lockout rules.
       const postState = await recordLoginAttempt(identifier, false)
       if (postState?.locked) {
-        return { success: false, error: lockoutMessage(postState.retry_after_seconds), lockedFor: postState.retry_after_seconds }
+        return { success: false, error: lockoutMessage(postState.retry_after_seconds), lockedFor: postState.retry_after_seconds, tipoErro: 'bloqueado' }
       }
 
-      return { success: false, error: GENERIC_LOGIN_ERROR }
+      return { success: false, error: GENERIC_LOGIN_ERROR, tipoErro: 'credenciais' }
     } catch (err) {
       console.error('login failed', err)
-      return { success: false, error: NET_ERROR, networkError: true }
+      return SERVIDOR
+    } finally {
+      loginEmAndamentoRef.current = false
     }
-  }, [])
+  }, [sairLocal])
 
   const logout = useCallback(() => {
-    void supabase.auth.signOut()
+    const saida = supabase.auth.signOut().catch(() => {})
+    saidaPendenteRef.current = saida
+    void saida.finally(() => { if (saidaPendenteRef.current === saida) saidaPendenteRef.current = null })
     localStorage.removeItem(TOKEN_KEY)
     localStorage.removeItem(USER_KEY)
     sessionStorage.removeItem(TOKEN_KEY)
@@ -178,18 +225,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [])
 
   const refreshUser = useCallback(async () => {
-    const { data: { user: authUser } } = await supabase.auth.getUser()
+    // Sessão local (sem ida ao servidor de autenticação); a consulta ao perfil já valida o acesso.
+    const { data: { session } } = await supabase.auth.getSession()
+    const authUser = session?.user
     if (!authUser) return
     const { data: profile } = await supabase
       .from('profiles')
-      .select('full_name, role, company_id, is_active, must_change_password, is_admin')
+      .select(PERFIL_LOGIN_COLUNAS)
       .eq('id', authUser.id)
-      .single()
-    let companyName: string | null | undefined
-    if (profile?.company_id) {
-      const { data: comp } = await supabase.from('companies').select('name, nome_fantasia').eq('id', profile.company_id).maybeSingle()
-      if (comp) companyName = (comp as any).nome_fantasia || (comp as any).name || null
-    }
+      .maybeSingle() as any
+    if (!profile) return
+    const empresa = profile.empresa as { name?: string; nome_fantasia?: string } | null
+    const companyName: string | null | undefined = empresa ? (empresa.nome_fantasia || empresa.name || null) : undefined
     setUser((prev) => {
       if (!prev) return prev
       const updated: AuthUser = {

@@ -1,4 +1,4 @@
-import { createContext, useCallback, useContext, useEffect, useState, type ReactNode } from 'react'
+import { createContext, useCallback, useContext, useEffect, useRef, useState, type ReactNode } from 'react'
 import { useAuth } from '@/context/AuthContext'
 import type { Profile, Sector, MenuFunction, SystemModule, PermissionAction } from '@/types/permissions.types'
 import type { CompanyUser, Origin } from '@/types/company-portal.types'
@@ -127,8 +127,14 @@ export function CompanyProvider({ children }: { children: ReactNode }) {
     return () => { cancelled = true }
   }, [user?.companyId])
 
+  // A origem ativa é lida por referência: escolher a origem não recria a função
+  // (antes isso disparava uma segunda busca das origens logo após entrar).
+  const activeOriginRef = useRef<Origin | null>(null)
+  activeOriginRef.current = activeOrigin
+
   const refreshOrigins = useCallback(async () => {
     if (!user) return
+    const activeOrigin = activeOriginRef.current
     const { data, error } = await supabase
       .from('origins')
       .select(`
@@ -171,11 +177,11 @@ export function CompanyProvider({ children }: { children: ReactNode }) {
         setActiveOrigin(matriz || data[0])
       }
     }
-  }, [user, activeOrigin])
+  }, [user?.id, user?.companyId])
 
   useEffect(() => {
     if (user) refreshOrigins()
-  }, [user, refreshOrigins])
+  }, [user?.id, user?.companyId, refreshOrigins])
 
   const selectOrigin = useCallback((origin: Origin) => {
     if (!user || origin.company_id !== user.companyId) return
