@@ -6,6 +6,7 @@ import { useQueue } from '@/context/QueueContext'
 import { useScheduling } from '@/context/SchedulingContext'
 import { useAuth } from '@/context/AuthContext'
 import { supabase } from '@/integrations/supabase/client'
+import { useCanalRealtime } from '@/hooks/useCanalRealtime'
 import { NoAppointmentsTodayState } from '@/components/reception/empty-states/NoAppointmentsTodayState'
 import { Users, Clock, Building2, Ticket as TicketIcon, PhoneCall, CheckCircle2, RefreshCw } from 'lucide-react'
 import { cn } from '@/lib/utils'
@@ -75,12 +76,11 @@ export default function ReceptionPage() {
   useEffect(() => {
     if (!selectedUnit) return
     loadTickets(selectedUnit)
-    const channel = supabase.channel(`reception_tickets_${selectedUnit}`)
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'queue_tickets', filter: `unit_id=eq.${selectedUnit}` },
-        () => loadTickets(selectedUnit))
-      .subscribe()
-    return () => { supabase.removeChannel(channel) }
   }, [selectedUnit, loadTickets])
+  useCanalRealtime(selectedUnit ? `reception_tickets_${selectedUnit}` : null, (ch) => ch
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'queue_tickets', filter: `unit_id=eq.${selectedUnit}` },
+      () => loadTickets(selectedUnit!)),
+  [selectedUnit, loadTickets], { aoRetomar: () => { if (selectedUnit) loadTickets(selectedUnit) } })
 
   const handleSelectUnit = (id: string) => {
     setSelectedUnit(id)

@@ -2,6 +2,8 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Globe, Loader2, MessageSquarePlus, Paperclip, Reply, Search, Send, Trash2, Users, Volume2, VolumeX, X, LogOut, UserPlus, UserMinus } from 'lucide-react'
 import { toast } from 'sonner'
 import { supabase } from '@/integrations/supabase/client'
+import { useCanalRealtime } from '@/hooks/useCanalRealtime'
+import { resolveCompanyId } from '@/utils/companyId'
 import { useAuth } from '@/context/AuthContext'
 import { avisarChatInternoLido, useChatInternoAcesso } from '@/hooks/useChatInterno'
 import { Button } from '@/components/ui/button'
@@ -137,26 +139,26 @@ export default function ChatInternoPage() {
   }, [ativa?.id, carregarMensagens])
   useEffect(() => { fimRef.current?.scrollIntoView({ behavior: 'smooth' }) }, [mensagens.length])
 
-  // Tempo real: mensagens novas + digitando + presença na conversa aberta
-  useEffect(() => {
-    if (!meuId) return
-    const canalDb = supabase
-      .channel(`chat-interno-msgs-${Math.random().toString(36).slice(2)}`)
-      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'chat_interno_mensagem' }, payload => {
-        const m = payload.new as any
-        if (ativa && m.conversa_id === ativa.id) {
-          void carregarMensagens(ativa.id).then(() => carregarConversas())
-        } else {
-          void carregarConversas()
-        }
-        if (m.tipo !== 'sistema' && m.autor_id !== meuId && (!ativa || m.conversa_id !== ativa.id)) {
-          const conv = conversas.find(c => c.id === m.conversa_id)
-          if (conv && !conv.silenciada) { tocarSom(); toast.message(`Nova mensagem em ${conv.nome}`) }
-        }
-      })
-      .subscribe()
-    return () => { void supabase.removeChannel(canalDb) }
-  }, [meuId, ativa?.id, conversas, carregarConversas, carregarMensagens])
+  // Tempo real: mensagens novas + digitando + presença na conversa aberta.
+  // Fica ligado mesmo com a aba oculta: o aviso sonoro de nova mensagem depende dele.
+  // Estado lido por refs para não reassinar o canal a cada atualização da lista.
+  const ativaRef = useRef(ativa); ativaRef.current = ativa
+  const conversasRef = useRef(conversas); conversasRef.current = conversas
+  const chatCompanyId = resolveCompanyId(user?.companyId)
+  useCanalRealtime(meuId && chatCompanyId ? 'chat-interno-msgs' : null, (ch) => ch
+    .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'chat_interno_mensagem', filter: `company_id=eq.${chatCompanyId}` }, payload => {
+      const m = payload.new as any
+      const atual = ativaRef.current
+      if (atual && m.conversa_id === atual.id) {
+        void carregarMensagens(atual.id).then(() => carregarConversas())
+      } else {
+        void carregarConversas()
+      }
+      if (m.tipo !== 'sistema' && m.autor_id !== meuId && (!atual || m.conversa_id !== atual.id)) {
+        const conv = conversasRef.current.find(c => c.id === m.conversa_id)
+        if (conv && !conv.silenciada) { tocarSom(); toast.message(`Nova mensagem em ${conv.nome}`) }
+      }
+    }), [meuId, chatCompanyId, carregarConversas, carregarMensagens], { manterEmSegundoPlano: true })
 
   useEffect(() => {
     if (!ativa || !meuId) return

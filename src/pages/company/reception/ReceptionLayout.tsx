@@ -4,6 +4,7 @@ import { useQueue } from '@/context/QueueContext'
 import { useQueueSystem } from '@/context/QueueSystemContext'
 import { useAuth } from '@/context/AuthContext'
 import { supabase } from '@/integrations/supabase/client'
+import { useCanalRealtime } from '@/hooks/useCanalRealtime'
 import { cn } from '@/lib/utils'
 import { Users, Stethoscope, ArrowLeft, FilterX } from 'lucide-react'
 import { toast } from 'sonner'
@@ -197,11 +198,10 @@ export default function ReceptionLayout() {
   useEffect(() => {
     if (isDemoCompany || !unitId || !unitConfirmed) return
     loadDbTickets()
-    const channel = supabase.channel(`reception_layout_tickets_${unitId}`)
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'queue_tickets', filter: `unit_id=eq.${unitId}` }, loadDbTickets)
-      .subscribe()
-    return () => { supabase.removeChannel(channel) }
   }, [isDemoCompany, unitId, unitConfirmed, loadDbTickets])
+  useCanalRealtime(!isDemoCompany && unitId && unitConfirmed ? `reception_layout_tickets_${unitId}` : null, (ch) => ch
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'queue_tickets', filter: `unit_id=eq.${unitId}` }, loadDbTickets),
+  [unitId, loadDbTickets], { aoRetomar: loadDbTickets })
 
   const allTickets = useMemo(() => {
     const list = isDemoCompany ? getUnitTickets(unitId, selectedQueues.length ? selectedQueues : undefined) : dbTickets

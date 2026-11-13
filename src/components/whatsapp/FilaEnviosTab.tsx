@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { supabase } from '@/integrations/supabase/client'
+import { useCanalRealtime } from '@/hooks/useCanalRealtime'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
@@ -112,14 +113,12 @@ export function FilaEnviosTab({ companyId }: { companyId: string }) {
   useEffect(() => { setPage(0) }, [sub, periodo, de, ate, numero, tipo, busca])
   useEffect(() => { const i = setInterval(() => tick(v => v + 1), 15000); return () => clearInterval(i) }, [])
 
-  useEffect(() => {
-    let t: ReturnType<typeof setTimeout> | undefined
-    const ch = supabase.channel(`wa-fila-${companyId}`)
-      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'whatsapp_fila_eventos', filter: `company_id=eq.${companyId}` },
-        () => { clearTimeout(t); t = setTimeout(() => recarregar.current(), 800) })
-      .subscribe()
-    return () => { clearTimeout(t); supabase.removeChannel(ch) }
-  }, [companyId])
+  const filaTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined)
+  useCanalRealtime(companyId ? `wa-fila-${companyId}` : null, (ch) => ch
+    .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'whatsapp_fila_eventos', filter: `company_id=eq.${companyId}` },
+      () => { clearTimeout(filaTimer.current); filaTimer.current = setTimeout(() => recarregar.current(), 800) }),
+  [companyId], { aoRetomar: () => recarregar.current() })
+  useEffect(() => () => clearTimeout(filaTimer.current), [])
 
   const apelido = (id: string | null) => numeros.find(n => n.instancia_id === id)?.apelido ?? '—'
 

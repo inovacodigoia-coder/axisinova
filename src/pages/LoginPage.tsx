@@ -1,6 +1,7 @@
 import { useState, useCallback, useEffect, useRef } from 'react'
 import { useNavigate, Link, useSearchParams } from 'react-router-dom'
 import { useAuth } from '@/context/AuthContext'
+import { CHAVE_MOTIVO_LOGOUT, MOTIVO_LOGOUT_INATIVIDADE } from '@/hooks/useIdleLogout'
 import { getRedirectByRole } from '@/mocks/users.mock'
 import { Mail, Lock, Eye, EyeOff, AlertCircle, Calendar, FileText, DollarSign, BarChart3, X, ChevronDown, ChevronUp } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
@@ -24,6 +25,13 @@ export default function LoginPage() {
   // Destino de retorno (ex.: tela de autorização de integrações). Só caminhos internos.
   const rawNext = searchParams.get('next')
   const nextPath = rawNext && rawNext.startsWith('/') && !rawNext.startsWith('//') ? rawNext : null
+
+  // Sessão encerrada por inatividade (motivo na URL ou guardado pela aba antes do redirecionamento)
+  const [avisoInatividade] = useState(() => {
+    let flag = false
+    try { flag = sessionStorage.getItem(CHAVE_MOTIVO_LOGOUT) === MOTIVO_LOGOUT_INATIVIDADE; sessionStorage.removeItem(CHAVE_MOTIVO_LOGOUT) } catch { /* sem armazenamento */ }
+    return flag || searchParams.get('motivo') === MOTIVO_LOGOUT_INATIVIDADE
+  })
 
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
@@ -353,6 +361,13 @@ export default function LoginPage() {
                 )}
               </button>
             </motion.div>
+
+            {avisoInatividade && !error && (
+              <div role="status" className="rounded-lg border border-warning/40 bg-warning/10 p-3 text-sm text-foreground flex items-start gap-2">
+                <AlertCircle className="h-4 w-4 shrink-0 mt-0.5 text-warning" />
+                <p>Sua sessão foi encerrada por inatividade. Entre novamente.</p>
+              </div>
+            )}
 
             {/* Error banner */}
             <AnimatePresence>

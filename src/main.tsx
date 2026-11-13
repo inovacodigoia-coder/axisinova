@@ -7,6 +7,7 @@ window.addEventListener('vite:preloadError', (e) => {
   window.location.reload()
 })
 window.addEventListener('load', () => setTimeout(() => sessionStorage.removeItem('axis-reload-after-deploy'), 10000))
+import { instalarContadorDeGravacoes } from "./lib/requisicoesPendentes";
 import { createRoot } from "react-dom/client";
 import App from "./App.tsx";
 import "./index.css";
@@ -21,5 +22,8 @@ import "./index.css";
   root.style.setProperty('--company-accent-hex', '#00D4FF');
   root.style.setProperty('--sidebar-bg', '#1E293B');
 })();
+
+// Conta salvamentos em andamento (o logout por inatividade espera eles terminarem).
+instalarContadorDeGravacoes();
 
 createRoot(document.getElementById("root")!).render(<App />);

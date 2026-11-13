@@ -1,5 +1,8 @@
 import { useEffect, useState } from 'react'
 import { supabase } from '@/integrations/supabase/client'
+import { useCanalRealtime } from '@/hooks/useCanalRealtime'
+import { useAuth } from '@/context/AuthContext'
+import { resolveCompanyId } from '@/utils/companyId'
 import type { CrmAcesso } from '@/lib/crm'
 
 /** Acesso ao CRM (empresa liberada + permissão), checado no banco. */
@@ -17,11 +20,10 @@ export function useCrmAcesso() {
 
 /** Aviso de mudança do quadro (sem conteúdo nem telefone). */
 export function useCrmSinais(ativo: boolean, onSinal: () => void) {
-  useEffect(() => {
-    if (!ativo) return
-    const ch = supabase.channel(`crm-sinais-${Math.random().toString(36).slice(2)}`)
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'crm_sinais' }, () => onSinal())
-      .subscribe()
-    return () => { void supabase.removeChannel(ch) }
-  }, [ativo, onSinal])
+  const { user } = useAuth()
+  const companyId = resolveCompanyId(user?.companyId)
+  // Só os sinais da empresa (antes ouvia a tabela inteira)
+  useCanalRealtime(ativo && companyId ? 'crm-sinais' : null, (ch) => ch
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'crm_sinais', filter: `company_id=eq.${companyId}` }, () => onSinal()),
+  [companyId, onSinal], { aoRetomar: () => onSinal() })
 }

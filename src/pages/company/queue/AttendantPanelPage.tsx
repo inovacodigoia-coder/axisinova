@@ -6,6 +6,7 @@ import { AnimatePresence } from 'framer-motion'
 import { useQueueSystem } from '@/context/QueueSystemContext'
 import { useAuth } from '@/context/AuthContext'
 import { supabase } from '@/integrations/supabase/client'
+import { useCanalRealtime } from '@/hooks/useCanalRealtime'
 import { TicketCard } from '@/components/queue/attendant/TicketCard'
 import { FinalizedTicketCard } from '@/components/queue/attendant/FinalizedTicketCard'
 import { TicketTimelineModal } from '@/components/queue/attendant/TicketTimelineModal'
@@ -103,12 +104,11 @@ export default function AttendantPanelPage() {
   useEffect(() => {
     if (isDemo || !unitId) return
     loadDbTickets()
-    const channel = supabase.channel(`attendant_tickets_${unitId}`)
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'queue_tickets', filter: `unit_id=eq.${unitId}` },
-        () => loadDbTickets())
-      .subscribe()
-    return () => { supabase.removeChannel(channel) }
   }, [isDemo, unitId, loadDbTickets])
+  useCanalRealtime(!isDemo && unitId ? `attendant_tickets_${unitId}` : null, (ch) => ch
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'queue_tickets', filter: `unit_id=eq.${unitId}` },
+      () => loadDbTickets()),
+  [unitId, loadDbTickets], { aoRetomar: () => loadDbTickets() })
 
   const allTickets = useMemo(() => {
     const list = isDemo ? getUnitTickets(unitId, selectedQueues.length ? selectedQueues : undefined) : dbTickets

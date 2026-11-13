@@ -1,5 +1,8 @@
 import { useCallback, useEffect, useState } from 'react'
 import { supabase } from '@/integrations/supabase/client'
+import { useCanalRealtime } from '@/hooks/useCanalRealtime'
+import { useAuth } from '@/context/AuthContext'
+import { resolveCompanyId } from '@/utils/companyId'
 
 export interface ChatInternoAcesso {
   ver: boolean
@@ -34,21 +37,19 @@ export function useChatInternoNaoLidas(ativo: boolean) {
     const { data } = await supabase.rpc('chat_interno_nao_lidas')
     setTotal(typeof data === 'number' ? data : 0)
   }, [])
+  const { user } = useAuth()
+  const companyId = resolveCompanyId(user?.companyId)
   useEffect(() => {
     if (!ativo) return
     void recarregar()
-    const canal = supabase
-      .channel(`chat-interno-badge-${Math.random().toString(36).slice(2)}`)
-      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'chat_interno_mensagem' }, () => {
-        void recarregar()
-      })
-      .subscribe()
     const aoLer = () => { void recarregar() }
     window.addEventListener(CHAT_INTERNO_LIDO_EVENTO, aoLer)
-    return () => {
-      window.removeEventListener(CHAT_INTERNO_LIDO_EVENTO, aoLer)
-      void supabase.removeChannel(canal)
-    }
+    return () => { window.removeEventListener(CHAT_INTERNO_LIDO_EVENTO, aoLer) }
   }, [ativo, recarregar])
+  // Só mensagens da empresa (antes ouvia a tabela inteira)
+  useCanalRealtime(ativo && companyId ? 'chat-interno-badge' : null, (ch) => ch
+    .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'chat_interno_mensagem', filter: `company_id=eq.${companyId}` }, () => {
+      void recarregar()
+    }), [companyId, recarregar], { aoRetomar: () => { void recarregar() } })
   return total
 }

@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { supabase } from '@/integrations/supabase/client'
+import { useCanalRealtime } from '@/hooks/useCanalRealtime'
 import { useAuth } from '@/context/AuthContext'
 import { useCompanyContext } from '@/context/CompanyContext'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
@@ -94,17 +95,14 @@ export default function NutritionPage() {
   }, [companyId, data])
 
   useEffect(() => { load() }, [load])
-  useEffect(() => {
-    if (!companyId) return
+  useCanalRealtime(companyId ? 'nutri-' + companyId : null, (ch) => {
     const f = `company_id=eq.${companyId}`
-    const ch = supabase.channel('nutri-' + companyId)
+    return ch
       .on('postgres_changes', { event: '*', schema: 'public', table: 'inpatient_beds', filter: f }, load)
       .on('postgres_changes', { event: '*', schema: 'public', table: 'admission_requests', filter: f }, load)
       .on('postgres_changes', { event: '*', schema: 'public', table: 'nutricao_paciente', filter: f }, load)
       .on('postgres_changes', { event: '*', schema: 'public', table: 'nutricao_refeicao', filter: f }, load)
-      .subscribe()
-    return () => { supabase.removeChannel(ch) }
-  }, [companyId, load])
+  }, [companyId, load], { aoRetomar: load })
 
   const totalAcomp = pacientes.filter(p => p.acompanhante).length
   const pendentes = pacientes.filter(p => !p.dieta || !p.acompConfirmado)

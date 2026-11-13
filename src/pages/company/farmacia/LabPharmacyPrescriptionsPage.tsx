@@ -8,6 +8,7 @@ import { Label } from '@/components/ui/label'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { supabase } from '@/integrations/supabase/client'
+import { useCanalRealtime } from '@/hooks/useCanalRealtime'
 import { useAuth } from '@/context/AuthContext'
 import { toast } from 'sonner'
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog'
@@ -47,11 +48,9 @@ export default function LabPharmacyPrescriptionsPage() {
     setRows(data || [])
   }, [companyId, status])
   useEffect(() => { load() }, [load])
-  useEffect(() => {
-    if (!companyId) return
-    const ch = supabase.channel('pharm-' + companyId).on('postgres_changes', { event: '*', schema: 'public', table: 'pharmacy_dispensations', filter: `company_id=eq.${companyId}` }, load).subscribe()
-    return () => { supabase.removeChannel(ch) }
-  }, [companyId, load])
+  useCanalRealtime(companyId ? 'pharm-' + companyId : null, (ch) => ch
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'pharmacy_dispensations', filter: `company_id=eq.${companyId}` }, load),
+  [companyId, load], { aoRetomar: load })
 
   const list = rows.filter(r => !searchTerm || r.prescriptions?.patient_name?.toLowerCase().includes(searchTerm.toLowerCase()))
 
