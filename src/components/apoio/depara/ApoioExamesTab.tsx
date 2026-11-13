@@ -10,6 +10,7 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { useApoioEntitlement, useApoioPermissions } from '@/hooks/useApoio'
 import { brl, db, norm, type ExameLis } from './deparaUtils'
+import { buscarEmBlocos } from '@/lib/buscarEmBlocos'
 import { ApoioDeparaDrawer, type DeparaRow } from './ApoioDeparaDrawer'
 import { ApoioAnalitosSheet } from './ApoioAnalitosSheet'
 import { ApoioLoteDialog } from './ApoioLoteDialog'
@@ -71,11 +72,14 @@ export function ApoioExamesTab({ moduloLiberado }: { moduloLiberado: boolean }) 
 
   const load = useCallback(async () => {
     setLoading(true)
+    // Blocos de 1.000 até acabar (o servidor corta em 1.000 mesmo pedindo mais).
+    const blocos = (fn: (de: number, ate: number) => any) => buscarEmBlocos<any>(fn, { tela: 'Exames terceirizados' })
+      .then(r => ({ data: r.linhas, error: null as any }), (error) => ({ data: [] as any[], error }))
     const [ex, wb, ap, li] = await Promise.all([
-      db.from('exams').select('id, internal_code, name, workbench_id, default_material, selected_materials, preparation_instructions, tuss_code, interfacing_parameters').eq('type', 'lab').eq('is_active', true).order('name').limit(5000),
+      blocos((de, ate) => db.from('exams').select('id, internal_code, name, workbench_id, default_material, selected_materials, preparation_instructions, tuss_code, interfacing_parameters').eq('type', 'lab').eq('is_active', true).order('name').order('id').range(de, ate)),
       db.from('lab_workbenches').select('id, name'),
       db.from('apoio_laboratorio').select('id, nome').eq('ativo', true).order('nome'),
-      db.rpc('apoio_depara_lista'),
+      blocos((de, ate) => db.rpc('apoio_depara_lista').range(de, ate)),
     ])
     if (li.error) toast.error('Erro ao carregar exames terceirizados')
     setExames(ex.data || [])
