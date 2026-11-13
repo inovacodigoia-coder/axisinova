@@ -2,6 +2,7 @@ import { useMedicamentos, medicamentoLabel } from '@/hooks/useMedicamentos'
 import { MedicamentoSelect } from '@/components/farmacia/MedicamentoSelect'
 import { useCallback, useEffect, useState } from 'react'
 import { supabase } from '@/integrations/supabase/client'
+import { useCanalRealtime } from '@/hooks/useCanalRealtime'
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -74,16 +75,18 @@ export function BedPanel({ bed, occupancy, sectors, onClose }: Props) {
   }, [occupancy?.id, bed?.id])
 
   useEffect(() => { load() }, [load])
+  const bedCompanyId = (occupancy as any)?.company_id as string | undefined
+  useCanalRealtime(occupancy ? 'bedpanel-' + occupancy.id : null, (ch) => ch
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'medication_doses', filter: `occupancy_id=eq.${occupancy!.id}` }, load)
+    // Dispensação filtrada pela empresa (antes ouvia a tabela inteira)
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'pharmacy_dispensations', ...(bedCompanyId ? { filter: `company_id=eq.${bedCompanyId}` } : { filter: `occupancy_id=eq.${occupancy!.id}` }) } as any, load)
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'bed_referrals', filter: `occupancy_id=eq.${occupancy!.id}` }, load),
+  [occupancy?.id, bedCompanyId, load], { aoRetomar: load })
   useEffect(() => {
     if (!occupancy) return
-    const ch = supabase.channel('bedpanel-' + occupancy.id)
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'medication_doses', filter: `occupancy_id=eq.${occupancy.id}` }, load)
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'pharmacy_dispensations' }, load)
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'bed_referrals', filter: `occupancy_id=eq.${occupancy.id}` }, load)
-      .subscribe()
     const t = setInterval(() => setTick(x => x + 1), 30000)
-    return () => { supabase.removeChannel(ch); clearInterval(t) }
-  }, [occupancy?.id, load])
+    return () => { clearInterval(t) }
+  }, [occupancy?.id])
 
   if (!bed) return null
   const color = occupancy?.manchester_color ? MANCHESTER_COLORS[occupancy.manchester_color as ManchesterColor] : null

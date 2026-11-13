@@ -3,6 +3,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { AlertTriangle, Check, ChevronDown, ChevronUp, Clock, Copy, FileText, GripVertical, Hand, Lock, MoreHorizontal, Pencil, Plus, RefreshCw, Repeat, Search, Trash2 } from 'lucide-react'
 import { toast } from 'sonner'
 import { supabase } from '@/integrations/supabase/client'
+import { useCanalRealtime } from '@/hooks/useCanalRealtime'
 import { buscarEmBlocos } from '@/lib/buscarEmBlocos'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -86,14 +87,11 @@ export default function ApoioKanbanPage() {
 
   // Realtime
   const timer = useRef<any>(null)
-  useEffect(() => {
-    if (!apoio.enabled || !apoio.companyId) return
-    const ch = supabase.channel('apoio-kanban')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'apoio_pedido_exame', filter: `company_id=eq.${apoio.companyId}` }, () => {
-        clearTimeout(timer.current); timer.current = setTimeout(() => carregar(), 600)
-      }).subscribe()
-    return () => { clearTimeout(timer.current); supabase.removeChannel(ch) }
-  }, [apoio.enabled, apoio.companyId, carregar])
+  useCanalRealtime(apoio.enabled && apoio.companyId ? 'apoio-kanban' : null, (ch) => ch
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'apoio_pedido_exame', filter: `company_id=eq.${apoio.companyId}` }, () => {
+      clearTimeout(timer.current); timer.current = setTimeout(() => carregar(), 600)
+    }), [apoio.companyId, carregar], { aoRetomar: () => carregar() })
+  useEffect(() => () => clearTimeout(timer.current), [])
 
   // Atualização automática a cada 30 segundos (quando ligada), com contagem visível
   useEffect(() => {

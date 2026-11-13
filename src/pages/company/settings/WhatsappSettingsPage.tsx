@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { ArrowLeft, Lock, MessageCircle, Plus, RefreshCw, Link2, Unlink, Clock, Loader2, Trash2 } from 'lucide-react'
 import { toast } from 'sonner'
 import { supabase } from '@/integrations/supabase/client'
+import { useCanalRealtime } from '@/hooks/useCanalRealtime'
 import { FilaEnviosTab } from '@/components/whatsapp/FilaEnviosTab'
 import { useAuth } from '@/context/AuthContext'
 import { Button } from '@/components/ui/button'
@@ -120,17 +121,12 @@ export default function WhatsappSettingsPage() {
   useEffect(() => { void load() }, [load])
 
   // Badges ao vivo: mudanças em whatsapp_instancias chegam pelo Realtime (sem polling)
-  useEffect(() => {
-    if (!companyId) return
-    const ch = supabase.channel(`wa-inst-${companyId}`)
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'whatsapp_instancias', filter: `company_id=eq.${companyId}` }, (p: any) => {
-        if (p.eventType === 'DELETE') setInsts(prev => prev.filter(i => i.id !== p.old?.id))
-        else if (p.eventType === 'INSERT') setInsts(prev => prev.some(i => i.id === p.new.id) ? prev : [...prev, p.new as Inst])
-        else setInsts(prev => prev.map(i => i.id === p.new.id ? { ...i, ...(p.new as Inst) } : i))
-      })
-      .subscribe()
-    return () => { void supabase.removeChannel(ch) }
-  }, [companyId])
+  useCanalRealtime(companyId ? `wa-inst-${companyId}` : null, (ch) => ch
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'whatsapp_instancias', filter: `company_id=eq.${companyId}` }, (p: any) => {
+      if (p.eventType === 'DELETE') setInsts(prev => prev.filter(i => i.id !== p.old?.id))
+      else if (p.eventType === 'INSERT') setInsts(prev => prev.some(i => i.id === p.new.id) ? prev : [...prev, p.new as Inst])
+      else setInsts(prev => prev.map(i => i.id === p.new.id ? { ...i, ...(p.new as Inst) } : i))
+    }), [companyId], { aoRetomar: () => recarregarInstancias.current?.() })
 
   const pendente = solic?.status === 'pendente'
   const temCota = insts.length < autorizados

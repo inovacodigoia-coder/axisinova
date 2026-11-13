@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { supabase } from '@/integrations/supabase/client'
+import { useCanalRealtime } from '@/hooks/useCanalRealtime'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Button } from '@/components/ui/button'
@@ -148,11 +149,9 @@ function ReferralsQueue({ companyId, beds }: { companyId?: string; beds: Bed[] }
     setRows(data || [])
   }, [companyId])
   useEffect(() => { load() }, [load])
-  useEffect(() => {
-    if (!companyId) return
-    const ch = supabase.channel('refq-' + companyId).on('postgres_changes', { event: '*', schema: 'public', table: 'bed_referrals', filter: `company_id=eq.${companyId}` }, load).subscribe()
-    return () => { supabase.removeChannel(ch) }
-  }, [companyId, load])
+  useCanalRealtime(companyId ? 'refq-' + companyId : null, (ch) => ch
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'bed_referrals', filter: `company_id=eq.${companyId}` }, load),
+  [companyId, load], { aoRetomar: load })
   const sectors = Array.from(new Set(rows.map(r => r.sector_name)))
   const list = filter === 'todos' ? rows : rows.filter(r => r.sector_name === filter)
   return (

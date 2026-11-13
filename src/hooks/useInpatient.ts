@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from 'react'
 import { supabase } from '@/integrations/supabase/client'
+import { useCanalRealtime } from '@/hooks/useCanalRealtime'
 import { useAuth } from '@/context/AuthContext'
 import { toast } from 'sonner'
 
@@ -46,14 +47,10 @@ export function useInpatient() {
   }, [companyId])
 
   useEffect(() => { load() }, [load])
-  useEffect(() => {
-    if (!companyId) return
-    const ch = supabase.channel('inp-' + companyId)
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'inpatient_beds', filter: `company_id=eq.${companyId}` }, load)
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'admission_requests', filter: `company_id=eq.${companyId}` }, load)
-      .subscribe()
-    return () => { supabase.removeChannel(ch) }
-  }, [companyId, load])
+  useCanalRealtime(companyId ? 'inp-' + companyId : null, (ch) => ch
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'inpatient_beds', filter: `company_id=eq.${companyId}` }, load)
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'admission_requests', filter: `company_id=eq.${companyId}` }, load),
+  [companyId, load], { aoRetomar: load })
 
   const addUnit = async (name: string, hospitalId: string | null, bedCount: number) => {
     if (!companyId || !name.trim()) return

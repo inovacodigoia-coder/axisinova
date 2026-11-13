@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { supabase } from '@/integrations/supabase/client'
+import { useCanalRealtime } from '@/hooks/useCanalRealtime'
 import { toast } from 'sonner'
 import { ManchesterColor, MANCHESTER_COLORS, escalateColor } from '@/data/manchester'
 
@@ -146,14 +147,10 @@ export function useTriage() {
   useEffect(() => { if (companyId) reload() }, [companyId, reload])
 
   // Realtime: mantém o painel sincronizado entre recepção, triagem e médico
-  useEffect(() => {
-    if (!companyId) return
-    const channel = supabase
-      .channel('triage-entries')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'triage_entries' }, () => loadEntries())
-      .subscribe()
-    return () => { supabase.removeChannel(channel) }
-  }, [companyId, loadEntries])
+  // (antes ouvia a tabela inteira; agora só a empresa)
+  useCanalRealtime(companyId ? `triage-entries-${companyId}` : null, (ch) => ch
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'triage_entries', filter: `company_id=eq.${companyId}` }, () => loadEntries()),
+  [companyId, loadEntries], { aoRetomar: () => loadEntries() })
 
   const createEntry = useCallback(
     async (payload: Partial<TriageEntry>) => {
