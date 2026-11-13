@@ -76,13 +76,13 @@ export function BedPanel({ bed, occupancy, sectors, onClose }: Props) {
 
   useEffect(() => { load() }, [load])
   const bedCompanyId = (occupancy as any)?.company_id as string | undefined
-  // Sem empresa conhecida, não ouve dispensações (nunca a tabela inteira); o load periódico cobre.
-  useCanalRealtime(occupancy ? 'bedpanel-' + occupancy.id : null, (ch) => ch
-    .on('postgres_changes', { event: '*', schema: 'public', table: 'medication_doses', filter: `occupancy_id=eq.${occupancy!.id}` }, load)
-    // Dispensação filtrada pela empresa (antes ouvia a tabela inteira)
-    .on('postgres_changes', { event: '*', schema: 'public', table: 'pharmacy_dispensations', filter: `company_id=eq.${bedCompanyId ?? '00000000-0000-0000-0000-000000000000'}` }, load)
-    .on('postgres_changes', { event: '*', schema: 'public', table: 'bed_referrals', filter: `occupancy_id=eq.${occupancy!.id}` }, load),
-  [occupancy?.id, bedCompanyId, load], { aoRetomar: load })
+  useCanalRealtime(occupancy ? 'bedpanel-' + occupancy.id : null, (ch) => {
+    ch.on('postgres_changes', { event: '*', schema: 'public', table: 'medication_doses', filter: `occupancy_id=eq.${occupancy!.id}` }, load)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'bed_referrals', filter: `occupancy_id=eq.${occupancy!.id}` }, load)
+    // Dispensações só da empresa (antes ouvia a tabela inteira)
+    if (bedCompanyId) ch.on('postgres_changes', { event: '*', schema: 'public', table: 'pharmacy_dispensations', filter: `company_id=eq.${bedCompanyId}` }, load)
+    return ch
+  }, [occupancy?.id, bedCompanyId, load], { aoRetomar: load })
   useEffect(() => {
     if (!occupancy) return
     const t = setInterval(() => setTick(x => x + 1), 30000)
