@@ -21,7 +21,7 @@ import { PageTransition } from '@/components/global/PageTransition'
 import { AvisoResultadosLimitados } from '@/components/global/AvisoResultadosLimitados'
 import { SystemStatusBar } from '@/components/global/SystemStatusBar'
 import { useKeyboardShortcuts } from '@/hooks/useKeyboardShortcuts'
-import { Menu, Bell, Search, Clock } from 'lucide-react'
+import { Menu, Bell, Search } from 'lucide-react'
 import { useAuth } from '@/context/AuthContext'
 import { useCompanyContext } from '@/context/CompanyContext'
 
