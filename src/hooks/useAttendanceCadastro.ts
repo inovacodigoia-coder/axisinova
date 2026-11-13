@@ -5,12 +5,20 @@ import type { AttendanceOrder } from '@/types/attendance-cadastro.types'
 import { useToast } from '@/hooks/use-toast'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { generateOrderHash } from '@/utils/orderHash'
+import { buscarEmBlocos } from '@/lib/buscarEmBlocos'
 
 /** Raiz do cache das listas de atendimentos; invalidar esta chave atualiza todas. */
 export const ATTENDANCE_ORDERS_KEY = 'attendance_orders'
 
 /** Fila de coleta e digitação: dados mais frescos e recarga ao voltar para a aba. */
 export const FILA_TEMPO_REAL = { staleTime: 10_000, refetchOnWindowFocus: true } as const
+
+/** Pedidos com exame pendente de digitação/liberação (filas de Digitação e Hematologia). */
+export const STATUS_PENDENTES_ANALISE = ['collection_done', 'in_analysis', 'validation', 'released'] as const
+/** Pedidos concluídos (inclui o legado 'concluded'). */
+export const STATUS_CONCLUIDOS = ['completed', 'concluded'] as const
+/** Teto de segurança da lista de pedidos (blocos de 1.000); acima disso a tela avisa. */
+export const TETO_PEDIDOS = 20_000
 
 /**
  * Colunas usadas pelas telas que leem a lista (o mesmo que o mapeamento abaixo).
@@ -30,6 +38,11 @@ const LIST_COLUMNS = [
 export interface AttendanceOrdersOptions {
   /** Período (created_at) buscado no servidor; ausente/null = todos os pedidos. */
   range?: { from: string; to: string } | null
+  /** Só estes status (filtro no servidor), de qualquer data. */
+  statuses?: readonly string[] | null
+  /** Status que NÃO entram (filtro no servidor). */
+  excludeStatuses?: readonly string[] | null
+  enabled?: boolean
   staleTime?: number
   refetchOnWindowFocus?: boolean
 }
@@ -91,31 +104,46 @@ export function useAttendanceCadastro(options: AttendanceOrdersOptions = {}) {
   const companyId = user?.companyId
   const isAdmin = user?.isAdmin === true || user?.role === 'company_admin' || user?.role === 'super_admin'
   const range = options.range ?? null
+  const statuses = options.statuses?.length ? [...options.statuses] : null
+  const excludeStatuses = options.excludeStatuses?.length ? [...options.excludeStatuses] : null
   const actions = useAttendanceOrderActions()
 
-  const { data: orders = [], isLoading: loading } = useQuery({
-    queryKey: range
-      ? [ATTENDANCE_ORDERS_KEY, companyId, isAdmin, 'periodo', range.from, range.to]
-      : [ATTENDANCE_ORDERS_KEY, companyId, isAdmin],
+  const { data, isLoading: loading } = useQuery({
+    queryKey: [
+      ATTENDANCE_ORDERS_KEY, companyId, isAdmin,
+      ...(range ? ['periodo', range.from, range.to] : []),
+      ...(statuses ? ['status', statuses.join(',')] : []),
+      ...(excludeStatuses ? ['sem_status', excludeStatuses.join(',')] : []),
+    ],
     queryFn: async () => {
-      if (!companyId) return []
-      let query = (supabase
-        .from('attendance_orders' as any) as any)
-        .select(`${LIST_COLUMNS}, patients(name, birth_date, gender)`)
-        .eq('company_id', companyId)
-      if (!isAdmin) query = query.neq('status', 'deleted')
-      if (range) query = query.gte('created_at', range.from).lte('created_at', range.to)
-      const { data, error } = await query.order('created_at', { ascending: false })
-      if (error) throw error
-      return (data || []).map(mapOrderRow)
+      if (!companyId) return { orders: [] as AttendanceOrder[], limitado: false }
+      // Busca em blocos de 1.000 até acabar: nenhum pedido fica de fora pelo limite do servidor.
+      const { linhas, limitado } = await buscarEmBlocos<any>((de, ate) => {
+        let query = (supabase
+          .from('attendance_orders' as any) as any)
+          .select(`${LIST_COLUMNS}, patients(name, birth_date, gender)`)
+          .eq('company_id', companyId)
+        if (!isAdmin) query = query.neq('status', 'deleted')
+        if (statuses) query = query.in('status', statuses)
+        if (excludeStatuses) query = query.not('status', 'in', `(${excludeStatuses.join(',')})`)
+        if (range) query = query.gte('created_at', range.from).lte('created_at', range.to)
+        return query
+          .order('created_at', { ascending: false })
+          .order('id', { ascending: false })
+          .range(de, ate)
+      }, { chave: (r) => r.id, teto: TETO_PEDIDOS, tela: 'Atendimentos' })
+      return { orders: linhas.map(mapOrderRow), limitado }
     },
-    enabled: !!companyId,
+    enabled: !!companyId && options.enabled !== false,
     ...(options.staleTime !== undefined ? { staleTime: options.staleTime } : {}),
     ...(options.refetchOnWindowFocus !== undefined ? { refetchOnWindowFocus: options.refetchOnWindowFocus } : {}),
   })
 
-  return { orders, loading, ...actions }
+  const orders = data?.orders ?? EMPTY_ORDERS
+  return { orders, loading, limitado: data?.limitado ?? false, ...actions }
 }
+
+const EMPTY_ORDERS: AttendanceOrder[] = []
 
 /** Criar/atualizar pedidos sem carregar a lista inteira. */
 export function useAttendanceOrderActions() {
