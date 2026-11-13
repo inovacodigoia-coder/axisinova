@@ -234,3 +234,4 @@
 
 ## Limite de 1.000 linhas (retenção 5 anos)
 - [x] Busca em blocos nas listas, filas, relatórios, exportações e funções dos aparelhos; filas por status sem data; aviso "Resultados limitados".
+- [x] Logout por inatividade escalonado (30/45/60 + desvio) e pausa do tempo real em aba oculta > 2 min.
