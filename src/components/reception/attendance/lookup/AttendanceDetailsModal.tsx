@@ -105,7 +105,7 @@ export function AttendanceDetailsModal({ open, onClose, onOrderDeleted, order, p
   const companySequenceId = useCompanySequenceId()
   const sampleCodeFor = (tubeIndex: number) => buildSampleCode(order.orderNumber, tubeIndex, companySequenceId)
   const { toast } = useToast()
-  const { updateOrder } = useAttendanceOrderActions()
+  const { updateOrder, refresh: refreshOrderLists } = useAttendanceOrderActions()
   const [corrigirColeta, setCorrigirColeta] = useState<{ examId: string; nome: string; atual: string } | null>(null)
 
   useEffect(() => { setCurrentPatient(patient) }, [patient])
@@ -343,6 +343,7 @@ export function AttendanceDetailsModal({ open, onClose, onOrderDeleted, order, p
         title: "Sucesso",
         description: "Atendimento excluído com sucesso.",
       });
+      void refreshOrderLists();
 
       onClose();
       if (onOrderDeleted) {

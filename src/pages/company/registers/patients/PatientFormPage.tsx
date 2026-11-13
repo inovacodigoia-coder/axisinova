@@ -45,6 +45,7 @@ export default function PatientFormPage() {
   const { patientId } = useParams<{ patientId?: string }>()
   const isEditing = Boolean(patientId)
   const { user } = useAuth()
+  const queryClient = useQueryClient()
 
   const methods = useForm<PatientFormValues>({
     resolver: zodResolver(patientFormSchema),
@@ -207,6 +208,7 @@ export default function PatientFormPage() {
       if (ordersRes.error || resultsRes.error) {
         console.error('[PatientFormPage] name sync error:', ordersRes.error || resultsRes.error)
       }
+      void queryClient.invalidateQueries({ queryKey: ['attendance_orders'] })
     }
 
     toast.success(isEditing ? 'Paciente atualizado!' : 'Paciente cadastrado com sucesso!')

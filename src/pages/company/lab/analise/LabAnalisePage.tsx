@@ -769,7 +769,7 @@ export default function LabAnalisePage() {
       
       <ResultEntryModal 
         isOpen={isResultModalOpen}
-        onClose={() => setIsResultModalOpen(false)}
+        onClose={() => { setIsResultModalOpen(false); void refreshOrders(); }}
         filteredExams={examsForEntry}
         filters={{
           period,
