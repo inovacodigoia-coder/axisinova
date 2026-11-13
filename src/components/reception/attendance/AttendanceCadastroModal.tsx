@@ -30,7 +30,7 @@ import { LabStep3GuidesProcedures } from '@/components/lab/attendance/steps/LabS
 import { QueueAllocationModal } from './queue-allocation/QueueAllocationModal'
 import { LabStep4Payment } from '@/components/lab/attendance/steps/LabStep4Payment'
 import { LabStep6Summary } from '@/components/lab/attendance/steps/LabStep6Summary'
-import { useAttendanceCadastro, useDraftAutosave, loadDraft, clearDraft } from '@/hooks/useAttendanceCadastro'
+import { useAttendanceOrderActions, useDraftAutosave, loadDraft, clearDraft } from '@/hooks/useAttendanceCadastro'
 import { usePrinterConfig } from '@/hooks/usePrinterConfig'
 import { useAuth } from '@/context/AuthContext'
 import { ensurePatientPortalAccess, buildPortalUrl, type ExternalAccessRecord } from '@/hooks/useExternalAccesses'
@@ -121,7 +121,7 @@ export function AttendanceCadastroModal({
 }: AttendanceCadastroModalProps) {
   const { user } = useAuth()
   const { activeOrigin } = useCompanyContext()
-  const { createOrder } = useAttendanceCadastro()
+  const { createOrder } = useAttendanceOrderActions()
   const { getDefault } = usePrinterConfig()
   const { settings: labSettings } = useLabSettings()
   const [step, setStep] = useState(initialPatient ? 1 : 0)

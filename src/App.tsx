@@ -50,7 +50,11 @@ const ExternalPortalPage = lazy(() => import("./pages/portal/ExternalPortalPage"
 const OAuthConsent = lazy(() => import("./pages/OAuthConsent"));
 const AlmoxarifadoDemo = lazy(() => import("./pages/company/estoque/AlmoxarifadoPage"));
 
-const queryClient = new QueryClient();
+// Padrão: listas ficam frescas por 45 s e não recarregam só por voltar à aba.
+// Telas operacionais (fila de coleta/digitação) usam FILA_TEMPO_REAL.
+const queryClient = new QueryClient({
+  defaultOptions: { queries: { staleTime: 45_000, refetchOnWindowFocus: false } },
+});
 
 const App = () => (
   <ErrorBoundary>

@@ -6,6 +6,7 @@ import { Loader2, User, Info, History, Pencil, Save, X } from 'lucide-react'
 import type { Patient } from '@/types/patient.types'
 import type { AttendanceOrder } from '@/types/attendance-cadastro.types'
 import { supabase } from '@/integrations/supabase/client'
+import { useQueryClient } from '@tanstack/react-query'
 import { format } from 'date-fns'
 import { toast } from 'sonner'
 import { usePatientRegistryPermissions } from '@/hooks/usePatientRegistryPermissions'
@@ -120,6 +121,7 @@ interface Props {
 }
 
 export function ClientInfoModal({ open, mode, onClose, order, patient, onPatientUpdated }: Props) {
+  const queryClient = useQueryClient()
   const [history, setHistory] = useState<any[]>([])
   const [loading, setLoading] = useState(false)
   const [editing, setEditing] = useState(false)
@@ -253,6 +255,7 @@ export function ClientInfoModal({ open, mode, onClose, order, patient, onPatient
         .update({ patient_name: updated.fullName })
         .eq('patient_id', patientId)
       if (ordersError) throw ordersError
+      void queryClient.invalidateQueries({ queryKey: ['attendance_orders'] })
       setCurrent(updated)
       onPatientUpdated?.(updated)
       setEditing(false)

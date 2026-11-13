@@ -116,7 +116,6 @@ export function AttendanceLookupModal({ open, onClose, unitName, guicheName, onA
   useMateriaisTubos(user?.companyId)
   // Somente usuários com a atribuição ADM (checkbox no modal Editar Usuário) veem pedidos excluídos
   const isAdmin = user?.isAdmin === true || user?.role === 'super_admin'
-  const { orders, updateOrder, loading } = useAttendanceCadastro()
   const { patients, loading: patientsLoading, refresh: refreshPatients } = usePatients()
   const { settings } = useLabSettings()
   const companySequenceId = useCompanySequenceId()
@@ -181,6 +180,15 @@ export function AttendanceLookupModal({ open, onClose, unitName, guicheName, onA
     if (datePreset !== 'today') from.setDate(from.getDate() - (Number(datePreset) - 1))
     return { from, to }
   }, [datePreset, customFrom, customTo])
+
+  // Busca no servidor só o período escolhido. Com busca por atendimento/amostra/CPF
+  // o período é ignorado (como antes), então carregamos todos os pedidos.
+  const hasTermSearch = search.trim().length > 0
+  const serverRange = useMemo(
+    () => (!hasTermSearch && dateRange ? { from: dateRange.from.toISOString(), to: dateRange.to.toISOString() } : null),
+    [hasTermSearch, dateRange],
+  )
+  const { orders, updateOrder, loading } = useAttendanceCadastro({ range: serverRange })
 
   const filtered = useMemo(() => {
     const term = normalize(search.trim())

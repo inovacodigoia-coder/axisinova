@@ -3,6 +3,7 @@
 // =====================================================================
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
+import { useQueryClient } from '@tanstack/react-query'
 import { useForm, FormProvider } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { toast } from 'sonner'
@@ -45,6 +46,7 @@ export default function PatientFormPage() {
   const { patientId } = useParams<{ patientId?: string }>()
   const isEditing = Boolean(patientId)
   const { user } = useAuth()
+  const queryClient = useQueryClient()
 
   const methods = useForm<PatientFormValues>({
     resolver: zodResolver(patientFormSchema),
@@ -207,6 +209,7 @@ export default function PatientFormPage() {
       if (ordersRes.error || resultsRes.error) {
         console.error('[PatientFormPage] name sync error:', ordersRes.error || resultsRes.error)
       }
+      void queryClient.invalidateQueries({ queryKey: ['attendance_orders'] })
     }
 
     toast.success(isEditing ? 'Paciente atualizado!' : 'Paciente cadastrado com sucesso!')

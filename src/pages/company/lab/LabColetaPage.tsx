@@ -3,7 +3,7 @@ import { Card } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Search, ChevronDown, User, Beaker, ClipboardList, Printer, Check, X, AlertCircle, Filter, History, Clock, Menu, RotateCw } from 'lucide-react'
 import { cn } from '@/lib/utils'
-import { useAttendanceCadastro } from '@/hooks/useAttendanceCadastro'
+import { useAttendanceCadastro, FILA_TEMPO_REAL } from '@/hooks/useAttendanceCadastro'
 import { useRegisters } from '@/context/RegistersContext'
 import { LabAttendanceOrder, LabExam } from '@/types/lab.types'
 import { useMateriaisTubos, tuboDoExame, tubosDosExames, avisoTubo } from '@/lib/tubos'
@@ -18,7 +18,7 @@ import { canSetCollectionDone } from '@/utils/orderStatusFlow'
 export default function LabColetaPage() {
   const { user } = useAuth()
   const cadTubos = useMateriaisTubos(user?.companyId)
-  const { orders, updateOrder, refresh } = useAttendanceCadastro()
+  const { orders, updateOrder, refresh } = useAttendanceCadastro(FILA_TEMPO_REAL)
   const navigate = useNavigate()
   const [loading, setLoading] = useState(true)
   const [expandedId, setExpandedId] = useState<string | null>(null)

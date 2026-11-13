@@ -20,7 +20,6 @@ import { SelectQueuesModal } from '@/components/queue/attendant/SelectQueuesModa
 import { AttendanceCadastroModal } from '@/components/reception/attendance/AttendanceCadastroModal'
 import { AttendancePrintModal } from '@/components/reception/attendance/print/AttendancePrintModal'
 import { AttendanceLookupModal } from '@/components/reception/attendance/lookup/AttendanceLookupModal'
-import { useAttendanceCadastro } from '@/hooks/useAttendanceCadastro'
 import type { AttendanceOrder } from '@/types/attendance-cadastro.types'
 import type { AttendanceControlDocument } from '@/types/payment-print.types'
 import type { Patient } from '@/types/patient.types'
@@ -92,13 +91,9 @@ export default function ReceptionLayout() {
   const [showLookup, setShowLookup] = useState(false)
   const location = useLocation()
   const [lookupPatient, setLookupPatient] = useState<Patient | null>(null)
-  const { orders } = useAttendanceCadastro()
-
-  const orderByTicket = useMemo(() => {
-    const m = new Map<string, AttendanceOrder>()
-    orders.forEach(o => { if (o.ticketId) m.set(o.ticketId, o) })
-    return m
-  }, [orders])
+  // O pedido não guarda a senha da fila (ticketId), então este mapa sempre ficou vazio;
+  // não carregamos a lista inteira de atendimentos só para montá-lo.
+  const orderByTicket = useMemo(() => new Map<string, AttendanceOrder>(), [])
 
   const buildDocFromOrder = (order: AttendanceOrder): AttendanceControlDocument => {
     const now = new Date()
