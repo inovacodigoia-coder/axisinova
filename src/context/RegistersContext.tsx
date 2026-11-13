@@ -5,6 +5,7 @@ import { useAuth } from '@/context/AuthContext'
 import { supabase } from '@/integrations/supabase/client'
 import { resolveCompanyId } from '@/utils/companyId'
 import { toast } from 'sonner'
+import { aoEntrarOuRenovar } from '@/lib/authEventos'
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
 const ensureUUID = (id?: string | null): string =>
@@ -19,6 +20,8 @@ interface RegistersContextValue {
   workbenches: LabWorkbench[]
   isDemo: boolean
   isLoading: boolean
+  /** Pede a carga dos cadastros (chamado sozinho por useRegisters). */
+  solicitarCarga: () => void
   addDoctor: (d: Doctor) => void
   updateDoctor: (d: Doctor) => void
   removeDoctor: (id: string) => void
@@ -141,11 +144,16 @@ export function RegistersProvider({ children }: { children: ReactNode }) {
   const [procedures, setProcedures] = useState<Procedure[]>(isDemo ? DEMO_PROCEDURES : [])
   const [workbenches, setWorkbenches] = useState<LabWorkbench[]>(isDemo ? [] : [])
   const [isLoading, setIsLoading] = useState(!isDemo)
+  // Carga sob demanda: só busca quando alguma tela usa os cadastros (nada na tela de login
+  // nem na escolha de perfil, e sem duplicar quando há outro provedor mais próximo da tela).
+  const [cargaSolicitada, setCargaSolicitada] = useState(false)
+  const solicitarCarga = useCallback(() => setCargaSolicitada(true), [])
 
   // Load from Supabase
   useEffect(() => {
-    if (isDemo || !companyId) return
+    if (isDemo || !companyId || !cargaSolicitada) return
     setIsLoading(true)
+    let carregado = false
 
     const load = async () => {
       try {
@@ -156,6 +164,7 @@ export function RegistersProvider({ children }: { children: ReactNode }) {
           setIsLoading(false)
           return
         }
+        carregado = true
 
         const queries = [
           supabase.from('specialties').select('*').eq('company_id', companyId),
@@ -199,14 +208,10 @@ export function RegistersProvider({ children }: { children: ReactNode }) {
     }
     load()
 
-    // Re-run when auth state changes (e.g. session hydrated after mount)
-    const { data: authSub } = supabase.auth.onAuthStateChange((event) => {
-      if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
-        load()
-      }
-    })
-    return () => { authSub.subscription.unsubscribe() }
-  }, [isDemo, companyId])
+    // Sessão chegou depois da montagem: carrega uma vez (não recarrega tudo a cada renovação do acesso)
+    const cancelar = aoEntrarOuRenovar(() => { if (!carregado) load() })
+    return cancelar
+  }, [isDemo, companyId, cargaSolicitada])
 
   // --- Specialties ---
   const addSpecialty = useCallback(async (s: Specialty) => {
@@ -594,7 +599,7 @@ export function RegistersProvider({ children }: { children: ReactNode }) {
 
   return (
     <RegistersContext.Provider value={{
-      doctors, specialties, convenios, exams, procedures, workbenches, isDemo, isLoading,
+      doctors, specialties, convenios, exams, procedures, workbenches, isDemo, isLoading, solicitarCarga,
       addDoctor, updateDoctor, removeDoctor,
       addSpecialty, updateSpecialty, removeSpecialty,
       addConvenio, updateConvenio, removeConvenio,
@@ -611,5 +616,7 @@ export function RegistersProvider({ children }: { children: ReactNode }) {
 export function useRegisters() {
   const context = useContext(RegistersContext)
   if (!context) throw new Error('useRegisters must be used within a RegistersProvider')
+  const { solicitarCarga } = context
+  useEffect(() => { solicitarCarga() }, [solicitarCarga])
   return context
 }
