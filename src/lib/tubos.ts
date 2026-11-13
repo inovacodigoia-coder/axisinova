@@ -7,10 +7,13 @@
 import { useEffect, useSyncExternalStore } from 'react'
 import { supabase } from '@/integrations/supabase/client'
 import { TUBE_TYPES } from '@/types/lab.types'
+import { coletasDoExame, chaveExame, refExameEtiqueta } from '@/lib/coletasEtiqueta'
 
 export interface Recipiente { id: string; nome: string; sigla: string; cor_tampa: string | null; cor_hex: string | null; aditivo: string | null; volume_ml: number | null; observacao: string | null; ativo: boolean; ordem: number }
 export interface Material { id: string; nome: string; sigla: string | null; recipiente_id: string | null; descricao: string | null; legado: boolean; ativo: boolean; ordem: number; condicao_transporte_id?: string | null; estab_ambiente_h?: number | null; estab_refrigerado_h?: number | null; estab_congelado_h?: number | null }
-export interface Tubo { type: string; label: string; sigla: string; color: string; hex: string; volume: string; indefinido?: boolean }
+export interface Tubo { type: string; label: string; sigla: string; color: string; hex: string; volume: string; indefinido?: boolean
+  /** Etiqueta própria de uma coleta seguinte (ex.: TOTG 120 min). */
+  extra?: { examKey: string; coleta: string; ordem: number } }
 
 export const normMat = (s: unknown) => String(s ?? '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/\s+/g, ' ').trim()
 
@@ -108,3 +111,44 @@ export function tubosDosExames(exams: any[]): Tubo[] {
 
 /** Texto da etiqueta: "NOME DO RECIPIENTE (SIGLA)" ou "TUBO NÃO DEFINIDO". */
 export const etiquetaTubo = (t: Tubo) => (t.indefinido ? { material: 'TUBO NÃO DEFINIDO', tube: '' } : { material: t.label, tube: t.sigla })
+
+/**
+ * Etiquetas do pedido: tubos comuns (mesma ordem/código de sempre) e, depois deles,
+ * uma etiqueta para cada coleta seguinte dos exames com coletas em tempos diferentes.
+ * Só para impressão/consulta de etiquetas — a Coleta continua por tubo comum.
+ */
+export function etiquetasDosExames(exams: any[]): Tubo[] {
+  const extras: Tubo[] = []
+  const vistos = new Set<string>()
+  for (const e of exams || []) {
+    const coletas = coletasDoExame(e)
+    if (coletas.length < 2) continue
+    const examKey = chaveExame(e)
+    if (vistos.has(examKey)) continue
+    vistos.add(examKey)
+    const base = tuboInfo(tuboDoExame(e))
+    coletas.slice(1).forEach((c, i) => {
+      extras.push({ ...base, type: `extra:${examKey}:${i + 2}`, extra: { examKey, coleta: c.nome, ordem: i + 2 } })
+    })
+  }
+  return [...tubosDosExames(exams), ...extras]
+}
+
+/** Exames de uma etiqueta (tubo comum ou etiqueta própria da coleta). */
+export function examesDoTubo(exams: any[], tube: Tubo): any[] {
+  if (tube.extra) return (exams || []).filter(e => chaveExame(e) === tube.extra!.examKey).slice(0, 1)
+  return (exams || []).filter(e => tuboDoExame(e) === tube.type)
+}
+
+/** Linha de exames da etiqueta, com o nome da coleta quando o exame tem coletas em tempos diferentes. */
+export function refsEtiqueta(tube: Tubo, exams: any[], refOf: (e: any) => string): string[] {
+  const lista = examesDoTubo(exams, tube)
+  return lista.map(e => refExameEtiqueta(refOf(e), e, tube.extra ? tube.extra.ordem - 1 : 0))
+}
+
+/** Descrição na tela: "TUBO GEL (GEL) · 120 MIN". */
+export function descricaoEtiqueta(tube: Tubo): string {
+  const t = etiquetaTubo(tube)
+  const base = `${t.material.toUpperCase()}${t.tube ? ` (${t.tube})` : ''}`
+  return tube.extra ? `${base} · ${tube.extra.coleta}` : base
+}
