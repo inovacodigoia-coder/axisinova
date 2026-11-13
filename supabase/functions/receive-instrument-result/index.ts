@@ -223,9 +223,11 @@ Deno.serve(async (req) => {
     const label = String(o.order_number || o.protocol || o.id)
     const candidates = new Set<string>([norm(label), norm(o.protocol), norm(o.order_number)])
     for (let idx = 1; idx <= TUBE_TYPES.length; idx++) {
-      const code = buildSampleCode(label, idx, companySeq)
-      candidates.add(norm(code))
-      candidates.add(norm(generateSampleHash(code)))
+      // Aceita etiquetas impressas com e sem o sufixo da empresa
+      for (const code of new Set([buildSampleCode(label, idx, companySeq), buildSampleCode(label, idx, null)])) {
+        candidates.add(norm(code))
+        candidates.add(norm(generateSampleHash(code)))
+      }
     }
     return candidates.has(barcodeUpper)
   }

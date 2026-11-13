@@ -247,9 +247,11 @@ Deno.serve(async (req) => {
     const orderLabel = String(o.order_number || o.protocol || o.id)
     const candidates = new Set<string>([norm(orderLabel), norm(o.protocol), norm(o.order_number)])
     for (let idx = 1; idx <= TUBE_TYPES.length; idx++) {
-      const code = buildSampleCode(orderLabel, idx, companySeq)
-      candidates.add(norm(code))
-      candidates.add(norm(generateSampleHash(code)))
+      // Aceita etiquetas impressas com e sem o sufixo da empresa
+      for (const code of new Set([buildSampleCode(orderLabel, idx, companySeq), buildSampleCode(orderLabel, idx, null)])) {
+        candidates.add(norm(code))
+        candidates.add(norm(generateSampleHash(code)))
+      }
     }
     if (!candidates.has(barcodeUpper)) continue
     if (CANCELLED_STATUSES.includes(String(o.status))) {
