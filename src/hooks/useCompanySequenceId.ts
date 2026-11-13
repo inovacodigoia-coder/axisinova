@@ -7,10 +7,15 @@ import { useAuth } from '@/context/AuthContext'
  * Usado como último bloco do código da amostra: 16-00-1-<idEmpresa>
  */
 export function useCompanySequenceId() {
+  return useCompanySequenceIdState().id
+}
+
+/** Igual ao useCompanySequenceId, com `ready` = já confirmado no servidor (ou sem empresa). */
+export function useCompanySequenceIdState() {
   const { user } = useAuth()
   const companyId = user?.companyId
 
-  const { data } = useQuery({
+  const { data, isSuccess, isError } = useQuery({
     queryKey: ['company_sequence_id', companyId],
     queryFn: async () => {
       if (!companyId) return null
@@ -26,5 +31,5 @@ export function useCompanySequenceId() {
     staleTime: 1000 * 60 * 60,
   })
 
-  return data ?? null
+  return { id: data ?? null, ready: !companyId || isSuccess || isError }
 }

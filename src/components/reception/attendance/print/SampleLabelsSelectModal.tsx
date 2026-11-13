@@ -6,7 +6,7 @@ import { cn } from '@/lib/utils'
 import { useAuth } from '@/context/AuthContext'
 import { useMateriaisTubos, tubosDosExames, tuboDoExame, etiquetaTubo } from '@/lib/tubos'
 import { buildSampleCode } from '@/utils/orderHash'
-import { useCompanySequenceId } from '@/hooks/useCompanySequenceId'
+import { useCompanySequenceIdState } from '@/hooks/useCompanySequenceId'
 import { useLabSettings } from '@/hooks/useLabSettings'
 import { SampleLabelsPrintModal } from './SampleLabelsPrintModal'
 
@@ -22,7 +22,7 @@ interface Props {
 }
 
 export function SampleLabelsSelectModal({ open, onClose, order, birthDate, autoPrint, onPrinted }: Props) {
-  const companySequenceId = useCompanySequenceId()
+  const { id: companySequenceId, ready: seqReady } = useCompanySequenceIdState()
   const { settings } = useLabSettings()
   const { user } = useAuth()
   const cad = useMateriaisTubos(user?.companyId)
@@ -54,10 +54,11 @@ export function SampleLabelsSelectModal({ open, onClose, order, birthDate, autoP
   // Modo automatico: abre direto a impressao com todas as amostras coletadas.
   // Se nenhuma amostra estiver coletada, encerra para nao travar o fluxo numa tela vazia.
   useEffect(() => {
-    if (!open || !autoPrint || printOpen) return
+    // Espera o ID da empresa: etiqueta sem ele gera código diferente do enviado ao aparelho
+    if (!open || !autoPrint || printOpen || !seqReady) return
     if (tubes.some(t => t.collected)) setPrintOpen(true)
     else onClose()
-  }, [open, autoPrint, printOpen, tubes, onClose])
+  }, [open, autoPrint, printOpen, tubes, onClose, seqReady])
 
   const toggle = (code: string) =>
     setSelected(prev => {
@@ -73,7 +74,7 @@ export function SampleLabelsSelectModal({ open, onClose, order, birthDate, autoP
 
   return (
     <>
-      <Dialog open={open && !printOpen && !autoPrint} onOpenChange={(o) => !o && onClose()}>
+      <Dialog open={open && !printOpen && !autoPrint && seqReady} onOpenChange={(o) => !o && onClose()}>
         <DialogContent className="max-w-[560px] p-0 overflow-hidden [&>button]:hidden">
           <div className="flex items-center justify-between border-b border-border px-5 py-3">
             <h2 className="text-base font-bold text-foreground flex items-center gap-2">
@@ -127,7 +128,7 @@ export function SampleLabelsSelectModal({ open, onClose, order, birthDate, autoP
       </Dialog>
 
       <SampleLabelsPrintModal
-        open={printOpen}
+        open={printOpen && seqReady}
         autoPrint={autoPrint}
         onPrinted={onPrinted}
         onClose={() => { setPrintOpen(false); if (autoPrint) onClose() }}
