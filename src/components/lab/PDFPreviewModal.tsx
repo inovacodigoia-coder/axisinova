@@ -11,6 +11,7 @@ import { useLabSettings } from '@/hooks/useLabSettings';
 import { useExamReportConfig } from '@/hooks/useExamReportConfig';
 import { useAuth } from '@/context/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
+import { buscarEmBlocos } from '@/lib/buscarEmBlocos';
 import { toast } from 'sonner';
 import { ServidorImpressaoStatus } from '@/components/print/ServidorImpressaoStatus';
 import { servidorImpressaoAtivo, imprimirDireto, TIPOS_DOCUMENTO } from '@/lib/impressaoLocal';
@@ -91,7 +92,10 @@ export default function PDFPreviewModal({
   React.useEffect(() => {
     const pedidoId = (order as any)?.id as string | undefined;
     if (!isOpen || !pedidoId) { setApoioItens([]); setRetificados([]); return; }
-    supabase.rpc('apoio_laudos_resumo' as any).then(({ data }) => setApoioItens(((data as any[]) || []).filter(r => r.pedido_id === pedidoId)));
+    // Blocos de 1.000 até acabar: o exame de apoio deste pedido nunca fica de fora da lista da empresa.
+    buscarEmBlocos<any>((de, ate) => (supabase.rpc('apoio_laudos_resumo' as any) as any).range(de, ate))
+      .then(({ linhas }) => setApoioItens(linhas.filter(r => r.pedido_id === pedidoId)))
+      .catch((e) => console.error('Erro ao carregar exames de apoio:', e));
     supabase.from('lab_exam_results').select('exam_ref, retificado_em').eq('order_id', pedidoId).not('retificado_em', 'is', null)
       .then(({ data }) => setRetificados((data as any) || []));
   }, [isOpen, (order as any)?.id]);

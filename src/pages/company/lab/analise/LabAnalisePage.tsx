@@ -37,6 +37,7 @@ import { toast } from 'sonner';
 import { useRegisters } from '@/context/RegistersContext';
 import { useAttendanceCadastro, FILA_TEMPO_REAL, STATUS_PENDENTES_ANALISE, STATUS_CONCLUIDOS } from '@/hooks/useAttendanceCadastro';
 import { intervaloDoPeriodo } from '@/lib/filaPeriodo';
+import { buscarEmBlocos, emPedacos } from '@/lib/buscarEmBlocos';
 import { useCompanyContext } from '@/context/CompanyContext';
 import { ResultEntryModal } from '@/components/lab/analise/ResultEntryModal';
 import { OriginFilterDialog } from '@/components/lab/analise/OriginFilterDialog';
@@ -141,12 +142,19 @@ export default function LabAnalisePage() {
   // Exames de apoio (modo e alertas) por pedido:exame
   const [apoioModos, setApoioModos] = useState<Record<string, { modo: string; alerta: boolean }>>({});
   useEffect(() => {
-    supabase.rpc('apoio_laudos_resumo' as any).then(async ({ data }) => {
+    // Blocos de 1.000 e listas de ids em pedaços: nenhum exame de apoio fica de fora.
+    buscarEmBlocos<any>((de, ate) => (supabase.rpc('apoio_laudos_resumo' as any) as any).range(de, ate), { tela: 'Digitação' }).then(async ({ linhas: data }) => {
       const m: Record<string, { modo: string; alerta: boolean }> = {};
-      const ids = ((data as any[]) || []).map(r => r.pedido_id);
-      const { data: pes } = ids.length ? await supabase.from('apoio_pedido_exame').select('id, pedido_id, exame_id, modo, status').in('pedido_id', Array.from(new Set(ids))).neq('status', 'cancelado') : { data: [] as any[] };
-      const peIds = (pes || []).map((p: any) => p.id);
-      const { data: vers } = peIds.length ? await supabase.from('apoio_resultado_versao').select('pedido_exame_id, situacao, retificacao, origem').in('pedido_exame_id', peIds) : { data: [] as any[] };
+      const ids = Array.from(new Set((data || []).map((r: any) => r.pedido_id)));
+      const pes: any[] = [];
+      for (const lote of emPedacos(ids)) {
+        pes.push(...(await buscarEmBlocos<any>((de, ate) => supabase.from('apoio_pedido_exame').select('id, pedido_id, exame_id, modo, status').in('pedido_id', lote).neq('status', 'cancelado').order('id').range(de, ate), { tela: 'Digitação' })).linhas);
+      }
+      const peIds = pes.map((p: any) => p.id);
+      const vers: any[] = [];
+      for (const lote of emPedacos(peIds)) {
+        vers.push(...(await buscarEmBlocos<any>((de, ate) => supabase.from('apoio_resultado_versao').select('id, pedido_exame_id, situacao, retificacao, origem').in('pedido_exame_id', lote).order('id').range(de, ate), { tela: 'Digitação' })).linhas);
+      }
       (pes || []).forEach((p: any) => {
         const vs = (vers || []).filter((v: any) => v.pedido_exame_id === p.id);
         const ultimo = vs.find((v: any) => !['substituido', 'descartado'].includes(v.situacao));
