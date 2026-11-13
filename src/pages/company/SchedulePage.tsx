@@ -6,6 +6,7 @@ import { AppointmentModal, type AppointmentFormData } from '@/components/company
 import { ConfirmModal } from '@/components/ui/ConfirmModal'
 import { useNotifications } from '@/components/company/NotificationPanel'
 import { supabase } from '@/integrations/supabase/client'
+import { buscarEmBlocos } from '@/lib/buscarEmBlocos'
 import { toast } from 'sonner'
 import { useAuth } from '@/context/AuthContext'
 
@@ -46,13 +47,18 @@ export default function SchedulePage() {
   const { addNotification } = useNotifications()
 
   const fetchAppointments = async () => {
-    const { data, error } = await supabase
-      .from('appointments')
-      .select('*')
-      .eq('company_id', companyId)
-      .order('date', { ascending: true })
-    if (error) { toast.error('Erro ao carregar agendamentos'); return }
-    const mapped: Appointment[] = (data || []).map(a => ({
+    // Blocos de 1.000 até acabar: nenhum agendamento fica de fora.
+    let data: any[]
+    try {
+      data = (await buscarEmBlocos<any>((de, ate) => supabase
+        .from('appointments')
+        .select('*')
+        .eq('company_id', companyId)
+        .order('date', { ascending: true })
+        .order('id', { ascending: true })
+        .range(de, ate), { chave: (r) => r.id, tela: 'Agenda' })).linhas
+    } catch { toast.error('Erro ao carregar agendamentos'); return }
+    const mapped: Appointment[] = data.map((a: any) => ({
       id: a.id, time: a.time.slice(0, 5), patient: a.patient_name, doctor: a.doctor,
       type: a.type, duration: a.duration, status: a.status,
       date: a.date, notes: a.notes || undefined,

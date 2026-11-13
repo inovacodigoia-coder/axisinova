@@ -13,6 +13,7 @@ import { cn } from '@/lib/utils'
 import { useRegisters } from '@/context/RegistersContext'
 import { toast } from 'sonner'
 import { supabase } from '@/integrations/supabase/client'
+import { buscarEmBlocos, emPedacos } from '@/lib/buscarEmBlocos'
 import { exportExamBillingCodes } from '@/lib/examBillingCodes'
 
 import {
@@ -136,12 +137,16 @@ export default function LabCatalogPage() {
       }
 
       // Fetch ALL parameters for these exams from the new table
-      const { data: dbParameters, error: paramsError } = await supabase
-        .from('lab_exam_parameters')
-        .select('*')
-        .in('exam_id', labExams.map(e => e.id))
-      
-      if (paramsError) {
+      // Exportação completa: ids em pedaços e blocos de 1.000 até acabar.
+      const todosDosExames = async (tabela: 'lab_exam_parameters' | 'lab_exam_reference_values') => {
+        const out: any[] = []
+        for (const lote of emPedacos(labExams.map(e => e.id))) {
+          out.push(...(await buscarEmBlocos<any>((de, ate) => (supabase.from(tabela) as any).select('*').in('exam_id', lote).order('id').range(de, ate))).linhas)
+        }
+        return out
+      }
+      let dbParameters: any[] = []
+      try { dbParameters = await todosDosExames('lab_exam_parameters') } catch (paramsError) {
         console.error('Erro ao buscar parâmetros do banco:', paramsError)
       }
 
@@ -243,12 +248,8 @@ export default function LabCatalogPage() {
       })
 
       // 3. Faixas de Referência
-      const { data: dbReferences, error: refsError } = await supabase
-        .from('lab_exam_reference_values')
-        .select('*')
-        .in('exam_id', labExams.map(e => e.id))
-      
-      if (refsError) {
+      let dbReferences: any[] = []
+      try { dbReferences = await todosDosExames('lab_exam_reference_values') } catch (refsError) {
         console.error('Erro ao buscar faixas de referência do banco:', refsError)
       }
 

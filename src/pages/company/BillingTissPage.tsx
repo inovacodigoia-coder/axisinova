@@ -7,6 +7,7 @@ import { TissGuideModal, type TissGuideFormData } from '@/components/company/Tis
 import { ConfirmModal } from '@/components/ui/ConfirmModal'
 import { useNotifications } from '@/components/company/NotificationPanel'
 import { supabase } from '@/integrations/supabase/client'
+import { buscarEmBlocos } from '@/lib/buscarEmBlocos'
 import { toast } from 'sonner'
 import { useAuth } from '@/context/AuthContext'
 
@@ -38,10 +39,14 @@ export default function BillingTissPage() {
   const { addNotification } = useNotifications()
 
   const fetchGuides = async () => {
-    const { data, error } = await supabase
-      .from('tiss_guides').select('*').eq('company_id', companyId).order('created_at', { ascending: false })
-    if (error) { toast.error('Erro ao carregar guias'); return }
-    const mapped: TissGuide[] = (data || []).map(g => ({
+    // Blocos de 1.000 até acabar: nenhuma guia fica de fora.
+    let data: any[]
+    try {
+      data = (await buscarEmBlocos<any>((de, ate) => supabase
+        .from('tiss_guides').select('*').eq('company_id', companyId).order('created_at', { ascending: false }).order('id')
+        .range(de, ate), { chave: (r) => r.id, tela: 'Faturamento TISS' })).linhas
+    } catch { toast.error('Erro ao carregar guias'); return }
+    const mapped: TissGuide[] = data.map((g: any) => ({
       id: g.id, number: g.guide_number, patient: g.patient_name,
       procedure: g.procedure_name, procedureCode: g.procedure_code || undefined,
       operator: g.operator, value: Number(g.value), doctor: g.doctor,
