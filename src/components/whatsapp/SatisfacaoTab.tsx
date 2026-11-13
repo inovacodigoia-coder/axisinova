@@ -2,6 +2,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { supabase } from '@/integrations/supabase/client'
+import { buscarEmBlocos } from '@/lib/buscarEmBlocos'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Loader2, MessageCircle } from 'lucide-react'
@@ -30,9 +31,11 @@ export function SatisfacaoTab({ companyId }: { companyId: string }) {
 
   const load = useCallback(async () => {
     setDados(null)
-    const [{ data }, { count }, { data: c }] = await Promise.all([
-      supabase.from('whatsapp_nps_respostas' as any).select('id, paciente_nome, medico_id, medico_nome, tipo_atendimento, nota, categoria, comentario, respondida_em')
-        .eq('company_id', companyId).gte('respondida_em', faixa.de).lte('respondida_em', faixa.ate).order('respondida_em', { ascending: false }).limit(1000),
+    const [{ linhas: data }, { count }, { data: c }] = await Promise.all([
+      // Blocos de 1.000 até acabar: a nota do período considera todas as respostas.
+      buscarEmBlocos<any>((de, ate) => (supabase.from('whatsapp_nps_respostas' as any).select('id, paciente_nome, medico_id, medico_nome, tipo_atendimento, nota, categoria, comentario, respondida_em')
+        .eq('company_id', companyId).gte('respondida_em', faixa.de).lte('respondida_em', faixa.ate).order('respondida_em', { ascending: false }).order('id') as any).range(de, ate), { chave: (r) => r.id, tela: 'Satisfação' })
+        .catch(() => ({ linhas: [] as any[] })),
       supabase.from('whatsapp_fila_envios_v' as any).select('id', { count: 'exact', head: true })
         .eq('company_id', companyId).eq('tipo', 'ciclo_nps').in('status', ['enviada', 'entregue', 'lida']).gte('enviada_em', faixa.de).lte('enviada_em', faixa.ate),
       supabase.from('companies').select('inovachat_habilitado').eq('id', companyId).maybeSingle(),
