@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button'
 import { Printer, X, Tag } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { useAuth } from '@/context/AuthContext'
-import { useMateriaisTubos, tubosDosExames, tuboDoExame, etiquetaTubo } from '@/lib/tubos'
+import { useMateriaisTubos, etiquetasDosExames, examesDoTubo, etiquetaTubo, refsEtiqueta } from '@/lib/tubos'
 import { buildSampleCode } from '@/utils/orderHash'
 import { useCompanySequenceIdState } from '@/hooks/useCompanySequenceId'
 import { useLabSettings } from '@/hooks/useLabSettings'
@@ -35,8 +35,9 @@ export function SampleLabelsSelectModal({ open, onClose, order, birthDate, autoP
   )
 
   const tubes = useMemo(() => {
-    return tubosDosExames(exams).map((tube, idx) => {
-      const tubeExams = exams.filter((e: any) => tuboDoExame(e) === tube.type)
+    // Tubos comuns + uma etiqueta para cada coleta seguinte (ex.: TOTG 120 min)
+    return etiquetasDosExames(exams).map((tube, idx) => {
+      const tubeExams = examesDoTubo(exams, tube)
       return {
         ...tube,
         index: idx + 1,
@@ -104,7 +105,7 @@ export function SampleLabelsSelectModal({ open, onClose, order, birthDate, autoP
                   />
                   <span className={cn('h-2.5 w-2.5 rounded-full', t.color)} style={t.color ? undefined : { backgroundColor: t.hex }} />
                   <div>
-                    <p className="text-xs font-bold uppercase text-foreground">{t.label} · {t.code}</p>
+                    <p className="text-xs font-bold uppercase text-foreground">{t.label}{t.extra ? ` · ${t.extra.coleta}` : ''} · {t.code}</p>
                     <p className="text-[10px] text-muted-foreground truncate max-w-[320px]">
                       {t.exams.map((e: any) => e.name).join(', ')}
                     </p>
@@ -143,7 +144,7 @@ export function SampleLabelsSelectModal({ open, onClose, order, birthDate, autoP
           labelIndex: t.index,
           ...etiquetaTubo(t),
           workbench: t.exams[0]?.workbench || 'GERAL',
-          examRefs: t.exams.map((e: any) => e.code || String(e.name || '').slice(0, 12)),
+          examRefs: refsEtiqueta(t, exams, (e: any) => e.code || String(e.name || '').slice(0, 12)),
         }))}
       />
     </>
