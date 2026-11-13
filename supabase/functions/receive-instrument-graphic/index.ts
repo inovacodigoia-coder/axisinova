@@ -225,18 +225,23 @@ Deno.serve(async (req) => {
   const companySeq = (company?.sequence_id ?? null) as number | null
 
   const since = new Date(Date.now() - 90 * 24 * 60 * 60 * 1000).toISOString()
-  const { data: orders } = await supabase
+  const barcodeUpper = norm(sampleBarcode)
+
+  let order: any = null
+  let cancelledMatch: any = null
+
+  // Pedidos dos últimos 90 dias em blocos de 1.000 (teto do servidor) até achar ou acabar:
+  // nenhum pedido fica de fora, mesmo em empresas com muito movimento.
+  for (let de = 0; de < 50_000 && !order; de += 1000) {
+  const { data: orders, error: ordersErr } = await supabase
     .from('attendance_orders')
     .select('id, protocol, order_number, status, created_at')
     .eq('company_id', companyId)
     .gt('created_at', since)
     .order('created_at', { ascending: false })
-    .limit(3000)
-
-  const barcodeUpper = norm(sampleBarcode)
-
-  let order: any = null
-  let cancelledMatch: any = null
+    .order('id', { ascending: false })
+    .range(de, de + 999)
+  if (ordersErr) break
 
   for (const o of orders || []) {
     const orderLabel = String(o.order_number || o.protocol || o.id)
@@ -253,6 +258,8 @@ Deno.serve(async (req) => {
     }
     order = o
     break
+  }
+  if (!orders || orders.length < 1000) break
   }
 
   if (!order && cancelledMatch) {

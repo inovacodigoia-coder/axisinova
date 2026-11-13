@@ -250,15 +250,22 @@ Deno.serve(async (req) => {
   let lightOrders: any[] = [...(byNumber.data || []), ...(byProtocol.data || [])]
     .sort((a, b) => String(b.created_at).localeCompare(String(a.created_at)))
   if (!lightOrders.some(matchesBarcode)) {
-    // 5b. Código alfanumérico (hash) da etiqueta: varre só colunas leves dos últimos 90 dias.
-    const { data: recent } = await supabase
-      .from('attendance_orders')
-      .select(LIGHT_COLS)
-      .eq('company_id', companyId)
-      .gt('created_at', since)
-      .order('created_at', { ascending: false })
-      .limit(3000)
-    lightOrders = recent || []
+    // 5b. Código alfanumérico (hash) da etiqueta: varre só colunas leves dos últimos 90 dias,
+    // em blocos de 1.000 (teto do servidor) até achar ou acabar — nenhum pedido fica de fora.
+    lightOrders = []
+    for (let de = 0; de < 50_000; de += 1000) {
+      const { data: bloco, error: blocoErr } = await supabase
+        .from('attendance_orders')
+        .select(LIGHT_COLS)
+        .eq('company_id', companyId)
+        .gt('created_at', since)
+        .order('created_at', { ascending: false })
+        .order('id', { ascending: false })
+        .range(de, de + 999)
+      if (blocoErr) break
+      lightOrders.push(...(bloco || []))
+      if (!bloco || bloco.length < 1000 || bloco.some(matchesBarcode)) break
+    }
   }
 
   let order: any = null
