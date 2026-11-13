@@ -231,3 +231,6 @@
 - [x] Caneta libera o campo calculado para editar ou apagar; o vazio manual não é recalculado e é identificado ao salvar/reabrir; botão restaura o cálculo automático.
 - [x] Campo CALC esvaziado pela caneta é opcional na conclusão; 37 testes de cálculo/referência/diferencial e typecheck passaram, sem alterar laudos reais.
 - [ ] Validar clique, salvamento e reabertura na tela autenticada: preview está signed_out e não foi gerada sessão em nome do usuário.
+
+## Limite de 1.000 linhas (retenção 5 anos)
+- [x] Busca em blocos nas listas, filas, relatórios, exportações e funções dos aparelhos; filas por status sem data; aviso "Resultados limitados".
