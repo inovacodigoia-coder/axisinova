@@ -1,5 +1,7 @@
 import { lazy, Suspense } from "react";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { QueryClientProvider } from "@tanstack/react-query";
+import { queryClient } from "@/lib/queryClient";
+import { IdleLogoutGuard } from "@/hooks/useIdleLogout";
 import { BrowserRouter, Route, Routes, Navigate } from "react-router-dom";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { Toaster } from "@/components/ui/toaster";
@@ -52,9 +54,6 @@ const AlmoxarifadoDemo = lazy(() => import("./pages/company/estoque/Almoxarifado
 
 // Padrão: listas ficam frescas por 45 s e não recarregam só por voltar à aba.
 // Telas operacionais (fila de coleta/digitação) usam FILA_TEMPO_REAL.
-const queryClient = new QueryClient({
-  defaultOptions: { queries: { staleTime: 45_000, refetchOnWindowFocus: false } },
-});
 
 const App = () => (
   <ErrorBoundary>
@@ -65,6 +64,8 @@ const App = () => (
         <UpdateBanner />
         <BrowserRouter>
           <AuthProvider>
+            {/* Logout por inatividade: um único ponto, só age em rotas autenticadas */}
+            <IdleLogoutGuard />
             <CompanyProvider>
               <RegistersProvider>
                 <QueueProvider>

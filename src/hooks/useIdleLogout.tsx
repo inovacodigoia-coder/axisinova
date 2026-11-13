@@ -103,7 +103,11 @@ export function useIdleLogout() {
     gravadoEmRef.current = 0
     registrarAtividade(agora + 1, true)
 
-    const aoAgir = () => registrarAtividade(Date.now(), true)
+    const aoAgir = (e: Event) => {
+      // Os botões do aviso tratam o clique (senão o aviso some antes do "Sair agora").
+      if ((e.target as Element | null)?.closest?.('[data-idle-botoes]')) return
+      registrarAtividade(Date.now(), true)
+    }
     EVENTOS.forEach(e => document.addEventListener(e, aoAgir, { capture: true, passive: true }))
     const aoStorage = (e: StorageEvent) => {
       if (e.key === CHAVE_ULTIMA_ATIVIDADE && e.newValue) registrarAtividade(Number(e.newValue) || 0, false)
@@ -166,7 +170,7 @@ export function IdleLogoutGuard() {
           <p className="text-sm text-muted-foreground">
             {aviso > 0 ? 'Clique em continuar para seguir conectado.' : 'Aguardando terminar o salvamento em andamento…'}
           </p>
-          <div className="flex w-full gap-3 mt-2">
+          <div className="flex w-full gap-3 mt-2" data-idle-botoes>
             <button
               onClick={sairAgora}
               className="flex-1 rounded-lg border border-border px-4 py-2 text-sm font-medium text-muted-foreground hover:bg-muted transition-colors"
