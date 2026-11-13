@@ -4,6 +4,8 @@ import { Button } from '@/components/ui/button'
 import { Search, ChevronDown, User, Beaker, ClipboardList, Printer, Check, X, AlertCircle, Filter, History, Clock, Menu, RotateCw } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { useAttendanceCadastro, FILA_TEMPO_REAL } from '@/hooks/useAttendanceCadastro'
+
+const STATUS_FILA_COLETA = ['waiting_collection'] as const
 import { useRegisters } from '@/context/RegistersContext'
 import { LabAttendanceOrder, LabExam } from '@/types/lab.types'
 import { useMateriaisTubos, tuboDoExame, tubosDosExames, avisoTubo } from '@/lib/tubos'
@@ -18,7 +20,8 @@ import { canSetCollectionDone } from '@/utils/orderStatusFlow'
 export default function LabColetaPage() {
   const { user } = useAuth()
   const cadTubos = useMateriaisTubos(user?.companyId)
-  const { orders, updateOrder, refresh } = useAttendanceCadastro(FILA_TEMPO_REAL)
+  // Fila de coleta: só pedidos aguardando coleta (filtro no servidor), de qualquer data
+  const { orders, updateOrder, refresh } = useAttendanceCadastro({ ...FILA_TEMPO_REAL, statuses: STATUS_FILA_COLETA })
   const navigate = useNavigate()
   const [loading, setLoading] = useState(true)
   const [expandedId, setExpandedId] = useState<string | null>(null)

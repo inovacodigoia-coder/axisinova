@@ -18,6 +18,7 @@ import { NotificationBadge } from '@/components/notifications/NotificationBadge'
 import { CommandPalette } from '@/components/global/CommandPalette'
 import { BreadcrumbNav } from '@/components/global/BreadcrumbNav'
 import { PageTransition } from '@/components/global/PageTransition'
+import { AvisoResultadosLimitados } from '@/components/global/AvisoResultadosLimitados'
 import { SystemStatusBar } from '@/components/global/SystemStatusBar'
 import { useKeyboardShortcuts } from '@/hooks/useKeyboardShortcuts'
 import { useSessionTimeout } from '@/hooks/useSessionTimeout'
@@ -251,6 +252,7 @@ function PortalContent() {
         {/* Main content */}
         <main className="flex-1 p-4 sm:p-6">
           <BreadcrumbNav />
+          <AvisoResultadosLimitados />
           {['/app/triagem', '/app/postos-coleta', '/app/internacao', '/app/nutricao', '/app/medico'].includes(location.pathname) && <div className="flex justify-end mb-3"><Button variant="outline" asChild><Link to="/app/estoque/solicitacoes">Solicitar materiais / estoque do setor</Link></Button></div>}
           <PageTransition key={location.pathname}>
             <Routes>

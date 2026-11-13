@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from 'react'
 import { supabase } from '@/integrations/supabase/client'
+import { buscarEmBlocos } from '@/lib/buscarEmBlocos'
 import { useAuth } from '@/context/AuthContext'
 import { InventoryState, RequestLine } from '@/lib/almoxarifado'
 
@@ -16,20 +17,24 @@ export function useAlmoxarifado(enabled = true) {
     if (!enabled || !user?.companyId) return
     setLoading(true); setError('')
     try {
+      const cid = user.companyId
+      // Blocos de 1.000 até acabar: histórico de movimentos e solicitações sempre completo.
+      const todos = <T,>(fn: (de: number, ate: number) => any) => buscarEmBlocos<T>(fn, { tela: 'Estoque' })
+        .then(r => ({ data: r.linhas, error: null as { message: string } | null }), (e: any) => ({ data: [] as T[], error: { message: e?.message || String(e) } }))
       const [ctx, items, balances, requests, lines, movements] = await Promise.all([
         supabase.rpc('almox_contexto'),
-        supabase.from('almox_itens').select('*').eq('company_id', user.companyId).eq('ativo', true).order('nome'),
-        supabase.from('almox_saldos').select('*').eq('company_id', user.companyId),
-        supabase.from('almox_solicitacoes').select('*').eq('company_id', user.companyId).order('created_at', { ascending: false }),
-        supabase.from('almox_solicitacao_itens').select('*').eq('company_id', user.companyId),
-        supabase.from('almox_movimentos').select('*').eq('company_id', user.companyId).order('created_at', { ascending: false }),
+        todos<any>((de, ate) => supabase.from('almox_itens').select('*').eq('company_id', cid).eq('ativo', true).order('nome').order('id').range(de, ate)),
+        todos<any>((de, ate) => supabase.from('almox_saldos').select('*').eq('company_id', cid).order('id').range(de, ate)),
+        todos<any>((de, ate) => supabase.from('almox_solicitacoes').select('*').eq('company_id', cid).order('created_at', { ascending: false }).order('id').range(de, ate)),
+        todos<any>((de, ate) => supabase.from('almox_solicitacao_itens').select('*').eq('company_id', cid).order('id').range(de, ate)),
+        todos<any>((de, ate) => supabase.from('almox_movimentos').select('*').eq('company_id', cid).order('created_at', { ascending: false }).order('id').range(de, ate)),
       ])
       for (const r of [ctx, items, balances, requests, lines, movements]) if (r.error) throw new Error(r.error.message)
       const context = ctx.data as unknown as InventoryAccess & { setores: InventoryState['setores'] }
       setAccess(context)
-      setState({ itens: (items.data || []) as InventoryState['itens'], setores: context.setores || [], saldos: (balances.data || []).map(b => ({ ...b, quantidade: Number(b.quantidade) })),
-        solicitacoes: (requests.data || []).map(r => ({ ...r, observacao: r.observacao || '', motivo: r.motivo || '', decidido_em: r.decidido_em || undefined, destino: r.destino as 'setor' | 'farmacia', status: r.status as 'pendente' | 'aprovada' | 'recusada', itens: (lines.data || []).filter(l => l.solicitacao_id === r.id).map(l => ({ item_id: l.item_id, quantidade: Number(l.quantidade) })) })),
-        movimentos: (movements.data || []).map(m => ({ ...m, setor_id: m.setor_id || undefined, solicitacao_id: m.solicitacao_id || undefined, quantidade: Number(m.quantidade) })),
+      setState({ itens: (items.data || []) as InventoryState['itens'], setores: context.setores || [], saldos: (balances.data || []).map((b: any) => ({ ...b, quantidade: Number(b.quantidade) })),
+        solicitacoes: (requests.data || []).map((r: any) => ({ ...r, observacao: r.observacao || '', motivo: r.motivo || '', decidido_em: r.decidido_em || undefined, destino: r.destino as 'setor' | 'farmacia', status: r.status as 'pendente' | 'aprovada' | 'recusada', itens: (lines.data || []).filter((l: any) => l.solicitacao_id === r.id).map((l: any) => ({ item_id: l.item_id, quantidade: Number(l.quantidade) })) })),
+        movimentos: (movements.data || []).map((m: any) => ({ ...m, setor_id: m.setor_id || undefined, solicitacao_id: m.solicitacao_id || undefined, quantidade: Number(m.quantidade) })),
       })
     } catch (e) { setError(e instanceof Error ? e.message : 'Não foi possível carregar o estoque') }
     finally { setLoading(false) }

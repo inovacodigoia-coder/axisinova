@@ -13,6 +13,7 @@ import { GradientButton } from '@/components/ui/GradientButton'
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs'
 import { useAuth } from '@/context/AuthContext'
 import { supabase } from '@/integrations/supabase/client'
+import { buscarEmBlocos } from '@/lib/buscarEmBlocos'
 import { maskCPF } from '@/utils/patient.validators'
 
 import { patientFormSchema, emptyPatientForm, type PatientFormValues } from '@/utils/patient.schema'
@@ -88,9 +89,11 @@ export default function PatientFormPage() {
   useEffect(() => {
     const cid = resolveCompanyId(user?.companyId)
     if (!cid) return
-    supabase.from('patients').select('id,company_id,name,cpf,birth_date,mother_name')
-      .eq('company_id', cid)
-      .then(({ data }) => { allPatientsRef.current = (data || []).map(dbToPatient) })
+    // Blocos de 1.000 até acabar: a detecção de duplicados compara com TODOS os pacientes.
+    buscarEmBlocos<any>((de, ate) => supabase.from('patients').select('id,company_id,name,cpf,birth_date,mother_name')
+      .eq('company_id', cid).order('id').range(de, ate), { chave: (r) => r.id })
+      .then(({ linhas }) => { allPatientsRef.current = linhas.map(dbToPatient) })
+      .catch((e) => console.error('Erro ao carregar pacientes para duplicados:', e))
   }, [user?.companyId])
 
   // Automatic CPF lookup effect

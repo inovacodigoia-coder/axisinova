@@ -39,6 +39,7 @@ import { useAttendanceCadastro } from '@/hooks/useAttendanceCadastro';
 import { format, differenceInYears } from 'date-fns';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/context/AuthContext';
+import { buscarEmBlocos } from '@/lib/buscarEmBlocos';
 
   /* Do not make any visual modifications. The phrases I write are commands to understand what I want, not to be written down. Understand their content well, then execute what is required.
                                         
@@ -68,9 +69,15 @@ export default function LabReportsPage() {
 
   useEffect(() => {
     if (!user?.companyId) return;
-    supabase.rpc('apoio_laudos_resumo' as any).then(({ data }) => setApoioItens((data as any[]) || []));
-    supabase.from('lab_exam_results').select('order_id').eq('company_id', user.companyId).not('retificado_em', 'is', null)
-      .then(({ data }) => setRetificadosPorPedido(new Set(((data as any[]) || []).map(r => r.order_id))));
+    const companyId = user.companyId;
+    // Blocos de 1.000 até acabar: nenhum exame de apoio ou retificado fica de fora.
+    buscarEmBlocos<any>((de, ate) => (supabase.rpc('apoio_laudos_resumo' as any) as any).range(de, ate), { tela: 'Laudos' })
+      .then(({ linhas }) => setApoioItens(linhas))
+      .catch((e) => console.error('Erro ao carregar exames de apoio:', e));
+    buscarEmBlocos<any>((de, ate) => supabase.from('lab_exam_results').select('id, order_id').eq('company_id', companyId)
+      .not('retificado_em', 'is', null).order('id').range(de, ate), { tela: 'Laudos' })
+      .then(({ linhas }) => setRetificadosPorPedido(new Set(linhas.map(r => r.order_id))))
+      .catch((e) => console.error('Erro ao carregar retificados:', e));
   }, [user?.companyId]);
 
   // Load persisted exam results (source of truth for released/typed exams)
@@ -79,12 +86,20 @@ export default function LabReportsPage() {
     if (!companyId) return;
     let active = true;
     (async () => {
-      const { data, error } = await supabase
-        .from('lab_exam_results')
-        .select('protocol, exam_ref, status')
-        .eq('company_id', companyId);
+      // A empresa já passa de 4.000 resultados: busca em blocos de 1.000 até acabar.
+      let data: any[] = [];
+      try {
+        data = (await buscarEmBlocos<any>((de, ate) => supabase
+          .from('lab_exam_results')
+          .select('id, protocol, exam_ref, status')
+          .eq('company_id', companyId)
+          .order('id')
+          .range(de, ate), { tela: 'Laudos' })).linhas;
+      } catch (error) {
+        if (active) console.error('Error loading lab results:', error);
+        return;
+      }
       if (!active) return;
-      if (error) { console.error('Error loading lab results:', error); return; }
       const map: Record<string, { released: number; total: number }> = {};
       const seen = new Set<string>();
       (data || []).forEach((r: any) => {

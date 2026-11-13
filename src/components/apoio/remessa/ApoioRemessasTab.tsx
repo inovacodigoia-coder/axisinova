@@ -2,6 +2,7 @@ import { Fragment, useCallback, useEffect, useMemo, useRef, useState } from 'rea
 import { Plus, Truck, Printer, Download, ScanLine, X, CheckCircle2, AlertTriangle, Send, PackageCheck, Ban, FileText, Loader2, RefreshCw } from 'lucide-react'
 import { toast } from 'sonner'
 import { supabase } from '@/integrations/supabase/client'
+import { buscarEmBlocos } from '@/lib/buscarEmBlocos'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
@@ -72,8 +73,9 @@ export function ApoioRemessasTab({ moduloLiberado }: { moduloLiberado: boolean }
   const carregar = useCallback(async () => {
     setLoading(true)
     supabase.rpc('apoio_alerta_guarda' as any).then(({ data }) => setGuarda(((data as any) || []) as any))
-    const [{ data: r }, { data: d }, { data: a }] = await Promise.all([
-      supabase.rpc('apoio_remessa_lista' as any),
+    const [{ linhas: r }, { data: d }, { data: a }] = await Promise.all([
+      // Blocos de 1.000 até acabar: todas as remessas aparecem na lista.
+      buscarEmBlocos<any>((de, ate) => (supabase.rpc('apoio_remessa_lista' as any) as any).range(de, ate), { chave: (x) => x.id, tela: 'Remessas' }),
       supabase.rpc('apoio_remessa_disponiveis' as any, {}),
       supabase.from('apoio_laboratorio').select('id, nome, conferir_apos_etiqueta, horarios_motoboy').eq('ativo', true).order('nome'),
     ])
@@ -265,8 +267,8 @@ function DetalheRemessa({ id, remessa: r0, pode, onClose, onChanged }: { id: str
 
   const carregar = useCallback(async () => {
     supabase.from('apoio_remessa').select('colisao').eq('id', id).maybeSingle().then(({ data }) => setColisao((data as any)?.colisao ?? null))
-    const [{ data: l }, { data: pe }, { data: t }, { data: rc }] = await Promise.all([
-      supabase.rpc('apoio_remessa_lista' as any),
+    const [{ linhas: l }, { data: pe }, { data: t }, { data: rc }] = await Promise.all([
+      buscarEmBlocos<any>((de, ate) => (supabase.rpc('apoio_remessa_lista' as any) as any).range(de, ate), { chave: (x) => x.id }),
       supabase.from('apoio_pedido_exame').select('id, pedido_id, exame_id, recipiente_id, codigo_apoio, status, apoio_id, cod_ped_apoio, info_complementar, exams(name), attendance_orders(order_number, patient_name)').eq('remessa_id', id),
       supabase.rpc('apoio_remessa_tubos' as any, { _remessa: id }),
       supabase.from('apoio_recipiente').select('*').eq('remessa_id', id).order('cod_bar_apoio'),

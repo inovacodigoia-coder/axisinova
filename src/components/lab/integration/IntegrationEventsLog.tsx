@@ -37,10 +37,14 @@ const STATUS_META: Record<string, { label: string; className: string; Icon: type
 const toIsoStart = (d: string) => (d ? new Date(`${d}T00:00:00`).toISOString() : null)
 const toIsoEnd = (d: string) => (d ? new Date(`${d}T23:59:59.999`).toISOString() : null)
 
+/** Teto de envios exibidos no log (cada envio carrega o conteúdo bruto do aparelho). */
+const LIMITE_EVENTOS = 500
+
 export default function IntegrationEventsLog() {
   const { user } = useAuth()
   const [loading, setLoading] = useState(true)
   const [rows, setRows] = useState<EventRow[]>([])
+  const [limitado, setLimitado] = useState(false)
   const [equipments, setEquipments] = useState<{ id: string; name: string; serial_number: string | null }[]>([])
   const [equipment, setEquipment] = useState('all')
   const [status, setStatus] = useState('all')
@@ -69,7 +73,7 @@ export default function IntegrationEventsLog() {
       )
       .eq('company_id', user.companyId)
       .order('created_at', { ascending: false })
-      .limit(500)
+      .limit(LIMITE_EVENTOS + 1)
 
     if (equipment !== 'all') query = query.eq('equipment_id', equipment)
     if (status !== 'all') query = query.eq('status', status)
@@ -88,7 +92,10 @@ export default function IntegrationEventsLog() {
 
     const { data, error } = await query
     if (error) toast.error('Erro ao carregar o log de integração')
-    setRows((data as EventRow[]) || [])
+    // Pede um a mais para saber se passou do limite e avisar, em vez de cortar em silêncio.
+    const lista = (data as EventRow[]) || []
+    setLimitado(lista.length > LIMITE_EVENTOS)
+    setRows(lista.slice(0, LIMITE_EVENTOS))
     setLoading(false)
   }
 
@@ -175,6 +182,11 @@ export default function IntegrationEventsLog() {
             <strong className="text-foreground">{summary.total}</strong> envios gravados
             {summary.fail > 0 && <> · <span className="text-red-600">{summary.fail} com erro</span></>}
           </p>
+          {limitado && (
+            <p role="alert" className="text-xs font-semibold text-warning">
+              Resultados limitados, refine o período (mostrando os {LIMITE_EVENTOS} envios mais recentes).
+            </p>
+          )}
           <Button variant="outline" size="sm" className="gap-2" onClick={fetchEvents}>
             <RefreshCw className="h-3.5 w-3.5" /> Atualizar
           </Button>

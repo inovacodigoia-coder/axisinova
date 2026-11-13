@@ -3,6 +3,7 @@ import { Navigate, useSearchParams } from 'react-router-dom'
 import { ArrowLeft, Check, CheckCheck, FileText, Image as ImageIcon, Link2, MessagesSquare, Mic, RefreshCw, Search, Smile, Unlink, Video, X, AlertTriangle, Send, Zap, Settings, ArrowRightLeft, CheckCircle2, RotateCcw, UserCheck, Loader2, Plus, Pencil, Trash2, Palette } from 'lucide-react'
 import { toast } from 'sonner'
 import { supabase } from '@/integrations/supabase/client'
+import { buscarEmBlocos } from '@/lib/buscarEmBlocos'
 import { useInovachatAcesso, useInovachatSinais } from '@/hooks/useInovachat'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
@@ -110,10 +111,12 @@ export default function InovachatPage() {
   }, [])
 
   const carregarMsgs = useCallback(async (id: string) => {
-    const { data } = await supabase.from('whatsapp_mensagens')
+    // Blocos de 1.000 até acabar: conversas longas mostram todas as mensagens, inclusive as mais novas.
+    const { linhas } = await buscarEmBlocos<any>((de, ate) => supabase.from('whatsapp_mensagens')
       .select('id, direcao, origem, tipo, texto, enviada_por_nome, status, criado_em, evento_tipo, erro, midia_status, midia_nome, midia_tamanho, duracao_seg, midia_mime')
-      .eq('conversa_id', id).order('criado_em', { ascending: true }).limit(1000)
-    setMsgs((data ?? []) as Mensagem[])
+      .eq('conversa_id', id).order('criado_em', { ascending: true }).order('id', { ascending: true }).range(de, ate), { chave: (m) => m.id })
+      .catch(() => ({ linhas: [] as any[] }))
+    setMsgs(linhas as Mensagem[])
   }, [])
 
   const carregarRapidas = useCallback(async () => {

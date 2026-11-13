@@ -4,6 +4,7 @@ import { MOCK_PATIENTS, MOCK_APPOINTMENTS, MOCK_CONFIRMATIONS } from '@/mocks/sc
 import { useAuth } from '@/context/AuthContext'
 import { isDemoCompany } from '@/mocks/registers.mock'
 import { supabase } from '@/integrations/supabase/client'
+import { buscarEmBlocos } from '@/lib/buscarEmBlocos'
 import { resolveCompanyId } from '@/utils/companyId'
 import { toast } from 'sonner'
 
@@ -138,24 +139,29 @@ export function SchedulingProvider({ children }: { children: ReactNode }) {
     const load = async () => {
       const { data: sessionData } = await supabase.auth.getSession()
       if (!sessionData?.session || cancelled) return
-      const [pRes, aRes] = await Promise.all([
-        supabase
+      // Blocos de 1.000 até acabar: nenhum paciente ou agendamento fica de fora.
+      const [pRes, aRes] = await Promise.allSettled([
+        buscarEmBlocos<any>((de, ate) => supabase
           .from('patients')
           .select('id, company_id, name, cpf, birth_date, phone, phone2, email, gender, mother_name, convenios, created_at')
           .eq('company_id', dbCompanyId)
-          .order('name', { ascending: true }),
-        supabase
+          .order('name', { ascending: true })
+          .order('id', { ascending: true })
+          .range(de, ate), { chave: (r) => r.id, tela: 'Pacientes' }),
+        buscarEmBlocos<any>((de, ate) => supabase
           .from('appointments')
           .select('*')
           .eq('company_id', dbCompanyId)
           .order('date', { ascending: true })
-          .order('time', { ascending: true }),
+          .order('time', { ascending: true })
+          .order('id', { ascending: true })
+          .range(de, ate), { chave: (r) => r.id, tela: 'Agenda' }),
       ])
       if (cancelled) return
-      if (pRes.error) console.error('[SchedulingContext] erro ao carregar pacientes:', pRes.error)
-      else setPatients((pRes.data || []).map(dbToSchedulingPatient))
-      if (aRes.error) console.error('[SchedulingContext] erro ao carregar agendamentos:', aRes.error)
-      else setAppointments((aRes.data || []).map(dbToAppointment))
+      if (pRes.status === 'rejected') console.error('[SchedulingContext] erro ao carregar pacientes:', pRes.reason)
+      else setPatients(pRes.value.linhas.map(dbToSchedulingPatient))
+      if (aRes.status === 'rejected') console.error('[SchedulingContext] erro ao carregar agendamentos:', aRes.reason)
+      else setAppointments(aRes.value.linhas.map(dbToAppointment))
     }
     load()
     const t = setInterval(load, 60000)

@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { supabase } from '@/integrations/supabase/client'
+import { buscarEmBlocos } from '@/lib/buscarEmBlocos'
 import { useAuth } from '@/context/AuthContext'
 import type { Patient, PatientListFilters } from '@/types/patient.types'
 import { dbToPatient } from '@/utils/patient.adapter'
@@ -47,18 +48,23 @@ export function usePatients(options: UsePatientsOptions = {}): UsePatientsResult
       setLoading(false)
       return
     }
-    const { data, error: err } = await supabase
-      .from('patients')
-      .select('*')
-      .eq('company_id', companyId)
-      .order('name', { ascending: true })
-    if (err) {
+    // Blocos de 1.000 até acabar: a busca por CPF/nome alcança todos os pacientes.
+    let data: any[] = []
+    try {
+      data = (await buscarEmBlocos<any>((de, ate) => supabase
+        .from('patients')
+        .select('*')
+        .eq('company_id', companyId)
+        .order('name', { ascending: true })
+        .order('id', { ascending: true })
+        .range(de, ate), { chave: (r) => r.id, tela: 'Pacientes' })).linhas
+    } catch (err: any) {
       console.error('[usePatients] fetch error:', err)
-      setError(err.message)
+      setError(err?.message || String(err))
       setLoading(false)
       return
     }
-    setPatients((data || []).map(dbToPatient))
+    setPatients(data.map(dbToPatient))
     setLoading(false)
   }, [companyId])
 

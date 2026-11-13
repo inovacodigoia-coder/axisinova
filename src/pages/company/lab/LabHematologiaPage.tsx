@@ -8,7 +8,7 @@ import { Input } from '@/components/ui/input'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Textarea } from '@/components/ui/textarea'
-import { useAttendanceCadastro, FILA_TEMPO_REAL } from '@/hooks/useAttendanceCadastro'
+import { useAttendanceCadastro, FILA_TEMPO_REAL, STATUS_CONCLUIDOS } from '@/hooks/useAttendanceCadastro'
 import { useAuth } from '@/context/AuthContext'
 import { useResultEntryPermissions } from '@/hooks/useResultEntryPermissions'
 import { resolveCompanyId } from '@/utils/companyId'
@@ -51,6 +51,9 @@ const STATUS_LABEL: Record<string, string> = {
 }
 
 const STATUS_OPTIONS = ['collection_done', 'in_analysis', 'validation', 'released', 'completed']
+
+/** Fora da fila de pendentes (concluídos entram só sob demanda). */
+const STATUS_FORA_DA_FILA = ['completed', 'concluded', 'deleted', 'cancelled'] as const
 
 const HEM_REGEX = /hemograma|hematol|eritrogram|leucogram|reticul|plaquet/i
 
@@ -239,7 +242,6 @@ const CompactInput = ({ value, onChange, label }: { value: string; onChange: (va
 )
 
 export default function LabHematologiaPage() {
-  const { orders, refresh, loading } = useAttendanceCadastro(FILA_TEMPO_REAL)
   const { user } = useAuth()
   const { canType, canRelease } = useResultEntryPermissions()
 
@@ -249,6 +251,20 @@ export default function LabHematologiaPage() {
   const [dateFrom, setDateFrom] = useState<Date | null>(null)
   const [dateTo, setDateTo] = useState<Date | null>(null)
   const [orderFilter, setOrderFilter] = useState('')
+
+  // Fila: pedidos pendentes de QUALQUER data (filtro por status no servidor, em blocos de 1.000).
+  const { orders: pendentes, refresh, loading } = useAttendanceCadastro({ ...FILA_TEMPO_REAL, excludeStatuses: STATUS_FORA_DA_FILA })
+  // Concluídos só quando pedidos: busca por pedido/paciente (qualquer data), status "Concluído" ou período informado.
+  const buscaConcluidos = orderFilter.trim().length > 0 || statusFilter === 'completed' || !!dateFrom || !!dateTo
+  const intervaloConcluidos = useMemo(() => {
+    if (orderFilter.trim() || (!dateFrom && !dateTo)) return null
+    return {
+      from: dateFrom ? startOfDay(dateFrom).toISOString() : '1900-01-01T00:00:00.000Z',
+      to: dateTo ? endOfDay(dateTo).toISOString() : '9999-12-31T23:59:59.999Z',
+    }
+  }, [orderFilter, dateFrom, dateTo])
+  const { orders: concluidos } = useAttendanceCadastro({ ...FILA_TEMPO_REAL, statuses: STATUS_CONCLUIDOS, range: intervaloConcluidos, enabled: buscaConcluidos })
+  const orders = useMemo(() => (buscaConcluidos ? [...pendentes, ...concluidos] : pendentes), [pendentes, concluidos, buscaConcluidos])
   const [selectedId, setSelectedId] = useState<string | null>(null)
   const [values, setValues] = useState<Record<string, string>>({})
   const [laudo, setLaudo] = useState('')
