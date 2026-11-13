@@ -5,6 +5,7 @@ import { useAuth } from '@/context/AuthContext'
 import type { Patient, PatientListFilters } from '@/types/patient.types'
 import { dbToPatient } from '@/utils/patient.adapter'
 import { resolveCompanyId } from '@/utils/companyId'
+import { aoEntrarOuRenovar } from '@/lib/authEventos'
 
 interface UsePatientsOptions {
   autoFetch?: boolean
@@ -70,10 +71,7 @@ export function usePatients(options: UsePatientsOptions = {}): UsePatientsResult
 
   useEffect(() => {
     if (autoFetch) refresh()
-    const { data: sub } = supabase.auth.onAuthStateChange((event) => {
-      if (autoFetch && (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED')) refresh()
-    })
-    return () => { sub.subscription.unsubscribe() }
+    return aoEntrarOuRenovar(() => { if (autoFetch) refresh() })
   }, [autoFetch, refresh])
 
   const filtered = useMemo(() => applyFilters(patients, filters), [patients, filters])

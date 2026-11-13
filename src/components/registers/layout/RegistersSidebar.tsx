@@ -6,6 +6,7 @@ import { useEffect, useState } from 'react'
 import { supabase } from '@/integrations/supabase/client'
 import { useAuth } from '@/context/AuthContext'
 import { resolveCompanyId } from '@/utils/companyId'
+import { aoEntrarOuRenovar } from '@/lib/authEventos'
 
 const NAV_ITEMS = [
   { path: '/app/cadastros/pacientes', label: 'Pacientes', icon: Users, countKey: 'patients' as const },
@@ -31,10 +32,8 @@ function usePatientsCount() {
       if (!cancelled) setCount(c || 0)
     }
     load()
-    const { data: sub } = supabase.auth.onAuthStateChange((event) => {
-      if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') load()
-    })
-    return () => { cancelled = true; sub.subscription.unsubscribe() }
+    const cancelarAuth = aoEntrarOuRenovar(load)
+    return () => { cancelled = true; cancelarAuth() }
   }, [user?.companyId])
   return count
 }
