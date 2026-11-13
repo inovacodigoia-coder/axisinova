@@ -153,7 +153,7 @@ export default function LabAnalisePage() {
       const peIds = pes.map((p: any) => p.id);
       const vers: any[] = [];
       for (const lote of emPedacos(peIds)) {
-        vers.push(...(await buscarEmBlocos<any>((de, ate) => supabase.from('apoio_resultado_versao').select('id, pedido_exame_id, situacao, retificacao, origem').in('pedido_exame_id', lote).order('id').range(de, ate), { tela: 'Digitação' })).linhas);
+        vers.push(...(await buscarEmBlocos<any>((de, ate) => supabase.from('apoio_resultado_versao').select('id, pedido_exame_id, situacao, retificacao, origem').in('pedido_exame_id', lote).order('created_at', { ascending: false }).order('id').range(de, ate), { tela: 'Digitação' })).linhas);
       }
       (pes || []).forEach((p: any) => {
         const vs = (vers || []).filter((v: any) => v.pedido_exame_id === p.id);
