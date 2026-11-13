@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { CheckCircle2, X, Droplets, AlertTriangle, Loader2, Printer } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
-import { useAttendanceCadastro } from '@/hooks/useAttendanceCadastro';
+import { useAttendanceOrderActions } from '@/hooks/useAttendanceCadastro';
 import { tuboDoExame, tuboInfo } from '@/lib/tubos';
 import type { AttendanceOrder } from '@/types/attendance-cadastro.types';
 import { canSetCollectionDone } from '@/utils/orderStatusFlow';
@@ -64,7 +64,7 @@ export function AttendancePrintSelectionModal({ open, onClose, onConfirm, order,
     onConfirm({ ...result, options, queue, action: result.action === 'print-batch' && queue?.length ? 'print-batch' : options.some((o: any) => o.enabled) ? result.action : 'confirm' });
   };
   const { toast } = useToast();
-  const { updateOrder } = useAttendanceCadastro();
+  const { updateOrder } = useAttendanceOrderActions();
   const [options, setOptions] = useState<PrintOption[]>([
     { id: 'comprovante', label: 'Comprovante', enabled: true, formats: ['A4', 'A5', 'TÉRMICA'], selectedFormat: 'TÉRMICA' },
     { id: 'controle_interno', label: 'Controle Interno', enabled: false, formats: ['A4', 'A5', 'TÉRMICA'], selectedFormat: 'TÉRMICA' },

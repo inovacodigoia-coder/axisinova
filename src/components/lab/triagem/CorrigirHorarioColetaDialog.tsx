@@ -8,13 +8,13 @@ import { Textarea } from '@/components/ui/textarea'
 import { Loader2, Clock } from 'lucide-react'
 import { toast } from 'sonner'
 import { cn } from '@/lib/utils'
-import { useAttendanceCadastro } from '@/hooks/useAttendanceCadastro'
+import { useAttendanceOrderActions } from '@/hooks/useAttendanceCadastro'
 
 const paraLocal = (d: Date) => new Date(d.getTime() - d.getTimezoneOffset() * 60000).toISOString().slice(0, 16)
 
 /** Corrige o horário de coleta (passado) ou, com permissão coleta.programar, programa a coleta para data futura */
 export function CorrigirHorarioColetaDialog({ pedidoId, examId, examNome, atual, onClose }: { pedidoId: string; examId: string; examNome: string; atual: string; onClose: () => void }) {
-  const { refresh } = useAttendanceCadastro() as any
+  const { refresh } = useAttendanceOrderActions() as any
   const [modo, setModo] = useState<'corrigir' | 'programar'>('corrigir')
   const [podeProgramar, setPodeProgramar] = useState(false)
   const [valor, setValor] = useState(paraLocal(new Date(atual)))

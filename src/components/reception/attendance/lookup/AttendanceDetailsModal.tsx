@@ -37,7 +37,7 @@ import type { AttendanceControlDocument, PrinterConfig } from '@/types/payment-p
 import { format } from 'date-fns'
 import { supabase } from '@/integrations/supabase/client'
 import { useToast } from '@/hooks/use-toast'
-import { useAttendanceCadastro } from '@/hooks/useAttendanceCadastro'
+import { useAttendanceOrderActions } from '@/hooks/useAttendanceCadastro'
 import { useRegisters } from '@/context/RegistersContext'
 import { GuideEditorModal } from '../guides/GuideEditorModal'
 import { SwitchConvenioModal } from '../guides/SwitchConvenioModal'
@@ -105,7 +105,7 @@ export function AttendanceDetailsModal({ open, onClose, onOrderDeleted, order, p
   const companySequenceId = useCompanySequenceId()
   const sampleCodeFor = (tubeIndex: number) => buildSampleCode(order.orderNumber, tubeIndex, companySequenceId)
   const { toast } = useToast()
-  const { updateOrder } = useAttendanceCadastro()
+  const { updateOrder } = useAttendanceOrderActions()
   const [corrigirColeta, setCorrigirColeta] = useState<{ examId: string; nome: string; atual: string } | null>(null)
 
   useEffect(() => { setCurrentPatient(patient) }, [patient])

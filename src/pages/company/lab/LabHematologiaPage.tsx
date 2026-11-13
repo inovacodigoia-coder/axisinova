@@ -8,7 +8,7 @@ import { Input } from '@/components/ui/input'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Textarea } from '@/components/ui/textarea'
-import { useAttendanceCadastro } from '@/hooks/useAttendanceCadastro'
+import { useAttendanceCadastro, FILA_TEMPO_REAL } from '@/hooks/useAttendanceCadastro'
 import { useAuth } from '@/context/AuthContext'
 import { useResultEntryPermissions } from '@/hooks/useResultEntryPermissions'
 import { resolveCompanyId } from '@/utils/companyId'
@@ -239,7 +239,7 @@ const CompactInput = ({ value, onChange, label }: { value: string; onChange: (va
 )
 
 export default function LabHematologiaPage() {
-  const { orders, refresh, loading } = useAttendanceCadastro()
+  const { orders, refresh, loading } = useAttendanceCadastro(FILA_TEMPO_REAL)
   const { user } = useAuth()
   const { canType, canRelease } = useResultEntryPermissions()
 

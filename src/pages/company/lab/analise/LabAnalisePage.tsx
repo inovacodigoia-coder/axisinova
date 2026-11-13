@@ -35,7 +35,7 @@ import { cn } from '@/lib/utils';
 import { LabAttendanceOrder } from '@/types/lab.types';
 import { toast } from 'sonner';
 import { useRegisters } from '@/context/RegistersContext';
-import { useAttendanceCadastro } from '@/hooks/useAttendanceCadastro';
+import { useAttendanceCadastro, FILA_TEMPO_REAL } from '@/hooks/useAttendanceCadastro';
 import { useCompanyContext } from '@/context/CompanyContext';
 import { ResultEntryModal } from '@/components/lab/analise/ResultEntryModal';
 import { OriginFilterDialog } from '@/components/lab/analise/OriginFilterDialog';
@@ -105,7 +105,7 @@ const SUB_TABS = [
 export default function LabAnalisePage() {
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState('analise');
-  const { orders, refresh: refreshOrders } = useAttendanceCadastro();
+  const { orders, refresh: refreshOrders } = useAttendanceCadastro(FILA_TEMPO_REAL);
   const { workbenches, exams: catalogExams } = useRegisters();
   const { availableOrigins: establishments } = useCompanyContext();
   
