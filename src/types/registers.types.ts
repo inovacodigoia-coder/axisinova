@@ -89,6 +89,8 @@ export interface Exam {
   defaultMaterial?: string
   /** { material_id: { recipiente_id, volume_ml } } — tubo específico deste exame */
   materialTubos?: Record<string, { recipiente_id?: string | null; volume_ml?: number | null }>
+  /** Coletas em tempos diferentes (ex.: TOTG). 2+ itens = uma etiqueta a mais por coleta seguinte. */
+  coletasEtiqueta?: { nome: string }[]
 }
 
 export interface Procedure {
