@@ -4,6 +4,7 @@ import { AlertTriangle, ArrowLeft, BarChart3, ChevronRight, Download, FileText, 
 import { Bar, BarChart, CartesianGrid, Legend, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts'
 import { toast } from 'sonner'
 import { supabase } from '@/integrations/supabase/client'
+import { buscarEmBlocos } from '@/lib/buscarEmBlocos'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Card } from '@/components/ui/card'
@@ -20,6 +21,8 @@ import { STATUS_APOIO } from '@/components/apoio/contingencia/ApoioContingenciaT
 import { exportarCsv, exportarPdf, type Coluna } from '@/components/apoio/relatorios/exportar'
 
 const db = supabase as any
+/** O relatório de log já vem limitado pelo servidor a 1.000 chamadas mais recentes. */
+const LIMITE_LOG = 1000
 const brl = (v: any) => v == null ? '' : Number(v).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
 const dt = (v: any) => v ? new Date(v).toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' }) : ''
 const dd = (v: any) => v ? String(v).slice(0, 10).split('-').reverse().join('/') : ''
@@ -215,10 +218,18 @@ function Relatorio({ rel, args, filtroTxt, permitido, onVoltar }: { rel: Rel; ar
     if (!permitido) return
     setLoading(true)
     const extra = rel.id === 'log' ? { _operacao: operacao.trim() || null, _so_erros: soErros } : {}
-    const { data, error } = await db.rpc(rel.rpc, { ...args, ...extra })
+    // Blocos de 1.000 até acabar: tela, CSV e PDF recebem todas as linhas do período.
+    let data: any[]
+    try {
+      data = (await buscarEmBlocos<any>((de, ate) => db.rpc(rel.rpc, { ...args, ...extra }).range(de, ate))).linhas
+    } catch (error: any) {
+      setLoading(false)
+      toast.error('Não foi possível carregar o relatório', { description: error?.message })
+      setRows([])
+      return
+    }
     setLoading(false)
-    if (error) { toast.error('Não foi possível carregar o relatório', { description: error.message }); setRows([]); return }
-    setRows((data || []).map((r: any) => ({ ...r, __cor: rel.cor?.(r) })))
+    setRows(data.map((r: any) => ({ ...r, __cor: rel.cor?.(r) })))
   }, [rel, args, operacao, soErros, permitido])
   useEffect(() => { carregar() }, [carregar])
 
@@ -247,6 +258,7 @@ function Relatorio({ rel, args, filtroTxt, permitido, onVoltar }: { rel: Rel; ar
           <Button variant="outline" size="sm" onClick={() => exportarPdf(nomeArq, rel.titulo, filtroTxt, rel.cols, rows, aviso)} className="gap-2"><FileText className="h-4 w-4" /> PDF</Button>
         </div>
       </div>
+      {rel.id === 'log' && rows.length >= LIMITE_LOG && <div role="alert" className="flex items-center gap-2 rounded-xl border border-warning/40 bg-warning/15 px-4 py-2 text-sm font-semibold text-foreground"><AlertTriangle className="h-4 w-4 text-warning" /> Resultados limitados, refine o período (o log mostra no máximo {LIMITE_LOG} chamadas).</div>}
       {ficticio && <div className="flex items-center gap-2 rounded-xl border border-warning/40 bg-warning/15 px-4 py-2 text-sm font-semibold text-foreground"><AlertTriangle className="h-4 w-4 text-warning" /> Valores fictícios: há preços de tabela fictícia neste relatório.</div>}
       {rel.id === 'log' && (
         <div className="flex flex-wrap items-center gap-3">

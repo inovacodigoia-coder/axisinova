@@ -3,6 +3,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { AlertTriangle, Check, ChevronDown, ChevronUp, Clock, Copy, FileText, GripVertical, Hand, Lock, MoreHorizontal, Pencil, Plus, RefreshCw, Repeat, Search, Trash2 } from 'lucide-react'
 import { toast } from 'sonner'
 import { supabase } from '@/integrations/supabase/client'
+import { buscarEmBlocos } from '@/lib/buscarEmBlocos'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -58,10 +59,15 @@ export default function ApoioKanbanPage() {
     if (!apoio.enabled || !podeVer) return
     setLoading(true)
     supabase.rpc('apoio_alerta_guarda' as any).then(({ data }) => setGuarda(((data as any) || []) as any))
-    const { data, error } = await supabase.rpc('apoio_kanban_lista' as any, { _desde_liberado: verTodosLiberados ? '1900-01-01' : null })
-    setLoading(false)
-    if (error) return toast.error(err(error))
-    setCards((data as any) || [])
+    // Blocos de 1.000 até acabar: nenhum card fica de fora do quadro.
+    try {
+      const { linhas } = await buscarEmBlocos<any>((de, ate) => (supabase.rpc('apoio_kanban_lista' as any, { _desde_liberado: verTodosLiberados ? '1900-01-01' : null }) as any).range(de, ate), { chave: (c) => c.id, tela: 'Kanban do Apoio' })
+      setLoading(false)
+      setCards(linhas as any)
+    } catch (error: any) {
+      setLoading(false)
+      return toast.error(err(error))
+    }
   }, [apoio.enabled, podeVer, verTodosLiberados])
 
   const carregarVisoes = useCallback(async () => {
