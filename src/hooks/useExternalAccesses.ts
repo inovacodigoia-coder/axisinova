@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from 'react'
 import { supabase } from '@/integrations/supabase/client'
+import { buscarEmBlocos } from '@/lib/buscarEmBlocos'
 import { useAuth } from '@/context/AuthContext'
 import { resolveCompanyId } from '@/utils/companyId'
 
@@ -73,16 +74,19 @@ export function useExternalAccesses() {
     }
     setLoading(true)
     setError(null)
-    const { data, error: err } = await supabase
-      .from('external_accesses')
-      .select('*')
-      .eq('company_id', companyId)
-      .order('created_at', { ascending: false })
-    if (err) {
+    // Blocos de 1.000 até acabar: nenhum acesso externo fica de fora da lista.
+    try {
+      const { linhas } = await buscarEmBlocos<any>((de, ate) => supabase
+        .from('external_accesses')
+        .select('*')
+        .eq('company_id', companyId)
+        .order('created_at', { ascending: false })
+        .order('id', { ascending: false })
+        .range(de, ate), { chave: (r) => r.id, tela: 'Portais Externos' })
+      setAccesses(linhas as unknown as ExternalAccessRecord[])
+    } catch (err: any) {
       console.error('[useExternalAccesses] fetch error:', err)
-      setError(err.message)
-    } else {
-      setAccesses((data || []) as unknown as ExternalAccessRecord[])
+      setError(err?.message || String(err))
     }
     setLoading(false)
   }, [companyId])

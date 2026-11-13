@@ -6,6 +6,7 @@ import { MedicalRecordModal, type MedicalRecordFormData } from '@/components/com
 import { PatientModal, type PatientFormData } from '@/components/company/PatientModal'
 import { ConfirmModal } from '@/components/ui/ConfirmModal'
 import { supabase } from '@/integrations/supabase/client'
+import { buscarEmBlocos } from '@/lib/buscarEmBlocos'
 import { toast } from 'sonner'
 import { useAuth } from '@/context/AuthContext'
 
@@ -32,13 +33,21 @@ export default function MedicalRecordsPage() {
 
   const fetchPatients = async () => {
     if (!companyId) { setLoading(false); return }
-    const { data: patientsData } = await supabase
-      .from('patients').select('*').eq('company_id', companyId).order('name')
-    
-    if (!patientsData) { setLoading(false); return }
-
-    const { data: recordCounts } = await supabase
-      .from('medical_records').select('patient_id, date').eq('company_id', companyId)
+    // Blocos de 1.000 até acabar: nenhum paciente ou prontuário fica de fora.
+    let patientsData: any[]
+    let recordCounts: any[]
+    try {
+      ;[patientsData, recordCounts] = await Promise.all([
+        buscarEmBlocos<any>((de, ate) => supabase.from('patients').select('*').eq('company_id', companyId)
+          .order('name').order('id').range(de, ate), { chave: (r) => r.id, tela: 'Prontuários' }).then(r => r.linhas),
+        buscarEmBlocos<any>((de, ate) => supabase.from('medical_records').select('id, patient_id, date').eq('company_id', companyId)
+          .order('id').range(de, ate), { chave: (r) => r.id, tela: 'Prontuários' }).then(r => r.linhas),
+      ])
+    } catch (e) {
+      console.error('Erro ao carregar prontuários:', e)
+      setLoading(false)
+      return
+    }
 
     const countMap: Record<string, { count: number; lastDate: string }> = {}
     ;(recordCounts || []).forEach(r => {
