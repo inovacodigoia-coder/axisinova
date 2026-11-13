@@ -177,11 +177,11 @@ export function CompanyProvider({ children }: { children: ReactNode }) {
         setActiveOrigin(matriz || data[0])
       }
     }
-  }, [user])
+  }, [user?.id, user?.companyId])
 
   useEffect(() => {
     if (user) refreshOrigins()
-  }, [user, refreshOrigins])
+  }, [user?.id, user?.companyId, refreshOrigins])
 
   const selectOrigin = useCallback((origin: Origin) => {
     if (!user || origin.company_id !== user.companyId) return
