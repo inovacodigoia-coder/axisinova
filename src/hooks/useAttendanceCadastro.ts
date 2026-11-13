@@ -1,83 +1,134 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect } from 'react'
 import { useAuth } from '@/context/AuthContext'
 import { supabase } from '@/integrations/supabase/client'
 import type { AttendanceOrder } from '@/types/attendance-cadastro.types'
 import { useToast } from '@/hooks/use-toast'
-import { useQuery } from '@tanstack/react-query'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { generateOrderHash } from '@/utils/orderHash'
 
-export function useAttendanceCadastro() {
+/** Raiz do cache das listas de atendimentos; invalidar esta chave atualiza todas. */
+export const ATTENDANCE_ORDERS_KEY = 'attendance_orders'
+
+/** Fila de coleta e digitação: dados mais frescos e recarga ao voltar para a aba. */
+export const FILA_TEMPO_REAL = { staleTime: 10_000, refetchOnWindowFocus: true } as const
+
+/**
+ * Colunas usadas pelas telas que leem a lista (o mesmo que o mapeamento abaixo).
+ * Ficam de fora as colunas que nenhuma lista mostra (hospital/leito, jejum, prontuário,
+ * episódio, delivery_status); elas continuam sendo lidas no detalhe/edição por id.
+ */
+const LIST_COLUMNS = [
+  'id', 'order_number', 'patient_id', 'patient_name', 'company_id', 'origin_id', 'origin_code', 'origin_name',
+  'protocol', 'hash', 'exam_mode', 'delivery_date', 'coleta_programada_para', 'lab_guides', 'is_fasting',
+  'weight', 'height', 'is_urgent', 'has_fever', 'service_observation', 'service_type', 'payment_type',
+  'doctor_id', 'doctor_name', 'doctor_crm', 'specialty', 'requesting_doctor', 'convenio_id', 'convenio_name',
+  'card_number', 'card_expiry', 'authorization_code', 'authorization_date', 'authorization_expiry',
+  'authorization_password', 'private_value', 'attachments', 'status', 'registered_by', 'registered_by_name',
+  'created_at', 'updated_at',
+].join(', ')
+
+export interface AttendanceOrdersOptions {
+  /** Período (created_at) buscado no servidor; ausente/null = todos os pedidos. */
+  range?: { from: string; to: string } | null
+  staleTime?: number
+  refetchOnWindowFocus?: boolean
+}
+
+function mapOrderRow(item: any): AttendanceOrder {
+  return {
+    id: item.id,
+    orderNumber: item.order_number,
+    patientId: item.patient_id,
+    // Dados pessoais sempre atualizados a partir do cadastro do paciente.
+    patientName: item.patients?.name || item.patient_name || '',
+    patientBirthDate: item.patients?.birth_date,
+    patientGender: item.patients?.gender,
+    companyId: item.company_id,
+    unitId: '',
+    originId: item.origin_id,
+    originCode: item.origin_code ? Number(item.origin_code) : undefined,
+    originName: item.origin_name,
+    protocol: item.protocol,
+    hash: item.hash,
+    examMode: item.exam_mode as 'clinic' | 'lab',
+    deliveryDate: item.delivery_date,
+    coletaProgramadaPara: (item as any).coleta_programada_para ?? null,
+    labGuides: item.lab_guides as any[],
+    isFasting: item.is_fasting ?? undefined,
+    weight: item.weight ?? undefined,
+    height: item.height ?? undefined,
+    isUrgent: item.is_urgent ?? undefined,
+    hasFever: item.has_fever ?? undefined,
+    serviceObservation: item.service_observation ?? undefined,
+    serviceType: item.service_type as any,
+    paymentType: item.payment_type as any,
+    doctorId: item.doctor_id,
+    doctorName: item.doctor_name,
+    doctorCRM: item.doctor_crm,
+    specialty: item.specialty,
+    requestingDoctor: item.requesting_doctor,
+    convenioId: item.convenio_id,
+    convenioName: item.convenio_name,
+    cardNumber: item.card_number,
+    cardExpiry: item.card_expiry,
+    authorizationCode: item.authorization_code,
+    authorizationDate: item.authorization_date,
+    authorizationExpiry: item.authorization_expiry,
+    authorizationPassword: item.authorization_password,
+    privateValue: item.private_value,
+    attachments: (item.attachments as any[]) || [],
+    status: item.status as any,
+    registeredBy: item.registered_by,
+    registeredByName: item.registered_by_name,
+    registeredAt: item.created_at,
+    updatedAt: item.updated_at,
+  } as AttendanceOrder
+}
+
+/** Lista de atendimentos (com as ações). Use useAttendanceOrderActions quando a tela só grava. */
+export function useAttendanceCadastro(options: AttendanceOrdersOptions = {}) {
   const { user } = useAuth()
-  const { toast } = useToast()
   const companyId = user?.companyId
   const isAdmin = user?.isAdmin === true || user?.role === 'company_admin' || user?.role === 'super_admin'
+  const range = options.range ?? null
+  const actions = useAttendanceOrderActions()
 
-  const { data: orders = [], refetch: refresh, isLoading: loading } = useQuery({
-    queryKey: ['attendance_orders', companyId, isAdmin],
+  const { data: orders = [], isLoading: loading } = useQuery({
+    queryKey: range
+      ? [ATTENDANCE_ORDERS_KEY, companyId, isAdmin, 'periodo', range.from, range.to]
+      : [ATTENDANCE_ORDERS_KEY, companyId, isAdmin],
     queryFn: async () => {
       if (!companyId) return []
       let query = (supabase
         .from('attendance_orders' as any) as any)
-        .select('*, patients(name, birth_date, gender)')
+        .select(`${LIST_COLUMNS}, patients(name, birth_date, gender)`)
         .eq('company_id', companyId)
       if (!isAdmin) query = query.neq('status', 'deleted')
+      if (range) query = query.gte('created_at', range.from).lte('created_at', range.to)
       const { data, error } = await query.order('created_at', { ascending: false })
-
-      
       if (error) throw error
-      
-      return (data || []).map((item: any) => ({
-        id: item.id,
-        orderNumber: item.order_number,
-        patientId: item.patient_id,
-        // Dados pessoais sempre atualizados a partir do cadastro do paciente.
-        patientName: item.patients?.name || item.patient_name || '',
-        patientBirthDate: item.patients?.birth_date,
-        patientGender: item.patients?.gender,
-        companyId: item.company_id,
-        unitId: '', 
-        originId: item.origin_id,
-        originCode: item.origin_code ? Number(item.origin_code) : undefined,
-        originName: item.origin_name,
-        protocol: item.protocol,
-        hash: item.hash,
-        examMode: item.exam_mode as 'clinic' | 'lab',
-        deliveryDate: item.delivery_date,
-        coletaProgramadaPara: (item as any).coleta_programada_para ?? null,
-        labGuides: item.lab_guides as any[],
-        isFasting: item.is_fasting ?? undefined,
-        weight: item.weight ?? undefined,
-        height: item.height ?? undefined,
-        isUrgent: item.is_urgent ?? undefined,
-        hasFever: item.has_fever ?? undefined,
-        serviceObservation: item.service_observation ?? undefined,
-        serviceType: item.service_type as any,
-        paymentType: item.payment_type as any,
-        doctorId: item.doctor_id,
-        doctorName: item.doctor_name,
-        doctorCRM: item.doctor_crm,
-        specialty: item.specialty,
-        requestingDoctor: item.requesting_doctor,
-        convenioId: item.convenio_id,
-        convenioName: item.convenio_name,
-        cardNumber: item.card_number,
-        cardExpiry: item.card_expiry,
-        authorizationCode: item.authorization_code,
-        authorizationDate: item.authorization_date,
-        authorizationExpiry: item.authorization_expiry,
-        authorizationPassword: item.authorization_password,
-        privateValue: item.private_value,
-        attachments: (item.attachments as any[]) || [],
-        status: item.status as any,
-        registeredBy: item.registered_by,
-        registeredByName: item.registered_by_name,
-        registeredAt: item.created_at,
-        updatedAt: item.updated_at,
-      })) as AttendanceOrder[]
-
+      return (data || []).map(mapOrderRow)
     },
-    enabled: !!companyId
+    enabled: !!companyId,
+    ...(options.staleTime !== undefined ? { staleTime: options.staleTime } : {}),
+    ...(options.refetchOnWindowFocus !== undefined ? { refetchOnWindowFocus: options.refetchOnWindowFocus } : {}),
   })
+
+  return { orders, loading, ...actions }
+}
+
+/** Criar/atualizar pedidos sem carregar a lista inteira. */
+export function useAttendanceOrderActions() {
+  const { user } = useAuth()
+  const { toast } = useToast()
+  const queryClient = useQueryClient()
+  const companyId = user?.companyId
+
+  // Atualiza todas as listas de atendimentos da empresa (inclusive os contadores do menu)
+  const refresh = useCallback(
+    () => queryClient.invalidateQueries({ queryKey: [ATTENDANCE_ORDERS_KEY, companyId] }),
+    [queryClient, companyId],
+  )
 
   const ensureIsoDate = (dateStr: any) => {
     if (!dateStr) return null;
@@ -210,52 +261,7 @@ export function useAttendanceCadastro() {
 
       await refresh()
       
-      const item = newOrder as any
-      return {
-        id: item.id,
-        orderNumber: item.order_number,
-        patientId: item.patient_id,
-        patientName: item.patient_name || '',
-        companyId: item.company_id,
-        unitId: '', 
-        originId: item.origin_id,
-        originCode: item.origin_code ? Number(item.origin_code) : undefined,
-        originName: item.origin_name,
-        protocol: item.protocol,
-        hash: item.hash,
-        examMode: item.exam_mode as 'clinic' | 'lab',
-        deliveryDate: item.delivery_date,
-        coletaProgramadaPara: (item as any).coleta_programada_para ?? null,
-        labGuides: item.lab_guides as any[],
-        isFasting: item.is_fasting ?? undefined,
-        weight: item.weight ?? undefined,
-        height: item.height ?? undefined,
-        isUrgent: item.is_urgent ?? undefined,
-        hasFever: item.has_fever ?? undefined,
-        serviceObservation: item.service_observation ?? undefined,
-        serviceType: item.service_type as any,
-        paymentType: item.payment_type as any,
-        doctorId: item.doctor_id,
-        doctorName: item.doctor_name,
-        doctorCRM: item.doctor_crm,
-        specialty: item.specialty,
-        requestingDoctor: item.requesting_doctor,
-        convenioId: item.convenio_id,
-        convenioName: item.convenio_name,
-        cardNumber: item.card_number,
-        cardExpiry: item.card_expiry,
-        authorizationCode: item.authorization_code,
-        authorizationDate: item.authorization_date,
-        authorizationExpiry: item.authorization_expiry,
-        authorizationPassword: item.authorization_password,
-        privateValue: item.private_value,
-        attachments: (item.attachments as any[]) || [],
-        status: item.status as any,
-        registeredBy: item.registered_by,
-        registeredByName: item.registered_by_name,
-        registeredAt: item.created_at,
-        updatedAt: item.updated_at,
-      } as AttendanceOrder
+      return mapOrderRow({ ...(newOrder as any), patients: null })
     } catch (error: any) {
       toast({
         variant: "destructive",
@@ -300,7 +306,7 @@ export function useAttendanceCadastro() {
     }
   }, [refresh, toast])
 
-  return { orders, createOrder, updateOrder, refresh, loading }
+  return { createOrder, updateOrder, refresh }
 }
 
 const DRAFT_PREFIX = 'attendance_draft_'
