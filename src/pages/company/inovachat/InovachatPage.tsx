@@ -3,6 +3,7 @@ import { Navigate, useSearchParams } from 'react-router-dom'
 import { ArrowLeft, Check, CheckCheck, FileText, Image as ImageIcon, Link2, MessagesSquare, Mic, RefreshCw, Search, Smile, Unlink, Video, X, AlertTriangle, Send, Zap, Settings, ArrowRightLeft, CheckCircle2, RotateCcw, UserCheck, Loader2, Plus, Pencil, Trash2, Palette } from 'lucide-react'
 import { toast } from 'sonner'
 import { supabase } from '@/integrations/supabase/client'
+import { useAuth } from '@/context/AuthContext'
 import { useCanalRealtime } from '@/hooks/useCanalRealtime'
 import { resolveCompanyId } from '@/utils/companyId'
 import { buscarEmBlocos } from '@/lib/buscarEmBlocos'
@@ -71,6 +72,7 @@ type Aba = 'minhas' | 'fila' | 'todas' | 'finalizadas'
 
 export default function InovachatPage() {
   const acesso = useInovachatAcesso()
+  const { user: authUser } = useAuth()
   const crm = useCrmAcesso()
   const { mapa: leadsAbertos, recarregar: recarregarLeads } = useLeadsAbertos(crm)
   const [params, setParams] = useSearchParams()
@@ -145,7 +147,7 @@ export default function InovachatPage() {
     if (acesso.gerenciar) setAba('todas')
   }, [acesso, eu, carregar, carregarInstancias, carregarRapidas])
   // Números da empresa ao vivo (antes ouvia a tabela inteira)
-  const instCompanyId = resolveCompanyId(user?.companyId)
+  const instCompanyId = resolveCompanyId(authUser?.companyId)
   useCanalRealtime(acesso?.ver && instCompanyId ? 'inovachat-inst' : null, (ch) => ch
     .on('postgres_changes', { event: '*', schema: 'public', table: 'whatsapp_instancias', filter: `company_id=eq.${instCompanyId}` }, () => carregarInstancias()),
   [instCompanyId, carregarInstancias], { aoRetomar: () => carregarInstancias() })
