@@ -5,6 +5,7 @@ import { useCompanyContext } from '@/context/CompanyContext'
 import { useQuery } from '@tanstack/react-query'
 import { ATTENDANCE_ORDERS_KEY } from '@/hooks/useAttendanceCadastro'
 import { supabase } from '@/integrations/supabase/client'
+import { buscarEmBlocos } from '@/lib/buscarEmBlocos'
 import {
   Home, Calendar, UserCheck, FileText, DollarSign, FlaskConical, BarChart3,
   TrendingUp, Users, Settings, Database, Monitor, Building2,
@@ -219,13 +220,15 @@ export function CompanySidebar({ mobileOpen, onMobileClose, collapsed = false, o
     enabled: !!user?.companyId,
     refetchOnWindowFocus: true,
     queryFn: async () => {
-      const { data, error } = await supabase
+      // Blocos de 1.000 até acabar: o contador nunca para em 1.000 pendências.
+      const { linhas } = await buscarEmBlocos<any>((de, ate) => supabase
         .from('attendance_orders')
-        .select('status, patient_id, patient_name')
+        .select('id, status, patient_id, patient_name')
         .eq('company_id', user!.companyId!)
         .in('status', ['waiting_collection', 'waiting', 'collection_done', 'in_analysis'])
-      if (error) throw error
-      return (data || []).map(o => ({ status: o.status, patientId: o.patient_id, patientName: o.patient_name || '' }))
+        .order('id')
+        .range(de, ate), { chave: (r) => r.id })
+      return linhas.map(o => ({ status: o.status, patientId: o.patient_id, patientName: o.patient_name || '' }))
     },
   })
   const inovachat = useInovachatAcesso()

@@ -6,6 +6,7 @@ import { X, Search, Eye, Printer, Pencil, Plus, ChevronDown, ChevronRight, Calen
 import { cn } from '@/lib/utils'
 import { toast } from 'sonner'
 import { supabase } from '@/integrations/supabase/client'
+import { buscarEmBlocos } from '@/lib/buscarEmBlocos'
 import { useAttendanceCadastro } from '@/hooks/useAttendanceCadastro'
 import { usePatients } from '@/hooks/usePatients'
 import { useLabSettings } from '@/hooks/useLabSettings'
@@ -139,12 +140,15 @@ export function AttendanceLookupModal({ open, onClose, unitName, guicheName, onA
 
   useEffect(() => {
     if (!open || !companyId) return
-    ;(supabase as any)
+    // Blocos de 1.000 até acabar: todo pedido de parceiro mantém o vínculo no filtro.
+    buscarEmBlocos<any>((de, ate) => (supabase as any)
       .from('partner_orders')
-      .select('attendance_order_id, partner_id, api_partners(id, name)')
+      .select('id, attendance_order_id, partner_id, api_partners(id, name)')
       .eq('company_id', companyId)
       .not('attendance_order_id', 'is', null)
-      .then(({ data }: any) => {
+      .order('id')
+      .range(de, ate), { tela: 'Consulta de Atendimentos' })
+      .then(({ linhas: data }) => {
         const m = new Map<string, { id: string; name: string }>()
         ;(data || []).forEach((row: any) => {
           if (row.attendance_order_id && row.api_partners) {
