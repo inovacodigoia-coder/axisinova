@@ -3,6 +3,8 @@ import { Navigate, useSearchParams } from 'react-router-dom'
 import { ArrowLeft, Check, CheckCheck, FileText, Image as ImageIcon, Link2, MessagesSquare, Mic, RefreshCw, Search, Smile, Unlink, Video, X, AlertTriangle, Send, Zap, Settings, ArrowRightLeft, CheckCircle2, RotateCcw, UserCheck, Loader2, Plus, Pencil, Trash2, Palette } from 'lucide-react'
 import { toast } from 'sonner'
 import { supabase } from '@/integrations/supabase/client'
+import { useCanalRealtime } from '@/hooks/useCanalRealtime'
+import { resolveCompanyId } from '@/utils/companyId'
 import { buscarEmBlocos } from '@/lib/buscarEmBlocos'
 import { useInovachatAcesso, useInovachatSinais } from '@/hooks/useInovachat'
 import { Input } from '@/components/ui/input'
@@ -141,11 +143,12 @@ export default function InovachatPage() {
     if (eu) void supabase.rpc('inovachat_nomes' as any, { p_ids: [eu] }).then(({ data }) =>
       setNomes(prev => ({ ...prev, ...Object.fromEntries(((data as any[]) ?? []).map(p => [p.id, p.nome])) })))
     if (acesso.gerenciar) setAba('todas')
-    const ch = supabase.channel(`inovachat-inst-${Math.random().toString(36).slice(2)}`)
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'whatsapp_instancias' }, () => carregarInstancias())
-      .subscribe()
-    return () => { void supabase.removeChannel(ch) }
   }, [acesso, eu, carregar, carregarInstancias, carregarRapidas])
+  // Números da empresa ao vivo (antes ouvia a tabela inteira)
+  const instCompanyId = resolveCompanyId(user?.companyId)
+  useCanalRealtime(acesso?.ver && instCompanyId ? 'inovachat-inst' : null, (ch) => ch
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'whatsapp_instancias', filter: `company_id=eq.${instCompanyId}` }, () => carregarInstancias()),
+  [instCompanyId, carregarInstancias], { aoRetomar: () => carregarInstancias() })
 
   const selRef = useRef<string | null>(null)
   selRef.current = selId

@@ -1,5 +1,8 @@
 import { useCallback, useEffect, useState } from 'react'
 import { supabase } from '@/integrations/supabase/client'
+import { useCanalRealtime } from '@/hooks/useCanalRealtime'
+import { useAuth } from '@/context/AuthContext'
+import { resolveCompanyId } from '@/utils/companyId'
 
 export interface InovachatAcesso { ver: boolean; responder: boolean; gerenciar: boolean; admin?: boolean; usuario_id?: string }
 
@@ -18,14 +21,13 @@ export function useInovachatAcesso() {
 
 /** Assina só os avisos de mudança (sem texto nem telefone) e chama onSinal. */
 export function useInovachatSinais(ativo: boolean, onSinal: (conversaId: string) => void) {
-  useEffect(() => {
-    if (!ativo) return
-    const ch = supabase.channel(`inovachat-sinais-${Math.random().toString(36).slice(2)}`)
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'inovachat_sinais' },
-        (p: any) => onSinal(String(p.new?.conversa_id ?? p.old?.conversa_id ?? '')))
-      .subscribe()
-    return () => { void supabase.removeChannel(ch) }
-  }, [ativo, onSinal])
+  const { user } = useAuth()
+  const companyId = resolveCompanyId(user?.companyId)
+  // Só os sinais da empresa (antes ouvia a tabela inteira). Ao voltar da pausa: onSinal('') recarrega a lista.
+  useCanalRealtime(ativo && companyId ? 'inovachat-sinais' : null, (ch) => ch
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'inovachat_sinais', filter: `company_id=eq.${companyId}` },
+      (p: any) => onSinal(String(p.new?.conversa_id ?? p.old?.conversa_id ?? ''))),
+  [companyId, onSinal], { aoRetomar: () => onSinal('') })
 }
 
 /** Total de não lidas das conversas que o usuário pode ver (para o badge do menu). */
