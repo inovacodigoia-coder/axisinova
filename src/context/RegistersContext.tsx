@@ -164,7 +164,6 @@ export function RegistersProvider({ children }: { children: ReactNode }) {
           setIsLoading(false)
           return
         }
-        carregado = true
 
         const queries = [
           supabase.from('specialties').select('*').eq('company_id', companyId),
@@ -176,6 +175,7 @@ export function RegistersProvider({ children }: { children: ReactNode }) {
         ]
 
         const results = await Promise.allSettled(queries)
+        if (results.some(r => r.status === 'fulfilled' && !r.value.error)) carregado = true
         
         results.forEach((result, index) => {
           if (result.status === 'rejected') {
