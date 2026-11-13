@@ -157,6 +157,7 @@ export function AttendanceLookupModal({ open, onClose, unitName, guicheName, onA
         })
         setPartnerByOrderId(m)
       })
+      .catch((e) => console.error('Erro ao carregar pedidos de parceiros:', e))
   }, [open, companyId])
 
   const partnerOptions = useMemo(() => {
