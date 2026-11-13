@@ -35,7 +35,8 @@ import { cn } from '@/lib/utils';
 import { LabAttendanceOrder } from '@/types/lab.types';
 import { toast } from 'sonner';
 import { useRegisters } from '@/context/RegistersContext';
-import { useAttendanceCadastro, FILA_TEMPO_REAL } from '@/hooks/useAttendanceCadastro';
+import { useAttendanceCadastro, FILA_TEMPO_REAL, STATUS_PENDENTES_ANALISE, STATUS_CONCLUIDOS } from '@/hooks/useAttendanceCadastro';
+import { intervaloDoPeriodo } from '@/lib/filaPeriodo';
 import { useCompanyContext } from '@/context/CompanyContext';
 import { ResultEntryModal } from '@/components/lab/analise/ResultEntryModal';
 import { OriginFilterDialog } from '@/components/lab/analise/OriginFilterDialog';
@@ -105,7 +106,6 @@ const SUB_TABS = [
 export default function LabAnalisePage() {
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState('analise');
-  const { orders, refresh: refreshOrders } = useAttendanceCadastro(FILA_TEMPO_REAL);
   const { workbenches, exams: catalogExams } = useRegisters();
   const { availableOrigins: establishments } = useCompanyContext();
   
@@ -129,6 +129,14 @@ export default function LabAnalisePage() {
   const [originDialogOpen, setOriginDialogOpen] = useState(false);
   const [selectedStatuses, setSelectedStatuses] = useState<string[]>([]);
   const [showFilters, setShowFilters] = useState(false);
+
+  // Fila: pendentes de QUALQUER data (filtro por status no servidor) + concluídos só do
+  // período escolhido (o filtro de período da tela já os limitava). Busca em blocos de 1.000.
+  const { orders: pendentes, refresh: refreshOrders } = useAttendanceCadastro({ ...FILA_TEMPO_REAL, statuses: STATUS_PENDENTES_ANALISE });
+  const intervaloConcluidos = useMemo(() => intervaloDoPeriodo(period, dateFrom, dateTo), [period, dateFrom, dateTo]);
+  const querConcluidos = selectedStatuses.length === 0 || selectedStatuses.includes('completed');
+  const { orders: concluidos } = useAttendanceCadastro({ ...FILA_TEMPO_REAL, statuses: STATUS_CONCLUIDOS, range: intervaloConcluidos, enabled: querConcluidos });
+  const orders = useMemo(() => (querConcluidos ? [...pendentes, ...concluidos] : pendentes), [pendentes, concluidos, querConcluidos]);
   const [quickFiltersOpen, setQuickFiltersOpen] = useState(false);
   // Exames de apoio (modo e alertas) por pedido:exame
   const [apoioModos, setApoioModos] = useState<Record<string, { modo: string; alerta: boolean }>>({});
