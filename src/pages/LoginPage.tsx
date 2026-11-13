@@ -9,6 +9,7 @@ import logoImg from '@/assets/logo-axisinova.jpeg'
 import { toast } from 'sonner'
 import { SYSTEM_VERSION } from '@/utils/version'
 import { fetchDevAccessConfig, type DevAccessConfig, type DevAccessCredential } from '@/utils/devAccessConfig'
+import { LOGIN_PRAZO_MS, LOGIN_AVISO_LENTO_MS, MSG_SERVIDOR_LENTO, MSG_AINDA_CONECTANDO, type TipoErroLogin } from '@/lib/loginResiliente'
 
 const FEATURES = [
   { icon: Calendar, label: 'Agendamento inteligente' },
@@ -39,6 +40,10 @@ export default function LoginPage() {
   const [rememberMe, setRememberMe] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [tipoErro, setTipoErro] = useState<TipoErroLogin | null>(null)
+  const [demorando, setDemorando] = useState(false)
+  // Uma tentativa por vez: trava síncrona contra clique duplo / Enter repetido.
+  const emAndamentoRef = useRef(false)
   const [failCount, setFailCount] = useState(0)
   const [cooldown, setCooldown] = useState(0)
   const [cooldownTotal, setCooldownTotal] = useState(1)
@@ -79,8 +84,15 @@ export default function LoginPage() {
 
   // Clear error when typing
   useEffect(() => {
-    if (error) setError(null)
+    if (error) { setError(null); setTipoErro(null) }
   }, [email, password])
+
+  // "Autenticando..." demorado: texto de espera depois de alguns segundos
+  useEffect(() => {
+    if (!isLoading) { setDemorando(false); return }
+    const t = setTimeout(() => setDemorando(true), LOGIN_AVISO_LENTO_MS)
+    return () => clearTimeout(t)
+  }, [isLoading])
 
   useEffect(() => {
     return () => clearTypingAnimation()
@@ -91,54 +103,71 @@ export default function LoginPage() {
     return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v) ? null : 'E-mail inválido'
   }
 
-  const handleSubmit = useCallback(
-    async (e: React.FormEvent) => {
-      e.preventDefault()
-      if (cooldown > 0 || isLoading) return
+  const entrar = useCallback(async () => {
+    if (cooldown > 0 || emAndamentoRef.current) return
 
-      const eErr = validateEmail(email)
-      if (eErr) {
-        setEmailError(eErr)
-        return
-      }
-      if (!email || !password) return
+    const eErr = validateEmail(email)
+    if (eErr) {
+      setEmailError(eErr)
+      return
+    }
+    if (!email || !password) return
 
-      setIsLoading(true)
-      setError(null)
-      setEmailError(null)
+    emAndamentoRef.current = true
+    setIsLoading(true)
+    setError(null)
+    setTipoErro(null)
+    setEmailError(null)
 
-      let result: Awaited<ReturnType<typeof login>>
-      try {
-        result = await login(email, password)
-      } catch {
-        result = { success: false, error: 'Não foi possível conectar ao servidor. Tente novamente.', networkError: true }
-      }
+    let result: Awaited<ReturnType<typeof login>>
+    try {
+      // Rede de segurança: o "Autenticando..." nunca passa muito do prazo da tentativa.
+      result = await Promise.race([
+        login(email, password),
+        new Promise<Awaited<ReturnType<typeof login>>>((resolve) =>
+          setTimeout(() => resolve({ success: false, error: MSG_SERVIDOR_LENTO, networkError: true, tipoErro: 'servidor' }), LOGIN_PRAZO_MS + 1500)),
+      ])
+    } catch {
+      result = { success: false, error: MSG_SERVIDOR_LENTO, networkError: true, tipoErro: 'servidor' }
+    } finally {
+      emAndamentoRef.current = false
+    }
 
-      if (!result.success) {
-        // Falha de conexão não é senha errada: não conta como tentativa.
-        if (!result.networkError) setFailCount((c) => c + 1)
-        setError(result.error || 'Usuário ou senha inválidos')
+    if (!result.success) {
+      const tipo: TipoErroLogin = result.tipoErro ?? (result.networkError ? 'servidor' : 'credenciais')
+      // Só senha errada conta como tentativa (falha de conexão ou conta sem acesso não contam).
+      if (tipo === 'credenciais') setFailCount((c) => c + 1)
+      setTipoErro(tipo)
+      setError(result.error || 'Usuário ou senha inválidos')
+      if (tipo === 'credenciais') {
         setShake(true)
         setTimeout(() => setShake(false), 400)
-
-        // Lockout is decided server-side; the UI only reflects the remaining time.
-        if (result.lockedFor && result.lockedFor > 0) {
-          setCooldown(result.lockedFor)
-          setCooldownTotal(result.lockedFor)
-          setFailCount(0)
-        }
-        setIsLoading(false)
-        return
       }
 
+      // Lockout is decided server-side; the UI only reflects the remaining time.
+      if (result.lockedFor && result.lockedFor > 0) {
+        setCooldown(result.lockedFor)
+        setCooldownTotal(result.lockedFor)
+        setFailCount(0)
+      }
       setIsLoading(false)
-      if (nextPath) {
-        navigate(nextPath, { replace: true })
-      } else if (result.redirectTo) {
-        navigate(result.redirectTo, { replace: true })
-      }
+      return
+    }
+
+    setIsLoading(false)
+    if (nextPath) {
+      navigate(nextPath, { replace: true })
+    } else if (result.redirectTo) {
+      navigate(result.redirectTo, { replace: true })
+    }
+  }, [email, password, login, cooldown, navigate, nextPath])
+
+  const handleSubmit = useCallback(
+    (e: React.FormEvent) => {
+      e.preventDefault()
+      void entrar()
     },
-    [email, password, login, failCount, cooldown, isLoading, navigate, nextPath]
+    [entrar]
   )
 
   // Typewriter fill for dev card
@@ -360,6 +389,9 @@ export default function LoginPage() {
                   'Entrar'
                 )}
               </button>
+              {isLoading && demorando && (
+                <p role="status" className="mt-2 text-center text-xs text-muted-foreground">{MSG_AINDA_CONECTANDO}</p>
+              )}
             </motion.div>
 
             {avisoInatividade && !error && (
@@ -369,9 +401,35 @@ export default function LoginPage() {
               </div>
             )}
 
+            {/* Servidor lento / sem conexão: não é senha errada */}
+            <AnimatePresence>
+              {error && tipoErro === 'servidor' && (
+                <motion.div
+                  role="alert"
+                  initial={{ opacity: 0, y: -8 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -8 }}
+                  className="rounded-lg border border-warning/40 bg-warning/10 p-3 text-sm text-foreground flex items-start gap-2"
+                >
+                  <AlertCircle className="h-4 w-4 shrink-0 mt-0.5 text-warning" />
+                  <div className="flex-1">
+                    <p>{error}</p>
+                    <button
+                      type="button"
+                      onClick={() => void entrar()}
+                      disabled={isLoading || cooldown > 0}
+                      className="mt-2 rounded-md border border-warning/50 px-3 py-1 text-xs font-semibold text-foreground hover:bg-warning/20 transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
+                    >
+                      Tentar novamente
+                    </button>
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
+
             {/* Error banner */}
             <AnimatePresence>
-              {error && (
+              {error && tipoErro !== 'servidor' && (
                 <motion.div
                   initial={{ opacity: 0, y: -8 }}
                   animate={{ opacity: 1, y: 0 }}
@@ -381,7 +439,7 @@ export default function LoginPage() {
                   <AlertCircle className="h-4 w-4 shrink-0 mt-0.5" />
                   <div>
                     <p>{error}</p>
-                    {failCount > 0 && failCount < 5 && (
+                    {tipoErro === 'credenciais' && failCount > 0 && failCount < 5 && (
                       <p className="text-xs mt-1 opacity-70">Tentativa {failCount} de 5</p>
                     )}
                   </div>
