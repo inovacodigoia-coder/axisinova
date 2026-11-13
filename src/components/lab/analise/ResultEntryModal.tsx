@@ -47,6 +47,7 @@ import { useApoioCancelamento } from '@/components/apoio/useApoioCancelamento';
 import PDFPreviewModal from '@/components/lab/PDFPreviewModal';
 import { InstrumentGraphicsSection } from '@/components/lab/analise/InstrumentGraphicsSection';
 import { PatientInfoFloating } from '@/components/lab/analise/PatientInfoFloating';
+import { SelectionResultField } from '@/components/lab/analise/SelectionResultField';
 import { useApoioAnalise, apoioEditavel, bloqueiosApoio, formatarCasas, notaDoApoio, temIntegracao } from '@/components/lab/analise/apoio/apoioAnalise';
 import { ApoioExamBlock, ApoioSelo } from '@/components/lab/analise/apoio/ApoioExamBlock';
 
@@ -2203,23 +2204,15 @@ export function ResultEntryModal({
 
                                   <div className="relative flex-1 group">
                                     {param.type === 'selection' && (param.options?.length ?? 0) > 0 ? (
-                                    <Select
-                                      value={value || undefined}
+                                    <SelectionResultField
+                                      id={`result-${paramKey}`}
+                                      value={value || ''}
+                                      options={param.options}
+                                      editable={!!param.editable}
+                                      multiple={!!param.multiple}
                                       disabled={!isExamEditable(exam.id)}
-                                      onValueChange={(val) => setResults(prev => ({ ...prev, [`${exam.id}_${param.id}`]: val }))}
-                                    >
-                                      <SelectTrigger className={cn(
-                                        "h-10 text-sm font-bold bg-white border-slate-200 focus:border-primary",
-                                        !isExamEditable(exam.id) && "bg-slate-100 text-slate-500"
-                                      )}>
-                                        <SelectValue placeholder="Selecione..." />
-                                      </SelectTrigger>
-                                      <SelectContent className="z-[200] bg-white">
-                                        {param.options.map((opt: string) => (
-                                          <SelectItem key={opt} value={opt} className="text-xs font-semibold">{opt}</SelectItem>
-                                        ))}
-                                      </SelectContent>
-                                    </Select>
+                                      onChange={(val) => setResults(prev => ({ ...prev, [paramKey]: val }))}
+                                    />
                                     ) : (
                                     <Input 
                                       id={`result-${paramKey}`}
