@@ -1,4 +1,4 @@
-import { createContext, useCallback, useContext, useReducer, useEffect, useMemo, type ReactNode } from 'react'
+import { createContext, useCallback, useContext, useReducer, useEffect, useMemo, useState, type ReactNode } from 'react'
 import type { Unit, QueueLine, Guiche, Totem, TV, Ticket, TicketStatus, AttendantSession, MediaAttachment } from '@/types/queue-system.types'
 import { MOCK_UNITS, MOCK_QUEUE_LINES, MOCK_GUICHES, MOCK_TOTEMS, MOCK_TVS, MOCK_TICKETS } from '@/mocks/queue-system.mock'
 import { useAuth } from '@/context/AuthContext'
@@ -206,6 +206,8 @@ interface QueueSystemContextValue {
   updateTVDB: (data: TV & { companyId?: string }) => Promise<boolean>
   removeTVDB: (id: string) => Promise<boolean>
   loadCompanyData: (companyId: string) => Promise<void>
+  /** Pede a carga das filas (chamado sozinho por useQueueSystem). */
+  solicitarCarga: () => void
 }
 
 const QueueSystemContext = createContext<QueueSystemContextValue | null>(null)
@@ -250,11 +252,14 @@ export function QueueSystemProvider({ children }: { children: ReactNode }) {
     }
   }, [])
 
+  // Carga sob demanda: só quando alguma tela usa as filas (não na entrada do sistema).
+  const [cargaSolicitada, setCargaSolicitada] = useState(false)
+  const solicitarCarga = useCallback(() => setCargaSolicitada(true), [])
   useEffect(() => {
-    if (user?.companyId && user.companyId !== DEMO_COMPANY_ID) {
+    if (cargaSolicitada && user?.companyId && user.companyId !== DEMO_COMPANY_ID) {
       loadCompanyData(user.companyId)
     }
-  }, [user?.companyId, loadCompanyData])
+  }, [user?.companyId, loadCompanyData, cargaSolicitada])
 
   // Auto ticket generation for demo
   useEffect(() => {
@@ -454,8 +459,8 @@ export function QueueSystemProvider({ children }: { children: ReactNode }) {
     state, dispatch, getUnitQueues, getUnitGuiches, getUnitTotems, getUnitTVs, getUnitTickets,
     addUnitDB, updateUnitDB, removeUnitDB, addTotemDB, updateTotemDB, removeTotemDB,
     addQueueLineDB, updateQueueLineDB, removeQueueLineDB, addGuicheDB, updateGuicheDB, removeGuicheDB,
-    addTVDB, updateTVDB, removeTVDB, loadCompanyData,
-  }), [state, dispatch, getUnitQueues, getUnitGuiches, getUnitTotems, getUnitTVs, getUnitTickets,
+    addTVDB, updateTVDB, removeTVDB, loadCompanyData, solicitarCarga,
+  }), [solicitarCarga, state, dispatch, getUnitQueues, getUnitGuiches, getUnitTotems, getUnitTVs, getUnitTickets,
     addUnitDB, updateUnitDB, removeUnitDB, addTotemDB, updateTotemDB, removeTotemDB,
     addQueueLineDB, updateQueueLineDB, removeQueueLineDB, addGuicheDB, updateGuicheDB, removeGuicheDB,
     addTVDB, updateTVDB, removeTVDB, loadCompanyData])
@@ -466,5 +471,7 @@ export function QueueSystemProvider({ children }: { children: ReactNode }) {
 export function useQueueSystem() {
   const ctx = useContext(QueueSystemContext)
   if (!ctx) throw new Error('useQueueSystem must be used within QueueSystemProvider')
+  const { solicitarCarga } = ctx
+  useEffect(() => { solicitarCarga() }, [solicitarCarga])
   return ctx
 }
