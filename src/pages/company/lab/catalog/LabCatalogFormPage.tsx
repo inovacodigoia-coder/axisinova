@@ -1050,6 +1050,8 @@ function ParametersSection({
       isHidden: false,
       defaultValueEnabled: false,
       defaultValue: '',
+      allowEditSelection: false,
+      multiSelect: false,
       formula: ''
     }])
   }
@@ -1124,6 +1126,8 @@ function ParametersSection({
                   <th className="px-2 py-3 font-bold text-[10px] uppercase text-muted-foreground text-center">Calc</th>
                   <th className="px-2 py-3 font-bold text-[10px] uppercase text-muted-foreground text-center">Oculto</th>
                   <th className="px-2 py-3 font-bold text-[10px] uppercase text-muted-foreground text-center min-w-[110px]">Valor</th>
+                  <th className="px-2 py-3 font-bold text-[10px] uppercase text-muted-foreground text-center" title="Seleção: permite alterar o texto escolhido na Digitação de Resultados">Editar</th>
+                  <th className="px-2 py-3 font-bold text-[10px] uppercase text-muted-foreground text-center" title="Seleção: permite marcar mais de uma opção na Digitação de Resultados">Várias</th>
                   <th className="px-3 py-3 text-right"></th>
                 </tr>
               </thead>
@@ -1333,6 +1337,46 @@ function ParametersSection({
                           )}
                         </div>
                       </td>
+                      <td className="px-2 py-2">
+                        <div className="flex justify-center">
+                          <button
+                            type="button"
+                            disabled={param.type !== 'selection'}
+                            title={param.type === 'selection' ? 'Permite alterar o texto escolhido na Digitação de Resultados' : 'Disponível só para o tipo Seleção'}
+                            aria-label={`Editar texto da seleção de ${param.name || 'parâmetro'}`}
+                            onClick={() => updateParameter(param.id, 'allowEditSelection', !param.allowEditSelection)}
+                            className={cn(
+                              "h-5 w-8 rounded-full transition-all relative flex items-center border border-border/50 shadow-sm disabled:opacity-30 disabled:cursor-not-allowed",
+                              param.type === 'selection' && param.allowEditSelection ? "bg-[#00D4FF]" : "bg-muted"
+                            )}
+                          >
+                            <div className={cn(
+                              "h-3 w-3 rounded-full bg-white shadow-sm transition-all absolute",
+                              param.type === 'selection' && param.allowEditSelection ? "left-[16px]" : "left-[3px]"
+                            )} />
+                          </button>
+                        </div>
+                      </td>
+                      <td className="px-2 py-2">
+                        <div className="flex justify-center">
+                          <button
+                            type="button"
+                            disabled={param.type !== 'selection'}
+                            title={param.type === 'selection' ? 'Permite marcar mais de uma opção na Digitação de Resultados' : 'Disponível só para o tipo Seleção'}
+                            aria-label={`Selecionar várias opções de ${param.name || 'parâmetro'}`}
+                            onClick={() => updateParameter(param.id, 'multiSelect', !param.multiSelect)}
+                            className={cn(
+                              "h-5 w-8 rounded-full transition-all relative flex items-center border border-border/50 shadow-sm disabled:opacity-30 disabled:cursor-not-allowed",
+                              param.type === 'selection' && param.multiSelect ? "bg-[#00D4FF]" : "bg-muted"
+                            )}
+                          >
+                            <div className={cn(
+                              "h-3 w-3 rounded-full bg-white shadow-sm transition-all absolute",
+                              param.type === 'selection' && param.multiSelect ? "left-[16px]" : "left-[3px]"
+                            )} />
+                          </button>
+                        </div>
+                      </td>
                       <td className="px-3 py-2 text-right">
                          <div className="flex justify-end">
                             <DropdownMenu>
@@ -1357,7 +1401,7 @@ function ParametersSection({
                     
                     {param.type === 'selection' && (
                       <tr>
-                        <td colSpan={14} className="px-4 py-3 bg-cyan-50/40 border-t border-b border-cyan-100">
+                        <td colSpan={16} className="px-4 py-3 bg-cyan-50/40 border-t border-b border-cyan-100">
                           <div className="space-y-2">
                             <div className="flex items-center gap-2 text-[9px] font-bold uppercase text-cyan-700">
                               <Settings2 className="h-3 w-3" />
@@ -1407,7 +1451,7 @@ function ParametersSection({
 
                     {param.isCalculated && (
                       <tr>
-                        <td colSpan={14} className="px-4 py-3 bg-blue-50/30 border-t border-b border-blue-100">
+                        <td colSpan={16} className="px-4 py-3 bg-blue-50/30 border-t border-b border-blue-100">
                           <div className="space-y-2">
                             <div className="flex items-center gap-2 text-[9px] font-bold uppercase text-blue-600">
                               <Calculator className="h-3 w-3" />
@@ -1484,7 +1528,7 @@ function ParametersSection({
                 ))}
                 {(!parameters || parameters.length === 0) && (
                   <tr>
-                    <td colSpan={14} className="px-4 py-10 text-center text-muted-foreground italic text-xs">
+                    <td colSpan={16} className="px-4 py-10 text-center text-muted-foreground italic text-xs">
                       Nenhum parâmetro cadastrado. Utilize o botão acima para adicionar.
                     </td>
                   </tr>
