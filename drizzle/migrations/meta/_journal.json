@@ -1100,6 +1100,13 @@
       "when": 1794661679595,
       "tag": "0156_pedido_codigo_empresa_congelado",
       "breakpoints": true
+    },
+    {
+      "idx": 157,
+      "version": "7",
+      "when": 1794673357473,
+      "tag": "0157_lab_painel_operacional",
+      "breakpoints": true
     }
   ]
 }
