@@ -102,7 +102,9 @@ export function AttendanceDetailsModal({ open, onClose, onOrderDeleted, order, p
   const [editarOpen, setEditarOpen] = useState(false)
   const [origemAtual, setOrigemAtual] = useState<{ id?: string; name?: string }>({ id: order.originId, name: order.originName })
   const { settings, isLoading: settingsLoading } = useLabSettings()
-  const companySequenceId = useCompanySequenceId()
+  const seqHook = useCompanySequenceId()
+  // Número da empresa gravado no pedido; o da sessão só para pedidos sem ele
+  const companySequenceId = (order as any).empresaSeq ?? seqHook
   const sampleCodeFor = (tubeIndex: number) => buildSampleCode(order.orderNumber, tubeIndex, companySequenceId)
   const { toast } = useToast()
   const { updateOrder, refresh: refreshOrderLists } = useAttendanceOrderActions()

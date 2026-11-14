@@ -109,7 +109,7 @@ Deno.serve(async (req) => {
   // fino abaixo (eventTime > since) usa o collected_at real das amostras.
   const { data: orders, error } = await supabase
     .from('attendance_orders')
-    .select('id, order_number, protocol, status, patient_id, patient_name, lab_guides, updated_at, created_at')
+    .select('id, order_number, protocol, status, patient_id, patient_name, lab_guides, updated_at, created_at, empresa_seq')
     .eq('company_id', companyId)
     .in('status', [...COLLECTED_STATUSES, ...CANCELLED_STATUSES])
     .gt('updated_at', since.toISOString())
@@ -262,7 +262,7 @@ Deno.serve(async (req) => {
       const bucket = byTube.get(tube.type)!
       // só devolve tubos efetivamente coletados
       if (!bucket.exams.some((e) => e.collected)) return
-      const sampleCode = buildSampleCode(orderLabel, idx + 1, companySeq)
+      const sampleCode = buildSampleCode(orderLabel, idx + 1, o.empresa_seq ?? companySeq) // número gravado no pedido
       samples.push({
         sample_barcode: generateSampleHash(sampleCode),
         sample_code: sampleCode,

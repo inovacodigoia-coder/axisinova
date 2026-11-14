@@ -2655,6 +2655,7 @@ export type Database = {
           doctor_crm: string | null
           doctor_id: string | null
           doctor_name: string | null
+          empresa_seq: number | null
           exam_mode: string | null
           fasting_start_hour: string | null
           fasting_type: string | null
@@ -2709,6 +2710,7 @@ export type Database = {
           doctor_crm?: string | null
           doctor_id?: string | null
           doctor_name?: string | null
+          empresa_seq?: number | null
           exam_mode?: string | null
           fasting_start_hour?: string | null
           fasting_type?: string | null
@@ -2763,6 +2765,7 @@ export type Database = {
           doctor_crm?: string | null
           doctor_id?: string | null
           doctor_name?: string | null
+          empresa_seq?: number | null
           exam_mode?: string | null
           fasting_start_hour?: string | null
           fasting_type?: string | null
