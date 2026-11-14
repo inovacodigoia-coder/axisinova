@@ -8,7 +8,7 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { cn } from '@/lib/utils'
 import { supabase } from '@/integrations/supabase/client'
 import { useAuth } from '@/context/AuthContext'
-import { useMateriaisTubos, recarregarTubos, normMat } from '@/lib/tubos'
+import { useMateriaisTubos, recarregarTubos, normMat, tuboAutomatico } from '@/lib/tubos'
 import { RecipienteSelect } from '@/components/lab/settings/MateriaisTubosSection'
 
 type Tubos = Record<string, { recipiente_id?: string | null; volume_ml?: number | null }>
@@ -26,7 +26,7 @@ export function MateriaisAceitos({ selecionados, padrao, tubos, onToggle, onPadr
   // Textos marcados que ainda não estão no cadastro continuam visíveis
   const soltos = selecionados.filter(s => !cad.materiais.some(m => normMat(m.nome) === normMat(s)))
   const rec = (id?: string | null) => cad.recipientes.find(r => r.id === id)
-  const semTubo = ativos.filter(m => marcado(m.nome) && !rec(tubos[m.id]?.recipiente_id) && !rec(m.recipiente_id))
+  const semTubo = ativos.filter(m => marcado(m.nome) && !rec(tubos[m.id]?.recipiente_id) && !rec(m.recipiente_id) && !tuboAutomatico(m))
 
   const criar = async () => {
     if (!novo?.nome.trim()) return toast.error('Informe o nome do material')
@@ -54,7 +54,7 @@ export function MateriaisAceitos({ selecionados, padrao, tubos, onToggle, onPadr
               className={cn('px-4 py-2 rounded-full border text-sm font-medium transition-all flex items-center gap-2',
                 on ? 'bg-primary/5 border-primary text-primary' : 'bg-background border-border text-muted-foreground hover:border-primary/50')}>
               {padrao && normMat(padrao) === normMat(m.nome) && <Star className="h-3 w-3 fill-primary text-primary" />}
-              {m.nome}{on && <span className="text-xs opacity-80">· {r ? r.sigla : 'tubo?'}</span>}
+              {m.nome}{on && <span className="text-xs opacity-80">· {r ? r.sigla : tuboAutomatico(m)?.sigla ?? 'tubo?'}</span>}
             </button>
           )
           if (!on) return <span key={m.id}>{chip}</span>
@@ -67,7 +67,7 @@ export function MateriaisAceitos({ selecionados, padrao, tubos, onToggle, onPadr
                 <div className="space-y-1">
                   <Label className="text-xs">Tubo/recipiente neste exame</Label>
                   <RecipienteSelect value={t.recipiente_id ?? ''} recipientes={cad.recipientes}
-                    vazio={rec(m.recipiente_id) ? `Padrão do material (${rec(m.recipiente_id)!.sigla})` : 'Padrão do material (definir)'}
+                    vazio={rec(m.recipiente_id) ? `Padrão do material (${rec(m.recipiente_id)!.sigla})` : tuboAutomatico(m) ? `Padrão do material (automático ${tuboAutomatico(m)!.sigla})` : 'Padrão do material (definir)'}
                     onChange={v => onTubos({ ...tubos, [m.id]: { ...t, recipiente_id: v || null } })} />
                 </div>
                 <div className="space-y-1">

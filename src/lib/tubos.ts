@@ -82,6 +82,21 @@ export function tuboDoExame(e: any): string {
   return regraAntiga(material) ?? 'indef'
 }
 
+/**
+ * Tubo que um material antigo (legado, sem recipiente) já recebe hoje pela regra
+ * antiga — a mesma ordem de tubos que o aparelho usa. null = sem tubo de verdade.
+ * Só serve para não mostrar "sem tubo" onde a etiqueta já sai certa; não muda a etiqueta.
+ */
+export function tuboAutomatico(m: Pick<Material, 'nome' | 'legado' | 'recipiente_id'> | null | undefined): Tubo | null {
+  if (!m || !m.legado || (m.recipiente_id && recipientePorId(m.recipiente_id))) return null
+  const k = regraAntiga(m.nome)
+  return k ? tuboInfo(k) : null
+}
+
+/** Material que precisa de tubo configurado (sem recipiente e sem regra automática). */
+export const materialSemTubo = (m: Pick<Material, 'nome' | 'legado' | 'recipiente_id'>) =>
+  !(m.recipiente_id && recipientePorId(m.recipiente_id)) && !tuboAutomatico(m)
+
 /** Aviso para a Coleta (null = tudo certo). */
 export function avisoTubo(e: any): string | null {
   const k = tuboDoExame(e)

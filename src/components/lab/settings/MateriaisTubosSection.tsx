@@ -10,7 +10,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog'
 import { supabase } from '@/integrations/supabase/client'
 import { useAuth } from '@/context/AuthContext'
-import { useMateriaisTubos, recarregarTubos, regraAntiga, normMat, type Material, type Recipiente } from '@/lib/tubos'
+import { useMateriaisTubos, recarregarTubos, regraAntiga, normMat, tuboAutomatico, materialSemTubo, type Material, type Recipiente } from '@/lib/tubos'
 import { TUBE_TYPES } from '@/types/lab.types'
 
 const db = supabase as any
@@ -72,10 +72,10 @@ export default function MateriaisTubosSection() {
   const recs = cad.recipientes
   const recDe = (id?: string | null) => recs.find(r => r.id === id)
   const usoRec = (id: string) => cad.materiais.filter(m => m.recipiente_id === id).length
-  const semTubo = cad.materiais.filter(m => m.ativo && !m.recipiente_id)
+  const semTubo = cad.materiais.filter(m => m.ativo && materialSemTubo(m))
 
   const listaMat = useMemo(() => cad.materiais
-    .filter(m => !pendentes || !m.recipiente_id)
+    .filter(m => !pendentes || materialSemTubo(m))
     .filter(m => !busca || normMat(`${m.nome} ${m.sigla ?? ''}`).includes(normMat(busca))), [cad.materiais, pendentes, busca])
   const listaRec = useMemo(() => recs.filter(r => !busca || normMat(`${r.nome} ${r.sigla} ${r.aditivo ?? ''}`).includes(normMat(busca))), [recs, busca])
   const lista: any[] = aba === 'materiais' ? listaMat : listaRec
@@ -228,10 +228,10 @@ export default function MateriaisTubosSection() {
             <table className="w-full text-sm">
               <thead className="bg-muted/50 text-left text-xs uppercase text-muted-foreground"><tr><th className="p-2">Nome</th><th className="p-2">Sigla</th><th className="p-2">Recipiente padrão</th><th className="p-2">Exames</th><th className="p-2">Ativo</th><th className="p-2" /></tr></thead>
               <tbody>
-                {visiveis.map((m: Material) => { const r = recDe(m.recipiente_id); return (
+                {visiveis.map((m: Material) => { const r = recDe(m.recipiente_id); const auto = r ? null : tuboAutomatico(m); return (
                   <tr key={m.id} className={`border-t border-border ${m.ativo ? '' : 'opacity-50'}`}>
                     <td className="p-2 font-medium">{m.nome}</td><td className="p-2">{m.sigla || '—'}</td>
-                    <td className="p-2">{r ? <span className="flex items-center gap-2"><Bolinha hex={r.cor_hex} />{r.nome} ({r.sigla})</span> : <span className="font-semibold text-warning">Recipiente: definir</span>}</td>
+                    <td className="p-2">{r ? <span className="flex items-center gap-2"><Bolinha hex={r.cor_hex} />{r.nome} ({r.sigla})</span> : auto ? <span className="text-muted-foreground" title="Tubo da regra automática, igual ao que o aparelho usa">Automático: {auto.label} ({auto.sigla})</span> : <span className="font-semibold text-warning">Recipiente: definir</span>}</td>
                     <td className="p-2">{uso[m.id] ?? 0}</td><td className="p-2">{m.ativo ? 'Sim' : 'Não'}</td>
                     <td className="p-2 text-right whitespace-nowrap">
                       <Button variant="ghost" size="sm" onClick={() => { setErros({}); setEditMat(m) }} aria-label="Editar"><Edit2 className="h-4 w-4" /></Button>
