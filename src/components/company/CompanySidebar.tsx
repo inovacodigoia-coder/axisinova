@@ -6,6 +6,7 @@ import { useQuery } from '@tanstack/react-query'
 import { ATTENDANCE_ORDERS_KEY } from '@/hooks/useAttendanceCadastro'
 import { supabase } from '@/integrations/supabase/client'
 import { buscarEmBlocos } from '@/lib/buscarEmBlocos'
+import { usePainelOperacionalAcesso } from '@/hooks/usePainelOperacional'
 import {
   Home, Calendar, UserCheck, FileText, DollarSign, FlaskConical, BarChart3,
   TrendingUp, Users, Settings, Database, Monitor, Building2,
@@ -98,6 +99,7 @@ export const NAV_SECTIONS: NavSection[] = [
     title: 'SETOR TÉCNICO',
     items: [
       { label: 'Dashboard', icon: 'Home', path: '/app/lab/dashboard', module: 'lab_technical' },
+      { label: 'Painel Operacional', icon: 'Activity', path: '/app/lab/painel-operacional', module: 'lab_technical' },
       { label: 'Coleta', icon: 'FlaskConical', path: '/app/lab/coleta', module: 'lab_technical' },
       { label: 'Triagem Lab', icon: 'ClipboardList', path: '/app/lab/triagem', module: 'triagem' },
       { label: 'Mapa de Trabalho', icon: 'FileText', path: '/app/lab/mapa', module: 'lab_technical' },
@@ -238,6 +240,7 @@ export function CompanySidebar({ mobileOpen, onMobileClose, collapsed = false, o
   const inovachatNaoLidas = useInovachatNaoLidas(!!inovachat?.ver)
   const chatInterno = useChatInternoAcesso()
   const biHospitalar = useBiHospitalarAcesso()
+  const painelOperacional = usePainelOperacionalAcesso()
   const chatInternoNaoLidas = useChatInternoNaoLidas(!!chatInterno?.ver)
 
   const visibleSections = NAV_SECTIONS.map(section => ({
@@ -250,6 +253,7 @@ export function CompanySidebar({ mobileOpen, onMobileClose, collapsed = false, o
       if (item.path === '/app/financeiro') return !!financeiro?.ver
       if (item.path === '/app/financeiro/caixa') return !!(caixaAcesso?.operar || caixaAcesso?.ver_todos || caixaAcesso?.configurar)
       if (item.path === '/app/bi-hospitalar') return !!biHospitalar?.ver
+      if (item.path === '/app/lab/painel-operacional') return painelOperacional === true
       const profileAllows = !item.module || canAccess(item.module, 'view')
       const sectorOverride = activeSector?.moduleOverrides?.[item.path]
       return sectorOverride !== undefined ? sectorOverride : profileAllows

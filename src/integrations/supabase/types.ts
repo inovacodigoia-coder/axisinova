@@ -6579,6 +6579,59 @@ export type Database = {
           },
         ]
       }
+      lab_critico_notificacao: {
+        Row: {
+          company_id: string
+          id: string
+          limite_critico: string | null
+          notified_at: string
+          notified_by: string
+          notified_by_name: string | null
+          observacao: string | null
+          order_id: string | null
+          parameter_name: string | null
+          result_id: string
+          result_value_id: string
+          valor: string | null
+        }
+        Insert: {
+          company_id: string
+          id?: string
+          limite_critico?: string | null
+          notified_at?: string
+          notified_by: string
+          notified_by_name?: string | null
+          observacao?: string | null
+          order_id?: string | null
+          parameter_name?: string | null
+          result_id: string
+          result_value_id: string
+          valor?: string | null
+        }
+        Update: {
+          company_id?: string
+          id?: string
+          limite_critico?: string | null
+          notified_at?: string
+          notified_by?: string
+          notified_by_name?: string | null
+          observacao?: string | null
+          order_id?: string | null
+          parameter_name?: string | null
+          result_id?: string
+          result_value_id?: string
+          valor?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "lab_critico_notificacao_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       lab_equipments: {
         Row: {
           company_id: string
@@ -13380,6 +13433,10 @@ export type Database = {
         Args: { _detalhes: Json; _pedido: string }
         Returns: undefined
       }
+      lab_critico_marcar_notificado: {
+        Args: { p_observacao?: string; p_value_id: string }
+        Returns: string
+      }
       lab_equipments_master_company: { Args: never; Returns: string }
       lab_materiais_seed: { Args: { _company: string }; Returns: undefined }
       lab_materiais_uso: {
@@ -13390,6 +13447,45 @@ export type Database = {
         }[]
       }
       lab_norm: { Args: { t: string }; Returns: string }
+      lab_painel_criticos: {
+        Args: { p_desde: string }
+        Returns: {
+          exam_name: string
+          is_urgent: boolean
+          limite_critico: string
+          order_id: string
+          parameter_name: string
+          patient_name: string
+          protocol: string
+          referencia: string
+          result_id: string
+          resultado_em: string
+          unidade: string
+          valor: string
+          value_id: string
+          workbench_id: string
+        }[]
+      }
+      lab_painel_operacional: {
+        Args: { p_desde: string }
+        Returns: {
+          bancada_tipo: string
+          collected_at: string
+          exam_id: string
+          exam_name: string
+          is_urgent: boolean
+          order_id: string
+          order_status: string
+          patient_name: string
+          protocol: string
+          recollection_at: string
+          released_at: string
+          result_status: string
+          typed_at: string
+          workbench_id: string
+        }[]
+      }
+      lab_painel_tem_permissao: { Args: never; Returns: boolean }
       lab_solicitar_reteste: {
         Args: { _result_id: string }
         Returns: undefined
