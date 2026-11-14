@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
+import { createPortal } from 'react-dom'
 import { format } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
 import { Printer } from 'lucide-react'
@@ -66,9 +67,9 @@ export function ResumoDiaTab({ bancadasInternas }: { bancadasInternas: ReadonlyS
       <style>{`
         @media print {
           @page { size: A4 portrait; margin: 14mm; }
-          body * { visibility: hidden !important; }
-          .resumo-impressao, .resumo-impressao * { visibility: visible !important; }
-          .resumo-impressao { position: absolute; left: 0; top: 0; width: 100%; display: block !important;
+          body > *:not(.resumo-impressao) { display: none !important; }
+          html, body { height: auto !important; overflow: visible !important; background: none !important; }
+          .resumo-impressao { display: block !important; width: 100%;
             font-family: 'Times New Roman', Georgia, serif; font-size: 11pt; color: #000; background: none; }
           .resumo-impressao * { background: none !important; color: #000 !important; box-shadow: none !important; }
           .resumo-impressao table { width: 100%; border-collapse: collapse; margin-top: 6pt; }
@@ -135,8 +136,8 @@ export function ResumoDiaTab({ bancadasInternas }: { bancadasInternas: ReadonlyS
         </div>
       )}
 
-      {/* Página A4 só da impressão */}
-      <div className="resumo-impressao hidden" aria-hidden>
+      {/* Página A4 só da impressão (fora do layout, direto no corpo da página) */}
+      {createPortal(<div className="resumo-impressao hidden" aria-hidden>
         <div style={{ display: 'flex', alignItems: 'center', gap: '10pt', borderBottom: '0.5pt solid #000', paddingBottom: '6pt' }}>
           {logo && <img src={logo} alt="" style={{ height: '42pt', maxWidth: '120pt', objectFit: 'contain' }} />}
           <div>
@@ -170,7 +171,7 @@ export function ResumoDiaTab({ bancadasInternas }: { bancadasInternas: ReadonlyS
           </div>
         </div>
         <p style={{ marginTop: '10pt', fontSize: '9pt' }}>Impresso em {format(Date.now(), "dd/MM/yyyy 'às' HH:mm")} por {user?.name}</p>
-      </div>
+      </div>, document.body)}
     </div>
   )
 }
