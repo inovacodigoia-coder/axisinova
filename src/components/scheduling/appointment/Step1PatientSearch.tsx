@@ -1,3 +1,4 @@
+import { formatBirthBR } from '@/lib/attendanceDocHeader'
 import { useState, useMemo } from 'react'
 import { Search, UserPlus } from 'lucide-react'
 import { useScheduling } from '@/context/SchedulingContext'
@@ -122,7 +123,7 @@ export function Step1PatientSearch({ onSelect, onCreateNew }: Props) {
                 <div className="flex items-start justify-between">
                   <div>
                     <p className="font-bold text-foreground">{p.fullName}</p>
-                    <p className="text-sm text-muted-foreground">{getAge(p.birthDate)} anos · Nasc. {format(new Date(p.birthDate), 'dd/MM/yyyy')}</p>
+                    <p className="text-sm text-muted-foreground">{getAge(p.birthDate)} anos · Nasc. {formatBirthBR(p.birthDate)}</p>
                     {p.cpf && <p className="text-xs text-muted-foreground">CPF: {p.cpf}</p>}
                     <p className="text-xs text-muted-foreground">📞 {p.phone1}</p>
                     {convName && <p className="text-xs text-muted-foreground">💳 {convName}</p>}

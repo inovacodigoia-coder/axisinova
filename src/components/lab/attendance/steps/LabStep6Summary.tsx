@@ -1,3 +1,4 @@
+import { formatBirthBR } from '@/lib/attendanceDocHeader'
 import React from 'react';
 import { CadastroState } from '@/components/reception/attendance/AttendanceCadastroModal';
 import { format } from 'date-fns';
@@ -54,7 +55,7 @@ export function LabStep6Summary({ state, update, unitName }: Props & { update: (
             <div className="space-y-1 border-b border-slate-100 pb-2">
               <span className="text-slate-400 font-medium block text-xs">Nascimento</span>
               <span className="text-slate-700 font-bold">
-                {patient?.birthDate ? format(new Date(patient.birthDate), 'dd/MM/yyyy') : '--/--/----'}
+                {patient?.birthDate ? formatBirthBR(patient.birthDate) : '--/--/----'}
                 <span className="text-slate-400 font-normal ml-2">
                   {patient?.age ? `${patient.age} anos, 0 meses, 0 dias` : ''}
                 </span>

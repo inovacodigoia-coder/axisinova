@@ -1,3 +1,4 @@
+import { formatBirthBR } from '@/lib/attendanceDocHeader'
 import { useAuth } from '@/context/AuthContext'
 import { useEffect, useMemo, useState } from 'react'
 import { Dialog, DialogContent } from '@/components/ui/dialog'
@@ -540,7 +541,7 @@ function OrderRowModern({
           {(order.coletaProgramadaPara ? new Date(order.coletaProgramadaPara) : date).toLocaleDateString('pt-BR')}
         </div>
         <div className="font-semibold text-foreground truncate uppercase">{patient?.fullName || order.patientName}</div>
-        <div className="text-muted-foreground">{patient?.birthDate ? new Date(patient.birthDate).toLocaleDateString('pt-BR') : '-'}</div>
+        <div className="text-muted-foreground">{patient?.birthDate ? formatBirthBR(patient.birthDate) : '-'}</div>
         <div className="truncate uppercase font-medium">{order.convenioName || 'Particular'}</div>
         <div>
           <span className={cn(

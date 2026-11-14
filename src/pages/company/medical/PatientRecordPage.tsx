@@ -1,3 +1,4 @@
+import { formatBirthBR } from '@/lib/attendanceDocHeader'
 import { useState, useMemo } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { useScheduling } from '@/context/SchedulingContext'
@@ -110,7 +111,7 @@ export default function PatientRecordPage() {
               <span>{getAge(patient.birthDate)} anos · {patient.gender === 'M' ? 'Masculino' : patient.gender === 'F' ? 'Feminino' : 'Outro'}</span>
               {patient.cpf && <span>CPF: {patient.cpf}</span>}
               {primaryConvenio && <span>{primaryConvenio.name}</span>}
-              <span><Calendar className="inline h-3 w-3 mr-1" />{new Date(patient.birthDate).toLocaleDateString('pt-BR')}</span>
+              <span><Calendar className="inline h-3 w-3 mr-1" />{formatBirthBR(patient.birthDate)}</span>
             </div>
             <div className="flex flex-wrap gap-x-4 gap-y-1 mt-1 text-sm text-muted-foreground">
               <span><Phone className="inline h-3 w-3 mr-1" />{patient.phone1}</span>

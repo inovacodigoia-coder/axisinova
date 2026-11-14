@@ -1,3 +1,4 @@
+import { formatBirthBR } from '@/lib/attendanceDocHeader'
 import { memo } from 'react'
 import { Eye, Pencil, MoreVertical } from 'lucide-react'
 import { cn } from '@/lib/utils'
@@ -55,7 +56,7 @@ function Table({ patients, onView, onEdit, onQuickView }: Props) {
                   </div>
                 </td>
                 <td className="px-3 py-2.5 text-foreground text-xs">
-                  {p.birthDate ? new Date(p.birthDate).toLocaleDateString('pt-BR') : '—'}
+                  {p.birthDate ? formatBirthBR(p.birthDate) : '—'}
                   {age !== undefined && <span className="text-muted-foreground"> · {age}a</span>}
                 </td>
                 <td className="px-3 py-2.5 text-xs text-foreground">{maskCPFPrivate(p.cpf)}</td>

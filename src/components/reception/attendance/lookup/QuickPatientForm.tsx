@@ -1,3 +1,4 @@
+import { formatBirthBR } from '@/lib/attendanceDocHeader'
 import { useEffect, useState } from 'react'
 import { toast } from 'sonner'
 import { UserCheck, AlertTriangle } from 'lucide-react'
@@ -241,7 +242,7 @@ export function QuickPatientForm({ onCreate }: Props) {
                 <div className="font-semibold text-sm text-foreground">{duplicate.fullName}</div>
                 <div className="text-xs text-muted-foreground space-y-0.5 mt-1">
                   <div>CPF: {formatCPFDisplay(duplicate.cpf)}</div>
-                  {duplicate.birthDate && <div>Nasc: {new Date(duplicate.birthDate).toLocaleDateString('pt-BR')}</div>}
+                  {duplicate.birthDate && <div>Nasc: {formatBirthBR(duplicate.birthDate)}</div>}
                   {duplicate.phone1 && <div>Tel: {duplicate.phone1}</div>}
                 </div>
               </div>

@@ -143,7 +143,8 @@ export const isValidCEP = (cep: string): boolean => /^\d{5}-?\d{3}$/.test(cep.tr
 // ─── HELPERS ──────────────────────────────────────────────────────────
 export const calculateAge = (birthDate?: string): number | undefined => {
   if (!birthDate) return undefined
-  const b = new Date(birthDate)
+  const m0 = /^(\d{4})-(\d{2})-(\d{2})/.exec(birthDate)
+  const b = m0 ? new Date(Number(m0[1]), Number(m0[2]) - 1, Number(m0[3])) : new Date(birthDate)
   if (Number.isNaN(b.getTime())) return undefined
   const today = new Date()
   let age = today.getFullYear() - b.getFullYear()

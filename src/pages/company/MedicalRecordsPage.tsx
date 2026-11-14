@@ -1,3 +1,4 @@
+import { formatBirthBR } from '@/lib/attendanceDocHeader'
 import { useState, useEffect } from 'react'
 import { Plus, FileText, Calendar, ChevronRight, Heart, Stethoscope, Trash2 } from 'lucide-react'
 import { GradientButton } from '@/components/ui/GradientButton'
@@ -58,7 +59,7 @@ export default function MedicalRecordsPage() {
 
     const mapped: Patient[] = patientsData.map(p => ({
       id: p.id, name: p.name, cpf: p.cpf,
-      birthDate: new Date(p.birth_date).toLocaleDateString('pt-BR'),
+      birthDate: formatBirthBR(p.birth_date),
       phone: p.phone, bloodType: p.blood_type || '',
       allergies: p.allergies || [],
       totalVisits: countMap[p.id]?.count || 0,
