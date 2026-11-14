@@ -99,7 +99,7 @@ export const NAV_SECTIONS: NavSection[] = [
     title: 'SETOR TÉCNICO',
     items: [
       { label: 'Dashboard', icon: 'Home', path: '/app/lab/dashboard', module: 'lab_technical' },
-      { label: 'Painel Operacional', icon: 'Activity', path: '/app/lab/painel-operacional' },
+      { label: 'Painel Operacional', icon: 'Activity', path: '/app/lab/painel-operacional', module: 'lab_technical' },
       { label: 'Coleta', icon: 'FlaskConical', path: '/app/lab/coleta', module: 'lab_technical' },
       { label: 'Triagem Lab', icon: 'ClipboardList', path: '/app/lab/triagem', module: 'triagem' },
       { label: 'Mapa de Trabalho', icon: 'FileText', path: '/app/lab/mapa', module: 'lab_technical' },
