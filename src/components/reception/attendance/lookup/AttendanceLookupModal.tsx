@@ -46,7 +46,7 @@ function sampleCodesAndHashesForOrder(order: AttendanceOrder, companySequenceId:
   const out: string[] = []
   list.forEach((_: any, idx: number) => {
     // Inclui também o formato sem empresa (etiquetas antigas)
-    for (const code of new Set([buildSampleCode(order.orderNumber, idx + 1, companySequenceId), buildSampleCode(order.orderNumber, idx + 1, null)])) {
+    for (const code of new Set([buildSampleCode(order.orderNumber, idx + 1, order.empresaSeq ?? companySequenceId), buildSampleCode(order.orderNumber, idx + 1, null)])) {
       if (!code) continue
       out.push(code)
       const hash = generateSampleHash(code)

@@ -37,6 +37,8 @@ export interface AttendanceOrder {
   originName?: string
   protocol?: string
   hash?: string
+  /** Número da empresa congelado no pedido (código do tubo). */
+  empresaSeq?: number | null
   examMode?: 'clinic' | 'lab'
   deliveryDate?: string
   /** Coleta programada para data futura (lab_coleta_programar) */

@@ -32,7 +32,7 @@ const LIST_COLUMNS = [
   'doctor_id', 'doctor_name', 'doctor_crm', 'specialty', 'requesting_doctor', 'convenio_id', 'convenio_name',
   'card_number', 'card_expiry', 'authorization_code', 'authorization_date', 'authorization_expiry',
   'authorization_password', 'private_value', 'attachments', 'status', 'registered_by', 'registered_by_name',
-  'created_at', 'updated_at',
+  'created_at', 'updated_at', 'empresa_seq',
 ].join(', ')
 
 export interface AttendanceOrdersOptions {
@@ -63,6 +63,7 @@ function mapOrderRow(item: any): AttendanceOrder {
     originName: item.origin_name,
     protocol: item.protocol,
     hash: item.hash,
+    empresaSeq: item.empresa_seq ?? null,
     examMode: item.exam_mode as 'clinic' | 'lab',
     deliveryDate: item.delivery_date,
     coletaProgramadaPara: (item as any).coleta_programada_para ?? null,

@@ -22,7 +22,11 @@ interface Props {
 }
 
 export function SampleLabelsSelectModal({ open, onClose, order, birthDate, autoPrint, onPrinted }: Props) {
-  const { id: companySequenceId, ready: seqReady } = useCompanySequenceIdState()
+  const seqState = useCompanySequenceIdState()
+  // Código do tubo usa o número da empresa gravado no pedido (nunca muda)
+  const congelado = order?.empresaSeq ?? order?.empresa_seq
+  const companySequenceId = congelado ?? seqState.id
+  const seqReady = congelado != null || seqState.ready
   const { settings } = useLabSettings()
   const { user } = useAuth()
   const cad = useMateriaisTubos(user?.companyId)
