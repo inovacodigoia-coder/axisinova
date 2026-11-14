@@ -10,7 +10,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog'
 import { supabase } from '@/integrations/supabase/client'
 import { useAuth } from '@/context/AuthContext'
-import { useMateriaisTubos, recarregarTubos, regraAntiga, normMat, type Material, type Recipiente } from '@/lib/tubos'
+import { useMateriaisTubos, recarregarTubos, regraAntiga, normMat, tuboAutomatico, materialSemTubo, type Material, type Recipiente } from '@/lib/tubos'
 import { TUBE_TYPES } from '@/types/lab.types'
 
 const db = supabase as any
