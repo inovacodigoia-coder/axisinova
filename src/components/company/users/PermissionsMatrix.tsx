@@ -275,7 +275,7 @@ export function PermissionsMatrix({ permissions, onChange }: PermissionsMatrixPr
 
       <div className="rounded-lg border border-border p-4 space-y-3">
         <div>
-          <p className="text-xs font-semibold text-foreground uppercase tracking-wide">Laboratório</p>
+          <p className="text-xs font-semibold text-foreground uppercase tracking-wide">Setor Técnico</p>
           <p className="text-[11px] text-muted-foreground">O administrador da empresa já tem todas.</p>
         </div>
         <div className="grid gap-2 sm:grid-cols-2">

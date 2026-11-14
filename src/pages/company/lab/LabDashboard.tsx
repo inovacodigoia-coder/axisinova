@@ -30,6 +30,7 @@ import { SamplesBreakdownPanel } from '@/components/lab/dashboard/SamplesBreakdo
 import { AttendanceHeatmap } from '@/components/lab/dashboard/AttendanceHeatmap';
 import { TopExamsList } from '@/components/lab/dashboard/TopExamsList';
 import { LabReportModal } from '@/components/lab/dashboard/LabReportModal';
+import { RelatoriosGerenciaisAbas } from '@/components/lab/dashboard/relatorios/RelatoriosGerenciaisAbas';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -118,6 +119,8 @@ export default function LabDashboard() {
         </div>
       </div>
 
+      <RelatoriosGerenciaisAbas visaoGeral={
+      <div className="space-y-6">
       {/* Filtro de período */}
       <div className="flex flex-wrap items-center gap-2 rounded-2xl border border-border bg-card p-3 shadow-sm">
         <span className="text-xs font-medium text-muted-foreground mr-1">Período:</span>
@@ -346,6 +349,8 @@ export default function LabDashboard() {
           </table>
         </div>
       </div>
+      </div>
+      } />
 
       <LabReportModal open={reportOpen} onOpenChange={setReportOpen} />
     </div>

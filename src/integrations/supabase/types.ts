@@ -13486,6 +13486,11 @@ export type Database = {
         }[]
       }
       lab_painel_tem_permissao: { Args: never; Returns: boolean }
+      lab_relatorio_gerencial: {
+        Args: { p_ate: string; p_de: string }
+        Returns: Json
+      }
+      lab_relatorios_tem_permissao: { Args: never; Returns: boolean }
       lab_solicitar_reteste: {
         Args: { _result_id: string }
         Returns: undefined
