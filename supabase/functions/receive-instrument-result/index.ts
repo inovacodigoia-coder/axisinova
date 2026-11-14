@@ -217,14 +217,14 @@ Deno.serve(async (req) => {
 
   const since = new Date(Date.now() - 90 * 24 * 60 * 60 * 1000).toISOString()
   const barcodeUpper = norm(sampleBarcode)
-  const LIGHT_COLS = 'id, protocol, order_number, status, created_at'
+  const LIGHT_COLS = 'id, protocol, order_number, status, created_at, empresa_seq'
 
   const matchesBarcode = (o: any) => {
     const label = String(o.order_number || o.protocol || o.id)
     const candidates = new Set<string>([norm(label), norm(o.protocol), norm(o.order_number)])
     for (let idx = 1; idx <= TUBE_TYPES.length; idx++) {
       // Aceita etiquetas impressas com e sem o sufixo da empresa
-      for (const code of new Set([buildSampleCode(label, idx, companySeq), buildSampleCode(label, idx, null)])) {
+      for (const code of new Set([buildSampleCode(label, idx, o.empresa_seq ?? companySeq), buildSampleCode(label, idx, companySeq), buildSampleCode(label, idx, null)])) {
         candidates.add(norm(code))
         candidates.add(norm(generateSampleHash(code)))
       }

@@ -235,7 +235,7 @@ Deno.serve(async (req) => {
   for (let de = 0; de < 50_000 && !order; de += 1000) {
   const { data: orders, error: ordersErr } = await supabase
     .from('attendance_orders')
-    .select('id, protocol, order_number, status, created_at')
+    .select('id, protocol, order_number, status, created_at, empresa_seq')
     .eq('company_id', companyId)
     .gt('created_at', since)
     .order('created_at', { ascending: false })
@@ -248,7 +248,7 @@ Deno.serve(async (req) => {
     const candidates = new Set<string>([norm(orderLabel), norm(o.protocol), norm(o.order_number)])
     for (let idx = 1; idx <= TUBE_TYPES.length; idx++) {
       // Aceita etiquetas impressas com e sem o sufixo da empresa
-      for (const code of new Set([buildSampleCode(orderLabel, idx, companySeq), buildSampleCode(orderLabel, idx, null)])) {
+      for (const code of new Set([buildSampleCode(orderLabel, idx, o.empresa_seq ?? companySeq), buildSampleCode(orderLabel, idx, companySeq), buildSampleCode(orderLabel, idx, null)])) {
         candidates.add(norm(code))
         candidates.add(norm(generateSampleHash(code)))
       }

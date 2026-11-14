@@ -1,1 +1,2 @@
 - Attendance edit (Detalhes Atendimento ⋮ → Editar) reuses the Cadastro steps LabStep2ExamData/LabStep3GuidesProcedures over a fresh order row and saves only changed columns via editarAtendimento; exams with typed results cannot be removed. Why: same form as Cadastro and the audit trigger logs exact changes.
+- Tube sample codes use attendance_orders.empresa_seq, frozen by trigger at insert and never overwritten; client/edge read it from the order, session sequence_id is only a fallback. Why: labels and instruments must never compute different codes.
