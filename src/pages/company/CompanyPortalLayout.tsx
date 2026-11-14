@@ -108,6 +108,7 @@ import LabAnalisePage from './lab/analise/LabAnalisePage'
 import LabMapaPage from './lab/LabMapaPage'
 import LabMapaViewPage from './lab/LabMapaViewPage'
 import LabReportsPage from './lab/LabReportsPage'
+import LabPainelOperacionalPage from './lab/LabPainelOperacionalPage'
 import LabBudgetsPage from './lab/orcamentos/LabBudgetsPage'
 import LabBudgetFormPage from './lab/orcamentos/LabBudgetFormPage'
 import LabBudgetDetailPage from './lab/orcamentos/LabBudgetDetailPage'
@@ -342,6 +343,7 @@ function PortalContent() {
               
               {/* Lab Technical Sector */}
               <Route path="lab/dashboard" element={<LabDashboard />} />
+              <Route path="lab/painel-operacional" element={<LabPainelOperacionalPage />} />
               <Route path="lab/coleta" element={<LabColetaPage />} />
               <Route path="lab/triagem" element={<LabTriagemPage />} />
               <Route path="lab/mapa" element={<LabMapaPage />} />

@@ -178,6 +178,11 @@ export const COLETA_PERMISSIONS: { code: string; label: string; description: str
   { code: 'coleta.programar', label: 'Programar coleta para data futura', description: 'Definir no Detalhes do Atendimento uma data futura de coleta, com justificativa' },
 ]
 
+/** Permissões do Laboratório (permissions.lab; checadas no banco por lab_painel_tem_permissao; administrador tem todas) */
+export const LAB_PERMISSIONS: { code: string; label: string; description: string }[] = [
+  { code: 'lab.painel_operacional', label: 'Painel Operacional do Laboratório', description: 'Ver TAT por bancada, pendentes com idade, urgências e críticos pendentes de notificação' },
+]
+
 /** Permissões do BI de Gestão Hospitalar (permissions.bi_hospitalar; checadas no banco por bi_hospitalar_tem_permissao; administrador tem todas) */
 export const BI_HOSPITALAR_PERMISSIONS: { code: string; label: string; description: string }[] = [
   { code: 'bi_hospitalar.ver', label: 'Ver o BI Gestão Hospitalar', description: 'Acessar a tela e os dados da jornada do paciente' },
