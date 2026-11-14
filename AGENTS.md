@@ -35,4 +35,3 @@
 - Warehouse: company gates, sector overrides, guarded atomic RPCs; materials reuse BI consumption for frozen costs/negative reversals and shared patient UI, resolving live episodes server-side. Demo is in memory; test fixtures stay isolated. Why: tenant safety and no duplicate consumption.
 - Laudo print history: only laudo_impressao_* RPCs. Why: immutable trail.
 - Portal extra deadline: RPC setter; order trigger adds to new items. Why: no recalc.
-- Lab Operational Panel: reads only via lab_painel_* RPCs (permission permissions.lab 'lab.painel_operacional' checked by lab_painel_tem_permissao; pending orders any date, finished ones only since the period start); TAT/alert/critical rules live in lib/painelOperacional; critical notifications are immutable rows via lab_critico_marcar_notificado; support (apoio) benches excluded. Why: one rule set for screen and print, no history loss, auditable notifications.
