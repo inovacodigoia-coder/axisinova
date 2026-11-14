@@ -33,6 +33,7 @@ export function useRelatorioGerencial(de: number, ate: number, habilitado: boole
     queryKey: ['lab_relatorio_gerencial', companyId, deMin, ateMin],
     enabled: habilitado && !!companyId,
     staleTime: 5 * 60_000,
+    placeholderData: (anterior) => anterior,
     queryFn: async (): Promise<DadosRelatorio> => {
       const { data, error } = await (supabase.rpc as any)('lab_relatorio_gerencial', {
         p_de: new Date(deMin).toISOString(), p_ate: new Date(ateMin).toISOString(),
