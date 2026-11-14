@@ -1114,6 +1114,13 @@
       "when": 1794673389870,
       "tag": "0158_lab_painel_operacional_rapido",
       "breakpoints": true
+    },
+    {
+      "idx": 159,
+      "version": "7",
+      "when": 1794673709538,
+      "tag": "0159_lab_painel_operacional_janela",
+      "breakpoints": true
     }
   ]
 }
