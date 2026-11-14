@@ -1121,6 +1121,13 @@
       "when": 1794673709538,
       "tag": "0159_lab_painel_operacional_janela",
       "breakpoints": true
+    },
+    {
+      "idx": 160,
+      "version": "7",
+      "when": 1794674946103,
+      "tag": "0160_lab_relatorios_gerenciais",
+      "breakpoints": true
     }
   ]
 }
