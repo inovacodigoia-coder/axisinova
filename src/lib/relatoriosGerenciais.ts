@@ -341,7 +341,7 @@ export function comparativoMes(exames: ExameRel[], ymd: string) {
   const pm1 = mesAnterior(m1)
   const diaAtual = Number(ymd.slice(8, 10))
   const diasPm = Number(somarDias(m1, -1).slice(8, 10))
-  const n = Math.max(diasPm, Number(somarDias(`${mesAnterior(somarDias(m1, 40).slice(0, 7) + '-01')}`, 0).slice(8, 10)) || 0, 31)
+  const n = 31
   const dias = Array.from({ length: n }, (_, i) => i + 1).map(dia => {
     const dA = `${ymd.slice(0, 7)}-${String(dia).padStart(2, '0')}`
     const dP = `${pm1.slice(0, 7)}-${String(dia).padStart(2, '0')}`
