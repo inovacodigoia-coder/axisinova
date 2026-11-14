@@ -1,3 +1,4 @@
+import { formatBirthBR } from '@/lib/attendanceDocHeader'
 // =====================================================================
 // DuplicateWarningModal — Avisa quando há paciente similar já cadastrado
 // =====================================================================
@@ -40,7 +41,7 @@ export function DuplicateWarningModal({ open, candidates, onCancel, onContinue, 
                   <div className="font-semibold text-sm text-foreground truncate">{patient.fullName}</div>
                   <div className="text-xs text-muted-foreground space-y-0.5">
                     {patient.cpf && <div>CPF: {formatCPFDisplay(patient.cpf)}</div>}
-                    {patient.birthDate && <div>Nasc: {new Date(patient.birthDate).toLocaleDateString('pt-BR')}</div>}
+                    {patient.birthDate && <div>Nasc: {formatBirthBR(patient.birthDate)}</div>}
                     {patient.motherName && <div>Mãe: {patient.motherName}</div>}
                   </div>
                   <div className="mt-1 inline-flex items-center rounded-full bg-warning/10 text-warning px-2 py-0.5 text-[10px] font-semibold">

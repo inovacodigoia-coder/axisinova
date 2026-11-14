@@ -1,3 +1,4 @@
+import { formatBirthBR } from '@/lib/attendanceDocHeader'
 import { X, Eye, Pencil, Calendar, PowerOff, Power } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import type { Patient } from '@/types/patient.types'
@@ -56,7 +57,7 @@ export function QuickViewDrawer({ patient, onClose, onView, onEdit, onSchedule, 
           <div className="grid grid-cols-2 gap-3 text-xs">
             <Field label="CPF">{maskCPFPrivate(patient.cpf)}</Field>
             <Field label="Nascimento">
-              {patient.birthDate ? new Date(patient.birthDate).toLocaleDateString('pt-BR') : '—'}
+              {patient.birthDate ? formatBirthBR(patient.birthDate) : '—'}
             </Field>
             <Field label="Telefone 1">{formatPhoneDisplay(patient.phone1)}</Field>
             <Field label="Telefone 2">{patient.phone2 ? formatPhoneDisplay(patient.phone2) : '—'}</Field>

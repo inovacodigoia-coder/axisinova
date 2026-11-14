@@ -1,3 +1,4 @@
+import { formatBirthBR } from '@/lib/attendanceDocHeader'
 import { useMemo } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { ArrowLeft, Edit2, FolderPlus, CornerDownLeft, CheckCircle, Clock, FileText } from 'lucide-react'
@@ -77,7 +78,7 @@ export default function GuideDetailPage() {
             <h3 className="text-sm font-semibold text-foreground mb-4">Dados do Paciente e Convênio</h3>
             <div className="grid grid-cols-2 gap-4 text-sm">
               <div><span className="text-muted-foreground">Paciente:</span> <span className="text-foreground font-medium">{guide.patientName}</span></div>
-              <div><span className="text-muted-foreground">Nascimento:</span> <span className="text-foreground">{new Date(guide.patientBirthDate).toLocaleDateString('pt-BR')}</span></div>
+              <div><span className="text-muted-foreground">Nascimento:</span> <span className="text-foreground">{formatBirthBR(guide.patientBirthDate)}</span></div>
               <div><span className="text-muted-foreground">Convênio:</span> <span className="text-foreground font-medium">{guide.convenioName}</span></div>
               <div><span className="text-muted-foreground">Carteirinha:</span> <span className="text-foreground">{guide.convenioCardNumber || '—'}</span></div>
               <div><span className="text-muted-foreground">Médico:</span> <span className="text-foreground">{guide.doctorName}</span></div>
