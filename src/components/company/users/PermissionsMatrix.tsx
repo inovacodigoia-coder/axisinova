@@ -6,6 +6,7 @@ import { FINANCEIRO_PERMISSIONS } from '@/lib/financeiro'
 import { useBiHospitalarHabilitada } from '@/hooks/useBiHospitalar'
 import { useSorotecaAcesso } from '@/hooks/useSoroteca'
 import { usePainelOperacionalModuloAtivo } from '@/hooks/usePainelOperacional'
+import { useRelatoriosGerenciaisModuloAtivo } from '@/hooks/useRelatoriosGerenciais'
 import { MATERIAIS_PERMISSIONS, ATENDIMENTO_DETALHES_PERMISSIONS } from '@/types/permissions.types'
 import { Checkbox } from '@/components/ui/checkbox'
 
@@ -21,7 +22,10 @@ export function PermissionsMatrix({ permissions, onChange }: PermissionsMatrixPr
   const sorotecaAtiva = useSorotecaAcesso()?.modulo_ativo === true
   // Painel Operacional desativado na empresa: a permissão não aparece
   const painelAtivo = usePainelOperacionalModuloAtivo() === true
-  const labPermissoes = useMemo(() => LAB_PERMISSIONS.filter(p => painelAtivo || p.code !== 'lab.painel_operacional'), [painelAtivo])
+  // Relatórios Gerenciais desativados na empresa: a permissão não aparece
+  const relatoriosAtivo = useRelatoriosGerenciaisModuloAtivo() === true
+  const labPermissoes = useMemo(() => LAB_PERMISSIONS.filter(p =>
+    (painelAtivo || p.code !== 'lab.painel_operacional') && (relatoriosAtivo || p.code !== 'lab.relatorios_gerenciais')), [painelAtivo, relatoriosAtivo])
   const MODULOS = useMemo(() => SYSTEM_MODULES.filter(m => sorotecaAtiva || m.key !== 'serotheque'), [sorotecaAtiva])
 
   useEffect(() => { onChange(perms) }, [perms])

@@ -4,14 +4,21 @@ import { toast } from 'sonner'
 import { Bar, BarChart, CartesianGrid, Cell, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts'
 import { cn } from '@/lib/utils'
 import {
-  DIAS_SEMANA, HORAS_MAPA, corUrgNoPrazo, kpisProducao, mapaCalor, serie7Dias, topDaBancada, topPedidos, variacao,
-  volumePorBancada, type ExameRel, type JanelaRel,
+  DIAS_SEMANA, HORAS_MAPA, corTatFase, corUrgNoPrazo, examesDoKpi, kpisProducao, mapaCalor, produtividadeAnalistas, serie7Dias,
+  topDaBancada, topPedidos, variacao, volumePorBancada, type ChaveKpi, type ExameRel, type JanelaRel,
 } from '@/lib/relatoriosGerenciais'
 import { exportarElementoPdf, exportarPlanilha } from '@/lib/exportarRelatorio'
-import { BarraFiltros, Bloco, KpiCard, fmtMin, fmtNum, fmtPct, tooltipStyle, type FiltrosRel } from './comum'
+import { BarraFiltros, Bloco, KpiCard, ListaExamesDialog, fmtMin, fmtNum, fmtPct, tooltipStyle, type FiltrosRel } from './comum'
 
-export function ProducaoTab({ exames, janela, filtros, setFiltros, bancadas, nomeBancada, rotuloPeriodo }: {
+const TITULOS_KPI: Record<ChaveKpi, string> = {
+  urgRecebidas: 'Urgências recebidas', urgTat: 'TAT médio urgência', urgNoPrazoPct: '% urgências no prazo',
+  liberados: 'Exames liberados', porDia: 'Exames liberados', rotTat: 'TAT médio rotina', noPrazoPct: 'Exames com TAT no período',
+  preTat: 'TAT pré-analítico', analTat: 'TAT analítico',
+}
+
+export function ProducaoTab({ exames, analistas, janela, filtros, setFiltros, bancadas, nomeBancada, rotuloPeriodo }: {
   exames: ExameRel[]
+  analistas: Record<string, string>
   janela: JanelaRel
   filtros: FiltrosRel
   setFiltros: (f: FiltrosRel) => void
@@ -22,6 +29,8 @@ export function ProducaoTab({ exames, janela, filtros, setFiltros, bancadas, nom
   const ref = useRef<HTMLDivElement>(null)
   const [exportando, setExportando] = useState(false)
   const [bancadaAberta, setBancadaAberta] = useState<string | null>(null)
+  const [kpiAberto, setKpiAberto] = useState<ChaveKpi | null>(null)
+  const [analistaAberto, setAnalistaAberto] = useState<string | null>(null)
 
   const base = useMemo(() => exames.filter(e => !e.apoio && (filtros.bancada === 'todas' || e.bancadaId === filtros.bancada)), [exames, filtros.bancada])
   const k = useMemo(() => kpisProducao(base, janela.inicio, janela.fim), [base, janela])
@@ -33,7 +42,13 @@ export function ProducaoTab({ exames, janela, filtros, setFiltros, bancadas, nom
     liberados: serie7Dias(base, janela.fim, x => x.liberados),
     rotTat: serie7Dias(base, janela.fim, x => x.rotTat),
     noPrazoPct: serie7Dias(base, janela.fim, x => x.noPrazoPct),
+    preTat: serie7Dias(base, janela.fim, x => x.preTat),
+    analTat: serie7Dias(base, janela.fim, x => x.analTat),
   }), [base, janela])
+  const listaKpi = useMemo(() => (kpiAberto === null ? [] : examesDoKpi(base, kpiAberto, janela.inicio, janela.fim)), [base, kpiAberto, janela])
+  const porAnalista = useMemo(() => produtividadeAnalistas(base, janela.inicio, janela.fim, analistas), [base, janela, analistas])
+  const analista = porAnalista.find(a => a.chave === analistaAberto) ?? null
+  const abrir = (c: ChaveKpi) => () => setKpiAberto(c)
   const volume = useMemo(() => volumePorBancada(base, janela.inicio, janela.fim).map(v => ({ ...v, nome: nomeBancada(v.bancadaId) })), [base, janela, nomeBancada])
   const mapa = useMemo(() => mapaCalor(base, janela.inicio, janela.fim), [base, janela])
   const top = useMemo(() => topPedidos(base, janela.inicio, janela.fim), [base, janela])
@@ -57,9 +72,12 @@ export function ProducaoTab({ exames, janela, filtros, setFiltros, bancadas, nom
         ind('Exames por dia (média)', k.porDia, ant.porDia),
         ind('TAT médio rotina (min)', k.rotTat, ant.rotTat),
         ind('Taxa de exames no prazo (%)', k.noPrazoPct, ant.noPrazoPct),
+        ind('TAT pré-analítico (min) — recebido → coleta', k.preTat, ant.preTat),
+        ind('TAT analítico (min) — coleta → liberação', k.analTat, ant.analTat),
       ] },
       { nome: 'Volume por bancada', linhas: volume.map(v => ({ Bancada: v.nome, 'Exames liberados': v.total })) },
       { nome: 'Top 10 exames', linhas: top.map((t, i) => ({ 'Posição': i + 1, Exame: t.exame, Bancada: nomeBancada(t.bancadaId), Quantidade: t.quantidade, 'TAT médio (min)': t.tatMedio === null ? '' : Math.round(t.tatMedio) })) },
+      { nome: 'Produtividade por analista', linhas: porAnalista.map(a => ({ Analista: a.nome, 'Exames liberados': a.liberados, 'TAT médio (min)': a.tatMedio === null ? '' : Math.round(a.tatMedio), 'Urgências liberadas': a.urgencias, 'Rejeições': a.rejeicoes })) },
       { nome: 'Mapa de calor', linhas: HORAS_MAPA.map((h, i) => Object.fromEntries([['Hora', `${String(h).padStart(2, '0')}h`], ...DIAS_SEMANA.map((d, j) => [d, mapa.celulas[i][j]])])) },
     ], `${nomeArquivo}.xlsx`)
   }
@@ -72,19 +90,27 @@ export function ProducaoTab({ exames, janela, filtros, setFiltros, bancadas, nom
           {rotuloPeriodo} · {filtros.bancada === 'todas' ? 'Todas as bancadas' : nomeBancada(filtros.bancada)} · TAT = liberação − coleta · exames de apoio não entram.
         </p>
         <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
-          <KpiCard destaque titulo="🔴 Urgências recebidas" valor={fmtNum(k.urgRecebidas)} detalhe="exames urgentes pedidos no período"
+          <KpiCard destaque onClick={abrir('urgRecebidas')} titulo="🔴 Urgências recebidas" valor={fmtNum(k.urgRecebidas)} detalhe="exames urgentes pedidos no período"
             variacao={variacao(k.urgRecebidas, ant.urgRecebidas, 'pct')} melhorQuandoSobe={false} comparacao={cmp} serie={s.urgRecebidas} />
-          <KpiCard destaque titulo="🔴 TAT médio urgência" valor={fmtMin(k.urgTat)}
+          <KpiCard destaque onClick={abrir('urgTat')} titulo="🔴 TAT médio urgência" valor={fmtMin(k.urgTat)}
             variacao={variacao(k.urgTat, ant.urgTat, 'min')} melhorQuandoSobe={false} comparacao={cmp} serie={s.urgTat} />
-          <KpiCard destaque titulo="🔴 % urgências no prazo (< 60 min)" valor={fmtPct(k.urgNoPrazoPct)} cor={corUrgNoPrazo(k.urgNoPrazoPct)} detalhe="meta ≥ 90%"
+          <KpiCard destaque onClick={abrir('urgNoPrazoPct')} titulo="🔴 % urgências no prazo (< 60 min)" valor={fmtPct(k.urgNoPrazoPct)} cor={corUrgNoPrazo(k.urgNoPrazoPct)} detalhe="meta ≥ 90%"
             variacao={variacao(k.urgNoPrazoPct, ant.urgNoPrazoPct, 'pp')} comparacao={cmp} serie={s.urgNoPrazoPct} />
         </div>
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          <KpiCard titulo="Total de exames liberados" valor={fmtNum(k.liberados)} variacao={variacao(k.liberados, ant.liberados, 'pct')} comparacao={cmp} serie={s.liberados} />
-          <KpiCard titulo="Exames por dia (média)" valor={fmtNum(k.porDia, 1)} variacao={variacao(k.porDia, ant.porDia, 'pct')} comparacao={cmp} serie={s.liberados} />
-          <KpiCard titulo="TAT médio rotina" valor={fmtMin(k.rotTat)} variacao={variacao(k.rotTat, ant.rotTat, 'min')} melhorQuandoSobe={false} comparacao={cmp} serie={s.rotTat} />
-          <KpiCard titulo="Taxa de exames no prazo" valor={fmtPct(k.noPrazoPct)} detalhe="urgência ≤ 60 min · rotina ≤ 120 min"
+          <KpiCard onClick={abrir('liberados')} titulo="Total de exames liberados" valor={fmtNum(k.liberados)} variacao={variacao(k.liberados, ant.liberados, 'pct')} comparacao={cmp} serie={s.liberados} />
+          <KpiCard onClick={abrir('porDia')} titulo="Exames por dia (média)" valor={fmtNum(k.porDia, 1)} variacao={variacao(k.porDia, ant.porDia, 'pct')} comparacao={cmp} serie={s.liberados} />
+          <KpiCard onClick={abrir('rotTat')} titulo="TAT médio rotina" valor={fmtMin(k.rotTat)} variacao={variacao(k.rotTat, ant.rotTat, 'min')} melhorQuandoSobe={false} comparacao={cmp} serie={s.rotTat} />
+          <KpiCard onClick={abrir('noPrazoPct')} titulo="Taxa de exames no prazo" valor={fmtPct(k.noPrazoPct)} detalhe="urgência ≤ 60 min · rotina ≤ 120 min"
             variacao={variacao(k.noPrazoPct, ant.noPrazoPct, 'pp')} comparacao={cmp} serie={s.noPrazoPct} />
+        </div>
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+          <KpiCard onClick={abrir('preTat')} titulo="TAT pré-analítico · gargalo na recepção" valor={fmtMin(k.preTat)} cor={corTatFase(k.preTat)}
+            detalhe="recebido → coleta realizada · verde < 30 min · amarelo 30–60 · vermelho > 60"
+            variacao={variacao(k.preTat, ant.preTat, 'min')} melhorQuandoSobe={false} comparacao={cmp} serie={s.preTat} />
+          <KpiCard onClick={abrir('analTat')} titulo="TAT analítico · gargalo na bancada" valor={fmtMin(k.analTat)} cor={corTatFase(k.analTat)}
+            detalhe="coleta realizada → liberado · verde < 30 min · amarelo 30–60 · vermelho > 60"
+            variacao={variacao(k.analTat, ant.analTat, 'min')} melhorQuandoSobe={false} comparacao={cmp} serie={s.analTat} />
         </div>
 
         <Bloco titulo="Volume por bancada" subtitulo="Exames liberados no período — clique numa barra para ver os 10 exames dessa bancada">
@@ -140,7 +166,38 @@ export function ProducaoTab({ exames, janela, filtros, setFiltros, bancadas, nom
         <Bloco titulo="Top 10 exames mais pedidos" subtitulo="Pedidos no período; TAT médio dos que já foram liberados">
           <TabelaRanking linhas={top} nomeBancada={nomeBancada} rotuloQtd="Quantidade" />
         </Bloco>
+
+        <Bloco titulo="Produtividade por analista" subtitulo="Quem liberou o laudo no período · rejeições = recoletas pedidas pelo analista · clique no nome para ver os exames">
+          {porAnalista.length === 0 ? <p className="py-6 text-center text-sm text-muted-foreground">Nenhum exame liberado no período.</p> : (
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b border-border text-left text-xs uppercase tracking-wider text-muted-foreground">
+                  <th className="px-3 py-2">Analista</th><th className="px-3 py-2 text-right">Exames liberados</th><th className="px-3 py-2 text-right">TAT médio</th>
+                  <th className="px-3 py-2 text-right">Urgências liberadas</th><th className="px-3 py-2 text-right">Rejeições</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-border">
+                {porAnalista.map(a => (
+                  <tr key={a.chave}>
+                    <td className="px-3 py-2">
+                      {a.liberados > 0
+                        ? <button className="font-medium text-primary hover:underline" onClick={() => setAnalistaAberto(a.chave)}>{a.nome}</button>
+                        : <span className="font-medium">{a.nome}</span>}
+                    </td>
+                    <td className="px-3 py-2 text-right font-semibold">{fmtNum(a.liberados)}</td>
+                    <td className="px-3 py-2 text-right">{fmtMin(a.tatMedio)}</td>
+                    <td className="px-3 py-2 text-right">{fmtNum(a.urgencias)}</td>
+                    <td className="px-3 py-2 text-right">{fmtNum(a.rejeicoes)}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          )}
+        </Bloco>
       </div>
+
+      <ListaExamesDialog titulo={kpiAberto === null ? null : TITULOS_KPI[kpiAberto]} exames={listaKpi} nomeBancada={nomeBancada} onClose={() => setKpiAberto(null)} />
+      <ListaExamesDialog titulo={analista ? `Liberados por ${analista.nome}` : null} exames={analista?.exames ?? []} nomeBancada={nomeBancada} onClose={() => setAnalistaAberto(null)} />
     </div>
   )
 }

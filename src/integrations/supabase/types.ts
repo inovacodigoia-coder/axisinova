@@ -7219,6 +7219,35 @@ export type Database = {
           },
         ]
       }
+      lab_relatorios_modulo: {
+        Row: {
+          alterado_em: string
+          alterado_por: string | null
+          ativo: boolean
+          company_id: string
+        }
+        Insert: {
+          alterado_em?: string
+          alterado_por?: string | null
+          ativo?: boolean
+          company_id: string
+        }
+        Update: {
+          alterado_em?: string
+          alterado_por?: string | null
+          ativo?: boolean
+          company_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "lab_relatorios_modulo_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: true
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       lab_report_overrides: {
         Row: {
           company_id: string
@@ -14246,6 +14275,7 @@ export type Database = {
         Args: { p_ate: string; p_de: string }
         Returns: Json
       }
+      lab_relatorios_modulo_ativo: { Args: never; Returns: boolean }
       lab_relatorios_tem_permissao: { Args: never; Returns: boolean }
       lab_solicitar_reteste: {
         Args: { _result_id: string }
