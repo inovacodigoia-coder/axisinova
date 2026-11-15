@@ -52,7 +52,7 @@ beforeEach(async () => {
     CREATE TABLE profiles(id uuid PRIMARY KEY, company_id uuid, role text, full_name text);
     CREATE FUNCTION get_user_company_id(u uuid) RETURNS uuid LANGUAGE sql AS $$ SELECT company_id FROM profiles WHERE id=u $$;
     CREATE FUNCTION is_company_manager(u uuid) RETURNS boolean LANGUAGE sql AS $$ SELECT EXISTS(SELECT 1 FROM profiles WHERE id=u AND role='company_admin') $$;
-    CREATE TABLE access_profiles(id text PRIMARY KEY, company_id uuid, permissions jsonb, is_active boolean DEFAULT true);
+    CREATE TABLE access_profiles(id text PRIMARY KEY, company_id uuid, permissions jsonb, is_active boolean DEFAULT true, name text);
     CREATE TABLE company_sectors(id uuid PRIMARY KEY DEFAULT gen_random_uuid(), is_active boolean DEFAULT true, allowed_profile_ids text[]);
     CREATE TABLE sector_users(user_id uuid, sector_id uuid);
     CREATE TABLE patients(id uuid PRIMARY KEY, name text, cpf text, birth_date date);
@@ -306,9 +306,7 @@ describe('Soroteca — módulo por empresa', () => {
   it('desativado: some para os perfis da empresa, mas TI/Administração e o administrador continuam vendo', async () => {
     await db.exec(`
       INSERT INTO profiles VALUES('${TI}','${C}','biochemist','Tiago TI');
-      INSERT INTO access_profiles VALUES('p_ti','${C}','{"soroteca":["soroteca.ver"]}');
-      UPDATE access_profiles SET permissions = permissions WHERE id = 'p_ti';`)
-    await db.exec(`ALTER TABLE access_profiles ADD COLUMN IF NOT EXISTS name text; UPDATE access_profiles SET name = 'TI – Administração' WHERE id = 'p_ti';
+      INSERT INTO access_profiles VALUES('p_ti','${C}','{"soroteca":["soroteca.ver"]}', true, 'TI – Administração');
       INSERT INTO company_sectors(id, allowed_profile_ids) VALUES('00000000-0000-4000-8000-0000000000f3','{p_ti}');
       INSERT INTO sector_users VALUES('${TI}','00000000-0000-4000-8000-0000000000f3');`)
     await desligar()
