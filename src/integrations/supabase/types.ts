@@ -9471,11 +9471,15 @@ export type Database = {
         Row: {
           company_id: string
           created_at: string
+          destino: string | null
           equipamento_nome: string | null
           estante_id: string
           estante_nome: string | null
           id: string
+          motivo: string | null
+          observacao: string | null
           prateleira_nome: string | null
+          responsavel_nome: string | null
           tipo: string
           tubos: number
           usuario_id: string | null
@@ -9484,11 +9488,15 @@ export type Database = {
         Insert: {
           company_id: string
           created_at?: string
+          destino?: string | null
           equipamento_nome?: string | null
           estante_id: string
           estante_nome?: string | null
           id?: string
+          motivo?: string | null
+          observacao?: string | null
           prateleira_nome?: string | null
+          responsavel_nome?: string | null
           tipo: string
           tubos?: number
           usuario_id?: string | null
@@ -9497,11 +9505,15 @@ export type Database = {
         Update: {
           company_id?: string
           created_at?: string
+          destino?: string | null
           equipamento_nome?: string | null
           estante_id?: string
           estante_nome?: string | null
           id?: string
+          motivo?: string | null
+          observacao?: string | null
           prateleira_nome?: string | null
+          responsavel_nome?: string | null
           tipo?: string
           tubos?: number
           usuario_id?: string | null
@@ -9563,6 +9575,7 @@ export type Database = {
           company_id: string
           created_at: string
           de_coluna: number | null
+          de_endereco: string | null
           de_equipamento_nome: string | null
           de_linha: number | null
           de_prateleira_nome: string | null
@@ -9586,6 +9599,7 @@ export type Database = {
           company_id: string
           created_at?: string
           de_coluna?: number | null
+          de_endereco?: string | null
           de_equipamento_nome?: string | null
           de_linha?: number | null
           de_prateleira_nome?: string | null
@@ -9609,6 +9623,7 @@ export type Database = {
           company_id?: string
           created_at?: string
           de_coluna?: number | null
+          de_endereco?: string | null
           de_equipamento_nome?: string | null
           de_linha?: number | null
           de_prateleira_nome?: string | null
@@ -14097,6 +14112,10 @@ export type Database = {
         Args: { _company_id: string; _data_inicial: string; _dias: number }
         Returns: string
       }
+      soroteca__posicao: {
+        Args: { p_coluna: number; p_linha: number }
+        Returns: string
+      }
       soroteca__resultados: {
         Args: { p_company: string; p_exames: string[]; p_order: string }
         Returns: {
@@ -14173,6 +14192,18 @@ export type Database = {
         Returns: string
       }
       soroteca_estante_abrir: { Args: { p_id: string }; Returns: Json }
+      soroteca_estante_conferir: { Args: { p_id: string }; Returns: Json }
+      soroteca_estante_descartar: {
+        Args: {
+          p_destino: string
+          p_forcar?: boolean
+          p_id: string
+          p_motivo: string
+          p_observacao: string
+          p_responsavel: string
+        }
+        Returns: Json
+      }
       soroteca_estante_gravar: {
         Args: {
           p_ativo?: boolean
@@ -14193,6 +14224,8 @@ export type Database = {
         }
         Returns: Json
       }
+      soroteca_estante_reativar: { Args: { p_id: string }; Returns: undefined }
+      soroteca_estantes_descarte: { Args: never; Returns: Json }
       soroteca_hash_amostra: { Args: { p_codigo: string }; Returns: string }
       soroteca_localizar: { Args: { p_termo: string }; Returns: Json }
       soroteca_modulo_ativo: { Args: never; Returns: boolean }

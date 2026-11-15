@@ -1156,6 +1156,13 @@
       "when": 1794713396290,
       "tag": "0164_soroteca_estantes",
       "breakpoints": true
+    },
+    {
+      "idx": 165,
+      "version": "7",
+      "when": 1794714919347,
+      "tag": "0165_soroteca_descarte_estante",
+      "breakpoints": true
     }
   ]
 }
