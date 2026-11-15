@@ -112,6 +112,13 @@ describe('tubos do pedido', () => {
     expect(gel.status).toBe('liberado')
   })
 
+  it('cartão do tubo: exames internos com liberado/pendente e bancadas sem repetir', () => {
+    const [t] = tubosDoPedido(pedido([ex('e1', 'Soro'), ex('e4', 'Soro', { bancadaNome: 'Imunologia' }), ex('e5', 'Soro'), ex('e2', 'Soro', { bancadaTipo: 'apoio' })],
+      { e1: 'released', e5: 'cancelled' }), AGORA)
+    expect(t.exames).toEqual([{ id: 'e1', nome: 'Exame e1', liberado: true }, { id: 'e4', nome: 'Exame e4', liberado: false }])
+    expect(t.bancadas).toEqual(['Bioquímica', 'Imunologia'])
+  })
+
   it('tubo só de apoio ou não coletado não pode ser guardado', () => {
     const [apoio] = tubosDoPedido(pedido([ex('a1', 'Soro', { bancadaTipo: 'apoio' })]), AGORA)
     expect(bloqueioDoTubo(apoio)).toMatch(/apoio/)
