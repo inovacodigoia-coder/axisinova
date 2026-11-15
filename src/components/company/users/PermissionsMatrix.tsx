@@ -4,6 +4,7 @@ import { SYSTEM_MODULES, ALL_ACTIONS, ACTION_LABELS, RESULT_ENTRY_PERMISSIONS, A
 import { Progress } from '@/components/ui/progress'
 import { FINANCEIRO_PERMISSIONS } from '@/lib/financeiro'
 import { useBiHospitalarHabilitada } from '@/hooks/useBiHospitalar'
+import { useSorotecaAcesso } from '@/hooks/useSoroteca'
 import { MATERIAIS_PERMISSIONS, ATENDIMENTO_DETALHES_PERMISSIONS } from '@/types/permissions.types'
 import { Checkbox } from '@/components/ui/checkbox'
 
@@ -15,6 +16,9 @@ interface PermissionsMatrixProps {
 export function PermissionsMatrix({ permissions, onChange }: PermissionsMatrixProps) {
   const [perms, setPerms] = useState<PermissionsMap>(permissions)
   const biHospitalarHabilitada = useBiHospitalarHabilitada()
+  // Soroteca desativada na empresa: nem a linha do módulo nem as permissões aparecem
+  const sorotecaAtiva = useSorotecaAcesso()?.modulo_ativo === true
+  const MODULOS = useMemo(() => SYSTEM_MODULES.filter(m => sorotecaAtiva || m.key !== 'serotheque'), [sorotecaAtiva])
 
   useEffect(() => { onChange(perms) }, [perms])
 
@@ -56,10 +60,10 @@ export function PermissionsMatrix({ permissions, onChange }: PermissionsMatrixPr
   }
 
   const toggleColumn = (act: PermissionAction) => {
-    const allHave = SYSTEM_MODULES.every(m => hasAction(m.key, act))
+    const allHave = MODULOS.every(m => hasAction(m.key, act))
     setPerms(prev => {
       const next = { ...prev }
-      SYSTEM_MODULES.forEach(m => {
+      MODULOS.forEach(m => {
         const current = [...(next[m.key] || [])]
         if (allHave) {
           if (act === 'view') next[m.key] = []
@@ -75,19 +79,19 @@ export function PermissionsMatrix({ permissions, onChange }: PermissionsMatrixPr
   }
 
   const toggleAll = () => {
-    const total = SYSTEM_MODULES.length * ALL_ACTIONS.length
-    const current = SYSTEM_MODULES.reduce((sum, m) => sum + (perms[m.key]?.length || 0), 0)
+    const total = MODULOS.length * ALL_ACTIONS.length
+    const current = MODULOS.reduce((sum, m) => sum + (perms[m.key]?.length || 0), 0)
     if (current === total) {
       setPerms({})
     } else {
       const all: PermissionsMap = {}
-      SYSTEM_MODULES.forEach(m => { all[m.key] = [...ALL_ACTIONS] })
+      MODULOS.forEach(m => { all[m.key] = [...ALL_ACTIONS] })
       setPerms(all)
     }
   }
 
-  const totalPerms = SYSTEM_MODULES.length * ALL_ACTIONS.length
-  const activePerms = SYSTEM_MODULES.reduce((sum, m) => sum + (perms[m.key]?.length || 0), 0)
+  const totalPerms = MODULOS.length * ALL_ACTIONS.length
+  const activePerms = MODULOS.reduce((sum, m) => sum + (perms[m.key]?.length || 0), 0)
 
   return (
     <div className="space-y-4">
@@ -109,7 +113,7 @@ export function PermissionsMatrix({ permissions, onChange }: PermissionsMatrixPr
             </tr>
           </thead>
           <tbody>
-            {SYSTEM_MODULES.map(mod => {
+            {MODULOS.map(mod => {
               const modPerms = perms[mod.key] || []
               return (
                 <tr key={mod.key} className="border-b border-border hover:bg-muted/20">
@@ -303,7 +307,7 @@ export function PermissionsMatrix({ permissions, onChange }: PermissionsMatrixPr
         </div>
       </div>
 
-      <div className="rounded-lg border border-border p-4 space-y-3">
+      {sorotecaAtiva && <div className="rounded-lg border border-border p-4 space-y-3">
         <div>
           <p className="text-xs font-semibold text-foreground uppercase tracking-wide">Soroteca</p>
           <p className="text-[11px] text-muted-foreground">Quem armazena, descarta ou configura também consegue ver. O administrador da empresa já tem todas.</p>
@@ -331,7 +335,7 @@ export function PermissionsMatrix({ permissions, onChange }: PermissionsMatrixPr
             )
           })}
         </div>
-      </div>
+      </div>}
 
       <div className="rounded-lg border border-border p-4 space-y-3">
         <div>
