@@ -194,13 +194,13 @@ export default function LabSorotecaEntradaPage() {
       }
       focar()
     } catch (e) {
-      toast.error((e as Error).message)
+      toast.error(mensagemErro(e))
     }
   }
 
   const imprimir = async (e: EquipamentoSoroteca) => {
     setImprimindo(true)
-    try { toast.success(await imprimirEtiquetaEquipamento(e)) } catch (err) { toast.error((err as Error).message) } finally { setImprimindo(false); focar() }
+    try { toast.success(await imprimirEtiquetaEquipamento(e)) } catch (err) { toast.error(mensagemErro(err)) } finally { setImprimindo(false); focar() }
   }
 
   const guardar = async (equipamentoId: string, prateleiraId: string) => {
@@ -215,7 +215,7 @@ export default function LabSorotecaEntradaPage() {
       if (modoLote) setOutra(msg)
       else focar()
     } catch (e) {
-      toast.error((e as Error).message)
+      toast.error(mensagemErro(e))
     }
   }
 
@@ -362,7 +362,7 @@ export default function LabSorotecaEntradaPage() {
                       <p className="text-xs text-muted-foreground">Estantes em preenchimento:</p>
                       <div className="flex flex-wrap justify-center gap-2">
                         {emPreenchimento.map(e => (
-                          <Button key={e.id} size="sm" variant="outline" className="font-mono" onClick={() => void abrirEstante(e).catch(err => setErro({ texto: (err as Error).message })).finally(focar)}>
+                          <Button key={e.id} size="sm" variant="outline" className="font-mono" onClick={() => void abrirEstante(e).catch(err => setErro({ texto: mensagemErro(err) })).finally(focar)}>
                             {e.codigo} · {e.ocupadas}/{e.capacidade}
                           </Button>
                         ))}

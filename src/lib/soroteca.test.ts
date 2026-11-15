@@ -150,3 +150,41 @@ describe('linha do tempo', () => {
     expect(ev[3].linhas[0]).toBe('Status: Parcial (2 de 3 exames liberados)')
   })
 })
+
+describe('descarte de estante', () => {
+  it('situação: vencida só com todos vencidos; vencendo se algum venceu ou vence no aviso; vazia sem tubos', async () => {
+    const { situacaoDescarteEstante } = await import('./soroteca')
+    expect(situacaoDescarteEstante({ tubos: 3, vencidos: 3, vencendo: 0 })).toBe('vencida')
+    expect(situacaoDescarteEstante({ tubos: 3, vencidos: 1, vencendo: 0 })).toBe('vencendo')
+    expect(situacaoDescarteEstante({ tubos: 3, vencidos: 0, vencendo: 1 })).toBe('vencendo')
+    expect(situacaoDescarteEstante({ tubos: 3, vencidos: 0, vencendo: 0 })).toBe('no_prazo')
+    expect(situacaoDescarteEstante({ tubos: 0, vencidos: 0, vencendo: 0 })).toBe('vazia')
+  })
+
+  it('tubo pede "Descartar mesmo assim" com exame pendente, sem prazo ou dentro do prazo', async () => {
+    const { riscoDescarteTubo } = await import('./soroteca')
+    expect(riscoDescarteTubo({ validade: h(-1), pendentes: [] }, AGORA)).toEqual([])
+    expect(riscoDescarteTubo({ validade: h(-1), pendentes: ['Glicose', 'Ureia'] }, AGORA)).toEqual(['exame pendente: Glicose, Ureia'])
+    expect(riscoDescarteTubo({ validade: null, pendentes: [] }, AGORA)).toEqual(['sem prazo de retenção'])
+    expect(riscoDescarteTubo({ validade: '2026-11-20T12:00:00Z', pendentes: [] }, AGORA)).toEqual(['dentro do prazo (até 20/11/2026)'])
+  })
+
+  it('consulta mostra o último endereço do tubo descartado', async () => {
+    const { localizacaoTexto } = await import('./soroteca')
+    const base = { equipamento_nome: null, prateleira_nome: null, linha: null, coluna: null }
+    expect(localizacaoTexto({ ...base, status: 'descartada', ultimo_endereco: 'Geladeira 01 > Prateleira 2 > Estante E79002 > B05' }))
+      .toBe('Descartada · estava em Geladeira 01 > Prateleira 2 > Estante E79002 > B05')
+    expect(localizacaoTexto({ ...base, status: 'retirada', ultimo_endereco: null })).toBe('Retirada')
+  })
+})
+
+describe('mensagens de erro da Soroteca', () => {
+  it('mensagem crua do banco nunca aparece; a mensagem própria em português passa', async () => {
+    const { mensagemErro } = await import('@/hooks/useSoroteca')
+    expect(mensagemErro({ message: 'DELETE requires a WHERE clause', code: '21000' })).not.toMatch(/WHERE/)
+    expect(mensagemErro({ message: 'DELETE requires a WHERE clause' })).not.toMatch(/WHERE/)
+    expect(mensagemErro({ message: 'A estante E79002 está cheia', code: 'P0001' })).toBe('A estante E79002 está cheia')
+    expect(mensagemErro({ message: 'Amostra não encontrada', code: 'P0002' })).toBe('Amostra não encontrada')
+    expect(mensagemErro({ message: 'duplicate key value violates unique constraint', code: '23505' })).toBe('Essa posição acabou de ser ocupada. Bipe de novo.')
+  })
+})
