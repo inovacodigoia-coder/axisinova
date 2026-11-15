@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest'
 import { buildSampleCode, generateSampleHash } from '@/utils/orderHash'
 import {
   alertaValidade, bloqueioDoTubo, capacidadePrateleiras, enderecoAmostra, enderecoPosicao, erroPrateleiras, letraLinha, linhaDoTempo, prioridadeDescarte, primeiraLivre, rotuloPosicao, statusResultado,
+  descreverEventoEstante, situacaoEstanteTexto, type EventoEstante,
   erroCodigoEstante, erroRetirada, estanteDoCodigo, percentualOcupacao, podeRemoverNaEntrada, estantesNaPrateleira, proximaPosicaoEstante, sugerirCodigoEstante, tubosDoPedido, type AmostraSoroteca, type EquipamentoSoroteca, type PedidoLocalizado, type RastreioSoroteca,
 } from './soroteca'
 
