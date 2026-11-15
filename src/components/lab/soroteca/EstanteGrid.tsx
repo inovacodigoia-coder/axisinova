@@ -10,11 +10,14 @@ interface Props {
   amostras: AmostraSoroteca[]
   /** Última posição preenchida: pisca com borda destacada. */
   atual?: { linha: number; coluna: number } | null
+  /** Tubo selecionado pelo clique: borda de destaque. */
+  selecionada?: string | null
+  /** Clique num círculo ocupado (posição livre não faz nada). O clique não tira o foco do campo de bipe. */
   onAmostra?: (a: AmostraSoroteca) => void
 }
 
 /** Estante em círculos (A01…D16): cinza livre, azul liberado, amarelo parcial, vermelho sem resultado. */
-export function EstanteGrid({ grade, amostras, atual, onAmostra }: Props) {
+export function EstanteGrid({ grade, amostras, atual, selecionada, onAmostra }: Props) {
   const mapa = useMemo(() => {
     const m = new Map<string, AmostraSoroteca>()
     for (const a of amostras) if (a.status === 'armazenada' && a.prateleira_id === grade.id && a.linha && a.coluna) m.set(chavePosicao(a.linha, a.coluna), a)
@@ -33,19 +36,24 @@ export function EstanteGrid({ grade, amostras, atual, onAmostra }: Props) {
             const a = mapa.get(k) || null
             const rotulo = rotuloPosicao(l, c)
             const eAtual = !!a && atual?.linha === l && atual?.coluna === c
+            const eSel = !!a && !!selecionada && a.id === selecionada
             const circulo = (
               <button
                 key={`${k}:${a?.id ?? 'livre'}`}
                 type="button"
                 role="gridcell"
-                aria-label={a ? `${rotulo}: ${a.patient_name || 'paciente'}, amostra ${a.codigo_amostra}, ${STATUS_LABEL[a.status_resultado]}${eAtual ? ' (última preenchida)' : ''}` : `${rotulo}: livre`}
+                aria-label={a ? `${rotulo}: ${a.patient_name || 'paciente'}, amostra ${a.codigo_amostra}, ${STATUS_LABEL[a.status_resultado]}${eAtual ? ' (última preenchida)' : ''}${eSel ? ' (selecionado)' : ''}` : `${rotulo}: livre`}
+                aria-pressed={a && onAmostra ? eSel : undefined}
                 disabled={!a || !onAmostra}
+                onMouseDown={e => { if (onAmostra) e.preventDefault() }}
                 onClick={() => a && onAmostra?.(a)}
                 className={cn(
                   'flex items-center justify-center rounded-full border-2 font-semibold leading-none transition-colors disabled:cursor-default',
                   tamanho,
                   a ? cn(COR_CELULA[a.status_resultado], 'animate-in fade-in zoom-in-75 duration-500') : 'border-transparent bg-muted text-muted-foreground',
-                  eAtual && 'animate-pulse ring-4 ring-primary ring-offset-2 ring-offset-background',
+                  eAtual && !eSel && 'animate-pulse ring-4 ring-primary ring-offset-2 ring-offset-background',
+                  eSel && 'scale-110 border-foreground ring-4 ring-foreground/70 ring-offset-2 ring-offset-background',
+                  a && onAmostra && 'cursor-pointer hover:brightness-95',
                 )}
               >
                 {rotulo}
