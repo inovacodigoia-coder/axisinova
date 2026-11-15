@@ -17,7 +17,7 @@ import { buscarRastreioEstanteCompleto, useSorotecaEstanteRastreio } from '@/hoo
 import { LabReportHeader, type LabReportHeaderProps } from '@/components/lab/LabReportHeader'
 import { FolhaDescarteDialog, imprimirElemento, useCabecalhoLaboratorio } from '@/components/lab/soroteca/FolhaDescarte'
 import {
-  dataBR, dataHoraBR, descreverEventoEstante, EVENTOS_POR_PAGINA, situacaoEstanteTexto, TIPO_EVENTO_ESTANTE,
+  dataHoraBR, descreverEventoEstante, EVENTOS_POR_PAGINA, situacaoEstanteTexto, TIPO_EVENTO_ESTANTE,
   type CabecalhoEstante, type EventoEstante, type FiltrosRastreioEstante, type TipoEventoEstante,
 } from '@/lib/soroteca'
 
@@ -209,7 +209,7 @@ export function EstanteRastreioView({ estanteId, onAmostra }: { estanteId: strin
               <Button size="sm" variant="outline" disabled={pagina + 1 >= paginas} onClick={() => setPagina(p => p + 1)}>Próxima</Button>
             </div>
           )}
-          <p className="text-[11px] text-muted-foreground">Registrado no momento de cada ação, com o usuário logado. Ninguém pode editar ou apagar este histórico. Coleta em {dataBR(e.criada_em) === '—' ? '—' : 'datas no horário de Brasília'}.</p>
+          <p className="text-[11px] text-muted-foreground">Registrado no momento de cada ação, com o usuário logado. Ninguém pode editar ou apagar este histórico. Datas e horas no horário de Brasília.</p>
         </CardContent>
       </Card>
       <FolhaDescarteDialog alvo={folha ? { descarteId: folha } : null} reimpressao onClose={() => setFolha(null)} />
