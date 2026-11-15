@@ -117,14 +117,14 @@ describe('linha do tempo', () => {
         { exam_id: 'c', nome: 'LDL', status: 'pending', liberado_em: null, liberado_por: null },
       ],
       movimentos: [
-        { tipo: 'entrada', quando: h(-9), equipamento_nome: 'Geladeira 01', linha: 2, coluna: 7, status_resultado: 'em_analise', usuario_nome: 'Pedro Lima' },
+        { tipo: 'entrada', quando: h(-9), equipamento_nome: 'Geladeira 01', prateleira_nome: 'Prateleira 2', linha: 2, coluna: 7, status_resultado: 'em_analise', usuario_nome: 'Pedro Lima' },
         { tipo: 'retirada', quando: h(-2), de_equipamento_nome: 'Geladeira 01', de_linha: 2, de_coluna: 7, motivo: 'Consulta externa', usuario_nome: 'Maria' },
       ],
       laboratorio: null,
     } as unknown as RastreioSoroteca
     const ev = linhaDoTempo(r)
     expect(ev.map(e => e.tipo)).toEqual(['coleta', 'entrada', 'liberacao', 'liberacao', 'consulta'])
-    expect(ev[1].titulo).toBe('Armazenada em Geladeira 01 — B07')
+    expect(ev[1].titulo).toBe('Armazenada em Geladeira 01 > Prateleira 2 > B07')
     expect(ev[2].linhas[0]).toBe('Status: Parcial (1 de 3 exames liberados)')
     expect(ev[3].linhas[0]).toBe('Status: Parcial (2 de 3 exames liberados)')
   })
