@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from 'vitest'
 import { fireEvent, render, screen } from '@testing-library/react'
 import { SorotecaGrid } from './SorotecaGrid'
-import { PrateleiraAbas } from './PrateleiraAbas'
+import { EstanteGrid } from './EstanteGrid'
 import type { AmostraSoroteca } from '@/lib/soroteca'
 
 const amostra = (over: Partial<AmostraSoroteca>): AmostraSoroteca => ({
@@ -28,14 +28,11 @@ describe('mapa da soroteca', () => {
     expect(screen.getByRole('gridcell', { name: 'A03: livre' })).toBeInTheDocument()
   })
 
-  it('uma aba por prateleira, na ordem cadastrada', () => {
-    const onChange = vi.fn()
-    render(<PrateleiraAbas valor="p1" onChange={onChange} prateleiras={[
-      { id: 'p2', nome: 'Fundo', linhas: 1, colunas: 2, ordem: 2, ocupadas: 0 },
-      { id: 'p1', nome: 'Prateleira 1', linhas: 2, colunas: 2, ordem: 1, ocupadas: 1 },
-    ]} />)
-    expect(screen.getAllByRole('tab').map(t => t.textContent)).toEqual(['Prateleira 1 · 1/4', 'Fundo · 0/2'])
-    fireEvent.click(screen.getByRole('tab', { name: /Fundo/ }))
-    expect(onChange).toHaveBeenCalledWith('p2')
+  it('estante: círculo com o código da posição, cor do status e a última posição destacada', () => {
+    render(<EstanteGrid grade={{ id: 'p1', nome: '', linhas: 2, colunas: 4 }} amostras={[amostra({ linha: 1, coluna: 2, status_resultado: 'liberado' })]} atual={{ linha: 1, coluna: 2 }} />)
+    expect(screen.getAllByRole('gridcell')).toHaveLength(8)
+    const cheia = screen.getByRole('gridcell', { name: 'A02: Maria Teste, amostra 1-01-1-15, Liberado (última preenchida)' })
+    expect(cheia).toHaveTextContent('A02')
+    expect(screen.getByRole('gridcell', { name: 'B04: livre' })).toHaveTextContent('B04')
   })
 })

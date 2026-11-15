@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { supabase } from '@/integrations/supabase/client'
 import { useAuth } from '@/context/AuthContext'
-import type { AmostraSoroteca, EquipamentoSoroteca, PedidoLocalizado, PrateleiraForm, RastreioSoroteca } from '@/lib/soroteca'
+import type { AmostraSoroteca, EquipamentoSoroteca, PedidoLocalizado, RastreioSoroteca } from '@/lib/soroteca'
 
 const rpc = (nome: string, args?: Record<string, unknown>) => (supabase.rpc as any)(nome, args) as Promise<{ data: any; error: any }>
 
@@ -138,6 +138,7 @@ export interface ItemArmazenar {
   tubo_indice: number
   exame_ids: string[]
   tubo_nome: string
+  /** Estante (os tubos só ficam em estantes). */
   equipamento_id: string
   prateleira_id: string
   linha: number
@@ -155,10 +156,23 @@ export function useSorotecaAcoes() {
       depois(chamar<void>('soroteca_retirar', { p_amostra_id: id, p_motivo: motivo, p_observacao: observacao || null })),
     descartar: (ids: string[], motivo: string, responsavel: string, observacao: string) =>
       depois(chamar<number>('soroteca_descartar', { p_ids: ids, p_motivo: motivo, p_responsavel: responsavel, p_observacao: observacao || null })),
-    salvarEquipamento: (e: { id: string | null; nome: string; tipo: string; temperatura: string; workbench_id: string | null; prateleiras: PrateleiraForm[]; ativo: boolean }) =>
-      depois(chamar<string>('soroteca_equipamento_gravar', {
-        p_id: e.id, p_nome: e.nome, p_tipo: e.tipo, p_temperatura: e.temperatura || null, p_workbench_id: e.workbench_id,
-        p_prateleiras: e.prateleiras.map(p => ({ id: p.id || null, nome: p.nome.trim(), linhas: p.linhas, colunas: p.colunas })), p_ativo: e.ativo,
+    /** Cria (id null) ou edita uma estante: grade única linhas × colunas e etiqueta própria. */
+    salvarEstante: (e: { id: string | null; codigo: string; nome: string; linhas: number; colunas: number; workbench_id: string | null; ativo: boolean }) =>
+      depois(chamar<string>('soroteca_estante_gravar', {
+        p_id: e.id, p_codigo: e.codigo.trim().toUpperCase(), p_nome: e.nome.trim() || null, p_linhas: e.linhas, p_colunas: e.colunas,
+        p_workbench_id: e.workbench_id, p_ativo: e.ativo,
+      })),
+    /** Geladeira / freezer / outro: N prateleiras com X posições de estante. */
+    salvarArmario: (e: { id: string | null; nome: string; tipo: string; temperatura: string; prateleiras: number; posicoes: number; ativo: boolean }) =>
+      depois(chamar<string>('soroteca_armario_gravar', {
+        p_id: e.id, p_nome: e.nome, p_tipo: e.tipo, p_temperatura: e.temperatura || null, p_prateleiras: e.prateleiras, p_posicoes: e.posicoes, p_ativo: e.ativo,
+      })),
+    /** Estante guardada bipada de novo: sai da geladeira para receber tubos. */
+    abrirEstante: (id: string) => depois(chamar<{ aberta: boolean; de: string | null }>('soroteca_estante_abrir', { p_id: id })),
+    /** Finalizar: guarda a estante na prateleira escolhida. */
+    guardarEstante: (id: string, equipamentoId: string, prateleiraId: string) =>
+      depois(chamar<{ equipamento_nome: string; prateleira_nome: string; tubos: number }>('soroteca_estante_guardar', {
+        p_id: id, p_equipamento_id: equipamentoId, p_prateleira_id: prateleiraId,
       })),
     salvarConfig: (aviso: number, responsavel: string, retencao: Record<string, number>) =>
       depois(chamar<void>('soroteca_config_salvar', { p_aviso_dias: aviso, p_responsavel: responsavel || null, p_retencao: retencao })),
