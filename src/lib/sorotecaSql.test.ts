@@ -16,9 +16,11 @@ const HEM = '00000000-0000-4000-8000-0000000000b1'
 const BIO = '00000000-0000-4000-8000-0000000000b2'
 const PAC = '00000000-0000-4000-8000-0000000000c1'
 
-const MIG = (() => {
-  const f = readdirSync('drizzle/migrations').find(n => /_soroteca\.sql$/.test(n))
-  return f ? `drizzle/migrations/${f}` : (process.env.SOROTECA_SQL ?? '')
+// 0161 (base) + migrations seguintes da soroteca (ex.: prateleiras), na ordem
+const MIGS = (() => {
+  const fs = readdirSync('drizzle/migrations').filter(n => /^\d+_soroteca(_[a-z_]+)?\.sql$/.test(n)).sort().map(n => `drizzle/migrations/${n}`)
+  const extra = process.env.SOROTECA_SQL_EXTRA
+  return extra && !fs.some(f => f.endsWith(extra.split('/').pop()!)) ? [...fs, extra] : fs
 })()
 
 const como = async (uid: string) => db.exec(`SET test.uid = '${uid}';`)
@@ -71,7 +73,7 @@ beforeEach(async () => {
     INSERT INTO patients VALUES('${PAC}','Maria Teste','123.456.789-00','1990-01-13');
     INSERT INTO lab_workbenches VALUES('${HEM}','${C}','Hematologia',true,'interna'),('${BIO}','${C}','Bioquímica',true,'interna');
   `)
-  await db.exec(readFileSync(MIG, 'utf8'))
+  for (const m of MIGS) await db.exec(readFileSync(m, 'utf8'))
 })
 afterEach(async () => { await db.close() })
 
@@ -231,5 +233,66 @@ describe('Soroteca — armazenar, mover, retirar e descartar', () => {
     expect(await erro(`SELECT soroteca_equipamento_salvar($1, 'Geladeira 01', 'geladeira', NULL, NULL, 2, 5, true)`, [eq])).toMatch(/fora da nova grade/)
     expect(await erro(`SELECT soroteca_equipamento_salvar($1, 'Geladeira 01', 'geladeira', NULL, NULL, 4, 5, false)`, [eq])).toMatch(/antes de inativar/)
     expect(await erro(`SELECT soroteca_equipamento_salvar(NULL, 'geladeira 01 ', 'geladeira', NULL, NULL, 4, 5, true)`)).toMatch(/Já existe/)
+  })
+})
+
+describe('Soroteca — prateleiras', () => {
+  const gravar = async (id: string | null, prateleiras: object[], nome = 'Geladeira 01') =>
+    (await uma(`SELECT soroteca_equipamento_gravar($1, $2, 'geladeira', '2-8°C', $3, $4::jsonb, true) id`, [id, nome, BIO, JSON.stringify(prateleiras)])).id as string
+  const prats = async (eq: string) => (await rows(`SELECT id, nome, linhas, colunas, ordem FROM soroteca_prateleira WHERE equipamento_id = $1 ORDER BY ordem`, [eq]))
+  const naPrat = (order: string, idx: number, exames: string[], eq: string, prat: string | null, linha: number, coluna: number) =>
+    ({ ...item(order, idx, exames, eq, linha, coluna), prateleira_id: prat })
+
+  it('capacidade do equipamento é a soma das prateleiras e A01 existe em cada uma', async () => {
+    const o = await pedido('1-01', [exame('e1', BIO), exame('e2', HEM)])
+    await como(ADM)
+    const eq = await gravar(null, [{ nome: 'Prateleira 1', linhas: 2, colunas: 3 }, { nome: 'Fundo', linhas: 1, colunas: 2 }])
+    const [p1, p2] = await prats(eq)
+    expect(p2).toMatchObject({ nome: 'Fundo', ordem: 2 })
+    const e = (await uma(`SELECT soroteca_resumo() r`)).r.equipamentos[0]
+    expect(e.capacidade).toBe(8)
+    expect(e.prateleiras.map((p: any) => p.nome)).toEqual(['Prateleira 1', 'Fundo'])
+    expect(await erro(`SELECT soroteca_armazenar($1::jsonb)`, [JSON.stringify([item(o, 1, ['e1'], eq, 1, 1)])])).toMatch(/Escolha a prateleira/)
+    expect(await erro(`SELECT soroteca_armazenar($1::jsonb)`, [JSON.stringify([naPrat(o, 1, ['e1'], eq, p2.id, 2, 1)])])).toMatch(/fora da grade de Geladeira 01 > Fundo/)
+    await armazenar([naPrat(o, 1, ['e1'], eq, p1.id, 1, 1), naPrat(o, 2, ['e2'], eq, p2.id, 1, 1)])
+    const l = await amostras()
+    expect(l.map(a => a.prateleira_nome).sort()).toEqual(['Fundo', 'Prateleira 1'])
+    const r = (await uma(`SELECT soroteca_resumo() r`)).r.equipamentos[0]
+    expect(r.prateleiras.map((p: any) => p.ocupadas)).toEqual([1, 1])
+  })
+
+  it('mover entre prateleiras fica no histórico com a prateleira de origem e retirada libera', async () => {
+    const o = await pedido('1-01', [exame('e1', BIO)])
+    await como(ADM)
+    const eq = await gravar(null, [{ nome: 'Prateleira 1', linhas: 2, colunas: 2 }, { nome: 'Prateleira 2', linhas: 2, colunas: 2 }])
+    const [p1, p2] = await prats(eq)
+    await armazenar([naPrat(o, 1, ['e1'], eq, p1.id, 1, 1)])
+    expect(await erro(`SELECT soroteca_armazenar($1::jsonb)`, [JSON.stringify([naPrat(o, 1, ['e1'], eq, p2.id, 1, 1)])])).toBe('')
+    const id = (await amostras())[0].id
+    await db.query(`SELECT soroteca_retirar($1, 'Consulta externa', '')`, [id])
+    expect((await amostras())[0]).toMatchObject({ status: 'retirada', prateleira_id: null })
+    const m = (await uma(`SELECT soroteca_rastreio($1) r`, [id])).r.movimentos
+    expect(m[0]).toMatchObject({ tipo: 'entrada', prateleira_nome: 'Prateleira 1', linha: 1, coluna: 1 })
+    expect(m[1]).toMatchObject({ tipo: 'movimentacao', prateleira_nome: 'Prateleira 2', de_prateleira_nome: 'Prateleira 1' })
+    expect(m[2]).toMatchObject({ tipo: 'retirada', de_prateleira_nome: 'Prateleira 2' })
+  })
+
+  it('prateleira com amostra não pode ser apagada nem encolher; vazia pode', async () => {
+    const o = await pedido('1-01', [exame('e1', BIO)])
+    await como(ADM)
+    const eq = await gravar(null, [{ nome: 'Prateleira 1', linhas: 3, colunas: 3 }, { nome: 'Prateleira 2', linhas: 2, colunas: 2 }])
+    const [p1, p2] = await prats(eq)
+    await armazenar([naPrat(o, 1, ['e1'], eq, p1.id, 3, 3)])
+    expect(await erro(`SELECT soroteca_equipamento_gravar($1, 'Geladeira 01', 'geladeira', NULL, NULL, $2::jsonb, true)`,
+      [eq, JSON.stringify([{ id: p2.id, nome: 'Prateleira 2', linhas: 2, colunas: 2 }])])).toMatch(/Prateleira 1 tem 1 amostra/)
+    expect(await erro(`SELECT soroteca_equipamento_gravar($1, 'Geladeira 01', 'geladeira', NULL, NULL, $2::jsonb, true)`,
+      [eq, JSON.stringify([{ id: p1.id, nome: 'Prateleira 1', linhas: 2, colunas: 3 }])])).toMatch(/Prateleira 1 tem 1 amostra|fora da nova grade/)
+    await gravar(eq, [{ id: p1.id, nome: 'Topo', linhas: 3, colunas: 3 }, { nome: 'Nova', linhas: 1, colunas: 1 }])
+    expect((await prats(eq)).map(p => p.nome)).toEqual(['Topo', 'Nova'])
+    expect((await amostras())[0].prateleira_nome).toBe('Topo')
+    expect(await erro(`SELECT soroteca_equipamento_gravar($1, 'Geladeira 01', 'geladeira', NULL, NULL, $2::jsonb, true)`,
+      [eq, JSON.stringify([{ id: p1.id, nome: 'Topo', linhas: 3, colunas: 3 }, { nome: 'topo ', linhas: 1, colunas: 1 }])])).toMatch(/mesmo nome/)
+    expect(await erro(`SELECT soroteca_equipamento_gravar($1, 'Geladeira 01', 'geladeira', NULL, NULL, '[]'::jsonb, true)`, [eq])).toMatch(/pelo menos uma prateleira/)
+    expect(await erro(`SELECT soroteca_equipamento_salvar($1, 'Geladeira 01', 'geladeira', NULL, NULL, 4, 4, true)`, [eq])).toMatch(/várias prateleiras/)
   })
 })
