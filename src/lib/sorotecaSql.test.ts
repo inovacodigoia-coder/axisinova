@@ -107,7 +107,7 @@ describe('Soroteca — permissões', () => {
     await como(NADA)
     expect(await erro(`SELECT soroteca_resumo()`)).toMatch(/Sem permissão/)
     await como(VER)
-    expect((await uma(`SELECT soroteca_acesso() a`)).a).toEqual({ ver: true, armazenar: false, descartar: false, configurar: false })
+    expect((await uma(`SELECT soroteca_acesso() a`)).a).toEqual({ ver: true, armazenar: false, descartar: false, configurar: false, modulo_ativo: true, pode_ativar: false })
     expect(await erro(`SELECT soroteca_armazenar($1::jsonb)`, [JSON.stringify([item(o, 1, ['e1'], eq, 1, 1)])])).toMatch(/Sem permissão/)
     await como(ARM)
     expect((await uma(`SELECT soroteca_acesso() a`)).a.ver).toBe(true)
