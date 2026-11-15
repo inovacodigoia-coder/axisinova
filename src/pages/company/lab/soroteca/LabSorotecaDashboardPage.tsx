@@ -1,18 +1,32 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Link, useNavigate, useSearchParams } from 'react-router-dom'
-import { AlertTriangle, ArrowRight, Beaker, Maximize2, Package, PackageCheck, Plus, Trash2 } from 'lucide-react'
+import { AlertTriangle, ArrowRight, Beaker, Loader2, Package, PackageCheck, Plus, Printer, Refrigerator, Rows3, Trash2 } from 'lucide-react'
+import { toast } from 'sonner'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog'
+import { cn } from '@/lib/utils'
 import { useSorotecaAcesso, useSorotecaAmostras, useSorotecaResumo } from '@/hooks/useSoroteca'
 import { SorotecaGrid, SorotecaLegenda } from '@/components/lab/soroteca/SorotecaGrid'
 import { AmostraDetalheDialog, SemAcessoSoroteca } from '@/components/lab/soroteca/SorotecaDialogs'
-import { PrateleiraAbas, prateleiraAtual } from '@/components/lab/soroteca/PrateleiraAbas'
 import { SorotecaModuloCard } from '@/components/lab/soroteca/SorotecaModuloCard'
-import { enderecoPosicao, gradeComprimida, type EquipamentoSoroteca, type PosicaoSoroteca } from '@/lib/soroteca'
+import { imprimirEtiquetaEquipamento } from '@/lib/sorotecaEtiqueta'
+import { ehArmario, ehEstante, estantesNaPrateleira, gradeDaEstante, localDaEstante, prateleirasDe, type EquipamentoSoroteca } from '@/lib/soroteca'
 
 const fmt = (n: number | undefined) => (n ?? 0).toLocaleString('pt-BR')
+
+/** Botão de uma estante: código e ocupação (abre o mapa da estante). */
+function ChipEstante({ e, onClick }: { e: EquipamentoSoroteca; onClick: () => void }) {
+  const pct = e.capacidade ? Math.round((e.ocupadas / e.capacidade) * 100) : 0
+  return (
+    <button type="button" onClick={onClick} className="w-28 rounded-lg border border-border bg-card p-2 text-left shadow-sm transition-colors hover:border-primary hover:bg-primary/5">
+      <span className="block font-mono text-sm font-semibold">{e.codigo}</span>
+      <span className="block text-[11px] text-muted-foreground">{fmt(e.ocupadas)}/{fmt(e.capacidade)} tubos</span>
+      <span className="mt-1 block h-1.5 overflow-hidden rounded-full bg-muted"><span className="block h-full bg-primary" style={{ width: `${pct}%` }} /></span>
+    </button>
+  )
+}
 
 export default function LabSorotecaDashboardPage() {
   const acesso = useSorotecaAcesso()
@@ -22,48 +36,28 @@ export default function LabSorotecaDashboardPage() {
   const navigate = useNavigate()
   const [params, setParams] = useSearchParams()
   const [detalhe, setDetalhe] = useState<string | null>(null)
-  const [expandido, setExpandido] = useState<string | null>(null)
-  const [sugestao, setSugestao] = useState<PosicaoSoroteca | null>(null)
-  const [pratSel, setPratSel] = useState<Record<string, string>>({})
+  const [aberta, setAberta] = useState<string | null>(null)
+  const [imprimindo, setImprimindo] = useState(false)
   const destaque = params.get('amostra')
 
-  // Vindo de "Ver posição no mapa" (Consulta): abre o equipamento em tela cheia com a célula destacada
-  useEffect(() => {
-    const eq = params.get('equipamento')
-    const pr = params.get('prateleira')
-    if (eq) setExpandido(eq)
-    if (eq && pr) setPratSel(m => ({ ...m, [eq]: pr }))
-  }, [params])
+  // Vindo de "Ver no mapa" (Consulta): abre a estante com a amostra destacada
+  useEffect(() => { const eq = params.get('equipamento'); if (eq) setAberta(eq) }, [params])
 
   const amostras = amostrasQ.data?.amostras ?? []
   const avisoDias = resumo.data?.aviso_dias ?? 7
-  const equipamentos = useMemo(() => (resumo.data?.equipamentos ?? []).filter(e => e.ativo), [resumo.data])
-  const eqExpandido = equipamentos.find(e => e.id === expandido) || null
+  const equipamentos = useMemo(() => resumo.data?.equipamentos ?? [], [resumo.data])
+  const armarios = equipamentos.filter(e => ehArmario(e) && e.ativo)
+  const foraDaGeladeira = equipamentos.filter(e => ehEstante(e) && e.ativo && e.situacao !== 'armazenada')
+  const estanteAberta = equipamentos.find(e => e.id === aberta && ehEstante(e)) || null
+  const gradeAberta = gradeDaEstante(estanteAberta)
 
   if (acesso === null) return <Skeleton className="h-96 rounded-2xl" />
   if (!pode) return <SemAcessoSoroteca />
 
-  const clicar = (eq: EquipamentoSoroteca, prateleiraId: string) => (linha: number, coluna: number, a: { id: string } | null) => {
-    if (a) { setDetalhe(a.id); return }
-    setSugestao(s => (s && s.prateleira_id === prateleiraId && s.linha === linha && s.coluna === coluna ? null : { equipamento_id: eq.id, prateleira_id: prateleiraId, linha, coluna }))
-  }
-  const pct = (e: EquipamentoSoroteca) => (e.capacidade ? Math.round((e.ocupadas / e.capacidade) * 100) : 0)
-  const eqSugestao = sugestao ? equipamentos.find(e => e.id === sugestao.equipamento_id) : null
-  const pratSugestao = sugestao && eqSugestao ? eqSugestao.prateleiras.find(p => p.id === sugestao.prateleira_id) : null
-
-  /** Abas das prateleiras + grade da prateleira escolhida. */
-  const mapa = (eq: EquipamentoSoroteca, grande: boolean) => {
-    const pr = prateleiraAtual(eq.prateleiras, pratSel[eq.id])
-    return (
-      <div className="space-y-2">
-        <PrateleiraAbas prateleiras={eq.prateleiras} valor={pr?.id ?? null} onChange={id => setPratSel(m => ({ ...m, [eq.id]: id }))} />
-        {pr ? (
-          <SorotecaGrid prateleira={pr} equipamentoNome={eq.nome} amostras={amostras} avisoDias={avisoDias} destaqueId={destaque}
-            comprimida={grande ? false : gradeComprimida(pr.linhas, pr.colunas)} grande={grande}
-            sugestao={sugestao?.prateleira_id === pr.id ? sugestao : null} onCelula={clicar(eq, pr.id)} />
-        ) : <p className="py-6 text-center text-sm text-muted-foreground">Sem prateleiras cadastradas.</p>}
-      </div>
-    )
+  const fechar = () => { setAberta(null); if (params.get('equipamento')) setParams({}, { replace: true }) }
+  const imprimir = async (e: EquipamentoSoroteca) => {
+    setImprimindo(true)
+    try { toast.success(await imprimirEtiquetaEquipamento(e)) } catch (err) { toast.error((err as Error).message) } finally { setImprimindo(false) }
   }
 
   const kpis = [
@@ -113,16 +107,6 @@ export default function LabSorotecaDashboardPage() {
         </div>
       )}
 
-      {sugestao && eqSugestao && (
-        <div className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-success/40 bg-success/10 p-3 text-sm">
-          <span>Posição <strong>{enderecoPosicao(eqSugestao.nome, pratSugestao?.nome, sugestao.linha, sugestao.coluna)}</strong> marcada como sugestão para a próxima armazenagem.</span>
-          <div className="flex gap-2">
-            <Button variant="ghost" size="sm" onClick={() => setSugestao(null)}>Limpar</Button>
-            {acesso.armazenar && <Button size="sm" asChild><Link to={`/app/soroteca/entrada?equipamento=${sugestao.equipamento_id}&prateleira=${sugestao.prateleira_id}&linha=${sugestao.linha}&coluna=${sugestao.coluna}`}>Armazenar aqui</Link></Button>}
-          </div>
-        </div>
-      )}
-
       {resumo.isLoading || amostrasQ.isLoading ? (
         <div className="grid gap-6 lg:grid-cols-2"><Skeleton className="h-72 rounded-2xl" /><Skeleton className="h-72 rounded-2xl" /></div>
       ) : resumo.error || amostrasQ.error ? (
@@ -132,40 +116,79 @@ export default function LabSorotecaDashboardPage() {
           <CardContent className="flex flex-col items-center gap-3 py-12 text-center">
             <Package className="h-10 w-10 text-muted-foreground" />
             <p className="font-semibold">Nenhum equipamento cadastrado</p>
-            <p className="max-w-md text-sm text-muted-foreground">Cadastre geladeiras, freezers ou estantes com suas prateleiras (linhas e colunas) para ver o mapa das posições.</p>
+            <p className="max-w-md text-sm text-muted-foreground">Cadastre as geladeiras ou freezers (prateleiras e quantas estantes cabem) e as estantes (linhas × colunas) para ver o mapa.</p>
             <Button asChild><Link to="/app/soroteca/estrutura"><Plus className="mr-1.5 h-4 w-4" />Cadastrar equipamento</Link></Button>
           </CardContent>
         </Card>
       ) : (
-        <div className="grid gap-6 xl:grid-cols-2">
-          {equipamentos.map(eq => (
-            <Card key={eq.id}>
-              <CardHeader className="flex flex-row items-start justify-between gap-3 space-y-0">
-                <div>
-                  <CardTitle className="text-base uppercase">{eq.nome}{eq.bancada_nome ? ` — ${eq.bancada_nome}` : ''} ({pct(eq)}%)</CardTitle>
-                  <p className="text-xs text-muted-foreground">{fmt(eq.ocupadas)} de {fmt(eq.capacidade)} posições · {eq.prateleiras.length} {eq.prateleiras.length === 1 ? 'prateleira' : 'prateleiras'}{eq.temperatura ? ` · ${eq.temperatura}` : ''}</p>
-                </div>
-                <Button variant="outline" size="sm" onClick={() => setExpandido(eq.id)}><Maximize2 className="mr-1.5 h-3.5 w-3.5" />Expandir mapa</Button>
+        <div className="space-y-6">
+          {!!foraDaGeladeira.length && (
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2 text-base"><Rows3 className="h-4 w-4 text-primary" />Estantes em preenchimento ({foraDaGeladeira.length})</CardTitle>
+                <p className="text-xs text-muted-foreground">Fora da geladeira: ainda recebendo tubos.</p>
               </CardHeader>
-              <CardContent className="space-y-3">
-                {mapa(eq, false)}
-                <SorotecaLegenda />
+              <CardContent className="flex flex-wrap gap-2">
+                {foraDaGeladeira.map(e => <ChipEstante key={e.id} e={e} onClick={() => setAberta(e.id)} />)}
               </CardContent>
             </Card>
-          ))}
+          )}
+          <div className="grid gap-6 xl:grid-cols-2">
+            {armarios.map(g => {
+              const pct = g.capacidade ? Math.round((g.ocupadas / g.capacidade) * 100) : 0
+              return (
+                <Card key={g.id}>
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2 text-base uppercase"><Refrigerator className="h-4 w-4 text-info" />{g.nome} ({pct}%)</CardTitle>
+                    <p className="text-xs text-muted-foreground">{fmt(g.ocupadas)} de {fmt(g.capacidade)} posições de estante{g.temperatura ? ` · ${g.temperatura}` : ''}</p>
+                  </CardHeader>
+                  <CardContent className="space-y-3">
+                    {prateleirasDe(g).map(p => {
+                      const cap = p.linhas * p.colunas
+                      const lista = estantesNaPrateleira(equipamentos, p.id)
+                      return (
+                        <div key={p.id} className="rounded-lg bg-muted/40 p-3">
+                          <p className="mb-2 text-xs font-semibold text-muted-foreground">{p.nome} · {lista.length}/{cap} estantes</p>
+                          <div className="flex flex-wrap gap-2">
+                            {lista.map(e => <ChipEstante key={e.id} e={e} onClick={() => setAberta(e.id)} />)}
+                            {cap <= 12 && Array.from({ length: Math.max(0, cap - lista.length) }, (_, i) => (
+                              <span key={`v${i}`} className="flex h-[62px] w-28 items-center justify-center rounded-lg border border-dashed border-border text-[11px] text-muted-foreground">Livre</span>
+                            ))}
+                          </div>
+                        </div>
+                      )
+                    })}
+                  </CardContent>
+                </Card>
+              )
+            })}
+          </div>
         </div>
       )}
       {amostrasQ.data?.limitado && <p className="text-xs text-warning">Mostrando as primeiras 5.000 amostras armazenadas.</p>}
 
-      <Dialog open={!!eqExpandido} onOpenChange={o => { if (!o) { setExpandido(null); if (params.get('equipamento')) setParams({}, { replace: true }) } }}>
-        <DialogContent className="h-[95vh] max-w-[95vw] overflow-auto">
-          {eqExpandido && (
+      <Dialog open={!!estanteAberta} onOpenChange={o => { if (!o) fechar() }}>
+        <DialogContent className="max-h-[95vh] max-w-[95vw] overflow-auto">
+          {estanteAberta && (
             <>
               <DialogHeader>
-                <DialogTitle className="uppercase">{eqExpandido.nome}{eqExpandido.bancada_nome ? ` — ${eqExpandido.bancada_nome}` : ''} ({pct(eqExpandido)}%)</DialogTitle>
-                <DialogDescription>{fmt(eqExpandido.ocupadas)} de {fmt(eqExpandido.capacidade)} posições ocupadas. Escolha a prateleira na aba e clique numa amostra para ver os detalhes.</DialogDescription>
+                <DialogTitle>{estanteAberta.nome} — {fmt(estanteAberta.ocupadas)}/{fmt(estanteAberta.capacidade)} tubos</DialogTitle>
+                <DialogDescription>{localDaEstante(estanteAberta) ? `Guardada em ${localDaEstante(estanteAberta)}` : 'Em preenchimento (fora da geladeira)'}{estanteAberta.bancada_nome ? ` · ${estanteAberta.bancada_nome}` : ''}. Clique numa amostra para ver os detalhes.</DialogDescription>
               </DialogHeader>
-              {mapa(eqExpandido, true)}
+              <div className="flex flex-wrap gap-2">
+                {(acesso.armazenar || acesso.configurar) && (
+                  <Button variant="outline" size="sm" onClick={() => imprimir(estanteAberta)} disabled={imprimindo}>
+                    {imprimindo ? <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" /> : <Printer className="mr-1.5 h-3.5 w-3.5" />}Reimprimir etiqueta
+                  </Button>
+                )}
+                {acesso.armazenar && <Button size="sm" asChild><Link to={`/app/soroteca/entrada?estante=${estanteAberta.id}`}><PackageCheck className="mr-1.5 h-3.5 w-3.5" />Abrir na Entrada</Link></Button>}
+              </div>
+              <div className={cn('rounded-lg bg-muted/40 p-3')}>
+                {gradeAberta ? (
+                  <SorotecaGrid prateleira={gradeAberta} equipamentoNome={estanteAberta.nome} amostras={amostras} avisoDias={avisoDias} destaqueId={destaque}
+                    comprimida={false} grande onCelula={(_l, _c, a) => { if (a) setDetalhe(a.id) }} />
+                ) : <p className="py-6 text-center text-sm text-muted-foreground">Estante sem grade cadastrada.</p>}
+              </div>
               <SorotecaLegenda />
             </>
           )}
