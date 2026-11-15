@@ -54,6 +54,8 @@ beforeEach(async () => {
     CREATE TABLE companies(id uuid PRIMARY KEY, sequence_id int);
     CREATE TABLE profiles(id uuid PRIMARY KEY, company_id uuid, role text, full_name text);
     CREATE FUNCTION get_user_company_id(u uuid) RETURNS uuid LANGUAGE sql AS $$ SELECT company_id FROM profiles WHERE id=u $$;
+    CREATE SCHEMA private;
+    CREATE FUNCTION private.is_super_admin() RETURNS boolean LANGUAGE sql AS $$ SELECT EXISTS(SELECT 1 FROM profiles WHERE id=auth.uid() AND role='super_admin') $$;
     CREATE FUNCTION is_company_manager(u uuid) RETURNS boolean LANGUAGE sql AS $$ SELECT EXISTS(SELECT 1 FROM profiles WHERE id=u AND role='company_admin') $$;
     CREATE TABLE access_profiles(id text PRIMARY KEY, company_id uuid, permissions jsonb, is_active boolean DEFAULT true, name text);
     CREATE TABLE company_sectors(id uuid PRIMARY KEY DEFAULT gen_random_uuid(), is_active boolean DEFAULT true, allowed_profile_ids text[]);
@@ -323,29 +325,34 @@ describe('Soroteca — módulo por empresa', () => {
   const TI = '00000000-0000-4000-8000-000000000016'
   const desligar = () => db.exec(`UPDATE soroteca_modulo SET ativo = false WHERE company_id = '${C}'`)
 
-  it('desativado: some para os perfis da empresa, mas TI/Administração e o administrador continuam vendo', async () => {
+  it('desativado: some para todos da empresa, inclusive administrador e TI – Administração', async () => {
     await db.exec(`
       INSERT INTO profiles VALUES('${TI}','${C}','biochemist','Tiago TI');
-      INSERT INTO access_profiles VALUES('p_ti','${C}','{"soroteca":["soroteca.ver"]}', true, 'TI – Administração');
+      INSERT INTO access_profiles VALUES('p_ti','${C}','{"soroteca":["soroteca.ver","soroteca.configurar"]}', true, 'TI – Administração');
       INSERT INTO company_sectors(id, allowed_profile_ids) VALUES('00000000-0000-4000-8000-0000000000f3','{p_ti}');
       INSERT INTO sector_users VALUES('${TI}','00000000-0000-4000-8000-0000000000f3');`)
     await desligar()
-    await como(VER)
-    expect((await uma(`SELECT soroteca_acesso() a`)).a).toMatchObject({ ver: false, modulo_ativo: false, pode_ativar: false })
-    expect(await erro(`SELECT soroteca_resumo()`)).toMatch(/Sem permissão/)
-    await como(ARM)
-    expect((await uma(`SELECT soroteca_acesso() a`)).a.armazenar).toBe(false)
-    await como(TI)
-    expect((await uma(`SELECT soroteca_acesso() a`)).a).toMatchObject({ ver: true, pode_ativar: true, modulo_ativo: false })
-    await como(ADM)
-    expect((await uma(`SELECT soroteca_acesso() a`)).a).toMatchObject({ ver: true, pode_ativar: true })
+    for (const u of [VER, ARM, TI, ADM]) {
+      await como(u)
+      expect((await uma(`SELECT soroteca_acesso() a`)).a).toMatchObject({ ver: false, armazenar: false, configurar: false, modulo_ativo: false, pode_ativar: false })
+      expect(await erro(`SELECT soroteca_resumo()`)).toMatch(/Sem permissão/)
+    }
   })
 
-  it('só TI/Administração ativa ou desativa, e vale só para a própria empresa', async () => {
+  it('empresa sem registro do módulo começa desativada, até para o administrador', async () => {
+    await como(ADM2)
+    expect((await uma(`SELECT soroteca_acesso() a`)).a).toMatchObject({ ver: false, modulo_ativo: false, pode_ativar: false })
+  })
+
+  it('a própria empresa não liga nem desliga; só o Super Admin', async () => {
+    const SA = '00000000-0000-4000-8000-000000000017'
+    await db.exec(`INSERT INTO profiles VALUES('${SA}','${C}','super_admin','Super')`)
     await desligar()
-    await como(ARM)
-    expect(await erro(`SELECT soroteca_modulo_definir(true)`)).toMatch(/Só TI\/Administração/)
-    await como(ADM)
+    for (const u of [ARM, ADM]) {
+      await como(u)
+      expect(await erro(`SELECT soroteca_modulo_definir(true)`)).toMatch(/Só o Super Admin/)
+    }
+    await como(SA)
     await db.query(`SELECT soroteca_modulo_definir(true)`)
     await como(VER)
     expect((await uma(`SELECT soroteca_acesso() a`)).a).toMatchObject({ ver: true, modulo_ativo: true })
