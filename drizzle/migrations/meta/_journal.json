@@ -1205,6 +1205,13 @@
       "when": 1794755327388,
       "tag": "0171_soroteca_rastreio_estante",
       "breakpoints": true
+    },
+    {
+      "idx": 172,
+      "version": "7",
+      "when": 1794755389479,
+      "tag": "0172_soroteca_estante_historico",
+      "breakpoints": true
     }
   ]
 }
