@@ -414,6 +414,8 @@ export interface ResumoDia {
   urgTat: number | null; rotTat: number | null; urgNoPrazoPct: number | null
   horaPico: { hora: number; total: number } | null
   rejeicoes: number; motivoTop: { nome: string; total: number } | null
+  taxaRejeicao: number | null
+  indiceHemolise: number | null
   criticos: number
 }
 
@@ -436,8 +438,24 @@ export function resumoDoDia(exames: ExameRel[], ymd: string, criticos: number[])
     liberados: k.liberados, urgTat: k.urgTat, rotTat: k.rotTat, urgNoPrazoPct: k.urgNoPrazoPct,
     horaPico: pico ? { hora: pico[0], total: pico[1] } : null,
     rejeicoes: rej.total, motivoTop: rej.motivoTop,
+    taxaRejeicao: rej.taxa, indiceHemolise: rej.indiceHemolise,
     criticos: criticos.filter(t => t >= ini && t <= fim).length,
   }
+}
+
+/** Liberados e TAT médio por bancada interna no dia (semáforo pelas metas de rotina). */
+export function porBancadaDoDia(exames: ExameRel[], ymd: string) {
+  const ini = inicioDiaSP(ymd), fim = fimDiaSP(ymd)
+  const m = new Map<string, { n: number; tats: number[] }>()
+  for (const e of exames) {
+    if (e.apoio || !dentro(e.liberadoEm, ini, fim)) continue
+    const g = m.get(e.bancadaId) || { n: 0, tats: [] }
+    g.n++
+    const t = tatRel(e)
+    if (t !== null) g.tats.push(t)
+    m.set(e.bancadaId, g)
+  }
+  return [...m.entries()].map(([bancadaId, g]) => ({ bancadaId, liberados: g.n, tatMedio: media(g.tats) }))
 }
 
 const liberadosEntre = (exames: ExameRel[], a: number, b: number) => exames.filter(e => !e.apoio && dentro(e.liberadoEm, a, b)).length

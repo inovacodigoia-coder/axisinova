@@ -75,7 +75,7 @@ function AbasRelatorios({ visaoGeral }: { visaoGeral: ReactNode }) {
           <TabsContent value="rejeicoes" className="mt-0">
             {corpoPeriodo(<RejeicoesTab exames={exames} janela={janela} filtros={filtros} setFiltros={mudarFiltros} bancadas={bancadasFiltro} nomeBancada={nomeBancada} rotuloPeriodo={rotuloPeriodo} />)}
           </TabsContent>
-          <TabsContent value="resumo" className="mt-0"><ResumoDiaTab bancadasInternas={idsInternos} /></TabsContent>
+          <TabsContent value="resumo" className="mt-0"><ResumoDiaTab bancadasInternas={idsInternos} ordemBancadas={internas.map((w: any) => w.id)} nomeBancada={nomeBancada} /></TabsContent>
         </>
       )}
     </Tabs>
