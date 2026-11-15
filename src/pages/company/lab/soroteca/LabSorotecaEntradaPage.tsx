@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
 import { toast } from 'sonner'
-import { CheckCircle2, Layers, Loader2, Lock, MinusCircle, PackageCheck, Plus, Printer, RotateCcw, Rows3, ScanBarcode, Trash2, X } from 'lucide-react'
+import { AlertTriangle, CheckCircle2, Layers, Loader2, Lock, MinusCircle, PackageCheck, Plus, Printer, RotateCcw, Rows3, ScanBarcode, Trash2, X } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -23,7 +23,7 @@ import { DescartarEstanteDialog } from '@/components/lab/soroteca/DescarteEstant
 import { imprimirEtiquetaEquipamento } from '@/lib/sorotecaEtiqueta'
 import {
   bloqueioDoTubo, ehEstante, enderecoGuardado, erroCodigoEstante, estanteDoCodigo, gradeDaEstante, localDaEstante, ocupadasDo,
-  percentualOcupacao, podeRemoverNaEntrada, proximaPosicaoEstante, rotuloPosicao, sugerirCodigoEstante, tubosDoPedido,
+  percentualOcupacao, podeRemoverNaEntrada, proximaPosicaoEstante, rotuloPosicao, sugerirCodigoEstante, tubosDoPedido, tubosQueBloqueiamFinalizar,
   type AmostraSoroteca, type EquipamentoSoroteca, type PedidoLocalizado, type TuboDoPedido,
 } from '@/lib/soroteca'
 
@@ -77,6 +77,16 @@ export default function LabSorotecaEntradaPage() {
   const preenchidas = grade ? ocupadasDo(grade.id, visiveis).size : 0
   const total = grade ? grade.linhas * grade.colunas : 0
   const emPreenchimento = equipamentos.filter(e => ehEstante(e) && e.ativo && e.situacao !== 'armazenada')
+  /** Tubos com exame ainda não liberado: travam o Finalizar até liberar ou sair da estante. */
+  const bloqueadores = useMemo(() => tubosQueBloqueiamFinalizar(grade?.id, visiveis), [grade?.id, visiveis])
+  const temBloqueio = bloqueadores.length > 0
+  const { refetch: recarregarAmostras } = amostrasQ
+  // enquanto houver tubo pendente, confere a liberação com mais frequência para o botão habilitar sozinho
+  useEffect(() => {
+    if (!temBloqueio) return
+    const t = setInterval(() => { void recarregarAmostras() }, 20_000)
+    return () => clearInterval(t)
+  }, [temBloqueio, recarregarAmostras])
 
   // estado mais recente para a fila de bipes (leitor dispara vários códigos seguidos)
   const atual = useRef({ equipamentos, estante, visiveis })
@@ -408,9 +418,21 @@ export default function LabSorotecaEntradaPage() {
             <Progress value={pct} className="h-2.5 bg-muted" aria-label="Posições preenchidas" />
           </div>
 
-          <Button size="lg" className="w-full bg-info text-info-foreground hover:bg-info/90" disabled={!estante || preenchidas === 0} onClick={() => setFinalizando(true)}>
+          <Button size="lg" className="w-full bg-info text-info-foreground hover:bg-info/90" disabled={!estante || preenchidas === 0 || temBloqueio} onClick={() => setFinalizando(true)}>
             <PackageCheck className="mr-2 h-5 w-5" />Finalizar
           </Button>
+          {estante && temBloqueio && (
+            <div className="space-y-1.5 rounded-md border-2 border-warning/60 bg-warning/10 p-3 text-sm" role="alert">
+              <p className="flex items-start gap-1.5 font-medium text-warning">
+                <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />Há amostra(s) com exame pendente nesta estante. Aguarde ou remova-as antes de finalizar.
+              </p>
+              <ul className="max-h-40 space-y-0.5 overflow-y-auto text-xs">
+                {bloqueadores.map(b => (
+                  <li key={b.id} className="flex justify-between gap-2"><span className="font-mono font-semibold">{b.codigo}</span><span>{b.status}</span></li>
+                ))}
+              </ul>
+            </div>
+          )}
         </div>
 
         {/* Painel direito: grade da estante */}
