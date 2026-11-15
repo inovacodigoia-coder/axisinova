@@ -34,9 +34,9 @@ async function chamar<T>(nome: string, args?: Record<string, unknown>): Promise<
 
 export interface AcessoSoroteca {
   ver: boolean; armazenar: boolean; descartar: boolean; configurar: boolean
-  /** Módulo ligado para a empresa (desligado: só TI/Administração continua vendo). */
+  /** Módulo ligado para a empresa (desligado: ninguém da empresa vê, nem o administrador). */
   modulo_ativo: boolean
-  /** TI/Administração: pode ligar/desligar o módulo da empresa. */
+  /** Só o Super Admin pode ligar/desligar o módulo da empresa. */
   pode_ativar: boolean
 }
 
@@ -67,7 +67,7 @@ export function useSorotecaAcesso(): AcessoSoroteca | null {
   return acesso
 }
 
-/** Liga/desliga a Soroteca da empresa (só TI/Administração) e atualiza menu e telas. */
+/** Liga/desliga a Soroteca da empresa (só Super Admin) e atualiza menu e telas. */
 export async function definirModuloSoroteca(ativo: boolean) {
   await chamar<boolean>('soroteca_modulo_definir', { p_ativo: ativo })
   window.dispatchEvent(new Event(EVENTO_ACESSO))
