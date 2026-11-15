@@ -1177,6 +1177,13 @@
       "when": 1794746803195,
       "tag": "0167_soroteca_modulo_so_ativas",
       "breakpoints": true
+    },
+    {
+      "idx": 168,
+      "version": "7",
+      "when": 1794748286741,
+      "tag": "0168_lab_painel_modulo",
+      "breakpoints": true
     }
   ]
 }
