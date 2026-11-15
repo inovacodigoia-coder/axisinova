@@ -682,3 +682,134 @@ describe('Soroteca — remover e retirar tubo, responsável logado (S06-A)', () 
     expect(await erro(`DELETE FROM soroteca_impressao`)).toMatch(/não pode ser alterada/)
   })
 })
+
+describe('Soroteca — rastreabilidade da estante (S06-C)', () => {
+  const DESC = '00000000-0000-4000-8000-000000000019'
+  const comDescarte = () => db.exec(`
+    INSERT INTO profiles VALUES('${DESC}','${C}','biochemist','Dora Descarte');
+    INSERT INTO access_profiles VALUES('p_desc2','${C}','{"soroteca":["soroteca.ver","soroteca.descartar","soroteca.armazenar"]}', true, 'Descarte');
+    INSERT INTO company_sectors(id, allowed_profile_ids) VALUES('00000000-0000-4000-8000-0000000000f5','{p_desc2}');
+    INSERT INTO sector_users VALUES('${DESC}','00000000-0000-4000-8000-0000000000f5');`)
+  const rastreio = async (id: string, filtros: object = {}, limite = 50, offset = 0) =>
+    (await uma(`SELECT soroteca_estante_rastreio($1, $2::jsonb, $3, $4) r`, [id, JSON.stringify(filtros), limite, offset])).r
+  const prat = async (eq: string, ordem = 1) => (await uma(`SELECT id FROM soroteca_prateleira WHERE equipamento_id = $1 AND ordem = $2`, [eq, ordem])).id as string
+
+  it('mostra quem criou a estante e quem colocou, removeu, retirou e devolveu cada tubo, com finalizar, reabrir, descartar, inativar e reativar', async () => {
+    await comDescarte()
+    const o = await pedido('63-00', [exame('e1', BIO)])
+    const o2 = await pedido('64-00', [exame('e2', BIO)])
+    await como(ADM)
+    const g = await geladeira('Geladeira 01', 2, 2)
+    const p2 = await prat(g, 2)
+    await como(ARM)
+    const est = await equipamento('E00001', 4, 16)
+    await uma(`SELECT soroteca_impressao_registrar('etiqueta', $1)`, [est])
+    await armazenar([item(o, 1, ['e1'], est, 1, 2)])
+    await armazenar([item(o2, 1, ['e2'], est, 1, 3)])
+    const [a1, a2] = (await amostras({ equipamento_id: est })).sort((x, y) => x.coluna - y.coluna)
+    await uma(`SELECT soroteca_remover_tubo($1)`, [a2.id])
+    await uma(`SELECT soroteca_estante_guardar($1, $2, $3)`, [est, g, p2])
+    await como(ADM)
+    await uma(`SELECT soroteca_impressao_registrar('etiqueta', $1)`, [est])
+    await como(DESC)
+    await db.query(`SELECT soroteca_retirar($1, 'Repetição de exame', 'Refazer a dosagem de glicose')`, [a1.id])
+    await uma(`SELECT soroteca_estante_abrir($1)`, [est])
+    await armazenar([item(o, 1, ['e1'], est, 1, 2)])
+    const desc = (await uma(`SELECT soroteca_estante_descartar($1, 'Prazo de retenção vencido', NULL, 'Fim do prazo de guarda', 'reaproveitar', true) r`, [est])).r
+    await uma(`SELECT soroteca_estante_descartar($1, 'Estante danificada', NULL, NULL, 'inativar', false)`, [est])
+    await db.query(`SELECT soroteca_estante_reativar($1)`, [est])
+
+    await como(VER)
+    const r = await rastreio(est)
+    expect(r.estante).toMatchObject({ codigo: 'E00001', linhas: 4, colunas: 16, bancada_nome: 'Bioquímica', ativo: true, situacao: 'em_preenchimento', tubos: 0, criada_por: 'Pedro Lima' })
+    // do mais novo para o mais antigo, sempre com usuário
+    const linha = (e: any) => [e.tipo, e.usuario_nome, e.codigo_amostra ?? null, e.posicao ?? e.de_posicao ?? null]
+    expect(r.eventos.map(linha)).toEqual([
+      ['reativada', 'Dora Descarte', null, null],
+      ['inativada', 'Dora Descarte', null, null],
+      ['descartada', 'Dora Descarte', null, null],
+      ['tubo_devolvido', 'Dora Descarte', a1.codigo_amostra, 'A02'],
+      ['reaberta', 'Dora Descarte', null, null],
+      ['tubo_retirado', 'Dora Descarte', a1.codigo_amostra, 'A02'],
+      ['etiqueta', 'Admin', null, null],
+      ['finalizada', 'Pedro Lima', null, null],
+      ['tubo_removido', 'Pedro Lima', a2.codigo_amostra, 'A03'],
+      ['tubo_colocado', 'Pedro Lima', a2.codigo_amostra, 'A03'],
+      ['tubo_colocado', 'Pedro Lima', a1.codigo_amostra, 'A02'],
+      ['etiqueta', 'Pedro Lima', null, null],
+      ['criada', 'Pedro Lima', null, null],
+    ])
+    expect(r.total).toBe(13)
+    const ev = (tipo: string) => r.eventos.find((e: any) => e.tipo === tipo)
+    expect(ev('tubo_colocado')).toMatchObject({ patient_name: 'Maria Teste' })
+    expect(ev('tubo_retirado')).toMatchObject({ motivo: 'Repetição de exame', observacao: 'Refazer a dosagem de glicose', recuperado: false })
+    expect(ev('finalizada')).toMatchObject({ equipamento_nome: 'Geladeira 01', prateleira_nome: 'Prateleira 2', tubos: 1 })
+    expect(ev('reaberta')).toMatchObject({ equipamento_nome: 'Geladeira 01', prateleira_nome: 'Prateleira 2' })
+    expect(ev('descartada')).toMatchObject({ tubos: 1, motivo: 'Prazo de retenção vencido', destino: 'reaproveitar', descarte_id: desc.descarte_id })
+    expect(r.eventos.filter((e: any) => e.tipo === 'etiqueta').map((e: any) => e.reimpressao)).toEqual([true, false])
+    expect([...r.usuarios].sort()).toEqual(['Admin', 'Dora Descarte', 'Pedro Lima'])
+  })
+
+  it('filtra por tipo, usuário e período e pagina de 50 em 50', async () => {
+    const o = await pedido('1-01', [exame('e1', BIO)])
+    await como(ARM)
+    const est = await equipamento('E00002', 8, 10)
+    for (let i = 0; i < 55; i++) await uma(`SELECT soroteca_impressao_registrar('etiqueta', $1)`, [est])
+    await como(ADM)
+    await armazenar([item(o, 1, ['e1'], est, 1, 1)])
+    const p1 = await rastreio(est)
+    expect(p1.total).toBe(57)
+    expect(p1.eventos).toHaveLength(50)
+    const p2 = await rastreio(est, {}, 50, 50)
+    expect(p2.eventos).toHaveLength(7)
+    expect(p2.eventos.at(-1).tipo).toBe('criada')
+    expect((await rastreio(est, { tipos: ['tubo_colocado'] })).eventos.map((e: any) => e.usuario_nome)).toEqual(['Admin'])
+    expect((await rastreio(est, { usuario: 'Admin' })).total).toBe(1)
+    expect((await rastreio(est, { de: '2000-01-01', ate: '2000-12-31' })).total).toBe(0)
+  })
+
+  it('estante antiga: criação e saída de tubo recuperadas dos registros que já existiam; outra empresa e quem não vê não acessam', async () => {
+    const o = await pedido('5-01', [exame('e1', BIO)])
+    await db.exec(`RESET ROLE`)
+    const est = (await uma(`INSERT INTO soroteca_equipamento(company_id, nome, tipo, codigo, situacao, linhas, colunas, ativo, created_by, created_at)
+      VALUES($1, 'Estante E00009', 'estante', 'E00009', 'em_preenchimento', 2, 8, true, $2, '2026-01-05T10:00:00Z') RETURNING id`, [C, ARM])).id
+    await db.query(`INSERT INTO soroteca_prateleira(company_id, equipamento_id, nome, linhas, colunas, ordem) VALUES($1, $2, '', 2, 8, 1)`, [C, est])
+    await como(ARM)
+    await armazenar([item(o, 1, ['e1'], est, 2, 3)])
+    const a = (await amostras())[0]
+    await db.exec(`RESET ROLE`)
+    // movimento gravado antes desta versão: só o nome da estante, sem a estante de origem
+    await db.query(`INSERT INTO soroteca_movimento(company_id, amostra_id, tipo, de_equipamento_nome, de_linha, de_coluna, motivo, usuario_nome)
+      VALUES($1, $2, 'retirada', 'Estante E00009', 2, 3, 'Solicitação médica', 'Pedro Lima')`, [C, a.id])
+    await como(VER)
+    const r = await rastreio(est)
+    expect(r.eventos.map((e: any) => [e.tipo, e.recuperado])).toEqual([['tubo_retirado', true], ['tubo_colocado', false], ['criada', true]])
+    expect(r.estante).toMatchObject({ criada_por: 'Pedro Lima', criada_em: '2026-01-05T10:00:00+00:00' })
+    await como(NADA)
+    expect(await erro(`SELECT soroteca_estante_rastreio($1)`, [est])).toMatch(/Sem permissão/)
+    await db.exec(`INSERT INTO soroteca_modulo(company_id, ativo) VALUES('${C2}', true)`)
+    await como(ADM2)
+    expect(await erro(`SELECT soroteca_estante_rastreio($1)`, [est])).toMatch(/Estante não encontrada/)
+  })
+
+  it('ninguém edita nem apaga o histórico, nem administrador do banco', async () => {
+    await comDescarte()
+    const o = await pedido('7-01', [exame('e1', BIO)])
+    await como(DESC)
+    const est = await equipamento('E00003')
+    await uma(`SELECT soroteca_impressao_registrar('etiqueta', $1)`, [est])
+    await armazenar([item(o, 1, ['e1'], est, 1, 1)])
+    await uma(`SELECT soroteca_estante_descartar($1, 'Estante danificada', NULL, 'Quebrou a base da estante', 'reaproveitar', true)`, [est])
+    await db.exec(`RESET ROLE`)
+    for (const t of ['soroteca_movimento', 'soroteca_estante_movimento', 'soroteca_impressao', 'soroteca_descarte', 'soroteca_descarte_item']) {
+      expect(await erro(`UPDATE ${t} SET company_id = company_id WHERE company_id = $1`, [C])).toMatch(/não pode ser alterada/)
+      expect(await erro(`DELETE FROM ${t} WHERE company_id = $1`, [C])).toMatch(/não pode ser alterada/)
+      expect(await erro(`TRUNCATE ${t} CASCADE`)).toMatch(/não pode ser alterada/)
+    }
+    await db.exec(`SET ROLE authenticated`)
+    expect(await erro(`DELETE FROM soroteca_estante_movimento WHERE company_id = '${C}'`)).not.toBe('')
+    expect(await erro(`UPDATE soroteca_movimento SET observacao = 'x' WHERE company_id = '${C}'`)).not.toBe('')
+    await db.exec(`RESET ROLE`)
+    expect(Number((await uma(`SELECT count(*) n FROM soroteca_estante_movimento WHERE estante_id = $1`, [est])).n)).toBe(2)
+  })
+})

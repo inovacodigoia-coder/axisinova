@@ -514,7 +514,7 @@ export function linhaDoTempo(r: RastreioSoroteca): EventoLinhaDoTempo[] {
   for (const m of r.estante_movimentos || []) {
     const onde = [m.equipamento_nome, m.prateleira_nome].filter(Boolean).join(' > ')
     ev.push({ tipo: 'estante', quando: m.quando,
-      titulo: m.tipo === 'guardada' ? `${m.estante_nome || 'Estante'} guardada em ${onde}` : `${m.estante_nome || 'Estante'} retirada de ${onde} para preenchimento`,
+      titulo: m.tipo === 'guardada' ? `${m.estante_nome || 'Estante'} finalizada: guardada em ${onde}` : `${m.estante_nome || 'Estante'} reaberta: saiu de ${onde} para preenchimento`,
       linhas: m.usuario_nome ? [`Responsável: ${m.usuario_nome}`] : [] })
   }
   const validos = (r.exames || []).filter(e => e.status !== 'cancelled')
@@ -681,4 +681,122 @@ export interface MovimentoEstante {
 export const TIPO_MOVIMENTO_ESTANTE: Record<MovimentoEstante['tipo'], string> = {
   criada: 'Criada', guardada: 'Guardada na geladeira', aberta: 'Retirada para preenchimento',
   descartada: 'Tubos descartados', inativada: 'Inativada', reativada: 'Reativada',
+}
+
+// ----------------------------- Rastreabilidade da estante -----------------------------
+
+export type TipoEventoEstante =
+  | 'criada' | 'etiqueta' | 'folha'
+  | 'tubo_colocado' | 'tubo_devolvido' | 'tubo_removido' | 'tubo_retirado' | 'tubo_descartado' | 'tubo_movido'
+  | 'finalizada' | 'reaberta' | 'descartada' | 'inativada' | 'reativada'
+
+/** Evento da linha do tempo da estante (montado no banco por soroteca_estante_rastreio). */
+export interface EventoEstante {
+  id: string
+  tipo: TipoEventoEstante
+  quando: string
+  usuario_nome: string | null
+  amostra_id: string | null
+  codigo_amostra: string | null
+  patient_name: string | null
+  /** Posição onde o tubo ficou. */
+  posicao: string | null
+  /** Posição de onde o tubo saiu. */
+  de_posicao: string | null
+  /** Outra estante envolvida (de onde veio / para onde foi). */
+  outra_estante: string | null
+  equipamento_nome: string | null
+  prateleira_nome: string | null
+  motivo: string | null
+  observacao: string | null
+  tubos: number | null
+  destino: DestinoEstante | null
+  descarte_id: string | null
+  reimpressao: boolean | null
+  /** Montado a partir de registros antigos (antes do histórico por estante). */
+  recuperado: boolean
+}
+
+export interface CabecalhoEstante {
+  id: string; codigo: string | null; nome: string; linhas: number; colunas: number; bancada_nome: string | null
+  ativo: boolean; situacao: SituacaoEstante | null; local_equipamento_nome: string | null; local_prateleira_nome: string | null
+  tubos: number; criada_em: string | null; criada_por: string | null
+}
+
+export interface RastreioEstante {
+  estante: CabecalhoEstante
+  total: number
+  usuarios: string[]
+  eventos: EventoEstante[]
+}
+
+export interface FiltrosRastreioEstante { tipos?: TipoEventoEstante[]; usuario?: string; de?: string; ate?: string }
+
+/** Eventos por página na linha do tempo da estante. */
+export const EVENTOS_POR_PAGINA = 50
+
+export const TIPO_EVENTO_ESTANTE: Record<TipoEventoEstante, string> = {
+  criada: 'Estante criada', etiqueta: 'Etiqueta impressa', folha: 'Folha de descarte impressa',
+  tubo_colocado: 'Tubo colocado', tubo_devolvido: 'Tubo devolvido', tubo_removido: 'Tubo removido antes de finalizar',
+  tubo_retirado: 'Tubo retirado', tubo_descartado: 'Tubo descartado', tubo_movido: 'Tubo trocado de lugar',
+  finalizada: 'Estante finalizada', reaberta: 'Estante reaberta', descartada: 'Estante descartada',
+  inativada: 'Estante inativada', reativada: 'Estante reativada',
+}
+
+/** Situação atual no cabeçalho: Inativa / Guardada em … / Vazia / Em preenchimento. */
+export function situacaoEstanteTexto(e: Pick<CabecalhoEstante, 'ativo' | 'situacao' | 'local_equipamento_nome' | 'local_prateleira_nome' | 'tubos'>): string {
+  if (!e.ativo) return 'Inativa'
+  const local = localDaEstante(e)
+  if (local) return `Guardada em ${local}`
+  return e.tubos > 0 ? 'Em preenchimento' : 'Vazia'
+}
+
+const tubosTxt = (n: number | null | undefined) => `${n ?? 0} ${(n ?? 0) === 1 ? 'tubo' : 'tubos'}`
+
+/** Título e detalhes de um evento da estante, como aparecem na tela e no PDF. */
+export function descreverEventoEstante(e: EventoEstante): { titulo: string; linhas: string[] } {
+  const tubo = `Tubo ${e.codigo_amostra || '—'}`
+  const onde = [e.equipamento_nome, e.prateleira_nome].filter(Boolean).join(' > ')
+  const linhas: string[] = []
+  if (e.codigo_amostra && e.patient_name) linhas.push(`Paciente: ${e.patient_name}`)
+  let titulo: string
+  switch (e.tipo) {
+    case 'criada': titulo = 'Estante criada'; break
+    case 'etiqueta': titulo = e.reimpressao ? 'Etiqueta reimpressa' : 'Etiqueta impressa'; break
+    case 'folha': titulo = e.reimpressao ? 'Folha de descarte reimpressa' : 'Folha de descarte impressa'; break
+    case 'tubo_colocado':
+      titulo = `${tubo} colocado em ${e.posicao || '—'}`
+      if (e.outra_estante) linhas.push(`Veio de ${e.outra_estante}${e.de_posicao ? ` > ${e.de_posicao}` : ''}`)
+      break
+    case 'tubo_devolvido': titulo = `${tubo} devolvido em ${e.posicao || '—'}`; break
+    case 'tubo_removido': titulo = `${tubo} removido de ${e.de_posicao || '—'} antes de finalizar`; break
+    case 'tubo_retirado': titulo = `${tubo} retirado de ${e.de_posicao || '—'}`; break
+    case 'tubo_descartado': titulo = `${tubo} descartado de ${e.de_posicao || '—'}`; break
+    case 'tubo_movido':
+      titulo = e.outra_estante
+        ? `${tubo} movido de ${e.de_posicao || '—'} para ${e.outra_estante} > ${e.posicao || '—'}`
+        : `${tubo} trocado de ${e.de_posicao || '—'} para ${e.posicao || '—'}`
+      break
+    case 'finalizada':
+      titulo = onde ? `Estante finalizada: guardada em ${onde}` : 'Estante finalizada'
+      if (e.tubos != null) linhas.push(tubosTxt(e.tubos))
+      break
+    case 'reaberta': titulo = onde ? `Estante reaberta: saiu de ${onde}` : 'Estante reaberta'; break
+    case 'descartada':
+      titulo = `Estante descartada: ${tubosTxt(e.tubos)}`
+      if (onde) linhas.push(`Estava em ${onde}`)
+      if (e.destino) linhas.push(e.destino === 'reaproveitar' ? 'Estante reaproveitada (vazia, mesmo código)' : 'Estante inativada')
+      break
+    case 'inativada': titulo = 'Estante inativada'; break
+    case 'reativada': titulo = 'Estante reativada'; break
+    default: titulo = TIPO_EVENTO_ESTANTE[e.tipo as TipoEventoEstante] || String(e.tipo)
+  }
+  if (e.tipo === 'tubo_retirado') {
+    if (e.motivo) linhas.push(`Motivo: ${e.motivo}`)
+    if (e.observacao) linhas.push(`Justificativa: ${e.observacao}`)
+  } else if (e.motivo || e.observacao) {
+    linhas.push(`Motivo: ${[e.motivo, e.observacao].filter(Boolean).join(' — ')}`)
+  }
+  if (e.recuperado) linhas.push('Recuperado dos registros anteriores')
+  return { titulo, linhas }
 }

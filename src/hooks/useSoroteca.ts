@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { supabase } from '@/integrations/supabase/client'
 import { useAuth } from '@/context/AuthContext'
-import type { AmostraSoroteca, DestinoEstante, EquipamentoSoroteca, EstanteConferida, EstanteDescarte, FolhaDescarte, MovimentoEstante, PedidoLocalizado, RastreioSoroteca } from '@/lib/soroteca'
+import type { AmostraSoroteca, DestinoEstante, FiltrosRastreioEstante, RastreioEstante, EquipamentoSoroteca, EstanteConferida, EstanteDescarte, FolhaDescarte, MovimentoEstante, PedidoLocalizado, RastreioSoroteca } from '@/lib/soroteca'
 
 const rpc = (nome: string, args?: Record<string, unknown>) => (supabase.rpc as any)(nome, args) as Promise<{ data: any; error: any }>
 
@@ -140,6 +140,32 @@ export function useSorotecaRastreio(amostraId: string | null) {
     enabled: !!amostraId && !!user?.companyId,
     queryFn: () => chamar<RastreioSoroteca>('soroteca_rastreio', { p_amostra_id: amostraId }),
   })
+}
+
+/** Rastreabilidade da estante: cabeçalho + uma página da linha do tempo (mais novo primeiro). */
+export function useSorotecaEstanteRastreio(estanteId: string | null, filtros: FiltrosRastreioEstante, pagina: number, porPagina: number) {
+  const { user } = useAuth()
+  return useQuery({
+    queryKey: ['soroteca', 'rastreio-estante', user?.companyId, estanteId, filtros, pagina, porPagina],
+    enabled: !!estanteId && !!user?.companyId,
+    queryFn: () => buscarRastreioEstante(estanteId!, filtros, porPagina, pagina * porPagina),
+  })
+}
+
+export const buscarRastreioEstante = (estanteId: string, filtros: FiltrosRastreioEstante, limite: number, offset: number) =>
+  chamar<RastreioEstante>('soroteca_estante_rastreio', { p_id: estanteId, p_filtros: filtros, p_limite: limite, p_offset: offset })
+
+/** Linha do tempo inteira (com os filtros), lida em blocos de 1.000 até o fim — para o PDF. */
+export async function buscarRastreioEstanteCompleto(estanteId: string, filtros: FiltrosRastreioEstante): Promise<RastreioEstante> {
+  const BLOCO = 1000
+  const primeiro = await buscarRastreioEstante(estanteId, filtros, BLOCO, 0)
+  const eventos = [...primeiro.eventos]
+  while (eventos.length < primeiro.total) {
+    const r = await buscarRastreioEstante(estanteId, filtros, BLOCO, eventos.length)
+    if (!r.eventos.length) break
+    eventos.push(...r.eventos)
+  }
+  return { ...primeiro, eventos }
 }
 
 /** Estantes ativas para a aba "Por estante" do descarte. */

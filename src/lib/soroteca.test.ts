@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest'
 import { buildSampleCode, generateSampleHash } from '@/utils/orderHash'
 import {
   alertaValidade, bloqueioDoTubo, capacidadePrateleiras, enderecoAmostra, enderecoPosicao, erroPrateleiras, letraLinha, linhaDoTempo, prioridadeDescarte, primeiraLivre, rotuloPosicao, statusResultado,
+  descreverEventoEstante, situacaoEstanteTexto, type EventoEstante,
   erroCodigoEstante, erroRetirada, estanteDoCodigo, percentualOcupacao, podeRemoverNaEntrada, estantesNaPrateleira, proximaPosicaoEstante, sugerirCodigoEstante, tubosDoPedido, type AmostraSoroteca, type EquipamentoSoroteca, type PedidoLocalizado, type RastreioSoroteca,
 } from './soroteca'
 
@@ -239,5 +240,40 @@ describe('S06-A: barra de progresso, remover e retirar tubo', () => {
     const ev = linhaDoTempo(r)
     expect(ev.map(e => e.titulo)).toEqual(['Armazenada em Estante E1 > A01', 'Retirada de Estante E1 > A01', 'Devolvida e armazenada em Estante E1 > B01'])
     expect(ev[1].linhas).toEqual(['Responsável: Dora', 'Motivo: Repetição de exame', 'Justificativa: Refazer a dosagem'])
+  })
+})
+
+describe('rastreabilidade da estante (S06-C)', () => {
+  const ev = (over: Partial<EventoEstante>): EventoEstante => ({
+    id: 'x', tipo: 'tubo_colocado', quando: '2026-11-15T12:00:00Z', usuario_nome: 'Pedro Lima', amostra_id: 'a1', codigo_amostra: '63-00-2-1',
+    patient_name: 'Maria Teste', posicao: 'A02', de_posicao: null, outra_estante: null, equipamento_nome: null, prateleira_nome: null,
+    motivo: null, observacao: null, tubos: null, destino: null, descarte_id: null, reimpressao: null, recuperado: false, ...over,
+  })
+
+  it('tubo colocado, removido, retirado (com justificativa completa) e devolvido', () => {
+    expect(descreverEventoEstante(ev({}))).toEqual({ titulo: 'Tubo 63-00-2-1 colocado em A02', linhas: ['Paciente: Maria Teste'] })
+    expect(descreverEventoEstante(ev({ tipo: 'tubo_removido', posicao: null, de_posicao: 'A03' })).titulo).toBe('Tubo 63-00-2-1 removido de A03 antes de finalizar')
+    const just = 'Refazer a dosagem de glicose a pedido do médico assistente, paciente em jejum de 12 horas'
+    expect(descreverEventoEstante(ev({ tipo: 'tubo_retirado', posicao: null, de_posicao: 'A02', motivo: 'Solicitação médica', observacao: just })))
+      .toEqual({ titulo: 'Tubo 63-00-2-1 retirado de A02', linhas: ['Paciente: Maria Teste', 'Motivo: Solicitação médica', `Justificativa: ${just}`] })
+    expect(descreverEventoEstante(ev({ tipo: 'tubo_devolvido' })).titulo).toBe('Tubo 63-00-2-1 devolvido em A02')
+  })
+
+  it('finalizar, reabrir, descartar (reaproveitada/inativada), etiqueta e registros recuperados', () => {
+    const local = { equipamento_nome: 'Geladeira 01', prateleira_nome: 'Prateleira 2', codigo_amostra: null, amostra_id: null }
+    expect(descreverEventoEstante(ev({ tipo: 'finalizada', tubos: 2, ...local })).titulo).toBe('Estante finalizada: guardada em Geladeira 01 > Prateleira 2')
+    expect(descreverEventoEstante(ev({ tipo: 'reaberta', ...local })).titulo).toBe('Estante reaberta: saiu de Geladeira 01 > Prateleira 2')
+    expect(descreverEventoEstante(ev({ tipo: 'descartada', tubos: 64, destino: 'reaproveitar', motivo: 'Prazo de retenção vencido', ...local })))
+      .toEqual({ titulo: 'Estante descartada: 64 tubos', linhas: ['Estava em Geladeira 01 > Prateleira 2', 'Estante reaproveitada (vazia, mesmo código)', 'Motivo: Prazo de retenção vencido'] })
+    expect(descreverEventoEstante(ev({ tipo: 'etiqueta', reimpressao: true, codigo_amostra: null })).titulo).toBe('Etiqueta reimpressa')
+    expect(descreverEventoEstante(ev({ tipo: 'criada', codigo_amostra: null, recuperado: true })).linhas).toEqual(['Recuperado dos registros anteriores'])
+  })
+
+  it('situação atual: inativa, guardada, vazia ou em preenchimento', () => {
+    const base = { ativo: true, situacao: 'em_preenchimento' as const, local_equipamento_nome: null, local_prateleira_nome: null, tubos: 3 }
+    expect(situacaoEstanteTexto(base)).toBe('Em preenchimento')
+    expect(situacaoEstanteTexto({ ...base, tubos: 0 })).toBe('Vazia')
+    expect(situacaoEstanteTexto({ ...base, situacao: 'armazenada', local_equipamento_nome: 'Geladeira 01', local_prateleira_nome: 'Prateleira 2' })).toBe('Guardada em Geladeira 01 > Prateleira 2')
+    expect(situacaoEstanteTexto({ ...base, ativo: false })).toBe('Inativa')
   })
 })

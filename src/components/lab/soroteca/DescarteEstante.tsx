@@ -20,7 +20,8 @@ import {
   type DescarteEstanteResultado,
 } from '@/hooks/useSoroteca'
 import { EstanteGrid } from './EstanteGrid'
-import { EstanteHistoricoDialog, FolhaDescarteDialog } from './FolhaDescarte'
+import { FolhaDescarteDialog } from './FolhaDescarte'
+import { EstanteHistoricoDialog } from './EstanteRastreio'
 import { SorotecaLegenda } from './SorotecaGrid'
 import { ResponsavelLogado } from './SorotecaDialogs'
 import {

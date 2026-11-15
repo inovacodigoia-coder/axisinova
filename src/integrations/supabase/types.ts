@@ -9293,6 +9293,7 @@ export type Database = {
           tem_apoio: boolean
           tubo_indice: number
           tubo_nome: string | null
+          ultimo_equipamento_id: string | null
           updated_at: string
           updated_by: string | null
           validade: string | null
@@ -9323,6 +9324,7 @@ export type Database = {
           tem_apoio?: boolean
           tubo_indice: number
           tubo_nome?: string | null
+          ultimo_equipamento_id?: string | null
           updated_at?: string
           updated_by?: string | null
           validade?: string | null
@@ -9353,6 +9355,7 @@ export type Database = {
           tem_apoio?: boolean
           tubo_indice?: number
           tubo_nome?: string | null
+          ultimo_equipamento_id?: string | null
           updated_at?: string
           updated_by?: string | null
           validade?: string | null
@@ -9378,6 +9381,13 @@ export type Database = {
             columns: ["prateleira_id"]
             isOneToOne: false
             referencedRelation: "soroteca_prateleira"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "soroteca_amostra_ultimo_equipamento_id_fkey"
+            columns: ["ultimo_equipamento_id"]
+            isOneToOne: false
+            referencedRelation: "soroteca_equipamento"
             referencedColumns: ["id"]
           },
         ]
@@ -9815,6 +9825,7 @@ export type Database = {
           created_at: string
           de_coluna: number | null
           de_endereco: string | null
+          de_equipamento_id: string | null
           de_equipamento_nome: string | null
           de_linha: number | null
           de_prateleira_nome: string | null
@@ -9839,6 +9850,7 @@ export type Database = {
           created_at?: string
           de_coluna?: number | null
           de_endereco?: string | null
+          de_equipamento_id?: string | null
           de_equipamento_nome?: string | null
           de_linha?: number | null
           de_prateleira_nome?: string | null
@@ -9863,6 +9875,7 @@ export type Database = {
           created_at?: string
           de_coluna?: number | null
           de_endereco?: string | null
+          de_equipamento_id?: string | null
           de_equipamento_nome?: string | null
           de_linha?: number | null
           de_prateleira_nome?: string | null
@@ -9893,6 +9906,13 @@ export type Database = {
             columns: ["company_id"]
             isOneToOne: false
             referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "soroteca_movimento_de_equipamento_id_fkey"
+            columns: ["de_equipamento_id"]
+            isOneToOne: false
+            referencedRelation: "soroteca_equipamento"
             referencedColumns: ["id"]
           },
         ]
@@ -14352,6 +14372,30 @@ export type Database = {
         Args: { _company_id: string; _data_inicial: string; _dias: number }
         Returns: string
       }
+      soroteca__estante_eventos: {
+        Args: { p_company: string; p_estante: string }
+        Returns: {
+          amostra_id: string
+          codigo_amostra: string
+          de_posicao: string
+          descarte_id: string
+          destino: string
+          equipamento_nome: string
+          id: string
+          motivo: string
+          observacao: string
+          outra_estante: string
+          patient_name: string
+          posicao: string
+          prateleira_nome: string
+          quando: string
+          recuperado: boolean
+          reimpressao: boolean
+          tipo: string
+          tubos: number
+          usuario_nome: string
+        }[]
+      }
       soroteca__posicao: {
         Args: { p_coluna: number; p_linha: number }
         Returns: string
@@ -14480,6 +14524,15 @@ export type Database = {
         Returns: Json
       }
       soroteca_estante_historico: { Args: { p_id: string }; Returns: Json }
+      soroteca_estante_rastreio: {
+        Args: {
+          p_filtros?: Json
+          p_id: string
+          p_limite?: number
+          p_offset?: number
+        }
+        Returns: Json
+      }
       soroteca_estante_reativar: { Args: { p_id: string }; Returns: undefined }
       soroteca_estantes_descarte: { Args: never; Returns: Json }
       soroteca_hash_amostra: { Args: { p_codigo: string }; Returns: string }
