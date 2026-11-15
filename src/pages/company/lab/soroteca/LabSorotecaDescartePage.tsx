@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useMemo, useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { toast } from 'sonner'
 import { Loader2, ScanBarcode, Search, Trash2 } from 'lucide-react'
@@ -15,9 +15,8 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { cn } from '@/lib/utils'
-import { useAuth } from '@/context/AuthContext'
 import { buscarAmostras, useSorotecaAcesso, useSorotecaAcoes, useSorotecaAmostras, useSorotecaConfig } from '@/hooks/useSoroteca'
-import { SemAcessoSoroteca, StatusBadge } from '@/components/lab/soroteca/SorotecaDialogs'
+import { ResponsavelLogado, SemAcessoSoroteca, StatusBadge } from '@/components/lab/soroteca/SorotecaDialogs'
 import { DescartePorEstante } from '@/components/lab/soroteca/DescarteEstante'
 import { FolhaDescarteDialog } from '@/components/lab/soroteca/FolhaDescarte'
 import {
@@ -33,7 +32,6 @@ const posicaoTxt = (a: AmostraSoroteca) => enderecoAmostra(a) ?? 'Retirada'
 const diasTxt = (d: number | null) => (d === null ? '—' : d < 0 ? `vencida há ${Math.abs(d)} dia(s)` : d === 0 ? 'vence hoje' : `${d} dia(s)`)
 
 export default function LabSorotecaDescartePage() {
-  const { user } = useAuth()
   const acesso = useSorotecaAcesso()
   const pode = !!acesso?.ver
   const cfg = useSorotecaConfig(pode)
@@ -45,7 +43,6 @@ export default function LabSorotecaDescartePage() {
   const { descartar } = useSorotecaAcoes()
   const [sel, setSel] = useState<Set<string>>(new Set())
   const [confirmar, setConfirmar] = useState<AmostraSoroteca[] | null>(null)
-  const [responsavel, setResponsavel] = useState('')
   const [motivo, setMotivo] = useState<string>('Validade vencida')
   const [obs, setObs] = useState('')
   const [salvando, setSalvando] = useState(false)
@@ -53,8 +50,6 @@ export default function LabSorotecaDescartePage() {
   const [manual, setManual] = useState<AmostraSoroteca[] | null>(null)
   const [buscando, setBuscando] = useState(false)
   const [folhaId, setFolhaId] = useState<string | null>(null)
-
-  useEffect(() => { setResponsavel(cfg.data?.responsavel_descarte || user?.name || '') }, [cfg.data?.responsavel_descarte, user?.name])
 
   const candidatas = useMemo(() => {
     const agora = Date.now()
@@ -77,7 +72,7 @@ export default function LabSorotecaDescartePage() {
     if (!confirmar?.length) return
     setSalvando(true)
     try {
-      const r = await descartar(confirmar.map(a => a.id), motivo === 'Outro' ? (obs.trim() || 'Outro') : motivo, responsavel, obs, aba === 'manual' ? 'manual' : 'lote')
+      const r = await descartar(confirmar.map(a => a.id), motivo === 'Outro' ? (obs.trim() || 'Outro') : motivo, obs, aba === 'manual' ? 'manual' : 'lote')
       toast.success(`${r.tubos} amostra(s) descartada(s). As posições ficaram livres.`)
       if (r.descarte_id) setFolhaId(r.descarte_id)
       setConfirmar(null); setSel(new Set()); setObs(''); setManual(null); setCodigo('')
@@ -201,7 +196,7 @@ export default function LabSorotecaDescartePage() {
             <DialogDescription>{confirmar?.length} amostra(s) selecionada(s) de {confirmar ? nEquip(confirmar) : 0} equipamento(s). As posições ficam livres e cada amostra guarda o registro do descarte.</DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
-            <div className="space-y-1.5"><Label>Responsável pelo descarte</Label><Input value={responsavel} maxLength={120} onChange={e => setResponsavel(e.target.value)} /></div>
+            <ResponsavelLogado id="desc-resp" />
             <div className="space-y-1.5">
               <Label>Motivo</Label>
               <Select value={motivo} onValueChange={setMotivo}>
@@ -213,7 +208,7 @@ export default function LabSorotecaDescartePage() {
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setConfirmar(null)}>Cancelar</Button>
-            <Button variant="destructive" onClick={executar} disabled={salvando || !responsavel.trim() || (motivo === 'Outro' && !obs.trim())}>
+            <Button variant="destructive" onClick={executar} disabled={salvando || (motivo === 'Outro' && !obs.trim())}>
               {salvando && <Loader2 className="mr-1.5 h-4 w-4 animate-spin" />}Confirmar descarte
             </Button>
           </DialogFooter>

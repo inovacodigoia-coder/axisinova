@@ -126,9 +126,9 @@ export default function LabSorotecaConsultaPage() {
                                 <MapPin className="mr-1 h-3.5 w-3.5" />Ver no mapa
                               </Button>
                             )}
-                            {a.status === 'armazenada' && acesso.armazenar && (
+                            {a.status === 'armazenada' && acesso.descartar && (
                               <Button variant="ghost" size="sm" onClick={() => setRetirar({ id: a.id, codigo: a.codigo_amostra })}>
-                                <PackageOpen className="mr-1 h-3.5 w-3.5" />Registrar retirada
+                                <PackageOpen className="mr-1 h-3.5 w-3.5" />Retirar tubo
                               </Button>
                             )}
                           </div>
@@ -143,7 +143,7 @@ export default function LabSorotecaConsultaPage() {
         </Card>
       )}
 
-      <AmostraDetalheDialog amostraId={detalhe} onClose={() => setDetalhe(null)} podeRetirar={acesso.armazenar} />
+      <AmostraDetalheDialog amostraId={detalhe} onClose={() => setDetalhe(null)} podeRetirar={acesso.descartar} />
       <RetiradaDialog amostra={retirar} onClose={() => setRetirar(null)} />
     </div>
   )

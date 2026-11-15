@@ -35,4 +35,18 @@ describe('mapa da soroteca', () => {
     expect(cheia).toHaveTextContent('A02')
     expect(screen.getByRole('gridcell', { name: 'B04: livre' })).toHaveTextContent('B04')
   })
+
+  it('estante: clicar num tubo seleciona sem tirar o foco do bipe; posição livre não faz nada', () => {
+    const onAmostra = vi.fn()
+    render(<EstanteGrid grade={{ id: 'p1', nome: '', linhas: 1, colunas: 3 }} amostras={[amostra({ id: 'a1', linha: 1, coluna: 1 })]} selecionada="a1" onAmostra={onAmostra} />)
+    const tubo = screen.getByRole('gridcell', { name: /^A01: Maria Teste.*\(selecionado\)$/ })
+    expect(tubo).toHaveAttribute('aria-pressed', 'true')
+    expect(fireEvent.mouseDown(tubo)).toBe(false) // padrão cancelado: o foco fica no campo de bipe
+    fireEvent.click(tubo)
+    expect(onAmostra).toHaveBeenCalledWith(expect.objectContaining({ id: 'a1' }))
+    const livre = screen.getByRole('gridcell', { name: 'A02: livre' })
+    expect(livre).toBeDisabled()
+    fireEvent.click(livre)
+    expect(onAmostra).toHaveBeenCalledTimes(1)
+  })
 })

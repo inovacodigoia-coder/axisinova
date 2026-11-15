@@ -15,14 +15,14 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { cn } from '@/lib/utils'
-import { useAuth } from '@/context/AuthContext'
 import {
-  useSorotecaAcoes, useSorotecaAmostras, useSorotecaConfig, useSorotecaEstanteConferir, useSorotecaEstantesDescarte, useSorotecaResumo,
+  mensagemErro, useSorotecaAcoes, useSorotecaAmostras, useSorotecaEstanteConferir, useSorotecaEstantesDescarte, useSorotecaResumo,
   type DescarteEstanteResultado,
 } from '@/hooks/useSoroteca'
 import { EstanteGrid } from './EstanteGrid'
 import { EstanteHistoricoDialog, FolhaDescarteDialog } from './FolhaDescarte'
 import { SorotecaLegenda } from './SorotecaGrid'
+import { ResponsavelLogado } from './SorotecaDialogs'
 import {
   dataBR, gradeDaEstante, MOTIVOS_DESCARTE_ESTANTE, ondeEstaEstante, riscoDescarteTubo, rotuloPosicao, situacaoDescarteEstante,
   type DestinoEstante, type SituacaoDescarte,
@@ -48,11 +48,8 @@ export function DescartarEstanteDialog({ estanteId, onClose, onDone }: {
   onClose: () => void
   onDone?: (r: DescarteEstanteResultado) => void
 }) {
-  const { user } = useAuth()
   const conf = useSorotecaEstanteConferir(estanteId)
-  const cfg = useSorotecaConfig(!!estanteId)
   const { descartarEstante } = useSorotecaAcoes()
-  const [responsavel, setResponsavel] = useState('')
   const [motivo, setMotivo] = useState<string>(MOTIVOS_DESCARTE_ESTANTE[0])
   const [obs, setObs] = useState('')
   const [destino, setDestino] = useState<DestinoEstante>('reaproveitar')
@@ -72,13 +69,11 @@ export function DescartarEstanteDialog({ estanteId, onClose, onDone }: {
     if (!estanteId) return
     setMotivo(MOTIVOS_DESCARTE_ESTANTE[0]); setObs(''); setForcar(false); setDestino('reaproveitar')
   }, [estanteId])
-  useEffect(() => { if (estanteId) setResponsavel(cfg.data?.responsavel_descarte || user?.name || '') }, [estanteId, cfg.data?.responsavel_descarte, user?.name])
   useEffect(() => { if (vazia) setDestino('inativar') }, [vazia])
 
   const precisaObs = motivo === 'Outro' || riscos.length > 0
   const bloqueio = !est ? 'Carregando…'
     : !est.ativo ? 'Estante inativa'
-    : !responsavel.trim() ? 'Informe o responsável'
     : riscos.length && !forcar ? 'Marque "Descartar mesmo assim"'
     : precisaObs && !obs.trim() ? (riscos.length ? 'Explique por que descartar mesmo assim' : 'Descreva o motivo')
     : null
@@ -87,7 +82,7 @@ export function DescartarEstanteDialog({ estanteId, onClose, onDone }: {
     if (!est || bloqueio) return
     setSalvando(true)
     try {
-      const r = await descartarEstante({ id: est.id, motivo, responsavel, observacao: obs, destino: vazia ? 'inativar' : destino, forcar: riscos.length > 0 && forcar })
+      const r = await descartarEstante({ id: est.id, motivo, observacao: obs, destino: vazia ? 'inativar' : destino, forcar: riscos.length > 0 && forcar })
       toast.success(r.tubos
         ? `Estante ${r.codigo}: ${r.tubos} tubo(s) descartado(s). ${r.destino === 'reaproveitar' ? 'A estante está vazia e pronta para uso.' : 'A estante foi inativada.'}`
         : `Estante ${r.codigo} inativada.`)
@@ -95,7 +90,7 @@ export function DescartarEstanteDialog({ estanteId, onClose, onDone }: {
       onClose()
       if (r.descarte_id) setFolhaId(r.descarte_id)
     } catch (e) {
-      toast.error((e as Error).message)
+      toast.error(mensagemErro(e))
     } finally {
       setSalvando(false)
     }
@@ -130,7 +125,7 @@ export function DescartarEstanteDialog({ estanteId, onClose, onDone }: {
                 </label>
               </div>
             )}
-            <div className="space-y-1.5"><Label htmlFor="desc-est-resp">Responsável pelo descarte</Label><Input id="desc-est-resp" value={responsavel} maxLength={120} onChange={e => setResponsavel(e.target.value)} /></div>
+            <ResponsavelLogado id="desc-est-resp" />
             <div className="space-y-1.5">
               <Label>Motivo</Label>
               <Select value={motivo} onValueChange={setMotivo}>

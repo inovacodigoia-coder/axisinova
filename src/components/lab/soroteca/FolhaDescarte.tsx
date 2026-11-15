@@ -7,7 +7,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { useAuth } from '@/context/AuthContext'
 import { useLabSettings } from '@/hooks/useLabSettings'
-import { useSorotecaEstanteHistorico, useSorotecaFolhaDescarte } from '@/hooks/useSoroteca'
+import { useSorotecaEstanteHistorico, registrarImpressaoSoroteca, useSorotecaFolhaDescarte } from '@/hooks/useSoroteca'
 import { LabReportHeader, type LabReportHeaderProps } from '@/components/lab/LabReportHeader'
 import {
   dataBR, dataHoraBR, marcaItemFolha, posicaoItemFolha, TIPO_DESCARTE_LABEL, TIPO_MOVIMENTO_ESTANTE, totaisFolha, type FolhaDescarte,
@@ -131,7 +131,10 @@ export function FolhaDescarteDialog({ alvo, reimpressao, onClose }: {
     const node = ref.current?.querySelector('.folha-descarte') as HTMLElement | null
     if (!node || !folha) return
     setImprimindo(true)
-    try { await imprimirElemento(node, `Folha de descarte ${folha.estante_codigo || ''}`.trim()) }
+    try {
+      await imprimirElemento(node, `Folha de descarte ${folha.estante_codigo || ''}`.trim())
+      await registrarImpressaoSoroteca('folha_descarte', folha.id)
+    }
     catch (e) { toast.error(e instanceof Error ? e.message : 'Não foi possível imprimir') }
     finally { setImprimindo(false) }
   }

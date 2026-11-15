@@ -121,7 +121,6 @@ export const buscarAmostras = (filtros: FiltrosAmostras) =>
 
 export interface ConfigSoroteca {
   aviso_dias: number
-  responsavel_descarte: string | null
   bancadas: { id: string; nome: string; dias: number; padrao: number; personalizado: boolean }[]
 }
 
@@ -165,7 +164,7 @@ export function useSorotecaEstanteConferir(estanteId: string | null) {
 }
 
 export interface DescarteEstanteDados {
-  id: string; motivo: string; responsavel: string; observacao: string; destino: DestinoEstante; forcar: boolean
+  id: string; motivo: string; observacao: string; destino: DestinoEstante; forcar: boolean
 }
 export interface DescarteEstanteResultado { tubos: number; codigo: string; origem: string | null; destino: DestinoEstante; ids: string[]; descarte_id: string | null }
 
@@ -187,6 +186,15 @@ export function useSorotecaEstanteHistorico(estanteId: string | null) {
     enabled: !!estanteId && !!user?.companyId,
     queryFn: () => chamar<MovimentoEstante[]>('soroteca_estante_historico', { p_id: estanteId }),
   })
+}
+
+/**
+ * Registra a impressão/reimpressão (etiqueta de equipamento ou folha de descarte) no nome do usuário logado.
+ * Não bloqueia a impressão: se o registro falhar, só avisa no console.
+ */
+export async function registrarImpressaoSoroteca(tipo: 'etiqueta' | 'folha_descarte', id: string) {
+  const { error } = await rpc('soroteca_impressao_registrar', { p_tipo: tipo, p_id: id })
+  if (error) console.warn('Soroteca: impressão não registrada', mensagemErro(error))
 }
 
 export const localizarNaSoroteca = (termo: string) =>
@@ -211,12 +219,15 @@ export function useSorotecaAcoes() {
   return {
     armazenar: (itens: ItemArmazenar[]) =>
       depois(chamar<{ id: string; codigo_amostra: string; equipamento_nome: string; prateleira_nome: string; linha: number; coluna: number; repetido: boolean }[]>('soroteca_armazenar', { p_itens: itens })),
-    retirar: (id: string, motivo: string, observacao: string) =>
-      depois(chamar<void>('soroteca_retirar', { p_amostra_id: id, p_motivo: motivo, p_observacao: observacao || null })),
-    /** Descarte em lote ou manual; devolve a folha gerada (descarte_id). */
-    descartar: (ids: string[], motivo: string, responsavel: string, observacao: string, tipo: 'lote' | 'manual') =>
+    /** Retirar tubo (Consulta): permissão de descarte, motivo da lista e justificativa (mín. 10 caracteres). */
+    retirar: (id: string, motivo: string, justificativa: string) =>
+      depois(chamar<void>('soroteca_retirar', { p_amostra_id: id, p_motivo: motivo, p_observacao: justificativa.trim() || null })),
+    /** Remover tubo ainda não finalizado (Entrada): só confirmação, a posição fica livre. */
+    removerTubo: (id: string) => depois(chamar<{ codigo: string; posicao: string }>('soroteca_remover_tubo', { p_amostra_id: id })),
+    /** Descarte em lote ou manual; devolve a folha gerada (descarte_id). O responsável é sempre o usuário logado (gravado no banco). */
+    descartar: (ids: string[], motivo: string, observacao: string, tipo: 'lote' | 'manual') =>
       depois(chamar<{ tubos: number; descarte_id: string | null }>('soroteca_descartar_amostras', {
-        p_ids: ids, p_motivo: motivo, p_responsavel: responsavel, p_observacao: observacao || null, p_tipo: tipo,
+        p_ids: ids, p_motivo: motivo, p_responsavel: null, p_observacao: observacao || null, p_tipo: tipo,
       })),
     /** Cria (id null) ou edita uma estante: grade única linhas × colunas e etiqueta própria. */
     salvarEstante: (e: { id: string | null; codigo: string; nome: string; linhas: number; colunas: number; workbench_id: string | null; ativo: boolean }) =>
@@ -239,11 +250,11 @@ export function useSorotecaAcoes() {
     /** Descarta a estante inteira (todos os tubos viram "descartada"); reaproveitar deixa vazia, inativar aposenta. */
     descartarEstante: (d: DescarteEstanteDados) =>
       depois(chamar<DescarteEstanteResultado>('soroteca_estante_descartar', {
-        p_id: d.id, p_motivo: d.motivo, p_responsavel: d.responsavel, p_observacao: d.observacao.trim() || null, p_destino: d.destino, p_forcar: d.forcar,
+        p_id: d.id, p_motivo: d.motivo, p_responsavel: null, p_observacao: d.observacao.trim() || null, p_destino: d.destino, p_forcar: d.forcar,
       })),
     /** Estante inativa volta a ser usada (vazia). */
     reativarEstante: (id: string) => depois(chamar<void>('soroteca_estante_reativar', { p_id: id })),
-    salvarConfig: (aviso: number, responsavel: string, retencao: Record<string, number>) =>
-      depois(chamar<void>('soroteca_config_salvar', { p_aviso_dias: aviso, p_responsavel: responsavel || null, p_retencao: retencao })),
+    salvarConfig: (aviso: number, retencao: Record<string, number>) =>
+      depois(chamar<void>('soroteca_config_salvar', { p_aviso_dias: aviso, p_responsavel: null, p_retencao: retencao })),
   }
 }

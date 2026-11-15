@@ -1184,6 +1184,20 @@
       "when": 1794748286741,
       "tag": "0168_lab_painel_modulo",
       "breakpoints": true
+    },
+    {
+      "idx": 169,
+      "version": "7",
+      "when": 1794750122851,
+      "tag": "0169_soroteca_remover_retirar",
+      "breakpoints": true
+    },
+    {
+      "idx": 170,
+      "version": "7",
+      "when": 1794750285055,
+      "tag": "0170_soroteca_tubo_finalizado",
+      "breakpoints": true
     }
   ]
 }

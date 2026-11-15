@@ -15,14 +15,12 @@ export default function LabSorotecaConfigPage() {
   const q = useSorotecaConfig(!!acesso?.ver)
   const { salvarConfig } = useSorotecaAcoes()
   const [aviso, setAviso] = useState('7')
-  const [responsavel, setResponsavel] = useState('')
   const [dias, setDias] = useState<Record<string, string>>({})
   const [salvando, setSalvando] = useState(false)
 
   useEffect(() => {
     if (!q.data) return
     setAviso(String(q.data.aviso_dias))
-    setResponsavel(q.data.responsavel_descarte || '')
     setDias(Object.fromEntries(q.data.bancadas.map(b => [b.id, String(b.dias)])))
   }, [q.data])
 
@@ -42,7 +40,7 @@ export default function LabSorotecaConfigPage() {
         const n = Number(dias[b.id])
         if (b.personalizado || n !== b.padrao) ret[b.id] = n
       }
-      await salvarConfig(Number(aviso), responsavel, ret)
+      await salvarConfig(Number(aviso), ret)
       toast.success('Configuração da Soroteca salva. Vale para as próximas entradas.')
     } catch (e) {
       toast.error((e as Error).message)
@@ -55,7 +53,7 @@ export default function LabSorotecaConfigPage() {
     <div className="space-y-6">
       <div>
         <h1 className="text-3xl font-bold tracking-tight">Configuração da Soroteca</h1>
-        <p className="text-muted-foreground">Prazos de retenção, aviso de vencimento e responsável padrão pelo descarte</p>
+        <p className="text-muted-foreground">Prazos de retenção e aviso de vencimento</p>
       </div>
       {!editar && <p className="rounded-lg border border-warning/40 bg-warning/10 p-3 text-sm">Seu perfil pode ver, mas não alterar a configuração.</p>}
       {q.isLoading ? <Skeleton className="h-64 rounded-2xl" /> : q.error ? (
@@ -94,10 +92,6 @@ export default function LabSorotecaConfigPage() {
                 <Label>Aviso de vencimento (dias antes)</Label>
                 <Input type="number" min={1} max={90} value={aviso} disabled={!editar} onChange={e => setAviso(e.target.value)} />
                 <p className="text-[11px] text-muted-foreground">Amostras que vencem dentro desse prazo aparecem em alerta no dashboard e como “Atenção” no descarte.</p>
-              </div>
-              <div className="space-y-1.5">
-                <Label>Responsável pelo descarte padrão</Label>
-                <Input value={responsavel} maxLength={120} disabled={!editar} placeholder="Nome que já vem preenchido no descarte" onChange={e => setResponsavel(e.target.value)} />
               </div>
               {editar && <Button className="w-full" onClick={salvar} disabled={!valido || salvando}>{salvando && <Loader2 className="mr-1.5 h-4 w-4 animate-spin" />}Salvar configurações</Button>}
               {!valido && <p className="text-xs text-destructive">Use números inteiros: aviso de 1 a 90 dias e prazos de 1 a 3650 dias.</p>}

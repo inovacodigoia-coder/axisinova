@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest'
 import { buildSampleCode, generateSampleHash } from '@/utils/orderHash'
 import {
   alertaValidade, bloqueioDoTubo, capacidadePrateleiras, enderecoAmostra, enderecoPosicao, erroPrateleiras, letraLinha, linhaDoTempo, prioridadeDescarte, primeiraLivre, rotuloPosicao, statusResultado,
-  erroCodigoEstante, estanteDoCodigo, estantesNaPrateleira, proximaPosicaoEstante, sugerirCodigoEstante, tubosDoPedido, type AmostraSoroteca, type EquipamentoSoroteca, type PedidoLocalizado, type RastreioSoroteca,
+  erroCodigoEstante, erroRetirada, estanteDoCodigo, percentualOcupacao, podeRemoverNaEntrada, estantesNaPrateleira, proximaPosicaoEstante, sugerirCodigoEstante, tubosDoPedido, type AmostraSoroteca, type EquipamentoSoroteca, type PedidoLocalizado, type RastreioSoroteca,
 } from './soroteca'
 
 const AGORA = new Date('2026-11-15T12:00:00Z').getTime()
@@ -201,5 +201,43 @@ describe('folha de descarte', () => {
     expect(posicaoItemFolha('manual', { posicao: null, endereco: null })).toBe('Retirada')
     expect(totaisFolha({ itens: [{ pendente: true, no_prazo: false }, { pendente: false, no_prazo: false }, { pendente: false, no_prazo: true }] as any }))
       .toEqual({ total: 3, marcados: 2 })
+  })
+})
+
+describe('S06-A: barra de progresso, remover e retirar tubo', () => {
+  it('barra mostra a porcentagem real das posições preenchidas', () => {
+    expect(percentualOcupacao(1, 64)).toBe(2)
+    expect(percentualOcupacao(32, 64)).toBe(50)
+    expect(percentualOcupacao(64, 64)).toBe(100)
+    expect(percentualOcupacao(0, 64)).toBe(0)
+    expect(percentualOcupacao(0, 0)).toBe(0)
+  })
+
+  it('na Entrada só sai sem justificativa o tubo guardado ainda não finalizado', () => {
+    expect(podeRemoverNaEntrada({ status: 'armazenada', finalizada: false })).toBe(true)
+    expect(podeRemoverNaEntrada({ status: 'armazenada', finalizada: true })).toBe(false)
+    expect(podeRemoverNaEntrada({ status: 'retirada', finalizada: false })).toBe(false)
+  })
+
+  it('retirada pede motivo da lista e justificativa de pelo menos 10 caracteres (sem contar espaços nas pontas)', () => {
+    expect(erroRetirada('', 'Refazer a dosagem')).toMatch(/motivo/)
+    expect(erroRetirada('Consulta externa', 'Refazer a dosagem')).toMatch(/motivo/)
+    expect(erroRetirada('Repetição de exame', '   123456789   ')).toMatch(/pelo menos 10/)
+    expect(erroRetirada('Repetição de exame', '1234567890')).toBeNull()
+    expect(erroRetirada('Envio ao laboratório de apoio', 'Enviado ao apoio')).toBeNull()
+  })
+
+  it('histórico mostra a retirada com justificativa e depois a devolução', () => {
+    const r = {
+      amostra: {} as any, coleta: null, exames: [], laboratorio: null,
+      movimentos: [
+        { tipo: 'entrada', quando: h(-5), equipamento_nome: 'Estante E1', linha: 1, coluna: 1, de_equipamento_nome: null, de_linha: null, de_coluna: null, motivo: null, observacao: null, status_resultado: null, responsavel_nome: null, usuario_nome: 'Ana' },
+        { tipo: 'retirada', quando: h(-3), equipamento_nome: null, linha: null, coluna: null, de_equipamento_nome: 'Estante E1', de_linha: 1, de_coluna: 1, motivo: 'Repetição de exame', observacao: 'Refazer a dosagem', status_resultado: null, responsavel_nome: 'Dora', usuario_nome: 'Dora' },
+        { tipo: 'entrada', quando: h(-1), equipamento_nome: 'Estante E1', linha: 2, coluna: 1, de_equipamento_nome: null, de_linha: null, de_coluna: null, motivo: null, observacao: null, status_resultado: null, responsavel_nome: null, usuario_nome: 'Ana' },
+      ],
+    } as unknown as RastreioSoroteca
+    const ev = linhaDoTempo(r)
+    expect(ev.map(e => e.titulo)).toEqual(['Armazenada em Estante E1 > A01', 'Retirada de Estante E1 > A01', 'Devolvida e armazenada em Estante E1 > B01'])
+    expect(ev[1].linhas).toEqual(['Responsável: Dora', 'Motivo: Repetição de exame', 'Justificativa: Refazer a dosagem'])
   })
 })

@@ -1,5 +1,6 @@
 // Etiqueta da estante: vai para o Servidor de Impressão local, na mesma impressora térmica das etiquetas de tubo.
 import { imprimirEtiquetas, servidorImpressaoAtivo, TIPOS_DOCUMENTO, type DadosEtiqueta } from '@/lib/impressaoLocal'
+import { registrarImpressaoSoroteca } from '@/hooks/useSoroteca'
 import { gradeDaEstante, rotuloPosicao, TIPOS_EQUIPAMENTO, type EquipamentoSoroteca } from '@/lib/soroteca'
 
 /** Dados enviados ao servidor: o código de barras é o próprio código da estante (ou o nome da geladeira). */
@@ -28,5 +29,6 @@ export async function imprimirEtiquetaEquipamento(e: EquipamentoSoroteca, labora
     throw new Error('Servidor de Impressão AisAxius não está aberto. Abra o programa na bandeja do Windows e tente de novo.')
   }
   const r = await imprimirEtiquetas(TIPOS_DOCUMENTO.etiquetaCliente, [dadosEtiquetaEquipamento(e, laboratorio)])
+  await registrarImpressaoSoroteca('etiqueta', e.id)
   return r.mensagem || `Etiqueta de ${e.codigo || e.nome} enviada para impressão`
 }
