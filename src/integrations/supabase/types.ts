@@ -9388,13 +9388,18 @@ export type Database = {
       soroteca_equipamento: {
         Row: {
           ativo: boolean
+          codigo: string | null
           colunas: number
           company_id: string
           created_at: string
           created_by: string | null
           id: string
           linhas: number
+          local_em: string | null
+          local_equipamento_id: string | null
+          local_prateleira_id: string | null
           nome: string
+          situacao: string | null
           temperatura: string | null
           tipo: string
           updated_at: string
@@ -9402,13 +9407,18 @@ export type Database = {
         }
         Insert: {
           ativo?: boolean
+          codigo?: string | null
           colunas: number
           company_id: string
           created_at?: string
           created_by?: string | null
           id?: string
           linhas: number
+          local_em?: string | null
+          local_equipamento_id?: string | null
+          local_prateleira_id?: string | null
           nome: string
+          situacao?: string | null
           temperatura?: string | null
           tipo?: string
           updated_at?: string
@@ -9416,13 +9426,18 @@ export type Database = {
         }
         Update: {
           ativo?: boolean
+          codigo?: string | null
           colunas?: number
           company_id?: string
           created_at?: string
           created_by?: string | null
           id?: string
           linhas?: number
+          local_em?: string | null
+          local_equipamento_id?: string | null
+          local_prateleira_id?: string | null
           nome?: string
+          situacao?: string | null
           temperatura?: string | null
           tipo?: string
           updated_at?: string
@@ -9434,6 +9449,77 @@ export type Database = {
             columns: ["company_id"]
             isOneToOne: false
             referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "soroteca_equipamento_local_equipamento_id_fkey"
+            columns: ["local_equipamento_id"]
+            isOneToOne: false
+            referencedRelation: "soroteca_equipamento"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "soroteca_equipamento_local_prateleira_id_fkey"
+            columns: ["local_prateleira_id"]
+            isOneToOne: false
+            referencedRelation: "soroteca_prateleira"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      soroteca_estante_movimento: {
+        Row: {
+          company_id: string
+          created_at: string
+          equipamento_nome: string | null
+          estante_id: string
+          estante_nome: string | null
+          id: string
+          prateleira_nome: string | null
+          tipo: string
+          tubos: number
+          usuario_id: string | null
+          usuario_nome: string | null
+        }
+        Insert: {
+          company_id: string
+          created_at?: string
+          equipamento_nome?: string | null
+          estante_id: string
+          estante_nome?: string | null
+          id?: string
+          prateleira_nome?: string | null
+          tipo: string
+          tubos?: number
+          usuario_id?: string | null
+          usuario_nome?: string | null
+        }
+        Update: {
+          company_id?: string
+          created_at?: string
+          equipamento_nome?: string | null
+          estante_id?: string
+          estante_nome?: string | null
+          id?: string
+          prateleira_nome?: string | null
+          tipo?: string
+          tubos?: number
+          usuario_id?: string | null
+          usuario_nome?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "soroteca_estante_movimento_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "soroteca_estante_movimento_estante_id_fkey"
+            columns: ["estante_id"]
+            isOneToOne: false
+            referencedRelation: "soroteca_equipamento"
             referencedColumns: ["id"]
           },
         ]
@@ -14029,6 +14115,18 @@ export type Database = {
       soroteca__usuario_nome: { Args: never; Returns: string }
       soroteca_acesso: { Args: never; Returns: Json }
       soroteca_amostras: { Args: { p_filtros?: Json }; Returns: Json }
+      soroteca_armario_gravar: {
+        Args: {
+          p_ativo?: boolean
+          p_id: string
+          p_nome: string
+          p_posicoes: number
+          p_prateleiras: number
+          p_temperatura: string
+          p_tipo: string
+        }
+        Returns: string
+      }
       soroteca_armazenar: { Args: { p_itens: Json }; Returns: Json }
       soroteca_base36: { Args: { p_n: number }; Returns: string }
       soroteca_codigo_tubo: {
@@ -14073,6 +14171,27 @@ export type Database = {
           p_workbench_id: string
         }
         Returns: string
+      }
+      soroteca_estante_abrir: { Args: { p_id: string }; Returns: Json }
+      soroteca_estante_gravar: {
+        Args: {
+          p_ativo?: boolean
+          p_codigo: string
+          p_colunas: number
+          p_id: string
+          p_linhas: number
+          p_nome: string
+          p_workbench_id: string
+        }
+        Returns: string
+      }
+      soroteca_estante_guardar: {
+        Args: {
+          p_equipamento_id: string
+          p_id: string
+          p_prateleira_id: string
+        }
+        Returns: Json
       }
       soroteca_hash_amostra: { Args: { p_codigo: string }; Returns: string }
       soroteca_localizar: { Args: { p_termo: string }; Returns: Json }
