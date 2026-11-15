@@ -6,8 +6,9 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { EquipamentoDesenho } from '@/components/lab/soroteca/EquipamentoDesenho'
 import {
-  COLUNAS_ESTANTE, ehArmario, erroCodigoEstante, estantesNaPrateleira, LINHAS_ESTANTE, prateleirasDe, rotuloPosicao,
+  COLUNAS_ESTANTE, desenhoDoArmario, ehArmario, erroCodigoEstante, LINHAS_ESTANTE, rotuloPosicao,
   type EquipamentoSoroteca,
 } from '@/lib/soroteca'
 
@@ -109,19 +110,23 @@ export function FinalizarEstanteDialog({ estante, preenchidas, total, equipament
   const [eqId, setEqId] = useState('')
   const [prId, setPrId] = useState('')
   const [salvando, setSalvando] = useState(false)
-  const vagas = (prateleiraId: string, cap: number) => cap - estantesNaPrateleira(equipamentos, prateleiraId).filter(x => x.id !== estante?.id).length
+  // Mesma regra do desenho: prateleira cheia não pode ser escolhida (a própria estante não conta).
+  const prateleirasDoArmario = (a: EquipamentoSoroteca | null | undefined) => desenhoDoArmario(a, equipamentos, estante?.id)
 
   useEffect(() => {
     if (!estante) return
     const atual = armarios.find(a => a.id === estante.local_equipamento_id)
-    const eq = atual || armarios.find(a => prateleirasDe(a).some(p => vagas(p.id, p.linhas * p.colunas) > 0)) || armarios[0]
+    const eq = atual || armarios.find(a => prateleirasDoArmario(a).some(p => !p.cheia)) || armarios[0]
     setEqId(eq?.id || '')
-    const pr = eq ? (prateleirasDe(eq).find(p => p.id === estante.local_prateleira_id) || prateleirasDe(eq).find(p => vagas(p.id, p.linhas * p.colunas) > 0)) : null
+    const ps = prateleirasDoArmario(eq)
+    const pr = ps.find(p => p.id === estante.local_prateleira_id) || ps.find(p => !p.cheia)
     setPrId(pr?.id || '')
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [estante?.id])
 
   const eq = armarios.find(a => a.id === eqId) || null
+  const prateleiras = prateleirasDoArmario(eq)
+  const escolherPrateleira = (id: string) => { const p = prateleiras.find(x => x.id === id); if (p && !p.cheia) setPrId(id) }
   const confirmar = async () => {
     if (!eqId || !prId) return
     setSalvando(true)
@@ -130,7 +135,7 @@ export function FinalizarEstanteDialog({ estante, preenchidas, total, equipament
 
   return (
     <Dialog open={!!estante} onOpenChange={o => !o && onClose()}>
-      <DialogContent className="max-w-md">
+      <DialogContent className="max-h-[95vh] max-w-2xl overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Finalizar estante</DialogTitle>
           <DialogDescription>
@@ -140,29 +145,34 @@ export function FinalizarEstanteDialog({ estante, preenchidas, total, equipament
         {!armarios.length ? (
           <p className="rounded-md border border-warning/40 bg-warning/10 p-3 text-sm">Nenhuma geladeira ou freezer ativo. Cadastre em Estrutura Física para guardar a estante.</p>
         ) : (
-          <div className="space-y-4">
-            <div className="space-y-1.5">
-              <Label>Geladeira</Label>
-              <Select value={eqId} onValueChange={v => { setEqId(v); setPrId('') }}>
-                <SelectTrigger aria-label="Geladeira"><SelectValue placeholder="Escolha" /></SelectTrigger>
-                <SelectContent>
-                  {armarios.map(a => <SelectItem key={a.id} value={a.id}>{a.nome}{a.temperatura ? ` · ${a.temperatura}` : ''} ({a.ocupadas}/{a.capacidade})</SelectItem>)}
-                </SelectContent>
-              </Select>
+          <div className="grid items-start gap-4 sm:grid-cols-[minmax(0,1fr)_18rem]">
+            <div className="space-y-4">
+              <div className="space-y-1.5">
+                <Label>Geladeira</Label>
+                <Select value={eqId} onValueChange={v => { setEqId(v); setPrId('') }}>
+                  <SelectTrigger aria-label="Geladeira"><SelectValue placeholder="Escolha" /></SelectTrigger>
+                  <SelectContent>
+                    {armarios.map(a => <SelectItem key={a.id} value={a.id}>{a.nome}{a.temperatura ? ` · ${a.temperatura}` : ''} ({a.ocupadas}/{a.capacidade})</SelectItem>)}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-1.5">
+                <Label>Prateleira</Label>
+                <Select value={prId} onValueChange={escolherPrateleira} disabled={!eq}>
+                  <SelectTrigger aria-label="Prateleira"><SelectValue placeholder="Escolha" /></SelectTrigger>
+                  <SelectContent>
+                    {prateleiras.map(p => (
+                      <SelectItem key={p.id} value={p.id} disabled={p.cheia}>{p.nome} — {p.estantes.length}/{p.capacidade} estantes{p.cheia ? ' (cheia)' : ''}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <p className="text-xs text-muted-foreground">Também dá para clicar na prateleira no desenho. Prateleira cheia fica bloqueada.</p>
             </div>
-            <div className="space-y-1.5">
-              <Label>Prateleira</Label>
-              <Select value={prId} onValueChange={setPrId} disabled={!eq}>
-                <SelectTrigger aria-label="Prateleira"><SelectValue placeholder="Escolha" /></SelectTrigger>
-                <SelectContent>
-                  {eq && prateleirasDe(eq).map(p => {
-                    const cap = p.linhas * p.colunas
-                    const livres = vagas(p.id, cap)
-                    return <SelectItem key={p.id} value={p.id} disabled={livres <= 0}>{p.nome} — {cap - livres}/{cap} estantes{livres <= 0 ? ' (cheia)' : ''}</SelectItem>
-                  })}
-                </SelectContent>
-              </Select>
-            </div>
+            {eq && (
+              <EquipamentoDesenho armario={eq} equipamentos={equipamentos} ignorarEstanteId={estante?.id} destaquePrateleiraId={prId || null}
+                onPrateleira={escolherPrateleira} rodape={[eq.nome, prateleiras.find(p => p.id === prId)?.nome].filter(Boolean).join(' > ')} />
+            )}
           </div>
         )}
         <DialogFooter>
