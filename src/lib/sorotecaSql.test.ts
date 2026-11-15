@@ -130,6 +130,7 @@ describe('Soroteca — permissões', () => {
     const o = await pedido('1-01', [exame('e1', BIO)])
     await como(ADM)
     const eq = await equipamento('E79002')
+    await db.exec(`INSERT INTO soroteca_modulo(company_id, ativo) VALUES('${C2}', true)`)
     await como(ADM2)
     expect(await erro(`SELECT soroteca_armazenar($1::jsonb)`, [JSON.stringify([item(o, 1, ['e1'], eq, 1, 1)])])).toMatch(/Pedido não encontrado/)
   })
