@@ -1191,6 +1191,13 @@
       "when": 1794750122851,
       "tag": "0169_soroteca_remover_retirar",
       "breakpoints": true
+    },
+    {
+      "idx": 170,
+      "version": "7",
+      "when": 1794750285055,
+      "tag": "0170_soroteca_tubo_finalizado",
+      "breakpoints": true
     }
   ]
 }
