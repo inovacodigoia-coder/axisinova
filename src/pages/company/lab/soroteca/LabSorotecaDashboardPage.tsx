@@ -203,7 +203,7 @@ export default function LabSorotecaDashboardPage() {
       </Dialog>
 
       <DescartarEstanteDialog estanteId={descartarId} onClose={() => setDescartarId(null)} />
-      <AmostraDetalheDialog amostraId={detalhe} onClose={() => setDetalhe(null)} podeRetirar={acesso.armazenar} />
+      <AmostraDetalheDialog amostraId={detalhe} onClose={() => setDetalhe(null)} podeRetirar={acesso.descartar} />
     </div>
   )
 }

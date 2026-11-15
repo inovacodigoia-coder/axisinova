@@ -1,19 +1,21 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { toast } from 'sonner'
-import { Archive, ArrowRightLeft, CheckCircle2, Eye, FlaskConical, LogOut, PackageOpen, Refrigerator, Trash2 } from 'lucide-react'
+import { Archive, ArrowRightLeft, CheckCircle2, Eye, FlaskConical, Lock, LogOut, PackageOpen, Refrigerator, Trash2 } from 'lucide-react'
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
+import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { cn } from '@/lib/utils'
 import { formatBirthBR } from '@/lib/attendanceDocHeader'
-import { useSorotecaAcoes, useSorotecaRastreio } from '@/hooks/useSoroteca'
+import { useAuth } from '@/context/AuthContext'
+import { mensagemErro, useSorotecaAcoes, useSorotecaRastreio } from '@/hooks/useSoroteca'
 import {
-  dataBR, dataHoraBR, linhaDoTempo, MOTIVOS_RETIRADA, enderecoAmostra, STATUS_LABEL,
+  dataBR, dataHoraBR, erroRetirada, JUSTIFICATIVA_RETIRADA_MIN, linhaDoTempo, MOTIVOS_RETIRADA, enderecoAmostra, STATUS_LABEL,
   type EventoLinhaDoTempo, type StatusResultado, type TipoEvento,
 } from '@/lib/soroteca'
 
@@ -97,7 +99,7 @@ export function AmostraDetalheDialog({ amostraId, onClose, podeRetirar }: { amos
           )}
           <DialogFooter className="gap-2 sm:justify-between">
             <Button variant="outline" asChild><Link to={`/app/soroteca/rastreabilidade?amostra=${amostraId}`}>Abrir rastreabilidade</Link></Button>
-            {podeRetirar && a?.status === 'armazenada' && <Button variant="secondary" onClick={() => setRetirar(true)}><PackageOpen className="mr-1.5 h-4 w-4" />Registrar retirada</Button>}
+            {podeRetirar && a?.status === 'armazenada' && <Button variant="secondary" onClick={() => setRetirar(true)}><PackageOpen className="mr-1.5 h-4 w-4" />Retirar tubo</Button>}
           </DialogFooter>
         </DialogContent>
       </Dialog>
@@ -106,49 +108,72 @@ export function AmostraDetalheDialog({ amostraId, onClose, podeRetirar }: { amos
   )
 }
 
-/** Retirada com motivo: libera a posição e registra no histórico. */
+/**
+ * Responsável pelo registro: sempre o usuário logado, travado (o banco grava o usuário da sessão,
+ * nunca o texto da tela).
+ */
+export function ResponsavelLogado({ id, label = 'Responsável pelo descarte' }: { id: string; label?: string }) {
+  const { user } = useAuth()
+  return (
+    <div className="space-y-1.5">
+      <Label htmlFor={id}>{label}</Label>
+      <div className="relative">
+        <Input id={id} value={user?.name || ''} readOnly aria-readonly tabIndex={-1}
+          className="cursor-not-allowed bg-muted pr-9 text-muted-foreground focus-visible:ring-0" />
+        <Lock className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" aria-hidden />
+      </div>
+      <p className="text-[11px] text-muted-foreground">Usuário logado. Não pode ser alterado.</p>
+    </div>
+  )
+}
+
+/** Retirar tubo (Consulta): motivo da lista + justificativa obrigatória; o tubo fica "Retirado" e a posição livre. */
 export function RetiradaDialog({ amostra, onClose }: { amostra: { id: string; codigo: string } | null; onClose: (ok: boolean) => void }) {
   const { retirar } = useSorotecaAcoes()
   const [motivo, setMotivo] = useState<string>('')
   const [obs, setObs] = useState('')
   const [salvando, setSalvando] = useState(false)
   const fechar = (ok: boolean) => { setMotivo(''); setObs(''); onClose(ok) }
+  const bloqueio = erroRetirada(motivo, obs)
   const confirmar = async () => {
-    if (!amostra) return
+    if (!amostra || bloqueio) return
     setSalvando(true)
     try {
       await retirar(amostra.id, motivo, obs)
-      toast.success(`Retirada da amostra ${amostra.codigo} registrada. A posição ficou livre.`)
+      toast.success(`Tubo ${amostra.codigo} retirado. A posição ficou livre.`)
       fechar(true)
     } catch (e) {
-      toast.error((e as Error).message)
+      toast.error(mensagemErro(e))
     } finally {
       setSalvando(false)
     }
   }
+  const n = obs.trim().length
   return (
     <Dialog open={!!amostra} onOpenChange={o => !o && fechar(false)}>
       <DialogContent className="max-w-md">
         <DialogHeader>
-          <DialogTitle>Registrar retirada</DialogTitle>
-          <DialogDescription>Amostra {amostra?.codigo}. A posição fica livre e a retirada entra no histórico.</DialogDescription>
+          <DialogTitle>Retirar tubo</DialogTitle>
+          <DialogDescription>Amostra {amostra?.codigo}. O tubo fica como “Retirado”, guardando o último endereço, e a posição fica livre. Se voltar, basta bipar de novo na Entrada.</DialogDescription>
         </DialogHeader>
         <div className="space-y-4">
           <div className="space-y-1.5">
             <Label>Motivo</Label>
             <Select value={motivo} onValueChange={setMotivo}>
-              <SelectTrigger><SelectValue placeholder="Escolha o motivo" /></SelectTrigger>
+              <SelectTrigger aria-label="Motivo da retirada"><SelectValue placeholder="Escolha o motivo" /></SelectTrigger>
               <SelectContent>{MOTIVOS_RETIRADA.map(m => <SelectItem key={m} value={m}>{m}</SelectItem>)}</SelectContent>
             </Select>
           </div>
           <div className="space-y-1.5">
-            <Label>Observação {motivo === 'Outro' ? '(obrigatória)' : '(opcional)'}</Label>
-            <Textarea value={obs} onChange={e => setObs(e.target.value)} maxLength={500} rows={3} />
+            <Label htmlFor="retirada-just">Justificativa (obrigatória)</Label>
+            <Textarea id="retirada-just" value={obs} onChange={e => setObs(e.target.value)} maxLength={500} rows={3} placeholder="Explique por que o tubo está saindo da soroteca" />
+            <p className={cn('text-[11px]', n < JUSTIFICATIVA_RETIRADA_MIN ? 'text-muted-foreground' : 'text-success')}>{n} / mínimo {JUSTIFICATIVA_RETIRADA_MIN} caracteres</p>
           </div>
+          <ResponsavelLogado id="retirada-resp" label="Responsável pela retirada" />
         </div>
         <DialogFooter>
           <Button variant="outline" onClick={() => fechar(false)}>Cancelar</Button>
-          <Button onClick={confirmar} disabled={!motivo || (motivo === 'Outro' && !obs.trim()) || salvando}>Confirmar retirada</Button>
+          <Button onClick={confirmar} disabled={!!bloqueio || salvando} title={bloqueio || undefined}>Retirar tubo</Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>
