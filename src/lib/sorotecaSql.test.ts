@@ -478,3 +478,62 @@ describe('Soroteca — bipe do tubo e descarte de estante (S05)', () => {
     expect(await erro(`SELECT soroteca_estante_reativar($1)`, [est])).toMatch(/não encontrada|Sem permissão/)
   })
 })
+
+describe('Soroteca — folha de descarte (S06)', () => {
+  const VELHO = { collectedAt: '2026-01-10T12:00:00.000Z' }
+  const folha = async (descarte: string | null, amostra: string | null = null) =>
+    (await uma(`SELECT soroteca_descarte_folha($1, $2) r`, [descarte, amostra])).r
+
+  it('descarte por estante gera folha com estante, origem, tubos marcados e reimpressão pela amostra e pelo histórico', async () => {
+    const o = await pedido('1-01', [exame('e1', BIO, VELHO)])
+    const o2 = await pedido('2-01', [exame('e2', BIO)])
+    await como(ADM)
+    const est = await equipamento('E79002')
+    const g = await geladeira('Geladeira 01', 2, 1)
+    const [p1] = await rows(`SELECT id FROM soroteca_prateleira WHERE equipamento_id = $1 ORDER BY ordem`, [g])
+    await armazenar([item(o, 1, ['e1'], est, 1, 1), item(o2, 1, ['e2'], est, 2, 5)])
+    await db.query(`INSERT INTO lab_exam_results(company_id, order_id, exam_ref, status, released_at) VALUES($1, $2, $3, 'released', now())`, [C, o, `${o}:e1`])
+    await uma(`SELECT soroteca_estante_guardar($1, $2, $3)`, [est, g, p1.id])
+    const r = (await uma(`SELECT soroteca_estante_descartar($1, 'Prazo de retenção vencido', 'Pedro Lima', 'rotina semanal', 'reaproveitar', true) r`, [est])).r
+    const f = await folha(r.descarte_id)
+    expect(f).toMatchObject({ tipo: 'estante', estante_codigo: 'E79002', estante_origem: 'Geladeira 01 > Prateleira 1', motivo: 'Prazo de retenção vencido',
+      observacao: 'rotina semanal', responsavel_nome: 'Pedro Lima', usuario_nome: 'Admin', tubos: 2 })
+    expect(f.itens.map((i: any) => [i.posicao, i.codigo_amostra, i.patient_name, i.bancada_nome, i.pendente, i.no_prazo])).toEqual([
+      ['A01', buildSampleCode('1-01', 1, 15), 'Maria Teste', 'Bioquímica', false, false],
+      ['B05', buildSampleCode('2-01', 1, 15), 'Maria Teste', 'Bioquímica', true, true],
+    ])
+    expect(f.itens[0].coletada_em).toBeTruthy()
+    expect(f.itens[0].validade).toBeTruthy()
+    // reimpressão: pela Rastreabilidade (amostra) e pelo histórico da estante
+    const id1 = (await amostras({ situacao: 'descartada' }))[0].id
+    expect((await folha(null, id1)).id).toBe(r.descarte_id)
+    const hist = (await uma(`SELECT soroteca_estante_historico($1) r`, [est])).r
+    expect(hist[0]).toMatchObject({ tipo: 'descartada', descarte_id: r.descarte_id, tubos: 2 })
+    // a folha não muda nem some
+    await db.exec(`RESET ROLE`)
+    expect(await erro(`UPDATE soroteca_descarte_item SET pendente = false`)).toMatch(/não pode ser alterada/)
+    expect(await erro(`DELETE FROM soroteca_descarte`)).toMatch(/não pode ser alterada/)
+  })
+
+  it('descarte em lote e manual geram folha com o endereço de cada tubo; outra empresa não vê', async () => {
+    const o = await pedido('1-01', [exame('e1', BIO, VELHO)])
+    const o2 = await pedido('2-01', [exame('e2', BIO, VELHO)])
+    await como(ADM)
+    const est = await equipamento('E79002')
+    await armazenar([item(o, 1, ['e1'], est, 1, 3), item(o2, 1, ['e2'], est, 1, 4)])
+    const [a1, a2] = (await amostras()).sort((x, y) => x.coluna - y.coluna)
+    const lote = (await uma(`SELECT soroteca_descartar_amostras(ARRAY[$1]::uuid[], 'Validade vencida', 'Ana', NULL, 'lote') r`, [a1.id])).r
+    expect(lote.tubos).toBe(1)
+    const fl = await folha(lote.descarte_id)
+    expect(fl).toMatchObject({ tipo: 'lote', estante_codigo: null, tubos: 1, responsavel_nome: 'Ana', motivo: 'Validade vencida' })
+    expect(fl.itens[0]).toMatchObject({ posicao: 'A03', endereco: 'Estante E79002 > A03', pendente: true, no_prazo: false })
+    const man = (await uma(`SELECT soroteca_descartar_amostras(ARRAY[$1]::uuid[], 'Amostra danificada', 'Ana', NULL, 'manual') r`, [a2.id])).r
+    expect((await folha(man.descarte_id)).tipo).toBe('manual')
+    // já descartada: nada a descartar, sem folha nova
+    expect((await uma(`SELECT soroteca_descartar_amostras(ARRAY[$1]::uuid[], 'x', 'Ana', NULL, 'lote') r`, [a2.id])).r).toEqual({ tubos: 0, descarte_id: null })
+    // função antiga continua respondendo e também gera folha
+    expect(await erro(`SELECT soroteca_descartar_amostras(ARRAY[$1]::uuid[], 'x', 'Ana', NULL, 'outro')`, [a2.id])).toMatch(/Tipo de descarte inválido/)
+    await como(ADM2)
+    expect(await erro(`SELECT soroteca_descarte_folha($1, NULL)`, [lote.descarte_id])).toMatch(/não encontrada|Sem permissão/)
+  })
+})

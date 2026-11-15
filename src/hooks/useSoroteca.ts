@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { supabase } from '@/integrations/supabase/client'
 import { useAuth } from '@/context/AuthContext'
-import type { AmostraSoroteca, DestinoEstante, EquipamentoSoroteca, EstanteConferida, EstanteDescarte, PedidoLocalizado, RastreioSoroteca } from '@/lib/soroteca'
+import type { AmostraSoroteca, DestinoEstante, EquipamentoSoroteca, EstanteConferida, EstanteDescarte, FolhaDescarte, MovimentoEstante, PedidoLocalizado, RastreioSoroteca } from '@/lib/soroteca'
 
 const rpc = (nome: string, args?: Record<string, unknown>) => (supabase.rpc as any)(nome, args) as Promise<{ data: any; error: any }>
 
@@ -167,7 +167,27 @@ export function useSorotecaEstanteConferir(estanteId: string | null) {
 export interface DescarteEstanteDados {
   id: string; motivo: string; responsavel: string; observacao: string; destino: DestinoEstante; forcar: boolean
 }
-export interface DescarteEstanteResultado { tubos: number; codigo: string; origem: string | null; destino: DestinoEstante; ids: string[] }
+export interface DescarteEstanteResultado { tubos: number; codigo: string; origem: string | null; destino: DestinoEstante; ids: string[]; descarte_id: string | null }
+
+/** Folha de descarte: pelo id do descarte ou pelo último descarte da amostra (reimpressão). */
+export function useSorotecaFolhaDescarte(alvo: { descarteId?: string | null; amostraId?: string | null } | null) {
+  const { user } = useAuth()
+  return useQuery({
+    queryKey: ['soroteca', 'folha', user?.companyId, alvo?.descarteId ?? null, alvo?.amostraId ?? null],
+    enabled: !!alvo && !!(alvo.descarteId || alvo.amostraId) && !!user?.companyId,
+    queryFn: () => chamar<FolhaDescarte>('soroteca_descarte_folha', { p_descarte_id: alvo?.descarteId ?? null, p_amostra_id: alvo?.amostraId ?? null }),
+  })
+}
+
+/** Histórico da estante (criada, guardada, aberta, descartada, inativada, reativada). */
+export function useSorotecaEstanteHistorico(estanteId: string | null) {
+  const { user } = useAuth()
+  return useQuery({
+    queryKey: ['soroteca', 'historico-estante', user?.companyId, estanteId],
+    enabled: !!estanteId && !!user?.companyId,
+    queryFn: () => chamar<MovimentoEstante[]>('soroteca_estante_historico', { p_id: estanteId }),
+  })
+}
 
 export const localizarNaSoroteca = (termo: string) =>
   chamar<{ modo: 'tubo' | 'pedido' | 'paciente' | 'nenhum'; pedidos: PedidoLocalizado[] }>('soroteca_localizar', { p_termo: termo })
@@ -193,8 +213,11 @@ export function useSorotecaAcoes() {
       depois(chamar<{ id: string; codigo_amostra: string; equipamento_nome: string; prateleira_nome: string; linha: number; coluna: number; repetido: boolean }[]>('soroteca_armazenar', { p_itens: itens })),
     retirar: (id: string, motivo: string, observacao: string) =>
       depois(chamar<void>('soroteca_retirar', { p_amostra_id: id, p_motivo: motivo, p_observacao: observacao || null })),
-    descartar: (ids: string[], motivo: string, responsavel: string, observacao: string) =>
-      depois(chamar<number>('soroteca_descartar', { p_ids: ids, p_motivo: motivo, p_responsavel: responsavel, p_observacao: observacao || null })),
+    /** Descarte em lote ou manual; devolve a folha gerada (descarte_id). */
+    descartar: (ids: string[], motivo: string, responsavel: string, observacao: string, tipo: 'lote' | 'manual') =>
+      depois(chamar<{ tubos: number; descarte_id: string | null }>('soroteca_descartar_amostras', {
+        p_ids: ids, p_motivo: motivo, p_responsavel: responsavel, p_observacao: observacao || null, p_tipo: tipo,
+      })),
     /** Cria (id null) ou edita uma estante: grade única linhas × colunas e etiqueta própria. */
     salvarEstante: (e: { id: string | null; codigo: string; nome: string; linhas: number; colunas: number; workbench_id: string | null; ativo: boolean }) =>
       depois(chamar<string>('soroteca_estante_gravar', {

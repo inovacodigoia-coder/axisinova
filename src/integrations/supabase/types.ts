@@ -9385,6 +9385,142 @@ export type Database = {
           },
         ]
       }
+      soroteca_descarte: {
+        Row: {
+          company_id: string
+          created_at: string
+          estante_codigo: string | null
+          estante_id: string | null
+          estante_origem: string | null
+          id: string
+          motivo: string
+          observacao: string | null
+          responsavel_nome: string
+          tipo: string
+          tubos: number
+          usuario_id: string | null
+          usuario_nome: string | null
+        }
+        Insert: {
+          company_id: string
+          created_at?: string
+          estante_codigo?: string | null
+          estante_id?: string | null
+          estante_origem?: string | null
+          id?: string
+          motivo: string
+          observacao?: string | null
+          responsavel_nome: string
+          tipo: string
+          tubos?: number
+          usuario_id?: string | null
+          usuario_nome?: string | null
+        }
+        Update: {
+          company_id?: string
+          created_at?: string
+          estante_codigo?: string | null
+          estante_id?: string | null
+          estante_origem?: string | null
+          id?: string
+          motivo?: string
+          observacao?: string | null
+          responsavel_nome?: string
+          tipo?: string
+          tubos?: number
+          usuario_id?: string | null
+          usuario_nome?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "soroteca_descarte_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "soroteca_descarte_estante_id_fkey"
+            columns: ["estante_id"]
+            isOneToOne: false
+            referencedRelation: "soroteca_equipamento"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      soroteca_descarte_item: {
+        Row: {
+          amostra_id: string
+          bancada_nome: string | null
+          codigo_amostra: string
+          coletada_em: string | null
+          company_id: string
+          descarte_id: string
+          endereco: string | null
+          id: string
+          no_prazo: boolean
+          ordem: number
+          patient_name: string | null
+          pendente: boolean
+          posicao: string | null
+          validade: string | null
+        }
+        Insert: {
+          amostra_id: string
+          bancada_nome?: string | null
+          codigo_amostra: string
+          coletada_em?: string | null
+          company_id: string
+          descarte_id: string
+          endereco?: string | null
+          id?: string
+          no_prazo?: boolean
+          ordem: number
+          patient_name?: string | null
+          pendente?: boolean
+          posicao?: string | null
+          validade?: string | null
+        }
+        Update: {
+          amostra_id?: string
+          bancada_nome?: string | null
+          codigo_amostra?: string
+          coletada_em?: string | null
+          company_id?: string
+          descarte_id?: string
+          endereco?: string | null
+          id?: string
+          no_prazo?: boolean
+          ordem?: number
+          patient_name?: string | null
+          pendente?: boolean
+          posicao?: string | null
+          validade?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "soroteca_descarte_item_amostra_id_fkey"
+            columns: ["amostra_id"]
+            isOneToOne: false
+            referencedRelation: "soroteca_amostra"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "soroteca_descarte_item_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "soroteca_descarte_item_descarte_id_fkey"
+            columns: ["descarte_id"]
+            isOneToOne: false
+            referencedRelation: "soroteca_descarte"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       soroteca_equipamento: {
         Row: {
           ativo: boolean
@@ -9471,6 +9607,7 @@ export type Database = {
         Row: {
           company_id: string
           created_at: string
+          descarte_id: string | null
           destino: string | null
           equipamento_nome: string | null
           estante_id: string
@@ -9488,6 +9625,7 @@ export type Database = {
         Insert: {
           company_id: string
           created_at?: string
+          descarte_id?: string | null
           destino?: string | null
           equipamento_nome?: string | null
           estante_id: string
@@ -9505,6 +9643,7 @@ export type Database = {
         Update: {
           company_id?: string
           created_at?: string
+          descarte_id?: string | null
           destino?: string | null
           equipamento_nome?: string | null
           estante_id?: string
@@ -9525,6 +9664,13 @@ export type Database = {
             columns: ["company_id"]
             isOneToOne: false
             referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "soroteca_estante_movimento_descarte_id_fkey"
+            columns: ["descarte_id"]
+            isOneToOne: false
+            referencedRelation: "soroteca_descarte"
             referencedColumns: ["id"]
           },
           {
@@ -14166,6 +14312,20 @@ export type Database = {
         }
         Returns: number
       }
+      soroteca_descartar_amostras: {
+        Args: {
+          p_ids: string[]
+          p_motivo: string
+          p_observacao: string
+          p_responsavel: string
+          p_tipo: string
+        }
+        Returns: Json
+      }
+      soroteca_descarte_folha: {
+        Args: { p_amostra_id?: string; p_descarte_id?: string }
+        Returns: Json
+      }
       soroteca_equipamento_gravar: {
         Args: {
           p_ativo?: boolean
@@ -14224,6 +14384,7 @@ export type Database = {
         }
         Returns: Json
       }
+      soroteca_estante_historico: { Args: { p_id: string }; Returns: Json }
       soroteca_estante_reativar: { Args: { p_id: string }; Returns: undefined }
       soroteca_estantes_descarte: { Args: never; Returns: Json }
       soroteca_hash_amostra: { Args: { p_codigo: string }; Returns: string }

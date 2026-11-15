@@ -553,3 +553,72 @@ export function riscoDescarteTubo(t: Pick<TuboConferido, 'validade' | 'pendentes
 /** Onde a estante está ("Geladeira 01 > Prateleira 2") ou "fora da geladeira". */
 export const ondeEstaEstante = (e: Pick<EstanteDescarte, 'situacao' | 'local_equipamento_nome' | 'local_prateleira_nome'>) =>
   localDaEstante(e) ?? 'Fora da geladeira (em preenchimento)'
+
+// ----------------------------- Folha de descarte -----------------------------
+
+export type TipoDescarte = 'estante' | 'lote' | 'manual'
+export const TIPO_DESCARTE_LABEL: Record<TipoDescarte, string> = { estante: 'Por estante', lote: 'Em lote', manual: 'Manual' }
+
+/** Linha da folha: retrato do tubo no momento do descarte. */
+export interface ItemFolhaDescarte {
+  ordem: number
+  posicao: string | null
+  endereco: string | null
+  codigo_amostra: string
+  patient_name: string | null
+  bancada_nome: string | null
+  coletada_em: string | null
+  validade: string | null
+  pendente: boolean
+  no_prazo: boolean
+}
+
+export interface FolhaDescarte {
+  id: string
+  tipo: TipoDescarte
+  estante_codigo: string | null
+  estante_origem: string | null
+  motivo: string
+  observacao: string | null
+  responsavel_nome: string
+  usuario_nome: string | null
+  tubos: number
+  created_at: string
+  itens: ItemFolhaDescarte[]
+}
+
+/** Marca da linha: tubo descartado com exame pendente e/ou ainda dentro do prazo ('' = normal). */
+export function marcaItemFolha(i: Pick<ItemFolhaDescarte, 'pendente' | 'no_prazo'>): string {
+  return [i.pendente ? 'Exame pendente' : null, i.no_prazo ? 'No prazo' : null].filter(Boolean).join(' · ')
+}
+
+/** Posição exibida: na folha por estante basta "B05"; nos outros tipos, o endereço completo (ou "Retirada"). */
+export const posicaoItemFolha = (tipo: TipoDescarte, i: Pick<ItemFolhaDescarte, 'posicao' | 'endereco'>) =>
+  (tipo === 'estante' ? i.posicao : i.endereco) || i.posicao || 'Retirada'
+
+/** Totais do rodapé. */
+export const totaisFolha = (f: Pick<FolhaDescarte, 'itens'>) => ({
+  total: f.itens.length,
+  marcados: f.itens.filter(i => i.pendente || i.no_prazo).length,
+})
+
+/** Evento do histórico da estante. */
+export interface MovimentoEstante {
+  id: string
+  tipo: 'criada' | 'guardada' | 'aberta' | 'descartada' | 'inativada' | 'reativada'
+  quando: string
+  equipamento_nome: string | null
+  prateleira_nome: string | null
+  tubos: number
+  motivo: string | null
+  observacao: string | null
+  responsavel_nome: string | null
+  destino: DestinoEstante | null
+  descarte_id: string | null
+  usuario_nome: string | null
+}
+
+export const TIPO_MOVIMENTO_ESTANTE: Record<MovimentoEstante['tipo'], string> = {
+  criada: 'Criada', guardada: 'Guardada na geladeira', aberta: 'Retirada para preenchimento',
+  descartada: 'Tubos descartados', inativada: 'Inativada', reativada: 'Reativada',
+}

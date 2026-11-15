@@ -19,6 +19,7 @@ import { useAuth } from '@/context/AuthContext'
 import { buscarAmostras, useSorotecaAcesso, useSorotecaAcoes, useSorotecaAmostras, useSorotecaConfig } from '@/hooks/useSoroteca'
 import { SemAcessoSoroteca, StatusBadge } from '@/components/lab/soroteca/SorotecaDialogs'
 import { DescartePorEstante } from '@/components/lab/soroteca/DescarteEstante'
+import { FolhaDescarteDialog } from '@/components/lab/soroteca/FolhaDescarte'
 import {
   dataBR, diasRestantes, MOTIVOS_DESCARTE, prioridadeDescarte, PRIORIDADE_ORDEM, enderecoAmostra, type AmostraSoroteca, type Prioridade,
 } from '@/lib/soroteca'
@@ -51,6 +52,7 @@ export default function LabSorotecaDescartePage() {
   const [codigo, setCodigo] = useState('')
   const [manual, setManual] = useState<AmostraSoroteca[] | null>(null)
   const [buscando, setBuscando] = useState(false)
+  const [folhaId, setFolhaId] = useState<string | null>(null)
 
   useEffect(() => { setResponsavel(cfg.data?.responsavel_descarte || user?.name || '') }, [cfg.data?.responsavel_descarte, user?.name])
 
@@ -75,8 +77,9 @@ export default function LabSorotecaDescartePage() {
     if (!confirmar?.length) return
     setSalvando(true)
     try {
-      const n = await descartar(confirmar.map(a => a.id), motivo === 'Outro' ? (obs.trim() || 'Outro') : motivo, responsavel, obs)
-      toast.success(`${n} amostra(s) descartada(s). As posições ficaram livres.`)
+      const r = await descartar(confirmar.map(a => a.id), motivo === 'Outro' ? (obs.trim() || 'Outro') : motivo, responsavel, obs, aba === 'manual' ? 'manual' : 'lote')
+      toast.success(`${r.tubos} amostra(s) descartada(s). As posições ficaram livres.`)
+      if (r.descarte_id) setFolhaId(r.descarte_id)
       setConfirmar(null); setSel(new Set()); setObs(''); setManual(null); setCodigo('')
     } catch (e) {
       toast.error((e as Error).message)
@@ -188,6 +191,8 @@ export default function LabSorotecaDescartePage() {
           </Card>
         </TabsContent>
       </Tabs>
+
+      <FolhaDescarteDialog alvo={folhaId ? { descarteId: folhaId } : null} onClose={() => setFolhaId(null)} />
 
       <Dialog open={!!confirmar} onOpenChange={o => !o && setConfirmar(null)}>
         <DialogContent className="max-w-md">

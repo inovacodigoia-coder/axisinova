@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import { toast } from 'sonner'
-import { AlertTriangle, Loader2, ScanBarcode, Trash2 } from 'lucide-react'
+import { AlertTriangle, History, Loader2, ScanBarcode, Trash2 } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
@@ -21,6 +21,7 @@ import {
   type DescarteEstanteResultado,
 } from '@/hooks/useSoroteca'
 import { EstanteGrid } from './EstanteGrid'
+import { EstanteHistoricoDialog, FolhaDescarteDialog } from './FolhaDescarte'
 import { SorotecaLegenda } from './SorotecaGrid'
 import {
   dataBR, gradeDaEstante, MOTIVOS_DESCARTE_ESTANTE, ondeEstaEstante, riscoDescarteTubo, rotuloPosicao, situacaoDescarteEstante,
@@ -57,6 +58,7 @@ export function DescartarEstanteDialog({ estanteId, onClose, onDone }: {
   const [destino, setDestino] = useState<DestinoEstante>('reaproveitar')
   const [forcar, setForcar] = useState(false)
   const [salvando, setSalvando] = useState(false)
+  const [folhaId, setFolhaId] = useState<string | null>(null)
 
   const est = conf.data
   const tubos = est?.tubos ?? []
@@ -91,6 +93,7 @@ export function DescartarEstanteDialog({ estanteId, onClose, onDone }: {
         : `Estante ${r.codigo} inativada.`)
       onDone?.(r)
       onClose()
+      if (r.descarte_id) setFolhaId(r.descarte_id)
     } catch (e) {
       toast.error((e as Error).message)
     } finally {
@@ -99,6 +102,8 @@ export function DescartarEstanteDialog({ estanteId, onClose, onDone }: {
   }
 
   return (
+    <>
+    <FolhaDescarteDialog alvo={folhaId ? { descarteId: folhaId } : null} onClose={() => setFolhaId(null)} />
     <Dialog open={!!estanteId} onOpenChange={o => !o && onClose()}>
       <DialogContent className="max-h-[92vh] max-w-lg overflow-y-auto">
         <DialogHeader>
@@ -163,6 +168,7 @@ export function DescartarEstanteDialog({ estanteId, onClose, onDone }: {
         </DialogFooter>
       </DialogContent>
     </Dialog>
+    </>
   )
 }
 
@@ -175,6 +181,7 @@ export function DescartePorEstante({ podeDescartar, ativa }: { podeDescartar: bo
   const [soVencidas, setSoVencidas] = useState(false)
   const [aberta, setAberta] = useState<string | null>(null)
   const [descartar, setDescartar] = useState<string | null>(null)
+  const [historico, setHistorico] = useState<{ id: string; codigo: string } | null>(null)
   const conf = useSorotecaEstanteConferir(aberta)
   const amostrasQ = useSorotecaAmostras(aberta ? { situacao: 'armazenada', equipamento_id: aberta } : null, !!aberta)
 
@@ -252,7 +259,10 @@ export function DescartePorEstante({ podeDescartar, ativa }: { podeDescartar: bo
               Estante {sel.e.codigo} <SituacaoEstanteBadge s={sel.s} />
               <span className="text-sm font-normal text-muted-foreground">{ondeEstaEstante(sel.e)}</span>
             </CardTitle>
+            <div className="flex gap-2">
+            <Button variant="outline" size="sm" onClick={() => setHistorico({ id: sel.e.id, codigo: sel.e.codigo })}><History className="mr-1.5 h-4 w-4" />Histórico</Button>
             {podeDescartar && <Button variant="destructive" size="sm" onClick={() => setDescartar(sel.e.id)}><Trash2 className="mr-1.5 h-4 w-4" />{sel.e.tubos ? 'Descartar estante' : 'Inativar estante'}</Button>}
+            </div>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="rounded-lg bg-muted/50 p-4">
@@ -287,6 +297,7 @@ export function DescartePorEstante({ podeDescartar, ativa }: { podeDescartar: bo
       )}
 
       <DescartarEstanteDialog estanteId={descartar} onClose={() => setDescartar(null)} onDone={() => setAberta(null)} />
+      <EstanteHistoricoDialog estante={historico} onClose={() => setHistorico(null)} />
     </div>
   )
 }
