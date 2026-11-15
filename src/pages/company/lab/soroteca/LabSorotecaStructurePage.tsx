@@ -16,7 +16,7 @@ import { useRegisters } from '@/context/RegistersContext'
 import { useSorotecaAcesso, useSorotecaAcoes, useSorotecaResumo } from '@/hooks/useSoroteca'
 import { SemAcessoSoroteca } from '@/components/lab/soroteca/SorotecaDialogs'
 import { DescartarEstanteDialog } from '@/components/lab/soroteca/DescarteEstante'
-import { EstanteHistoricoDialog } from '@/components/lab/soroteca/FolhaDescarte'
+import { EstanteHistoricoDialog } from '@/components/lab/soroteca/EstanteRastreio'
 import { EstanteJanelaDialog } from '@/components/lab/soroteca/EstanteJanela'
 import { imprimirEtiquetaEquipamento } from '@/lib/sorotecaEtiqueta'
 import {

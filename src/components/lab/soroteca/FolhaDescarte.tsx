@@ -1,20 +1,19 @@
 import { useRef, useState } from 'react'
 import { toast } from 'sonner'
-import { FileText, Loader2, Printer } from 'lucide-react'
+import { Loader2, Printer } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { useAuth } from '@/context/AuthContext'
 import { useLabSettings } from '@/hooks/useLabSettings'
-import { useSorotecaEstanteHistorico, registrarImpressaoSoroteca, useSorotecaFolhaDescarte } from '@/hooks/useSoroteca'
+import { registrarImpressaoSoroteca, useSorotecaFolhaDescarte } from '@/hooks/useSoroteca'
 import { LabReportHeader, type LabReportHeaderProps } from '@/components/lab/LabReportHeader'
 import {
-  dataBR, dataHoraBR, marcaItemFolha, posicaoItemFolha, TIPO_DESCARTE_LABEL, TIPO_MOVIMENTO_ESTANTE, totaisFolha, type FolhaDescarte,
+  dataBR, dataHoraBR, marcaItemFolha, posicaoItemFolha, TIPO_DESCARTE_LABEL, totaisFolha, type FolhaDescarte,
 } from '@/lib/soroteca'
 
 /** Imprime só o elemento, num quadro à parte (A4 retrato), sem misturar com outras impressões da página. */
-async function imprimirElemento(node: HTMLElement, titulo: string) {
+export async function imprimirElemento(node: HTMLElement, titulo: string) {
   const frame = document.createElement('iframe')
   frame.setAttribute('aria-hidden', 'true')
   frame.style.position = 'fixed'; frame.style.width = '0'; frame.style.height = '0'; frame.style.border = '0'
@@ -100,7 +99,7 @@ export function FolhaDescarteDocumento({ folha, header, reimpressao }: { folha: 
 }
 
 /** Cabeçalho igual ao dos outros relatórios do laboratório. */
-function useCabecalhoLaboratorio(): { header: LabReportHeaderProps; carregando: boolean } {
+export function useCabecalhoLaboratorio(): { header: LabReportHeaderProps; carregando: boolean } {
   const { user } = useAuth()
   const { settings, isLoading } = useLabSettings()
   return {
@@ -161,51 +160,5 @@ export function FolhaDescarteDialog({ alvo, reimpressao, onClose }: {
         </div>
       </DialogContent>
     </Dialog>
-  )
-}
-
-/** Histórico da estante, com reimpressão da folha de cada descarte. */
-export function EstanteHistoricoDialog({ estante, onClose }: { estante: { id: string; codigo?: string | null } | null; onClose: () => void }) {
-  const q = useSorotecaEstanteHistorico(estante?.id ?? null)
-  const [folha, setFolha] = useState<string | null>(null)
-  return (
-    <>
-      <Dialog open={!!estante} onOpenChange={o => !o && onClose()}>
-        <DialogContent className="max-h-[90vh] max-w-2xl overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle>Histórico da estante {estante?.codigo || ''}</DialogTitle>
-            <DialogDescription>Criação, idas à geladeira, descartes e inativações.</DialogDescription>
-          </DialogHeader>
-          {q.isLoading ? <Skeleton className="h-40" /> : q.error ? <p className="text-sm text-destructive">{(q.error as Error).message}</p> : !q.data?.length ? (
-            <p className="text-sm text-muted-foreground">Sem registros.</p>
-          ) : (
-            <Table>
-              <TableHeader><TableRow><TableHead>Quando</TableHead><TableHead>Evento</TableHead><TableHead>Detalhes</TableHead><TableHead /></TableRow></TableHeader>
-              <TableBody>
-                {q.data.map(m => (
-                  <TableRow key={m.id}>
-                    <TableCell className="whitespace-nowrap text-xs">{dataHoraBR(m.quando)}</TableCell>
-                    <TableCell className="text-sm font-medium">{TIPO_MOVIMENTO_ESTANTE[m.tipo]}</TableCell>
-                    <TableCell className="text-xs text-muted-foreground">
-                      {[
-                        [m.equipamento_nome, m.prateleira_nome].filter(Boolean).join(' > '),
-                        m.tipo === 'descartada' ? `${m.tubos} tubo(s)` : '',
-                        m.motivo ? `Motivo: ${[m.motivo, m.observacao].filter(Boolean).join(' — ')}` : '',
-                        m.destino ? (m.destino === 'reaproveitar' ? 'Reaproveitada' : 'Inativada') : '',
-                        m.responsavel_nome || m.usuario_nome ? `Responsável: ${m.responsavel_nome || m.usuario_nome}` : '',
-                      ].filter(Boolean).join(' · ')}
-                    </TableCell>
-                    <TableCell className="text-right">
-                      {m.descarte_id && <Button size="sm" variant="outline" onClick={() => setFolha(m.descarte_id)}><FileText className="mr-1 h-3.5 w-3.5" />Folha</Button>}
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          )}
-        </DialogContent>
-      </Dialog>
-      <FolhaDescarteDialog alvo={folha ? { descarteId: folha } : null} reimpressao onClose={() => setFolha(null)} />
-    </>
   )
 }
