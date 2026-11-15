@@ -9257,6 +9257,7 @@ export type Database = {
           order_id: string
           patient_id: string | null
           patient_name: string | null
+          prateleira_id: string | null
           protocolo: string | null
           status: string
           tem_apoio: boolean
@@ -9285,6 +9286,7 @@ export type Database = {
           order_id: string
           patient_id?: string | null
           patient_name?: string | null
+          prateleira_id?: string | null
           protocolo?: string | null
           status?: string
           tem_apoio?: boolean
@@ -9313,6 +9315,7 @@ export type Database = {
           order_id?: string
           patient_id?: string | null
           patient_name?: string | null
+          prateleira_id?: string | null
           protocolo?: string | null
           status?: string
           tem_apoio?: boolean
@@ -9336,6 +9339,13 @@ export type Database = {
             columns: ["equipamento_id"]
             isOneToOne: false
             referencedRelation: "soroteca_equipamento"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "soroteca_amostra_prateleira_id_fkey"
+            columns: ["prateleira_id"]
+            isOneToOne: false
+            referencedRelation: "soroteca_prateleira"
             referencedColumns: ["id"]
           },
         ]
@@ -9437,12 +9447,15 @@ export type Database = {
           de_coluna: number | null
           de_equipamento_nome: string | null
           de_linha: number | null
+          de_prateleira_nome: string | null
           equipamento_id: string | null
           equipamento_nome: string | null
           id: string
           linha: number | null
           motivo: string | null
           observacao: string | null
+          prateleira_id: string | null
+          prateleira_nome: string | null
           responsavel_nome: string | null
           status_resultado: string | null
           tipo: string
@@ -9457,12 +9470,15 @@ export type Database = {
           de_coluna?: number | null
           de_equipamento_nome?: string | null
           de_linha?: number | null
+          de_prateleira_nome?: string | null
           equipamento_id?: string | null
           equipamento_nome?: string | null
           id?: string
           linha?: number | null
           motivo?: string | null
           observacao?: string | null
+          prateleira_id?: string | null
+          prateleira_nome?: string | null
           responsavel_nome?: string | null
           status_resultado?: string | null
           tipo: string
@@ -9477,12 +9493,15 @@ export type Database = {
           de_coluna?: number | null
           de_equipamento_nome?: string | null
           de_linha?: number | null
+          de_prateleira_nome?: string | null
           equipamento_id?: string | null
           equipamento_nome?: string | null
           id?: string
           linha?: number | null
           motivo?: string | null
           observacao?: string | null
+          prateleira_id?: string | null
+          prateleira_nome?: string | null
           responsavel_nome?: string | null
           status_resultado?: string | null
           tipo?: string
@@ -9502,6 +9521,57 @@ export type Database = {
             columns: ["company_id"]
             isOneToOne: false
             referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      soroteca_prateleira: {
+        Row: {
+          colunas: number
+          company_id: string
+          created_at: string
+          equipamento_id: string
+          id: string
+          linhas: number
+          nome: string
+          ordem: number
+          updated_at: string
+        }
+        Insert: {
+          colunas: number
+          company_id: string
+          created_at?: string
+          equipamento_id: string
+          id?: string
+          linhas: number
+          nome: string
+          ordem?: number
+          updated_at?: string
+        }
+        Update: {
+          colunas?: number
+          company_id?: string
+          created_at?: string
+          equipamento_id?: string
+          id?: string
+          linhas?: number
+          nome?: string
+          ordem?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "soroteca_prateleira_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "soroteca_prateleira_equipamento_id_fkey"
+            columns: ["equipamento_id"]
+            isOneToOne: false
+            referencedRelation: "soroteca_equipamento"
             referencedColumns: ["id"]
           },
         ]
@@ -13946,6 +14016,18 @@ export type Database = {
           p_responsavel: string
         }
         Returns: number
+      }
+      soroteca_equipamento_gravar: {
+        Args: {
+          p_ativo?: boolean
+          p_id: string
+          p_nome: string
+          p_prateleiras: Json
+          p_temperatura: string
+          p_tipo: string
+          p_workbench_id: string
+        }
+        Returns: string
       }
       soroteca_equipamento_salvar: {
         Args: {
