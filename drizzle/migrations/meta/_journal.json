@@ -1219,6 +1219,13 @@
       "when": 1794759705799,
       "tag": "0173_soroteca_ajustes_descarte",
       "breakpoints": true
+    },
+    {
+      "idx": 174,
+      "version": "7",
+      "when": 1794762214247,
+      "tag": "0174_lab_painel_aparelhos",
+      "breakpoints": true
     }
   ]
 }
