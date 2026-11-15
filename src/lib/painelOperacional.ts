@@ -233,3 +233,37 @@ export function valorCritico(valor: string, limite: string): boolean {
     return Number.isFinite(n) && v >= n
   })
 }
+
+// ---------------------------------------------------------------------------
+// Status dos aparelhos (última mensagem recebida do ServidorAisaxius)
+// ---------------------------------------------------------------------------
+
+export type StatusAparelho = 'conectado' | 'aguardando' | 'erro' | 'sem_comunicacao'
+
+export const STATUS_APARELHO_LABEL: Record<StatusAparelho, string> = {
+  conectado: 'Conectado',
+  aguardando: 'Aguardando',
+  erro: 'Erro',
+  sem_comunicacao: 'Sem comunicação',
+}
+
+/** Conectado: até 5 min · Aguardando: 5–30 min · Erro: acima de 30 min. Nunca comunicou: sem comunicação. */
+export function statusDoAparelho(ultimaComunicacao: string | null, agora: number): StatusAparelho {
+  if (!ultimaComunicacao) return 'sem_comunicacao'
+  const t = new Date(ultimaComunicacao).getTime()
+  if (!Number.isFinite(t)) return 'sem_comunicacao'
+  const min = Math.max(0, (agora - t) / 60_000)
+  if (min <= 5) return 'conectado'
+  if (min <= 30) return 'aguardando'
+  return 'erro'
+}
+
+/** "há 2 min", "há 1h 05min", "nunca". */
+export function haQuantoTempo(quando: string | null, agora: number): string {
+  if (!quando) return 'nunca'
+  const t = new Date(quando).getTime()
+  if (!Number.isFinite(t)) return 'nunca'
+  const min = Math.max(0, (agora - t) / 60_000)
+  if (min < 1) return 'agora'
+  return `há ${formatarDuracao(min)}`
+}

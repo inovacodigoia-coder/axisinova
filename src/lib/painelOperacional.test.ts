@@ -93,3 +93,20 @@ describe('valor crítico', () => {
     expect(valorCritico('texto', '< 40')).toBe(false)
   })
 })
+
+describe('status dos aparelhos', () => {
+  it('conectado até 5 min, aguardando de 5 a 30 min, erro acima de 30 min', async () => {
+    const { statusDoAparelho } = await import('./painelOperacional')
+    expect(statusDoAparelho(minAtras(2), AGORA)).toBe('conectado')
+    expect(statusDoAparelho(minAtras(5), AGORA)).toBe('conectado')
+    expect(statusDoAparelho(minAtras(18), AGORA)).toBe('aguardando')
+    expect(statusDoAparelho(minAtras(30), AGORA)).toBe('aguardando')
+    expect(statusDoAparelho(minAtras(65), AGORA)).toBe('erro')
+  })
+  it('aparelho que nunca mandou resultado fica sem comunicação', async () => {
+    const { statusDoAparelho, haQuantoTempo } = await import('./painelOperacional')
+    expect(statusDoAparelho(null, AGORA)).toBe('sem_comunicacao')
+    expect(haQuantoTempo(null, AGORA)).toBe('nunca')
+    expect(haQuantoTempo(minAtras(65), AGORA)).toBe('há 1h 05min')
+  })
+})
