@@ -1128,6 +1128,13 @@
       "when": 1794674946103,
       "tag": "0160_lab_relatorios_gerenciais",
       "breakpoints": true
+    },
+    {
+      "idx": 161,
+      "version": "7",
+      "when": 1794705944513,
+      "tag": "0161_soroteca",
+      "breakpoints": true
     }
   ]
 }

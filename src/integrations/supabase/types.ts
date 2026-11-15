@@ -9238,6 +9238,274 @@ export type Database = {
           },
         ]
       }
+      soroteca_amostra: {
+        Row: {
+          armazenada_em: string | null
+          bancada_nome: string | null
+          codigo_alfanumerico: string
+          codigo_amostra: string
+          coletada_em: string | null
+          coluna: number | null
+          company_id: string
+          created_at: string
+          descartada_em: string | null
+          equipamento_id: string | null
+          exame_ids: string[]
+          exames_nomes: string[]
+          id: string
+          linha: number | null
+          order_id: string
+          patient_id: string | null
+          patient_name: string | null
+          protocolo: string | null
+          status: string
+          tem_apoio: boolean
+          tubo_indice: number
+          tubo_nome: string | null
+          updated_at: string
+          updated_by: string | null
+          validade: string | null
+          workbench_id: string | null
+        }
+        Insert: {
+          armazenada_em?: string | null
+          bancada_nome?: string | null
+          codigo_alfanumerico: string
+          codigo_amostra: string
+          coletada_em?: string | null
+          coluna?: number | null
+          company_id: string
+          created_at?: string
+          descartada_em?: string | null
+          equipamento_id?: string | null
+          exame_ids?: string[]
+          exames_nomes?: string[]
+          id?: string
+          linha?: number | null
+          order_id: string
+          patient_id?: string | null
+          patient_name?: string | null
+          protocolo?: string | null
+          status?: string
+          tem_apoio?: boolean
+          tubo_indice: number
+          tubo_nome?: string | null
+          updated_at?: string
+          updated_by?: string | null
+          validade?: string | null
+          workbench_id?: string | null
+        }
+        Update: {
+          armazenada_em?: string | null
+          bancada_nome?: string | null
+          codigo_alfanumerico?: string
+          codigo_amostra?: string
+          coletada_em?: string | null
+          coluna?: number | null
+          company_id?: string
+          created_at?: string
+          descartada_em?: string | null
+          equipamento_id?: string | null
+          exame_ids?: string[]
+          exames_nomes?: string[]
+          id?: string
+          linha?: number | null
+          order_id?: string
+          patient_id?: string | null
+          patient_name?: string | null
+          protocolo?: string | null
+          status?: string
+          tem_apoio?: boolean
+          tubo_indice?: number
+          tubo_nome?: string | null
+          updated_at?: string
+          updated_by?: string | null
+          validade?: string | null
+          workbench_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "soroteca_amostra_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "soroteca_amostra_equipamento_id_fkey"
+            columns: ["equipamento_id"]
+            isOneToOne: false
+            referencedRelation: "soroteca_equipamento"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      soroteca_config: {
+        Row: {
+          aviso_dias: number
+          company_id: string
+          responsavel_descarte: string | null
+          retencao_bancadas: Json
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          aviso_dias?: number
+          company_id: string
+          responsavel_descarte?: string | null
+          retencao_bancadas?: Json
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          aviso_dias?: number
+          company_id?: string
+          responsavel_descarte?: string | null
+          retencao_bancadas?: Json
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "soroteca_config_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: true
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      soroteca_equipamento: {
+        Row: {
+          ativo: boolean
+          colunas: number
+          company_id: string
+          created_at: string
+          created_by: string | null
+          id: string
+          linhas: number
+          nome: string
+          temperatura: string | null
+          tipo: string
+          updated_at: string
+          workbench_id: string | null
+        }
+        Insert: {
+          ativo?: boolean
+          colunas: number
+          company_id: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          linhas: number
+          nome: string
+          temperatura?: string | null
+          tipo?: string
+          updated_at?: string
+          workbench_id?: string | null
+        }
+        Update: {
+          ativo?: boolean
+          colunas?: number
+          company_id?: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          linhas?: number
+          nome?: string
+          temperatura?: string | null
+          tipo?: string
+          updated_at?: string
+          workbench_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "soroteca_equipamento_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      soroteca_movimento: {
+        Row: {
+          amostra_id: string
+          coluna: number | null
+          company_id: string
+          created_at: string
+          de_coluna: number | null
+          de_equipamento_nome: string | null
+          de_linha: number | null
+          equipamento_id: string | null
+          equipamento_nome: string | null
+          id: string
+          linha: number | null
+          motivo: string | null
+          observacao: string | null
+          responsavel_nome: string | null
+          status_resultado: string | null
+          tipo: string
+          usuario_id: string | null
+          usuario_nome: string | null
+        }
+        Insert: {
+          amostra_id: string
+          coluna?: number | null
+          company_id: string
+          created_at?: string
+          de_coluna?: number | null
+          de_equipamento_nome?: string | null
+          de_linha?: number | null
+          equipamento_id?: string | null
+          equipamento_nome?: string | null
+          id?: string
+          linha?: number | null
+          motivo?: string | null
+          observacao?: string | null
+          responsavel_nome?: string | null
+          status_resultado?: string | null
+          tipo: string
+          usuario_id?: string | null
+          usuario_nome?: string | null
+        }
+        Update: {
+          amostra_id?: string
+          coluna?: number | null
+          company_id?: string
+          created_at?: string
+          de_coluna?: number | null
+          de_equipamento_nome?: string | null
+          de_linha?: number | null
+          equipamento_id?: string | null
+          equipamento_nome?: string | null
+          id?: string
+          linha?: number | null
+          motivo?: string | null
+          observacao?: string | null
+          responsavel_nome?: string | null
+          status_resultado?: string | null
+          tipo?: string
+          usuario_id?: string | null
+          usuario_nome?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "soroteca_movimento_amostra_id_fkey"
+            columns: ["amostra_id"]
+            isOneToOne: false
+            referencedRelation: "soroteca_amostra"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "soroteca_movimento_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       specialties: {
         Row: {
           company_id: string
@@ -13641,6 +13909,67 @@ export type Database = {
         Args: { _company_id: string; _data_inicial: string; _dias: number }
         Returns: string
       }
+      soroteca__resultados: {
+        Args: { p_company: string; p_exames: string[]; p_order: string }
+        Returns: {
+          liberados: number
+          total: number
+        }[]
+      }
+      soroteca__retencao_dias: {
+        Args: { p_company: string; p_nome: string; p_workbench: string }
+        Returns: number
+      }
+      soroteca__status: {
+        Args: { p_liberados: number; p_total: number }
+        Returns: string
+      }
+      soroteca__usuario_nome: { Args: never; Returns: string }
+      soroteca_acesso: { Args: never; Returns: Json }
+      soroteca_amostras: { Args: { p_filtros?: Json }; Returns: Json }
+      soroteca_armazenar: { Args: { p_itens: Json }; Returns: Json }
+      soroteca_base36: { Args: { p_n: number }; Returns: string }
+      soroteca_codigo_tubo: {
+        Args: { p_indice: number; p_protocolo: string; p_seq: number }
+        Returns: string
+      }
+      soroteca_config_ler: { Args: never; Returns: Json }
+      soroteca_config_salvar: {
+        Args: { p_aviso_dias: number; p_responsavel: string; p_retencao: Json }
+        Returns: undefined
+      }
+      soroteca_descartar: {
+        Args: {
+          p_ids: string[]
+          p_motivo: string
+          p_observacao?: string
+          p_responsavel: string
+        }
+        Returns: number
+      }
+      soroteca_equipamento_salvar: {
+        Args: {
+          p_ativo?: boolean
+          p_colunas: number
+          p_id: string
+          p_linhas: number
+          p_nome: string
+          p_temperatura: string
+          p_tipo: string
+          p_workbench_id: string
+        }
+        Returns: string
+      }
+      soroteca_hash_amostra: { Args: { p_codigo: string }; Returns: string }
+      soroteca_localizar: { Args: { p_termo: string }; Returns: Json }
+      soroteca_rastreio: { Args: { p_amostra_id: string }; Returns: Json }
+      soroteca_resumo: { Args: never; Returns: Json }
+      soroteca_retencao_padrao: { Args: { p_nome: string }; Returns: number }
+      soroteca_retirar: {
+        Args: { p_amostra_id: string; p_motivo: string; p_observacao?: string }
+        Returns: undefined
+      }
+      soroteca_tem_permissao: { Args: { p_codigo: string }; Returns: boolean }
       totem_create_ticket: {
         Args: { _preferential?: boolean; _queue_line_id: string; _slug: string }
         Returns: Json

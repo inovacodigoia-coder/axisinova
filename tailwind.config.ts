@@ -36,6 +36,10 @@ export default {
           foreground: "hsl(var(--warning-foreground, 0 0% 100%))",
         },
         scheduled: "hsl(var(--scheduled))",
+        info: {
+          DEFAULT: "hsl(var(--info))",
+          foreground: "hsl(var(--info-foreground, 0 0% 100%))",
+        },
         success: {
           DEFAULT: "hsl(var(--success))",
           foreground: "hsl(var(--success-foreground, 0 0% 100%))",

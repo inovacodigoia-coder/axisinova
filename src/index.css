@@ -32,6 +32,8 @@
 
     --success: 145 63% 42%;
     --warning: 43 74% 49%;
+    /* Soroteca: azul = amostra com todos os resultados liberados */
+    --info: 217 91% 50%;
     --scheduled: 222 70% 28%;
 
     --border: 214 32% 91%;
