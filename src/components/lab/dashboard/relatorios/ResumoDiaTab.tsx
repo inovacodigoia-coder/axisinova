@@ -12,15 +12,19 @@ import { useAuth } from '@/context/AuthContext'
 import { useRelatorioGerencial } from '@/hooks/useRelatoriosGerenciais'
 import { corDoTat } from '@/lib/painelOperacional'
 import {
-  SEMAFORO_TEXTO, comparativoMes, comparativoSemana, corUrgNoPrazo, inicioDiaSP, intervaloResumo, montarExamesRel,
-  resumoDoDia, semaforoTat, somarDias, variacao, ymdSP,
+  SEMAFORO_TEXTO, comparativoMes, comparativoSemana, corIndiceHemolise, corTaxaRejeicao, corUrgNoPrazo, inicioDiaSP, intervaloResumo,
+  montarExamesRel, porBancadaDoDia, resumoDoDia, semaforoTat, somarDias, variacao, ymdSP,
 } from '@/lib/relatoriosGerenciais'
 import { cn } from '@/lib/utils'
 import { Bloco, COR_TEXTO, SetaVariacao, fmtMin, fmtNum, fmtPct, tooltipStyle } from './comum'
 
 const dataBR = (ymd: string) => `${ymd.slice(8, 10)}/${ymd.slice(5, 7)}/${ymd.slice(0, 4)}`
 
-export function ResumoDiaTab({ bancadasInternas }: { bancadasInternas: ReadonlySet<string> }) {
+export function ResumoDiaTab({ bancadasInternas, ordemBancadas, nomeBancada }: {
+  bancadasInternas: ReadonlySet<string>
+  ordemBancadas: string[]
+  nomeBancada: (id: string) => string
+}) {
   const { user } = useAuth()
   const ontem = useMemo(() => somarDias(ymdSP(Date.now()), -1), [])
   const [dia, setDia] = useState(ontem)
@@ -38,6 +42,13 @@ export function ResumoDiaTab({ bancadasInternas }: { bancadasInternas: ReadonlyS
   const r = useMemo(() => resumoDoDia(exames, dia, q.data?.criticos ?? []), [exames, dia, q.data])
   const sem = useMemo(() => comparativoSemana(exames, dia), [exames, dia])
   const mes = useMemo(() => comparativoMes(exames, dia), [exames, dia])
+  const bancadas = useMemo(() => {
+    const pos = new Map(ordemBancadas.map((id, i) => [id, i]))
+    return porBancadaDoDia(exames, dia).sort((a, b) => (pos.get(a.bancadaId) ?? 999) - (pos.get(b.bancadaId) ?? 999) || b.liberados - a.liberados)
+  }, [exames, dia, ordemBancadas])
+  const corHemo = corIndiceHemolise(r.indiceHemolise)
+  const corRej = corTaxaRejeicao(r.taxaRejeicao)
+  const pct2 = (n: number | null) => (n === null ? '—' : `${fmtNum(n, 1)}%`)
   const logo = q.data?.responsavel?.logo || marca.logo
   const nomeLab = marca.nome || user?.companyName || ''
   const corUrg = r.urgTat === null ? null : corDoTat(r.urgTat, 'urgente')
@@ -51,7 +62,8 @@ export function ResumoDiaTab({ bancadasInternas }: { bancadasInternas: ReadonlyS
   const mesAtualNome = nomeMes(dia)
   const mesAntNome = nomeMes(somarDias(`${dia.slice(0, 7)}-01`, -1))
 
-  const linhas: { rotulo: string; valor: string; semaforo?: string; cor?: keyof typeof COR_TEXTO | null }[] = [
+  type Linha = { rotulo: string; valor: string; semaforo?: string; cor?: keyof typeof COR_TEXTO | null }
+  const linhas: Linha[] = [
     { rotulo: 'Total de pedidos', valor: `${fmtNum(r.pedidos)} (urgência: ${r.pedidosUrg} | rotina: ${r.pedidosRot})` },
     { rotulo: 'Total de exames liberados', valor: fmtNum(r.liberados) },
     { rotulo: 'TAT médio urgência', valor: fmtMin(r.urgTat), semaforo: semaforoTat(r.urgTat, 'urgente'), cor: corUrg },
@@ -59,8 +71,29 @@ export function ResumoDiaTab({ bancadasInternas }: { bancadasInternas: ReadonlyS
     { rotulo: '% urgências liberadas em até 60 min', valor: fmtPct(r.urgNoPrazoPct), semaforo: corPrazo ? SEMAFORO_TEXTO[corPrazo] : '', cor: corPrazo },
     { rotulo: 'Hora de pico', valor: pico },
     { rotulo: 'Rejeições do dia', valor: rejTxt },
+    { rotulo: 'Índice de hemólise do dia', valor: pct2(r.indiceHemolise), semaforo: corHemo ? SEMAFORO_TEXTO[corHemo] : '', cor: corHemo },
     { rotulo: 'Exames críticos acionados', valor: fmtNum(r.criticos) },
   ]
+  // Página impressa: Produção do dia / Qualidade / Por bancada
+  const producaoImp: Linha[] = [
+    { rotulo: 'Pedidos recebidos', valor: fmtNum(r.pedidos) },
+    { rotulo: '    └ Urgência', valor: fmtNum(r.pedidosUrg) },
+    { rotulo: '    └ Rotina', valor: fmtNum(r.pedidosRot) },
+    linhas[1], linhas[2], linhas[3],
+    { rotulo: 'Urgências no prazo (até 60 min)', valor: linhas[4].valor, semaforo: linhas[4].semaforo },
+    { rotulo: 'Hora de pico', valor: r.horaPico ? `${String(r.horaPico.hora).padStart(2, '0')}h (${r.horaPico.total} pedido(s))` : '—' },
+  ]
+  const qualidadeImp: Linha[] = [
+    { rotulo: 'Rejeições', valor: r.rejeicoes ? `${r.rejeicoes}${r.motivoTop ? ` (${r.motivoTop.nome})` : ''}` : '0' },
+    { rotulo: 'Índice de hemólise', valor: pct2(r.indiceHemolise), semaforo: corHemo ? SEMAFORO_TEXTO[corHemo] : '' },
+    { rotulo: 'Taxa de rejeição', valor: pct2(r.taxaRejeicao), semaforo: corRej ? SEMAFORO_TEXTO[corRej] : '' },
+    { rotulo: 'Exames críticos', valor: fmtNum(r.criticos) },
+  ]
+  const tabelaImp = (ls: Linha[]) => (
+    <table><tbody>
+      {ls.map(l => <tr key={l.rotulo}><th style={{ width: '55%', fontWeight: 'normal', whiteSpace: 'pre' }}>{l.rotulo}</th><td>{l.valor} {l.semaforo}</td></tr>)}
+    </tbody></table>
+  )
 
   return (
     <div className="resumo-dia space-y-6">
@@ -138,21 +171,31 @@ export function ResumoDiaTab({ bancadasInternas }: { bancadasInternas: ReadonlyS
 
       {/* Página A4 só da impressão (fora do layout, direto no corpo da página) */}
       {createPortal(<div className="resumo-impressao hidden" aria-hidden>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '10pt', borderBottom: '0.5pt solid #000', paddingBottom: '6pt' }}>
-          {logo && <img src={logo} alt="" style={{ height: '42pt', maxWidth: '120pt', objectFit: 'contain' }} />}
-          <div>
-            <h1>Resumo do Dia — {dataBR(dia)}</h1>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '10pt', borderBottom: '0.5pt solid #000', paddingBottom: '6pt' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8pt' }}>
+            {logo && <img src={logo} alt="" style={{ height: '42pt', maxWidth: '120pt', objectFit: 'contain' }} />}
             <div>{nomeLab}</div>
           </div>
+          <div style={{ textAlign: 'right' }}>
+            <h1>Resumo Diário</h1>
+            <div>Data: {dataBR(dia)}</div>
+          </div>
         </div>
-        <h2>Resumo executivo</h2>
-        <table>
-          <tbody>
-            {linhas.map(l => (
-              <tr key={l.rotulo}><th style={{ width: '55%', fontWeight: 'normal' }}>{l.rotulo}</th><td>{l.valor} {l.semaforo}</td></tr>
-            ))}
-          </tbody>
-        </table>
+        <h2>Produção do dia</h2>
+        {tabelaImp(producaoImp)}
+        <h2>Qualidade</h2>
+        {tabelaImp(qualidadeImp)}
+        <h2>Por bancada</h2>
+        {bancadas.length === 0 ? <p>Nenhum exame liberado no dia.</p> : (
+          <table>
+            <thead><tr><th>Bancada</th><th>Exames liberados</th><th>TAT médio</th></tr></thead>
+            <tbody>
+              {bancadas.map(b => (
+                <tr key={b.bancadaId}><td>{nomeBancada(b.bancadaId)}</td><td>{b.liberados}</td><td>{fmtMin(b.tatMedio)} {semaforoTat(b.tatMedio, 'rotina')}</td></tr>
+              ))}
+            </tbody>
+          </table>
+        )}
         <h2>Comparativo rápido (exames liberados)</h2>
         <table>
           <thead><tr><th>Período</th><th>Atual</th><th>Anterior</th><th>Variação</th></tr></thead>
@@ -161,10 +204,11 @@ export function ResumoDiaTab({ bancadasInternas }: { bancadasInternas: ReadonlyS
             <tr><td>Este mês até o dia {Number(dia.slice(8, 10))} vs mesmo período do mês passado</td><td>{mes.totalAtual}</td><td>{mes.mesmoPeriodoAnterior}</td><td>{varMes ? `${varMes.direcao === 'desce' ? '−' : varMes.direcao === 'sobe' ? '+' : ''}${varMes.texto}` : '—'}</td></tr>
           </tbody>
         </table>
-        <p style={{ marginTop: '6pt', fontSize: '9pt' }}>TAT = liberação − coleta. Metas: urgência até 30 min (OK), até 60 min (ATENÇÃO), acima de 60 min (ATRASO); rotina até 60 / 120 min. Exames de apoio não entram no TAT.</p>
+        <p style={{ marginTop: '6pt', fontSize: '9pt' }}>TAT = liberação − coleta. Metas: urgência até 30 min (OK), até 60 min (ATENÇÃO), acima de 60 min (ATRASO); rotina e bancadas até 60 / 120 min. Hemólise: OK &lt; 2%, ATENÇÃO 2–3%, ATRASO &gt; 3%. Rejeição: OK &lt; 0,6%, ATENÇÃO 0,6–1%, ATRASO &gt; 1%. Exames de apoio não entram no TAT.</p>
         <div style={{ marginTop: '48pt', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', gap: '24pt' }}>
-          <div style={{ flex: 1, borderTop: '0.5pt solid #000', paddingTop: '3pt' }}>
-            Responsável Técnico: {q.data?.responsavel?.nome || '______________________________'}
+          <div style={{ flex: 1 }}>
+            <div style={{ marginBottom: '28pt' }}>Responsável técnico: {q.data?.responsavel?.nome || '______________________________'}</div>
+            <div style={{ borderTop: '0.5pt solid #000', paddingTop: '3pt' }}>Assinatura</div>
           </div>
           <div style={{ width: '170pt', borderTop: '0.5pt solid #000', paddingTop: '3pt' }}>
             CRF: {q.data?.responsavel?.registro || '________________'}

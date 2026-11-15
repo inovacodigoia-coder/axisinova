@@ -201,3 +201,29 @@ describe('L-Lab-02-A: TAT por fase, analistas, hemólise e recoleta', () => {
     expect(corTaxaRecoleta(0.5)).toBe('vermelho')
   })
 })
+
+describe('L-Lab-02-B: Resumo do Dia', () => {
+  it('traz índice de hemólise e taxa de rejeição do dia', () => {
+    const r = resumoDoDia(ex([
+      l({ o: 'o1', e: 'a', ca: sp('2026-11-13T08:00:00') }),
+      l({ o: 'o1', e: 'b', ra: sp('2026-11-13T09:00:00'), rm: 'Amostra hemolisada' }),
+      l({ o: 'o2', e: 'a', ca: sp('2026-11-13T08:00:00') }),
+      l({ o: 'o2', e: 'b', ca: sp('2026-11-13T08:00:00') }),
+    ]), '2026-11-13', [])
+    expect(r.indiceHemolise).toBe(25)
+    expect(r.taxaRejeicao).toBe(25)
+  })
+
+  it('por bancada: liberados e TAT médio do dia, sem apoio', async () => {
+    const { porBancadaDoDia } = await import('./relatoriosGerenciais')
+    const linhas = porBancadaDoDia(ex([
+      l({ o: 'o1', b: 'b1', ca: sp('2026-11-13T08:00:00'), la: sp('2026-11-13T08:40:00') }),
+      l({ o: 'o2', b: 'b1', ca: sp('2026-11-13T08:00:00'), la: sp('2026-11-13T09:00:00') }),
+      l({ o: 'o3', b: 'b2', ca: sp('2026-11-13T08:00:00'), la: sp('2026-11-13T10:11:00') }),
+      l({ o: 'o4', b: 'apoio1', ca: sp('2026-11-13T08:00:00'), la: sp('2026-11-13T09:00:00') }),
+      l({ o: 'o5', b: 'b1', ca: sp('2026-11-12T08:00:00'), la: sp('2026-11-12T09:00:00') }),
+    ]), '2026-11-13')
+    expect(linhas).toEqual([{ bancadaId: 'b1', liberados: 2, tatMedio: 50 }, { bancadaId: 'b2', liberados: 1, tatMedio: 131 }])
+    expect(semaforoTat(71, 'rotina')).toBe('(ATENÇÃO)')
+  })
+})
