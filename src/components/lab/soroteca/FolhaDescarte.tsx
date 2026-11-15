@@ -25,7 +25,7 @@ async function imprimirElemento(node: HTMLElement, titulo: string) {
   win.document.close()
   document.querySelectorAll('style,link[rel="stylesheet"]').forEach(el => win.document.head.appendChild(el.cloneNode(true)))
   const st = win.document.createElement('style')
-  st.textContent = '@page{size:A4 portrait;margin:12mm} html,body{margin:0;background:var(--document-paper);color:var(--document-ink)} .folha-descarte{box-shadow:none!important;padding:0!important;width:100%!important}'
+  st.textContent = '@page{size:A4 portrait;margin:12mm} html body > .folha-descarte{display:block!important;visibility:visible!important} html,body{margin:0;background:var(--document-paper);color:var(--document-ink)} .folha-descarte{box-shadow:none!important;padding:0!important;width:100%!important}'
   win.document.head.appendChild(st)
   win.document.body.appendChild(node.cloneNode(true))
   await new Promise<void>(resolve => {
