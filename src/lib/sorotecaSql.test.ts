@@ -74,6 +74,8 @@ beforeEach(async () => {
     INSERT INTO lab_workbenches VALUES('${HEM}','${C}','Hematologia',true,'interna'),('${BIO}','${C}','Bioquímica',true,'interna');
   `)
   for (const m of MIGS) await db.exec(readFileSync(m, 'utf8'))
+  // módulo ativo na empresa de teste (as demais regras são testadas em 'Soroteca — módulo por empresa')
+  await db.exec(`INSERT INTO soroteca_modulo(company_id, ativo) VALUES('${C}', true) ON CONFLICT (company_id) DO UPDATE SET ativo = true`)
 })
 afterEach(async () => { await db.close() })
 
@@ -294,5 +296,42 @@ describe('Soroteca — prateleiras', () => {
       [eq, JSON.stringify([{ id: p1.id, nome: 'Topo', linhas: 3, colunas: 3 }, { nome: 'topo ', linhas: 1, colunas: 1 }])])).toMatch(/mesmo nome/)
     expect(await erro(`SELECT soroteca_equipamento_gravar($1, 'Geladeira 01', 'geladeira', NULL, NULL, '[]'::jsonb, true)`, [eq])).toMatch(/pelo menos uma prateleira/)
     expect(await erro(`SELECT soroteca_equipamento_salvar($1, 'Geladeira 01', 'geladeira', NULL, NULL, 4, 4, true)`, [eq])).toMatch(/várias prateleiras/)
+  })
+})
+
+describe('Soroteca — módulo por empresa', () => {
+  const TI = '00000000-0000-4000-8000-000000000016'
+  const desligar = () => db.exec(`UPDATE soroteca_modulo SET ativo = false WHERE company_id = '${C}'`)
+
+  it('desativado: some para os perfis da empresa, mas TI/Administração e o administrador continuam vendo', async () => {
+    await db.exec(`
+      INSERT INTO profiles VALUES('${TI}','${C}','biochemist','Tiago TI');
+      INSERT INTO access_profiles VALUES('p_ti','${C}','{"soroteca":["soroteca.ver"]}');
+      UPDATE access_profiles SET permissions = permissions WHERE id = 'p_ti';`)
+    await db.exec(`ALTER TABLE access_profiles ADD COLUMN IF NOT EXISTS name text; UPDATE access_profiles SET name = 'TI – Administração' WHERE id = 'p_ti';
+      INSERT INTO company_sectors(id, allowed_profile_ids) VALUES('00000000-0000-4000-8000-0000000000f3','{p_ti}');
+      INSERT INTO sector_users VALUES('${TI}','00000000-0000-4000-8000-0000000000f3');`)
+    await desligar()
+    await como(VER)
+    expect((await uma(`SELECT soroteca_acesso() a`)).a).toMatchObject({ ver: false, modulo_ativo: false, pode_ativar: false })
+    expect(await erro(`SELECT soroteca_resumo()`)).toMatch(/Sem permissão/)
+    await como(ARM)
+    expect((await uma(`SELECT soroteca_acesso() a`)).a.armazenar).toBe(false)
+    await como(TI)
+    expect((await uma(`SELECT soroteca_acesso() a`)).a).toMatchObject({ ver: true, pode_ativar: true, modulo_ativo: false })
+    await como(ADM)
+    expect((await uma(`SELECT soroteca_acesso() a`)).a).toMatchObject({ ver: true, pode_ativar: true })
+  })
+
+  it('só TI/Administração ativa ou desativa, e vale só para a própria empresa', async () => {
+    await desligar()
+    await como(ARM)
+    expect(await erro(`SELECT soroteca_modulo_definir(true)`)).toMatch(/Só TI\/Administração/)
+    await como(ADM)
+    await db.query(`SELECT soroteca_modulo_definir(true)`)
+    await como(VER)
+    expect((await uma(`SELECT soroteca_acesso() a`)).a).toMatchObject({ ver: true, modulo_ativo: true })
+    await como(ADM2)
+    expect((await uma(`SELECT soroteca_modulo_ativo() a`)).a).toBe(false)
   })
 })
