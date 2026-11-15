@@ -178,7 +178,7 @@ export default function LabSorotecaEntradaPage() {
   const selLote = loteSel !== null ? lote[loteSel] : null
 
   return (
-    <div className="space-y-6 pb-24">
+    <div className="space-y-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <h1 className="text-3xl font-bold tracking-tight">Entrada / Armazenar</h1>
@@ -309,8 +309,8 @@ export default function LabSorotecaEntradaPage() {
         </Card>
       </div>
 
-      <div className="fixed inset-x-0 bottom-0 z-30 border-t border-border bg-card/95 px-6 py-3 shadow-lg backdrop-blur lg:left-[var(--sidebar-width,16rem)]">
-        <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-end gap-4 text-sm">
+      <div className="sticky bottom-0 z-30 rounded-xl border border-border bg-card/95 px-4 py-3 shadow-lg backdrop-blur">
+        <div className="flex flex-wrap items-center justify-end gap-4 text-sm">
           {modoLote ? (
             <>
               <span>{lote.length} amostra(s) no lote</span>
