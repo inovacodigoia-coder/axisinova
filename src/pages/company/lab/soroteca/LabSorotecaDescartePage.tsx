@@ -131,7 +131,7 @@ export default function LabSorotecaDescartePage() {
                     <TableHeader>
                       <TableRow>
                         <TableHead className="w-10" /><TableHead>Prioridade</TableHead><TableHead>Amostra</TableHead><TableHead>Paciente</TableHead>
-                        <TableHead>Bancada</TableHead><TableHead>Posição</TableHead><TableHead>Validade</TableHead><TableHead>Dias restantes</TableHead>
+                        <TableHead>Bancada</TableHead><TableHead>Localização</TableHead><TableHead>Validade</TableHead><TableHead>Dias restantes</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>

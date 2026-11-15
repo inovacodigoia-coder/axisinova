@@ -99,7 +99,7 @@ export default function LabSorotecaConfigPage() {
                 <Label>Responsável pelo descarte padrão</Label>
                 <Input value={responsavel} maxLength={120} disabled={!editar} placeholder="Nome que já vem preenchido no descarte" onChange={e => setResponsavel(e.target.value)} />
               </div>
-              {editar && <Button className="w-full" onClick={salvar} disabled={!valido || salvando}>{salvando && <Loader2 className="mr-1.5 h-4 w-4 animate-spin" />}Salvar</Button>}
+              {editar && <Button className="w-full" onClick={salvar} disabled={!valido || salvando}>{salvando && <Loader2 className="mr-1.5 h-4 w-4 animate-spin" />}Salvar configurações</Button>}
               {!valido && <p className="text-xs text-destructive">Use números inteiros: aviso de 1 a 90 dias e prazos de 1 a 3650 dias.</p>}
             </CardContent>
           </Card>

@@ -103,7 +103,7 @@ export default function LabSorotecaConsultaPage() {
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>Amostra</TableHead><TableHead>Paciente</TableHead><TableHead>Bancada</TableHead><TableHead>Posição</TableHead>
+                    <TableHead>Amostra</TableHead><TableHead>Paciente</TableHead><TableHead>Bancada</TableHead><TableHead>Localização</TableHead>
                     <TableHead>Status</TableHead><TableHead>Entrada</TableHead><TableHead>Validade</TableHead><TableHead className="text-right">Ações</TableHead>
                   </TableRow>
                 </TableHeader>
