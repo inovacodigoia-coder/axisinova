@@ -115,14 +115,14 @@ export default function LabSorotecaConsultaPage() {
                         <TableCell><button type="button" className="font-mono font-semibold text-primary hover:underline" onClick={() => setDetalhe(a.id)}>{a.codigo_amostra}</button></TableCell>
                         <TableCell>{a.patient_name || '—'}</TableCell>
                         <TableCell>{a.bancada_nome || '—'}</TableCell>
-                        <TableCell>{a.status === 'armazenada' && a.linha && a.coluna ? `${a.equipamento_nome} — ${rotuloPosicao(a.linha, a.coluna)}` : a.status === 'retirada' ? 'Retirada' : '—'}</TableCell>
+                        <TableCell>{enderecoAmostra(a) ?? (a.status === 'retirada' ? 'Retirada' : '—')}</TableCell>
                         <TableCell><StatusBadge status={a.status_resultado} descartada={a.status === 'descartada'} /></TableCell>
                         <TableCell className="whitespace-nowrap text-xs">{dataHoraBR(a.armazenada_em)}</TableCell>
                         <TableCell className={cn('whitespace-nowrap text-xs font-medium', v === 'vencida' && 'text-destructive', v === 'vencendo' && 'text-warning')}>{dataBR(a.validade)}</TableCell>
                         <TableCell className="text-right">
                           <div className="flex justify-end gap-1">
                             {a.status === 'armazenada' && (
-                              <Button variant="ghost" size="sm" onClick={() => navigate(`/app/soroteca?equipamento=${a.equipamento_id}&amostra=${a.id}`)}>
+                              <Button variant="ghost" size="sm" onClick={() => navigate(`/app/soroteca?equipamento=${a.equipamento_id}&prateleira=${a.prateleira_id}&amostra=${a.id}`)}>
                                 <MapPin className="mr-1 h-3.5 w-3.5" />Ver no mapa
                               </Button>
                             )}

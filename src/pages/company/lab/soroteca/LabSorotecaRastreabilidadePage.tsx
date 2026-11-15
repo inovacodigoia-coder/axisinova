@@ -10,7 +10,7 @@ import { Skeleton } from '@/components/ui/skeleton'
 import { formatBirthBR } from '@/lib/attendanceDocHeader'
 import { buscarAmostras, useSorotecaAcesso, useSorotecaRastreio } from '@/hooks/useSoroteca'
 import { LinhaDoTempoView, SemAcessoSoroteca, StatusBadge } from '@/components/lab/soroteca/SorotecaDialogs'
-import { dataBR, dataHoraBR, linhaDoTempo, rotuloPosicao, type AmostraSoroteca } from '@/lib/soroteca'
+import { dataBR, dataHoraBR, linhaDoTempo, enderecoAmostra, type AmostraSoroteca } from '@/lib/soroteca'
 
 export default function LabSorotecaRastreabilidadePage() {
   const acesso = useSorotecaAcesso()
@@ -94,7 +94,7 @@ export default function LabSorotecaRastreabilidadePage() {
             <CardTitle className="text-lg">Amostra {a.codigo_amostra} · Paciente {a.patient_name || '—'} · {a.bancada_nome || 'Sem bancada'}</CardTitle>
             <p className="flex flex-wrap items-center gap-3 text-sm text-muted-foreground">
               <span>Pedido {a.protocolo}</span><span>Código de barras {a.codigo_alfanumerico}</span><span>Validade {dataBR(a.validade)}</span>
-              <span>{a.status === 'armazenada' && a.linha && a.coluna ? `Em ${a.equipamento_nome} — ${rotuloPosicao(a.linha, a.coluna)}` : a.status === 'retirada' ? 'Retirada' : 'Descartada'}</span>
+              <span>{enderecoAmostra(a) ? `Em ${enderecoAmostra(a)}` : a.status === 'retirada' ? 'Retirada' : 'Descartada'}</span>
               {a.status === 'descartada' && <StatusBadge status="liberado" descartada />}
             </p>
           </CardHeader>
@@ -119,7 +119,7 @@ export default function LabSorotecaRastreabilidadePage() {
               <tr><th>Pedido</th><td>{a.protocolo}</td></tr>
               <tr><th>Bancada / tubo</th><td>{a.bancada_nome || '—'} · {a.tubo_nome || '—'}</td></tr>
               <tr><th>Validade</th><td>{dataBR(a.validade)}</td></tr>
-              <tr><th>Situação atual</th><td>{a.status === 'armazenada' && a.linha && a.coluna ? `Armazenada em ${a.equipamento_nome} — ${rotuloPosicao(a.linha, a.coluna)}` : a.status === 'retirada' ? 'Retirada' : `Descartada em ${dataHoraBR(a.descartada_em)}`}</td></tr>
+              <tr><th>Situação atual</th><td>{enderecoAmostra(a) ? `Armazenada em ${enderecoAmostra(a)}` : a.status === 'retirada' ? 'Retirada' : `Descartada em ${dataHoraBR(a.descartada_em)}`}</td></tr>
             </tbody>
           </table>
           <h2>Linha do tempo</h2>
