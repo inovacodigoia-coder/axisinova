@@ -113,7 +113,29 @@ export function percentualOcupacao(preenchidas: number, total: number): number {
   if (!total || total <= 0 || !preenchidas || preenchidas <= 0) return 0
   return Math.min(100, Math.round((preenchidas / total) * 100))
 }
-export const MOTIVOS_DESCARTE = ['Validade vencida', 'Prazo de retenção atingido', 'Descarte de rotina', 'Amostra danificada', 'Outro'] as const
+export const MOTIVOS_DESCARTE = ['Prazo de retenção vencido', 'Descarte de rotina', 'Amostra danificada', 'Outro'] as const
+
+/** Único motivo de descarte em que a justificativa é opcional (estante, lote e manual; o banco confere o mesmo em soroteca__justificativa_ok). */
+export const MOTIVO_DESCARTE_SEM_JUSTIFICATIVA = 'Prazo de retenção vencido'
+export const JUSTIFICATIVA_DESCARTE_MIN = 10
+export const justificativaDescarteObrigatoria = (motivo: string) => motivo.trim() !== MOTIVO_DESCARTE_SEM_JUSTIFICATIVA
+/** Motivo para não deixar confirmar o descarte pela justificativa (null = pode). */
+export function erroJustificativaDescarte(motivo: string, justificativa: string): string | null {
+  if (!justificativaDescarteObrigatoria(motivo)) return null
+  const n = justificativa.trim().length
+  return n >= JUSTIFICATIVA_DESCARTE_MIN ? null : `Explique o motivo com pelo menos ${JUSTIFICATIVA_DESCARTE_MIN} caracteres (faltam ${JUSTIFICATIVA_DESCARTE_MIN - n})`
+}
+
+/** Bipe de confirmação na janela "Descartar estante": vazio, confere com o código da estante ou é de outra estante. */
+export type ConfereEtiqueta = 'vazio' | 'ok' | 'errado'
+export function conferirEtiquetaEstante(bipado: string, codigo: string | null | undefined): ConfereEtiqueta {
+  const b = bipado.trim().toUpperCase()
+  if (!b) return 'vazio'
+  return codigo && b === codigo.trim().toUpperCase() ? 'ok' : 'errado'
+}
+
+/** Lista do descarte em lote: tubo "Retirada" (em reprocessamento) não entra. */
+export const entraNoDescarteEmLote = (a: Pick<AmostraSoroteca, 'status'>) => a.status === 'armazenada'
 
 /** Linha 1 = A … 26 = Z, 27 = AA … 52 = AZ. */
 export function letraLinha(n: number): string {
@@ -283,6 +305,16 @@ export function statusResultado(total: number, liberados: number): StatusResulta
 }
 
 export const STATUS_LABEL: Record<StatusResultado, string> = { liberado: 'Liberado', parcial: 'Parcial', em_analise: 'Em análise' }
+
+/** Tubo da estante que impede o Finalizar (mesma regra de soroteca_estante_guardar): qualquer status que não seja Liberado. */
+export interface TuboBloqueiaFinalizar { id: string; codigo: string; status: string }
+export function tubosQueBloqueiamFinalizar(prateleiraId: string | null | undefined, amostras: AmostraSoroteca[]): TuboBloqueiaFinalizar[] {
+  if (!prateleiraId) return []
+  return amostras
+    .filter(a => a.status === 'armazenada' && a.prateleira_id === prateleiraId && a.status_resultado !== 'liberado')
+    .sort((x, y) => (x.linha ?? 0) - (y.linha ?? 0) || (x.coluna ?? 0) - (y.coluna ?? 0))
+    .map(a => ({ id: a.id, codigo: a.codigo_amostra, status: !a.total ? 'Sem resultado' : STATUS_LABEL[a.status_resultado] ?? 'Em análise' }))
+}
 
 /** Grade grande (> 200 posições) aparece comprimida no dashboard. */
 export const gradeComprimida = (linhas: number, colunas: number) => linhas * colunas > 200
