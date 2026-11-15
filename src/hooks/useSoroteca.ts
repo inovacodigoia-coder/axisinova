@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { supabase } from '@/integrations/supabase/client'
 import { useAuth } from '@/context/AuthContext'
-import type { AmostraSoroteca, EquipamentoSoroteca, PedidoLocalizado, RastreioSoroteca } from '@/lib/soroteca'
+import type { AmostraSoroteca, EquipamentoSoroteca, PedidoLocalizado, PrateleiraForm, RastreioSoroteca } from '@/lib/soroteca'
 
 const rpc = (nome: string, args?: Record<string, unknown>) => (supabase.rpc as any)(nome, args) as Promise<{ data: any; error: any }>
 
@@ -115,6 +115,7 @@ export interface ItemArmazenar {
   exame_ids: string[]
   tubo_nome: string
   equipamento_id: string
+  prateleira_id: string
   linha: number
   coluna: number
 }
@@ -125,15 +126,15 @@ export function useSorotecaAcoes() {
   const depois = async <T,>(p: Promise<T>) => { const r = await p; await qc.invalidateQueries({ queryKey: ['soroteca'] }); return r }
   return {
     armazenar: (itens: ItemArmazenar[]) =>
-      depois(chamar<{ id: string; codigo_amostra: string; equipamento_nome: string; linha: number; coluna: number; repetido: boolean }[]>('soroteca_armazenar', { p_itens: itens })),
+      depois(chamar<{ id: string; codigo_amostra: string; equipamento_nome: string; prateleira_nome: string; linha: number; coluna: number; repetido: boolean }[]>('soroteca_armazenar', { p_itens: itens })),
     retirar: (id: string, motivo: string, observacao: string) =>
       depois(chamar<void>('soroteca_retirar', { p_amostra_id: id, p_motivo: motivo, p_observacao: observacao || null })),
     descartar: (ids: string[], motivo: string, responsavel: string, observacao: string) =>
       depois(chamar<number>('soroteca_descartar', { p_ids: ids, p_motivo: motivo, p_responsavel: responsavel, p_observacao: observacao || null })),
-    salvarEquipamento: (e: { id: string | null; nome: string; tipo: string; temperatura: string; workbench_id: string | null; linhas: number; colunas: number; ativo: boolean }) =>
-      depois(chamar<string>('soroteca_equipamento_salvar', {
+    salvarEquipamento: (e: { id: string | null; nome: string; tipo: string; temperatura: string; workbench_id: string | null; prateleiras: PrateleiraForm[]; ativo: boolean }) =>
+      depois(chamar<string>('soroteca_equipamento_gravar', {
         p_id: e.id, p_nome: e.nome, p_tipo: e.tipo, p_temperatura: e.temperatura || null, p_workbench_id: e.workbench_id,
-        p_linhas: e.linhas, p_colunas: e.colunas, p_ativo: e.ativo,
+        p_prateleiras: e.prateleiras.map(p => ({ id: p.id || null, nome: p.nome.trim(), linhas: p.linhas, colunas: p.colunas })), p_ativo: e.ativo,
       })),
     salvarConfig: (aviso: number, responsavel: string, retencao: Record<string, number>) =>
       depois(chamar<void>('soroteca_config_salvar', { p_aviso_dias: aviso, p_responsavel: responsavel || null, p_retencao: retencao })),
