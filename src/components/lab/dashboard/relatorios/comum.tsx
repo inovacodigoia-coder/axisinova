@@ -1,11 +1,15 @@
+import { useEffect, useState } from 'react'
+import { format } from 'date-fns'
 import { ArrowDown, ArrowUp, FileDown, FileSpreadsheet, Minus } from 'lucide-react'
 import { Line, LineChart, ResponsiveContainer, Tooltip } from 'recharts'
 import { Button } from '@/components/ui/button'
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
+import { ScrollArea } from '@/components/ui/scroll-area'
 import { Input } from '@/components/ui/input'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { cn } from '@/lib/utils'
 import type { Cor } from '@/lib/painelOperacional'
-import type { PeriodoRel, Variacao } from '@/lib/relatoriosGerenciais'
+import { tatPreAnalitico, tatRel, type ExameRel, type PeriodoRel, type Variacao } from '@/lib/relatoriosGerenciais'
 
 export const COR_TEXTO: Record<Cor, string> = { verde: 'text-success', amarelo: 'text-warning', vermelho: 'text-destructive' }
 export const COR_BORDA: Record<Cor, string> = { verde: 'border-success/40', amarelo: 'border-warning/50', vermelho: 'border-destructive/50' }
@@ -80,7 +84,7 @@ export function SetaVariacao({ v, melhorQuandoSobe, comparacao }: { v: Variacao 
   )
 }
 
-export function KpiCard({ titulo, valor, detalhe, cor, variacao, melhorQuandoSobe = true, comparacao, serie, destaque }: {
+export function KpiCard({ titulo, valor, detalhe, cor, variacao, melhorQuandoSobe = true, comparacao, serie, destaque, onClick }: {
   titulo: string
   valor: string
   detalhe?: string
@@ -90,9 +94,15 @@ export function KpiCard({ titulo, valor, detalhe, cor, variacao, melhorQuandoSob
   comparacao: string
   serie?: { dia: string; v: number | null }[]
   destaque?: boolean
+  /** Card clicável: abre a lista dos exames que entram no número. */
+  onClick?: () => void
 }) {
   return (
-    <div className={cn('rounded-2xl border bg-card p-4 shadow-sm', cor ? COR_BORDA[cor] : 'border-border', destaque && 'bg-destructive/5')}>
+    <div
+      className={cn('rounded-2xl border bg-card p-4 shadow-sm', cor ? COR_BORDA[cor] : 'border-border', destaque && 'bg-destructive/5',
+        onClick && 'cursor-pointer transition-colors hover:border-primary/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring')}
+      {...(onClick ? { role: 'button', tabIndex: 0, title: 'Clique para ver os exames', onClick,
+        onKeyDown: (e: React.KeyboardEvent) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onClick() } } } : {})}>
       <p className="text-xs font-medium text-muted-foreground">{titulo}</p>
       <p className={cn('mt-1 text-2xl font-bold', cor ? COR_TEXTO[cor] : 'text-foreground')}>{valor}</p>
       {detalhe && <p className="text-[11px] text-muted-foreground">{detalhe}</p>}
@@ -131,3 +141,58 @@ export function Bloco({ titulo, subtitulo, children, acao }: { titulo: string; s
 }
 
 export const tooltipStyle = { borderRadius: 12, border: '1px solid hsl(var(--border))', backgroundColor: 'hsl(var(--card))', fontSize: 12 }
+
+const LOTE_LISTA = 200
+
+/** Lista de exames (cards clicáveis e analistas). Mostra em lotes de 200, sem esconder nenhum. */
+export function ListaExamesDialog({ titulo, exames, nomeBancada, onClose }: {
+  titulo: string | null
+  exames: ExameRel[]
+  nomeBancada: (id: string) => string
+  onClose: () => void
+}) {
+  const [limite, setLimite] = useState(LOTE_LISTA)
+  useEffect(() => { setLimite(LOTE_LISTA) }, [titulo])
+  const fmt = (t: number | null) => (t ? format(t, 'dd/MM/yyyy HH:mm') : '—')
+  const visiveis = exames.slice(0, limite)
+  return (
+    <Dialog open={titulo !== null} onOpenChange={o => !o && onClose()}>
+      <DialogContent className="max-w-5xl">
+        <DialogHeader><DialogTitle>{titulo} — {fmtNum(exames.length)} exame(s)</DialogTitle></DialogHeader>
+        <ScrollArea className="max-h-[60vh]">
+          {exames.length === 0 ? <p className="py-6 text-center text-sm text-muted-foreground">Nenhum exame.</p> : (
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b border-border text-left text-xs uppercase tracking-wider text-muted-foreground">
+                  <th className="px-3 py-2">Pedido</th><th className="px-3 py-2">Exame</th><th className="px-3 py-2">Bancada</th>
+                  <th className="px-3 py-2">Recebido</th><th className="px-3 py-2">Coleta</th><th className="px-3 py-2">Liberação</th>
+                  <th className="px-3 py-2 text-right">Pré-analítico</th><th className="px-3 py-2 text-right">TAT</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-border">
+                {visiveis.map(e => (
+                  <tr key={e.chave}>
+                    <td className="px-3 py-2 font-mono text-xs">{e.protocolo || '—'}{e.urgente && <span className="ml-1 font-sans text-[10px] font-semibold text-destructive">URG</span>}</td>
+                    <td className="px-3 py-2">{e.exame}</td>
+                    <td className="px-3 py-2 text-muted-foreground">{nomeBancada(e.bancadaId)}</td>
+                    <td className="px-3 py-2 whitespace-nowrap">{fmt(e.pedidoEm)}</td>
+                    <td className="px-3 py-2 whitespace-nowrap">{fmt(e.coletaEm)}</td>
+                    <td className="px-3 py-2 whitespace-nowrap">{fmt(e.liberadoEm)}</td>
+                    <td className="px-3 py-2 text-right">{fmtMin(tatPreAnalitico(e))}</td>
+                    <td className="px-3 py-2 text-right">{fmtMin(tatRel(e))}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          )}
+        </ScrollArea>
+        {exames.length > limite && (
+          <div className="flex justify-center gap-2">
+            <Button variant="outline" size="sm" onClick={() => setLimite(l => l + LOTE_LISTA)}>Mostrar mais {fmtNum(Math.min(LOTE_LISTA, exames.length - limite))}</Button>
+            <Button variant="ghost" size="sm" onClick={() => setLimite(exames.length)}>Mostrar todos ({fmtNum(exames.length)})</Button>
+          </div>
+        )}
+      </DialogContent>
+    </Dialog>
+  )
+}
