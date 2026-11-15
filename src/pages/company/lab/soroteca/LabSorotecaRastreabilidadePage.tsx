@@ -1,17 +1,26 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { useSearchParams } from 'react-router-dom'
 import { toast } from 'sonner'
-import { FileDown, FileText, Loader2, Search } from 'lucide-react'
+import { FileDown, FileText, Loader2, Rows3, Search } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Skeleton } from '@/components/ui/skeleton'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { formatBirthBR } from '@/lib/attendanceDocHeader'
-import { buscarAmostras, useSorotecaAcesso, useSorotecaRastreio } from '@/hooks/useSoroteca'
+import { buscarAmostras, useSorotecaAcesso, useSorotecaRastreio, useSorotecaResumo } from '@/hooks/useSoroteca'
 import { LinhaDoTempoView, SemAcessoSoroteca, StatusBadge } from '@/components/lab/soroteca/SorotecaDialogs'
 import { FolhaDescarteDialog } from '@/components/lab/soroteca/FolhaDescarte'
-import { dataBR, dataHoraBR, linhaDoTempo, enderecoAmostra, type AmostraSoroteca } from '@/lib/soroteca'
+import { EstanteRastreioView } from '@/components/lab/soroteca/EstanteRastreio'
+import { dataBR, dataHoraBR, ehEstante, estanteDoCodigo, linhaDoTempo, enderecoAmostra, type AmostraSoroteca, type EquipamentoSoroteca } from '@/lib/soroteca'
+
+/** Sugestões enquanto digita o código da estante. */
+const sugerirEstantes = (estantes: EquipamentoSoroteca[], termo: string) => {
+  const t = termo.trim().toUpperCase()
+  if (!t) return []
+  return estantes.filter(e => String(e.codigo || '').toUpperCase().includes(t) || e.nome.toUpperCase().includes(t)).slice(0, 8)
+}
 
 export default function LabSorotecaRastreabilidadePage() {
   const acesso = useSorotecaAcesso()
@@ -22,19 +31,32 @@ export default function LabSorotecaRastreabilidadePage() {
   const [amostraId, setAmostraId] = useState<string | null>(params.get('amostra'))
   const q = useSorotecaRastreio(amostraId)
   const [folha, setFolha] = useState(false)
+  const resumo = useSorotecaResumo(!!acesso?.ver)
+  const estantes = useMemo(() => (resumo.data?.equipamentos ?? []).filter(ehEstante), [resumo.data])
+  const aba = params.get('aba') === 'estante' || (params.get('estante') && !params.get('amostra')) ? 'estante' : 'amostra'
+  const estanteId = params.get('estante')
+  const [termoEstante, setTermoEstante] = useState('')
+  const [semEstante, setSemEstante] = useState(false)
 
   useEffect(() => { const id = params.get('amostra'); if (id) setAmostraId(id) }, [params])
 
   if (acesso === null) return <Skeleton className="h-96 rounded-2xl" />
   if (!acesso.ver) return <SemAcessoSoroteca />
 
+  const abrirEstante = (id: string) => { setSemEstante(false); setTermoEstante(''); setParams({ aba: 'estante', estante: id }) }
+  const abrirAmostra = (id: string) => { setOpcoes(null); setAmostraId(id); setParams({ aba: 'amostra', amostra: id }) }
+  const mudarAba = (v: string) => setParams(v === 'estante' ? { aba: 'estante', ...(estanteId ? { estante: estanteId } : {}) } : { aba: 'amostra', ...(amostraId ? { amostra: amostraId } : {}) }, { replace: true })
+
   const buscar = async () => {
     if (termo.trim().length < 2) return
+    // código de estante bipado na aba Amostra: troca de aba sozinho
+    const est = estanteDoCodigo(estantes, termo)
+    if (est) { setTermo(''); toast.info(`Código da estante ${est.codigo}: abrindo a aba Estante`); abrirEstante(est.id); return }
     setBuscando(true)
     try {
       const r = await buscarAmostras({ situacao: 'todas', codigo: termo.trim() })
       setOpcoes(r.amostras)
-      if (r.amostras.length === 1) { setAmostraId(r.amostras[0].id); setParams({ amostra: r.amostras[0].id }, { replace: true }) }
+      if (r.amostras.length === 1) { setAmostraId(r.amostras[0].id); setParams({ aba: 'amostra', amostra: r.amostras[0].id }, { replace: true }) }
       else setAmostraId(null)
     } catch (e) {
       toast.error((e as Error).message)
@@ -42,6 +64,14 @@ export default function LabSorotecaRastreabilidadePage() {
       setBuscando(false)
     }
   }
+  const sugestoes = sugerirEstantes(estantes, termoEstante)
+  const buscarEstante = () => {
+    const exata = estanteDoCodigo(estantes, termoEstante)
+    const alvo = exata || (sugestoes.length === 1 ? sugestoes[0] : null)
+    if (alvo) abrirEstante(alvo.id)
+    else setSemEstante(true)
+  }
+  const estanteDaAmostra = (codigo: string | null | undefined) => (codigo ? estanteDoCodigo(estantes, codigo) : null)
 
   const r = q.data
   const a = r?.amostra
