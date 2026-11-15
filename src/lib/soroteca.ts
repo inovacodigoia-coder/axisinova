@@ -33,7 +33,18 @@ export interface EquipamentoSoroteca {
   /** Soma das posições de todas as prateleiras. */
   capacidade: number
   prateleiras: PrateleiraSoroteca[]
+  /** Etiqueta da estante (ex.: E79002); geladeira/freezer não têm. */
+  codigo?: string | null
+  /** Só estantes: em preenchimento (fora da geladeira) ou armazenada. */
+  situacao?: SituacaoEstante | null
+  local_equipamento_id?: string | null
+  local_equipamento_nome?: string | null
+  local_prateleira_id?: string | null
+  local_prateleira_nome?: string | null
+  local_em?: string | null
 }
+
+export type SituacaoEstante = 'em_preenchimento' | 'armazenada'
 
 export interface AmostraSoroteca {
   id: string
@@ -55,6 +66,12 @@ export interface AmostraSoroteca {
   equipamento_nome: string | null
   prateleira_id: string | null
   prateleira_nome: string | null
+  /** Estante onde o tubo está e onde a estante está guardada (geladeira > prateleira). */
+  equipamento_tipo?: EquipamentoSoroteca['tipo'] | null
+  estante_codigo?: string | null
+  local_equipamento_id?: string | null
+  local_nome?: string | null
+  local_prateleira_nome?: string | null
   linha: number | null
   coluna: number | null
   armazenada_em: string | null
@@ -89,9 +106,85 @@ export function enderecoPosicao(equipamento: string | null | undefined, pratelei
   return [equipamento, prateleira, linha && coluna ? rotuloPosicao(linha, coluna) : null].filter(Boolean).join(' > ')
 }
 
-/** Endereço atual de uma amostra guardada (null se retirada/descartada). */
-export const enderecoAmostra = (a: Pick<AmostraSoroteca, 'status' | 'equipamento_nome' | 'prateleira_nome' | 'linha' | 'coluna'>) =>
-  a.status === 'armazenada' && a.linha && a.coluna ? enderecoPosicao(a.equipamento_nome, a.prateleira_nome, a.linha, a.coluna) : null
+type ComLocal = Pick<AmostraSoroteca, 'status' | 'equipamento_nome' | 'prateleira_nome' | 'linha' | 'coluna'> &
+  Partial<Pick<AmostraSoroteca, 'local_nome' | 'local_prateleira_nome'>>
+
+/**
+ * Endereço atual de uma amostra guardada (null se retirada/descartada):
+ * "Geladeira 01 > Prateleira 2 > Estante E79002 > B05", ou "Estante E79002 > B05" enquanto a estante está fora da geladeira.
+ */
+export const enderecoAmostra = (a: ComLocal) =>
+  a.status === 'armazenada' && a.linha && a.coluna
+    ? [a.local_nome, a.local_prateleira_nome, enderecoPosicao(a.equipamento_nome, a.prateleira_nome, a.linha, a.coluna)].filter(Boolean).join(' > ')
+    : null
+
+// ----------------------------- Estantes -----------------------------
+
+export const ehEstante = (e: Pick<EquipamentoSoroteca, 'tipo'> | null | undefined) => e?.tipo === 'estante'
+/** Geladeira, freezer ou outro: guarda estantes nas prateleiras. */
+export const ehArmario = (e: Pick<EquipamentoSoroteca, 'tipo'> | null | undefined) => !!e && e.tipo !== 'estante'
+
+/** Opções do modal "Nova estante" (entrada rápida). */
+export const LINHAS_ESTANTE = [2, 4, 6, 8] as const
+export const COLUNAS_ESTANTE = [8, 10, 12, 16, 20] as const
+
+/** Mesmas regras do banco (soroteca_estante_gravar). */
+export function erroCodigoEstante(codigo: string): string | null {
+  const c = codigo.trim().toUpperCase()
+  if (!/^[A-Z0-9][A-Z0-9-]{1,29}$/.test(c)) return 'Código da estante: de 2 a 30 letras, números ou hífen'
+  if (/^[A-Z][A-Z0-9]{7}[0-9]$/.test(c)) return 'Esse código se parece com a etiqueta de um tubo; escolha outro'
+  return null
+}
+
+/** Próximo código livre no padrão E00001 (E + 5 dígitos), depois do maior já usado. */
+export function sugerirCodigoEstante(equipamentos: Pick<EquipamentoSoroteca, 'codigo'>[]): string {
+  let max = 0
+  for (const e of equipamentos) {
+    const m = /^E(\d+)$/.exec(String(e.codigo || '').toUpperCase())
+    if (m) max = Math.max(max, Number(m[1]))
+  }
+  return `E${String(max + 1).padStart(5, '0')}`
+}
+
+/** Estante com essa etiqueta (bipe), sem diferenciar maiúsculas. */
+export const estanteDoCodigo = (equipamentos: EquipamentoSoroteca[], codigo: string) => {
+  const c = codigo.trim().toUpperCase()
+  return c ? equipamentos.find(e => ehEstante(e) && String(e.codigo || '').toUpperCase() === c) ?? null : null
+}
+
+/** Grade única da estante. */
+export const gradeDaEstante = (e: Pick<EquipamentoSoroteca, 'prateleiras'> | null | undefined) => prateleirasDe(e)[0] ?? null
+
+/** Onde a estante está guardada ("Geladeira 01 > Prateleira 2") ou null se está em preenchimento. */
+export const localDaEstante = (e: Pick<EquipamentoSoroteca, 'situacao' | 'local_equipamento_nome' | 'local_prateleira_nome'>) =>
+  e.situacao === 'armazenada' ? [e.local_equipamento_nome, e.local_prateleira_nome].filter(Boolean).join(' > ') || null : null
+
+/** Próxima posição livre da estante (A01 → A02 → … → D16), somando posições já usadas nesta sessão. */
+export function proximaPosicaoEstante(
+  estante: Pick<EquipamentoSoroteca, 'prateleiras'>,
+  amostras: AmostraSoroteca[],
+  extra: { linha: number; coluna: number }[] = [],
+): { prateleira_id: string; linha: number; coluna: number } | null {
+  const g = gradeDaEstante(estante)
+  if (!g) return null
+  const ocup = ocupadasDo(g.id, amostras, extra.map(p => ({ prateleira_id: g.id, ...p })))
+  const p = primeiraLivre(g.linhas, g.colunas, ocup)
+  return p ? { prateleira_id: g.id, ...p } : null
+}
+
+/** Estantes guardadas numa prateleira de geladeira/freezer. */
+export const estantesNaPrateleira = (equipamentos: EquipamentoSoroteca[], prateleiraId: string) =>
+  equipamentos.filter(e => ehEstante(e) && e.situacao === 'armazenada' && e.local_prateleira_id === prateleiraId)
+    .sort((a, b) => String(a.codigo).localeCompare(String(b.codigo)))
+
+/** Endereço de um tubo já guardado (resultado do bipe), com a geladeira da estante. */
+export function enderecoGuardado(
+  g: Pick<PedidoLocalizado['guardados'][number], 'equipamento_id' | 'equipamento_nome' | 'prateleira_nome' | 'linha' | 'coluna'>,
+  equipamentos: EquipamentoSoroteca[],
+): string {
+  const e = equipamentos.find(x => x.id === g.equipamento_id)
+  return [e ? localDaEstante(e) : null, enderecoPosicao(g.equipamento_nome, g.prateleira_nome, g.linha, g.coluna)].filter(Boolean).join(' > ')
+}
 
 /** Prateleiras na ordem cadastrada. */
 export const prateleirasDe = (e: Pick<EquipamentoSoroteca, 'prateleiras'> | null | undefined) =>
@@ -181,34 +274,6 @@ export function ocupadasDo(prateleiraId: string, amostras: AmostraSoroteca[], re
   return s
 }
 
-/**
- * Sugestão de posição: equipamento ativo da mesma bancada do tubo com vaga; senão um
- * equipamento sem bancada definida; senão qualquer ativo com vaga. Dentro do equipamento,
- * a primeira prateleira (na ordem cadastrada) com vaga.
- */
-export function sugerirPosicao(
-  equipamentos: EquipamentoSoroteca[],
-  amostras: AmostraSoroteca[],
-  workbenchId: string | null,
-  reservas: PosicaoSoroteca[] = [],
-): PosicaoSoroteca | null {
-  const ativos = equipamentos.filter(e => e.ativo)
-  const grupos = [
-    ativos.filter(e => workbenchId && e.workbench_id === workbenchId),
-    ativos.filter(e => !e.workbench_id),
-    ativos,
-  ]
-  for (const g of grupos) {
-    for (const e of g) {
-      for (const pr of prateleirasDe(e)) {
-        const p = primeiraLivre(pr.linhas, pr.colunas, ocupadasDo(pr.id, amostras, reservas))
-        if (p) return { equipamento_id: e.id, prateleira_id: pr.id, ...p }
-      }
-    }
-  }
-  return null
-}
-
 export const primeiroNome = (nome: string | null | undefined) => String(nome || '').trim().split(/\s+/)[0] || ''
 
 // ----------------------------- Tubos do pedido -----------------------------
@@ -247,6 +312,10 @@ export interface TuboDoPedido {
   total: number
   liberados: number
   status: StatusResultado
+  /** Exames internos do tubo, com liberado/pendente (apoio e cancelados ficam de fora). */
+  exames: { id: string; nome: string; liberado: boolean }[]
+  /** Bancadas dos exames internos, sem repetir. */
+  bancadas: string[]
   guardado: PedidoLocalizado['guardados'][number] | null
 }
 
@@ -279,12 +348,15 @@ export function tubosDoPedido(p: PedidoLocalizado, agora: number = Date.now()): 
     const top = [...contagem.entries()].sort((a, b) => b[1].n - a[1].n)[0]
     let total = 0
     let liberados = 0
+    const exames: TuboDoPedido['exames'] = []
     for (const e of internos) {
       const st = p.resultados?.[idDoExame(e)]
       if (st === 'cancelled') continue
       total++
       if (st === 'released') liberados++
+      exames.push({ id: idDoExame(e), nome: String(e.name || e.examName || ''), liberado: st === 'released' })
     }
+    const bancadas = [...new Set(internos.map(e => String(e.bancadaNome || '').trim()).filter(Boolean))]
     return {
       indice,
       codigo,
@@ -301,6 +373,8 @@ export function tubosDoPedido(p: PedidoLocalizado, agora: number = Date.now()): 
       total,
       liberados,
       status: statusResultado(total, liberados),
+      exames,
+      bancadas,
       guardado: (p.guardados || []).find(g => g.tubo_indice === indice) ?? null,
     }
   })
@@ -326,10 +400,12 @@ export interface RastreioSoroteca {
     de_equipamento_nome: string | null; de_prateleira_nome?: string | null; de_linha: number | null; de_coluna: number | null; motivo: string | null; observacao: string | null
     status_resultado: StatusResultado | null; responsavel_nome: string | null; usuario_nome: string | null
   }[]
+  /** Estante guardada na geladeira / aberta para preencher enquanto o tubo estava nela. */
+  estante_movimentos?: { tipo: 'guardada' | 'aberta'; quando: string; estante_nome: string | null; equipamento_nome: string | null; prateleira_nome: string | null; usuario_nome: string | null }[]
   laboratorio: { nome: string | null; responsavel: string | null; registro: string | null; logo: string | null } | null
 }
 
-export type TipoEvento = 'coleta' | 'entrada' | 'movimentacao' | 'retirada' | 'consulta' | 'descarte' | 'liberacao'
+export type TipoEvento = 'coleta' | 'entrada' | 'movimentacao' | 'retirada' | 'consulta' | 'descarte' | 'liberacao' | 'estante'
 
 export interface EventoLinhaDoTempo {
   tipo: TipoEvento
@@ -364,6 +440,12 @@ export function linhaDoTempo(r: RastreioSoroteca): EventoLinhaDoTempo[] {
           ...(m.observacao ? [`Observação: ${m.observacao}`] : []),
           ...(m.usuario_nome && m.responsavel_nome && m.usuario_nome !== m.responsavel_nome ? [`Registrado por: ${m.usuario_nome}`] : [])] })
     }
+  }
+  for (const m of r.estante_movimentos || []) {
+    const onde = [m.equipamento_nome, m.prateleira_nome].filter(Boolean).join(' > ')
+    ev.push({ tipo: 'estante', quando: m.quando,
+      titulo: m.tipo === 'guardada' ? `${m.estante_nome || 'Estante'} guardada em ${onde}` : `${m.estante_nome || 'Estante'} retirada de ${onde} para preenchimento`,
+      linhas: m.usuario_nome ? [`Responsável: ${m.usuario_nome}`] : [] })
   }
   const validos = (r.exames || []).filter(e => e.status !== 'cancelled')
   const total = validos.length
