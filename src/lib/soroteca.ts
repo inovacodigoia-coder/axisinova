@@ -79,6 +79,8 @@ export interface AmostraSoroteca {
   total: number
   liberados: number
   status_resultado: StatusResultado
+  /** Retirada/descartada: último endereço completo que o tubo teve (Geladeira > Prateleira > Estante > posição). */
+  ultimo_endereco?: string | null
 }
 
 export const TIPOS_EQUIPAMENTO: { value: EquipamentoSoroteca['tipo']; label: string }[] = [
@@ -117,6 +119,14 @@ export const enderecoAmostra = (a: ComLocal) =>
   a.status === 'armazenada' && a.linha && a.coluna
     ? [a.local_nome, a.local_prateleira_nome, enderecoPosicao(a.equipamento_nome, a.prateleira_nome, a.linha, a.coluna)].filter(Boolean).join(' > ')
     : null
+
+/** Texto de localização para listas: endereço atual, ou onde estava (retirada/descartada). */
+export function localizacaoTexto(a: ComLocal & Pick<AmostraSoroteca, 'ultimo_endereco'>): string {
+  const atual = enderecoAmostra(a)
+  if (atual) return atual
+  const rotulo = a.status === 'retirada' ? 'Retirada' : a.status === 'descartada' ? 'Descartada' : '—'
+  return a.ultimo_endereco && rotulo !== '—' ? `${rotulo} · estava em ${a.ultimo_endereco}` : rotulo
+}
 
 // ----------------------------- Estantes -----------------------------
 
@@ -476,3 +486,70 @@ export const dataBR = (iso: string | null | undefined) => fmt(iso, { day: '2-dig
 /** Data e hora no horário de Brasília (dd/mm/aaaa hh:mm). */
 export const dataHoraBR = (iso: string | null | undefined) =>
   fmt(iso, { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' }).replace(',', '')
+
+// ----------------------------- Descarte de estante -----------------------------
+
+export const MOTIVOS_DESCARTE_ESTANTE = ['Prazo de retenção vencido', 'Estante danificada', 'Outro'] as const
+export type DestinoEstante = 'reaproveitar' | 'inativar'
+
+/** Estante ativa na aba "Por estante" (contagens calculadas no banco). */
+export interface EstanteDescarte {
+  id: string
+  codigo: string
+  nome: string
+  situacao: SituacaoEstante
+  local_equipamento_nome: string | null
+  local_prateleira_nome: string | null
+  tubos: number
+  mais_antigo: string | null
+  vencidos: number
+  vencendo: number
+  pendentes: number
+}
+
+/** Tubo da estante conferido antes do descarte. */
+export interface TuboConferido {
+  id: string
+  codigo_amostra: string
+  patient_name: string | null
+  linha: number
+  coluna: number
+  validade: string | null
+  coletada_em: string | null
+  armazenada_em: string | null
+  /** Nomes dos exames internos ainda não liberados. */
+  pendentes: string[]
+}
+
+export interface EstanteConferida {
+  id: string; codigo: string; nome: string; ativo: boolean; situacao: SituacaoEstante
+  local_equipamento_nome: string | null; local_prateleira_nome: string | null
+  tubos: TuboConferido[]
+}
+
+export type SituacaoDescarte = 'vencida' | 'vencendo' | 'no_prazo' | 'vazia'
+
+/** Vencida: todos os tubos passaram do prazo; vencendo: algum já venceu ou vence dentro do aviso; senão no prazo. */
+export function situacaoDescarteEstante(e: Pick<EstanteDescarte, 'tubos' | 'vencidos' | 'vencendo'>): SituacaoDescarte {
+  if (!e.tubos) return 'vazia'
+  if (e.vencidos >= e.tubos) return 'vencida'
+  if (e.vencidos + e.vencendo > 0) return 'vencendo'
+  return 'no_prazo'
+}
+
+/**
+ * Por que o tubo pede "Descartar mesmo assim" (lista vazia = pode descartar direto).
+ * Mesma regra do banco (soroteca_estante_descartar): exame pendente, sem prazo ou ainda dentro do prazo.
+ */
+export function riscoDescarteTubo(t: Pick<TuboConferido, 'validade' | 'pendentes'>, agora: number = Date.now()): string[] {
+  const r: string[] = []
+  if (t.pendentes.length) r.push(`exame pendente: ${t.pendentes.join(', ')}`)
+  const v = t.validade ? new Date(t.validade).getTime() : NaN
+  if (Number.isNaN(v)) r.push('sem prazo de retenção')
+  else if (v >= agora) r.push(`dentro do prazo (até ${dataBR(t.validade)})`)
+  return r
+}
+
+/** Onde a estante está ("Geladeira 01 > Prateleira 2") ou "fora da geladeira". */
+export const ondeEstaEstante = (e: Pick<EstanteDescarte, 'situacao' | 'local_equipamento_nome' | 'local_prateleira_nome'>) =>
+  localDaEstante(e) ?? 'Fora da geladeira (em preenchimento)'

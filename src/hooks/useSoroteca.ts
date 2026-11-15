@@ -2,15 +2,28 @@ import { useEffect, useState } from 'react'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { supabase } from '@/integrations/supabase/client'
 import { useAuth } from '@/context/AuthContext'
-import type { AmostraSoroteca, EquipamentoSoroteca, PedidoLocalizado, RastreioSoroteca } from '@/lib/soroteca'
+import type { AmostraSoroteca, DestinoEstante, EquipamentoSoroteca, EstanteConferida, EstanteDescarte, PedidoLocalizado, RastreioSoroteca } from '@/lib/soroteca'
 
 const rpc = (nome: string, args?: Record<string, unknown>) => (supabase.rpc as any)(nome, args) as Promise<{ data: any; error: any }>
 
-/** Mensagem do servidor (as RPCs já devolvem texto em português). */
+const ERRO_GENERICO = 'Não foi possível concluir agora. Tente de novo; se continuar, avise a TI.'
+/** Mensagens cruas do banco/navegador (em inglês) que nunca devem aparecer na tela. */
+const TECNICO = /requires a WHERE clause|syntax error|violates|duplicate key|does not exist|relation |column |null value|invalid input|could not|deadlock|statement timeout|JWT|Cannot read|is not a function|undefined|unexpected/i
+
+/**
+ * Texto em português para a tela. As RPCs da Soroteca levantam mensagens próprias (código P0001/P0002/42501);
+ * qualquer outra mensagem técnica do banco vira um aviso claro.
+ */
 export function mensagemErro(e: any): string {
-  const m = String(e?.message || e || '')
-  if (/permission denied|42501/i.test(m) && !/Sem permissão/.test(m)) return 'Sem permissão para esta ação na Soroteca'
-  return m || 'Não foi possível concluir agora. Tente de novo.'
+  const m = String(e?.message || e || '').trim()
+  const code = String(e?.code || '')
+  if (/Sem permissão/.test(m)) return m
+  if (code === '42501' || /permission denied/i.test(m)) return 'Sem permissão para esta ação na Soroteca'
+  if (/Failed to fetch|NetworkError|Load failed/i.test(m)) return 'Sem conexão com o servidor. Confira a internet e tente de novo.'
+  if (code === '23505' || /duplicate key/i.test(m)) return 'Essa posição acabou de ser ocupada. Bipe de novo.'
+  if (code === '40P01' || code === '40001' || /deadlock|could not serialize/i.test(m)) return 'Outra pessoa gravou ao mesmo tempo. Tente de novo.'
+  if (m && (code === 'P0001' || code === 'P0002' || (!code && !TECNICO.test(m)))) return m
+  return ERRO_GENERICO
 }
 
 async function chamar<T>(nome: string, args?: Record<string, unknown>): Promise<T> {
@@ -130,6 +143,32 @@ export function useSorotecaRastreio(amostraId: string | null) {
   })
 }
 
+/** Estantes ativas para a aba "Por estante" do descarte. */
+export function useSorotecaEstantesDescarte(habilitado: boolean) {
+  const { user } = useAuth()
+  return useQuery({
+    queryKey: ['soroteca', 'estantes-descarte', user?.companyId],
+    enabled: habilitado && !!user?.companyId,
+    refetchInterval: 60_000,
+    queryFn: () => chamar<{ aviso_dias: number; estantes: EstanteDescarte[] }>('soroteca_estantes_descarte'),
+  })
+}
+
+/** Tubos de uma estante (com exames pendentes) para conferir antes de descartar. */
+export function useSorotecaEstanteConferir(estanteId: string | null) {
+  const { user } = useAuth()
+  return useQuery({
+    queryKey: ['soroteca', 'conferir', user?.companyId, estanteId],
+    enabled: !!estanteId && !!user?.companyId,
+    queryFn: () => chamar<EstanteConferida>('soroteca_estante_conferir', { p_id: estanteId }),
+  })
+}
+
+export interface DescarteEstanteDados {
+  id: string; motivo: string; responsavel: string; observacao: string; destino: DestinoEstante; forcar: boolean
+}
+export interface DescarteEstanteResultado { tubos: number; codigo: string; origem: string | null; destino: DestinoEstante; ids: string[] }
+
 export const localizarNaSoroteca = (termo: string) =>
   chamar<{ modo: 'tubo' | 'pedido' | 'paciente' | 'nenhum'; pedidos: PedidoLocalizado[] }>('soroteca_localizar', { p_termo: termo })
 
@@ -174,6 +213,13 @@ export function useSorotecaAcoes() {
       depois(chamar<{ equipamento_nome: string; prateleira_nome: string; tubos: number }>('soroteca_estante_guardar', {
         p_id: id, p_equipamento_id: equipamentoId, p_prateleira_id: prateleiraId,
       })),
+    /** Descarta a estante inteira (todos os tubos viram "descartada"); reaproveitar deixa vazia, inativar aposenta. */
+    descartarEstante: (d: DescarteEstanteDados) =>
+      depois(chamar<DescarteEstanteResultado>('soroteca_estante_descartar', {
+        p_id: d.id, p_motivo: d.motivo, p_responsavel: d.responsavel, p_observacao: d.observacao.trim() || null, p_destino: d.destino, p_forcar: d.forcar,
+      })),
+    /** Estante inativa volta a ser usada (vazia). */
+    reativarEstante: (id: string) => depois(chamar<void>('soroteca_estante_reativar', { p_id: id })),
     salvarConfig: (aviso: number, responsavel: string, retencao: Record<string, number>) =>
       depois(chamar<void>('soroteca_config_salvar', { p_aviso_dias: aviso, p_responsavel: responsavel || null, p_retencao: retencao })),
   }

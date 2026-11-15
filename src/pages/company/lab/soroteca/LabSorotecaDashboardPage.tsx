@@ -11,6 +11,7 @@ import { useSorotecaAcesso, useSorotecaAmostras, useSorotecaResumo } from '@/hoo
 import { SorotecaGrid, SorotecaLegenda } from '@/components/lab/soroteca/SorotecaGrid'
 import { AmostraDetalheDialog, SemAcessoSoroteca } from '@/components/lab/soroteca/SorotecaDialogs'
 import { SorotecaModuloCard } from '@/components/lab/soroteca/SorotecaModuloCard'
+import { DescartarEstanteDialog } from '@/components/lab/soroteca/DescarteEstante'
 import { imprimirEtiquetaEquipamento } from '@/lib/sorotecaEtiqueta'
 import { ehArmario, ehEstante, estantesNaPrateleira, gradeDaEstante, localDaEstante, prateleirasDe, type EquipamentoSoroteca } from '@/lib/soroteca'
 
@@ -38,6 +39,7 @@ export default function LabSorotecaDashboardPage() {
   const [detalhe, setDetalhe] = useState<string | null>(null)
   const [aberta, setAberta] = useState<string | null>(null)
   const [imprimindo, setImprimindo] = useState(false)
+  const [descartarId, setDescartarId] = useState<string | null>(null)
   const destaque = params.get('amostra')
 
   // Vindo de "Ver no mapa" (Consulta): abre a estante com a amostra destacada
@@ -182,6 +184,11 @@ export default function LabSorotecaDashboardPage() {
                   </Button>
                 )}
                 {acesso.armazenar && <Button size="sm" asChild><Link to={`/app/soroteca/entrada?estante=${estanteAberta.id}`}><PackageCheck className="mr-1.5 h-3.5 w-3.5" />Abrir na Entrada</Link></Button>}
+                {acesso.descartar && (
+                  <Button variant="outline" size="sm" className="text-destructive" onClick={() => { setDescartarId(estanteAberta.id); fechar() }}>
+                    <Trash2 className="mr-1.5 h-3.5 w-3.5" />Descartar estante
+                  </Button>
+                )}
               </div>
               <div className={cn('rounded-lg bg-muted/40 p-3')}>
                 {gradeAberta ? (
@@ -195,6 +202,7 @@ export default function LabSorotecaDashboardPage() {
         </DialogContent>
       </Dialog>
 
+      <DescartarEstanteDialog estanteId={descartarId} onClose={() => setDescartarId(null)} />
       <AmostraDetalheDialog amostraId={detalhe} onClose={() => setDetalhe(null)} podeRetirar={acesso.armazenar} />
     </div>
   )
