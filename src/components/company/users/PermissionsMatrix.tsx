@@ -5,6 +5,7 @@ import { Progress } from '@/components/ui/progress'
 import { FINANCEIRO_PERMISSIONS } from '@/lib/financeiro'
 import { useBiHospitalarHabilitada } from '@/hooks/useBiHospitalar'
 import { useSorotecaAcesso } from '@/hooks/useSoroteca'
+import { usePainelOperacionalModuloAtivo } from '@/hooks/usePainelOperacional'
 import { MATERIAIS_PERMISSIONS, ATENDIMENTO_DETALHES_PERMISSIONS } from '@/types/permissions.types'
 import { Checkbox } from '@/components/ui/checkbox'
 
@@ -18,6 +19,9 @@ export function PermissionsMatrix({ permissions, onChange }: PermissionsMatrixPr
   const biHospitalarHabilitada = useBiHospitalarHabilitada()
   // Soroteca desativada na empresa: nem a linha do módulo nem as permissões aparecem
   const sorotecaAtiva = useSorotecaAcesso()?.modulo_ativo === true
+  // Painel Operacional desativado na empresa: a permissão não aparece
+  const painelAtivo = usePainelOperacionalModuloAtivo() === true
+  const labPermissoes = useMemo(() => LAB_PERMISSIONS.filter(p => painelAtivo || p.code !== 'lab.painel_operacional'), [painelAtivo])
   const MODULOS = useMemo(() => SYSTEM_MODULES.filter(m => sorotecaAtiva || m.key !== 'serotheque'), [sorotecaAtiva])
 
   useEffect(() => { onChange(perms) }, [perms])
@@ -283,7 +287,7 @@ export function PermissionsMatrix({ permissions, onChange }: PermissionsMatrixPr
           <p className="text-[11px] text-muted-foreground">O administrador da empresa já tem todas.</p>
         </div>
         <div className="grid gap-2 sm:grid-cols-2">
-          {LAB_PERMISSIONS.map(p => {
+          {labPermissoes.map(p => {
             const cur = ((perms as any).lab || []) as string[]
             return (
               <label key={p.code} className="flex items-start gap-2 rounded-md border border-border bg-muted/20 px-3 py-2 cursor-pointer">
