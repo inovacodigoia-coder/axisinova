@@ -3,6 +3,7 @@ import { buildSampleCode, generateSampleHash } from '@/utils/orderHash'
 import {
   alertaValidade, bloqueioDoTubo, capacidadePrateleiras, enderecoAmostra, enderecoPosicao, erroPrateleiras, letraLinha, linhaDoTempo, prioridadeDescarte, primeiraLivre, rotuloPosicao, statusResultado,
   descreverEventoEstante, situacaoEstanteTexto, type EventoEstante,
+  conferirEtiquetaEstante, entraNoDescarteEmLote, erroJustificativaDescarte, tubosQueBloqueiamFinalizar,
   erroCodigoEstante, erroRetirada, estanteDoCodigo, percentualOcupacao, podeRemoverNaEntrada, estantesNaPrateleira, proximaPosicaoEstante, sugerirCodigoEstante, tubosDoPedido, type AmostraSoroteca, type EquipamentoSoroteca, type PedidoLocalizado, type RastreioSoroteca,
 } from './soroteca'
 
@@ -275,5 +276,41 @@ describe('rastreabilidade da estante (S06-C)', () => {
     expect(situacaoEstanteTexto({ ...base, tubos: 0 })).toBe('Vazia')
     expect(situacaoEstanteTexto({ ...base, situacao: 'armazenada', local_equipamento_nome: 'Geladeira 01', local_prateleira_nome: 'Prateleira 2' })).toBe('Guardada em Geladeira 01 > Prateleira 2')
     expect(situacaoEstanteTexto({ ...base, ativo: false })).toBe('Inativa')
+  })
+})
+
+describe('S07 — descarte e Finalizar', () => {
+  it('justificativa só é opcional com "Prazo de retenção vencido"; nos outros motivos exige 10 caracteres', () => {
+    expect(erroJustificativaDescarte('Prazo de retenção vencido', '')).toBeNull()
+    for (const m of ['Estante danificada', 'Outro', 'Amostra danificada', 'Descarte de rotina']) {
+      expect(erroJustificativaDescarte(m, '')).toMatch(/faltam 10/)
+      expect(erroJustificativaDescarte(m, '  123456789  ')).toMatch(/faltam 1\)/)
+      expect(erroJustificativaDescarte(m, '1234567890')).toBeNull()
+    }
+  })
+
+  it('bipe de confirmação: vazio, estante certa (sem diferenciar maiúsculas) ou estante errada', () => {
+    expect(conferirEtiquetaEstante('', 'E00001')).toBe('vazio')
+    expect(conferirEtiquetaEstante('  ', 'E00001')).toBe('vazio')
+    expect(conferirEtiquetaEstante(' e00001 ', 'E00001')).toBe('ok')
+    expect(conferirEtiquetaEstante('E00002', 'E00001')).toBe('errado')
+    expect(conferirEtiquetaEstante('E00001', null)).toBe('errado')
+  })
+
+  it('tubo "Retirada" não entra na lista do descarte em lote', () => {
+    expect(entraNoDescarteEmLote({ status: 'armazenada' })).toBe(true)
+    expect(entraNoDescarteEmLote({ status: 'retirada' })).toBe(false)
+    expect(entraNoDescarteEmLote({ status: 'descartada' })).toBe(false)
+  })
+
+  it('Finalizar trava com tubo Parcial, Em análise ou Sem resultado; libera quando todos estão Liberados ou saíram', () => {
+    const a = (id: string, coluna: number, status_resultado: AmostraSoroteca['status_resultado'], total = 2, extra: Partial<AmostraSoroteca> = {}) =>
+      ({ id, codigo_amostra: `T-${id}`, status: 'armazenada', prateleira_id: 'g1', linha: 1, coluna, status_resultado, total, ...extra }) as AmostraSoroteca
+    const lista = [a('1', 1, 'liberado'), a('2', 3, 'em_analise'), a('3', 2, 'parcial'), a('4', 4, 'em_analise', 0),
+      a('5', 5, 'parcial', 2, { prateleira_id: 'outra' }), a('6', 6, 'parcial', 2, { status: 'retirada' })]
+    expect(tubosQueBloqueiamFinalizar('g1', lista)).toEqual([
+      { id: '3', codigo: 'T-3', status: 'Parcial' }, { id: '2', codigo: 'T-2', status: 'Em análise' }, { id: '4', codigo: 'T-4', status: 'Sem resultado' }])
+    expect(tubosQueBloqueiamFinalizar('g1', [a('1', 1, 'liberado'), a('7', 2, 'liberado')])).toEqual([])
+    expect(tubosQueBloqueiamFinalizar(null, lista)).toEqual([])
   })
 })
