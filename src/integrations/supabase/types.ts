@@ -9438,6 +9438,38 @@ export type Database = {
           },
         ]
       }
+      soroteca_modulo: {
+        Row: {
+          alterado_em: string
+          alterado_por: string | null
+          alterado_por_nome: string | null
+          ativo: boolean
+          company_id: string
+        }
+        Insert: {
+          alterado_em?: string
+          alterado_por?: string | null
+          alterado_por_nome?: string | null
+          ativo?: boolean
+          company_id: string
+        }
+        Update: {
+          alterado_em?: string
+          alterado_por?: string | null
+          alterado_por_nome?: string | null
+          ativo?: boolean
+          company_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "soroteca_modulo_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: true
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       soroteca_movimento: {
         Row: {
           amostra_id: string
@@ -14044,6 +14076,9 @@ export type Database = {
       }
       soroteca_hash_amostra: { Args: { p_codigo: string }; Returns: string }
       soroteca_localizar: { Args: { p_termo: string }; Returns: Json }
+      soroteca_modulo_ativo: { Args: never; Returns: boolean }
+      soroteca_modulo_definir: { Args: { p_ativo: boolean }; Returns: boolean }
+      soroteca_pode_ativar: { Args: never; Returns: boolean }
       soroteca_rastreio: { Args: { p_amostra_id: string }; Returns: Json }
       soroteca_resumo: { Args: never; Returns: Json }
       soroteca_retencao_padrao: { Args: { p_nome: string }; Returns: number }
