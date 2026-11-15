@@ -221,7 +221,7 @@ export default function LabSorotecaEntradaPage() {
       toast.success(msg)
       setFinalizando(false)
       setEstanteId(null); atual.current.estante = null
-      setUltimo(null); setAviso(null); setErro(null); setLocais([])
+      setUltimo(null); limparSelecao(); setAviso(null); setErro(null); setLocais([])
       if (modoLote) setOutra(msg)
       else focar()
     } catch (e) {
