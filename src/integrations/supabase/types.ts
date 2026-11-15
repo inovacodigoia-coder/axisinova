@@ -14396,6 +14396,10 @@ export type Database = {
           usuario_nome: string
         }[]
       }
+      soroteca__justificativa_ok: {
+        Args: { p_motivo: string; p_obs: string }
+        Returns: boolean
+      }
       soroteca__posicao: {
         Args: { p_coluna: number; p_linha: number }
         Returns: string

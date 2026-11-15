@@ -1212,6 +1212,13 @@
       "when": 1794755389479,
       "tag": "0172_soroteca_estante_historico",
       "breakpoints": true
+    },
+    {
+      "idx": 173,
+      "version": "7",
+      "when": 1794759705799,
+      "tag": "0173_soroteca_ajustes_descarte",
+      "breakpoints": true
     }
   ]
 }
