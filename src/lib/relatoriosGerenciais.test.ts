@@ -148,3 +148,56 @@ describe('resumo do dia', () => {
     expect(semaforoTat(61, 'urgente')).toBe('(ATRASO)')
   })
 })
+
+describe('L-Lab-02-A: TAT por fase, analistas, hemólise e recoleta', () => {
+  const ini = new Date(sp('2026-11-14T00:00:00')).getTime()
+  const fim = AGORA
+
+  it('TAT pré-analítico = recebido → coleta; analítico = coleta → liberação; cores 30/60 min', async () => {
+    const { corTatFase } = await import('./relatoriosGerenciais')
+    const k = kpisProducao(ex([
+      l({ c: sp('2026-11-14T08:00:00'), ca: sp('2026-11-14T08:20:00'), la: sp('2026-11-14T09:00:00') }),
+      l({ o: 'o2', c: sp('2026-11-14T08:00:00'), ca: sp('2026-11-14T08:40:00'), la: sp('2026-11-14T10:00:00') }),
+    ]), ini, fim)
+    expect(k.preTat).toBe(30)
+    expect(k.analTat).toBe(60)
+    expect(corTatFase(29)).toBe('verde')
+    expect(corTatFase(30)).toBe('amarelo')
+    expect(corTatFase(60)).toBe('amarelo')
+    expect(corTatFase(61)).toBe('vermelho')
+  })
+
+  it('produtividade usa quem liberou; rejeições pelo nome de quem pediu a recoleta', async () => {
+    const { produtividadeAnalistas } = await import('./relatoriosGerenciais')
+    const linhas = produtividadeAnalistas(ex([
+      l({ ca: sp('2026-11-14T08:00:00'), la: sp('2026-11-14T08:40:00'), lb: 'u1', u: true }),
+      l({ o: 'o2', ca: sp('2026-11-14T08:00:00'), la: sp('2026-11-14T09:00:00'), lb: 'u1' }),
+      l({ o: 'o3', ca: sp('2026-11-14T08:00:00'), la: sp('2026-11-14T09:00:00'), lb: 'u2' }),
+      l({ o: 'o4', ra: sp('2026-11-14T10:00:00'), rm: 'Amostra hemolisada', rb: 'joão' }),
+    ]), ini, fim, { u1: 'João', u2: 'Ana' })
+    expect(linhas.map(a => [a.nome, a.liberados, a.tatMedio, a.urgencias, a.rejeicoes])).toEqual([
+      ['João', 2, 50, 1, 1],
+      ['Ana', 1, 60, 0, 0],
+    ])
+  })
+
+  it('índice de hemólise por amostra e taxa de recoleta por pedido', () => {
+    const r = resumoRejeicoes(ex([
+      l({ o: 'o1', e: 'a', ca: sp('2026-11-14T08:00:00') }),
+      l({ o: 'o1', e: 'b', ra: sp('2026-11-14T09:00:00'), rm: 'Amostra hemolisada' }),
+      l({ o: 'o1', e: 'c', ra: sp('2026-11-14T09:00:00'), rm: 'Coágulo na amostra' }),
+      l({ o: 'o2', e: 'a', ca: sp('2026-11-14T08:00:00') }),
+    ]), ini, fim)
+    expect(r.indiceHemolise).toBe(25) // 1 de 4 amostras
+    expect(r.taxaRecoleta).toBe(50)   // 1 de 2 pedidos
+  })
+
+  it('cores: hemólise verde < 2%, amarelo 2–3%, vermelho > 3%; recoleta verde só abaixo de 0,5%', async () => {
+    const { corIndiceHemolise, corTaxaRecoleta } = await import('./relatoriosGerenciais')
+    expect(corIndiceHemolise(1.9)).toBe('verde')
+    expect(corIndiceHemolise(2.1)).toBe('amarelo')
+    expect(corIndiceHemolise(3.1)).toBe('vermelho')
+    expect(corTaxaRecoleta(0.4)).toBe('verde')
+    expect(corTaxaRecoleta(0.5)).toBe('vermelho')
+  })
+})
