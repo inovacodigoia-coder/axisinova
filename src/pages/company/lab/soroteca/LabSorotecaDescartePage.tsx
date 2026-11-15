@@ -18,6 +18,7 @@ import { cn } from '@/lib/utils'
 import { useAuth } from '@/context/AuthContext'
 import { buscarAmostras, useSorotecaAcesso, useSorotecaAcoes, useSorotecaAmostras, useSorotecaConfig } from '@/hooks/useSoroteca'
 import { SemAcessoSoroteca, StatusBadge } from '@/components/lab/soroteca/SorotecaDialogs'
+import { DescartePorEstante } from '@/components/lab/soroteca/DescarteEstante'
 import {
   dataBR, diasRestantes, MOTIVOS_DESCARTE, prioridadeDescarte, PRIORIDADE_ORDEM, enderecoAmostra, type AmostraSoroteca, type Prioridade,
 } from '@/lib/soroteca'
@@ -37,7 +38,7 @@ export default function LabSorotecaDescartePage() {
   const cfg = useSorotecaConfig(pode)
   const avisoDias = cfg.data?.aviso_dias ?? 7
   const [params] = useSearchParams()
-  const [aba, setAba] = useState(params.get('modo') === 'manual' ? 'manual' : 'lote')
+  const [aba, setAba] = useState(params.get('modo') === 'manual' ? 'manual' : params.get('modo') === 'estante' ? 'estante' : 'lote')
   const venceAte = useMemo(() => new Date(Date.now() + 30 * 86_400_000).toISOString(), [])
   const q = useSorotecaAmostras(pode ? { situacao: 'ativas', vence_ate: venceAte } : null, pode)
   const { descartar } = useSorotecaAcoes()
@@ -109,7 +110,12 @@ export default function LabSorotecaDescartePage() {
         <TabsList>
           <TabsTrigger value="lote">Lote</TabsTrigger>
           <TabsTrigger value="manual">Manual</TabsTrigger>
+          <TabsTrigger value="estante">Por estante</TabsTrigger>
         </TabsList>
+
+        <TabsContent value="estante">
+          <DescartePorEstante podeDescartar={acesso.descartar} ativa={aba === 'estante'} />
+        </TabsContent>
 
         <TabsContent value="lote" className="space-y-4">
           <div className="flex flex-wrap items-center gap-2">

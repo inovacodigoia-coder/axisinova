@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
 import { toast } from 'sonner'
-import { CheckCircle2, Layers, Loader2, PackageCheck, Plus, Printer, Rows3, ScanBarcode, X } from 'lucide-react'
+import { CheckCircle2, Layers, Loader2, PackageCheck, Plus, Printer, RotateCcw, Rows3, ScanBarcode, Trash2, X } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -14,11 +14,12 @@ import { cn } from '@/lib/utils'
 import { useAuth } from '@/context/AuthContext'
 import { useRegisters } from '@/context/RegistersContext'
 import { useMateriaisTubos } from '@/lib/tubos'
-import { localizarNaSoroteca, useSorotecaAcesso, useSorotecaAcoes, useSorotecaAmostras, useSorotecaResumo } from '@/hooks/useSoroteca'
+import { localizarNaSoroteca, mensagemErro, useSorotecaAcesso, useSorotecaAcoes, useSorotecaAmostras, useSorotecaResumo } from '@/hooks/useSoroteca'
 import { EstanteGrid } from '@/components/lab/soroteca/EstanteGrid'
 import { SorotecaLegenda } from '@/components/lab/soroteca/SorotecaGrid'
 import { SemAcessoSoroteca } from '@/components/lab/soroteca/SorotecaDialogs'
 import { FinalizarEstanteDialog, NovaEstanteDialog, type NovaEstanteDados } from '@/components/lab/soroteca/EstanteDialogs'
+import { DescartarEstanteDialog } from '@/components/lab/soroteca/DescarteEstante'
 import { imprimirEtiquetaEquipamento } from '@/lib/sorotecaEtiqueta'
 import {
   bloqueioDoTubo, ehEstante, enderecoGuardado, erroCodigoEstante, estanteDoCodigo, gradeDaEstante, localDaEstante, ocupadasDo,
@@ -27,7 +28,7 @@ import {
 } from '@/lib/soroteca'
 
 type Ultimo = { pedido: PedidoLocalizado; tubo: TuboDoPedido; linha: number; coluna: number }
-type Erro = { texto: string; novaEstante?: boolean }
+type Erro = { texto: string; novaEstante?: boolean; reativar?: EquipamentoSoroteca }
 
 export default function LabSorotecaEntradaPage() {
   const { user } = useAuth()
@@ -55,6 +56,8 @@ export default function LabSorotecaEntradaPage() {
   const [modoLote, setModoLote] = useState(false)
   const [outra, setOutra] = useState<string | null>(null)
   const [imprimindo, setImprimindo] = useState(false)
+  const [descartando, setDescartando] = useState(false)
+  const [reativando, setReativando] = useState(false)
 
   const equipamentos = useMemo(() => resumo.data?.equipamentos ?? [], [resumo.data])
   const estante = equipamentos.find(e => e.id === estanteId) ?? null
@@ -78,7 +81,7 @@ export default function LabSorotecaEntradaPage() {
   useEffect(() => { focar() }, [acesso?.ver])
 
   const abrirEstante = async (est: EquipamentoSoroteca) => {
-    if (!est.ativo) { setErro({ texto: `A estante ${est.codigo} está inativa.` }); return }
+    if (!est.ativo) { setErro({ texto: `Estante inativa: ${est.codigo} não recebe tubos.`, reativar: est }); return }
     const g = gradeDaEstante(est)
     if (g && ocupadasDo(g.id, atual.current.visiveis).size >= g.linhas * g.colunas) {
       setErro({ texto: `A estante ${est.codigo} está cheia (${g.linhas * g.colunas} posições). Crie uma nova estante.`, novaEstante: true })
@@ -99,7 +102,7 @@ export default function LabSorotecaEntradaPage() {
     if (!id || !equipamentos.length || !acesso?.armazenar) return
     const est = equipamentos.find(e => e.id === id && ehEstante(e))
     setParams({}, { replace: true })
-    if (est) void abrirEstante(est).catch(e => setErro({ texto: (e as Error).message }))
+    if (est) void abrirEstante(est).catch(e => setErro({ texto: mensagemErro(e) }))
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [params, equipamentos.length, acesso?.armazenar])
 
@@ -157,7 +160,7 @@ export default function LabSorotecaEntradaPage() {
     try {
       while (fila.current.length) {
         const c = fila.current.shift()!
-        try { await processar(c) } catch (e) { setErro({ texto: (e as Error).message }) }
+        try { await processar(c) } catch (e) { setErro({ texto: mensagemErro(e) }) }
       }
     } finally {
       rodando.current = false
@@ -216,6 +219,22 @@ export default function LabSorotecaEntradaPage() {
     }
   }
 
+  const reativar = async (est: EquipamentoSoroteca) => {
+    setReativando(true)
+    try {
+      await acoes.reativarEstante(est.id)
+      const nova = ((await resumo.refetch()).data?.equipamentos ?? []).find(e => e.id === est.id)
+      setErro(null)
+      toast.success(`Estante ${est.codigo} reativada.`)
+      if (nova) await abrirEstante(nova)
+    } catch (e) {
+      setErro({ texto: mensagemErro(e) })
+    } finally {
+      setReativando(false)
+      focar()
+    }
+  }
+
   const sair = () => { setEstanteId(null); atual.current.estante = null; setUltimo(null); setAviso(null); setErro(null); focar() }
 
   if (acesso === null) return <Skeleton className="h-96 rounded-2xl" />
@@ -259,6 +278,11 @@ export default function LabSorotecaEntradaPage() {
               {erro && (
                 <div className="space-y-2" role="alert">
                   <p className="text-sm font-medium text-destructive">{erro.texto}</p>
+                  {erro.reativar && (acesso.descartar || acesso.configurar) && (
+                    <Button size="sm" variant="outline" disabled={reativando} onClick={() => void reativar(erro.reativar!)}>
+                      {reativando ? <Loader2 className="mr-1 h-3.5 w-3.5 animate-spin" /> : <RotateCcw className="mr-1 h-3.5 w-3.5" />}Reativar estante
+                    </Button>
+                  )}
                   {erro.novaEstante && <Button size="sm" variant="outline" onClick={() => setNova({ codigo: sugerirCodigoEstante(equipamentos), doBipe: false })}><Plus className="mr-1 h-3.5 w-3.5" />Nova estante</Button>}
                 </div>
               )}
@@ -306,6 +330,7 @@ export default function LabSorotecaEntradaPage() {
           <div className="flex flex-wrap gap-2">
             <Button variant="outline" onClick={() => setNova({ codigo: sugerirCodigoEstante(equipamentos), doBipe: false })}><Plus className="mr-1.5 h-4 w-4" />Nova estante</Button>
             {estante && <Button variant="outline" onClick={() => imprimir(estante)} disabled={imprimindo}>{imprimindo ? <Loader2 className="mr-1.5 h-4 w-4 animate-spin" /> : <Printer className="mr-1.5 h-4 w-4" />}Reimprimir etiqueta</Button>}
+            {estante && acesso.descartar && <Button variant="outline" className="text-destructive" onClick={() => setDescartando(true)}><Trash2 className="mr-1.5 h-4 w-4" />Descartar estante</Button>}
           </div>
 
           <div className="space-y-1.5">
@@ -358,6 +383,9 @@ export default function LabSorotecaEntradaPage() {
         onClose={() => { setNova(null); focar() }} onCriar={criarEstante} />
       <FinalizarEstanteDialog estante={finalizando ? estante : null} preenchidas={preenchidas} total={total} equipamentos={equipamentos}
         onClose={() => { setFinalizando(false); focar() }} onConfirmar={guardar} />
+
+      <DescartarEstanteDialog estanteId={descartando ? estante?.id ?? null : null} onClose={() => { setDescartando(false); focar() }}
+        onDone={() => { setLocais([]); sair() }} />
 
       <Dialog open={!!outra} onOpenChange={o => { if (!o) { setOutra(null); focar() } }}>
         <DialogContent className="max-w-md">

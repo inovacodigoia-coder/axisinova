@@ -11,7 +11,7 @@ import { cn } from '@/lib/utils'
 import { useRegisters } from '@/context/RegistersContext'
 import { useSorotecaAcesso, useSorotecaAmostras, useSorotecaResumo, type FiltrosAmostras } from '@/hooks/useSoroteca'
 import { AmostraDetalheDialog, RetiradaDialog, SemAcessoSoroteca, StatusBadge } from '@/components/lab/soroteca/SorotecaDialogs'
-import { alertaValidade, dataBR, dataHoraBR, enderecoAmostra } from '@/lib/soroteca'
+import { alertaValidade, dataBR, dataHoraBR, enderecoAmostra, localizacaoTexto } from '@/lib/soroteca'
 
 const TODOS = '__todos__'
 
@@ -115,7 +115,7 @@ export default function LabSorotecaConsultaPage() {
                         <TableCell><button type="button" className="font-mono font-semibold text-primary hover:underline" onClick={() => setDetalhe(a.id)}>{a.codigo_amostra}</button></TableCell>
                         <TableCell>{a.patient_name || '—'}</TableCell>
                         <TableCell>{a.bancada_nome || '—'}</TableCell>
-                        <TableCell>{enderecoAmostra(a) ?? (a.status === 'retirada' ? 'Retirada' : '—')}</TableCell>
+                        <TableCell>{localizacaoTexto(a)}</TableCell>
                         <TableCell><StatusBadge status={a.status_resultado} descartada={a.status === 'descartada'} /></TableCell>
                         <TableCell className="whitespace-nowrap text-xs">{dataHoraBR(a.armazenada_em)}</TableCell>
                         <TableCell className={cn('whitespace-nowrap text-xs font-medium', v === 'vencida' && 'text-destructive', v === 'vencendo' && 'text-warning')}>{dataBR(a.validade)}</TableCell>

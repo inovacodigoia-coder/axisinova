@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react'
 import { toast } from 'sonner'
-import { Loader2, Pencil, Plus, Printer } from 'lucide-react'
+import { Loader2, Pencil, Plus, Printer, Trash2 } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -15,6 +15,7 @@ import { cn } from '@/lib/utils'
 import { useRegisters } from '@/context/RegistersContext'
 import { useSorotecaAcesso, useSorotecaAcoes, useSorotecaResumo } from '@/hooks/useSoroteca'
 import { SemAcessoSoroteca } from '@/components/lab/soroteca/SorotecaDialogs'
+import { DescartarEstanteDialog } from '@/components/lab/soroteca/DescarteEstante'
 import { imprimirEtiquetaEquipamento } from '@/lib/sorotecaEtiqueta'
 import {
   ehEstante, erroCodigoEstante, gradeDaEstante, localDaEstante, prateleirasDe, rotuloPosicao, sugerirCodigoEstante, TIPOS_EQUIPAMENTO,
@@ -72,6 +73,7 @@ export default function LabSorotecaStructurePage() {
   const [form, setForm] = useState<Form | null>(null)
   const [salvando, setSalvando] = useState(false)
   const [imprimindo, setImprimindo] = useState<string | null>(null)
+  const [descartarId, setDescartarId] = useState<string | null>(null)
 
   if (acesso === null) return <Skeleton className="h-96 rounded-2xl" />
   if (!acesso.ver) return <SemAcessoSoroteca />
@@ -169,6 +171,12 @@ export default function LabSorotecaStructurePage() {
                             {imprimindo === eq.id ? <Loader2 className="h-4 w-4 animate-spin" /> : <Printer className="h-4 w-4" />}
                           </Button>
                         )}
+                        {est && eq.ativo && acesso.descartar && (
+                          <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive" onClick={() => setDescartarId(eq.id)}
+                            aria-label={`Descartar estante ${eq.codigo}`} title="Descartar estante">
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        )}
                         {acesso.configurar && (
                           <Button variant="ghost" size="sm" onClick={() => setForm(doEquipamento(eq))}><Pencil className="mr-1 h-3.5 w-3.5" />Editar</Button>
                         )}
@@ -181,6 +189,8 @@ export default function LabSorotecaStructurePage() {
           )}
         </CardContent>
       </Card>
+
+      <DescartarEstanteDialog estanteId={descartarId} onClose={() => setDescartarId(null)} />
 
       <Dialog open={!!form} onOpenChange={o => !o && setForm(null)}>
         <DialogContent className="max-h-[92vh] max-w-xl overflow-y-auto">
