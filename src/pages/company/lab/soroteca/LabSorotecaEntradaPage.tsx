@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
 import { toast } from 'sonner'
-import { CheckCircle2, Layers, Loader2, PackageCheck, Plus, Printer, RotateCcw, Rows3, ScanBarcode, Trash2, X } from 'lucide-react'
+import { CheckCircle2, Layers, Loader2, Lock, MinusCircle, PackageCheck, Plus, Printer, RotateCcw, Rows3, ScanBarcode, Trash2, X } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -23,11 +23,13 @@ import { DescartarEstanteDialog } from '@/components/lab/soroteca/DescarteEstant
 import { imprimirEtiquetaEquipamento } from '@/lib/sorotecaEtiqueta'
 import {
   bloqueioDoTubo, ehEstante, enderecoGuardado, erroCodigoEstante, estanteDoCodigo, gradeDaEstante, localDaEstante, ocupadasDo,
-  proximaPosicaoEstante, rotuloPosicao, sugerirCodigoEstante, tubosDoPedido,
+  percentualOcupacao, podeRemoverNaEntrada, proximaPosicaoEstante, rotuloPosicao, sugerirCodigoEstante, tubosDoPedido,
   type AmostraSoroteca, type EquipamentoSoroteca, type PedidoLocalizado, type TuboDoPedido,
 } from '@/lib/soroteca'
 
 type Ultimo = { pedido: PedidoLocalizado; tubo: TuboDoPedido; linha: number; coluna: number }
+/** Tubo escolhido com clique na grade (o cartão mostra ele em vez do último bipado). */
+type Selecionado = Ultimo & { amostra: AmostraSoroteca }
 type Erro = { texto: string; novaEstante?: boolean; reativar?: EquipamentoSoroteca }
 
 export default function LabSorotecaEntradaPage() {
@@ -58,6 +60,11 @@ export default function LabSorotecaEntradaPage() {
   const [imprimindo, setImprimindo] = useState(false)
   const [descartando, setDescartando] = useState(false)
   const [reativando, setReativando] = useState(false)
+  const [selId, setSelId] = useState<string | null>(null)
+  const [selecionado, setSelecionado] = useState<Selecionado | null>(null)
+  const [remover, setRemover] = useState<AmostraSoroteca | null>(null)
+  const [removendo, setRemovendo] = useState(false)
+  const pedidoSel = useRef(0)
 
   const equipamentos = useMemo(() => resumo.data?.equipamentos ?? [], [resumo.data])
   const estante = equipamentos.find(e => e.id === estanteId) ?? null
@@ -77,6 +84,7 @@ export default function LabSorotecaEntradaPage() {
   const fila = useRef<string[]>([])
   const rodando = useRef(false)
   const focar = () => setTimeout(() => inputRef.current?.focus(), 0)
+  const limparSelecao = () => { pedidoSel.current++; setSelId(null); setSelecionado(null) }
 
   useEffect(() => { focar() }, [acesso?.ver])
 
@@ -94,6 +102,7 @@ export default function LabSorotecaEntradaPage() {
     atual.current.estante = est
     setEstanteId(est.id)
     setUltimo(null)
+    limparSelecao()
   }
 
   // Vindo do Dashboard ("Abrir na Entrada"): ?estante=<id>
@@ -110,6 +119,7 @@ export default function LabSorotecaEntradaPage() {
     const codigo = bruto.trim()
     if (codigo.length < 2) return
     setErro(null)
+    limparSelecao()
     const { equipamentos: eqs, estante: ativa } = atual.current
 
     // 1) etiqueta de estante
@@ -235,7 +245,48 @@ export default function LabSorotecaEntradaPage() {
     }
   }
 
-  const sair = () => { setEstanteId(null); atual.current.estante = null; setUltimo(null); setAviso(null); setErro(null); focar() }
+  const sair = () => { setEstanteId(null); atual.current.estante = null; setUltimo(null); limparSelecao(); setAviso(null); setErro(null); focar() }
+
+  /** Clique num tubo da grade: seleciona (clicar de novo tira a seleção). O foco continua no bipe. */
+  const selecionar = async (a: AmostraSoroteca) => {
+    focar()
+    if (selId === a.id) { limparSelecao(); return }
+    const vez = ++pedidoSel.current
+    setSelId(a.id)
+    setSelecionado(null)
+    try {
+      const r = await localizarNaSoroteca(a.codigo_amostra)
+      if (vez !== pedidoSel.current) return
+      const p = r.pedidos.find(x => x.order_id === a.order_id) ?? null
+      const t = p ? tubosDoPedido(p).find(x => x.indice === a.tubo_indice) ?? null : null
+      if (!p || !t || !a.linha || !a.coluna) { setErro({ texto: `Não foi possível carregar os dados do tubo ${a.codigo_amostra}.` }); limparSelecao(); return }
+      setSelecionado({ pedido: p, tubo: t, linha: a.linha, coluna: a.coluna, amostra: a })
+    } catch (e) {
+      if (vez === pedidoSel.current) { setErro({ texto: mensagemErro(e) }); limparSelecao() }
+    } finally {
+      focar()
+    }
+  }
+
+  const confirmarRemocao = async () => {
+    if (!remover) return
+    setRemovendo(true)
+    try {
+      const r = await acoes.removerTubo(remover.id)
+      const id = remover.id
+      atual.current.visiveis = atual.current.visiveis.filter(x => x.id !== id)
+      setLocais(l => l.filter(x => x.id !== id))
+      setUltimo(u => (u && u.pedido.order_id === remover.order_id && u.tubo.indice === remover.tubo_indice ? null : u))
+      limparSelecao()
+      setRemover(null)
+      toast.success(`Tubo ${r.codigo} removido da posição ${r.posicao}. A posição ficou livre.`)
+    } catch (e) {
+      toast.error(mensagemErro(e))
+    } finally {
+      setRemovendo(false)
+      focar()
+    }
+  }
 
   if (acesso === null) return <Skeleton className="h-96 rounded-2xl" />
   if (!pode) return <SemAcessoSoroteca />
@@ -246,9 +297,13 @@ export default function LabSorotecaEntradaPage() {
     </div>
   )
 
-  const t = ultimo?.tubo
+  // cartão: tubo selecionado na grade, ou o último bipado
+  const cartao: Ultimo | null = selId ? selecionado : ultimo
+  const t = cartao?.tubo
   const todosLiberados = !!t && t.total > 0 && t.liberados >= t.total
   const local = estante ? localDaEstante(estante) : null
+  const amostraSel = selecionado ? (visiveis.find(v => v.id === selecionado.amostra.id) ?? selecionado.amostra) : null
+  const pct = percentualOcupacao(preenchidas, total)
 
   return (
     <div className="space-y-6">
@@ -305,12 +360,18 @@ export default function LabSorotecaEntradaPage() {
             </CardContent>
           </Card>
 
-          {t && ultimo && (
-            <Card className="rounded-lg shadow-sm" aria-live="polite">
+          {selId && !selecionado && (
+            <Card className="rounded-lg shadow-sm"><CardContent className="space-y-2 pt-5"><Skeleton className="h-5 w-2/3" /><Skeleton className="h-4 w-1/2" /><Skeleton className="h-16" /></CardContent></Card>
+          )}
+          {t && cartao && (
+            <Card className={cn('rounded-lg shadow-sm', selecionado && 'border-2 border-foreground/60')} aria-live="polite">
               <CardContent className="space-y-2 pt-5">
-                {todosLiberados && <Badge className="bg-success text-success-foreground hover:bg-success">Todos liberados ✓</Badge>}
-                <p className="text-lg font-semibold leading-tight">{ultimo.pedido.patient_name || '—'}</p>
-                <p className="font-mono text-sm">{t.codigo} <span className="text-xs text-muted-foreground">· {t.hash} · posição {rotuloPosicao(ultimo.linha, ultimo.coluna)}</span></p>
+                <div className="flex flex-wrap items-center gap-2">
+                  {selecionado && <Badge variant="outline">Selecionado</Badge>}
+                  {todosLiberados && <Badge className="bg-success text-success-foreground hover:bg-success">Todos liberados ✓</Badge>}
+                </div>
+                <p className="text-lg font-semibold leading-tight">{cartao.pedido.patient_name || '—'}</p>
+                <p className="font-mono text-sm">{t.codigo} <span className="text-xs text-muted-foreground">· {t.hash} · posição {rotuloPosicao(cartao.linha, cartao.coluna)}</span></p>
                 <p className="text-xs text-muted-foreground">Bancada{t.bancadas.length === 1 ? '' : 's'}: {t.bancadas.join(', ') || '—'}</p>
                 <ul className="space-y-1 pt-1">
                   {t.exames.map(e => (
@@ -323,6 +384,15 @@ export default function LabSorotecaEntradaPage() {
                   ))}
                 </ul>
                 {t.temApoio && <p className="text-xs text-muted-foreground">Tem exame no laboratório de apoio (fora do status).</p>}
+                {amostraSel && (podeRemoverNaEntrada(amostraSel) ? (
+                  <Button variant="outline" size="sm" className="mt-1 w-full text-destructive" onMouseDown={e => e.preventDefault()} onClick={() => setRemover(amostraSel)}>
+                    <MinusCircle className="mr-1.5 h-4 w-4" />Remover tubo
+                  </Button>
+                ) : (
+                  <p className="mt-1 flex items-center gap-1.5 rounded-md bg-muted p-2 text-xs text-muted-foreground">
+                    <Lock className="h-3.5 w-3.5 shrink-0" />Tubo já finalizado: retire pela <Link className="underline" to="/app/soroteca/consulta">Consulta de Amostras</Link>
+                  </p>
+                ))}
               </CardContent>
             </Card>
           )}
@@ -334,8 +404,8 @@ export default function LabSorotecaEntradaPage() {
           </div>
 
           <div className="space-y-1.5">
-            <div className="flex justify-between text-sm"><span>{preenchidas} / {total} posições preenchidas</span>{total > 0 && <span className="text-muted-foreground">{Math.round((preenchidas / total) * 100)}%</span>}</div>
-            <Progress value={total ? (preenchidas / total) * 100 : 0} className="h-2.5" aria-label="Posições preenchidas" />
+            <div className="flex justify-between text-sm"><span>{preenchidas} / {total} posições preenchidas</span>{total > 0 && <span className="text-muted-foreground">{pct}%</span>}</div>
+            <Progress value={pct} className="h-2.5 bg-muted" aria-label="Posições preenchidas" />
           </div>
 
           <Button size="lg" className="w-full bg-info text-info-foreground hover:bg-info/90" disabled={!estante || preenchidas === 0} onClick={() => setFinalizando(true)}>
@@ -352,7 +422,8 @@ export default function LabSorotecaEntradaPage() {
           <CardContent>
             <div className="rounded-lg bg-muted/50 p-4">
               {resumo.isLoading || amostrasQ.isLoading ? <Skeleton className="h-64" /> : estante && grade ? (
-                <EstanteGrid grade={grade} amostras={visiveis} atual={ultimo ? { linha: ultimo.linha, coluna: ultimo.coluna } : null} />
+                <EstanteGrid grade={grade} amostras={visiveis} atual={ultimo ? { linha: ultimo.linha, coluna: ultimo.coluna } : null}
+                  selecionada={selId} onAmostra={a => void selecionar(a)} />
               ) : (
                 <div className="flex flex-col items-center gap-3 py-12 text-center">
                   <ScanBarcode className="h-10 w-10 text-muted-foreground" />
@@ -386,6 +457,23 @@ export default function LabSorotecaEntradaPage() {
 
       <DescartarEstanteDialog estanteId={descartando ? estante?.id ?? null : null} onClose={() => { setDescartando(false); focar() }}
         onDone={() => { setLocais([]); sair() }} />
+
+      <Dialog open={!!remover} onOpenChange={o => { if (!o && !removendo) { setRemover(null); focar() } }}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Remover tubo</DialogTitle>
+            <DialogDescription>
+              Remover o tubo {remover?.codigo_amostra} da posição {remover?.linha && remover?.coluna ? rotuloPosicao(remover.linha, remover.coluna) : '—'}? A posição fica livre e a remoção entra no histórico.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter className="gap-2">
+            <Button variant="outline" onClick={() => { setRemover(null); focar() }} disabled={removendo}>Cancelar</Button>
+            <Button variant="destructive" onClick={() => void confirmarRemocao()} disabled={removendo}>
+              {removendo ? <Loader2 className="mr-1.5 h-4 w-4 animate-spin" /> : <MinusCircle className="mr-1.5 h-4 w-4" />}Remover tubo
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       <Dialog open={!!outra} onOpenChange={o => { if (!o) { setOutra(null); focar() } }}>
         <DialogContent className="max-w-md">
