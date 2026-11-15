@@ -11,7 +11,7 @@ import { cn } from '@/lib/utils'
 import { useRegisters } from '@/context/RegistersContext'
 import { useSorotecaAcesso, useSorotecaAmostras, useSorotecaResumo, type FiltrosAmostras } from '@/hooks/useSoroteca'
 import { AmostraDetalheDialog, RetiradaDialog, SemAcessoSoroteca, StatusBadge } from '@/components/lab/soroteca/SorotecaDialogs'
-import { alertaValidade, dataBR, dataHoraBR, rotuloPosicao } from '@/lib/soroteca'
+import { alertaValidade, dataBR, dataHoraBR, enderecoAmostra } from '@/lib/soroteca'
 
 const TODOS = '__todos__'
 
