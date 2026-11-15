@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest'
 import { buildSampleCode, generateSampleHash } from '@/utils/orderHash'
 import {
   alertaValidade, bloqueioDoTubo, capacidadePrateleiras, enderecoAmostra, enderecoPosicao, erroPrateleiras, letraLinha, linhaDoTempo, prioridadeDescarte, primeiraLivre, rotuloPosicao, statusResultado,
-  sugerirPosicao, tubosDoPedido, type AmostraSoroteca, type EquipamentoSoroteca, type PedidoLocalizado, type RastreioSoroteca,
+  erroCodigoEstante, estanteDoCodigo, estantesNaPrateleira, proximaPosicaoEstante, sugerirCodigoEstante, tubosDoPedido, type AmostraSoroteca, type EquipamentoSoroteca, type PedidoLocalizado, type RastreioSoroteca,
 } from './soroteca'
 
 const AGORA = new Date('2026-11-15T12:00:00Z').getTime()
@@ -26,24 +26,38 @@ describe('posições da grade', () => {
   const eq = (id: string, wb: string | null, prateleiras = [prat(`${id}-p1`, 1)]): EquipamentoSoroteca =>
     ({ id, nome: id, tipo: 'geladeira', temperatura: null, workbench_id: wb, bancada_nome: null, ativo: true, ocupadas: 0, capacidade: 0, prateleiras })
 
-  it('sugestão vai para o equipamento da bancada do tubo e pula reservas do lote', () => {
-    const guardada = { status: 'armazenada', equipamento_id: 'bio', prateleira_id: 'bio-p1', linha: 1, coluna: 1 } as AmostraSoroteca
-    const eqs = [eq('hem', 'HEM'), eq('bio', 'BIO')]
-    expect(sugerirPosicao(eqs, [guardada], 'BIO')).toEqual({ equipamento_id: 'bio', prateleira_id: 'bio-p1', linha: 1, coluna: 2 })
-    expect(sugerirPosicao(eqs, [guardada], 'BIO', [{ equipamento_id: 'bio', prateleira_id: 'bio-p1', linha: 1, coluna: 2 }]))
-      .toEqual({ equipamento_id: 'hem', prateleira_id: 'hem-p1', linha: 1, coluna: 1 })
+  it('estante: próxima posição livre A01 → A02 … e nenhuma quando cheia', () => {
+    const est = eq('E79002', null, [prat('g1', 1, 2, 2)])
+    const a = (linha: number, coluna: number) => ({ status: 'armazenada', prateleira_id: 'g1', linha, coluna }) as AmostraSoroteca
+    expect(proximaPosicaoEstante(est, [])).toEqual({ prateleira_id: 'g1', linha: 1, coluna: 1 })
+    expect(proximaPosicaoEstante(est, [a(1, 1)], [{ linha: 1, coluna: 2 }])).toEqual({ prateleira_id: 'g1', linha: 2, coluna: 1 })
+    expect(proximaPosicaoEstante(est, [a(1, 1), a(1, 2), a(2, 1), a(2, 2)])).toBeNull()
   })
 
-  it('com a 1ª prateleira cheia, sugere A01 da próxima prateleira (na ordem cadastrada)', () => {
-    const e = eq('g', 'BIO', [prat('p2', 2), prat('p1', 1, 1, 1)])
-    const cheia = { status: 'armazenada', equipamento_id: 'g', prateleira_id: 'p1', linha: 1, coluna: 1 } as AmostraSoroteca
-    expect(sugerirPosicao([e], [cheia], 'BIO')).toEqual({ equipamento_id: 'g', prateleira_id: 'p2', linha: 1, coluna: 1 })
+  it('código da estante: sugere E + 5 dígitos depois do maior e recusa o que parece etiqueta de tubo', () => {
+    expect(sugerirCodigoEstante([])).toBe('E00001')
+    expect(sugerirCodigoEstante([{ codigo: 'E79002' }, { codigo: 'X1' }, { codigo: 'e00010' }])).toBe('E79003')
+    expect(erroCodigoEstante('E79002')).toBeNull()
+    expect(erroCodigoEstante('E 1')).toMatch(/de 2 a 30/)
+    expect(erroCodigoEstante('ABCDEFGH1')).toMatch(/etiqueta de um tubo/)
+  })
+
+  it('bipe acha a estante pelo código (sem diferenciar maiúsculas) e lista as guardadas na prateleira', () => {
+    const e1 = { ...eq('a', null), tipo: 'estante', codigo: 'E79002', situacao: 'armazenada', local_prateleira_id: 'p9' } as EquipamentoSoroteca
+    const e2 = { ...eq('b', null), tipo: 'estante', codigo: 'E79001', situacao: 'armazenada', local_prateleira_id: 'p9' } as EquipamentoSoroteca
+    const e3 = { ...eq('c', null), tipo: 'estante', codigo: 'E79003', situacao: 'em_preenchimento', local_prateleira_id: null } as EquipamentoSoroteca
+    expect(estanteDoCodigo([e1, e2, e3], ' e79002 ')?.id).toBe('a')
+    expect(estanteDoCodigo([eq('geladeira', null)], 'geladeira')).toBeNull()
+    expect(estantesNaPrateleira([e1, e2, e3], 'p9').map(e => e.codigo)).toEqual(['E79001', 'E79002'])
   })
 
   it('endereço completo: Equipamento > Prateleira > posição', () => {
     expect(enderecoPosicao('Geladeira 01', 'Prateleira 2', 2, 5)).toBe('Geladeira 01 > Prateleira 2 > B05')
     expect(enderecoPosicao('Geladeira 01', null, 1, 1)).toBe('Geladeira 01 > A01')
     expect(enderecoAmostra({ status: 'retirada', equipamento_nome: null, prateleira_nome: null, linha: null, coluna: null })).toBeNull()
+    expect(enderecoAmostra({ status: 'armazenada', equipamento_nome: 'Estante E79002', prateleira_nome: '', linha: 2, coluna: 5,
+      local_nome: 'Geladeira 01', local_prateleira_nome: 'Prateleira 2' })).toBe('Geladeira 01 > Prateleira 2 > Estante E79002 > B05')
+    expect(enderecoAmostra({ status: 'armazenada', equipamento_nome: 'Estante E79002', prateleira_nome: '', linha: 1, coluna: 1 })).toBe('Estante E79002 > A01')
   })
 
   it('capacidade é a soma das prateleiras; nomes repetidos e grades inválidas são recusados', () => {
