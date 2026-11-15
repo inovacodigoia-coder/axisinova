@@ -6,8 +6,8 @@ import { Badge } from '@/components/ui/badge'
 import { definirModuloSoroteca, useSorotecaAcesso } from '@/hooks/useSoroteca'
 
 /**
- * Liga/desliga a Soroteca da empresa. Só aparece para TI/Administração.
- * Desligada, a seção some do menu para todos os perfis, exceto TI/Administração.
+ * Liga/desliga a Soroteca da empresa. Só aparece para o Super Admin.
+ * Desligada, a seção some do menu para todos os perfis da empresa, inclusive o administrador.
  */
 export function SorotecaModuloCard() {
   const acesso = useSorotecaAcesso()
@@ -19,7 +19,7 @@ export function SorotecaModuloCard() {
     setSalvando(true)
     try {
       await definirModuloSoroteca(v)
-      toast.success(v ? 'Soroteca ativada para toda a empresa' : 'Soroteca desativada: só TI/Administração continua vendo')
+      toast.success(v ? 'Soroteca ativada para toda a empresa' : 'Soroteca desativada para toda a empresa')
     } catch (e) {
       toast.error((e as Error).message)
     } finally {
@@ -40,7 +40,7 @@ export function SorotecaModuloCard() {
         <p className="text-xs text-muted-foreground">
           {ativo
             ? 'Os perfis com permissão de Soroteca veem o módulo no menu.'
-            : 'A seção Soroteca está escondida do menu para todos os perfis desta empresa, exceto TI/Administração. Ative na hora do treinamento.'}
+            : 'A seção Soroteca está escondida do menu para todos os perfis desta empresa.'}
         </p>
       </div>
       <label className="flex items-center gap-2 text-sm">
