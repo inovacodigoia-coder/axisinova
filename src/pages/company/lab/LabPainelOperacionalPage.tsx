@@ -17,6 +17,7 @@ import { useAuth } from '@/context/AuthContext'
 import { useRegisters } from '@/context/RegistersContext'
 import { supabase } from '@/integrations/supabase/client'
 import { usePainelOperacional, usePainelOperacionalAcesso } from '@/hooks/usePainelOperacional'
+import { StatusAparelhos } from '@/components/lab/painel/StatusAparelhos'
 import {
   alertaDoPendente, corDaBancada, corDoTat, formatarDuracao, indicadoresDoPeriodo, janelaDoPeriodo, montarExames,
   ordenarBacklog, pendente, SITUACAO_LABEL, tatMinutos, valorCritico,
@@ -369,6 +370,8 @@ export default function LabPainelOperacionalPage() {
                 onClick={() => setModal({ titulo: 'Recoletas solicitadas no período', exames: rejeicoes.lista })} />
             </div>
           )}
+
+          <StatusAparelhos agora={agora} habilitado={acesso === true} />
 
           {criticos.length > 0 && (
             <Card className="painel-bloco border-destructive/40 p-0">

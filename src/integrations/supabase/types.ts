@@ -14177,6 +14177,31 @@ export type Database = {
         }[]
       }
       lab_norm: { Args: { t: string }; Returns: string }
+      lab_painel_aparelho_log: {
+        Args: { p_equipment_id: string }
+        Returns: {
+          amostra: string
+          codigo_teste: string
+          criado_em: string
+          exame: string
+          mensagem: string
+          protocolo: string
+          status: string
+          valor: string
+        }[]
+      }
+      lab_painel_aparelhos: {
+        Args: never
+        Returns: {
+          bancada: string
+          equipment_id: string
+          identificador: string
+          nome: string
+          ultima_comunicacao: string
+          ultimo_erro: string
+          ultimo_status: string
+        }[]
+      }
       lab_painel_criticos: {
         Args: { p_desde: string }
         Returns: {

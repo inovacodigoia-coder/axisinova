@@ -106,3 +106,54 @@ export function usePainelOperacional(periodo: PeriodoPainel, habilitado: boolean
     marcarNotificado,
   }
 }
+
+export interface AparelhoPainel {
+  equipment_id: string
+  nome: string
+  bancada: string | null
+  identificador: string | null
+  ultima_comunicacao: string | null
+  ultimo_status: string | null
+  ultimo_erro: string | null
+}
+
+export interface LogAparelho {
+  criado_em: string
+  status: string | null
+  mensagem: string | null
+  amostra: string | null
+  exame: string | null
+  codigo_teste: string | null
+  valor: string | null
+  protocolo: string | null
+}
+
+/** Aparelhos ativos com a última mensagem recebida (atualiza junto com o painel). */
+export function usePainelAparelhos(habilitado: boolean) {
+  const { user } = useAuth()
+  return useQuery({
+    queryKey: ['lab_painel_aparelhos', user?.companyId],
+    enabled: habilitado && !!user?.companyId,
+    refetchInterval: PAINEL_ATUALIZACAO_MS,
+    refetchOnWindowFocus: true,
+    queryFn: async () => {
+      const { data, error } = await (supabase.rpc as any)('lab_painel_aparelhos')
+      if (error) throw error
+      return (data ?? []) as AparelhoPainel[]
+    },
+  })
+}
+
+/** Últimas 10 mensagens do aparelho. */
+export function usePainelAparelhoLog(equipmentId: string | null) {
+  const { user } = useAuth()
+  return useQuery({
+    queryKey: ['lab_painel_aparelho_log', user?.companyId, equipmentId],
+    enabled: !!equipmentId && !!user?.companyId,
+    queryFn: async () => {
+      const { data, error } = await (supabase.rpc as any)('lab_painel_aparelho_log', { p_equipment_id: equipmentId })
+      if (error) throw error
+      return (data ?? []) as LogAparelho[]
+    },
+  })
+}

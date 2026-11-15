@@ -35,6 +35,16 @@ beforeEach(async () => {
     INSERT INTO sector_users VALUES('${BIO_LAB}','00000000-0000-4000-8000-0000000000f1'),('${BIO_OUT}','00000000-0000-4000-8000-0000000000f2');
   `)
   await db.exec(readFileSync('drizzle/migrations/0168_lab_painel_modulo.sql', 'utf8'))
+  await db.exec(`
+    CREATE TABLE lab_equipments(id uuid PRIMARY KEY, company_id uuid, name text, connection_type text, serial_number text, is_active boolean);
+    CREATE TABLE instrument_events(id serial PRIMARY KEY, company_id uuid, equipment_id text, status text, error_message text,
+      sample_barcode text, exam_name text, test_code text, received_value text, protocol text, created_at timestamptz DEFAULT now());
+    INSERT INTO lab_equipments VALUES
+      ('00000000-0000-4000-8000-0000000000a1','${LABSAUDE}','VIDA S2800','Bioquímico','VIDAS2800',true),
+      ('00000000-0000-4000-8000-0000000000a2','${LABSAUDE}','Antigo','Bioquímico','OLD',false),
+      ('00000000-0000-4000-8000-0000000000a3','${TOUROS}','Count 860','Hematológico','C860',true);
+  `)
+  await db.exec(readFileSync('drizzle/migrations/0174_lab_painel_aparelhos.sql', 'utf8').replace(/--> statement-breakpoint/g, ''))
 })
 afterEach(async () => { await db.close() })
 
@@ -53,5 +63,29 @@ describe('Painel Operacional — liberação por empresa', () => {
     expect((await db.query<{ a: boolean }>(`SELECT lab_painel_modulo_ativo() a`)).rows[0].a).toBe(false)
     await como(ADM_OUT)
     expect(await pode()).toBe(false)
+  })
+
+  it('status dos aparelhos: última mensagem de cada aparelho ativo e as 10 últimas do log', async () => {
+    for (let i = 0; i < 12; i++) {
+      await db.exec(`INSERT INTO instrument_events(company_id, equipment_id, status, sample_barcode, created_at)
+        VALUES('${LABSAUDE}',' vidas2800 ','processed','A${i}', now() - interval '${60 - i} minutes')`)
+    }
+    await db.exec(`INSERT INTO instrument_events(company_id, equipment_id, status, error_message, created_at)
+      VALUES('${LABSAUDE}','VIDAS2800','error','Amostra não encontrada', now() - interval '2 minutes'),
+            ('${TOUROS}','VIDAS2800','processed',null, now())`)
+    await como(BIO_LAB)
+    const ap = (await db.query<any>(`SELECT * FROM lab_painel_aparelhos()`)).rows
+    expect(ap.map(a => a.nome)).toEqual(['VIDA S2800'])
+    expect(ap[0].ultimo_status).toBe('error')
+    expect(ap[0].ultimo_erro).toBe('Amostra não encontrada')
+    const log = (await db.query<any>(`SELECT * FROM lab_painel_aparelho_log('00000000-0000-4000-8000-0000000000a1')`)).rows
+    expect(log).toHaveLength(10)
+    expect(log[0].status).toBe('error')
+    await expect(db.query(`SELECT * FROM lab_painel_aparelho_log('00000000-0000-4000-8000-0000000000a3')`)).rejects.toThrow(/não encontrado/)
+  })
+
+  it('status dos aparelhos fica fechado nas empresas com o painel desligado', async () => {
+    await como(ADM_OUT)
+    await expect(db.query(`SELECT * FROM lab_painel_aparelhos()`)).rejects.toThrow(/Sem permissão/)
   })
 })
