@@ -818,3 +818,71 @@ describe('Soroteca — rastreabilidade da estante (S06-C)', () => {
     expect(Number((await uma(`SELECT count(*) n FROM soroteca_estante_movimento WHERE estante_id = $1`, [est])).n)).toBe(2)
   })
 })
+
+describe('Soroteca — ajustes de descarte e Finalizar (S07)', () => {
+  const prats = async (eq: string) => (await rows(`SELECT id FROM soroteca_prateleira WHERE equipamento_id = $1 ORDER BY ordem`, [eq]))
+  const DESC = '00000000-0000-4000-8000-000000000017'
+  const comDescarte = () => db.exec(`
+    INSERT INTO profiles VALUES('${DESC}','${C}','biochemist','Dora Descarte');
+    INSERT INTO access_profiles VALUES('p_desc7','${C}','{"soroteca":["soroteca.ver","soroteca.descartar","soroteca.armazenar"]}', true, 'Descarte');
+    INSERT INTO company_sectors(id, allowed_profile_ids) VALUES('00000000-0000-4000-8000-0000000000f7','{p_desc7}');
+    INSERT INTO sector_users VALUES('${DESC}','00000000-0000-4000-8000-0000000000f7');`)
+  const liberar = (o: string, e: string) =>
+    db.query(`INSERT INTO lab_exam_results(company_id, order_id, exam_ref, status, released_at) VALUES($1, $2, $3, 'released', now())`, [C, o, `${o}:${e}`])
+
+  it('Finalizar recusa estante com tubo parcial ou em análise; libera quando tudo foi liberado ou o tubo pendente saiu', async () => {
+    const o = await pedido('1-01', [exame('e1', BIO), exame('e2', BIO)])
+    const o2 = await pedido('2-01', [exame('e3', BIO)])
+    await como(ADM)
+    const g = await geladeira('Geladeira 01', 1, 2)
+    const [p1] = await prats(g)
+    const est = await equipamento('E79002')
+    await armazenar([item(o, 1, ['e1', 'e2'], est, 1, 1), item(o2, 1, ['e3'], est, 1, 2)])
+    const finalizar = () => erro(`SELECT soroteca_estante_guardar($1, $2, $3)`, [est, g, p1.id])
+    expect(await finalizar()).toMatch(/E79002 tem 2 amostra\(s\) com exame pendente/)
+    await liberar(o, 'e1') // tubo 1 parcial
+    expect(await finalizar()).toMatch(/tem 2 amostra\(s\) com exame pendente/)
+    await liberar(o, 'e2') // tubo 1 liberado; tubo 2 em análise
+    expect(await finalizar()).toMatch(/tem 1 amostra\(s\) com exame pendente/)
+    const pendente = (await amostras({ equipamento_id: est })).find(a => a.coluna === 2)
+    await uma(`SELECT soroteca_remover_tubo($1)`, [pendente.id])
+    expect(await finalizar()).toBe('')
+  })
+
+  it('justificativa de 10+ caracteres obrigatória quando o motivo não é "Prazo de retenção vencido" (estante, lote e manual)', async () => {
+    await comDescarte()
+    const VELHO = { collectedAt: '2026-01-10T12:00:00.000Z' }
+    const o = await pedido('1-01', [exame('e1', BIO, VELHO)])
+    const o2 = await pedido('2-01', [exame('e2', BIO, VELHO)])
+    await como(DESC)
+    const est = await equipamento('E79002')
+    await armazenar([item(o, 1, ['e1'], est, 1, 1), item(o2, 1, ['e2'], est, 1, 2)])
+    const [a1, a2] = (await amostras({ equipamento_id: est })).sort((x, y) => x.coluna - y.coluna)
+    for (const tipo of ['lote', 'manual']) {
+      expect(await erro(`SELECT soroteca_descartar_amostras(ARRAY[$1]::uuid[], 'Amostra danificada', NULL, 'curta', $2)`, [a1.id, tipo])).toMatch(/mínimo 10 caracteres/)
+      expect(await erro(`SELECT soroteca_descartar_amostras(ARRAY[$1]::uuid[], 'Outro', NULL, NULL, $2)`, [a1.id, tipo])).toMatch(/mínimo 10 caracteres/)
+    }
+    expect(await erro(`SELECT soroteca_estante_descartar($1, 'Estante danificada', NULL, 'curta', 'reaproveitar', true)`, [est])).toMatch(/mínimo 10 caracteres/)
+    expect((await amostras({ situacao: 'armazenada' })).length).toBe(2)
+    // prazo vencido: observação opcional
+    expect((await uma(`SELECT soroteca_descartar_amostras(ARRAY[$1]::uuid[], 'Prazo de retenção vencido', NULL, NULL, 'lote') r`, [a1.id])).r.tubos).toBe(1)
+    expect((await uma(`SELECT soroteca_descartar_amostras(ARRAY[$1]::uuid[], 'Amostra danificada', NULL, 'Tubo trincado na centrífuga', 'manual') r`, [a2.id])).r.tubos).toBe(1)
+  })
+
+  it('descarte em lote não aceita tubo retirado (em reprocessamento); manual continua aceitando', async () => {
+    await comDescarte()
+    const o = await pedido('1-01', [exame('e1', BIO)])
+    await como(ADM)
+    const g = await geladeira('Geladeira 01', 1, 2)
+    const [p1] = await prats(g)
+    await como(DESC)
+    const est = await equipamento('E79002')
+    await armazenar([item(o, 1, ['e1'], est, 1, 1)])
+    await guardarLiberada(est, g, p1.id)
+    const id = (await amostras())[0].id
+    await db.query(`SELECT soroteca_retirar($1, 'Repetição de exame', 'Refazer a dosagem')`, [id])
+    expect(await erro(`SELECT soroteca_descartar_amostras(ARRAY[$1]::uuid[], 'Prazo de retenção vencido', NULL, NULL, 'lote')`, [id])).toMatch(/retirado.*não entra no descarte em lote/)
+    expect((await amostras({ situacao: 'retirada' })).length).toBe(1)
+    expect((await uma(`SELECT soroteca_descartar_amostras(ARRAY[$1]::uuid[], 'Prazo de retenção vencido', NULL, NULL, 'manual') r`, [id])).r.tubos).toBe(1)
+  })
+})
