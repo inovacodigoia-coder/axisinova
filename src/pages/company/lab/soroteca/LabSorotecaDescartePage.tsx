@@ -15,12 +15,13 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { cn } from '@/lib/utils'
-import { buscarAmostras, useSorotecaAcesso, useSorotecaAcoes, useSorotecaAmostras, useSorotecaConfig } from '@/hooks/useSoroteca'
+import { buscarAmostras, mensagemErro, useSorotecaAcesso, useSorotecaAcoes, useSorotecaAmostras, useSorotecaConfig } from '@/hooks/useSoroteca'
 import { ResponsavelLogado, SemAcessoSoroteca, StatusBadge } from '@/components/lab/soroteca/SorotecaDialogs'
 import { DescartePorEstante } from '@/components/lab/soroteca/DescarteEstante'
 import { FolhaDescarteDialog } from '@/components/lab/soroteca/FolhaDescarte'
 import {
-  dataBR, diasRestantes, MOTIVOS_DESCARTE, prioridadeDescarte, PRIORIDADE_ORDEM, enderecoAmostra, type AmostraSoroteca, type Prioridade,
+  dataBR, diasRestantes, entraNoDescarteEmLote, erroJustificativaDescarte, justificativaDescarteObrigatoria, MOTIVOS_DESCARTE,
+  MOTIVO_DESCARTE_SEM_JUSTIFICATIVA, prioridadeDescarte, PRIORIDADE_ORDEM, enderecoAmostra, type AmostraSoroteca, type Prioridade,
 } from '@/lib/soroteca'
 
 const BADGE: Record<Prioridade, { label: string; cls: string }> = {
@@ -39,11 +40,12 @@ export default function LabSorotecaDescartePage() {
   const [params] = useSearchParams()
   const [aba, setAba] = useState(params.get('modo') === 'manual' ? 'manual' : params.get('modo') === 'estante' ? 'estante' : 'lote')
   const venceAte = useMemo(() => new Date(Date.now() + 30 * 86_400_000).toISOString(), [])
-  const q = useSorotecaAmostras(pode ? { situacao: 'ativas', vence_ate: venceAte } : null, pode)
+  // lote: só tubos guardados — "Retirada" está em reprocessamento e volta para a soroteca
+  const q = useSorotecaAmostras(pode ? { situacao: 'armazenada', vence_ate: venceAte } : null, pode)
   const { descartar } = useSorotecaAcoes()
   const [sel, setSel] = useState<Set<string>>(new Set())
   const [confirmar, setConfirmar] = useState<AmostraSoroteca[] | null>(null)
-  const [motivo, setMotivo] = useState<string>('Validade vencida')
+  const [motivo, setMotivo] = useState<string>(MOTIVO_DESCARTE_SEM_JUSTIFICATIVA)
   const [obs, setObs] = useState('')
   const [salvando, setSalvando] = useState(false)
   const [codigo, setCodigo] = useState('')
@@ -54,6 +56,7 @@ export default function LabSorotecaDescartePage() {
   const candidatas = useMemo(() => {
     const agora = Date.now()
     return (q.data?.amostras ?? [])
+      .filter(entraNoDescarteEmLote)
       .map(a => ({ a, p: prioridadeDescarte(a.validade, avisoDias, agora), d: diasRestantes(a.validade, agora) }))
       .filter((x): x is { a: AmostraSoroteca; p: Prioridade; d: number | null } => !!x.p)
       .sort((x, y) => PRIORIDADE_ORDEM[x.p] - PRIORIDADE_ORDEM[y.p] || String(x.a.validade).localeCompare(String(y.a.validade)))
@@ -66,18 +69,21 @@ export default function LabSorotecaDescartePage() {
     setSel(new Set(candidatas.filter(x => filtro(x.p, x.d)).map(x => x.a.id)))
   const toggle = (id: string) => setSel(s => { const n = new Set(s); if (n.has(id)) n.delete(id); else n.add(id); return n })
   const selecionadas = candidatas.filter(x => sel.has(x.a.id)).map(x => x.a)
+  const obsObrigatoria = justificativaDescarteObrigatoria(motivo)
+  const erroObs = erroJustificativaDescarte(motivo, obs)
   const nEquip = (lista: AmostraSoroteca[]) => new Set(lista.map(a => a.equipamento_id || 'retirada')).size
 
   const executar = async () => {
     if (!confirmar?.length) return
     setSalvando(true)
     try {
-      const r = await descartar(confirmar.map(a => a.id), motivo === 'Outro' ? (obs.trim() || 'Outro') : motivo, obs, aba === 'manual' ? 'manual' : 'lote')
+      if (erroJustificativaDescarte(motivo, obs)) return
+      const r = await descartar(confirmar.map(a => a.id), motivo, obs, aba === 'manual' ? 'manual' : 'lote')
       toast.success(`${r.tubos} amostra(s) descartada(s). As posições ficaram livres.`)
       if (r.descarte_id) setFolhaId(r.descarte_id)
       setConfirmar(null); setSel(new Set()); setObs(''); setManual(null); setCodigo('')
     } catch (e) {
-      toast.error((e as Error).message)
+      toast.error(mensagemErro(e))
     } finally {
       setSalvando(false)
     }
@@ -106,7 +112,7 @@ export default function LabSorotecaDescartePage() {
 
       <Tabs value={aba} onValueChange={setAba}>
         <TabsList>
-          <TabsTrigger value="lote">Lote</TabsTrigger>
+          <TabsTrigger value="lote">Em lote</TabsTrigger>
           <TabsTrigger value="manual">Manual</TabsTrigger>
           <TabsTrigger value="estante">Por estante</TabsTrigger>
         </TabsList>
@@ -121,7 +127,7 @@ export default function LabSorotecaDescartePage() {
             <Button variant="outline" size="sm" onClick={() => marcar(p => p !== 'planejado')} disabled={!acesso.descartar}>Selecionar urgentes (até {avisoDias} dias)</Button>
             {sel.size > 0 && <Button variant="ghost" size="sm" onClick={() => setSel(new Set())}>Limpar seleção</Button>}
             <Button variant="destructive" size="sm" className="ml-auto" disabled={!acesso.descartar || !selecionadas.length}
-              onClick={() => { setMotivo(selecionadas.every(a => a.validade && new Date(a.validade).getTime() < Date.now()) ? 'Validade vencida' : 'Prazo de retenção atingido'); setConfirmar(selecionadas) }}>
+              onClick={() => { setMotivo(MOTIVO_DESCARTE_SEM_JUSTIFICATIVA); setObs(''); setConfirmar(selecionadas) }}>
               <Trash2 className="mr-1.5 h-4 w-4" />Descartar selecionadas ({selecionadas.length})
             </Button>
           </div>
@@ -177,7 +183,7 @@ export default function LabSorotecaDescartePage() {
                     <p>{a.patient_name} · Pedido {a.protocolo} · {a.bancada_nome || '—'}</p>
                     <p className="text-xs text-muted-foreground">{posicaoTxt(a)} · Validade {dataBR(a.validade)} · <StatusBadge status={a.status_resultado} /></p>
                   </div>
-                  <Button variant="destructive" disabled={!acesso.descartar} onClick={() => { setMotivo('Validade vencida'); setConfirmar([a]) }}>
+                  <Button variant="destructive" disabled={!acesso.descartar} onClick={() => { setMotivo(MOTIVO_DESCARTE_SEM_JUSTIFICATIVA); setObs(''); setConfirmar([a]) }}>
                     <Trash2 className="mr-1.5 h-4 w-4" />Registrar descarte
                   </Button>
                 </div>
@@ -204,12 +210,18 @@ export default function LabSorotecaDescartePage() {
                 <SelectContent>{MOTIVOS_DESCARTE.map(m => <SelectItem key={m} value={m}>{m}</SelectItem>)}</SelectContent>
               </Select>
             </div>
-            <div className="space-y-1.5"><Label>Observação {motivo === 'Outro' ? '(obrigatória)' : '(opcional)'}</Label><Textarea rows={2} maxLength={500} placeholder="Ex.: descarte de rotina semanal" value={obs} onChange={e => setObs(e.target.value)} /></div>
+            <div className="space-y-1.5">
+              <Label htmlFor="desc-obs">{obsObrigatoria ? 'Explique o motivo (obrigatório)' : 'Observação (opcional)'}</Label>
+              <Textarea id="desc-obs" rows={2} maxLength={500} placeholder={aba === 'lote' ? 'Uma justificativa para toda a leva' : 'Ex.: tubo trincado'}
+                value={obs} onChange={e => setObs(e.target.value)} aria-invalid={!!erroObs}
+                className={cn(obsObrigatoria && 'border-2 border-warning focus-visible:ring-warning')} />
+              {erroObs && <p className="text-xs text-warning">{erroObs}</p>}
+            </div>
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setConfirmar(null)}>Cancelar</Button>
-            <Button variant="destructive" onClick={executar} disabled={salvando || (motivo === 'Outro' && !obs.trim())}>
-              {salvando && <Loader2 className="mr-1.5 h-4 w-4 animate-spin" />}Confirmar descarte
+            <Button variant="destructive" onClick={executar} disabled={salvando || !!erroObs} title={erroObs || undefined}>
+              {salvando && <Loader2 className="mr-1.5 h-4 w-4 animate-spin" />}{aba === 'lote' ? 'Confirmar descarte do lote' : 'Confirmar descarte'}
             </Button>
           </DialogFooter>
         </DialogContent>
