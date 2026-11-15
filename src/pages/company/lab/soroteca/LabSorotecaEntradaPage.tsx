@@ -15,12 +15,13 @@ import { formatBirthBR } from '@/lib/attendanceDocHeader'
 import { localizarNaSoroteca, useSorotecaAcesso, useSorotecaAcoes, useSorotecaAmostras, useSorotecaResumo } from '@/hooks/useSoroteca'
 import { SorotecaGrid, SorotecaLegenda } from '@/components/lab/soroteca/SorotecaGrid'
 import { SemAcessoSoroteca, StatusBadge } from '@/components/lab/soroteca/SorotecaDialogs'
+import { PrateleiraAbas, prateleiraAtual } from '@/components/lab/soroteca/PrateleiraAbas'
 import {
-  bloqueioDoTubo, chavePosicao, ocupadasDo, rotuloPosicao, sugerirPosicao, tubosDoPedido,
-  type PedidoLocalizado, type TuboDoPedido,
+  bloqueioDoTubo, chavePosicao, enderecoPosicao, ocupadasDo, sugerirPosicao, tubosDoPedido,
+  type EquipamentoSoroteca, type PedidoLocalizado, type PosicaoSoroteca, type TuboDoPedido,
 } from '@/lib/soroteca'
 
-type Posicao = { equipamento_id: string; linha: number; coluna: number }
+type Posicao = PosicaoSoroteca
 type ItemLote = { pedido: PedidoLocalizado; tubo: TuboDoPedido } & Posicao
 
 export default function LabSorotecaEntradaPage() {
@@ -41,6 +42,7 @@ export default function LabSorotecaEntradaPage() {
   const [pedido, setPedido] = useState<PedidoLocalizado | null>(null)
   const [tubo, setTubo] = useState<TuboDoPedido | null>(null)
   const [eqAtual, setEqAtual] = useState<string | null>(null)
+  const [pratAtual, setPratAtual] = useState<string | null>(null)
   const [posicao, setPosicao] = useState<Posicao | null>(null)
   const [modoLote, setModoLote] = useState(false)
   const [lote, setLote] = useState<ItemLote[]>([])
@@ -52,21 +54,30 @@ export default function LabSorotecaEntradaPage() {
   const amostras = amostrasQ.data?.amostras ?? []
   const avisoDias = resumo.data?.aviso_dias ?? 7
   const eq = equipamentos.find(e => e.id === eqAtual) || equipamentos[0] || null
+  const pr = prateleiraAtual(eq?.prateleiras, pratAtual)
+  /** "Geladeira 01 > Prateleira 2 > B05" a partir dos ids. */
+  const endereco = (pos: Posicao | null) => {
+    if (!pos) return '—'
+    const e = equipamentos.find(x => x.id === pos.equipamento_id)
+    return enderecoPosicao(e?.nome, e?.prateleiras.find(x => x.id === pos.prateleira_id)?.nome, pos.linha, pos.coluna)
+  }
+  const irPara = (pos: { equipamento_id: string; prateleira_id: string }) => { setEqAtual(pos.equipamento_id); setPratAtual(pos.prateleira_id) }
+  const escolherEquipamento = (e: EquipamentoSoroteca) => { setEqAtual(e.id); setPratAtual(null) }
   const tubos = useMemo(() => (pedido && cad.carregado ? tubosDoPedido(pedido) : []), [pedido, cad.carregado])
 
   useEffect(() => { if (!eqAtual && equipamentos[0]) setEqAtual(equipamentos[0].id) }, [equipamentos, eqAtual])
   useEffect(() => { inputRef.current?.focus() }, [acesso?.ver])
 
-  const reservas = (exceto?: number) => lote.filter((_, i) => i !== exceto).map(i => ({ equipamento_id: i.equipamento_id, linha: i.linha, coluna: i.coluna }))
+  const reservas = (exceto?: number) => lote.filter((_, i) => i !== exceto).map(i => ({ equipamento_id: i.equipamento_id, prateleira_id: i.prateleira_id, linha: i.linha, coluna: i.coluna }))
 
   /** Posição sugerida (ou a vinda do dashboard "Armazenar aqui", se ainda livre). */
   const sugerir = (t: TuboDoPedido): Posicao | null => {
-    const pe = params.get('equipamento'), pl = Number(params.get('linha')), pc = Number(params.get('coluna'))
-    if (!presetUsado && pe && pl && pc) {
-      const e = equipamentos.find(x => x.id === pe)
-      if (e && pl <= e.linhas && pc <= e.colunas && !ocupadasDo(e.id, amostras, reservas()).has(chavePosicao(pl, pc))) {
+    const pe = params.get('equipamento'), pp = params.get('prateleira'), pl = Number(params.get('linha')), pc = Number(params.get('coluna'))
+    if (!presetUsado && pe && pp && pl && pc) {
+      const p = equipamentos.find(x => x.id === pe)?.prateleiras.find(x => x.id === pp)
+      if (p && pl <= p.linhas && pc <= p.colunas && !ocupadasDo(p.id, amostras, reservas()).has(chavePosicao(pl, pc))) {
         setPresetUsado(true)
-        return { equipamento_id: pe, linha: pl, coluna: pc }
+        return { equipamento_id: pe, prateleira_id: pp, linha: pl, coluna: pc }
       }
     }
     return sugerirPosicao(equipamentos, amostras, t.bancadaId, reservas())
@@ -81,7 +92,7 @@ export default function LabSorotecaEntradaPage() {
       if (!s) { toast.error('Não há posição livre nos equipamentos ativos'); return }
       setLote(l => [...l, { pedido: p, tubo: t, ...s }])
       setLoteSel(lote.length)
-      setEqAtual(s.equipamento_id)
+      irPara(s)
       limparBusca()
       return
     }
@@ -90,7 +101,7 @@ export default function LabSorotecaEntradaPage() {
     if (!bloq) {
       const s = sugerir(t)
       setPosicao(s)
-      if (s) setEqAtual(s.equipamento_id)
+      if (s) irPara(s)
     } else setPosicao(null)
   }
 
@@ -122,25 +133,26 @@ export default function LabSorotecaEntradaPage() {
   }
 
   const clicarCelula = (linha: number, coluna: number) => {
-    if (!eq) return
+    if (!eq || !pr) return
     if (modoLote) {
       if (loteSel === null || !lote[loteSel]) return
-      setLote(l => l.map((it, i) => (i === loteSel ? { ...it, equipamento_id: eq.id, linha, coluna } : it)))
+      setLote(l => l.map((it, i) => (i === loteSel ? { ...it, equipamento_id: eq.id, prateleira_id: pr.id, linha, coluna } : it)))
       return
     }
     if (!tubo || bloqueioDoTubo(tubo)) return
-    setPosicao({ equipamento_id: eq.id, linha, coluna })
+    setPosicao({ equipamento_id: eq.id, prateleira_id: pr.id, linha, coluna })
   }
 
   const item = (t: TuboDoPedido, p: PedidoLocalizado, pos: Posicao) =>
-    ({ order_id: p.order_id, tubo_indice: t.indice, exame_ids: t.exameIds, tubo_nome: t.nome, ...pos })
+    ({ order_id: p.order_id, tubo_indice: t.indice, exame_ids: t.exameIds, tubo_nome: t.nome,
+       equipamento_id: pos.equipamento_id, prateleira_id: pos.prateleira_id, linha: pos.linha, coluna: pos.coluna })
 
   const confirmar = async () => {
     if (!pedido || !tubo || !posicao) return
     setSalvando(true)
     try {
       const [r] = await armazenar([item(tubo, pedido, posicao)])
-      toast.success(`Amostra ${r.codigo_amostra} ${tubo.guardado?.status === 'armazenada' ? 'movida para' : 'armazenada em'} ${r.equipamento_nome} — ${rotuloPosicao(r.linha, r.coluna)}`)
+      toast.success(`Amostra ${r.codigo_amostra} ${tubo.guardado?.status === 'armazenada' ? 'movida para' : 'armazenada em'} ${enderecoPosicao(r.equipamento_nome, r.prateleira_nome, r.linha, r.coluna)}`)
       limparBusca()
     } catch (e) {
       toast.error((e as Error).message)
@@ -173,8 +185,8 @@ export default function LabSorotecaEntradaPage() {
   )
 
   const bloqueio = tubo ? bloqueioDoTubo(tubo) : null
-  const eqPos = posicao ? equipamentos.find(e => e.id === posicao.equipamento_id) : null
-  const reservasEq = eq ? lote.map((i, n) => ({ ...i, n })).filter(i => i.equipamento_id === eq.id).map(i => ({ linha: i.linha, coluna: i.coluna, rotulo: String(i.n + 1) })) : []
+  const reservasPrat = pr ? lote.map((i, n) => ({ ...i, n })).filter(i => i.prateleira_id === pr.id).map(i => ({ linha: i.linha, coluna: i.coluna, rotulo: String(i.n + 1) })) : []
+  const loteNaPrat = lote.reduce<Record<string, number>>((m, i) => ({ ...m, [i.prateleira_id]: (m[i.prateleira_id] ?? 0) + 1 }), {})
   const selLote = loteSel !== null ? lote[loteSel] : null
 
   return (
@@ -230,7 +242,7 @@ export default function LabSorotecaEntradaPage() {
                       <span className="font-mono font-semibold">{t.codigo}</span> · {t.nome}
                       <span className="block text-xs text-muted-foreground">{t.examesNomes.join(', ')}</span>
                       {b && <span className="block text-xs text-destructive">{b}</span>}
-                      {t.guardado?.status === 'armazenada' && <span className="block text-xs text-primary">Guardada em {t.guardado.equipamento_nome} — {rotuloPosicao(t.guardado.linha!, t.guardado.coluna!)}</span>}
+                      {t.guardado?.status === 'armazenada' && <span className="block text-xs text-primary">Guardada em {enderecoPosicao(t.guardado.equipamento_nome, t.guardado.prateleira_nome, t.guardado.linha, t.guardado.coluna)}</span>}
                     </button>
                   )
                 })}
@@ -255,7 +267,7 @@ export default function LabSorotecaEntradaPage() {
                   {tubo.temApoio && <div><dt className="text-xs text-muted-foreground">Apoio</dt><dd className="text-xs">Tem exame no apoio (fora do status)</dd></div>}
                 </dl>
                 {tubo.guardado?.status === 'armazenada' && (
-                  <p className="rounded-lg bg-primary/10 p-2 text-sm text-primary">Já está em {tubo.guardado.equipamento_nome} — {rotuloPosicao(tubo.guardado.linha!, tubo.guardado.coluna!)}. Escolha a nova posição para mover.</p>
+                  <p className="rounded-lg bg-primary/10 p-2 text-sm text-primary">Já está em {enderecoPosicao(tubo.guardado.equipamento_nome, tubo.guardado.prateleira_nome, tubo.guardado.linha, tubo.guardado.coluna)}. Escolha a nova posição para mover.</p>
                 )}
                 {bloqueio && <p className="rounded-lg bg-destructive/10 p-2 text-sm text-destructive">{bloqueio}</p>}
               </div>
@@ -271,7 +283,7 @@ export default function LabSorotecaEntradaPage() {
                     <span><span className="mr-2 inline-flex h-5 w-5 items-center justify-center rounded-full bg-success text-[10px] font-bold text-success-foreground">{n + 1}</span>
                       <span className="font-mono font-semibold">{i.tubo.codigo}</span> · {i.pedido.patient_name?.split(' ')[0]}</span>
                     <span className="flex items-center gap-2 text-xs">
-                      {equipamentos.find(e => e.id === i.equipamento_id)?.nome} — {rotuloPosicao(i.linha, i.coluna)}
+                      {endereco(i)}
                       <Button variant="ghost" size="icon" className="h-6 w-6" aria-label="Remover do lote"
                         onClick={ev => { ev.stopPropagation(); setLote(l => l.filter((_, k) => k !== n)); setLoteSel(null) }}><Trash2 className="h-3.5 w-3.5" /></Button>
                     </span>
@@ -287,20 +299,23 @@ export default function LabSorotecaEntradaPage() {
             <CardTitle className="text-base">Escolher posição</CardTitle>
             <div className="flex flex-wrap gap-2">
               {equipamentos.map(e => (
-                <Button key={e.id} size="sm" variant={eq?.id === e.id ? 'default' : 'outline'} onClick={() => setEqAtual(e.id)}>
+                <Button key={e.id} size="sm" variant={eq?.id === e.id ? 'default' : 'outline'} onClick={() => escolherEquipamento(e)}>
                   <Rows3 className="mr-1.5 h-3.5 w-3.5" />{e.nome}{e.bancada_nome ? ` · ${e.bancada_nome}` : ''}
                 </Button>
               ))}
             </div>
+            {eq && <PrateleiraAbas prateleiras={eq.prateleiras} valor={pr?.id ?? null} onChange={setPratAtual} extra={loteNaPrat} />}
           </CardHeader>
           <CardContent className="space-y-3">
             {resumo.isLoading || amostrasQ.isLoading ? <Skeleton className="h-64" /> : !eq ? (
               <p className="py-10 text-center text-sm text-muted-foreground">Nenhum equipamento ativo. Cadastre um em Estrutura Física.</p>
+            ) : !pr ? (
+              <p className="py-10 text-center text-sm text-muted-foreground">Este equipamento não tem prateleiras. Cadastre em Estrutura Física.</p>
             ) : (
               <>
-                <SorotecaGrid equipamento={eq} amostras={amostras} avisoDias={avisoDias} modo="selecionar" comprimida={false}
-                  selecionada={modoLote ? (selLote && selLote.equipamento_id === eq.id ? selLote : null) : (posicao?.equipamento_id === eq.id ? posicao : null)}
-                  reservas={modoLote ? reservasEq.filter(r => !(selLote && selLote.equipamento_id === eq.id && r.linha === selLote.linha && r.coluna === selLote.coluna)) : []}
+                <SorotecaGrid prateleira={pr} equipamentoNome={eq.nome} amostras={amostras} avisoDias={avisoDias} modo="selecionar" comprimida={false}
+                  selecionada={modoLote ? (selLote && selLote.prateleira_id === pr.id ? selLote : null) : (posicao?.prateleira_id === pr.id ? posicao : null)}
+                  reservas={modoLote ? reservasPrat.filter(r => !(selLote && selLote.prateleira_id === pr.id && r.linha === selLote.linha && r.coluna === selLote.coluna)) : []}
                   onCelula={(l, c, a) => { if (!a) clicarCelula(l, c) }} />
                 <SorotecaLegenda selecao />
               </>
@@ -319,9 +334,8 @@ export default function LabSorotecaEntradaPage() {
             </>
           ) : (
             <>
-              <span>Equipamento: <strong>{eqPos?.nome || '—'}</strong></span>
-              <span>Posição: <strong>{posicao ? rotuloPosicao(posicao.linha, posicao.coluna) : '—'}</strong></span>
-              {posicao && <Badge variant="outline" className="border-success/40 bg-success/10 text-success">✔ Selecionada {rotuloPosicao(posicao.linha, posicao.coluna)}</Badge>}
+              <span>Posição: <strong>{endereco(posicao)}</strong></span>
+              {posicao && <Badge variant="outline" className="border-success/40 bg-success/10 text-success">✔ Selecionada</Badge>}
               <Button onClick={confirmar} disabled={!tubo || !posicao || !!bloqueio || salvando}>
                 {salvando && <Loader2 className="mr-1.5 h-4 w-4 animate-spin" />}
                 {tubo?.guardado?.status === 'armazenada' ? 'Confirmar mudança' : 'Confirmar armazenamento'}

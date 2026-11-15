@@ -1135,6 +1135,13 @@
       "when": 1794705944513,
       "tag": "0161_soroteca",
       "breakpoints": true
+    },
+    {
+      "idx": 162,
+      "version": "7",
+      "when": 1794709269144,
+      "tag": "0162_soroteca_prateleiras",
+      "breakpoints": true
     }
   ]
 }

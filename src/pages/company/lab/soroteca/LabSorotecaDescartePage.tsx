@@ -19,7 +19,7 @@ import { useAuth } from '@/context/AuthContext'
 import { buscarAmostras, useSorotecaAcesso, useSorotecaAcoes, useSorotecaAmostras, useSorotecaConfig } from '@/hooks/useSoroteca'
 import { SemAcessoSoroteca, StatusBadge } from '@/components/lab/soroteca/SorotecaDialogs'
 import {
-  dataBR, diasRestantes, MOTIVOS_DESCARTE, prioridadeDescarte, PRIORIDADE_ORDEM, rotuloPosicao, type AmostraSoroteca, type Prioridade,
+  dataBR, diasRestantes, MOTIVOS_DESCARTE, prioridadeDescarte, PRIORIDADE_ORDEM, enderecoAmostra, type AmostraSoroteca, type Prioridade,
 } from '@/lib/soroteca'
 
 const BADGE: Record<Prioridade, { label: string; cls: string }> = {
@@ -27,7 +27,7 @@ const BADGE: Record<Prioridade, { label: string; cls: string }> = {
   atencao: { label: 'Atenção', cls: 'border-warning/40 bg-warning/15 text-warning' },
   planejado: { label: 'Planejado', cls: 'border-success/40 bg-success/10 text-success' },
 }
-const posicaoTxt = (a: AmostraSoroteca) => (a.status === 'armazenada' && a.linha && a.coluna ? `${a.equipamento_nome} — ${rotuloPosicao(a.linha, a.coluna)}` : 'Retirada')
+const posicaoTxt = (a: AmostraSoroteca) => enderecoAmostra(a) ?? 'Retirada'
 const diasTxt = (d: number | null) => (d === null ? '—' : d < 0 ? `vencida há ${Math.abs(d)} dia(s)` : d === 0 ? 'vence hoje' : `${d} dia(s)`)
 
 export default function LabSorotecaDescartePage() {

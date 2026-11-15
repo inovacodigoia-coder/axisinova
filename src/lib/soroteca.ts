@@ -11,6 +11,16 @@ export type Prioridade = 'urgente' | 'atencao' | 'planejado'
 
 const DIA = 86_400_000
 
+/** Prateleira de um equipamento: grade própria (linha = letra, coluna = número). */
+export interface PrateleiraSoroteca {
+  id: string
+  nome: string
+  linhas: number
+  colunas: number
+  ordem: number
+  ocupadas: number
+}
+
 export interface EquipamentoSoroteca {
   id: string
   nome: string
@@ -18,10 +28,11 @@ export interface EquipamentoSoroteca {
   temperatura: string | null
   workbench_id: string | null
   bancada_nome: string | null
-  linhas: number
-  colunas: number
   ativo: boolean
   ocupadas: number
+  /** Soma das posições de todas as prateleiras. */
+  capacidade: number
+  prateleiras: PrateleiraSoroteca[]
 }
 
 export interface AmostraSoroteca {
@@ -42,6 +53,8 @@ export interface AmostraSoroteca {
   status: Situacao
   equipamento_id: string | null
   equipamento_nome: string | null
+  prateleira_id: string | null
+  prateleira_nome: string | null
   linha: number | null
   coluna: number | null
   armazenada_em: string | null
@@ -70,6 +83,40 @@ export function letraLinha(n: number): string {
 /** "A05" */
 export const rotuloPosicao = (linha: number, coluna: number) => `${letraLinha(linha)}${String(coluna).padStart(2, '0')}`
 export const chavePosicao = (linha: number, coluna: number) => `${linha}:${coluna}`
+
+/** Endereço completo: "Geladeira 01 > Prateleira 2 > B05" (partes ausentes são omitidas). */
+export function enderecoPosicao(equipamento: string | null | undefined, prateleira: string | null | undefined, linha?: number | null, coluna?: number | null): string {
+  return [equipamento, prateleira, linha && coluna ? rotuloPosicao(linha, coluna) : null].filter(Boolean).join(' > ')
+}
+
+/** Endereço atual de uma amostra guardada (null se retirada/descartada). */
+export const enderecoAmostra = (a: Pick<AmostraSoroteca, 'status' | 'equipamento_nome' | 'prateleira_nome' | 'linha' | 'coluna'>) =>
+  a.status === 'armazenada' && a.linha && a.coluna ? enderecoPosicao(a.equipamento_nome, a.prateleira_nome, a.linha, a.coluna) : null
+
+/** Prateleiras na ordem cadastrada. */
+export const prateleirasDe = (e: Pick<EquipamentoSoroteca, 'prateleiras'> | null | undefined) =>
+  [...(e?.prateleiras ?? [])].sort((a, b) => a.ordem - b.ordem)
+
+export const capacidadePrateleiras = (ps: { linhas: number; colunas: number }[]) => ps.reduce((t, p) => t + p.linhas * p.colunas, 0)
+
+export interface PrateleiraForm { id?: string | null; nome: string; linhas: number; colunas: number }
+
+/** Mesmas regras do banco (soroteca_equipamento_gravar): ao menos 1, até 30, nomes únicos, 1–52 linhas, 1–99 colunas. */
+export function erroPrateleiras(ps: PrateleiraForm[]): string | null {
+  if (!ps.length) return 'Cadastre pelo menos uma prateleira'
+  if (ps.length > 30) return 'No máximo 30 prateleiras por equipamento'
+  const nomes = new Set<string>()
+  for (const p of ps) {
+    const nome = p.nome.trim()
+    if (!nome) return 'Informe o nome de cada prateleira'
+    if (!Number.isInteger(p.linhas) || p.linhas < 1 || p.linhas > 52) return `Linhas da prateleira ${nome} devem ficar entre 1 e 52`
+    if (!Number.isInteger(p.colunas) || p.colunas < 1 || p.colunas > 99) return `Colunas da prateleira ${nome} devem ficar entre 1 e 99`
+    const k = nome.toLowerCase()
+    if (nomes.has(k)) return 'Há duas prateleiras com o mesmo nome'
+    nomes.add(k)
+  }
+  return null
+}
 
 /** Mesma regra do banco (soroteca__status). */
 export function statusResultado(total: number, liberados: number): StatusResultado {
@@ -124,24 +171,27 @@ export function primeiraLivre(linhas: number, colunas: number, ocupadas: Readonl
   return null
 }
 
-/** Ocupadas de um equipamento (opcionalmente somando posições já reservadas no lote). */
-export function ocupadasDo(equipamentoId: string, amostras: AmostraSoroteca[], reservas: { equipamento_id: string; linha: number; coluna: number }[] = []) {
+export interface PosicaoSoroteca { equipamento_id: string; prateleira_id: string; linha: number; coluna: number }
+
+/** Ocupadas de uma prateleira (opcionalmente somando posições já reservadas no lote). */
+export function ocupadasDo(prateleiraId: string, amostras: AmostraSoroteca[], reservas: Pick<PosicaoSoroteca, 'prateleira_id' | 'linha' | 'coluna'>[] = []) {
   const s = new Set<string>()
-  for (const a of amostras) if (a.status === 'armazenada' && a.equipamento_id === equipamentoId && a.linha && a.coluna) s.add(chavePosicao(a.linha, a.coluna))
-  for (const r of reservas) if (r.equipamento_id === equipamentoId) s.add(chavePosicao(r.linha, r.coluna))
+  for (const a of amostras) if (a.status === 'armazenada' && a.prateleira_id === prateleiraId && a.linha && a.coluna) s.add(chavePosicao(a.linha, a.coluna))
+  for (const r of reservas) if (r.prateleira_id === prateleiraId) s.add(chavePosicao(r.linha, r.coluna))
   return s
 }
 
 /**
  * Sugestão de posição: equipamento ativo da mesma bancada do tubo com vaga; senão um
- * equipamento sem bancada definida; senão qualquer ativo com vaga.
+ * equipamento sem bancada definida; senão qualquer ativo com vaga. Dentro do equipamento,
+ * a primeira prateleira (na ordem cadastrada) com vaga.
  */
 export function sugerirPosicao(
   equipamentos: EquipamentoSoroteca[],
   amostras: AmostraSoroteca[],
   workbenchId: string | null,
-  reservas: { equipamento_id: string; linha: number; coluna: number }[] = [],
-): { equipamento_id: string; linha: number; coluna: number } | null {
+  reservas: PosicaoSoroteca[] = [],
+): PosicaoSoroteca | null {
   const ativos = equipamentos.filter(e => e.ativo)
   const grupos = [
     ativos.filter(e => workbenchId && e.workbench_id === workbenchId),
@@ -150,8 +200,10 @@ export function sugerirPosicao(
   ]
   for (const g of grupos) {
     for (const e of g) {
-      const p = primeiraLivre(e.linhas, e.colunas, ocupadasDo(e.id, amostras, reservas))
-      if (p) return { equipamento_id: e.id, ...p }
+      for (const pr of prateleirasDe(e)) {
+        const p = primeiraLivre(pr.linhas, pr.colunas, ocupadasDo(pr.id, amostras, reservas))
+        if (p) return { equipamento_id: e.id, prateleira_id: pr.id, ...p }
+      }
     }
   }
   return null
@@ -173,7 +225,10 @@ export interface PedidoLocalizado {
   lab_guides: any[]
   tubo_indice: number | null
   resultados: Record<string, string>
-  guardados: { id: string; tubo_indice: number; codigo_amostra: string; status: Situacao; equipamento_id: string | null; equipamento_nome: string | null; linha: number | null; coluna: number | null }[]
+  guardados: {
+    id: string; tubo_indice: number; codigo_amostra: string; status: Situacao; equipamento_id: string | null; equipamento_nome: string | null
+    prateleira_id: string | null; prateleira_nome: string | null; linha: number | null; coluna: number | null
+  }[]
 }
 
 export interface TuboDoPedido {
@@ -266,8 +321,9 @@ export interface RastreioSoroteca {
   coleta: { quando: string | null; responsavel: string | null } | null
   exames: { exam_id: string; nome: string; status: string; liberado_em: string | null; liberado_por: string | null }[]
   movimentos: {
-    tipo: 'entrada' | 'movimentacao' | 'retirada' | 'descarte'; quando: string; equipamento_nome: string | null; linha: number | null; coluna: number | null
-    de_equipamento_nome: string | null; de_linha: number | null; de_coluna: number | null; motivo: string | null; observacao: string | null
+    tipo: 'entrada' | 'movimentacao' | 'retirada' | 'descarte'; quando: string; equipamento_nome: string | null; prateleira_nome?: string | null
+    linha: number | null; coluna: number | null
+    de_equipamento_nome: string | null; de_prateleira_nome?: string | null; de_linha: number | null; de_coluna: number | null; motivo: string | null; observacao: string | null
     status_resultado: StatusResultado | null; responsavel_nome: string | null; usuario_nome: string | null
   }[]
   laboratorio: { nome: string | null; responsavel: string | null; registro: string | null; logo: string | null } | null
@@ -282,7 +338,6 @@ export interface EventoLinhaDoTempo {
   linhas: string[]
 }
 
-const pos = (eq: string | null, l: number | null, c: number | null) => (eq && l && c ? `${eq} — ${rotuloPosicao(l, c)}` : eq || '')
 
 /** Junta coleta, movimentações e liberações em ordem de data (status progressivo a cada liberação). */
 export function linhaDoTempo(r: RastreioSoroteca): EventoLinhaDoTempo[] {
@@ -293,15 +348,15 @@ export function linhaDoTempo(r: RastreioSoroteca): EventoLinhaDoTempo[] {
   for (const m of r.movimentos || []) {
     const quem = m.usuario_nome ? [`Responsável: ${m.usuario_nome}`] : []
     if (m.tipo === 'entrada') {
-      ev.push({ tipo: 'entrada', quando: m.quando, titulo: `Armazenada em ${pos(m.equipamento_nome, m.linha, m.coluna)}`,
+      ev.push({ tipo: 'entrada', quando: m.quando, titulo: `Armazenada em ${enderecoPosicao(m.equipamento_nome, m.prateleira_nome, m.linha, m.coluna)}`,
         linhas: [...quem, ...(m.status_resultado ? [`Status na entrada: ${STATUS_LABEL[m.status_resultado]}`] : [])] })
     } else if (m.tipo === 'movimentacao') {
-      ev.push({ tipo: 'movimentacao', quando: m.quando, titulo: `Movida para ${pos(m.equipamento_nome, m.linha, m.coluna)}`,
-        linhas: [...quem, ...(m.de_equipamento_nome ? [`Antes: ${pos(m.de_equipamento_nome, m.de_linha, m.de_coluna)}`] : [])] })
+      ev.push({ tipo: 'movimentacao', quando: m.quando, titulo: `Movida para ${enderecoPosicao(m.equipamento_nome, m.prateleira_nome, m.linha, m.coluna)}`,
+        linhas: [...quem, ...(m.de_equipamento_nome ? [`Antes: ${enderecoPosicao(m.de_equipamento_nome, m.de_prateleira_nome, m.de_linha, m.de_coluna)}`] : [])] })
     } else if (m.tipo === 'retirada') {
       const consulta = m.motivo === 'Consulta externa'
       ev.push({ tipo: consulta ? 'consulta' : 'retirada', quando: m.quando,
-        titulo: consulta ? 'Consultada (retirada da soroteca)' : `Retirada de ${pos(m.de_equipamento_nome, m.de_linha, m.de_coluna)}`,
+        titulo: consulta ? 'Consultada (retirada da soroteca)' : `Retirada de ${enderecoPosicao(m.de_equipamento_nome, m.de_prateleira_nome, m.de_linha, m.de_coluna)}`,
         linhas: [...quem, ...(m.motivo ? [`Motivo: ${m.motivo}`] : []), ...(m.observacao ? [`Observação: ${m.observacao}`] : [])] })
     } else if (m.tipo === 'descarte') {
       ev.push({ tipo: 'descarte', quando: m.quando, titulo: 'Descartada',

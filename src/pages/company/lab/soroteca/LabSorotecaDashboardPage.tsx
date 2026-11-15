@@ -8,7 +8,8 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } f
 import { useSorotecaAcesso, useSorotecaAmostras, useSorotecaResumo } from '@/hooks/useSoroteca'
 import { SorotecaGrid, SorotecaLegenda } from '@/components/lab/soroteca/SorotecaGrid'
 import { AmostraDetalheDialog, SemAcessoSoroteca } from '@/components/lab/soroteca/SorotecaDialogs'
-import { rotuloPosicao, type EquipamentoSoroteca } from '@/lib/soroteca'
+import { PrateleiraAbas, prateleiraAtual } from '@/components/lab/soroteca/PrateleiraAbas'
+import { enderecoPosicao, gradeComprimida, type EquipamentoSoroteca, type PosicaoSoroteca } from '@/lib/soroteca'
 
 const fmt = (n: number | undefined) => (n ?? 0).toLocaleString('pt-BR')
 
@@ -21,13 +22,16 @@ export default function LabSorotecaDashboardPage() {
   const [params, setParams] = useSearchParams()
   const [detalhe, setDetalhe] = useState<string | null>(null)
   const [expandido, setExpandido] = useState<string | null>(null)
-  const [sugestao, setSugestao] = useState<{ equipamento_id: string; linha: number; coluna: number } | null>(null)
+  const [sugestao, setSugestao] = useState<PosicaoSoroteca | null>(null)
+  const [pratSel, setPratSel] = useState<Record<string, string>>({})
   const destaque = params.get('amostra')
 
   // Vindo de "Ver posição no mapa" (Consulta): abre o equipamento em tela cheia com a célula destacada
   useEffect(() => {
     const eq = params.get('equipamento')
+    const pr = params.get('prateleira')
     if (eq) setExpandido(eq)
+    if (eq && pr) setPratSel(m => ({ ...m, [eq]: pr }))
   }, [params])
 
   const amostras = amostrasQ.data?.amostras ?? []
@@ -38,12 +42,28 @@ export default function LabSorotecaDashboardPage() {
   if (acesso === null) return <Skeleton className="h-96 rounded-2xl" />
   if (!pode) return <SemAcessoSoroteca />
 
-  const clicar = (eq: EquipamentoSoroteca) => (linha: number, coluna: number, a: { id: string } | null) => {
+  const clicar = (eq: EquipamentoSoroteca, prateleiraId: string) => (linha: number, coluna: number, a: { id: string } | null) => {
     if (a) { setDetalhe(a.id); return }
-    setSugestao(s => (s && s.equipamento_id === eq.id && s.linha === linha && s.coluna === coluna ? null : { equipamento_id: eq.id, linha, coluna }))
+    setSugestao(s => (s && s.prateleira_id === prateleiraId && s.linha === linha && s.coluna === coluna ? null : { equipamento_id: eq.id, prateleira_id: prateleiraId, linha, coluna }))
   }
-  const pct = (e: EquipamentoSoroteca) => (e.linhas * e.colunas ? Math.round((e.ocupadas / (e.linhas * e.colunas)) * 100) : 0)
+  const pct = (e: EquipamentoSoroteca) => (e.capacidade ? Math.round((e.ocupadas / e.capacidade) * 100) : 0)
   const eqSugestao = sugestao ? equipamentos.find(e => e.id === sugestao.equipamento_id) : null
+  const pratSugestao = sugestao && eqSugestao ? eqSugestao.prateleiras.find(p => p.id === sugestao.prateleira_id) : null
+
+  /** Abas das prateleiras + grade da prateleira escolhida. */
+  const mapa = (eq: EquipamentoSoroteca, grande: boolean) => {
+    const pr = prateleiraAtual(eq.prateleiras, pratSel[eq.id])
+    return (
+      <div className="space-y-2">
+        <PrateleiraAbas prateleiras={eq.prateleiras} valor={pr?.id ?? null} onChange={id => setPratSel(m => ({ ...m, [eq.id]: id }))} />
+        {pr ? (
+          <SorotecaGrid prateleira={pr} equipamentoNome={eq.nome} amostras={amostras} avisoDias={avisoDias} destaqueId={destaque}
+            comprimida={grande ? false : gradeComprimida(pr.linhas, pr.colunas)} grande={grande}
+            sugestao={sugestao?.prateleira_id === pr.id ? sugestao : null} onCelula={clicar(eq, pr.id)} />
+        ) : <p className="py-6 text-center text-sm text-muted-foreground">Sem prateleiras cadastradas.</p>}
+      </div>
+    )
+  }
 
   const kpis = [
     { titulo: 'Amostras armazenadas', valor: resumo.data?.armazenadas, detalhe: 'Total ativo', icone: Beaker, tom: '' },
@@ -92,10 +112,10 @@ export default function LabSorotecaDashboardPage() {
 
       {sugestao && eqSugestao && (
         <div className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-success/40 bg-success/10 p-3 text-sm">
-          <span>Posição <strong>{rotuloPosicao(sugestao.linha, sugestao.coluna)}</strong> de <strong>{eqSugestao.nome}</strong> marcada como sugestão para a próxima armazenagem.</span>
+          <span>Posição <strong>{enderecoPosicao(eqSugestao.nome, pratSugestao?.nome, sugestao.linha, sugestao.coluna)}</strong> marcada como sugestão para a próxima armazenagem.</span>
           <div className="flex gap-2">
             <Button variant="ghost" size="sm" onClick={() => setSugestao(null)}>Limpar</Button>
-            {acesso.armazenar && <Button size="sm" asChild><Link to={`/app/soroteca/entrada?equipamento=${sugestao.equipamento_id}&linha=${sugestao.linha}&coluna=${sugestao.coluna}`}>Armazenar aqui</Link></Button>}
+            {acesso.armazenar && <Button size="sm" asChild><Link to={`/app/soroteca/entrada?equipamento=${sugestao.equipamento_id}&prateleira=${sugestao.prateleira_id}&linha=${sugestao.linha}&coluna=${sugestao.coluna}`}>Armazenar aqui</Link></Button>}
           </div>
         </div>
       )}
@@ -109,7 +129,7 @@ export default function LabSorotecaDashboardPage() {
           <CardContent className="flex flex-col items-center gap-3 py-12 text-center">
             <Package className="h-10 w-10 text-muted-foreground" />
             <p className="font-semibold">Nenhum equipamento cadastrado</p>
-            <p className="max-w-md text-sm text-muted-foreground">Cadastre geladeiras, freezers ou estantes com o número de linhas e colunas para ver o mapa das posições.</p>
+            <p className="max-w-md text-sm text-muted-foreground">Cadastre geladeiras, freezers ou estantes com suas prateleiras (linhas e colunas) para ver o mapa das posições.</p>
             <Button asChild><Link to="/app/soroteca/estrutura"><Plus className="mr-1.5 h-4 w-4" />Cadastrar equipamento</Link></Button>
           </CardContent>
         </Card>
@@ -120,13 +140,12 @@ export default function LabSorotecaDashboardPage() {
               <CardHeader className="flex flex-row items-start justify-between gap-3 space-y-0">
                 <div>
                   <CardTitle className="text-base uppercase">{eq.nome}{eq.bancada_nome ? ` — ${eq.bancada_nome}` : ''} ({pct(eq)}%)</CardTitle>
-                  <p className="text-xs text-muted-foreground">{fmt(eq.ocupadas)} de {fmt(eq.linhas * eq.colunas)} posições · {eq.linhas} × {eq.colunas}{eq.temperatura ? ` · ${eq.temperatura}` : ''}</p>
+                  <p className="text-xs text-muted-foreground">{fmt(eq.ocupadas)} de {fmt(eq.capacidade)} posições · {eq.prateleiras.length} {eq.prateleiras.length === 1 ? 'prateleira' : 'prateleiras'}{eq.temperatura ? ` · ${eq.temperatura}` : ''}</p>
                 </div>
                 <Button variant="outline" size="sm" onClick={() => setExpandido(eq.id)}><Maximize2 className="mr-1.5 h-3.5 w-3.5" />Expandir mapa</Button>
               </CardHeader>
               <CardContent className="space-y-3">
-                <SorotecaGrid equipamento={eq} amostras={amostras} avisoDias={avisoDias} destaqueId={destaque}
-                  sugestao={sugestao?.equipamento_id === eq.id ? sugestao : null} onCelula={clicar(eq)} />
+                {mapa(eq, false)}
                 <SorotecaLegenda />
               </CardContent>
             </Card>
@@ -141,10 +160,9 @@ export default function LabSorotecaDashboardPage() {
             <>
               <DialogHeader>
                 <DialogTitle className="uppercase">{eqExpandido.nome}{eqExpandido.bancada_nome ? ` — ${eqExpandido.bancada_nome}` : ''} ({pct(eqExpandido)}%)</DialogTitle>
-                <DialogDescription>{fmt(eqExpandido.ocupadas)} de {fmt(eqExpandido.linhas * eqExpandido.colunas)} posições ocupadas. Clique numa amostra para ver os detalhes.</DialogDescription>
+                <DialogDescription>{fmt(eqExpandido.ocupadas)} de {fmt(eqExpandido.capacidade)} posições ocupadas. Escolha a prateleira na aba e clique numa amostra para ver os detalhes.</DialogDescription>
               </DialogHeader>
-              <SorotecaGrid equipamento={eqExpandido} amostras={amostras} avisoDias={avisoDias} comprimida={false} grande destaqueId={destaque}
-                sugestao={sugestao?.equipamento_id === eqExpandido.id ? sugestao : null} onCelula={clicar(eqExpandido)} />
+              {mapa(eqExpandido, true)}
               <SorotecaLegenda />
             </>
           )}

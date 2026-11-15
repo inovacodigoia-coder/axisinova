@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { buildSampleCode, generateSampleHash } from '@/utils/orderHash'
 import {
-  alertaValidade, bloqueioDoTubo, letraLinha, linhaDoTempo, prioridadeDescarte, primeiraLivre, rotuloPosicao, statusResultado,
+  alertaValidade, bloqueioDoTubo, capacidadePrateleiras, enderecoAmostra, enderecoPosicao, erroPrateleiras, letraLinha, linhaDoTempo, prioridadeDescarte, primeiraLivre, rotuloPosicao, statusResultado,
   sugerirPosicao, tubosDoPedido, type AmostraSoroteca, type EquipamentoSoroteca, type PedidoLocalizado, type RastreioSoroteca,
 } from './soroteca'
 
@@ -22,13 +22,37 @@ describe('posições da grade', () => {
     expect(primeiraLivre(2, 2, new Set(['1:1', '1:2', '2:1', '2:2']))).toBeNull()
   })
 
+  const prat = (id: string, ordem: number, linhas = 1, colunas = 2) => ({ id, nome: `Prateleira ${ordem}`, linhas, colunas, ordem, ocupadas: 0 })
+  const eq = (id: string, wb: string | null, prateleiras = [prat(`${id}-p1`, 1)]): EquipamentoSoroteca =>
+    ({ id, nome: id, tipo: 'geladeira', temperatura: null, workbench_id: wb, bancada_nome: null, ativo: true, ocupadas: 0, capacidade: 0, prateleiras })
+
   it('sugestão vai para o equipamento da bancada do tubo e pula reservas do lote', () => {
-    const eq = (id: string, wb: string | null): EquipamentoSoroteca =>
-      ({ id, nome: id, tipo: 'geladeira', temperatura: null, workbench_id: wb, bancada_nome: null, linhas: 1, colunas: 2, ativo: true, ocupadas: 0 })
-    const guardada = { status: 'armazenada', equipamento_id: 'bio', linha: 1, coluna: 1 } as AmostraSoroteca
+    const guardada = { status: 'armazenada', equipamento_id: 'bio', prateleira_id: 'bio-p1', linha: 1, coluna: 1 } as AmostraSoroteca
     const eqs = [eq('hem', 'HEM'), eq('bio', 'BIO')]
-    expect(sugerirPosicao(eqs, [guardada], 'BIO')).toEqual({ equipamento_id: 'bio', linha: 1, coluna: 2 })
-    expect(sugerirPosicao(eqs, [guardada], 'BIO', [{ equipamento_id: 'bio', linha: 1, coluna: 2 }])).toEqual({ equipamento_id: 'hem', linha: 1, coluna: 1 })
+    expect(sugerirPosicao(eqs, [guardada], 'BIO')).toEqual({ equipamento_id: 'bio', prateleira_id: 'bio-p1', linha: 1, coluna: 2 })
+    expect(sugerirPosicao(eqs, [guardada], 'BIO', [{ equipamento_id: 'bio', prateleira_id: 'bio-p1', linha: 1, coluna: 2 }]))
+      .toEqual({ equipamento_id: 'hem', prateleira_id: 'hem-p1', linha: 1, coluna: 1 })
+  })
+
+  it('com a 1ª prateleira cheia, sugere A01 da próxima prateleira (na ordem cadastrada)', () => {
+    const e = eq('g', 'BIO', [prat('p2', 2), prat('p1', 1, 1, 1)])
+    const cheia = { status: 'armazenada', equipamento_id: 'g', prateleira_id: 'p1', linha: 1, coluna: 1 } as AmostraSoroteca
+    expect(sugerirPosicao([e], [cheia], 'BIO')).toEqual({ equipamento_id: 'g', prateleira_id: 'p2', linha: 1, coluna: 1 })
+  })
+
+  it('endereço completo: Equipamento > Prateleira > posição', () => {
+    expect(enderecoPosicao('Geladeira 01', 'Prateleira 2', 2, 5)).toBe('Geladeira 01 > Prateleira 2 > B05')
+    expect(enderecoPosicao('Geladeira 01', null, 1, 1)).toBe('Geladeira 01 > A01')
+    expect(enderecoAmostra({ status: 'retirada', equipamento_nome: null, prateleira_nome: null, linha: null, coluna: null })).toBeNull()
+  })
+
+  it('capacidade é a soma das prateleiras; nomes repetidos e grades inválidas são recusados', () => {
+    expect(capacidadePrateleiras([{ linhas: 10, colunas: 16 }, { linhas: 2, colunas: 5 }])).toBe(170)
+    expect(erroPrateleiras([{ nome: 'Prateleira 1', linhas: 10, colunas: 16 }])).toBeNull()
+    expect(erroPrateleiras([])).toMatch(/pelo menos uma/)
+    expect(erroPrateleiras([{ nome: 'Fundo', linhas: 2, colunas: 2 }, { nome: ' fundo', linhas: 1, colunas: 1 }])).toMatch(/mesmo nome/)
+    expect(erroPrateleiras([{ nome: 'Topo', linhas: 53, colunas: 2 }])).toMatch(/entre 1 e 52/)
+    expect(erroPrateleiras([{ nome: 'Topo', linhas: 2, colunas: 100 }])).toMatch(/entre 1 e 99/)
   })
 })
 
@@ -93,14 +117,14 @@ describe('linha do tempo', () => {
         { exam_id: 'c', nome: 'LDL', status: 'pending', liberado_em: null, liberado_por: null },
       ],
       movimentos: [
-        { tipo: 'entrada', quando: h(-9), equipamento_nome: 'Geladeira 01', linha: 2, coluna: 7, status_resultado: 'em_analise', usuario_nome: 'Pedro Lima' },
+        { tipo: 'entrada', quando: h(-9), equipamento_nome: 'Geladeira 01', prateleira_nome: 'Prateleira 2', linha: 2, coluna: 7, status_resultado: 'em_analise', usuario_nome: 'Pedro Lima' },
         { tipo: 'retirada', quando: h(-2), de_equipamento_nome: 'Geladeira 01', de_linha: 2, de_coluna: 7, motivo: 'Consulta externa', usuario_nome: 'Maria' },
       ],
       laboratorio: null,
     } as unknown as RastreioSoroteca
     const ev = linhaDoTempo(r)
     expect(ev.map(e => e.tipo)).toEqual(['coleta', 'entrada', 'liberacao', 'liberacao', 'consulta'])
-    expect(ev[1].titulo).toBe('Armazenada em Geladeira 01 — B07')
+    expect(ev[1].titulo).toBe('Armazenada em Geladeira 01 > Prateleira 2 > B07')
     expect(ev[2].linhas[0]).toBe('Status: Parcial (1 de 3 exames liberados)')
     expect(ev[3].linhas[0]).toBe('Status: Parcial (2 de 3 exames liberados)')
   })

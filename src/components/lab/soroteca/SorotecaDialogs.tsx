@@ -13,7 +13,7 @@ import { cn } from '@/lib/utils'
 import { formatBirthBR } from '@/lib/attendanceDocHeader'
 import { useSorotecaAcoes, useSorotecaRastreio } from '@/hooks/useSoroteca'
 import {
-  dataBR, dataHoraBR, linhaDoTempo, MOTIVOS_RETIRADA, rotuloPosicao, STATUS_LABEL,
+  dataBR, dataHoraBR, linhaDoTempo, MOTIVOS_RETIRADA, enderecoAmostra, STATUS_LABEL,
   type EventoLinhaDoTempo, type StatusResultado, type TipoEvento,
 } from '@/lib/soroteca'
 
@@ -74,7 +74,7 @@ export function AmostraDetalheDialog({ amostraId, onClose, podeRetirar }: { amos
                 <div><dt className="text-xs text-muted-foreground">Código de barras</dt><dd className="font-mono font-medium">{a.codigo_alfanumerico}</dd></div>
                 <div><dt className="text-xs text-muted-foreground">Nascimento</dt><dd className="font-medium">{formatBirthBR(a.patient_birth) || '—'}</dd></div>
                 <div><dt className="text-xs text-muted-foreground">Tubo</dt><dd className="font-medium">{a.tubo_nome || '—'}</dd></div>
-                <div><dt className="text-xs text-muted-foreground">Posição</dt><dd className="font-medium">{a.status === 'armazenada' && a.linha && a.coluna ? `${a.equipamento_nome} — ${rotuloPosicao(a.linha, a.coluna)}` : a.status === 'retirada' ? 'Retirada' : 'Descartada'}</dd></div>
+                <div><dt className="text-xs text-muted-foreground">Posição</dt><dd className="font-medium">{enderecoAmostra(a) ?? (a.status === 'retirada' ? 'Retirada' : 'Descartada')}</dd></div>
                 <div><dt className="text-xs text-muted-foreground">Validade</dt><dd className="font-medium">{dataBR(a.validade)}</dd></div>
               </dl>
               <div>
