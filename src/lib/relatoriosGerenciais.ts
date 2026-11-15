@@ -14,6 +14,10 @@ const OFFSET = 3 * H
 export interface LinhaRelatorio {
   o: string; u?: boolean; c?: string; og?: string; e: string; x?: string; b?: string; t?: string
   ca?: string; la?: string; ra?: string; rm?: string; p?: string; n?: string; cb?: string
+  /** Usuário que liberou o laudo (liberado_por). */
+  lb?: string
+  /** Nome de quem pediu a recoleta. */
+  rb?: string
 }
 
 export interface ExameRel {
@@ -34,6 +38,8 @@ export interface ExameRel {
   protocolo: string
   paciente: string
   coletador: string
+  liberadoPor: string | null
+  rejeitadoPor: string | null
 }
 
 const ts = (v?: string | null) => {
@@ -62,6 +68,8 @@ export function montarExamesRel(linhas: LinhaRelatorio[], bancadasInternas: Read
       protocolo: l.p || '',
       paciente: l.n || '',
       coletador: l.cb || '',
+      liberadoPor: l.lb || null,
+      rejeitadoPor: l.rb || null,
     }
   })
 }
@@ -140,6 +148,20 @@ export function tatRel(e: ExameRel): number | null {
   if (e.liberadoEm === null || e.coletaEm === null || e.liberadoEm < e.coletaEm) return null
   return (e.liberadoEm - e.coletaEm) / 60_000
 }
+/** TAT pré-analítico (recebido → coleta realizada) em minutos; null se faltar um dos horários. */
+export function tatPreAnalitico(e: ExameRel): number | null {
+  if (e.pedidoEm === null || e.coletaEm === null || e.coletaEm < e.pedidoEm) return null
+  return (e.coletaEm - e.pedidoEm) / 60_000
+}
+
+/** Cor dos TATs por fase: verde < 30 min · amarelo 30–60 min · vermelho > 60 min. */
+export function corTatFase(min: number | null): Cor | null {
+  if (min === null) return null
+  if (min > 60) return 'vermelho'
+  if (min >= 30) return 'amarelo'
+  return 'verde'
+}
+
 export const noPrazo = (e: ExameRel) => {
   const t = tatRel(e)
   return t !== null && t <= METAS_TAT[prio(e)].vermelho
@@ -153,6 +175,10 @@ export interface KpisProducao {
   porDia: number | null
   rotTat: number | null
   noPrazoPct: number | null
+  /** Recebido → coleta (exames coletados no período). */
+  preTat: number | null
+  /** Coleta → liberação (exames liberados no período). */
+  analTat: number | null
 }
 
 /** `exames` já sem apoio e já filtrados por bancada. */
@@ -170,7 +196,68 @@ export function kpisProducao(exames: ExameRel[], inicio: number, fim: number): K
     porDia: dias ? liberados.length / dias : null,
     rotTat: media(rot.map(e => tatRel(e)!)),
     noPrazoPct: comTat.length ? (comTat.filter(noPrazo).length / comTat.length) * 100 : null,
+    preTat: media(exames.filter(e => dentro(e.coletaEm, inicio, fim)).map(tatPreAnalitico).filter((t): t is number => t !== null)),
+    analTat: media(comTat.map(e => tatRel(e)!)),
   }
+}
+
+export type ChaveKpi = 'urgRecebidas' | 'urgTat' | 'urgNoPrazoPct' | 'liberados' | 'porDia' | 'rotTat' | 'noPrazoPct' | 'preTat' | 'analTat'
+
+/** Exames por trás de cada card de produção (o que entra na conta daquele número). */
+export function examesDoKpi(exames: ExameRel[], chave: ChaveKpi, inicio: number, fim: number): ExameRel[] {
+  const lib = exames.filter(e => dentro(e.liberadoEm, inicio, fim))
+  const comTat = lib.filter(e => tatRel(e) !== null)
+  const lista =
+    chave === 'urgRecebidas' ? exames.filter(e => e.urgente && dentro(e.pedidoEm, inicio, fim))
+    : chave === 'urgTat' || chave === 'urgNoPrazoPct' ? comTat.filter(e => e.urgente)
+    : chave === 'rotTat' ? comTat.filter(e => !e.urgente)
+    : chave === 'noPrazoPct' || chave === 'analTat' ? comTat
+    : chave === 'preTat' ? exames.filter(e => dentro(e.coletaEm, inicio, fim) && tatPreAnalitico(e) !== null)
+    : lib
+  const quando = (e: ExameRel) => (chave === 'urgRecebidas' ? e.pedidoEm : chave === 'preTat' ? e.coletaEm : e.liberadoEm) ?? 0
+  return [...lista].sort((a, b) => quando(b) - quando(a))
+}
+
+const normNome = (s: string) => s.normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim().toLowerCase()
+
+export interface LinhaAnalista {
+  chave: string
+  nome: string
+  liberados: number
+  tatMedio: number | null
+  urgencias: number
+  rejeicoes: number
+  exames: ExameRel[]
+}
+
+/**
+ * Produtividade por analista: liberações pelo usuário que liberou (liberado_por);
+ * rejeições = recoletas pedidas por ele no período (pelo nome registrado na recoleta).
+ */
+export function produtividadeAnalistas(exames: ExameRel[], inicio: number, fim: number, nomes: Record<string, string>): LinhaAnalista[] {
+  const m = new Map<string, LinhaAnalista & { tats: number[] }>()
+  const pegar = (chave: string, nome: string) => {
+    let g = m.get(chave)
+    if (!g) { g = { chave, nome, liberados: 0, tatMedio: null, urgencias: 0, rejeicoes: 0, exames: [], tats: [] }; m.set(chave, g) }
+    return g
+  }
+  for (const e of exames) {
+    if (!dentro(e.liberadoEm, inicio, fim)) continue
+    const nome = e.liberadoPor ? nomes[e.liberadoPor] || 'Usuário removido' : 'Sem registro de quem liberou'
+    const g = pegar(normNome(nome), nome)
+    g.liberados++
+    if (e.urgente) g.urgencias++
+    g.exames.push(e)
+    const t = tatRel(e)
+    if (t !== null) g.tats.push(t)
+  }
+  for (const e of exames) {
+    if (!e.rejeitadoPor || !dentro(e.recoletaEm, inicio, fim)) continue
+    pegar(normNome(e.rejeitadoPor), e.rejeitadoPor).rejeicoes++
+  }
+  return [...m.values()]
+    .map(({ tats, ...g }) => ({ ...g, tatMedio: media(tats), exames: g.exames.sort((a, b) => b.liberadoEm! - a.liberadoEm!) }))
+    .sort((a, b) => b.liberados - a.liberados || b.rejeicoes - a.rejeicoes || a.nome.localeCompare(b.nome))
 }
 
 /** Valores diários dos 7 dias que terminam no dia de `fim`. */
@@ -277,16 +364,43 @@ function contar<T>(xs: T[], chave: (x: T) => string) {
   return [...m.entries()].map(([nome, total]) => ({ nome, total })).sort((a, b) => b.total - a.total || a.nome.localeCompare(b.nome))
 }
 
-/** Rejeição = recoleta pedida no período. Base = exames coletados ou rejeitados no período. */
+/** Hemólise detectada: motivo da recoleta citando hemólise/hemolisada. */
+export const ehHemolise = (motivo: string | null) => !!motivo && /hem[oó]l/i.test(motivo)
+
+/** Índice de hemólise: vermelho > 3%, amarelo 2–3%, verde < 2%. */
+export function corIndiceHemolise(pct: number | null): Cor | null {
+  if (pct === null) return null
+  if (pct > 3) return 'vermelho'
+  if (pct >= 2) return 'amarelo'
+  return 'verde'
+}
+
+/** Taxa de recoleta: meta < 0,5% (verde); acima disso vermelho. */
+export const corTaxaRecoleta = (pct: number | null): Cor | null => (pct === null ? null : pct < 0.5 ? 'verde' : 'vermelho')
+
+/**
+ * Rejeição = recoleta pedida no período (por amostra/exame). Base = exames coletados ou rejeitados no período.
+ * Índice de hemólise = amostras rejeitadas por hemólise ÷ base.
+ * Taxa de recoleta = pedidos com ao menos uma nova coleta ÷ pedidos com coleta no período (por pedido, não por tubo).
+ */
 export function resumoRejeicoes(exames: ExameRel[], inicio: number, fim: number) {
   const lista = exames.filter(e => dentro(e.recoletaEm, inicio, fim)).sort((a, b) => b.recoletaEm! - a.recoletaEm!)
-  const base = exames.filter(e => dentro(e.coletaEm, inicio, fim) || dentro(e.recoletaEm, inicio, fim)).length
+  const baseLista = exames.filter(e => dentro(e.coletaEm, inicio, fim) || dentro(e.recoletaEm, inicio, fim))
+  const base = baseLista.length
   const porMotivo = contar(lista, e => rotuloMotivo(e.motivo))
+  const hemolise = lista.filter(e => ehHemolise(e.motivo)).length
+  const pedidosBase = new Set(baseLista.map(e => e.orderId)).size
+  const pedidosRecoleta = new Set(lista.map(e => e.orderId)).size
   return {
     lista,
     total: lista.length,
     base,
     taxa: base ? (lista.length / base) * 100 : null,
+    hemolise,
+    indiceHemolise: base ? (hemolise / base) * 100 : null,
+    pedidosBase,
+    pedidosRecoleta,
+    taxaRecoleta: pedidosBase ? (pedidosRecoleta / pedidosBase) * 100 : null,
     porMotivo,
     porOrigem: contar(lista, e => e.origem),
     motivoTop: porMotivo[0] ?? null,
