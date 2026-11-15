@@ -34,7 +34,7 @@ beforeEach(async () => {
     INSERT INTO company_sectors VALUES('00000000-0000-4000-8000-0000000000f1',true,'{p_lab}'),('00000000-0000-4000-8000-0000000000f2',true,'{p_out}');
     INSERT INTO sector_users VALUES('${BIO_LAB}','00000000-0000-4000-8000-0000000000f1'),('${BIO_OUT}','00000000-0000-4000-8000-0000000000f2');
   `)
-  await db.exec(readFileSync('drizzle/migrations/0175_lab_relatorios_modulo.sql', 'utf8'))
+  await db.exec(readFileSync('drizzle/migrations/0175_lab_relatorios_modulo.sql', 'utf8').replace(/--> statement-breakpoint/g, ''))
   await db.exec(`
     CREATE TABLE patients(id uuid PRIMARY KEY, name text);
     CREATE TABLE exams(id uuid PRIMARY KEY, name text, workbench_id uuid);
