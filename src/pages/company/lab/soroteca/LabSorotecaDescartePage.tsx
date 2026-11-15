@@ -113,7 +113,6 @@ export default function LabSorotecaDescartePage() {
 
         <TabsContent value="lote" className="space-y-4">
           <div className="flex flex-wrap items-center gap-2">
-            <Button variant="outline" size="sm" onClick={() => marcar(p => p === 'urgente' || false)} disabled={!acesso.descartar}>Selecionar vencidas há mais de 24 h</Button>
             <Button variant="outline" size="sm" onClick={() => marcar((_, d) => d !== null && d < 0)} disabled={!acesso.descartar}>Selecionar vencidas</Button>
             <Button variant="outline" size="sm" onClick={() => marcar(p => p !== 'planejado')} disabled={!acesso.descartar}>Selecionar urgentes (até {avisoDias} dias)</Button>
             {sel.size > 0 && <Button variant="ghost" size="sm" onClick={() => setSel(new Set())}>Limpar seleção</Button>}
