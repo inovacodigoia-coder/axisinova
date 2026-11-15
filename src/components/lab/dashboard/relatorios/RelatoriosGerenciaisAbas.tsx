@@ -4,7 +4,7 @@ import { Lock } from 'lucide-react'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Skeleton } from '@/components/ui/skeleton'
 import { useRegisters } from '@/context/RegistersContext'
-import { useRelatorioGerencial, useRelatoriosGerenciaisAcesso } from '@/hooks/useRelatoriosGerenciais'
+import { useRelatorioGerencial, useRelatoriosGerenciaisAcesso, useRelatoriosGerenciaisModuloAtivo } from '@/hooks/useRelatoriosGerenciais'
 import { intervaloDeBusca, janelaRelatorio, montarExamesRel, somarDias, ymdSP } from '@/lib/relatoriosGerenciais'
 import { PERIODOS_REL, type FiltrosRel } from './comum'
 import { ProducaoTab } from './ProducaoTab'
@@ -15,6 +15,13 @@ type Aba = 'geral' | 'producao' | 'rejeicoes' | 'resumo'
 
 /** Abas do Dashboard Laboratorial; Visão Geral é o conteúdo atual, as demais exigem lab.relatorios_gerenciais. */
 export function RelatoriosGerenciaisAbas({ visaoGeral }: { visaoGeral: ReactNode }) {
+  // Desligado na empresa (só a labsaude tem): fica só a Visão Geral, sem barra de abas.
+  const modulo = useRelatoriosGerenciaisModuloAtivo()
+  if (modulo !== true) return <>{visaoGeral}</>
+  return <AbasRelatorios visaoGeral={visaoGeral} />
+}
+
+function AbasRelatorios({ visaoGeral }: { visaoGeral: ReactNode }) {
   const acesso = useRelatoriosGerenciaisAcesso()
   const { workbenches } = useRegisters()
   const [aba, setAba] = useState<Aba>('geral')
@@ -63,7 +70,7 @@ export function RelatoriosGerenciaisAbas({ visaoGeral }: { visaoGeral: ReactNode
       {acesso === true && (
         <>
           <TabsContent value="producao" className="mt-0">
-            {corpoPeriodo(<ProducaoTab exames={exames} janela={janela} filtros={filtros} setFiltros={mudarFiltros} bancadas={internas} nomeBancada={nomeBancada} rotuloPeriodo={rotuloPeriodo} />)}
+            {corpoPeriodo(<ProducaoTab exames={exames} analistas={q.data?.analistas ?? {}} janela={janela} filtros={filtros} setFiltros={mudarFiltros} bancadas={internas} nomeBancada={nomeBancada} rotuloPeriodo={rotuloPeriodo} />)}
           </TabsContent>
           <TabsContent value="rejeicoes" className="mt-0">
             {corpoPeriodo(<RejeicoesTab exames={exames} janela={janela} filtros={filtros} setFiltros={mudarFiltros} bancadas={bancadasFiltro} nomeBancada={nomeBancada} rotuloPeriodo={rotuloPeriodo} />)}

@@ -17,8 +17,23 @@ export function useRelatoriosGerenciaisAcesso(): boolean | null {
   return ok
 }
 
+/** Relatórios Gerenciais liberados para a empresa (desligado: só a Visão Geral aparece). null = carregando. */
+export function useRelatoriosGerenciaisModuloAtivo(): boolean | null {
+  const { user } = useAuth()
+  const [ok, setOk] = useState<boolean | null>(null)
+  useEffect(() => {
+    let vivo = true
+    if (!user?.id) { setOk(false); return }
+    void (supabase.rpc as any)('lab_relatorios_modulo_ativo').then(({ data }: any) => { if (vivo) setOk(data === true) })
+    return () => { vivo = false }
+  }, [user?.id, user?.companyId])
+  return ok
+}
+
 export interface DadosRelatorio {
   exames: LinhaRelatorio[]
+  /** id do usuário → nome, de quem liberou exames no intervalo. */
+  analistas: Record<string, string>
   criticos: number[]
   responsavel: { nome: string | null; registro: string | null; logo: string | null } | null
 }
@@ -42,6 +57,7 @@ export function useRelatorioGerencial(de: number, ate: number, habilitado: boole
       const d = (data || {}) as any
       return {
         exames: Array.isArray(d.exames) ? d.exames : [],
+        analistas: d.analistas && typeof d.analistas === 'object' && !Array.isArray(d.analistas) ? d.analistas : {},
         criticos: (Array.isArray(d.criticos) ? d.criticos : []).map((t: string) => new Date(t).getTime()).filter(Number.isFinite),
         responsavel: d.responsavel || null,
       }
