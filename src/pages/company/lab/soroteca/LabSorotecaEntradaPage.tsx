@@ -1,179 +1,222 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { useSearchParams } from 'react-router-dom'
+import { Link, useSearchParams } from 'react-router-dom'
 import { toast } from 'sonner'
-import { Layers, Loader2, Rows3, ScanBarcode, Search, Trash2, X } from 'lucide-react'
+import { CheckCircle2, Layers, Loader2, PackageCheck, Plus, Printer, Rows3, ScanBarcode, X } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
 import { Switch } from '@/components/ui/switch'
+import { Progress } from '@/components/ui/progress'
 import { Skeleton } from '@/components/ui/skeleton'
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { cn } from '@/lib/utils'
 import { useAuth } from '@/context/AuthContext'
+import { useRegisters } from '@/context/RegistersContext'
 import { useMateriaisTubos } from '@/lib/tubos'
-import { formatBirthBR } from '@/lib/attendanceDocHeader'
 import { localizarNaSoroteca, useSorotecaAcesso, useSorotecaAcoes, useSorotecaAmostras, useSorotecaResumo } from '@/hooks/useSoroteca'
-import { SorotecaGrid, SorotecaLegenda } from '@/components/lab/soroteca/SorotecaGrid'
-import { SemAcessoSoroteca, StatusBadge } from '@/components/lab/soroteca/SorotecaDialogs'
-import { PrateleiraAbas, prateleiraAtual } from '@/components/lab/soroteca/PrateleiraAbas'
+import { EstanteGrid } from '@/components/lab/soroteca/EstanteGrid'
+import { SorotecaLegenda } from '@/components/lab/soroteca/SorotecaGrid'
+import { SemAcessoSoroteca } from '@/components/lab/soroteca/SorotecaDialogs'
+import { FinalizarEstanteDialog, NovaEstanteDialog, type NovaEstanteDados } from '@/components/lab/soroteca/EstanteDialogs'
+import { imprimirEtiquetaEquipamento } from '@/lib/sorotecaEtiqueta'
 import {
-  bloqueioDoTubo, chavePosicao, enderecoPosicao, ocupadasDo, sugerirPosicao, tubosDoPedido,
-  type EquipamentoSoroteca, type PedidoLocalizado, type PosicaoSoroteca, type TuboDoPedido,
+  bloqueioDoTubo, ehEstante, enderecoGuardado, erroCodigoEstante, estanteDoCodigo, gradeDaEstante, localDaEstante, ocupadasDo,
+  proximaPosicaoEstante, rotuloPosicao, sugerirCodigoEstante, tubosDoPedido,
+  type AmostraSoroteca, type EquipamentoSoroteca, type PedidoLocalizado, type TuboDoPedido,
 } from '@/lib/soroteca'
 
-type Posicao = PosicaoSoroteca
-type ItemLote = { pedido: PedidoLocalizado; tubo: TuboDoPedido } & Posicao
+type Ultimo = { pedido: PedidoLocalizado; tubo: TuboDoPedido; linha: number; coluna: number }
+type Erro = { texto: string; novaEstante?: boolean }
 
 export default function LabSorotecaEntradaPage() {
   const { user } = useAuth()
   const cad = useMateriaisTubos(user?.companyId)
+  const { workbenches } = useRegisters()
+  const bancadas = useMemo(() => (workbenches || []).filter((w: any) => w.isActive !== false && w.tipo !== 'apoio'), [workbenches])
   const acesso = useSorotecaAcesso()
   const pode = !!acesso?.ver
   const resumo = useSorotecaResumo(pode)
   const amostrasQ = useSorotecaAmostras(pode ? { situacao: 'armazenada' } : null, pode)
-  const { armazenar } = useSorotecaAcoes()
-  const [params] = useSearchParams()
+  const acoes = useSorotecaAcoes()
+  const [params, setParams] = useSearchParams()
   const inputRef = useRef<HTMLInputElement>(null)
 
   const [termo, setTermo] = useState('')
-  const [buscando, setBuscando] = useState(false)
+  const [erro, setErro] = useState<Erro | null>(null)
   const [aviso, setAviso] = useState<string | null>(null)
-  const [pedidos, setPedidos] = useState<PedidoLocalizado[]>([])
-  const [pedido, setPedido] = useState<PedidoLocalizado | null>(null)
-  const [tubo, setTubo] = useState<TuboDoPedido | null>(null)
-  const [eqAtual, setEqAtual] = useState<string | null>(null)
-  const [pratAtual, setPratAtual] = useState<string | null>(null)
-  const [posicao, setPosicao] = useState<Posicao | null>(null)
+  const [estanteId, setEstanteId] = useState<string | null>(null)
+  const [ultimo, setUltimo] = useState<Ultimo | null>(null)
+  /** Tubos guardados nesta sessão (acendem na hora, antes da lista do servidor voltar). */
+  const [locais, setLocais] = useState<AmostraSoroteca[]>([])
+  const [processando, setProcessando] = useState(false)
+  const [nova, setNova] = useState<{ codigo: string; doBipe: boolean } | null>(null)
+  const [finalizando, setFinalizando] = useState(false)
   const [modoLote, setModoLote] = useState(false)
-  const [lote, setLote] = useState<ItemLote[]>([])
-  const [loteSel, setLoteSel] = useState<number | null>(null)
-  const [salvando, setSalvando] = useState(false)
-  const [presetUsado, setPresetUsado] = useState(false)
+  const [outra, setOutra] = useState<string | null>(null)
+  const [imprimindo, setImprimindo] = useState(false)
 
-  const equipamentos = useMemo(() => (resumo.data?.equipamentos ?? []).filter(e => e.ativo), [resumo.data])
-  const amostras = amostrasQ.data?.amostras ?? []
-  const avisoDias = resumo.data?.aviso_dias ?? 7
-  const eq = equipamentos.find(e => e.id === eqAtual) || equipamentos[0] || null
-  const pr = prateleiraAtual(eq?.prateleiras, pratAtual)
-  /** "Geladeira 01 > Prateleira 2 > B05" a partir dos ids. */
-  const endereco = (pos: Posicao | null) => {
-    if (!pos) return '—'
-    const e = equipamentos.find(x => x.id === pos.equipamento_id)
-    return enderecoPosicao(e?.nome, e?.prateleiras.find(x => x.id === pos.prateleira_id)?.nome, pos.linha, pos.coluna)
-  }
-  const irPara = (pos: { equipamento_id: string; prateleira_id: string }) => { setEqAtual(pos.equipamento_id); setPratAtual(pos.prateleira_id) }
-  const escolherEquipamento = (e: EquipamentoSoroteca) => { setEqAtual(e.id); setPratAtual(null) }
-  const tubos = useMemo(() => (pedido && cad.carregado ? tubosDoPedido(pedido) : []), [pedido, cad.carregado])
+  const equipamentos = useMemo(() => resumo.data?.equipamentos ?? [], [resumo.data])
+  const estante = equipamentos.find(e => e.id === estanteId) ?? null
+  const grade = gradeDaEstante(estante)
+  const visiveis = useMemo(() => {
+    const doServidor = amostrasQ.data?.amostras ?? []
+    const ids = new Set(doServidor.map(a => a.id))
+    return [...doServidor, ...locais.filter(l => !ids.has(l.id))]
+  }, [amostrasQ.data, locais])
+  const preenchidas = grade ? ocupadasDo(grade.id, visiveis).size : 0
+  const total = grade ? grade.linhas * grade.colunas : 0
+  const emPreenchimento = equipamentos.filter(e => ehEstante(e) && e.ativo && e.situacao !== 'armazenada')
 
-  useEffect(() => { if (!eqAtual && equipamentos[0]) setEqAtual(equipamentos[0].id) }, [equipamentos, eqAtual])
-  useEffect(() => { inputRef.current?.focus() }, [acesso?.ver])
+  // estado mais recente para a fila de bipes (leitor dispara vários códigos seguidos)
+  const atual = useRef({ equipamentos, estante, visiveis })
+  atual.current = { equipamentos, estante, visiveis }
+  const fila = useRef<string[]>([])
+  const rodando = useRef(false)
+  const focar = () => setTimeout(() => inputRef.current?.focus(), 0)
 
-  const reservas = (exceto?: number) => lote.filter((_, i) => i !== exceto).map(i => ({ equipamento_id: i.equipamento_id, prateleira_id: i.prateleira_id, linha: i.linha, coluna: i.coluna }))
+  useEffect(() => { focar() }, [acesso?.ver])
 
-  /** Posição sugerida (ou a vinda do dashboard "Armazenar aqui", se ainda livre). */
-  const sugerir = (t: TuboDoPedido): Posicao | null => {
-    const pe = params.get('equipamento'), pp = params.get('prateleira'), pl = Number(params.get('linha')), pc = Number(params.get('coluna'))
-    if (!presetUsado && pe && pp && pl && pc) {
-      const p = equipamentos.find(x => x.id === pe)?.prateleiras.find(x => x.id === pp)
-      if (p && pl <= p.linhas && pc <= p.colunas && !ocupadasDo(p.id, amostras, reservas()).has(chavePosicao(pl, pc))) {
-        setPresetUsado(true)
-        return { equipamento_id: pe, prateleira_id: pp, linha: pl, coluna: pc }
-      }
+  const abrirEstante = async (est: EquipamentoSoroteca) => {
+    if (!est.ativo) { setErro({ texto: `A estante ${est.codigo} está inativa.` }); return }
+    const g = gradeDaEstante(est)
+    if (g && ocupadasDo(g.id, atual.current.visiveis).size >= g.linhas * g.colunas) {
+      setErro({ texto: `A estante ${est.codigo} está cheia (${g.linhas * g.colunas} posições). Crie uma nova estante.`, novaEstante: true })
+      return
     }
-    return sugerirPosicao(equipamentos, amostras, t.bancadaId, reservas())
+    if (est.situacao === 'armazenada') {
+      const r = await acoes.abrirEstante(est.id)
+      if (r.aberta) setAviso(`Estante ${est.codigo} retirada de ${r.de} para receber tubos. Ao finalizar, escolha onde guardar.`)
+    } else setAviso(null)
+    atual.current.estante = est
+    setEstanteId(est.id)
+    setUltimo(null)
   }
 
-  const escolherTubo = (p: PedidoLocalizado, t: TuboDoPedido) => {
+  // Vindo do Dashboard ("Abrir na Entrada"): ?estante=<id>
+  useEffect(() => {
+    const id = params.get('estante')
+    if (!id || !equipamentos.length || !acesso?.armazenar) return
+    const est = equipamentos.find(e => e.id === id && ehEstante(e))
+    setParams({}, { replace: true })
+    if (est) void abrirEstante(est).catch(e => setErro({ texto: (e as Error).message }))
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [params, equipamentos.length, acesso?.armazenar])
+
+  const processar = async (bruto: string) => {
+    const codigo = bruto.trim()
+    if (codigo.length < 2) return
+    setErro(null)
+    const { equipamentos: eqs, estante: ativa } = atual.current
+
+    // 1) etiqueta de estante
+    let est = estanteDoCodigo(eqs, codigo)
+    if (!est && !ativa && !erroCodigoEstante(codigo)) est = estanteDoCodigo((await resumo.refetch()).data?.equipamentos ?? [], codigo)
+    if (est) { await abrirEstante(est); return }
+
+    // 2) etiqueta de tubo
+    if (!cad.carregado) { setErro({ texto: 'Carregando o cadastro de tubos; bipe de novo em instantes.' }); return }
+    const r = await localizarNaSoroteca(codigo)
+    const p = r.modo === 'tubo' && r.pedidos.length === 1 ? r.pedidos[0] : null
+    const t = p?.tubo_indice ? tubosDoPedido(p).find(x => x.indice === p.tubo_indice) ?? null : null
+    if (!ativa) {
+      if (t) { setErro({ texto: 'Bipe primeiro a etiqueta da estante; depois os tubos.' }); return }
+      if (!erroCodigoEstante(codigo)) { setNova({ codigo: codigo.toUpperCase(), doBipe: true }); return }
+      setErro({ texto: 'Código não reconhecido: não é uma estante nem uma amostra.' })
+      return
+    }
+    if (!p || !t) {
+      setErro({ texto: r.modo === 'pedido' ? 'Esse é o número do pedido: bipe a etiqueta do tubo.' : `Amostra não encontrada (${codigo}).` })
+      return
+    }
     const bloq = bloqueioDoTubo(t)
-    if (modoLote) {
-      if (bloq) { toast.error(`${t.codigo}: ${bloq}`); return }
-      if (lote.some(i => i.tubo.codigo === t.codigo)) { toast.info(`${t.codigo} já está no lote`); return }
-      const s = sugerir(t)
-      if (!s) { toast.error('Não há posição livre nos equipamentos ativos'); return }
-      setLote(l => [...l, { pedido: p, tubo: t, ...s }])
-      setLoteSel(lote.length)
-      irPara(s)
-      limparBusca()
+    if (bloq) { setErro({ texto: `${t.codigo}: ${bloq}` }); return }
+    if (t.guardado?.status === 'armazenada') {
+      setErro({ texto: `Amostra ${t.codigo} já está armazenada em ${enderecoGuardado(t.guardado, eqs)}.` })
       return
     }
-    setPedido(p)
-    setTubo(t)
-    if (!bloq) {
-      const s = sugerir(t)
-      setPosicao(s)
-      if (s) irPara(s)
-    } else setPosicao(null)
+    const pos = proximaPosicaoEstante(ativa, atual.current.visiveis)
+    if (!pos) { setErro({ texto: `A estante ${ativa.codigo} está cheia. Clique em Finalizar ou crie uma nova estante.`, novaEstante: true }); return }
+    const [res] = await acoes.armazenar([{ order_id: p.order_id, tubo_indice: t.indice, exame_ids: t.exameIds, tubo_nome: t.nome, equipamento_id: ativa.id, ...pos }])
+    const nova: AmostraSoroteca = {
+      id: res.id, codigo_amostra: t.codigo, codigo_alfanumerico: t.hash, order_id: p.order_id, tubo_indice: t.indice, protocolo: p.protocolo,
+      patient_name: p.patient_name, workbench_id: t.bancadaId, bancada_nome: t.bancadaNome, tubo_nome: t.nome, exames_nomes: t.examesNomes,
+      tem_apoio: t.temApoio, coletada_em: null, validade: null, status: 'armazenada', equipamento_id: ativa.id, equipamento_nome: ativa.nome,
+      prateleira_id: pos.prateleira_id, prateleira_nome: '', linha: pos.linha, coluna: pos.coluna, armazenada_em: new Date().toISOString(),
+      descartada_em: null, total: t.total, liberados: t.liberados, status_resultado: t.status,
+    }
+    atual.current.visiveis = [...atual.current.visiveis, nova]
+    setLocais(l => [...l, nova])
+    setUltimo({ pedido: p, tubo: t, linha: pos.linha, coluna: pos.coluna })
   }
 
-  const limparBusca = () => {
-    setTermo(''); setPedidos([]); setPedido(null); setTubo(null); setPosicao(null); setAviso(null)
-    setTimeout(() => inputRef.current?.focus(), 0)
-  }
-
-  const buscar = async () => {
-    const t = termo.trim()
-    if (t.length < 2) return
-    if (!cad.carregado) { toast.info('Carregando o cadastro de tubos, tente de novo em instantes'); return }
-    setBuscando(true); setAviso(null); setPedido(null); setTubo(null); setPosicao(null)
+  const rodarFila = async () => {
+    if (rodando.current) return
+    rodando.current = true
+    setProcessando(true)
     try {
-      const r = await localizarNaSoroteca(t)
-      setPedidos(r.pedidos)
-      if (!r.pedidos.length) { setAviso('Nenhuma amostra ou pedido encontrado com esse código ou nome.'); return }
-      if (r.modo === 'tubo' && r.pedidos.length === 1 && r.pedidos[0].tubo_indice) {
-        const p = r.pedidos[0]
-        const tb = tubosDoPedido(p).find(x => x.indice === p.tubo_indice)
-        if (tb) { escolherTubo(p, tb); return }
+      while (fila.current.length) {
+        const c = fila.current.shift()!
+        try { await processar(c) } catch (e) { setErro({ texto: (e as Error).message }) }
       }
-      if (r.pedidos.length === 1) setPedido(r.pedidos[0])
-    } catch (e) {
-      toast.error((e as Error).message)
     } finally {
-      setBuscando(false)
+      rodando.current = false
+      setProcessando(false)
+      focar()
     }
   }
 
-  const clicarCelula = (linha: number, coluna: number) => {
-    if (!eq || !pr) return
-    if (modoLote) {
-      if (loteSel === null || !lote[loteSel]) return
-      setLote(l => l.map((it, i) => (i === loteSel ? { ...it, equipamento_id: eq.id, prateleira_id: pr.id, linha, coluna } : it)))
-      return
-    }
-    if (!tubo || bloqueioDoTubo(tubo)) return
-    setPosicao({ equipamento_id: eq.id, prateleira_id: pr.id, linha, coluna })
+  const bipar = () => {
+    const c = termo.trim()
+    setTermo('')
+    if (!c) return
+    fila.current.push(c)
+    void rodarFila()
   }
 
-  const item = (t: TuboDoPedido, p: PedidoLocalizado, pos: Posicao) =>
-    ({ order_id: p.order_id, tubo_indice: t.indice, exame_ids: t.exameIds, tubo_nome: t.nome,
-       equipamento_id: pos.equipamento_id, prateleira_id: pos.prateleira_id, linha: pos.linha, coluna: pos.coluna })
-
-  const confirmar = async () => {
-    if (!pedido || !tubo || !posicao) return
-    setSalvando(true)
+  const criarEstante = async (d: NovaEstanteDados) => {
     try {
-      const [r] = await armazenar([item(tubo, pedido, posicao)])
-      toast.success(`Amostra ${r.codigo_amostra} ${tubo.guardado?.status === 'armazenada' ? 'movida para' : 'armazenada em'} ${enderecoPosicao(r.equipamento_nome, r.prateleira_nome, r.linha, r.coluna)}`)
-      limparBusca()
+      const id = await acoes.salvarEstante({ id: null, codigo: d.codigo, nome: '', linhas: d.linhas, colunas: d.colunas, workbench_id: d.workbench_id, ativo: true })
+      const lista = (await resumo.refetch()).data?.equipamentos ?? []
+      const est = lista.find(e => e.id === id)
+      setNova(null)
+      setErro(null)
+      if (est) {
+        atual.current.estante = est
+        setEstanteId(est.id)
+        setUltimo(null)
+        setAviso(null)
+        toast.success(`Estante ${est.codigo} criada. Bipe os tubos.`)
+        if (d.imprimir) void imprimir(est)
+      }
+      focar()
     } catch (e) {
       toast.error((e as Error).message)
-    } finally {
-      setSalvando(false)
     }
   }
 
-  const confirmarLote = async () => {
-    if (!lote.length) return
-    setSalvando(true)
+  const imprimir = async (e: EquipamentoSoroteca) => {
+    setImprimindo(true)
+    try { toast.success(await imprimirEtiquetaEquipamento(e)) } catch (err) { toast.error((err as Error).message) } finally { setImprimindo(false); focar() }
+  }
+
+  const guardar = async (equipamentoId: string, prateleiraId: string) => {
+    if (!estante) return
     try {
-      const r = await armazenar(lote.map(i => item(i.tubo, i.pedido, i)))
-      toast.success(`${r.length} amostra(s) armazenada(s)`)
-      setLote([]); setLoteSel(null); limparBusca()
+      const r = await acoes.guardarEstante(estante.id, equipamentoId, prateleiraId)
+      const msg = `Estante ${estante.codigo} guardada em ${r.equipamento_nome} > ${r.prateleira_nome} (${r.tubos} tubo${r.tubos === 1 ? '' : 's'})`
+      toast.success(msg)
+      setFinalizando(false)
+      setEstanteId(null); atual.current.estante = null
+      setUltimo(null); setAviso(null); setErro(null); setLocais([])
+      if (modoLote) setOutra(msg)
+      else focar()
     } catch (e) {
       toast.error((e as Error).message)
-    } finally {
-      setSalvando(false)
     }
   }
+
+  const sair = () => { setEstanteId(null); atual.current.estante = null; setUltimo(null); setAviso(null); setErro(null); focar() }
 
   if (acesso === null) return <Skeleton className="h-96 rounded-2xl" />
   if (!pode) return <SemAcessoSoroteca />
@@ -184,166 +227,151 @@ export default function LabSorotecaEntradaPage() {
     </div>
   )
 
-  const bloqueio = tubo ? bloqueioDoTubo(tubo) : null
-  const reservasPrat = pr ? lote.map((i, n) => ({ ...i, n })).filter(i => i.prateleira_id === pr.id).map(i => ({ linha: i.linha, coluna: i.coluna, rotulo: String(i.n + 1) })) : []
-  const loteNaPrat = lote.reduce<Record<string, number>>((m, i) => ({ ...m, [i.prateleira_id]: (m[i.prateleira_id] ?? 0) + 1 }), {})
-  const selLote = loteSel !== null ? lote[loteSel] : null
+  const t = ultimo?.tubo
+  const todosLiberados = !!t && t.total > 0 && t.liberados >= t.total
+  const local = estante ? localDaEstante(estante) : null
 
   return (
     <div className="space-y-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <h1 className="text-3xl font-bold tracking-tight">Entrada / Armazenar</h1>
-          <p className="text-muted-foreground">Bipe a etiqueta do tubo e confirme a posição na soroteca</p>
+          <p className="text-muted-foreground">Bipe a etiqueta da estante e depois os tubos; cada tubo vai para a próxima posição livre</p>
         </div>
         <label className="flex items-center gap-2 rounded-lg border border-border bg-card px-3 py-2 text-sm">
           <Layers className="h-4 w-4 text-primary" />Modo lote
-          <Switch checked={modoLote} onCheckedChange={v => { setModoLote(v); limparBusca() }} />
+          <Switch checked={modoLote} onCheckedChange={setModoLote} />
         </label>
       </div>
 
       <div className="grid gap-6 lg:grid-cols-[minmax(320px,2fr)_3fr]">
-        <Card>
-          <CardHeader><CardTitle className="text-base">Localizar amostra</CardTitle></CardHeader>
-          <CardContent className="space-y-4">
-            <form className="relative" onSubmit={e => { e.preventDefault(); void buscar() }}>
-              <ScanBarcode className="pointer-events-none absolute left-3 top-1/2 h-6 w-6 -translate-y-1/2 text-primary" />
-              <Input ref={inputRef} value={termo} onChange={e => setTermo(e.target.value)} className="h-14 pl-12 pr-12 text-lg"
-                placeholder="Bipe aqui: código da amostra, pedido ou nome" aria-label="Código da amostra, pedido ou nome do paciente" />
-              <Button type="submit" size="icon" variant="ghost" className="absolute right-2 top-1/2 -translate-y-1/2" disabled={buscando}>
-                {buscando ? <Loader2 className="h-5 w-5 animate-spin" /> : <Search className="h-5 w-5" />}
-              </Button>
-            </form>
-            {aviso && <p className="rounded-lg border border-warning/40 bg-warning/10 p-3 text-sm">{aviso}</p>}
-
-            {!pedido && pedidos.length > 1 && (
-              <div className="space-y-2">
-                <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">{pedidos.length} pedido(s) encontrados</p>
-                {pedidos.map(p => (
-                  <button key={p.order_id} type="button" onClick={() => setPedido(p)} className="w-full rounded-lg border border-border p-3 text-left text-sm hover:border-primary hover:bg-primary/5">
-                    <span className="font-semibold">Pedido {p.protocolo}</span> · {p.patient_name}
-                    <span className="block text-xs text-muted-foreground">Nascimento {formatBirthBR(p.patient_birth) || '—'}</span>
-                  </button>
-                ))}
-              </div>
-            )}
-
-            {pedido && !tubo && (
-              <div className="space-y-2">
-                <div className="flex items-center justify-between">
-                  <p className="text-sm"><span className="font-semibold">Pedido {pedido.protocolo}</span> · {pedido.patient_name}</p>
-                  {pedidos.length > 1 && <Button variant="ghost" size="sm" onClick={() => setPedido(null)}>Voltar</Button>}
+        {/* Painel esquerdo: bipe, tubo, ações e Finalizar */}
+        <div className="flex flex-col gap-4 lg:sticky lg:top-4 lg:max-h-[calc(100vh-2rem)] lg:self-start">
+          <Card className="rounded-lg shadow-sm">
+            <CardContent className="space-y-3 pt-6">
+              <form className="relative" onSubmit={e => { e.preventDefault(); bipar() }}>
+                <ScanBarcode className={cn('pointer-events-none absolute left-3 top-1/2 h-6 w-6 -translate-y-1/2', erro ? 'text-destructive' : 'text-primary')} />
+                <Input ref={inputRef} value={termo} onChange={e => { setTermo(e.target.value); if (erro) setErro(null) }} autoFocus
+                  className={cn('h-14 pl-12 pr-12 text-lg', erro && 'border-2 border-destructive focus-visible:ring-destructive')}
+                  placeholder={estante ? 'Bipe o tubo' : 'Bipe a etiqueta da estante'} aria-label="Campo de bipe" aria-invalid={!!erro} />
+                {processando && <Loader2 className="absolute right-4 top-1/2 h-5 w-5 -translate-y-1/2 animate-spin text-muted-foreground" />}
+              </form>
+              {erro && (
+                <div className="space-y-2" role="alert">
+                  <p className="text-sm font-medium text-destructive">{erro.texto}</p>
+                  {erro.novaEstante && <Button size="sm" variant="outline" onClick={() => setNova({ codigo: sugerirCodigoEstante(equipamentos), doBipe: false })}><Plus className="mr-1 h-3.5 w-3.5" />Nova estante</Button>}
                 </div>
-                <p className="text-xs text-muted-foreground">Escolha o tubo:</p>
-                {!cad.carregado ? <Skeleton className="h-20" /> : tubos.map(t => {
-                  const b = bloqueioDoTubo(t)
-                  return (
-                    <button key={t.indice} type="button" onClick={() => escolherTubo(pedido, t)} className={cn('w-full rounded-lg border border-border p-3 text-left text-sm hover:border-primary hover:bg-primary/5', b && 'opacity-60')}>
-                      <span className="font-mono font-semibold">{t.codigo}</span> · {t.nome}
-                      <span className="block text-xs text-muted-foreground">{t.examesNomes.join(', ')}</span>
-                      {b && <span className="block text-xs text-destructive">{b}</span>}
-                      {t.guardado?.status === 'armazenada' && <span className="block text-xs text-primary">Guardada em {enderecoPosicao(t.guardado.equipamento_nome, t.guardado.prateleira_nome, t.guardado.linha, t.guardado.coluna)}</span>}
-                    </button>
-                  )
-                })}
-              </div>
-            )}
+              )}
+              {aviso && !erro && <p className="rounded-md bg-info/10 p-2 text-sm text-info">{aviso}</p>}
 
-            {pedido && tubo && !modoLote && (
-              <div className="space-y-3 rounded-xl border border-border p-4">
-                <div className="flex items-start justify-between gap-2">
+              {estante ? (
+                <div className="flex items-start justify-between gap-2 rounded-md border border-border bg-muted/40 p-3 text-sm">
                   <div>
-                    <p className="font-mono text-lg font-bold">{tubo.codigo}</p>
-                    <p className="text-xs text-muted-foreground">Código de barras {tubo.hash} · {tubo.nome}</p>
+                    <p className="font-semibold"><Rows3 className="mr-1 inline h-4 w-4 text-primary" />{estante.nome}</p>
+                    <p className="text-xs text-muted-foreground">
+                      {grade ? `${grade.linhas}×${grade.colunas} · A01–${rotuloPosicao(grade.linhas, grade.colunas)}` : ''}
+                      {estante.bancada_nome ? ` · ${estante.bancada_nome}` : ''} · {local ? `Guardada em ${local}` : 'Em preenchimento'}
+                    </p>
                   </div>
-                  <Button variant="ghost" size="icon" onClick={limparBusca} aria-label="Limpar"><X className="h-4 w-4" /></Button>
+                  <Button variant="ghost" size="icon" className="h-7 w-7" onClick={sair} aria-label="Trocar de estante"><X className="h-4 w-4" /></Button>
                 </div>
-                <dl className="grid grid-cols-2 gap-x-4 gap-y-2 text-sm">
-                  <div className="col-span-2"><dt className="text-xs text-muted-foreground">Paciente</dt><dd className="font-medium">{pedido.patient_name} · {formatBirthBR(pedido.patient_birth) || '—'}</dd></div>
-                  <div><dt className="text-xs text-muted-foreground">Pedido nº</dt><dd className="font-medium">{pedido.protocolo}</dd></div>
-                  <div><dt className="text-xs text-muted-foreground">Bancada</dt><dd className="font-medium">{tubo.bancadaNome || '—'}</dd></div>
-                  <div className="col-span-2"><dt className="text-xs text-muted-foreground">Exames</dt><dd>{tubo.examesNomes.join(', ')}</dd></div>
-                  <div><dt className="text-xs text-muted-foreground">Status</dt><dd><StatusBadge status={tubo.status} /> <span className="text-xs text-muted-foreground">{tubo.liberados}/{tubo.total}</span></dd></div>
-                  {tubo.temApoio && <div><dt className="text-xs text-muted-foreground">Apoio</dt><dd className="text-xs">Tem exame no apoio (fora do status)</dd></div>}
-                </dl>
-                {tubo.guardado?.status === 'armazenada' && (
-                  <p className="rounded-lg bg-primary/10 p-2 text-sm text-primary">Já está em {enderecoPosicao(tubo.guardado.equipamento_nome, tubo.guardado.prateleira_nome, tubo.guardado.linha, tubo.guardado.coluna)}. Escolha a nova posição para mover.</p>
-                )}
-                {bloqueio && <p className="rounded-lg bg-destructive/10 p-2 text-sm text-destructive">{bloqueio}</p>}
-              </div>
-            )}
+              ) : (
+                <p className="text-sm text-muted-foreground">Nenhuma estante aberta. Bipe a etiqueta da estante (ex.: E79002) ou crie uma nova.</p>
+              )}
+            </CardContent>
+          </Card>
 
-            {modoLote && (
-              <div className="space-y-2">
-                <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Lote ({lote.length})</p>
-                {!lote.length && <p className="text-sm text-muted-foreground">Bipe as amostras em sequência. Cada uma recebe a próxima posição livre; clique numa linha e depois numa célula para trocar a posição.</p>}
-                {lote.map((i, n) => (
-                  <div key={i.tubo.codigo} onClick={() => setLoteSel(n)} role="button" tabIndex={0}
-                    className={cn('flex items-center justify-between gap-2 rounded-lg border p-2 text-sm', loteSel === n ? 'border-success bg-success/10' : 'border-border')}>
-                    <span><span className="mr-2 inline-flex h-5 w-5 items-center justify-center rounded-full bg-success text-[10px] font-bold text-success-foreground">{n + 1}</span>
-                      <span className="font-mono font-semibold">{i.tubo.codigo}</span> · {i.pedido.patient_name?.split(' ')[0]}</span>
-                    <span className="flex items-center gap-2 text-xs">
-                      {endereco(i)}
-                      <Button variant="ghost" size="icon" className="h-6 w-6" aria-label="Remover do lote"
-                        onClick={ev => { ev.stopPropagation(); setLote(l => l.filter((_, k) => k !== n)); setLoteSel(null) }}><Trash2 className="h-3.5 w-3.5" /></Button>
-                    </span>
-                  </div>
-                ))}
-              </div>
-            )}
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="space-y-3">
-            <CardTitle className="text-base">Escolher posição</CardTitle>
-            <div className="flex flex-wrap gap-2">
-              {equipamentos.map(e => (
-                <Button key={e.id} size="sm" variant={eq?.id === e.id ? 'default' : 'outline'} onClick={() => escolherEquipamento(e)}>
-                  <Rows3 className="mr-1.5 h-3.5 w-3.5" />{e.nome}{e.bancada_nome ? ` · ${e.bancada_nome}` : ''}
-                </Button>
-              ))}
-            </div>
-            {eq && <PrateleiraAbas prateleiras={eq.prateleiras} valor={pr?.id ?? null} onChange={setPratAtual} extra={loteNaPrat} />}
-          </CardHeader>
-          <CardContent className="space-y-3">
-            {resumo.isLoading || amostrasQ.isLoading ? <Skeleton className="h-64" /> : !eq ? (
-              <p className="py-10 text-center text-sm text-muted-foreground">Nenhum equipamento ativo. Cadastre um em Estrutura Física.</p>
-            ) : !pr ? (
-              <p className="py-10 text-center text-sm text-muted-foreground">Este equipamento não tem prateleiras. Cadastre em Estrutura Física.</p>
-            ) : (
-              <>
-                <SorotecaGrid prateleira={pr} equipamentoNome={eq.nome} amostras={amostras} avisoDias={avisoDias} modo="selecionar" comprimida={false}
-                  selecionada={modoLote ? (selLote && selLote.prateleira_id === pr.id ? selLote : null) : (posicao?.prateleira_id === pr.id ? posicao : null)}
-                  reservas={modoLote ? reservasPrat.filter(r => !(selLote && selLote.prateleira_id === pr.id && r.linha === selLote.linha && r.coluna === selLote.coluna)) : []}
-                  onCelula={(l, c, a) => { if (!a) clicarCelula(l, c) }} />
-                <SorotecaLegenda selecao />
-              </>
-            )}
-          </CardContent>
-        </Card>
-      </div>
-
-      <div className="sticky bottom-0 z-30 rounded-xl border border-border bg-card/95 px-4 py-3 shadow-lg backdrop-blur">
-        <div className="flex flex-wrap items-center justify-end gap-4 text-sm">
-          {modoLote ? (
-            <>
-              <span>{lote.length} amostra(s) no lote</span>
-              <Button variant="outline" onClick={() => { setLote([]); setLoteSel(null) }} disabled={!lote.length || salvando}>Limpar lote</Button>
-              <Button onClick={confirmarLote} disabled={!lote.length || salvando}>{salvando && <Loader2 className="mr-1.5 h-4 w-4 animate-spin" />}Confirmar tudo</Button>
-            </>
-          ) : (
-            <>
-              <span>Posição: <strong>{endereco(posicao)}</strong></span>
-              {posicao && <Badge variant="outline" className="border-success/40 bg-success/10 text-success">✔ Selecionada</Badge>}
-              <Button onClick={confirmar} disabled={!tubo || !posicao || !!bloqueio || salvando}>
-                {salvando && <Loader2 className="mr-1.5 h-4 w-4 animate-spin" />}
-                {tubo?.guardado?.status === 'armazenada' ? 'Confirmar mudança' : 'Confirmar armazenamento'}
-              </Button>
-            </>
+          {t && ultimo && (
+            <Card className="rounded-lg shadow-sm" aria-live="polite">
+              <CardContent className="space-y-2 pt-5">
+                {todosLiberados && <Badge className="bg-success text-success-foreground hover:bg-success">Todos liberados ✓</Badge>}
+                <p className="text-lg font-semibold leading-tight">{ultimo.pedido.patient_name || '—'}</p>
+                <p className="font-mono text-sm">{t.codigo} <span className="text-xs text-muted-foreground">· {t.hash} · posição {rotuloPosicao(ultimo.linha, ultimo.coluna)}</span></p>
+                <p className="text-xs text-muted-foreground">Bancada{t.bancadas.length === 1 ? '' : 's'}: {t.bancadas.join(', ') || '—'}</p>
+                <ul className="space-y-1 pt-1">
+                  {t.exames.map(e => (
+                    <li key={e.id} className="flex items-center justify-between gap-2 text-sm">
+                      <span className="truncate">{e.nome}</span>
+                      <Badge variant="outline" className={e.liberado ? 'border-success/40 bg-success/15 text-success' : 'border-destructive/40 bg-destructive/10 text-destructive'}>
+                        <span className={cn('mr-1.5 h-2 w-2 rounded-full', e.liberado ? 'bg-success' : 'bg-destructive')} />{e.liberado ? 'Liberado' : 'Pendente'}
+                      </Badge>
+                    </li>
+                  ))}
+                </ul>
+                {t.temApoio && <p className="text-xs text-muted-foreground">Tem exame no laboratório de apoio (fora do status).</p>}
+              </CardContent>
+            </Card>
           )}
+
+          <div className="flex flex-wrap gap-2">
+            <Button variant="outline" onClick={() => setNova({ codigo: sugerirCodigoEstante(equipamentos), doBipe: false })}><Plus className="mr-1.5 h-4 w-4" />Nova estante</Button>
+            {estante && <Button variant="outline" onClick={() => imprimir(estante)} disabled={imprimindo}>{imprimindo ? <Loader2 className="mr-1.5 h-4 w-4 animate-spin" /> : <Printer className="mr-1.5 h-4 w-4" />}Reimprimir etiqueta</Button>}
+          </div>
+
+          <div className="space-y-1.5">
+            <div className="flex justify-between text-sm"><span>{preenchidas} / {total} posições preenchidas</span>{total > 0 && <span className="text-muted-foreground">{Math.round((preenchidas / total) * 100)}%</span>}</div>
+            <Progress value={total ? (preenchidas / total) * 100 : 0} className="h-2.5" aria-label="Posições preenchidas" />
+          </div>
+
+          <Button size="lg" className="w-full bg-info text-info-foreground hover:bg-info/90" disabled={!estante || preenchidas === 0} onClick={() => setFinalizando(true)}>
+            <PackageCheck className="mr-2 h-5 w-5" />Finalizar
+          </Button>
         </div>
+
+        {/* Painel direito: grade da estante */}
+        <Card className="rounded-lg shadow-sm">
+          <CardHeader className="flex flex-row flex-wrap items-center justify-between gap-2 space-y-0">
+            <CardTitle className="text-base">{estante ? estante.nome : 'Estante'}</CardTitle>
+            <SorotecaLegenda />
+          </CardHeader>
+          <CardContent>
+            <div className="rounded-lg bg-muted/50 p-4">
+              {resumo.isLoading || amostrasQ.isLoading ? <Skeleton className="h-64" /> : estante && grade ? (
+                <EstanteGrid grade={grade} amostras={visiveis} atual={ultimo ? { linha: ultimo.linha, coluna: ultimo.coluna } : null} />
+              ) : (
+                <div className="flex flex-col items-center gap-3 py-12 text-center">
+                  <ScanBarcode className="h-10 w-10 text-muted-foreground" />
+                  <p className="font-medium">Bipe a etiqueta da estante para começar</p>
+                  {!!emPreenchimento.length && (
+                    <div className="space-y-2">
+                      <p className="text-xs text-muted-foreground">Estantes em preenchimento:</p>
+                      <div className="flex flex-wrap justify-center gap-2">
+                        {emPreenchimento.map(e => (
+                          <Button key={e.id} size="sm" variant="outline" className="font-mono" onClick={() => void abrirEstante(e).catch(err => setErro({ texto: (err as Error).message })).finally(focar)}>
+                            {e.codigo} · {e.ocupadas}/{e.capacidade}
+                          </Button>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                  {!equipamentos.some(e => !ehEstante(e)) && (
+                    <p className="text-xs text-muted-foreground">Ainda não há geladeira ou freezer: cadastre em <Link className="underline" to="/app/soroteca/estrutura">Estrutura Física</Link> para guardar as estantes.</p>
+                  )}
+                </div>
+              )}
+            </div>
+          </CardContent>
+        </Card>
       </div>
+
+      <NovaEstanteDialog aberto={!!nova} codigoInicial={nova?.codigo ?? ''} doBipe={!!nova?.doBipe} bancadas={bancadas}
+        onClose={() => { setNova(null); focar() }} onCriar={criarEstante} />
+      <FinalizarEstanteDialog estante={finalizando ? estante : null} preenchidas={preenchidas} total={total} equipamentos={equipamentos}
+        onClose={() => { setFinalizando(false); focar() }} onConfirmar={guardar} />
+
+      <Dialog open={!!outra} onOpenChange={o => { if (!o) { setOutra(null); focar() } }}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2"><CheckCircle2 className="h-5 w-5 text-success" />Estante guardada</DialogTitle>
+            <DialogDescription>{outra} Deseja começar outra estante agora?</DialogDescription>
+          </DialogHeader>
+          <DialogFooter className="gap-2">
+            <Button variant="outline" onClick={() => { setOutra(null); focar() }}>Não, terminar</Button>
+            <Button variant="outline" onClick={() => { setOutra(null); setNova({ codigo: sugerirCodigoEstante(equipamentos), doBipe: false }) }}><Plus className="mr-1 h-4 w-4" />Nova estante</Button>
+            <Button onClick={() => { setOutra(null); focar() }}><ScanBarcode className="mr-1 h-4 w-4" />Bipar a próxima estante</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }
