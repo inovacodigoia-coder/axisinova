@@ -1198,6 +1198,13 @@
       "when": 1794750285055,
       "tag": "0170_soroteca_tubo_finalizado",
       "breakpoints": true
+    },
+    {
+      "idx": 171,
+      "version": "7",
+      "when": 1794755327388,
+      "tag": "0171_soroteca_rastreio_estante",
+      "breakpoints": true
     }
   ]
 }
