@@ -188,3 +188,18 @@ describe('mensagens de erro da Soroteca', () => {
     expect(mensagemErro({ message: 'duplicate key value violates unique constraint', code: '23505' })).toBe('Essa posição acabou de ser ocupada. Bipe de novo.')
   })
 })
+
+describe('folha de descarte', () => {
+  it('marca tubo pendente/no prazo, mostra a posição certa por tipo e soma o rodapé', async () => {
+    const { marcaItemFolha, posicaoItemFolha, totaisFolha } = await import('./soroteca')
+    expect(marcaItemFolha({ pendente: true, no_prazo: true })).toBe('Exame pendente · No prazo')
+    expect(marcaItemFolha({ pendente: false, no_prazo: true })).toBe('No prazo')
+    expect(marcaItemFolha({ pendente: false, no_prazo: false })).toBe('')
+    const i = { posicao: 'B05', endereco: 'Geladeira 01 > Prateleira 2 > Estante E79002 > B05' }
+    expect(posicaoItemFolha('estante', i)).toBe('B05')
+    expect(posicaoItemFolha('lote', i)).toBe('Geladeira 01 > Prateleira 2 > Estante E79002 > B05')
+    expect(posicaoItemFolha('manual', { posicao: null, endereco: null })).toBe('Retirada')
+    expect(totaisFolha({ itens: [{ pendente: true, no_prazo: false }, { pendente: false, no_prazo: false }, { pendente: false, no_prazo: true }] as any }))
+      .toEqual({ total: 3, marcados: 2 })
+  })
+})

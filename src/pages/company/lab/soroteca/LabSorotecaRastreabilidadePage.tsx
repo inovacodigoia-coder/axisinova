@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { useSearchParams } from 'react-router-dom'
 import { toast } from 'sonner'
-import { FileDown, Loader2, Search } from 'lucide-react'
+import { FileDown, FileText, Loader2, Search } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -10,6 +10,7 @@ import { Skeleton } from '@/components/ui/skeleton'
 import { formatBirthBR } from '@/lib/attendanceDocHeader'
 import { buscarAmostras, useSorotecaAcesso, useSorotecaRastreio } from '@/hooks/useSoroteca'
 import { LinhaDoTempoView, SemAcessoSoroteca, StatusBadge } from '@/components/lab/soroteca/SorotecaDialogs'
+import { FolhaDescarteDialog } from '@/components/lab/soroteca/FolhaDescarte'
 import { dataBR, dataHoraBR, linhaDoTempo, enderecoAmostra, type AmostraSoroteca } from '@/lib/soroteca'
 
 export default function LabSorotecaRastreabilidadePage() {
@@ -20,6 +21,7 @@ export default function LabSorotecaRastreabilidadePage() {
   const [opcoes, setOpcoes] = useState<AmostraSoroteca[] | null>(null)
   const [amostraId, setAmostraId] = useState<string | null>(params.get('amostra'))
   const q = useSorotecaRastreio(amostraId)
+  const [folha, setFolha] = useState(false)
 
   useEffect(() => { const id = params.get('amostra'); if (id) setAmostraId(id) }, [params])
 
@@ -67,8 +69,12 @@ export default function LabSorotecaRastreabilidadePage() {
           <h1 className="text-3xl font-bold tracking-tight">Rastreabilidade</h1>
           <p className="text-muted-foreground">Histórico completo da amostra, da coleta ao descarte</p>
         </div>
+        <div className="flex gap-2">
+        {a?.status === 'descartada' && <Button variant="outline" onClick={() => setFolha(true)}><FileText className="mr-1.5 h-4 w-4" />Folha de descarte</Button>}
         {a && <Button onClick={() => window.print()} title="Abre a impressão; escolha “Salvar como PDF”"><FileDown className="mr-1.5 h-4 w-4" />Exportar PDF</Button>}
+        </div>
       </div>
+      <FolhaDescarteDialog alvo={folha && a ? { amostraId: a.id } : null} reimpressao onClose={() => setFolha(false)} />
 
       <form className="flex max-w-xl gap-2" onSubmit={e => { e.preventDefault(); void buscar() }}>
         <Input value={termo} onChange={e => setTermo(e.target.value)} placeholder="Código da amostra ou pedido" aria-label="Código da amostra ou pedido" />

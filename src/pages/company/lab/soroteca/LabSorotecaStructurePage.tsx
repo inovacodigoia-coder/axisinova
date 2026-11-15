@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react'
 import { toast } from 'sonner'
-import { Loader2, Pencil, Plus, Printer, Trash2 } from 'lucide-react'
+import { History, Loader2, Pencil, Plus, Printer, Trash2 } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -16,6 +16,7 @@ import { useRegisters } from '@/context/RegistersContext'
 import { useSorotecaAcesso, useSorotecaAcoes, useSorotecaResumo } from '@/hooks/useSoroteca'
 import { SemAcessoSoroteca } from '@/components/lab/soroteca/SorotecaDialogs'
 import { DescartarEstanteDialog } from '@/components/lab/soroteca/DescarteEstante'
+import { EstanteHistoricoDialog } from '@/components/lab/soroteca/FolhaDescarte'
 import { imprimirEtiquetaEquipamento } from '@/lib/sorotecaEtiqueta'
 import {
   ehEstante, erroCodigoEstante, gradeDaEstante, localDaEstante, prateleirasDe, rotuloPosicao, sugerirCodigoEstante, TIPOS_EQUIPAMENTO,
@@ -74,6 +75,7 @@ export default function LabSorotecaStructurePage() {
   const [salvando, setSalvando] = useState(false)
   const [imprimindo, setImprimindo] = useState<string | null>(null)
   const [descartarId, setDescartarId] = useState<string | null>(null)
+  const [historico, setHistorico] = useState<EquipamentoSoroteca | null>(null)
 
   if (acesso === null) return <Skeleton className="h-96 rounded-2xl" />
   if (!acesso.ver) return <SemAcessoSoroteca />
@@ -171,6 +173,12 @@ export default function LabSorotecaStructurePage() {
                             {imprimindo === eq.id ? <Loader2 className="h-4 w-4 animate-spin" /> : <Printer className="h-4 w-4" />}
                           </Button>
                         )}
+                        {est && (
+                          <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setHistorico(eq)}
+                            aria-label={`Histórico da estante ${eq.codigo}`} title="Histórico da estante">
+                            <History className="h-4 w-4" />
+                          </Button>
+                        )}
                         {est && eq.ativo && acesso.descartar && (
                           <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive" onClick={() => setDescartarId(eq.id)}
                             aria-label={`Descartar estante ${eq.codigo}`} title="Descartar estante">
@@ -191,6 +199,7 @@ export default function LabSorotecaStructurePage() {
       </Card>
 
       <DescartarEstanteDialog estanteId={descartarId} onClose={() => setDescartarId(null)} />
+      <EstanteHistoricoDialog estante={historico} onClose={() => setHistorico(null)} />
 
       <Dialog open={!!form} onOpenChange={o => !o && setForm(null)}>
         <DialogContent className="max-h-[92vh] max-w-xl overflow-y-auto">
