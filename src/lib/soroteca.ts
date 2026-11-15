@@ -209,6 +209,38 @@ export const estantesNaPrateleira = (equipamentos: EquipamentoSoroteca[], pratel
   equipamentos.filter(e => ehEstante(e) && e.situacao === 'armazenada' && e.local_prateleira_id === prateleiraId)
     .sort((a, b) => String(a.codigo).localeCompare(String(b.codigo)))
 
+/** Prateleira no desenho do equipamento: vagas de cima para baixo, livres e se está cheia. */
+export interface PrateleiraDesenho {
+  id: string
+  nome: string
+  /** 1 = prateleira de cima. */
+  numero: number
+  capacidade: number
+  estantes: EquipamentoSoroteca[]
+  /** Uma entrada por vaga (estante guardada ou null = livre); nunca menos que as estantes guardadas. */
+  vagas: (EquipamentoSoroteca | null)[]
+  livres: number
+  cheia: boolean
+}
+
+/**
+ * Desenho de uma geladeira/freezer como foi cadastrada: prateleiras na ordem (de cima para baixo) e
+ * uma vaga por estante que cabe. `ignorarEstanteId` não conta a própria estante (Finalizar).
+ */
+export function desenhoDoArmario(
+  armario: Pick<EquipamentoSoroteca, 'prateleiras'> | null | undefined,
+  equipamentos: EquipamentoSoroteca[],
+  ignorarEstanteId?: string | null,
+): PrateleiraDesenho[] {
+  return prateleirasDe(armario).map((p, i) => {
+    const capacidade = p.linhas * p.colunas
+    const estantes = estantesNaPrateleira(equipamentos, p.id).filter(e => e.id !== ignorarEstanteId)
+    const livres = Math.max(0, capacidade - estantes.length)
+    const vagas: (EquipamentoSoroteca | null)[] = [...estantes, ...Array.from({ length: livres }, () => null)]
+    return { id: p.id, nome: p.nome, numero: i + 1, capacidade, estantes, vagas, livres, cheia: livres <= 0 }
+  })
+}
+
 /** Endereço de um tubo já guardado (resultado do bipe), com a geladeira da estante. */
 export function enderecoGuardado(
   g: Pick<PedidoLocalizado['guardados'][number], 'equipamento_id' | 'equipamento_nome' | 'prateleira_nome' | 'linha' | 'coluna'>,

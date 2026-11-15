@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { toast } from 'sonner'
 import { Archive, ArrowRightLeft, CheckCircle2, Eye, FlaskConical, Lock, LogOut, PackageOpen, Refrigerator, Trash2 } from 'lucide-react'
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog'
@@ -13,9 +13,10 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { cn } from '@/lib/utils'
 import { formatBirthBR } from '@/lib/attendanceDocHeader'
 import { useAuth } from '@/context/AuthContext'
-import { mensagemErro, useSorotecaAcoes, useSorotecaRastreio } from '@/hooks/useSoroteca'
+import { mensagemErro, useSorotecaAcoes, useSorotecaRastreio, useSorotecaResumo } from '@/hooks/useSoroteca'
+import { LocalDaEstanteDesenho } from '@/components/lab/soroteca/EquipamentoDesenho'
 import {
-  dataBR, dataHoraBR, erroRetirada, JUSTIFICATIVA_RETIRADA_MIN, linhaDoTempo, MOTIVOS_RETIRADA, enderecoAmostra, STATUS_LABEL,
+  dataBR, dataHoraBR, erroRetirada, estanteDoCodigo, JUSTIFICATIVA_RETIRADA_MIN, linhaDoTempo, MOTIVOS_RETIRADA, enderecoAmostra, STATUS_LABEL,
   type EventoLinhaDoTempo, type StatusResultado, type TipoEvento,
 } from '@/lib/soroteca'
 
@@ -58,7 +59,12 @@ export function LinhaDoTempoView({ eventos }: { eventos: EventoLinhaDoTempo[] })
 export function AmostraDetalheDialog({ amostraId, onClose, podeRetirar }: { amostraId: string | null; onClose: () => void; podeRetirar?: boolean }) {
   const q = useSorotecaRastreio(amostraId)
   const [retirar, setRetirar] = useState(false)
+  const navigate = useNavigate()
   const a = q.data?.amostra
+  // Onde o tubo está: estante (pela etiqueta) e o equipamento em que ela está guardada.
+  const resumo = useSorotecaResumo(!!amostraId)
+  const equipamentos = resumo.data?.equipamentos ?? []
+  const estante = a?.status === 'armazenada' && a.estante_codigo ? estanteDoCodigo(equipamentos, a.estante_codigo) : null
   return (
     <>
       <Dialog open={!!amostraId && !retirar} onOpenChange={o => !o && onClose()}>
@@ -79,6 +85,20 @@ export function AmostraDetalheDialog({ amostraId, onClose, podeRetirar }: { amos
                 <div><dt className="text-xs text-muted-foreground">Posição</dt><dd className="font-medium">{enderecoAmostra(a) ?? (a.status === 'retirada' ? 'Retirada' : 'Descartada')}</dd></div>
                 <div><dt className="text-xs text-muted-foreground">Validade</dt><dd className="font-medium">{dataBR(a.validade)}</dd></div>
               </dl>
+              {estante && (
+                <div>
+                  <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">Onde está</p>
+                  <div className="grid items-start gap-3 sm:grid-cols-[minmax(0,1fr)_18rem]">
+                    <div className="space-y-1 rounded-lg border border-border p-3 text-sm">
+                      <p><span className="text-muted-foreground">Estante:</span> <span className="font-mono font-semibold">{estante.codigo || estante.nome}</span></p>
+                      <p><span className="text-muted-foreground">Posição:</span> <span className="font-semibold">{enderecoAmostra(a)}</span></p>
+                      <p className="text-xs text-muted-foreground">{estante.ocupadas.toLocaleString('pt-BR')}/{estante.capacidade.toLocaleString('pt-BR')} tubos nesta estante</p>
+                    </div>
+                    <LocalDaEstanteDesenho estante={estante} equipamentos={equipamentos}
+                      onEstante={id => { onClose(); navigate(`/app/soroteca?equipamento=${id}`) }} />
+                  </div>
+                </div>
+              )}
               <div>
                 <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">Exames</p>
                 <ul className="divide-y divide-border rounded-lg border border-border">
