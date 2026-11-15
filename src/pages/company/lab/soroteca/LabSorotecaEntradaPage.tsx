@@ -138,15 +138,15 @@ export default function LabSorotecaEntradaPage() {
     const pos = proximaPosicaoEstante(ativa, atual.current.visiveis)
     if (!pos) { setErro({ texto: `A estante ${ativa.codigo} está cheia. Clique em Finalizar ou crie uma nova estante.`, novaEstante: true }); return }
     const [res] = await acoes.armazenar([{ order_id: p.order_id, tubo_indice: t.indice, exame_ids: t.exameIds, tubo_nome: t.nome, equipamento_id: ativa.id, ...pos }])
-    const nova: AmostraSoroteca = {
+    const guardada: AmostraSoroteca = {
       id: res.id, codigo_amostra: t.codigo, codigo_alfanumerico: t.hash, order_id: p.order_id, tubo_indice: t.indice, protocolo: p.protocolo,
       patient_name: p.patient_name, workbench_id: t.bancadaId, bancada_nome: t.bancadaNome, tubo_nome: t.nome, exames_nomes: t.examesNomes,
       tem_apoio: t.temApoio, coletada_em: null, validade: null, status: 'armazenada', equipamento_id: ativa.id, equipamento_nome: ativa.nome,
       prateleira_id: pos.prateleira_id, prateleira_nome: '', linha: pos.linha, coluna: pos.coluna, armazenada_em: new Date().toISOString(),
       descartada_em: null, total: t.total, liberados: t.liberados, status_resultado: t.status,
     }
-    atual.current.visiveis = [...atual.current.visiveis, nova]
-    setLocais(l => [...l, nova])
+    atual.current.visiveis = [...atual.current.visiveis, guardada]
+    setLocais(l => [...l, guardada])
     setUltimo({ pedido: p, tubo: t, linha: pos.linha, coluna: pos.coluna })
   }
 
