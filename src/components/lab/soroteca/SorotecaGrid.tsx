@@ -4,7 +4,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/comp
 import { cn } from '@/lib/utils'
 import {
   alertaValidade, chavePosicao, dataBR, gradeComprimida, letraLinha, primeiroNome, rotuloPosicao, STATUS_LABEL,
-  type AmostraSoroteca, type EquipamentoSoroteca, type StatusResultado,
+  type AmostraSoroteca, type PrateleiraSoroteca, type StatusResultado,
 } from '@/lib/soroteca'
 
 export const COR_CELULA: Record<StatusResultado, string> = {
@@ -16,7 +16,10 @@ export const COR_CELULA: Record<StatusResultado, string> = {
 export interface Reserva { linha: number; coluna: number; rotulo?: string }
 
 interface Props {
-  equipamento: Pick<EquipamentoSoroteca, 'id' | 'nome' | 'linhas' | 'colunas'>
+  /** Prateleira desenhada (cada prateleira tem a própria grade A01…). */
+  prateleira: Pick<PrateleiraSoroteca, 'id' | 'nome' | 'linhas' | 'colunas'>
+  /** Nome do equipamento, só para leitura de tela. */
+  equipamentoNome?: string
   amostras: AmostraSoroteca[]
   avisoDias?: number
   /** 'selecionar': células livres pontilhadas e clicáveis (Entrada / Armazenar). */
@@ -31,20 +34,20 @@ interface Props {
   onCelula?: (linha: number, coluna: number, amostra: AmostraSoroteca | null) => void
 }
 
-/** Grade de posições de um equipamento da soroteca (A01…). */
+/** Grade de posições de uma prateleira da soroteca (A01…). */
 export function SorotecaGrid({
-  equipamento, amostras, avisoDias = 7, modo = 'ver', selecionada, sugestao, reservas = [], destaqueId, comprimida, grande, onCelula,
+  prateleira, equipamentoNome, amostras, avisoDias = 7, modo = 'ver', selecionada, sugestao, reservas = [], destaqueId, comprimida, grande, onCelula,
 }: Props) {
   const mapa = useMemo(() => {
     const m = new Map<string, AmostraSoroteca>()
-    for (const a of amostras) if (a.status === 'armazenada' && a.equipamento_id === equipamento.id && a.linha && a.coluna) m.set(chavePosicao(a.linha, a.coluna), a)
+    for (const a of amostras) if (a.status === 'armazenada' && a.prateleira_id === prateleira.id && a.linha && a.coluna) m.set(chavePosicao(a.linha, a.coluna), a)
     return m
-  }, [amostras, equipamento.id])
+  }, [amostras, prateleira.id])
   const reservaMap = useMemo(() => new Map(reservas.map(r => [chavePosicao(r.linha, r.coluna), r])), [reservas])
-  const compacta = comprimida ?? gradeComprimida(equipamento.linhas, equipamento.colunas)
+  const compacta = comprimida ?? gradeComprimida(prateleira.linhas, prateleira.colunas)
   const agora = Date.now()
-  const linhas = Array.from({ length: equipamento.linhas }, (_, i) => i + 1)
-  const colunas = Array.from({ length: equipamento.colunas }, (_, i) => i + 1)
+  const linhas = Array.from({ length: prateleira.linhas }, (_, i) => i + 1)
+  const colunas = Array.from({ length: prateleira.colunas }, (_, i) => i + 1)
   const tamanho = compacta ? (grande ? 'h-4 min-w-[0.75rem]' : 'h-2.5 min-w-[0.4rem]') : (grande ? 'h-9 min-w-[2.25rem] text-[10px]' : 'h-7 min-w-[1.6rem] text-[9px]')
 
   return (
@@ -52,9 +55,9 @@ export function SorotecaGrid({
       <div className="overflow-auto">
         <div
           className={cn('inline-grid', compacta ? 'gap-px' : 'gap-1')}
-          style={{ gridTemplateColumns: compacta ? `repeat(${equipamento.colunas}, minmax(0, 1fr))` : `auto repeat(${equipamento.colunas}, minmax(0, 1fr))` }}
+          style={{ gridTemplateColumns: compacta ? `repeat(${prateleira.colunas}, minmax(0, 1fr))` : `auto repeat(${prateleira.colunas}, minmax(0, 1fr))` }}
           role="grid"
-          aria-label={`Mapa de posições de ${equipamento.nome}`}
+          aria-label={`Mapa de posições de ${[equipamentoNome, prateleira.nome].filter(Boolean).join(' > ')}`}
         >
           {!compacta && <span />}
           {!compacta && colunas.map(c => <span key={`h${c}`} className="text-center text-[9px] font-semibold text-muted-foreground">{String(c).padStart(2, '0')}</span>)}
