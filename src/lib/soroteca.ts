@@ -81,6 +81,8 @@ export interface AmostraSoroteca {
   status_resultado: StatusResultado
   /** Retirada/descartada: último endereço completo que o tubo teve (Geladeira > Prateleira > Estante > posição). */
   ultimo_endereco?: string | null
+  /** Já passou por um "Finalizar": só sai pela Consulta (Retirar tubo, com justificativa). */
+  finalizada?: boolean
 }
 
 export const TIPOS_EQUIPAMENTO: { value: EquipamentoSoroteca['tipo']; label: string }[] = [
@@ -90,7 +92,27 @@ export const TIPOS_EQUIPAMENTO: { value: EquipamentoSoroteca['tipo']; label: str
   { value: 'outro', label: 'Outro' },
 ]
 
-export const MOTIVOS_RETIRADA = ['Recoleta solicitada', 'Consulta externa', 'Exame complementar', 'Descarte antecipado', 'Outro'] as const
+export const MOTIVOS_RETIRADA = ['Repetição de exame', 'Envio ao laboratório de apoio', 'Solicitação médica', 'Guardado por engano', 'Outro'] as const
+/** Retirada de tubo finalizado: justificativa obrigatória com este mínimo de caracteres (o banco confere o mesmo). */
+export const JUSTIFICATIVA_RETIRADA_MIN = 10
+
+/** Motivo para não deixar confirmar a retirada (null = pode). */
+export function erroRetirada(motivo: string, justificativa: string): string | null {
+  if (!(MOTIVOS_RETIRADA as readonly string[]).includes(motivo)) return 'Escolha o motivo'
+  const n = justificativa.trim().length
+  if (n < JUSTIFICATIVA_RETIRADA_MIN) return `Justificativa com pelo menos ${JUSTIFICATIVA_RETIRADA_MIN} caracteres (faltam ${JUSTIFICATIVA_RETIRADA_MIN - n})`
+  return null
+}
+
+/** Na Entrada só sai (sem justificativa) o tubo guardado que ainda não passou por um Finalizar. */
+export const podeRemoverNaEntrada = (a: Pick<AmostraSoroteca, 'status' | 'finalizada'> | null | undefined) =>
+  !!a && a.status === 'armazenada' && !a.finalizada
+
+/** Porcentagem real de posições preenchidas (0–100), para a barra de progresso. */
+export function percentualOcupacao(preenchidas: number, total: number): number {
+  if (!total || total <= 0 || !preenchidas || preenchidas <= 0) return 0
+  return Math.min(100, Math.round((preenchidas / total) * 100))
+}
 export const MOTIVOS_DESCARTE = ['Validade vencida', 'Prazo de retenção atingido', 'Descarte de rotina', 'Amostra danificada', 'Outro'] as const
 
 /** Linha 1 = A … 26 = Z, 27 = AA … 52 = AZ. */
@@ -405,7 +427,7 @@ export interface RastreioSoroteca {
   coleta: { quando: string | null; responsavel: string | null } | null
   exames: { exam_id: string; nome: string; status: string; liberado_em: string | null; liberado_por: string | null }[]
   movimentos: {
-    tipo: 'entrada' | 'movimentacao' | 'retirada' | 'descarte'; quando: string; equipamento_nome: string | null; prateleira_nome?: string | null
+    tipo: 'entrada' | 'movimentacao' | 'retirada' | 'descarte' | 'remocao'; quando: string; equipamento_nome: string | null; prateleira_nome?: string | null
     linha: number | null; coluna: number | null
     de_equipamento_nome: string | null; de_prateleira_nome?: string | null; de_linha: number | null; de_coluna: number | null; motivo: string | null; observacao: string | null
     status_resultado: StatusResultado | null; responsavel_nome: string | null; usuario_nome: string | null
@@ -431,10 +453,13 @@ export function linhaDoTempo(r: RastreioSoroteca): EventoLinhaDoTempo[] {
   if (r.coleta?.quando) {
     ev.push({ tipo: 'coleta', quando: r.coleta.quando, titulo: 'Coleta realizada', linhas: r.coleta.responsavel ? [`Responsável: ${r.coleta.responsavel}`] : [] })
   }
+  let anterior: string | null = null
   for (const m of r.movimentos || []) {
     const quem = m.usuario_nome ? [`Responsável: ${m.usuario_nome}`] : []
+    const devolvida = m.tipo === 'entrada' && (anterior === 'retirada' || anterior === 'remocao')
+    anterior = m.tipo
     if (m.tipo === 'entrada') {
-      ev.push({ tipo: 'entrada', quando: m.quando, titulo: `Armazenada em ${enderecoPosicao(m.equipamento_nome, m.prateleira_nome, m.linha, m.coluna)}`,
+      ev.push({ tipo: 'entrada', quando: m.quando, titulo: `${devolvida ? 'Devolvida e armazenada' : 'Armazenada'} em ${enderecoPosicao(m.equipamento_nome, m.prateleira_nome, m.linha, m.coluna)}`,
         linhas: [...quem, ...(m.status_resultado ? [`Status na entrada: ${STATUS_LABEL[m.status_resultado]}`] : [])] })
     } else if (m.tipo === 'movimentacao') {
       ev.push({ tipo: 'movimentacao', quando: m.quando, titulo: `Movida para ${enderecoPosicao(m.equipamento_nome, m.prateleira_nome, m.linha, m.coluna)}`,
@@ -443,7 +468,10 @@ export function linhaDoTempo(r: RastreioSoroteca): EventoLinhaDoTempo[] {
       const consulta = m.motivo === 'Consulta externa'
       ev.push({ tipo: consulta ? 'consulta' : 'retirada', quando: m.quando,
         titulo: consulta ? 'Consultada (retirada da soroteca)' : `Retirada de ${enderecoPosicao(m.de_equipamento_nome, m.de_prateleira_nome, m.de_linha, m.de_coluna)}`,
-        linhas: [...quem, ...(m.motivo ? [`Motivo: ${m.motivo}`] : []), ...(m.observacao ? [`Observação: ${m.observacao}`] : [])] })
+        linhas: [...quem, ...(m.motivo ? [`Motivo: ${m.motivo}`] : []), ...(m.observacao ? [`Justificativa: ${m.observacao}`] : [])] })
+    } else if (m.tipo === 'remocao') {
+      ev.push({ tipo: 'retirada', quando: m.quando, titulo: `Removida de ${enderecoPosicao(m.de_equipamento_nome, m.de_prateleira_nome, m.de_linha, m.de_coluna)} antes de finalizar`,
+        linhas: quem })
     } else if (m.tipo === 'descarte') {
       ev.push({ tipo: 'descarte', quando: m.quando, titulo: 'Descartada',
         linhas: [`Responsável: ${m.responsavel_nome || m.usuario_nome || '—'}`, ...(m.motivo ? [`Motivo: ${m.motivo}`] : []),
