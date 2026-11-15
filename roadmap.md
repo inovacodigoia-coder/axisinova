@@ -244,3 +244,10 @@
 # Catálogo — exame com mais de uma etiqueta (TOTG)
 - [x] Opção "Coletas em tempos diferentes" no Editar Exame (nome de cada coleta, até 6); 1ª no tubo comum, demais com etiqueta própria no Cadastro de Atendimento, Detalhes e busca pelo código; 6 testes + typecheck OK.
 - [ ] Conferir a tela e a impressão logado: sem sessão autorizada nesta conversa. Pedidos já criados antes da configuração não ganham a etiqueta extra.
+
+# Soroteca completa (S01 + S02)
+- [ ] Banco: equipamentos (linhas × colunas), amostras por etiqueta do tubo, movimentações imutáveis, configuração; permissões ver/armazenar/descartar/configurar.
+- [ ] Estrutura Física real (cadastro de equipamentos) e Dashboard real (KPIs + mapa do grid, tela cheia, detalhes).
+- [ ] Entrada / Armazenar (bipe, sugestão de posição, modo lote).
+- [ ] Consulta (filtros, ver no mapa, retirada), Descarte (lote/manual), Rastreabilidade (linha do tempo + PDF), Config. Soroteca.
+- [ ] Testes do banco e das regras; conferir telas.
