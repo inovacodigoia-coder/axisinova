@@ -7134,6 +7134,35 @@ export type Database = {
           },
         ]
       }
+      lab_painel_modulo: {
+        Row: {
+          alterado_em: string
+          alterado_por: string | null
+          ativo: boolean
+          company_id: string
+        }
+        Insert: {
+          alterado_em?: string
+          alterado_por?: string | null
+          ativo?: boolean
+          company_id: string
+        }
+        Update: {
+          alterado_em?: string
+          alterado_por?: string | null
+          ativo?: boolean
+          company_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "lab_painel_modulo_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: true
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       lab_recipiente: {
         Row: {
           aditivo: string | null
@@ -14083,6 +14112,7 @@ export type Database = {
           workbench_id: string
         }[]
       }
+      lab_painel_modulo_ativo: { Args: never; Returns: boolean }
       lab_painel_operacional: {
         Args: { p_desde: string }
         Returns: {

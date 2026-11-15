@@ -22,6 +22,19 @@ export function usePainelOperacionalAcesso(): boolean | null {
   return ok
 }
 
+/** Painel Operacional liberado para a empresa (desligado: some do menu e das permissões). null = carregando. */
+export function usePainelOperacionalModuloAtivo(): boolean | null {
+  const { user } = useAuth()
+  const [ok, setOk] = useState<boolean | null>(null)
+  useEffect(() => {
+    let vivo = true
+    if (!user?.id) { setOk(false); return }
+    void (supabase.rpc as any)('lab_painel_modulo_ativo').then(({ data }: any) => { if (vivo) setOk(data === true) })
+    return () => { vivo = false }
+  }, [user?.id, user?.companyId])
+  return ok
+}
+
 export interface CriticoPainel {
   value_id: string
   result_id: string
