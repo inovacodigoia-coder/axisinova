@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { toast } from 'sonner'
-import { Archive, ArrowRightLeft, CheckCircle2, Eye, FlaskConical, LogOut, PackageOpen, Trash2 } from 'lucide-react'
+import { Archive, ArrowRightLeft, CheckCircle2, Eye, FlaskConical, LogOut, PackageOpen, Refrigerator, Trash2 } from 'lucide-react'
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -18,12 +18,12 @@ import {
 } from '@/lib/soroteca'
 
 const ICONE: Record<TipoEvento, typeof Archive> = {
-  coleta: FlaskConical, entrada: Archive, movimentacao: ArrowRightLeft, retirada: LogOut, consulta: Eye, descarte: Trash2, liberacao: CheckCircle2,
+  coleta: FlaskConical, entrada: Archive, movimentacao: ArrowRightLeft, retirada: LogOut, consulta: Eye, descarte: Trash2, liberacao: CheckCircle2, estante: Refrigerator,
 }
 const COR_EVENTO: Record<TipoEvento, string> = {
   coleta: 'bg-muted text-foreground', entrada: 'bg-primary/15 text-primary', movimentacao: 'bg-primary/15 text-primary',
   retirada: 'bg-warning/20 text-warning', consulta: 'bg-warning/20 text-warning', descarte: 'bg-muted text-muted-foreground',
-  liberacao: 'bg-info/15 text-info',
+  liberacao: 'bg-info/15 text-info', estante: 'bg-info/15 text-info',
 }
 
 export function StatusBadge({ status, descartada }: { status: StatusResultado; descartada?: boolean }) {
