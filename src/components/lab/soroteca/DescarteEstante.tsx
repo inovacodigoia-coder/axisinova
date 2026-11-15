@@ -1,6 +1,6 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { toast } from 'sonner'
-import { AlertTriangle, History, Loader2, ScanBarcode, Trash2 } from 'lucide-react'
+import { AlertTriangle, CheckCircle2, History, Loader2, ScanBarcode, Trash2 } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
@@ -25,7 +25,7 @@ import { EstanteHistoricoDialog } from './EstanteRastreio'
 import { SorotecaLegenda } from './SorotecaGrid'
 import { ResponsavelLogado } from './SorotecaDialogs'
 import {
-  dataBR, gradeDaEstante, MOTIVOS_DESCARTE_ESTANTE, ondeEstaEstante, riscoDescarteTubo, rotuloPosicao, situacaoDescarteEstante,
+  conferirEtiquetaEstante, dataBR, erroJustificativaDescarte, gradeDaEstante, justificativaDescarteObrigatoria, MOTIVOS_DESCARTE_ESTANTE, ondeEstaEstante, riscoDescarteTubo, rotuloPosicao, situacaoDescarteEstante,
   type DestinoEstante, type SituacaoDescarte,
 } from '@/lib/soroteca'
 
@@ -57,6 +57,8 @@ export function DescartarEstanteDialog({ estanteId, onClose, onDone }: {
   const [forcar, setForcar] = useState(false)
   const [salvando, setSalvando] = useState(false)
   const [folhaId, setFolhaId] = useState<string | null>(null)
+  const [etiqueta, setEtiqueta] = useState('')
+  const etiquetaRef = useRef<HTMLInputElement>(null)
 
   const est = conf.data
   const tubos = est?.tubos ?? []
@@ -68,15 +70,19 @@ export function DescartarEstanteDialog({ estanteId, onClose, onDone }: {
 
   useEffect(() => {
     if (!estanteId) return
-    setMotivo(MOTIVOS_DESCARTE_ESTANTE[0]); setObs(''); setForcar(false); setDestino('reaproveitar')
+    setMotivo(MOTIVOS_DESCARTE_ESTANTE[0]); setObs(''); setForcar(false); setDestino('reaproveitar'); setEtiqueta('')
   }, [estanteId])
   useEffect(() => { if (vazia) setDestino('inativar') }, [vazia])
 
-  const precisaObs = motivo === 'Outro' || riscos.length > 0
+  const obsObrigatoria = justificativaDescarteObrigatoria(motivo)
+  const erroObs = erroJustificativaDescarte(motivo, obs)
+  const conferida = conferirEtiquetaEstante(etiqueta, est?.codigo)
   const bloqueio = !est ? 'Carregando…'
     : !est.ativo ? 'Estante inativa'
     : riscos.length && !forcar ? 'Marque "Descartar mesmo assim"'
-    : precisaObs && !obs.trim() ? (riscos.length ? 'Explique por que descartar mesmo assim' : 'Descreva o motivo')
+    : erroObs ? erroObs
+    : riscos.length && !obs.trim() ? 'Explique por que descartar mesmo assim'
+    : conferida !== 'ok' ? 'Bipe a etiqueta da estante para confirmar'
     : null
 
   const confirmar = async () => {
@@ -101,7 +107,7 @@ export function DescartarEstanteDialog({ estanteId, onClose, onDone }: {
     <>
     <FolhaDescarteDialog alvo={folhaId ? { descarteId: folhaId } : null} onClose={() => setFolhaId(null)} />
     <Dialog open={!!estanteId} onOpenChange={o => !o && onClose()}>
-      <DialogContent className="max-h-[92vh] max-w-lg overflow-y-auto">
+      <DialogContent className="max-h-[92vh] max-w-lg overflow-y-auto" onOpenAutoFocus={e => { e.preventDefault(); etiquetaRef.current?.focus() }}>
         <DialogHeader>
           <DialogTitle>Descartar estante{est ? ` ${est.codigo}` : ''}</DialogTitle>
           <DialogDescription>
@@ -135,8 +141,10 @@ export function DescartarEstanteDialog({ estanteId, onClose, onDone }: {
               </Select>
             </div>
             <div className="space-y-1.5">
-              <Label htmlFor="desc-est-obs">{riscos.length ? 'Justificativa (obrigatória)' : motivo === 'Outro' ? 'Descreva o motivo (obrigatório)' : 'Observação (opcional)'}</Label>
-              <Textarea id="desc-est-obs" rows={2} maxLength={500} value={obs} onChange={e => setObs(e.target.value)} />
+              <Label htmlFor="desc-est-obs">{obsObrigatoria ? 'Explique o motivo (obrigatório)' : riscos.length ? 'Justificativa (obrigatória)' : 'Observação (opcional)'}</Label>
+              <Textarea id="desc-est-obs" rows={2} maxLength={500} value={obs} onChange={e => setObs(e.target.value)}
+                className={cn(obsObrigatoria && 'border-2 border-warning focus-visible:ring-warning')} aria-invalid={!!erroObs} />
+              {erroObs && <p className="text-xs text-warning">{erroObs}</p>}
             </div>
             <div className="space-y-2">
               <Label>Depois do descarte, a estante</Label>
@@ -155,6 +163,19 @@ export function DescartarEstanteDialog({ estanteId, onClose, onDone }: {
             </div>
           </div>
         )}
+        <div className="space-y-1.5">
+          <Label htmlFor="desc-est-etiqueta">Bipe a etiqueta da estante para confirmar</Label>
+          <div className="relative">
+            <ScanBarcode className={cn('pointer-events-none absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2',
+              conferida === 'ok' ? 'text-success' : conferida === 'errado' ? 'text-destructive' : 'text-primary')} />
+            <Input id="desc-est-etiqueta" ref={etiquetaRef} value={etiqueta} onChange={e => setEtiqueta(e.target.value)} autoComplete="off"
+              onKeyDown={e => { if (e.key === 'Enter') e.preventDefault() }} aria-invalid={conferida === 'errado'}
+              className={cn('h-11 pl-11 font-mono', conferida === 'ok' && 'border-2 border-success focus-visible:ring-success',
+                conferida === 'errado' && 'border-2 border-destructive focus-visible:ring-destructive')} />
+          </div>
+          {conferida === 'ok' && <p className="flex items-center gap-1 text-sm font-medium text-success"><CheckCircle2 className="h-4 w-4" />Estante confirmada ✓</p>}
+          {conferida === 'errado' && est && <p className="text-sm font-medium text-destructive" role="alert">Etiqueta não confere: esta janela é da estante {est.codigo}</p>}
+        </div>
         <DialogFooter className="gap-2">
           <Button variant="outline" onClick={onClose}>Cancelar</Button>
           <Button variant="destructive" onClick={confirmar} disabled={salvando || !!bloqueio} title={bloqueio || undefined}>
