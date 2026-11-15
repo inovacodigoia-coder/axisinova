@@ -1,19 +1,14 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Link, useNavigate, useSearchParams } from 'react-router-dom'
-import { AlertTriangle, ArrowRight, Beaker, Loader2, Package, PackageCheck, Plus, Printer, Refrigerator, Rows3, Trash2 } from 'lucide-react'
-import { toast } from 'sonner'
+import { AlertTriangle, ArrowRight, Beaker, Package, PackageCheck, Plus, Refrigerator, Rows3, Trash2 } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog'
-import { cn } from '@/lib/utils'
-import { useSorotecaAcesso, useSorotecaAmostras, useSorotecaResumo } from '@/hooks/useSoroteca'
-import { SorotecaGrid, SorotecaLegenda } from '@/components/lab/soroteca/SorotecaGrid'
-import { AmostraDetalheDialog, SemAcessoSoroteca } from '@/components/lab/soroteca/SorotecaDialogs'
+import { useSorotecaAcesso, useSorotecaResumo } from '@/hooks/useSoroteca'
+import { SemAcessoSoroteca } from '@/components/lab/soroteca/SorotecaDialogs'
 import { SorotecaModuloCard } from '@/components/lab/soroteca/SorotecaModuloCard'
-import { DescartarEstanteDialog } from '@/components/lab/soroteca/DescarteEstante'
-import { imprimirEtiquetaEquipamento } from '@/lib/sorotecaEtiqueta'
-import { ehArmario, ehEstante, estantesNaPrateleira, gradeDaEstante, localDaEstante, prateleirasDe, type EquipamentoSoroteca } from '@/lib/soroteca'
+import { EstanteJanelaDialog } from '@/components/lab/soroteca/EstanteJanela'
+import { ehArmario, ehEstante, estantesNaPrateleira, prateleirasDe, type EquipamentoSoroteca } from '@/lib/soroteca'
 
 const fmt = (n: number | undefined) => (n ?? 0).toLocaleString('pt-BR')
 
@@ -33,35 +28,24 @@ export default function LabSorotecaDashboardPage() {
   const acesso = useSorotecaAcesso()
   const pode = !!acesso?.ver
   const resumo = useSorotecaResumo(pode)
-  const amostrasQ = useSorotecaAmostras(pode ? { situacao: 'armazenada' } : null, pode)
   const navigate = useNavigate()
   const [params, setParams] = useSearchParams()
-  const [detalhe, setDetalhe] = useState<string | null>(null)
   const [aberta, setAberta] = useState<string | null>(null)
-  const [imprimindo, setImprimindo] = useState(false)
-  const [descartarId, setDescartarId] = useState<string | null>(null)
   const destaque = params.get('amostra')
 
   // Vindo de "Ver no mapa" (Consulta): abre a estante com a amostra destacada
   useEffect(() => { const eq = params.get('equipamento'); if (eq) setAberta(eq) }, [params])
 
-  const amostras = amostrasQ.data?.amostras ?? []
   const avisoDias = resumo.data?.aviso_dias ?? 7
   const equipamentos = useMemo(() => resumo.data?.equipamentos ?? [], [resumo.data])
   const armarios = equipamentos.filter(e => ehArmario(e) && e.ativo)
   const foraDaGeladeira = equipamentos.filter(e => ehEstante(e) && e.ativo && e.situacao !== 'armazenada')
   const estanteAberta = equipamentos.find(e => e.id === aberta && ehEstante(e)) || null
-  const gradeAberta = gradeDaEstante(estanteAberta)
 
   if (acesso === null) return <Skeleton className="h-96 rounded-2xl" />
   if (!pode) return <SemAcessoSoroteca />
 
   const fechar = () => { setAberta(null); if (params.get('equipamento')) setParams({}, { replace: true }) }
-  const imprimir = async (e: EquipamentoSoroteca) => {
-    setImprimindo(true)
-    try { toast.success(await imprimirEtiquetaEquipamento(e)) } catch (err) { toast.error((err as Error).message) } finally { setImprimindo(false) }
-  }
-
   const kpis = [
     { titulo: 'Amostras armazenadas', valor: resumo.data?.armazenadas, detalhe: 'Total ativo', icone: Beaker, tom: '' },
     { titulo: `Vencendo em ${avisoDias} dias`, valor: resumo.data?.vencendo_aviso, detalhe: `${fmt(resumo.data?.vencidas)} já vencida(s)`, icone: AlertTriangle, tom: 'text-warning' },
@@ -109,10 +93,10 @@ export default function LabSorotecaDashboardPage() {
         </div>
       )}
 
-      {resumo.isLoading || amostrasQ.isLoading ? (
+      {resumo.isLoading ? (
         <div className="grid gap-6 lg:grid-cols-2"><Skeleton className="h-72 rounded-2xl" /><Skeleton className="h-72 rounded-2xl" /></div>
-      ) : resumo.error || amostrasQ.error ? (
-        <p className="rounded-2xl border border-destructive/40 bg-destructive/5 p-4 text-sm text-destructive">{((resumo.error || amostrasQ.error) as Error).message}</p>
+      ) : resumo.error ? (
+        <p className="rounded-2xl border border-destructive/40 bg-destructive/5 p-4 text-sm text-destructive">{(resumo.error as Error).message}</p>
       ) : !equipamentos.length ? (
         <Card>
           <CardContent className="flex flex-col items-center gap-3 py-12 text-center">
@@ -167,43 +151,7 @@ export default function LabSorotecaDashboardPage() {
           </div>
         </div>
       )}
-      {amostrasQ.data?.limitado && <p className="text-xs text-warning">Mostrando as primeiras 5.000 amostras armazenadas.</p>}
-
-      <Dialog open={!!estanteAberta} onOpenChange={o => { if (!o) fechar() }}>
-        <DialogContent className="max-h-[95vh] max-w-[95vw] overflow-auto">
-          {estanteAberta && (
-            <>
-              <DialogHeader>
-                <DialogTitle>{estanteAberta.nome} — {fmt(estanteAberta.ocupadas)}/{fmt(estanteAberta.capacidade)} tubos</DialogTitle>
-                <DialogDescription>{localDaEstante(estanteAberta) ? `Guardada em ${localDaEstante(estanteAberta)}` : 'Em preenchimento (fora da geladeira)'}{estanteAberta.bancada_nome ? ` · ${estanteAberta.bancada_nome}` : ''}. Clique numa amostra para ver os detalhes.</DialogDescription>
-              </DialogHeader>
-              <div className="flex flex-wrap gap-2">
-                {(acesso.armazenar || acesso.configurar) && (
-                  <Button variant="outline" size="sm" onClick={() => imprimir(estanteAberta)} disabled={imprimindo}>
-                    {imprimindo ? <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" /> : <Printer className="mr-1.5 h-3.5 w-3.5" />}Reimprimir etiqueta
-                  </Button>
-                )}
-                {acesso.armazenar && <Button size="sm" asChild><Link to={`/app/soroteca/entrada?estante=${estanteAberta.id}`}><PackageCheck className="mr-1.5 h-3.5 w-3.5" />Abrir na Entrada</Link></Button>}
-                {acesso.descartar && (
-                  <Button variant="outline" size="sm" className="text-destructive" onClick={() => { setDescartarId(estanteAberta.id); fechar() }}>
-                    <Trash2 className="mr-1.5 h-3.5 w-3.5" />Descartar estante
-                  </Button>
-                )}
-              </div>
-              <div className={cn('rounded-lg bg-muted/40 p-3')}>
-                {gradeAberta ? (
-                  <SorotecaGrid prateleira={gradeAberta} equipamentoNome={estanteAberta.nome} amostras={amostras} avisoDias={avisoDias} destaqueId={destaque}
-                    comprimida={false} grande onCelula={(_l, _c, a) => { if (a) setDetalhe(a.id) }} />
-                ) : <p className="py-6 text-center text-sm text-muted-foreground">Estante sem grade cadastrada.</p>}
-              </div>
-              <SorotecaLegenda />
-            </>
-          )}
-        </DialogContent>
-      </Dialog>
-
-      <DescartarEstanteDialog estanteId={descartarId} onClose={() => setDescartarId(null)} />
-      <AmostraDetalheDialog amostraId={detalhe} onClose={() => setDetalhe(null)} podeRetirar={acesso.descartar} />
+      <EstanteJanelaDialog estanteId={estanteAberta?.id ?? null} onChange={id => (id ? setAberta(id) : fechar())} acesso={acesso} destaqueAmostraId={destaque} />
     </div>
   )
 }
