@@ -509,6 +509,8 @@ describe('Soroteca — folha de descarte (S06)', () => {
     await armazenar([item(o, 1, ['e1'], est, 1, 1), item(o2, 1, ['e2'], est, 2, 5)])
     await db.query(`INSERT INTO lab_exam_results(company_id, order_id, exam_ref, status, released_at) VALUES($1, $2, $3, 'released', now())`, [C, o, `${o}:e1`])
     await guardarLiberada(est, g, p1.id)
+    // resultado do tubo B05 reaberto depois de guardada: volta a ficar pendente
+    await db.query(`DELETE FROM lab_exam_results WHERE exam_ref = $1`, [`${o2}:e2`])
     const r = (await uma(`SELECT soroteca_estante_descartar($1, 'Prazo de retenção vencido', 'Pedro Lima', 'rotina semanal', 'reaproveitar', true) r`, [est])).r
     const f = await folha(r.descarte_id)
     expect(f).toMatchObject({ tipo: 'estante', estante_codigo: 'E79002', estante_origem: 'Geladeira 01 > Prateleira 1', motivo: 'Prazo de retenção vencido',
