@@ -328,3 +328,14 @@ export function linhaDoTempo(r: RastreioSoroteca): EventoLinhaDoTempo[] {
   }
   return ev.sort((a, b) => new Date(a.quando).getTime() - new Date(b.quando).getTime())
 }
+
+const fmt = (iso: string | null | undefined, opts: Intl.DateTimeFormatOptions) => {
+  if (!iso) return '—'
+  const d = new Date(iso)
+  return Number.isNaN(d.getTime()) ? '—' : new Intl.DateTimeFormat('pt-BR', { timeZone: 'America/Sao_Paulo', ...opts }).format(d)
+}
+/** Data no horário de Brasília (dd/mm/aaaa). */
+export const dataBR = (iso: string | null | undefined) => fmt(iso, { day: '2-digit', month: '2-digit', year: 'numeric' })
+/** Data e hora no horário de Brasília (dd/mm/aaaa hh:mm). */
+export const dataHoraBR = (iso: string | null | undefined) =>
+  fmt(iso, { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' }).replace(',', '')

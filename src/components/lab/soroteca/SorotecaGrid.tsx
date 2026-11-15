@@ -2,9 +2,8 @@ import { useMemo } from 'react'
 import { Check, Clock, Send } from 'lucide-react'
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
 import { cn } from '@/lib/utils'
-import { formatBirthBR } from '@/lib/attendanceDocHeader'
 import {
-  alertaValidade, chavePosicao, gradeComprimida, letraLinha, primeiroNome, rotuloPosicao, STATUS_LABEL,
+  alertaValidade, chavePosicao, dataBR, gradeComprimida, letraLinha, primeiroNome, rotuloPosicao, STATUS_LABEL,
   type AmostraSoroteca, type EquipamentoSoroteca, type StatusResultado,
 } from '@/lib/soroteca'
 
@@ -91,7 +90,7 @@ export function SorotecaGrid({
                     a && modo === 'selecionar' && 'cursor-not-allowed opacity-80',
                   )}
                 >
-                  {sel ? <Check className={compacta ? 'h-2 w-2' : 'h-3.5 w-3.5'} /> : !compacta && (reserva?.rotulo ?? (a ? '' : ''))}
+                  {sel ? <Check className={compacta ? 'h-2 w-2' : 'h-3.5 w-3.5'} /> : !compacta && reserva?.rotulo}
                   {a && !compacta && a.tem_apoio && <Send className="absolute -right-1 -top-1 h-2.5 w-2.5 rounded-full bg-card p-px text-primary" aria-label="Tem exame enviado ao apoio" />}
                   {a && !compacta && validade && <Clock className={cn('absolute -bottom-1 -right-1 h-2.5 w-2.5 rounded-full bg-card p-px', validade === 'vencida' ? 'text-destructive' : 'text-warning')} aria-label={validade === 'vencida' ? 'Validade vencida' : 'Vence em breve'} />}
                 </button>
@@ -104,7 +103,7 @@ export function SorotecaGrid({
                     <p className="font-semibold">{rotulo} · {a.codigo_amostra}</p>
                     <p>Paciente: {primeiroNome(a.patient_name) || '—'}</p>
                     <p>Bancada: {a.bancada_nome || '—'}</p>
-                    <p>Validade: {a.validade ? formatBirthBR(a.validade.slice(0, 10)) : '—'}{validade === 'vencida' ? ' (vencida)' : validade === 'vencendo' ? ' (vencendo)' : ''}</p>
+                    <p>Validade: {dataBR(a.validade)}{validade === 'vencida' ? ' (vencida)' : validade === 'vencendo' ? ' (vencendo)' : ''}</p>
                     <p>Status: {STATUS_LABEL[a.status_resultado]} ({a.liberados} de {a.total} liberado{a.total === 1 ? '' : 's'})</p>
                     {a.tem_apoio && <p>Tem exame enviado ao laboratório de apoio</p>}
                   </TooltipContent>
