@@ -1170,6 +1170,13 @@
       "when": 1794715683270,
       "tag": "0166_soroteca_folha_descarte",
       "breakpoints": true
+    },
+    {
+      "idx": 167,
+      "version": "7",
+      "when": 1794746803195,
+      "tag": "0167_soroteca_modulo_so_ativas",
+      "breakpoints": true
     }
   ]
 }
