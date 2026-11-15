@@ -11,6 +11,7 @@ import { SYSTEM_MODULES, ALL_ACTIONS, ACTION_LABELS } from '@/types/permissions.
 import { NAV_SECTIONS } from '@/components/company/CompanySidebar'
 import { toast } from 'sonner'
 import { resolveCompanyId } from '@/utils/companyId'
+import { SorotecaModuloCard } from '@/components/lab/soroteca/SorotecaModuloCard'
 
 interface RealUser {
   id: string
@@ -105,6 +106,8 @@ export default function SectorsPage() {
           )
         )}
       </div>
+
+      <SorotecaModuloCard />
 
       <div className="flex gap-1 border-b border-border">
         {([['sectors', 'Setores'], ['profiles', 'Perfis de Acesso']] as const).map(([key, label]) => (

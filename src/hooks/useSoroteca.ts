@@ -19,21 +19,45 @@ async function chamar<T>(nome: string, args?: Record<string, unknown>): Promise<
   return data as T
 }
 
-export interface AcessoSoroteca { ver: boolean; armazenar: boolean; descartar: boolean; configurar: boolean }
+export interface AcessoSoroteca {
+  ver: boolean; armazenar: boolean; descartar: boolean; configurar: boolean
+  /** Módulo ligado para a empresa (desligado: só TI/Administração continua vendo). */
+  modulo_ativo: boolean
+  /** TI/Administração: pode ligar/desligar o módulo da empresa. */
+  pode_ativar: boolean
+}
+
+const EVENTO_ACESSO = 'soroteca-acesso-alterado'
+const SEM_ACESSO: AcessoSoroteca = { ver: false, armazenar: false, descartar: false, configurar: false, modulo_ativo: false, pode_ativar: false }
 
 /** Permissões da Soroteca checadas no banco (administrador tem todas). null = carregando. */
 export function useSorotecaAcesso(): AcessoSoroteca | null {
   const { user } = useAuth()
   const [acesso, setAcesso] = useState<AcessoSoroteca | null>(null)
+  const [versao, setVersao] = useState(0)
+  useEffect(() => {
+    const recarregar = () => setVersao(v => v + 1)
+    window.addEventListener(EVENTO_ACESSO, recarregar)
+    return () => window.removeEventListener(EVENTO_ACESSO, recarregar)
+  }, [])
   useEffect(() => {
     let vivo = true
-    if (!user?.id) { setAcesso({ ver: false, armazenar: false, descartar: false, configurar: false }); return }
+    if (!user?.id) { setAcesso(SEM_ACESSO); return }
     void rpc('soroteca_acesso').then(({ data }) => {
-      if (vivo) setAcesso({ ver: !!data?.ver, armazenar: !!data?.armazenar, descartar: !!data?.descartar, configurar: !!data?.configurar })
+      if (vivo) setAcesso({
+        ver: !!data?.ver, armazenar: !!data?.armazenar, descartar: !!data?.descartar, configurar: !!data?.configurar,
+        modulo_ativo: !!data?.modulo_ativo, pode_ativar: !!data?.pode_ativar,
+      })
     })
     return () => { vivo = false }
-  }, [user?.id, user?.companyId])
+  }, [user?.id, user?.companyId, versao])
   return acesso
+}
+
+/** Liga/desliga a Soroteca da empresa (só TI/Administração) e atualiza menu e telas. */
+export async function definirModuloSoroteca(ativo: boolean) {
+  await chamar<boolean>('soroteca_modulo_definir', { p_ativo: ativo })
+  window.dispatchEvent(new Event(EVENTO_ACESSO))
 }
 
 export interface ResumoSoroteca {

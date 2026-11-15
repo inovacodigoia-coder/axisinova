@@ -9,6 +9,7 @@ import { useSorotecaAcesso, useSorotecaAmostras, useSorotecaResumo } from '@/hoo
 import { SorotecaGrid, SorotecaLegenda } from '@/components/lab/soroteca/SorotecaGrid'
 import { AmostraDetalheDialog, SemAcessoSoroteca } from '@/components/lab/soroteca/SorotecaDialogs'
 import { PrateleiraAbas, prateleiraAtual } from '@/components/lab/soroteca/PrateleiraAbas'
+import { SorotecaModuloCard } from '@/components/lab/soroteca/SorotecaModuloCard'
 import { enderecoPosicao, gradeComprimida, type EquipamentoSoroteca, type PosicaoSoroteca } from '@/lib/soroteca'
 
 const fmt = (n: number | undefined) => (n ?? 0).toLocaleString('pt-BR')
@@ -84,6 +85,8 @@ export default function LabSorotecaDashboardPage() {
           {acesso.armazenar && <Button asChild><Link to="/app/soroteca/entrada"><PackageCheck className="mr-1.5 h-4 w-4" />Entrada / Armazenar</Link></Button>}
         </div>
       </div>
+
+      {!acesso.modulo_ativo && <SorotecaModuloCard />}
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         {kpis.map(k => (
