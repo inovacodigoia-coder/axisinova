@@ -140,6 +140,11 @@ import LabPharmacyStockPage from './farmacia/LabPharmacyStockPage'
 import LabPharmacyReportsPage from './farmacia/LabPharmacyReportsPage'
 import LabSorotecaDashboardPage from './lab/soroteca/LabSorotecaDashboardPage'
 import LabSorotecaStructurePage from './lab/soroteca/LabSorotecaStructurePage'
+import LabSorotecaEntradaPage from './lab/soroteca/LabSorotecaEntradaPage'
+import LabSorotecaConsultaPage from './lab/soroteca/LabSorotecaConsultaPage'
+import LabSorotecaDescartePage from './lab/soroteca/LabSorotecaDescartePage'
+import LabSorotecaRastreabilidadePage from './lab/soroteca/LabSorotecaRastreabilidadePage'
+import LabSorotecaConfigPage from './lab/soroteca/LabSorotecaConfigPage'
 import ExternalPortalsPage from './lab/portals/ExternalPortalsPage'
 import SupportOutsourcingPage from './support/SupportOutsourcingPage'
 import ApoioKanbanPage from './support/ApoioKanbanPage'
@@ -403,11 +408,11 @@ function PortalContent() {
               {/* Soroteca Module */}
               <Route path="soroteca" element={<LabSorotecaDashboardPage />} />
               <Route path="soroteca/estrutura" element={<LabSorotecaStructurePage />} />
-              <Route path="soroteca/entrada" element={<LabSorotecaDashboardPage />} /> {/* Placeholder */}
-              <Route path="soroteca/consulta" element={<LabSorotecaDashboardPage />} /> {/* Placeholder */}
-              <Route path="soroteca/descarte" element={<LabSorotecaDashboardPage />} /> {/* Placeholder */}
-              <Route path="soroteca/rastreabilidade" element={<LabSorotecaDashboardPage />} /> {/* Placeholder */}
-              <Route path="soroteca/configuracoes" element={<LabSorotecaDashboardPage />} /> {/* Placeholder */}
+              <Route path="soroteca/entrada" element={<LabSorotecaEntradaPage />} />
+              <Route path="soroteca/consulta" element={<LabSorotecaConsultaPage />} />
+              <Route path="soroteca/descarte" element={<LabSorotecaDescartePage />} />
+              <Route path="soroteca/rastreabilidade" element={<LabSorotecaRastreabilidadePage />} />
+              <Route path="soroteca/configuracoes" element={<LabSorotecaConfigPage />} />
 
 
 

@@ -54,7 +54,7 @@ export default function LabSorotecaRastreabilidadePage() {
           body > *:not(.rastreio-impressao) { display: none !important; }
           html, body { height: auto !important; overflow: visible !important; background: none !important; }
           .rastreio-impressao { display: block !important; width: 100%; font-family: 'Times New Roman', Georgia, serif; font-size: 11pt;
-            color: hsl(var(--document-ink, 0 0% 0%)); background: none; }
+            color: var(--document-ink, black); background: none; }
           .rastreio-impressao * { background: none !important; box-shadow: none !important; }
           .rastreio-impressao table { width: 100%; border-collapse: collapse; margin-top: 6pt; }
           .rastreio-impressao th, .rastreio-impressao td { border: 0.5pt solid; padding: 3pt 6pt; text-align: left; vertical-align: top; }

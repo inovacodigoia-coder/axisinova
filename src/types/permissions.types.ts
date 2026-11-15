@@ -184,6 +184,14 @@ export const LAB_PERMISSIONS: { code: string; label: string; description: string
   { code: 'lab.relatorios_gerenciais', label: 'Relatórios gerenciais do laboratório', description: 'Abas Produção, Rejeições e Resumo do Dia no Dashboard Laboratorial (com exportação e impressão)' },
 ]
 
+/** Permissões da Soroteca (permissions.soroteca; checadas no banco por soroteca_tem_permissao; administrador tem todas) */
+export const SOROTECA_PERMISSIONS: { code: string; label: string; description: string }[] = [
+  { code: 'soroteca.ver', label: 'Ver a Soroteca', description: 'Dashboard, mapa das posições, consulta e rastreabilidade' },
+  { code: 'soroteca.armazenar', label: 'Armazenar, mover e retirar', description: 'Entrada / Armazenar (inclui modo lote), mudar de posição e registrar retirada' },
+  { code: 'soroteca.descartar', label: 'Descartar amostras', description: 'Registrar descarte em lote ou manual' },
+  { code: 'soroteca.configurar', label: 'Configurar a Soroteca', description: 'Cadastrar equipamentos (Estrutura Física) e alterar prazos de retenção e avisos' },
+]
+
 /** Permissões do BI de Gestão Hospitalar (permissions.bi_hospitalar; checadas no banco por bi_hospitalar_tem_permissao; administrador tem todas) */
 export const BI_HOSPITALAR_PERMISSIONS: { code: string; label: string; description: string }[] = [
   { code: 'bi_hospitalar.ver', label: 'Ver o BI Gestão Hospitalar', description: 'Acessar a tela e os dados da jornada do paciente' },
