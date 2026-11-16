@@ -1,3 +1,12 @@
+# Etapas AxisInova (prompt-18)
+- [ ] Etapa 1: laudo_code opcional — padrão laudo do item/bancada/ordem 1, 409 para código inválido ou de outro exame, bench_laudos na lista.
+- [x] Etapa 2: sobrescrever resultado e reteste (feito no pedido anterior); responder as 3 perguntas.
+- [ ] Etapa 3: vários laudos — escolha clonar/em branco, nunca excluir o último ativo; parâmetros dos laudos no aparelho.
+- [ ] Etapa 4: parâmetro oculto sai na lista de integração e aceita texto.
+- [ ] Etapa 5: aparelhos novos — levantamento; criar equipamentos depende de confirmação do laboratório.
+- [ ] Etapa 6: inventário para cópia local (documento + esquema).
+- [ ] Etapa 7: teste de impressão de etiqueta, reimprimir fácil, barras maiores.
+
 # Carga do banco — pedidos de atendimento
 - [x] Mapa das telas, colunas explícitas na lista, menu com contadores leves, telas que só gravam sem carregar a lista, cache 45 s (fila/digitação 10 s), Consulta de Atendimentos busca só o período; índices já existiam (nenhum criado); 3 testes + typecheck/build OK.
 - [ ] Paginação no servidor e "Hoje" padrão nas filas de coleta/digitação, mapas, painéis e relatórios: aguarda decisão do usuário (esconderia pendências de dias anteriores e mudaria os textos "Exibindo X de Y").
