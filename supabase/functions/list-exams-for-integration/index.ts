@@ -124,12 +124,12 @@ Deno.serve(async (req) => {
       bench_laudos: benchLaudosByExam.get(String(e.id)) || [],
     })
 
-    // Parâmetros do exame = "painel" que se desdobra em vários resultados
     // Parâmetros do exame + dos laudos ativos, sem repetir. Ocultos também saem (hidden: true):
     // não aparecem no laudo, mas o aparelho envia valor para eles (ex.: WBCFlag, texto).
     const params = parametrosParaCasar(e.parameters, laudoRowsByExam.get(String(e.id)) || []).todos
     const mapping: any[] = Array.isArray(e.interfacing_parameters) ? e.interfacing_parameters : []
 
+    const codigosVistos = new Set<string>()
     params
       .filter((p: any) => p)
       .forEach((p: any, idx: number) => {
@@ -140,6 +140,8 @@ Deno.serve(async (req) => {
           mapped?.machineCode || p.equipCode || p.equipment_code || p.internalCode || p.internal_code || p.code || '',
         ).trim()
         if (!paramCode || paramCode === code) return
+        if (codigosVistos.has(paramCode.toUpperCase())) return
+        codigosVistos.add(paramCode.toUpperCase())
         out.push({
           code: paramCode,
           name: p.name ?? paramCode,
@@ -149,7 +151,8 @@ Deno.serve(async (req) => {
           parent_code: code,
           parameter_order: typeof p.sortOrder === 'number' ? p.sortOrder : idx + 1,
           hidden: p.isHidden === true || p.is_hidden === true,
-          result_type: String(p.type ?? '').toLowerCase() === 'text' ? 'text' : 'numeric',
+          // numerical → numeric; text/selection → text (o aparelho manda o texto como veio)
+          result_type: String(p.type ?? 'numerical').toLowerCase() === 'numerical' ? 'numeric' : 'text',
         })
       })
   }
