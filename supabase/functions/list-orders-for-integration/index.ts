@@ -1,6 +1,7 @@
 import { createClient } from 'npm:@supabase/supabase-js@2'
 import { corsHeaders } from 'npm:@supabase/supabase-js@2/cors'
 import { authenticateIntegration } from '../_shared/integrationAuth.ts'
+import { examIntegrationStatus } from '../_shared/examIntegrationStatus.ts'
 
 const json = (body: unknown, status = 200) =>
   new Response(JSON.stringify(body), {
@@ -176,9 +177,10 @@ Deno.serve(async (req) => {
       const released = String(r.status) === 'released'
       // Reteste solicitado (só vale em exame NÃO liberado): o servidor reabre o exame na fila do aparelho.
       // Liberado prevalece — dado antigo "liberado + reteste" sai como released.
-      const retest = r.retest_requested === true && !released
+      const status = examIntegrationStatus(r)
+      const retest = status === 'retest_requested'
       const entry = {
-        status: retest ? 'retest_requested' : released ? 'released' : String(r.status) === 'cancelled' ? 'pending' : 'resulted',
+        status,
         released_at: released ? (r.released_at ? new Date(r.released_at).toISOString() : null) : null,
         released_by: instrumentResults.has(String(r.id)) ? 'instrument' : 'manual',
         retest_requested_at: retest && r.retest_requested_at ? new Date(r.retest_requested_at).toISOString() : null,
