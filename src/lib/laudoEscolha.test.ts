@@ -27,7 +27,7 @@ describe('laudo do resultado do aparelho', () => {
   it('laudo_code de outro exame é recusado com a mensagem do exame', () => {
     const r = escolherLaudo({ laudoCode: 'X9', examName: 'Glicose', laudos })
     expect(r.ok).toBe(false)
-    if (!r.ok) expect(r.erro).toContain('não pertence ao exame "Glicose"')
+    expect('erro' in r ? r.erro : '').toContain('não pertence ao exame "Glicose"')
   })
 
   it('laudo_code inativo é recusado', () => {
