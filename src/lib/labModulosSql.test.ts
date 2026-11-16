@@ -52,3 +52,16 @@ describe('módulos do laboratório por empresa', () => {
     expect(await erro(`SELECT lab_modulo_definir('${SUPER}','soroteca',true)`)).toMatch(/não encontrada/)
   })
 })
+
+describe('Almoxarifado por empresa', () => {
+  it('só o Super Admin liga e desliga', async () => {
+    await db.exec(`ALTER TABLE companies ADD COLUMN almoxarifado_habilitado boolean NOT NULL DEFAULT false;`)
+    await db.exec(readFileSync('drizzle/migrations/0178_almox_liberar_super_admin.sql', 'utf8'))
+    await como(ADMIN)
+    expect(await erro(`SELECT almox_liberar('${EMPRESA}', true)`)).toMatch(/Só o Super Admin/)
+    await como(SUPER)
+    await db.query(`SELECT almox_liberar('${EMPRESA}', true)`)
+    expect((await db.query<{ a: boolean }>(`SELECT almoxarifado_habilitado a FROM companies WHERE id='${EMPRESA}'`)).rows[0].a).toBe(true)
+    expect(await erro(`SELECT almox_liberar('${SUPER}', true)`)).toMatch(/não encontrada/)
+  })
+})
