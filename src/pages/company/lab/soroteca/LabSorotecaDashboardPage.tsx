@@ -6,7 +6,6 @@ import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
 import { useSorotecaAcesso, useSorotecaResumo } from '@/hooks/useSoroteca'
 import { SemAcessoSoroteca } from '@/components/lab/soroteca/SorotecaDialogs'
-import { SorotecaModuloCard } from '@/components/lab/soroteca/SorotecaModuloCard'
 import { EstanteJanelaDialog } from '@/components/lab/soroteca/EstanteJanela'
 import { ehArmario, ehEstante, estantesNaPrateleira, prateleirasDe, type EquipamentoSoroteca } from '@/lib/soroteca'
 
@@ -66,7 +65,6 @@ export default function LabSorotecaDashboardPage() {
         </div>
       </div>
 
-      {!acesso.modulo_ativo && <SorotecaModuloCard />}
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         {kpis.map(k => (

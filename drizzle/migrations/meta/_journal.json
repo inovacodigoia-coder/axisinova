@@ -1240,6 +1240,20 @@
       "when": 1794855732318,
       "tag": "0176_lab_desliberar_reteste",
       "breakpoints": true
+    },
+    {
+      "idx": 177,
+      "version": "7",
+      "when": 1794856190745,
+      "tag": "0177_lab_modulos_super_admin",
+      "breakpoints": true
+    },
+    {
+      "idx": 178,
+      "version": "7",
+      "when": 1794856413631,
+      "tag": "0178_almox_liberar_super_admin",
+      "breakpoints": true
     }
   ]
 }

@@ -12439,6 +12439,10 @@ export type Database = {
         }
         Returns: string
       }
+      almox_liberar: {
+        Args: { _company: string; _habilitado: boolean }
+        Returns: boolean
+      }
       almox_material_configurar: {
         Args: { _custo: number; _fracao: boolean; _item: string }
         Returns: undefined
@@ -14268,6 +14272,11 @@ export type Database = {
           material_id: string
         }[]
       }
+      lab_modulo_definir: {
+        Args: { p_ativo: boolean; p_company: string; p_modulo: string }
+        Returns: boolean
+      }
+      lab_modulos_situacao: { Args: { p_company: string }; Returns: Json }
       lab_norm: { Args: { t: string }; Returns: string }
       lab_painel_aparelho_log: {
         Args: { p_equipment_id: string }

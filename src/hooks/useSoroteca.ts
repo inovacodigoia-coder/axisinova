@@ -67,11 +67,6 @@ export function useSorotecaAcesso(): AcessoSoroteca | null {
   return acesso
 }
 
-/** Liga/desliga a Soroteca da empresa (só Super Admin) e atualiza menu e telas. */
-export async function definirModuloSoroteca(ativo: boolean) {
-  await chamar<boolean>('soroteca_modulo_definir', { p_ativo: ativo })
-  window.dispatchEvent(new Event(EVENTO_ACESSO))
-}
 
 export interface ResumoSoroteca {
   aviso_dias: number

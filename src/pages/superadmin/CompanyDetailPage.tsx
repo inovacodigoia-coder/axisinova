@@ -17,6 +17,8 @@ import { CompanyChatInternoPanel } from '@/components/superadmin/CompanyChatInte
 import { CompanyCrmPanel } from '@/components/superadmin/CompanyCrmPanel'
 import { CompanyFinanceiroPanel } from '@/components/superadmin/CompanyFinanceiroPanel'
 import { CompanyBiHospitalarPanel } from '@/components/superadmin/CompanyBiHospitalarPanel'
+import { CompanyLabModulosPanel } from '@/components/superadmin/CompanyLabModulosPanel'
+import { CompanyAlmoxarifadoPanel } from '@/components/superadmin/CompanyAlmoxarifadoPanel'
 import type { Company, PlanType, CompanyStatus } from '@/types/company.types'
 
 const ADDON_PRICE_DOCTOR = 79
@@ -442,6 +444,8 @@ export default function CompanyDetailPage() {
               {companyId && <CompanyCrmPanel companyId={companyId} />}
               {companyId && <CompanyFinanceiroPanel companyId={companyId} />}
               {companyId && <CompanyBiHospitalarPanel companyId={companyId} />}
+              {companyId && <CompanyLabModulosPanel companyId={companyId} />}
+              {companyId && <CompanyAlmoxarifadoPanel companyId={companyId} />}
 
             </div>
           </div>
