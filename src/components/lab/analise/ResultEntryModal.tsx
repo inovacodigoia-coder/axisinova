@@ -588,7 +588,8 @@ export function ResultEntryModal({
           const exam: any = examByRef.get(String(r.exam_ref));
           if (!exam) return;
           (r.lab_result_values || []).forEach((v: any) => gravados.push({
-            key: `${exam.id}_${String(v.parameter_key)}`,
+            // mesma chave da carga da tela (exam_ref = instância pedido:exame)
+            key: `${String(r.exam_ref)}_${String(v.parameter_key)}`,
             nome: v.parameter_name || exam.name || String(v.parameter_key),
             source: v.source ?? null,
             value: v.value ?? null,
