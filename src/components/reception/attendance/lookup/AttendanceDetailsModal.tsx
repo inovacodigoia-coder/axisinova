@@ -1179,19 +1179,19 @@ export function AttendanceDetailsModal({ open, onClose, onOrderDeleted, order, p
                       const blocked = selectedTubes.size > 0 ? pendingSelectedTubes.length > 0 : hasPendingTube
                       return (
                         <Button
-                          size="icon"
-                          variant="ghost"
+                          size="sm"
+                          variant="outline"
                           className={cn(
-                            "h-8 w-8 ml-1 disabled:opacity-100",
+                            "h-8 ml-1 gap-1.5 bg-white text-[10px] font-bold uppercase tracking-wider disabled:opacity-100",
                             blocked
                               ? "text-red-600 hover:text-red-600 hover:bg-red-50 cursor-not-allowed"
-                              : "text-muted-foreground hover:text-foreground"
+                              : "text-foreground"
                           )}
                           disabled={blocked || patientTubes.length === 0}
                           title={
                             blocked
                               ? 'Para impressão de etiqueta é necessário receber a amostra (coleta pendente)'
-                              : 'Imprimir etiquetas'
+                              : 'Reimprimir as etiquetas (selecione os tubos para imprimir só alguns)'
                           }
                           onClick={() => {
                             if (blocked) {
@@ -1206,6 +1206,7 @@ export function AttendanceDetailsModal({ open, onClose, onOrderDeleted, order, p
                           }}
                         >
                           <Printer className="h-4 w-4" />
+                          {hasCollectedTube ? 'Reimprimir etiqueta' : 'Etiqueta'}
                         </Button>
                       )
                     })()}
