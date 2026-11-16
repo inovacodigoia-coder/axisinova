@@ -3,11 +3,13 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Switch } from '@/components/ui/switch'
-import { Layout, Edit2, Plus, History, Printer, Save, Loader2, AlertTriangle, Type } from 'lucide-react'
+import { Layout, Edit2, Plus, History, Printer, Save, Loader2, AlertTriangle, Type, ScanLine } from 'lucide-react'
 import { toast } from 'sonner'
 import { SampleLabel } from '@/components/lab/print/SampleLabel'
 import { ServidorImpressaoStatus } from '@/components/print/ServidorImpressaoStatus'
-import { servidorImpressaoAtivo, imprimirEtiquetas, TIPOS_DOCUMENTO } from '@/lib/impressaoLocal'
+import { servidorImpressaoAtivo, imprimirEtiquetas, imprimirRaw, textoParaBase64, TIPOS_DOCUMENTO } from '@/lib/impressaoLocal'
+import { zplTesteCabeca } from '@/lib/etiquetaTesteCabeca'
+import { EtiquetaTesteCabeca } from '@/components/lab/print/EtiquetaTesteCabeca'
 import { gerarPdfEtiquetas } from '@/lib/labelPdf'
 import { useLabelConfig } from '@/hooks/useLabelConfig'
 import { useLabSettings } from '@/hooks/useLabSettings'
@@ -93,6 +95,8 @@ export function LabPrinterLabelSection() {
   const [printing, setPrinting] = useState(false)
   const [showTypography, setShowTypography] = useState(true)
   const previewRef = useRef<HTMLDivElement>(null)
+  const testeCabecaRef = useRef<HTMLDivElement>(null)
+  const [testandoCabeca, setTestandoCabeca] = useState(false)
 
   const update = (patch: Partial<LabelConfig>) => setConfig({ ...config, ...patch })
   const updateField = (key: LabelFieldKey, patch: Partial<{ size: number; bold: boolean }>) =>
@@ -177,8 +181,34 @@ export function LabPrinterLabelSection() {
     }
   }
 
+  const handleTesteCabeca = async () => {
+    if (testandoCabeca) return
+    setTestandoCabeca(true)
+    try {
+      if (await servidorImpressaoAtivo()) {
+        const r = await imprimirRaw(TIPOS_DOCUMENTO.etiquetaCliente, textoParaBase64(zplTesteCabeca({ widthMm: sheetW, heightMm: sheetH })))
+        toast.success(r.mensagem || 'Teste da cabeça enviado para a impressora.')
+        return
+      }
+      const node = testeCabecaRef.current
+      if (!node) throw new Error('Teste indisponível.')
+      await printViaBrowser(node, sheetW, sheetH)
+      toast.info('Servidor de impressão local não detectado — abrindo a impressão do navegador.')
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Falha ao enviar o teste da cabeça.')
+    } finally {
+      setTestandoCabeca(false)
+    }
+  }
+
   return (
     <div className="space-y-8">
+      {/* Teste da cabeça para a impressão do navegador (fora da tela) */}
+      <div aria-hidden className="pointer-events-none fixed -left-[10000px] top-0">
+        <div ref={testeCabecaRef}>
+          <EtiquetaTesteCabeca widthMm={sheetW} heightMm={sheetH} />
+        </div>
+      </div>
       <NutricaoLabelConfigCard />
       <HospitalLabelConfigSection />
       <div className="flex items-center justify-between gap-3 flex-wrap">
@@ -310,6 +340,14 @@ export function LabPrinterLabelSection() {
             {printing ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Printer className="h-3.5 w-3.5" />}
             Impressão Teste
           </Button>
+          <Button variant="outline" size="sm" className="w-full gap-2" onClick={handleTesteCabeca} disabled={testandoCabeca}>
+            {testandoCabeca ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <ScanLine className="h-3.5 w-3.5" />}
+            Teste da cabeça de impressão
+          </Button>
+          <p className="text-[10px] text-center text-muted-foreground">
+            Imprime faixas pretas, letras em todas as posições e um código de barras. Risco branco
+            vertical ou letra falhando sempre no mesmo lugar indica ponto queimado na cabeça térmica.
+          </p>
           <p className="text-[10px] text-center text-muted-foreground italic">
             A impressão teste usa o estado atual da tela, mesmo sem salvar.
           </p>
