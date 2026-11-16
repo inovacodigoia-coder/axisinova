@@ -1,11 +1,11 @@
 # Etapas AxisInova (prompt-18)
-- [ ] Etapa 1: laudo_code opcional — padrão laudo do item/bancada/ordem 1, 409 para código inválido ou de outro exame, bench_laudos na lista.
+- [x] Etapa 1: laudo_code opcional — padrão laudo do resultado/item/bancada/ordem 1, 409 para código inválido, bench_laudos na lista; publicado.
 - [x] Etapa 2: sobrescrever resultado e reteste (feito no pedido anterior); responder as 3 perguntas.
-- [ ] Etapa 3: vários laudos — escolha clonar/em branco, nunca excluir o último ativo; parâmetros dos laudos no aparelho.
-- [ ] Etapa 4: parâmetro oculto sai na lista de integração e aceita texto.
-- [ ] Etapa 5: aparelhos novos — levantamento; criar equipamentos depende de confirmação do laboratório.
+- [x] Etapa 3: vários laudos (já existia) + escolha clonar/em branco, bloqueio de excluir o último ativo, parâmetros dos laudos no aparelho.
+- [x] Etapa 4: parâmetro oculto sai na lista (hidden/result_type) e aceita texto. WBCFlag/RBCFlag/PLTFlag ainda não cadastrados na labsaude.
+- [ ] Etapa 5: levantamento feito; criar os 3 equipamentos aguarda nomes/IDs de integração do laboratório. Eletrólitos: 5 parâmetros com o mesmo código ELET.
 - [ ] Etapa 6: inventário para cópia local (documento + esquema).
-- [ ] Etapa 7: teste de impressão de etiqueta, reimprimir fácil, barras maiores.
+- [x] Etapa 7: teste da cabeça, botão Reimprimir etiqueta, preset Reforçada. Barras do servidor local (ZPL) dependem do ServidorAisaxius.
 
 # Carga do banco — pedidos de atendimento
 - [x] Mapa das telas, colunas explícitas na lista, menu com contadores leves, telas que só gravam sem carregar a lista, cache 45 s (fila/digitação 10 s), Consulta de Atendimentos busca só o período; índices já existiam (nenhum criado); 3 testes + typecheck/build OK.
