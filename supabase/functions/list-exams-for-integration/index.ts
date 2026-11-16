@@ -1,6 +1,7 @@
 import { createClient } from 'npm:@supabase/supabase-js@2'
 import { corsHeaders } from 'npm:@supabase/supabase-js@2/cors'
 import { authenticateIntegration } from '../_shared/integrationAuth.ts'
+import { parametrosParaCasar } from '../_shared/laudoEscolha.ts'
 
 const json = (body: unknown, status = 200) =>
   new Response(JSON.stringify(body), {
@@ -55,12 +56,18 @@ Deno.serve(async (req) => {
   // Laudos cadastrados por exame (o equipamento informa o laudo em laudo_code)
   const { data: laudoRows } = await supabase
     .from('exam_laudos')
-    .select('exam_id, code, name, sort_order, is_active')
+    .select('id, exam_id, code, name, sort_order, is_active, parameters')
     .eq('company_id', companyId)
     .order('sort_order', { ascending: true })
 
   const laudosByExam = new Map<string, any[]>()
+  const laudoRowsByExam = new Map<string, any[]>()
+  const laudoCodeById = new Map<string, string>()
   for (const l of laudoRows || []) {
+    laudoCodeById.set(String((l as any).id), String((l as any).code))
+    const rows = laudoRowsByExam.get(String((l as any).exam_id)) || []
+    rows.push(l)
+    laudoRowsByExam.set(String((l as any).exam_id), rows)
     const key = String((l as any).exam_id)
     const list = laudosByExam.get(key) || []
     list.push({
@@ -70,6 +77,22 @@ Deno.serve(async (req) => {
       is_active: (l as any).is_active !== false,
     })
     laudosByExam.set(key, list)
+  }
+
+  // Laudo por bancada (só para exibição no servidor do laboratório): bancada → código do laudo
+  const { data: benchLaudoRows } = await supabase
+    .from('exame_laudo_bancada')
+    .select('exame_id, bancada_id, laudo_id, ativo')
+    .eq('company_id', companyId)
+    .eq('ativo', true)
+  const benchLaudosByExam = new Map<string, any[]>()
+  for (const b of benchLaudoRows || []) {
+    const laudo = (b as any).laudo_id ? laudoCodeById.get(String((b as any).laudo_id)) : null
+    if (!laudo) continue
+    const key = String((b as any).exame_id)
+    const list = benchLaudosByExam.get(key) || []
+    list.push({ bench: benchName.get(String((b as any).bancada_id)) ?? null, laudo_code: laudo })
+    benchLaudosByExam.set(key, list)
   }
 
   const materialOf = (e: any): string | null => {
@@ -98,14 +121,17 @@ Deno.serve(async (req) => {
       parent_code: null,
       parameter_order: null,
       laudos: laudosByExam.get(String(e.id)) || [],
+      bench_laudos: benchLaudosByExam.get(String(e.id)) || [],
     })
 
-    // Parâmetros do exame = "painel" que se desdobra em vários resultados
-    const params: any[] = Array.isArray(e.parameters) ? e.parameters : []
+    // Parâmetros do exame + dos laudos ativos, sem repetir. Ocultos também saem (hidden: true):
+    // não aparecem no laudo, mas o aparelho envia valor para eles (ex.: WBCFlag, texto).
+    const params = parametrosParaCasar(e.parameters, laudoRowsByExam.get(String(e.id)) || []).todos
     const mapping: any[] = Array.isArray(e.interfacing_parameters) ? e.interfacing_parameters : []
 
+    const codigosVistos = new Set<string>()
     params
-      .filter((p: any) => p && !p.isHidden && !p.is_hidden)
+      .filter((p: any) => p)
       .forEach((p: any, idx: number) => {
         const mapped = mapping.find(
           (m: any) => String(m?.parameterName ?? '').trim().toUpperCase() === String(p?.name ?? '').trim().toUpperCase(),
@@ -114,6 +140,8 @@ Deno.serve(async (req) => {
           mapped?.machineCode || p.equipCode || p.equipment_code || p.internalCode || p.internal_code || p.code || '',
         ).trim()
         if (!paramCode || paramCode === code) return
+        if (codigosVistos.has(paramCode.toUpperCase())) return
+        codigosVistos.add(paramCode.toUpperCase())
         out.push({
           code: paramCode,
           name: p.name ?? paramCode,
@@ -122,6 +150,9 @@ Deno.serve(async (req) => {
           is_active: true,
           parent_code: code,
           parameter_order: typeof p.sortOrder === 'number' ? p.sortOrder : idx + 1,
+          hidden: p.isHidden === true || p.is_hidden === true,
+          // numerical → numeric; text/selection → text (o aparelho manda o texto como veio)
+          result_type: String(p.type ?? 'numerical').toLowerCase() === 'numerical' ? 'numeric' : 'text',
         })
       })
   }

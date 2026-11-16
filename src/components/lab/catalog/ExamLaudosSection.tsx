@@ -12,6 +12,9 @@ import { toast } from 'sonner'
 import { supabase } from '@/integrations/supabase/client'
 import { ExamLaudo, nextLaudoCode } from '@/hooks/useExamLaudos'
 
+/** Valor do seletor para "Começar em branco" (não clona nenhum laudo). */
+const BRANCO = '__branco__'
+
 interface Props {
   examId?: string
   companyId?: string
@@ -28,7 +31,7 @@ export default function ExamLaudosSection({ examId, companyId, laudos, selectedL
   const [saving, setSaving] = useState(false)
 
   const openCreate = () => {
-    setForm({ code: nextLaudoCode(laudos), name: '', copyFrom: laudos[0]?.id || '' })
+    setForm({ code: nextLaudoCode(laudos), name: '', copyFrom: laudos[0]?.id || BRANCO })
     setCreating(true)
   }
 
@@ -45,7 +48,7 @@ export default function ExamLaudosSection({ examId, companyId, laudos, selectedL
       toast.error('Já existe um laudo com este código neste exame')
       return
     }
-    const source = laudos.find((l) => l.id === form.copyFrom)
+    const source = form.copyFrom === BRANCO ? undefined : laudos.find((l) => l.id === form.copyFrom)
     setSaving(true)
     const { error } = await supabase.from('exam_laudos').insert({
       exam_id: examId,
@@ -98,6 +101,10 @@ export default function ExamLaudosSection({ examId, companyId, laudos, selectedL
   const remove = async (laudo: ExamLaudo) => {
     if (laudos.length <= 1) {
       toast.error('O exame precisa ter pelo menos um laudo')
+      return
+    }
+    if (laudo.is_active && laudos.filter((l) => l.is_active).length <= 1) {
+      toast.error('Este é o único laudo ativo. Ative outro laudo antes de excluir este.')
       return
     }
     if (!confirm(`Excluir o laudo "${laudo.name}"? A configuração dele será perdida.`)) return
@@ -193,16 +200,17 @@ export default function ExamLaudosSection({ examId, companyId, laudos, selectedL
               </div>
             </div>
             <div>
-              <Label className="text-xs">Copiar configuração de</Label>
+              <Label className="text-xs">Como começar</Label>
               <Select value={form.copyFrom} onValueChange={(v) => setForm({ ...form, copyFrom: v })}>
                 <SelectTrigger>
-                  <SelectValue placeholder="Começar vazio" />
+                  <SelectValue placeholder="Escolha" />
                 </SelectTrigger>
                 <SelectContent>
+                  <SelectItem value={BRANCO}>Começar em branco</SelectItem>
                   {laudos.map((l) => (
                     <SelectItem key={l.id} value={l.id}>
                       <span className="flex items-center gap-2">
-                        <Copy className="h-3 w-3" /> {l.code} — {l.name}
+                        <Copy className="h-3 w-3" /> Clonar {l.code} — {l.name}
                       </span>
                     </SelectItem>
                   ))}

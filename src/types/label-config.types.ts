@@ -106,6 +106,20 @@ export const labelPresets: LabelPreset[] = [
     name: '50x30 padrão',
     config: { ...defaultLabelConfig },
   },
+  {
+    // Para cabeça térmica gasta: barras mais altas e um pouco mais largas, código em letra maior
+    name: 'Reforçada 50x30 (código maior)',
+    config: {
+      ...defaultLabelConfig,
+      marginMm: 0.5,
+      barcodeHeightMm: 9,
+      fields: {
+        ...defaultLabelFields,
+        sampleCode: { size: 10, bold: true },
+        sampleHash: { size: 9.5, bold: true },
+      },
+    },
+  },
 ]
 
 export function normalizeLabelConfig(raw: unknown): LabelConfig {

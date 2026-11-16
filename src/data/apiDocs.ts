@@ -371,6 +371,7 @@ export const API_GROUPS: ApiGroup[] = [
           { name: 'flag', in: 'body', type: 'string', required: false, description: 'N (normal), L (baixo) ou H (alto)' },
           { name: 'reference_range', in: 'body', type: 'string', required: false, description: 'Faixa de referência do equipamento' },
           { name: 'result_datetime', in: 'body', type: 'string', required: false, description: 'ISO 8601 do horário do resultado' },
+          { name: 'laudo_code', in: 'body', type: 'string', required: false, description: 'Código do laudo do exame (laudos[].code de /list-exams-for-integration). Opcional: sem ele o resultado é aceito e vai para o laudo já usado no exame, o laudo da bancada do exame ou o de Ordem 1 — nunca é recusado por falta de laudo. Código que não pertence ao exame (ou inativo) responde 409' },
         ],
         requestExample: `{
   "idempotency_key": "cobas-2026-08-25-000123",
@@ -398,6 +399,9 @@ export const API_GROUPS: ApiGroup[] = [
 
 // 409 exame liberado (recusa definitiva: não repetir automaticamente; o LIS precisa desliberar e pedir reteste)
 { "success": false, "error": "exame_liberado", "message": "Exame já liberado; para aceitar novo resultado, desliberar o exame no sistema e pedir reteste." }
+
+// 409 laudo_code não pertence ao exame (ou está inativo) — nada foi gravado
+{ "success": false, "error": "laudo_code \"L009\" não pertence ao exame \"Hemograma\". Laudos deste exame: L001, L002." }
 
 // 422 rejeição com motivo explícito (fica gravada no Log de Integração)
 { "success": false, "error": "Nenhum pedido encontrado com sample_barcode=17RGQ3RM6" }
@@ -455,7 +459,7 @@ export const API_GROUPS: ApiGroup[] = [
         path: '/list-exams-for-integration',
         summary: 'Catálogo de exames (sincronização do middleware)',
         description:
-          'Lista os exames ativos da empresa da chave, para o middleware local puxar periodicamente (pull). Parâmetros do exame são retornados como itens filhos com parent_code. Apenas exames do Tipo "Laboratório" são devolvidos — exames do tipo "Clínica" nunca aparecem na resposta.',
+          'Lista os exames ativos da empresa da chave, para o middleware local puxar periodicamente (pull). Parâmetros do exame (e dos laudos ativos do exame) são retornados como itens filhos com parent_code; parâmetros OCULTOS também saem, com hidden = true (não aparecem no laudo, mas recebem valor do aparelho, ex.: WBCFlag), e result_type = "numeric" ou "text" (texto é gravado como veio). Cada exame traz laudos[] (code, name, order, is_active) e bench_laudos[] (bench, laudo_code — só para exibição). Apenas exames do Tipo "Laboratório" são devolvidos — exames do tipo "Clínica" nunca aparecem na resposta.',
         scope: 'company',
         auth: 'Authorization: Bearer <access_token> (OAuth2) ou X-API-Key (legado)',
         params: [
@@ -473,7 +477,20 @@ export const API_GROUPS: ApiGroup[] = [
       "sector": "Hematologia",
       "is_active": true,
       "parent_code": null,
-      "parameter_order": null
+      "parameter_order": null,
+      "laudos": [{ "code": "L001", "name": "Laudo Padrão", "order": 1, "is_active": true }],
+      "bench_laudos": [{ "bench": "Hematologia", "laudo_code": "L001" }]
+    },
+    {
+      "code": "WBCFlag",
+      "name": "Alerta WBC",
+      "material": "Sangue total",
+      "sector": "Hematologia",
+      "is_active": true,
+      "parent_code": "HEM",
+      "parameter_order": 24,
+      "hidden": true,
+      "result_type": "text"
     }
   ]
 }`,
