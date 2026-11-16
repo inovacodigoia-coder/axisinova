@@ -2625,6 +2625,28 @@ export function ResultEntryModal({
 
       {/* Modal de Cancelamento */}
       {apoioCancelDialog}
+      <DesliberarExameDialog
+        open={!!desliberar}
+        onOpenChange={(o) => { if (!o) setDesliberar(null); }}
+        resultId={desliberar ? resultIdByExam[desliberar.examId] : null}
+        examName={desliberar ? filteredExams.find(e => e.id === desliberar.examId)?.name : null}
+        motivoInicial={MOTIVO_DESLIBERAR_RETESTE}
+        onDesliberado={async () => {
+          const d = desliberar;
+          if (d) await handleDesliberado(d.examId, d.reteste);
+        }}
+      />
+      <AvisoRetesteLiberadoDialog
+        open={!!avisoReteste}
+        onOpenChange={(o) => { if (!o) setAvisoReteste(null); }}
+        podeDesliberar={canRelease}
+        onDesliberarAgora={() => {
+          const a = avisoReteste;
+          setAvisoReteste(null);
+          if (a) setDesliberar({ examId: a.examId, reteste: a.tipo });
+        }}
+      />
+
       {cancelModal && (
         <Dialog open={cancelModal.isOpen} onOpenChange={(open) => { if (!open) { setCancelModal(null); setCancelReason(""); setCancelConfirmed(false); } }}>
           <DialogContent className="sm:max-w-[450px] p-0 overflow-hidden border-none shadow-2xl z-[150]">
