@@ -37,6 +37,8 @@ interface HemItem {
   date?: string
   urgent: boolean
   status: OrderStatus
+  /** Laudo congelado no item do pedido (bancada do exame) */
+  laudoId?: string | null
 }
 
 const STATUS_LABEL: Record<string, string> = {
@@ -273,6 +275,9 @@ export default function LabHematologiaPage() {
   const [observacao, setObservacao] = useState('')
   const [flags, setFlags] = useState<string[]>([])
   const [catalogList, setCatalogList] = useState<any[]>([])
+  /** Laudos ativos por exame do catálogo, em ordem (mesma regra da Digitação de Resultados) */
+  const [laudosByCatalogExam, setLaudosByCatalogExam] = useState<Record<string, any[]>>({})
+  const [resultLaudoId, setResultLaudoId] = useState<string | null>(null)
   const [examStatus, setExamStatus] = useState<string | null>(null)
   const [resultId, setResultId] = useState<string | null>(null)
   const [retestePendente, setRetestePendente] = useState(false)
@@ -328,8 +333,35 @@ export default function LabHematologiaPage() {
         .select('id, name, internal_code, measurement_unit, parameters, reference_values')
       if (active && data) setCatalogList(data as any[])
     })()
+    ;(async () => {
+      const { data } = await supabase
+        .from('exam_laudos')
+        .select('id, exam_id, sort_order, parameters, reference_values')
+        .eq('is_active', true)
+        .order('sort_order', { ascending: true })
+      if (!active || !data) return
+      const map: Record<string, any[]> = {}
+      ;(data as any[]).forEach((l) => { (map[String(l.exam_id)] ||= []).push(l) })
+      setLaudosByCatalogExam(map)
+    })()
     return () => { active = false }
   }, [])
+
+  // Laudo já usado no resultado do exame selecionado (ex.: indicado pelo aparelho em laudo_code)
+  useEffect(() => {
+    setResultLaudoId(null)
+    if (!selected) return
+    let cancelled = false
+    ;(async () => {
+      const { data } = await supabase
+        .from('lab_exam_results')
+        .select('laudo_id')
+        .eq('exam_ref', selected.id)
+        .maybeSingle()
+      if (!cancelled) setResultLaudoId((data as any)?.laudo_id ?? null)
+    })()
+    return () => { cancelled = true }
+  }, [selected?.id])
 
 
 
@@ -358,6 +390,7 @@ export default function LabHematologiaPage() {
             date: order.registeredAt,
             urgent: !!(exam.urgent || order.urgent),
             status: order.status,
+            laudoId: exam.laudoId ?? null,
           })
         })
       })
@@ -420,13 +453,26 @@ export default function LabHematologiaPage() {
           return years
         })()
       : undefined
-    const catalogExam = findCatalogExam(catalogList, {
+    const baseExam = findCatalogExam(catalogList, {
       examId: selected.id.split(':')[1],
       code: selected.examCode,
       name: selected.examName,
     })
+    // Exame com laudos: vale a configuração do laudo (resultado > item do pedido > Ordem 1)
+    const laudos = baseExam?.id ? laudosByCatalogExam[String(baseExam.id)] || [] : []
+    const laudo = laudos.find((l: any) => String(l.id) === String(resultLaudoId))
+      || laudos.find((l: any) => String(l.id) === String(selected.laudoId))
+      || laudos[0]
+    const laudoParams = Array.isArray(laudo?.parameters) ? laudo.parameters : []
+    const catalogExam = laudo && laudoParams.length > 0
+      ? {
+          ...baseExam,
+          parameters: laudoParams,
+          reference_values: Array.isArray(laudo.reference_values) ? laudo.reference_values : baseExam?.reference_values,
+        }
+      : baseExam
     return buildExamParams(catalogExam, selected.examName, { gender: selected.gender, age })
-  }, [selected, catalogList])
+  }, [selected, catalogList, laudosByCatalogExam, resultLaudoId])
 
   const formKeyOfParam = (param: ResolvedParam) => mapParamToFormKey(param.name) || `p_${param.id}`
 
