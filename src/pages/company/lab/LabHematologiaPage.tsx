@@ -347,21 +347,6 @@ export default function LabHematologiaPage() {
     return () => { active = false }
   }, [])
 
-  // Laudo já usado no resultado do exame selecionado (ex.: indicado pelo aparelho em laudo_code)
-  useEffect(() => {
-    setResultLaudoId(null)
-    if (!selected) return
-    let cancelled = false
-    ;(async () => {
-      const { data } = await supabase
-        .from('lab_exam_results')
-        .select('laudo_id')
-        .eq('exam_ref', selected.id)
-        .maybeSingle()
-      if (!cancelled) setResultLaudoId((data as any)?.laudo_id ?? null)
-    })()
-    return () => { cancelled = true }
-  }, [selected?.id])
 
 
 
@@ -438,6 +423,22 @@ export default function LabHematologiaPage() {
     () => filteredExams.find((exam) => exam.id === selectedId) ?? null,
     [filteredExams, selectedId],
   )
+
+  // Laudo já usado no resultado do exame selecionado (ex.: indicado pelo aparelho em laudo_code)
+  useEffect(() => {
+    setResultLaudoId(null)
+    if (!selected) return
+    let cancelled = false
+    ;(async () => {
+      const { data } = await supabase
+        .from('lab_exam_results')
+        .select('laudo_id')
+        .eq('exam_ref', selected.id)
+        .maybeSingle()
+      if (!cancelled) setResultLaudoId((data as any)?.laudo_id ?? null)
+    })()
+    return () => { cancelled = true }
+  }, [selected?.id])
 
   // Parâmetros e faixas de referência do catálogo (idênticos à Digitação de Resultados)
   const resolvedParams = useMemo<ResolvedParam[]>(() => {
