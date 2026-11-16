@@ -440,6 +440,21 @@ export default function LabHematologiaPage() {
     return () => { cancelled = true }
   }, [selected?.id])
 
+  // Exame com laudos: vale a configuração do laudo (resultado > item do pedido > Ordem 1)
+  const laudoAtivo = useMemo<any | null>(() => {
+    if (!selected) return null
+    const baseExam = findCatalogExam(catalogList, {
+      examId: selected.id.split(':')[1],
+      code: selected.examCode,
+      name: selected.examName,
+    })
+    const laudos = baseExam?.id ? laudosByCatalogExam[String(baseExam.id)] || [] : []
+    return laudos.find((l: any) => String(l.id) === String(resultLaudoId))
+      || laudos.find((l: any) => String(l.id) === String(selected.laudoId))
+      || laudos[0]
+      || null
+  }, [selected, catalogList, laudosByCatalogExam, resultLaudoId])
+
   // Parâmetros e faixas de referência do catálogo (idênticos à Digitação de Resultados)
   const resolvedParams = useMemo<ResolvedParam[]>(() => {
     if (!selected) return []
@@ -459,11 +474,7 @@ export default function LabHematologiaPage() {
       code: selected.examCode,
       name: selected.examName,
     })
-    // Exame com laudos: vale a configuração do laudo (resultado > item do pedido > Ordem 1)
-    const laudos = baseExam?.id ? laudosByCatalogExam[String(baseExam.id)] || [] : []
-    const laudo = laudos.find((l: any) => String(l.id) === String(resultLaudoId))
-      || laudos.find((l: any) => String(l.id) === String(selected.laudoId))
-      || laudos[0]
+    const laudo = laudoAtivo
     const laudoParams = Array.isArray(laudo?.parameters) ? laudo.parameters : []
     const catalogExam = laudo && laudoParams.length > 0
       ? {
@@ -473,7 +484,7 @@ export default function LabHematologiaPage() {
         }
       : baseExam
     return buildExamParams(catalogExam, selected.examName, { gender: selected.gender, age })
-  }, [selected, catalogList, laudosByCatalogExam, resultLaudoId])
+  }, [selected, catalogList, laudoAtivo])
 
   const formKeyOfParam = (param: ResolvedParam) => mapParamToFormKey(param.name) || `p_${param.id}`
 
@@ -599,6 +610,7 @@ export default function LabHematologiaPage() {
       status,
       notes: observacao || null,
     }
+    if (laudoAtivo?.id) payload.laudo_id = laudoAtivo.id
     if (status === 'digitized') { payload.typed_by = user?.id || null; payload.typed_at = nowIso }
     if (status === 'released') { payload.released_by = user?.id || null; payload.released_at = nowIso }
 
