@@ -35,3 +35,4 @@
 - Warehouse: company gates, sector overrides, guarded atomic RPCs; materials reuse BI consumption for frozen costs/negative reversals and shared patient UI, resolving live episodes server-side. Demo is in memory; test fixtures stay isolated. Why: tenant safety and no duplicate consumption.
 - Laudo print history: only laudo_impressao_* RPCs. Why: immutable trail.
 - Portal extra deadline: RPC setter; order trigger adds to new items. Why: no recalc.
+- Unrelease/retest: lab_desliberar_exame (immutable lab_exam_desliberacao); retest only on non-released exams, guarded by trigger; UI rules in lib/retesteLiberacao. Why: never Liberado+Reteste.
