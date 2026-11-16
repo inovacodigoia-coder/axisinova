@@ -44,6 +44,9 @@ import {
   FlaskConical
 } from 'lucide-react';
 import { useApoioCancelamento } from '@/components/apoio/useApoioCancelamento';
+import { ShieldOff } from 'lucide-react';
+import { DesliberarExameDialog, AvisoRetesteLiberadoDialog } from '@/components/lab/analise/DesliberarExameDialog';
+import { acaoRetesteAparelho, acaoRetesteLocal, bloqueioLiberar, MOTIVO_DESLIBERAR_RETESTE } from '@/lib/retesteLiberacao';
 import PDFPreviewModal from '@/components/lab/PDFPreviewModal';
 import { InstrumentGraphicsSection } from '@/components/lab/analise/InstrumentGraphicsSection';
 import { PatientInfoFloating } from '@/components/lab/analise/PatientInfoFloating';
@@ -136,6 +139,9 @@ export function ResultEntryModal({
   const [instrumentAt, setInstrumentAt] = useState<Record<string, string>>({});
   const [instrumentPrevious, setInstrumentPrevious] = useState<Record<string, { value: string; at: string }>>({});
   const [retestSaving, setRetestSaving] = useState<string | null>(null);
+  // Desliberar (no lugar de "Liberar exame") e aviso de reteste em exame liberado
+  const [desliberar, setDesliberar] = useState<{ examId: string; reteste: 'aparelho' | 'local' | null } | null>(null);
+  const [avisoReteste, setAvisoReteste] = useState<{ examId: string; tipo: 'aparelho' | 'local' } | null>(null);
   const [cancelModal, setCancelModal] = useState<{ isOpen: boolean; exam: any } | null>(null);
   const { cancelarNoApoio, dialog: apoioCancelDialog } = useApoioCancelamento();
   const [cancelReason, setCancelReason] = useState("");
@@ -1206,9 +1212,13 @@ export function ResultEntryModal({
     }
   };
 
+  const temReteste = (examId: string) => !!retestRequested[examId] || examActions[examId]?.type === 'reteste';
+
   const handleReleaseExam = async (examId: string) => {
     const exam = filteredExams.find(e => e.id === examId);
     if (!exam) return;
+    const bloqueio = bloqueioLiberar({ liberado: false, retesteAparelho: !!retestRequested[examId], retesteLocal: examActions[examId]?.type === 'reteste' });
+    if (bloqueio) { toast.error(bloqueio); return; }
     setSaving(true);
     try {
       await persistExams([exam], 'released');
@@ -1229,7 +1239,9 @@ export function ResultEntryModal({
   };
 
   const handleReleaseAllDigitized = async () => {
-    const toRelease = filteredExams.filter(e => examStatuses[e.id] === 'digitized');
+    const digitados = filteredExams.filter(e => examStatuses[e.id] === 'digitized');
+    const toRelease = digitados.filter(e => !temReteste(e.id));
+    if (digitados.length > toRelease.length) toast.info(`${digitados.length - toRelease.length} exame(s) com reteste pendente não foram liberados.`);
     if (toRelease.length === 0) return;
     setSaving(true);
     try {
@@ -1282,6 +1294,29 @@ export function ResultEntryModal({
     }
   };
 
+  const handleRetesteAparelhoClick = (examId: string) => {
+    const acao = acaoRetesteAparelho({ liberado: examStatuses[examId] === 'released', retesteAparelho: !!retestRequested[examId] });
+    if (acao === 'aviso_desliberar') { setAvisoReteste({ examId, tipo: 'aparelho' }); return; }
+    void handleRetesteAparelho(examId, acao === 'solicitar');
+  };
+
+  const marcarRetesteLocal = (examId: string) => {
+    setExamActions(prev => ({ ...prev, [examId]: { type: 'reteste', reason: '', details: '' } }));
+    toast.info("Informe o motivo do reteste abaixo das observações técnicas.");
+  };
+
+  /** Depois de desliberar: exame volta a digitado (campos editáveis); opcionalmente já pede o reteste. */
+  const handleDesliberado = async (examId: string, reteste: 'aparelho' | 'local' | null) => {
+    const newStatuses = { ...examStatuses, [examId]: 'digitized' };
+    setExamStatuses(newStatuses);
+    setCorrectionUnlocked(prev => ({ ...prev, [examId]: false }));
+    const exam = filteredExams.find(e => e.id === examId);
+    const patient = groupedPatients.find(p => p.exams.some((e: any) => e.id === examId));
+    if (patient) await updateParentOrderStatus(patient.id || exam?.orderId, patient.exams, newStatuses);
+    if (reteste === 'aparelho') await handleRetesteAparelho(examId, true);
+    if (reteste === 'local') marcarRetesteLocal(examId);
+  };
+
   const handleExamAction = (examId: string, actionType: string) => {
     if (actionType === 'cancelar') {
       // Se já estiver cancelado, permite reverter (limpar o status de cancelamento)
@@ -1320,9 +1355,10 @@ export function ResultEntryModal({
           return next;
         });
         toast.info("Ação de reteste removida.");
+      } else if (acaoRetesteLocal({ liberado: examStatuses[examId] === 'released', retesteAparelho: !!retestRequested[examId] }) === 'aviso_desliberar') {
+        setAvisoReteste({ examId, tipo: 'local' });
       } else {
-        setExamActions(prev => ({ ...prev, [examId]: { type: 'reteste', reason: '', details: '' } }));
-        toast.info("Informe o motivo do reteste abaixo das observações técnicas.");
+        marcarRetesteLocal(examId);
       }
     } else if (actionType === 'recoleta') {
       const exam = filteredExams.find(e => e.id === examId);
@@ -1618,7 +1654,9 @@ export function ResultEntryModal({
     if (!patient) return;
     setSaving(true);
     try {
-      const toRelease = (patient.exams || []).filter((e: any) => examStatuses[e.id] === 'digitized');
+      const digitados = (patient.exams || []).filter((e: any) => examStatuses[e.id] === 'digitized');
+      const toRelease = digitados.filter((e: any) => !temReteste(e.id));
+      if (digitados.length > toRelease.length) toast.info(`${digitados.length - toRelease.length} exame(s) com reteste pendente não foram liberados.`);
       if (toRelease.length === 0) {
         toast.info('Nenhum exame digitado para liberar neste paciente.');
       } else {
@@ -1981,7 +2019,15 @@ export function ResultEntryModal({
                                       </Button>
                                     </DropdownMenuTrigger>
                                     <DropdownMenuContent align="start" className="w-52 z-[110]">
-                                      {!isReleased && canRelease && (
+                                      {canRelease && (isReleased ? (
+                                        <DropdownMenuItem
+                                          onClick={(e) => { e.stopPropagation(); setDesliberar({ examId: exam.id, reteste: null }); }}
+                                          className="text-xs font-bold uppercase text-amber-700 gap-2"
+                                        >
+                                          <ShieldOff className="h-3.5 w-3.5" />
+                                          Desliberar exame
+                                        </DropdownMenuItem>
+                                      ) : (
                                         <DropdownMenuItem
                                           onClick={(e) => { e.stopPropagation(); handleReleaseExam(exam.id); }}
                                           disabled={!hasResult}
@@ -1990,7 +2036,7 @@ export function ResultEntryModal({
                                           <ShieldCheck className="h-3.5 w-3.5" />
                                           Liberar exame
                                         </DropdownMenuItem>
-                                      )}
+                                      ))}
                                       <DropdownMenuItem onClick={(e) => { e.stopPropagation(); handleExamAction(exam.id, 'cancelar'); }} className="text-xs font-bold uppercase text-rose-600 gap-2">
                                         <XCircle className="h-3.5 w-3.5" /> 
                                         {examStatuses[exam.id] === 'cancelled' ? "Reverter Cancelamento" : "Cancelar exame"}
@@ -1999,9 +2045,9 @@ export function ResultEntryModal({
                                         <RefreshCw className="h-3.5 w-3.5" />
                                         {examActions[exam.id]?.type === 'reteste' ? "Remover Reteste" : "Solicitar Reteste"}
                                       </DropdownMenuItem>
-                                      {isReleased && (
+                                      {(isReleased || (!!resultIdByExam[exam.id] && examStatuses[exam.id] !== 'cancelled')) && (
                                         <DropdownMenuItem
-                                          onClick={(e) => { e.stopPropagation(); void handleRetesteAparelho(exam.id, !retestRequested[exam.id]); }}
+                                          onClick={(e) => { e.stopPropagation(); handleRetesteAparelhoClick(exam.id); }}
                                           disabled={retestSaving === exam.id}
                                           className="text-xs font-bold uppercase text-sky-700 gap-2"
                                         >
