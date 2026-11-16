@@ -3,7 +3,7 @@ import { decideInstrumentResult } from '../../supabase/functions/_shared/resultO
 
 const NOW = new Date('2026-11-04T15:00:00Z')
 
-const instrumentValue = (over: Partial<{ value: string; source: string; result_datetime: string; updated_at: string }> = {}) => ({
+const instrumentValue = (over: Partial<{ value: string; source: string; instrument_value: string | null; result_datetime: string | null; updated_at: string }> = {}) => ({
   value: '7.09',
   source: 'instrument',
   result_datetime: '2026-11-04T14:00:00Z',
@@ -158,5 +158,40 @@ describe('decideInstrumentResult — regra de resultado novo do aparelho', () =>
   it('não liberado com reteste + campo vazio → grava e consome o reteste', () => {
     const d = decideInstrumentResult({ examStatus: 'digitized', retestRequested: true, current: null, incomingResultDatetime: null, now: NOW })
     expect(d).toEqual({ kind: 'created', retest: true })
+  })
+
+  it('3c. valor do aparelho corrigido à mão depois → resultado antigo reenviado não apaga a correção', () => {
+    // aparelho 14:00 = 7.09; técnico corrigiu para 7.50 às 14:45; chega reenvio de 14:30
+    const d = decideInstrumentResult({
+      examStatus: 'digitized',
+      retestRequested: false,
+      current: instrumentValue({ value: '7.50', instrument_value: '7.09', updated_at: '2026-11-04T14:45:00Z' }),
+      incomingResultDatetime: '2026-11-04T14:30:00Z',
+      now: NOW,
+    })
+    expect(d).toEqual({ kind: 'ignored_older' })
+  })
+
+  it('3d. valor corrigido à mão + aparelho rodou depois da correção → sobrescreve', () => {
+    const d = decideInstrumentResult({
+      examStatus: 'digitized',
+      retestRequested: false,
+      current: instrumentValue({ value: '7.50', instrument_value: '7.09', updated_at: '2026-11-04T14:45:00Z' }),
+      incomingResultDatetime: '2026-11-04T14:50:00Z',
+      now: NOW,
+    })
+    expect(d).toEqual({ kind: 'overwritten', retest: false })
+  })
+
+  it('3e. valor do aparelho intacto, só salvo de novo depois → vale o horário do aparelho', () => {
+    // salvar a tela sem mudar o valor não bloqueia uma repetição feita depois da 1ª leitura
+    const d = decideInstrumentResult({
+      examStatus: 'digitized',
+      retestRequested: false,
+      current: instrumentValue({ instrument_value: '7.09', updated_at: '2026-11-04T14:45:00Z' }),
+      incomingResultDatetime: '2026-11-04T14:30:00Z',
+      now: NOW,
+    })
+    expect(d).toEqual({ kind: 'overwritten', retest: false })
   })
 })
