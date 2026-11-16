@@ -1,4 +1,6 @@
 import { displayReference } from '@/lib/examReferenceMode';
+import { emPedacos } from '@/lib/buscarEmBlocos';
+import { mudadosPeloAparelho, AparelhoMudouError, type ValorGravado } from '@/lib/aparelhoMudouNaTela';
 import { flagReference, resultFlag } from '@/lib/resultFlag';
 import { calculatedResultSource, calculatedResultValue, isManualCalculatedSource, shouldCalculateAutomatically } from '@/lib/calculatedResultOverride';
 import { defaultResultUpdates, onlyUntouchedDefaults } from '@/lib/parameterDefaultValue';
@@ -570,6 +572,38 @@ export function ResultEntryModal({
     if (!cid || exams.length === 0) return;
 
     const nowIso = new Date().toISOString();
+
+    // Mais recente vence: se o aparelho mandou valor novo com a tela aberta, não grava por cima
+    {
+      const examByRef = new Map(exams.map((e: any) => [examRefOf(e), e]));
+      const gravados: ValorGravado[] = [];
+      for (const refs of emPedacos(Array.from(examByRef.keys()))) {
+        const { data: atuais, error: atuaisErr } = await supabase
+          .from('lab_exam_results')
+          .select('exam_ref, lab_result_values(parameter_key, parameter_name, source, value, instrument_value)')
+          .eq('company_id', cid)
+          .in('exam_ref', refs);
+        if (atuaisErr) throw atuaisErr;
+        (atuais || []).forEach((r: any) => {
+          const exam: any = examByRef.get(String(r.exam_ref));
+          if (!exam) return;
+          (r.lab_result_values || []).forEach((v: any) => gravados.push({
+            // mesma chave da carga da tela (exam_ref = instância pedido:exame)
+            key: `${String(r.exam_ref)}_${String(v.parameter_key)}`,
+            nome: v.parameter_name || exam.name || String(v.parameter_key),
+            source: v.source ?? null,
+            value: v.value ?? null,
+            instrument_value: v.instrument_value ?? null,
+          }));
+        });
+      }
+      const mudados = mudadosPeloAparelho(rawInstrumentValues, gravados);
+      if (mudados.length) {
+        const erro = new AparelhoMudouError(mudados);
+        toast.error(erro.message, { duration: 10000 });
+        throw erro;
+      }
+    }
 
     for (const exam of exams) {
       await apoioGate(exam, status);

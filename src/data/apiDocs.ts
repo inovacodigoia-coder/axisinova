@@ -391,11 +391,12 @@ export const API_GROUPS: ApiGroup[] = [
 // O valor anterior fica no histórico do exame; reopened é sempre false (exame liberado nunca é reaberto pelo aparelho).
 { "success": true, "status": "overwritten", "previous_value": "7.09", "reopened": false, "result_id": "...", "parameter_result_id": "..." }
 
-// 200 o resultado enviado é mais antigo que o valor atual (pelo result_datetime) — nada foi alterado
+// 200 o resultado enviado é mais antigo que o valor atual (pelo result_datetime) — nada foi alterado.
+// Valor digitado ou alterado à mão vale pelo horário da alteração: só resultado do aparelho mais novo que ela o substitui.
 { "success": true, "status": "ignored_older", "message": "Resultado ignorado: o result_datetime enviado é mais antigo que o valor atual..." }
 
 // 200 evento repetido (mesma idempotency_key — não duplica nem sobrescreve)
-{ "success": true, "duplicate": true, "message": "Evento já processado anteriormente" }
+{ "success": true, "status": "ignored_older", "duplicate": true, "message": "Evento já processado anteriormente" }
 
 // 409 exame liberado (recusa definitiva: não repetir automaticamente; o LIS precisa desliberar e pedir reteste)
 { "success": false, "error": "exame_liberado", "message": "Exame já liberado; para aceitar novo resultado, desliberar o exame no sistema e pedir reteste." }

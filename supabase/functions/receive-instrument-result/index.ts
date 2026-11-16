@@ -1,7 +1,7 @@
 import { createClient } from 'npm:@supabase/supabase-js@2'
 import { corsHeaders } from 'npm:@supabase/supabase-js@2/cors'
 import { authenticateIntegration } from '../_shared/integrationAuth.ts'
-import { decideInstrumentResult } from '../_shared/resultOverwrite.ts'
+import { decideInstrumentResult, editadoAMao } from '../_shared/resultOverwrite.ts'
 import { escolherLaudo, parametrosParaCasar } from '../_shared/laudoEscolha.ts'
 
 const json = (body: unknown, status = 200) =>
@@ -156,7 +156,7 @@ Deno.serve(async (req) => {
     if (existingEvent.status === 'processed') {
       const msg = 'Reenvio ignorado: evento com esta idempotency_key já foi processado'
       await logRaw('duplicate', msg, baseFields, uniqueKey(idempotencyKey))
-      return ok({ duplicate: true, message: 'Evento já processado anteriormente', event_id: existingEvent.id })
+      return ok({ status: 'ignored_older', duplicate: true, message: 'Evento já processado anteriormente', event_id: existingEvent.id })
     }
     const msg =
       `Reenvio recusado: idempotency_key já recebida e com falha anterior (${existingEvent.error_message || 'erro anterior'}). ` +
@@ -479,7 +479,7 @@ Deno.serve(async (req) => {
   const { data: currentValue } = existingResult
     ? await supabase
         .from('lab_result_values')
-        .select('id, value, unit, source, instrument_code, flag, result_datetime, updated_at')
+        .select('id, value, unit, source, instrument_code, instrument_value, flag, result_datetime, updated_at')
         .eq('result_id', existingResult.id)
         .eq('parameter_key', matchedParamId)
         .maybeSingle()
@@ -492,6 +492,7 @@ Deno.serve(async (req) => {
       ? {
           value: currentValue.value,
           source: currentValue.source,
+          instrument_value: currentValue.instrument_value,
           result_datetime: currentValue.result_datetime,
           updated_at: currentValue.updated_at,
         }
@@ -508,7 +509,7 @@ Deno.serve(async (req) => {
   if (decision.kind === 'ignored_older') {
     const msg =
       `Resultado ignorado: o result_datetime enviado é mais antigo que o valor atual de "${matchedParamName}" ` +
-      `(origem: ${currentValue?.source === 'manual' ? 'digitado' : 'aparelho'})`
+      `(origem: ${editadoAMao(currentValue) ? 'digitado/alterado à mão' : 'aparelho'})`
     await logEvent('ignored', msg)
     return ok({ status: 'ignored_older', message: msg, protocol: order.protocol, exam: matchedExam.name, parameter: matchedParamName })
   }
@@ -578,7 +579,8 @@ Deno.serve(async (req) => {
       parameter_name: matchedParamName,
       value: currentValue.value,
       unit: currentValue.unit,
-      source: currentValue.source,
+      // Valor do aparelho corrigido à mão entra no histórico como digitado
+      source: editadoAMao(currentValue) && currentValue.source === 'instrument' ? 'manual' : currentValue.source,
       instrument_code: currentValue.instrument_code,
       flag: currentValue.flag,
       result_datetime: currentValue.result_datetime,

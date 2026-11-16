@@ -16,6 +16,8 @@ export type OverwriteDecision =
 export interface CurrentValueState {
   value: string | null
   source: string | null // 'instrument' | 'manual'
+  /** Último valor intacto do aparelho; diferente de value = técnico alterou à mão */
+  instrument_value?: string | null
   result_datetime: string | null
   updated_at: string | null
 }
@@ -24,6 +26,14 @@ const ts = (v: string | null | undefined): number => {
   if (!v) return 0
   const t = new Date(v).getTime()
   return isNaN(t) ? 0 : t
+}
+
+/** Valor digitado ou alterado à mão (inclusive por cima de um valor do aparelho). */
+export function editadoAMao(current: CurrentValueState | null): boolean {
+  if (!current) return false
+  if (current.source !== 'instrument') return true
+  const iv = current.instrument_value
+  return iv !== null && iv !== undefined && String(iv).trim() !== String(current.value ?? '').trim()
 }
 
 export function decideInstrumentResult(opts: {
@@ -43,7 +53,11 @@ export function decideInstrumentResult(opts: {
   if (!hasValue) return { kind: 'created', retest }
 
   const incomingTs = ts(opts.incomingResultDatetime) || (opts.now ?? new Date()).getTime()
-  const currentTs = ts(current!.result_datetime) || ts(current!.updated_at)
+  // Valor do aparelho intacto: vale o horário do aparelho. Alterado à mão: vale também
+  // o horário da alteração (updated_at), para um resultado antigo reenviado não apagar a correção.
+  const currentTs = editadoAMao(current)
+    ? Math.max(ts(current!.result_datetime), ts(current!.updated_at))
+    : ts(current!.result_datetime) || ts(current!.updated_at)
   if (currentTs && incomingTs < currentTs) return { kind: 'ignored_older' }
 
   return { kind: 'overwritten', retest }
