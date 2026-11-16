@@ -455,7 +455,7 @@ export const API_GROUPS: ApiGroup[] = [
         path: '/list-exams-for-integration',
         summary: 'Catálogo de exames (sincronização do middleware)',
         description:
-          'Lista os exames ativos da empresa da chave, para o middleware local puxar periodicamente (pull). Parâmetros do exame são retornados como itens filhos com parent_code. Apenas exames do Tipo "Laboratório" são devolvidos — exames do tipo "Clínica" nunca aparecem na resposta.',
+          'Lista os exames ativos da empresa da chave, para o middleware local puxar periodicamente (pull). Parâmetros do exame (e dos laudos ativos do exame) são retornados como itens filhos com parent_code; parâmetros OCULTOS também saem, com hidden = true (não aparecem no laudo, mas recebem valor do aparelho, ex.: WBCFlag), e result_type = "numeric" ou "text" (texto é gravado como veio). Cada exame traz laudos[] (code, name, order, is_active) e bench_laudos[] (bench, laudo_code — só para exibição). Apenas exames do Tipo "Laboratório" são devolvidos — exames do tipo "Clínica" nunca aparecem na resposta.',
         scope: 'company',
         auth: 'Authorization: Bearer <access_token> (OAuth2) ou X-API-Key (legado)',
         params: [
@@ -473,7 +473,20 @@ export const API_GROUPS: ApiGroup[] = [
       "sector": "Hematologia",
       "is_active": true,
       "parent_code": null,
-      "parameter_order": null
+      "parameter_order": null,
+      "laudos": [{ "code": "L001", "name": "Laudo Padrão", "order": 1, "is_active": true }],
+      "bench_laudos": [{ "bench": "Hematologia", "laudo_code": "L001" }]
+    },
+    {
+      "code": "WBCFlag",
+      "name": "Alerta WBC",
+      "material": "Sangue total",
+      "sector": "Hematologia",
+      "is_active": true,
+      "parent_code": "HEM",
+      "parameter_order": 24,
+      "hidden": true,
+      "result_type": "text"
     }
   ]
 }`,
