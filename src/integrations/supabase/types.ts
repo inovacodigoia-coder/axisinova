@@ -12439,6 +12439,10 @@ export type Database = {
         }
         Returns: string
       }
+      almox_liberar: {
+        Args: { _company: string; _habilitado: boolean }
+        Returns: boolean
+      }
       almox_material_configurar: {
         Args: { _custo: number; _fracao: boolean; _item: string }
         Returns: undefined
