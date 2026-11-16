@@ -174,8 +174,9 @@ Deno.serve(async (req) => {
 
     for (const r of results || []) {
       const released = String(r.status) === 'released'
-      // Reteste solicitado: o servidor do laboratório reabre o exame na fila do aparelho
-      const retest = r.retest_requested === true
+      // Reteste solicitado (só vale em exame NÃO liberado): o servidor reabre o exame na fila do aparelho.
+      // Liberado prevalece — dado antigo "liberado + reteste" sai como released.
+      const retest = r.retest_requested === true && !released
       const entry = {
         status: retest ? 'retest_requested' : released ? 'released' : String(r.status) === 'cancelled' ? 'pending' : 'resulted',
         released_at: released ? (r.released_at ? new Date(r.released_at).toISOString() : null) : null,

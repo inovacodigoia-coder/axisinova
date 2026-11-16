@@ -610,7 +610,7 @@ Deno.serve(async (req) => {
 
   return ok({
     status: decision.kind === 'overwritten' ? 'overwritten' : 'created',
-    ...(decision.kind === 'overwritten' ? { previous_value: currentValue?.value ?? null, retest: retestConsumed } : {}),
+    ...(decision.kind === 'overwritten' ? { previous_value: currentValue?.value ?? null, reopened: false } : {}),
     result_id: resultId!,
     parameter_result_id: parameterResultId,
     parameter_key: matchedParamId,
