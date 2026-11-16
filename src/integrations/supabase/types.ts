@@ -6685,6 +6685,65 @@ export type Database = {
           },
         ]
       }
+      lab_exam_desliberacao: {
+        Row: {
+          company_id: string
+          desliberado_em: string
+          desliberado_por: string
+          desliberado_por_nome: string | null
+          exam_name: string | null
+          exam_ref: string | null
+          id: string
+          liberado_em_antes: string | null
+          liberado_por_antes: string | null
+          motivo: string
+          order_id: string | null
+          protocol: string | null
+          result_id: string
+          valores: Json
+        }
+        Insert: {
+          company_id: string
+          desliberado_em?: string
+          desliberado_por: string
+          desliberado_por_nome?: string | null
+          exam_name?: string | null
+          exam_ref?: string | null
+          id?: string
+          liberado_em_antes?: string | null
+          liberado_por_antes?: string | null
+          motivo: string
+          order_id?: string | null
+          protocol?: string | null
+          result_id: string
+          valores?: Json
+        }
+        Update: {
+          company_id?: string
+          desliberado_em?: string
+          desliberado_por?: string
+          desliberado_por_nome?: string | null
+          exam_name?: string | null
+          exam_ref?: string | null
+          id?: string
+          liberado_em_antes?: string | null
+          liberado_por_antes?: string | null
+          motivo?: string
+          order_id?: string | null
+          protocol?: string | null
+          result_id?: string
+          valores?: Json
+        }
+        Relationships: [
+          {
+            foreignKeyName: "lab_exam_desliberacao_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       lab_exam_parameters: {
         Row: {
           allow_negative: boolean | null
@@ -14195,6 +14254,10 @@ export type Database = {
       lab_critico_marcar_notificado: {
         Args: { p_observacao?: string; p_value_id: string }
         Returns: string
+      }
+      lab_desliberar_exame: {
+        Args: { _motivo: string; _result_id: string }
+        Returns: undefined
       }
       lab_equipments_master_company: { Args: never; Returns: string }
       lab_materiais_seed: { Args: { _company: string }; Returns: undefined }
