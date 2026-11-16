@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
+import { mudadosPeloAparelho, AparelhoMudouError, type ValorGravado } from '@/lib/aparelhoMudouNaTela'
 import { AlertTriangle, BarChart3, CheckCircle2, Droplet, RefreshCcw, Save, ShieldCheck, ShieldOff } from 'lucide-react'
 import { toast } from 'sonner'
 
@@ -597,6 +598,35 @@ export default function LabHematologiaPage() {
     if (!selected) return
     const cid = resolveCompanyId(user?.companyId)
     if (!cid) throw new Error('Empresa não identificada')
+
+    // Mais recente vence: se o aparelho mandou valor novo com a tela aberta, não grava por cima
+    {
+      const { data: atual, error: atualErr } = await supabase
+        .from('lab_exam_results')
+        .select('lab_result_values(parameter_key, parameter_name, source, value, instrument_value)')
+        .eq('company_id', cid)
+        .eq('exam_ref', selected.id)
+        .maybeSingle()
+      if (atualErr) throw atualErr
+      const byId: Record<string, ResolvedParam> = {}
+      resolvedParams.forEach((param) => { byId[String(param.id)] = param })
+      const gravados: ValorGravado[] = ((atual as any)?.lab_result_values || []).map((v: any) => {
+        const param = byId[String(v.parameter_key)]
+        return {
+          key: param ? formKeyOfParam(param) : (mapParamToFormKey(String(v.parameter_name || '')) || `?${v.parameter_key}`),
+          nome: v.parameter_name || String(v.parameter_key),
+          source: v.source ?? null,
+          value: v.value ?? null,
+          instrument_value: v.instrument_value ?? null,
+        }
+      })
+      const mudados = mudadosPeloAparelho(rawInstrumentValues, gravados)
+      if (mudados.length) {
+        const erro = new AparelhoMudouError(mudados)
+        toast.error(erro.message, { duration: 10000 })
+        throw erro
+      }
+    }
 
     const nowIso = new Date().toISOString()
     const payload: any = {
