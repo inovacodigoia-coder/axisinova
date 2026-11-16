@@ -110,7 +110,7 @@ export function AvisoRetesteLiberadoDialog({
           <DialogDescription>{AVISO_RETESTE_LIBERADO}</DialogDescription>
         </DialogHeader>
         {!podeDesliberar && (
-          <p className="text-sm text-muted-foreground">Seu perfil não pode desliberar. Peça a quem libera exames.</p>
+          <p className="text-sm text-muted-foreground">Este exame não pode ser desliberado por aqui (seu perfil não libera exames, ou é exame de laboratório de apoio).</p>
         )}
         <DialogFooter>
           <Button variant="outline" onClick={() => onOpenChange(false)}>Fechar</Button>
