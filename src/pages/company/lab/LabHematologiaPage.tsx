@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
-import { AlertTriangle, BarChart3, CheckCircle2, Droplet, RefreshCcw, Save, ShieldCheck } from 'lucide-react'
+import { AlertTriangle, BarChart3, CheckCircle2, Droplet, RefreshCcw, Save, ShieldCheck, ShieldOff } from 'lucide-react'
 import { toast } from 'sonner'
 
 import { Badge } from '@/components/ui/badge'
@@ -16,6 +16,8 @@ import { buildExamParams, evaluateFormula, findCatalogExam, type ResolvedParam }
 import { supabase } from '@/integrations/supabase/client'
 import { differentialPercent, resolveDifferential, hematologyReady } from '@/utils/hematologyDifferential'
 import { InstrumentGraphicsSection } from '@/components/lab/analise/InstrumentGraphicsSection'
+import { DesliberarExameDialog } from '@/components/lab/analise/DesliberarExameDialog'
+import { bloqueioLiberar } from '@/lib/retesteLiberacao'
 
 
 type OrderStatus = string
@@ -272,6 +274,9 @@ export default function LabHematologiaPage() {
   const [flags, setFlags] = useState<string[]>([])
   const [catalogList, setCatalogList] = useState<any[]>([])
   const [examStatus, setExamStatus] = useState<string | null>(null)
+  const [resultId, setResultId] = useState<string | null>(null)
+  const [retestePendente, setRetestePendente] = useState(false)
+  const [desliberarAberto, setDesliberarAberto] = useState(false)
   const [rawInstrumentValues, setRawInstrumentValues] = useState<Record<string, string>>({})
   const [instrumentKeys, setInstrumentKeys] = useState<Set<string>>(new Set())
   const [saving, setSaving] = useState(false)
@@ -448,6 +453,8 @@ export default function LabHematologiaPage() {
     setObservacao('')
     setFlags([])
     setExamStatus(null)
+    setResultId(null)
+    setRetestePendente(false)
     setInstrumentKeys(new Set())
     setRawInstrumentValues({})
     if (!selected) return
@@ -457,7 +464,7 @@ export default function LabHematologiaPage() {
     ;(async () => {
       const { data: results } = await supabase
         .from('lab_exam_results')
-        .select('id, status, notes, lab_result_values(parameter_key, parameter_name, value, flag, source, instrument_value)')
+        .select('id, status, notes, retest_requested, lab_result_values(parameter_key, parameter_name, value, flag, source, instrument_value)')
         .eq('company_id', cid)
         .eq('exam_ref', selected.id)
       const match = (results || [])[0] as any
@@ -485,6 +492,8 @@ export default function LabHematologiaPage() {
       setRawInstrumentValues(raw)
       setObservacao(match.notes || '')
       setExamStatus(match.status || null)
+      setResultId(match.id ? String(match.id) : null)
+      setRetestePendente(match.retest_requested === true)
     })()
 
     return () => { cancelled = true }
@@ -607,6 +616,10 @@ export default function LabHematologiaPage() {
   const allFilled = hematologyReady(resolvedParams, pid => { const p = resolvedParams.find(p => p.id === pid); return p ? values[formKeyOfParam(p)] || '' : '' }) && !differential.blockRelease
 
   const runAction = async (status: 'draft' | 'digitized' | 'released', message: string) => {
+    if (status === 'released') {
+      const bloqueio = bloqueioLiberar({ liberado: false, retesteAparelho: retestePendente })
+      if (bloqueio) { toast.error(bloqueio); return }
+    }
     setSaving(true)
     try {
       await persistExam(status)
@@ -1032,7 +1045,16 @@ export default function LabHematologiaPage() {
                 <Save className="h-4 w-4" /> SALVAR PARCIAL
               </Button>
             )}
-            {canRelease && (
+            {canRelease && (examStatus === 'released' ? (
+              <Button
+                variant="outline"
+                className="gap-2 border-amber-500/40 text-amber-700 hover:bg-amber-50"
+                disabled={saving || !resultId}
+                onClick={() => setDesliberarAberto(true)}
+              >
+                <ShieldOff className="h-4 w-4" /> Desliberar
+              </Button>
+            ) : (
               <Button
                 variant="outline"
                 className="gap-2 border-emerald-500/30 text-emerald-600 hover:bg-emerald-50"
@@ -1041,7 +1063,7 @@ export default function LabHematologiaPage() {
               >
                 <ShieldCheck className="h-4 w-4" /> Liberar Digitados
               </Button>
-            )}
+            ))}
             {canType && (
               <Button
                 className="gradient-bg gap-2 text-primary-foreground"
@@ -1056,6 +1078,13 @@ export default function LabHematologiaPage() {
 
       </section>
       )}
+      <DesliberarExameDialog
+        open={desliberarAberto}
+        onOpenChange={setDesliberarAberto}
+        resultId={resultId}
+        examName={selected?.examName}
+        onDesliberado={async () => { setExamStatus('digitized'); await Promise.resolve(refresh()) }}
+      />
     </div>
   )
 }
