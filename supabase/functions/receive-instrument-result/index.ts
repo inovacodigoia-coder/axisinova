@@ -467,7 +467,7 @@ Deno.serve(async (req) => {
   })
 
   if (decision.kind === 'refused_released') {
-    const msg = `Exame "${matchedExam.name}" já foi liberado; solicite reteste para aceitar novo resultado.`
+    const msg = `Exame "${matchedExam.name}" já foi liberado; para aceitar novo resultado, desliberar o exame no sistema e pedir reteste.`
     await logEvent('ignored', msg)
     return json({ success: false, error: 'exame_liberado', message: msg }, 409)
   }
@@ -505,7 +505,8 @@ Deno.serve(async (req) => {
   }
 
   let resultId = existingResult?.id as string | undefined
-  const reopened = (decision.kind === 'overwritten' || decision.kind === 'created') && decision.reopened === true
+  // Reteste pedido no LIS (só em exame não liberado): este resultado consome o pedido
+  const retestConsumed = (decision.kind === 'overwritten' || decision.kind === 'created') && decision.retest === true
   const resultPayload: Record<string, unknown> = {
     company_id: companyId,
     order_id: order.id,
@@ -520,10 +521,8 @@ Deno.serve(async (req) => {
     typed_at: nowIso,
     laudo_id: laudoId,
   }
-  if (reopened) {
-    // Reteste: o exame volta a "não liberado" e o pedido de reteste é consumido
-    resultPayload.released_by = null
-    resultPayload.released_at = null
+  if (retestConsumed) {
+    // Reteste vale por UM resultado: a etiqueta some e o exame continua não liberado
     resultPayload.retest_requested = false
     resultPayload.retest_requested_by = null
     resultPayload.retest_requested_at = null
@@ -574,7 +573,7 @@ Deno.serve(async (req) => {
       instrument_code: currentValue.instrument_code,
       flag: currentValue.flag,
       result_datetime: currentValue.result_datetime,
-      reason: reopened ? 'reteste' : 'novo resultado do aparelho',
+      reason: retestConsumed ? 'reteste' : 'novo resultado do aparelho',
       replaced_by: 'instrument',
     })
     if (histError) console.error('[receive-instrument-result] falha ao guardar histórico', histError.message)
@@ -611,7 +610,7 @@ Deno.serve(async (req) => {
 
   return ok({
     status: decision.kind === 'overwritten' ? 'overwritten' : 'created',
-    ...(decision.kind === 'overwritten' ? { previous_value: currentValue?.value ?? null, reopened } : {}),
+    ...(decision.kind === 'overwritten' ? { previous_value: currentValue?.value ?? null, retest: retestConsumed } : {}),
     result_id: resultId!,
     parameter_result_id: parameterResultId,
     parameter_key: matchedParamId,
