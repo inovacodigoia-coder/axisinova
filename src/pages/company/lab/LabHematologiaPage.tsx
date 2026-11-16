@@ -1033,6 +1033,7 @@ export default function LabHematologiaPage() {
             {resolvedParams.filter((param) => (values[formKeyOfParam(param)] || '').trim() !== '').length} de {resolvedParams.length} campos preenchidos
             {examStatus === 'digitized' && ' · digitado'}
             {examStatus === 'released' && ' · liberado'}
+            {retestePendente && examStatus !== 'released' && ' · reteste pendente'}
           </p>
           <div className="flex flex-col gap-2 sm:flex-row">
             {canType && (

@@ -20,7 +20,7 @@ describe('decideInstrumentResult — regra de resultado novo do aparelho', () =>
       incomingResultDatetime: '2026-11-04T14:30:00Z',
       now: NOW,
     })
-    expect(d).toEqual({ kind: 'overwritten', reopened: false })
+    expect(d).toEqual({ kind: 'overwritten', retest: false })
   })
 
   it('1b. sem valor anterior → created', () => {
@@ -31,7 +31,7 @@ describe('decideInstrumentResult — regra de resultado novo do aparelho', () =>
       incomingResultDatetime: '2026-11-04T14:30:00Z',
       now: NOW,
     })
-    expect(d).toEqual({ kind: 'created' })
+    expect(d).toEqual({ kind: 'created', retest: false })
   })
 
   it('2. result_datetime mais antigo que o valor atual → ignored_older', () => {
@@ -64,7 +64,7 @@ describe('decideInstrumentResult — regra de resultado novo do aparelho', () =>
       incomingResultDatetime: '2026-11-04T14:50:00Z',
       now: NOW,
     })
-    expect(d).toEqual({ kind: 'overwritten', reopened: false })
+    expect(d).toEqual({ kind: 'overwritten', retest: false })
   })
 
   it('4. liberado sem reteste → recusa (exame_liberado)', () => {
@@ -78,7 +78,7 @@ describe('decideInstrumentResult — regra de resultado novo do aparelho', () =>
     expect(d).toEqual({ kind: 'refused_released' })
   })
 
-  it('5. liberado com reteste solicitado → sobrescreve e reabre', () => {
+  it('5. liberado com reteste antigo pendurado → recusa (laudo liberado não muda sozinho)', () => {
     const d = decideInstrumentResult({
       examStatus: 'released',
       retestRequested: true,
@@ -86,11 +86,22 @@ describe('decideInstrumentResult — regra de resultado novo do aparelho', () =>
       incomingResultDatetime: '2026-11-04T14:30:00Z',
       now: NOW,
     })
-    expect(d).toEqual({ kind: 'overwritten', reopened: true })
+    expect(d).toEqual({ kind: 'refused_released' })
+  })
+
+  it('5b. desliberado com reteste → grava, consome o reteste e continua não liberado', () => {
+    const d = decideInstrumentResult({
+      examStatus: 'digitized',
+      retestRequested: true,
+      current: instrumentValue(),
+      incomingResultDatetime: '2026-11-04T14:30:00Z',
+      now: NOW,
+    })
+    expect(d).toEqual({ kind: 'overwritten', retest: true })
   })
 
   it('6. depois do reteste, novo resultado sem novo pedido → regra de não liberado', () => {
-    // exame reaberto (digitized), reteste consumido
+    // exame desliberado (digitized), reteste consumido
     const d = decideInstrumentResult({
       examStatus: 'digitized',
       retestRequested: false,
@@ -98,7 +109,7 @@ describe('decideInstrumentResult — regra de resultado novo do aparelho', () =>
       incomingResultDatetime: '2026-11-04T14:40:00Z',
       now: NOW,
     })
-    expect(d).toEqual({ kind: 'overwritten', reopened: false })
+    expect(d).toEqual({ kind: 'overwritten', retest: false })
     // liberado de novo sem reteste → recusa
     const d2 = decideInstrumentResult({
       examStatus: 'released',
@@ -118,7 +129,7 @@ describe('decideInstrumentResult — regra de resultado novo do aparelho', () =>
       incomingResultDatetime: null,
       now: NOW,
     })
-    expect(d).toEqual({ kind: 'overwritten', reopened: false })
+    expect(d).toEqual({ kind: 'overwritten', retest: false })
   })
 
   it('valor atual vazio → created (não há o que sobrescrever)', () => {
@@ -129,7 +140,7 @@ describe('decideInstrumentResult — regra de resultado novo do aparelho', () =>
       incomingResultDatetime: '2026-11-04T14:30:00Z',
       now: NOW,
     })
-    expect(d).toEqual({ kind: 'created' })
+    expect(d).toEqual({ kind: 'created', retest: false })
   })
 
   it('liberado sem reteste + campo vazio → recusa (não desfaz a liberação)', () => {
@@ -139,8 +150,13 @@ describe('decideInstrumentResult — regra de resultado novo do aparelho', () =>
     expect(vazio).toEqual({ kind: 'refused_released' })
   })
 
-  it('liberado com reteste + campo vazio → grava e reabre', () => {
+  it('liberado com reteste + campo vazio → recusa', () => {
     const d = decideInstrumentResult({ examStatus: 'released', retestRequested: true, current: null, incomingResultDatetime: null, now: NOW })
-    expect(d).toEqual({ kind: 'created', reopened: true })
+    expect(d).toEqual({ kind: 'refused_released' })
+  })
+
+  it('não liberado com reteste + campo vazio → grava e consome o reteste', () => {
+    const d = decideInstrumentResult({ examStatus: 'digitized', retestRequested: true, current: null, incomingResultDatetime: null, now: NOW })
+    expect(d).toEqual({ kind: 'created', retest: true })
   })
 })
