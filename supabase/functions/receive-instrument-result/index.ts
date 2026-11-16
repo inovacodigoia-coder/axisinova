@@ -2,6 +2,7 @@ import { createClient } from 'npm:@supabase/supabase-js@2'
 import { corsHeaders } from 'npm:@supabase/supabase-js@2/cors'
 import { authenticateIntegration } from '../_shared/integrationAuth.ts'
 import { decideInstrumentResult } from '../_shared/resultOverwrite.ts'
+import { escolherLaudo, parametrosParaCasar } from '../_shared/laudoEscolha.ts'
 
 const json = (body: unknown, status = 200) =>
   new Response(JSON.stringify(body), {
@@ -339,6 +340,18 @@ Deno.serve(async (req) => {
         .in('id', catalogIds)
     : { data: [] as any[] }
 
+  // Laudos dos exames do pedido (com os parâmetros de cada laudo): o test_code também é
+  // procurado na configuração dos laudos, e o laudo de destino é escolhido mais abaixo.
+  const { data: laudoRows } = catalogIds.length
+    ? await supabase
+        .from('exam_laudos')
+        .select('id, exam_id, code, sort_order, is_active, parameters')
+        .eq('company_id', companyId)
+        .in('exam_id', catalogIds)
+    : { data: [] as any[] }
+  const laudosDoExame = (examId: string) =>
+    (laudoRows || []).filter((l: any) => String(l.exam_id) === String(examId))
+
   let matchedExam: any = null
   let matchedParamId: string | null = null
   let matchedParamName: string | null = null
@@ -346,7 +359,9 @@ Deno.serve(async (req) => {
 
   for (const exam of catalog || []) {
     if (!orderExamIds.has(String(exam.id))) continue
-    const params: any[] = Array.isArray(exam.parameters) ? exam.parameters : []
+    // `params` = exame + todos os laudos ativos (parâmetros ocultos inclusive);
+    // `principal` = configuração que vale, usada no código de nível do exame.
+    const { principal, todos: params } = parametrosParaCasar(exam.parameters, laudosDoExame(exam.id), laudoCode)
     const mapping: any[] = Array.isArray(exam.interfacing_parameters) ? exam.interfacing_parameters : []
 
     const mapped = mapping.find((m: any) => norm(m?.machineCode) === testCode)
@@ -375,7 +390,7 @@ Deno.serve(async (req) => {
       norm(exam.internal_code) === testCode ||
       norm(exam.tuss_code) === testCode
     ) {
-      const visibleParams = params.filter((x: any) => !x?.isHidden && !x?.is_hidden)
+      const visibleParams = principal.filter((x: any) => !x?.isHidden && !x?.is_hidden)
       // Um código no nível do exame só identifica o valor quando há um único
       // parâmetro. Em painéis, escolher o primeiro faria analitos distintos se
       // sobrescreverem sob a mesma parameter_key.
@@ -403,7 +418,7 @@ Deno.serve(async (req) => {
     if (hit) {
       matchedExam = (catalog || []).find((e: any) => String(e.id) === String(hit.exam_id)) || null
       if (matchedExam) {
-        const params: any[] = Array.isArray(matchedExam.parameters) ? matchedExam.parameters : []
+        const params = parametrosParaCasar(matchedExam.parameters, laudosDoExame(matchedExam.id), laudoCode).todos
         const pp = params.find((x: any) => norm(x?.name) === norm(hit.name))
         matchedParamId = pp ? String(pp.id) : String(hit.id)
         matchedParamName = pp?.name || hit.name
@@ -438,10 +453,28 @@ Deno.serve(async (req) => {
 
   const { data: existingResult } = await supabase
     .from('lab_exam_results')
-    .select('id, status, retest_requested')
+    .select('id, status, retest_requested, laudo_id')
     .eq('company_id', companyId)
     .eq('exam_ref', examRef)
     .maybeSingle()
+
+  // ---- Laudo de destino (Etapa 1): laudo_code inválido → 409; sem laudo_code nunca recusa ----
+  let bancadaLaudoId: string | null = null
+  const itemBancada = orderExam?.bancadaId ?? orderExam?.bancada_id ?? null
+  if (!laudoCode && !existingResult?.laudo_id && !orderExam?.laudoId && itemBancada) {
+    const { data: bl } = await supabase.rpc('bancada_laudo', { _exam: matchedExam.id, _bancada: itemBancada })
+    bancadaLaudoId = (bl as string | null) ?? null
+  }
+  const escolha = escolherLaudo({
+    laudoCode,
+    examName: matchedExam.name,
+    laudos: laudosDoExame(matchedExam.id),
+    resultadoLaudoId: existingResult?.laudo_id ?? null,
+    itemLaudoId: orderExam?.laudoId ?? orderExam?.laudo_id ?? null,
+    bancadaLaudoId,
+  })
+  if (!escolha.ok) return reject(escolha.erro, 409)
+  const laudoId = escolha.laudoId
 
   const { data: currentValue } = existingResult
     ? await supabase
@@ -478,30 +511,6 @@ Deno.serve(async (req) => {
       `(origem: ${currentValue?.source === 'manual' ? 'digitado' : 'aparelho'})`
     await logEvent('ignored', msg)
     return ok({ status: 'ignored_older', message: msg, protocol: order.protocol, exam: matchedExam.name, parameter: matchedParamName })
-  }
-
-  // ---- Laudo do exame: usa o indicado pelo equipamento ou o de Ordem 1 ----
-  const { data: examLaudos } = await supabase
-    .from('exam_laudos')
-    .select('id, code, is_active')
-    .eq('company_id', companyId)
-    .eq('exam_id', matchedExam.id)
-    .order('sort_order', { ascending: true })
-
-  let laudoId: string | null = null
-  if (laudoCode) {
-    const found = (examLaudos || []).find(
-      (l: any) => String(l.code).trim().toUpperCase() === laudoCode.toUpperCase() && l.is_active !== false,
-    )
-    if (!found) {
-      return reject(
-        `laudo_code="${laudoCode}" não existe (ou está inativo) no exame "${matchedExam.name}". ` +
-          `Laudos cadastrados: ${(examLaudos || []).map((l: any) => l.code).join(', ') || 'nenhum'}.`,
-      )
-    }
-    laudoId = found.id
-  } else {
-    laudoId = (examLaudos || []).find((l: any) => l.is_active !== false)?.id ?? null
   }
 
   let resultId = existingResult?.id as string | undefined
