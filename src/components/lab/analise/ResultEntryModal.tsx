@@ -2019,7 +2019,7 @@ export function ResultEntryModal({
                                       </Button>
                                     </DropdownMenuTrigger>
                                     <DropdownMenuContent align="start" className="w-52 z-[110]">
-                                      {canRelease && (isReleased ? (
+                                      {canRelease && (isReleased ? (!apoioDe(exam) &&
                                         <DropdownMenuItem
                                           onClick={(e) => { e.stopPropagation(); setDesliberar({ examId: exam.id, reteste: null }); }}
                                           className="text-xs font-bold uppercase text-amber-700 gap-2"
@@ -2045,7 +2045,7 @@ export function ResultEntryModal({
                                         <RefreshCw className="h-3.5 w-3.5" />
                                         {examActions[exam.id]?.type === 'reteste' ? "Remover Reteste" : "Solicitar Reteste"}
                                       </DropdownMenuItem>
-                                      {(isReleased || (!!resultIdByExam[exam.id] && examStatuses[exam.id] !== 'cancelled')) && (
+                                      {!apoioDe(exam) && (isReleased || (!!resultIdByExam[exam.id] && examStatuses[exam.id] !== 'cancelled')) && (
                                         <DropdownMenuItem
                                           onClick={(e) => { e.stopPropagation(); handleRetesteAparelhoClick(exam.id); }}
                                           disabled={retestSaving === exam.id}
@@ -2639,7 +2639,8 @@ export function ResultEntryModal({
       <AvisoRetesteLiberadoDialog
         open={!!avisoReteste}
         onOpenChange={(o) => { if (!o) setAvisoReteste(null); }}
-        podeDesliberar={canRelease}
+        // Exame de apoio tem fluxo próprio de liberação/retificação: não desliberar por aqui
+        podeDesliberar={canRelease && !(avisoReteste && apoioPorExame[avisoReteste.examId])}
         onDesliberarAgora={() => {
           const a = avisoReteste;
           setAvisoReteste(null);
