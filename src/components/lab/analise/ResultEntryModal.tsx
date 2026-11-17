@@ -4,6 +4,7 @@ import { mudadosPeloAparelho, AparelhoMudouError, type ValorGravado } from '@/li
 import { flagReference, resultFlag } from '@/lib/resultFlag';
 import { calculatedResultSource, calculatedResultValue, isManualCalculatedSource, shouldCalculateAutomatically } from '@/lib/calculatedResultOverride';
 import { defaultResultUpdates, onlyUntouchedDefaults } from '@/lib/parameterDefaultValue';
+import { mergeSavedResults } from '@/lib/savedResultsMerge';
 import { useState, useMemo, useEffect, useCallback, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { buildExamParams, catalogKey, findCatalogExam, evaluateFormula, normalizeText, resolveReference } from '@/utils/examParameters';
@@ -126,6 +127,8 @@ export function ResultEntryModal({
   const [defaultFilled, setDefaultFilled] = useState<Record<string, string>>({});
   const [savedResultRefs, setSavedResultRefs] = useState<Set<string> | null>(null);
   const prefilledKeys = useRef<Set<string>>(new Set());
+  // Campos alterados à mão nesta sessão: o recarregamento do banco não os substitui.
+  const userEditedKeys = useRef<Set<string>>(new Set());
   const [externalResultValues, setExternalResultValues] = useState<Record<string, string>>({});
   const [instrumentCodes, setInstrumentCodes] = useState<Record<string, string>>({});
   const [rawInstrumentValues, setRawInstrumentValues] = useState<Record<string, string>>({});
@@ -719,6 +722,9 @@ export function ResultEntryModal({
     if (error) console.error('Erro ao atualizar status do pedido:', error);
   };
 
+  // Nova abertura: o que está gravado volta a valer para todos os campos.
+  useEffect(() => { if (isOpen) userEditedKeys.current = new Set(); }, [isOpen]);
+
   // Carrega resultados já salvos ao abrir o modal
   useEffect(() => {
     if (!isOpen) return;
@@ -849,14 +855,10 @@ export function ResultEntryModal({
       setInstrumentCodes(nextInstrumentCodes);
       setInstrumentKeys(nextInstrumentKeys);
       setManualCalc(prev => ({ ...prev, ...nextManualCalc }));
-      setResults(prev => {
-        const next = { ...prev };
-        Object.entries(nextResults).forEach(([k, v]) => {
-          // Aparelho e edição CALC persistida prevalecem; os demais só preenchem campos vazios.
-          if (nextManualCalc[k] || nextInstrumentKeys.has(k) || !(next[k] || '').trim()) next[k] = v;
-        });
-        return next;
-      });
+      // Valor gravado sempre volta à tela; só a digitação desta sessão fica.
+      // Aparelho e edição CALC persistida prevalecem sobre tudo.
+      const priority = new Set<string>([...nextInstrumentKeys, ...Object.keys(nextManualCalc).filter(k => nextManualCalc[k])]);
+      setResults(prev => mergeSavedResults({ current: prev, saved: nextResults, userEdited: userEditedKeys.current, priority }));
       setLaudoByExam(prev => ({ ...nextLaudos, ...prev }));
       setNotes(prev => ({ ...nextNotes, ...prev }));
       setExamStatuses(prev => ({ ...nextStatuses, ...prev }));
@@ -946,29 +948,6 @@ export function ResultEntryModal({
       return next;
     });
   }, [isOpen, savedResultRefs, filteredExams, paramsByExam, examStatuses]);
-
-  // Pré-seleciona "Ausente" nos parâmetros de seleção que possuem essa opção (ex.: Sumário de Urina)
-  useEffect(() => {
-    if (!isOpen) return;
-    const defaults: Record<string, string> = {};
-    filteredExams.forEach((exam: any) => {
-      (paramsByExam[exam.id] || []).forEach((p: any) => {
-        if (p?.type !== 'selection') return;
-        const opts: string[] = p.options || [];
-        const ausente = opts.find(o => String(o).trim().toLowerCase() === 'ausente');
-        if (ausente) defaults[`${exam.id}_${p.id}`] = ausente;
-      });
-    });
-    if (Object.keys(defaults).length === 0) return;
-    setResults(prev => {
-      const next = { ...prev };
-      let changed = false;
-      Object.entries(defaults).forEach(([k, v]) => {
-        if (!next[k]) { next[k] = v; changed = true; }
-      });
-      return changed ? next : prev;
-    });
-  }, [isOpen, filteredExams, paramsByExam]);
 
   // Carrega resultados anteriores REAIS do paciente (outros protocolos)
   useEffect(() => {
@@ -2294,7 +2273,7 @@ export function ResultEntryModal({
                                       editable={!!param.editable}
                                       multiple={!!param.multiple}
                                       disabled={!isExamEditable(exam.id)}
-                                      onChange={(val) => setResults(prev => ({ ...prev, [paramKey]: val }))}
+                                      onChange={(val) => { userEditedKeys.current.add(paramKey); setResults(prev => ({ ...prev, [paramKey]: val })); }}
                                     />
                                     ) : (
                                     <Input 
@@ -2313,6 +2292,7 @@ export function ResultEntryModal({
                                       onChange={(e) => {
                                         if (calculatedLocked) return;
                                         if (calculatedField) setManualCalc(prev => ({ ...prev, [paramKey]: true }));
+                                        userEditedKeys.current.add(paramKey);
                                         setResults(prev => ({ ...prev, [paramKey]: e.target.value }));
                                       }}
                                     />
