@@ -1268,6 +1268,13 @@
       "when": 1794882923331,
       "tag": "0180_renumeracao_pedidos_repetidos",
       "breakpoints": true
+    },
+    {
+      "idx": 181,
+      "version": "7",
+      "when": 1794883215249,
+      "tag": "0181_soroteca_localizar_numero_anterior",
+      "breakpoints": true
     }
   ]
 }
