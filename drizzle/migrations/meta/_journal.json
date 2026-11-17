@@ -1261,6 +1261,13 @@
       "when": 1794881129549,
       "tag": "0179_numero_pedido_unico",
       "breakpoints": true
+    },
+    {
+      "idx": 180,
+      "version": "7",
+      "when": 1794882923331,
+      "tag": "0180_renumeracao_pedidos_repetidos",
+      "breakpoints": true
     }
   ]
 }

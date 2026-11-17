@@ -2635,6 +2635,47 @@ export type Database = {
           },
         ]
       }
+      attendance_order_renumeracao: {
+        Row: {
+          company_id: string
+          criado_em: string
+          criado_por: string | null
+          id: string
+          motivo: string
+          numero_anterior: string
+          numero_novo: string
+          order_id: string
+        }
+        Insert: {
+          company_id: string
+          criado_em?: string
+          criado_por?: string | null
+          id?: string
+          motivo: string
+          numero_anterior: string
+          numero_novo: string
+          order_id: string
+        }
+        Update: {
+          company_id?: string
+          criado_em?: string
+          criado_por?: string | null
+          id?: string
+          motivo?: string
+          numero_anterior?: string
+          numero_novo?: string
+          order_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "attendance_order_renumeracao_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "attendance_orders"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       attendance_orders: {
         Row: {
           attachments: Json | null
