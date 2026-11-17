@@ -36,3 +36,4 @@
 - Laudo print history: only laudo_impressao_* RPCs. Why: immutable trail.
 - Portal extra deadline: RPC setter; order trigger adds to new items. Why: no recalc.
 - Order renumbering only by inserting into immutable attendance_order_renumeracao (trigger carries linked rows). Why: keep the old-number trail.
+- Public company signup (/cadastro) creates a 'pending' company; access opens only via super-admin RPC empresa_aprovar_cadastro (list: empresa_cadastros_pendentes). handle_new_user trusts user_metadata company/role only when app_metadata.provisionado is set (create-user); otherwise the user can only become the inactive first admin of its own pending company. Why: public sign-up metadata is user-controlled.
