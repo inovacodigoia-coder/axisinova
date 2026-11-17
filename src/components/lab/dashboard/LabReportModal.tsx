@@ -20,6 +20,27 @@ import { useRegisters } from '@/context/RegistersContext'
 import { useLabSettings } from '@/hooks/useLabSettings'
 import { buildSimpleExamReport, simpleReportColumns } from '@/lib/labSimpleReport'
 import { LabSimpleReportDocument } from './LabSimpleReportDocument'
+import { LabCustomReportDocument } from './LabCustomReportDocument'
+import { buildCustomLines, exportRows, DEFAULT_FIELDS, type CustomFields, type CustomLayout, type CustomSort } from '@/lib/labCustomReport'
+
+const FIELD_DEFS: { key: keyof CustomFields; label: string }[] = [
+  { key: 'empresa', label: 'Dados da empresa (CNPJ, endereço, logo)' },
+  { key: 'exame', label: 'Exame (nome e sigla)' },
+  { key: 'codigo', label: 'Código do exame (TUSS/SIGTAP)' },
+  { key: 'bancada', label: 'Bancada' },
+  { key: 'pacientes', label: 'Pacientes que realizaram (nome, data, pedido)' },
+  { key: 'convenio', label: 'Convênio' },
+  { key: 'qtdExame', label: 'Quantidade por exame' },
+  { key: 'qtdBancada', label: 'Quantidade por bancada' },
+  { key: 'valor', label: 'Valor (R$)' },
+  { key: 'totais', label: 'Totais gerais' },
+]
+const LAYOUTS: { value: CustomLayout; label: string; hint: string }[] = [
+  { value: 'exame', label: 'Por exame com pacientes', hint: 'Cada exame com quantidade, bancada e valor, e a lista de pacientes abaixo.' },
+  { value: 'bancada', label: 'Por bancada', hint: 'Cada bancada com seu total e os exames dela.' },
+  { value: 'paciente', label: 'Por paciente', hint: 'Cada paciente com os exames que fez no período.' },
+  { value: 'tabela', label: 'Tabela corrida', hint: 'Uma linha por exame feito, ótima para Excel.' },
+]
 
 interface Props {
   open: boolean
@@ -62,7 +83,11 @@ export function LabReportModal({ open, onOpenChange }: Props) {
   const { orders } = useAttendanceCadastro()
   const { exams: catalog, workbenches } = useRegisters()
   const { settings } = useLabSettings()
-  const [reportMode, setReportMode] = useState<'custom' | 'simple'>('custom')
+  const [reportMode, setReportMode] = useState<'charts' | 'simple' | 'custom'>('charts')
+  const [fields, setFields] = useState<CustomFields>(DEFAULT_FIELDS)
+  const [layout, setLayout] = useState<CustomLayout>('exame')
+  const [sort, setSort] = useState<CustomSort>('data')
+  const [benchPatients, setBenchPatients] = useState(true)
   const [simpleWorkbench, setSimpleWorkbench] = useState('all')
   const [simpleConvenio, setSimpleConvenio] = useState('all')
   const [from, setFrom] = useState(() => iso(subDays(new Date(), 29)))
@@ -116,8 +141,13 @@ export function LabReportModal({ open, onOpenChange }: Props) {
   const convenioOptions = useMemo(() => [...new Set(orders.flatMap(order => ((order as any).labGuides || []).map((guide: any) => guide.convenioName || order.convenioName || 'Particular')))] as string[], [orders])
   const simpleProps = { brandName: settings?.lab_name || brandName, periodLabel, generatedAt: new Date().toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo' }), origin: origin === 'all' ? 'Todas' : origin, workbench: simpleWorkbench === 'all' ? 'Todas' : workbenches.find(w => w.id === simpleWorkbench)?.name || '', convenio: simpleConvenio === 'all' ? 'Todos' : simpleConvenio, rows: simpleRows }
 
+  const customLines = useMemo(() => buildCustomLines(orders as any, catalog as any, workbenches, { from, to, origin, workbench: simpleWorkbench, convenio: simpleConvenio }), [orders, catalog, workbenches, from, to, origin, simpleWorkbench, simpleConvenio])
+  const addr = [settings?.address_street, settings?.address_number, settings?.address_district, settings?.address_city && `${settings.address_city}${settings.address_state ? '/' + settings.address_state : ''}`].filter(Boolean).join(', ')
+  const customProps = { brandName: settings?.lab_name || brandName, company: { cnpj: settings?.cnpj || '', address: addr, logoUrl: settings?.report_logo_primary_url || logoUrl }, periodLabel, generatedAt: simpleProps.generatedAt, filters: `Origem: ${simpleProps.origin} · Bancada: ${simpleProps.workbench} · Convênio: ${simpleProps.convenio}`, layout, sort, benchPatients, fields, lines: customLines }
+  const docEl = reportMode === 'simple' ? <LabSimpleReportDocument {...simpleProps} /> : reportMode === 'custom' ? <LabCustomReportDocument {...customProps} /> : <LabReportDocument brandName={brandName} logoUrl={logoUrl} periodLabel={periodLabel} generatedAt={generatedAt} sections={sections} data={data} />
+
   const handlePrint = () => {
-    if (reportMode === 'custom' && !sections.length) return toast.error('Selecione ao menos um dado para o relatório.')
+    if (reportMode === 'charts' && !sections.length) return toast.error('Selecione ao menos um dado para o relatório.')
     setPrinting(true)
     document.body.classList.add('printing-lab-report')
     setTimeout(() => {
@@ -135,6 +165,11 @@ export function LabReportModal({ open, onOpenChange }: Props) {
       const sheet = XLSX.utils.json_to_sheet(rows)
       sheet['!cols'] = [{ wch: 12 }, { wch: 50 }, { wch: 20 }, { wch: 22 }, { wch: 15 }]
       XLSX.utils.book_append_sheet(wb, sheet, 'Resumo de Exames')
+      return wb
+    }
+    if (reportMode === 'custom') {
+      const sheet = XLSX.utils.json_to_sheet(exportRows(customLines, layout, fields, sort))
+      XLSX.utils.book_append_sheet(wb, sheet, 'Relatório Personalizado')
       return wb
     }
     const header = [
@@ -167,7 +202,7 @@ export function LabReportModal({ open, onOpenChange }: Props) {
   }
 
   const handleExport = (ext: 'xlsx' | 'xls' | 'csv') => {
-    if (reportMode === 'custom' && !sections.length) return toast.error('Selecione ao menos um dado para o relatório.')
+    if (reportMode === 'charts' && !sections.length) return toast.error('Selecione ao menos um dado para o relatório.')
     const wb = buildWorkbook()
     const name = `relatorio-lab-${brandName.replace(/\s+/g, '-').toLowerCase()}-${format(new Date(), 'yyyyMMdd-HHmm')}.${ext}`
     XLSX.writeFile(wb, name, { bookType: ext === 'xls' ? 'biff8' : ext })
@@ -189,7 +224,7 @@ export function LabReportModal({ open, onOpenChange }: Props) {
             <div className="border-r">
               <ScrollArea className="h-[70vh]">
                 <div className="p-4 space-y-5">
-                  <div className="space-y-2"><Label>Tipo de relatório</Label><Select value={reportMode} onValueChange={(value: 'custom' | 'simple') => setReportMode(value)}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent className="z-[100]"><SelectItem value="custom">Personalizado</SelectItem><SelectItem value="simple">Relatório simples</SelectItem></SelectContent></Select></div>
+                  <div className="space-y-2"><Label>Tipo de relatório</Label><Select value={reportMode} onValueChange={(value: 'charts' | 'simple' | 'custom') => setReportMode(value)}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent className="z-[100]"><SelectItem value="charts">Relatório com gráficos</SelectItem><SelectItem value="simple">Relatório simples</SelectItem><SelectItem value="custom">Relatório personalizado</SelectItem></SelectContent></Select></div>
                   <div className="space-y-2">
                     <Label className="text-xs font-semibold uppercase text-muted-foreground">Período</Label>
                     <div className="flex flex-wrap gap-1.5">
@@ -236,8 +271,15 @@ export function LabReportModal({ open, onOpenChange }: Props) {
                     <Label className="text-xs font-semibold uppercase text-muted-foreground">
                       Dados do relatório
                     </Label>
-                    {reportMode === 'simple' && <div className="space-y-3"><Label>Bancada</Label><Select value={simpleWorkbench} onValueChange={setSimpleWorkbench}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent className="z-[100]"><SelectItem value="all">Todas</SelectItem>{workbenches.map(w => <SelectItem key={w.id} value={w.id}>{w.name}</SelectItem>)}</SelectContent></Select><Label>Convênio</Label><Select value={simpleConvenio} onValueChange={setSimpleConvenio}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent className="z-[100]"><SelectItem value="all">Todos</SelectItem>{convenioOptions.map(name => <SelectItem key={name} value={name}>{name}</SelectItem>)}</SelectContent></Select></div>}
-                    {reportMode === 'custom' && SECTION_DEFS.map(s => (
+                    {reportMode !== 'charts' && <div className="space-y-3"><Label>Bancada</Label><Select value={simpleWorkbench} onValueChange={setSimpleWorkbench}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent className="z-[100]"><SelectItem value="all">Todas</SelectItem>{workbenches.map(w => <SelectItem key={w.id} value={w.id}>{w.name}</SelectItem>)}</SelectContent></Select><Label>Convênio</Label><Select value={simpleConvenio} onValueChange={setSimpleConvenio}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent className="z-[100]"><SelectItem value="all">Todos</SelectItem>{convenioOptions.map(name => <SelectItem key={name} value={name}>{name}</SelectItem>)}</SelectContent></Select></div>}
+                    {reportMode === 'custom' && <div className="space-y-4 pt-2">
+                      <div className="space-y-1.5"><Label className="text-xs font-semibold uppercase text-muted-foreground">1. O que sai no relatório</Label>{FIELD_DEFS.map(fd => <div key={fd.key} className="flex items-start gap-2"><Checkbox id={`fld-${fd.key}`} checked={fields[fd.key]} onCheckedChange={v => setFields(p => ({ ...p, [fd.key]: !!v }))} className="mt-0.5" /><label htmlFor={`fld-${fd.key}`} className="text-xs cursor-pointer">{fd.label}</label></div>)}</div>
+                      <div className="space-y-1.5"><Label className="text-xs font-semibold uppercase text-muted-foreground">2. Forma de exibição</Label>{LAYOUTS.map(l => <button key={l.value} type="button" onClick={() => setLayout(l.value)} className={`w-full rounded-lg border p-2 text-left ${layout === l.value ? 'border-primary bg-primary/10' : 'border-border'}`}><p className="text-xs font-medium">{l.label}</p><p className="text-[11px] text-muted-foreground">{l.hint}</p></button>)}
+                        {layout === 'tabela' && <Select value={sort} onValueChange={(v: CustomSort) => setSort(v)}><SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger><SelectContent className="z-[100]"><SelectItem value="data">Ordenar por data</SelectItem><SelectItem value="paciente">Ordenar por paciente</SelectItem><SelectItem value="exame">Ordenar por exame</SelectItem></SelectContent></Select>}
+                        {layout === 'bancada' && <div className="flex items-center gap-2"><Checkbox id="bench-pat" checked={benchPatients} onCheckedChange={v => setBenchPatients(!!v)} /><label htmlFor="bench-pat" className="text-xs">Mostrar pacientes de cada exame</label></div>}
+                      </div>
+                    </div>}
+                    {reportMode === 'charts' && SECTION_DEFS.map(s => (
                       <div key={s.key} className="rounded-lg border border-border p-2.5 space-y-2">
                         <div className="flex items-start gap-2">
                           <Checkbox
@@ -279,14 +321,7 @@ export function LabReportModal({ open, onOpenChange }: Props) {
                 ) : (
                   <div className="origin-top scale-[0.78] lg:scale-[0.85]">
                     <div className="shadow-lg">
-                      {reportMode === 'simple' ? <LabSimpleReportDocument {...simpleProps} /> : <LabReportDocument
-                        brandName={brandName}
-                        logoUrl={logoUrl}
-                        periodLabel={periodLabel}
-                        generatedAt={generatedAt}
-                        sections={sections}
-                        data={data}
-                      />}
+                      {docEl}
                     </div>
                   </div>
                 )}
@@ -315,14 +350,7 @@ export function LabReportModal({ open, onOpenChange }: Props) {
       {open &&
         createPortal(
           <div id="lab-report-print-root">
-            {reportMode === 'simple' ? <LabSimpleReportDocument {...simpleProps} /> : <LabReportDocument
-              brandName={brandName}
-              logoUrl={logoUrl}
-              periodLabel={periodLabel}
-              generatedAt={generatedAt}
-              sections={sections}
-              data={data}
-            />}
+            {docEl}
           </div>,
           document.body
         )}
