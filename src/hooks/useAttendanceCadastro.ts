@@ -6,6 +6,7 @@ import { useToast } from '@/hooks/use-toast'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { generateOrderHash } from '@/utils/orderHash'
 import { buscarEmBlocos } from '@/lib/buscarEmBlocos'
+import { numeroPedidoRepetido } from '@/lib/numeroPedido'
 
 /** Raiz do cache das listas de atendimentos; invalidar esta chave atualiza todas. */
 export const ATTENDANCE_ORDERS_KEY = 'attendance_orders'
