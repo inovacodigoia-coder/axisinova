@@ -198,17 +198,6 @@ export function useAttendanceOrderActions() {
       const originCode = data.originCode !== undefined ? data.originCode : '00'
       const originStr = String(originCode).replace(/\D/g, '').padStart(2, '0')
 
-      // Numeração atômica no banco (nunca gera duplicados, considera pedidos excluídos)
-      const { data: nextNumber, error: seqError } = await (supabase as any).rpc(
-        'next_attendance_order_number',
-        { _company_id: companyId, _origin_id: originId, _origin_code: originStr }
-      )
-      if (seqError) throw seqError
-
-      const protocol = String(nextNumber)
-      const hash = generateOrderHash(protocol, Date.now())
-
-
       // Calculate max delivery date from guides
       const calculatedDeliveryDate = (data.guides || data.labGuides)?.reduce((latest: string | null, guide: any) => {
         if (!guide.exams) return latest
@@ -227,61 +216,76 @@ export function useAttendanceOrderActions() {
       const convenioId = firstGuide?.convenioId || data.convenioId
       const convenioName = firstGuide?.convenioName || firstGuide?.name || firstGuide?.plan || data.convenioName || 'Particular'
 
-      const { data: newOrder, error } = await (supabase
-        .from('attendance_orders' as any) as any)
-        .insert({
-          company_id: companyId,
-          patient_id: data.patientId,
-          patient_name: data.patientName,
-          origin_id: data.originId || null,
-          origin_code: String(data.originCode !== undefined ? data.originCode : '00'),
-          origin_name: data.originName,
-          order_number: protocol,
-          protocol: protocol,
-          hash: hash,
-          service_type: data.serviceType,
-          payment_type: data.paymentType,
-          exam_mode: data.examMode,
-          doctor_id: data.doctorId || firstGuide?.doctorId || null,
-          doctor_name: data.doctorName || firstGuide?.doctorName || null,
-          doctor_crm: data.doctorCRM || firstGuide?.doctorCRM || firstGuide?.doctorCrm || null,
-          specialty: data.specialty,
-          requesting_doctor: data.requestingDoctor || firstGuide?.doctorName || null,
-          convenio_id: convenioId,
-          convenio_name: convenioName,
-          card_number: data.cardNumber || firstGuide?.number,
-          card_expiry: ensureIsoDate(data.cardExpiry),
-          authorization_code: data.authorizationCode,
-          authorization_date: ensureIsoDate(data.authorizationDate),
-          authorization_expiry: ensureIsoDate(data.authorizationExpiry),
-          authorization_password: data.authorizationPassword,
-          private_value: data.privateValue, 
-          delivery_date: ensureIsoDate(data.deliveryDate) || calculatedDeliveryDate,
-          lab_guides: data.guides || data.labGuides || [],
-          is_fasting: typeof data.isFasting === 'boolean' ? data.isFasting : null,
-          weight: data.weight || null,
-          height: data.height || null,
-          is_urgent: !!data.isUrgent,
-          has_fever: !!data.hasFever,
-          service_observation: data.serviceObservation || null,
-          fasting_start_hour: data.fastingStartHour || null,
-          fasting_type: data.fastingType || null,
-          hospital_id: data.hospitalId || null,
-          hospital_name: data.hospitalName || null,
-          hospital_sector_id: data.hospitalSectorId || null,
-          hospital_sector_name: data.hospitalSectorName || null,
-          bed: data.bed || null,
-          medical_record_number: data.medicalRecordNumber || null,
-          status: data.examMode === 'lab' 
-            ? ((data.guides || data.labGuides)?.some((g: any) => g.exams?.some((e: any) => e.collected)) ? 'waiting_collection' : 'open')
-            : ((data.guides || data.labGuides)?.some((g: any) => g.exams?.some((e: any) => e.collected)) ? 'collection_done' : 'open'),
-          registered_by: user.id,
-          registered_by_name: user.name,
-        })
-        .select()
-        .single()
+      // Número único na empresa: se outro atendimento pegou o mesmo número ao mesmo tempo, gera outro.
+      let newOrder: any = null
+      for (let tentativa = 1; ; tentativa++) {
+        // Numeração atômica no banco (nunca gera duplicados, considera pedidos excluídos)
+        const { data: nextNumber, error: seqError } = await (supabase as any).rpc(
+          'next_attendance_order_number',
+          { _company_id: companyId, _origin_id: originId, _origin_code: originStr }
+        )
+        if (seqError) throw seqError
 
-      if (error) throw error
+        const protocol = String(nextNumber)
+        const hash = generateOrderHash(protocol, Date.now())
+
+        const { data: inserted, error } = await (supabase
+          .from('attendance_orders' as any) as any)
+          .insert({
+            company_id: companyId,
+            patient_id: data.patientId,
+            patient_name: data.patientName,
+            origin_id: data.originId || null,
+            origin_code: String(data.originCode !== undefined ? data.originCode : '00'),
+            origin_name: data.originName,
+            order_number: protocol,
+            protocol: protocol,
+            hash: hash,
+            service_type: data.serviceType,
+            payment_type: data.paymentType,
+            exam_mode: data.examMode,
+            doctor_id: data.doctorId || firstGuide?.doctorId || null,
+            doctor_name: data.doctorName || firstGuide?.doctorName || null,
+            doctor_crm: data.doctorCRM || firstGuide?.doctorCRM || firstGuide?.doctorCrm || null,
+            specialty: data.specialty,
+            requesting_doctor: data.requestingDoctor || firstGuide?.doctorName || null,
+            convenio_id: convenioId,
+            convenio_name: convenioName,
+            card_number: data.cardNumber || firstGuide?.number,
+            card_expiry: ensureIsoDate(data.cardExpiry),
+            authorization_code: data.authorizationCode,
+            authorization_date: ensureIsoDate(data.authorizationDate),
+            authorization_expiry: ensureIsoDate(data.authorizationExpiry),
+            authorization_password: data.authorizationPassword,
+            private_value: data.privateValue, 
+            delivery_date: ensureIsoDate(data.deliveryDate) || calculatedDeliveryDate,
+            lab_guides: data.guides || data.labGuides || [],
+            is_fasting: typeof data.isFasting === 'boolean' ? data.isFasting : null,
+            weight: data.weight || null,
+            height: data.height || null,
+            is_urgent: !!data.isUrgent,
+            has_fever: !!data.hasFever,
+            service_observation: data.serviceObservation || null,
+            fasting_start_hour: data.fastingStartHour || null,
+            fasting_type: data.fastingType || null,
+            hospital_id: data.hospitalId || null,
+            hospital_name: data.hospitalName || null,
+            hospital_sector_id: data.hospitalSectorId || null,
+            hospital_sector_name: data.hospitalSectorName || null,
+            bed: data.bed || null,
+            medical_record_number: data.medicalRecordNumber || null,
+            status: data.examMode === 'lab' 
+              ? ((data.guides || data.labGuides)?.some((g: any) => g.exams?.some((e: any) => e.collected)) ? 'waiting_collection' : 'open')
+              : ((data.guides || data.labGuides)?.some((g: any) => g.exams?.some((e: any) => e.collected)) ? 'collection_done' : 'open'),
+            registered_by: user.id,
+            registered_by_name: user.name,
+          })
+          .select()
+          .single()
+        if (!error) { newOrder = inserted; break }
+        if (tentativa < 3 && numeroPedidoRepetido(error)) continue
+        throw error
+      }
 
       toast({
         title: "Sucesso",

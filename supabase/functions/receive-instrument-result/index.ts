@@ -274,14 +274,23 @@ Deno.serve(async (req) => {
   let order: any = null
   let cancelledMatch: any = null
 
+  // Mesmo código em mais de um pedido ativo (número repetido em origens diferentes, antes da
+  // correção da numeração): nunca escolher um paciente por palpite.
+  const ativosIds = new Set<string>()
   for (const o of lightOrders) {
     if (!matchesBarcode(o)) continue
     if (CANCELLED_STATUSES.includes(String(o.status))) {
       cancelledMatch = o
       continue
     }
-    order = o
-    break
+    ativosIds.add(String(o.id))
+    if (!order) order = o
+  }
+  if (ativosIds.size > 1) {
+    return reject(
+      `A amostra sample_barcode=${sampleBarcode} corresponde a ${ativosIds.size} pedidos com o mesmo número ` +
+      `(${order?.order_number || order?.protocol}). Resultado não gravado para não ir ao paciente errado — digite-o manualmente.`,
+    )
   }
 
   if (order) {
