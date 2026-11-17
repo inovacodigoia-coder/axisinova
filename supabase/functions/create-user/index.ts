@@ -76,6 +76,8 @@ Deno.serve(async (req) => {
       email,
       password,
       email_confirm: true,
+      // Marca de criação pelo sistema: só com ela o banco aceita empresa e função do user_metadata.
+      app_metadata: { provisionado: true },
       user_metadata: {
         full_name,
         cpf: cpf || null,
