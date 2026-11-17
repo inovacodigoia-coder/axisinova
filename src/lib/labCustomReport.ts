@@ -1,9 +1,9 @@
 // Relatório personalizado: mesmas regras de contagem do Relatório simples (pedidos reais, dia em São Paulo, sem cancelados).
 export type CustomLayout = 'exame' | 'bancada' | 'paciente' | 'tabela'
 export type CustomSort = 'data' | 'paciente' | 'exame'
-export interface CustomFields { empresa: boolean; exame: boolean; codigo: boolean; bancada: boolean; pacientes: boolean; convenio: boolean; qtdExame: boolean; qtdBancada: boolean; valor: boolean; totais: boolean }
-export const DEFAULT_FIELDS: CustomFields = { empresa: true, exame: true, codigo: true, bancada: true, pacientes: true, convenio: false, qtdExame: true, qtdBancada: true, valor: false, totais: true }
-export interface CustomLine { day: string; protocol: string; patient: string; patientKey: string; examKey: string; examName: string; abbreviation: string; tussCode: string; sigtapCode: string; workbenchId: string; workbench: string; convenio: string; value: number }
+export interface CustomFields { empresa: boolean; exame: boolean; codigo: boolean; bancada: boolean; pacientes: boolean; origem: boolean; convenio: boolean; qtdExame: boolean; qtdBancada: boolean; valor: boolean; totais: boolean }
+export const DEFAULT_FIELDS: CustomFields = { empresa: true, exame: true, codigo: true, bancada: true, pacientes: true, origem: true, convenio: false, qtdExame: true, qtdBancada: true, valor: false, totais: true }
+export interface CustomLine { day: string; protocol: string; origin: string; patient: string; patientKey: string; examKey: string; examName: string; abbreviation: string; tussCode: string; sigtapCode: string; workbenchId: string; workbench: string; convenio: string; value: number }
 interface ExamItem { examId?: string; id?: string; name?: string; examName?: string; code?: string; status?: string; price?: number | string; value?: number | string; valor?: number | string }
 interface CatalogItem { id: string; name: string; internalCode?: string; tussCode?: string; sigtapCode?: string; workbenchId?: string; price?: number }
 interface Order { status?: string; examMode?: string; originName?: string; registeredAt?: string; protocol?: string; orderNumber?: string | number; patientId?: string; patientName?: string; convenioName?: string; labGuides?: { exams?: ExamItem[]; convenioName?: string }[] }
@@ -27,7 +27,7 @@ export function buildCustomLines(orders: Order[], catalog: CatalogItem[], benche
         const cat = byId.get(it.examId || it.id || '') || byCode.get(norm(it.code)) || byName.get(norm(it.name || it.examName))
         if (f.workbench !== 'all' && cat?.workbenchId !== f.workbench) continue
         const wb = cat?.workbenchId || ''
-        out.push({ day, protocol: String(o.protocol || o.orderNumber || '-'), patient: o.patientName || '-', patientKey: o.patientId || norm(o.patientName), examKey: cat?.id || it.examId || it.id || `${norm(it.code)}:${norm(it.name || it.examName)}`, examName: cat?.name || it.name || it.examName || 'Exame', abbreviation: cat?.internalCode || it.code || '', tussCode: cat?.tussCode?.trim() || '', sigtapCode: cat?.sigtapCode?.trim() || '', workbenchId: wb, workbench: benchName.get(wb) || 'Sem bancada', convenio, value: num(it.price ?? it.value ?? it.valor) })
+        out.push({ day, protocol: String(o.protocol || o.orderNumber || '-'), origin: o.originName || 'MATRIZ', patient: o.patientName || '-', patientKey: o.patientId || norm(o.patientName), examKey: cat?.id || it.examId || it.id || `${norm(it.code)}:${norm(it.name || it.examName)}`, examName: cat?.name || it.name || it.examName || 'Exame', abbreviation: cat?.internalCode || it.code || '', tussCode: cat?.tussCode?.trim() || '', sigtapCode: cat?.sigtapCode?.trim() || '', workbenchId: wb, workbench: benchName.get(wb) || 'Sem bancada', convenio, value: num(it.price ?? it.value ?? it.valor) })
       }
     }
   }
@@ -63,7 +63,8 @@ export function exportRows(ls: CustomLine[], layout: CustomLayout, f: CustomFiel
     if (f.exame) { r.Sigla = l.abbreviation; r.Exame = l.examName }
     if (f.codigo) { r['Código TUSS'] = l.tussCode; r['Código SUS (SIGTAP)'] = l.sigtapCode }
     if (f.bancada && layout !== 'bancada') r.Bancada = l.workbench
-    if (f.pacientes) { r.Data = brDay(l.day); r.Pedido = l.protocol; if (layout !== 'paciente') r.Paciente = l.patient }
+    if (f.pacientes) { r.Data = brDay(l.day); r.Pedido = l.protocol; if (f.origem) r.Origem = l.origin; if (layout !== 'paciente') r.Paciente = l.patient }
+    else if (f.origem) r.Origem = l.origin
     if (f.convenio) r['Convênio'] = l.convenio
     if (f.valor) r['Valor (R$)'] = l.value
     return r

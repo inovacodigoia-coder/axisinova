@@ -11,7 +11,7 @@ function ExamHead({ g, f }: { g: Group; f: CustomFields }) {
 }
 function PatientList({ lines, f }: { lines: CustomLine[]; f: CustomFields }) {
   if (!f.pacientes) return null
-  return <table className="w-full text-[10px] mb-2"><tbody>{lines.map((l, i) => <tr key={i} className="border-b border-dotted border-current"><td className="py-0.5 pl-3 w-20">{brDay(l.day)}</td><td className="w-20">{l.protocol}</td><td>{l.patient}</td>{f.convenio && <td>{l.convenio}</td>}{f.valor && <td className="text-right">{brl(l.value)}</td>}</tr>)}</tbody></table>
+  return <table className="w-full text-[10px] mb-2"><tbody>{lines.map((l, i) => <tr key={i} className="border-b border-dotted border-current"><td className="py-0.5 pl-3 w-20">{brDay(l.day)}</td><td className="w-20">{l.protocol}</td>{f.origem && <td className="w-32">{l.origin}</td>}<td>{l.patient}</td>{f.convenio && <td>{l.convenio}</td>}{f.valor && <td className="text-right">{brl(l.value)}</td>}</tr>)}</tbody></table>
 }
 export function LabCustomReportDocument(p: CustomReportProps) {
   const { fields: f, lines } = p
@@ -32,11 +32,11 @@ export function LabCustomReportDocument(p: CustomReportProps) {
     </section>)}
     {p.layout === 'paciente' && groupByPatient(lines).map(g => <section key={g.key} className="mb-3 break-inside-avoid-page">
       <div className="flex justify-between border-b border-current py-1 font-semibold"><span>{f.pacientes ? g.title : 'Paciente'}</span><span className="flex gap-4"><span>Exames: {qtd(g.count)}</span>{f.valor && <span>{brl(g.value)}</span>}</span></div>
-      <table className="w-full text-[10px]"><tbody>{g.lines.map((l, i) => <tr key={i} className="border-b border-dotted border-current"><td className="py-0.5 pl-3 w-20">{brDay(l.day)}</td><td className="w-20">{l.protocol}</td><td>{f.exame && l.examName}{f.codigo && codigoDe(l) && ` (${codigoDe(l)})`}</td>{f.bancada && <td>{l.workbench}</td>}{f.convenio && <td>{l.convenio}</td>}{f.valor && <td className="text-right">{brl(l.value)}</td>}</tr>)}</tbody></table>
+      <table className="w-full text-[10px]"><tbody>{g.lines.map((l, i) => <tr key={i} className="border-b border-dotted border-current"><td className="py-0.5 pl-3 w-20">{brDay(l.day)}</td><td className="w-20">{l.protocol}</td>{f.origem && <td className="w-32">{l.origin}</td>}<td>{f.exame && l.examName}{f.codigo && codigoDe(l) && ` (${codigoDe(l)})`}</td>{f.bancada && <td>{l.workbench}</td>}{f.convenio && <td>{l.convenio}</td>}{f.valor && <td className="text-right">{brl(l.value)}</td>}</tr>)}</tbody></table>
     </section>)}
     {p.layout === 'tabela' && !!lines.length && <table className="w-full border-collapse text-[10px]">
-      <thead><tr className="border-y border-current text-left"><th className="py-1">Data</th><th>Pedido</th>{f.pacientes && <th>Paciente</th>}{f.exame && <th>Exame</th>}{f.codigo && <th>Código</th>}{f.bancada && <th>Bancada</th>}{f.convenio && <th>Convênio</th>}{f.valor && <th className="text-right">Valor</th>}</tr></thead>
-      <tbody>{sortLines(lines, p.sort).map((l, i) => <tr key={i} className="border-b border-current"><td className="py-0.5">{brDay(l.day)}</td><td>{l.protocol}</td>{f.pacientes && <td>{l.patient}</td>}{f.exame && <td>{l.examName}</td>}{f.codigo && <td>{codigoDe(l)}</td>}{f.bancada && <td>{l.workbench}</td>}{f.convenio && <td>{l.convenio}</td>}{f.valor && <td className="text-right">{brl(l.value)}</td>}</tr>)}</tbody>
+      <thead><tr className="border-y border-current text-left"><th className="py-1">Data</th><th>Pedido</th>{f.origem && <th>Origem</th>}{f.pacientes && <th>Paciente</th>}{f.exame && <th>Exame</th>}{f.codigo && <th>Código</th>}{f.bancada && <th>Bancada</th>}{f.convenio && <th>Convênio</th>}{f.valor && <th className="text-right">Valor</th>}</tr></thead>
+      <tbody>{sortLines(lines, p.sort).map((l, i) => <tr key={i} className="border-b border-current"><td className="py-0.5">{brDay(l.day)}</td><td>{l.protocol}</td>{f.origem && <td>{l.origin}</td>}{f.pacientes && <td>{l.patient}</td>}{f.exame && <td>{l.examName}</td>}{f.codigo && <td>{codigoDe(l)}</td>}{f.bancada && <td>{l.workbench}</td>}{f.convenio && <td>{l.convenio}</td>}{f.valor && <td className="text-right">{brl(l.value)}</td>}</tr>)}</tbody>
     </table>}
     {f.totais && !!lines.length && <p className="font-semibold text-right mt-3">Total: {qtd(lines.length)} exames · {qtd(patients)} pacientes{f.valor && ` · ${brl(total)}`}</p>}
   </div>

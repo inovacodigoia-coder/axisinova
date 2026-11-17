@@ -29,6 +29,7 @@ const FIELD_DEFS: { key: keyof CustomFields; label: string }[] = [
   { key: 'codigo', label: 'Código do exame (TUSS/SIGTAP)' },
   { key: 'bancada', label: 'Bancada' },
   { key: 'pacientes', label: 'Pacientes que realizaram (nome, data, pedido)' },
+  { key: 'origem', label: 'Origem / unidade onde foi atendido' },
   { key: 'convenio', label: 'Convênio' },
   { key: 'qtdExame', label: 'Quantidade por exame' },
   { key: 'qtdBancada', label: 'Quantidade por bancada' },
