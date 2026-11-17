@@ -228,9 +228,12 @@ export function ResultEntryModal({
       
       if (!matchesWorkbench) return;
 
-      const key = exam.protocol;
+      // Um cartão por pedido (dois pedidos antigos com o mesmo número nunca se misturam).
+      const key = exam.orderId || exam.protocol;
       if (!groups[key]) {
         groups[key] = {
+          grupo: key,
+          orderId: exam.orderId,
           protocol: exam.protocol,
           patientId: exam.patientId,
           patientName: exam.patientName,
@@ -1910,7 +1913,7 @@ export function ResultEntryModal({
                 </div>
               );
               return (
-                <div key={patient.protocol} className="bg-card rounded-2xl border border-border shadow-sm overflow-hidden animate-in slide-in-from-bottom-4 duration-300" style={{ animationDelay: `${vIdx * 50}ms` }}>
+                <div key={patient.grupo || patient.protocol} className="bg-card rounded-2xl border border-border shadow-sm overflow-hidden animate-in slide-in-from-bottom-4 duration-300" style={{ animationDelay: `${vIdx * 50}ms` }}>
                   {/* Cabeçalho do Paciente */}
                   <div 
                     className="bg-slate-800 text-white px-6 py-3 flex items-center justify-between cursor-pointer hover:bg-slate-700 transition-colors"
@@ -1980,7 +1983,7 @@ export function ResultEntryModal({
                 {/* Exames do Paciente */}
                 {isExpanded && (
                   <div className="p-6 space-y-6 border-t border-slate-100 animate-in slide-in-from-top-2 duration-200">
-                    <InstrumentGraphicsSection protocol={patient.protocol} />
+                    <InstrumentGraphicsSection protocol={patient.protocol} orderId={patient.orderId} />
                     {patient.exams.map((exam: any) => {
                       const hasResult = (apoioDe(exam)?.exige_pdf && apoioDe(exam)!.docs.some(d => d.tipo !== 'grafico')) || getParams(exam).some((p: any) => 
                         (results[`${exam.id}_${p.id}`] || '').trim() !== ''
