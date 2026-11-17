@@ -18,6 +18,7 @@ export const MSG_CONTA_INATIVA = 'Seu acesso está desativado. Fale com o admini
 export const MSG_SEM_ACESSO = 'Seu usuário ainda não tem acesso liberado. Fale com o administrador da sua clínica.'
 
 /** Tipo do erro mostrado na tela de login. */
+export const MSG_AGUARDANDO_APROVACAO = 'Seu cadastro foi recebido e está aguardando aprovação da equipe Axis Inova. Você poderá entrar assim que o acesso for liberado.'
 export type TipoErroLogin = 'credenciais' | 'servidor' | 'bloqueado' | 'sem_acesso'
 
 export type ResultadoChamada<T> =

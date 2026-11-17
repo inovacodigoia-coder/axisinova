@@ -2,6 +2,7 @@ import type { CompanyStatus } from '@/types/company.types'
 import { StatusBadge } from '@/components/ui/StatusBadge'
 
 const STATUS_CONFIG: Record<CompanyStatus, { label: string; variant: 'success' | 'info' | 'warning' | 'error' | 'neutral'; icon: string }> = {
+  pending: { label: 'Aguardando aprovação', variant: 'warning', icon: '⏳' },
   active: { label: 'Ativa', variant: 'success', icon: '●' },
   trial: { label: 'Trial', variant: 'info', icon: '◌' },
   overdue: { label: 'Inadimplente', variant: 'warning', icon: '⚠' },

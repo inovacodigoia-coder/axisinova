@@ -4,12 +4,12 @@ import { getRedirectByRole } from '@/mocks/users.mock'
 import { supabase } from '@/integrations/supabase/client'
 import { checkLockout, recordLoginAttempt, lockoutMessage, GENERIC_LOGIN_ERROR, withTimeout } from '@/services/authGuard'
 import {
-  LOGIN_PRAZO_MS, MSG_SERVIDOR_LENTO, MSG_CONTA_INATIVA, MSG_SEM_ACESSO,
+  LOGIN_PRAZO_MS, MSG_SERVIDOR_LENTO, MSG_CONTA_INATIVA, MSG_SEM_ACESSO, MSG_AGUARDANDO_APROVACAO,
   chamarComPrazo, falhaPassageiraAuth, falhaPassageiraConsulta, servidorOcupado, type TipoErroLogin,
 } from '@/lib/loginResiliente'
 
 /** Só o necessário para liberar o acesso: usuário, empresa e perfil, numa única consulta. */
-const PERFIL_LOGIN_COLUNAS = 'full_name, role, company_id, is_active, must_change_password, is_admin, empresa:companies!profiles_company_id_fkey(name, nome_fantasia)'
+const PERFIL_LOGIN_COLUNAS = 'full_name, role, company_id, is_active, must_change_password, is_admin, empresa:companies!profiles_company_id_fkey(name, nome_fantasia, status)'
 
 const TOKEN_KEY = 'axis_inova_token'
 const USER_KEY = 'axis_inova_user'
@@ -152,6 +152,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         if (!profile) {
           sairLocal()
           return { success: false, error: MSG_SEM_ACESSO, tipoErro: 'sem_acesso' }
+        }
+
+        // Cadastro gratuito ainda não aprovado pelo Super Admin.
+        if ((profile.empresa as { status?: string } | null)?.status === 'pending') {
+          sairLocal()
+          return { success: false, error: MSG_AGUARDANDO_APROVACAO, tipoErro: 'sem_acesso' }
         }
 
         if (!profile.is_active) {

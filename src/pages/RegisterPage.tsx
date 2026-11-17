@@ -126,7 +126,7 @@ export default function RegisterPage() {
     try {
       const vals = methods.getValues();
       await registerCompany(vals as any);
-      toast.success('Conta criada com sucesso!');
+      toast.success('Cadastro enviado! Aguarde a aprovação para acessar.');
       setCompleted(true);
     } catch (err: any) {
       toast.error(err.message || 'Erro ao criar conta. Tente novamente.');

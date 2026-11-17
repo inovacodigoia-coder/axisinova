@@ -3637,6 +3637,9 @@ export type Database = {
           bi_hospitalar_habilitado: boolean
           bi_hospitalar_habilitado_em: string | null
           bi_hospitalar_habilitado_por: string | null
+          cadastro_aprovado_em: string | null
+          cadastro_aprovado_por: string | null
+          cadastro_publico: boolean
           cep: string | null
           chat_interno_habilitado: boolean
           chat_interno_retencao_meses: number
@@ -3695,6 +3698,9 @@ export type Database = {
           bi_hospitalar_habilitado?: boolean
           bi_hospitalar_habilitado_em?: string | null
           bi_hospitalar_habilitado_por?: string | null
+          cadastro_aprovado_em?: string | null
+          cadastro_aprovado_por?: string | null
+          cadastro_publico?: boolean
           cep?: string | null
           chat_interno_habilitado?: boolean
           chat_interno_retencao_meses?: number
@@ -3753,6 +3759,9 @@ export type Database = {
           bi_hospitalar_habilitado?: boolean
           bi_hospitalar_habilitado_em?: string | null
           bi_hospitalar_habilitado_por?: string | null
+          cadastro_aprovado_em?: string | null
+          cadastro_aprovado_por?: string | null
+          cadastro_publico?: boolean
           cep?: string | null
           chat_interno_habilitado?: boolean
           chat_interno_retencao_meses?: number
@@ -13806,6 +13815,10 @@ export type Database = {
         Args: { _company_id: string; _d: string }
         Returns: boolean
       }
+      empresa_aprovar_cadastro: {
+        Args: { _company_id: string }
+        Returns: undefined
+      }
       empresa_cadastro_publico: {
         Args: {
           _bairro: string
@@ -13825,6 +13838,25 @@ export type Database = {
           _website: string
         }
         Returns: string
+      }
+      empresa_cadastros_pendentes: {
+        Args: never
+        Returns: {
+          admin_email: string
+          admin_email_confirmado: boolean
+          admin_nome: string
+          cidade: string
+          cnpj: string
+          company_id: string
+          criado_em: string
+          email: string
+          estado: string
+          nome_fantasia: string
+          plano: string
+          razao_social: string
+          segmento: string
+          telefone: string
+        }[]
       }
       exame_destino: {
         Args: { _bancada_id?: string; _exam_id: string }
