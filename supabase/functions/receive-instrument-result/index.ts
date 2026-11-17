@@ -3,6 +3,7 @@ import { corsHeaders } from 'npm:@supabase/supabase-js@2/cors'
 import { authenticateIntegration } from '../_shared/integrationAuth.ts'
 import { decideInstrumentResult, editadoAMao } from '../_shared/resultOverwrite.ts'
 import { escolherLaudo, parametrosParaCasar } from '../_shared/laudoEscolha.ts'
+import { outrosPedidosComMesmoNumero } from '../_shared/pedidoRepetido.ts'
 
 const json = (body: unknown, status = 200) =>
   new Response(JSON.stringify(body), {
@@ -285,6 +286,9 @@ Deno.serve(async (req) => {
     }
     ativosIds.add(String(o.id))
     if (!order) order = o
+  }
+  if (order && ativosIds.size === 1 && await outrosPedidosComMesmoNumero(supabase, companyId, order) > 0) {
+    ativosIds.add('outro')
   }
   if (ativosIds.size > 1) {
     return reject(
