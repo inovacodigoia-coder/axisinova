@@ -140,6 +140,25 @@ export function AttendanceLookupModal({ open, onClose, unitName, guicheName, onA
   const [partnerByOrderId, setPartnerByOrderId] = useState<Map<string, { id: string; name: string }>>(new Map())
   const companyId = user?.companyId
 
+  // Números antigos de pedidos que receberam número novo (correção de números repetidos):
+  // a busca pelo número/etiqueta antiga também mostra o pedido, com o aviso "antes".
+  const [anterioresPorPedido, setAnterioresPorPedido] = useState<Map<string, string[]>>(new Map())
+  useEffect(() => {
+    if (!open || !companyId) return
+    buscarEmBlocos<any>((de, ate) => (supabase as any)
+      .from('attendance_order_renumeracao')
+      .select('id, order_id, numero_anterior')
+      .eq('company_id', companyId)
+      .order('id')
+      .range(de, ate), { tela: 'Consulta de Atendimentos' })
+      .then(({ linhas }) => {
+        const m = new Map<string, string[]>()
+        ;(linhas || []).forEach((r: any) => m.set(r.order_id, [...(m.get(r.order_id) || []), r.numero_anterior]))
+        setAnterioresPorPedido(m)
+      })
+      .catch((e) => console.error('Erro ao carregar números anteriores:', e))
+  }, [open, companyId])
+
   useEffect(() => {
     if (!open || !companyId) return
     // Blocos de 1.000 até acabar: todo pedido de parceiro mantém o vínculo no filtro.
@@ -227,6 +246,7 @@ export function AttendanceLookupModal({ open, onClose, unitName, guicheName, onA
           p?.motherName,
           // Códigos e hashes alfanuméricos das etiquetas de amostra (ex.: N2RQ87134)
           ...sampleCodesAndHashesForOrder(o, companySequenceId),
+          ...(anterioresPorPedido.get(o.id) || []).flatMap(n => [n, ...sampleCodesAndHashesForOrder({ ...o, orderNumber: n }, companySequenceId)]),
         ].filter(Boolean).map(v => String(v))
         const haystack = values.map(v => normalize(v)).join(' ')
         const digitsHay = values.map(v => v.replace(/\D/g, '')).filter(Boolean).join(' ')
@@ -241,7 +261,7 @@ export function AttendanceLookupModal({ open, onClose, unitName, guicheName, onA
 
       return true
     }).sort((a, b) => b.registeredAt.localeCompare(a.registeredAt))
-  }, [orders, patientById, search, patientSearch, statusFilter, partnerFilter, partnerByOrderId, isAdmin, dateRange, companySequenceId])
+  }, [orders, patientById, search, patientSearch, statusFilter, partnerFilter, partnerByOrderId, isAdmin, dateRange, companySequenceId, anterioresPorPedido])
 
 
   useEffect(() => { setVisibleCount(pageSize) }, [pageSize, datePreset, customFrom, customTo, statusFilter, partnerFilter, search, patientSearch])
@@ -442,6 +462,7 @@ export function AttendanceLookupModal({ open, onClose, unitName, guicheName, onA
                   order={order}
                   patient={patientById.get(order.patientId)}
                   partnerName={partnerByOrderId.get(order.id)?.name}
+                  numerosAnteriores={anterioresPorPedido.get(order.id)}
 
                   onPrint={() => setPrintDoc(buildDoc(order, patientById.get(order.patientId), unitName, guicheName, settings))}
                   onEdit={() => setEditing(order)}
@@ -496,6 +517,7 @@ function OrderRowModern({
   order, 
   patient,
   partnerName,
+  numerosAnteriores,
   onPrint, 
   onEdit, 
   onDetails,
@@ -504,6 +526,7 @@ function OrderRowModern({
   order: AttendanceOrder; 
   patient?: Patient;
   partnerName?: string;
+  numerosAnteriores?: string[];
   onPrint: () => void; 
   onEdit: () => void; 
   onDetails: () => void;
@@ -523,6 +546,11 @@ function OrderRowModern({
       <div className="grid grid-cols-[120px_100px_1fr_100px_120px_120px_100px_140px] gap-4 px-6 py-3 items-center text-xs">
         <div className="font-mono text-primary font-bold hover:underline flex items-center gap-1.5" onClick={(e) => { e.stopPropagation(); onDetails(); }}>
           {order.orderNumber}
+          {!!numerosAnteriores?.length && (
+            <span title="Este pedido recebeu número novo porque o número anterior era igual ao de outro paciente. Reimprima as etiquetas." className="rounded bg-muted px-1 py-0.5 text-[10px] font-medium text-muted-foreground">
+              antes {numerosAnteriores.join(', ')}
+            </span>
+          )}
           {programada && (
             <span title={`Coleta programada para ${new Date(order.coletaProgramadaPara!).toLocaleDateString('pt-BR')}`} className="inline-flex items-center justify-center rounded-md bg-scheduled/10 text-scheduled p-1">
               <Clock className="h-3.5 w-3.5" />
