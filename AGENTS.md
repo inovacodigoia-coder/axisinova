@@ -35,3 +35,4 @@
 - Warehouse: company gates, sector overrides, guarded atomic RPCs; materials reuse BI consumption for frozen costs/negative reversals and shared patient UI, resolving live episodes server-side. Demo is in memory; test fixtures stay isolated. Why: tenant safety and no duplicate consumption.
 - Laudo print history: only laudo_impressao_* RPCs. Why: immutable trail.
 - Portal extra deadline: RPC setter; order trigger adds to new items. Why: no recalc.
+- Order number changes only by inserting into attendance_order_renumeracao (immutable; its trigger assigns the next free number of the same suffix and carries results/graphics/triage/cards, refusing orders with Soroteca or support-lab items); instrument intake refuses a barcode whose number belonged to a renumbered order that is not yet completed. Why: old tube labels read as the kept number, and the trail of old numbers must stay.
