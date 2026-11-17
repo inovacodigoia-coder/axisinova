@@ -2,7 +2,6 @@ import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import { useEffect } from 'react';
 import { GradientButton } from '@/components/ui/GradientButton';
-import { OutlineButton } from '@/components/ui/OutlineButton';
 
 interface SuccessScreenProps {
   companyName: string;
@@ -17,7 +16,7 @@ export function SuccessScreen({ companyName, cnpj, plan, email }: SuccessScreenP
   useEffect(() => {
     const timer = setTimeout(() => {
       navigate('/login');
-    }, 5000); // 5 seconds
+    }, 15000);
     return () => clearTimeout(timer);
   }, [navigate]);
 
@@ -58,9 +57,12 @@ export function SuccessScreen({ companyName, cnpj, plan, email }: SuccessScreenP
         </defs>
       </svg>
 
-      <h2 className="text-3xl font-bold text-foreground">Conta criada com sucesso! 🎉</h2>
+      <h2 className="text-3xl font-bold text-foreground">Cadastro enviado!</h2>
       <p className="mt-3 text-base text-muted-foreground max-w-md">
-        Enviamos um e-mail de ativação para <strong className="text-foreground">{email}</strong>. Verifique sua caixa de entrada.
+        Seu cadastro está <strong className="text-foreground">aguardando aprovação</strong> da equipe Axis Inova. Assim que for aprovado, você poderá entrar com o e-mail <strong className="text-foreground">{email}</strong>.
+      </p>
+      <p className="mt-2 text-sm text-muted-foreground max-w-md">
+        Se receber um e-mail de confirmação, confirme seu endereço enquanto aguarda.
       </p>
 
       <div className="mt-8 w-full max-w-sm rounded-2xl bg-muted p-6 text-left">
@@ -82,8 +84,7 @@ export function SuccessScreen({ companyName, cnpj, plan, email }: SuccessScreenP
       </div>
 
       <div className="mt-8 flex flex-col sm:flex-row gap-3 w-full max-w-sm">
-        <GradientButton fullWidth onClick={() => navigate('/login')}>Acessar o Sistema</GradientButton>
-        <OutlineButton fullWidth variant="purple">Reenviar E-mail</OutlineButton>
+        <GradientButton fullWidth onClick={() => navigate('/login')}>Voltar para o login</GradientButton>
       </div>
     </motion.div>
   );

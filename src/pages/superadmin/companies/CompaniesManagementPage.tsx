@@ -8,12 +8,15 @@ import { CompanyStatusBadge } from '@/components/superadmin/CompanyStatusBadge'
 import { StatusBadge } from '@/components/ui/StatusBadge'
 import { SearchInput } from '@/components/ui/SearchInput'
 import CompaniesTablePage from './CompaniesTablePage'
+import { CadastrosPendentesPanel } from '@/components/superadmin/CadastrosPendentesPanel'
 
 export default function CompaniesManagementPage() {
   const [viewMode, setViewMode] = useState<'table' | 'grid'>('table')
   const [dbCompanies, setDbCompanies] = useState<Company[]>([])
   const [loading, setLoading] = useState(true)
   const [search, setSearch] = useState('')
+  const [refreshKey, setRefreshKey] = useState(0)
+  const aoAprovar = () => { setRefreshKey(k => k + 1); void fetchCompanies() }
 
   useEffect(() => {
     fetchCompanies()
@@ -96,7 +99,8 @@ export default function CompaniesManagementPage() {
           </div>
         </div>
         
-        <CompaniesTablePage />
+        <CadastrosPendentesPanel key={`p${refreshKey}`} onAprovado={aoAprovar} />
+        <CompaniesTablePage refreshKey={refreshKey} />
       </div>
     )
   }
@@ -126,6 +130,8 @@ export default function CompaniesManagementPage() {
           </button>
         </div>
       </div>
+
+      <CadastrosPendentesPanel onAprovado={aoAprovar} />
 
       <div className="flex items-center gap-4">
         <div className="relative flex-1 max-w-sm">

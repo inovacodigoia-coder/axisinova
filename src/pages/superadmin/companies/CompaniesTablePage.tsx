@@ -56,7 +56,7 @@ function ActionsDropdown({ company, onDelete, onView }: { company: Company; onDe
   )
 }
 
-export default function CompaniesListPage() {
+export default function CompaniesListPage({ refreshKey = 0 }: { refreshKey?: number }) {
   const navigate = useNavigate()
   const [search, setSearch] = useState('')
   const [statusFilter, setStatusFilter] = useState<string>('all')
@@ -68,7 +68,7 @@ export default function CompaniesListPage() {
   // Fetch real companies from database
   useEffect(() => {
     fetchCompanies()
-  }, [])
+  }, [refreshKey])
 
   async function fetchCompanies() {
     const { data, error } = await supabase.from('companies').select('*').neq('status', 'deleted').order('sequence_id', { ascending: true })
@@ -279,6 +279,7 @@ export default function CompaniesListPage() {
         <SearchInput value={search} onChange={setSearch} placeholder="Buscar nome, CNPJ ou e-mail..." className="w-72" />
         <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)} className="h-10 rounded-lg border border-input bg-background px-3 text-sm">
           <option value="all">Todos os status</option>
+          <option value="pending">Aguardando aprovação</option>
           <option value="active">Ativa</option>
           <option value="trial">Trial</option>
           <option value="overdue">Inadimplente</option>
