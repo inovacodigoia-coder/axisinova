@@ -91,7 +91,7 @@ export default function LabReportsPage() {
       try {
         data = (await buscarEmBlocos<any>((de, ate) => supabase
           .from('lab_exam_results')
-          .select('id, protocol, exam_ref, status')
+          .select('id, protocol, order_id, exam_ref, status')
           .eq('company_id', companyId)
           .order('id')
           .range(de, ate), { tela: 'Laudos' })).linhas;
@@ -103,14 +103,16 @@ export default function LabReportsPage() {
       const map: Record<string, { released: number; total: number }> = {};
       const seen = new Set<string>();
       (data || []).forEach((r: any) => {
-        if (!r.protocol) return;
-        const key = `${r.protocol}:${r.exam_ref}`;
+        if (!r.protocol && !r.order_id) return;
+        // Conta pelo pedido; resultados antigos sem pedido ficam pelo número.
+        const dono = r.order_id ? `o:${r.order_id}` : `p:${r.protocol}`;
+        const key = `${dono}:${r.exam_ref}`;
         if (seen.has(key)) return;
         seen.add(key);
-        const entry = map[r.protocol] || { released: 0, total: 0 };
+        const entry = map[dono] || { released: 0, total: 0 };
         entry.total += 1;
         if (r.status === 'released' || r.status === 'liberado') entry.released += 1;
-        map[r.protocol] = entry;
+        map[dono] = entry;
       });
       setResultsByProtocol(map);
     })();
@@ -125,7 +127,11 @@ export default function LabReportsPage() {
         const labOrder = order as unknown as LabAttendanceOrder;
         const exams = labOrder.labGuides?.flatMap(g => g.exams || []) || [];
         const protocolKey = order.protocol || order.orderNumber;
-        const persisted = resultsByProtocol[protocolKey];
+        const porPedido = resultsByProtocol[`o:${order.id}`];
+        const porNumero = resultsByProtocol[`p:${protocolKey}`];
+        const persisted = porPedido || porNumero
+          ? { total: (porPedido?.total || 0) + (porNumero?.total || 0), released: (porPedido?.released || 0) + (porNumero?.released || 0) }
+          : undefined;
         const totalExams = Math.max(exams.length, persisted?.total || 0);
         const releasedFromGuides = exams.filter(e => e.status === 'released' || e.status === 'liberado').length;
         const releasedExams = Math.max(releasedFromGuides, persisted?.released || 0);

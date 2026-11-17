@@ -311,8 +311,10 @@ export default function LabAnalisePage() {
   const groupedExams = useMemo(() => {
     const groups: Record<string, any> = {};
     filteredExams.forEach(exam => {
-      if (!groups[exam.protocol]) {
-        groups[exam.protocol] = {
+      // Um grupo por pedido (dois pedidos antigos com o mesmo número nunca se misturam).
+      const chave = exam.orderId || exam.protocol;
+      if (!groups[chave]) {
+        groups[chave] = {
           id: exam.orderId,
           protocol: exam.protocol,
           patientName: exam.patientName,
@@ -320,7 +322,7 @@ export default function LabAnalisePage() {
           exams: []
         };
       }
-      groups[exam.protocol].exams.push(exam);
+      groups[chave].exams.push(exam);
     });
     return Object.values(groups);
   }, [filteredExams]);
@@ -685,7 +687,7 @@ export default function LabAnalisePage() {
                             groupedExams.map((group) => {
                               const isExpanded = !!expandedGroups[group.protocol];
                               return (
-                                <div key={group.protocol} className="space-y-1.5">
+                                <div key={group.id || group.protocol} className="space-y-1.5">
                                   <div className="flex items-center justify-between px-1">
                                     <div className="flex items-center gap-2 min-w-0">
                                       <Button 

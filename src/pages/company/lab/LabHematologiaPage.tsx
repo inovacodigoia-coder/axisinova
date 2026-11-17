@@ -1039,7 +1039,7 @@ export default function LabHematologiaPage() {
 
           <div className="space-y-3 bg-card p-3 xl:col-span-4">
             <SectionTitle>Gráficos</SectionTitle>
-            <InstrumentGraphicsSection protocol={selected.protocol} />
+            <InstrumentGraphicsSection protocol={selected.protocol} orderId={selected.orderId} />
             <Tabs defaultValue="histograma">
               <TabsList className="h-8 w-full">
                 <TabsTrigger value="histograma" className="h-7 flex-1 text-xs">Histograma</TabsTrigger>

@@ -1,6 +1,7 @@
 import { createClient } from 'npm:@supabase/supabase-js@2'
 import { corsHeaders } from 'npm:@supabase/supabase-js@2/cors'
 import { authenticateIntegration } from '../_shared/integrationAuth.ts'
+import { outrosPedidosComMesmoNumero } from '../_shared/pedidoRepetido.ts'
 
 const json = (body: unknown, status = 200) =>
   new Response(JSON.stringify(body), {
@@ -269,6 +270,12 @@ Deno.serve(async (req) => {
   }
   if (!order) {
     return reject(`Nenhum pedido encontrado com sample_barcode=${sampleBarcode}`)
+  }
+  if (await outrosPedidosComMesmoNumero(supabase, companyId, order) > 0) {
+    return reject(
+      `A amostra sample_barcode=${sampleBarcode} corresponde a mais de um pedido com o mesmo número ` +
+      `(${order.order_number || order.protocol}). Gráfico não gravado para não ir ao paciente errado.`,
+    )
   }
   logCtx.protocol = order.order_number || order.protocol || null
   logCtx.orderId = order.id

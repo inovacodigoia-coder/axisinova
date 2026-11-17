@@ -45,7 +45,7 @@ export function MudarOrigemDialog({ open, onOpenChange, orderId, companyId, curr
         <DialogHeader>
           <DialogTitle>Mudar origem do atendimento</DialogTitle>
           <DialogDescription>
-            Origem atual: <b>{currentOriginName || '—'}</b>. Após a mudança, o paciente aparece nos Portais Externos da nova origem.
+            Origem atual: <b>{currentOriginName || '—'}</b>. O número do pedido continua o mesmo; após a mudança, o paciente aparece nos Portais Externos da nova origem.
           </DialogDescription>
         </DialogHeader>
         <Select value={destino} onValueChange={setDestino}>
