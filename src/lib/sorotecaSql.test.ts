@@ -68,6 +68,7 @@ beforeEach(async () => {
     CREATE TABLE patients(id uuid PRIMARY KEY, name text, cpf text, birth_date date);
     CREATE TABLE attendance_orders(id uuid PRIMARY KEY DEFAULT gen_random_uuid(), company_id uuid, order_number text, protocol text,
       empresa_seq int, patient_id uuid, patient_name text, is_urgent boolean, status text, lab_guides jsonb, created_at timestamptz DEFAULT now());
+    CREATE TABLE attendance_order_renumeracao(id uuid PRIMARY KEY DEFAULT gen_random_uuid(), company_id uuid, order_id uuid, numero_anterior text, numero_novo text);
     CREATE TABLE lab_exam_results(id uuid PRIMARY KEY DEFAULT gen_random_uuid(), company_id uuid, order_id uuid, exam_ref text, exam_name text,
       status text, released_at timestamptz, released_by uuid, UNIQUE(company_id, exam_ref));
     CREATE TABLE lab_workbenches(id uuid PRIMARY KEY, company_id uuid, name text, is_active boolean DEFAULT true, tipo text);
@@ -106,6 +107,18 @@ describe('Soroteca — código do tubo', () => {
     expect(r.modo).toBe('tubo')
     expect(r.pedidos[0].order_id).toBe(o)
     expect(r.pedidos[0].tubo_indice).toBe(2)
+  })
+
+  it('etiqueta antiga de pedido que recebeu número novo mostra os dois pacientes', async () => {
+    const fica = await pedido('3-01', [exame('e1', BIO)])
+    const trocado = await pedido('5-01', [exame('e1', BIO)])
+    await db.query(`INSERT INTO attendance_order_renumeracao(company_id, order_id, numero_anterior, numero_novo) VALUES($1, $2, '3-01', '5-01')`, [C, trocado])
+    await como(VER)
+    const r = (await uma(`SELECT soroteca_localizar($1) r`, [generateSampleHash('3-01-1-15')])).r
+    expect(r.modo).toBe('tubo')
+    expect(r.pedidos.map((p: any) => p.order_id).sort()).toEqual([fica, trocado].sort())
+    const novo = (await uma(`SELECT soroteca_localizar($1) r`, [generateSampleHash('5-01-1-15')])).r
+    expect(novo.pedidos.map((p: any) => p.order_id)).toEqual([trocado])
   })
 })
 
