@@ -3,7 +3,7 @@ import { corsHeaders } from 'npm:@supabase/supabase-js@2/cors'
 import { authenticateIntegration } from '../_shared/integrationAuth.ts'
 import { decideInstrumentResult, editadoAMao } from '../_shared/resultOverwrite.ts'
 import { escolherLaudo, parametrosParaCasar } from '../_shared/laudoEscolha.ts'
-import { outrosPedidosComMesmoNumero } from '../_shared/pedidoRepetido.ts'
+import { numeroTrocadoPendente, outrosPedidosComMesmoNumero } from '../_shared/pedidoRepetido.ts'
 
 const json = (body: unknown, status = 200) =>
   new Response(JSON.stringify(body), {
@@ -298,6 +298,13 @@ Deno.serve(async (req) => {
   }
 
   if (order) {
+    const trocado = await numeroTrocadoPendente(supabase, companyId, order)
+    if (trocado) {
+      return reject(
+        `O número ${order.order_number || order.protocol} também foi usado por outro paciente, que agora é o pedido ${trocado}. ` +
+        `A etiqueta deste tubo pode ser de qualquer um dos dois — resultado não gravado. Confira o paciente, reimprima a etiqueta e digite manualmente.`,
+      )
+    }
     // Carrega os dados completos só do pedido encontrado
     const { data: full } = await supabase
       .from('attendance_orders')

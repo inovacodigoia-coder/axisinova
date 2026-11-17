@@ -148,6 +148,10 @@ export default function LabSorotecaEntradaPage() {
       setErro({ texto: 'Código não reconhecido: não é uma estante nem uma amostra.' })
       return
     }
+    if (r.modo === 'tubo' && r.pedidos.length > 1) {
+      setErro({ texto: `Essa etiqueta é de mais de um paciente (${r.pedidos.map(x => `${x.protocolo} ${x.patient_name ?? ''}`.trim()).join(' / ')}). Confira o tubo e reimprima a etiqueta antes de guardar.` })
+      return
+    }
     if (!p || !t) {
       setErro({ texto: r.modo === 'pedido' ? 'Esse é o número do pedido: bipe a etiqueta do tubo.' : `Amostra não encontrada (${codigo}).` })
       return
