@@ -621,12 +621,12 @@ export const API_GROUPS: ApiGroup[] = [
         path: '/partner-orders',
         summary: 'Enviar pedido de atendimento (paciente + exames)',
         description:
-          'Endpoint principal da integração de parceiros. Valida CPF e códigos de exame e registra o pedido na fila "Pedidos Recebidos" do parceiro. O paciente NÃO é cadastrado e o atendimento NÃO é criado automaticamente: isso ocorre apenas quando a equipe do laboratório seleciona o pedido e confirma a criação, respeitando a origem selecionada e a numeração sequencial de pedidos. Se qualquer código de exame não for reconhecido, o pedido inteiro é rejeitado. O parceiro precisa estar com "Autorizado a criar pedidos via API" ativo.',
+          'Endpoint principal da integração de parceiros. Valida CPF e códigos de exame e registra o pedido na fila "Pedidos Recebidos" do parceiro. O paciente NÃO é cadastrado e o atendimento NÃO é criado automaticamente: isso ocorre apenas quando a equipe do laboratório seleciona o pedido e confirma a criação, respeitando a origem selecionada e a numeração sequencial de pedidos. Se qualquer código de exame não for reconhecido, o pedido inteiro é rejeitado. O parceiro precisa estar com "Autorizado a criar pedidos via API" ativo. Limites: corpo até 256 KB; até 50 exames por pedido (código até 20 caracteres); nome e nome_social até 200 caracteres; observacoes_gerais e observacao_atendimento até 2.000; hospital, setor, leito, numero_prontuario, estado_civil, etnia, rg, tipo_sanguineo e campos do endereço até 200; alergias, condicoes_cronicas e medicacoes_continuas com até 50 itens de até 200 caracteres; peso_kg de 0,2 a 500 e altura_m de 0,2 a 2,8 (aceita vírgula decimal); e-mail válido até 254 caracteres; telefone com 8 a 13 dígitos (máscara é ignorada); datas reais no calendário (AAAA-MM-DD ou DD/MM/AAAA), com data_nascimento entre 1900 e hoje. Caracteres de controle e de direção de texto são removidos e os espaços das pontas aparados; quebras de linha só são mantidas nas observações. Fila: no máximo 500 pedidos aguardando autorização por parceiro e 2.000 por empresa. Erros nunca repetem o valor enviado, só o nome do campo.',
         scope: 'partner',
         auth: 'Authorization: Bearer <access_token> (OAuth2)',
         params: [
           { name: 'Authorization', in: 'header', type: 'string', required: true, description: 'Bearer <access_token> obtido em /oauth-token' },
-          { name: 'protocolo_parceiro', in: 'body', type: 'string', required: false, description: 'Identificador do pedido no sistema do parceiro (deve ser único)' },
+          { name: 'protocolo_parceiro', in: 'body', type: 'string', required: false, description: 'Identificador do pedido no sistema do parceiro (deve ser único). Mesma regra da consulta GET: apenas letras, números, hífen, underline e ponto, de 1 a 64 caracteres' },
           { name: 'paciente', in: 'body', type: 'object', required: true, description: 'Obrigatórios: nome, cpf. Opcionais: data_nascimento, sexo, telefone, nome_social, rg, etnia, estado_civil, email, gestante (true/"sim"), peso_kg, altura_m, endereco { cep, logradouro, numero }, alergias [], medicacoes_continuas [], observacoes_gerais. Campos não enviados são registrados como null.' },
           { name: 'exames', in: 'body', type: 'array', required: true, description: 'Lista de { codigo } usando o Código interno do Catálogo de Exames (ex.: "VDRL") — nunca o código TUSS/ANS' },
           { name: 'medico_solicitante', in: 'body', type: 'object', required: false, description: 'nome, conselho, uf, numero_inscricao, especialidade, telefone, email' },
@@ -699,11 +699,31 @@ export const API_GROUPS: ApiGroup[] = [
 {
   "success": false,
   "error": "EXAM_CODE_NOT_FOUND",
-  "message": "Código de exame não reconhecido: XPTO99",
+  "message": "Código(s) de exame não reconhecido(s) na(s) posição(ões) 2 da lista \"exames\". ...",
+  "protocolo_parceiro": "PED-2026-00871",
+  "posicoes": [2]
+}
+
+// 422 campo inválido (informa só o nome do campo, nunca o valor enviado)
+{
+  "success": false,
+  "error": "VALIDATION_ERROR",
+  "message": "Campo inválido: paciente.email (e-mail em formato inválido)",
+  "campo": "paciente.email",
   "protocolo_parceiro": "PED-2026-00871"
 }
 
-// demais erros: UNAUTHORIZED, PARTNER_NOT_AUTHORIZED, INVALID_CPF, MISSING_FIELD, DUPLICATE_ORDER, RATE_LIMITED
+// 413 PAYLOAD_TOO_LARGE — corpo acima de 256 KB
+// 422 TOO_MANY_EXAMS — mais de 50 exames no pedido
+// 422 INVALID_PROTOCOL — protocolo_parceiro com espaço, símbolo ou mais de 64 caracteres
+// 429 QUEUE_FULL — 500 pedidos do parceiro (ou 2.000 da empresa) já aguardando autorização:
+{
+  "success": false,
+  "error": "QUEUE_FULL",
+  "message": "A fila de pedidos aguardando autorização está cheia (limite de 500 por parceiro). Aguarde a equipe do laboratório autorizar os pedidos pendentes antes de enviar novos."
+}
+
+// demais erros: UNAUTHORIZED, PARTNER_NOT_AUTHORIZED, INVALID_JSON, INVALID_CPF, MISSING_FIELD, DUPLICATE_ORDER, RATE_LIMITED
 
 // 429 RATE_LIMITED (cabeçalho Retry-After: segundos de espera)
 {

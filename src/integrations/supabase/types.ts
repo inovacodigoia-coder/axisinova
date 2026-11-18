@@ -12687,6 +12687,10 @@ export type Database = {
         }
         Returns: undefined
       }
+      api_partner_post_pre: {
+        Args: { _company_id: string; _partner_id: string }
+        Returns: Json
+      }
       apoio__mascarar: { Args: { _t: string }; Returns: string }
       apoio_acao_adiar: { Args: { _id: string }; Returns: undefined }
       apoio_acao_concluir: {

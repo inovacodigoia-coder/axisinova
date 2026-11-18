@@ -7,9 +7,13 @@ import { corsHeaders } from 'npm:@supabase/supabase-js@2/cors'
 import { authenticateIntegration } from '../_shared/integrationAuth.ts'
 import { consultarPedidoParceiro } from '../_shared/parceiroAcesso.ts'
 import {
-  codigoDeErro, consumirLimites, emSegundoPlano, gravarLog, linhaDeLog, mensagemLimite, novoContexto,
-  regrasPartnerOrders, type CtxApi,
+  codigoDeErro, consumirLimites, emSegundoPlano, gravarLog, linhaDeLog, mensagemFilaCheia, mensagemLimite, novoContexto,
+  regrasPartnerOrders, verificarPostParceiro, type CtxApi,
 } from '../_shared/apiProtecao.ts'
+import {
+  FALHA_CORPO_GRANDE, FALHA_PROTOCOLO, codigoDoExame, lerCorpoLimitado, lerProtocolo, limparCorpo, numeroDecimal,
+  validarCampos, type Falha,
+} from '../_shared/pedidoParceiroValidacao.ts'
 
 const json = (body: unknown, status = 200) =>
   new Response(JSON.stringify(body), {
@@ -69,14 +73,8 @@ const boolOrNull = (v: unknown): boolean | null => {
   return null
 }
 
-/** número a partir de "85,5" ou "85.5"; ausente/inválido = null */
-const numOrNull = (v: unknown): number | null => {
-  if (typeof v === 'number' && isFinite(v)) return v
-  const s = String(v ?? '').trim().replace(',', '.')
-  if (!s) return null
-  const n = Number(s)
-  return isFinite(n) ? n : null
-}
+/** número a partir de "85,5" ou "85.5"; ausente = null (formato e faixa já conferidos em validarCampos) */
+const numOrNull = (v: unknown): number | null => numeroDecimal(v)
 
 /** lista de strings a partir de array ou texto separado por vírgula/ponto-e-vírgula; vazio = null */
 const listOrNull = (v: unknown): string[] | null => {
@@ -118,7 +116,8 @@ const materialOf = (e: any): string | null => {
 
 // ---------- handler ----------
 // Toda chamada (sucesso ou falha) gera uma linha em api_request_logs, gravada depois da resposta.
-// Consultas extras por chamada: 1 de limite (api_limite_consumir) + 1 de log (api_log_registrar).
+// Consultas extras por chamada: 1 de limite (POST: api_partner_post_pre, que também confere o teto
+// da fila; GET: api_limite_consumir) + 1 de log (api_log_registrar).
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders })
 
@@ -176,8 +175,14 @@ async function atender(req: Request, supabase: any, ctx: CtxApi): Promise<Respon
     return err('PARTNER_NOT_FOUND', 'Nenhum parceiro cadastrado para estas credenciais', 403)
   }
 
-  // ---- 1b. Limite por minuto (por parceiro; no POST também por empresa) ----
-  const limite = await consumirLimites(supabase, regrasPartnerOrders(req.method, String(partner.id), companyId))
+  // ---- 1b. Limite por minuto (por parceiro; no POST também por empresa e teto da fila) ----
+  const limite = req.method === 'POST'
+    ? await verificarPostParceiro(supabase, String(partner.id), companyId)
+    : await consumirLimites(supabase, regrasPartnerOrders(req.method, String(partner.id), companyId))
+  if (!limite.permitido && limite.errorCode === 'QUEUE_FULL') {
+    const l = limite as Awaited<ReturnType<typeof verificarPostParceiro>>
+    return err('QUEUE_FULL', mensagemFilaCheia(l.escopo, l.limite), 429)
+  }
   if (!limite.permitido) {
     return new Response(JSON.stringify({
       success: false, error: 'RATE_LIMITED', message: mensagemLimite(limite.retryAfter), retry_after: limite.retryAfter,
@@ -192,14 +197,26 @@ async function atender(req: Request, supabase: any, ctx: CtxApi): Promise<Respon
 
 // ---------- POST: criar pedido ----------
 async function createOrder(req: Request, supabase: any, companyId: string, partner: any, clientId: string) {
-  let body: any
+  const falha = (f: Falha, extra: Record<string, unknown> = {}) =>
+    err(f.error, f.message, f.status, { ...(f.campo ? { campo: f.campo } : {}), ...extra })
+
+  // ---- Etapa 2B: tamanho do corpo (bytes lidos), JSON, limpeza do texto livre e protocolo ----
+  const lido = await lerCorpoLimitado(req)
+  if (!lido.ok) return falha(FALHA_CORPO_GRANDE)
+  let bruto: any
   try {
-    body = await req.json()
+    bruto = JSON.parse(lido.texto)
   } catch {
     return err('INVALID_JSON', 'Corpo da requisição não é um JSON válido', 400)
   }
+  const limpo = limparCorpo(bruto)
+  if (!limpo.ok) return falha({ status: 422, error: 'VALIDATION_ERROR', campo: 'corpo', message: 'Campo inválido: corpo (estrutura do JSON profunda demais)' })
+  const body: any = limpo.valor
 
-  const protocoloParceiro = String(body?.protocolo_parceiro ?? body?.partnerProtocol ?? '').trim() || null
+  const protocolo = lerProtocolo(body)
+  if (!protocolo.ok) return falha(FALHA_PROTOCOLO)
+  // já validado pela regra do GET: pode voltar nas respostas como identificador do pedido
+  const protocoloParceiro = protocolo.valor
   const paciente = body?.paciente ?? body?.patient ?? {}
   const exames = Array.isArray(body?.exames) ? body.exames : (Array.isArray(body?.exams) ? body.exams : [])
   const medico = body?.medico_solicitante ?? body?.requesting_doctor ?? null
@@ -220,6 +237,10 @@ async function createOrder(req: Request, supabase: any, companyId: string, partn
   if (!exames.length) {
     return err('MISSING_FIELD', 'Informe ao menos um exame em "exames" (array de { codigo })', 400, { protocolo_parceiro: protocoloParceiro })
   }
+
+  // ---- Etapa 2B: quantidade de exames, tamanho e formato dos campos (erro só com o nome do campo) ----
+  const invalido = validarCampos(body)
+  if (invalido) return falha(invalido, { protocolo_parceiro: protocoloParceiro })
 
   // ---- idempotência: protocolo_parceiro único por parceiro ----
   if (protocoloParceiro) {
@@ -262,19 +283,19 @@ async function createOrder(req: Request, supabase: any, companyId: string, partn
   }
 
   const matched: any[] = []
-  const invalid: string[] = []
-  for (const item of exames) {
-    const code = typeof item === 'string' ? item : String(item?.codigo ?? item?.code ?? '')
-    const exam = byCode.get(norm(code))
-    if (!exam) invalid.push(code || '(vazio)')
+  const invalid: number[] = []
+  exames.forEach((item: unknown, i: number) => {
+    const exam = byCode.get(norm(codigoDoExame(item)))
+    if (!exam) invalid.push(i + 1)
     else matched.push(exam)
-  }
+  })
   if (invalid.length) {
+    // nunca repete o código enviado: informa a posição na lista "exames" (a partir de 1)
     return err(
       'EXAM_CODE_NOT_FOUND',
-      `Código(s) de exame não reconhecido(s): ${invalid.join(', ')}. Use o Código interno do Catálogo de Exames (não o código TUSS/ANS). Nenhum pedido foi criado.`,
+      `Código(s) de exame não reconhecido(s) na(s) posição(ões) ${invalid.join(', ')} da lista "exames". Use o Código interno do Catálogo de Exames (não o código TUSS/ANS). Nenhum pedido foi criado.`,
       422,
-      { protocolo_parceiro: protocoloParceiro },
+      { protocolo_parceiro: protocoloParceiro, posicoes: invalid },
     )
   }
 

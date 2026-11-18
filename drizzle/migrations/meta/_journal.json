@@ -1310,6 +1310,13 @@
       "when": 1794970381268,
       "tag": "0186_oauth_credencial_antes_do_ip",
       "breakpoints": true
+    },
+    {
+      "idx": 187,
+      "version": "7",
+      "when": 1794974073141,
+      "tag": "0187_api_parceiros_teto_fila",
+      "breakpoints": true
     }
   ]
 }

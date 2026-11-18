@@ -36,7 +36,7 @@ export interface LinhaLog {
   duration_ms: number
 }
 
-export interface Limite { permitido: boolean; retryAfter: number; errorCode: 'RATE_LIMITED' | 'LOCKED' | null }
+export interface Limite { permitido: boolean; retryAfter: number; errorCode: 'RATE_LIMITED' | 'LOCKED' | 'QUEUE_FULL' | null }
 
 type Headers = { get: (name: string) => string | null }
 
@@ -137,6 +137,7 @@ const LIBERADO: Limite = { permitido: true, retryAfter: 0, errorCode: null }
 function lerLimite(data: unknown): Limite {
   const d = (data ?? {}) as { permitido?: unknown; retry_after?: unknown; error_code?: unknown }
   if (d.permitido !== false) return LIBERADO
+  if (d.error_code === 'QUEUE_FULL') return { permitido: false, retryAfter: 0, errorCode: 'QUEUE_FULL' }
   const retry = Math.max(1, Math.ceil(Number(d.retry_after) || 60))
   return { permitido: false, retryAfter: retry, errorCode: d.error_code === 'LOCKED' ? 'LOCKED' : 'RATE_LIMITED' }
 }
@@ -152,6 +153,33 @@ export async function consumirLimites(db: DbRpc, itens: { regra: string; chave: 
     return LIBERADO
   }
 }
+
+export interface LimitePost extends Limite {
+  /** Só no QUEUE_FULL: qual teto encheu e o valor dele. */
+  escopo?: 'parceiro' | 'empresa'
+  limite?: number
+}
+
+/**
+ * POST /partner-orders (Etapa 2B): limite por minuto do parceiro/empresa e teto da fila
+ * "aguardando autorização" na mesma consulta (api_partner_post_pre). Erro de banco = deixa passar.
+ */
+export async function verificarPostParceiro(db: DbRpc, partnerId: string, companyId: string): Promise<LimitePost> {
+  try {
+    const data = await chamar(db, 'api_partner_post_pre', { _partner_id: partnerId, _company_id: companyId })
+    const lim = lerLimite(data)
+    if (lim.errorCode !== 'QUEUE_FULL') return lim
+    const d = (data ?? {}) as { escopo?: unknown; limite?: unknown }
+    return { ...lim, escopo: d.escopo === 'empresa' ? 'empresa' : 'parceiro', limite: Number(d.limite) || undefined }
+  } catch (e) {
+    console.error('[api-protecao] limite do POST indisponível, requisição liberada:', e instanceof Error ? e.message : e)
+    return LIBERADO
+  }
+}
+
+export const mensagemFilaCheia = (escopo: 'parceiro' | 'empresa' = 'parceiro', limite?: number) =>
+  `A fila de pedidos aguardando autorização está cheia${limite ? ` (limite de ${limite} por ${escopo})` : ''}. ` +
+  'Aguarde a equipe do laboratório autorizar os pedidos pendentes antes de enviar novos.'
 
 export interface LimiteOauth extends Limite {
   /** Credencial válida que passou apesar de um bloqueio ativo do IP ou do par client_id+IP. */
