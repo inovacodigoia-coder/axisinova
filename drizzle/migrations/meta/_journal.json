@@ -1303,6 +1303,13 @@
       "when": 1794969110216,
       "tag": "0185_api_parceiros_protecao",
       "breakpoints": true
+    },
+    {
+      "idx": 186,
+      "version": "7",
+      "when": 1794970381268,
+      "tag": "0186_oauth_credencial_antes_do_ip",
+      "breakpoints": true
     }
   ]
 }

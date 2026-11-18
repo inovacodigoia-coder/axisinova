@@ -352,9 +352,10 @@ export const API_GROUPS: ApiGroup[] = [
 
 // 429 limite ou bloqueio (cabeçalho Retry-After: segundos de espera)
 { "error": "RATE_LIMITED", "error_description": "Limite de requisições excedido. Aguarde 42 segundos e tente novamente." }
-// limites: 30 requisições/min por IP; 30 tokens emitidos/min por client_id;
+// a credencial é conferida antes de qualquer bloqueio: credencial válida nunca é recusada por bloqueio de IP;
+// limites: 30 tokens emitidos/min por client_id; 30 tentativas inválidas/min por IP;
 // 5 credenciais erradas em 15 min do mesmo client_id + IP bloqueiam esse par por 15 min;
-// 20 credenciais erradas em 15 min do mesmo IP bloqueiam o IP por 15 min`,
+// 20 credenciais erradas em 15 min do mesmo IP bloqueiam o IP por 15 min (só para credenciais erradas)`,
       },
       {
         id: 'fn-receive-result',

@@ -12675,7 +12675,7 @@ export type Database = {
       api_limite_consumir: { Args: { _itens: Json }; Returns: Json }
       api_log_registrar: { Args: { _log: Json }; Returns: undefined }
       api_oauth_pre: {
-        Args: { _client_id: string; _ip: string }
+        Args: { _client_id: string; _credencial_valida: boolean; _ip: string }
         Returns: Json
       }
       api_oauth_resultado: {

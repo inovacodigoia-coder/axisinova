@@ -3,14 +3,16 @@
 //   Content-Type: application/x-www-form-urlencoded (ou JSON)
 //   grant_type=client_credentials&client_id=...&client_secret=...&scope=...
 //   ou Authorization: Basic base64(client_id:client_secret)
-// Proteção (Etapa 2A): limite por IP e por client_id, bloqueio por tentativas (par client_id+IP e IP)
-// e log de toda chamada — 1 consulta antes (api_oauth_pre) e 1 depois, em segundo plano (api_oauth_resultado).
+// Proteção (Etapa 2A/2A.1): client_id + segredo são conferidos ANTES de qualquer bloqueio por IP.
+// Credencial válida nunca é recusada por bloqueio de IP/par (só pelo limite de emissões do client_id);
+// credencial inválida/inexistente conta no limite por IP e respeita os bloqueios (par client_id+IP e IP).
+// Log de toda chamada — 1 consulta antes (api_oauth_pre) e 1 depois, em segundo plano (api_oauth_resultado).
 import { createClient } from 'npm:@supabase/supabase-js@2'
 import { corsHeaders } from 'npm:@supabase/supabase-js@2/cors'
 import { sha256Hex, signAccessToken } from '../_shared/integrationAuth.ts'
 import { avaliarCliente, carregarCliente, iguaisTempoConstante } from '../_shared/parceiroAcesso.ts'
 import {
-  codigoDeErro, emSegundoPlano, linhaDeLog, MENSAGEM_BLOQUEIO, mensagemLimite, novoContexto,
+  CODIGO_BLOQUEIO_IGNORADO, codigoDeErro, emSegundoPlano, linhaDeLog, MENSAGEM_BLOQUEIO, mensagemLimite, novoContexto,
   registrarOauth, verificarOauth, type ResultadoOauth,
 } from '../_shared/apiProtecao.ts'
 
@@ -79,29 +81,36 @@ Deno.serve(async (req) => {
     }
     ctx.clientId = clientId || null
 
-    // ---- 1b. Limite por IP, bloqueios e emissões do client_id (antes de conferir a senha) ----
-    const limite = await verificarOauth(supabase, ctx.ip, clientId)
+    // ---- 1b. Erros de formato (não consultam o cadastro) ----
+    let erroFormato: Response | null = null
+    if (corpoInvalido) erroFormato = oauthError('invalid_request', 'Corpo da requisição inválido')
+    else if (basicInvalido) erroFormato = oauthError('invalid_client', 'Cabeçalho Basic inválido', 401)
+    else if (String(params.grant_type ?? '') !== 'client_credentials') {
+      erroFormato = oauthError('unsupported_grant_type', 'Somente grant_type=client_credentials é suportado')
+    } else if (!clientId || !clientSecret) {
+      erroFormato = oauthError('invalid_client', 'client_id e client_secret são obrigatórios', 401)
+    }
+
+    // ---- 2. Confere client e segredo ANTES do bloqueio por IP (hash em tempo constante) ----
+    let client: Awaited<ReturnType<typeof carregarCliente>> = null
+    let credencialValida = false
+    if (!erroFormato) {
+      client = await carregarCliente(supabase, clientId)
+      const secretHash = await sha256Hex(clientSecret)
+      const hashOk = iguaisTempoConstante(String(client?.secret_hash ?? '0'.repeat(64)), secretHash)
+      credencialValida = !!client && hashOk && !!client.is_active && !client.revoked_at
+    }
+
+    // ---- 2a. Limites e bloqueios: válida só por emissões do client_id; inválida por IP e bloqueios ----
+    const limite = await verificarOauth(supabase, ctx.ip, clientId, credencialValida)
     if (!limite.permitido) {
       const msg = limite.errorCode === 'LOCKED' ? MENSAGEM_BLOQUEIO(limite.retryAfter) : mensagemLimite(limite.retryAfter)
       const res = json({ error: 'RATE_LIMITED', error_description: msg }, 429, { 'Retry-After': String(limite.retryAfter) })
       return await finalizar(res, 'outro', limite.errorCode ?? 'RATE_LIMITED')
     }
 
-    if (corpoInvalido) return await finalizar(oauthError('invalid_request', 'Corpo da requisição inválido'), 'outro')
-    if (basicInvalido) return await finalizar(oauthError('invalid_client', 'Cabeçalho Basic inválido', 401), 'outro')
-
-    if (String(params.grant_type ?? '') !== 'client_credentials') {
-      return await finalizar(oauthError('unsupported_grant_type', 'Somente grant_type=client_credentials é suportado'), 'outro')
-    }
-    if (!clientId || !clientSecret) {
-      return await finalizar(oauthError('invalid_client', 'client_id e client_secret são obrigatórios', 401), 'outro')
-    }
-
-    // ---- 2. Valida o client (hash comparado em tempo constante) ----
-    const client = await carregarCliente(supabase, clientId)
-    const secretHash = await sha256Hex(clientSecret)
-    const hashOk = iguaisTempoConstante(String(client?.secret_hash ?? '0'.repeat(64)), secretHash)
-    if (!client || !hashOk || !client.is_active || client.revoked_at) {
+    if (erroFormato) return await finalizar(erroFormato, 'outro')
+    if (!credencialValida || !client) {
       // client_id inexistente e senha errada: mesma resposta e mesma contagem
       return await finalizar(oauthError('invalid_client', 'Credenciais inválidas ou revogadas', 401), 'falha_credencial')
     }
@@ -148,7 +157,7 @@ Deno.serve(async (req) => {
       token_type: 'Bearer',
       expires_in: TOKEN_TTL_SECONDS,
       scope: granted.join(' '),
-    }), 'sucesso')
+    }), 'sucesso', limite.bloqueioIgnorado ? CODIGO_BLOQUEIO_IGNORADO : undefined)
   } catch (e) {
     console.error('[oauth-token] erro interno:', e instanceof Error ? e.message : e)
     return await finalizar(oauthError('server_error', 'Erro interno ao emitir o token', 500), 'outro', 'INTERNAL_ERROR')

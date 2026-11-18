@@ -19,9 +19,10 @@ const COMUM = '00000000-0000-4000-8000-000000000021'
 const SUPER = '00000000-0000-4000-8000-000000000022'
 const GESTOR_OUTRA = '00000000-0000-4000-8000-000000000023'
 
-type Pre = { permitido: boolean; retry_after: number; error_code?: string }
-const pre = async (ip: string | null, cid: string) =>
-  (await db.query<{ r: Pre }>(`SELECT api_oauth_pre($1, $2) r`, [ip, cid])).rows[0].r
+type Pre = { permitido: boolean; retry_after: number; error_code?: string; bloqueio_ignorado?: boolean }
+/** Etapa 2A.1: o /oauth-token chama depois de conferir client_id + segredo (valida = credencial correta). */
+const pre = async (ip: string | null, cid: string, valida = false) =>
+  (await db.query<{ r: Pre }>(`SELECT api_oauth_pre($1, $2, $3) r`, [ip, cid, valida])).rows[0].r
 const resultado = (ip: string | null, cid: string, r: string, log: unknown = null) =>
   db.query(`SELECT api_oauth_resultado($1, $2, $3, $4::jsonb)`, [ip, cid, r, log === null ? null : JSON.stringify(log)])
 const consumir = async (itens: unknown) =>
@@ -55,6 +56,7 @@ beforeEach(async () => {
       ('${SUPER}', NULL, 'super_admin'), ('${GESTOR_OUTRA}', '${OUTRA}', 'company_admin');
   `)
   await db.exec(migracao('api_parceiros_protecao'))
+  await db.exec(migracao('oauth_credencial_antes_do_ip'))
 })
 afterEach(async () => { await db.close() })
 
@@ -73,7 +75,7 @@ describe('limite do /oauth-token', () => {
   it('a 31ª emissão bem-sucedida do mesmo client_id no minuto é recusada', async () => {
     await longeDaVirada()
     for (let i = 0; i < 30; i++) await resultado(`198.51.100.${i}`, 'cid-ok', 'sucesso')
-    expect(await pre('198.51.100.200', 'cid-ok')).toMatchObject({ permitido: false, error_code: 'RATE_LIMITED' })
+    expect(await pre('198.51.100.200', 'cid-ok', true)).toMatchObject({ permitido: false, error_code: 'RATE_LIMITED' })
   })
 
   it('o limite muda pela tabela de configuração, sem deploy', async () => {
@@ -121,6 +123,64 @@ describe('bloqueio por tentativas', () => {
   it('outras recusas (parceiro pendente, escopo) não contam como falha de credencial', async () => {
     for (let i = 0; i < 10; i++) await resultado('203.0.113.70', 'cid-pend', 'outro')
     expect((await pre('203.0.113.70', 'cid-pend')).permitido).toBe(true)
+  })
+})
+
+describe('Etapa 2A.1 — credencial válida nunca é barrada por bloqueio de IP', () => {
+  const IP_LAB = '203.0.113.90' // vários servidores do mesmo laboratório atrás do mesmo IP público
+
+  it('(a) 20+ falhas de um IP não impedem uma credencial válida vinda desse mesmo IP', async () => {
+    await longeDaVirada()
+    for (let i = 0; i < 25; i++) await resultado(IP_LAB, `cid-mal-configurado-${i % 3}`, 'falha_credencial')
+    // o IP está bloqueado para credencial errada...
+    expect(await pre(IP_LAB, 'cid-servidor-ok')).toMatchObject({ permitido: false, error_code: 'LOCKED' })
+    // ...mas o servidor com credencial válida renova o token, e isso fica marcado para o log
+    expect(await pre(IP_LAB, 'cid-servidor-ok', true)).toMatchObject({ permitido: true, bloqueio_ignorado: true })
+    await resultado(IP_LAB, 'cid-servidor-ok', 'sucesso')
+    // o sucesso não desbloqueia o IP para os outros
+    expect(await pre(IP_LAB, 'cid-mal-configurado-0')).toMatchObject({ permitido: false, error_code: 'LOCKED' })
+  })
+
+  it('(b) 5 falhas de um par bloqueiam só esse par; outro servidor no mesmo IP segue', async () => {
+    for (let i = 0; i < 5; i++) await resultado(IP_LAB, 'cid-par', 'falha_credencial')
+    expect(await pre(IP_LAB, 'cid-par')).toMatchObject({ permitido: false, error_code: 'LOCKED' })
+    // outro client_id do mesmo IP (inválido ou válido) não é afetado
+    expect((await pre(IP_LAB, 'cid-vizinho')).permitido).toBe(true)
+    expect(await pre(IP_LAB, 'cid-vizinho', true)).toMatchObject({ permitido: true, bloqueio_ignorado: false })
+    // o próprio par com o segredo certo passa, e o acerto zera as falhas do par
+    expect(await pre(IP_LAB, 'cid-par', true)).toMatchObject({ permitido: true, bloqueio_ignorado: true })
+    await resultado(IP_LAB, 'cid-par', 'sucesso')
+    expect((await pre(IP_LAB, 'cid-par')).permitido).toBe(true)
+  })
+
+  it('(c) o limite de 30/minuto por IP não bloqueia emissões bem-sucedidas', async () => {
+    await longeDaVirada()
+    // 40 servidores diferentes no mesmo IP renovando no mesmo minuto
+    for (let i = 0; i < 40; i++) {
+      expect((await pre(IP_LAB, `cid-srv-${i}`, true)).permitido, `servidor ${i}`).toBe(true)
+      await resultado(IP_LAB, `cid-srv-${i}`, 'sucesso')
+    }
+    // emissões válidas não gastam o limite por IP: 30 tentativas inválidas ainda cabem
+    for (let i = 0; i < 30; i++) expect((await pre(IP_LAB, `cid-x-${i}`)).permitido, `inválida ${i}`).toBe(true)
+    expect(await pre(IP_LAB, 'cid-x-31')).toMatchObject({ permitido: false, error_code: 'RATE_LIMITED' })
+    // e mesmo com o limite por IP estourado, credencial válida continua passando
+    expect((await pre(IP_LAB, 'cid-srv-0', true)).permitido).toBe(true)
+  })
+
+  it('(d) credencial inválida recebe 401 e depois 429 no bloqueio, igual para client_id existente ou não', async () => {
+    // existente com senha errada e inexistente seguem o mesmo caminho (valida = false)
+    for (const cid of ['cid-existe', 'cid-nao-existe']) {
+      const ip = cid === 'cid-existe' ? '198.51.100.91' : '198.51.100.92'
+      for (let i = 0; i < 5; i++) {
+        expect((await pre(ip, cid)).permitido, `${cid} tentativa ${i + 1}`).toBe(true) // → 401
+        await resultado(ip, cid, 'falha_credencial')
+      }
+      const r = await pre(ip, cid) // → 429
+      expect(r).toMatchObject({ permitido: false, error_code: 'LOCKED' })
+      expect(r).not.toHaveProperty('bloqueio_ignorado')
+    }
+    // credencial inválida nunca recebe a marcação de "bloqueio ignorado"
+    expect((await pre('198.51.100.93', 'cid-livre'))).not.toHaveProperty('bloqueio_ignorado')
   })
 })
 
@@ -180,7 +240,8 @@ describe('registro das chamadas', () => {
     await expect(comoUsuario('authenticated', GESTOR, `INSERT INTO api_request_logs(endpoint, metodo, status_code) VALUES ('x','GET',200)`)).rejects.toThrow(/permission denied/)
     await expect(comoUsuario('authenticated', SUPER, `SELECT * FROM api_limite_contadores`)).rejects.toThrow(/permission denied/)
     await expect(comoUsuario('authenticated', SUPER, `SELECT api_limite_consumir('[]'::jsonb)`)).rejects.toThrow(/permission denied/)
-    await expect(comoUsuario('anon', null, `SELECT api_oauth_pre('1.1.1.1', 'x')`)).rejects.toThrow(/permission denied/)
+    await expect(comoUsuario('anon', null, `SELECT api_oauth_pre('1.1.1.1', 'x', true)`)).rejects.toThrow(/permission denied/)
+    await expect(comoUsuario('authenticated', SUPER, `SELECT api_oauth_pre('1.1.1.1', 'x', true)`)).rejects.toThrow(/permission denied/)
   })
 
   it('a limpeza apaga só contadores antigos, nunca o log', async () => {

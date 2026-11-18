@@ -153,15 +153,32 @@ export async function consumirLimites(db: DbRpc, itens: { regra: string; chave: 
   }
 }
 
-/** /oauth-token antes de conferir a senha (limite por IP, bloqueios e emissões); erro = deixa passar. */
-export async function verificarOauth(db: DbRpc, ip: string | null, clientId: string): Promise<Limite> {
+export interface LimiteOauth extends Limite {
+  /** Credencial válida que passou apesar de um bloqueio ativo do IP ou do par client_id+IP. */
+  bloqueioIgnorado: boolean
+}
+
+/**
+ * /oauth-token DEPOIS de conferir client_id + segredo. Credencial válida: nunca recusada por bloqueio
+ * de IP/par, só pelo limite de emissões do client_id. Inválida/inexistente: limite por IP e bloqueios.
+ * Erro de banco = deixa passar.
+ */
+export async function verificarOauth(db: DbRpc, ip: string | null, clientId: string, credencialValida: boolean): Promise<LimiteOauth> {
   try {
-    return lerLimite(await chamar(db, 'api_oauth_pre', { _ip: ip, _client_id: String(clientId ?? '').slice(0, 100) }))
+    const data = await chamar(db, 'api_oauth_pre', {
+      _ip: ip, _client_id: String(clientId ?? '').slice(0, 100), _credencial_valida: credencialValida === true,
+    })
+    const lim = lerLimite(data)
+    const ignorado = credencialValida === true && lim.permitido && (data as { bloqueio_ignorado?: unknown })?.bloqueio_ignorado === true
+    return { ...lim, bloqueioIgnorado: ignorado }
   } catch (e) {
     console.error('[api-protecao] limite do oauth indisponível, requisição liberada:', e instanceof Error ? e.message : e)
-    return LIBERADO
+    return { ...LIBERADO, bloqueioIgnorado: false }
   }
 }
+
+/** error_code gravado quando uma credencial válida passa por um IP/par bloqueado (resposta 200). */
+export const CODIGO_BLOQUEIO_IGNORADO = 'BLOCK_BYPASSED_VALID_CREDENTIAL'
 
 export type ResultadoOauth = 'sucesso' | 'falha_credencial' | 'outro'
 

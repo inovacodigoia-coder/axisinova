@@ -39,7 +39,8 @@ describe('(h) falha no limite ou no log não derruba a requisição', () => {
     const spy = vi.spyOn(console, 'error').mockImplementation(() => {})
     expect((await consumirLimites(quebrado, [{ regra: 'partner_get_parceiro', chave: 'p' }])).permitido).toBe(true)
     expect((await consumirLimites(explode, [{ regra: 'partner_get_parceiro', chave: 'p' }])).permitido).toBe(true)
-    expect((await verificarOauth(explode, '1.1.1.1', 'cid')).permitido).toBe(true)
+    expect((await verificarOauth(explode, '1.1.1.1', 'cid', false)).permitido).toBe(true)
+    expect((await verificarOauth(explode, '1.1.1.1', 'cid', true)).bloqueioIgnorado).toBe(false)
     expect(spy).toHaveBeenCalled()
     spy.mockRestore()
   })
@@ -57,6 +58,28 @@ describe('(h) falha no limite ou no log não derruba a requisição', () => {
   it('limite excedido volta com tempo de espera', async () => {
     const db = { rpc: async () => ({ data: { permitido: false, retry_after: 17, error_code: 'RATE_LIMITED' }, error: null }) }
     expect(await consumirLimites(db, [{ regra: 'partner_post_parceiro', chave: 'p' }])).toEqual({ permitido: false, retryAfter: 17, errorCode: 'RATE_LIMITED' })
+  })
+})
+
+describe('Etapa 2A.1 — credencial conferida antes do bloqueio por IP', () => {
+  const comResposta = (data: unknown) => {
+    const rpc = vi.fn(async (_fn: string, _args: Record<string, unknown>) => ({ data, error: null }))
+    return { rpc }
+  }
+
+  it('envia ao banco se a credencial é válida e lê o "bloqueio ignorado" só para credencial válida', async () => {
+    const db = comResposta({ permitido: true, retry_after: 0, bloqueio_ignorado: true })
+    expect(await verificarOauth(db, '203.0.113.9', 'cid', true)).toEqual({ permitido: true, retryAfter: 0, errorCode: null, bloqueioIgnorado: true })
+    expect(db.rpc).toHaveBeenCalledWith('api_oauth_pre', { _ip: '203.0.113.9', _client_id: 'cid', _credencial_valida: true })
+    expect((await verificarOauth(db, '203.0.113.9', 'cid', false)).bloqueioIgnorado).toBe(false)
+  })
+
+  it('o /oauth-token confere o segredo antes de consultar bloqueios e marca BLOCK_BYPASSED_VALID_CREDENTIAL no sucesso', () => {
+    const src = readFileSync('supabase/functions/oauth-token/index.ts', 'utf8')
+    expect(src.indexOf('iguaisTempoConstante(')).toBeGreaterThan(0)
+    expect(src.indexOf('iguaisTempoConstante(')).toBeLessThan(src.indexOf('verificarOauth('))
+    expect(src).toMatch(/verificarOauth\(supabase, ctx\.ip, clientId, credencialValida\)/)
+    expect(src).toMatch(/'sucesso', limite\.bloqueioIgnorado \? CODIGO_BLOQUEIO_IGNORADO : undefined/)
   })
 })
 
