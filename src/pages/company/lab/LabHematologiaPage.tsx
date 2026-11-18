@@ -484,7 +484,7 @@ export default function LabHematologiaPage() {
           reference_values: Array.isArray(laudo.reference_values) ? laudo.reference_values : baseExam?.reference_values,
         }
       : baseExam
-    return buildExamParams(catalogExam, selected.examName, { gender: selected.gender, age })
+    return buildExamParams(catalogExam, selected.examName, { gender: selected.gender, age, birthDate: selected.patientBirthDate })
   }, [selected, catalogList, laudoAtivo])
 
   const formKeyOfParam = (param: ResolvedParam) => mapParamToFormKey(param.name) || `p_${param.id}`

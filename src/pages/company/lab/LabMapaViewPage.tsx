@@ -150,6 +150,7 @@ export default function LabMapaViewPage() {
             params: buildExamParams(cat, exam.name || exam.code, {
               gender: order.patientGender,
               age,
+              birthDate: order.patientBirthDate,
             }),
             workbenchId: resolveExamWorkbench(exam, catalogList.map((c: any) => ({ id: c.id, workbenchId: c.workbench_id }))) || cat?.workbench_id || undefined,
             bancadaNome: exam.bancadaNome || exam.workbenchName || undefined,

@@ -37,7 +37,10 @@ export interface ResolvedParam {
 
 export interface PatientCtx {
   gender?: string
+  /** Idade em anos completos (usada quando não há data de nascimento). */
   age?: number
+  /** Data de nascimento (AAAA-MM-DD): permite faixas em dias/semanas/meses (recém-nascido, lactente). */
+  birthDate?: string | null
   /** Paciente está em jejum (informado no Cadastro de Atendimento). */
   isFasting?: boolean | null
 }
@@ -90,6 +93,33 @@ export function ageToYears(value: any, unit?: string): number | null {
   if (u === 'semanas' || u === 'weeks') return n / 52.1786
   if (u === 'dias' || u === 'days') return n / 365.25
   return n
+}
+
+/** Data de nascimento como data local (sem deslocamento de fuso). */
+function parseBirth(value?: string | null): Date | null {
+  const m = String(value ?? '').trim().match(/^(\d{4})-(\d{2})-(\d{2})/)
+  if (!m) return null
+  const d = new Date(Number(m[1]), Number(m[2]) - 1, Number(m[3]), 12)
+  return isNaN(d.getTime()) ? null : d
+}
+
+/**
+ * Idade completa do paciente na unidade da faixa (anos, meses, semanas ou dias).
+ * Anos completos seguem a mesma conta de antes; meses/dias só existem com a data de nascimento.
+ */
+export function ageInUnit(birthDate: string | null | undefined, unit?: string, today = new Date()): number | null {
+  const birth = parseBirth(birthDate)
+  if (!birth) return null
+  const hoje = new Date(today.getFullYear(), today.getMonth(), today.getDate(), 12)
+  if (hoje < birth) return 0
+  const u = (unit || 'anos').toString().toLowerCase()
+  const dias = Math.round((hoje.getTime() - birth.getTime()) / 86400000)
+  if (u === 'dias' || u === 'days') return dias
+  if (u === 'semanas' || u === 'weeks') return Math.floor(dias / 7)
+  let meses = (hoje.getFullYear() - birth.getFullYear()) * 12 + (hoje.getMonth() - birth.getMonth())
+  if (hoje.getDate() < birth.getDate()) meses -= 1
+  if (u === 'meses' || u === 'months') return meses
+  return Math.floor(meses / 12)
 }
 
 /** Indica se a faixa usa a condição de jejum. */
@@ -186,8 +216,17 @@ export function pickReference(ranges: any[] | undefined, patient: PatientCtx, re
       return (lower == null || value >= lower) && (upper == null || value <= upper)
     }
 
-    const minAge = ageToYears(r.minAge ?? r.age_min, r.ageUnit ?? r.age_unit)
-    const maxAge = ageToYears(r.maxAge ?? r.age_max, r.ageUnit ?? r.age_unit)
+    const unit = r.ageUnit ?? r.age_unit
+    // Com data de nascimento: idade completa na própria unidade da faixa (ex.: 0 a 2 dias, 3 a 6 meses)
+    const ageUnitValue = ageInUnit(patient.birthDate, unit)
+    if (ageUnitValue != null) {
+      const lo = toNumber(r.minAge ?? r.age_min)
+      const hi = toNumber(r.maxAge ?? r.age_max)
+      const ok = (lo == null || ageUnitValue >= lo) && (hi == null || ageUnitValue <= hi)
+      return sexOk && ok && fastingOk
+    }
+    const minAge = ageToYears(r.minAge ?? r.age_min, unit)
+    const maxAge = ageToYears(r.maxAge ?? r.age_max, unit)
     const ageOk =
       age == null ||
       ((minAge == null || age >= minAge) && (maxAge == null || age <= maxAge))

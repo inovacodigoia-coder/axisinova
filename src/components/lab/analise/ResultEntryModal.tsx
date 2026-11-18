@@ -354,6 +354,7 @@ export function ResultEntryModal({
         const resolved = buildExamParams(catalogExam, exam.name || exam.code, {
           gender: patient.patientGender,
           age,
+          birthDate: patient.patientBirthDate,
           isFasting: patient.isFasting,
         });
         

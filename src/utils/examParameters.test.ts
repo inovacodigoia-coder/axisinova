@@ -1,5 +1,5 @@
-import { describe, expect, it } from 'vitest'
-import { evaluateFormula, pickReference, resolveReference } from './examParameters'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { ageInUnit, evaluateFormula, pickReference, resolveReference } from './examParameters'
 
 describe('resolveReference', () => {
   it('mostra somente o texto cadastrado quando o valor máximo da referência é uma frase', () => {
@@ -142,5 +142,61 @@ describe('absolutos do leucograma saem como célula inteira', () => {
     ] }, 'Hemograma', {})
     expect(p.map(x => x.isCalculated)).toEqual([true, true])
     expect(p.map(x => x.formula)).toEqual(['', ''])
+  })
+})
+
+
+// Hemograma da labsaude conforme VRH2020 (Dacie & Lewis, 12ª ed.): adulto por sexo e criança por idade.
+describe('faixas do hemograma por idade e sexo (VRH2020)', () => {
+  const HB = [{"description": "Adulto Masculino", "sex": "Masculino", "minAge": 13, "maxAge": 150, "ageUnit": "anos", "minValue": "13,0", "maxValue": "17,0"}, {"description": "Adulto Feminino", "sex": "Feminino", "minAge": 13, "maxAge": 150, "ageUnit": "anos", "minValue": "12,0", "maxValue": "15,0"}, {"description": "Recém-nascido (0 a 2 dias)", "sex": "Todos", "minAge": 0, "maxAge": 2, "ageUnit": "dias", "minValue": "14,0", "maxValue": "22,0"}, {"description": "3 a 31 dias", "sex": "Todos", "minAge": 3, "maxAge": 31, "ageUnit": "dias", "minValue": "15,0", "maxValue": "21,0"}, {"description": "1 mês", "sex": "Todos", "minAge": 1, "maxAge": 1, "ageUnit": "meses", "minValue": "11,5", "maxValue": "16,5"}, {"description": "2 meses", "sex": "Todos", "minAge": 2, "maxAge": 2, "ageUnit": "meses", "minValue": "9,4", "maxValue": "13,0"}, {"description": "3 a 6 meses", "sex": "Todos", "minAge": 3, "maxAge": 6, "ageUnit": "meses", "minValue": "11,1", "maxValue": "14,1"}, {"description": "7 meses a 1 ano", "sex": "Todos", "minAge": 7, "maxAge": 23, "ageUnit": "meses", "minValue": "11,1", "maxValue": "14,1"}, {"description": "2 a 5 anos", "sex": "Todos", "minAge": 2, "maxAge": 5, "ageUnit": "anos", "minValue": "11,1", "maxValue": "14,1"}, {"description": "6 a 12 anos", "sex": "Todos", "minAge": 6, "maxAge": 12, "ageUnit": "anos", "minValue": "11,0", "maxValue": "14,0"}]
+  const LEUCO = [{"description": "Adulto", "sex": "Todos", "minAge": 13, "maxAge": 150, "ageUnit": "anos", "minValue": "4000", "maxValue": "10000"}, {"description": "Recém-nascido (0 a 2 dias)", "sex": "Todos", "minAge": 0, "maxAge": 2, "ageUnit": "dias", "minValue": "10000", "maxValue": "26000"}, {"description": "3 a 31 dias", "sex": "Todos", "minAge": 3, "maxAge": 31, "ageUnit": "dias", "minValue": "7000", "maxValue": "22000"}, {"description": "1 mês", "sex": "Todos", "minAge": 1, "maxAge": 1, "ageUnit": "meses", "minValue": "5000", "maxValue": "19000"}, {"description": "2 meses", "sex": "Todos", "minAge": 2, "maxAge": 2, "ageUnit": "meses", "minValue": "5000", "maxValue": "15000"}, {"description": "3 a 6 meses", "sex": "Todos", "minAge": 3, "maxAge": 6, "ageUnit": "meses", "minValue": "6000", "maxValue": "18000"}, {"description": "7 meses a 1 ano", "sex": "Todos", "minAge": 7, "maxAge": 23, "ageUnit": "meses", "minValue": "6000", "maxValue": "16000"}, {"description": "2 a 5 anos", "sex": "Todos", "minAge": 2, "maxAge": 5, "ageUnit": "anos", "minValue": "5000", "maxValue": "15000"}, {"description": "6 a 12 anos", "sex": "Todos", "minAge": 6, "maxAge": 12, "ageUnit": "anos", "minValue": "5000", "maxValue": "13000"}]
+  beforeEach(() => { vi.useFakeTimers(); vi.setSystemTime(new Date(2026, 10, 18, 9, 0)) })
+  afterEach(() => { vi.useRealTimers() })
+  const ref = (faixas: any[], gender: string | undefined, birthDate: string | null, age?: number) =>
+    pickReference(faixas, { gender, birthDate, age })
+
+  it('adulto: homem e mulher têm faixas diferentes', () => {
+    expect(ref(HB, 'male', '1980-05-10', 46)).toBe('13,0 a 17,0')
+    expect(ref(HB, 'female', '1980-05-10', 46)).toBe('12,0 a 15,0')
+    expect(ref(LEUCO, 'female', '1980-05-10', 46)).toBe('4000 a 10000')
+  })
+
+  it('recém-nascido, 3 dias, 1 mês, 2 meses e 3 a 6 meses usam a idade em dias/meses', () => {
+    expect(ref(HB, 'female', '2026-11-17', 0)).toBe('14,0 a 22,0') // 1 dia
+    expect(ref(HB, 'female', '2026-11-10', 0)).toBe('15,0 a 21,0') // 8 dias
+    expect(ref(HB, 'male', '2026-10-10', 0)).toBe('11,5 a 16,5') // 1 mês
+    expect(ref(HB, 'male', '2026-09-15', 0)).toBe('9,4 a 13,0') // 2 meses
+    expect(ref(HB, 'male', '2026-06-01', 0)).toBe('11,1 a 14,1') // 5 meses
+    expect(ref(LEUCO, 'male', '2026-11-17', 0)).toBe('10000 a 26000')
+  })
+
+  it('crianças: 1 ano, 2 a 5 anos e 6 a 12 anos; a partir de 13 anos vale o adulto', () => {
+    expect(ref(LEUCO, 'male', '2025-08-01', 1)).toBe('6000 a 16000')
+    expect(ref(LEUCO, 'male', '2022-01-01', 4)).toBe('5000 a 15000')
+    expect(ref(HB, 'female', '2016-01-01', 10)).toBe('11,0 a 14,0')
+    expect(ref(HB, 'female', '2013-11-18', 13)).toBe('12,0 a 15,0')
+    expect(ref(HB, 'female', '2013-11-19', 12)).toBe('11,0 a 14,0') // faz 13 amanhã
+  })
+
+  it('sem data de nascimento nem idade continua saindo a faixa do adulto', () => {
+    expect(ref(HB, 'female', null)).toBe('12,0 a 15,0')
+    expect(ref(HB, undefined, null)).toBe('13,0 a 17,0')
+  })
+
+  it('idade completa por unidade', () => {
+    const hoje = new Date(2026, 10, 18)
+    expect(ageInUnit('2026-11-15', 'dias', hoje)).toBe(3)
+    expect(ageInUnit('2026-09-19', 'meses', hoje)).toBe(1)
+    expect(ageInUnit('2013-11-19', 'anos', hoje)).toBe(12)
+    expect(ageInUnit(null, 'anos', hoje)).toBeNull()
+  })
+
+  it('cadastros antigos só em anos continuam iguais (0 a 17 x 18 a 150)', () => {
+    const antigas = [
+      { description: 'Criança', sex: 'Todos', minAge: 0, maxAge: 17, ageUnit: 'anos', minValue: '1', maxValue: '2' },
+      { description: 'Adulto', sex: 'Todos', minAge: 18, maxAge: 150, ageUnit: 'anos', minValue: '3', maxValue: '4' },
+    ]
+    expect(ref(antigas, 'male', '2008-12-01', 17)).toBe('1 a 2') // 17 anos e 11 meses
+    expect(ref(antigas, 'male', '2008-11-18', 18)).toBe('3 a 4')
   })
 })
