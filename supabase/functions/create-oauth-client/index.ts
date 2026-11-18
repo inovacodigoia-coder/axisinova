@@ -105,31 +105,61 @@ Deno.serve(async (req) => {
     const scopes = rawScopes.filter((s: string) => VALID_SCOPES.includes(s))
     if (!scopes.length) return json({ error: 'Informe ao menos um escopo válido' }, 400)
 
+    // Credencial de parceiro: 'parceiro' (novo cadastro) ou partner_id (regenerar).
+    const rawPartnerId = String((body as any).partner_id ?? '').trim()
+    const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
+    if (rawPartnerId && !UUID_RE.test(rawPartnerId)) return json({ error: 'Parceiro inválido' }, 400)
+    const uso = rawPartnerId || String((body as any).uso ?? '') === 'parceiro' ? 'parceiro' : 'instrumento'
+
     const clientId = `axis_cid_${base64url(crypto.getRandomValues(new Uint8Array(12)))}`
     const clientSecret = `axis_sec_${base64url(crypto.getRandomValues(new Uint8Array(32)))}`
     const secretHash = await sha256Hex(clientSecret)
 
-    const { data: inserted, error } = await admin
-      .from('integration_oauth_clients')
-      .insert({
-        company_id: profile.company_id,
-        name,
-        client_id: clientId,
-        secret_hash: secretHash,
-        scopes,
-        created_by: user.id,
-        is_active: true,
+    let insertedId: string
+    if (rawPartnerId) {
+      // Regenerar: inativa a anterior e cria a nova numa única transação no banco.
+      const method = 'oauth2'
+      const { data: newId, error } = await admin.rpc('parceiro_credencial_regenerar', {
+        _partner_id: rawPartnerId,
+        _company_id: profile.company_id,
+        _client_id: clientId,
+        _secret_hash: secretHash,
+        _name: name,
+        _scopes: scopes,
+        _created_by: user.id,
+        _method: method,
       })
-      .select('id')
-      .single()
+      if (error) {
+        console.error('[create-oauth-client] erro ao regenerar:', error.code, error.message)
+        if (error.code === 'P0002') return json({ error: 'Parceiro não encontrado' }, 404)
+        return json({ error: 'Não foi possível regenerar as credenciais' }, 500)
+      }
+      insertedId = String(newId)
+    } else {
+      const { data: inserted, error } = await admin
+        .from('integration_oauth_clients')
+        .insert({
+          company_id: profile.company_id,
+          name,
+          client_id: clientId,
+          secret_hash: secretHash,
+          scopes,
+          created_by: user.id,
+          is_active: true,
+          uso,
+        })
+        .select('id')
+        .single()
 
-    if (error) {
-      console.error('[create-oauth-client] erro:', error.message)
-      return json({ error: 'Não foi possível criar as credenciais' }, 500)
+      if (error) {
+        console.error('[create-oauth-client] erro:', error.message)
+        return json({ error: 'Não foi possível criar as credenciais' }, 500)
+      }
+      insertedId = inserted.id
     }
 
     return json({
-      id: inserted.id,
+      id: insertedId,
       client_id: clientId,
       client_secret: clientSecret,
       scopes,

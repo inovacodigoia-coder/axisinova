@@ -132,7 +132,11 @@ export interface GeneratedCredential {
 const isJwt = (token: string | null | undefined): token is string =>
   typeof token === 'string' && token.split('.').length === 3
 
-export async function generateCredential(name = 'Parceiro de Integração'): Promise<GeneratedCredential> {
+/**
+ * Gera credencial OAuth2 de parceiro. Com `partnerId` é uma regeneração: o servidor
+ * inativa a anterior e cria a nova na mesma operação (o segredo antigo para na hora).
+ */
+export async function generateCredential(name = 'Parceiro de Integração', partnerId?: string): Promise<GeneratedCredential> {
   // Só um JWT real do Supabase é aceito pela função. Tokens locais/legados
   // fazem o serviço responder 401 ("Sessão inválida ou expirada").
   let accessToken = (await supabase.auth.getSession()).data.session?.access_token ?? null
@@ -146,7 +150,7 @@ export async function generateCredential(name = 'Parceiro de Integração'): Pro
   }
 
   const { data, error } = await supabase.functions.invoke('create-oauth-client', {
-    body: { name },
+    body: partnerId ? { name, partner_id: partnerId } : { name, uso: 'parceiro' },
     headers: { Authorization: `Bearer ${accessToken}` },
   })
   if (error) {
@@ -216,18 +220,13 @@ export async function removePartner(id: string) {
   await db().delete().eq('id', id)
 }
 
-/** Regenera credenciais revogando a anterior. Retorna a credencial em texto puro (exibição única). */
-export async function regenerateCredential(id: string, method: ApiPartnerAuthMethod = 'oauth2'): Promise<GeneratedCredential> {
+/** Regenera credenciais revogando a anterior (no servidor, atômico). Retorna a credencial em texto puro (exibição única). */
+export async function regenerateCredential(id: string, _method: ApiPartnerAuthMethod = 'oauth2'): Promise<GeneratedCredential> {
   const current = partners.find(p => p.id === id)
   if (!current) throw new Error('Parceiro não encontrado')
 
-  const cred = await generateCredential(`${current.name} — Parceiro API`)
-  const now = new Date().toISOString()
-  const credentials: ApiPartnerCredential[] = [
-    { method, masked: maskCredential(cred), clientId: cred.clientId, createdAt: now, revokedAt: null },
-    ...(current?.credentials || []).map(c => ({ ...c, revokedAt: c.revokedAt ?? now })),
-  ]
-  await updatePartner(id, { authMethod: method, credentials })
+  const cred = await generateCredential(`${current.name} — Parceiro API`, id)
+  await loadPartners(current.companyId)
   return cred
 }
 

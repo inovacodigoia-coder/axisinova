@@ -1,6 +1,7 @@
 // Autenticação das integrações máquina-a-máquina.
 // Suporta OAuth2 (Bearer <access_token>) e a API Key legada (X-API-Key).
 import type { SupabaseClient } from 'npm:@supabase/supabase-js@2'
+import { avaliarCliente, carregarCliente } from './parceiroAcesso.ts'
 
 export async function sha256Hex(value: string) {
   const digest = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(value))
@@ -64,8 +65,17 @@ export async function verifyAccessToken(token: string): Promise<Record<string, a
 }
 
 export type IntegrationAuth =
-  | { ok: true; companyId: string; scopes: string[]; method: 'oauth2' | 'api_key' }
-  | { ok: false; status: number; error: string }
+  | {
+      ok: true
+      companyId: string
+      scopes: string[]
+      method: 'oauth2' | 'api_key'
+      /** client_id OAuth2 do token (null na API Key) */
+      clientId: string | null
+      /** parceiro dono da credencial (null em credencial de equipamento ou API Key) */
+      partnerId: string | null
+    }
+  | { ok: false; status: number; error: string; code: 'UNAUTHORIZED' | 'PARTNER_NOT_AUTHORIZED' | 'FORBIDDEN' }
 
 /**
  * Autentica a requisição. `requiredScope` só é exigido no fluxo OAuth2;
@@ -81,25 +91,41 @@ export async function authenticateIntegration(
     const token = authHeader.slice(7).trim()
     const payload = await verifyAccessToken(token)
     if (payload?.company_id) {
+      // Token assinado não basta: credencial e parceiro são conferidos a cada chamada,
+      // então revogar, regenerar ou desativar bloqueia na hora (sem esperar o exp).
+      const clientId = String(payload.sub ?? '')
+      const client = await carregarCliente(supabase, clientId)
+      const acesso = await avaliarCliente(supabase, client)
+      if (!acesso.ok) return { ok: false, status: acesso.status, error: acesso.message, code: acesso.code }
+      if (String(acesso.client.company_id) !== String(payload.company_id)) {
+        return { ok: false, status: 401, error: 'Token de acesso inválido ou expirado', code: 'UNAUTHORIZED' }
+      }
       const scopes: string[] = String(payload.scope ?? '').split(' ').filter(Boolean)
       if (requiredScope && !scopes.includes(requiredScope)) {
-        return { ok: false, status: 403, error: `Token sem o escopo necessário: ${requiredScope}` }
+        return { ok: false, status: 403, error: `Token sem o escopo necessário: ${requiredScope}`, code: 'FORBIDDEN' }
       }
       await supabase
         .from('integration_oauth_clients')
         .update({ last_used_at: new Date().toISOString() })
-        .eq('client_id', String(payload.sub ?? ''))
-      return { ok: true, companyId: String(payload.company_id), scopes, method: 'oauth2' }
+        .eq('id', acesso.client.id)
+      return {
+        ok: true,
+        companyId: String(acesso.client.company_id),
+        scopes,
+        method: 'oauth2',
+        clientId,
+        partnerId: acesso.partnerId,
+      }
     }
     // Bearer inválido só é erro se não houver API Key como alternativa
     if (!req.headers.get('X-API-Key') && !req.headers.get('x-api-key')) {
-      return { ok: false, status: 401, error: 'Token de acesso inválido ou expirado' }
+      return { ok: false, status: 401, error: 'Token de acesso inválido ou expirado', code: 'UNAUTHORIZED' }
     }
   }
 
   const apiKey = req.headers.get('X-API-Key') || req.headers.get('x-api-key')
   if (!apiKey) {
-    return { ok: false, status: 401, error: 'Credenciais ausentes: envie Authorization: Bearer <token> ou X-API-Key' }
+    return { ok: false, status: 401, error: 'Credenciais ausentes: envie Authorization: Bearer <token> ou X-API-Key', code: 'UNAUTHORIZED' }
   }
 
   const keyHash = await sha256Hex(apiKey.trim())
@@ -110,7 +136,7 @@ export async function authenticateIntegration(
     .maybeSingle()
 
   if (!keyRow || !keyRow.is_active || keyRow.revoked_at) {
-    return { ok: false, status: 401, error: 'Chave de integração inválida ou revogada' }
+    return { ok: false, status: 401, error: 'Chave de integração inválida ou revogada', code: 'UNAUTHORIZED' }
   }
 
   await supabase
@@ -123,5 +149,7 @@ export async function authenticateIntegration(
     companyId: keyRow.company_id as string,
     scopes: ['exams:read', 'orders:read', 'results:write'],
     method: 'api_key',
+    clientId: null,
+    partnerId: null,
   }
 }

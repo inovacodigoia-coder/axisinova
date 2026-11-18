@@ -6551,9 +6551,11 @@ export type Database = {
           is_active: boolean
           last_used_at: string | null
           name: string
+          partner_id: string | null
           revoked_at: string | null
           scopes: string[]
           secret_hash: string
+          uso: string
         }
         Insert: {
           client_id: string
@@ -6564,9 +6566,11 @@ export type Database = {
           is_active?: boolean
           last_used_at?: string | null
           name: string
+          partner_id?: string | null
           revoked_at?: string | null
           scopes?: string[]
           secret_hash: string
+          uso?: string
         }
         Update: {
           client_id?: string
@@ -6577,9 +6581,11 @@ export type Database = {
           is_active?: boolean
           last_used_at?: string | null
           name?: string
+          partner_id?: string | null
           revoked_at?: string | null
           scopes?: string[]
           secret_hash?: string
+          uso?: string
         }
         Relationships: [
           {
@@ -6587,6 +6593,13 @@ export type Database = {
             columns: ["company_id"]
             isOneToOne: false
             referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "integration_oauth_clients_partner_id_fkey"
+            columns: ["partner_id"]
+            isOneToOne: false
+            referencedRelation: "api_partners"
             referencedColumns: ["id"]
           },
         ]
@@ -14502,6 +14515,19 @@ export type Database = {
           tv_id: string
           unit_id: string
         }[]
+      }
+      parceiro_credencial_regenerar: {
+        Args: {
+          _client_id: string
+          _company_id: string
+          _created_by: string
+          _method?: string
+          _name: string
+          _partner_id: string
+          _scopes: string[]
+          _secret_hash: string
+        }
+        Returns: string
       }
       perm_modulo: { Args: { _acao: string; _mod: string }; Returns: boolean }
       pharmacy_dispense: {

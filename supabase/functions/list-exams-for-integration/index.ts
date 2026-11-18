@@ -20,7 +20,7 @@ Deno.serve(async (req) => {
 
   // ---- 1. Autenticação: OAuth2 (Bearer) ou API Key legada ----
   const auth = await authenticateIntegration(req, supabase, 'exams:read')
-  if (!auth.ok) return json({ error: auth.error }, auth.status)
+  if (!auth.ok) return json({ error: auth.error, code: auth.code }, auth.status)
   const companyId = auth.companyId
 
   // ---- 2. Paginação opcional ----

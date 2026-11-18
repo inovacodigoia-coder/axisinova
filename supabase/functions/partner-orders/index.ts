@@ -1,10 +1,11 @@
 // API de Parceiros — Pedidos de Exames
 // POST /functions/v1/partner-orders          -> registra pedido na fila (aguarda autorização)
-// GET  /functions/v1/partner-orders/{proto}  -> consulta status (ou ?protocolo=)
+// GET  /functions/v1/partner-orders/{protocolo_parceiro} -> consulta status do próprio pedido (ou ?protocolo=)
 // Auth: Authorization: Bearer <access_token> (OAuth2 client credentials de /oauth-token)
 import { createClient } from 'npm:@supabase/supabase-js@2'
 import { corsHeaders } from 'npm:@supabase/supabase-js@2/cors'
-import { authenticateIntegration, verifyAccessToken } from '../_shared/integrationAuth.ts'
+import { authenticateIntegration } from '../_shared/integrationAuth.ts'
+import { consultarPedidoParceiro } from '../_shared/parceiroAcesso.ts'
 
 const json = (body: unknown, status = 200) =>
   new Response(JSON.stringify(body), {
@@ -92,19 +93,6 @@ const genderFromSex = (sex: unknown) => {
   return 'not_informed'
 }
 
-const STATUS_LABEL: Record<string, string> = {
-  open: 'ABERTO',
-  waiting: 'AGUARDANDO',
-  waiting_collection: 'AGUARDANDO',
-  collection_done: 'COLETA_REALIZADA',
-  in_analysis: 'EM_ANALISE',
-  validation: 'VALIDACAO',
-  released: 'LIBERADO',
-  completed: 'CONCLUIDO',
-  cancelled: 'CANCELADO',
-  deleted: 'CANCELADO',
-}
-const statusLabel = (s: unknown) => STATUS_LABEL[String(s ?? '')] ?? 'ABERTO'
 
 /** Hash interno do pedido (mesma regra do front: src/utils/orderHash.ts) */
 const generateOrderHash = (orderId: string): string => {
@@ -134,44 +122,38 @@ Deno.serve(async (req) => {
   )
 
   // ---- 1. Autenticação OAuth2 (parceiros não usam API Key legada) ----
+  // authenticateIntegration confere a cada chamada: credencial ativa/não revogada e
+  // parceiro ativo + autorizado + módulo liberado na empresa.
   const auth = await authenticateIntegration(req, supabase)
-  if (!auth.ok) return err('UNAUTHORIZED', auth.error, auth.status)
+  if (!auth.ok) {
+    return err(auth.code === 'PARTNER_NOT_AUTHORIZED' ? 'PARTNER_NOT_AUTHORIZED' : 'UNAUTHORIZED', auth.error, auth.status)
+  }
   if (auth.method !== 'oauth2') {
     return err('UNAUTHORIZED', 'Parceiros devem autenticar com OAuth2 (Bearer token de /oauth-token)', 401)
   }
   if (auth.scopes.length && !auth.scopes.some((s) => ['orders:write', 'orders:read'].includes(s))) {
     return err('FORBIDDEN', 'Token sem permissão para pedidos (escopo orders:write)', 403)
   }
+  // company_id e partner_id vêm SEMPRE do token (credencial vinculada ao parceiro)
   const companyId = auth.companyId
-
-  // client_id do token -> parceiro dono da credencial
-  const bearer = (req.headers.get('Authorization') || '').slice(7).trim()
-  const payload = await verifyAccessToken(bearer)
-  const clientId = String(payload?.sub ?? '')
-
-  const { data: partners } = await supabase
-    .from('api_partners')
-    .select('id, name, api_authorized, status, credentials')
-    .eq('company_id', companyId)
-
-  const partner = (partners || []).find((p: any) =>
-    Array.isArray(p.credentials) &&
-    p.credentials.some((c: any) => c?.clientId === clientId && !c?.revokedAt),
-  )
-  if (!partner) {
+  const clientId = String(auth.clientId ?? '')
+  if (!auth.partnerId) {
     return err('PARTNER_NOT_FOUND', 'Nenhum parceiro cadastrado para estas credenciais', 403)
   }
-  if (partner.status !== 'active' || partner.api_authorized !== true) {
-    return err(
-      'PARTNER_NOT_AUTHORIZED',
-      'Parceiro sem autorização para criar pedidos via API. Ative "Autorizado a criar pedidos via API" no cadastro do parceiro.',
-      403,
-    )
+
+  const { data: partner } = await supabase
+    .from('api_partners')
+    .select('id, name, api_authorized, status')
+    .eq('id', auth.partnerId)
+    .eq('company_id', companyId)
+    .maybeSingle()
+  if (!partner) {
+    return err('PARTNER_NOT_FOUND', 'Nenhum parceiro cadastrado para estas credenciais', 403)
   }
 
   // ---- 2. Roteamento ----
   if (req.method === 'POST') return await createOrder(req, supabase, companyId, partner, clientId)
-  if (req.method === 'GET') return await getOrderStatus(req, supabase, companyId, partner)
+  if (req.method === 'GET') return await getOrderStatus(req, supabase, companyId, String(partner.id))
   return err('METHOD_NOT_ALLOWED', 'Use POST (criar) ou GET (consultar status)', 405)
 })
 
@@ -392,105 +374,16 @@ async function createOrder(req: Request, supabase: any, companyId: string, partn
 }
 
 // ---------- GET: status do pedido ----------
-async function getOrderStatus(req: Request, supabase: any, companyId: string, _partner: any) {
+// Só pedidos do próprio parceiro, pelo protocolo_parceiro; regras em _shared/parceiroAcesso.ts
+async function getOrderStatus(req: Request, supabase: any, companyId: string, partnerId: string) {
   const url = new URL(req.url)
   const segments = url.pathname.split('/').filter(Boolean)
   const last = segments[segments.length - 1]
-  const fromPath = last && last !== 'partner-orders' ? decodeURIComponent(last) : null
+  let fromPath: string | null = null
+  if (last && last !== 'partner-orders') {
+    try { fromPath = decodeURIComponent(last) } catch { fromPath = '\u0000' }
+  }
   const ref = String(url.searchParams.get('protocolo') ?? url.searchParams.get('protocolo_parceiro') ?? fromPath ?? '').trim()
-
-  if (!ref) {
-    return err('MISSING_FIELD', 'Informe o protocolo: /partner-orders/{protocolo} ou ?protocolo=', 400)
-  }
-
-  // aceita protocolo interno OU protocolo_parceiro
-  let orderId: string | null = null
-  const { data: byProtocol } = await supabase
-    .from('attendance_orders')
-    .select('id')
-    .eq('company_id', companyId)
-    .or(`order_number.eq.${ref},protocol.eq.${ref}`)
-    .maybeSingle()
-  orderId = byProtocol?.id ?? null
-
-  let protocoloParceiro: string | null = null
-  let queued: any = null
-  if (!orderId) {
-    const { data: po } = await supabase
-      .from('partner_orders')
-      .select('attendance_order_id, protocolo_parceiro, status, error, payload')
-      .eq('company_id', companyId)
-      .eq('protocolo_parceiro', ref)
-      .maybeSingle()
-    queued = po ?? null
-    orderId = po?.attendance_order_id ?? null
-    protocoloParceiro = po?.protocolo_parceiro ?? null
-  } else {
-    const { data: po } = await supabase
-      .from('partner_orders')
-      .select('protocolo_parceiro')
-      .eq('attendance_order_id', orderId)
-      .maybeSingle()
-    protocoloParceiro = po?.protocolo_parceiro ?? null
-  }
-
-  // pedido ainda na fila de autorização (atendimento não criado)
-  if (!orderId && queued) {
-    const resolved = (queued.payload as any)?._resolved ?? {}
-    return json({
-      success: true,
-      protocolo: null,
-      protocolo_parceiro: protocoloParceiro,
-      status: queued.status === 'error' ? 'ERRO' : 'AGUARDANDO_AUTORIZACAO',
-      message: queued.status === 'error'
-        ? (queued.error ?? 'Pedido não pôde ser processado')
-        : 'Pedido recebido e aguardando autorização da equipe do laboratório.',
-      paciente: { nome: (queued.payload as any)?.paciente?.nome ?? null },
-      exames: (Array.isArray(resolved.exams) ? resolved.exams : []).map((e: any) => ({
-        codigo: e.code,
-        nome: e.name,
-        status: 'RECEBIDO',
-      })),
-    })
-  }
-
-  if (!orderId) {
-    return err('ORDER_NOT_FOUND', 'Nenhum pedido encontrado com o protocolo informado', 404)
-  }
-
-  const { data: order } = await supabase
-    .from('attendance_orders')
-    .select('id, order_number, protocol, status, patient_name, lab_guides')
-    .eq('id', orderId)
-    .maybeSingle()
-  if (!order) return err('ORDER_NOT_FOUND', 'Nenhum pedido encontrado com o protocolo informado', 404)
-
-  const { data: results } = await supabase
-    .from('lab_exam_results')
-    .select('exam_code, status')
-    .eq('order_id', orderId)
-  const resultStatus = new Map<string, string>(
-    (results || []).map((r: any) => [norm(r.exam_code), statusLabel(r.status)]),
-  )
-
-  const exames: any[] = []
-  for (const g of Array.isArray(order.lab_guides) ? order.lab_guides : []) {
-    for (const e of Array.isArray((g as any)?.exams) ? (g as any).exams : []) {
-      const code = String(e?.internalCode ?? '').toUpperCase()
-      exames.push({
-        codigo: code,
-        nome: e?.name ?? null,
-        status: resultStatus.get(norm(code)) ?? (e?.collected ? 'COLETA_REALIZADA' : 'AGUARDANDO'),
-      })
-    }
-  }
-
-  return json({
-    success: true,
-    protocolo: order.order_number ?? order.protocol,
-    protocolo_parceiro: protocoloParceiro,
-    status: statusLabel(order.status),
-    paciente: { nome: order.patient_name },
-    exames,
-  })
+  const r = await consultarPedidoParceiro(supabase, { companyId, partnerId, ref })
+  return json(r.body, r.status)
 }

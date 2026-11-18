@@ -1282,6 +1282,13 @@
       "when": 1794918576329,
       "tag": "0182_cadastro_aprovacao_super_admin",
       "breakpoints": true
+    },
+    {
+      "idx": 183,
+      "version": "7",
+      "when": 1794966625110,
+      "tag": "0183_parceiro_credencial_isolamento",
+      "breakpoints": true
     }
   ]
 }

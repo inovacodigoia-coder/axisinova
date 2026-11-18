@@ -6,6 +6,7 @@
 import { createClient } from 'npm:@supabase/supabase-js@2'
 import { corsHeaders } from 'npm:@supabase/supabase-js@2/cors'
 import { sha256Hex, signAccessToken } from '../_shared/integrationAuth.ts'
+import { avaliarCliente, carregarCliente, iguaisTempoConstante } from '../_shared/parceiroAcesso.ts'
 
 const json = (body: unknown, status = 200) =>
   new Response(JSON.stringify(body), {
@@ -66,16 +67,20 @@ Deno.serve(async (req) => {
     return oauthError('invalid_client', 'client_id e client_secret são obrigatórios', 401)
   }
 
-  // ---- 2. Valida o client ----
-  const { data: client } = await supabase
-    .from('integration_oauth_clients')
-    .select('id, company_id, client_id, secret_hash, scopes, is_active, revoked_at')
-    .eq('client_id', clientId)
-    .maybeSingle()
-
+  // ---- 2. Valida o client (hash comparado em tempo constante) ----
+  const client = await carregarCliente(supabase, clientId)
   const secretHash = await sha256Hex(clientSecret)
-  if (!client || client.secret_hash !== secretHash || !client.is_active || client.revoked_at) {
+  const hashOk = iguaisTempoConstante(String(client?.secret_hash ?? '0'.repeat(64)), secretHash)
+  if (!client || !hashOk || !client.is_active || client.revoked_at) {
     return oauthError('invalid_client', 'Credenciais inválidas ou revogadas', 401)
+  }
+
+  // ---- 2b. Parceiro vinculado: ativo, autorizado e módulo liberado; senão, sem token ----
+  const acesso = await avaliarCliente(supabase, client)
+  if (!acesso.ok) {
+    return acesso.code === 'PARTNER_NOT_AUTHORIZED'
+      ? oauthError('PARTNER_NOT_AUTHORIZED', acesso.message, 403)
+      : oauthError('invalid_client', 'Credenciais inválidas ou revogadas', 401)
   }
 
   // ---- 3. Escopos ----
