@@ -6,6 +6,10 @@ import { createClient } from 'npm:@supabase/supabase-js@2'
 import { corsHeaders } from 'npm:@supabase/supabase-js@2/cors'
 import { authenticateIntegration } from '../_shared/integrationAuth.ts'
 import { consultarPedidoParceiro } from '../_shared/parceiroAcesso.ts'
+import {
+  codigoDeErro, consumirLimites, emSegundoPlano, gravarLog, linhaDeLog, mensagemLimite, novoContexto,
+  regrasPartnerOrders, type CtxApi,
+} from '../_shared/apiProtecao.ts'
 
 const json = (body: unknown, status = 200) =>
   new Response(JSON.stringify(body), {
@@ -113,6 +117,8 @@ const materialOf = (e: any): string | null => {
 }
 
 // ---------- handler ----------
+// Toda chamada (sucesso ou falha) gera uma linha em api_request_logs, gravada depois da resposta.
+// Consultas extras por chamada: 1 de limite (api_limite_consumir) + 1 de log (api_log_registrar).
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders })
 
@@ -120,6 +126,22 @@ Deno.serve(async (req) => {
     Deno.env.get('SUPABASE_URL')!,
     Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!,
   )
+  const ctx = novoContexto(req, 'partner-orders')
+  let res: Response
+  let errorCode: string | null = null
+  try {
+    res = await atender(req, supabase, ctx)
+  } catch (e) {
+    console.error('[partner-orders] erro interno:', e instanceof Error ? e.message : e)
+    res = err('INTERNAL_ERROR', 'Erro interno ao processar a requisição', 500)
+    errorCode = 'INTERNAL_ERROR'
+  }
+  errorCode = errorCode ?? (await codigoDeErro(res))
+  emSegundoPlano(gravarLog(supabase, linhaDeLog(ctx, res.status, errorCode)))
+  return res
+})
+
+async function atender(req: Request, supabase: any, ctx: CtxApi): Promise<Response> {
 
   // ---- 1. Autenticação OAuth2 (parceiros não usam API Key legada) ----
   // authenticateIntegration confere a cada chamada: credencial ativa/não revogada e
@@ -137,6 +159,9 @@ Deno.serve(async (req) => {
   // company_id e partner_id vêm SEMPRE do token (credencial vinculada ao parceiro)
   const companyId = auth.companyId
   const clientId = String(auth.clientId ?? '')
+  ctx.companyId = companyId
+  ctx.clientId = auth.clientId
+  ctx.partnerId = auth.partnerId
   if (!auth.partnerId) {
     return err('PARTNER_NOT_FOUND', 'Nenhum parceiro cadastrado para estas credenciais', 403)
   }
@@ -151,11 +176,19 @@ Deno.serve(async (req) => {
     return err('PARTNER_NOT_FOUND', 'Nenhum parceiro cadastrado para estas credenciais', 403)
   }
 
+  // ---- 1b. Limite por minuto (por parceiro; no POST também por empresa) ----
+  const limite = await consumirLimites(supabase, regrasPartnerOrders(req.method, String(partner.id), companyId))
+  if (!limite.permitido) {
+    return new Response(JSON.stringify({
+      success: false, error: 'RATE_LIMITED', message: mensagemLimite(limite.retryAfter), retry_after: limite.retryAfter,
+    }), { status: 429, headers: { ...corsHeaders, 'Content-Type': 'application/json', 'Retry-After': String(limite.retryAfter) } })
+  }
+
   // ---- 2. Roteamento ----
   if (req.method === 'POST') return await createOrder(req, supabase, companyId, partner, clientId)
   if (req.method === 'GET') return await getOrderStatus(req, supabase, companyId, String(partner.id))
   return err('METHOD_NOT_ALLOWED', 'Use POST (criar) ou GET (consultar status)', 405)
-})
+}
 
 // ---------- POST: criar pedido ----------
 async function createOrder(req: Request, supabase: any, companyId: string, partner: any, clientId: string) {

@@ -348,7 +348,13 @@ export const API_GROUPS: ApiGroup[] = [
 }
 
 // erro
-{ "error": "invalid_client", "error_description": "Credenciais inválidas ou revogadas" }`,
+{ "error": "invalid_client", "error_description": "Credenciais inválidas ou revogadas" }
+
+// 429 limite ou bloqueio (cabeçalho Retry-After: segundos de espera)
+{ "error": "RATE_LIMITED", "error_description": "Limite de requisições excedido. Aguarde 42 segundos e tente novamente." }
+// limites: 30 requisições/min por IP; 30 tokens emitidos/min por client_id;
+// 5 credenciais erradas em 15 min do mesmo client_id + IP bloqueiam esse par por 15 min;
+// 20 credenciais erradas em 15 min do mesmo IP bloqueiam o IP por 15 min`,
       },
       {
         id: 'fn-receive-result',
@@ -696,7 +702,17 @@ export const API_GROUPS: ApiGroup[] = [
   "protocolo_parceiro": "PED-2026-00871"
 }
 
-// demais erros: UNAUTHORIZED, PARTNER_NOT_AUTHORIZED, INVALID_CPF, MISSING_FIELD, DUPLICATE_ORDER, RATE_LIMITED`,
+// demais erros: UNAUTHORIZED, PARTNER_NOT_AUTHORIZED, INVALID_CPF, MISSING_FIELD, DUPLICATE_ORDER, RATE_LIMITED
+
+// 429 RATE_LIMITED (cabeçalho Retry-After: segundos de espera)
+{
+  "success": false,
+  "error": "RATE_LIMITED",
+  "message": "Limite de requisições excedido. Aguarde 42 segundos e tente novamente.",
+  "retry_after": 42
+}
+// limites: POST 120/min por parceiro e 600/min por empresa; GET 120/min por parceiro;
+// list-exams-for-integration com credencial de parceiro: 30/min por parceiro`,
       },
       {
         id: 'fn-partner-orders-status',
@@ -738,7 +754,9 @@ export const API_GROUPS: ApiGroup[] = [
   "success": false,
   "error": "ORDER_NOT_FOUND",
   "message": "Nenhum pedido encontrado com o protocolo informado"
-}`,
+}
+
+// 429 RATE_LIMITED: mais de 120 consultas/min do parceiro (cabeçalho Retry-After)`,
       },
       {
         id: 'fn-list-exams-partner',

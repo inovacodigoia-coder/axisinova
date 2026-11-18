@@ -472,6 +472,81 @@ export type Database = {
           },
         ]
       }
+      api_auth_falhas: {
+        Row: {
+          bloqueado_ate: string | null
+          chave: string
+          falhas: number
+          primeira_falha: string
+          regra: string
+          updated_at: string
+        }
+        Insert: {
+          bloqueado_ate?: string | null
+          chave: string
+          falhas?: number
+          primeira_falha?: string
+          regra: string
+          updated_at?: string
+        }
+        Update: {
+          bloqueado_ate?: string | null
+          chave?: string
+          falhas?: number
+          primeira_falha?: string
+          regra?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      api_limite_contadores: {
+        Row: {
+          chave: string
+          contagem: number
+          janela_inicio: string
+          regra: string
+        }
+        Insert: {
+          chave: string
+          contagem?: number
+          janela_inicio: string
+          regra: string
+        }
+        Update: {
+          chave?: string
+          contagem?: number
+          janela_inicio?: string
+          regra?: string
+        }
+        Relationships: []
+      }
+      api_limites_config: {
+        Row: {
+          bloqueio_segundos: number | null
+          descricao: string | null
+          janela_segundos: number
+          limite: number
+          regra: string
+          updated_at: string
+        }
+        Insert: {
+          bloqueio_segundos?: number | null
+          descricao?: string | null
+          janela_segundos?: number
+          limite: number
+          regra: string
+          updated_at?: string
+        }
+        Update: {
+          bloqueio_segundos?: number | null
+          descricao?: string | null
+          janela_segundos?: number
+          limite?: number
+          regra?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       api_partners: {
         Row: {
           api_authorized: boolean
@@ -548,6 +623,54 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      api_request_logs: {
+        Row: {
+          client_id: string | null
+          company_id: string | null
+          created_at: string
+          duration_ms: number | null
+          endpoint: string
+          error_code: string | null
+          id: string
+          ip: string | null
+          metodo: string
+          partner_id: string | null
+          request_id: string | null
+          status_code: number
+          user_agent: string | null
+        }
+        Insert: {
+          client_id?: string | null
+          company_id?: string | null
+          created_at?: string
+          duration_ms?: number | null
+          endpoint: string
+          error_code?: string | null
+          id?: string
+          ip?: string | null
+          metodo: string
+          partner_id?: string | null
+          request_id?: string | null
+          status_code: number
+          user_agent?: string | null
+        }
+        Update: {
+          client_id?: string | null
+          company_id?: string | null
+          created_at?: string
+          duration_ms?: number | null
+          endpoint?: string
+          error_code?: string | null
+          id?: string
+          ip?: string | null
+          metodo?: string
+          partner_id?: string | null
+          request_id?: string | null
+          status_code?: number
+          user_agent?: string | null
+        }
+        Relationships: []
       }
       apoio_acao_pendente: {
         Row: {
@@ -12533,6 +12656,36 @@ export type Database = {
           _setor: string
         }
         Returns: string
+      }
+      api__consumir: {
+        Args: { _chave: string; _regra: string }
+        Returns: number
+      }
+      api__falha: {
+        Args: { _chave: string; _regra: string }
+        Returns: undefined
+      }
+      api__janela_inicio: { Args: { _janela: number }; Returns: string }
+      api__limite: {
+        Args: { _regra: string }
+        Returns: Record<string, unknown>
+      }
+      api__limpar_contadores: { Args: never; Returns: undefined }
+      api__segundos_ate: { Args: { _quando: string }; Returns: number }
+      api_limite_consumir: { Args: { _itens: Json }; Returns: Json }
+      api_log_registrar: { Args: { _log: Json }; Returns: undefined }
+      api_oauth_pre: {
+        Args: { _client_id: string; _ip: string }
+        Returns: Json
+      }
+      api_oauth_resultado: {
+        Args: {
+          _client_id: string
+          _ip: string
+          _log: Json
+          _resultado: string
+        }
+        Returns: undefined
       }
       apoio__mascarar: { Args: { _t: string }; Returns: string }
       apoio_acao_adiar: { Args: { _id: string }; Returns: undefined }

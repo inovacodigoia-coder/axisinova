@@ -2,6 +2,10 @@ import { createClient } from 'npm:@supabase/supabase-js@2'
 import { corsHeaders } from 'npm:@supabase/supabase-js@2/cors'
 import { authenticateIntegration } from '../_shared/integrationAuth.ts'
 import { parametrosParaCasar } from '../_shared/laudoEscolha.ts'
+import {
+  codigoDeErro, consumirLimites, emSegundoPlano, gravarLog, linhaDeLog, mensagemLimite, novoContexto,
+  protegerListaExames, type CtxApi,
+} from '../_shared/apiProtecao.ts'
 
 const json = (body: unknown, status = 200) =>
   new Response(JSON.stringify(body), {
@@ -21,7 +25,31 @@ Deno.serve(async (req) => {
   // ---- 1. Autenticação: OAuth2 (Bearer) ou API Key legada ----
   const auth = await authenticateIntegration(req, supabase, 'exams:read')
   if (!auth.ok) return json({ error: auth.error, code: auth.code }, auth.status)
-  const companyId = auth.companyId
+
+  // Credencial de equipamento (ou API Key): sem log, sem limite, sem consulta extra.
+  if (!protegerListaExames(auth)) return await listar(req, supabase, auth.companyId)
+
+  // Credencial de parceiro: limite por minuto + log (gravado depois da resposta).
+  const ctx: CtxApi = { ...novoContexto(req, 'list-exams-for-integration'), companyId: auth.companyId, partnerId: auth.partnerId, clientId: auth.clientId }
+  let res: Response
+  const limite = await consumirLimites(supabase, [{ regra: 'list_exams_parceiro', chave: auth.partnerId }])
+  if (!limite.permitido) {
+    res = new Response(JSON.stringify({ error: 'RATE_LIMITED', code: 'RATE_LIMITED', message: mensagemLimite(limite.retryAfter), retry_after: limite.retryAfter }), {
+      status: 429, headers: { ...corsHeaders, 'Content-Type': 'application/json', 'Retry-After': String(limite.retryAfter) },
+    })
+  } else {
+    try {
+      res = await listar(req, supabase, auth.companyId)
+    } catch (e) {
+      console.error('[list-exams-for-integration] erro interno:', e instanceof Error ? e.message : e)
+      res = json({ error: 'INTERNAL_ERROR', message: 'Erro interno ao ler o catálogo' }, 500)
+    }
+  }
+  emSegundoPlano(gravarLog(supabase, linhaDeLog(ctx, res.status, await codigoDeErro(res))))
+  return res
+})
+
+async function listar(req: Request, supabase: any, companyId: string): Promise<Response> {
 
   // ---- 2. Paginação opcional ----
   const url = new URL(req.url)
@@ -158,4 +186,4 @@ Deno.serve(async (req) => {
   }
 
   return json({ exams: out })
-})
+}

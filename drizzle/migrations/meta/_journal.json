@@ -1296,6 +1296,13 @@
       "when": 1794967793209,
       "tag": "0184_parceiro_arquivar",
       "breakpoints": true
+    },
+    {
+      "idx": 185,
+      "version": "7",
+      "when": 1794969110216,
+      "tag": "0185_api_parceiros_protecao",
+      "breakpoints": true
     }
   ]
 }
