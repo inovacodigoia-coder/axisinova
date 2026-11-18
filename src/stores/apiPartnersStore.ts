@@ -42,6 +42,7 @@ interface PartnerRow {
   credentials: ApiPartnerCredential[] | null
   last_sync_at: string | null
   created_at: string
+  archived_at?: string | null
 }
 
 function fromRow(r: PartnerRow): ApiPartner {
@@ -61,6 +62,7 @@ function fromRow(r: PartnerRow): ApiPartner {
     credentials: r.credentials || [],
     lastSyncAt: r.last_sync_at,
     createdAt: r.created_at,
+    archivedAt: r.archived_at ?? null,
   }
 }
 
@@ -209,15 +211,40 @@ export async function addPartner(
 }
 
 export async function updatePartner(id: string, patch: Partial<ApiPartner>) {
+  const before = partners.find(p => p.id === id)
   partners = partners.map(p => (p.id === id ? { ...p, ...patch } : p))
   emit()
-  await db().update(toRow(patch)).eq('id', id)
+  const { error } = await db().update(toRow(patch)).eq('id', id)
+  if (error) {
+    if (before) { partners = partners.map(p => (p.id === id ? before : p)); emit() }
+    throw new Error(/arquivado/i.test(error.message)
+      ? 'Parceiro arquivado: restaure antes de alterar'
+      : 'Não foi possível salvar as alterações do parceiro')
+  }
 }
 
-export async function removePartner(id: string) {
-  partners = partners.filter(p => p.id !== id)
-  emit()
-  await db().delete().eq('id', id)
+const rpc = (fn: string, args: Record<string, unknown>) =>
+  (supabase as unknown as { rpc: (f: string, a: Record<string, unknown>) => Promise<{ error: { message: string } | null }> }).rpc(fn, args)
+
+/**
+ * Arquiva o parceiro (substitui a exclusão): nada é apagado, a autorização sai e
+ * todas as credenciais são desligadas no servidor. Pedidos recebidos continuam guardados.
+ */
+export async function archivePartner(id: string) {
+  const current = partners.find(p => p.id === id)
+  const { error } = await rpc('parceiro_arquivar', { _partner_id: id })
+  if (error) throw new Error('Não foi possível arquivar o parceiro. Só administradores da empresa podem arquivar.')
+  if (current) await loadPartners(current.companyId)
+}
+
+/** Restaura um parceiro arquivado (só Super Admin): volta Pendente e sem credencial ativa. */
+export async function restorePartner(id: string, companyId?: string) {
+  const { error } = await rpc('parceiro_restaurar', { _partner_id: id })
+  if (error) throw new Error(/Super Admin/.test(error.message)
+    ? 'Somente o Super Admin pode restaurar parceiros'
+    : 'Não foi possível restaurar o parceiro')
+  const cid = companyId ?? partners.find(p => p.id === id)?.companyId
+  if (cid && cid === loadedCompanyId) await loadPartners(cid)
 }
 
 /** Regenera credenciais revogando a anterior (no servidor, atômico). Retorna a credencial em texto puro (exibição única). */

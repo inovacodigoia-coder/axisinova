@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
-import { ArrowLeft, Trash2, RefreshCw, KeyRound, Lock, Info, FileDown } from 'lucide-react'
+import { ArrowLeft, Archive, ArchiveRestore, RefreshCw, Lock, Info, FileDown } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -20,12 +20,13 @@ import { generatePartnerIntegrationGuide, canGeneratePartnerGuide } from '@/lib/
 import { buildPartnerExamCatalog, PARTNER_CODE_WARNING } from '@/lib/partnerExamCatalog'
 import { useRegisters } from '@/context/RegistersContext'
 import { usePartnerApiEntitlement } from '@/stores/partnerApiEntitlementStore'
+import { usePermissions } from '@/hooks/usePermissions'
 import { toast } from 'sonner'
 import { cn } from '@/lib/utils'
 import { PartnerOrdersTable } from '@/components/lab/portals/partners/PartnerOrdersTable'
 import { CredentialRevealCard } from '@/components/lab/portals/partners/CredentialRevealCard'
 import {
-  useApiPartners, updatePartner, removePartner, regenerateCredential, maskDocument, maskPhone,
+  useApiPartners, updatePartner, archivePartner, restorePartner, regenerateCredential, maskDocument, maskPhone,
   type GeneratedCredential,
 } from '@/stores/apiPartnersStore'
 import type { ApiPartnerAuthMethod, ApiPartnerType } from '@/types/api-partners.types'
@@ -42,8 +43,10 @@ export default function PartnerDetailPage() {
   const [regenOpen, setRegenOpen] = useState(false)
   const [regenMethod, setRegenMethod] = useState<ApiPartnerAuthMethod>('oauth2')
   const [newCredential, setNewCredential] = useState<GeneratedCredential | null>(null)
-  const [deleteOpen, setDeleteOpen] = useState(false)
-  const [deleteConfirmed, setDeleteConfirmed] = useState(false)
+  const [archiveOpen, setArchiveOpen] = useState(false)
+  const [archiveConfirmed, setArchiveConfirmed] = useState(false)
+  const [busy, setBusy] = useState(false)
+  const { isSuperAdmin } = usePermissions()
   const [guidePreviewOpen, setGuidePreviewOpen] = useState(false)
   const { exams: registeredExams, workbenches } = useRegisters()
   const guideCatalog = buildPartnerExamCatalog(registeredExams, workbenches)
@@ -64,13 +67,45 @@ export default function PartnerDetailPage() {
   const auth = partnerAuthorizationState(partner)
   const guideEnabled = entitlement.enabled && canGeneratePartnerGuide(partner)
   const activeCredential = partner.credentials.find(c => !c.revokedAt)
+  const archived = !!partner.archivedAt
 
-  const save = () => {
-    void updatePartner(partner.id, {
-      type: form.type, name: form.name, document: form.document, contactName: form.contactName,
-      contactEmail: form.contactEmail, contactPhone: form.contactPhone, notes: form.notes,
-    })
-    toast.success('Dados do parceiro atualizados')
+  const save = async () => {
+    try {
+      await updatePartner(partner.id, {
+        type: form.type, name: form.name, document: form.document, contactName: form.contactName,
+        contactEmail: form.contactEmail, contactPhone: form.contactPhone, notes: form.notes,
+      })
+      toast.success('Dados do parceiro atualizados')
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Não foi possível salvar')
+    }
+  }
+
+  const toggleAuthorized = async (v: boolean) => {
+    try { await updatePartner(partner.id, { apiAuthorized: v }) } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Não foi possível atualizar a autorização')
+    }
+  }
+
+  const confirmArchive = async () => {
+    setBusy(true)
+    try {
+      await archivePartner(partner.id)
+      setArchiveOpen(false)
+      toast.success('Parceiro arquivado. Os pedidos recebidos continuam guardados.')
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Não foi possível arquivar o parceiro')
+    } finally { setBusy(false) }
+  }
+
+  const restore = async () => {
+    setBusy(true)
+    try {
+      await restorePartner(partner.id, partner.companyId)
+      toast.success('Parceiro restaurado como Pendente. Gere uma nova credencial para ele voltar a usar a API.')
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Não foi possível restaurar o parceiro')
+    } finally { setBusy(false) }
   }
 
   const confirmRegenerate = async () => {
@@ -94,6 +129,7 @@ export default function PartnerDetailPage() {
           <h1 className="text-2xl font-bold text-foreground">{partner.name}</h1>
           <div className="flex flex-wrap gap-1.5">
             <Badge variant="outline">{PARTNER_TYPE_LABEL[partner.type]}</Badge>
+            {archived && <Badge variant="secondary">Arquivado</Badge>}
             <Badge className={cn('border-transparent', partner.status === 'active'
               ? 'bg-[hsl(145,63%,42%)]/15 text-[hsl(145,63%,32%)]' : 'bg-muted text-muted-foreground')}>
               {partner.status === 'active' ? 'Ativo' : 'Inativo'}
@@ -130,11 +166,31 @@ export default function PartnerDetailPage() {
               )}
             </Tooltip>
           </TooltipProvider>
-          <Button variant="destructive" className="min-h-[44px]" onClick={() => { setDeleteConfirmed(false); setDeleteOpen(true) }}>
-            <Trash2 className="mr-2 h-4 w-4" /> Excluir Parceiro
-          </Button>
+          {archived ? (
+            isSuperAdmin && (
+              <Button variant="outline" className="min-h-[44px]" disabled={busy} onClick={() => void restore()}>
+                <ArchiveRestore className="mr-2 h-4 w-4" /> Restaurar
+              </Button>
+            )
+          ) : (
+            <Button variant="outline" className="min-h-[44px]" onClick={() => { setArchiveConfirmed(false); setArchiveOpen(true) }}>
+              <Archive className="mr-2 h-4 w-4" /> Arquivar Parceiro
+            </Button>
+          )}
         </div>
       </div>
+
+      {archived && (
+        <div className="flex items-start gap-2 rounded-xl border bg-muted/40 p-4 text-sm">
+          <Info className="mt-0.5 h-4 w-4 shrink-0 text-muted-foreground" />
+          <p className="text-muted-foreground">
+            Parceiro arquivado em {new Date(partner.archivedAt!).toLocaleDateString('pt-BR')}. Ele não acessa a API e as credenciais foram desligadas.
+            Os pedidos recebidos continuam guardados. {isSuperAdmin
+              ? 'Ao restaurar, ele volta como Pendente e sem credencial ativa.'
+              : 'Só o Super Admin pode restaurá-lo.'}
+          </p>
+        </div>
+      )}
 
       <Tabs defaultValue="dados">
         <TabsList className="flex-wrap">
@@ -184,7 +240,7 @@ export default function PartnerDetailPage() {
             </div>
           </div>
           <div className="flex justify-end">
-            <Button onClick={save} className="min-h-[44px] bg-gradient-to-r from-[#00D4FF] to-[#7B2FF7] text-white hover:opacity-90">
+            <Button onClick={() => void save()} disabled={archived} className="min-h-[44px] bg-gradient-to-r from-[#00D4FF] to-[#7B2FF7] text-white hover:opacity-90">
               Salvar Alterações
             </Button>
           </div>
@@ -221,7 +277,7 @@ export default function PartnerDetailPage() {
 
           {newCredential && <CredentialRevealCard credential={newCredential} />}
 
-          <Button variant="outline" className="min-h-[44px]" onClick={() => setRegenOpen(true)}>
+          <Button variant="outline" className="min-h-[44px]" disabled={archived} onClick={() => setRegenOpen(true)}>
             <RefreshCw className="mr-2 h-4 w-4" /> Regenerar Credenciais
           </Button>
 
@@ -238,7 +294,7 @@ export default function PartnerDetailPage() {
               <p className="text-sm font-medium">Autorizado a criar pedidos via API</p>
               <p className="text-xs text-muted-foreground">Sem esta autorização o parceiro fica como Pendente.</p>
             </div>
-            <Switch checked={partner.apiAuthorized} onCheckedChange={v => updatePartner(partner.id, { apiAuthorized: v })} />
+            <Switch checked={partner.apiAuthorized} disabled={archived} onCheckedChange={v => void toggleAuthorized(v)} />
           </div>
 
           <div className="flex items-start gap-2 rounded-xl border border-primary/30 bg-primary/5 p-4 text-sm">
@@ -270,7 +326,6 @@ export default function PartnerDetailPage() {
         </AlertDialogContent>
       </AlertDialog>
 
-      {/* Excluir parceiro (confirmação dupla) */}
       <Dialog open={guidePreviewOpen} onOpenChange={setGuidePreviewOpen}>
         <DialogContent className="max-w-2xl">
           <DialogHeader>
@@ -319,26 +374,28 @@ export default function PartnerDetailPage() {
         </DialogContent>
       </Dialog>
 
-      <Dialog open={deleteOpen} onOpenChange={setDeleteOpen}>
+      {/* Arquivar parceiro (confirmação dupla) — nada é apagado */}
+      <Dialog open={archiveOpen} onOpenChange={setArchiveOpen}>
         <DialogContent className="max-w-md">
           <DialogHeader>
-            <DialogTitle>Excluir parceiro</DialogTitle>
+            <DialogTitle>Arquivar parceiro</DialogTitle>
           </DialogHeader>
           <p className="text-sm text-muted-foreground">
-            Esta ação remove o acesso à API de <strong className="text-foreground">{partner.name}</strong> e não pode ser desfeita.
+            <strong className="text-foreground">{partner.name}</strong> perde o acesso à API na hora e todas as credenciais são desligadas.
+            O cadastro e os pedidos recebidos continuam guardados. Só o Super Admin pode restaurar.
           </p>
           <label className="flex items-start gap-2 rounded-lg border p-3 text-sm">
-            <Checkbox checked={deleteConfirmed} onCheckedChange={v => setDeleteConfirmed(v === true)} />
-            <span>Confirmo que desejo excluir este parceiro e revogar suas credenciais.</span>
+            <Checkbox checked={archiveConfirmed} onCheckedChange={v => setArchiveConfirmed(v === true)} />
+            <span>Confirmo que desejo arquivar este parceiro e desligar suas credenciais.</span>
           </label>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setDeleteOpen(false)}>Cancelar</Button>
+            <Button variant="outline" onClick={() => setArchiveOpen(false)}>Cancelar</Button>
             <Button
               variant="destructive"
-              disabled={!deleteConfirmed}
-              onClick={() => { void removePartner(partner.id); toast.success('Parceiro excluído'); navigate('/app/portais/parceiros') }}
+              disabled={!archiveConfirmed || busy}
+              onClick={() => void confirmArchive()}
             >
-              Excluir definitivamente
+              Arquivar
             </Button>
           </DialogFooter>
         </DialogContent>

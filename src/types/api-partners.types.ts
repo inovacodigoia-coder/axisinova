@@ -28,6 +28,8 @@ export interface ApiPartner {
   credentials: ApiPartnerCredential[]
   lastSyncAt: string | null
   createdAt: string
+  /** Arquivado (substitui a exclusão): nunca acessa a API; só o Super Admin restaura. */
+  archivedAt?: string | null
 }
 
 export const PARTNER_TYPE_LABEL: Record<ApiPartnerType, string> = {
@@ -47,6 +49,6 @@ export const PARTNER_TYPE_ICON: Record<ApiPartnerType, string> = {
 }
 
 export function partnerAuthorizationState(p: ApiPartner): ApiPartnerAuthorization {
-  if (p.status === 'inactive') return 'blocked'
+  if (p.archivedAt || p.status === 'inactive') return 'blocked'
   return p.apiAuthorized ? 'authorized' : 'pending'
 }

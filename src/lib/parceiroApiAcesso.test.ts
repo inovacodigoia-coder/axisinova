@@ -104,6 +104,24 @@ describe('GET /partner-orders/{ref}', () => {
 })
 
 describe('estado da credencial e do parceiro a cada chamada', () => {
+  it('parceiro arquivado é recusado, mesmo ativo, autorizado e com credencial ainda ativa', async () => {
+    const t = base()
+    t.api_partners[0] = { ...t.api_partners[0], archived_at: '2026-11-18T02:00:00Z' } as any
+    const db = fakeDb(t)
+    const r = await avaliarCliente(db, await carregarCliente(db, 'cid-a'))
+    expect(r).toMatchObject({ ok: false, status: 403, code: 'PARTNER_NOT_AUTHORIZED' })
+  })
+
+  it('credencial de equipamento não depende do cadastro de parceiros', async () => {
+    const inner = fakeDb(base())
+    const tabelas: string[] = []
+    const db = { from: (t: string) => { tabelas.push(t); return inner.from(t) } }
+    const r = await avaliarCliente(db, await carregarCliente(db, 'cid-equip'))
+    expect(r).toMatchObject({ ok: true, partnerId: null })
+    // uma única busca (integration_oauth_clients por client_id); nada em api_partners/companies
+    expect(tabelas).toEqual(['integration_oauth_clients'])
+  })
+
   it('(e) parceiro Pendente não é liberado (oauth-token não emite token)', async () => {
     const db = fakeDb(base())
     const r = await avaliarCliente(db, await carregarCliente(db, 'cid-pend'))

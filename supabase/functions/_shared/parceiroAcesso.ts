@@ -1,7 +1,7 @@
 // API de Parceiros — regras de isolamento e revogação, sem dependências de runtime
 // (usadas pelas Edge Functions e testadas com vitest).
 //  - a cada chamada: credencial ativa (integration_oauth_clients) e, se for de parceiro,
-//    parceiro ativo + autorizado + módulo liberado na empresa;
+//    parceiro ativo + não arquivado + autorizado + módulo liberado na empresa;
 //  - consulta de pedido só em partner_orders do próprio parceiro, sem dados do paciente.
 
 // deno-lint-ignore no-explicit-any
@@ -63,11 +63,11 @@ export async function avaliarCliente(db: Db, client: ClienteOAuth | null): Promi
 
   const { data: partner } = await db
     .from('api_partners')
-    .select('id, status, api_authorized')
+    .select('id, status, api_authorized, archived_at')
     .eq('id', client.partner_id)
     .eq('company_id', client.company_id)
     .maybeSingle()
-  if (!partner || partner.status !== 'active' || partner.api_authorized !== true) return NEGADO_PARCEIRO
+  if (!partner || partner.archived_at || partner.status !== 'active' || partner.api_authorized !== true) return NEGADO_PARCEIRO
 
   const { data: company } = await db
     .from('companies')

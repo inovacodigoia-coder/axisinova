@@ -475,6 +475,8 @@ export type Database = {
       api_partners: {
         Row: {
           api_authorized: boolean
+          archived_at: string | null
+          archived_by: string | null
           auth_method: string
           company_id: string
           contact_email: string | null
@@ -487,12 +489,16 @@ export type Database = {
           last_sync_at: string | null
           name: string
           notes: string | null
+          restored_at: string | null
+          restored_by: string | null
           status: string
           type: string
           updated_at: string
         }
         Insert: {
           api_authorized?: boolean
+          archived_at?: string | null
+          archived_by?: string | null
           auth_method?: string
           company_id: string
           contact_email?: string | null
@@ -505,12 +511,16 @@ export type Database = {
           last_sync_at?: string | null
           name: string
           notes?: string | null
+          restored_at?: string | null
+          restored_by?: string | null
           status?: string
           type: string
           updated_at?: string
         }
         Update: {
           api_authorized?: boolean
+          archived_at?: string | null
+          archived_by?: string | null
           auth_method?: string
           company_id?: string
           contact_email?: string | null
@@ -523,6 +533,8 @@ export type Database = {
           last_sync_at?: string | null
           name?: string
           notes?: string | null
+          restored_at?: string | null
+          restored_by?: string | null
           status?: string
           type?: string
           updated_at?: string
@@ -14516,6 +14528,7 @@ export type Database = {
           unit_id: string
         }[]
       }
+      parceiro_arquivar: { Args: { _partner_id: string }; Returns: undefined }
       parceiro_credencial_regenerar: {
         Args: {
           _client_id: string
@@ -14529,6 +14542,7 @@ export type Database = {
         }
         Returns: string
       }
+      parceiro_restaurar: { Args: { _partner_id: string }; Returns: undefined }
       perm_modulo: { Args: { _acao: string; _mod: string }; Returns: boolean }
       pharmacy_dispense: {
         Args: { _dispensation_id: string }

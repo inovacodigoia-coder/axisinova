@@ -701,30 +701,39 @@ export const API_GROUPS: ApiGroup[] = [
       {
         id: 'fn-partner-orders-status',
         method: 'GET',
-        path: '/partner-orders/{protocolo}',
+        path: '/partner-orders/{protocolo_parceiro}',
         summary: 'Consultar status de um pedido enviado',
         description:
-          'Retorna a situação atual de um pedido enviado via POST /partner-orders, usando o protocolo_parceiro enviado (ou o protocolo interno, depois que o atendimento for criado). Enquanto o pedido não for autorizado pela equipe, o status é AGUARDANDO_AUTORIZACAO; depois passa a refletir o andamento do atendimento (aguardando, coletado, em análise, liberado).',
+          'Retorna a situação atual de um pedido enviado via POST /partner-orders. Aceita SOMENTE o protocolo_parceiro que o próprio parceiro enviou na criação (o protocolo interno não é aceito na busca) e só encontra pedidos do parceiro dono do token. A resposta não traz dados do paciente. Enquanto o pedido não for autorizado pela equipe, o status é AGUARDANDO_AUTORIZACAO; depois passa a refletir o andamento do atendimento (aguardando, coletado, em análise, liberado).',
         scope: 'partner',
         auth: 'Authorization: Bearer <access_token> (OAuth2)',
         params: [
           { name: 'Authorization', in: 'header', type: 'string', required: true, description: 'Bearer <access_token> obtido em /oauth-token' },
-          { name: 'protocolo', in: 'path', type: 'string', required: true, description: 'Protocolo interno (ex.: "192-00") ou o protocolo_parceiro enviado na criação' },
+          { name: 'protocolo_parceiro', in: 'path', type: 'string', required: true, description: 'O protocolo_parceiro enviado pelo próprio parceiro na criação. Apenas letras, números, hífen, underline e ponto (até 64 caracteres)' },
         ],
         responseExample: `// 200 sucesso
 {
   "success": true,
-  "protocolo": "192-00",
   "protocolo_parceiro": "PED-2026-00871",
   "status": "LIBERADO",
-  "paciente": { "nome": "Maria Aparecida Souza" },
+  "protocolo": "192-00",
+  "recebido_em": "2026-11-10T13:42:05.000Z",
+  "atualizado_em": "2026-11-11T09:15:30.000Z",
   "exames": [
     { "codigo": "VDRL", "nome": "Pesquisa de Sífilis (VDRL)", "status": "LIBERADO" },
     { "codigo": "FR", "nome": "Fator Reumatoide (FR)", "status": "LIBERADO" }
   ]
 }
+// "protocolo" (interno) fica null enquanto o atendimento não for criado
 
-// 404 erro
+// 400 protocolo com caractere não permitido
+{
+  "success": false,
+  "error": "INVALID_REFERENCE",
+  "message": "Protocolo inválido: use apenas letras, números, hífen, underline ou ponto (até 64 caracteres)"
+}
+
+// 404 pedido inexistente ou de outro parceiro (mesma resposta)
 {
   "success": false,
   "error": "ORDER_NOT_FOUND",

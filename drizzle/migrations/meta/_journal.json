@@ -1289,6 +1289,13 @@
       "when": 1794966625110,
       "tag": "0183_parceiro_credencial_isolamento",
       "breakpoints": true
+    },
+    {
+      "idx": 184,
+      "version": "7",
+      "when": 1794967793209,
+      "tag": "0184_parceiro_arquivar",
+      "breakpoints": true
     }
   ]
 }

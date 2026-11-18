@@ -1,11 +1,12 @@
 import { useCallback, useEffect, useState } from 'react'
-import { FileDown, Handshake, RefreshCw } from 'lucide-react'
+import { ArchiveRestore, FileDown, Handshake, RefreshCw } from 'lucide-react'
 import { toast } from 'sonner'
 import { supabase } from '@/integrations/supabase/client'
 import { Switch } from '@/components/ui/switch'
 import { Button } from '@/components/ui/button'
 import { generatePartnerIntegrationGuide, canGeneratePartnerGuide } from '@/lib/partnerIntegrationGuide'
 import { buildPartnerExamCatalog, type PartnerCatalogExam } from '@/lib/partnerExamCatalog'
+import { restorePartner } from '@/stores/apiPartnersStore'
 import type { ApiPartner, ApiPartnerCredential, ApiPartnerType } from '@/types/api-partners.types'
 import type { Exam } from '@/types/registers.types'
 
@@ -20,6 +21,7 @@ interface PartnerRow {
   contact_email: string | null
   contact_phone: string | null
   credentials: ApiPartnerCredential[]
+  archived_at: string | null
 }
 
 function toApiPartner(r: PartnerRow, companyId: string): ApiPartner {
@@ -38,6 +40,7 @@ function toApiPartner(r: PartnerRow, companyId: string): ApiPartner {
     credentials: Array.isArray(r.credentials) ? r.credentials : [],
     lastSyncAt: null,
     createdAt: new Date().toISOString(),
+    archivedAt: r.archived_at,
   }
 }
 
@@ -59,7 +62,7 @@ export function CompanyPartnersPanel({ companyId }: { companyId: string }) {
     setLoading(true)
     const { data, error } = await supabase
       .from('api_partners')
-      .select('id, name, document, type, status, api_authorized, contact_name, contact_email, contact_phone, credentials')
+      .select('id, name, document, type, status, api_authorized, contact_name, contact_email, contact_phone, credentials, archived_at')
       .eq('company_id', companyId)
       .order('created_at', { ascending: false })
     if (!error) setRows((data || []) as unknown as PartnerRow[])
@@ -95,6 +98,18 @@ export function CompanyPartnersPanel({ companyId }: { companyId: string }) {
     }
     generatePartnerIntegrationGuide(partner, catalog)
     toast.success('Guia de integração gerado.')
+  }
+
+  const [restoring, setRestoring] = useState<string | null>(null)
+  const restore = async (row: PartnerRow) => {
+    setRestoring(row.id)
+    try {
+      await restorePartner(row.id, companyId)
+      toast.success(`${row.name} restaurado como Pendente, sem credencial ativa.`)
+      await load()
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Não foi possível restaurar o parceiro.')
+    } finally { setRestoring(null) }
   }
 
   const toggle = async (row: PartnerRow, authorized: boolean) => {
@@ -133,11 +148,25 @@ export function CompanyPartnersPanel({ companyId }: { companyId: string }) {
           {rows.map(r => (
             <div key={r.id} className="flex flex-col gap-2 rounded-lg border border-border bg-card p-3 sm:flex-row sm:items-center sm:justify-between">
               <div className="min-w-0">
-                <p className="truncate text-sm font-medium text-foreground">{r.name}</p>
+                <p className="truncate text-sm font-medium text-foreground">
+                  {r.name}
+                  {r.archived_at && <span className="ml-2 rounded-full bg-muted px-2 py-0.5 text-xs font-normal text-muted-foreground">Arquivado</span>}
+                </p>
                 <p className="text-xs text-muted-foreground">
                   {TYPE_LABEL[r.type] || r.type} · {r.document}
                 </p>
               </div>
+              {r.archived_at ? (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="h-8 gap-1 text-xs"
+                  disabled={restoring === r.id}
+                  onClick={() => void restore(r)}
+                >
+                  <ArchiveRestore className="h-3.5 w-3.5" /> Restaurar
+                </Button>
+              ) : (
               <div className="flex items-center gap-3">
                 <Button
                   variant="outline"
@@ -156,6 +185,7 @@ export function CompanyPartnersPanel({ companyId }: { companyId: string }) {
                 </span>
                 <Switch checked={r.api_authorized} onCheckedChange={v => void toggle(r, v)} />
               </div>
+              )}
             </div>
           ))}
         </div>

@@ -132,6 +132,7 @@ Deno.serve(async (req) => {
       if (error) {
         console.error('[create-oauth-client] erro ao regenerar:', error.code, error.message)
         if (error.code === 'P0002') return json({ error: 'Parceiro não encontrado' }, 404)
+        if (error.code === 'P0003') return json({ error: 'Parceiro arquivado: o Super Admin precisa restaurá-lo antes de gerar credenciais' }, 409)
         return json({ error: 'Não foi possível regenerar as credenciais' }, 500)
       }
       insertedId = String(newId)

@@ -6,6 +6,8 @@ import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
+import { Switch } from '@/components/ui/switch'
+import { Label } from '@/components/ui/label'
 import { EmptyState } from '@/components/feedback/EmptyState'
 import { cn } from '@/lib/utils'
 import { useAuth } from '@/context/AuthContext'
@@ -56,6 +58,7 @@ export function PartnerCard({ partner, onClick, moduleBlocked = false }: { partn
 
       <div className="flex flex-wrap gap-1.5">
         <Badge variant="outline">{PARTNER_TYPE_LABEL[partner.type]}</Badge>
+        {partner.archivedAt && <Badge variant="secondary">Arquivado</Badge>}
         <Badge className={cn('border-transparent',
           partner.status === 'active' ? 'bg-[hsl(145,63%,42%)]/15 text-[hsl(145,63%,32%)]' : 'bg-muted text-muted-foreground')}>
           {partner.status === 'active' ? 'Ativo' : 'Inativo'}
@@ -84,20 +87,23 @@ export default function PartnersListPage() {
   const [status, setStatus] = useState('all')
   const [auth, setAuth] = useState('all')
   const [wizardOpen, setWizardOpen] = useState(false)
+  const [showArchived, setShowArchived] = useState(false)
 
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase()
     const qDigits = q.replace(/\D/g, '')
     return partners.filter(p => {
+      if (!showArchived && p.archivedAt) return false
       if (q && !p.name.toLowerCase().includes(q) && !(qDigits && p.document.replace(/\D/g, '').includes(qDigits))) return false
       if (type !== 'all' && p.type !== type) return false
       if (status !== 'all' && p.status !== status) return false
       if (auth !== 'all' && partnerAuthorizationState(p) !== auth) return false
       return true
     })
-  }, [partners, search, type, status, auth])
+  }, [partners, search, type, status, auth, showArchived])
 
-  const activeCount = partners.filter(p => p.status === 'active').length
+  const archivedCount = partners.filter(p => p.archivedAt).length
+  const activeCount = partners.filter(p => p.status === 'active' && !p.archivedAt).length
   const entitlement = usePartnerApiEntitlement(companyId)
   const moduleBlocked = !entitlement.enabled
   const limitReached = !moduleBlocked && activeCount >= entitlement.maxPartners
@@ -195,6 +201,12 @@ export default function PartnersListPage() {
             <SelectItem value="blocked">Bloqueado</SelectItem>
           </SelectContent>
         </Select>
+        <div className="flex items-center gap-2 sm:col-span-2 lg:col-span-4">
+          <Switch id="mostrar-arquivados" checked={showArchived} onCheckedChange={setShowArchived} />
+          <Label htmlFor="mostrar-arquivados" className="text-sm text-muted-foreground">
+            Mostrar arquivados{archivedCount > 0 ? ` (${archivedCount})` : ''}
+          </Label>
+        </div>
       </div>
 
       {filtered.length === 0 ? (
