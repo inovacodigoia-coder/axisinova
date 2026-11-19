@@ -53,6 +53,8 @@ import { Calendar } from '@/components/ui/calendar';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { matchesExamWorkbench, resolveExamWorkbench } from '@/lib/labExamWorkbench';
+import { indiceDeEtiquetas, pedidosDaEtiqueta } from '@/lib/buscaEtiqueta';
+import { useCompanySequenceId } from '@/hooks/useCompanySequenceId';
 
 /** Converte string de data para Date no fuso local (evita deslocamento de 1 dia em datas "YYYY-MM-DD"). */
 function parseLocalDate(value?: string | Date | null): Date | null {
@@ -138,6 +140,13 @@ export default function LabAnalisePage() {
   const querConcluidos = selectedStatuses.length === 0 || selectedStatuses.includes('completed');
   const { orders: concluidos } = useAttendanceCadastro({ ...FILA_TEMPO_REAL, statuses: STATUS_CONCLUIDOS, range: intervaloConcluidos, enabled: querConcluidos });
   const orders = useMemo(() => (querConcluidos ? [...pendentes, ...concluidos] : pendentes), [pendentes, concluidos, querConcluidos]);
+  const companySequenceId = useCompanySequenceId();
+  // Código alfanumérico do tubo (ou código da amostra) colado/bipado: mostra só o pedido daquela etiqueta
+  const temBuscaEtiqueta = search.trim().length >= 3 || protocolSearch.trim().length >= 3;
+  const indiceEtiquetas = useMemo(
+    () => (temBuscaEtiqueta ? indiceDeEtiquetas(orders as any[], companySequenceId) : new Map<string, Set<string>>()),
+    [temBuscaEtiqueta, orders, companySequenceId],
+  );
   const [quickFiltersOpen, setQuickFiltersOpen] = useState(false);
   // Exames de apoio (modo e alertas) por pedido:exame
   const [apoioModos, setApoioModos] = useState<Record<string, { modo: string; alerta: boolean }>>({});
@@ -247,11 +256,17 @@ export default function LabAnalisePage() {
 
     });
 
+    const etiquetaBusca = search.trim() ? pedidosDaEtiqueta(indiceEtiquetas, search) : null;
+    const etiquetaPedido = protocolSearch.trim() ? pedidosDaEtiqueta(indiceEtiquetas, protocolSearch) : null;
     return allExams.filter(exam => {
-      const matchesSearch = String(exam.patientName || '').toLowerCase().includes(search.toLowerCase()) || 
-                            String(exam.protocol || '').includes(search);
+      const matchesSearch = etiquetaBusca
+        ? etiquetaBusca.has(exam.orderId)
+        : String(exam.patientName || '').toLowerCase().includes(search.toLowerCase()) ||
+          String(exam.protocol || '').includes(search);
       
-      const matchesProtocol = protocolSearch === '' || String(exam.protocol || '').includes(protocolSearch);
+      const matchesProtocol = etiquetaPedido
+        ? etiquetaPedido.has(exam.orderId)
+        : protocolSearch === '' || String(exam.protocol || '').includes(protocolSearch);
       
       // Filtro de Bancada: Deve filtrar exames individuais, mas a lista principal
       // é agrupada por paciente. O filtro de bancada afeta quais exames aparecem
@@ -271,8 +286,11 @@ export default function LabAnalisePage() {
       // Filtro de Período baseado na data de atendimento (registeredAt)
       const examDate = parseLocalDate(exam.registeredAt);
 
+      // Busca pela etiqueta encontra o pedido de qualquer data carregada
       let matchesPeriod = true;
-      if (!examDate) {
+      if (etiquetaBusca || etiquetaPedido) {
+        matchesPeriod = true;
+      } else if (!examDate) {
         matchesPeriod = period === 'todos';
       } else {
         const examDay = startOfDay(examDate);
@@ -305,7 +323,7 @@ export default function LabAnalisePage() {
 
       return matchesSearch && matchesProtocol && matchesWorkbench && matchesOrigin && matchesPeriod;
     });
-  }, [orders, catalogExams, apoioModos, search, protocolSearch, selectedWorkbenches, selectedEstablishments, selectedStatuses, period, dateFrom, dateTo]);
+  }, [orders, catalogExams, apoioModos, search, protocolSearch, selectedWorkbenches, selectedEstablishments, selectedStatuses, period, dateFrom, dateTo, indiceEtiquetas]);
 
   // Agrupamento por protocolo para a lista lateral
   const groupedExams = useMemo(() => {

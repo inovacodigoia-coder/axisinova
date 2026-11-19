@@ -14,7 +14,7 @@ import { useLabSettings } from '@/hooks/useLabSettings'
 import { companyHeaderFromSettings } from '@/lib/attendanceDocHeader'
 import { useCompanySequenceId } from '@/hooks/useCompanySequenceId'
 import { etiquetasDosExames, useMateriaisTubos } from '@/lib/tubos'
-import { buildSampleCode, generateSampleHash } from '@/utils/orderHash'
+import { indiceDeEtiquetas, pedidosDaEtiqueta, buscaSoNumeros, codigosDasEtiquetas } from '@/lib/buscaEtiqueta'
 import { AttendancePrintModal } from '../print/AttendancePrintModal'
 import { AttendanceDetailsModal } from './AttendanceDetailsModal'
 import type { AttendanceOrder } from '@/types/attendance-cadastro.types'
@@ -39,23 +39,6 @@ const DATE_PRESETS: { value: DatePreset; label: string }[] = [
   { value: 'custom', label: 'Personalizado' },
   { value: 'all', label: 'Todos' },
 ]
-
-/** Códigos e hashes alfanuméricos das amostras (etiquetas) de um pedido */
-function sampleCodesAndHashesForOrder(order: AttendanceOrder, companySequenceId: number | null): string[] {
-  const exams = (order.labGuides || []).flatMap((g: any) => g?.exams || [])
-  const list = etiquetasDosExames(exams)
-  const out: string[] = []
-  list.forEach((_: any, idx: number) => {
-    // Inclui também o formato sem empresa (etiquetas antigas)
-    for (const code of new Set([buildSampleCode(order.orderNumber, idx + 1, order.empresaSeq ?? companySequenceId), buildSampleCode(order.orderNumber, idx + 1, null)])) {
-      if (!code) continue
-      out.push(code)
-      const hash = generateSampleHash(code)
-      if (hash) out.push(hash)
-    }
-  })
-  return out
-}
 
 function normalize(s: string) {
   return (s || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^\w\s]/g, '')
@@ -216,12 +199,23 @@ export function AttendanceLookupModal({ open, onClose, unitName, guicheName, onA
   )
   const { orders, updateOrder, loading } = useAttendanceCadastro({ range: serverRange })
 
+  // Índice código da etiqueta → pedido, montado só quando há busca
+  const indiceEtiquetas = useMemo(
+    () => (hasTermSearch ? indiceDeEtiquetas(orders, companySequenceId, anterioresPorPedido) : new Map<string, Set<string>>()),
+    [hasTermSearch, orders, companySequenceId, anterioresPorPedido],
+  )
+
   const filtered = useMemo(() => {
     const term = normalize(search.trim())
-    const termDigits = search.replace(/\D/g, '')
+    // Código do tubo (alfanumérico) ou código da amostra colado/bipado: só o pedido daquela etiqueta
+    const daEtiqueta = search.trim() ? pedidosDaEtiqueta(indiceEtiquetas, search) : null
+    // Busca por dígitos (pedido, CPF) só quando o texto não tem letras — senão os números
+    // de um código como BRS3IWT10 trariam vários pedidos sem relação
+    const termDigits = buscaSoNumeros(search) ? search.replace(/\D/g, '') : ''
     const pTerm = normalize(patientSearch.trim())
 
     return orders.filter(o => {
+      if (daEtiqueta && !daEtiqueta.has(o.id)) return false
       // Quando há busca por atendimento/amostra/integração/CPF, o período é ignorado
       if (dateRange && !term) {
         const d = new Date(o.registeredAt)
@@ -238,15 +232,15 @@ export function AttendanceLookupModal({ open, onClose, unitName, guicheName, onA
       if (partnerFilter !== 'all' && partnerFilter !== 'partners' && partnerByOrderId.get(o.id)?.id !== partnerFilter) return false
 
 
-      if (term) {
+      if (term && !daEtiqueta) {
         const values = [
           o.orderNumber,
           o.hash,
           p?.cpf,
           p?.motherName,
           // Códigos e hashes alfanuméricos das etiquetas de amostra (ex.: N2RQ87134)
-          ...sampleCodesAndHashesForOrder(o, companySequenceId),
-          ...(anterioresPorPedido.get(o.id) || []).flatMap(n => [n, ...sampleCodesAndHashesForOrder({ ...o, orderNumber: n }, companySequenceId)]),
+          ...(anterioresPorPedido.get(o.id) || []),
+          ...codigosDasEtiquetas(o, companySequenceId, anterioresPorPedido.get(o.id) || []),
         ].filter(Boolean).map(v => String(v))
         const haystack = values.map(v => normalize(v)).join(' ')
         const digitsHay = values.map(v => v.replace(/\D/g, '')).filter(Boolean).join(' ')
@@ -261,7 +255,7 @@ export function AttendanceLookupModal({ open, onClose, unitName, guicheName, onA
 
       return true
     }).sort((a, b) => b.registeredAt.localeCompare(a.registeredAt))
-  }, [orders, patientById, search, patientSearch, statusFilter, partnerFilter, partnerByOrderId, isAdmin, dateRange, companySequenceId, anterioresPorPedido])
+  }, [orders, patientById, search, patientSearch, statusFilter, partnerFilter, partnerByOrderId, isAdmin, dateRange, companySequenceId, anterioresPorPedido, indiceEtiquetas])
 
 
   useEffect(() => { setVisibleCount(pageSize) }, [pageSize, datePreset, customFrom, customTo, statusFilter, partnerFilter, search, patientSearch])
