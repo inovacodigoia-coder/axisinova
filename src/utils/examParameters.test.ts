@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { ageInUnit, evaluateFormula, pickReference, resolveReference } from './examParameters'
+import { ageInUnit, buildExamParams, evaluateFormula, examLevelRangesFor, pickReference, resolveReference } from './examParameters'
 
 describe('resolveReference', () => {
   it('mostra somente o texto cadastrado quando o valor máximo da referência é uma frase', () => {
@@ -198,5 +198,35 @@ describe('faixas do hemograma por idade e sexo (VRH2020)', () => {
     ]
     expect(ref(antigas, 'male', '2008-12-01', 17)).toBe('1 a 2') // 17 anos e 11 meses
     expect(ref(antigas, 'male', '2008-11-18', 18)).toBe('3 a 4')
+  })
+})
+
+describe('parâmetro sem faixa própria não empresta a referência de outro', () => {
+  const faixa = (id: string, texto: string) => ({ id, sex: 'F', minAge: 0, maxAge: 150, ageUnit: 'anos', textRange: texto, normalText: texto })
+  const exame = {
+    name: 'Exame a Fresco do Conteúdo Cérvico-Vaginal (Fluxo Vaginal)',
+    reference_values: [faixa('1-1', 'Raras'), faixa('2-1', 'Até 6 por campo')],
+    parameters: [
+      { id: 1, name: 'Células epiteliais', type: 'selection', referenceValues: [faixa('1-1', 'Raras')] },
+      { id: 2, name: 'Leucócitos', type: 'numerical', referenceValues: [faixa('2-1', 'Até 6 por campo')] },
+      { id: 7, name: 'Conclusão', type: 'selection', referenceValues: [] },
+    ],
+  }
+
+  it('Conclusão sai sem referência (não pega "Raras" das Células epiteliais)', () => {
+    const params = buildExamParams(exame, exame.name, { gender: 'female', age: 30 })
+    expect(params.find((p) => p.name === 'Conclusão')?.reference).toBe('')
+    expect(params.find((p) => p.name === 'Células epiteliais')?.reference).toBe('Raras')
+  })
+
+  it('usa só as faixas do exame com o id do próprio parâmetro', () => {
+    expect(examLevelRangesFor(exame.reference_values, '2', 3).map((r) => r.id)).toEqual(['2-1'])
+    expect(examLevelRangesFor(exame.reference_values, '7', 3)).toEqual([])
+  })
+
+  it('cadastro antigo sem id por parâmetro: só exame de parâmetro único usa as faixas do exame', () => {
+    const antigas = [{ id: 'a', textRange: 'Negativo' }]
+    expect(examLevelRangesFor(antigas, '1', 1)).toEqual(antigas)
+    expect(examLevelRangesFor(antigas, '2', 3)).toEqual([])
   })
 })

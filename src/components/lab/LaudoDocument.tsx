@@ -95,6 +95,10 @@ const inferSection = (paramName: string): string => {
   return '';
 };
 
+/** Exame de hematologia (hemograma, leucograma, eritrograma), pelo nome ou código. */
+export const isHemogramExam = (exam: any): boolean =>
+  /hemograma|hematol|leucograma|eritrograma/.test(stripAccents(`${exam?.name || ''} ${exam?.examName || ''}`));
+
 const isWhiteSeries = (name: string) => /serie branca/.test(stripAccents(name));
 
 const normalizeBase = (name: string) =>
@@ -134,6 +138,12 @@ function buildPairedRows(rows: any[]): { paired: PairedRow[]; hasPairs: boolean 
   return { paired, hasPairs };
 }
 
+/** Unidade gravada como "-" significa sem unidade e não sai no laudo. */
+const temUnidade = (unit: unknown) => {
+  const u = unit == null ? '' : String(unit).trim();
+  return u !== '' && u !== '-' && u !== '—';
+};
+
 function Flag({ flag }: { flag?: string }) {
   if (!flag) return <span className="text-transparent">*</span>;
   return <span className="font-mono font-bold text-red-600 print:text-black">*{flag}</span>;
@@ -156,7 +166,7 @@ function StandardTable({ rows }: { rows: any[] }) {
           <tr key={rIdx} className="align-top">
             <td className="py-[3px] pr-3 text-zinc-800 break-words">{res.parameterName || res.parameterCode}</td>
             <td colSpan={semReferencia(res.referenceRange) ? 3 : 2} className="py-[3px] pr-6 text-zinc-900 leading-[1.45] whitespace-pre-wrap break-words [overflow-wrap:anywhere]">
-              {String(res.value).trim()} {res.unit && <span className="text-zinc-600">{res.unit}</span>}
+              {String(res.value).trim()} {temUnidade(res.unit) && <span className="text-zinc-600">{res.unit}</span>}
             </td>
             {!semReferencia(res.referenceRange) && (
               <td className="py-[3px] text-zinc-600 whitespace-pre-line break-words">{res.referenceRange}</td>
@@ -166,7 +176,7 @@ function StandardTable({ rows }: { rows: any[] }) {
           <tr key={rIdx} className="align-top">
             <td className="py-[3px] pr-3 text-zinc-800 break-words">{res.parameterName || res.parameterCode}</td>
             <td className="py-[3px] font-mono text-zinc-900 whitespace-nowrap">
-              {res.value || '—'} {res.unit && <span className="text-zinc-600">{res.unit}</span>}
+              {res.value || '—'} {temUnidade(res.unit) && <span className="text-zinc-600">{res.unit}</span>}
             </td>
             <td className="py-[3px] whitespace-nowrap">
               <Flag flag={res.flag} />
@@ -220,8 +230,11 @@ function ExamBlock({ exam, order, equipmentTypes }: { exam: any; order?: any; eq
   // Parâmetro com Obrig desmarcado e sem resultado não sai no laudo
   const results: any[] = differentialReportRows(linhasDoLaudo(exam.results || []), type);
   const sections: { name: string; rows: any[] }[] = [];
+  // Títulos Série Vermelha/Branca/Plaquetas só são deduzidos no hemograma; nos demais
+  // exames (ex.: Fluxo Vaginal, urina) Hemácias e Leucócitos ficam na mesma tabela.
+  const hemograma = isHemogramExam(exam);
   results.forEach((r) => {
-    const name = ((r.section || '').trim() || inferSection(r.parameterName || r.parameterCode || '')).trim();
+    const name = ((r.section || '').trim() || (hemograma ? inferSection(r.parameterName || r.parameterCode || '') : '')).trim();
     let bucket = sections.find((s) => s.name === name);
     if (!bucket) {
       bucket = { name, rows: [] };

@@ -279,6 +279,20 @@ export function normalizeOptions(raw: any): string[] {
 }
 
 /**
+ * Faixas do exame inteiro usadas por um parâmetro sem faixas próprias.
+ * O cadastro guarda no exame a cópia de todas as faixas, com id "<parâmetro>-<n>":
+ * cada parâmetro só pode usar as suas. Sem esse padrão (cadastro antigo), o exame
+ * de parâmetro único continua usando as faixas do exame.
+ */
+export function examLevelRangesFor(examLevelRefs: any[], paramId: string, paramCount: number): any[] {
+  const refs = Array.isArray(examLevelRefs) ? examLevelRefs : []
+  if (refs.length === 0) return []
+  const porParametro = refs.some((r) => /^[^-]+-\d+$/.test(String(r?.id ?? '')))
+  if (porParametro) return refs.filter((r) => String(r?.id ?? '').startsWith(`${paramId}-`))
+  return paramCount <= 1 ? refs : []
+}
+
+/**
  * Monta a lista de parâmetros de um exame do catálogo.
  * Se o exame não tiver parâmetros cadastrados, gera um parâmetro único
  * com o nome do exame, sua unidade de medida e a referência do exame.
@@ -312,7 +326,9 @@ export function buildExamParams(catalogExam: any | undefined, fallbackName: stri
     // Cálculo só pela fórmula escrita no parâmetro: CALC ligado sem fórmula não calcula nada.
     const isCalculated = isBands ? false : !!(p.isCalculated || p.is_calculated)
     const formula = isBands ? '' : (p.formula && String(p.formula).trim()) || ''
-    const ranges = p.referenceValues && p.referenceValues.length ? p.referenceValues : examLevelRefs
+    const ranges = p.referenceValues && p.referenceValues.length
+      ? p.referenceValues
+      : examLevelRangesFor(examLevelRefs, String(p.id ?? idx + 1), visible.length)
     return {
       id: String(p.id ?? idx + 1),
       dbId: p.dbId ? String(p.dbId) : undefined,
