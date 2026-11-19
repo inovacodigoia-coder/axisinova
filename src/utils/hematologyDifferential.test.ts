@@ -63,6 +63,21 @@ describe('regra única da diferencial', () => {
     expect(differentialReportRows(params, '5').map(p => p.id)).not.toContain('9')
     expect(differentialReportRows(params, '3').map(p => p.id)).toEqual(['0','3','9','10'])
   })
+  it('aparelho de 3 ou 5 partes nunca esconde célula com valor digitado', () => {
+    const rows = [
+      { id: 'l', name: 'Leucócitos', value: '9520' },
+      { id: 'e', name: 'Eosinófilos (%)', value: '1' },
+      { id: 'ea', name: 'Eosinófilos (/mm³)', value: '95' },
+      { id: 'm', name: 'Monócitos (%)', value: '2' },
+      { id: 'b', name: 'Basófilos (%)', value: '1' },
+      { id: 'bt', name: 'Bastonetes (%)', value: '1' },
+      { id: 's', name: 'Segmentados (%)', value: '84,8' },
+      { id: 'n', name: 'Neutrófilos (%)', value: '' },
+      { id: 'x', name: 'MID (%)', value: '' },
+    ]
+    expect(differentialReportRows(rows, '3').map(p => p.id)).toEqual(['l','e','ea','m','b','bt','s','x'])
+    expect(differentialReportRows(rows, '5').map(p => p.id)).toEqual(['l','e','ea','m','b','bt','s','n'])
+  })
   it('catálogo não pode reintroduzir complemento ou índices vermelhos derivados', () => {
     const p = buildExamParams({ name: 'Hemograma', parameters: [
       { id: 'b', name: 'Neutrófilos bastonetes (%)', isCalculated: true, formula: '100 - [Basófilos (%)]' },

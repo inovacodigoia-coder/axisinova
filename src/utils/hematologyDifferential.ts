@@ -87,9 +87,16 @@ export function hematologyReady(
   return params.length > 0 && required.every(p => valueOf(p.id).trim() !== '')
 }
 
-/** Only presentation changes; unspecified devices retain every row. */
-export function differentialReportRows<T extends { parameterName?: string; name?: string }>(rows: T[], type?: string | null): T[] {
-  if (type === '5') return rows.filter(p => !['mid', 'granulocytes'].includes(differentialCell(p) || ''))
-  if (type === '3') return rows.filter(p => !['neutrophils', 'segments', 'bands', 'monocytes', 'eosinophils', 'basophils', 'other'].includes(differentialCell(p) || ''))
-  return rows
+/**
+ * Only presentation changes; unspecified devices retain every row.
+ * The device type only hides cells it does not count when they are EMPTY:
+ * any value (manual slide count or received) always prints on the laudo.
+ */
+export function differentialReportRows<T extends { parameterName?: string; name?: string; value?: unknown }>(rows: T[], type?: string | null): T[] {
+  const hidden = type === '5' ? ['mid', 'granulocytes']
+    : type === '3' ? ['neutrophils', 'segments', 'bands', 'monocytes', 'eosinophils', 'basophils', 'other']
+    : []
+  if (!hidden.length) return rows
+  const empty = (v: unknown) => v == null || String(v).trim() === ''
+  return rows.filter(p => !hidden.includes(differentialCell(p) || '') || !empty(p.value))
 }
