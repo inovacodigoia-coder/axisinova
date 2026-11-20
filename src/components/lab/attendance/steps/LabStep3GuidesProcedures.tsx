@@ -1,6 +1,6 @@
 import React, { useState, useMemo, useEffect, useRef } from 'react';
 import { useCadastroRapidoExames } from '@/hooks/useCadastroRapidoExames';
-import { moverDestaque, abreBuscaPeloTeclado } from '@/lib/cadastroRapido';
+import { moverDestaque, abreBuscaPeloTeclado, exameCombinaBusca } from '@/lib/cadastroRapido';
 import { materialPorNome } from '@/lib/tubos'
 import { indiceExameNaGuia } from '@/lib/guiaExames'
 import { Card } from '@/components/ui/card';
@@ -144,12 +144,7 @@ export function LabStep3GuidesProcedures({ state, update }: Props) {
 
   const filteredExams = useMemo(() => {
     if (!examSearch || selectedExam) return [];
-    return clinicExams.filter(e =>
-      e.isActive !== false &&
-      (e.name.toLowerCase().includes(examSearch.toLowerCase()) ||
-      e.tussCode?.toLowerCase().includes(examSearch.toLowerCase()) ||
-      (e.internalCode && e.internalCode.toLowerCase().includes(examSearch.toLowerCase())))
-    );
+    return clinicExams.filter(e => e.isActive !== false && exameCombinaBusca(e, examSearch));
   }, [examSearch, clinicExams, selectedExam]);
 
   useEffect(() => { setDestaque(0) }, [examSearch]);

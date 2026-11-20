@@ -14,3 +14,15 @@ describe('cadastro rápido', () => {
     expect(abreBuscaPeloTeclado('Enter', 'DIV', true)).toBe(false)
   })
 })
+
+import { exameCombinaBusca } from './cadastroRapido'
+describe('busca de exame sem acento', () => {
+  it('sodio encontra Sódio e vice-versa', () => {
+    expect(exameCombinaBusca({ name: 'Sódio' }, 'sodio')).toBe(true)
+    expect(exameCombinaBusca({ name: 'Sodio' }, 'SÓDIO')).toBe(true)
+    expect(exameCombinaBusca({ name: 'Potássio' }, 'sodio')).toBe(false)
+  })
+  it('procura também nos códigos', () => {
+    expect(exameCombinaBusca({ name: 'X', internalCode: 'NA' }, 'na')).toBe(true)
+  })
+})
