@@ -3,6 +3,7 @@ import { FlaskConical } from 'lucide-react'
 import { toast } from 'sonner'
 import { supabase } from '@/integrations/supabase/client'
 import { Switch } from '@/components/ui/switch'
+import { CadastroRapidoSwitch } from './CadastroRapidoSwitch'
 
 type Modulo = 'soroteca' | 'painel' | 'relatorios'
 const MODULOS: { id: Modulo; nome: string; detalhe: string }[] = [
@@ -54,6 +55,7 @@ export function CompanyLabModulosPanel({ companyId }: { companyId: string }) {
           />
         </div>
       ))}
+      <div className="border-t border-border pt-3"><CadastroRapidoSwitch companyId={companyId} /></div>
     </div>
   )
 }

@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { supabase } from '@/integrations/supabase/client'
-import { Building2, Palette, DoorOpen, Bell, Printer, Volume2, MapPin, Settings2, Beaker, Shield, MessageCircle, FileText } from 'lucide-react'
+import { Building2, Palette, DoorOpen, Bell, Printer, Volume2, MapPin, Settings2, Beaker, Shield, MessageCircle, FileText, Keyboard } from 'lucide-react'
 
 const CARDS = [
   { key: 'documents', label: 'Declarações e Termos', desc: 'Modelos de documentos e assinaturas', icon: FileText, path: '/app/configuracoes/documentos' },
@@ -15,6 +15,7 @@ const CARDS = [
   { key: 'establishments', label: 'Estab. e Origem', desc: 'Filiais e pontos de atendimento', icon: MapPin, path: '/app/configuracoes/estabelecimentos' },
   { key: 'admin-panel', label: 'Painel Administrativo', desc: 'Origens, filas e guichês', icon: Settings2, path: '/app/filas/admin/unidades' },
    { key: 'lab-settings', label: 'Config. Laboratório', desc: 'Assinaturas, etiquetas, parâmetros', icon: Beaker, path: '/app/configuracoes/laboratorio' },
+  { key: 'cadastro-rapido', label: 'Cadastro rápido de exames', desc: 'Usar Enter para incluir exames no atendimento', icon: Keyboard, path: '/app/configuracoes/cadastro-rapido' },
   { key: 'session-security', label: 'Segurança da Sessão', desc: 'Tempo de expiração e inatividade', icon: Shield, path: '/app/configuracoes/sessao' },
 ]
 

@@ -1317,6 +1317,13 @@
       "when": 1794974073141,
       "tag": "0187_api_parceiros_teto_fila",
       "breakpoints": true
+    },
+    {
+      "idx": 188,
+      "version": "7",
+      "when": 1795132756616,
+      "tag": "0188_cadastro_rapido_exames",
+      "breakpoints": true
     }
   ]
 }

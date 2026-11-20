@@ -36,3 +36,4 @@
 - Laudo print history: only laudo_impressao_* RPCs. Why: immutable trail.
 - Portal extra deadline: RPC setter; order trigger adds to new items. Why: no recalc.
 - Order renumbering only by inserting into immutable attendance_order_renumeracao (trigger carries linked rows). Why: keep the old-number trail.
+- Cadastro rápido de exames (Enter flow in LabStep3GuidesProcedures): per-company flag companies.cadastro_rapido_exames (default off), read via cadastro_rapido_situacao and toggled only via cadastro_rapido_definir (company manager of that company or Super Admin); keyboard rules in lib/cadastroRapido; when off the step behaves exactly as before. Why: opt-in without changing the default workflow.

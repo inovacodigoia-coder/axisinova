@@ -3775,6 +3775,7 @@ export type Database = {
           cadastro_aprovado_em: string | null
           cadastro_aprovado_por: string | null
           cadastro_publico: boolean
+          cadastro_rapido_exames: boolean
           cep: string | null
           chat_interno_habilitado: boolean
           chat_interno_retencao_meses: number
@@ -3836,6 +3837,7 @@ export type Database = {
           cadastro_aprovado_em?: string | null
           cadastro_aprovado_por?: string | null
           cadastro_publico?: boolean
+          cadastro_rapido_exames?: boolean
           cep?: string | null
           chat_interno_habilitado?: boolean
           chat_interno_retencao_meses?: number
@@ -3897,6 +3899,7 @@ export type Database = {
           cadastro_aprovado_em?: string | null
           cadastro_aprovado_por?: string | null
           cadastro_publico?: boolean
+          cadastro_rapido_exames?: boolean
           cep?: string | null
           chat_interno_habilitado?: boolean
           chat_interno_retencao_meses?: number
@@ -13658,6 +13661,14 @@ export type Database = {
       bi_registrar_evasao: {
         Args: { _episodio: string; _motivo: string }
         Returns: undefined
+      }
+      cadastro_rapido_definir: {
+        Args: { p_ativo: boolean; p_company: string }
+        Returns: boolean
+      }
+      cadastro_rapido_situacao: {
+        Args: { p_company?: string }
+        Returns: boolean
       }
       calcular_prazo: {
         Args: {

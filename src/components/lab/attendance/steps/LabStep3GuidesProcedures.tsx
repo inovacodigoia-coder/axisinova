@@ -1,4 +1,6 @@
 import React, { useState, useMemo, useEffect, useRef } from 'react';
+import { useCadastroRapidoExames } from '@/hooks/useCadastroRapidoExames';
+import { moverDestaque, abreBuscaPeloTeclado } from '@/lib/cadastroRapido';
 import { materialPorNome } from '@/lib/tubos'
 import { indiceExameNaGuia } from '@/lib/guiaExames'
 import { Card } from '@/components/ui/card';
@@ -118,6 +120,9 @@ export function LabStep3GuidesProcedures({ state, update }: Props) {
   const addingRef = useRef(false);
   const [dupIndex, setDupIndex] = useState<number | null>(null);
   const [examSearch, setExamSearch] = useState('');
+  const { ativo: cadastroRapido } = useCadastroRapidoExames();
+  const [destaque, setDestaque] = useState(0);
+  const examSearchRef = useRef<HTMLInputElement>(null);
   const [selectedExam, setSelectedExam] = useState<any>(null);
   const [examMaterial, setExamMaterial] = useState('');
   const [examCollected, setExamCollected] = useState(true);
@@ -146,6 +151,39 @@ export function LabStep3GuidesProcedures({ state, update }: Props) {
       (e.internalCode && e.internalCode.toLowerCase().includes(examSearch.toLowerCase())))
     );
   }, [examSearch, clinicExams, selectedExam]);
+
+  useEffect(() => { setDestaque(0) }, [examSearch]);
+  useEffect(() => {
+    if (!cadastroRapido) return;
+    const onKey = (ev: KeyboardEvent) => {
+      const algumModal = !!document.querySelector('[role="dialog"]');
+      if (abreBuscaPeloTeclado(ev.key, (ev.target as HTMLElement)?.tagName, showExamModal || algumModal)) {
+        ev.preventDefault();
+        handleOpenExamModal();
+      }
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  });
+
+  const escolherExame = (exam: any) => {
+    setSelectedExam(exam);
+    setExamSearch(exam.name);
+    const materials = exam.selectedMaterials || [];
+    setExamMaterial(exam.defaultMaterial || materials[0] || 'Sangue');
+  };
+
+  const teclaNaBusca = (ev: React.KeyboardEvent<HTMLInputElement>) => {
+    if (!cadastroRapido) return;
+    if (ev.key === 'ArrowDown' || ev.key === 'ArrowUp') {
+      ev.preventDefault();
+      setDestaque(d => moverDestaque(d, ev.key, filteredExams.length));
+    } else if (ev.key === 'Enter') {
+      ev.preventDefault();
+      if (selectedExam) void handleAddOrUpdateExam();
+      else if (filteredExams.length > 0) escolherExame(filteredExams[moverDestaque(destaque, '', filteredExams.length)]);
+    }
+  };
 
   const filteredDoctors = useMemo(() => {
     if (!doctorSearch || doctorSearch.length < 2) return [];
@@ -380,8 +418,17 @@ export function LabStep3GuidesProcedures({ state, update }: Props) {
 
     setGuides(newGuides);
     update({ guides: newGuides });
-    setShowExamModal(false);
     toast.success(editingExamIndex !== null ? "Exame editado" : "Exame adicionado");
+    if (cadastroRapido && editingExamIndex === null) {
+      // Modo contínuo: limpa e espera o próximo exame
+      setSelectedExam(null);
+      setExamSearch('');
+      setExamMaterial('');
+      setExamCollected(true);
+      setTimeout(() => examSearchRef.current?.focus(), 0);
+      return;
+    }
+    setShowExamModal(false);
   };
 
   const removeExam = (index: number) => {
@@ -914,6 +961,9 @@ export function LabStep3GuidesProcedures({ state, update }: Props) {
                 <Search className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
                 <Input
                   id="exam-search"
+                  ref={examSearchRef}
+                  autoFocus={cadastroRapido}
+                  onKeyDown={teclaNaBusca}
                   placeholder="Nome ou código do exame..."
                   className="pl-9"
                   value={examSearch}
@@ -924,18 +974,11 @@ export function LabStep3GuidesProcedures({ state, update }: Props) {
                 />
                 {filteredExams.length > 0 && !selectedExam && (
                   <div className="absolute z-50 w-full mt-1 bg-popover border border-border rounded-md shadow-md max-h-60 overflow-auto">
-                    {filteredExams.map((exam) => (
+                    {filteredExams.map((exam, i) => (
                       <button
                         key={exam.id}
-                        className="w-full text-left px-4 py-2 text-sm hover:bg-muted flex items-center justify-between"
-                        onClick={() => {
-                          setSelectedExam(exam);
-                          setExamSearch(exam.name);
-                          // Fix: Use configured materials from the exam
-                          const materials = exam.selectedMaterials || [];
-                          const defaultMat = exam.defaultMaterial || materials[0] || 'Sangue';
-                          setExamMaterial(defaultMat);
-                        }}
+                        className={cn("w-full text-left px-4 py-2 text-sm hover:bg-muted flex items-center justify-between", cadastroRapido && i === destaque && "bg-muted")}
+                        onClick={() => escolherExame(exam)}
                       >
                         <span className="font-medium">{exam.name}</span>
                         <span className="text-xs font-mono text-muted-foreground">{exam.tussCode}</span>
@@ -979,6 +1022,9 @@ export function LabStep3GuidesProcedures({ state, update }: Props) {
               </div>
             </div>
 
+            {cadastroRapido && editingExamIndex === null && (
+              <p className="text-[11px] text-muted-foreground">↑/↓ escolhe · Enter seleciona · Enter de novo inclui · Esc fecha</p>
+            )}
             <div className="flex items-center justify-between p-3 border rounded-lg">
               <div className="space-y-0.5">
                 <Label>Coletado</Label>
