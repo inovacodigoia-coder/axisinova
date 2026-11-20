@@ -1,3 +1,4 @@
+import { montarCsv } from '@/lib/csvSeguro'
 import { jsPDF } from 'jspdf'
 
 export interface Coluna { key: string; label: string; fmt?: (v: any, row: any) => string }
@@ -8,12 +9,13 @@ const txt = (c: Coluna, r: any) => {
   if (v == null) return ''
   return String(v)
 }
+/** Valor bruto para o CSV: números continuam números (a proteção não os altera). */
+const bruto = (c: Coluna, r: any) => (c.fmt ? c.fmt(r[c.key], r) : r[c.key])
 
 /** CSV com ; e BOM UTF-8 (Excel abre com acentuação certa) */
 export function exportarCsv(nome: string, cols: Coluna[], rows: any[]) {
-  const esc = (s: string) => /[;"\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s
-  const linhas = [cols.map(c => esc(c.label)).join(';'), ...rows.map(r => cols.map(c => esc(txt(c, r))).join(';'))]
-  baixar(new Blob(['\uFEFF' + linhas.join('\r\n')], { type: 'text/csv;charset=utf-8' }), `${nome}.csv`)
+  const csv = montarCsv([cols.map(c => c.label), ...rows.map(r => cols.map(c => bruto(c, r)))])
+  baixar(new Blob([csv], { type: 'text/csv;charset=utf-8' }), `${nome}.csv`)
 }
 
 export function exportarPdf(nome: string, titulo: string, subtitulo: string, cols: Coluna[], rows: any[], aviso?: string) {

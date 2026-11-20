@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import { createPortal } from 'react-dom'
+import { montarCsv, baixarCsv } from '@/lib/csvSeguro'
 import * as XLSX from 'xlsx'
 import { FileSpreadsheet, Printer, FileText, Loader2 } from 'lucide-react'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog'
@@ -206,7 +207,14 @@ export function LabReportModal({ open, onOpenChange }: Props) {
     if (reportMode === 'charts' && !sections.length) return toast.error('Selecione ao menos um dado para o relatório.')
     const wb = buildWorkbook()
     const name = `relatorio-lab-${brandName.replace(/\s+/g, '-').toLowerCase()}-${format(new Date(), 'yyyyMMdd-HHmm')}.${ext}`
-    XLSX.writeFile(wb, name, { bookType: ext === 'xls' ? 'biff8' : ext })
+    if (ext === 'csv') {
+      // CSV: mesma 1ª planilha que o XLSX gravava em CSV, agora pela proteção contra fórmulas
+      const ws = wb.Sheets[wb.SheetNames[0]]
+      const linhas = ws ? XLSX.utils.sheet_to_json<unknown[]>(ws, { header: 1, raw: true, defval: '' }) : []
+      baixarCsv(montarCsv(linhas, { separador: ',' }), name)
+    } else {
+      XLSX.writeFile(wb, name, { bookType: ext === 'xls' ? 'biff8' : ext })
+    }
     toast.success(`Arquivo ${ext.toUpperCase()} gerado com sucesso!`)
   }
 

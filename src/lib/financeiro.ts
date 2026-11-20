@@ -1,3 +1,4 @@
+import { montarCsv } from '@/lib/csvSeguro'
 import type { FinanceiroPermission } from '@/types/permissions.types'
 export const FINANCEIRO_PERMISSIONS: {code: FinanceiroPermission; label: string}[] = [
   { code: 'financeiro.ver', label: 'Ver' },
@@ -16,6 +17,5 @@ export const hojeFinanceiro = () => new Intl.DateTimeFormat('en-CA', { timeZone:
 export function csvFinanceiro(rows: Record<string, unknown>[]) {
   if (!rows.length) return ''
   const keys = Object.keys(rows[0])
-  const cell = (v: unknown) => `"${String(v ?? '').replace(/^[=+@\-]/, "'$&").replace(/"/g, '""')}"`
-  return '\uFEFF' + [keys.map(cell).join(';'), ...rows.map(r => keys.map(k => cell(r[k])).join(';'))].join('\r\n')
+  return montarCsv([keys, ...rows.map(r => keys.map(k => r[k]))], { sempreAspas: true })
 }

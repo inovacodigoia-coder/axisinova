@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
+import { montarCsv, baixarCsv } from '@/lib/csvSeguro'
 import { AlertTriangle, BookOpen, Download, FileUp, History, Loader2, RefreshCw, Tag, Trash2 } from 'lucide-react'
 import { toast } from 'sonner'
 import { supabase } from '@/integrations/supabase/client'
@@ -346,13 +347,8 @@ export function PrecoImportDialog({ apoio, open, onClose, onDone }: { apoio: { i
 /* ------------------------------ Histórico ------------------------------ */
 
 function baixarErros(imp: any) {
-  const linhas = ['linha;codigo;motivo', ...((imp.erros || []) as LinhaErro[]).map(e => `${e.linha};${e.codigo};"${String(e.motivo).replace(/"/g, '""')}"`)]
-  const blob = new Blob(['\uFEFF' + linhas.join('\n')], { type: 'text/csv;charset=utf-8' })
-  const a = document.createElement('a')
-  a.href = URL.createObjectURL(blob)
-  a.download = `erros_${(imp.arquivo_nome || 'importacao').replace(/\.csv$/i, '')}.csv`
-  a.click()
-  URL.revokeObjectURL(a.href)
+  const linhas = [['linha', 'codigo', 'motivo'], ...((imp.erros || []) as LinhaErro[]).map(e => [e.linha, e.codigo, e.motivo])]
+  baixarCsv(montarCsv(linhas, { quebra: '\n' }), `erros_${(imp.arquivo_nome || 'importacao').replace(/\.csv$/i, '')}.csv`)
 }
 
 /* ------------------------------ Seção do drawer ------------------------------ */
