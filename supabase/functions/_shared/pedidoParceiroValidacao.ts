@@ -286,3 +286,22 @@ export function validarCampos(body: unknown, agora = new Date()): Falha | null {
   }
   return null
 }
+
+/** Código seguro para repetir na resposta: só letras, números, hífen, underline ou ponto, até 20 caracteres. */
+const CODIGO_SEGURO = /^[A-Za-z0-9._-]{1,20}$/
+export function codigoSeguroParaEco(c: unknown): string | null {
+  if (typeof c !== 'string' && typeof c !== 'number') return null
+  const s = String(c).trim()
+  return CODIGO_SEGURO.test(s) ? s : null
+}
+
+/** Mensagem do EXAM_CODE_NOT_FOUND: posição a partir de 1 e, quando seguro, o código enviado. */
+export function falhaExameNaoEncontrado(itens: { posicao: number; enviado: unknown }[]) {
+  const nao_encontrados = itens.map(i => ({ posicao: i.posicao, codigo: codigoSeguroParaEco(i.enviado) }))
+  const partes = nao_encontrados.map(n => n.codigo ? `posição ${n.posicao} (código ${n.codigo})` : `posição ${n.posicao}`)
+  return {
+    message: `Código(s) de exame não reconhecido(s) na lista "exames": ${partes.join(', ')}. Use o Código interno do Catálogo de Exames (não o código TUSS/ANS). Nenhum pedido foi criado.`,
+    posicoes: nao_encontrados.map(n => n.posicao),
+    nao_encontrados,
+  }
+}

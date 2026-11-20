@@ -11,7 +11,7 @@ import {
   regrasPartnerOrders, verificarPostParceiro, type CtxApi,
 } from '../_shared/apiProtecao.ts'
 import {
-  FALHA_CORPO_GRANDE, FALHA_PROTOCOLO, codigoDoExame, lerCorpoLimitado, lerProtocolo, limparCorpo, numeroDecimal,
+  FALHA_CORPO_GRANDE, FALHA_PROTOCOLO, codigoDoExame, falhaExameNaoEncontrado, lerCorpoLimitado, lerProtocolo, limparCorpo, numeroDecimal,
   validarCampos, type Falha,
 } from '../_shared/pedidoParceiroValidacao.ts'
 
@@ -283,20 +283,19 @@ async function createOrder(req: Request, supabase: any, companyId: string, partn
   }
 
   const matched: any[] = []
-  const invalid: number[] = []
+  const invalid: { posicao: number; enviado: unknown }[] = []
   exames.forEach((item: unknown, i: number) => {
-    const exam = byCode.get(norm(codigoDoExame(item)))
-    if (!exam) invalid.push(i + 1)
+    const enviado = codigoDoExame(item)
+    const exam = byCode.get(norm(enviado))
+    if (!exam) invalid.push({ posicao: i + 1, enviado })
     else matched.push(exam)
   })
   if (invalid.length) {
-    // nunca repete o código enviado: informa a posição na lista "exames" (a partir de 1)
-    return err(
-      'EXAM_CODE_NOT_FOUND',
-      `Código(s) de exame não reconhecido(s) na(s) posição(ões) ${invalid.join(', ')} da lista "exames". Use o Código interno do Catálogo de Exames (não o código TUSS/ANS). Nenhum pedido foi criado.`,
-      422,
-      { protocolo_parceiro: protocoloParceiro, posicoes: invalid },
-    )
+    // tudo ou nada; posição a partir de 1; código só é repetido quando tem formato seguro
+    const f = falhaExameNaoEncontrado(invalid)
+    return err('EXAM_CODE_NOT_FOUND', f.message, 422, {
+      protocolo_parceiro: protocoloParceiro, posicoes: f.posicoes, nao_encontrados: f.nao_encontrados,
+    })
   }
 
   try {

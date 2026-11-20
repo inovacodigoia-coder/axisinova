@@ -699,10 +699,13 @@ export const API_GROUPS: ApiGroup[] = [
 {
   "success": false,
   "error": "EXAM_CODE_NOT_FOUND",
-  "message": "Código(s) de exame não reconhecido(s) na(s) posição(ões) 2 da lista \"exames\". ...",
+  "message": "Código(s) de exame não reconhecido(s) na lista \"exames\": posição 2 (código XYZ1), posição 3. ... Nenhum pedido foi criado.",
   "protocolo_parceiro": "PED-2026-00871",
-  "posicoes": [2]
+  "posicoes": [2, 3],
+  "nao_encontrados": [{ "posicao": 2, "codigo": "XYZ1" }, { "posicao": 3, "codigo": null }]
 }
+// Posição conta a partir de 1. O código só é repetido quando tem apenas letras, números,
+// hífen, underline ou ponto (até 20 caracteres); senão vem null. Nenhum exame é criado (tudo ou nada).
 
 // 422 campo inválido (informa só o nome do campo, nunca o valor enviado)
 {

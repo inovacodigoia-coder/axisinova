@@ -209,3 +209,22 @@ describe('teto da fila no servidor da API', () => {
     expect(chamadas).toBe(1)
   })
 })
+
+import { codigoSeguroParaEco, falhaExameNaoEncontrado } from '../../supabase/functions/_shared/pedidoParceiroValidacao'
+describe('EXAM_CODE_NOT_FOUND', () => {
+  it('repete só código seguro de até 20 caracteres', () => {
+    expect(codigoSeguroParaEco('HB_A1c-2.0')).toBe('HB_A1c-2.0')
+    expect(codigoSeguroParaEco('A'.repeat(20))).toBe('A'.repeat(20))
+    expect(codigoSeguroParaEco('A'.repeat(21))).toBeNull()
+    expect(codigoSeguroParaEco('<script>')).toBeNull()
+    expect(codigoSeguroParaEco('ABC DEF')).toBeNull()
+    expect(codigoSeguroParaEco({ x: 1 })).toBeNull()
+  })
+  it('posição a partir de 1 e código quando seguro', () => {
+    const f = falhaExameNaoEncontrado([{ posicao: 2, enviado: 'XYZ1' }, { posicao: 3, enviado: 'a b' }])
+    expect(f.posicoes).toEqual([2, 3])
+    expect(f.nao_encontrados).toEqual([{ posicao: 2, codigo: 'XYZ1' }, { posicao: 3, codigo: null }])
+    expect(f.message).toContain('posição 2 (código XYZ1), posição 3.')
+    expect(f.message).not.toContain('a b')
+  })
+})
