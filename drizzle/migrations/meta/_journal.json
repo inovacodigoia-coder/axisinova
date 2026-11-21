@@ -1331,6 +1331,48 @@
       "when": 1795233529093,
       "tag": "0189_bancada_funcoes_exigem_login",
       "breakpoints": true
+    },
+    {
+      "idx": 190,
+      "version": "7",
+      "when": 1795234534896,
+      "tag": "0190_funcoes_sem_visitante_lote1",
+      "breakpoints": true
+    },
+    {
+      "idx": 191,
+      "version": "7",
+      "when": 1795234597470,
+      "tag": "0191_funcoes_sem_visitante_lote2",
+      "breakpoints": true
+    },
+    {
+      "idx": 192,
+      "version": "7",
+      "when": 1795234623934,
+      "tag": "0192_funcoes_sem_visitante_lote3",
+      "breakpoints": true
+    },
+    {
+      "idx": 193,
+      "version": "7",
+      "when": 1795234681601,
+      "tag": "0193_funcoes_sem_visitante_lote4",
+      "breakpoints": true
+    },
+    {
+      "idx": 194,
+      "version": "7",
+      "when": 1795234726337,
+      "tag": "0194_funcoes_sem_visitante_lote5",
+      "breakpoints": true
+    },
+    {
+      "idx": 195,
+      "version": "7",
+      "when": 1795234815097,
+      "tag": "0195_funcoes_seed_e_privilegios_padrao",
+      "breakpoints": true
     }
   ]
 }

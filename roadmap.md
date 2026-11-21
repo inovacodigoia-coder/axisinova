@@ -267,4 +267,12 @@
 - [x] Classificação das demais 81 funções chamáveis sem login (nenhuma revogada) e prova de que funções de gatilho não são chamáveis.
 - [x] Gatilhos de Super Admin ativos e teste automático (usuário comum não liga a API).
 - [x] Prova "logado em outra empresa" na publicada: 0 linhas para exame de outra empresa (banco tem 7), falso na checagem de resultado, própria empresa segue listando.
-- [ ] Próxima etapa (aguarda aprovação da lista): revogar as funções marcadas REVOGAR_ANON e corrigir as funções de usuário logado que leem outra empresa.
+
+# Etapa 3B — tirar acesso de visitante
+- [x] Diagnóstico (servidor, regras de acesso, visões, gatilhos, telas públicas): nenhuma exceção.
+- [x] 67 funções revogadas em 5 lotes + apoio_seed_company (só gatilho/servidor) + lab_materiais_seed (login + mesma empresa).
+- [x] Funções novas nascem sem acesso de visitante; teste de recaída criado e provado.
+- [x] Prova na publicada (11 recusas, 12 públicas respondendo) e teste revertido de empresa nova/portal.
+- [x] Regressão logada com usuário de teste sem empresa (sem "permissão negada" nas telas).
+- [ ] Usuário de teste não ligado à empresa "teste": só o Super Admin pode mudar a empresa de um usuário.
+- [ ] Etapa 3C: funções de usuário logado que leem outra empresa (lista aprovada).

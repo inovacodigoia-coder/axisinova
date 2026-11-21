@@ -1,0 +1,35 @@
+-- Etapa 3B lote 2/5: tira o acesso de visitante (PUBLIC e anon); usuário logado e servidor continuam.
+REVOKE EXECUTE ON FUNCTION public.apoio_depara_lista() FROM PUBLIC, anon;
+GRANT EXECUTE ON FUNCTION public.apoio_depara_lista() TO authenticated, service_role;
+REVOKE EXECUTE ON FUNCTION public.apoio_depara_referencia(uuid,text) FROM PUBLIC, anon;
+GRANT EXECUTE ON FUNCTION public.apoio_depara_referencia(uuid,text) TO authenticated, service_role;
+REVOKE EXECUTE ON FUNCTION public.apoio_dias_uteis(date,date) FROM PUBLIC, anon;
+GRANT EXECUTE ON FUNCTION public.apoio_dias_uteis(date,date) TO authenticated, service_role;
+REVOKE EXECUTE ON FUNCTION public.apoio_dias_uteis(uuid,date,date) FROM PUBLIC, anon;
+GRANT EXECUTE ON FUNCTION public.apoio_dias_uteis(uuid,date,date) TO authenticated, service_role;
+REVOKE EXECUTE ON FUNCTION public.apoio_exame_atendimento(uuid) FROM PUBLIC, anon;
+GRANT EXECUTE ON FUNCTION public.apoio_exame_atendimento(uuid) TO authenticated, service_role;
+REVOKE EXECUTE ON FUNCTION public.apoio_laudo_ajustar(uuid,uuid,text,text,jsonb,jsonb,jsonb) FROM PUBLIC, anon;
+GRANT EXECUTE ON FUNCTION public.apoio_laudo_ajustar(uuid,uuid,text,text,jsonb,jsonb,jsonb) TO authenticated, service_role;
+REVOKE EXECUTE ON FUNCTION public.apoio_laudo_ajustar(uuid,uuid,text,text,jsonb,jsonb) FROM PUBLIC, anon;
+GRANT EXECUTE ON FUNCTION public.apoio_laudo_ajustar(uuid,uuid,text,text,jsonb,jsonb) TO authenticated, service_role;
+REVOKE EXECUTE ON FUNCTION public.apoio_laudo_ajuste_cadastro(uuid) FROM PUBLIC, anon;
+GRANT EXECUTE ON FUNCTION public.apoio_laudo_ajuste_cadastro(uuid) TO authenticated, service_role;
+REVOKE EXECUTE ON FUNCTION public.apoio_laudo_ajuste_dados(uuid) FROM PUBLIC, anon;
+GRANT EXECUTE ON FUNCTION public.apoio_laudo_ajuste_dados(uuid) TO authenticated, service_role;
+REVOKE EXECUTE ON FUNCTION public.apoio_log__tipo(text,text) FROM PUBLIC, anon;
+GRANT EXECUTE ON FUNCTION public.apoio_log__tipo(text,text) TO authenticated, service_role;
+REVOKE EXECUTE ON FUNCTION public.apoio_log_lista(timestamp with time zone,timestamp with time zone,uuid,text,text,text,uuid,integer,integer) FROM PUBLIC, anon;
+GRANT EXECUTE ON FUNCTION public.apoio_log_lista(timestamp with time zone,timestamp with time zone,uuid,text,text,text,uuid,integer,integer) TO authenticated, service_role;
+-- Reversão (rodar em nova migração se precisar voltar):
+-- GRANT EXECUTE ON FUNCTION public.apoio_depara_lista() TO PUBLIC, anon;
+-- GRANT EXECUTE ON FUNCTION public.apoio_depara_referencia(uuid,text) TO PUBLIC, anon;
+-- GRANT EXECUTE ON FUNCTION public.apoio_dias_uteis(date,date) TO PUBLIC, anon;
+-- GRANT EXECUTE ON FUNCTION public.apoio_dias_uteis(uuid,date,date) TO PUBLIC, anon;
+-- GRANT EXECUTE ON FUNCTION public.apoio_exame_atendimento(uuid) TO PUBLIC, anon;
+-- GRANT EXECUTE ON FUNCTION public.apoio_laudo_ajustar(uuid,uuid,text,text,jsonb,jsonb,jsonb) TO PUBLIC, anon;
+-- GRANT EXECUTE ON FUNCTION public.apoio_laudo_ajustar(uuid,uuid,text,text,jsonb,jsonb) TO PUBLIC, anon;
+-- GRANT EXECUTE ON FUNCTION public.apoio_laudo_ajuste_cadastro(uuid) TO PUBLIC, anon;
+-- GRANT EXECUTE ON FUNCTION public.apoio_laudo_ajuste_dados(uuid) TO PUBLIC, anon;
+-- GRANT EXECUTE ON FUNCTION public.apoio_log__tipo(text,text) TO PUBLIC, anon;
+-- GRANT EXECUTE ON FUNCTION public.apoio_log_lista(timestamp with time zone,timestamp with time zone,uuid,text,text,text,uuid,integer,integer) TO PUBLIC, anon;
