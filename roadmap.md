@@ -266,5 +266,5 @@
 - [x] bancada_itens_exame e bancada_item_tem_resultado: login + mesma empresa, sem anon/public; recusa sem login comprovada na publicada.
 - [x] Classificação das demais 81 funções chamáveis sem login (nenhuma revogada) e prova de que funções de gatilho não são chamáveis.
 - [x] Gatilhos de Super Admin ativos e teste automático (usuário comum não liga a API).
-- [ ] Prova "logado em outra empresa" na publicada: aguarda o usuário escolher a conta (teste automático já cobre).
+- [x] Prova "logado em outra empresa" na publicada: 0 linhas para exame de outra empresa (banco tem 7), falso na checagem de resultado, própria empresa segue listando.
 - [ ] Próxima etapa: revogar as funções marcadas REVOGAR_ANON, após aprovação da lista.
