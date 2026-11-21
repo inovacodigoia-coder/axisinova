@@ -1324,6 +1324,13 @@
       "when": 1795132756616,
       "tag": "0188_cadastro_rapido_exames",
       "breakpoints": true
+    },
+    {
+      "idx": 189,
+      "version": "7",
+      "when": 1795233529093,
+      "tag": "0189_bancada_funcoes_exigem_login",
+      "breakpoints": true
     }
   ]
 }

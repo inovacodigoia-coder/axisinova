@@ -261,3 +261,10 @@
 - [x] Consulta (filtros, ver no mapa, retirada), Descarte (lote/manual), Rastreabilidade (linha do tempo + PDF A4), Config. Soroteca.
 - [x] 13 testes do banco + 10 de regras/mapa passaram; typecheck/build OK.
 - [ ] Conferir as telas logado e um armazenamento real: sessão não autorizada nesta conversa; amostras da soroteca não podem ser apagadas, então não gravei teste no banco real.
+
+# Etapa 3A — funções sem login
+- [x] bancada_itens_exame e bancada_item_tem_resultado: login + mesma empresa, sem anon/public; recusa sem login comprovada na publicada.
+- [x] Classificação das demais 81 funções chamáveis sem login (nenhuma revogada) e prova de que funções de gatilho não são chamáveis.
+- [x] Gatilhos de Super Admin ativos e teste automático (usuário comum não liga a API).
+- [ ] Prova "logado em outra empresa" na publicada: aguarda o usuário escolher a conta (teste automático já cobre).
+- [ ] Próxima etapa: revogar as funções marcadas REVOGAR_ANON, após aprovação da lista.

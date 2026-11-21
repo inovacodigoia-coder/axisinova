@@ -1,0 +1,1 @@
+- Anon-callable SECURITY DEFINER functions must check auth.uid() and company inside (no "auth.uid() IS NULL" bypass); helpers called only by other definer RPCs get no anon/PUBLIC EXECUTE. Why: the Data API exposes every granted function to visitors.
