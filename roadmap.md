@@ -278,10 +278,12 @@
 - [ ] Etapa 3C: funções de usuário logado que leem outra empresa (lista aprovada).
 
 # Etapa 3C.2 — senha do portal só como hash
-- [ ] Levantamento dos lugares que usam a senha (antes de mudar).
-- [ ] Hash bcrypt das 2.531 senhas + prova de amostra.
-- [ ] Portal, laudo e chat verificam só pelo hash; trava no servidor (aguarda resposta).
-- [ ] Senha gerada no servidor (8 números, não trivial), exibida uma vez; registro de quem gerou.
-- [ ] Comprovante do paciente: sempre 4 últimos do CPF; só senha nova pedida segue o modelo de 8 números; senhas atuais não mudam.
-- [ ] Fechar leitura da coluna em texto (depois de publicar as telas novas).
-- [ ] 7 testes automáticos + teste na publicada com acesso novo na empresa "teste".
+- [x] Levantamento dos lugares que usam a senha.
+- [x] Hash bcrypt das 2.531 senhas (todas conferidas com a antiga).
+- [x] Portal, laudo e chat verificam só pelo hash; trava no servidor e resposta uniforme.
+- [x] Senha gerada no servidor (8 números, não trivial), exibida uma vez; registro de quem gerou.
+- [x] Comprovante do paciente: 4 últimos do CPF; só senha nova pedida segue 8 números; senhas atuais não mudam.
+- [x] Coluna em texto fechada para logados e visitantes (após publicar).
+- [x] Testes automáticos + teste na publicada (acesso fictício na empresa "teste", apagado).
+- [ ] Telas da equipe (Portais Externos, comprovante) não testadas logado: falta usuário da empresa "teste".
+- [ ] Etapa 3C.3: apagar o texto antigo da senha.

@@ -1387,6 +1387,20 @@
       "when": 1795237500789,
       "tag": "0197_portal_senha_so_hash_e_trava",
       "breakpoints": true
+    },
+    {
+      "idx": 198,
+      "version": "7",
+      "when": 1795237978625,
+      "tag": "0198_portal_senha_coluna_fechada",
+      "breakpoints": true
+    },
+    {
+      "idx": 199,
+      "version": "7",
+      "when": 1795238126744,
+      "tag": "0199_portal_senha_texto_vazio",
+      "breakpoints": true
     }
   ]
 }

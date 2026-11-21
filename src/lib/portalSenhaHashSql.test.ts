@@ -17,7 +17,6 @@ const POUTRA = '00000000-0000-4000-8000-0000000000f3'
 
 const migracao = (trecho: string) => {
   const f = readdirSync('drizzle/migrations').find(n => n.endsWith('.sql') && n.includes(trecho))
-  if (!f && process.env.PORTAL_COLUNA_SQL && trecho === 'portal_senha_coluna_fechada') return readFileSync(process.env.PORTAL_COLUNA_SQL, 'utf8')
   if (!f) throw new Error(`migração ${trecho} não encontrada`)
   return readFileSync(`drizzle/migrations/${f}`, 'utf8')
 }
@@ -73,7 +72,7 @@ beforeAll(async () => {
     CREATE TABLE lab_settings(id uuid PRIMARY KEY, company_id uuid);
     CREATE TABLE lab_report_templates(id uuid PRIMARY KEY);
     CREATE TABLE external_accesses(id uuid PRIMARY KEY DEFAULT gen_random_uuid(), company_id uuid, type text, name text,
-      email text, status text NOT NULL DEFAULT 'active', access_code text UNIQUE, access_password text, patient_id uuid,
+      email text, status text NOT NULL DEFAULT 'active', access_code text UNIQUE, access_password text NOT NULL, patient_id uuid,
       doctor_id uuid, origin_id uuid, partner_origin_ids uuid[] DEFAULT '{}', partner_type text, cnpj text,
       responsible_name text, phone text, crm text, specialty text, permissions jsonb DEFAULT '{}', last_access_at timestamptz,
       created_by uuid, created_at timestamptz DEFAULT now(), updated_at timestamptz DEFAULT now(), password_kind text,
@@ -101,6 +100,7 @@ beforeAll(async () => {
   await db.exec(CONVERTER)
   await db.exec(migracao('portal_senha_so_hash_e_trava'))
   await db.exec(migracao('portal_senha_coluna_fechada'))
+  await db.exec(migracao('portal_senha_texto_vazio'))
 }, 120_000)
 afterAll(async () => { await db?.close() })
 
@@ -170,7 +170,7 @@ describe('Etapa 3C.2 — senha do portal só como hash', () => {
     expect(r.senha).toMatch(/^\d{8}$/)
     expect(r.company_id).toBe(C) // empresa vem da sessão, não do pedido
     const linha = await uma(`SELECT access_password, access_password_hash, senha_gerada_por FROM external_accesses WHERE id=$1`, [r.id])
-    expect(linha.access_password).toBeNull()
+    expect(linha.access_password).toBe('')
     expect(linha.access_password_hash).not.toContain(r.senha)
     expect(linha.senha_gerada_por).toBe(U1)
     await fetch(r.access_code, '00000001')
@@ -182,7 +182,7 @@ describe('Etapa 3C.2 — senha do portal só como hash', () => {
     expect((await uma(`SELECT evento FROM external_access_senha_log WHERE access_id=$1`, [r.id])).evento).toBe('gerada')
     // tela antiga que ainda grava texto: vira hash na hora e o texto não fica
     await db.exec(`UPDATE external_accesses SET access_password='5555' WHERE id='${r.id}'`)
-    expect((await uma(`SELECT access_password p FROM external_accesses WHERE id=$1`, [r.id])).p).toBeNull()
+    expect((await uma(`SELECT access_password p FROM external_accesses WHERE id=$1`, [r.id])).p).toBe('')
     expect((await fetch(r.access_code, '5555')).ok).toBe(true)
     await db.exec(ZERAR_FALHAS)
   }, 60_000)
@@ -272,9 +272,8 @@ describe.skipIf(!process.env.PGHOST)('banco real', () => {
     expect(q(`select count(*) filter (where access_password_hash is null or access_password_hash not like '$2a$%') from external_accesses`)).toBe('0')
   })
   it('authenticated e anon não leem nem gravam as colunas de senha', () => {
-    for (const papel of ['authenticated', 'anon'])
-      for (const col of ['access_password', 'access_password_hash'])
-        for (const priv of ['SELECT', 'UPDATE', 'INSERT'])
-          expect(q(`select has_column_privilege('${papel}','public.external_accesses','${col}','${priv}')`)).toBe('f')
+    expect(q(`select count(*) filter (where has_column_privilege(r, 'public.external_accesses', c, p))
+      from unnest(array['authenticated','anon']) r, unnest(array['access_password','access_password_hash']) c,
+           unnest(array['SELECT','UPDATE','INSERT']) p`)).toBe('0')
   })
 })
