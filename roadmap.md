@@ -295,3 +295,9 @@
 - [x] Teste com duas empresas (18) + relacionados (71 no total); visitante recusado no sistema publicado.
 - [ ] Conferir as telas logado: sem sessão autorizada.
 - [ ] Próxima: eh_dia_util/prazos e funções extras (company_id_by_cnpj, apoio_modulo_liberado, apoio_prazo_vigente, bancada_*) — aguarda aprovação.
+
+# Etapa 4 — RLS de parceiros
+- [x] Levantamento (telas, servidor, permissão Portais Externos; 43 comuns perdem escrita, nenhum processava pedidos).
+- [x] Pedidos imutáveis + transições + auditoria; segredo oculto com colunas explícitas; parceiros só com permissão; visitante sem acesso (migração 0201).
+- [x] 29 testes novos + 61 existentes; recusa de visitante na publicada; script de reversão.
+- [ ] Conferir as telas logado: sem sessão autorizada.

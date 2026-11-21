@@ -101,7 +101,11 @@ export async function loadPartnerOrders(companyId: string) {
 
 /** Marca o pedido como "Recebido" novamente para nova tentativa de criação. */
 export async function markOrderForReprocess(id: string) {
-  await supabase.from('partner_orders').update({ status: 'received', error: null }).eq('id', id)
+  // Só quem tem a permissão de Portais Externos (ou administrador) altera pedidos; sem ela nenhuma linha muda.
+  const { data, error } = await supabase.from('partner_orders').update({ status: 'received', error: null }).eq('id', id).select('id')
+  if (error || !data || data.length === 0) {
+    throw new Error('Sem permissão para reprocessar pedidos (Portais Externos)')
+  }
   orders = orders.map(o => (o.id === id ? { ...o, status: 'received', errorMessage: undefined } : o))
   emit()
 }

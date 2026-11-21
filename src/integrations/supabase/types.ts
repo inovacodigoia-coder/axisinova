@@ -8627,7 +8627,11 @@ export type Database = {
           id: string
           partner_id: string | null
           payload: Json
+          processado_em: string | null
+          processado_por: string | null
           protocolo_parceiro: string | null
+          situacao_alterada_em: string | null
+          situacao_alterada_por: string | null
           status: string
         }
         Insert: {
@@ -8639,7 +8643,11 @@ export type Database = {
           id?: string
           partner_id?: string | null
           payload?: Json
+          processado_em?: string | null
+          processado_por?: string | null
           protocolo_parceiro?: string | null
+          situacao_alterada_em?: string | null
+          situacao_alterada_por?: string | null
           status?: string
         }
         Update: {
@@ -8651,7 +8659,11 @@ export type Database = {
           id?: string
           partner_id?: string | null
           payload?: Json
+          processado_em?: string | null
+          processado_por?: string | null
           protocolo_parceiro?: string | null
+          situacao_alterada_em?: string | null
+          situacao_alterada_por?: string | null
           status?: string
         }
         Relationships: [

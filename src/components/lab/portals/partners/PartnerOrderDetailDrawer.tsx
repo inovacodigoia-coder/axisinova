@@ -72,7 +72,7 @@ export function PartnerOrderDetailDrawer({ order, partner, open, onOpenChange }:
               <Button
                 variant="outline"
                 className="min-h-[44px] w-full border-destructive/40 text-destructive hover:bg-destructive/10"
-                onClick={() => { markOrderForReprocess(order.id); toast.success('Pedido enviado para reprocessamento') }}
+                onClick={() => { markOrderForReprocess(order.id).then(() => toast.success('Pedido enviado para reprocessamento'), (e: unknown) => toast.error(e instanceof Error ? e.message : 'Não foi possível reprocessar o pedido')) }}
               >
                 <RefreshCw className="mr-2 h-4 w-4" /> Reprocessar Pedido
               </Button>

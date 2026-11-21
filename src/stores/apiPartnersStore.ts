@@ -202,7 +202,13 @@ export async function addPartner(
     .insert({ company_id: input.companyId, credentials, ...toRow(input) })
     .select('*')
     .single()
-  if (error) throw new Error(error.message)
+  if (error) {
+    throw new Error(/Credencial inválida|única credencial/.test(error.message)
+      ? error.message
+      : /row-level security|permission denied/i.test(error.message)
+        ? 'Sem permissão para cadastrar parceiros (Portais Externos)'
+        : 'Não foi possível cadastrar o parceiro')
+  }
 
   const partner = fromRow(data as PartnerRow)
   partners = [partner, ...partners.filter(p => p.id !== partner.id)]
@@ -214,7 +220,11 @@ export async function updatePartner(id: string, patch: Partial<ApiPartner>) {
   const before = partners.find(p => p.id === id)
   partners = partners.map(p => (p.id === id ? { ...p, ...patch } : p))
   emit()
-  const { error } = await db().update(toRow(patch)).eq('id', id)
+  const { data, error } = await db().update(toRow(patch)).eq('id', id).select('id')
+  if (!error && (!data || data.length === 0)) {
+    if (before) { partners = partners.map(p => (p.id === id ? before : p)); emit() }
+    throw new Error('Sem permissão para alterar parceiros (Portais Externos)')
+  }
   if (error) {
     if (before) { partners = partners.map(p => (p.id === id ? before : p)); emit() }
     throw new Error(/arquivado/i.test(error.message)

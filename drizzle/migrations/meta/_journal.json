@@ -1408,6 +1408,13 @@
       "when": 1795265782823,
       "tag": "0200_empresa_do_usuario_3d",
       "breakpoints": true
+    },
+    {
+      "idx": 201,
+      "version": "7",
+      "when": 1795296866954,
+      "tag": "0201_parceiros_rls_etapa4",
+      "breakpoints": true
     }
   ]
 }
