@@ -267,4 +267,4 @@
 - [x] Classificação das demais 81 funções chamáveis sem login (nenhuma revogada) e prova de que funções de gatilho não são chamáveis.
 - [x] Gatilhos de Super Admin ativos e teste automático (usuário comum não liga a API).
 - [x] Prova "logado em outra empresa" na publicada: 0 linhas para exame de outra empresa (banco tem 7), falso na checagem de resultado, própria empresa segue listando.
-- [ ] Próxima etapa: revogar as funções marcadas REVOGAR_ANON, após aprovação da lista.
+- [ ] Próxima etapa (aguarda aprovação da lista): revogar as funções marcadas REVOGAR_ANON e corrigir as funções de usuário logado que leem outra empresa.
