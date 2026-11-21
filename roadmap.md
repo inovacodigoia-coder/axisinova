@@ -276,3 +276,12 @@
 - [x] Regressão logada com usuário de teste sem empresa (sem "permissão negada" nas telas).
 - [ ] Usuário de teste não ligado à empresa "teste": só o Super Admin pode mudar a empresa de um usuário.
 - [ ] Etapa 3C: funções de usuário logado que leem outra empresa (lista aprovada).
+
+# Etapa 3C.2 — senha do portal só como hash
+- [ ] Levantamento dos lugares que usam a senha (antes de mudar).
+- [ ] Hash bcrypt das 2.531 senhas + prova de amostra.
+- [ ] Portal, laudo e chat verificam só pelo hash; trava no servidor (aguarda resposta).
+- [ ] Senha gerada no servidor (8 números, não trivial), exibida uma vez; registro de quem gerou.
+- [ ] Comprovante do paciente: sempre 4 últimos do CPF; só senha nova pedida segue o modelo de 8 números; senhas atuais não mudam.
+- [ ] Fechar leitura da coluna em texto (depois de publicar as telas novas).
+- [ ] 7 testes automáticos + teste na publicada com acesso novo na empresa "teste".

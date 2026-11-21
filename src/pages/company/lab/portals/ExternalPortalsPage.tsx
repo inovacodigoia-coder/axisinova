@@ -44,7 +44,7 @@ export default function ExternalPortalsPage() {
 
   const {
     accesses, loading, companyId, updateAccess,
-    createAccess, regenerateCredentials, setPassword, deleteAccess, toggleStatus, setPrazoAdicional,
+    createAccess, regenerateCredentials, deleteAccess, toggleStatus, setPrazoAdicional,
   } = useExternalAccesses();
 
   const filteredList = useMemo(() => {
@@ -80,8 +80,8 @@ export default function ExternalPortalsPage() {
     setCredentialsIsNew(isNew);
   };
 
-  const handleRegenerate = async (id: string) => {
-    const record = await regenerateCredentials(id);
+  const handleRegenerate = async (id: string, novoCodigo: boolean) => {
+    const record = await regenerateCredentials(id, novoCodigo);
     setCredentialsFor(record);
     return record;
   };
@@ -333,7 +333,6 @@ export default function ExternalPortalsPage() {
         access={credentialsFor}
         isNew={credentialsIsNew}
         onRegenerate={handleRegenerate}
-        onSetPassword={async (id, pwd, kind) => { const r = await setPassword(id, pwd, kind); setCredentialsFor(r); return r; }}
       />
     </div>
   );

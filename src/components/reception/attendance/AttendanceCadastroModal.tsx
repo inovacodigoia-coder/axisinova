@@ -419,7 +419,7 @@ export function AttendanceCadastroModal({
       registeredByName: order.registeredByName,
       ...companyHeaderFromSettings(labSettings),
       locatorCode: portalAccess?.access_code,
-      password: portalAccess?.access_password,
+      password: portalAccess?.senha,
       passwordKind: portalAccess?.password_kind,
       portalUrl: portalAccess ? buildPortalUrl(portalAccess.access_code) : undefined,
     }

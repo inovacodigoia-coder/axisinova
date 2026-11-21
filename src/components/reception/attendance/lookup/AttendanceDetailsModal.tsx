@@ -1428,7 +1428,7 @@ export function AttendanceDetailsModal({ open, onClose, onOrderDeleted, order, p
             convenioName: order.convenioName || 'PARTICULAR',
             paymentType: order.paymentType === 'private' ? 'PARTICULAR' : 'CONVÊNIO',
             locatorCode: portalAccess?.access_code || order.orderNumber.replace('-', ''),
-            password: portalAccess?.access_password || '',
+            password: portalAccess?.senha || '',
             passwordKind: portalAccess?.password_kind,
             portalUrl: portalAccess ? buildPortalUrl(portalAccess.access_code) : undefined,
             attachments: [],

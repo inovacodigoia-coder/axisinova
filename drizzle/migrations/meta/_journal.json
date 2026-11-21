@@ -1373,6 +1373,20 @@
       "when": 1795234815097,
       "tag": "0195_funcoes_seed_e_privilegios_padrao",
       "breakpoints": true
+    },
+    {
+      "idx": 196,
+      "version": "7",
+      "when": 1795236753700,
+      "tag": "0196_portal_senha_hash_base",
+      "breakpoints": true
+    },
+    {
+      "idx": 197,
+      "version": "7",
+      "when": 1795237500789,
+      "tag": "0197_portal_senha_so_hash_e_trava",
+      "breakpoints": true
     }
   ]
 }

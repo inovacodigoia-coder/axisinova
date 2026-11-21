@@ -76,7 +76,7 @@ const ERROR_MESSAGES: Record<string, string> = {
   not_found: 'Código de acesso não encontrado. Confira o link ou o código impresso no comprovante.',
   inactive: 'Este acesso está inativo. Entre em contato com o laboratório.',
   locked: 'Muitas tentativas incorretas. Aguarde 5 minutos e tente novamente.',
-  invalid_password: 'Senha incorreta. Confira a senha impressa no comprovante.',
+  invalid_password: 'Código ou senha incorretos. Confira os dados impressos no comprovante.',
   not_released: 'Este laudo ainda não foi liberado.',
   forbidden: 'Este exame não pertence a este acesso.',
   blocked: 'Exame não disponível para visualização. Em caso de dúvidas, entre em contato com o laboratório responsável pela realização do exame.',
@@ -465,17 +465,17 @@ export default function ExternalPortalPage() {
             <form onSubmit={handleSubmit} className="space-y-4">
               <div className="space-y-1.5">
                 <label htmlFor="senha" className="text-sm font-medium">
-                  Senha (4 dígitos)
+                  Senha
                 </label>
                 <Input
                   id="senha"
                   inputMode="numeric"
-                  maxLength={4}
+                  maxLength={12}
                   autoFocus
                   value={password}
                   onChange={(e) => setPassword(e.target.value.replace(/\D/g, ''))}
-                  placeholder="0000"
-                  className="text-center text-2xl tracking-[0.5em] font-mono h-12"
+                  placeholder="Somente números"
+                  className="text-center text-2xl tracking-[0.3em] font-mono h-12"
                 />
               </div>
               {error && (

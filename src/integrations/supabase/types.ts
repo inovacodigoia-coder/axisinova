@@ -5261,10 +5261,38 @@ export type Database = {
           },
         ]
       }
+      external_access_senha_log: {
+        Row: {
+          access_id: string
+          company_id: string
+          created_at: string
+          evento: string
+          id: string
+          user_id: string | null
+        }
+        Insert: {
+          access_id: string
+          company_id: string
+          created_at?: string
+          evento: string
+          id?: string
+          user_id?: string | null
+        }
+        Update: {
+          access_id?: string
+          company_id?: string
+          created_at?: string
+          evento?: string
+          id?: string
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       external_accesses: {
         Row: {
           access_code: string
           access_password: string
+          access_password_hash: string | null
           cnpj: string | null
           company_id: string
           created_at: string
@@ -5272,6 +5300,7 @@ export type Database = {
           crm: string | null
           doctor_id: string | null
           email: string | null
+          falhas_zeradas_em: string | null
           id: string
           last_access_at: string | null
           name: string
@@ -5284,6 +5313,8 @@ export type Database = {
           phone: string | null
           prazo_dias_adicionais: number
           responsible_name: string | null
+          senha_gerada_em: string | null
+          senha_gerada_por: string | null
           specialty: string | null
           status: string
           type: string
@@ -5292,6 +5323,7 @@ export type Database = {
         Insert: {
           access_code: string
           access_password: string
+          access_password_hash?: string | null
           cnpj?: string | null
           company_id: string
           created_at?: string
@@ -5299,6 +5331,7 @@ export type Database = {
           crm?: string | null
           doctor_id?: string | null
           email?: string | null
+          falhas_zeradas_em?: string | null
           id?: string
           last_access_at?: string | null
           name: string
@@ -5311,6 +5344,8 @@ export type Database = {
           phone?: string | null
           prazo_dias_adicionais?: number
           responsible_name?: string | null
+          senha_gerada_em?: string | null
+          senha_gerada_por?: string | null
           specialty?: string | null
           status?: string
           type: string
@@ -5319,6 +5354,7 @@ export type Database = {
         Update: {
           access_code?: string
           access_password?: string
+          access_password_hash?: string | null
           cnpj?: string | null
           company_id?: string
           created_at?: string
@@ -5326,6 +5362,7 @@ export type Database = {
           crm?: string | null
           doctor_id?: string | null
           email?: string | null
+          falhas_zeradas_em?: string | null
           id?: string
           last_access_at?: string | null
           name?: string
@@ -5338,6 +5375,8 @@ export type Database = {
           phone?: string | null
           prazo_dias_adicionais?: number
           responsible_name?: string | null
+          senha_gerada_em?: string | null
+          senha_gerada_por?: string | null
           specialty?: string | null
           status?: string
           type?: string
@@ -14716,8 +14755,30 @@ export type Database = {
         Args: { _dispensation_id: string }
         Returns: undefined
       }
+      portal__acesso_json: {
+        Args: { r: Database["public"]["Tables"]["external_accesses"]["Row"] }
+        Returns: Json
+      }
       portal__chat_validar: {
         Args: { p_code: string; p_password: string }
+        Returns: Json
+      }
+      portal__verificar: {
+        Args: { p_acao: string; p_code: string; p_password: string }
+        Returns: Json
+      }
+      portal_acesso_criar: { Args: { _dados: Json }; Returns: Json }
+      portal_acesso_paciente_garantir: {
+        Args: {
+          _email?: string
+          _gerar_nova?: boolean
+          _nome: string
+          _patient_id: string
+        }
+        Returns: Json
+      }
+      portal_acesso_regenerar: {
+        Args: { _id: string; _novo_codigo?: boolean }
         Returns: Json
       }
       portal_chat_abrir: {
@@ -14756,6 +14817,10 @@ export type Database = {
         Args: { _company: string; _dias: number; _ex: Json }
         Returns: Json
       }
+      portal_senha_gerar: { Args: never; Returns: string }
+      portal_senha_hash: { Args: { _s: string }; Returns: string }
+      portal_senha_tamanho: { Args: never; Returns: number }
+      portal_senha_trivial: { Args: { _s: string }; Returns: boolean }
       prescription_create: {
         Args: {
           _doctor_name: string
