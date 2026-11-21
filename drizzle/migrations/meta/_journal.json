@@ -1401,6 +1401,13 @@
       "when": 1795238126744,
       "tag": "0199_portal_senha_texto_vazio",
       "breakpoints": true
+    },
+    {
+      "idx": 200,
+      "version": "7",
+      "when": 1795265782823,
+      "tag": "0200_empresa_do_usuario_3d",
+      "breakpoints": true
     }
   ]
 }

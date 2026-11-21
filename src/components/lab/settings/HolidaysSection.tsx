@@ -57,7 +57,12 @@ export default function HolidaysSection() {
 
   const loadNational = async () => {
     const { data, error } = await supabase.rpc('carregar_feriados_nacionais' as any, { _ano: year })
-    if (error) return toast.error('Falha ao carregar feriados nacionais')
+    if (error) {
+      // Só administrador da empresa ou Super Admin carrega os feriados nacionais (conferido no banco).
+      return toast.error((error as { code?: string }).code === '42501'
+        ? 'Somente o administrador da empresa pode carregar os feriados nacionais'
+        : 'Falha ao carregar feriados nacionais')
+    }
     toast.success(Number(data) > 0 ? `${data} feriado(s) nacional(is) adicionados` : 'Os feriados nacionais deste ano já estavam cadastrados')
     load()
   }

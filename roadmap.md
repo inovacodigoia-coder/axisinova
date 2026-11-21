@@ -275,7 +275,7 @@
 - [x] Prova na publicada (11 recusas, 12 públicas respondendo) e teste revertido de empresa nova/portal.
 - [x] Regressão logada com usuário de teste sem empresa (sem "permissão negada" nas telas).
 - [ ] Usuário de teste não ligado à empresa "teste": só o Super Admin pode mudar a empresa de um usuário.
-- [ ] Etapa 3C: funções de usuário logado que leem outra empresa (lista aprovada).
+- [x] Etapa 3C: funções de usuário logado que leem outra empresa — feita como Etapa 3D.
 
 # Etapa 3C.2 — senha do portal só como hash
 - [x] Levantamento dos lugares que usam a senha.
@@ -287,3 +287,11 @@
 - [x] Testes automáticos + teste na publicada (acesso fictício na empresa "teste", apagado).
 - [ ] Telas da equipe (Portais Externos, comprovante) não testadas logado: falta usuário da empresa "teste".
 - [ ] Etapa 3C.3: apagar o texto antigo da senha.
+
+# Etapa 3D — funções de usuário logado conferem a empresa
+- [x] lab_aprovador_info, apoio_item_material, apoio_codigo_aliquota, next_attendance_order_number e carregar_feriados_nacionais conferem a empresa (migração 0200).
+- [x] chat_interno_ativo e apoio_valida_cod_ped sem acesso direto de usuário logado.
+- [x] Auxiliares conferidas; eh_dia_util (motor de prazo) listada sem correção.
+- [x] Teste com duas empresas (18) + relacionados (71 no total); visitante recusado no sistema publicado.
+- [ ] Conferir as telas logado: sem sessão autorizada.
+- [ ] Próxima: eh_dia_util/prazos e funções extras (company_id_by_cnpj, apoio_modulo_liberado, apoio_prazo_vigente, bancada_*) — aguarda aprovação.
