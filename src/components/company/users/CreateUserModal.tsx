@@ -10,6 +10,7 @@ import { useAuth } from '@/context/AuthContext'
 import { toast } from 'sonner'
 
 import { ROLE_OPTIONS } from '@/lib/userRoles'
+import { mensagemErroFuncao } from '@/lib/erroFuncao'
 
 interface CreateUserModalProps {
   open: boolean
@@ -70,10 +71,7 @@ export function CreateUserModal({ open, onOpenChange, onCreated }: CreateUserMod
       })
 
       if (res.error) {
-        const errorMsg = typeof res.error === 'object' && 'message' in res.error
-          ? (res.error as any).message
-          : 'Erro ao criar usuário'
-        toast.error(errorMsg)
+        toast.error(await mensagemErroFuncao(res.error, 'Erro ao criar usuário'))
         return
       }
 
