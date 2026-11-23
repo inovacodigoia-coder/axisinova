@@ -15067,6 +15067,15 @@ export type Database = {
       triagem__semear: { Args: { _company: string }; Returns: undefined }
       triagem_semear_padroes: { Args: never; Returns: undefined }
       triagem_tem_permissao: { Args: { _perm: string }; Returns: boolean }
+      usuario_provisionar: {
+        Args: {
+          p_badge: string
+          p_company: string
+          p_role: string
+          p_user: string
+        }
+        Returns: undefined
+      }
       whatsapp__ciclo_um: {
         Args: { p_ag: string; p_base: string; p_tipo: string }
         Returns: string

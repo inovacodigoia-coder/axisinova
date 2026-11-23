@@ -1415,6 +1415,13 @@
       "when": 1795296866954,
       "tag": "0201_parceiros_rls_etapa4",
       "breakpoints": true
+    },
+    {
+      "idx": 202,
+      "version": "7",
+      "when": 1795437183799,
+      "tag": "0202_migration",
+      "breakpoints": true
     }
   ]
 }

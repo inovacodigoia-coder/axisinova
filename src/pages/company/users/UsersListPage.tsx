@@ -2,7 +2,8 @@ import { useState, useEffect, useCallback } from 'react'
 import { useAuth } from '@/context/AuthContext'
 import { supabase } from '@/integrations/supabase/client'
 import { DataTable } from '@/components/ui/DataTable'
-import { Search, Plus, Users, Edit, Loader2, ToggleLeft, ToggleRight, RefreshCw } from 'lucide-react'
+import { Search, Plus, Users, Edit, Loader2, ToggleLeft, ToggleRight, RefreshCw, Trash2 } from 'lucide-react'
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog'
 import { toast } from 'sonner'
 import { CreateUserModal } from '@/components/company/users/CreateUserModal'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
@@ -39,6 +40,8 @@ export default function UsersListPage() {
   const [search, setSearch] = useState('')
   const [showCreateModal, setShowCreateModal] = useState(false)
   const [editingUser, setEditingUser] = useState<ProfileRow | null>(null)
+  const [deletingUser, setDeletingUser] = useState<ProfileRow | null>(null)
+  const [deleting, setDeleting] = useState(false)
 
   const companyId = user?.companyId
 
@@ -60,9 +63,11 @@ export default function UsersListPage() {
 
   useEffect(() => { fetchProfiles() }, [fetchProfiles])
 
-  const activeProfiles = profiles.filter(p => p.is_active !== false)
+  // Desativados continuam na lista (depois dos ativos) para poder ativar de novo ou excluir.
+  const ordenados = [...profiles].sort((a, b) =>
+    Number(a.is_active === false) - Number(b.is_active === false) || (a.full_name ?? '').localeCompare(b.full_name ?? '', 'pt-BR'))
 
-  const filtered = activeProfiles.filter(p => {
+  const filtered = ordenados.filter(p => {
     if (search && !p.full_name.toLowerCase().includes(search.toLowerCase()) && !(p.cpf ?? '').includes(search)) return false
     return true
   })
@@ -79,6 +84,20 @@ export default function UsersListPage() {
       return
     }
     toast.success(newStatus ? 'Usuário ativado' : 'Usuário desativado')
+    fetchProfiles()
+  }
+
+  const handleDelete = async () => {
+    if (!deletingUser) return
+    setDeleting(true)
+    const { data, error } = await supabase.functions.invoke('delete-user', { body: { user_id: deletingUser.id } })
+    setDeleting(false)
+    if (error || !(data as any)?.ok) {
+      toast.error(await mensagemErroFuncao(error, 'Não foi possível excluir o usuário', data))
+      return
+    }
+    toast.success('Usuário excluído')
+    setDeletingUser(null)
     fetchProfiles()
   }
 
@@ -107,6 +126,11 @@ export default function UsersListPage() {
             : <ToggleLeft className="h-4 w-4 text-muted-foreground" />
           }
         </button>
+        {p.is_active === false && p.id !== user?.id && (
+          <button onClick={() => setDeletingUser(p)} className="rounded p-1.5 hover:bg-destructive/10" title="Excluir">
+            <Trash2 className="h-4 w-4 text-destructive" />
+          </button>
+        )}
       </div>
     )},
   ]
@@ -156,6 +180,29 @@ export default function UsersListPage() {
           <DataTable data={filtered} columns={columns} pageSize={10} />
         </div>
       )}
+
+      <AlertDialog open={!!deletingUser} onOpenChange={o => { if (!o && !deleting) setDeletingUser(null) }}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Excluir usuário?</AlertDialogTitle>
+            <AlertDialogDescription>
+              {deletingUser?.full_name} será excluído de vez e o e-mail fica livre para um novo cadastro.
+              Só é possível excluir quem nunca entrou no sistema; quem já usou fica apenas desativado, para manter o histórico.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={deleting}>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={e => { e.preventDefault(); void handleDelete() }}
+              disabled={deleting}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {deleting && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+              Excluir
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       <CreateUserModal open={showCreateModal} onOpenChange={setShowCreateModal} onCreated={fetchProfiles} />
 

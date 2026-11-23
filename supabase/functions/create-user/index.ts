@@ -94,10 +94,18 @@ Deno.serve(async (req) => {
       return json({ error: msg }, 400);
     }
 
-    await adminClient
-      .from("profiles")
-      .update({ must_change_password: true })
-      .eq("id", newUser.user.id);
+    // O gatilho de cadastro não enxerga app_metadata na inserção; empresa, função e ativo são gravados aqui.
+    const { error: provError } = await adminClient.rpc("usuario_provisionar", {
+      p_user: newUser.user.id,
+      p_company: effectiveCompanyId,
+      p_role: role,
+      p_badge: badge_code || null,
+    });
+    if (provError) {
+      console.error("create-user provisionar:", provError.message);
+      await adminClient.auth.admin.deleteUser(newUser.user.id).catch(() => {});
+      return json({ error: "Não foi possível vincular o usuário à empresa. Tente de novo." }, 500);
+    }
 
     return json({ user: { id: newUser.user.id, email: newUser.user.email } }, 201);
   } catch (err) {
