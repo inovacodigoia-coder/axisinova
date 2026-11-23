@@ -1,7 +1,9 @@
 import { useState, useEffect } from 'react'
 import { StatusBadge } from '@/components/ui/StatusBadge'
 import { supabase } from '@/integrations/supabase/client'
-import { Eye, Building2, Lock, Unlock } from 'lucide-react'
+import { Eye, Building2, Lock, Unlock, Trash2, Loader2 } from 'lucide-react'
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog'
+import { mensagemErroFuncao } from '@/lib/erroFuncao'
 import { toast } from 'sonner'
 import { useNavigate } from 'react-router-dom'
 
@@ -35,6 +37,8 @@ const roleLabels: Record<string, string> = {
 }
 
 export default function SuperAdminUsersPage() {
+  const [excluindo, setExcluindo] = useState<SystemUser | null>(null)
+  const [excluindoAgora, setExcluindoAgora] = useState(false)
   const [users, setUsers] = useState<SystemUser[]>([])
   const [loading, setLoading] = useState(true)
   const navigate = useNavigate()
@@ -128,6 +132,20 @@ export default function SuperAdminUsersPage() {
     } catch (err: any) {
       toast.error('Erro ao desbloquear: ' + err.message)
     }
+  }
+
+  async function excluirUsuario() {
+    if (!excluindo) return
+    setExcluindoAgora(true)
+    const { data, error } = await supabase.functions.invoke('delete-user', { body: { user_id: excluindo.id } })
+    setExcluindoAgora(false)
+    if (error || !(data as any)?.ok) {
+      toast.error(await mensagemErroFuncao(error, 'Não foi possível excluir o usuário', data))
+      return
+    }
+    toast.success(`Usuário ${excluindo.name} excluído`)
+    setExcluindo(null)
+    fetchUsers()
   }
 
   async function toggleUserStatus(userId: string, currentStatus: boolean) {
@@ -244,6 +262,15 @@ export default function SuperAdminUsersPage() {
                         >
                           {m.isActive ? 'Desativar' : 'Ativar'}
                         </button>
+                        {!m.isActive && m.role !== 'super_admin' && (
+                          <button
+                            onClick={() => setExcluindo(m)}
+                            className="p-2 rounded-md hover:bg-destructive/10 text-destructive"
+                            title="Excluir"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </button>
+                        )}
                       </div>
                     </td>
                   </tr>
@@ -253,6 +280,25 @@ export default function SuperAdminUsersPage() {
           </table>
         </div>
       </div>
+      <AlertDialog open={!!excluindo} onOpenChange={o => { if (!o && !excluindoAgora) setExcluindo(null) }}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Excluir usuário?</AlertDialogTitle>
+            <AlertDialogDescription>
+              {excluindo?.name} será excluído de vez e o e-mail fica livre para um novo cadastro.
+              Só é possível excluir quem nunca entrou no sistema; quem já usou fica apenas desativado, para manter o histórico.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={excluindoAgora}>Cancelar</AlertDialogCancel>
+            <AlertDialogAction onClick={e => { e.preventDefault(); void excluirUsuario() }} disabled={excluindoAgora}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+              {excluindoAgora && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+              Excluir
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   )
 }
