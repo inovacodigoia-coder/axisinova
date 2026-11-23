@@ -11,3 +11,15 @@ describe('mensagemErroFuncao', () => {
     expect(await mensagemErroFuncao(erro, 'Erro ao criar usuário')).toBe('Erro ao criar usuário')
   })
 })
+
+describe('mensagemErroFuncao com outros formatos de recusa', () => {
+  it('lê "motivo" (Apoio) e "mensagem" (WhatsApp/InovaChat)', async () => {
+    const motivo = { context: new Response(JSON.stringify({ ok: false, motivo: 'Somente administradores' }), { status: 403 }) }
+    const mensagem = { context: new Response(JSON.stringify({ ok: false, mensagem: 'Este número não existe mais no servidor do WhatsApp.' }), { status: 404 }) }
+    expect(await mensagemErroFuncao(motivo, 'x')).toBe('Somente administradores')
+    expect(await mensagemErroFuncao(mensagem, 'x')).toBe('Este número não existe mais no servidor do WhatsApp.')
+  })
+  it('usa o motivo que já veio em data quando a resposta foi 200', async () => {
+    expect(await mensagemErroFuncao(null, 'x', { ok: false, mensagem: 'Conversa encerrada' })).toBe('Conversa encerrada')
+  })
+})

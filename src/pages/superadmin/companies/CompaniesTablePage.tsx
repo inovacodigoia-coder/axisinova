@@ -10,6 +10,7 @@ import { Eye, MoreHorizontal, Trash2, Edit, Ban } from 'lucide-react'
 import type { Company, CompanyStatus, PlanType } from '@/types/company.types'
 import { supabase } from '@/integrations/supabase/client'
 import { toast } from 'sonner'
+import { mensagemErroFuncao } from '@/lib/erroFuncao'
 
 const PLAN_VARIANT: Record<PlanType, 'info' | 'success' | 'warning'> = { Starter: 'info', Pro: 'warning', Enterprise: 'success' }
 
@@ -135,20 +136,18 @@ export default function CompaniesListPage({ refreshKey = 0 }: { refreshKey?: num
         body: { companyId: deleteTarget.id },
       })
 
-      if (error) {
-        console.error('Invoke error:', error);
-        toast.error(`Erro ao invocar função: ${error.message || 'Erro desconhecido'}`)
-        return
-      }
+      const erroFn: string | null = error
+        ? await mensagemErroFuncao(error, `Erro ao invocar função: ${error.message || 'Erro desconhecido'}`, data)
+        : (typeof data?.error === 'string' ? data.error : null)
 
-      if (data?.error) {
-        console.error('Function internal error:', data.error);
-        if (data.error.includes('not found') || data.error.includes('não encontrada')) {
+      if (erroFn) {
+        console.error('Function error:', erroFn);
+        if (erroFn.includes('not found') || erroFn.includes('não encontrada')) {
           toast.error(`Esta empresa já foi removida do sistema.`)
           setDeleteTarget(null)
           fetchCompanies()
         } else {
-          toast.error(`Erro no processamento: ${data.error}`)
+          toast.error(`Erro no processamento: ${erroFn}`)
         }
         return
       }

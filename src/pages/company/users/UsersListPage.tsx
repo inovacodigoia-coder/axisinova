@@ -30,6 +30,7 @@ interface ProfileRow {
 }
 
 import { ROLE_OPTIONS, getRoleLabel } from '@/lib/userRoles'
+import { mensagemErroFuncao } from '@/lib/erroFuncao'
 
 export default function UsersListPage() {
   const { user } = useAuth()
@@ -304,7 +305,7 @@ function EditUserModal({ profile, extraRoles = [], onClose, onSaved }: { profile
     setSettingPwd(false)
 
     if (error || (data as any)?.error) {
-      toast.error((data as any)?.error || 'Erro ao definir a senha')
+      toast.error(await mensagemErroFuncao(error, 'Erro ao definir a senha', data))
       return
     }
     toast.success('Senha definida. O usuário deverá criar uma nova senha no primeiro acesso.')

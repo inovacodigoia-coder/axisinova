@@ -7,6 +7,7 @@ import { Checkbox } from '@/components/ui/checkbox'
 import { Label } from '@/components/ui/label'
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog'
+import { mensagemErroFuncao } from '@/lib/erroFuncao'
 
 export interface ItemCancelavel { id: string; paciente: string; order_number: string; exame: string; tubo: string }
 type Resultado = { id: string; resultado: 'cancelado' | 'recusado' | 'sem_confirmacao'; mensagem: string }
@@ -36,7 +37,7 @@ export function CancelarPardiniDialog({ itens, marcados, open, onClose, onDone, 
     for (const id of sel) {
       const { data, error } = await supabase.functions.invoke('apoio-cancelar', { body: { modo: 'remessa', pedido_exame_id: id, motivo: motivoFinal, destino } })
       const r: Resultado = error
-        ? { id, resultado: 'recusado', mensagem: (data as any)?.error || error.message || 'Falha ao cancelar' }
+        ? { id, resultado: 'recusado', mensagem: await mensagemErroFuncao(error, 'Falha ao cancelar', data) }
         : { id, resultado: (data as any)?.resultado || 'recusado', mensagem: (data as any)?.mensagem || (data as any)?.error || '' }
       todos.push(r)
       setFeitos(f => [...f, r])

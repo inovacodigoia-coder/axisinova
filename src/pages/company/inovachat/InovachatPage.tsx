@@ -26,6 +26,7 @@ import { useCrmAcesso } from '@/hooks/useCrm'
 import { CrmLeadAcoes, rotuloLead, useLeadsAbertos, type LeadAberto } from '@/components/crm/CrmLeadChip'
 import type { CrmAcesso } from '@/lib/crm'
 import { nomePrincipalContato, perfilSecundarioContato } from '@/lib/inovachatNome'
+import { mensagemErroFuncao } from '@/lib/erroFuncao'
 
 interface Contato { id: string; telefone: string; nome_exibicao: string | null; paciente_id: string | null; paciente?: { name: string | null } | null; vinculo_status: string; criado_em: string }
 interface Conversa {
@@ -444,8 +445,7 @@ export default function InovachatPage() {
     const { data, error } = await supabase.functions.invoke('inovachat-enviar', { body: ehMidia
       ? { conversa_id: sel.id, substituir_id: m.id, midia_retry: true } : { conversa_id: sel.id, texto: m.texto, substituir_id: m.id } })
     const r = (data ?? {}) as any
-    if (error && !r.mensagem) toast.error('Não foi possível enviar.')
-    else if (!r.ok) toast.error(r.mensagem ?? 'Não foi possível enviar.')
+    if (error || !r.ok) toast.error(await mensagemErroFuncao(error, 'Não foi possível enviar.', r))
     void carregar(); void carregarMsgs(sel.id)
   }
 }

@@ -8,6 +8,7 @@ import { isValidCnpj, maskCnpj, onlyDigits } from '@/lib/cnpj'
 import { useApoioEntitlement } from '@/hooks/useApoio'
 import { LicencaBadge } from './ApoioLaboratoriosTab'
 import { ReferenciaSection } from './ApoioReferencia'
+import { mensagemErroFuncao } from '@/lib/erroFuncao'
 
 export interface ApoioLab {
   id: string
@@ -163,7 +164,7 @@ export function ApoioLaboratorioDrawer({ open, lab, readOnly, podeCatalogo = fal
 
       if (f.conector === 'pardini' && f.senha) {
         const { data, error } = await supabase.functions.invoke('apoio-salvar-senha', { body: { apoio_id: id, senha: f.senha } })
-        if (error || !data?.ok) throw new Error(data?.error || 'Não foi possível guardar a senha')
+        if (error || !data?.ok) throw new Error(await mensagemErroFuncao(error, 'Não foi possível guardar a senha', data))
       }
 
       if (licFile) {

@@ -3,6 +3,7 @@ import { toast } from 'sonner'
 import { supabase } from '@/integrations/supabase/client'
 import { Button } from '@/components/ui/button'
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog'
+import { mensagemErroFuncao } from '@/lib/erroFuncao'
 
 interface Inst { id: string; apelido: string | null; status: string }
 interface Res { config: { enabled: boolean; events: string[]; aponta_para_axis: boolean }[]; erros: { quando: string | null; evento: string | null; status: number | null; erro: string }[]; erros_http: number; diagnostico?: { formato: string; chaves: string[]; message_type: string | null; button_or_listid: string | null; tamanho_texto: number | null; criado_em: string; motivo: string | null }[] }
@@ -32,7 +33,7 @@ export function WhatsappWebhookCheck({ companyId }: { companyId: string }) {
     setAberto(i); setRes(null); setCarregando(true)
     const { data, error } = await supabase.functions.invoke('whatsapp-instancia', { body: { acao: 'verificar_webhook', instancia_id: i.id } })
     setCarregando(false)
-    if (error || !data?.ok) { toast.error(data?.mensagem || 'Não foi possível verificar o webhook.'); setAberto(null); return }
+    if (error || !data?.ok) { toast.error(await mensagemErroFuncao(error, 'Não foi possível verificar o webhook.', data)); setAberto(null); return }
     setRes(data.dados)
   }
 

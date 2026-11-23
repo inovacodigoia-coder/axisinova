@@ -11,6 +11,7 @@ import { useApoioPermissions } from '@/hooks/useApoio'
 import { maskCnpj } from '@/lib/cnpj'
 import { ApoioLaboratorioDrawer, type ApoioLab } from './ApoioLaboratorioDrawer'
 import { CatalogoUploadDialog, PrecoImportDialog, CatalogoInfoLinha, carregarCatalogoInfo, type CatalogoInfo } from './ApoioReferencia'
+import { mensagemErroFuncao } from '@/lib/erroFuncao'
 
 const diasAte = (d: string) => Math.floor((new Date(d + 'T00:00:00').getTime() - new Date(new Date().toDateString()).getTime()) / 86400000)
 
@@ -75,7 +76,7 @@ export function ApoioLaboratoriosTab({ moduloLiberado, onChanged }: { moduloLibe
     const t0 = performance.now()
     const { data, error } = await supabase.functions.invoke('apoio-testar-conexao', { body: { apoio_id: l.id } })
     const ms = Math.round(performance.now() - t0)
-    setTeste({ nome: l.nome, loading: false, ok: !!data?.ok, motivo: error ? 'Não foi possível contatar o servidor' : data?.motivo, ms })
+    setTeste({ nome: l.nome, loading: false, ok: !!data?.ok, motivo: error ? await mensagemErroFuncao(error, 'Não foi possível contatar o servidor', data) : data?.motivo, ms })
   }
 
   const alternarModo = async (l: ApoioLab) => {

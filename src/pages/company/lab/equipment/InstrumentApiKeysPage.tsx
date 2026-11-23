@@ -13,6 +13,7 @@ import { useAuth } from '@/context/AuthContext'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import OAuthClientsSection from '@/components/lab/integration/OAuthClientsSection'
 import IntegrationEventsLog from '@/components/lab/integration/IntegrationEventsLog'
+import { mensagemErroFuncao } from '@/lib/erroFuncao'
 
 type KeyRow = {
   id: string
@@ -62,7 +63,7 @@ export default function InstrumentApiKeysPage() {
       const { data, error } = await supabase.functions.invoke('create-company-api-key', {
         body: { name: name.trim() },
       })
-      if (error) throw error
+      if (error) throw new Error(await mensagemErroFuncao(error, 'Erro ao gerar chave', data))
       if ((data as any)?.error) throw new Error((data as any).error)
       setNewKey((data as any).api_key)
       toast.success('Chave gerada! Copie agora — ela não será exibida novamente.')

@@ -19,6 +19,7 @@ import { useApoioEntitlement, useApoioPermissions } from '@/hooks/useApoio'
 import { ApoioBloqueadoAviso } from '@/pages/company/support/SupportOutsourcingPage'
 import { STATUS_APOIO } from '@/components/apoio/contingencia/ApoioContingenciaTab'
 import { exportarCsv, exportarPdf, type Coluna } from '@/components/apoio/relatorios/exportar'
+import { mensagemErroFuncao } from '@/lib/erroFuncao'
 
 const db = supabase as any
 /** O relatório de log já vem limitado pelo servidor a 1.000 chamadas mais recentes. */
@@ -239,7 +240,7 @@ function Relatorio({ rel, args, filtroTxt, permitido, onVoltar }: { rel: Rel; ar
 
   const reprocessar = async (id: string) => {
     const { data, error } = await supabase.functions.invoke('apoio-resultado', { body: { reprocessar_log_id: id } })
-    if (error || !data?.ok) toast.error('Não foi possível reprocessar', { description: data?.motivo || error?.message })
+    if (error || !data?.ok) toast.error('Não foi possível reprocessar', { description: await mensagemErroFuncao(error, error?.message ?? '', data) || undefined })
     else { toast.success(`Reprocessado: ${data.novos ?? 0} novo(s), ${data.pendentes ?? 0} pendente(s)`); carregar() }
   }
 

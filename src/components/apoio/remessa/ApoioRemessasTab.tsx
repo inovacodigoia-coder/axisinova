@@ -19,6 +19,7 @@ import { CancelarPardiniDialog } from './CancelarPardiniDialog'
 import { SepararTemperaturaDialog } from './SepararTemperaturaDialog'
 import { CONSERVACAO, ORDEM_CONSERVACAO, ORIGEM_CONSERVACAO, proximaSaida, resumoSacos } from './conservacao'
 import { imprimirDireto, imprimirRaw, textoParaBase64, servidorImpressaoAtivo } from '@/lib/impressaoLocal'
+import { mensagemErroFuncao } from '@/lib/erroFuncao'
 
 interface Remessa {
   id: string; cod_lote_lab: number; apoio_id: string; apoio_nome: string; created_at: string; criado_por_nome: string | null
@@ -215,7 +216,7 @@ function NovaRemessa({ apoios, onClose, onCriada }: { apoios: { id: string; nome
     setSalvando(true)
     const { data, error } = await supabase.rpc('apoio_remessa_criar' as any, { _apoio: apoio, _ids: sel, _saida_prevista: saida ? new Date(saida).toISOString() : null })
     setSalvando(false)
-    if (error) return toast.error(erroMsg(error))
+    if (error) return toast.error(await mensagemErroFuncao(error, erroMsg(error), data))
     toast.success(`Remessa nº ${(data as any).cod_lote_lab} criada`)
     onCriada((data as any).id)
   }

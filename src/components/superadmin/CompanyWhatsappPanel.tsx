@@ -11,6 +11,7 @@ import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription,
   AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
 } from '@/components/ui/alert-dialog'
+import { mensagemErroFuncao } from '@/lib/erroFuncao'
 
 interface WaState { habilitado: boolean; numeros: number; instancias: number }
 
@@ -53,7 +54,7 @@ export function CompanyWhatsappPanel({ companyId }: { companyId: string }) {
     setSaving(true)
     const { data, error } = await supabase.functions.invoke('whatsapp-instancia', { body: { acao: 'desconectar_empresa', company_id: companyId } })
     setSaving(false)
-    if (error || !data?.ok) toast.warning(data?.mensagem || 'Alguns números não foram desconectados; o envio será bloqueado mesmo assim.')
+    if (error || !data?.ok) toast.warning(await mensagemErroFuncao(error, 'Alguns números não foram desconectados; o envio será bloqueado mesmo assim.', data))
     void salvar(false, null)
   }
 

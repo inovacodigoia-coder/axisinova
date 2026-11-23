@@ -16,6 +16,7 @@ import {
   separarAvisoSaida, BOTAO_SAIR, VARIAVEIS_RELACIONAMENTO, renderLinks, linkFaltando, validarLink, ehDominioGoogle,
   CHAVES_LINK, type ChaveLink, type Links, TIPOS_POS,
 } from '@/lib/whatsappModelo'
+import { mensagemErroFuncao } from '@/lib/erroFuncao'
 
 interface Regra {
   id: string; tipo: TipoAutomacao; nome: string; ativo: boolean; deslocamento_minutos: number; horario_fixo: string | null
@@ -319,7 +320,7 @@ function Editor({ alvo, companyId, medicos, links, empresa, onClose, onSalvo }: 
     })
     setEnviando(false)
     const d = data as any
-    if (error || !d?.ok) toast.error(d?.mensagem ?? 'Não foi possível enviar o teste.')
+    if (error || !d?.ok) toast.error(await mensagemErroFuncao(error, 'Não foi possível enviar o teste.', d))
     else toast.success(`Teste enviado por ${d.dados?.instancia_apelido ?? 'número conectado'}.`)
   }
   const inserirVar = (v: string) => setTexto(t => (t + (t.endsWith(' ') || !t ? '' : ' ') + v).slice(0, 1000))

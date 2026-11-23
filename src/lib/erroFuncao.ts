@@ -1,13 +1,26 @@
 /**
- * Extrai a mensagem amigável que uma Edge Function devolveu no corpo ({ error }).
- * O supabase-js só informa "non-2xx status code"; o texto real fica em error.context (Response).
+ * Extrai o motivo que uma Edge Function devolveu ({ error } | { mensagem } | { motivo }).
+ * Em respostas não-2xx o supabase-js entrega data = null e só diz "non-2xx status code";
+ * o texto real fica no corpo, em error.context (Response).
  */
-export async function mensagemErroFuncao(error: unknown, padrao: string): Promise<string> {
+const motivoDoCorpo = (corpo: unknown): string | null => {
+  if (!corpo || typeof corpo !== 'object') return null
+  const c = corpo as Record<string, unknown>
+  for (const k of ['error', 'mensagem', 'motivo']) {
+    const v = c[k]
+    if (typeof v === 'string' && v.trim()) return v
+  }
+  return null
+}
+
+export async function mensagemErroFuncao(error: unknown, padrao: string, data?: unknown): Promise<string> {
+  const doData = motivoDoCorpo(data)
+  if (doData) return doData
   const ctx = (error as { context?: unknown } | null)?.context
   if (ctx && typeof (ctx as Response).clone === 'function') {
     try {
-      const corpo = await (ctx as Response).clone().json()
-      if (corpo && typeof corpo.error === 'string' && corpo.error.trim()) return corpo.error
+      const doCorpo = motivoDoCorpo(await (ctx as Response).clone().json())
+      if (doCorpo) return doCorpo
     } catch {
       /* corpo não é JSON */
     }

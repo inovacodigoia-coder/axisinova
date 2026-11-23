@@ -15,6 +15,7 @@ import { toast } from "sonner"
 import { Loader2, Plus, Trash2, Globe, Send } from "lucide-react"
 import { supabase } from "@/integrations/supabase/client"
 import { useAuth } from "@/context/AuthContext"
+import { mensagemErroFuncao } from '@/lib/erroFuncao'
 
 interface Webhook {
   id: string
@@ -173,7 +174,7 @@ export function InstrumentWebhooksModal({
           instrument,
         }
       })
-      if (error) throw error
+      if (error) throw new Error(await mensagemErroFuncao(error, error.message || 'Falha ao testar o webhook', data))
 
       const res = data as any
       if (res?.ok) {

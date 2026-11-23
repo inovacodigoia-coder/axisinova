@@ -10,6 +10,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { EmptyState } from '@/components/feedback/EmptyState'
 import { useApoioPermissions } from '@/hooks/useApoio'
 import { LinhaLog, TIPOS, LADOS, Lado, traduzir } from './traducaoLog'
+import { mensagemErroFuncao } from '@/lib/erroFuncao'
 
 const fmt = (d?: string | null) => d ? new Date(d).toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', year: '2-digit', hour: '2-digit', minute: '2-digit', second: '2-digit' }) : '—'
 const hojeISO = () => new Date().toISOString().slice(0, 10)
@@ -100,7 +101,7 @@ export function DetalheLog({ linha, erros, onClose, onChanged }: { linha: LinhaL
     setOcupado(true)
     const { data, error } = await supabase.functions.invoke('apoio-resultado', { body: { reprocessar_log_id: linha.id } })
     setOcupado(false)
-    if (error || !(data as any)?.ok) return toast.error((data as any)?.motivo || 'Não foi possível reprocessar')
+    if (error || !(data as any)?.ok) return toast.error(await mensagemErroFuncao(error, 'Não foi possível reprocessar', data))
     toast.success('Resultado reprocessado'); onChanged()
   }
 
